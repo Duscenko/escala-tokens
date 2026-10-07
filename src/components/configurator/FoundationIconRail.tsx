@@ -38,9 +38,11 @@ export const FOUNDATION_ICON_RAIL_WIDTH = 64
  *  so the selection reads without shouting over the canvas. Inactive = muted
  *  ink, neutral hover. `compact` drops the label (horizontal placement). */
 export function RailTile({
-  on, label, onClick, children, ariaCurrent, compact = false, className = '', ...aria
+  on, label, onClick, children, ariaCurrent, compact = false, className = '', step, ...aria
 }: {
   on: boolean
+  /** Guided theme setup: a finished step carries a ✓, a future one is locked. */
+  step?: 'done' | 'locked'
   label: string
   onClick: () => void
   children: ReactNode
@@ -57,13 +59,14 @@ export function RailTile({
     <button
       type="button"
       onClick={onClick}
+      disabled={step === 'locked' || step === 'done'}
       aria-current={ariaCurrent}
-      aria-label={aria['aria-label'] ?? label}
-      title={aria.title ?? label}
+      aria-label={aria['aria-label'] ?? (step === 'locked' ? `${label} — next steps` : step === 'done' ? `${label} — done` : label)}
+      title={aria.title ?? (step === 'locked' ? `${label} — next steps` : step === 'done' ? `${label} — done` : label)}
       aria-pressed={aria['aria-pressed']}
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
-      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : ''} ${
         compact ? '' : 'w-[56px] gap-0.5 py-1'
       } ${className}`}
     >
@@ -72,13 +75,18 @@ export function RailTile({
           The active glyph scales inside that fixed 36px box (`transform` does
           not change layout), so the tile's height stays put. */}
       <span
-        className={`flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] w-9 h-9 ${on
+        className={`relative flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] w-9 h-9 ${on
           ? 'bg-accent-ui/[0.16] text-accent-ui'
           : 'text-fg-muted group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
       >
         <span className={`flex transition-transform duration-200 ease-out motion-reduce:transition-none ${on ? 'scale-[1.2]' : ''}`}>
           {children}
         </span>
+        {step === 'done' && (
+          <span aria-hidden className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent-solid text-accent-ink">
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.5 5 9l4.5-5.5" /></svg>
+          </span>
+        )}
       </span>
       {!compact && (
         <span
@@ -104,8 +112,11 @@ export function RailTile({
 // SectionRail; this component doesn't apply there.
 
 export default function FoundationIconRail({
-  groups, active, onSelect, orientation = 'horizontal', header, footer, ariaLabel = 'Variable foundations',
+  groups, active, onSelect, orientation = 'horizontal', header, footer, ariaLabel = 'Variable foundations', guide,
 }: {
+  /** Guided theme setup: steps already done, and the one in progress. Every
+   *  other foundation is locked until its turn. */
+  guide?: { done: readonly string[]; current: string }
   groups: RailGroup[]
   /** Highlighted entry key. */
   active: string | null
@@ -123,6 +134,7 @@ export default function FoundationIconRail({
   return (
     <nav
       aria-label={ariaLabel}
+      data-shell-chrome={vertical ? '' : undefined}
       className={vertical
         // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
         // icons begin near the top with `pt-2`. Group spacing is per-group.
@@ -134,7 +146,7 @@ export default function FoundationIconRail({
         <div className="flex w-full flex-shrink-0 flex-col items-center">
           {header}
           {headerDivider ? (
-            <div className="mt-3 w-full border-t border-line" aria-hidden />
+            <div className="mt-0.5 h-px w-8 bg-line/60" aria-hidden />
           ) : null}
         </div>
       ) : null}
@@ -144,7 +156,7 @@ export default function FoundationIconRail({
             key={group.label ?? gi}
             className={vertical
               ? `flex w-full flex-col items-center gap-1 ${
-                gi > 0 ? 'mt-3 border-t border-line pt-3' : headerDivider ? 'pt-3' : ''
+                gi > 0 ? 'mt-3 pt-3' : headerDivider ? 'pt-[22px]' : ''
               }`
               : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
           >
@@ -159,6 +171,7 @@ export default function FoundationIconRail({
                   onClick={() => onSelect(key)}
                   ariaCurrent={on ? 'page' : undefined}
                   compact={!vertical}
+                  step={!guide || key === guide.current ? undefined : guide.done.includes(key) ? 'done' : 'locked'}
                 >
                   {VARIABLE_ICON_SOURCES[key]
                     ? <span

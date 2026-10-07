@@ -569,7 +569,7 @@ export default function TopNav({
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
-    <header className={`relative z-30 flex items-stretch flex-shrink-0 ${SHELL_CHROME} border-b border-line`} style={{ height: TOP_NAV_H }}>
+    <header data-shell-chrome className={`relative z-30 flex items-stretch flex-shrink-0 ${SHELL_CHROME} border-b border-line`} style={{ height: TOP_NAV_H }}>
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
           the mark (no wordmark) in step with the rail below it. One line, never

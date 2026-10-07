@@ -22,8 +22,8 @@ import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/Th
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
+import { SETUP_STEPS, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
 import ThemePanel from '../components/configurator/ThemePanel'
-import { ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
 import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
@@ -32,7 +32,7 @@ import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { type StylePreview } from '../lib/stylePreviewOverlay'
-import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
+import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
 import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
@@ -637,10 +637,14 @@ export default function Configurator() {
   // the library, the empty states — opens the SAME sheet on its create view
   // instead of the old docked ThemePanel. That panel survives for EDITING an
   // existing theme only (`themeEditor` is a theme key).
-  const [themeSheet, setThemeSheet] = useState<false | 'browse' | 'create'>(false)
+  // "Create a theme" lives on Home now (its form opens in the inspector): every
+  // door that used to open the Customize sheet goes there and bumps this, which
+  // Home reads as "open the create form".
+  const [createPending, setCreatePending] = useState(false)
   const openCreateTheme = () => {
     setStylePreview(null)
-    setThemeSheet('create')
+    openLibraryPage()
+    setCreatePending(true)
   }
   const [resetOpen, setResetOpen] = useState(false)
   // The Generator's right-hand inspector column — the DOM node every view's
@@ -1153,7 +1157,30 @@ export default function Configurator() {
    * itself: on Variables the rail is which TABLE you're editing, so jumping
    * tabs on every click would be leaving the screen you meant to stay on.
    */
+  // A theme just made from Home's first step (name + accent) goes through
+  // GUIDED SETUP (`lib/themeSetup`): one edition at a time, in rail order. The
+  // board opens on the current step; the rest of the rail waits. Ends on
+  // Finish or "Skip setup", after which every edition is open again.
+  const setupStep = useSetupStep(themeWorkspaceTab === 'preview' ? previewTheme : null)
+  const beginThemeSetup = (key: string) => {
+    commitVisit()
+    startThemeSetupState(key)
+    changePreviewTheme(key)
+    setActiveFoundation(SETUP_STEPS[1])
+    setThemeWorkspaceTab('preview')
+    setThemeHubSurface('artefacts')
+  }
+  useEffect(() => {
+    if (setupStep == null) return
+    setActiveFoundation(SETUP_STEPS[setupStep])
+  }, [setupStep])
+  const railGuide = setupStep == null ? undefined : {
+    done: SETUP_STEPS.slice(0, setupStep) as readonly string[],
+    current: SETUP_STEPS[setupStep] as string,
+  }
   const selectWorkspaceFoundation = (key: string) => {
+    // During guided setup only the current step is open (the rail locks the rest).
+    if (railGuide && previewWidgetKey(key) !== railGuide.current) return
     commitVisit()
     setActiveFoundation(key)
     // From the Themes library page, a foundation icon means "edit this", which
@@ -1822,22 +1849,11 @@ export default function Configurator() {
         themeControl={(
           <ThemeAppearanceControl
             previewTheme={previewTheme}
-            onPreviewThemeChange={changePreviewTheme}
             stylePreview={stylePreview}
-            onStylePreview={setStylePreview}
             appearance={theme}
             onAppearanceChange={setTheme}
-            sheet={themeSheet}
-            onSheetChange={setThemeSheet}
-            onCreated={changePreviewTheme}
+            homeOpen={themesCanvas && themeWorkspaceTab === 'library'}
             onOpenLibrary={openLibraryPage}
-            onOpenTheme={(key) => {
-              leaveExportWizard()
-              setExportMode(null)
-              setTab('foundations')
-              changePreviewTheme(key)
-              changeThemeWorkspaceTab('preview')
-            }}
           />
         )}
         onOpenDocsPage={openDocsPage}
@@ -1870,7 +1886,9 @@ export default function Configurator() {
         >
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
-          {themeWorkspaceRailVisible && (
+          {/* Home has no rail: the foundations belong to a theme being edited, and the
+              way HOME itself is reached is the theme avatar in the top bar. */}
+          {themeWorkspaceRailVisible && !homeRailOnly && (
             // Home is the top tile on every Generator surface that shows this
             // rail. Theme and Variables keep the foundation icons under it.
             // Code, Docs and Home pass an empty group list.
@@ -1879,13 +1897,7 @@ export default function Configurator() {
               ariaLabel={homeRailOnly ? t('Home') : themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
               active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
-              header={(
-                <ThemesLibraryToggle
-                  open={themeWorkspaceTab === 'library'}
-                  onToggle={openLibraryPage}
-                  placement="icon-rail"
-                />
-              )}
+              guide={railGuide}
               groups={homeRailOnly ? [] : [
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
                   key: foundation.key,
@@ -1905,9 +1917,11 @@ export default function Configurator() {
               "the theme paints the canvas, the platform paints the chrome",
               made visible. Side panels portal OUT of it into the inspector, so
               the `.light`/`.dark` class here never reaches them. */}
+          {/* Home is a file browser, not a view of one theme: its card follows the
+              app's own light/dark; only the covers inside show each theme's look. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${previewAppearance === 'dark' ? 'dark' : 'light'}`
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -1944,6 +1958,7 @@ export default function Configurator() {
                     onDocsOpenChange={setDocsPanelOpen}
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
+                    onGetCode={() => openCodeForTheme(previewTheme)}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     previewPlatform={previewPlatform}
@@ -1997,11 +2012,21 @@ export default function Configurator() {
                     previewTheme={previewTheme}
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
+                    onStartTheme={beginThemeSetup}
+                    onPreviewStyle={(preset) => {
+                      // Same try-on the theme sheet makes: the board paints the
+                      // style, the rail shows it with Add theme. Nothing is added.
+                      setThemeWorkspaceTab('preview')
+                      setThemeHubSurface('artefacts')
+                      setStylePreview({ preset, appearance: theme === 'dark' ? 'dark' : 'light' })
+                    }}
                     onGetCode={openCodeForTheme}
                     onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     figmaThemes={figmaSyncModes.map((mode) => mode.theme)}
                     onCreateTheme={openCreateTheme}
+                    createPending={createPending}
+                    onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
@@ -2033,7 +2058,10 @@ export default function Configurator() {
                   <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
                     {t(activeFoundationCollections.find(({ key }) => key === activeCollection)?.label ?? section.variablesLabel)}
                   </h2>
-                  <div className="flex min-w-0 flex-1 justify-end">{tokenSearchField}</div>
+                  <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                    <GetCodeButton onOpen={() => openCodeForTheme(previewTheme)} />
+                    {tokenSearchField}
+                  </div>
                 </div>
                 <div className="flex-1 min-h-0">
                 <LoginWall

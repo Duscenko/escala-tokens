@@ -16,6 +16,8 @@ import { accountsEnabled } from './supabase'
 import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
 import { WORKSPACE_SECTION_PARAM } from './workspaceLink'
+import { useDesignStore } from '../store/useDesignStore'
+import { myThemeKeys } from './themeLibrary'
 
 export type AccessTier = 'anon' | 'free' | 'pro'
 
@@ -45,4 +47,14 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
   const section = new URLSearchParams(window.location.search).get(WORKSPACE_SECTION_PARAM)
   rememberReturn('workspace', intent ?? null, section)
   window.location.assign(loginHref({ next: 'workspace', mode }))
+}
+
+/** Free keeps ONE theme of its own (see the tier table above). True when
+ *  adding another — a System Style, say — needs Pro. Never with accounts off:
+ *  a local checkout has no plan to upgrade to. */
+export const FREE_MY_THEME_LIMIT = 1
+export function useNeedsProForAnotherTheme(): boolean {
+  const { tier } = useAccess()
+  const count = useDesignStore((s) => myThemeKeys(s.themeOrder, s.themes).length)
+  return accountsEnabled && tier === 'free' && count >= FREE_MY_THEME_LIMIT
 }

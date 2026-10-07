@@ -198,6 +198,35 @@ function FigmaSyncButton({ publishState, onOpen }: { publishState: FigmaPublishS
   )
 }
 
+/**
+ * Get code, beside the Figma door and in the same 32px shell: icon-only at
+ * rest, hover/focus slides out the label. A plain action — the Code tab it
+ * opens replaces this view, so there's no state left for it to show.
+ */
+export function GetCodeButton({ onOpen }: { onOpen: () => void }) {
+  const { t } = useI18n()
+  const label = t('Get code')
+  return (
+    <div className="flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={label}
+        title={label}
+        className={`${HEADER_CONTROL_BTN} text-fg ${CHROME_CONTROL_HOVER}`}
+      >
+        <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
+            <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
+          </svg>
+        </span>
+        <RevealLabel open={false}>{label}</RevealLabel>
+      </button>
+    </div>
+  )
+}
+
 function HistoryGlyph({ redo = false }: { redo?: boolean }) {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={redo ? { transform: 'scaleX(-1)' } : undefined}>
@@ -431,10 +460,12 @@ export default function ThemePreviewHub({
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
-  githubPushState, onGithubPushStateChange, docsExits,
+  githubPushState, onGithubPushStateChange, docsExits, onGetCode,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
+  /** Opens the Code tab on this theme — the header's Get code door. */
+  onGetCode?: () => void
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
   previewTheme: string
@@ -714,6 +745,9 @@ export default function ThemePreviewHub({
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
                     />
+                  )}
+                  {!needsMyTheme && !contrastOpen && onGetCode && (
+                    <GetCodeButton onOpen={onGetCode} />
                   )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
                     <FigmaSyncButton publishState={figmaPublishState} onOpen={() => onSurfaceChange('figma')} />

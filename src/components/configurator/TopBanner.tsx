@@ -27,6 +27,7 @@ export default function TopBanner({
   const { t } = useI18n()
   return (
     <div
+      data-shell-chrome
       className={`relative flex min-h-[30px] flex-shrink-0 items-center justify-center border-b border-line py-1 ${onDismiss ? 'px-9' : 'px-4'} ${WORKSPACE_CHROME}`}
     >
       <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-center text-body text-fg [text-wrap:balance]">

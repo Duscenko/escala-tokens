@@ -7,6 +7,8 @@ import { generateColorScale } from '../../lib/colorUtils'
 import { useI18n } from '../../lib/i18n'
 import { THEME_STYLE_PRESETS, presetStates, type ThemeStylePreset } from '../../lib/themePresets'
 import { ThemeAvatar } from './ThemeLibraryRail'
+import { useNeedsProForAnotherTheme } from '../../lib/access'
+import { PRICING_PATH } from '../../lib/entitlement'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
@@ -34,6 +36,8 @@ export function StyleOverview({
   compact?: boolean
 }) {
   const { t } = useI18n()
+  // Free keeps one theme: a style that isn't already yours needs Pro to add.
+  const needsPro = useNeedsProForAnotherTheme() && !owned
   const f = preset.foundations
   const states = presetStates(preset)
   const ramp = PRESET_AVATAR_RAMPS[`${preset.id}:${appearance}`]
@@ -73,17 +77,37 @@ export function StyleOverview({
           ))}
         </dl>
       )}
-      <button
-        type="button"
-        onClick={onEdit}
-        className={`flex h-10 items-center justify-center gap-2 rounded-full bg-fg px-4 text-ui font-medium text-app transition-opacity hover:opacity-90 ${FOCUS}`}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9.5 2.5 11.5 4.5 5 11H3V9l6.5-6.5Z" />
-        </svg>
-        {t('Edit theme')}
-      </button>
-      {!owned && <p className="-mt-2 text-center text-caption text-fg-faint">{t('Adds it to My themes.')}</p>}
+      {needsPro ? (
+        <>
+          <a
+            href={PRICING_PATH}
+            className={`flex h-10 items-center justify-center gap-2 rounded-full bg-accent-solid px-4 text-ui font-medium text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
+          >
+            {t('Upgrade to Pro')}
+          </a>
+          <p className="-mt-2 text-center text-caption text-fg-faint">{t('Free includes one theme. Pro adds this style and as many as you need.')}</p>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={onEdit}
+            className={`flex h-10 items-center justify-center gap-2 rounded-full bg-fg px-4 text-ui font-medium text-app transition-opacity hover:opacity-90 ${FOCUS}`}
+          >
+            {owned ? (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9.5 2.5 11.5 4.5 5 11H3V9l6.5-6.5Z" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
+                <path d="M7 3v8M3 7h8" />
+              </svg>
+            )}
+            {owned ? t('Edit theme') : t('Add theme')}
+          </button>
+          {!owned && <p className="-mt-2 text-center text-caption text-fg-faint">{t('Adds it to My themes.')}</p>}
+        </>
+      )}
     </div>
   )
 }

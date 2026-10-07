@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
-import { isLiveEnvironment, publishOrigin, syncProjectId, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
-import { buildWorkspaceAppUrl } from '../../lib/workspaceLink'
+import { isLiveEnvironment, syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { figmaSyncThemeKeys } from '../../lib/themeLibrary'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
@@ -21,7 +19,6 @@ import {
 } from '../../lib/figmaSyncModes'
 import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
-import { CopyGlyph } from '../ui/icons'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
@@ -52,8 +49,8 @@ interface FigmaSyncViewProps {
   /** Viewports that become Dimension Semantics' Figma modes (≥ 1). */
   viewports: FigmaViewport[]
   onViewportsChange: (viewports: FigmaViewport[]) => void
-  /** Workspace section id for this window (`workspaceLink.ts`). Drives the
-   *  auto-updating This page link. ID to plugin is `?project=<file slug>`. */
+  /** Kept so existing callers still compile. The plugin signs in; this screen
+   *  no longer shows a page URL. */
   section?: string
 }
 
@@ -118,7 +115,7 @@ function SyncStuckHelp() {
       </button>
       {open ? (
         <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
-          <li>{t('Open the Escala plugin in Figma. In Live Sync, paste ID to plugin and click Update now.')}</li>
+          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this library.')}</li>
           <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself — Live Sync will not rewrite a pasted import.')}</li>
           <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
         </ol>
@@ -154,105 +151,6 @@ function EditIcon() {
         mask: "url('/icons/settings/edit.svg') center / contain no-repeat",
       }}
     />
-  )
-}
-
-function InfoIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M8 7.1v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="8" cy="4.9" r=".8" fill="currentColor" />
-    </svg>
-  )
-}
-
-/** Click-only, same interaction as the quick-settings `InfoHint`. Tutorial
- *  lines stay reachable from the info mark without occupying a row. */
-function SyncInfoTip({ label, children }: { label: string; children: ReactNode }) {
-  const tooltipId = useId()
-  const anchor = useRef<HTMLButtonElement>(null)
-  const panel = useRef<HTMLDivElement>(null)
-  const [open, setOpen] = useState(false)
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
-  const updatePosition = useCallback(() => {
-    const rect = anchor.current?.getBoundingClientRect()
-    if (!rect) return
-    const width = 288
-    setPosition({
-      left: Math.max(8, Math.min(window.innerWidth - width - 8, rect.left)),
-      top: rect.bottom + 6,
-    })
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    updatePosition()
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node
-      if (anchor.current?.contains(target) || panel.current?.contains(target)) return
-      setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    document.addEventListener('keydown', onKeyDown)
-    // The opening click's leftover pointerdown must not dismiss.
-    const listen = window.setTimeout(() => {
-      document.addEventListener('pointerdown', onPointerDown)
-    }, 0)
-    return () => {
-      window.clearTimeout(listen)
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open, updatePosition])
-
-  return (
-    <>
-      <button
-        ref={anchor}
-        type="button"
-        aria-expanded={open}
-        aria-controls={tooltipId}
-        aria-label={label}
-        onClick={() => setOpen((next) => !next)}
-        className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
-      >
-        <InfoIcon />
-      </button>
-      {open && position && createPortal(
-        <div
-          ref={panel}
-          id={tooltipId}
-          role="tooltip"
-          className="fixed z-[70] w-72 rounded-lg border border-line-strong bg-app px-3 py-2.5 text-caption leading-relaxed text-fg-muted shadow-lg"
-          style={position}
-        >
-          {children}
-        </div>,
-        document.body,
-      )}
-    </>
-  )
-}
-
-function SyncUrlInfo({ deployed }: { deployed: boolean }) {
-  const { t } = useI18n()
-  return (
-    <SyncInfoTip label={t('About ID to plugin')}>
-      <p>{t('Paste ID to plugin in Live Sync, then Sync now.')}</p>
-      <p className="mt-2">{t('Changes only when you rename the file. This page holds the themes in this window — it is not the key.')}</p>
-      {!deployed && (
-        <p className="mt-2">
-          {t('Live publish needs the deployed app — on localhost, copy the production URL or use Import with tokens.json.')}
-        </p>
-      )}
-    </SyncInfoTip>
   )
 }
 
@@ -328,7 +226,7 @@ function ProRequiredBanner({ onOpenLicence }: { onOpenLicence: () => void }) {
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload,
   publishState, publishError, onRequestSync, previewTheme, onSelectTheme,
-  fileName, onFileNameChange, syncModes, onSyncModesChange, viewports, onViewportsChange, section,
+  fileName, onFileNameChange, syncModes, onSyncModesChange, viewports, onViewportsChange,
 }: FigmaSyncViewProps) {
   const store = useDesignStore()
   const {
@@ -354,19 +252,12 @@ export default function FigmaSyncView({
   const ensurePublishId = store.ensurePublishId
   useEffect(() => { ensurePublishId() }, [ensurePublishId])
   const pluginSlug = syncProjectId(fileName)
-  const syncUrl = buildSyncUrl(fileName)
-  const pageUrl = section
-    ? buildWorkspaceAppUrl({ origin: publishOrigin(), project: pluginSlug, section })
-    : null
 
   const { t, locale } = useI18n()
   const [licenceOpen, setLicenceOpen] = useState(false)
   const entitlement = useEntitlement()
-  const pageLabelId = useId()
-  const pluginLabelId = useId()
   const fileHintId = useId()
   const fileNameRef = useRef<HTMLInputElement>(null)
-  const [copied, setCopied] = useState<'sync' | 'page' | null>(null)
   // ── Does this ID actually serve anything? ─────────────────────────────────
   // The screen used to hand out a copyable key with no idea whether a blob
   // existed behind it, and a key that has never been published answers 404 —
@@ -390,16 +281,6 @@ export default function FigmaSyncView({
   }, [pluginSlug, isDeployed, publishState])
   const publishedState: 'unknown' | 'live' | 'missing' =
     probe && probe.key === pluginSlug ? (probe.ok ? 'live' : 'missing') : 'unknown'
-  // Two clicks, because it disconnects every Figma file on the old ID.
-  const [regenArmed, setRegenArmed] = useState(false)
-  useEffect(() => {
-    if (!regenArmed) return
-    const timer = setTimeout(() => setRegenArmed(false), 4000)
-    return () => clearTimeout(timer)
-  }, [regenArmed])
-  // Parent flips `done` back to `idle` after 1.8s, and localhost never
-  // publishes at all — the plugin handoff has to ride this click, not that
-  // ephemeral state.
   const [handoff, setHandoff] = useState(false)
 
   function requestSync() {
@@ -408,39 +289,6 @@ export default function FigmaSyncView({
     if (!entitlement.pro) { setLicenceOpen(true); return }
     setHandoff(true)
     onRequestSync()
-  }
-
-  function copyUrl(kind: 'sync' | 'page', value: string) {
-    navigator.clipboard.writeText(value)
-    setCopied(kind)
-    setTimeout(() => setCopied(null), 2000)
-  }
-
-  /** The ONE primary action: publish, then put the ID on the clipboard.
-   *
-   *  It used to be "Sync now", and the payoff of that button was a POST to a
-   *  server — nothing the user could see. Reported as clicking it and "no ve
-   *  nada". Publishing is a MEANS; the end is having the ID in hand to paste
-   *  in Figma, so the button is named and shaped after the end.
-   *
-   *  It still publishes, and that half is not optional: hand out an ID with no
-   *  blob behind it and the plugin's first poll answers 404 — the exact failure
-   *  this ID exists to remove. `publishedState !== 'live'` covers both "never
-   *  published" and "the probe could not answer", so a copy is never made on a
-   *  guess. */
-  function copyPluginId() {
-    if (!entitlement.pro) { setLicenceOpen(true); return }
-    if (publishedState !== 'live' && !cannotSync && publishState !== 'publishing') requestSync()
-    else setHandoff(true)
-    copyUrl('sync', pluginSlug)
-  }
-
-  function handleRegenerate() {
-    if (!regenArmed) { setRegenArmed(true); return }
-    setRegenArmed(false)
-    store.regeneratePublishId()
-    // No optimistic 'missing': the effect re-probes on the new id, and until it
-    // answers the badge is honestly `unknown`.
   }
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
@@ -636,77 +484,26 @@ export default function FigmaSyncView({
               </span>
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-1">
-            <p id={pluginLabelId} className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('ID to plugin')}</p>
-            <SyncUrlInfo deployed={isDeployed} />
+          <div className="flex items-center gap-2">
             <PublishStateBadge state={publishedState} />
             <button
               type="button"
-              onClick={handleRegenerate}
-              title={t('Generate a new ID. Every Figma file on the current ID stops receiving updates.')}
-              className={`ml-auto rounded-md px-1.5 py-0.5 text-mini font-semibold uppercase tracking-[0.12em] transition-colors ${regenArmed ? 'bg-status-danger/12 text-status-danger' : 'text-fg-faint hover:bg-fg/8 hover:text-fg'} ${SYNC_FOCUS}`}
-            >
-              {regenArmed ? t('Click again to confirm') : t('New ID')}
-            </button>
-          </div>
-          <div className="flex items-stretch gap-2">
-            <div className={`flex min-w-0 flex-1 items-center gap-2 border border-line bg-app px-3 ${SYNC_CONTROL}`}>
-              {/* The ID, not the URL. The plugin's connection field takes
-                  either — it normalizes whatever is pasted — but the ID is the
-                  thing that is stable and short enough to read back off a
-                  screen, and showing the URL is what taught everyone to treat
-                  the last path segment as a name they could edit. */}
-              <code
-                title={syncUrl}
-                aria-labelledby={pluginLabelId}
-                className="min-w-0 flex-1 truncate font-mono text-caption tracking-[0.04em] text-fg"
-              >
-                {pluginSlug}
-              </code>
-              <a
-                href={syncUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={t('Open the raw tokens.json')}
-                title={syncUrl}
-                className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
-              >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M6.5 3.5H3.5v9h9V9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M9.5 3.5h3v3M12.5 3.5 7.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-            <button
-              type="button"
-              onClick={copyPluginId}
+              onClick={requestSync}
               disabled={publishState === 'publishing' || cannotSync}
-              className={`inline-flex min-w-[112px] flex-shrink-0 items-center justify-center gap-2 bg-fg px-3 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-60 ${cannotSync ? 'disabled:cursor-not-allowed' : 'disabled:cursor-wait'} ${SYNC_CONTROL} ${SYNC_FOCUS}`}
+              className={`inline-flex h-9 items-center justify-center gap-2 bg-fg px-4 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-60 ${cannotSync ? 'disabled:cursor-not-allowed' : 'disabled:cursor-wait'} ${SYNC_CONTROL} ${SYNC_FOCUS}`}
             >
               {publishState === 'publishing' ? (
                 <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden>
                   <path d="M8 2a6 6 0 1 1-5.2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
-              ) : copied === 'sync' ? (
-                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              ) : (
-                <CopyGlyph size={14} />
-              )}
+              ) : null}
               {publishState === 'publishing'
                 ? t('Publishing…')
                 : publishState === 'error'
                   ? t('Try again')
-                  : copied === 'sync'
-                    ? t('Copied')
-                    : t('Copy ID')}
+                  : t('Sync now')}
             </button>
           </div>
-          {/* A disabled button whose only explanation is a `title` is a dead
-              end — you click, nothing happens, and the reason needs a hover you
-              have no cue to attempt. It is what "no ve nada" actually was. */}
           {cannotSync && (
             <p className="text-caption leading-relaxed text-status-warning">
               {t('Add a System style to My themes first — there is nothing to publish yet.')}
@@ -714,52 +511,10 @@ export default function FigmaSyncView({
           )}
           <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
             {publishedState === 'missing'
-              ? t('Nothing published under this ID yet — press Sync now, then paste the ID in the plugin.')
-              : t('Paste this ID in the plugin. It never changes when you rename a theme or the file.')}
+              ? t('Nothing published yet. Press Sync now, then sign in from the Escala plugin in Figma.')
+              : t('In Figma, open the Escala plugin and sign in. This library shows up there — press Sync to start.')}
           </p>
-          </div>
         </div>
-        {/* Resume readout — last, and not an input well. File name + ID to
-            plugin are the work; this URL only reopens the themes in this window. */}
-        {pageUrl ? (
-          <div className="flex flex-col gap-1 border-t border-line pt-4">
-            <p id={pageLabelId} className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('This page')}</p>
-            <div
-              role="group"
-              aria-labelledby={pageLabelId}
-              className="flex min-w-0 items-center gap-1.5 rounded-md px-2 h-8 bg-fg/[0.03]"
-            >
-              <code
-                className="pointer-events-none min-w-0 flex-1 cursor-default select-none truncate font-mono text-caption text-fg-faint outline-none"
-                title={pageUrl}
-                aria-readonly="true"
-              >
-                {pageUrl}
-              </code>
-              <SyncInfoTip label={t('About this page')}>
-                <p>{t('This URL reopens these themes. ID to plugin is the key you paste in Live Sync.')}</p>
-              </SyncInfoTip>
-              <button
-                type="button"
-                onClick={() => copyUrl('page', pageUrl)}
-                aria-label={copied === 'page' ? t('Page link copied') : t('Copy page link')}
-                title={copied === 'page' ? t('Copied') : t('Copy')}
-                className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
-              >
-                {copied === 'page' ? (
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-status-success" aria-hidden>
-                    <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <CopyGlyph size={13} />
-                )}
-              </button>
-            </div>
-            <p className="text-caption leading-relaxed text-fg-faint">
-              {t('Themes in this window. ID to plugin is the key.')}
-            </p>
-          </div>
-        ) : null}
         {publishState === 'publishing' && (
           <div className="flex items-center gap-1.5 text-caption">
             <span className="h-1.5 w-1.5 rounded-full bg-status-warning-solid animate-pulse" />
@@ -788,10 +543,10 @@ export default function FigmaSyncView({
             <span className="mt-0.5 text-status-success" aria-hidden>✓</span>
             <div className="min-w-0">
               <p className="text-caption font-semibold text-fg">
-                {t('ID copied. Now paste it in the plugin.')}
+                {t('Published. Sign in from the plugin to sync this library.')}
               </p>
               <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-                {t('In Figma: open the Escala plugin, paste into ID to plugin, then press Start sync.')}
+                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this library.')}
               </p>
             </div>
           </div>

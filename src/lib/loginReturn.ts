@@ -21,7 +21,7 @@ import { decodeWorkspaceSection } from './workspaceLink'
  *  `section` below). Still a closed list: the section is re-validated against
  *  the workspace grammar on the way back, so it can only ever produce
  *  `/?section=<a real section id>`, never an arbitrary URL. */
-export type LoginNext = 'library' | 'workspace'
+export type LoginNext = 'library' | 'workspace' | 'plugin'
 /** Something the user started while signed out and should be finished on return. */
 export type LoginIntent = 'save-library' | 'export'
 export type LoginMode = 'signin' | 'signup'
@@ -29,6 +29,7 @@ export type LoginMode = 'signin' | 'signup'
 const NEXT_PATH: Record<LoginNext, string> = {
   library: '/?section=library',
   workspace: '/',
+  plugin: '/plugin',
 }
 
 const STORAGE_KEY = 'escala-login-return'

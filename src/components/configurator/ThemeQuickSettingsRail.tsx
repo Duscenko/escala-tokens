@@ -13,11 +13,11 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
-import { recordEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
+import { recordEdit } from '../../lib/editHistory'
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { activeLibraryId, captureSnapshot, DEFAULT_THEME_SOURCES, libraryMatchesSaved, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
+import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
@@ -67,7 +67,6 @@ import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { goToLogin, useAccess } from '../../lib/access'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { PlatformSwitch } from './PlatformRail'
 import RailSelect from '../ui/RailSelect'
@@ -80,6 +79,10 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INA
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
+import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
+import { useLibraryStatus } from '../../lib/libraryStatus'
+import { useSetupStep } from '../../lib/themeSetup'
+import { goToLogin, useAccess } from '../../lib/access'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 /**
@@ -295,12 +298,7 @@ export function ThemeIdentityBand({
  * and drives Reset, a different question from "is this saved".
  */
 export function useLibrarySaved(): boolean {
-  const store = useDesignStore()
-  const savedLibrary = store.savedSystems.find((entry) => entry.id === activeLibraryId(store))
-  return useMemo(
-    () => (savedLibrary ? libraryMatchesSaved(store as unknown as DesignSnapshot, savedLibrary.snapshot) : false),
-    [store, savedLibrary],
-  )
+  return useLibraryStatus() === 'saved'
 }
 
 /**
@@ -760,7 +758,7 @@ export function RailCard({ title, trailing, footer, flush, children }: {
  * Sits on `WORKSPACE_CHROME`. Do not wrap this in `RailCard` — that `--app`
  * fill is for the integration rail's Connection / Protocol blocks.
  */
-function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, children }: {
+function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, children }: {
   title: string
   foundationKey: string
   /** Header slot — Color edition puts Light/Dark here. */
@@ -770,6 +768,9 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   /** No row rules — Color edition groups with its own hairlines. */
   flush?: boolean
   onOpenAdvanced: (foundationKey: string) => void
+  /** Guided setup keeps you on the board: the advanced edition waits until
+   *  the theme is finished. */
+  advancedDisabled?: boolean
   children: React.ReactNode
 }) {
   const { t } = useI18n()
@@ -785,7 +786,9 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
           <button
             type="button"
             onClick={() => onOpenAdvanced(foundationKey)}
-            className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${RAIL_SURFACE_RADIUS}`}
+            disabled={advancedDisabled}
+            title={advancedDisabled ? t('Available once the theme is finished') : undefined}
+            className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-input-bg disabled:hover:text-fg-muted ${RAIL_SURFACE_RADIUS}`}
           >
             <AdvancedIcon />
             {t('Go to advanced edition')}
@@ -1556,12 +1559,6 @@ export default function ThemeQuickSettingsRail({
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
   const applyState = useApplyStateColor()
-  const [undo, setUndo] = useState<{ snapshot: DesignSnapshot; label: string } | null>(null)
-  // The footer bar offers THIS edit only while it is still the newest step of
-  // the edit history. Once the header's Undo / ⌘Z has stepped past it, the bar
-  // would otherwise sit there naming an edit it no longer undoes.
-  const lastStep = useEditHistory((h) => h.past[h.past.length - 1])
-  const undoIsCurrent = Boolean(undo && lastStep?.snapshot === undo.snapshot)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   const rampAppearance = colorAppearance ?? previewAppearance
@@ -1569,12 +1566,10 @@ export default function ThemeQuickSettingsRail({
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
   const [adoptError, setAdoptError] = useState<string | null>(null)
-  const [justSaved, setJustSaved] = useState(false)
   const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const lastRandomScaffold = useRef<string | undefined>(undefined)
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
@@ -1588,7 +1583,7 @@ export default function ThemeQuickSettingsRail({
   // rail and the canvas can't describe different systems.
   const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
   const tryOn = stylePreview ?? null
-  const librarySaved = useLibrarySaved()
+  const setupStep = useSetupStep(previewTheme)
   const access = useAccess()
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
@@ -1675,7 +1670,6 @@ export default function ThemeQuickSettingsRail({
   const activeTint = tryOn ? tryOn.preset.neutralTint : neutralTint
 
   useEffect(() => () => {
-    if (undoTimer.current) clearTimeout(undoTimer.current)
     onAccentPreview?.(null)
   }, [onAccentPreview])
 
@@ -1692,12 +1686,9 @@ export default function ThemeQuickSettingsRail({
     showToast(t('{name} added to My themes', { name }))
 
   const showUndo = (snapshot: DesignSnapshot, label: string) => {
-    // Every rail edit is one step of the header's Undo / Redo history; the
-    // footer bar is the same step, offered right where the edit was made.
+    // Every rail edit is one step of the Undo / Redo history — the header's
+    // and the footer's Undo (ThemeSaveBar) both walk it.
     recordEdit(snapshot, label)
-    setUndo({ snapshot, label })
-    if (undoTimer.current) clearTimeout(undoTimer.current)
-    undoTimer.current = setTimeout(() => setUndo(null), 9000)
   }
 
   /**
@@ -1718,6 +1709,8 @@ export default function ThemeQuickSettingsRail({
   /** Edit theme — the rail's twin of the sheet's button, same helper. */
   const editTryOn = () => {
     if (!tryOn) return
+    // A guest previews freely; making a style theirs starts with an account.
+    if (access.gated) { goToLogin(); return }
     const result = openStyleForEditing(tryOn.preset, previewAppearance)
     if ('error' in result) { setAdoptError(t(result.error, { count: ownThemeCount })); return }
     setAdoptError(null)
@@ -1877,15 +1870,6 @@ export default function ThemeQuickSettingsRail({
     commit('Accent updated', (themeKey) => writeAccent(themeKey, value))
   }
 
-  const restore = () => {
-    if (!undo) return
-    // Through the history, not a raw setState, so the header's Redo can bring
-    // it back and the two Undo doors can't disagree about where you are.
-    undoEdit()
-    setUndo(null)
-    if (undoTimer.current) clearTimeout(undoTimer.current)
-  }
-
   // ONE commit path for the accent, whichever control produced the hex — the
   // hue slider's release and the picker's every change. Two paths would be two
   // chances to skip `applyAccentScoped`'s forking rule.
@@ -1939,11 +1923,6 @@ export default function ThemeQuickSettingsRail({
     setOpenChip((current) => current === id ? null : id)
   }
   useEffect(() => { setOpenChip(null) }, [rampAppearance])
-  useEffect(() => {
-    if (!justSaved) return
-    const id = window.setTimeout(() => setJustSaved(false), 2000)
-    return () => window.clearTimeout(id)
-  }, [justSaved])
   const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
     current: chipRefs.current[id] ?? null,
   })
@@ -2348,7 +2327,7 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null} trailing={platformSwitch}>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2386,7 +2365,7 @@ export default function ThemeQuickSettingsRail({
         })()}
 
         {activePanel === 'radius' && (
-        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
+        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
           <SettingItem label="Radius" hint="The preset sets the scale; boxes, fields and selectors then round independently on it.">
             <RadiusCard
               radius={radius}
@@ -2399,7 +2378,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'shadow' && (
-        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced}>
+        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
           <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
               shadows={shadows}
@@ -2410,7 +2389,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'sizes' && (
-        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null} trailing={platformSwitch}>
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -2479,7 +2458,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'icons' && (
-        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced}>
+        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
           <div className="px-3 pt-1 pb-2">
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
@@ -2522,44 +2501,9 @@ export default function ThemeQuickSettingsRail({
       )}
       </ThemeRailScrollRegion>
 
-      <AnimatePresence>
-        {undo && undoIsCurrent && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className={`flex-shrink-0 border-t border-line ${WORKSPACE_CHROME} px-4 py-2`}>
-            <button type="button" onClick={restore} className="text-caption font-medium text-accent-ui hover:underline underline-offset-2">
-              Undo {undo.label}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {/* Persistence is GLOBAL, not a property of one edition — pinned under
-          every panel. Creating a second theme lives on the Themes library
-          page; this door only saves the system on screen so My libraries
-          has a real entry before anyone mints another theme. Hidden while a
+      {/* Undo + Save / Update theme — shared with Variables. Hidden while a
           System Style is only tried on (that overlay is not the store). */}
-      {!tryOn && (
-        <div className={`flex-shrink-0 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
-          <button
-            type="button"
-            onClick={() => {
-              // A guest signs up first; the shell finishes the save on return.
-              if (access.gated) { goToLogin('save-library'); return }
-              store.saveCurrentSystem()
-              setJustSaved(true)
-            }}
-            disabled={librarySaved && !justSaved}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            {/* Already saved → a check beside the label, so the dimmed button
-                reads as "done", not "unavailable". */}
-            {(librarySaved || justSaved) && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M2.5 6.5 5 9l4.5-5.5" />
-              </svg>
-            )}
-            {justSaved ? t('Saved') : t('Save theme')}
-          </button>
-        </div>
-      )}
+      {!tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : <ThemeSaveBar />)}
       </div>
     </aside>
     </InspectorPortal>

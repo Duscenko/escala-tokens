@@ -1,0 +1,57 @@
+import { supabase } from './supabase'
+import { librariesFromPersist, type PluginLibrary } from './pluginSession'
+
+/** Session key for the pairing code while `/login` is in the way. */
+export const PLUGIN_CODE_KEY = 'escala-plugin-code'
+
+type LibraryInput = { id: string; name: string }
+
+async function postAccount(
+  op: 'approve' | 'register',
+  accessToken: string,
+  body: { code?: string; libraries: LibraryInput[] },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`/api/plugin-session?op=${op}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) return { ok: true }
+    const parsed = await res.json().catch(() => null) as { error?: unknown } | null
+    const error = typeof parsed?.error === 'string' ? parsed.error : 'Could not reach Escala.'
+    return { ok: false, error }
+  } catch {
+    return { ok: false, error: 'Could not reach Escala.' }
+  }
+}
+
+/** Libraries this browser can hand the plugin: persist blob, live store included. */
+export function librariesOnThisBrowser(): LibraryInput[] {
+  try {
+    return librariesFromPersist(JSON.parse(window.localStorage.getItem('scalable-designs-store') || 'null'))
+  } catch {
+    return []
+  }
+}
+
+export async function approvePluginSignIn(
+  code: string,
+  libraries: LibraryInput[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const token = (await supabase?.auth.getSession())?.data.session?.access_token
+  if (!token) return { ok: false, error: 'Sign in first.' }
+  return postAccount('approve', token, { code, libraries })
+}
+
+/** After a successful publish, so the plugin's list includes this library. Best-effort. */
+export async function registerPublishedLibrary(id: string, name: string): Promise<void> {
+  const token = (await supabase?.auth.getSession())?.data.session?.access_token
+  if (!token || !id) return
+  await postAccount('register', token, { libraries: [{ id, name }] })
+}
+
+export type { PluginLibrary }

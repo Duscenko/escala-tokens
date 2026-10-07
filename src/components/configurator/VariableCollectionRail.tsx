@@ -3,6 +3,7 @@ import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } fro
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PlatformRail } from './PlatformRail'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import ThemeSaveBar from './ThemeSaveBar'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients' | 'responsive'
 
@@ -279,6 +280,8 @@ export default function VariableCollectionRail({
       </section>
       </div>
     </nav>
+    {/* Variables is an editing tab too: same pinned bar as Theme, greyed out: saving and the guest sign-up hook live in Theme. */}
+    {inInspector && <ThemeSaveBar inactive />}
     </InspectorPortal>
   )
 }

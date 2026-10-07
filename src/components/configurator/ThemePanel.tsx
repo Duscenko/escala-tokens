@@ -10,7 +10,8 @@ import {
 import { slugify } from '../../lib/utils'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
-import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
+import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
+import SpectrumSlider from '../ui/SpectrumSlider'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
 import { SELECT_FOCUS, SELECT_SHELL } from './themeWorkspaceLayout'
@@ -275,6 +276,10 @@ type ThemeFormProps = {
   onCreated?: (key: string) => void
   /** Fired after a successful rename so callers can re-point preview state. */
   onRenamed?: (oldKey: string, newKey: string) => void
+  /** Create as the FIRST STEP of a guided setup: name, mode and accent only
+   *  (the full picker and the six slots behind "More colour options"), and the
+   *  confirm reads Continue — the rest is set on the Theme board. */
+  firstStep?: boolean
 }
 
 /**
@@ -301,6 +306,7 @@ export function ThemeForm({
   appearance = 'light',
   onCreated,
   onRenamed,
+  firstStep = false,
 }: ThemeFormProps) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -349,6 +355,9 @@ export function ThemeForm({
     () => (seed ? new Set<FamilySlot>() : new Set(FAMILY_SLOTS.filter((s) => s !== 'brand'))),
   )
   const [adjustOpen, setAdjustOpen] = useState(false)
+  // First step: the compact accent chooser until the user asks for more.
+  const [moreOpen, setMoreOpen] = useState(!firstStep)
+  const curated = useMemo(() => accentCuratedPalette(slots.brand), [slots.brand])
   const [err, setErr] = useState<string | null>(null)
 
   // A theme's page belongs to its Neutral, not to whichever system happened
@@ -417,6 +426,9 @@ export function ThemeForm({
       setErr(t(result.error, { count: MY_THEME_HARD_CAP }))
       return
     }
+    // The key is a slug ("test guide"); the name on screen is what was typed,
+    // capitals included ("Test Guide").
+    if (!isEdit && name.trim()) useDesignStore.getState().setThemeLabel(result.key, name.trim())
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
     else if (!isEdit) onCreated?.(result.key)
     onClose()
@@ -516,6 +528,38 @@ export function ThemeForm({
               tuned to the current hue with the selection box and the
               Muted / Vivid / High contrast options — not a static swatch list.
               `dynamicAccentPalette` + `palette={[]}` is exactly that call. */}
+          {!moreOpen ? (
+            // The first step's chooser: a hue strip that keeps the colour vivid
+            // at every angle (the Theme rail's own control) and six curated
+            // neighbours of the current hue. The full picker is one click away.
+            <div className="flex flex-col gap-3">
+              <SpectrumSlider value={slots.brand} ariaLabel="Accent hue" onCommit={setAccent} />
+              <div className="flex gap-1.5" role="group" aria-label="Curated accents">
+                {curated.map((c) => {
+                  const on = c.hex.toLowerCase() === slots.brand.toLowerCase()
+                  return (
+                    <button
+                      key={c.hex}
+                      type="button"
+                      onClick={() => setAccent(c.hex)}
+                      aria-pressed={on}
+                      aria-label={c.label}
+                      title={c.label}
+                      className={`h-8 flex-1 rounded-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? 'ring-2 ring-fg ring-offset-2 ring-offset-[var(--app)]' : ''}`}
+                      style={{ backgroundColor: c.hex }}
+                    />
+                  )
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(true)}
+                className="self-start rounded-md px-1 py-0.5 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              >
+                More colour options
+              </button>
+            </div>
+          ) : (
           <ColorPickerPanel
             value={slots.brand}
             onChange={setAccent}
@@ -527,11 +571,13 @@ export function ThemeForm({
             appearance={kind}
             fieldAppearance={kind}
           />
+          )}
         </section>
 
         {/* The six slots — disclosed, not always-on. Five of them follow the
             accent until touched, so the common case needs nothing here; this
             is where you refine one, or re-point it at another family. */}
+        {moreOpen && (
         <div className="flex-shrink-0 rounded-xl border border-line overflow-hidden">
           <button
             type="button"
@@ -580,6 +626,13 @@ export function ThemeForm({
             )}
           </AnimatePresence>
         </div>
+        )}
+
+        {firstStep && (
+          <p className="flex-shrink-0 text-caption text-fg-faint">
+            Next, set font, radius, spacing, shadow and icons on the Theme board — each one repaints it live.
+          </p>
+        )}
 
         {err ? <p className="text-caption text-status-danger">{err}</p> : null}
       </div>
@@ -599,7 +652,7 @@ export function ThemeForm({
           onClick={handleSubmit}
           className="px-4 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-opacity"
         >
-          {isEdit ? 'Save changes' : 'Create theme'}
+          {isEdit ? 'Save changes' : firstStep ? 'Continue' : 'Create theme'}
         </button>
       </div>
     </div>

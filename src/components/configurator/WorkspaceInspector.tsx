@@ -45,10 +45,11 @@ export function InspectorPortal({ children }: { children: ReactNode }) {
   return createPortal(children, slot)
 }
 
+// Code is a tab KEY (the view still exists) but not a tab in the strip: its door is
+// the Get code icon in each canvas header. On Code, no tab reads as selected.
 const TABS: { key: InspectorTab; label: string }[] = [
   { key: 'theme', label: 'Theme' },
   { key: 'variables', label: 'Variables' },
-  { key: 'code', label: 'Code' },
   { key: 'docs', label: 'Docs' },
 ]
 

@@ -1035,9 +1035,9 @@ export function AboutHome({
           flip
           eyebrow={t('05 · Sync with Figma')}
           title={t('Your system in Figma, one mode per theme and viewport.')}
-          body={t('Paste one ID into the Escala plugin. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per theme and Desktop, Tablet and Mobile for every length.')}
+          body={t('Sign in from the Escala plugin. Your libraries show up there — press Sync and variables, text styles, effect styles, grids and components land in your file, with Light and Dark per theme and Desktop, Tablet and Mobile for every length.')}
           points={[
-            t('One ID that survives renaming the theme or the file'),
+            t('Sign in once. Sync starts the file, Pause stops it'),
             t('Pick which themes and viewports ship'),
             t('Live sync republishes as you edit, with Pro'),
           ]}

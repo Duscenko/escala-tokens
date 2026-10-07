@@ -43,6 +43,8 @@ describe('loginReturn', () => {
     expect(readLoginSearch('?next=library&mode=signup')).toEqual({ next: 'library', mode: 'signup' })
     expect(pathForNext(null)).toBe('/?section=library')
     expect(pathForNext('library')).toBe('/?section=library')
+    expect(pathForNext('plugin')).toBe('/plugin')
+    expect(readLoginSearch('?next=plugin').next).toBe('plugin')
   })
 
   it('header Sign in (next=library, no intent) opens Home', () => {

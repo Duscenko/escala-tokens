@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { getStoredToken, type GitHubPushState } from '../../lib/github'
-import { syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
+import { type FigmaPublishState } from '../../lib/figmaSync'
 import { FIGMA_SYNC_MODE_CAP } from '../../lib/figmaSyncModes'
 import { GitHubGlyph } from '../ui/icons'
 import { FigmaLogo, PluginInstallPromo, relativeTime } from './figmaShared'
@@ -164,7 +164,7 @@ export default function IntegrationStatusRail({
               <>
                 <StatusRow label="Sync status" value={statusValue} dot={figmaSyncDot} />
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
-                <StatusRow label="ID to plugin" value={`/api/tokens · ${syncProjectId(fileName)}`} mono />
+                <StatusRow label="Plugin" value="Sign in to sync" />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />
                 <StatusRow
                   label="GitHub"
@@ -204,7 +204,7 @@ export default function IntegrationStatusRail({
           ) : (
             <>
               <dl className="divide-y divide-line">
-                <StatusRow label="This page" value={workspaceSection || 'This window'} mono={Boolean(workspaceSection)} />
+                <StatusRow label="Window" value={workspaceSection || 'This window'} mono={Boolean(workspaceSection)} />
                 <StatusRow label="File" value={fileName?.trim() || 'Untitled'} />
                 <StatusRow
                   label="Modes"
@@ -221,7 +221,7 @@ export default function IntegrationStatusRail({
                   layout="stacked"
                   version={PLUGIN_VERSION}
                   updateAvailable={pluginUpdateAvailable}
-                  info="Paste ID to plugin in Live Sync — that is the key. This page holds the themes in this window. File and modes travel in the published payload."
+                  info="Sign in from the Escala plugin. Your libraries show up there — press Sync to start, Pause to stop. File and modes travel in the published payload."
                 />
                 </div>
               ) : null}

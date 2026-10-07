@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -12,16 +12,18 @@ import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
 import { loginHref, rememberReturn, takeLoginIntent } from '../../lib/loginReturn'
-import { ARTEFACTS } from '../preview/artefacts'
-import { ScaledArtefactCard } from '../preview/artefacts/ScaledArtefactCard'
+import { ThemeCover } from './ThemeCover'
+import { resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
+import { SETUP_STEPS, finishThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
-import { InspectorPortal } from './WorkspaceInspector'
-import { PRESET_AVATAR_RAMPS } from './StyleOverview'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import { ThemeForm } from './ThemePanel'
+import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar, ThemeOptionsMenu,
+  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
@@ -44,8 +46,6 @@ import {
 // selects on click and OPENS on double-click — the Open button does the same.
 
 const CARD_MIN = 248
-const CARD_PAD = 24
-const SOURCE = ARTEFACTS[0]
 
 type HomeSection =
   | { kind: 'recents' }
@@ -163,20 +163,13 @@ function ThemeCard({
   const tokens = useMemo(() => resolvePreviewTokens(store, themeKey, kind), [store, themeKey, kind])
   const name = themeDisplayName(themeKey, store.themeLabels)
   const updatedAt = store.themeUpdatedAt?.[themeKey]
-  const stageRef = useRef<HTMLDivElement>(null)
+  // A theme still in guided setup is a DRAFT: say how far it got and resume it.
+  const setupStep = useSetupStep(themeKey)
   const menuBtnRef = useRef<HTMLButtonElement>(null)
-  const [stageW, setStageW] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(name)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  useLayoutEffect(() => {
-    const el = stageRef.current
-    if (!el) return
-    const ro = new ResizeObserver((entries) => setStageW(Math.round(entries[0].contentRect.width)))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
   const commitRename = () => {
     const next = draft.trim()
     if (next && next !== name) store.setThemeLabel(themeKey, next)
@@ -185,15 +178,13 @@ function ThemeCard({
   return (
     <article
       className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-surface transition-colors ${
-        active ? 'border-accent-ui/60 ring-1 ring-accent-ui/40' : 'border-line hover:border-line-strong'
+        // No accent ring for the selected card: the cover is the identity,
+        // and the name's weight + the inspector already say which one is open.
+        'border-line hover:border-line-strong'
       }`}
     >
-      <div
-        ref={stageRef}
-        className="relative flex justify-center p-3"
-        style={{ background: tokens.surface }}
-      >
-        {stageW > CARD_PAD && <ScaledArtefactCard artefact={SOURCE} t={tokens} targetWidth={stageW - CARD_PAD} />}
+      <div className="relative">
+        <ThemeCover t={tokens} />
         <button
           type="button"
           onClick={onSelect}
@@ -264,9 +255,16 @@ function ThemeCard({
           that change yet. Words live in each badge's label; the dot is only
           the at-a-glance cue. */}
       <div className="flex items-center gap-2 px-3 pb-2 text-micro text-fg-faint">
+        {setupStep != null ? (
+          <span className="min-w-0 flex-1 truncate">
+            <span className="mr-1.5 rounded bg-accent-ui/[0.14] px-1.5 py-0.5 font-semibold text-accent-ui">{t('Draft')}</span>
+            {t('Step {n} of {total}', { n: setupStep + 1, total: SETUP_STEPS.length })}
+          </span>
+        ) : (
         <span className="min-w-0 flex-1 truncate">
           {updatedAt ? t('Edited {when}', { when: timeAgo(updatedAt) }) : t('Not edited yet')}
         </span>
+        )}
         <SyncBadge state={figma} service="Figma" icon={<FigmaGlyph size={11} />} />
         <SyncBadge state={github} service="GitHub" icon={<GitHubGlyph size={11} />} />
       </div>
@@ -282,7 +280,7 @@ function ThemeCard({
         </div>
       ) : (
         <div className="flex items-center gap-1 border-t border-line px-1.5 py-1.5">
-          <button type="button" onClick={onOpenPreview} className={ACTION}>{t('Open')}</button>
+          <button type="button" onClick={onOpenPreview} className={ACTION}>{setupStep != null ? t('Resume setup') : t('Open')}</button>
           <button type="button" onClick={onGetCode} className={ACTION}>{t('Get code')}</button>
         </div>
       )}
@@ -322,20 +320,9 @@ function SavedThemeCard({ snapshot, themeKey }: { snapshot: DesignSnapshot; them
     () => resolvePreviewTokens(snapshot as unknown as Parameters<typeof resolvePreviewTokens>[0], themeKey, kind),
     [snapshot, themeKey, kind],
   )
-  const stageRef = useRef<HTMLDivElement>(null)
-  const [stageW, setStageW] = useState(0)
-  useLayoutEffect(() => {
-    const el = stageRef.current
-    if (!el) return
-    const ro = new ResizeObserver((entries) => setStageW(Math.round(entries[0].contentRect.width)))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-surface">
-      <div ref={stageRef} className="flex justify-center p-3" style={{ background: tokens.surface }}>
-        {stageW > CARD_PAD && <ScaledArtefactCard artefact={SOURCE} t={tokens} targetWidth={stageW - CARD_PAD} />}
-      </div>
+      <ThemeCover t={tokens} />
       <div className="flex items-center gap-2 border-t border-line px-3 py-2.5">
         <span className="text-fg-muted" title={kind === 'dark' ? t('Dark') : t('Light')}>
           <AppearanceGlyph kind={kind} />
@@ -515,6 +502,33 @@ function SaveLibraryButton() {
       >
         {justSaved ? t('Saved') : t('Save library')}
       </button>
+    </div>
+  )
+}
+
+/** Stays visible while the Home canvas scrolls — root context for every Home view. */
+function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: () => void }) {
+  const { t } = useI18n()
+  return (
+    <div
+      className="sticky top-0 z-20 -mx-8 flex flex-shrink-0 items-center gap-2 border-b border-line bg-app/95 px-8 pb-2.5 pt-7 backdrop-blur-sm supports-[backdrop-filter]:bg-app/85"
+      aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
+    >
+      {trail ? (
+        <>
+          <button
+            type="button"
+            onClick={onGoHome}
+            className="text-caption font-semibold text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded-sm"
+          >
+            {t('Home')}
+          </button>
+          <span className="text-caption text-fg-faint" aria-hidden>/</span>
+          <span className="min-w-0 truncate text-caption font-semibold text-fg">{trail}</span>
+        </>
+      ) : (
+        <span className="text-caption font-semibold text-fg">{t('Home')}</span>
+      )}
     </div>
   )
 }
@@ -744,26 +758,153 @@ function HomeNav({
 
 // ── System styles ────────────────────────────────────────────────────────────
 
-function StyleCard({ preset, owned, onUse }: { preset: ThemeStylePreset; owned: boolean; onUse: () => void }) {
-  const { t } = useI18n()
+/**
+ * A System Style as a picture: its cover (the same `ThemeCover` My themes use,
+ * painted from the preset itself) and its name. Hover or focus reveals one
+ * action — Preview, which tries the style on the Theme board without adding
+ * it; the board's own panel then offers Add theme. A style already in My
+ * themes opens that theme instead.
+ */
+function styleCoverTokens(preset: ThemeStylePreset, appearance: 'light' | 'dark') {
+  return resolveStylePreviewTokens(useDesignStore.getState(), { preset, appearance }, '__style-cover')
+}
+
+const FOLDER_CARD_BTN =
+  'group flex w-full max-w-[28rem] flex-col overflow-hidden rounded-2xl border border-line bg-surface text-left transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+/** Footer row shared by folder cards + style cards (Figma-style folder card). */
+function FolderCardFooter({ title, detail, kind }: { title: string; detail: string; kind: 'library' | 'styles' }) {
+  const accent = kind === 'styles'
+    ? <SparkGlyph />
+    : <FolderIcon size={14} />
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4">
-      <div className="flex items-center gap-3">
-        <ThemeAvatar ramp={PRESET_AVATAR_RAMPS[`${preset.id}:light`]} appearance="light" fallback={preset.accent} size={40} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-body font-semibold text-fg">{preset.label}</span>
-          <span className="truncate text-caption text-fg-muted">{t(preset.description)}</span>
-        </div>
+    <div className="flex items-start gap-2.5 border-t border-line px-3 py-2.5">
+      <span className="mt-0.5 flex-shrink-0 text-fg-muted" aria-hidden>
+        <FolderIcon size={14} />
+      </span>
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-accent-ui/[0.14] text-accent-ui" aria-hidden>
+        {accent}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body font-semibold text-fg">{title}</p>
+        <p className="truncate text-caption text-fg-faint">{detail}</p>
       </div>
-      <p className="line-clamp-2 min-h-[2.5em] text-caption text-fg-faint">{t(preset.detail)}</p>
-      <div className="flex items-center justify-between gap-2">
-        {owned
-          ? <span className="text-micro font-medium text-fg-muted">{t('In My themes')}</span>
-          : <span />}
-        <button type="button" onClick={onUse} className={owned ? ACTION : PRIMARY}>
-          {owned ? t('Open') : t('Edit theme')}
+    </div>
+  )
+}
+
+function ThemeCoverThumbPlaceholder() {
+  return <div className="aspect-[16/10] min-w-0 rounded-lg border border-dashed border-line/70 bg-elevated/40" aria-hidden />
+}
+
+function ThemeKeyCoverThumb({ themeKey }: { themeKey: string }) {
+  const store = useDesignStore()
+  const kind = store.themeKinds[themeKey] ?? 'light'
+  const tokens = useMemo(() => resolvePreviewTokens(store, themeKey, kind), [store, themeKey, kind])
+  return (
+    <div className="min-w-0 overflow-hidden rounded-lg border border-line/70">
+      <ThemeCover t={tokens} />
+    </div>
+  )
+}
+
+function StyleCoverThumb({ preset, appearance }: { preset: ThemeStylePreset; appearance: 'light' | 'dark' }) {
+  const tokens = useMemo(() => styleCoverTokens(preset, appearance), [preset, appearance])
+  return (
+    <div className="min-w-0 overflow-hidden rounded-lg border border-line/70">
+      <ThemeCover t={tokens} />
+    </div>
+  )
+}
+
+/** Default library on screen — My themes live here (e.g. Escala). */
+function DefaultLibraryFolderCard({
+  name,
+  themeKeys,
+  onOpen,
+}: {
+  name: string
+  themeKeys: string[]
+  onOpen: () => void
+}) {
+  const { t } = useI18n()
+  const thumbs = themeKeys.slice(0, 3)
+  const pads = Math.max(0, 3 - thumbs.length)
+  const count = themeKeys.length
+  const themesLine = count === 1 ? t('1 theme') : t('{count} themes', { count })
+  const detail = `${themesLine} · ${t('On screen')}`
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={t('Open {name}', { name })}
+      className={FOLDER_CARD_BTN}
+    >
+      <div className="grid grid-cols-3 gap-2 p-3">
+        {thumbs.map((key) => <ThemeKeyCoverThumb key={key} themeKey={key} />)}
+        {Array.from({ length: pads }, (_, i) => <ThemeCoverThumbPlaceholder key={`pad-${i}`} />)}
+      </div>
+      <FolderCardFooter title={name} detail={detail} kind="library" />
+    </button>
+  )
+}
+
+/** Curated styles as one folder: three covers on top, name on the bottom row. */
+function SystemStylesFolderCard({
+  presets,
+  appearance,
+  onOpen,
+}: {
+  presets: ThemeStylePreset[]
+  appearance: 'light' | 'dark'
+  onOpen: () => void
+}) {
+  const { t } = useI18n()
+  const thumbs = presets.slice(0, 3)
+  const detail = t('{count} system styles', { count: presets.length })
+  return (
+    <button type="button" onClick={onOpen} className={FOLDER_CARD_BTN}>
+      <div className="grid grid-cols-3 gap-2 p-3">
+        {thumbs.map((preset) => (
+          <StyleCoverThumb key={preset.id} preset={preset} appearance={appearance} />
+        ))}
+      </div>
+      <FolderCardFooter title={t('System styles')} detail={detail} kind="styles" />
+    </button>
+  )
+}
+
+function StyleCard({ preset, owned, appearance, onPreview, onOpen }: {
+  preset: ThemeStylePreset
+  owned: boolean
+  appearance: 'light' | 'dark'
+  onPreview: () => void
+  onOpen: () => void
+}) {
+  const { t } = useI18n()
+  // Painted once per style and appearance: a cover is a thumbnail, it doesn't
+  // need to follow every edit to the open system.
+  const tokens = useMemo(() => styleCoverTokens(preset, appearance), [preset, appearance])
+  const action = owned ? onOpen : onPreview
+  const detail = owned ? t('In My themes') : preset.description
+  return (
+    <article className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="relative overflow-hidden">
+        <ThemeCover t={tokens} />
+        {/* Pinterest-style: the cover dims and the one action appears. The whole
+            cover is the target; the pill only names it. */}
+        <button
+          type="button"
+          onClick={action}
+          aria-label={owned ? t('Open {name}', { name: preset.label }) : t('Preview {name}', { name: preset.label })}
+          className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 ease-[var(--ease-out-quint)] group-hover:bg-black/35 focus-visible:bg-black/35 focus-visible:outline-none"
+        >
+          <span className="flex h-9 translate-y-1 items-center gap-1.5 rounded-full bg-white px-4 text-ui font-semibold text-neutral-900 opacity-0 shadow-lg transition-[opacity,transform] duration-200 ease-[var(--ease-out-quint)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transition-none">
+            {owned ? t('Open') : t('Preview')}
+          </span>
         </button>
       </div>
+      <FolderCardFooter title={preset.label} detail={detail} kind="styles" />
     </article>
   )
 }
@@ -779,6 +920,10 @@ export default function ThemeLibraryPage({
   onSyncFigma,
   onShareGithub,
   onCreateTheme,
+  onStartTheme,
+  createPending = false,
+  onCreateHandled,
+  onPreviewStyle,
   onOpenReset,
   onNewSystem,
   onImport,
@@ -796,6 +941,14 @@ export default function ThemeLibraryPage({
   onShareGithub: (key: string) => void
   /** Opens the theme sheet on its create view (owned by the shell). */
   onCreateTheme: () => void
+  /** Continue on the first step: open the new theme on the Theme board to set
+   *  the rest. Without it, creating only selects the theme. */
+  onStartTheme?: (key: string) => void
+  /** Another door asked to create a theme: open the form, then report back. */
+  createPending?: boolean
+  onCreateHandled?: () => void
+  /** Try a System Style on the Theme board without adding it. */
+  onPreviewStyle?: (preset: ThemeStylePreset) => void
   /** The Reset modal (this theme / whole system), owned by the shell. */
   onOpenReset?: () => void
   /** Opens the guided New-system modal (owned by the shell). */
@@ -807,6 +960,35 @@ export default function ThemeLibraryPage({
   const timeAgo = useTimeAgo()
   const { gated } = useAccess()
   const store = useDesignStore()
+  const chromeAppearance = useTheme() === 'dark' ? 'dark' : 'light'
+  const inInspector = useInInspector()
+  const [creating, setCreating] = useState(false)
+  // In the Generator the form opens in the inspector; anywhere without one
+  // it falls back to the shell's Create (the Customize sheet).
+  // Creating a theme is a focused task: the rest of the shell (banner, top
+  // bar, Home rail) steps back too, tagged `data-shell-chrome` where it is built.
+  useEffect(() => {
+    if (!creating) return
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-shell-chrome]'))
+    els.forEach((el) => {
+      el.inert = true
+      el.style.opacity = '0.3'
+      el.style.pointerEvents = 'none'
+      el.style.transition = 'opacity 200ms cubic-bezier(0.22, 1, 0.36, 1)'
+    })
+    return () => els.forEach((el) => {
+      el.inert = false
+      el.style.opacity = ''
+      el.style.pointerEvents = ''
+      el.style.transition = ''
+    })
+  }, [creating])
+  useEffect(() => {
+    if (!createPending || !inInspector) return
+    setCreating(true)
+    onCreateHandled?.()
+  }, [createPending, inInspector, onCreateHandled])
+  const openCreate = () => (inInspector ? setCreating(true) : onCreateTheme())
   const { themeOrder, themes, removeTheme, themeUpdatedAt, pinned, togglePinned } = store
   const currentId = activeLibraryId(store)
   const mine = myThemeKeys(themeOrder, themes)
@@ -864,10 +1046,10 @@ export default function ThemeLibraryPage({
           onSyncFigma={() => onSyncFigma(key)}
           onShareGithub={() => onShareGithub(key)}
           onTogglePin={() => togglePinned(`theme:${key}`)}
-          onDelete={() => deleteTheme(key)}
+          onDelete={() => { finishThemeSetup(key); deleteTheme(key) }}
         />
       ))}
-      {withCreate && <CreateThemeCard disabled={!canAddMyTheme(mine.length)} onClick={onCreateTheme} />}
+      {withCreate && <CreateThemeCard disabled={!canAddMyTheme(mine.length)} onClick={openCreate} />}
     </div>
   )
   const themeMatches = (key: string) => matches(query, themeDisplayName(key, store.themeLabels))
@@ -884,21 +1066,34 @@ export default function ThemeLibraryPage({
       ))}
     </ul>
   )
-  const libraryCrumb = (
+  const sectionBackCrumb = (label: string, onClick: () => void) => (
     <button
       type="button"
-      onClick={() => setSection({ kind: 'libraries' })}
+      onClick={onClick}
       className="-ml-2 inline-flex h-7 items-center gap-1.5 self-start rounded-md px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
-      {t('All libraries')}
+      {label}
     </button>
   )
+  const homeRecentsCrumb = sectionBackCrumb(t('Home'), () => setSection({ kind: 'recents' }))
+  const libraryCrumb = sectionBackCrumb(t('All libraries'), () => setSection({ kind: 'libraries' }))
   const commitLibraryName = () => {
     const next = libraryDraft.trim()
     if (next && next !== store.projectName) store.setProjectName(next)
     setRenamingLibrary(false)
   }
+
+  const homeTrail = (() => {
+    if (viewing.kind === 'recents') return null
+    if (viewing.kind === 'styles') return t('System styles')
+    if (viewing.kind === 'libraries') return t('All libraries')
+    if (viewing.kind === 'library') {
+      if (viewing.id === currentId) return store.projectName
+      return others.find((s) => s.id === viewing.id)?.name ?? viewing.id
+    }
+    return null
+  })()
 
   let body: ReactNode
   if (viewing.kind === 'recents') {
@@ -910,21 +1105,48 @@ export default function ThemeLibraryPage({
           title={t('Recents')}
           detail={t('Your themes, last edited first. Click to select, double-click to open.')}
         />
-        <section aria-labelledby="home-recent-themes" className="flex flex-col gap-3">
-          <SectionTitle
-            id="home-recent-themes"
-            count={themesShown.length}
-            right={(
-              <button type="button" onClick={() => setSection({ kind: 'library', id: currentId })} className={LINK}>
-                <FolderIcon size={12} />
-                {store.projectName}
-              </button>
-            )}
-          >
-            {t('My themes')}
+        <section aria-labelledby="home-recently" className="flex flex-col gap-3">
+          <SectionTitle id="home-recently" count={themesShown.length}>
+            {t('Recently')}
           </SectionTitle>
           {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
         </section>
+        {!query && (
+          <>
+            <div className="border-t border-line" role="separator" />
+            <section aria-labelledby="home-files" className="flex flex-col gap-3">
+              <SectionTitle
+                id="home-files"
+                right={(
+                  <button
+                    type="button"
+                    onClick={openCreate}
+                    disabled={!canAddMyTheme(mine.length)}
+                    title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : undefined}
+                    className={LINK}
+                  >
+                    <PlusGlyph />
+                    {t('Create file')}
+                  </button>
+                )}
+              >
+                {t('Files')}
+              </SectionTitle>
+              <div className="flex flex-wrap gap-4">
+                <DefaultLibraryFolderCard
+                  name={store.projectName}
+                  themeKeys={recent}
+                  onOpen={() => setSection({ kind: 'library', id: currentId })}
+                />
+                <SystemStylesFolderCard
+                  presets={THEME_STYLE_PRESETS}
+                  appearance={chromeAppearance}
+                  onOpen={() => setSection({ kind: 'styles' })}
+                />
+              </div>
+            </section>
+          </>
+        )}
         {libs.length > 0 && (
           <section aria-labelledby="home-recent-libraries" className="flex flex-col gap-3">
             <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other libraries')}</SectionTitle>
@@ -938,8 +1160,9 @@ export default function ThemeLibraryPage({
     body = (
       <>
         <ViewHeader
+          crumb={homeRecentsCrumb}
           title={t('System styles')}
-          detail={t('Curated starting points. Editing one adds it to My themes; the style itself never changes.')}
+          detail={t('Curated starting points. Preview one on the board, then add it to My themes.')}
         />
         {styleError && <p role="alert" className="text-caption text-status-danger">{styleError}</p>}
         {presets.length === 0 ? <EmptyNote>{t('No style matches “{q}”.', { q: query })}</EmptyNote> : (
@@ -949,7 +1172,9 @@ export default function ThemeLibraryPage({
                 key={preset.id}
                 preset={preset}
                 owned={mine.some((key) => store.themeOrigin?.[key] === preset.id)}
-                onUse={() => useStyle(preset)}
+                appearance={chromeAppearance}
+                onPreview={() => onPreviewStyle?.(preset)}
+                onOpen={() => useStyle(preset)}
               />
             ))}
           </div>
@@ -1144,6 +1369,22 @@ export default function ThemeLibraryPage({
 
   return (
     <div className="h-full overflow-y-auto">
+      {creating ? (
+        // Create opens IN the inspector, beside the grid it adds to — the same
+        // form the Customize sheet and the theme editor use. ✕ / Cancel step
+        // back to the Home menu; creating selects the new theme.
+        <InspectorPortal>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ThemeForm
+              key="home-create"
+              firstStep
+              appearance={chromeAppearance}
+              onClose={() => setCreating(false)}
+              onCreated={(key) => { setCreating(false); (onStartTheme ?? onSelectTheme)(key) }}
+            />
+          </div>
+        </InspectorPortal>
+      ) : (
       <HomeNav
         section={viewing}
         onSection={setSection}
@@ -1153,7 +1394,17 @@ export default function ThemeLibraryPage({
         onNewSystem={onNewSystem}
         onImport={onImport}
       />
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-7">{body}</div>
+      )}
+      {/* While a theme is being created the page steps back: dimmed and
+          inert, so the form in the inspector is the only thing to act on. */}
+      <div
+        inert={creating}
+        aria-hidden={creating || undefined}
+        className={`mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-0 transition-opacity duration-200 ease-[var(--ease-out-quint)] ${creating ? 'pointer-events-none select-none opacity-30' : ''}`}
+      >
+        <HomeStickyBar trail={homeTrail} onGoHome={() => setSection({ kind: 'recents' })} />
+        {body}
+      </div>
     </div>
   )
 }

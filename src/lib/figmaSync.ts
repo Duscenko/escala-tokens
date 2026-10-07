@@ -233,6 +233,11 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     const legacy = legacyProjectId(opts.project ?? undefined)
     if (legacy && legacy !== slug && getStoredClaim(legacy)) await postTo(legacy)
     useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
+    // The plugin lists libraries by account. A publish that isn't registered
+    // never shows up there — the id stays internal either way.
+    const { registerPublishedLibrary } = await import('./pluginAccount')
+    const name = (opts.project ?? useDesignStore.getState().projectName).trim() || 'Escala'
+    await registerPublishedLibrary(slug, name).catch(() => {})
     return { ok: true }
   }
 
@@ -259,7 +264,7 @@ export function describePublishFailure(
       // key was DERIVED from that name. It no longer is — a rename changes
       // nothing now — so the escape hatch is the explicit one:
       // `regeneratePublishId()`, surfaced in Figma sync as "New ID".
-      return `This ID (${syncProjectId(fileName)}) was first published from another browser or device, and only that one can update it. Generate a new ID to publish this copy separately, or sync from the browser that published it first.`
+      return `This library was first published from another browser, and only that one can update it. Sign in there and publish again, or create the theme again on this browser.`
     case 'licence':
       return 'Hosted sync needs Escala Pro. Paste your licence key, or import tokens.json in the plugin by hand.'
     case 'network':
