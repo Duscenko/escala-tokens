@@ -113,7 +113,8 @@ export default function FoundationIconRail({
   orientation?: 'horizontal' | 'vertical'
   /** Theme library folder — pinned above foundation icons on Theme preview. */
   header?: ReactNode
-  /** Sync destinations (GitHub · Figma) — pinned to the foot of the vertical rail. */
+  /** Themes library door — pinned to the foot of the vertical rail, outside
+   *  the icon scroller, so it stays visible when the foundation list is long. */
   footer?: ReactNode
   ariaLabel?: string
 }) {
@@ -124,7 +125,7 @@ export default function FoundationIconRail({
       className={vertical
         // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
         // icons begin near the top with `pt-2`. Group spacing is per-group.
-        ? 'h-full flex-shrink-0 flex flex-col items-center pt-3 pb-3 overflow-y-auto scrollbar-thin'
+        ? 'h-full flex-shrink-0 flex flex-col items-center overflow-hidden pt-3 pb-3'
         : 'flex items-center gap-4'}
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >
@@ -133,7 +134,7 @@ export default function FoundationIconRail({
           {header}
         </div>
       ) : null}
-      <div className={vertical ? 'flex w-full flex-col items-center' : 'contents'}>
+      <div className={vertical ? 'flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto scrollbar-thin' : 'contents'}>
         {groups.map((group, gi) => (
           <div
             key={group.label ?? gi}
@@ -174,7 +175,7 @@ export default function FoundationIconRail({
         ))}
       </div>
       {vertical && footer ? (
-        <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-3">
+        <div className="flex w-full flex-shrink-0 flex-col items-center gap-1.5 pt-3">
           {footer}
         </div>
       ) : null}

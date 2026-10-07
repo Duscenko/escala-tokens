@@ -14,10 +14,10 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
-import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
+import { activeLibraryId, captureSnapshot, DEFAULT_THEME_SOURCES, libraryMatchesSaved, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
@@ -64,7 +64,7 @@ import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../..
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
 import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
-import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
+import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, typePrimitivesForViewport, asTypeViewport } from '../../lib/typeRoles'
@@ -1359,7 +1359,6 @@ export default function ThemeQuickSettingsRail({
   onAccentPreview,
   stylePreview,
   onAdoptStyle,
-  onCreateTheme,
   onQuickEditOpenChange,
   containedDrawerRootRef,
   onRandomBoardAppearance,
@@ -1391,8 +1390,6 @@ export default function ThemeQuickSettingsRail({
    *  previewed style). The shell re-points `previewTheme` and drops the
    *  ephemeral preview. */
   onAdoptStyle?: (themeKey: string) => void
-  /** Pinned footer action — start a new theme from wherever this rail is. */
-  onCreateTheme?: () => void
   /** Reports whether a contained colour picker is open, so the canvas beside
    *  this rail can cede matching space instead of sitting under the fly-out. */
   onQuickEditOpenChange?: (open: boolean) => void
@@ -1430,6 +1427,7 @@ export default function ThemeQuickSettingsRail({
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
   const [adoptError, setAdoptError] = useState<string | null>(null)
+  const [justSaved, setJustSaved] = useState(false)
   const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
@@ -1447,8 +1445,12 @@ export default function ThemeQuickSettingsRail({
   // same source `resolveStylePreviewTokens` paints the artefacts from, so the
   // rail and the canvas can't describe different systems.
   const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
-  const canAddTheme = canAddMyTheme(ownThemeCount)
   const tryOn = stylePreview ?? null
+  const savedLibrary = store.savedSystems.find((entry) => entry.id === activeLibraryId(store))
+  const libraryUpToDate = useMemo(
+    () => (savedLibrary ? libraryMatchesSaved(store as unknown as DesignSnapshot, savedLibrary.snapshot) : false),
+    [store, savedLibrary],
+  )
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
@@ -1806,6 +1808,11 @@ export default function ThemeQuickSettingsRail({
     setOpenChip((current) => current === id ? null : id)
   }
   useEffect(() => { setOpenChip(null) }, [rampAppearance])
+  useEffect(() => {
+    if (!justSaved) return
+    const id = window.setTimeout(() => setJustSaved(false), 2000)
+    return () => window.clearTimeout(id)
+  }, [justSaved])
   const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
     current: chipRefs.current[id] ?? null,
   })
@@ -2396,23 +2403,20 @@ export default function ThemeQuickSettingsRail({
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Creating a theme is GLOBAL, not a property of one edition, so it is
-          pinned here, under every panel, instead of after Color's Random
-          (which only exists in Color edition). Outline, not filled: Random and
-          "Add to system" stay the column's emphasised actions. */}
-      {onCreateTheme && (
+      {/* Persistence is GLOBAL, not a property of one edition — pinned under
+          every panel. Creating a second theme lives on the Themes library
+          page; this door only saves the system on screen so My libraries
+          has a real entry before anyone mints another theme. Hidden while a
+          System Style is only tried on (that overlay is not the store). */}
+      {!tryOn && (
         <div className={`flex-shrink-0 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
           <button
             type="button"
-            onClick={onCreateTheme}
-            disabled={!canAddTheme}
-            title={!canAddTheme ? t(MY_THEME_FULL_ERROR, { count: ownThemeCount }) : undefined}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-caption font-medium text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45"
+            onClick={() => { store.saveCurrentSystem(); setJustSaved(true) }}
+            disabled={Boolean(savedLibrary && libraryUpToDate && !justSaved)}
+            className="flex h-8 w-full items-center justify-center rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
-              <path d="M7 2.25v9.5M2.25 7h9.5" />
-            </svg>
-            {t('Create new theme')}
+            {justSaved ? t('Saved') : t('Save theme')}
           </button>
         </div>
       )}

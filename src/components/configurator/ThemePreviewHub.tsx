@@ -383,11 +383,12 @@ function ArtefactsView({
 // The doc list is a SIBLING of the context bar now (see the hub's return), like
 // the showcase rail — that's what lands its header band on the view-switcher's
 // row instead of one row below it, and what lets both columns share `HubRail`.
-function DocumentationView({ onEditFoundation, exits, active, onChange, overviewTitle, previewTheme, stylePreview }: {
+function DocumentationView({ onEditFoundation, exits, active, onChange, overviewTitle, previewTheme, previewAppearance, stylePreview }: {
   onEditFoundation: (key: string) => void
   exits: Parameters<typeof DocsView>[0]['exits']
   active: string
   onChange: (key: string) => void
+  previewAppearance: ThemeAppearance
   /** The previewed theme's name — the whole-system sheet's title, so it reads
    *  as THIS theme's spec rather than a generic "System reference". */
   overviewTitle: string
@@ -403,6 +404,7 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
         exits={exits}
         overviewTitle={overviewTitle}
         hubMode
+        appearance={previewAppearance}
         docScope={{ themeKey: previewTheme, stylePreview }}
       />
     </div>
@@ -413,7 +415,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onCreateTheme, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits,
@@ -432,8 +434,6 @@ export default function ThemePreviewHub({
   /** A tried-on style was adopted into the system — re-point the preview at it
    *  and drop the ephemeral try-on. */
   onAdoptStyle: (themeKey: string) => void
-  /** Opens the create-theme panel — the quick-settings rail's pinned footer. */
-  onCreateTheme?: () => void
   onSelectTheme: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
   /** Open the Components destination — catalogue link in the Button teaser header. */
@@ -521,12 +521,15 @@ export default function ThemePreviewHub({
     return isQuickPanelFoundation(f) ? f : 'color'
   }, [activeFoundation])
   const boardPlatform: GridViewport = PLATFORM_QUICK_PANELS.has(contextDocKey) ? previewPlatform : 'desktop'
-  useEffect(() => { setDocPageOverride(null) }, [contextDocKey])
+  // Docs is the system, not the foundation the icon rail last lit. Closing
+  // the tab clears the pick so the next open is the theme reference again.
   useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
   useEffect(() => { if (docsOpen) setContrastOpen(false) }, [docsOpen])
-  const activeDocKey = docPageOverride ?? contextDocKey
+  const activeDocKey = docsOpen ? (docPageOverride ?? OVERVIEW_KEY) : contextDocKey
   const handleDocNavigate = (key: string) => {
     setDocPageOverride(key)
+    // A foundation key may later open Variables on that table. It does not
+    // decide which doc is showing — `docPageOverride` does.
     if (foundationDoc(key)) onSyncFoundationFromDoc(key)
   }
   const hubRootRef = useRef<HTMLElement>(null)
@@ -625,7 +628,6 @@ export default function ThemePreviewHub({
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
           onAdoptStyle={onAdoptStyle}
-          onCreateTheme={onCreateTheme}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
           onRandomBoardAppearance={setRandomBoardAppearance}
@@ -717,6 +719,7 @@ export default function ThemePreviewHub({
                     onEditFoundation={onEditFoundation}
                     overviewTitle={themeName}
                     previewTheme={previewTheme}
+                    previewAppearance={previewAppearance}
                     stylePreview={paintedPreview}
                     exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }}
                   />

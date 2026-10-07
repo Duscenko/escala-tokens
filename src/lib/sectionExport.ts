@@ -655,8 +655,8 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     const t = store.typography
     return [
       '## Typography\n',
-      `- **Heading font:** ${t.headingFontFamily ?? t.fontFamily}`,
-      `- **Body font:** ${t.fontFamily}\n`,
+      `- **Display family:** ${t.headingFontFamily ?? t.fontFamily} — only the Display role uses it.`,
+      `- **Body family:** ${t.fontFamily} — headings, body and controls, unless a role is re-pointed.\n`,
       '### Sizes\n',
       table(['Token', 'Size', 'Line height'], Object.keys(t.sizes).map((k) => [`\`${k}\``, `\`${t.sizes[k]}\``, `\`${t.lineHeights?.[k] ?? '—'}\``])),
       '\n### Weights\n',

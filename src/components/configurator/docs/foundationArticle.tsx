@@ -4,14 +4,13 @@
 // right. Content and token bodies come from `foundationDocs.tsx`.
 //
 // "Use it" replaced the old "Ships as" section AND moved up to sit directly
-// under the lead: it answers "how do I consume this" (Figma · Code · AI) with
-// live values, which is the question you have before any of the conceptual
-// copy — the same slot Create UI gives Installation. See `useIt.ts`.
+// under the lead: it answers "how do I consume this" (Figma · Code · the
+// agent brief) with live values, which is the question you have before any
+// of the conceptual copy — the same slot Create UI gives Installation.
+// Copy context to Agents lives in that block, beside Code. See `useIt.ts`.
 
 import { type ReactNode, useMemo, useState } from 'react'
-import { AIContextButton } from '../../ui/AIContextButton'
 import { useI18n } from '../../../lib/i18n'
-import { withAgentEnvelope } from '../../../lib/aiContext'
 import { useThemeHubHeaderActions } from '../themeHubHeaderActions'
 import {
   DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
@@ -19,10 +18,11 @@ import {
 } from './blocks'
 import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 import {
-  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown, presentFoundationDoc, PrimitiveRamp,
+  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, presentFoundationDoc, PrimitiveRamp,
   type FoundationDoc, type SystemDoc,
 } from './foundationDocs'
 import { GET_STARTED_KEY, colorPrev, introPager, overviewNext } from './getStarted'
+import { HubSystemBoard } from './hubSystemBoard'
 
 /** "Edit in Variables Generator" — the link that makes this a documentation OF
  *  the editor rather than a parallel description of it. It opens the very
@@ -103,16 +103,11 @@ export function FoundationArticle({
   const prev = idx === 0 ? colorPrev() : FOUNDATION_DOCS[idx - 1]
   const next = FOUNDATION_DOCS[idx + 1]
   const count = page.tokenCount(system)
-  const headerActions = useMemo(() => (
-    <>
-      <AIContextButton
-        scope="variable"
-        markdown={() => withAgentEnvelope('variable', page.label, foundationMarkdown(page, system))}
-      />
-      {!hubMode ? <EditTokensPill label={page.codeSection === 'spacing' ? 'Sizes' : page.label} onEdit={() => onEdit(doc.key)} /> : null}
-    </>
-  ), [doc, page, system, onEdit, hubMode])
-  useThemeHubHeaderActions(hubMode ? headerActions : null)
+  const headerActions = useMemo(
+    () => (hubMode ? null : <EditTokensPill label={page.codeSection === 'spacing' ? 'Sizes' : page.label} onEdit={() => onEdit(doc.key)} />),
+    [doc.key, page.codeSection, page.label, onEdit, hubMode],
+  )
+  useThemeHubHeaderActions(null)
 
   const paletteFirst = PALETTE_FIRST.has(page.key)
   const renderSection = (section: FoundationDoc['sections'][number]) => (
@@ -192,8 +187,11 @@ export const SYSTEM_REFERENCE_TITLE = 'System reference'
 
 export const SYSTEM_REFERENCE_LEAD = 'The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.'
 
+/** Hub Docs index — a visual sheet, not the print column. */
+export const HUB_REFERENCE_LEAD = 'A sheet of this theme, drawn from your own tokens. Open a foundation for the why, the usage and every value.'
+
 export function OverviewArticle({
-  system, onOpen, title, hubMode,
+  system, onOpen, title, hubMode, appearance = 'light',
 }: {
   system: SystemDoc
   onOpen: (key: string) => void
@@ -203,6 +201,8 @@ export function OverviewArticle({
   title?: string
   /** Theme Preview hub — page actions render in the fixed header band. */
   hubMode?: boolean
+  /** Which ramp the hub sheet paints. The card is already in this appearance. */
+  appearance?: 'light' | 'dark'
 }) {
   const { t } = useI18n()
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
@@ -212,9 +212,11 @@ export function OverviewArticle({
   // French inflect around "this theme" / "this system" differently enough
   // (de este tema / de ce thème, and the article that precedes them) that a
   // single template would force an ungrammatical translation.
-  const lead = title?.trim()
-    ? t('The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
-    : t(SYSTEM_REFERENCE_LEAD)
+  const lead = hubMode
+    ? t(HUB_REFERENCE_LEAD)
+    : title?.trim()
+      ? t('The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
+      : t(SYSTEM_REFERENCE_LEAD)
   const headerActions = useMemo(() => <DownloadSkillButton />, [])
   useThemeHubHeaderActions(hubMode ? headerActions : null)
 
@@ -236,34 +238,38 @@ export function OverviewArticle({
         meta={<CountBadge>{t('{count} tokens', { count: total })}</CountBadge>}
       />
 
-      <section id="start" className="flex flex-col gap-2 scroll-mt-4">
-        <p className="text-ui text-fg-muted leading-relaxed">
-          {t('Looking for how this lands in Figma or in your product repo?')}{' '}
-          <button
-            type="button"
-            onClick={() => onOpen(GET_STARTED_KEY)}
-            className="text-fg font-medium hover:underline"
-          >
-            {t('Get started')}
-          </button>
-          {' '}{t('is the recipe. This page is the spec.')}
-        </p>
-      </section>
+      {!hubMode ? (
+        <section id="start" className="flex flex-col gap-2 scroll-mt-4">
+          <p className="text-ui text-fg-muted leading-relaxed">
+            {t('Looking for how this lands in Figma or in your product repo?')}{' '}
+            <button
+              type="button"
+              onClick={() => onOpen(GET_STARTED_KEY)}
+              className="text-fg font-medium hover:underline"
+            >
+              {t('Get started')}
+            </button>
+            {' '}{t('is the recipe. This page is the spec.')}
+          </p>
+        </section>
+      ) : null}
 
-      {FOUNDATION_DOCS.map((f) => (
-        <OverviewFoundation
-          key={f.key}
-          f={f}
-          system={system}
-          onOpen={onOpen}
-          // The Color section alone is 8 blocks — 20+ ramps plus every
-          // categorical table — so on the theme doc (where `title` is set) it
-          // opens COLLAPSED to just the Accent + Neutral ramps, with a toggle
-          // for the rest. The hand-off / print sheet (`title` absent) still
-          // renders everything inline.
-          collapsible={f.key === 'color' && !!title?.trim()}
-        />
-      ))}
+      {hubMode
+        ? <HubSystemBoard system={system} appearance={appearance} onOpen={onOpen} />
+        : FOUNDATION_DOCS.map((f) => (
+            <OverviewFoundation
+              key={f.key}
+              f={f}
+              system={system}
+              onOpen={onOpen}
+              // The Color section alone is 8 blocks — 20+ ramps plus every
+              // categorical table — so on a themed hand-off sheet it opens
+              // COLLAPSED to Accent + Neutral. The print sheet (`title` absent)
+              // still renders everything inline. The hub does not use this
+              // path: it lists foundations and opens each full article.
+              collapsible={f.key === 'color' && !!title?.trim()}
+            />
+          ))}
 
       <Pager
         prev={intro.prev}

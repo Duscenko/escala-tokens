@@ -75,11 +75,11 @@ export default function WorkspaceInspector({
       // whole column is one surface, so `--tab-bar` resolves to the panel's.
       style={{ width: INSPECTOR_WIDTH, '--tab-bar': 'var(--side-panel)', '--color-tab-bar': 'var(--side-panel)' } as CSSProperties}
     >
-      <div className="flex-shrink-0 px-3 pt-3 pb-2" style={{ height: INSPECTOR_TABS_H }}>
+      <div className="flex flex-shrink-0 items-center px-3" style={{ height: INSPECTOR_TABS_H }}>
         <div
           role="tablist"
           aria-label={t('Theme workspace')}
-          className="grid grid-cols-4 gap-0.5 rounded-xl bg-chip-rest p-1"
+          className="inline-flex w-fit max-w-full shrink-0 gap-0.5 rounded-xl bg-chip-rest p-1"
           onKeyDown={(event) => {
             const current = TABS.findIndex((item) => item.key === value)
             let next = current
@@ -104,7 +104,7 @@ export default function WorkspaceInspector({
                 aria-selected={active}
                 tabIndex={active || (value == null && item.key === 'theme') ? 0 : -1}
                 onClick={() => onChange(item.key)}
-                className={`relative h-8 rounded-lg text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                className={`relative h-8 shrink-0 rounded-lg px-2 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                   // The label's weight and ink change on the BUTTON; the sliding
                   // pill below carries the fill and the edge.
                   active ? 'font-semibold text-fg' : SEGMENT_INACTIVE

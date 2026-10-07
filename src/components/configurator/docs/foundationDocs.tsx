@@ -19,7 +19,6 @@
 // `accent-8`, not just that it happens to be #CCF57B today.
 
 import { useMemo, type CSSProperties, type ReactNode } from 'react'
-import { useItForFoundation, useItMarkdown } from './useIt'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../../../store/useDesignStore'
 import {
   ROLE_GROUPS, sourceScaleFor, recToneFor, SCALE_META, baseLabelForTone,
@@ -1005,7 +1004,7 @@ line-height: var(--text-label-line-height);
       {
         id: 'roles',
         title: 'Text roles',
-        description: 'Semantic styles alias the primitive scale. Desktop, Tablet and Mobile are three mappings of the same role — Color’s light/dark, for type. Only Display and headings step down; body and control text keep one size everywhere.',
+        description: 'Semantic styles alias the primitive scale. Desktop, Tablet and Mobile are three mappings of the same role — Color’s light/dark, for type. Only the Display role uses the heading font family by default; headings step in size on a narrow viewport but stay on the body stack unless you re-point them. Body and control text keep one size everywhere.',
         render: (c) => {
           const roles = mergeTypeRoles(c.typography.roles)
           return (
@@ -1636,50 +1635,4 @@ export function presentFoundationDoc(doc: FoundationDoc, hubMode?: boolean): Fou
       }),
     ],
   }
-}
-
-export function foundationMarkdown(doc: FoundationDoc, c: SystemDoc): string {
-  const lines = [
-    `# ${doc.label}`,
-    '',
-    `> ${doc.lead}`,
-    '',
-    `## Why ${doc.label.toLowerCase()} tokens`,
-    '',
-    doc.why,
-    '',
-    '## Usage',
-    '',
-    doc.usage,
-    '',
-    '```css',
-    doc.usageCode,
-    '```',
-    '',
-  ]
-
-  if (doc.key === 'color' && c.categoricalCategories?.length) {
-    lines.push('## Semantic roles (Categorical)', '')
-    for (const cat of c.categoricalCategories) {
-      lines.push(`### ${cat.label}`, '')
-      if (cat.description) lines.push(cat.description, '')
-      lines.push(
-        '| Token | Role | Primitive · light | Hex · light | Primitive · dark | Hex · dark |',
-        '|---|---|---|---|---|---|',
-        ...cat.tokens.map((t) =>
-          `| \`${t.id}\` | ${t.role} | \`${t.lightRef}\` | \`${t.lightHex.toUpperCase() || '—'}\` | \`${t.darkRef}\` | \`${t.darkHex.toUpperCase() || '—'}\` |`,
-        ),
-        '',
-      )
-    }
-  }
-
-  // The SAME descriptor the page renders — second of the three outputs, so a
-  // pasted spec can't name a destination the page doesn't show. See `useIt.ts`.
-  lines.push(
-    useItMarkdown(useItForFoundation(doc)),
-    '',
-    `${doc.tokenCount(c)} tokens · ${doc.sections.length} section${doc.sections.length === 1 ? '' : 's'}: ${doc.sections.map((s) => s.title).join(' · ')}`,
-  )
-  return lines.join('\n')
 }

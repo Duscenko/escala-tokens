@@ -65,7 +65,7 @@ const a = (
 
 export const TYPE_ROLE_GROUPS: { id: TypeRoleGroupId; label: string; hint: string }[] = [
   { id: 'display', label: 'Display', hint: 'Page-level statements. One per screen.' },
-  { id: 'heading', label: 'Heading', hint: 'Section titles. Display family, semibold.' },
+  { id: 'heading', label: 'Heading', hint: 'Section titles. Body family by default — size and semibold carry the hierarchy.' },
   { id: 'body', label: 'Body', hint: 'Reading text. Body family, regular.' },
   { id: 'control', label: 'Control', hint: 'Labels, placeholders, captions, buttons.' },
 ]
@@ -86,45 +86,45 @@ export const TYPE_ROLES: TypeRole[] = [
     label: 'Heading XL',
     description: 'Largest section title.',
     group: 'heading',
-    desktop: a('display', 'display-lg', 'semibold'),
-    tablet: a('display', 'display-md', 'semibold'),
-    mobile: a('display', 'display-sm', 'semibold'),
+    desktop: a('body', 'display-lg', 'semibold'),
+    tablet: a('body', 'display-md', 'semibold'),
+    mobile: a('body', 'display-sm', 'semibold'),
   },
   {
     key: 'heading-lg',
     label: 'Heading LG',
     description: 'Primary section heading.',
     group: 'heading',
-    desktop: a('display', 'display-md', 'semibold'),
-    tablet: a('display', 'display-md', 'semibold'),
-    mobile: a('display', 'display-sm', 'semibold'),
+    desktop: a('body', 'display-md', 'semibold'),
+    tablet: a('body', 'display-md', 'semibold'),
+    mobile: a('body', 'display-sm', 'semibold'),
   },
   {
     key: 'heading-md',
     label: 'Heading MD',
     description: 'Card and panel titles.',
     group: 'heading',
-    desktop: a('display', 'display-sm', 'semibold'),
-    tablet: a('display', 'display-sm', 'semibold'),
-    mobile: a('display', 'display-xs', 'semibold'),
+    desktop: a('body', 'display-sm', 'semibold'),
+    tablet: a('body', 'display-sm', 'semibold'),
+    mobile: a('body', 'display-xs', 'semibold'),
   },
   {
     key: 'heading-sm',
     label: 'Heading SM',
     description: 'Nested headings and list titles.',
     group: 'heading',
-    desktop: a('display', 'display-xs', 'semibold'),
-    tablet: a('display', 'display-xs', 'semibold'),
-    mobile: a('display', 'text-xl', 'semibold'),
+    desktop: a('body', 'display-xs', 'semibold'),
+    tablet: a('body', 'display-xs', 'semibold'),
+    mobile: a('body', 'text-xl', 'semibold'),
   },
   {
     key: 'heading-xs',
     label: 'Heading XS',
     description: 'Overline-scale titles still read as headings.',
     group: 'heading',
-    desktop: a('display', 'text-xl', 'semibold'),
-    tablet: a('display', 'text-xl', 'semibold'),
-    mobile: a('display', 'text-lg', 'semibold'),
+    desktop: a('body', 'text-xl', 'semibold'),
+    tablet: a('body', 'text-xl', 'semibold'),
+    mobile: a('body', 'text-lg', 'semibold'),
   },
   {
     key: 'body-lg',
@@ -236,6 +236,13 @@ function isAlias(v: unknown): v is TypeAlias {
   )
 }
 
+/** Headings follow the body stack. Only `display` may alias the heading font.
+ *  Size and weight stay as stored; family is the locked facet. */
+function withLockedFamily(role: TypeRole, alias: TypeAlias): TypeAlias {
+  if (role.group !== 'heading') return alias
+  return alias.family === 'body' ? alias : { ...alias, family: 'body' }
+}
+
 /** Desktop + mobile are required; tablet is optional so a pre-v75 map (two
  *  columns) still counts as stored edits rather than being thrown away. */
 function isModes(v: unknown): v is Omit<TypeRoleModes, 'tablet'> & { tablet?: unknown } {
@@ -263,7 +270,11 @@ export function mergeTypeRoles(
       const tablet = isAlias(hit.tablet)
         ? hit.tablet
         : aliasesEqual(hit.desktop, role.desktop) ? role.tablet : hit.desktop
-      out[role.key] = { desktop: { ...hit.desktop }, tablet: { ...tablet }, mobile: { ...hit.mobile } }
+      out[role.key] = {
+        desktop: withLockedFamily(role, { ...hit.desktop }),
+        tablet: withLockedFamily(role, { ...tablet }),
+        mobile: withLockedFamily(role, { ...hit.mobile }),
+      }
     } else {
       out[role.key] = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } }
     }
@@ -312,6 +323,14 @@ export function roleIsDefault(key: string, modes: TypeRoleModes): boolean {
 const LEGACY_LARGE_MOBILE: Record<string, TypeAlias> = {
   display: a('display', 'display-lg', 'bold'),
   'heading-xl': a('display', 'display-md', 'semibold'),
+}
+
+/** v81/v82: heading roles alias body family. Size and weight stay; family is
+ *  the locked facet (the Variables table disables it for the same reason). */
+export function migrateHeadingFamilyToBody(
+  stored?: object | null,
+): Record<string, TypeRoleModes> {
+  return mergeTypeRoles(stored)
 }
 
 /** v75: move Display / Heading XL to their new two-rung mobile step when the

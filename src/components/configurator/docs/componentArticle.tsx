@@ -26,11 +26,11 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
-  CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
+  CopyButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
   ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
   type TocEntry,
 } from './blocks'
-import { useItForComponent, useItMarkdown, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
+import { useItForComponent, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 
 // Categories whose components respond to pointer/keyboard — they get the
 // standard keyboard-interaction table in Accessibility.
@@ -482,11 +482,11 @@ export function ComponentArticle({
 
   const heroCode = snippetFor(def, values, icons)
   const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
-  // ONE descriptor, rendered below AND appended to the agent brief — the
-  // second of the three outputs (page · markdown · MCP). Composed here rather
-  // than inside `agentContextMarkdown` because that lives in `lib/`, and lib
-  // importing a `components/` module would invert the layering.
-  const useIt = useItForComponent(def, heroCode)
+  // The Use it brief is this page: identity, live tokens, API, and the
+  // snippet on screen. Built here rather than inside `useIt` because
+  // `agentContextMarkdown` lives in `lib/` and must not import this module.
+  const agentBrief = agentContextMarkdown(def, heroCode, tokens)
+  const useIt = useItForComponent(def, heroCode, agentBrief)
   const idx = COMPONENTS.findIndex((c) => c.key === def.key)
   const prev = COMPONENTS[idx - 1]
   const next = COMPONENTS[idx + 1]
@@ -497,11 +497,7 @@ export function ComponentArticle({
         section={t('Components')}
         kind={t(def.category)}
         title={def.label}
-        actions={
-          <CopyAgentContextButton
-            text={`${agentContextMarkdown(def, heroCode, tokens)}\n\n${useItMarkdown(useIt)}`}
-          />
-        }
+        actions={null}
       />
 
       {/* `def.label` is NOT translated: it is the plugin's own component name
@@ -527,10 +523,8 @@ export function ComponentArticle({
         snippet={heroCode}
       />
 
-      {/* Use it — the same Figma · Code · AI block every foundation page
-          carries, so the two page kinds answer "how do I consume this" the
-          same way. Sits before Usage for the reason Create UI puts
-          Installation there: you reach for it before the prose. */}
+      {/* Use it — Figma · Code · the agent brief, same as a foundation page.
+          Sits before Usage for the reason Create UI puts Installation there. */}
       <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
         <UseItBlock useIt={useIt} />
       </DocSection>

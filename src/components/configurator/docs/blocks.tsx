@@ -190,10 +190,10 @@ export function ViewToggle({
   )
 }
 
-export function CodePane({ code, minH = 60 }: { code: string; minH?: number }) {
+export function CodePane({ code, minH = 60, scroll = false }: { code: string; minH?: number; scroll?: boolean }) {
   return (
     <pre
-      className="px-4 py-3 text-caption font-mono leading-relaxed text-fg-muted overflow-x-auto whitespace-pre bg-surface/40"
+      className={`px-4 py-3 text-caption font-mono leading-relaxed text-fg-muted overflow-x-auto whitespace-pre bg-surface/40 ${scroll ? 'max-h-80 overflow-y-auto' : ''}`}
       style={{ minHeight: minH }}
     >
       {code}
@@ -253,11 +253,9 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
  *  Supersedes `ShipsAs`, which listed the same three destinations as static,
  *  hand-written naming PATTERNS in a 3-row table. Two things changed and both
  *  matter: the values are now the user's own, resolved live (see `useIt.ts`),
- *  and each one is copyable. The third row also changed identity — `Figma` /
- *  `variables.css` / `tokens.json` became **Figma · Code · AI**, because AI is
- *  a first-class destination everywhere else in this product (Get started is
- *  literally those three) and was the one missing from the triad. tokens.json
- *  didn't get dropped; it's named in the Code tab's note, where it belongs.
+ *  and each one is copyable. The third tab is **Copy context to Agents**:
+ *  the brief for this page (the facts it states, plus the live values), not
+ *  a generic MCP call. tokens.json stays named in the Code tab's note.
  *
  *  Tabs rather than three rows at once, for the same reason Create UI's
  *  Installation block uses them: one destination is the one you're actually
@@ -303,7 +301,7 @@ export function UseItBlock({ useIt, trailingActions }: { useIt: UseIt; trailingA
           <CopyButton text={dest.code} />
         </div>
       </BlockChrome>
-      <CodePane code={dest.code} minH={0} />
+      <CodePane code={dest.code} minH={0} scroll={dest.id === 'ai'} />
       {dest.note && (
         <p className="px-4 py-2 text-caption leading-relaxed text-fg-faint border-t border-line break-words">
           {t(dest.note, dest.noteVars)}

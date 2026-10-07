@@ -8,7 +8,7 @@ import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
 import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
 import { GUIDE_MCP_KEY, isGuideKey, type DocsExits } from './docs/getStarted'
-import { useSystemDoc, OVERVIEW_KEY, foundationDoc, presentFoundationDoc, type SystemDocScope } from './docs/foundationDocs'
+import { useSystemDoc, OVERVIEW_KEY, FOUNDATION_DOCS, foundationDoc, presentFoundationDoc, type SystemDocScope } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
 import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
 import { useI18n } from '../../lib/i18n'
@@ -21,7 +21,7 @@ export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
   activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits, allowReference = true,
-  overviewTitle, hubMode, docScope,
+  overviewTitle, hubMode, docScope, appearance = 'light',
 }: {
   /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
    *  (the whole-system sheet), or a foundation key. */
@@ -45,6 +45,8 @@ export default function DocsView({
    *  optional System Style try-on), so Cupertino docs don't inherit Core's
    *  leftover primitives. */
   docScope?: SystemDocScope
+  /** Hub sheet paints the previewed appearance's ramps and shadows. */
+  appearance?: 'light' | 'dark'
 }) {
   const { t } = useI18n()
   const system = useSystemDoc(docScope ?? {})
@@ -109,7 +111,7 @@ export default function DocsView({
               hubMode={hubMode}
             />
           ) : allowReference ? (
-            <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} hubMode={hubMode} />
+            <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} hubMode={hubMode} appearance={appearance} />
           ) : null}
         </motion.div>
       </div>
@@ -125,7 +127,29 @@ export default function DocsView({
           the card keeps its full width for the ramps. */}
       {hubMode && inInspector ? (
         <InspectorPortal>
-          <div className="overflow-y-auto p-5">
+          <div className="flex flex-col gap-6 overflow-y-auto p-5">
+            <nav aria-label={t('Foundations')} className="flex flex-col gap-0.5">
+              <span className="mb-1 text-mini uppercase tracking-widest text-fg-faint">{t('Foundations')}</span>
+              <button
+                type="button"
+                onClick={() => onSelectFoundationKey(OVERVIEW_KEY)}
+                aria-current={pageKey === OVERVIEW_KEY ? 'page' : undefined}
+                className={`rounded-md py-0.5 text-left text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${pageKey === OVERVIEW_KEY ? 'font-medium text-fg' : 'text-fg-muted hover:text-fg'}`}
+              >
+                {overviewTitle?.trim() || t('Theme reference')}
+              </button>
+              {FOUNDATION_DOCS.map((foundation) => (
+                <button
+                  key={foundation.key}
+                  type="button"
+                  onClick={() => onSelectFoundationKey(foundation.key)}
+                  aria-current={pageKey === foundation.key ? 'page' : undefined}
+                  className={`rounded-md py-0.5 text-left text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${pageKey === foundation.key ? 'font-medium text-fg' : 'text-fg-muted hover:text-fg'}`}
+                >
+                  {t(foundation.label)}
+                </button>
+              ))}
+            </nav>
             <OnThisPage entries={toc} scrollRoot={articleRef} />
           </div>
         </InspectorPortal>

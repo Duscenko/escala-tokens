@@ -177,6 +177,7 @@ const es: Record<string, string> = {
   'Dimension primitives: one global collection every length points at, with Dimension Semantics as viewport modes in Figma — you choose which viewports ship. Type gained Desktop · Tablet · Mobile cuts. The legal notice, privacy policy and a contact form went live.': 'Primitivas de dimensión: una colección global a la que apunta cada longitud, con Dimension Semantics como modos de viewport en Figma — usted elige qué viewports se envían. Type ganó cortes Desktop · Tablet · Mobile. Se publicaron el aviso legal, la política de privacidad y un formulario de contacto.',
   'Docs and Components got crawlable URLs, and the Figma plugin installs from its Community listing. Figma sync publishes only the theme columns you check.': 'Docs y Components tienen URLs rastreables, y el plugin de Figma se instala desde su ficha de la Community. La sincronización con Figma publica solo las columnas de tema que usted marca.',
   'Create new theme': 'Crear un tema nuevo',
+  'Save theme': 'Guardar tema',
   'Double-click to rename': 'Doble clic para renombrar',
   'double-click to rename': 'doble clic para renombrar',
   'Options for {name}': 'Opciones de {name}',
@@ -601,7 +602,8 @@ const es: Record<string, string> = {
   // Terminology follows what this file already established — a colour "ramp" is
   // una escala / une gamme, and the reader is addressed as usted / vous.
   'Use it': 'Cómo usarlo',
-  'The same element in the three places this system ships to. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.': 'El mismo elemento en los tres destinos a los que llega este sistema. Cada valor se lee de sus propios tokens con los mismos resolutores que usa la exportación, así que lo que copia es lo que se entrega.',
+  'Figma and code, plus the brief for this page. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.': 'Figma y código, más el informe de esta página. Cada valor se lee de sus propios tokens con los mismos resolutores que usa la exportación, así que lo que copia es lo que se entrega.',
+  'The brief for this page: the same facts it states, with the live values. Paste it into a chat.': 'El informe de esta página: los mismos hechos que cuenta, con los valores en vivo. Pégalo en un chat.',
   'Needs the system published (Sync) and the MCP server connected — see Docs → Use in code.': 'Requiere el sistema publicado (Sync) y el servidor MCP conectado; consulte Documentación → Usar en código.',
   'Created by the Escala plugin on import, then kept current by Live Sync.': 'Creado por el plugin de Escala al importar y mantenido al día mediante Live Sync.',
   'variables.css: {css}   ·   tokens.json: {json}': 'variables.css: {css}   ·   tokens.json: {json}',
@@ -853,6 +855,7 @@ const es: Record<string, string> = {
   '{count} token': '{count} token',
   '{count} tokens': '{count} tokens',
   'The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.': 'La especificación completa de este tema, generada a partir de sus propios tokens: todos los fundamentos en una sola columna, para entrega e impresión. Cada sección enlaza con su propia página para ver el porqué y el uso.',
+  'A sheet of this theme, drawn from your own tokens. Open a foundation for the why, the usage and every value.': 'Una hoja de este tema, dibujada con sus propios tokens. Abra un fundamento para ver el porqué, el uso y cada valor.',
   'The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.': 'La especificación completa de este sistema, generada a partir de sus propios tokens: todos los fundamentos en una sola columna, para entrega e impresión. Cada sección enlaza con su propia página para ver el porqué y el uso.',
   'Looking for how this lands in Figma or in your product repo?': '¿Busca cómo llega esto a Figma o al repositorio de su producto?',
   'is the recipe. This page is the spec.': 'es la receta. Esta página es la especificación.',
@@ -1071,6 +1074,7 @@ const fr: Record<string, string> = {
   'Dimension primitives: one global collection every length points at, with Dimension Semantics as viewport modes in Figma — you choose which viewports ship. Type gained Desktop · Tablet · Mobile cuts. The legal notice, privacy policy and a contact form went live.': 'Primitives de dimension : une collection globale vers laquelle pointe chaque longueur, avec Dimension Semantics en modes de viewport dans Figma — vous choisissez quels viewports sont envoyés. Type a gagné des coupes Desktop · Tablet · Mobile. Les mentions légales, la politique de confidentialité et un formulaire de contact sont en ligne.',
   'Docs and Components got crawlable URLs, and the Figma plugin installs from its Community listing. Figma sync publishes only the theme columns you check.': 'Docs et Components ont des URL indexables, et le plugin Figma s’installe depuis sa fiche Community. La synchronisation Figma ne publie que les colonnes de thème que vous cochez.',
   'Create new theme': 'Créer un nouveau thème',
+  'Save theme': 'Enregistrer le thème',
   'Double-click to rename': 'Double-cliquez pour renommer',
   'double-click to rename': 'double-cliquez pour renommer',
   'Options for {name}': 'Options de {name}',
@@ -1557,7 +1561,8 @@ const fr: Record<string, string> = {
   // Terminology follows what this file already established — a colour "ramp" is
   // una escala / une gamme, and the reader is addressed as usted / vous.
   'Use it': 'L’utiliser',
-  'The same element in the three places this system ships to. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.': 'Le même élément dans les trois destinations vers lesquelles ce système est livré. Chaque valeur est lue depuis vos propres tokens par les mêmes résolveurs que ceux de l’export : ce que vous copiez est donc exactement ce qui sera livré.',
+  'Figma and code, plus the brief for this page. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.': 'Figma et le code, plus le brief de cette page. Chaque valeur est lue depuis vos propres tokens par les mêmes résolveurs que ceux de l’export : ce que vous copiez est donc exactement ce qui sera livré.',
+  'The brief for this page: the same facts it states, with the live values. Paste it into a chat.': 'Le brief de cette page : les mêmes faits qu’elle énonce, avec les valeurs en direct. Collez-le dans un chat.',
   'Needs the system published (Sync) and the MCP server connected — see Docs → Use in code.': 'Nécessite que le système soit publié (Sync) et que le serveur MCP soit connecté — voir Documentation → Utiliser dans le code.',
   'Created by the Escala plugin on import, then kept current by Live Sync.': 'Créé par le plugin Escala à l’import, puis tenu à jour par Live Sync.',
   'variables.css: {css}   ·   tokens.json: {json}': 'variables.css: {css}   ·   tokens.json: {json}',
@@ -1685,6 +1690,7 @@ const fr: Record<string, string> = {
   '{count} token': '{count} token',
   '{count} tokens': '{count} tokens',
   'The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.': 'La spécification complète de ce thème, générée à partir de vos propres tokens : toutes les fondations en une seule colonne, pour la transmission et l’impression. Chaque section renvoie à sa propre page pour le pourquoi et l’utilisation.',
+  'A sheet of this theme, drawn from your own tokens. Open a foundation for the why, the usage and every value.': 'Une planche de ce thème, dessinée à partir de vos propres tokens. Ouvrez une fondation pour le pourquoi, l’usage et chaque valeur.',
   'The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.': 'La spécification complète de ce système, générée à partir de vos propres tokens : toutes les fondations en une seule colonne, pour la transmission et l’impression. Chaque section renvoie à sa propre page pour le pourquoi et l’utilisation.',
   'Looking for how this lands in Figma or in your product repo?': 'Vous cherchez comment tout cela arrive dans Figma ou dans le dépôt de votre produit ?',
   'is the recipe. This page is the spec.': 'est la marche à suivre. Cette page est la spécification.',

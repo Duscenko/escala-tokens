@@ -5,6 +5,7 @@ import {
   TYPE_ROLE_GROUPS,
   aliasesEqual,
   mergeTypeRoles,
+  migrateHeadingFamilyToBody,
   promoteReadingTypeIdentity,
   typePrimitivesForViewport,
   primitiveVar,
@@ -37,6 +38,12 @@ describe('type roles', () => {
     }
     expect(TYPE_ROLES.some((r) => r.key === 'label')).toBe(true)
     expect(TYPE_ROLES.some((r) => r.key === 'placeholder')).toBe(true)
+  })
+
+  it('only the display role aliases the heading font family', () => {
+    for (const role of TYPE_ROLES) {
+      expect(role.desktop.family).toBe(role.key === 'display' ? 'display' : 'body')
+    }
   })
 
   it('body and control aliases are the same on desktop and mobile; display and headings step', () => {
@@ -272,5 +279,33 @@ describe('three platform cuts (v75)', () => {
     expect(typeRoleVar('display', 'size', 'tablet')).toBe('--text-display-font-size-tablet')
     expect(lines).toContain('--text-display-font-size-tablet: var(--font-size-display-lg);')
     expect(lines).toContain('--text-display-font-size-mobile: var(--font-size-display-md);')
+  })
+})
+
+describe('heading family defaults (v81)', () => {
+  it('migrates catalogue-default heading aliases from display to body family', () => {
+    const map = migrateHeadingFamilyToBody(null)
+    expect(map['heading-xl'].desktop.family).toBe('body')
+    expect(map.display.desktop.family).toBe('display')
+    expect(typeRoleCssVars(null)).toContain('--text-heading-xl-font-family: var(--font-family-body);')
+    expect(typeRoleCssVars(null)).toContain('--text-display-font-family: var(--font-family-heading);')
+  })
+
+  it('locks heading family to body even when a stored overlay still says display', () => {
+    const custom = {
+      'heading-md': {
+        desktop: { family: 'display' as const, size: 'display-2xl' as const, weight: 'semibold' as const },
+        mobile: { family: 'display' as const, size: 'display-xl' as const, weight: 'semibold' as const },
+      },
+      'heading-xl': {
+        desktop: { family: 'display' as const, size: 'display-lg' as const, weight: 'semibold' as const },
+        mobile: { family: 'display' as const, size: 'display-sm' as const, weight: 'semibold' as const },
+      },
+    }
+    const map = mergeTypeRoles(custom)
+    expect(map['heading-md'].desktop.family).toBe('body')
+    expect(map['heading-md'].desktop.size).toBe('display-2xl')
+    expect(map['heading-xl'].desktop.family).toBe('body')
+    expect(map.display.desktop.family).toBe('display')
   })
 })

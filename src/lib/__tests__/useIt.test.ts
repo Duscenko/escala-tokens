@@ -19,9 +19,10 @@ import {
 const SNIPPET = '<Button>Save</Button>'
 
 describe('useItForComponent', () => {
-  it('offers exactly the three destinations, in Figma · Code · AI order', () => {
+  it('offers exactly the three destinations, in Figma · Code · agent-brief order', () => {
     const useIt = useItForComponent(COMPONENTS[0], SNIPPET)
     expect(useIt.destinations.map((d) => d.id)).toEqual(['figma', 'code', 'ai'])
+    expect(useIt.destinations.map((d) => d.label)).toEqual(['Figma', 'Code', 'Copy context to Agents'])
   })
 
   it('shows the caller-supplied snippet verbatim, so the block cannot disagree with the playground above it', () => {
@@ -57,11 +58,21 @@ describe('useItForComponent', () => {
     expect(figma.note).toContain('spec-only')
   })
 
-  it('points the AI pane at this component, by its real catalogue key', () => {
+  it('the agent brief is this page: what it is, when to use it, and the snippet on screen', () => {
     const def = COMPONENTS.find((c) => c.key === 'Button') ?? COMPONENTS[0]
     const ai = useItForComponent(def, SNIPPET).destinations.find((d) => d.id === 'ai')!
-    expect(ai.code).toContain(`get_component   { "key": "${def.key}" }`)
-    expect(ai.code).toContain(def.category)
+    expect(ai.label).toBe('Copy context to Agents')
+    expect(ai.code).toContain(def.description)
+    expect(ai.code).toContain(def.usage)
+    expect(ai.code).toContain(SNIPPET)
+    expect(ai.code).toContain('scope: component')
+    expect(ai.code).not.toContain('get_component')
+  })
+
+  it('uses a caller-supplied brief verbatim, so the pane cannot disagree with the article', () => {
+    const brief = '# Agent context — Button\n\nSolid, soft, outline.'
+    const ai = useItForComponent(COMPONENTS[0], SNIPPET, brief).destinations.find((d) => d.id === 'ai')!
+    expect(ai.code).toBe(brief)
   })
 })
 

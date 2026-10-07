@@ -1695,17 +1695,23 @@ export default function Configurator() {
   // render.
   const themeHubConnecting = themeWorkspaceTab === 'preview'
     && (themeHubSurface === 'figma' || themeHubSurface === 'github')
-  // The library and Get code pages keep the icon column: the folder that opens it
-  // sits on top of that column, and the column stays the one way back into a
-  // foundation's widget.
+  // Icon rail is Theme widgets + Variables tables only. Library, Get code,
+  // Docs, and Figma/GitHub are reading/destination pages — a Color click
+  // there would leave the tab, and Docs already jumps sections from the
+  // inspector TOC (`OnThisPage`).
   const themeWorkspaceRailVisible = themesCanvas
     && !themeHubConnecting
-    // The Themes library is a page of its own: picking a theme isn't editing one.
     && themeWorkspaceTab !== 'library'
+    && themeWorkspaceTab !== 'code'
+    && !(themeWorkspaceTab === 'preview' && docsPanelOpen)
+  const themeWorkspaceCardInset = themesCanvas
+    && (themeWorkspaceTab === 'library'
+      || themeWorkspaceTab === 'code'
+      || (themeWorkspaceTab === 'preview' && docsPanelOpen))
   /** Foundation icon rail on Theme Preview AND Variables. Preview lights the
    *  widget that exists (Color → color edition, Font → text edition, …);
-   *  Variables keeps all nine tables. Get code uses its own scope rail.
-   *  Figma / GitHub drop the icon column too. */
+   *  Variables keeps all nine tables. Code, Docs, library, Figma / GitHub
+   *  drop the column so the card can go full width. */
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
   const skipCenterHeader = themesCanvas || tab === 'about'
@@ -1836,13 +1842,13 @@ export default function Configurator() {
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
-            // Variables only — which token TABLE the centre column shows.
             // Theme Preview: Color / Font / Radius pick the matching widget.
-            // Variables: the same icons pick the token table. Get code is off.
+            // Variables: the same icons pick the token table.
+            // Hidden on Code, Docs, library (see themeWorkspaceRailVisible).
             <FoundationIconRail
               orientation="vertical"
               ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
-              active={themeWorkspaceTab === 'code' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
+              active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
@@ -1875,7 +1881,7 @@ export default function Configurator() {
               the `.light`/`.dark` class here never reaches them. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${themeWorkspaceTab === 'library' ? 'mx-3' : ''} ${previewAppearance === 'dark' ? 'dark' : 'light'}`
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${themeWorkspaceCardInset ? 'mx-3' : ''} ${previewAppearance === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -1918,7 +1924,6 @@ export default function Configurator() {
                     onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
-                    onCreateTheme={openCreateTheme}
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}

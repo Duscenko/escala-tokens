@@ -93,6 +93,17 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   LEFT column, or describe the Theme · Variables · Sync tab strip, describe the
 >   pre-2026-10-06 layout.
 >
+> **UPDATE (2026-10-07): the foundation icon rail is Theme + Variables only.**
+> Code, Docs, and the Themes library hide `FoundationIconRail`. Hub Docs opens
+> the theme reference — a visual sheet of that theme (ramps, type, radius,
+> spacing, shadow, grid, sizes, stroke, icons) — and reads one foundation
+> article at a time, chosen from the inspector or by opening a card (not the
+> foundation the icon rail last selected);
+> “On this page” still jumps inside the open article. The hand-off overview
+> (no hub) still inlines every section. Code stays on `ThemeCodeFormat`
+> without a Color/Font click that would leave the tab. The card uses `mx-3` when
+> that column is gone (same as the library page).
+>
 > **UPDATE (2026-10-07): the Themes library is a PAGE of its own — no icon rail, no
 > inspector.** `themeWorkspaceTab === 'library'` hides `FoundationIconRail` and
 > `WorkspaceInspector` (the card gets `mx-3`), and `ThemeLibraryRail` is no longer

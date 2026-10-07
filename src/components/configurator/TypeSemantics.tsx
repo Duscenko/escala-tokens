@@ -57,6 +57,8 @@ function AliasSelect<T extends string>({
   ariaLabel,
   grow = 1,
   minWidth,
+  disabled = false,
+  title,
 }: {
   value: T
   options: { value: T; label: string }[]
@@ -68,14 +70,22 @@ function AliasSelect<T extends string>({
   /** Floor so the closed label (`Display`, `Semibold`) isn't ellipsized once
    *  the chevron has reserved its own inset. */
   minWidth?: string
+  disabled?: boolean
+  title?: string
 }) {
   return (
-    <div className="relative min-w-0" style={{ flex: `${grow} 1 0%`, minWidth }}>
+    <div className="relative min-w-0" style={{ flex: `${grow} 1 0%`, minWidth }} title={title}>
       <select
         aria-label={ariaLabel}
+        title={title}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value as T)}
-        className="w-full min-w-0 h-7 appearance-none rounded-md border border-line bg-app pl-2 pr-6 text-caption font-mono text-fg-muted text-ellipsis cursor-pointer hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+        className={`w-full min-w-0 h-7 appearance-none rounded-md border border-line bg-app pl-2 pr-6 text-caption font-mono text-fg-muted text-ellipsis focus:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+          disabled
+            ? 'cursor-default opacity-55 pointer-events-none'
+            : 'cursor-pointer hover:border-line-strong'
+        }`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -103,6 +113,7 @@ function ViewportCell({
   alias: TypeAlias
   onChange: (next: TypeAlias) => void
 }) {
+  const familyLocked = roleKey !== 'display'
   return (
     <div className="flex items-center gap-1 px-2.5 py-2 border-r border-line min-w-0">
       <AliasSelect
@@ -125,6 +136,8 @@ function ViewportCell({
         minWidth="6.25rem"
         value={alias.family}
         options={FAMILY_OPTIONS}
+        disabled={familyLocked}
+        title={familyLocked ? 'Family is set on Display. Headings, body and controls follow the body stack.' : undefined}
         onChange={(family) => onChange({ ...alias, family })}
         ariaLabel={`${roleKey} ${viewport} family`}
       />
