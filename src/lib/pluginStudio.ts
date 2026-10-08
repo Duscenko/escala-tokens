@@ -26,10 +26,11 @@ import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from './phosphorIcons'
 import {
   INSET_SURFACE_ROLE, RADIUS_GROUPS, RADIUS_GROUP_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD,
   SPACING_MODES, SPACING_STEPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
-  radiusPresetPatch, radiusPresetPx, type RadiusGroupStep,
+  radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep,
 } from './layoutTokens'
 import { slugify } from './utils'
-import { THEME_STYLE_PRESETS, themeStylePreset } from './themePresets'
+import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
+import { matchShadowPreset } from './shadowTokens'
 import { adoptPreset } from './adoptPreset'
 
 export interface StudioChoices {
@@ -75,15 +76,37 @@ export function studioOptions() {
     })),
     shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md })),
     iconWeights: [...PHOSPHOR_WEIGHTS],
-    styles: THEME_STYLE_PRESETS.map((p) => ({
-      id: p.id,
-      label: p.label,
-      shortLabel: p.shortLabel,
-      description: p.description,
-      accent: p.accent,
-      appearance: p.preferredAppearance,
-      font: p.foundations.typography?.fontFamily ?? 'Inter',
-    })),
+    styles: THEME_STYLE_PRESETS.map((p) => styleSummary(p, radius)),
+  }
+}
+
+/** One System Style as the plugin's overview shows it BEFORE it is used: the
+ *  same foundations the build will write, read off the preset — never a
+ *  description typed twice. */
+function styleSummary(p: ThemeStylePreset, standard: Record<string, string>) {
+  const f = p.foundations
+  const ramp = (f.radius as Record<string, string> | undefined) ?? standard
+  const roles = mergeLayoutRoles('radius', f.radiusRoles)
+  const px = (role: string) => parseFloat(ramp[roles[role]] ?? '0') || 0
+  const mode = SPACING_MODES.find((m) => m.id === matchSpacingMode(f.sizes, f.spacingRoles, f.stroke))
+  const states = presetStates(p)
+  return {
+    id: p.id,
+    label: p.label,
+    shortLabel: p.shortLabel,
+    description: p.description,
+    detail: p.detail,
+    accent: p.accent,
+    neutral: presetHarmony(p).neutral,
+    states: [states.error, states.warning, states.success, states.info],
+    appearance: p.preferredAppearance,
+    font: f.typography?.fontFamily ?? 'Inter',
+    heading: f.typography?.headingFontFamily ?? f.typography?.fontFamily ?? 'Inter',
+    radius: { boxes: px('container'), fields: px('action'), selectors: px('control') },
+    spacing: mode?.label ?? 'Custom',
+    shadow: (f.shadows && matchShadowPreset(f.shadows)) ?? 'Custom',
+    shadowMd: f.shadows?.md ?? 'none',
+    iconWeight: f.iconWeight ?? 'regular',
   }
 }
 
