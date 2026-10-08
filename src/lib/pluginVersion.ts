@@ -10,4 +10,4 @@
 // (`pluginBuildSeen` in the store) against this to surface an "Update available"
 // hint on the Sync hub's "Download plugin" row.
 export const PLUGIN_VERSION = '0.4.0'
-export const PLUGIN_BUILD = 'fa34c326057c'
+export const PLUGIN_BUILD = 'df9cf7a4ff6b'
