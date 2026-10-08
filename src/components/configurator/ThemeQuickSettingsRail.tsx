@@ -2149,20 +2149,14 @@ export default function ThemeQuickSettingsRail({
               />
               </div>
 
-              {/* Hue above; Saturation and Brightness here — the accent as the
-                  three axes a designer names it by. Each moves ONE axis of the
-                  hue-relative position (`readHuePosition`), so a vivid colour
-                  stays inside sRGB at every hue and nothing ratchets. */}
+              {/* Hue above, Saturation here — the two a first pass needs.
+                  Brightness and Ramp contrast are fine-tuning and live with the
+                  Contrast grid, where their effect can be checked. Each axis
+                  moves ONE coordinate of the hue-relative position
+                  (`readHuePosition`), so nothing leaves sRGB or ratchets. */}
               <AccentAxisSlider
                 axis="saturation"
                 label={t('Saturation')}
-                value={liveAccent}
-                onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
-                onCommit={commitAccent}
-              />
-              <AccentAxisSlider
-                axis="lightness"
-                label={t('Brightness')}
                 value={liveAccent}
                 onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
                 onCommit={commitAccent}
@@ -2223,41 +2217,23 @@ export default function ThemeQuickSettingsRail({
               </div>
             </div>
 
-            {/* Its own section, not a third bar in Brand accent: contrast is how
-                the ramp's steps are spread, a different question from which colour
-                or how tinted — the title keeps it from reading as part of them. */}
+            {/* Contrast grid — and, while it is open, the two fine-tuning
+                controls whose effect it shows: the accent's Brightness and how
+                far apart the ramp's tones sit. Closed, Colour reads as three
+                decisions (accent, neutral, states) instead of six sliders. */}
             <div className="flex flex-col px-3 py-2.5">
-              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint" title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</p>
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <ContrastSlider
-                    hueHex={liveNeutral}
-                    value={contrastShift}
-                    onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
-                  />
-                </div>
-                {/* The chip slot, as in Brand accent, carries the readout;
-                    clicking it is the reset, since 0 is the generator's own. */}
-                <button
-                  type="button"
-                  onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
-                  disabled={contrastShift === 0}
-                  title={t('Reset contrast shift')}
-                  aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
-                  className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                >
-                  {formatShift(contrastShift)}
-                </button>
-            </div>
-            <div className="mt-2.5 border-t border-line pt-2">
               <button
                 type="button"
                 onClick={() => onContrastOpenChange?.(!contrastOpen)}
                 aria-pressed={contrastOpen}
+                aria-expanded={contrastOpen}
                 className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
               >
                 <ContrastGridThumb tones={contrastThumbTones} />
-                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
+                  <span className="block truncate text-mini text-fg-faint">{t('Brightness · Ramp contrast')}</span>
+                </span>
                 <span
                   className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
                     contrastOpen
@@ -2268,7 +2244,40 @@ export default function ThemeQuickSettingsRail({
                   {contrastOpen ? t('Hide') : t('Show')}
                 </span>
               </button>
-            </div>
+              {contrastOpen && (
+                <div className="mt-2.5 flex flex-col gap-3 border-t border-line pt-2.5">
+                  <AccentAxisSlider
+                    axis="lightness"
+                    label={t('Brightness')}
+                    value={liveAccent}
+                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
+                    onCommit={commitAccent}
+                  />
+                  <div>
+                    <p className="mb-1 text-micro font-medium uppercase tracking-wide text-fg-faint" title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</p>
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <ContrastSlider
+                          hueHex={liveNeutral}
+                          value={contrastShift}
+                          onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
+                        />
+                      </div>
+                      {/* The readout is the reset — 0 is the generator's own. */}
+                      <button
+                        type="button"
+                        onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
+                        disabled={contrastShift === 0}
+                        title={t('Reset contrast shift')}
+                        aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                      >
+                        {formatShift(contrastShift)}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="px-3 py-2.5">
