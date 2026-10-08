@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildStudioTokens, studioOptions, readCode } from '../pluginStudio'
+import { buildStudioTokens, studioOptions, readCode, harmonyFor } from '../pluginStudio'
 
 type Payload = { colors: { themeOrder: string[] }; viewports?: string[]; radiusRoles?: Record<string, string>; typography: { fontFamily: string }; shadows: Record<string, string> }
 
@@ -93,5 +93,15 @@ describe('plugin studio build', () => {
     const out = buildStudioTokens({ style: sty.id, neutralTint: 'pure' }, 'free')
     if ('error' in out) throw new Error(out.error)
     expect(JSON.stringify(out.tokens)).toContain(sty.font)
+  })
+
+  it('gives the states an accent produces, the ones a build uses', () => {
+    const h = harmonyFor('#2970ff', 'subtle')
+    if (!h) throw new Error('no harmony')
+    const out = buildStudioTokens({ accent: '#2970ff', name: 'H' }, 'free')
+    if ('error' in out) throw new Error(out.error)
+    const prim = Object.values((out.tokens as { colors: { primitive: Record<string, string> } }).colors.primitive)
+    for (const hex of Object.values(h.states)) expect(prim).toContain(hex)
+    expect(harmonyFor('nope')).toBeNull()
   })
 })

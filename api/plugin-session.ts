@@ -291,6 +291,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── Plugin, signed in: the native theme setup. Options are the web's own
   //    lists; build applies the choices with the web's own code. ──
+  // ── Plugin: what an accent gives on its own (neutral + four states), for the
+  //    Colour edition's defaults. Pure maths, no account, cacheable. ──
+  if (op === 'studio-harmony' && req.method === 'GET') {
+    const studio = await import('./_pluginStudio.mjs') as typeof import('../src/lib/pluginStudio.js')
+    const q = (k: string) => { const v = req.query?.[k]; return (Array.isArray(v) ? v[0] : v) ?? '' }
+    const out = studio.harmonyFor(String(q('accent')), String(q('tint')))
+    if (!out) return res.status(400).json({ error: 'Pick an accent colour.' })
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400')
+    return res.status(200).json(out)
+  }
+
   if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST') || (op === 'studio-code' && req.method === 'POST')) {
     // No account needed: anyone can build ONE theme in ONE mode in the plugin
     // (the Free scope). A token, when sent, must still be a live session — a

@@ -8246,8 +8246,16 @@ function readCode(css, name) {
     }
   };
 }
+function harmonyFor(accent2, tint) {
+  if (typeof accent2 !== "string" || !HEX.test(accent2)) return null;
+  const TINTS = ["pure", "subtle", "tinted", "vivid"];
+  const t = TINTS.includes(tint) ? tint : "subtle";
+  const s = slotsFromAccent(accent2.toLowerCase(), t);
+  return { neutral: s.gray, states: { error: s.error, warning: s.warning, success: s.success, info: s.info } };
+}
 export {
   buildStudioTokens,
+  harmonyFor,
   readCode,
   studioOptions
 };

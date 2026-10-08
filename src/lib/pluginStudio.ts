@@ -315,3 +315,14 @@ export function readCode(css: string, name?: string): { ok: true; reading: CodeR
     },
   }
 }
+
+/** The neutral and the four severities an accent gives on its own — what the
+ *  plugin's Colour edition shows before anyone picks a state, from the same
+ *  `slotsFromAccent` the build mints with. */
+export function harmonyFor(accent: string, tint?: string): { neutral: string; states: Record<'error' | 'warning' | 'success' | 'info', string> } | null {
+  if (typeof accent !== 'string' || !HEX.test(accent)) return null
+  const TINTS: NeutralTint[] = ['pure', 'subtle', 'tinted', 'vivid']
+  const t = TINTS.includes(tint as NeutralTint) ? tint as NeutralTint : 'subtle'
+  const s = slotsFromAccent(accent.toLowerCase(), t)
+  return { neutral: s.gray, states: { error: s.error, warning: s.warning, success: s.success, info: s.info } }
+}
