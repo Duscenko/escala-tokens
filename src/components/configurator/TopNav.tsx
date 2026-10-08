@@ -654,7 +654,8 @@ export default function TopNav({
           <div className="hidden min-[1080px]:flex items-center gap-2">
             <LanguageMenu onOpen={onOpenLanguages} />
           </div>
-          <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+          {/* With the ☰ menu always on (Generator), Appearance lives inside it. */}
+          {!hamburgerNav && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           {themeControl}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}
