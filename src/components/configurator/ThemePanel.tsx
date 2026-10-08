@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
 import { resolveThemePalette, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import { mintTheme, slotsFromAccent, type MintPages } from '../../lib/themeMint'
+import { THEME_STYLE_PRESETS, presetStates } from '../../lib/themePresets'
+import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
 import {
   BASE_TONE, backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony, readableInk,
@@ -16,7 +18,7 @@ import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
-import { SELECT_FOCUS, SELECT_SHELL } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
@@ -132,6 +134,70 @@ type ThemeFormProps = {
  * disclosed rather than always-on, so refining a slot is one click away
  * without making the common case pay for it.
  */
+
+/** "Style · Scratch ⇅" — one row that opens the list of Escala's styles.
+ *  Scratch first; each style shows its accent and its one-line description. */
+function StylePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const down = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', down)
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key) }
+  }, [open])
+  const current = THEME_STYLE_PRESETS.find((p) => p.id === value)
+  const options = [
+    { id: '', label: t('Scratch'), note: t('A blank system from your accent'), accent: '' },
+    ...THEME_STYLE_PRESETS.map((p) => ({ id: p.id, label: p.shortLabel, note: p.description, accent: p.accent })),
+  ]
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <span className="text-ui text-fg-muted">{t('Style')}</span>
+        <span className="ml-auto flex min-w-0 items-center gap-1.5 text-ui font-medium text-fg">
+          {current && <span aria-hidden className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: current.accent }} />}
+          <span className="truncate">{current ? current.shortLabel : t('Scratch')}</span>
+        </span>
+        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint"><path d="M2 5l3-3 3 3M2 9l3 3 3-3" /></svg>
+      </button>
+      {open && (
+        <div role="listbox" aria-label={t('Style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-72 flex-col overflow-y-auto ${SELECT_LIST}`}>
+          <p className="px-2 pb-1 pt-1.5 text-mini font-medium uppercase tracking-wide text-fg-faint">{t('Escala inspirations')}</p>
+          {options.map((o) => (
+            <button
+              key={o.id || 'scratch'}
+              type="button"
+              role="option"
+              aria-selected={o.id === value}
+              onClick={() => { onChange(o.id); setOpen(false) }}
+              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${o.id === value ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated hover:text-fg'}`}
+            >
+              {o.accent
+                ? <span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full" style={{ background: o.accent }} />
+                : <span aria-hidden className="flex h-3 w-3 flex-shrink-0 items-center justify-center text-ui leading-none">+</span>}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-ui font-medium">{o.label}</span>
+                <span className="block truncate text-mini text-fg-faint">{o.note}</span>
+              </span>
+              {o.id === value && <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-accent-ui"><path d="M2.5 6.5l2.5 2.5L9.5 3.5" /></svg>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ThemeForm({
   onClose,
   editKey = null,
@@ -187,6 +253,26 @@ export function ThemeForm({
     () => (seed ? new Set<FamilySlot>() : new Set(FAMILY_SLOTS.filter((s) => s !== 'brand'))),
   )
   const [adjustOpen, setAdjustOpen] = useState(false)
+  // "Start from": a blank system, or one of Escala's styles as the base. A
+  // style fills the colours here and — once created — every edition of the
+  // setup, which then walks its six steps from there.
+  const [styleId, setStyleId] = useState('')
+  const startPreset = styleId ? THEME_STYLE_PRESETS.find((p) => p.id === styleId) : undefined
+  function pickStyle(id: string) {
+    setErr(null)
+    setStyleId(id)
+    const preset = id ? THEME_STYLE_PRESETS.find((p) => p.id === id) : undefined
+    if (!preset) {
+      setSlots(slotsFromAccent(primaryColor, neutralTint))
+      setDerived(new Set(FAMILY_SLOTS.filter((s) => s !== 'brand')))
+      return
+    }
+    const next = slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset))
+    if (preset.neutral) next.gray = preset.neutral
+    setSlots(next)
+    setKind(preset.preferredAppearance)
+    setDerived(new Set())
+  }
   // First step: the compact accent chooser until the user asks for more.
   const [moreOpen, setMoreOpen] = useState(!firstStep)
   const curated = useMemo(() => accentCuratedPalette(slots.brand), [slots.brand])
@@ -253,6 +339,23 @@ export function ThemeForm({
 
   function handleSubmit() {
     setErr(null)
+    if (startPreset && !isEdit) {
+      // Untouched colour → the style exactly as the web adopts it. A moved
+      // accent → minted from these colours, with the style's foundations on top.
+      const untouched = slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
+      let res: { key: string } | { error: string }
+      if (untouched) {
+        res = adoptPreset(startPreset, kind)
+      } else {
+        res = mintTheme(slots, kind, name || startPreset.label, null, startPreset.neutralTint, themePages)
+        if (!('error' in res)) useDesignStore.getState().setThemeFoundations(res.key, startPreset.foundations)
+      }
+      if ('error' in res) { setErr(t(res.error, { count: MY_THEME_HARD_CAP })); return }
+      if (name.trim()) useDesignStore.getState().setThemeLabel(res.key, name.trim())
+      onCreated?.(res.key)
+      onClose()
+      return
+    }
     const result = mintTheme(slots, kind, name, editKey, neutralTint, themePages)
     if ('error' in result) {
       setErr(t(result.error, { count: MY_THEME_HARD_CAP }))
@@ -300,6 +403,12 @@ export function ThemeForm({
             colours" row below it to its 2px borders — present in the DOM, its
             own button overflowing past the container, and unreachable however
             far you scrolled. */}
+        {firstStep && !isEdit && (
+          <div className="flex-shrink-0">
+            <StylePicker value={styleId} onChange={pickStyle} />
+            {startPreset && <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">{startPreset.detail}</p>}
+          </div>
+        )}
         <div className="flex-shrink-0 flex items-center gap-1.5">
           <input
             type="text"

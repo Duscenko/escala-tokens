@@ -1498,6 +1498,54 @@ function ContrastSlider({
   )
 }
 
+
+/** One axis of the accent — Saturation or Brightness — over its own hue. The
+ *  track is drawn from the same `colorAtHue` the value is, so what the thumb
+ *  sits on is the colour it will commit. Preview while dragging, commit once
+ *  on release, like the hue slider beside it. */
+function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
+  axis: 'saturation' | 'lightness'
+  label: string
+  value: string
+  onPreview: (hex: string) => void
+  onCommit: (hex: string) => void
+}) {
+  // Frozen at pointer-down: a grey (saturation 0) has no hue to read back, so
+  // re-reading mid-drag would snap the hue to red and ratchet.
+  const frozen = useRef<ReturnType<typeof readHuePosition> | null>(null)
+  const live = readHuePosition(value)
+  const { hue, position } = frozen.current ?? live
+  const current = live.position[axis]
+  const at = (t: number) => colorAtHue({ ...position, [axis]: t }, hue)
+  const stops = [0, 0.2, 0.4, 0.6, 0.8, 1].map((t) => `${at(t)} ${t * 100}%`).join(', ')
+  const pending = useRef<string | null>(null)
+  const commit = () => { frozen.current = null; if (pending.current) { onCommit(pending.current); pending.current = null } }
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
+        <span>{label}</span>
+        <span className="tabular-nums">{Math.round(current * 100)}</span>
+      </div>
+      <div className="relative h-4 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
+        <input
+          type="range"
+          aria-label={label}
+          min={0}
+          max={1}
+          step={0.01}
+          value={current}
+          onPointerDown={() => { frozen.current = readHuePosition(value) }}
+          onChange={(e) => { const hex = at(Number(e.target.value)); pending.current = hex; onPreview(hex) }}
+          onPointerUp={commit}
+          onKeyUp={commit}
+          onBlur={commit}
+          className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function ThemeQuickSettingsRail({
   previewTheme,
   previewAppearance,
@@ -2101,6 +2149,25 @@ export default function ThemeQuickSettingsRail({
               />
               </div>
 
+              {/* Hue above; Saturation and Brightness here — the accent as the
+                  three axes a designer names it by. Each moves ONE axis of the
+                  hue-relative position (`readHuePosition`), so a vivid colour
+                  stays inside sRGB at every hue and nothing ratchets. */}
+              <AccentAxisSlider
+                axis="saturation"
+                label={t('Saturation')}
+                value={liveAccent}
+                onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
+                onCommit={commitAccent}
+              />
+              <AccentAxisSlider
+                axis="lightness"
+                label={t('Brightness')}
+                value={liveAccent}
+                onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
+                onCommit={commitAccent}
+              />
+
               <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <TintSlider
@@ -2160,7 +2227,7 @@ export default function ThemeQuickSettingsRail({
                 the ramp's steps are spread, a different question from which colour
                 or how tinted — the title keeps it from reading as part of them. */}
             <div className="flex flex-col px-3 py-2.5">
-              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Contrast')}</p>
+              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint" title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</p>
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <ContrastSlider
