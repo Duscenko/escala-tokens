@@ -1111,7 +1111,7 @@ export default function ThemeLibraryPage({
           <SectionTitle id="home-recently" count={themesShown.length}>
             {t('Recently')}
           </SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, true)}
         </section>
         {!query && (
           <>
