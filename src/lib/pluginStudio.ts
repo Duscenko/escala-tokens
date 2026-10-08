@@ -29,6 +29,7 @@ import {
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep,
 } from './layoutTokens'
 import { slugify } from './utils'
+import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
 import { adoptPreset } from './adoptPreset'
@@ -204,4 +205,66 @@ export function buildStudioTokens(
     : { themes: [key], modes: defaultFigmaSyncModes([key], s.themeKinds) }
   const label = themeDisplayName(key, s.themeLabels) || key
   return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) }
+}
+
+/** What the plugin's "From code" step shows after reading pasted CSS — and the
+ *  choices it will build with. Reading is separate from building so the person
+ *  reviews what was found before anything is written. */
+export interface CodeReading {
+  choices: StudioChoices
+  found: {
+    accent: string
+    others: { slot: string; hex: string }[]
+    font?: string
+    /** Base radius in px, when `--radius` was declared. */
+    radiusPx?: number
+    hasDark: boolean
+  }
+}
+
+const REM = 16
+
+/** Nearest radius preset to a base radius: the preset's Fields px is what a
+ *  shadcn-style `--radius` describes (buttons, inputs). */
+function presetForBaseRadius(px: number): string {
+  let best = RADIUS_ROLE_PRESETS[0]
+  let gap = Infinity
+  for (const p of RADIUS_ROLE_PRESETS) {
+    const fields = radiusPresetPx(p)[1]
+    const d = Math.abs(fields - px)
+    if (d < gap) { gap = d; best = p }
+  }
+  return best.label
+}
+
+export function readCode(css: string, name?: string): { ok: true; reading: CodeReading } | { ok: false; error: string } {
+  const text = String(css ?? '').slice(0, 200_000)
+  const read = approximateSource(text, name || 'From code')
+  if (!read.ok) return { ok: false, error: read.error }
+  const primary = read.seeds.find((x) => x.slot === 'primary')
+  if (!primary) return { ok: false, error: 'No primary colour found. Declare one as --primary or --brand, or paste the :root block of your globals.css.' }
+  const family = (read.json as { fontFamily?: unknown }).fontFamily
+  const font = typeof family === 'string' ? FONT_PRESETS.find((f) => f.value.toLowerCase() === family.toLowerCase())?.value : undefined
+  const radiusMatch = text.match(/--radius\s*:\s*([0-9.]+)\s*(rem|px)/i)
+  const radiusPx = radiusMatch ? Math.round(parseFloat(radiusMatch[1]) * (radiusMatch[2].toLowerCase() === 'rem' ? REM : 1)) : undefined
+  const choices: StudioChoices = {
+    name: name || 'From code',
+    kind: 'light',
+    accent: primary.hex,
+    ...(font ? { bodyFont: font, headingFont: font } : {}),
+    ...(radiusPx != null ? { radiusPreset: presetForBaseRadius(radiusPx) } : {}),
+  }
+  return {
+    ok: true,
+    reading: {
+      choices,
+      found: {
+        accent: primary.hex,
+        others: read.seeds.filter((x) => x.slot !== 'primary').map((x) => ({ slot: x.slot, hex: x.hex })),
+        font,
+        radiusPx,
+        hasDark: /\.dark\b/.test(text),
+      },
+    },
+  }
 }

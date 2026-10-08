@@ -291,7 +291,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── Plugin, signed in: the native theme setup. Options are the web's own
   //    lists; build applies the choices with the web's own code. ──
-  if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST')) {
+  if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST') || (op === 'studio-code' && req.method === 'POST')) {
     // No account needed: anyone can build ONE theme in ONE mode in the plugin
     // (the Free scope). A token, when sent, must still be a live session — a
     // stale one answers 401 so the plugin signs in again instead of silently
@@ -310,6 +310,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (op === 'studio-options') {
       res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300')
       return res.status(200).json(studio.studioOptions())
+    }
+    if (op === 'studio-code') {
+      if (rateLimited(`${ip}:plugin-studio-code`, 30)) {
+        res.setHeader('Retry-After', '60')
+        return res.status(429).json({ error: 'Too many requests.' })
+      }
+      const body = jsonBody(req)
+      const out = studio.readCode(typeof body.css === 'string' ? body.css : '', typeof body.name === 'string' ? body.name.slice(0, 60) : undefined)
+      return out.ok ? res.status(200).json(out.reading) : res.status(400).json({ error: out.error })
     }
     if (rateLimited(`${ip}:plugin-studio`, 30)) {
       res.setHeader('Retry-After', '60')

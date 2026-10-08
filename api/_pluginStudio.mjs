@@ -2165,10 +2165,10 @@ function gamutMapSrgb(color) {
   let clipped = clipToOklab(current);
   if (deltaEOK(clipped, oklchToOklab(current)) < JND) return oklabToOklch(clipped);
   while (max - min > SEARCH_EPS) {
-    const chroma4 = (min + max) / 2;
-    current = { l: color.l, c: chroma4, h: color.h };
+    const chroma6 = (min + max) / 2;
+    current = { l: color.l, c: chroma6, h: color.h };
     if (minInGamut && inSrgbGamut(current)) {
-      min = chroma4;
+      min = chroma6;
       continue;
     }
     clipped = clipToOklab(current);
@@ -2176,9 +2176,9 @@ function gamutMapSrgb(color) {
     if (e < JND) {
       if (JND - e < SEARCH_EPS) return oklabToOklch(clipped);
       minInGamut = false;
-      min = chroma4;
+      min = chroma6;
     } else {
-      max = chroma4;
+      max = chroma6;
     }
   }
   return oklabToOklch(clipped);
@@ -7315,6 +7315,146 @@ var PHOSPHOR_WEIGHTS = [
 var BY_NAME = new Map(PHOSPHOR_ICONS.map((i) => [i.name.toLowerCase(), i]));
 var BY_SLUG = new Map(PHOSPHOR_ICONS.map((i) => [i.slug, i]));
 
+// src/lib/tokenImport/approximateSource.ts
+import chroma5 from "chroma-js";
+
+// src/lib/tokenImport/parse.ts
+import chroma4 from "chroma-js";
+var HEX_RE = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+var FUNC_COLOR_RE = /^(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color)\(/i;
+var NAMED_COLOR_RE = /^[a-z]{3,20}$/;
+function normalizeColor(value) {
+  const v = value.trim();
+  const colorish = HEX_RE.test(v) || FUNC_COLOR_RE.test(v) || NAMED_COLOR_RE.test(v) && chroma4.valid(v);
+  if (!colorish) return null;
+  try {
+    return chroma4(v).hex();
+  } catch {
+    return null;
+  }
+}
+
+// src/lib/tokenImport/approximateSource.ts
+var HEX_RE2 = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-fA-F])/g;
+var FUNC_RE = /(?:oklch|oklab|rgba?|hsla?)\([^)]{1,80}\)/gi;
+var VAR_RE = /--([A-Za-z_][\w-]*)\s*:\s*([^;}{]+)/g;
+var FONT_RE = /font-family\s*:\s*([^;}{]+)/i;
+var NAMED_SLOT = [
+  [/\b(primary|brand|accent|main)\b/, "primary"],
+  [/\b(gray|grey|neutral|slate|stone|zinc)\b/, "gray"],
+  [/\b(error|danger|destructive|critical|red)\b/, "red"],
+  [/\b(warning|caution|amber|orange|yellow|gold)\b/, "orange"],
+  [/\b(success|positive|confirm|green)\b/, "green"],
+  [/\b(info|informative|notice|blue)\b/, "blue"]
+];
+function readHit(value) {
+  let alpha = 1;
+  try {
+    alpha = chroma5(value).alpha();
+  } catch {
+    return null;
+  }
+  if (alpha < 0.35) return null;
+  const hex = normalizeColor(value);
+  if (!hex) return null;
+  try {
+    const [l, c, h] = chroma5(hex).oklch();
+    if (Number.isNaN(l)) return null;
+    return { hex: hex.slice(0, 7).toLowerCase(), l, c: Number.isNaN(c) ? 0 : c, h: Number.isNaN(h) ? 0 : h };
+  } catch {
+    return null;
+  }
+}
+function slotOfName(name) {
+  const hay = name.toLowerCase().replace(/[-_./]/g, " ");
+  for (const [re, slot] of NAMED_SLOT) {
+    if (re.test(hay)) return slot;
+  }
+  return null;
+}
+function bucketOf(hit) {
+  if (hit.c < 0.04) return hit.l > 0.06 && hit.l < 0.94 ? "gray" : null;
+  if (hit.l > 0.96 || hit.l < 0.05) return null;
+  const h = hit.h;
+  if (h >= 10 && h < 45) return "red";
+  if (h >= 45 && h < 100) return "orange";
+  if (h >= 130 && h < 180) return "green";
+  if (h >= 220 && h < 265) return "blue";
+  return "primary";
+}
+function add(map, sample, weight) {
+  const prev = map.get(sample.hex);
+  if (prev) prev.count += weight;
+  else map.set(sample.hex, { ...sample, count: weight });
+}
+function pickSolid(hits) {
+  const ranked = [...hits].sort((a2, b) => b.count - a2.count);
+  const top = ranked[0];
+  const mid = ranked.find((h) => h.l >= 0.32 && h.l <= 0.78 && h.count >= top.count * 0.2);
+  return mid ?? top;
+}
+function pickGray(hits) {
+  const ranked = [...hits].sort((a2, b) => b.count - a2.count);
+  const mid = ranked.find((h) => h.l >= 0.35 && h.l <= 0.75);
+  if (mid) return mid;
+  return ranked.reduce((best, h) => Math.abs(h.l - 0.55) < Math.abs(best.l - 0.55) ? h : best);
+}
+function approximateSource(text, name = "From code") {
+  const trimmed = text.trim();
+  if (!trimmed) return { ok: false, error: "Drop source files or paste component code first." };
+  const rest = trimmed.replace(VAR_RE, (full, rawName, rawValue) => {
+    const slot = slotOfName(rawName);
+    const sample = readHit(rawValue);
+    return slot && sample ? " " : full;
+  });
+  const loose = /* @__PURE__ */ new Map();
+  const take = (raw) => {
+    const sample = readHit(raw);
+    if (sample) add(loose, sample, 1);
+  };
+  for (const m of rest.matchAll(HEX_RE2)) take(m[0]);
+  for (const m of rest.matchAll(FUNC_RE)) take(m[0]);
+  const buckets = /* @__PURE__ */ new Map();
+  for (const hit of loose.values()) {
+    const slot = bucketOf(hit);
+    if (!slot) continue;
+    const list = buckets.get(slot) ?? [];
+    list.push(hit);
+    buckets.set(slot, list);
+  }
+  const seeds = [];
+  const colors = {};
+  const claim = (slot, hit, via) => {
+    if (colors[slot]) return;
+    colors[slot] = hit.hex;
+    seeds.push({ slot, hex: hit.hex, via });
+  };
+  const namedBySlot = /* @__PURE__ */ new Map();
+  for (const m of trimmed.matchAll(VAR_RE)) {
+    const slot = slotOfName(m[1]);
+    const sample = readHit(m[2]);
+    if (!slot || !sample) continue;
+    const prev = namedBySlot.get(slot);
+    if (!prev || sample.c > prev.c) namedBySlot.set(slot, { ...sample, count: 8 });
+  }
+  for (const [slot, hit] of namedBySlot) claim(slot, hit, "variable");
+  for (const [slot, hits] of buckets) {
+    if (colors[slot]) continue;
+    claim(slot, slot === "gray" ? pickGray(hits) : pickSolid(hits), "frequency");
+  }
+  if (!colors.primary && !colors.gray && !colors.red && !colors.green && !colors.blue && !colors.orange) {
+    return { ok: false, error: "No colors found. This reads hex, rgb, hsl and CSS color variables \u2014 not Tailwind class names like bg-red-500." };
+  }
+  const json = { project: name, colors };
+  const font = trimmed.match(FONT_RE)?.[1];
+  if (font) {
+    const family = font.split(",")[0]?.trim().replace(/["']/g, "");
+    if (family && !/^(inherit|initial|unset|var\()/.test(family)) json.fontFamily = family;
+  }
+  const colorCount = loose.size + namedBySlot.size;
+  return { ok: true, json, colors: colorCount, seeds };
+}
+
 // src/lib/themePresets.ts
 function presetStates(preset) {
   return preset.states ?? previewHarmony(preset.accent, preset.neutralTint).states;
@@ -8035,7 +8175,53 @@ function buildStudioTokens(choices, tier) {
   const label = themeDisplayName(key, s.themeLabels) || key;
   return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) };
 }
+var REM = 16;
+function presetForBaseRadius(px) {
+  let best = RADIUS_ROLE_PRESETS[0];
+  let gap = Infinity;
+  for (const p of RADIUS_ROLE_PRESETS) {
+    const fields = radiusPresetPx(p)[1];
+    const d = Math.abs(fields - px);
+    if (d < gap) {
+      gap = d;
+      best = p;
+    }
+  }
+  return best.label;
+}
+function readCode(css, name) {
+  const text = String(css ?? "").slice(0, 2e5);
+  const read = approximateSource(text, name || "From code");
+  if (!read.ok) return { ok: false, error: read.error };
+  const primary = read.seeds.find((x) => x.slot === "primary");
+  if (!primary) return { ok: false, error: "No primary colour found. Declare one as --primary or --brand, or paste the :root block of your globals.css." };
+  const family = read.json.fontFamily;
+  const font = typeof family === "string" ? FONT_PRESETS.find((f) => f.value.toLowerCase() === family.toLowerCase())?.value : void 0;
+  const radiusMatch = text.match(/--radius\s*:\s*([0-9.]+)\s*(rem|px)/i);
+  const radiusPx = radiusMatch ? Math.round(parseFloat(radiusMatch[1]) * (radiusMatch[2].toLowerCase() === "rem" ? REM : 1)) : void 0;
+  const choices = {
+    name: name || "From code",
+    kind: "light",
+    accent: primary.hex,
+    ...font ? { bodyFont: font, headingFont: font } : {},
+    ...radiusPx != null ? { radiusPreset: presetForBaseRadius(radiusPx) } : {}
+  };
+  return {
+    ok: true,
+    reading: {
+      choices,
+      found: {
+        accent: primary.hex,
+        others: read.seeds.filter((x) => x.slot !== "primary").map((x) => ({ slot: x.slot, hex: x.hex })),
+        font,
+        radiusPx,
+        hasDark: /\.dark\b/.test(text)
+      }
+    }
+  };
+}
 export {
   buildStudioTokens,
+  readCode,
   studioOptions
 };

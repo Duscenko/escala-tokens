@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildStudioTokens, studioOptions } from '../pluginStudio'
+import { buildStudioTokens, studioOptions, readCode } from '../pluginStudio'
 
 type Payload = { colors: { themeOrder: string[] }; viewports?: string[]; radiusRoles?: Record<string, string>; typography: { fontFamily: string }; shadows: Record<string, string> }
 
@@ -59,5 +59,23 @@ describe('plugin studio build', () => {
   })
   it('rejects a bad accent', () => {
     expect('error' in buildStudioTokens({ accent: 'blue' }, 'free')).toBe(true)
+  })
+
+  it('reads shadcn-style CSS into choices a build accepts', () => {
+    const css = `:root { --background: oklch(1 0 0); --primary: oklch(0.55 0.22 264); --radius: 0.625rem; --destructive: oklch(0.577 0.245 27.325); font-family: 'Geist', sans-serif }
+      .dark { --background: oklch(0.145 0 0); --primary: oklch(0.72 0.17 264); }`
+    const r = readCode(css, 'Mine')
+    if (!r.ok) throw new Error(r.error)
+    expect(r.reading.found.hasDark).toBe(true)
+    expect(r.reading.choices.accent).toMatch(/^#[0-9a-f]{6}$/i)
+    expect(r.reading.found.radiusPx).toBe(10)
+    expect(r.reading.choices.radiusPreset).toBe('Rounded')
+    expect(r.reading.choices.bodyFont).toBe('Geist')
+    const built = buildStudioTokens(r.reading.choices, 'free')
+    expect('error' in built).toBe(false)
+  })
+  it('says what is missing when the CSS has no primary colour', () => {
+    expect(readCode('body { margin: 0 }').ok).toBe(false)
+    expect(readCode('').ok).toBe(false)
   })
 })
