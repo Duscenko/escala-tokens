@@ -4,7 +4,7 @@
 // is no account yet, we go through `/login` and come back. Confirming binds
 // the code to the account and sends the libraries stored in this browser.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { BrandMark } from '../configurator/TopNav'
 import { FigmaLogo } from '../configurator/figmaShared'
 import { useAuth } from '../../lib/auth'
@@ -18,6 +18,18 @@ import { useI18n } from '../../lib/i18n'
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const SECONDARY = `flex h-11 w-full items-center justify-center rounded-2xl border border-line-strong px-4 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`
 const PRIMARY = `flex h-12 w-full items-center justify-center rounded-2xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
+
+const FIGMA_WEB = 'https://www.figma.com/files'
+
+// Prefer the desktop app (`figma://`); if the page is still visible a moment
+// later the app is not installed, so open Figma on the web instead.
+function goToFigma(e: MouseEvent) {
+  e.preventDefault()
+  window.location.href = 'figma://'
+  window.setTimeout(() => {
+    if (document.visibilityState === 'visible') window.open(FIGMA_WEB, '_blank', 'noopener')
+  }, 1500)
+}
 
 function readCode(): string {
   const fromUrl = new URLSearchParams(window.location.search).get('code') ?? ''
@@ -111,7 +123,7 @@ export function PluginConnectPage() {
               <p className="mt-2 text-ui leading-relaxed text-fg-muted">
                 {t('Back in Figma, pick a library and press Sync. You can close this tab.')}
               </p>
-              <a href={home} className={`mt-6 ${PRIMARY}`}>{t('Open my libraries')}</a>
+              <a href={FIGMA_WEB} onClick={goToFigma} className={`mt-6 ${PRIMARY}`}>{t('Go to Figma')}</a>
               <a href="/docs/figma" className={`mt-2 ${SECONDARY}`}>{t('How Figma sync works')}</a>
             </>
           ) : waitingForAccount ? (

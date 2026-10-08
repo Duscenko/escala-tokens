@@ -661,7 +661,7 @@ const es: Record<string, string> = {
   'Connecting…': 'Conectando…',
   'Open Escala': 'Abrir Escala',
   'Back in Figma, pick a library and press Sync. You can close this tab.': 'De vuelta en Figma, elija una biblioteca y pulse Sync. Puede cerrar esta pestaña.',
-  'Open my libraries': 'Abrir mis bibliotecas',
+  'Go to Figma': 'Ir a Figma',
   'How Figma sync works': 'Cómo funciona la sincronización con Figma',
   'Taking you to sign in…': 'Llevándole a iniciar sesión…',
   'Only continue if you just pressed Sign in in the Escala plugin.': 'Continúe solo si acaba de pulsar Sign in en el plugin Escala.',
