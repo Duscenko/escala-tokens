@@ -29,6 +29,7 @@ import {
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep,
 } from './layoutTokens'
 import { slugify } from './utils'
+import { backgroundFromBase, type NeutralTint } from './colorUtils'
 import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
@@ -51,6 +52,13 @@ export interface StudioChoices {
   radiusPreset?: string
   /** Per-axis picks on top of the preset. */
   radiusAxes?: Partial<Record<'boxes' | 'fields' | 'selectors', string>>
+  /** Colour edition beyond the accent — the web rail's Neutral tint, Contrast
+   *  and States rows. Any of them makes the build mint from the accent (a
+   *  style's foundations still apply on top). */
+  neutralTint?: string
+  /** -1 (softer) … 1 (stronger), the rail's contrast shift. */
+  contrastShift?: number
+  states?: Partial<Record<'error' | 'warning' | 'success' | 'info', string>>
   /** A `SPACING_MODES` id. */
   spacingMode?: string
   /** A `SHADOW_PRESETS` label. */
@@ -77,6 +85,8 @@ export function studioOptions() {
     })),
     shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md })),
     iconWeights: [...PHOSPHOR_WEIGHTS],
+    neutralTints: ['pure', 'subtle', 'tinted', 'vivid'],
+    contrast: { min: -1, max: 1, step: 0.05 },
     styles: THEME_STYLE_PRESETS.map((p) => styleSummary(p, radius)),
   }
 }
@@ -113,6 +123,13 @@ function styleSummary(p: ThemeStylePreset, standard: Record<string, string>) {
 
 const HEX = /^#[0-9a-f]{6}$/i
 
+/** The four severities the accent alone would give — the base a partial
+ *  States pick fills the rest from. */
+function slotsFromAccentStates(accent: string, tint: NeutralTint) {
+  const s = slotsFromAccent(accent, tint)
+  return { error: s.error, warning: s.warning, success: s.success, info: s.info }
+}
+
 export function buildStudioTokens(
   choices: StudioChoices,
   tier: 'free' | 'pro',
@@ -123,6 +140,18 @@ export function buildStudioTokens(
 
   const store = useDesignStore.getState()
   store.startNewSystem()
+  // Neutral tint and contrast shape every ramp, so they are set BEFORE the
+  // global ramps are generated and the theme's families minted.
+  const TINTS: NeutralTint[] = ['pure', 'subtle', 'tinted', 'vivid']
+  const tint = TINTS.includes(choices?.neutralTint as NeutralTint) ? choices.neutralTint as NeutralTint : undefined
+  const shift = typeof choices?.contrastShift === 'number' && Number.isFinite(choices.contrastShift)
+    ? Math.max(-1, Math.min(1, choices.contrastShift)) : undefined
+  const pickedStates = choices?.states && typeof choices.states === 'object'
+    ? Object.fromEntries(Object.entries(choices.states).filter(([k, v]) => ['error', 'warning', 'success', 'info'].includes(k) && typeof v === 'string' && HEX.test(v))) as Record<string, string>
+    : {}
+  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0
+  if (tint) store.setNeutralTint(tint)
+  if (shift != null) store.setContrastShift(shift)
   // The global ramps ship empty and the web fills them on mount
   // (`useEnsureColorScales` in the shell). Same backfill here, or every theme
   // that reuses a global family (accent, error…) exports no primitives for it.
@@ -130,9 +159,27 @@ export function buildStudioTokens(
   const s0 = useDesignStore.getState()
   const kind = choices.kind === 'dark' ? 'dark' : 'light'
   const name = String(choices.name ?? '').slice(0, 60)
-  const minted = preset
-    ? adoptPreset(preset, choices.kind ? kind : preset.preferredAppearance, { track: false })
-    : mintTheme(slotsFromAccent(choices.accent as string, s0.neutralTint), kind, name, null, s0.neutralTint)
+  // A style with no colour edition is adopted as the web adopts it. Anything
+  // else mints from the accent with the chosen tint, contrast and states, on
+  // pages derived from its own neutral (the New theme form's rule) — and a
+  // style's foundations are patched on top so its type, radius, spacing,
+  // shadow and icons survive a colour change.
+  let minted: { key: string } | { error: string }
+  if (preset && !colourCustom) {
+    minted = adoptPreset(preset, choices.kind ? kind : preset.preferredAppearance, { track: false })
+  } else {
+    const useTint = tint ?? (preset ? preset.neutralTint : s0.neutralTint)
+    if (!tint && preset) store.setNeutralTint(useTint)
+    const accent = (typeof choices.accent === 'string' && HEX.test(choices.accent) ? choices.accent : preset?.accent) as string
+    const baseStates = preset ? presetStates(preset) : undefined
+    const states = Object.keys(pickedStates).length
+      ? { ...(baseStates ?? slotsFromAccentStates(accent, useTint)), ...pickedStates } as { error: string; warning: string; success: string; info: string }
+      : baseStates
+    const slots = slotsFromAccent(accent, useTint, states)
+    const pages = { light: backgroundFromBase(slots.gray, 'light', useTint), dark: backgroundFromBase(slots.gray, 'dark', useTint) }
+    minted = mintTheme(slots, choices.kind ? kind : (preset?.preferredAppearance ?? kind), name || preset?.label || '', null, useTint, pages)
+    if (!('error' in minted) && preset) useDesignStore.getState().patchThemeFoundations(minted.key, preset.foundations)
+  }
   if ('error' in minted) return { error: minted.error }
   const key = minted.key
   // A style brings its own accent; an accent sent WITH it is the user's change

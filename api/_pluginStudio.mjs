@@ -8079,6 +8079,8 @@ function studioOptions() {
     })),
     shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md })),
     iconWeights: [...PHOSPHOR_WEIGHTS],
+    neutralTints: ["pure", "subtle", "tinted", "vivid"],
+    contrast: { min: -1, max: 1, step: 0.05 },
     styles: THEME_STYLE_PRESETS.map((p) => styleSummary(p, radius))
   };
 }
@@ -8109,17 +8111,41 @@ function styleSummary(p, standard) {
   };
 }
 var HEX = /^#[0-9a-f]{6}$/i;
+function slotsFromAccentStates(accent2, tint) {
+  const s = slotsFromAccent(accent2, tint);
+  return { error: s.error, warning: s.warning, success: s.success, info: s.info };
+}
 function buildStudioTokens(choices, tier) {
   const preset = choices?.style ? themeStylePreset(choices.style) : void 0;
   if (choices?.style && !preset) return { error: "Unknown style." };
   if (!preset && (!choices || typeof choices.accent !== "string" || !HEX.test(choices.accent))) return { error: "Pick an accent colour." };
   const store = useDesignStore.getState();
   store.startNewSystem();
+  const TINTS = ["pure", "subtle", "tinted", "vivid"];
+  const tint = TINTS.includes(choices?.neutralTint) ? choices.neutralTint : void 0;
+  const shift = typeof choices?.contrastShift === "number" && Number.isFinite(choices.contrastShift) ? Math.max(-1, Math.min(1, choices.contrastShift)) : void 0;
+  const pickedStates = choices?.states && typeof choices.states === "object" ? Object.fromEntries(Object.entries(choices.states).filter(([k, v]) => ["error", "warning", "success", "info"].includes(k) && typeof v === "string" && HEX.test(v))) : {};
+  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0;
+  if (tint) store.setNeutralTint(tint);
+  if (shift != null) store.setContrastShift(shift);
   ensureColorScales();
   const s0 = useDesignStore.getState();
   const kind = choices.kind === "dark" ? "dark" : "light";
   const name = String(choices.name ?? "").slice(0, 60);
-  const minted = preset ? adoptPreset(preset, choices.kind ? kind : preset.preferredAppearance, { track: false }) : mintTheme(slotsFromAccent(choices.accent, s0.neutralTint), kind, name, null, s0.neutralTint);
+  let minted;
+  if (preset && !colourCustom) {
+    minted = adoptPreset(preset, choices.kind ? kind : preset.preferredAppearance, { track: false });
+  } else {
+    const useTint = tint ?? (preset ? preset.neutralTint : s0.neutralTint);
+    if (!tint && preset) store.setNeutralTint(useTint);
+    const accent2 = typeof choices.accent === "string" && HEX.test(choices.accent) ? choices.accent : preset?.accent;
+    const baseStates = preset ? presetStates(preset) : void 0;
+    const states = Object.keys(pickedStates).length ? { ...baseStates ?? slotsFromAccentStates(accent2, useTint), ...pickedStates } : baseStates;
+    const slots = slotsFromAccent(accent2, useTint, states);
+    const pages = { light: backgroundFromBase(slots.gray, "light", useTint), dark: backgroundFromBase(slots.gray, "dark", useTint) };
+    minted = mintTheme(slots, choices.kind ? kind : preset?.preferredAppearance ?? kind, name || preset?.label || "", null, useTint, pages);
+    if (!("error" in minted) && preset) useDesignStore.getState().patchThemeFoundations(minted.key, preset.foundations);
+  }
   if ("error" in minted) return { error: minted.error };
   const key = minted.key;
   if (preset && typeof choices.accent === "string" && HEX.test(choices.accent) && choices.accent.toLowerCase() !== preset.accent.toLowerCase()) {

@@ -78,4 +78,20 @@ describe('plugin studio build', () => {
     expect(readCode('body { margin: 0 }').ok).toBe(false)
     expect(readCode('').ok).toBe(false)
   })
+
+  it('applies neutral tint, contrast and states from the colour edition', () => {
+    const base = buildStudioTokens({ accent: '#2970ff', name: 'C' }, 'free')
+    const out = buildStudioTokens({ accent: '#2970ff', name: 'C', neutralTint: 'vivid', contrastShift: 0.5, states: { error: '#c0362c' } }, 'free')
+    if ('error' in base || 'error' in out) throw new Error('build failed')
+    const prim = (t: unknown) => (t as { colors: { primitive: Record<string, string> } }).colors.primitive
+    expect(JSON.stringify(prim(out.tokens))).not.toBe(JSON.stringify(prim(base.tokens)))
+    expect(Object.entries(prim(out.tokens)).some(([k, v]) => /error-9$/.test(k) && v === '#c0362c')).toBe(true)
+  })
+  it('a style with a colour edit keeps its own fonts', () => {
+    const o = studioOptions()
+    const sty = o.styles.find((x) => x.font !== 'Inter') ?? o.styles[0]
+    const out = buildStudioTokens({ style: sty.id, neutralTint: 'pure' }, 'free')
+    if ('error' in out) throw new Error(out.error)
+    expect(JSON.stringify(out.tokens)).toContain(sty.font)
+  })
 })
