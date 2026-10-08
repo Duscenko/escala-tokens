@@ -758,6 +758,8 @@ interface DesignStore {
   // null until the first download so a first-time user sees no false "update".
   pluginBuildSeen: string | null
   setPluginBuildSeen: (build: string) => void
+  /** When each theme last changed (theme key → ISO). Same field as the snapshot. */
+  themeUpdatedAt: Record<string, string>
   /** Stamps `themeUpdatedAt` for the given themes (see useThemeActivity). */
   stampThemesUpdated: (keys: string[], iso: string) => void
   // Home's Pinned shortcuts: `theme:<key>` / `library:<id>`. A global

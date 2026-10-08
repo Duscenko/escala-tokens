@@ -149,6 +149,7 @@ function ThemeNameFieldShell({
   draftName,
   setDraftName,
   nameError,
+  setNameError,
   commitName,
   onRevertDraft,
   readOnlyDisplay,
@@ -159,6 +160,7 @@ function ThemeNameFieldShell({
   draftName: string
   setDraftName: (value: string) => void
   nameError: boolean
+  setNameError: (value: boolean) => void
   commitName: () => void
   onRevertDraft: () => void
   readOnlyDisplay?: string
@@ -283,6 +285,7 @@ export function ThemeIdentityBand({
         draftName={draftName}
         setDraftName={setDraftName}
         nameError={nameError}
+        setNameError={setNameError}
         commitName={commitName}
         onRevertDraft={revertDraft}
         readOnlyDisplay={tryOnLabel}
@@ -338,6 +341,7 @@ export function ThemeNameField({ previewTheme, readOnlyLabel }: {
         draftName={draftName}
         setDraftName={setDraftName}
         nameError={nameError}
+        setNameError={setNameError}
         commitName={commitName}
         onRevertDraft={revertDraft}
         heightClass="h-8"
