@@ -14,7 +14,7 @@
     "bundle:plugin": "node scripts/bundle-plugin.mjs",
     "postinstall": "node scripts/fetch-phosphor-icons.mjs",
     "predev": "node scripts/fetch-phosphor-icons.mjs",
-    "prebuild": "node scripts/fetch-phosphor-icons.mjs",
+    "prebuild": "node scripts/fetch-phosphor-icons.mjs && node scripts/build-plugin-studio.mjs",
     "gen:phosphor-icons": "node scripts/fetch-phosphor-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

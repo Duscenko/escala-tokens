@@ -8,7 +8,7 @@ import {
   type PluginLibrary,
 } from '../src/lib/pluginSession.js'
 import { checkLicenceKey } from './_licence.js'
-import { buildStudioTokens, studioOptions, type StudioChoices } from '../src/lib/pluginStudio.js'
+import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob } from './_blob.js'
 
@@ -296,15 +296,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!token || token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
     const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
     if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
+    // Loaded on demand from the prebuilt bundle (scripts/build-plugin-studio.mjs):
+    // the generator graph can't load as plain Node ESM, and a failure here must
+    // never take sign-in down with it.
+    const studio = await import('./_pluginStudio.mjs') as typeof import('../src/lib/pluginStudio.js')
     if (op === 'studio-options') {
       res.setHeader('Cache-Control', 'private, max-age=300')
-      return res.status(200).json(studioOptions())
+      return res.status(200).json(studio.studioOptions())
     }
     if (rateLimited(`${ip}:plugin-studio`, 30)) {
       res.setHeader('Retry-After', '60')
       return res.status(429).json({ error: 'Too many requests.' })
     }
-    const built = buildStudioTokens(jsonBody(req) as unknown as StudioChoices, tierOf(session).tier)
+    const built = studio.buildStudioTokens(jsonBody(req) as unknown as StudioChoices, tierOf(session).tier)
     if ('error' in built) return res.status(400).json({ error: built.error })
     return res.status(200).json(built)
   }
