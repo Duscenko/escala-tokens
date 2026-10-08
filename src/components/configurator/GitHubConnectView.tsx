@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore, captureSnapshot } from '../../store/useDesignStore'
-import { generateTokenJSON } from '../../lib/tokenGenerator'
-import { buildCSS, buildMarkdown } from '../../lib/exporters'
+import { useFreeTier } from '../../lib/access'
+import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { slugify } from '../../lib/utils'
 import { ESCALA_SYSTEM_PATH, parseEscalaSystem, serializeEscalaSystem } from '../../lib/escalaSystem'
 import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
@@ -20,6 +21,9 @@ interface GitHubConnectViewProps {
   embedded?: boolean
   /** Mirrors an explicit push in the persistent top-bar status affordance. */
   onPushStateChange?: (state: GitHubPushState) => void
+  /** Free pushes one theme and the appearance on screen. The editor snapshot stays whole. */
+  theme?: string
+  appearance?: ThemeAppearance
 }
 
 // Every failure `githubOAuth.ts`/`api/github-oauth.ts` can hand back, worded
@@ -44,7 +48,8 @@ function oauthErrorMessage(code: string): string {
 const TOKEN_URL =
   'https://github.com/settings/tokens/new?scopes=repo&description=Escala%20token%20sync'
 
-export default function GitHubConnectView({ onClose, embedded = false, onPushStateChange }: GitHubConnectViewProps) {
+export default function GitHubConnectView({ onClose, embedded = false, onPushStateChange, theme, appearance }: GitHubConnectViewProps) {
+  const free = useFreeTier()
   const { projectName, githubRepo, setGithubRepo, githubLastPushAt, setGithubLastPushAt } =
     useDesignStore()
 
@@ -217,10 +222,12 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     onPushStateChange?.('pushing')
     setPushError(null)
     setPushLog([])
+    const live = useDesignStore.getState()
+    const shipped = shippedBundle(live, free ? freeScopeFor(live, theme, appearance) : undefined)
     const files = [
-      { path: 'tokens.json', content: JSON.stringify(generateTokenJSON(), null, 2) },
-      { path: 'variables.css', content: buildCSS(useDesignStore.getState()) },
-      { path: 'README.md', content: buildMarkdown(useDesignStore.getState()) },
+      { path: 'tokens.json', content: shipped.tokens },
+      { path: 'variables.css', content: shipped.css },
+      { path: 'README.md', content: shipped.markdown },
       {
         path: ESCALA_SYSTEM_PATH,
         content: serializeEscalaSystem({

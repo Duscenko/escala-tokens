@@ -276,6 +276,7 @@ export function ThemeOptionsMenu({
   onShareGithub,
   onOpenInCode,
   onRename,
+  onDuplicate,
   onAskDelete,
   pinned,
   onTogglePin,
@@ -291,6 +292,7 @@ export function ThemeOptionsMenu({
   onShareGithub?: () => void
   onOpenInCode?: () => void
   onRename: () => void
+  onDuplicate?: () => void
   onAskDelete: () => void
   /** Home's Pinned shortcut — omitted where there is no Pinned list. */
   pinned?: boolean
@@ -408,6 +410,16 @@ export function ThemeOptionsMenu({
               className={THEME_MENU_ITEM}
             >
               {t('Open in code')}
+            </button>
+          )}
+          {onDuplicate && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onDuplicate}
+              className={THEME_MENU_ITEM}
+            >
+              {t('Duplicate')}
             </button>
           )}
           <button
@@ -704,9 +716,8 @@ export default function ThemeLibraryRail({
     onStylePreview?.({ preset, appearance })
   }
 
-  // Core try-on is seeded by Configurator while My themes is empty. This rail
-  // used to own that seed, but it is closed by default — mounting it here left
-  // Theme Preview blank, and unmounting it (folder close) wiped a live try-on.
+  // Empty My themes is allowed. Do not try on Core after the last delete —
+  // Theme Preview shows NeedMyThemeEmpty until they pick a style or create.
 
   // Adopting a style is the quick-settings rail's job now — `adoptPreset` is
   // called there, from the "Add to system" button under the Name field and from
@@ -718,9 +729,6 @@ export default function ThemeLibraryRail({
     if (previewTheme === key) {
       if (nextOwn) onPreviewThemeChange(nextOwn)
       else if (next) onPreviewThemeChange(next)
-      else if (corePreset) previewPreset(corePreset, chromeTheme)
-    } else if (!nextOwn && corePreset) {
-      previewPreset(corePreset, chromeTheme)
     }
     removeTheme(key)
     setDeleteKey(null)
@@ -730,7 +738,6 @@ export default function ThemeLibraryRail({
     const fallback = availableThemes.find((key) => key === 'light') ?? availableThemes.find((key) => key === 'dark') ?? availableThemes.find((key) => !ownThemeKeys.includes(key))
     if (ownThemeKeys.includes(previewTheme) && fallback) onPreviewThemeChange(fallback)
     ownThemeKeys.forEach((key) => removeTheme(key))
-    if (corePreset) previewPreset(corePreset, chromeTheme)
     setDeleteKey(null)
     setConfirmDeleteOwnThemes(false)
     setAllOpen(false)
@@ -862,7 +869,7 @@ export default function ThemeLibraryRail({
               fallback={store.primaryColor}
               menuOpen={rowMenuKey === key}
               deleteOpen={deleteKey === key}
-              isLast={availableThemes.length <= 1}
+              isLast={ownThemeKeys.length <= 1}
               onPreview={() => { clearStylePreview(); onPreviewThemeChange(key) }}
               onEdit={() => { clearStylePreview(); onPreviewThemeChange(key); openEdit(key) }}
               onToggleMenu={() => setRowMenuKey((open) => (open === key ? null : key))}

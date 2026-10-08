@@ -178,6 +178,9 @@ export interface SectionExportOptions {
    *  was included. Threaded through so the promised count and the actual file
    *  agree, the same rule `families` already exists to keep for Primitives. */
   modes?: string[]
+  /** Omit tablet and mobile columns and the media queries that carry them.
+   *  Desktop values stay. Set together with the Free Figma scope. */
+  desktopOnly?: boolean
 }
 
 /** Ordered color families present in the system: [name, scale].
@@ -310,7 +313,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     Object.entries(t.sizes).forEach(([k, v]) => lines.push(`--font-size-${k}: ${v};`))
     Object.entries(t.lineHeights ?? {}).forEach(([k, v]) => lines.push(`--line-height-${k}: ${v};`))
     Object.entries(t.weights).forEach(([k, v]) => lines.push(`--font-weight-${k}: ${v};`))
-    typeRoleCssVars(t.roles).forEach((l) => lines.push(`${l}`))
+    typeRoleCssVars(t.roles, opts.desktopOnly ? ['desktop'] : undefined).forEach((l) => lines.push(`${l}`))
     return lines
   }
   if (section === 'icons') {
@@ -403,6 +406,7 @@ function withDimensions(lines: string[]): string[] {
 
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   const root = wrapRoot(withDimensions(cssLines(section, store, cf, opts)))
+  if (opts.desktopOnly) return root
   if (section === 'spacing') {
     const media = spacingMediaCss(store.breakpointRoles, store.grid, store.spacingRoles, store.spacing)
     return media ? `${root}\n\n${media}` : root
@@ -434,7 +438,9 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
       colors[name] = obj
     })
     if (opts.includeSemantics !== false) {
-      Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) colors[k] = formatColor(v, cf) })
+      const themeKey = opts.modes?.[0]
+      const theme = (themeKey ? store.themes[themeKey] : null) ?? store.themes.light ?? {}
+      Object.entries(theme).forEach(([k, v]) => { if (v) colors[k] = formatColor(v, cf) })
     }
     return { colors }
   }
@@ -452,18 +458,18 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   if (section === 'gradients') {
     // `backgroundImage` is Tailwind's real theme key for named gradients —
     // this mints usable `bg-<slug>` utilities, not a placeholder comment.
-    return { backgroundImage: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])) }
+    const kind = opts.modes?.[0] ? store.themeKinds[opts.modes[0]] : 'light'
+    return { backgroundImage: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, kind === 'dark' ? 'dark' : 'light')])) }
   }
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
     const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
-    return {
-      screens: {
-        ...Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, bps[s]])),
-        desktop: `${breakpointRolePx(store.breakpointRoles, bps, 'desktop')}px`,
-        mobile: { max: breakpointMobileMax(store.breakpointRoles, bps) },
-      },
+    const screens: Record<string, string | { max: string }> = {
+      ...Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, bps[s]])),
+      desktop: `${breakpointRolePx(store.breakpointRoles, bps, 'desktop')}px`,
     }
+    if (!opts.desktopOnly) screens.mobile = { max: breakpointMobileMax(store.breakpointRoles, bps) }
+    return { screens }
   }
   const simple = SIMPLE[section]!
   // The extra ramp has no Tailwind theme key of its own — a checkbox square is
@@ -628,6 +634,15 @@ function lengthTable(prefix: string, map: Record<string, string>): string {
   return table(['Token', 'Value', 'Primitive'], Object.entries(map).map(([k, v]) => [`\`--${prefix}-${k}\``, `\`${v}\``, primitiveCell(v)]))
 }
 
+/** Free files name one appearance. Pro, and a system that still has both
+ *  themes, keep the Light and Dark columns. */
+function oneAppearance(store: Store, opts: SectionExportOptions): 'light' | 'dark' | undefined {
+  if (!opts.desktopOnly) return undefined
+  const keys = store.themeOrder.filter((theme) => store.themes[theme])
+  if (keys.length !== 1) return undefined
+  return store.themeKinds[keys[0]] === 'dark' ? 'dark' : 'light'
+}
+
 function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'color') {
     const parts = ['## Color']
@@ -662,16 +677,28 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       '\n### Weights\n',
       table(['Token', 'Weight'], Object.entries(t.weights).map(([k, v]) => [`\`${k}\``, `\`${v}\``])),
       '\n### Text roles (semantics)\n',
-      table(
-        ['Role', 'Desktop', 'Tablet', 'Mobile'],
-        TYPE_ROLES.map((r) => {
-          const m = mergeTypeRoles(t.roles)[r.key]
-          const fmt = (a: { family: string; size: string; weight: string }) =>
-            `\`${a.size}\` · ${a.weight} · ${a.family}`
-          return [`\`text-${r.key}\``, fmt(m.desktop), fmt(m.tablet), fmt(m.mobile)]
-        }),
-      ),
-      '\nDesktop CSS: `var(--text-label-font-size)`. Tablet: `var(--text-label-font-size-tablet)` in the tablet range (the same media query as the grid\'s tablet frame). Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. All three alias primitives (`var(--font-size-text-sm)`). Only Display and headings step; body and control text keep one size.',
+      opts.desktopOnly
+        ? table(
+          ['Role', 'Desktop'],
+          TYPE_ROLES.map((r) => {
+            const m = mergeTypeRoles(t.roles)[r.key]
+            const fmt = (a: { family: string; size: string; weight: string }) =>
+              `\`${a.size}\` · ${a.weight} · ${a.family}`
+            return [`\`text-${r.key}\``, fmt(m.desktop)]
+          }),
+        )
+        : table(
+          ['Role', 'Desktop', 'Tablet', 'Mobile'],
+          TYPE_ROLES.map((r) => {
+            const m = mergeTypeRoles(t.roles)[r.key]
+            const fmt = (a: { family: string; size: string; weight: string }) =>
+              `\`${a.size}\` · ${a.weight} · ${a.family}`
+            return [`\`text-${r.key}\``, fmt(m.desktop), fmt(m.tablet), fmt(m.mobile)]
+          }),
+        ),
+      opts.desktopOnly
+        ? '\nDesktop CSS: `var(--text-label-font-size)`, aliasing a primitive (`var(--font-size-text-sm)`). Only Display and headings step; body and control text keep one size.'
+        : '\nDesktop CSS: `var(--text-label-font-size)`. Tablet: `var(--text-label-font-size-tablet)` in the tablet range (the same media query as the grid\'s tablet frame). Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. All three alias primitives (`var(--font-size-text-sm)`). Only Display and headings step; body and control text keep one size.',
     ].join('\n')
   }
   if (section === 'icons') {
@@ -684,9 +711,11 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       '',
       'Three sizes. Desktop, Tablet and Mobile use the same px — a control\'s height does not step, and the glyph holds with it.',
       '',
-      '| Role | Desktop | Tablet | Mobile | Use |',
-      '|---|---|---|---|---|',
-      ...ICON_ROLES.map((r) => `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${iconSizePx(r, 'tablet')}px | ${iconSizePx(r, 'mobile')}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
+      opts.desktopOnly ? '| Role | Desktop | Use |' : '| Role | Desktop | Tablet | Mobile | Use |',
+      opts.desktopOnly ? '|---|---|---|' : '|---|---|---|---|---|',
+      ...ICON_ROLES.map((r) => opts.desktopOnly
+        ? `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${ICON_ROLE_DESCRIPTION[r]} |`
+        : `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${iconSizePx(r, 'tablet')}px | ${iconSizePx(r, 'mobile')}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
       '',
       `Each aliases a Dimension primitive (\`--icon-small: var(--dimension-${ICON_SIZE_PX.small})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
     ].join('\n')
@@ -707,15 +736,33 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     ].filter(Boolean).join(', ') || '_none_'
     return [
       '## Gradients\n',
-      table(
-        ['Token', 'Type', 'Light', 'Dark'],
-        gradients.map((g) => [
-          `\`--gradient-${gradientSlug(g)}\``,
-          g.type,
-          `\`${gradientToCss(g)}\``,
-          g.stops.some((s) => s.darkColor) ? `\`${gradientToCss(g, 'dark')}\`` : '—',
-        ]),
-      ),
+      oneAppearance(store, opts) === 'dark'
+        ? table(
+          ['Token', 'Type', 'Dark'],
+          gradients.map((g) => [
+            `\`--gradient-${gradientSlug(g)}\``,
+            g.type,
+            `\`${gradientToCss(g, 'dark')}\``,
+          ]),
+        )
+        : oneAppearance(store, opts) === 'light'
+          ? table(
+            ['Token', 'Type', 'Light'],
+            gradients.map((g) => [
+              `\`--gradient-${gradientSlug(g)}\``,
+              g.type,
+              `\`${gradientToCss(g)}\``,
+            ]),
+          )
+          : table(
+            ['Token', 'Type', 'Light', 'Dark'],
+            gradients.map((g) => [
+              `\`--gradient-${gradientSlug(g)}\``,
+              g.type,
+              `\`${gradientToCss(g)}\``,
+              g.stops.some((s) => s.darkColor) ? `\`${gradientToCss(g, 'dark')}\`` : '—',
+            ]),
+          ),
       `\nAssigned surfaces: ${assigned}.`,
     ].join('\n')
   }
@@ -742,22 +789,33 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       ),
       '\nType mobile styles apply at `max-width: var(--breakpoint-mobile)`. `@media` itself must use the resolved px (`' + max + '`), because custom properties are not valid there. Tablet (8-col) overrides at `' + tabletMax + '`.\n',
       '\n### Frame\n',
-      table(
-        ['Token', 'Desktop', 'Tablet', 'Mobile'],
-        (['columns', 'gutter', 'margin', 'container'] as const).map((k) => [
-          `\`--grid-${k}\``,
-          `\`${fmt(k, f.desktop[k])}\``,
-          `\`${fmt(k, f.tablet[k])}\``,
-          `\`${fmt(k, f.mobile[k])}\``,
-        ]),
-      ),
+      opts.desktopOnly
+        ? table(
+          ['Token', 'Desktop'],
+          (['columns', 'gutter', 'margin', 'container'] as const).map((k) => [
+            `\`--grid-${k}\``,
+            `\`${fmt(k, f.desktop[k])}\``,
+          ]),
+        )
+        : table(
+          ['Token', 'Desktop', 'Tablet', 'Mobile'],
+          (['columns', 'gutter', 'margin', 'container'] as const).map((k) => [
+            `\`--grid-${k}\``,
+            `\`${fmt(k, f.desktop[k])}\``,
+            `\`${fmt(k, f.tablet[k])}\``,
+            `\`${fmt(k, f.mobile[k])}\``,
+          ]),
+        ),
     ].join('\n')
   }
   const simple = SIMPLE[section]!
+  const shadowValues = section === 'shadow' && oneAppearance(store, opts) === 'dark'
+    ? darkShadowMap(store.shadows)
+    : simple.get(store)
   const parts = [
     `## ${cap(section)}\n`,
     section === 'shadow'
-      ? table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``]))
+      ? table(['Token', 'Value'], Object.entries(shadowValues).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``]))
       : lengthTable(simple.prefix, simple.get(store)),
   ]
   const family = layoutFamilyOf(section)
@@ -798,7 +856,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
   // level. The Markdown listed the light ramp alone, so a reader (or an agent
   // told to "use these tokens verbatim") had no dark elevation to reach for.
   // Same gate as the primitive twins above: only where a dark theme exists.
-  if (section === 'shadow' && themeContextFromStore(store).hasDarkTheme) {
+  if (section === 'shadow' && !oneAppearance(store, opts) && themeContextFromStore(store).hasDarkTheme) {
     const dark = darkShadowMap(store.shadows)
     if (Object.keys(dark).length) {
       parts.push(
@@ -820,15 +878,17 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
     case 'css': {
       const lines: string[] = []
       ALL_SECTIONS.forEach((s, i) => {
-        const body = cssLines(s, store, cf)
+        const body = cssLines(s, store, cf, opts)
         if (!body.length) return
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      return `${wrapRoot(withDimensions(lines))}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing, { roles: store.radiusRoles, radius: store.radius, viewports: store.radiusRoleViewports }, { roles: store.spacingRoles, spacing: store.spacing })}`
+      const root = wrapRoot(withDimensions(lines))
+      if (opts.desktopOnly) return root
+      return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing, { roles: store.radiusRoles, radius: store.radius, viewports: store.radiusRoleViewports }, { roles: store.spacingRoles, spacing: store.spacing })}`
     }
     case 'tailwind':
-      return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))
+      return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf, opts))))
     case 'tokens':
       // The full Tokens export IS tokens.json — the exact payload the Figma
       // plugin imports (schemaVersion, themes, atoms and all).
@@ -851,8 +911,8 @@ export function buildSectionExport(
   format: ExportFormat,
   colorFormat: ColorFormat = 'hex',
   opts: SectionExportOptions = {},
+  store: Store = useDesignStore.getState(),
 ): string {
-  const store = useDesignStore.getState()
   if (section === 'all') return buildFullExport(store, format, colorFormat, opts)
   switch (format) {
     case 'css': return cssFor(section, store, colorFormat, opts)

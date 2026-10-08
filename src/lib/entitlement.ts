@@ -1,14 +1,14 @@
 // Entitlement: what this browser may sync right now.
 //
-// Phase 1 of design-plans/pricing-and-packaging.md: there is no licence yet,
-// only the launch promo. Until PROMO_ENDS_AT everyone gets Pro; after it the
-// Free limits apply. Pure and DOM-free so `api/entitlement.ts` and the client
-// share ONE definition of the cutoff — the server is the clock that counts
-// (a browser clock can be set to anything), this module is only the rule.
+// The free-for-everyone Pro period ended 7 Oct 2026 (Paris). After that the
+// Free limits apply unless Polar vouches for a licence key. Pure and DOM-free
+// so `api/entitlement.ts` and the client share ONE definition of the cutoff —
+// the server is the clock that counts (a browser clock can be set to anything),
+// this module is only the rule.
 
-/** Last second of October 31, Europe/Paris. DST ends Oct 25 2026, so the
- *  31st is CET (+01:00) — written as an offset, never a local-time string. */
-export const PROMO_ENDS_AT = '2026-10-31T23:59:59+01:00'
+/** Last second of October 7, Europe/Paris. Still CEST (+02:00); DST ends
+ *  Oct 25. Written as an offset, never a local-time string. */
+export const PROMO_ENDS_AT = '2026-10-07T23:59:59+02:00'
 
 /** Themes (each with its Light + Dark) a Figma sync may carry. */
 export const FREE_MAX_THEMES = 1
@@ -17,16 +17,18 @@ export const PRO_MAX_THEMES = 10
 /** Public pricing page (`src/components/public/PricingPage.tsx`). */
 export const PRICING_PATH = '/pricing'
 
-/** Escala Pro, one-time, in US dollars (the main audience is LATAM). Sales
- *  open Nov 1 at the launch price for 15 days, then the regular price.
- *  Change them here, never in the page.
+/** Escala Pro, one-time, in US dollars. The early ceiling is the cheaper of
+ *  the two on purpose: the first stretch of the product stays at a lower top
+ *  price, and the price rises later if the product grows. Change them here,
+ *  never in the page.
  *
- *  Presented as a price that RISES on a date, never as a reduction from $79:
- *  the product has never sold at $79, and EU/French price-reduction rules
+ *  Presented as a price that RISES on a date, never as a reduction from a
+ *  higher number that was never charged. EU/French price-reduction rules
  *  reference the lowest price actually charged in the previous 30 days. In
- *  Polar this is the product's base price, edited on Nov 16 — not a discount. */
-export const PRO_PRICE_USD = 79
-export const PRO_LAUNCH_PRICE_USD = 59
+ *  Polar this is the product's base price — already $45; edit it to $69 on
+ *  Nov 16. The web follows this module; Polar does not. */
+export const PRO_PRICE_USD = 69
+export const PRO_LAUNCH_PRICE_USD = 45
 /** Last second of the launch price, Europe/Paris (CET). */
 export const PRO_LAUNCH_ENDS_AT = '2026-11-15T23:59:59+01:00'
 

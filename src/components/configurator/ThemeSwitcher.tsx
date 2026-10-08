@@ -9,6 +9,8 @@ import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
+import { useNeedsProForAnotherTheme } from '../../lib/access'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
 import { DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar } from './ThemeLibraryRail'
@@ -112,6 +114,8 @@ export function ThemeSwitcher({
   const listed = myThemeKeys(themeOrder, themes)
   const canAdd = canAddMyTheme(listed.length)
   const canDuplicate = canAdd && listed.includes(previewTheme)
+  const needsPro = useNeedsProForAnotherTheme()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
@@ -179,13 +183,7 @@ export function ThemeSwitcher({
 
   const deleteTheme = (key: string) => {
     const other = listed.find((k) => k !== key)
-    if (previewTheme === key) {
-      if (other) onPreviewThemeChange(other)
-      else {
-        const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
-        if (core) previewPreset(core)
-      }
-    }
+    if (previewTheme === key && other) onPreviewThemeChange(other)
     store.removeTheme(key)
     resetRow()
   }
@@ -437,8 +435,12 @@ export function ThemeSwitcher({
                 <button
                   type="button"
                   role="menuitem"
-                  disabled={!canDuplicate}
-                  onClick={() => { setOpen(false); onDuplicateTheme() }}
+                  disabled={!canDuplicate && !needsPro}
+                  onClick={() => {
+                    setOpen(false)
+                    if (needsPro) { setUpgradeOpen(true); return }
+                    onDuplicateTheme()
+                  }}
                   className={`${ITEM} disabled:cursor-not-allowed disabled:opacity-40`}
                 >
                   {t('Duplicate current theme')}
@@ -457,6 +459,7 @@ export function ThemeSwitcher({
         </AnimatePresence>,
         document.body,
       )}
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }

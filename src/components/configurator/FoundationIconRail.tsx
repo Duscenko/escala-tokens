@@ -32,6 +32,27 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
 
 export const FOUNDATION_ICON_RAIL_WIDTH = 64
 
+/** The same foundation glyph the icon rail paints, at any size. */
+export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; className?: string }) {
+  const src = VARIABLE_ICON_SOURCES[id]
+  if (!src) return null
+  const maskSize = VARIABLE_ICON_MASK_SIZE[id] ?? '100%'
+  return (
+    <span
+      aria-hidden
+      className={className}
+      style={{
+        backgroundColor: 'currentColor',
+        maskImage: `url(${src})`,
+        WebkitMaskImage: `url(${src})`,
+        maskSize, WebkitMaskSize: maskSize,
+        maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
+        maskPosition: 'center', WebkitMaskPosition: 'center',
+      }}
+    />
+  )
+}
+
 /** One tile language for every button in the 64px workspace rail (foundation
  *  icons + the Themes library folder): glyph over a short label. Active = the
  *  platform accent as INK on a very subtle wash of itself — not a solid fill,

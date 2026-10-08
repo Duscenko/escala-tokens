@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -7,24 +7,35 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import { openStyleForEditing } from '../../lib/adoptPreset'
-import { goToLogin, useAccess } from '../../lib/access'
+import { COLLAGE_TILE_COUNT, randomBoardAppearance, randomTheme } from '../../lib/randomTheme'
+import { slotsFromAccent, mintTheme } from '../../lib/themeMint'
+import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
+import { loadGoogleFont } from '../../lib/fonts'
+import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
 import { loginHref, rememberReturn, takeLoginIntent } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
-import { resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
+import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
 import { SETUP_STEPS, finishThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
-import { InspectorPortal, useInInspector } from './WorkspaceInspector'
-import { ThemeForm } from './ThemePanel'
+import { InspectorPortal } from './WorkspaceInspector'
+import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
+import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
+import { SystemCollage } from '../preview/artefacts/SystemCollage'
+import { FoundationGlyph } from './FoundationIconRail'
+import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
+import { CreateStudioBar } from './ThemeSaveBar'
+import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
 // (Its section id stays `library`, so every old `?section=library` link and the
@@ -139,6 +150,7 @@ function ThemeCard({
   onShareGithub,
   onTogglePin,
   onDelete,
+  onDuplicate,
 }: {
   themeKey: string
   active: boolean
@@ -154,6 +166,7 @@ function ThemeCard({
   onShareGithub: () => void
   onTogglePin: () => void
   onDelete: () => void
+  onDuplicate: () => void
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
@@ -246,6 +259,7 @@ function ThemeCard({
           onTogglePin={() => { setMenuOpen(false); onTogglePin() }}
           onSyncFigma={() => { setMenuOpen(false); onSyncFigma() }}
           onShareGithub={() => { setMenuOpen(false); onShareGithub() }}
+          onDuplicate={() => { setMenuOpen(false); onDuplicate() }}
           onRename={() => { setMenuOpen(false); setDraft(name); setRenaming(true) }}
           onAskDelete={() => { setMenuOpen(false); setConfirmDelete(true) }}
         />
@@ -287,24 +301,30 @@ function ThemeCard({
   )
 }
 
-/** The last card of a theme grid: a cover-shaped door to create a theme. */
-function CreateThemeCard({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
-  const { t } = useI18n()
-  const count = myThemeKeys(useDesignStore.getState().themeOrder, useDesignStore.getState().themes).length
+/** A start door on the theme grid — same height as a cover, content at the top. */
+function StartDoor({
+  title, hint, titleClass, disabled, disabledTitle, onClick, mark,
+}: {
+  title: string
+  hint?: string
+  titleClass: string
+  disabled: boolean
+  disabledTitle?: string
+  onClick: () => void
+  mark: ReactNode
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={disabled ? t(MY_THEME_FULL_ERROR, { count }) : undefined}
-      className="group flex min-h-[15rem] min-w-0 flex-col items-center justify-center gap-3 rounded-xl border-[1.5px] border-dashed border-fg/20 p-6 text-center transition-colors hover:border-fg/40 hover:bg-elevated/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      title={disabled ? disabledTitle : undefined}
+      className="group flex min-h-[15rem] min-w-0 flex-col items-start gap-8 rounded-xl border border-line bg-elevated/25 p-5 text-left transition-colors hover:border-line-strong hover:bg-elevated/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-line disabled:hover:bg-elevated/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line-strong text-fg-muted transition-colors group-hover:border-fg/40 group-hover:text-fg">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-      </span>
+      <span className="text-fg-muted transition-colors group-hover:text-fg group-disabled:text-fg-muted">{mark}</span>
       <span className="flex flex-col gap-1">
-        <span className="text-body font-semibold text-fg">{t('Create theme')}</span>
-        <span className="text-caption text-fg-faint">{t('A new theme in this folder.')}</span>
+        <span className={`text-strong font-semibold ${titleClass}`}>{title}</span>
+        {hint ? <span className="text-caption text-fg-faint">{hint}</span> : null}
       </span>
     </button>
   )
@@ -505,12 +525,14 @@ function SaveLibraryButton() {
   )
 }
 
-/** Stays visible while the Home canvas scrolls — where you are on Home. */
+/** Pins to the top of the Home card — same band as Theme preview's canvas
+ *  header. Solid `--app` fill, full width; the file list scrolls under it. */
 function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: () => void }) {
   const { t } = useI18n()
   return (
     <div
-      className="sticky top-0 z-20 -mx-8 flex min-h-[52px] w-full flex-shrink-0 items-center justify-start gap-2 border-b border-line bg-app/95 px-8 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-app/85"
+      className="flex flex-shrink-0 items-center gap-2 border-b border-line bg-app px-8"
+      style={{ height: INSPECTOR_TABS_H }}
       aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
     >
       {trail ? (
@@ -526,7 +548,7 @@ function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: ()
           <h1 className="min-w-0 truncate text-left text-heading font-semibold text-fg">{trail}</h1>
         </>
       ) : (
-        <h1 className="w-full text-left text-heading font-semibold text-fg">{t('Home')}</h1>
+        <h1 className="min-w-0 truncate text-left text-heading font-semibold text-fg">{t('Home')}</h1>
       )}
     </div>
   )
@@ -632,6 +654,115 @@ function NavRow({ on, icon, label, trailing, onClick, title }: {
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {trailing}
     </button>
+  )
+}
+
+const CREATE_STEPS = [
+  { key: 'color', label: 'Color' },
+  { key: 'typography', label: 'Font' },
+  { key: 'radius', label: 'Radius' },
+  { key: 'sizes', label: 'Spacing' },
+  { key: 'shadow', label: 'Shadow' },
+  { key: 'icons', label: 'Icons' },
+] as const
+type CreateStep = (typeof CREATE_STEPS)[number]['key']
+
+function CreateStepNav({ step, onPick }: { step: CreateStep; onPick: (next: CreateStep) => void }) {
+  const { t } = useI18n()
+  return (
+    <nav aria-label={t('Foundations')} className="flex flex-shrink-0 flex-col gap-0.5 border-b border-line px-3 pb-2 pt-2">
+      <div className="flex h-6 items-center pl-2.5">
+        <span className="text-micro font-semibold text-fg-faint">{t('Foundations')}</span>
+      </div>
+      {CREATE_STEPS.map((item) => (
+        <NavRow
+          key={item.key}
+          on={step === item.key}
+          icon={<FoundationGlyph id={item.key} />}
+          label={t(item.label)}
+          onClick={() => onPick(item.key)}
+        />
+      ))}
+    </nav>
+  )
+}
+
+/** A theme key that is never persisted. The colour step paints the board from it. */
+const CREATE_DRAFT_KEY = '__create-draft'
+
+function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, draft: CreateDraft) {
+  const { slots, kind, tint, shift, foundations, semantics } = draft
+  const light = backgroundFromBase(slots.gray, 'light', tint)
+  const dark = backgroundFromBase(slots.gray, 'dark', tint)
+  const alg = store.colorAlgorithm
+  const gen = (hex: string, neutral = false) =>
+    generateColorScale(hex, alg, shift, light, 'light', neutral ? tint : undefined)
+  const genDark = (hex: string, neutral = false) =>
+    neutral
+      ? generateDarkColorScale(hex, alg, shift, dark, tint)
+      : generateFamilyDarkScale(hex, alg, shift, dark)
+  return {
+    ...store,
+    neutralTint: tint,
+    pageBackground: light,
+    darkBackground: dark,
+    primaryColor: slots.brand,
+    grayBaseColor: slots.gray,
+    errorColor: slots.error,
+    warningColor: slots.warning,
+    successColor: slots.success,
+    infoColor: slots.info,
+    primaryScale: gen(slots.brand),
+    primaryDarkScale: genDark(slots.brand),
+    grayLightScale: gen(slots.gray, true),
+    grayDarkScale: genDark(slots.gray, true),
+    errorScale: gen(slots.error),
+    errorDarkScale: genDark(slots.error),
+    warningScale: gen(slots.warning),
+    warningDarkScale: genDark(slots.warning),
+    successScale: gen(slots.success),
+    successDarkScale: genDark(slots.success),
+    infoScale: gen(slots.info),
+    infoDarkScale: genDark(slots.info),
+    themeKinds: { ...store.themeKinds, [CREATE_DRAFT_KEY]: kind },
+    themeFoundations: foundations
+      ? { ...store.themeFoundations, [CREATE_DRAFT_KEY]: foundations }
+      : store.themeFoundations,
+    architectureOverrides: semantics
+      ? resetThemeSemantics(store.architectureOverrides, semantics, CREATE_DRAFT_KEY)
+      : store.architectureOverrides,
+  }
+}
+
+function CreateBoard({
+  store, themeKey, appearance,
+}: {
+  store: ReturnType<typeof useDesignStore.getState>
+  themeKey: string
+  appearance: 'light' | 'dark'
+}) {
+  const tokensByAppearance = useMemo(() => ({
+    light: resolvePreviewTokens(store, themeKey, 'light', 'desktop'),
+    dark: resolvePreviewTokens(store, themeKey, 'dark', 'desktop'),
+  }), [store, themeKey])
+  const stage = tokensByAppearance[appearance]
+  const tiles = useMemo(
+    () => Array.from({ length: COLLAGE_TILE_COUNT }, () => appearance),
+    [appearance],
+  )
+  const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
+  return (
+    <div className={`flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <SystemCollage
+          layout="board"
+          frameTokens={stage}
+          tokensByAppearance={tokensByAppearance}
+          tileAppearances={tiles}
+          projectName={store.projectName}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -918,7 +1049,7 @@ export default function ThemeLibraryPage({
   onGetCode,
   onSyncFigma,
   onShareGithub,
-  onCreateTheme,
+  onOpenRandom,
   onStartTheme,
   createPending = false,
   onCreateHandled,
@@ -927,6 +1058,7 @@ export default function ThemeLibraryPage({
   onNewSystem,
   onImport,
   enterFolderTick = 0,
+  onEditFoundation,
 }: {
   previewTheme: string
   /** Themes the live Figma sync publishes (File & modes). */
@@ -941,6 +1073,8 @@ export default function ThemeLibraryPage({
   onShareGithub: (key: string) => void
   /** Opens the theme sheet on its create view (owned by the shell). */
   onCreateTheme: () => void
+  /** A minted random theme: open it on Theme preview, Color edition (Random lives there). */
+  onOpenRandom: (key: string) => void
   /** Continue on the first step: open the new theme on the Theme board to set
    *  the rest. Without it, creating only selects the theme. */
   onStartTheme?: (key: string) => void
@@ -957,40 +1091,72 @@ export default function ThemeLibraryPage({
   onImport: () => void
   /** After a new folder is created, open that folder so a file can be added inside it. */
   enterFolderTick?: number
+  /** "Go to advanced edition" leaves the studio for that foundation's table. */
+  onEditFoundation?: (foundationKey: string) => void
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
   const { gated } = useAccess()
+  const needsPro = useNeedsProForAnotherTheme()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const store = useDesignStore()
   const chromeAppearance = useTheme() === 'dark' ? 'dark' : 'light'
-  const inInspector = useInInspector()
   const [creating, setCreating] = useState(false)
-  // In the Generator the form opens in the inspector; anywhere without one
-  // it falls back to the shell's Create (the Customize sheet).
-  // Creating a theme is a focused task: the rest of the shell (banner, top
-  // bar, Home rail) steps back too, tagged `data-shell-chrome` where it is built.
+  const [identityHost, setIdentityHost] = useState<HTMLDivElement | null>(null)
+  const [createDraft, setCreateDraft] = useState<CreateDraft | null>(null)
+  const onDraftChange = useCallback((draft: CreateDraft) => setCreateDraft(draft), [])
+  const [createStep, setCreateStep] = useState<CreateStep>('color')
+  const [createdKey, setCreatedKey] = useState<string | null>(null)
+  const pendingStep = useRef<CreateStep | null>(null)
+  const submitHandle = useRef<(() => void) | null>(null)
+  const skipHandle = useRef<(() => void) | null>(null)
   useEffect(() => {
-    if (!creating) return
-    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-shell-chrome]'))
-    els.forEach((el) => {
-      el.inert = true
-      el.style.opacity = '0.3'
-      el.style.pointerEvents = 'none'
-      el.style.transition = 'opacity 200ms cubic-bezier(0.22, 1, 0.36, 1)'
-    })
-    return () => els.forEach((el) => {
-      el.inert = false
-      el.style.opacity = ''
-      el.style.pointerEvents = ''
-      el.style.transition = ''
-    })
+    if (creating) return
+    setCreateStep('color')
+    setCreatedKey(null)
+    setCreateDraft(null)
+    pendingStep.current = null
   }, [creating])
   useEffect(() => {
-    if (!createPending || !inInspector) return
-    setCreating(true)
+    if (!createPending) return
     onCreateHandled?.()
-  }, [createPending, inInspector, onCreateHandled])
-  const openCreate = () => (inInspector ? setCreating(true) : onCreateTheme())
+    if (needsPro) { setUpgradeOpen(true); return }
+    setCreating(true)
+  }, [createPending, onCreateHandled, needsPro])
+  const openCreate = () => {
+    if (needsPro) { setUpgradeOpen(true); return }
+    setCreating(true)
+  }
+  const openRandom = () => {
+    if (needsPro) { setUpgradeOpen(true); return }
+    const s = useDesignStore.getState()
+    const recipe = randomTheme({ accent: s.primaryColor })
+    const slots = slotsFromAccent(recipe.accent, recipe.neutralTint)
+    const res = mintTheme(
+      slots,
+      randomBoardAppearance(),
+      '',
+      null,
+      recipe.neutralTint,
+      {
+        light: backgroundFromBase(slots.gray, 'light', recipe.neutralTint),
+        dark: backgroundFromBase(slots.gray, 'dark', recipe.neutralTint),
+      },
+    )
+    if ('error' in res) {
+      setStyleError(t(res.error, { count: MY_THEME_HARD_CAP }))
+      return
+    }
+    const next = useDesignStore.getState()
+    next.setThemeFoundations(res.key, recipe.foundations)
+    useDesignStore.setState({
+      architectureOverrides: resetThemeSemantics(next.architectureOverrides, recipe.semantics, res.key),
+    })
+    loadGoogleFont(recipe.bodyFont)
+    loadGoogleFont(recipe.headingFont)
+    setStyleError(null)
+    onOpenRandom(res.key)
+  }
   const { themeOrder, themes, removeTheme, themeUpdatedAt, pinned, togglePinned } = store
   const currentId = activeLibraryId(store)
   const mine = myThemeKeys(themeOrder, themes)
@@ -1027,8 +1193,17 @@ export default function ThemeLibraryPage({
     mine.forEach((key) => removeTheme(key))
     setConfirmDeleteAll(false)
   }
+  const duplicateTheme = (key: string) => {
+    if (needsPro) { setUpgradeOpen(true); return }
+    const id = store.duplicateTheme(key)
+    if (!id) { setStyleError(t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP })); return }
+    setStyleError(null)
+    onSelectTheme(id)
+  }
   const useStyle = (preset: ThemeStylePreset) => {
     if (gated) { goToLogin(); return }
+    const owned = Object.values(store.themeOrigin ?? {}).includes(preset.id)
+    if (needsPro && !owned) { setUpgradeOpen(true); return }
     const result = openStyleForEditing(preset, 'light')
     if ('error' in result) { setStyleError(t(result.error, { count: MY_THEME_HARD_CAP })); return }
     setStyleError(null)
@@ -1053,9 +1228,40 @@ export default function ThemeLibraryPage({
           onShareGithub={() => onShareGithub(key)}
           onTogglePin={() => togglePinned(`theme:${key}`)}
           onDelete={() => { finishThemeSetup(key); deleteTheme(key) }}
+          onDuplicate={() => duplicateTheme(key)}
         />
       ))}
-      {withCreate && <CreateThemeCard disabled={!canAddMyTheme(mine.length)} onClick={openCreate} />}
+      {withCreate && (
+        <>
+          <StartDoor
+            title={t('Blank')}
+            hint={t('Six quick steps')}
+            titleClass="text-fg"
+            disabled={!canAddMyTheme(mine.length)}
+            disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
+            onClick={openCreate}
+            mark={(
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            )}
+          />
+          <StartDoor
+            title={t('Random')}
+            titleClass="text-[#e946ff]"
+            disabled={!canAddMyTheme(mine.length)}
+            disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
+            onClick={openRandom}
+            mark={(
+              <span className="text-[#e946ff]">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 2.8 14.9 8.9l6.6.6-5 4.3 1.5 6.5L12 17.2 6 20.3l1.5-6.5-5-4.3 6.6-.6L12 2.8z" />
+                </svg>
+              </span>
+            )}
+          />
+        </>
+      )}
     </div>
   )
   const themeMatches = (key: string) => matches(query, themeDisplayName(key, store.themeLabels))
@@ -1377,24 +1583,123 @@ export default function ThemeLibraryPage({
     )
   }
 
+  const onColorCommitted = (key: string) => {
+    setCreatedKey(key)
+    const jump = pendingStep.current
+    pendingStep.current = null
+    setCreateStep(jump && jump !== 'color' ? jump : 'typography')
+  }
+  const pickCreateStep = (next: CreateStep) => {
+    if (next === createStep) return
+    if (createStep === 'color') {
+      pendingStep.current = next
+      submitHandle.current?.()
+      return
+    }
+    setCreateStep(next)
+  }
+  const advanceCreateStep = () => {
+    const index = CREATE_STEPS.findIndex((item) => item.key === createStep)
+    const next = CREATE_STEPS[index + 1]
+    if (next) setCreateStep(next.key)
+    else if (createdKey) {
+      setCreating(false)
+      onOpenPreview(createdKey)
+    }
+  }
+  const finishCreate = (key: string) => {
+    setCreating(false)
+    onOpenPreview(key)
+  }
+  const skipCreate = () => {
+    if (createStep === 'color' || !createdKey) {
+      skipHandle.current?.()
+      return
+    }
+    finishCreate(createdKey)
+  }
+  const createIndex = CREATE_STEPS.findIndex((item) => item.key === createStep)
+  const createFont = createdKey
+    ? resolveThemeFoundations(store, createdKey).typography.fontFamily
+    : ''
+  const continueLabel = createStep === 'color'
+    ? t('Continue')
+    : createStep === 'icons'
+      ? t('Finish')
+      : createStep === 'typography' && createFont
+        ? t('Use {name}', { name: createFont })
+        : t('Use default')
+  const openAdvanced = (foundation: string) => {
+    if (!createdKey) return
+    onSelectTheme(createdKey)
+    setCreating(false)
+    onEditFoundation?.(foundation)
+  }
+
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-col">
       {creating ? (
-        // Create opens IN the inspector, beside the grid it adds to — the same
-        // form the Customize sheet and the theme editor use. ✕ / Cancel step
-        // back to the Home menu; creating selects the new theme.
-        <InspectorPortal>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <ThemeForm
-              key="home-create"
-              firstStep
-              appearance={chromeAppearance}
-              onClose={() => setCreating(false)}
-              onCreated={(key) => { setCreating(false); (onStartTheme ?? onSelectTheme)(key) }}
-            />
-          </div>
-        </InspectorPortal>
+        <>
+          <InspectorPortal>
+            <div className="flex h-full min-h-0 flex-col">
+              <div ref={setIdentityHost} className="flex-shrink-0 border-b border-line">
+                {!(createStep === 'color' || !createdKey) && createdKey && (
+                  <MintedThemeIdentity themeKey={createdKey} onClose={() => setCreating(false)} />
+                )}
+              </div>
+              <CreateStepNav step={createStep} onPick={pickCreateStep} />
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {createStep === 'color' || !createdKey ? (
+                  <ThemeForm
+                    key={createdKey ?? 'new'}
+                    firstStep
+                    holdAfterCreate
+                    hideFooter
+                    pinIdentity
+                    identityHost={identityHost}
+                    editKey={createdKey}
+                    submitHandle={submitHandle}
+                    skipHandle={skipHandle}
+                    appearance={chromeAppearance}
+                    onClose={() => setCreating(false)}
+                    onCreated={onColorCommitted}
+                    onFinishEarly={finishCreate}
+                    onDraftChange={onDraftChange}
+                  />
+                ) : (
+                  <ThemeQuickSettingsRail
+                    embed
+                    key={`${createdKey}-${createStep}`}
+                    previewTheme={createdKey}
+                    previewAppearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
+                    activePanel={createStep}
+                    onOpenAdvanced={openAdvanced}
+                  />
+                )}
+              </div>
+              <CreateStudioBar
+                stepIndex={Math.max(0, createIndex)}
+                total={CREATE_STEPS.length}
+                continueLabel={continueLabel}
+                last={createStep === 'icons' && !!createdKey}
+                onSkip={skipCreate}
+                onContinue={() => {
+                  if (createStep === 'color' || !createdKey) submitHandle.current?.()
+                  else advanceCreateStep()
+                }}
+              />
+            </div>
+          </InspectorPortal>
+          <CreateBoard
+            store={createdKey ? store : (createDraft ? scratchPreviewStore(store, createDraft) : store)}
+            themeKey={createdKey ?? CREATE_DRAFT_KEY}
+            appearance={createdKey
+              ? (store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light')
+              : (createDraft?.kind ?? 'dark')}
+          />
+        </>
       ) : (
+      <>
       <HomeNav
         section={viewing}
         onSection={setSection}
@@ -1404,17 +1709,17 @@ export default function ThemeLibraryPage({
         onNewSystem={onNewSystem}
         onImport={onImport}
       />
-      )}
-      {/* While a theme is being created the page steps back: dimmed and
-          inert, so the form in the inspector is the only thing to act on. */}
-      <div
-        inert={creating}
-        aria-hidden={creating || undefined}
-        className={`mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-0 transition-opacity duration-200 ease-[var(--ease-out-quint)] ${creating ? 'pointer-events-none select-none opacity-30' : ''}`}
-      >
+      <div className="flex min-h-0 flex-1 flex-col">
         <HomeStickyBar trail={homeTrail} onGoHome={() => setSection({ kind: 'recents' })} />
-        {body}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6">
+            {body}
+          </div>
+        </div>
       </div>
+      </>
+      )}
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }

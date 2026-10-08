@@ -90,16 +90,17 @@ function scalesForSlot(
   s: ReturnType<typeof useDesignStore.getState>,
   neutralTint: NeutralTint = s.neutralTint,
   pages: MintPages = { light: s.pageBackground, dark: s.darkBackground },
+  rampShift: number = s.contrastShift,
 ) {
   if (slot === 'gray') {
     return {
-      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light', neutralTint),
-      darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, neutralTint),
+      scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light, 'light', neutralTint),
+      darkScale: generateDarkColorScale(hex, s.colorAlgorithm, rampShift, pages.dark, neutralTint),
     }
   }
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
-    darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+    scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light),
+    darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, rampShift, pages.dark),
   }
 }
 
@@ -110,6 +111,8 @@ export function mintTheme(
   editKey: string | null,
   neutralTint?: NeutralTint,
   pages?: MintPages,
+  /** Local Fine-tune shift. Does not rewrite the open system's `contrastShift`. */
+  rampShift?: number,
 ): { key: string; renamedFrom?: string } | { error: string } {
   const s = useDesignStore.getState()
   if (!editKey && !canAddMyTheme(myThemeKeys(s.themeOrder, s.themes).length)) {
@@ -157,7 +160,7 @@ export function mintTheme(
         key: familyKey,
         label: titleCaseKey(familyKey),
         base: slotHex,
-        ...scalesForSlot(slot, slotHex, s, neutralTint, pages),
+        ...scalesForSlot(slot, slotHex, s, neutralTint, pages, rampShift),
       })
       refs[slot] = familyKey
     }

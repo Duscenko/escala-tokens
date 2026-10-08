@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LICENCE_STAMP, isServable, stampLicence, stripLicence } from '../licenceGate'
 
-const PROMO = new Date('2026-10-20T12:00:00Z')
+const PROMO = new Date('2026-10-05T12:00:00Z')
 const AFTER = new Date('2026-11-05T12:00:00Z')
 const payload = { colors: { primitive: { 'accent-9': '#9522e9' } } }
 

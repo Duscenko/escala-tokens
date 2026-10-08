@@ -22,7 +22,10 @@ import { AppearanceGlyph } from './colorControls'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
+import { useFreeTier } from '../../lib/access'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { LicenceModal } from './LicenceModal'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
@@ -38,6 +41,8 @@ interface FigmaSyncViewProps {
   onRequestSync: () => void
   /** Theme the canvas is previewing — selecting a sync row also previews it. */
   previewTheme: string
+  /** The appearance on screen. Free keeps this one; the other stays visible and locked. */
+  previewAppearance?: ThemeAppearance
   onSelectTheme: (key: string) => void
   /** Figma file name and `/api/tokens?project=` slug (`slugify` of this).
    *  Defaults to the first theme. Does not rename the editor project. */
@@ -225,7 +230,7 @@ function ProRequiredBanner({ onOpenLicence }: { onOpenLicence: () => void }) {
 // /api/tokens.
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload,
-  publishState, publishError, onRequestSync, previewTheme, onSelectTheme,
+  publishState, publishError, onRequestSync, previewTheme, previewAppearance = 'light', onSelectTheme,
   fileName, onFileNameChange, syncModes, onSyncModesChange, viewports, onViewportsChange,
 }: FigmaSyncViewProps) {
   const store = useDesignStore()
@@ -254,7 +259,33 @@ export default function FigmaSyncView({
   const pluginSlug = syncProjectId(fileName)
 
   const { t, locale } = useI18n()
+  const free = useFreeTier()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [licenceOpen, setLicenceOpen] = useState(false)
+  // A selection saved while Pro was on (or during the beta) must not keep
+  // shipping the other appearance or a phone viewport once the account is Free.
+  useEffect(() => {
+    if (!free) return
+    const nextModes: FigmaSyncMode[] = []
+    const seen = new Set<string>()
+    for (const mode of syncModes) {
+      if (mode.appearance === previewAppearance) {
+        const id = `${mode.theme}::${mode.appearance}`
+        if (seen.has(id)) continue
+        seen.add(id)
+        nextModes.push(mode)
+        continue
+      }
+      const id = `${mode.theme}::${previewAppearance}`
+      if (seen.has(id) || syncModes.some((other) => other.theme === mode.theme && other.appearance === previewAppearance)) continue
+      seen.add(id)
+      nextModes.push({ theme: mode.theme, appearance: previewAppearance })
+    }
+    const modesSame = nextModes.length === syncModes.length
+      && nextModes.every((mode, index) => mode.theme === syncModes[index]?.theme && mode.appearance === syncModes[index]?.appearance)
+    if (!modesSame) onSyncModesChange(nextModes)
+    if (viewports.length !== 1 || viewports[0] !== 'desktop') onViewportsChange(['desktop'])
+  }, [free, previewAppearance, syncModes, viewports, onSyncModesChange, onViewportsChange])
   const entitlement = useEntitlement()
   const fileHintId = useId()
   const fileNameRef = useRef<HTMLInputElement>(null)
@@ -385,28 +416,32 @@ export default function FigmaSyncView({
                       <div className="flex flex-shrink-0 items-center gap-1">
                         {(['light', 'dark'] as const).map((appearance) => {
                           const on = appearance === 'light' ? lightOn : darkOn
-                          const blocked = !on && atCap
+                          const locked = free && appearance !== previewAppearance
+                          const blocked = !locked && !on && atCap
                           return (
                             <button
                               key={appearance}
                               type="button"
                               aria-pressed={on}
                               disabled={blocked}
-                              title={blocked ? t('Maximum {max} modes', { max: String(FIGMA_SYNC_MODE_CAP) }) : t(appearance === 'light' ? 'Light' : 'Dark')}
+                              title={locked ? t('Upgrade to Pro') : blocked ? t('Maximum {max} modes', { max: String(FIGMA_SYNC_MODE_CAP) }) : t(appearance === 'light' ? 'Light' : 'Dark')}
                               aria-label={`${name} ${appearance === 'light' ? t('Light') : t('Dark')}`}
                               onClick={() => {
+                                if (locked) { setUpgradeOpen(true); return }
                                 onSyncModesChange(toggleFigmaSyncAppearance(syncModes, key, appearance))
                                 onSelectTheme(key)
                               }}
                               className={`inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption transition-colors ${SYNC_FOCUS} ${
-                                on
+                                locked
+                                  ? 'text-fg-faint'
+                                  : on
                                   ? 'bg-fg/12 text-fg'
                                   : blocked
                                     ? 'cursor-not-allowed text-fg-faint opacity-40'
                                     : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
                               }`}
                             >
-                              <AppearanceGlyph kind={appearance} size={12} />
+                              {locked ? <LockGlyph /> : <AppearanceGlyph kind={appearance} size={12} />}
                               <span className="hidden min-[520px]:inline">{t(appearance === 'light' ? 'Light' : 'Dark')}</span>
                             </button>
                           )
@@ -431,20 +466,26 @@ export default function FigmaSyncView({
               <div role="group" aria-label={t('Viewports to sync')} className="flex flex-wrap gap-1.5">
                 {FIGMA_VIEWPORTS.map((viewport: FigmaViewport) => {
                   const on = viewports.includes(viewport)
-                  const last = on && viewports.length === 1
+                  const locked = free && viewport !== 'desktop'
+                  const last = !locked && on && viewports.length === 1
                   return (
                     <button
                       key={viewport}
                       type="button"
                       aria-pressed={on}
                       disabled={last}
-                      title={last ? t('At least one viewport ships') : undefined}
-                      onClick={() => onViewportsChange(toggleFigmaViewport(viewports, viewport))}
+                      title={locked ? t('Upgrade to Pro') : last ? t('At least one viewport ships') : undefined}
+                      onClick={() => {
+                        if (locked) { setUpgradeOpen(true); return }
+                        onViewportsChange(toggleFigmaViewport(viewports, viewport))
+                      }}
                       className={`inline-flex items-center gap-2 border border-line px-3 ${SYNC_CONTROL} text-body transition-colors ${SYNC_FOCUS} ${
-                        on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
+                        locked
+                          ? 'text-fg-faint'
+                          : on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
                       } ${last ? 'cursor-not-allowed' : ''}`}
                     >
-                      <CheckMark selected={on} />
+                      {locked ? <LockGlyph /> : <CheckMark selected={on} />}
                       {t(FIGMA_VIEWPORT_LABEL[viewport])}
                     </button>
                   )
@@ -580,6 +621,16 @@ export default function FigmaSyncView({
         )}
       </div>
       {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </motion.div>
+  )
+}
+
+function LockGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden className="flex-shrink-0">
+      <rect x="3.25" y="7" width="9.5" height="6.25" rx="1.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.25 7V5.25a2.75 2.75 0 0 1 5.5 0V7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
   )
 }

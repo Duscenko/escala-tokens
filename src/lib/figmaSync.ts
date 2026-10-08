@@ -327,7 +327,15 @@ export function useAutoFigmaSync(
     const schedule = () => {
       // Empty modes = My themes is empty. Do not republish scaffold light/dark.
       if (Array.isArray(opts.modes) && opts.modes.length === 0) return
-      if (licenceBlocked) return
+      if (licenceBlocked) {
+        // The first 402 already happened. Turning auto-sync back on must not
+        // publish again; it stops and says Pro is required.
+        if (useDesignStore.getState().autoSyncFigma) {
+          useDesignStore.getState().setAutoSyncFigma(false)
+          onStateChange?.('error', 'licence')
+        }
+        return
+      }
       if (activeTheme) setActiveThemeHint(activeTheme)
       const payload = generateTokenJSON(undefined, {
         ...(publishOpts.theme ? { theme: publishOpts.theme } : {}),

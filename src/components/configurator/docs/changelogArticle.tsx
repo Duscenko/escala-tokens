@@ -35,6 +35,10 @@ export function changelogToc(t: Translate = (source) => source): TocEntry[] {
  *  describes the way the About page's role count once did. */
 const ENTRIES: { date: string; text: string; vars?: Record<string, string | number> }[] = [
   {
+    date: '2026-10-08',
+    text: 'The free Pro period ended. Free keeps one theme, one appearance and Desktop. Escala Pro is $45 until November 15, then $69.',
+  },
+  {
     date: '2026-10-04',
     text: "Themes library is now its own page — a card per theme painted with its own tokens, plus your saved systems — and Get code shows only the selected theme's code. Sync with Figma became a workspace tab, Get code an icon beside Search. Each theme can be opened, renamed (also by double-click) or deleted from the switcher, and the platform's own accent is always Escala's violet, never the previewed theme's.",
   },

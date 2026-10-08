@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
-import { resolveThemePalette, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
+import { resolveThemePalette, themeDisplayName, FAMILY_SLOTS, SLOT_DISPLAY_LABEL, type FamilySlot } from '../../lib/themeSources'
 import { mintTheme, slotsFromAccent, type MintPages } from '../../lib/themeMint'
-import { THEME_STYLE_PRESETS, presetStates } from '../../lib/themePresets'
+import { THEME_STYLE_PRESETS, presetStates, type ThemeStyleSemantics } from '../../lib/themePresets'
+import type { ThemeFoundationOverride } from '../../lib/themeFoundations'
 import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
 import {
@@ -16,13 +17,17 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { useI18n } from '../../lib/i18n'
 import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import SpectrumSlider from '../ui/SpectrumSlider'
+import { AccentAxisSlider, ContrastSlider, TintSlider, formatShift } from './ThemeQuickSettingsRail'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
 import {
-  SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
+  SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover, STATE_PRESETS,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
+import { CreateStudioBar } from './ThemeSaveBar'
+
+const STATE_ROLES = ['error', 'warning', 'success', 'info'] as const
 
 // The six slots a theme references, in the order they read on screen: the two
 // that define the theme's character first, then the four intents.
@@ -96,9 +101,58 @@ function SlotRow({
   )
 }
 
+function StateChip({
+  role, hex, open, onToggle, onClose, onChange, appearance,
+}: {
+  role: (typeof STATE_ROLES)[number]
+  hex: string
+  open: boolean
+  onToggle: () => void
+  onClose: () => void
+  onChange: (hex: string) => void
+  appearance: 'light' | 'dark'
+}) {
+  const { t } = useI18n()
+  const ref = useRef<HTMLDivElement>(null)
+  const label = SLOT_DISPLAY_LABEL[role]
+  return (
+    <div ref={ref} className="flex min-w-0 flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={`${t(label)} — ${hex}`}
+        className="block h-10 w-10 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+        style={{ background: hex }}
+      />
+      <span className="max-w-full truncate text-micro text-fg">{t(label)}</span>
+      <ColorPickerPopover
+        open={open}
+        onClose={onClose}
+        anchor={ref}
+        label={label}
+        value={hex}
+        onChange={onChange}
+        palette={STATE_PRESETS[role]}
+        appearance={appearance}
+      />
+    </div>
+  )
+}
+
 /** Rendered width of the docked panel. See the dock geometry note on
  *  `ThemePanel` for why this is a fixed number and not measured. */
 const PANEL_W = 360
+
+export type CreateDraft = {
+  slots: Record<FamilySlot, string>
+  kind: 'light' | 'dark'
+  tint: NeutralTint
+  shift: number
+  foundations?: ThemeFoundationOverride
+  semantics?: ThemeStyleSemantics
+}
 
 type ThemeFormProps = {
   onClose: () => void
@@ -114,6 +168,22 @@ type ThemeFormProps = {
    *  (the full picker and the six slots behind "More colour options"), and the
    *  confirm reads Continue — the rest is set on the Theme board. */
   firstStep?: boolean
+  /** Stay mounted after a successful create or save. The studio advances
+   *  itself; the docked editor still closes. */
+  holdAfterCreate?: boolean
+  /** Skip setup: mint (if needed) then leave the remaining steps at defaults. */
+  skipHandle?: MutableRefObject<(() => void) | null>
+  /** Studio owns the Step n of 6 bar; hide this form's own Cancel/Continue. */
+  hideFooter?: boolean
+  /** Fired after a skip-mint so the studio can open the board. */
+  onFinishEarly?: (key: string) => void
+  /** Live colour draft, so the centre board can paint the theme before it is minted. */
+  onDraftChange?: (draft: CreateDraft) => void
+  /** The step list can commit Colour without a click on Continue. */
+  submitHandle?: MutableRefObject<(() => void) | null>
+  /** Studio: the name and Light/Dark sit in this host, above the step list. */
+  pinIdentity?: boolean
+  identityHost?: HTMLElement | null
 }
 
 /**
@@ -198,6 +268,103 @@ function StylePicker({ value, onChange }: { value: string; onChange: (id: string
   )
 }
 
+export function ThemeIdentityBar({
+  name, onName, kind, onKind, pages, nameLocked = false, onSubmit, onClose, autoFocus = false, padded = false,
+}: {
+  name: string
+  onName: (value: string) => void
+  kind: 'light' | 'dark'
+  onKind: (kind: 'light' | 'dark') => void
+  pages: { light: string; dark: string }
+  nameLocked?: boolean
+  onSubmit?: () => void
+  onClose?: () => void
+  autoFocus?: boolean
+  /** Studio host: the row is the panel's top bar, so it carries its own inset. */
+  padded?: boolean
+}) {
+  const { t } = useI18n()
+  return (
+    <div className={`flex items-center gap-1.5 ${padded ? 'px-3 py-2' : ''}`}>
+      <input
+        type="text"
+        value={name}
+        disabled={nameLocked}
+        onChange={(e) => onName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') onSubmit?.() }}
+        placeholder={t('Name')}
+        aria-label={t('Theme name')}
+        title={nameLocked ? t('Locked — reserved export key') : undefined}
+        autoFocus={autoFocus}
+        spellCheck={false}
+        className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 py-1.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint focus:border-fg disabled:cursor-not-allowed disabled:opacity-60"
+      />
+      <div className="flex flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme mode')}>
+        {(['light', 'dark'] as const).map((k) => {
+          const on = kind === k
+          const bg = k === 'dark' ? pages.dark : pages.light
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => onKind(k)}
+              aria-pressed={on}
+              className={`px-2 py-1.5 text-caption font-medium capitalize transition-colors ${
+                on ? '' : 'bg-surface text-fg-muted hover:text-fg'
+              }`}
+              style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
+            >
+              {k}
+            </button>
+          )
+        })}
+      </div>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t('Close')}
+          title={t('Close')}
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M10 2 2 10M2 2l8 8" /></svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Name and appearance of a theme that already exists — the studio's later steps. */
+export function MintedThemeIdentity({ themeKey, onClose }: { themeKey: string; onClose: () => void }) {
+  const store = useDesignStore()
+  const label = themeDisplayName(themeKey, store.themeLabels)
+  const [name, setName] = useState(label)
+  useEffect(() => { setName(label) }, [label])
+  const kind: 'light' | 'dark' = store.themeKinds[themeKey] === 'dark' ? 'dark' : 'light'
+  const pal = resolveThemePalette(store.themeSources[themeKey], kind, store)
+  const gray = (pal?.gray?.[BASE_TONE] as string | undefined) ?? store.grayBaseColor
+  const pages = {
+    light: backgroundFromBase(gray, 'light', store.neutralTint),
+    dark: backgroundFromBase(gray, 'dark', store.neutralTint),
+  }
+  const sources = store.themeSources[themeKey]
+  return (
+    <ThemeIdentityBar
+      name={name}
+      onName={(value) => {
+        setName(value)
+        if (value.trim()) store.setThemeLabel(themeKey, value)
+      }}
+      kind={kind}
+      onKind={(next) => { if (sources) store.updateTheme(themeKey, next, sources) }}
+      pages={pages}
+      nameLocked={themeKey === 'light' || themeKey === 'dark'}
+      onSubmit={() => { if (name.trim()) store.setThemeLabel(themeKey, name) }}
+      onClose={onClose}
+    />
+  )
+}
+
 export function ThemeForm({
   onClose,
   editKey = null,
@@ -205,6 +372,14 @@ export function ThemeForm({
   onCreated,
   onRenamed,
   firstStep = false,
+  holdAfterCreate = false,
+  submitHandle,
+  skipHandle,
+  hideFooter = false,
+  onFinishEarly,
+  onDraftChange,
+  pinIdentity = false,
+  identityHost = null,
 }: ThemeFormProps) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -214,6 +389,7 @@ export function ThemeForm({
     colorAlgorithm, contrastShift,
   } = store
   const isEdit = !!editKey
+  const studioFooter = firstStep && (!isEdit || holdAfterCreate)
   // light/dark are the export's reserved keys (semantic / semanticDark) — their
   // palette and mode stay editable, but the key itself must not move.
   const nameLocked = editKey === 'light' || editKey === 'dark'
@@ -257,21 +433,38 @@ export function ThemeForm({
   // style fills the colours here and — once created — every edition of the
   // setup, which then walks its six steps from there.
   const [styleId, setStyleId] = useState('')
+  // Neutral tint for THIS theme. It rides with the mint — it does not rewrite
+  // the system already on screen. A style seeds its own level.
+  const [tint, setTint] = useState<NeutralTint>(neutralTint)
+  const [shift, setShift] = useState(contrastShift)
+  const [fineOpen, setFineOpen] = useState(false)
+  const [openState, setOpenState] = useState<(typeof STATE_ROLES)[number] | null>(null)
   const startPreset = styleId ? THEME_STYLE_PRESETS.find((p) => p.id === styleId) : undefined
   function pickStyle(id: string) {
     setErr(null)
     setStyleId(id)
     const preset = id ? THEME_STYLE_PRESETS.find((p) => p.id === id) : undefined
     if (!preset) {
-      setSlots(slotsFromAccent(primaryColor, neutralTint))
+      const level = useDesignStore.getState().neutralTint
+      setTint(level)
+      setShift(useDesignStore.getState().contrastShift)
+      setSlots(slotsFromAccent(primaryColor, level))
       setDerived(new Set(FAMILY_SLOTS.filter((s) => s !== 'brand')))
       return
     }
+    setTint(preset.neutralTint)
     const next = slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset))
     if (preset.neutral) next.gray = preset.neutral
     setSlots(next)
     setKind(preset.preferredAppearance)
     setDerived(new Set())
+  }
+  function setTintLevel(next: NeutralTint) {
+    setTint(next)
+    setSlots((prev) => {
+      if (!derived.has('gray')) return prev
+      return { ...prev, gray: slotsFromAccent(prev.brand, next).gray }
+    })
   }
   // First step: the compact accent chooser until the user asks for more.
   const [moreOpen, setMoreOpen] = useState(!firstStep)
@@ -283,16 +476,16 @@ export function ThemeForm({
   // every family, so using the global purple page here made newly minted
   // green/orange/blue themes keep a purple first step forever.
   const themePages = useMemo(() => ({
-    light: backgroundFromBase(slots.gray, 'light', neutralTint),
-    dark: backgroundFromBase(slots.gray, 'dark', neutralTint),
-  }), [slots.gray, neutralTint])
+    light: backgroundFromBase(slots.gray, 'light', tint),
+    dark: backgroundFromBase(slots.gray, 'dark', tint),
+  }), [slots.gray, tint])
 
   function setAccent(hex: string) {
     setErr(null)
     setSlots((prev) => {
       const next = { ...prev, brand: hex }
       if (derived.size) {
-        const harmony = slotsFromAccent(hex, neutralTint)
+        const harmony = slotsFromAccent(hex, tint)
         derived.forEach((slot) => { next[slot] = harmony[slot] })
       }
       return next
@@ -319,13 +512,13 @@ export function ThemeForm({
     try {
       if (dark) {
         return isNeutral
-          ? generateDarkColorScale(hex, colorAlgorithm, contrastShift, themePages.dark, neutralTint)
-          : generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, themePages.dark)
+          ? generateDarkColorScale(hex, colorAlgorithm, shift, themePages.dark, tint)
+          : generateFamilyDarkScale(hex, colorAlgorithm, shift, themePages.dark)
       }
-      return generateColorScale(hex, colorAlgorithm, contrastShift, themePages.light, 'light', isNeutral ? neutralTint : undefined)
+      return generateColorScale(hex, colorAlgorithm, shift, themePages.light, 'light', isNeutral ? tint : undefined)
     } catch { return {} }
   }
-  const deps = [dark, colorAlgorithm, contrastShift, themePages.light, themePages.dark, neutralTint]
+  const deps = [dark, colorAlgorithm, shift, themePages.light, themePages.dark, tint]
   /* eslint-disable react-hooks/exhaustive-deps */
   const scales: Record<FamilySlot, Record<number, string>> = {
     brand:   useMemo(() => rampFor(slots.brand, false), [slots.brand, ...deps]),
@@ -337,26 +530,29 @@ export function ThemeForm({
   }
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  function handleSubmit() {
+  function handleSubmit(then: 'next' | 'done' = 'next') {
     setErr(null)
     if (startPreset && !isEdit) {
       // Untouched colour → the style exactly as the web adopts it. A moved
       // accent → minted from these colours, with the style's foundations on top.
       const untouched = slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
+        && tint === startPreset.neutralTint
+        && shift === contrastShift
       let res: { key: string } | { error: string }
       if (untouched) {
         res = adoptPreset(startPreset, kind)
       } else {
-        res = mintTheme(slots, kind, name || startPreset.label, null, startPreset.neutralTint, themePages)
+        res = mintTheme(slots, kind, name || startPreset.label, null, tint, themePages, shift)
         if (!('error' in res)) useDesignStore.getState().setThemeFoundations(res.key, startPreset.foundations)
       }
       if ('error' in res) { setErr(t(res.error, { count: MY_THEME_HARD_CAP })); return }
       if (name.trim()) useDesignStore.getState().setThemeLabel(res.key, name.trim())
-      onCreated?.(res.key)
-      onClose()
+      if (then === 'done') onFinishEarly?.(res.key)
+      else onCreated?.(res.key)
+      if (!holdAfterCreate) onClose()
       return
     }
-    const result = mintTheme(slots, kind, name, editKey, neutralTint, themePages)
+    const result = mintTheme(slots, kind, name, editKey, tint, themePages, shift)
     if ('error' in result) {
       setErr(t(result.error, { count: MY_THEME_HARD_CAP }))
       return
@@ -365,9 +561,23 @@ export function ThemeForm({
     // capitals included ("Test Guide").
     if (!isEdit && name.trim()) useDesignStore.getState().setThemeLabel(result.key, name.trim())
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
-    else if (!isEdit) onCreated?.(result.key)
-    onClose()
+    if (then === 'done') onFinishEarly?.(result.key)
+    else if (!isEdit || holdAfterCreate) onCreated?.(result.key)
+    if (!holdAfterCreate) onClose()
   }
+  if (submitHandle) submitHandle.current = () => handleSubmit('next')
+  if (skipHandle) skipHandle.current = () => handleSubmit('done')
+  useEffect(() => {
+    if (!firstStep || !onDraftChange) return
+    onDraftChange({
+      slots,
+      kind,
+      tint,
+      shift,
+      foundations: startPreset?.foundations,
+      semantics: startPreset?.semantics,
+    })
+  }, [firstStep, onDraftChange, slots, kind, tint, shift, startPreset])
 
   const page = dark ? themePages.dark : themePages.light
 
@@ -377,10 +587,10 @@ export function ThemeForm({
           accent, so the panel says WHICH theme it is before you read a word.
           Create used to have no header at all, which is why the two panels
           read as unrelated surfaces. */}
-      <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
+      {!(firstStep && hideFooter) && <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
         <span className={SWATCH} style={{ backgroundColor: slots.brand }} />
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">
-          {isEdit ? 'Edit theme' : 'New theme'}
+          {isEdit && !holdAfterCreate ? 'Edit theme' : 'New theme'}
         </h2>
         <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
           {slots.brand.toUpperCase()}
@@ -393,7 +603,7 @@ export function ThemeForm({
         >
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8" /></svg>
         </button>
-      </header>
+      </header>}
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4 flex flex-col gap-3">
         {/* Identity — name + mode on one row. `flex-shrink-0` on every child
@@ -409,47 +619,31 @@ export function ThemeForm({
             {startPreset && <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">{startPreset.detail}</p>}
           </div>
         )}
-        <div className="flex-shrink-0 flex items-center gap-1.5">
-          <input
-            type="text"
-            value={name}
-            disabled={nameLocked}
-            onChange={(e) => { setName(e.target.value); setErr(null) }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-            placeholder="Name"
-            aria-label="Theme name"
-            title={nameLocked ? 'Locked — reserved export key' : undefined}
-            autoFocus={!nameLocked}
-            spellCheck={false}
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-line bg-surface text-body text-fg outline-none placeholder:text-fg-faint focus:border-fg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          />
-          {/* The ACTIVE side is painted in that mode's real page colour, ink
-              solved against it — so the selection is visible regardless of
-              which theme the app CHROME happens to be in. */}
-          <div className="flex flex-shrink-0 rounded-lg border border-line overflow-hidden" role="group" aria-label="Theme mode">
-            {(['light', 'dark'] as const).map((k) => {
-              const on = kind === k
-              const bg = k === 'dark' ? themePages.dark : themePages.light
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setKind(k)}
-                  aria-pressed={on}
-                  className={`px-2 py-1.5 text-caption font-medium capitalize transition-colors ${
-                    on ? '' : 'bg-surface text-fg-muted hover:text-fg'
-                  }`}
-                  style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
-                >
-                  {k}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-        {nameLocked && (
-          <p className="text-mini text-fg-faint -mt-1.5">Name locked — reserved export key.</p>
-        )}
+        {(() => {
+          const identity = (
+            <ThemeIdentityBar
+              name={name}
+              onName={(value) => { setName(value); setErr(null) }}
+              kind={kind}
+              onKind={setKind}
+              pages={themePages}
+              nameLocked={nameLocked}
+              onSubmit={() => handleSubmit()}
+              onClose={pinIdentity ? onClose : undefined}
+              autoFocus={!nameLocked}
+              padded={pinIdentity}
+            />
+          )
+          if (pinIdentity) return identityHost ? createPortal(identity, identityHost) : null
+          return (
+            <>
+              <div className="flex-shrink-0">{identity}</div>
+              {nameLocked && (
+                <p className="text-mini text-fg-faint -mt-1.5">Name locked — reserved export key.</p>
+              )}
+            </>
+          )
+        })()}
 
         {/* Accent — the one required decision. `.light`/`.dark` are the app's
             own token sets (index.css); `.light` exists precisely so a subtree
@@ -475,6 +669,13 @@ export function ThemeForm({
             // neighbours of the current hue. The full picker is one click away.
             <div className="flex flex-col gap-3">
               <SpectrumSlider value={slots.brand} ariaLabel="Accent hue" onCommit={setAccent} />
+              <AccentAxisSlider
+                axis="saturation"
+                label="Saturation"
+                value={slots.brand}
+                onPreview={setAccent}
+                onCommit={setAccent}
+              />
               <div className="flex gap-1.5" role="group" aria-label="Curated accents">
                 {curated.map((c) => {
                   const on = c.hex.toLowerCase() === slots.brand.toLowerCase()
@@ -514,6 +715,102 @@ export function ThemeForm({
           />
           )}
         </section>
+
+        {firstStep && (
+          <section
+            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
+            style={{ backgroundColor: page }}
+          >
+            <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Neutral')}</p>
+            <TintSlider hueHex={slots.gray} value={tint} onChange={setTintLevel} />
+          </section>
+        )}
+
+        {firstStep && (
+          <section
+            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
+            style={{ backgroundColor: page }}
+          >
+            <button
+              type="button"
+              onClick={() => setFineOpen((v) => !v)}
+              aria-expanded={fineOpen}
+              className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
+                <span className="block truncate text-mini text-fg-faint">{t('Brightness · Ramp contrast')}</span>
+              </span>
+              <span
+                className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
+                  fineOpen
+                    ? 'border border-line text-fg-muted group-hover:text-fg'
+                    : 'bg-elevated text-fg ring-1 ring-line-strong'
+                }`}
+              >
+                {fineOpen ? t('Hide') : t('Show')}
+              </span>
+            </button>
+            {fineOpen && (
+              <div className="mt-2.5 flex flex-col gap-3 border-t border-line pt-2.5">
+                <AccentAxisSlider
+                  axis="lightness"
+                  label={t('Brightness')}
+                  value={slots.brand}
+                  onPreview={setAccent}
+                  onCommit={setAccent}
+                />
+                <div>
+                  <p className="mb-1 text-micro font-medium uppercase tracking-wide text-fg-faint">{t('Ramp contrast')}</p>
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <ContrastSlider hueHex={slots.gray} value={shift} onChange={setShift} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShift(0)}
+                      disabled={shift === 0}
+                      title={t('Reset contrast shift')}
+                      aria-label={`${t('Contrast shift')} ${shift.toFixed(2)} — ${t('Reset contrast shift')}`}
+                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                    >
+                      {formatShift(shift)}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-mini text-fg-faint">{t('How far apart the twelve tones of every ramp sit — not the accent itself.')}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {firstStep && (
+          <section
+            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
+            style={{ backgroundColor: page }}
+          >
+            <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('States')}</p>
+            <div className="grid grid-cols-4 gap-2">
+              {STATE_ROLES.map((role) => (
+                <StateChip
+                  key={role}
+                  role={role}
+                  hex={slots[role]}
+                  open={openState === role}
+                  onToggle={() => setOpenState((cur) => (cur === role ? null : role))}
+                  onClose={() => setOpenState(null)}
+                  onChange={(hex) => setSlot(role, hex)}
+                  appearance={kind}
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-mini text-fg-faint">
+              {derived.has('error') && derived.has('warning') && derived.has('success') && derived.has('info')
+                ? t('From your accent, like the neutral. Click one to set your own.')
+                : t('Click a colour to change it.')}
+            </p>
+          </section>
+        )}
 
         {/* The six slots — disclosed, not always-on. Five of them follow the
             accent until touched, so the common case needs nothing here; this
@@ -569,33 +866,40 @@ export function ThemeForm({
         </div>
         )}
 
-        {firstStep && (
-          <p className="flex-shrink-0 text-caption text-fg-faint">
-            Next, set font, radius, spacing, shadow and icons on the Theme board — each one repaints it live.
-          </p>
-        )}
-
         {err ? <p className="text-caption text-status-danger">{err}</p> : null}
       </div>
 
-      {/* Pinned footer — the commit stays reachable without scrolling past the
-          picker, whether or not the slots section is open. */}
-      <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-3 border-t border-line bg-app">
+      {!hideFooter && studioFooter && (
+        <CreateStudioBar
+          stepIndex={0}
+          total={6}
+          continueLabel={t('Continue')}
+          last={false}
+          onSkip={() => {
+            if (isEdit && editKey && holdAfterCreate) { onFinishEarly?.(editKey); return }
+            handleSubmit('done')
+          }}
+          onContinue={() => handleSubmit('next')}
+        />
+      )}
+      {!hideFooter && !studioFooter && (
+      <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-line bg-app px-4 py-3">
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+          className="rounded-lg border border-line px-3 py-2 text-xs font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
         >
-          Cancel
+          {t('Cancel')}
         </button>
         <button
           type="button"
-          onClick={handleSubmit}
-          className="px-4 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-opacity"
+          onClick={() => handleSubmit('next')}
+          className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          {isEdit ? 'Save changes' : firstStep ? 'Continue' : 'Create theme'}
+          {isEdit ? 'Save changes' : 'Create theme'}
         </button>
       </div>
+      )}
     </div>
   )
 }

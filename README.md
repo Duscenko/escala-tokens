@@ -92,9 +92,9 @@ This configurator, the CLI and the MCP server are MIT: you can fork, self-host a
 
 **Free:** configure a system, export `tokens.json` / `variables.css` / W3C JSON, connect GitHub, and load **one theme** (Light + Dark, Desktop) into Figma by importing the exported `tokens.json` in the plugin.
 
-**Paid (one-time licence, not live yet):** up to 10 themes and every platform mode (Desktop · Tablet · Mobile) in Figma, automatic hosted sync, the live MCP server, plus updates and support. Hosted sync and MCP are enforced on the server (`api/tokens.ts`, `api/mcp.ts`), so there is nothing to patch out of the plugin. If you self-host, you set your own limits.
+**Paid (one-time licence):** up to 10 themes and every platform mode (Desktop · Tablet · Mobile) in Figma, automatic hosted sync, the live MCP server, plus updates and support. Hosted sync and MCP are enforced on the server (`api/tokens.ts`, `api/mcp.ts`), so there is nothing to patch out of the plugin. If you self-host, you set your own limits.
 
-Everything is free for everyone until October 31, 2026. From November 1, hosted sync and the live MCP need a licence. Status and details: [design-plans/pricing-and-packaging.md](design-plans/pricing-and-packaging.md).
+The free-for-everyone Pro period ended on October 7, 2026. Escala Pro is $45 until November 15, 2026, then $69. Hosted sync and the live MCP need a licence. Status and details: [design-plans/pricing-and-packaging.md](design-plans/pricing-and-packaging.md).
 
 Why pay when the code is free: hosted sync and MCP cost money on every request, and a licence keeps your Figma file and your agents in step with the web without manual exports.
 

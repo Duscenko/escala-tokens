@@ -178,16 +178,15 @@ en el lado duro**: sync alojado y MCP en vivo (Escala Pro) y la Library (archivo
 
 | Fechas | Escala Pro |
 |---|---|
-| hasta el 31-oct | gratis para todos (promo) |
-| 1–15 nov | **$59** (precio de lanzamiento) |
-| desde el 16-nov | **$79** |
+| hasta el 7-oct 23:59 (París) | gratis para todos (promo) — **cerrada el 8-oct** |
+| 8-oct – 15-nov | **$45** (techo barato de los primeros meses) |
+| desde el 16-nov | **$69** |
 
 - **USD**, pago único, 12 meses de sync/MCP/actualizaciones incluidos.
-- **En Polar es el PRECIO BASE, no un descuento**: $59 hasta el 15-nov, se edita a $79 el
-  16-nov. Escala Pro nunca se ha vendido a $79, y las reglas de precios de la UE/Francia
-  toman como referencia de una rebaja el precio más bajo cobrado en los 30 días anteriores;
-  un descuento "$79 → $59" sería una rebaja sobre un precio nunca cobrado. Se comunica como
-  un precio que SUBE en una fecha, nunca tachado.
+- **Actualizado el 2026-10-08.** El techo de los primeros meses es más barato a propósito
+  ($45, luego $69). Si el producto crece, el precio sube; no es una rebaja sobre $79.
+- **En Polar es el PRECIO BASE, no un descuento**: $45 hasta el 15-nov (ya puesto en Polar),
+  se edita a $69 el 16-nov. Se comunica como un precio que SUBE en una fecha, nunca tachado.
 - **Sin Black Friday para Pro este año**: caería 12 días después del lanzamiento (castiga a
   quien compró) y su precio de referencia legal sería $59.
 - **Cupón LATAM desde el 16-nov**: 25 % sobre $79 = $59, repartido en comunidades. Nada de
@@ -333,7 +332,7 @@ Recomendación:
 | **31-oct 23:59 (París)** | Termina la promo. Es automático: desde ese segundo `POST`/`GET /api/tokens` y el MCP exigen licencia | automático |
 | 1-nov | Se abren las ventas a $59: el botón "Get Pro" de `/pricing` pasa solo al checkout de Polar. Mensaje de apertura | tú |
 | 13-nov | Mensaje: "quedan 2 días a $59" | tú |
-| **16-nov** | **Cambiar el precio del producto en Polar de `59.00` a `79.00`.** La web cambia sola, Polar NO. Si se olvida, la web dice $79 y el checkout cobra $59: un desajuste de precio anunciado/cobrado | **tú, manual** |
+| **16-nov** | **Cambiar el precio del producto en Polar de `45.00` a `69.00`.** La web cambia sola, Polar NO. Si se olvida, la web dice $69 y el checkout cobra $45: un desajuste de precio anunciado/cobrado | **tú, manual** |
 | 16-nov | Empieza el cupón LATAM (25 % sobre $79 = $59), solo repartido en comunidades | tú |
 | **Sep-2027** | **Crear el producto "Escala Pro · renovación"** en Polar. Las primeras claves (compradas el 1-nov-2026) caducan el 1-nov-2027 y no hay forma de renovar | tú |
 | Oct-2027 | Aviso a los compradores de que su año termina (la app ya muestra "Active until…") | tú |

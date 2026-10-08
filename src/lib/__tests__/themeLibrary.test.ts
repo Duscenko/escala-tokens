@@ -96,3 +96,20 @@ describe('duplicateTheme', () => {
     expect(useDesignStore.getState().duplicateTheme('missing')).toBeNull()
   })
 })
+
+describe('removeTheme last own theme', () => {
+  beforeEach(() => {
+    useDesignStore.setState(makeDesignDefaults())
+  })
+
+  it('leaves My themes empty — scaffolding stays', () => {
+    const s = useDesignStore.getState()
+    s.addTheme('only', 'light', DEFAULT_THEME_SOURCES)
+    expect(myThemeKeys(useDesignStore.getState().themeOrder, useDesignStore.getState().themes)).toEqual(['only'])
+    useDesignStore.getState().removeTheme('only')
+    const next = useDesignStore.getState()
+    expect(myThemeKeys(next.themeOrder, next.themes)).toEqual([])
+    expect(next.themes.light).toBeTruthy()
+    expect(next.themes.dark).toBeTruthy()
+  })
+})

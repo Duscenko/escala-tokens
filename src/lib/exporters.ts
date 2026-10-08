@@ -5,7 +5,7 @@ import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
-import { toneLabel, withAlpha, darkShadow, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { toneLabel, withAlpha, darkShadow, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
@@ -38,7 +38,16 @@ function paddingCssEntries(
   ])
 }
 
-export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
+export type ShippedFileOptions = {
+  /** Drop tablet and mobile overrides. Desktop values stay on `:root`. */
+  desktopOnly?: boolean
+}
+
+export function buildCSS(
+  store: ReturnType<typeof useDesignStore.getState>,
+  opts?: ShippedFileOptions,
+): string {
+  const desktopOnly = opts?.desktopOnly === true
   const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   // First theme in order that actually has tokens. Whole-system exports stay
   // light-first; Get code remaps a dark-created theme so `:root` is dark.
@@ -136,8 +145,10 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
-  lines.push('\n  /* Text roles — alias the primitive scale. Desktop, plus `-tablet` and `-mobile`. */')
-  typeRoleCssVars(typography.roles).forEach((l) => lines.push(`  ${l}`))
+  lines.push(desktopOnly
+    ? '\n  /* Text roles — alias the primitive scale. Desktop. */'
+    : '\n  /* Text roles — alias the primitive scale. Desktop, plus `-tablet` and `-mobile`. */')
+  typeRoleCssVars(typography.roles, desktopOnly ? ['desktop'] : undefined).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
@@ -174,7 +185,8 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Shadow */')
-  Object.entries(shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
+  const rootShadows = desktopOnly && rootKind === 'dark' ? darkShadowMap(shadows) : shadows
+  Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
   lines.push('\n  /* Breakpoints — primitive min-widths */')
   const bps = extractBreakpoints(grid)
@@ -183,12 +195,15 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push(`  --grid-${breakpointKey(step)}: var(--breakpoint-${step});`)
   })
 
-  lines.push('\n  /* Grid frame — desktop aliases. Tablet / mobile override below. */')
+  lines.push(desktopOnly
+    ? '\n  /* Grid frame — desktop. */'
+    : '\n  /* Grid frame — desktop aliases. Tablet / mobile override below. */')
   gridFrameRootCss(gridFrame, { spacing, breakpoints: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
-    gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g)};`))
+    const gradientAppearance = desktopOnly && rootKind === 'dark' ? 'dark' : 'light'
+    gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`))
   }
 
   lines.push('}')
@@ -212,7 +227,10 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   // The same two viewport blocks carry the grid frame AND the radius roles
   // stepping down (RADIUS_RESPONSIVE): one media query per viewport.
-  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`)
+  // Desktop-only (the Free cut) keeps the :root values and skips both blocks.
+  if (!desktopOnly) {
+    lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`)
+  }
   // Themes with their own foundations step their OWN radius roles down too.
   const themedRadius: { selector: string; roles?: Record<string, string>; radius: Record<string, string>; viewports?: RadiusRoleViewports; spacingRoles?: Record<string, string>; spacing: Record<string, string> }[] = []
 
@@ -299,7 +317,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push('}')
   })
 
-  if (themedRadius.length) {
+  if (!desktopOnly && themedRadius.length) {
     const bps = extractBreakpoints(grid)
     for (const [vp, max] of [['tablet', breakpointTabletMax(breakpointRoles, bps)], ['mobile', breakpointMobileMax(breakpointRoles, bps)]] as const) {
       const blocks = themedRadius
@@ -328,7 +346,12 @@ function readmeLengthTable(prefix: string, map: Record<string, string>): string 
   return ['| Token | Value | Primitive |', '|-------|-------|-----------|', ...rows].join('\n')
 }
 
-export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
+export function buildMarkdown(
+  store: ReturnType<typeof useDesignStore.getState>,
+  opts?: ShippedFileOptions & { appearance?: 'light' | 'dark' },
+): string {
+  const desktopOnly = opts?.desktopOnly === true
+  const appearance = opts?.appearance
   const {
     projectName, projectDescription, primaryColor, primaryScale, grayLightScale, errorScale, warningScale,
     successScale, infoScale, customColors, themes, themeOrder, typography, spacing, padding, radius,
@@ -339,8 +362,8 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
     const g = gradients.find((x) => x.id === id)
     return g ? gradientSlug(g) : null
   }
-  const semanticTokens = themes.light ?? {}
   const themeCols = themeOrder.filter((t) => themes[t])
+  const semanticTokens = themes.light ?? themes[themeCols[0]] ?? {}
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
   // Same 6 built-in families `buildCSS` ships (Accent · Neutral · Error ·
   // Warning · Success · Info) — this README used to print ONLY Accent plus
@@ -356,6 +379,29 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const ai = getIconAiSource(iconAiSource)
   const iconsBlock = iconAiContext(iconAiSource)
+  const roleFmt = (a: { family: string; size: string; weight: string }) => `${a.size} · ${a.weight} · ${a.family}`
+  const mergedRoles = mergeTypeRoles(typography.roles)
+  const textRolesTable = desktopOnly
+    ? `| Role | Desktop |\n|------|---------|\n${TYPE_ROLES.map((r) => `| \`text-${r.key}\` | \`${roleFmt(mergedRoles[r.key].desktop)}\` |`).join('\n')}`
+    : `| Role | Desktop | Tablet | Mobile |\n|------|---------|--------|--------|\n${TYPE_ROLES.map((r) => {
+      const m = mergedRoles[r.key]
+      return `| \`text-${r.key}\` | \`${roleFmt(m.desktop)}\` | \`${roleFmt(m.tablet)}\` | \`${roleFmt(m.mobile)}\` |`
+    }).join('\n')}`
+  const responsiveRadiusTable = desktopOnly
+    ? `| Token | Desktop |\n|---|---|\n${RADIUS_RESPONSIVE_STEPS.map((step) => `| \`${step}\` | \`${RADIUS_RESPONSIVE[step].desktop}\` · ${radius[RADIUS_RESPONSIVE[step].desktop] ?? '—'} |`).join('\n')}`
+    : `| Token | Desktop | Tablet | Mobile |\n|---|---|---|---|\n${RADIUS_RESPONSIVE_STEPS.map((step) => `| \`${step}\` | ${(['desktop', 'tablet', 'mobile'] as const).map((vp) => { const to = RADIUS_RESPONSIVE[step][vp]; return `\`${to}\` · ${radius[to] ?? '—'}` }).join(' | ')} |`).join('\n')}`
+  const shadowTable = appearance === 'dark'
+    ? `| Token | Dark |\n|-------|------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}`
+    : appearance === 'light'
+      ? `| Token | Light |\n|-------|-------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | \`${v}\` |`).join('\n')}`
+      : `| Token | Light | Dark |\n|-------|-------|------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | \`${v}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}`
+  const frame = mergeGridFrame(gridFrame)
+  const bps = extractBreakpoints(grid)
+  const frameFmt = (k: 'columns' | 'gutter' | 'margin' | 'container', step: string) =>
+    k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : layoutValueCss('breakpoint', step, bps)) : layoutValueCss('spacing', step, spacing)
+  const frameTable = desktopOnly
+    ? `| Token | Desktop |\n|-------|---------|\n${(['columns', 'gutter', 'margin', 'container'] as const).map((k) => `| \`--grid-${k}\` | \`${frameFmt(k, frame.desktop[k])}\` |`).join('\n')}`
+    : `| Token | Desktop | Mobile |\n|-------|---------|--------|\n${(['columns', 'gutter', 'margin', 'container'] as const).map((k) => `| \`--grid-${k}\` | \`${frameFmt(k, frame.desktop[k])}\` | \`${frameFmt(k, frame.mobile[k])}\` |`).join('\n')}`
 
   return `# ${projectName} — Design System
 
@@ -421,13 +467,7 @@ ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`
 
 ### Text roles
 
-| Role | Desktop | Tablet | Mobile |
-|------|---------|--------|--------|
-${TYPE_ROLES.map((r) => {
-  const m = mergeTypeRoles(typography.roles)[r.key]
-  const fmt = (a: { family: string; size: string; weight: string }) => `${a.size} · ${a.weight} · ${a.family}`
-  return `| \`text-${r.key}\` | \`${fmt(m.desktop)}\` | \`${fmt(m.tablet)}\` | \`${fmt(m.mobile)}\` |`
-}).join('\n')}
+${textRolesTable}
 
 ---
 
@@ -469,21 +509,21 @@ ${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`${layoutValueCss('
 
 ### Responsive radius
 
-Corner rounding steps down on smaller screens: every responsive token points at a static step, one smaller on Tablet and one (two from 3xl up) smaller on Mobile. The radius roles follow it in the Tablet and Mobile media queries; in Figma, Dimension Semantics carries a value per viewport mode.
+${desktopOnly ? 'Desktop. The roles follow the static step.' : 'Corner rounding steps down on smaller screens: every responsive token points at a static step, one smaller on Tablet and one (two from 3xl up) smaller on Mobile. The radius roles follow it in the Tablet and Mobile media queries; in Figma, Dimension Semantics carries a value per viewport mode.'}
 
-| Token | Desktop | Tablet | Mobile |
-|---|---|---|---|
-${RADIUS_RESPONSIVE_STEPS.map((step) => `| \`${step}\` | ${(['desktop', 'tablet', 'mobile'] as const).map((vp) => { const to = RADIUS_RESPONSIVE[step][vp]; return `\`${to}\` · ${radius[to] ?? '—'}` }).join(' | ')} |`).join('\n')}
+${responsiveRadiusTable}
 
 ---
 
 ## Shadow
 
-Elevation ships a dark twin: the ramp's near-black shadow colour is the dark page itself, so the light value renders as nothing there. The dark column is applied automatically under \`.dark\` — same \`--shadow-*\` name, no theme check needed.
+${appearance === 'dark'
+  ? 'Dark elevation. The light ramp is the page itself, so these are the values that read on it.'
+  : appearance === 'light'
+    ? 'Light elevation.'
+    : 'Elevation ships a dark twin: the ramp\'s near-black shadow colour is the dark page itself, so the light value renders as nothing there. The dark column is applied automatically under `.dark` — same `--shadow-*` name, no theme check needed.'}
 
-| Token | Light | Dark |
-|-------|-------|------|
-${Object.entries(shadows).map(([k,v])=>`| \`--shadow-${k}\` | \`${v}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}
+${shadowTable}
 
 ---
 
@@ -502,15 +542,7 @@ ${readmeLengthTable('breakpoint', Object.fromEntries(BREAKPOINT_STEPS.map((s) =>
 
 ### Frame
 
-| Token | Desktop | Mobile |
-|-------|---------|--------|
-${['columns', 'gutter', 'margin', 'container'].map((k) => {
-  const f = mergeGridFrame(gridFrame)
-  const d = f.desktop[k as 'columns']
-  const m = f.mobile[k as 'columns']
-  const fmt = (step: string) => k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : layoutValueCss('breakpoint', step, extractBreakpoints(grid))) : layoutValueCss('spacing', step, spacing)
-  return `| \`--grid-${k}\` | \`${fmt(d)}\` | \`${fmt(m)}\` |`
-}).join('\n')}
+${frameTable}
 
 ---
 

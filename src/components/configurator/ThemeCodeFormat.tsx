@@ -15,7 +15,9 @@ import {
 import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
-import { goToLogin, useAccess } from '../../lib/access'
+import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
+import { shippedBundle } from '../../lib/freeExport'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { LoginWall } from '../ui/LoginWall'
 import { showToast } from '../ui/Toast'
 import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
@@ -370,6 +372,7 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
 
 export default function ThemeCodeFormat({
   previewTheme,
+  previewAppearance,
   scope = '',
   onScopeChange,
   onPreviewThemeChange,
@@ -379,6 +382,8 @@ export default function ThemeCodeFormat({
   onEditTheme,
 }: {
   previewTheme: string
+  /** Free keeps this appearance. Pro still ships both. */
+  previewAppearance?: ThemeAppearance
   scope?: CodeThemeScope
   onScopeChange: (scope: CodeThemeScope) => void
   onPreviewThemeChange: (theme: string) => void
@@ -397,6 +402,7 @@ export default function ThemeCodeFormat({
   const [format, setFormat] = useState<Format>('css')
   const [expanded, setExpanded] = useState(false)
   const { gated } = useAccess()
+  const free = useFreeTier()
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const effectiveScope = resolveCodeTheme(listed, scope, previewTheme)
@@ -407,19 +413,30 @@ export default function ThemeCodeFormat({
   ), [store, effectiveScope])
   const artifacts = useMemo(() => {
     if (!source) return { css: '', markdown: '', tokensMd: '', skillMd: '', facts: null }
+    const asStore = source as ReturnType<typeof useDesignStore.getState>
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
       projectFallback: source.projectName,
       iconKey: source.iconAiSource,
     })
+    const appearance = previewAppearance ?? source.themeKinds[effectiveScope ?? ''] ?? 'light'
+    const cut = free
+      ? shippedBundle(asStore, {
+          themes: [appearance],
+          modes: [{ theme: appearance, appearance }],
+          viewports: ['desktop'],
+          gridStyles: ['xl-desktop'],
+        }, true)
+      : null
+    const css = cut?.css ?? buildCSS(asStore)
     return {
-      css: buildCSS(source as ReturnType<typeof useDesignStore.getState>),
-      markdown: buildMarkdown(source as ReturnType<typeof useDesignStore.getState>),
+      css,
+      markdown: cut?.markdown ?? buildMarkdown(asStore),
       tokensMd: files.find((file) => file.path === 'references/tokens.md')?.text ?? '',
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
-      facts: exportFacts(json, buildCSS(source as ReturnType<typeof useDesignStore.getState>)),
+      facts: exportFacts(cut ? JSON.parse(cut.tokens) as typeof json : json, css),
     }
-  }, [source])
+  }, [source, free, previewAppearance, effectiveScope])
   const content = format === 'css' ? artifacts.css : format === 'markdown' ? artifacts.markdown : artifacts.tokensMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)

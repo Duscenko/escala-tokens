@@ -12,7 +12,6 @@ import { applyDocumentHead } from '../lib/documentHead'
 import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
-import { adoptPreset } from '../lib/adoptPreset'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
@@ -30,7 +29,6 @@ import { PreviewPlatformProvider } from '../components/configurator/PlatformRail
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
-import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
@@ -85,7 +83,8 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-import { goToLogin, useAccess } from '../lib/access'
+import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../lib/access'
+import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
 import { hasStoredSession } from '../lib/auth'
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall } from '../components/ui/LoginWall'
@@ -571,6 +570,8 @@ export default function Configurator() {
   // Anonymous wall (design-plans/login-funnel.md): Variables / Code / Docs show
   // a part, Export and Save ask for a free account first.
   const access = useAccess()
+  const needsAnotherThemePro = useNeedsProForAnotherTheme()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
   const { markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = store
@@ -642,6 +643,7 @@ export default function Configurator() {
   // Home reads as "open the create form".
   const [createPending, setCreatePending] = useState(false)
   const openCreateTheme = () => {
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     setStylePreview(null)
     openLibraryPage()
     setCreatePending(true)
@@ -900,8 +902,10 @@ export default function Configurator() {
   // any real theme change and whenever the preview surface isn't on screen.
   //
   //
-  // (Core used to be tried on here whenever My themes was empty; it is now a REAL
-  // theme from the start — see the seed effect below `changePreviewTheme`.)
+  // Empty My themes is a real state (delete the last one, or a fresh
+  // session). Do not auto-adopt Core here: that fought last-theme delete
+  // and locked Free at the one-theme cap. Theme Preview / Variables show
+  // NeedMyThemeEmpty until the user creates one or tries on a System style.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
@@ -915,30 +919,6 @@ export default function Configurator() {
     const kinds = useDesignStore.getState().themeKinds
     setPreviewSelection({ theme: key, appearance: kinds[key] ?? 'light' })
   }
-  // Default for everyone: with no theme of their own, the workspace starts on
-  // Core / Minimalist as a REAL theme in My themes, shown exactly like one
-  // already added — no "preview, then Edit theme" step before anything can be
-  // edited. (It used to be an ephemeral try-on; reported: the first screen read
-  // as an offer to add something instead of a system to work on.) Explicit
-  // "Edit theme" remains the only way ANYTHING ELSE enters My themes.
-  // Runs only while My themes is empty and nothing is being created, so it can't
-  // fight a user who is mid-way through making their own; silent in analytics —
-  // nobody chose it.
-  useEffect(() => {
-    if (myThemeKeys(themeOrder, themes).length > 0) return
-    if (themeEditor !== false) return
-    // Re-check against the LIVE store, not this render's closure: React runs
-    // effects twice in dev (and a fast re-render can repeat one) before the
-    // first adopt has reached `themes`, which minted "Core" and "Core 2".
-    const live = useDesignStore.getState()
-    if (myThemeKeys(live.themeOrder, live.themes).length > 0) return
-    const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
-    if (!core) return
-    const adopted = adoptPreset(core, theme === 'dark' ? 'dark' : 'light', { track: false })
-    if ('error' in adopted) return
-    changePreviewTheme(adopted.key)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeOrder, themes, themeEditor, theme])
   const changePreviewAppearance = (appearance: ThemeAppearance) => {
     setPreviewSelection((current) => ({ ...current, theme: previewTheme, appearance }))
     // A live System Style try-on renders from `stylePreview.appearance`, not
@@ -1294,6 +1274,13 @@ export default function Configurator() {
     setTab('foundations')
     setThemeWorkspaceTab('library')
   }
+  const openThemePreviewPage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    changeThemeWorkspaceTab('preview')
+  }
   const openMcpPage = () => {
     leaveExportWizard()
     openDocs(GUIDE_MCP_KEY)
@@ -1336,10 +1323,14 @@ export default function Configurator() {
     }
     setFigmaPublishState(next)
     setFigmaPublishError(next === 'error' ? describePublishFailure(reason, figmaFileName) : null)
+    if (next === 'error' && reason === 'licence') {
+      useDesignStore.getState().setAutoSyncFigma(false)
+      showToast(t('Hosted sync needs Escala Pro.'))
+    }
     if (next === 'done') {
       figmaPublishResetTimer.current = setTimeout(() => setFigmaPublishState('idle'), 1800)
     }
-  }, [figmaFileName])
+  }, [figmaFileName, t])
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op
   // otherwise) — shares handleFigmaPublishState with the manual button below
   // so a background failure lights the same red dot instead of failing silently.
@@ -1447,7 +1438,7 @@ export default function Configurator() {
     header = { Icon: GitHubIcon, title: 'GitHub', subtitle: 'Version your design system in a repository.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <GitHubConnectView onClose={() => setExportMode(null)} onPushStateChange={handleGithubPushState} />
+        <GitHubConnectView onClose={() => setExportMode(null)} onPushStateChange={handleGithubPushState} theme={previewTheme} appearance={previewAppearance} />
       </div>
     )
     centerKey = 'export-github'
@@ -1462,6 +1453,7 @@ export default function Configurator() {
           publishError={figmaPublishError}
           onRequestSync={syncFigmaNow}
           previewTheme={previewTheme}
+          previewAppearance={previewAppearance}
           onSelectTheme={changePreviewTheme}
           fileName={figmaFileName}
           onFileNameChange={(name) => {
@@ -1489,7 +1481,7 @@ export default function Configurator() {
     header = { Icon: DocIcon, title: 'Docs', subtitle: 'Your didactic README — preview, copy or download it.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <ExportView initialTab="markdown" onClose={() => setExportMode(null)} />
+        <ExportView initialTab="markdown" onClose={() => setExportMode(null)} theme={previewTheme} appearance={previewAppearance} />
       </div>
     )
     centerKey = 'export-md'
@@ -1497,7 +1489,7 @@ export default function Configurator() {
     header = { Icon: CodeIcon, title: 'Export', subtitle: 'tokens.json and variables.css for your codebase.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <ExportView initialTab="tokens" onClose={() => setExportMode(null)} />
+        <ExportView initialTab="tokens" onClose={() => setExportMode(null)} theme={previewTheme} appearance={previewAppearance} />
       </div>
     )
     centerKey = 'export-code'
@@ -1785,14 +1777,17 @@ export default function Configurator() {
   // and that is what put a "Core Copy" row in My themes on a browser that had
   // never created anything. Committing is only ever explicit ("Add to system")
   // or a real edit (the quick rail's first-control auto-adopt). Navigating is
-  // neither. A themeless session KEEPS the seeded Core try-on across the
-  // workspace tabs so coming back to Theme Preview is not an empty board.
+  // neither. A themeless session KEEPS a live try-on across workspace tabs so
+  // coming back to Theme Preview is not an empty board.
   useEffect(() => {
     if (!themesCanvas || themeWorkspaceTab === 'preview' || !stylePreview) return
     if (myThemeKeys(themeOrder, themes).length === 0) return
     setStylePreview(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themesCanvas, themeWorkspaceTab, stylePreview, themeOrder, themes])
+  useEffect(() => {
+    if (stylePreview) setDocsPanelOpen(false)
+  }, [stylePreview])
 
   // Which inspector tab is lit. The library and the Figma / GitHub surfaces
   // are pages reached from elsewhere (rail foot, Export menu): no tab.
@@ -1800,9 +1795,12 @@ export default function Configurator() {
     themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
     : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts'
-      ? (docsPanelOpen ? 'docs' : 'theme')
+      ? (docsPanelOpen && !stylePreview ? 'docs' : 'theme')
       : null
   const changeInspectorTab = (next: InspectorTab) => {
+    // A try-on has no store ramps: Variables and Docs would show the open
+    // system under the previewed style's name. Theme stays the only door.
+    if (stylePreview && (next === 'variables' || next === 'docs')) return
     if (next === 'variables') changeThemeWorkspaceTab('primitives')
     else if (next === 'code') openGetCodePage()
     else {
@@ -1855,7 +1853,14 @@ export default function Configurator() {
             previewTheme={previewTheme}
             stylePreview={stylePreview}
             homeOpen={themesCanvas && themeWorkspaceTab === 'library'}
+            themeOpen={themesCanvas && themeWorkspaceTab === 'preview'}
             onOpenLibrary={openLibraryPage}
+            onOpenTheme={openThemePreviewPage}
+            onCreateTheme={openCreateTheme}
+            onOpenComponents={() => changeTab('components')}
+            onSyncFigma={() => syncFigmaForTheme(previewTheme)}
+            onGetCode={() => openCodeForTheme(previewTheme)}
+            onSelectTheme={(key) => { changePreviewTheme(key); openThemePreviewPage() }}
           />
         ) : undefined}
         onOpenDocsPage={openDocsPage}
@@ -1961,6 +1966,7 @@ export default function Configurator() {
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
                     onGetCode={() => openCodeForTheme(previewTheme)}
+                    onCreateTheme={openCreateTheme}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     previewPlatform={previewPlatform}
@@ -2027,12 +2033,20 @@ export default function Configurator() {
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     figmaThemes={figmaSyncModes.map((mode) => mode.theme)}
                     onCreateTheme={openCreateTheme}
+                    onOpenRandom={(key) => {
+                      setStylePreview(null)
+                      setThemeHubSurface('artefacts')
+                      setActiveFoundation('color')
+                      changePreviewTheme(key)
+                      changeThemeWorkspaceTab('preview')
+                    }}
                     createPending={createPending}
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
                     enterFolderTick={enterFolderTick}
+                    onEditFoundation={selectFoundation}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (
@@ -2045,6 +2059,7 @@ export default function Configurator() {
                 >
                   <ThemeCodeFormat
                     previewTheme={previewTheme}
+                    previewAppearance={previewAppearance}
                     // The theme switcher in the tab bar IS this page's picker.
                     scope={previewTheme}
                     onScopeChange={(next) => { if (next) changePreviewTheme(next) }}
@@ -2130,6 +2145,8 @@ export default function Configurator() {
               onChange={changeInspectorTab}
               onSlot={setInspectorSlot}
               showTabs={themeWorkspaceTab !== 'library'}
+              disabledTabs={stylePreview && themeWorkspaceTab === 'preview' ? ['variables', 'docs'] : undefined}
+              disabledReason={stylePreview ? t('Add this style to open Variables and Docs') : undefined}
             />
           )}
           </div>
@@ -2293,6 +2310,8 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
+
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>

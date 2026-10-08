@@ -457,16 +457,21 @@ export function primitiveVar(alias: TypeAlias, facet: TypeFacet): string {
 
 const FACETS: TypeFacet[] = ['family', 'size', 'weight', 'leading']
 
-/** Desktop + `-tablet` + `-mobile` alias declarations. Safe inside `:root`. */
-export function typeRoleCssVars(roles?: object | null): string[] {
+/** Desktop + `-tablet` + `-mobile` alias declarations. Safe inside `:root`.
+ *  Pass `['desktop']` when the file is the Free cut (Desktop only). Omitted,
+ *  every viewport ships — the output every existing caller already has. */
+export function typeRoleCssVars(
+  roles?: object | null,
+  viewports: readonly ('desktop' | 'tablet' | 'mobile')[] = ['desktop', 'tablet', 'mobile'],
+): string[] {
   const map = mergeTypeRoles(roles)
   const lines: string[] = []
   for (const role of TYPE_ROLES) {
     const m = map[role.key]
     for (const facet of FACETS) {
-      lines.push(`${typeRoleVar(role.key, facet)}: ${primitiveVar(m.desktop, facet)};`)
-      lines.push(`${typeRoleVar(role.key, facet, 'tablet')}: ${primitiveVar(m.tablet, facet)};`)
-      lines.push(`${typeRoleVar(role.key, facet, 'mobile')}: ${primitiveVar(m.mobile, facet)};`)
+      if (viewports.includes('desktop')) lines.push(`${typeRoleVar(role.key, facet)}: ${primitiveVar(m.desktop, facet)};`)
+      if (viewports.includes('tablet')) lines.push(`${typeRoleVar(role.key, facet, 'tablet')}: ${primitiveVar(m.tablet, facet)};`)
+      if (viewports.includes('mobile')) lines.push(`${typeRoleVar(role.key, facet, 'mobile')}: ${primitiveVar(m.mobile, facet)};`)
     }
   }
   return lines

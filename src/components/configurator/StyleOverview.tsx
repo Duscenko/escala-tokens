@@ -8,7 +8,7 @@ import { useI18n } from '../../lib/i18n'
 import { THEME_STYLE_PRESETS, presetStates, type ThemeStylePreset } from '../../lib/themePresets'
 import { ThemeAvatar } from './ThemeLibraryRail'
 import { useNeedsProForAnotherTheme } from '../../lib/access'
-import { PRICING_PATH } from '../../lib/entitlement'
+import { UpgradeToProNotice } from './UpgradeToProNotice'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
@@ -78,15 +78,7 @@ export function StyleOverview({
         </dl>
       )}
       {needsPro ? (
-        <>
-          <a
-            href={PRICING_PATH}
-            className={`flex h-10 items-center justify-center gap-2 rounded-full bg-accent-solid px-4 text-ui font-medium text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
-          >
-            {t('Upgrade to Pro')}
-          </a>
-          <p className="-mt-2 text-center text-caption text-fg-faint">{t('Free includes one theme. Pro adds this style and as many as you need.')}</p>
-        </>
+        <UpgradeToProNotice />
       ) : (
         <>
           <button

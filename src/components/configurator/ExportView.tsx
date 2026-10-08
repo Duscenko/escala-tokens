@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { generateTokenJSON } from '../../lib/tokenGenerator'
-import { buildCSS, buildMarkdown } from '../../lib/exporters'
+import { useFreeTier } from '../../lib/access'
+import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 
 type Tab = 'tokens' | 'css' | 'markdown'
@@ -12,6 +13,8 @@ interface ExportViewProps {
   initialTab?: Tab
   /** Optional back-to-editor affordance shown when rendered inside the shell. */
   onClose?: () => void
+  theme?: string
+  appearance?: ThemeAppearance
 }
 
 // ─── Download helpers ────────────────────────────────────────────────────────
@@ -44,8 +47,9 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export default function ExportView({ initialTab = 'tokens', onClose }: ExportViewProps = {}) {
+export default function ExportView({ initialTab = 'tokens', onClose, theme, appearance }: ExportViewProps = {}) {
   const { projectName, primaryColor, selectedComponents, setProjectName } = useDesignStore()
+  const free = useFreeTier()
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   const [copiedTab, setCopiedTab] = useState<Tab | null>(null)
   const [justDownloaded, setJustDownloaded] = useState<string | null>(null)
@@ -58,9 +62,11 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
 
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'scalable-designs'
 
-  const tokenJSON = JSON.stringify(generateTokenJSON(), null, 2)
-  const cssVars   = buildCSS(useDesignStore.getState())
-  const markdown  = buildMarkdown(useDesignStore.getState())
+  const live = useDesignStore()
+  const shipped = shippedBundle(live, free ? freeScopeFor(live, theme, appearance) : undefined)
+  const tokenJSON = shipped.tokens
+  const cssVars   = shipped.css
+  const markdown  = shipped.markdown
 
   // tokens.json is the contract the Figma plugin imports — badge it so users
   // know exactly which file feeds the plugin.

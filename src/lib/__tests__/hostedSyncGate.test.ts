@@ -27,7 +27,7 @@ vi.mock('../../../api/_blob.js', async () => {
 
 import handler from '../../../api/tokens'
 
-const PROMO = '2026-10-20T12:00:00Z'
+const PROMO = '2026-10-05T12:00:00Z'
 const AFTER = '2026-11-05T12:00:00Z'
 const KEY = 'ESCALA-GOOD-KEY'
 

@@ -460,7 +460,7 @@ export default function ThemePreviewHub({
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
-  githubPushState, onGithubPushStateChange, docsExits, onGetCode,
+  githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
@@ -506,6 +506,7 @@ export default function ThemePreviewHub({
   githubPushState: GitHubPushState
   onGithubPushStateChange: (state: GitHubPushState) => void
   docsExits: Parameters<typeof DocsView>[0]['exits']
+  onCreateTheme?: () => void
 }) {
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
@@ -757,7 +758,7 @@ export default function ThemePreviewHub({
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
                 {needsMyTheme ? (
-                  <NeedMyThemeEmpty />
+                  <NeedMyThemeEmpty onCreateTheme={onCreateTheme} />
                 ) : (
                   <>
                 {contrastOpen ? (
@@ -809,8 +810,8 @@ export default function ThemePreviewHub({
           <>
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
-              {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
+              {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} theme={previewTheme} appearance={previewAppearance} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} previewAppearance={previewAppearance} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
             </div>
           </>
         )}

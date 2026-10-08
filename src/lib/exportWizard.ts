@@ -17,7 +17,7 @@
 // themes pre-normalized onto their source ramps.
 
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
-import type { FigmaScope } from './freeFigmaScope'
+import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
 import { primitiveDisplayLabel } from './themeSources'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
@@ -76,9 +76,8 @@ export interface WizardSelection {
    *  tab edits, so there's no second, divergent "which components" list).
    *  Other formats have no component representation and ignore this. */
   includeComponents: boolean
-  /** Escala JSON only — narrows the Figma document to one theme and a viewport
-   *  subset. Set by the wizard when the person has no Escala Pro (see
-   *  `freeFigmaScope`); omitted, the whole document ships exactly as before. */
+  /** Free cut — one theme, one appearance, Desktop. The wizard sets it for
+   *  Figma JSON, W3C and Markdown. Omitted, the whole document ships. */
   figmaScope?: FigmaScope
 }
 
@@ -381,11 +380,12 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
           fontWeight: token(`{typography.weight.${alias.weight}}`, 'fontWeight'),
           lineHeight: token(`{typography.lineHeight.${alias.size}}`, 'dimension'),
         })
-        ;(roleNode as Record<string, W3CNode>)[key] = {
-          desktop: pack(modes.desktop),
-          tablet: pack(modes.tablet ?? modes.desktop),
-          mobile: pack(modes.mobile),
+        const roleModes: Record<string, W3CNode> = { desktop: pack(modes.desktop) }
+        if (!desktopOnlyPayload(full)) {
+          roleModes.tablet = pack(modes.tablet ?? modes.desktop)
+          roleModes.mobile = pack(modes.mobile)
         }
+        ;(roleNode as Record<string, W3CNode>)[key] = roleModes
       }
       return {
         fontFamily: {
@@ -416,7 +416,9 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         breakpoint[step] = lengthToken(bps[step])
       }
       breakpoint.desktop = token(roleRef(cuts.desktop, bps, 'grid.breakpoint'), 'dimension')
-      breakpoint.mobile = token(roleRef(cuts.mobile, bps, 'grid.breakpoint'), 'dimension')
+      if (!desktopOnlyPayload(full)) {
+        breakpoint.mobile = token(roleRef(cuts.mobile, bps, 'grid.breakpoint'), 'dimension')
+      }
       const pack = (alias: { columns: string; gutter: string; margin: string; container: string }): W3CNode => ({
         columns: token(Number(alias.columns), 'number'),
         gutter: token(roleRef(alias.gutter, full.spacing, 'spacing'), 'dimension'),
@@ -425,12 +427,11 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
           ? token('none', 'string')
           : token(roleRef(alias.container, bps, 'grid.breakpoint'), 'dimension'),
       })
+      const frameNode: Record<string, W3CNode> = { desktop: pack(frame.desktop) }
+      if (!desktopOnlyPayload(full)) frameNode.mobile = pack(frame.mobile)
       return {
         breakpoint,
-        frame: {
-          desktop: pack(frame.desktop),
-          mobile: pack(frame.mobile),
-        },
+        frame: frameNode,
       }
     }
     case 'shadow':
@@ -501,15 +502,22 @@ function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON
     // trigger. `ExportWizard.tsx`'s step-3 Summary row mirrors this so the UI
     // never claims "Included" for a file that will actually ship hex.
     const families = primitivesShipped ? sel.primitiveFamilies : undefined
-    return w3cSemantics(full, sel.modes, sel.includeAliases && primitivesShipped, families)
+    const modes = sel.figmaScope?.modes?.length ? full.colors.themeOrder : sel.modes
+    return w3cSemantics(full, modes, sel.includeAliases && primitivesShipped, families)
   }
   return w3cSection(key, full)
 }
 
 // ── Public entry ─────────────────────────────────────────────────────────────
 
+function desktopOnlyPayload(full: TokenJSON): boolean {
+  const viewports = full.viewports
+  return Array.isArray(viewports) && viewports.length > 0 && viewports.every((viewport) => viewport === 'desktop')
+}
+
 export function buildWizardExport(sel: WizardSelection): WizardFile[] {
-  const full = generateTokenJSON()
+  const unscoped = generateTokenJSON()
+  const full = sel.figmaScope ? generateTokenJSON(undefined, sel.figmaScope) : unscoped
   const project = useDesignStore.getState().projectName || 'escala'
   const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'escala'
   const ordered = ALL_WIZARD_COLLECTIONS.filter((k) => sel.collections.includes(k))
@@ -528,7 +536,7 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // `atoms`, the one field Step 1's "Include components" toggle controls:
     // off ships an empty array so the plugin's importComponents phase
     // no-ops, same as unchecking every component individually.
-    const doc = sel.figmaScope ? generateTokenJSON(undefined, sel.figmaScope) : full
+    const doc = full
     const payload = sel.includeComponents ? doc : { ...doc, atoms: [] }
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
   }
@@ -574,25 +582,33 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   // Markdown — delegate to the section builders so a slice reads identically
   // wherever it's taken (preview .MD tab, wizard, Copy Page).
   const sections = [...new Set(ordered.map((k) => SECTION_OF[k]))]
+  const live = useDesignStore.getState()
+  const narrowed = sel.figmaScope?.modes?.length
+    ? freeDownloadStore(live, sel.figmaScope)
+    : undefined
+  const mdStore = narrowed ?? live
   const colorOpts = {
     families: ordered.includes('primitives') ? sel.primitiveFamilies : [],
     appearance: sel.primitiveAppearance,
     includeSemantics: ordered.includes('semantics'),
-    modes: ordered.includes('semantics') ? sel.modes : undefined,
+    modes: sel.figmaScope?.themes?.length
+      ? sel.figmaScope.themes
+      : ordered.includes('semantics') ? sel.modes : undefined,
+    desktopOnly: desktopOnlyPayload(full),
   }
   if (sel.structure === 'per-collection') {
     return sections
       .map((s) => ({
         name: `${s}.md`,
-        content: buildSectionExport(s, 'md', sel.colorFormat, colorOpts),
+        content: buildSectionExport(s, 'md', sel.colorFormat, colorOpts, mdStore),
         language: 'md' as const,
       }))
       .filter((f) => f.content.trim().length > 0)
   }
   const isAll = ordered.length === ALL_WIZARD_COLLECTIONS.length && !sel.primitiveFamilies && !sel.primitiveAppearance
   const content = isAll
-    ? buildSectionExport('all', 'md', sel.colorFormat, colorOpts)
-    : sections.map((s) => buildSectionExport(s, 'md', sel.colorFormat, colorOpts)).join('\n\n---\n\n')
+    ? buildSectionExport('all', 'md', sel.colorFormat, colorOpts, mdStore)
+    : sections.map((s) => buildSectionExport(s, 'md', sel.colorFormat, colorOpts, mdStore)).join('\n\n---\n\n')
   return [{ name: `${slug}.md`, content, language: 'md' }]
 }
 

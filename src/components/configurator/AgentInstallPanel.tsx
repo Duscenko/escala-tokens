@@ -34,6 +34,8 @@ import {
 } from '../../lib/agentInstall'
 import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { CopyButton } from './docs/blocks'
+import { useFreeTier } from '../../lib/access'
+import { UpgradeToProNotice } from './UpgradeToProNotice'
 
 export type InstallClient = 'cursor' | 'claude' | 'vscode' | 'make'
 type Mode = 'mcp' | 'prompt'
@@ -75,6 +77,7 @@ export default function AgentInstallPanel({
   const slug = syncProjectId()
   const inWizard = variant === 'export'
   const teaser = variant === 'about'
+  const free = useFreeTier()
 
   // Make has no live mode; force the panel back to its one real view rather
   // than rendering an empty MCP pane if it was left on that tab.
@@ -142,7 +145,11 @@ export default function AgentInstallPanel({
         )}
       </div>
 
-      {effectiveMode === 'prompt' ? (
+      {free && tab !== 'make' ? (
+        <div className="px-4 py-5">
+          <UpgradeToProNotice />
+        </div>
+      ) : effectiveMode === 'prompt' ? (
         <PromptPane
           prompt={agentSetupPrompt(
             origin,

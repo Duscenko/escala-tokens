@@ -1409,7 +1409,7 @@ function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; on
  * The track previews the four levels at a constant lightness (`neutralFromBrand`
  * at each `brandSat`), so the range you're dialing is visible.
  */
-function TintSlider({
+export function TintSlider({
   hueHex, value, onChange,
 }: {
   /** Any hex in the neutral's hue — the track paints from it. */
@@ -1448,7 +1448,7 @@ function TintSlider({
 }
 
 /** "−.15", "0", "+.3" — fits the 24px chip slot the rows above use. */
-function formatShift(n: number): string {
+export function formatShift(n: number): string {
   if (n === 0) return '0'
   const abs = Math.abs(n).toFixed(2).replace(/^0/, '').replace(/0$/, '')
   return `${n < 0 ? '−' : '+'}${abs}`
@@ -1460,7 +1460,7 @@ function formatShift(n: number): string {
  * track reads softer → stronger in the neutral's own hue — the ramp's steps
  * pulled together on the left, pushed apart on the right.
  */
-function ContrastSlider({
+export function ContrastSlider({
   hueHex, value, onChange,
 }: {
   hueHex: string
@@ -1503,7 +1503,7 @@ function ContrastSlider({
  *  track is drawn from the same `colorAtHue` the value is, so what the thumb
  *  sits on is the colour it will commit. Preview while dragging, commit once
  *  on release, like the hue slider beside it. */
-function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
+export function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
   axis: 'saturation' | 'lightness'
   label: string
   value: string
@@ -1565,6 +1565,7 @@ export default function ThemeQuickSettingsRail({
   onPreviewPlatformChange,
   overlapSize = 'md',
   onOverlapSizeChange,
+  embed = false,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1604,6 +1605,9 @@ export default function ThemeQuickSettingsRail({
    *  the hub so the bar here and the card there are one value. */
   overlapSize?: OverlapSize
   onOverlapSizeChange?: (size: OverlapSize) => void
+  /** Render in the page column instead of the inspector. The create studio
+   *  uses the inspector for the step list, so the edition sits in the card. */
+  embed?: boolean
 }) {
   const { t } = useI18n()
   const inInspector = useInInspector()
@@ -2044,15 +2048,14 @@ export default function ThemeQuickSettingsRail({
     if (activePanel !== 'color') onContrastOpenChange?.(false)
   }, [activePanel, onContrastOpenChange])
 
-  return (
-    <InspectorPortal>
+  const aside = (
     <aside
       id={QUICK_SETTINGS_ID}
       aria-label={t('Quick settings')}
-      className={inInspector
+      className={embed || inInspector
         ? 'flex-1 min-h-0 w-full flex flex-col'
         : `flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
-      style={inInspector ? undefined : { width: QUICK_SETTINGS_WIDTH }}
+      style={embed || inInspector ? undefined : { width: QUICK_SETTINGS_WIDTH }}
     >
       {/* No Name band here any more: a theme is renamed where it is LISTED —
           double-click in the theme switcher or the library, or Rename in a
@@ -2583,9 +2586,9 @@ export default function ThemeQuickSettingsRail({
 
       {/* Undo + Save / Update theme — shared with Variables. Hidden while a
           System Style is only tried on (that overlay is not the store). */}
-      {!tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : <ThemeSaveBar />)}
+      {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : <ThemeSaveBar />)}
       </div>
     </aside>
-    </InspectorPortal>
   )
+  return embed ? aside : <InspectorPortal>{aside}</InspectorPortal>
 }

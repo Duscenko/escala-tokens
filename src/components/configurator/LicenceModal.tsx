@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { activateLicence, clearLicence } from '../../lib/licence'
 import { POLAR_CHECKOUT_URL } from '../../lib/polar'
-import { PRICING_PATH } from '../../lib/entitlement'
+import { PRICING_PATH, PRO_PRICE_USD } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 
 // "Paste your licence key" — the only place a key enters the app.
@@ -12,9 +12,9 @@ import { useEntitlement } from '../../lib/useEntitlement'
 // Two jobs in one dialog because they are the two halves of one trip: buy
 // (Polar emails the key), then paste it here. No account, no sign-in.
 //
-// The BUY half stays out of sight until the free launch promo ends: before
-// Nov 1 everything is free, and a checkout button would invite a payment nobody
-// needs to make. Someone who already holds a key can still paste it.
+// The BUY half stays out of sight only while the free-for-everyone period is
+// still on. Once it has ended the button shows the price in force ($45 until
+// 15 Nov, then $69) and the field under it is where the emailed key is pasted.
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
@@ -112,9 +112,13 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
               rel="noreferrer"
               className={`flex min-h-11 items-center justify-between rounded-lg bg-accent-solid px-4 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
             >
-              <span>{t('Buy Escala Pro')}</span>
-              <span className="tabular-nums">${entitlement.priceUsd}</span>
+              <span>{t('Buy Escala Pro')} · <span className="tabular-nums">${entitlement.priceUsd}</span></span>
             </a>
+            {entitlement.launchPrice && (
+              <p className="text-caption text-fg-muted">
+                {t('After November 15, ${price}.', { price: String(PRO_PRICE_USD) })}
+              </p>
+            )}
             <p className="text-caption text-fg-faint">
               {t('Secure checkout by Polar. The key arrives by email.')}{' '}
               <a href={PRICING_PATH} className="text-accent-ui underline-offset-2 hover:underline">{t('See pricing')}</a>

@@ -52,6 +52,15 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
 /** Free keeps ONE theme of its own (see the tier table above). True when
  *  adding another — a System Style, say — needs Pro. Never with accounts off:
  *  a local checkout has no plan to upgrade to. */
+/** Signed in, not Pro, accounts actually on. Export, MCP and File & modes use
+ *  this — `!entitlement.pro` alone would wall a fork that has no account to
+ *  upgrade. While the session is loading this is false, so the full view
+ *  shows instead of a flash of the wall. */
+export function useFreeTier(): boolean {
+  const { tier, loading } = useAccess()
+  return accountsEnabled && !loading && tier === 'free'
+}
+
 export const FREE_MY_THEME_LIMIT = 1
 export function useNeedsProForAnotherTheme(): boolean {
   const { tier } = useAccess()

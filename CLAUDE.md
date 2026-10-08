@@ -1194,16 +1194,17 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > shared by the sheet and the rail.** The two silent "<Style> Copy" auto-adopts are GONE: the
 > quick-settings rail's first-edit adopt (`resolveWriteTarget` now returns null during a try-on)
 > and Theme preview's inspector edit (`recordTryOnEdit` keeps try-on edits ephemeral). While a
-> style is only previewed (the seeded Core when My themes is empty), the rail shows
+> style is only previewed, the rail shows
 > `StyleOverview` (`StyleOverview.tsx`, also home of `PRESET_AVATAR_RAMPS`) + Edit theme INSTEAD
 > of its controls — reported: a list that grows from every glance and slider nudge "se vuelve un
 > caos". This supersedes the "first edit makes it real" notes above.
-> **Core / Minimalist is a REAL theme from the start (supersedes the "Core is tried on" seed
-> notes).** With no theme of their own the shell adopts it (`adoptPreset(core, …, { track:
-> false })`, effect below `changePreviewTheme` in `Configurator`) and selects it, so the first
-> screen is a system to work on, not an offer to add one. The effect re-checks the LIVE store —
-> React runs effects twice in dev and it minted "Core" + "Core 2" off the stale closure. The
-> try-on / `StyleOverview` rail branch stays for any style that is only previewed.
+> **Empty My themes is allowed (supersedes the "Core is a REAL theme from the start" seed).**
+> `removeTheme` may delete the last own theme. Do not auto-`adoptPreset` Core in
+> `Configurator` when `myThemeKeys` is empty — that re-minted Core after delete and
+> pinned Free at the one-theme cap. Home shows only Create theme; Theme Preview /
+> Variables show `NeedMyThemeEmpty`. A System style try-on still paints the board
+> without adding a row. The try-on / `StyleOverview` rail branch stays for any style
+> that is only previewed.
 > **CREATE lives in the sheet too.** `themeSheet: false | 'browse' | 'create'` is lifted into
 > `Configurator`; every "create a theme" door (the rail's Create new theme, the library, the
 > empty states, the sheet's dashed + tile) calls `openCreateTheme`, which opens the sheet on its

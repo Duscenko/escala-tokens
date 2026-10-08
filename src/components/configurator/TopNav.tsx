@@ -7,7 +7,7 @@ import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHRO
 type ChromeMenuAlign = 'left' | 'right' | 'center'
 
 /** Fixed + portaled so header `z-30` cannot trap menus under workspace drawers/modals. */
-function ChromeAnchoredDropdown({
+export function ChromeAnchoredDropdown({
   open,
   onClose,
   anchorRef,
@@ -397,8 +397,13 @@ function TopNavCompactMenu({
 
   const close = () => setOpen(false)
 
+  // Primary nav · Docs · Language live in the header from 1080px up — except on
+  // the Generator, where the ☰ is the only section nav. Appearance is ALWAYS
+  // here, never a separate header icon.
+  const mobileOnlySections = always ? '' : 'max-[1079px]:block min-[1080px]:hidden'
+
   return (
-    <div className={`relative flex-shrink-0 ${always ? 'flex' : 'hidden max-[1079px]:flex'}`}>
+    <div className="relative flex-shrink-0 flex">
       <button
         ref={triggerRef}
         type="button"
@@ -420,6 +425,7 @@ function TopNavCompactMenu({
         className="w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
         style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
       >
+          <div className={mobileOnlySections}>
           {NAV_ITEMS.filter(({ key }) => key !== 'docs').map(({ key, label }) => {
             const on = nav === key
             return (
@@ -467,7 +473,8 @@ function TopNavCompactMenu({
               </button>
             ))}
           </div>
-          <div className="mt-1 border-t border-line pt-1.5 pb-0.5" role="group" aria-label={t('Appearance')}>
+          </div>
+          <div className={`${always ? 'mt-1 border-t border-line pt-1.5' : 'min-[1080px]:pt-0 max-[1079px]:mt-1 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-1.5'} pb-0.5`} role="group" aria-label={t('Appearance')}>
             <p className="px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Appearance')}</p>
             <div className="grid grid-cols-2 gap-1 px-0.5">
               {(['light', 'dark'] as const).map((appearance) => {
@@ -647,15 +654,11 @@ export default function TopNav({
             onChromeAppearanceChange={onChromeAppearanceChange}
             always={hamburgerNav}
           />
-          {/* Language is a one-click icon again (it briefly moved into the
-              theme sheet and read as noise there). Order: ☰ · language (wide)
-              · appearance · Home — appearance sits between the compact menu
-              and the Home chip, or right before Home when ☰ is hidden. */}
+          {/* Language stays a header icon from 1080px; narrow viewports use ☰.
+              Light/dark is ONLY inside ☰ (never a second sun/moon icon). */}
           <div className="hidden min-[1080px]:flex items-center gap-2">
             <LanguageMenu onOpen={onOpenLanguages} />
           </div>
-          {/* With the ☰ menu always on (Generator), Appearance lives inside it. */}
-          {!hamburgerNav && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           {themeControl}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}

@@ -58,6 +58,8 @@ export default function WorkspaceInspector({
   onChange,
   onSlot,
   showTabs = true,
+  disabledTabs,
+  disabledReason,
 }: {
   value: InspectorTab | null
   onChange: (tab: InspectorTab) => void
@@ -65,9 +67,14 @@ export default function WorkspaceInspector({
   /** Home fills this column with its file menu and does not draw the
    *  Theme · Variables · Code · Docs strip. */
   showTabs?: boolean
+  /** A System Style try-on has no live ramps to edit or document. */
+  disabledTabs?: readonly InspectorTab[]
+  disabledReason?: string
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion()
+  const locked = new Set(disabledTabs)
+  const enabledTabs = TABS.filter((item) => !locked.has(item.key))
   return (
     <aside
       id={INSPECTOR_ID}
@@ -92,33 +99,39 @@ export default function WorkspaceInspector({
           aria-label={t('Theme workspace')}
           className="flex w-full min-w-0 gap-0.5 rounded-xl bg-chip-rest p-1"
           onKeyDown={(event) => {
-            const current = TABS.findIndex((item) => item.key === value)
+            if (enabledTabs.length === 0) return
+            const current = Math.max(0, enabledTabs.findIndex((item) => item.key === value))
             let next = current
-            if (event.key === 'ArrowRight') next = (current + 1) % TABS.length
-            else if (event.key === 'ArrowLeft') next = (current + TABS.length - 1) % TABS.length
+            if (event.key === 'ArrowRight') next = (current + 1) % enabledTabs.length
+            else if (event.key === 'ArrowLeft') next = (current + enabledTabs.length - 1) % enabledTabs.length
             else if (event.key === 'Home') next = 0
-            else if (event.key === 'End') next = TABS.length - 1
+            else if (event.key === 'End') next = enabledTabs.length - 1
             else return
             event.preventDefault()
-            onChange(TABS[next].key)
-            const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+            const key = enabledTabs[next].key
+            onChange(key)
+            const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)')
             requestAnimationFrame(() => tabs[next]?.focus())
           }}
         >
           {TABS.map((item) => {
             const active = item.key === value
+            const disabled = locked.has(item.key)
             return (
               <button
                 key={item.key}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                tabIndex={active || (value == null && item.key === 'theme') ? 0 : -1}
-                onClick={() => onChange(item.key)}
+                aria-disabled={disabled || undefined}
+                disabled={disabled}
+                title={disabled ? disabledReason : undefined}
+                tabIndex={disabled ? -1 : (active || (value == null && item.key === 'theme') ? 0 : -1)}
+                onClick={() => { if (!disabled) onChange(item.key) }}
                 className={`relative flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg px-1 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                   // The label's weight and ink change on the BUTTON; the sliding
                   // pill below carries the fill and the edge.
-                  active ? 'font-semibold text-fg' : SEGMENT_INACTIVE
+                  disabled ? 'cursor-not-allowed font-medium text-fg/40' : active ? 'font-semibold text-fg' : SEGMENT_INACTIVE
                 }`}
               >
                 {active && (

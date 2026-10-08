@@ -6,10 +6,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { useEntitlement } from '../../lib/useEntitlement'
-import { freeFigmaScope } from '../../lib/freeFigmaScope'
-import { generateTokenJSON } from '../../lib/tokenGenerator'
-import { buildCSS, buildMarkdown } from '../../lib/exporters'
+import { useFreeTier } from '../../lib/access'
+import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
 import { slugify } from '../../lib/utils'
 import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 import { getIconLibrary } from '../../lib/iconLibraries'
@@ -185,18 +183,16 @@ export function FilePreviewCard() {
   const syncUrl = typeof window !== 'undefined' ? buildSyncUrl() : ''
 
   const slug = slugify(projectName) || 'scalable-designs'
-  // Without Escala Pro the Figma file carries one theme and Desktop — the same
-  // soft limit the Export wizard applies (lib/freeFigmaScope.ts).
-  const entitlement = useEntitlement()
-  const { themeOrder, themes, themeKinds } = useDesignStore()
-  const figmaScope = entitlement.pro ? undefined : freeFigmaScope(undefined, themeOrder, themes, themeKinds)
+  const live = useDesignStore()
+  const free = useFreeTier()
+  const shipped = shippedBundle(live, free ? freeScopeFor(live, undefined) : undefined)
 
   // tokens.json is the contract the Figma plugin imports — badge it so users
   // know exactly which file feeds the plugin.
   const FILES: { id: FileTab; label: string; badge?: string; filename: string; mime: string; content: () => string }[] = [
-    { id: 'tokens',   label: 'tokens.json', badge: 'Figma plugin', filename: `${slug}-tokens.json`,   mime: 'application/json', content: () => JSON.stringify(generateTokenJSON(undefined, figmaScope), null, 2) },
-    { id: 'css',      label: 'variables.css',                      filename: `${slug}-variables.css`, mime: 'text/css',         content: () => buildCSS(useDesignStore.getState()) },
-    { id: 'markdown', label: 'README.md',                          filename: `${slug}-README.md`,     mime: 'text/markdown',    content: () => buildMarkdown(useDesignStore.getState()) },
+    { id: 'tokens',   label: 'tokens.json', badge: 'Figma plugin', filename: `${slug}-tokens.json`,   mime: 'application/json', content: () => shipped.tokens },
+    { id: 'css',      label: 'variables.css',                      filename: `${slug}-variables.css`, mime: 'text/css',         content: () => shipped.css },
+    { id: 'markdown', label: 'README.md',                          filename: `${slug}-README.md`,     mime: 'text/markdown',    content: () => shipped.markdown },
   ]
   const activeFile = FILES.find((f) => f.id === activeTab) ?? FILES[0]
 

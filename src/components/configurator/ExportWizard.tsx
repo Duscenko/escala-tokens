@@ -13,8 +13,8 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { AppearanceGlyph } from './colorControls'
 import AgentInstallPanel from './AgentInstallPanel'
-import { useEntitlement } from '../../lib/useEntitlement'
 import { freeFigmaScope } from '../../lib/freeFigmaScope'
+import { useFreeTier } from '../../lib/access'
 import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
@@ -261,11 +261,10 @@ export default function ExportWizard({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Without Escala Pro the Figma document carries one theme and Desktop (a soft
-  // limit — see lib/freeFigmaScope.ts). Only that destination: code exports,
-  // the AI zips and GitHub are not narrowed.
-  const entitlement = useEntitlement()
-  const figmaScope = format === 'escala' && !entitlement.pro
+  // Free downloads the same cut as the Figma JSON: one theme, the appearance
+  // on screen, Desktop. The AI zips stay the whole system.
+  const free = useFreeTier()
+  const figmaScope = free && format !== 'skill' && format !== 'agent-bundle'
     ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance)
     : undefined
   // Every family picked = unscoped, so an untouched export keeps producing the
