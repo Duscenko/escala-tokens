@@ -1828,8 +1828,9 @@ export default function Configurator() {
         hamburgerNav={tab === 'foundations'}
         onOpenLibrary={openLibraryPage}
         // Export is for the two surfaces that hold a system you're shaping —
-        // Generator and Components. About and Docs are reading surfaces.
-        exportAction={(tab === 'foundations' || tab === 'components') ? (
+        // Generator and Components. About and Docs are reading surfaces, and
+        // Home (the file browser) has no theme open to export.
+        exportAction={((tab === 'foundations' && !(themesCanvas && themeWorkspaceTab === 'library')) || tab === 'components') ? (
           <ExportPill
             onExport={openSectionExport}
             onSyncFigma={openFigmaSyncPage}

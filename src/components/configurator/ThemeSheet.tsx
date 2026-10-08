@@ -51,7 +51,7 @@ export function ThemeAppearanceControl({
       aria-pressed={homeOpen}
       aria-label={label}
       title={label}
-      className={`flex h-8 min-w-0 flex-shrink-0 items-center gap-1.5 rounded-lg pl-2 pr-1.5 ${CHROME_CONTROL_SHELL} ${homeOpen ? 'bg-fg/[0.08] text-fg' : 'text-fg-muted hover:text-fg'} ${CHROME_CONTROL_HOVER} ${FOCUS}`}
+      className={`flex h-8 min-w-0 flex-shrink-0 items-center gap-1.5 rounded-lg border pl-2 pr-1.5 ${CHROME_CONTROL_SHELL} ${homeOpen ? 'border-accent-ui bg-fg/[0.08] text-fg' : 'border-line-strong text-fg-muted hover:text-fg'} ${CHROME_CONTROL_HOVER} ${FOCUS}`}
     >
       {/* The house says WHERE it goes; the small avatar beside it says which
           theme you are editing, so the colour still travels with you. */}
