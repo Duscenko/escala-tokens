@@ -292,23 +292,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Plugin, signed in: the native theme setup. Options are the web's own
   //    lists; build applies the choices with the web's own code. ──
   if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST')) {
+    // No account needed: anyone can build ONE theme in ONE mode in the plugin
+    // (the Free scope). A token, when sent, must still be a live session — a
+    // stale one answers 401 so the plugin signs in again instead of silently
+    // dropping a Pro user to Free.
     const token = parseBearer(req.headers.authorization) ?? ''
-    if (!token || token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
-    const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
-    if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
+    if (token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
+    let session: SessionRecord | null = null
+    if (token) {
+      session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
+      if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
+    }
     // Loaded on demand from the prebuilt bundle (scripts/build-plugin-studio.mjs):
     // the generator graph can't load as plain Node ESM, and a failure here must
     // never take sign-in down with it.
     const studio = await import('./_pluginStudio.mjs') as typeof import('../src/lib/pluginStudio.js')
     if (op === 'studio-options') {
-      res.setHeader('Cache-Control', 'private, max-age=300')
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300')
       return res.status(200).json(studio.studioOptions())
     }
     if (rateLimited(`${ip}:plugin-studio`, 30)) {
       res.setHeader('Retry-After', '60')
       return res.status(429).json({ error: 'Too many requests.' })
     }
-    const built = studio.buildStudioTokens(jsonBody(req) as unknown as StudioChoices, tierOf(session).tier)
+    const built = studio.buildStudioTokens(jsonBody(req) as unknown as StudioChoices, session ? tierOf(session).tier : 'free')
     if ('error' in built) return res.status(400).json({ error: built.error })
     return res.status(200).json(built)
   }
