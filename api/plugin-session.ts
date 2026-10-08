@@ -7,6 +7,9 @@ import {
   upsertPluginLibraries,
   type PluginLibrary,
 } from '../src/lib/pluginSession.js'
+import { checkLicenceKey } from './_licence.js'
+import { buildStudioTokens, studioOptions, type StudioChoices } from '../src/lib/pluginStudio.js'
+import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob } from './_blob.js'
 
 // The Figma plugin cannot share the browser session. Sign-in is a short-lived
@@ -32,7 +35,18 @@ type PairRecord = {
   sealed?: string
 }
 
-type SessionRecord = { userId: string; email: string; revoked?: boolean }
+// `proUntil` is the instant a validated licence stops working ('lifetime' when
+// Polar gave it no expiry). The licence KEY is never stored: this blob is public.
+type SessionRecord = { userId: string; email: string; revoked?: boolean; proUntil?: string }
+
+/** What this plugin session may do. Pro is the launch promo OR a licence the
+ *  browser vouched for at sign-in. Free keeps ONE theme in ONE mode. */
+function tierOf(session: Pick<SessionRecord, 'proUntil'> | null | undefined, now = new Date()) {
+  const promo = entitlementAt(now).promo
+  const licensed = !!session?.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())
+  const pro = promo || licensed
+  return { tier: pro ? 'pro' as const : 'free' as const, maxThemes: pro ? PRO_MAX_THEMES : FREE_MAX_THEMES }
+}
 type LibraryRecord = { libraries: PluginLibrary[] }
 
 function sha256(value: string): string {
@@ -204,7 +218,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // wipe leaves a sealed blob that still needs the poll secret.
     }
     const libraries = await readLibraries(pair.userId).catch(() => [])
-    return res.status(200).json({ token, email: pair.email ?? '', libraries })
+    const fresh = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
+    return res.status(200).json({ token, email: pair.email ?? '', libraries, ...tierOf(fresh) })
   }
 
   // ── Signed-in browser confirms the code and registers libraries. ──
@@ -227,6 +242,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'This sign-in expired. Press Sign in in the plugin again.' })
     }
     const token = randomBytes(32).toString('base64url')
+    let proUntil: string | undefined
+    const licenceKey = typeof body.licenceKey === 'string' ? body.licenceKey.trim().slice(0, 200) : ''
+    if (licenceKey) {
+      const checked = await checkLicenceKey(licenceKey)
+      if (checked.valid) proUntil = checked.expiresAt ?? 'lifetime'
+    }
     // The blob is public. The raw token is sealed with the secret's hash,
     // which poll reconstructs from the secret only the plugin holds.
     const sealed = seal(pair.secretHash, token)
@@ -234,7 +255,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const libraries = upsertPluginLibraries(await readLibraries(user.id), incoming, new Date().toISOString())
       await writeJson(librariesKey(user.id), { libraries } satisfies LibraryRecord)
-      await writeJson(sessionKey(sha256(token)), { userId: user.id, email: user.email } satisfies SessionRecord)
+      await writeJson(sessionKey(sha256(token)), { userId: user.id, email: user.email, ...(proUntil ? { proUntil } : {}) } satisfies SessionRecord)
       await writeJson(pairKey(code), {
         secretHash: pair.secretHash,
         expiresAt: pair.expiresAt,
@@ -268,6 +289,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true })
   }
 
+  // ── Plugin, signed in: the native theme setup. Options are the web's own
+  //    lists; build applies the choices with the web's own code. ──
+  if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST')) {
+    const token = parseBearer(req.headers.authorization) ?? ''
+    if (!token || token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
+    const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
+    if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
+    if (op === 'studio-options') {
+      res.setHeader('Cache-Control', 'private, max-age=300')
+      return res.status(200).json(studioOptions())
+    }
+    if (rateLimited(`${ip}:plugin-studio`, 30)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+    const built = buildStudioTokens(jsonBody(req) as unknown as StudioChoices, tierOf(session).tier)
+    if ('error' in built) return res.status(400).json({ error: built.error })
+    return res.status(200).json(built)
+  }
+
   // ── Plugin, signed in: list or sign out. Bearer is the plugin token. ──
   if ((op === 'libraries' || op === 'signout') && (req.method === 'GET' || req.method === 'POST')) {
     const token = parseBearer(req.headers.authorization) ?? ''
@@ -283,7 +324,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true })
     }
     const libraries = await readLibraries(session.userId).catch(() => [])
-    return res.status(200).json({ email: session.email, libraries })
+    return res.status(200).json({ email: session.email, libraries, ...tierOf(session) })
   }
 
   return res.status(405).json({ error: 'Method not allowed.' })

@@ -274,48 +274,52 @@ export function useApplyAccentColor() {
 // carries empty state scales, and views that READ the ramps would dead-end.
 // The Alias/Semantics matrix calls this so it always opens against the same
 // primitives Home shows, instead of gating on "pick an accent first".
+/** The backfill itself, outside React — the plugin studio's server build
+ *  (`pluginStudio.ts`) has no component to mount it in. */
+export function ensureColorScales() {
+  const s = useDesignStore.getState()
+  const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+  const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
+  const empty = (o?: Record<number, string>) => !o || !Object.keys(o).length
+  try {
+    if (!Object.keys(s.primaryScale).length)   s.setPrimaryScale(gen(s.primaryColor))
+    if (!Object.keys(s.errorScale).length)     s.setErrorScale(gen(s.errorColor))
+    if (!Object.keys(s.warningScale).length)   s.setWarningScale(gen(s.warningColor))
+    if (!Object.keys(s.successScale).length)   s.setSuccessScale(gen(s.successColor))
+    if (!Object.keys(s.infoScale).length)      s.setInfoScale(gen(s.infoColor))
+    // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
+    if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
+    // Dark twins — backfills systems created before the two-scale model.
+    if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(s.primaryColor))
+    if (empty(s.errorDarkScale))   s.setErrorDarkScale(genDark(s.errorColor))
+    if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor))
+    if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor))
+    if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
+    s.customColors.forEach((c) => {
+      const pages = resolveFamilyPages(s, c.key)
+      const next = customScalePair(c.base, s, pages, pages.isGray)
+      if (empty(c.darkScale)) {
+        s.updateCustomColor(c.key, { darkScale: next.darkScale })
+        return
+      }
+      // Heal persisted ramps that still carry a chromatic page hex as tone 1
+      // of a differently-hued family (Glass warning dark `#071719` → teal on
+      // an amber ramp). Signature: stored tone 1 IS the page, but regenerating
+      // would rematch the family's hue. Only then rewrite — hand-edits that
+      // already left the page alone stay put.
+      const darkLeaked = (c.darkScale?.[1]?.toLowerCase() === pages.dark.toLowerCase())
+        && (next.darkScale[1].toLowerCase() !== pages.dark.toLowerCase())
+      const lightLeaked = (c.scale?.[1]?.toLowerCase() === pages.light.toLowerCase())
+        && (next.scale[1].toLowerCase() !== pages.light.toLowerCase())
+      if (darkLeaked || lightLeaked) s.updateCustomColor(c.key, next)
+    })
+  } catch {
+    /* invalid hex — ignore */
+  }
+}
+
 export function useEnsureColorScales() {
-  useEffect(() => {
-    const s = useDesignStore.getState()
-    const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
-    const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
-    const empty = (o?: Record<number, string>) => !o || !Object.keys(o).length
-    try {
-      if (!Object.keys(s.primaryScale).length)   s.setPrimaryScale(gen(s.primaryColor))
-      if (!Object.keys(s.errorScale).length)     s.setErrorScale(gen(s.errorColor))
-      if (!Object.keys(s.warningScale).length)   s.setWarningScale(gen(s.warningColor))
-      if (!Object.keys(s.successScale).length)   s.setSuccessScale(gen(s.successColor))
-      if (!Object.keys(s.infoScale).length)      s.setInfoScale(gen(s.infoColor))
-      // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
-      if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
-      // Dark twins — backfills systems created before the two-scale model.
-      if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(s.primaryColor))
-      if (empty(s.errorDarkScale))   s.setErrorDarkScale(genDark(s.errorColor))
-      if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor))
-      if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor))
-      if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
-      s.customColors.forEach((c) => {
-        const pages = resolveFamilyPages(s, c.key)
-        const next = customScalePair(c.base, s, pages, pages.isGray)
-        if (empty(c.darkScale)) {
-          s.updateCustomColor(c.key, { darkScale: next.darkScale })
-          return
-        }
-        // Heal persisted ramps that still carry a chromatic page hex as tone 1
-        // of a differently-hued family (Glass warning dark `#071719` → teal on
-        // an amber ramp). Signature: stored tone 1 IS the page, but regenerating
-        // would rematch the family's hue. Only then rewrite — hand-edits that
-        // already left the page alone stay put.
-        const darkLeaked = (c.darkScale?.[1]?.toLowerCase() === pages.dark.toLowerCase())
-          && (next.darkScale[1].toLowerCase() !== pages.dark.toLowerCase())
-        const lightLeaked = (c.scale?.[1]?.toLowerCase() === pages.light.toLowerCase())
-          && (next.scale[1].toLowerCase() !== pages.light.toLowerCase())
-        if (darkLeaked || lightLeaked) s.updateCustomColor(c.key, next)
-      })
-    } catch {
-      /* invalid hex — ignore */
-    }
-  }, [])
+  useEffect(() => { ensureColorScales() }, [])
 }
 
 // Rebuilds EVERY ramp from its stored base colour when the contrast shift (or

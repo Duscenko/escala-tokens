@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getLicenceKey } from './licence'
 import { librariesFromPersist, type PluginLibrary } from './pluginSession'
 
 /** Session key for the pairing code while `/login` is in the way. */
@@ -9,7 +10,7 @@ type LibraryInput = { id: string; name: string }
 async function postAccount(
   op: 'approve' | 'register',
   accessToken: string,
-  body: { code?: string; libraries: LibraryInput[] },
+  body: { code?: string; libraries: LibraryInput[]; licenceKey?: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const res = await fetch(`/api/plugin-session?op=${op}`, {
@@ -44,7 +45,9 @@ export async function approvePluginSignIn(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const token = (await supabase?.auth.getSession())?.data.session?.access_token
   if (!token) return { ok: false, error: 'Sign in first.' }
-  return postAccount('approve', token, { code, libraries })
+  // The key rides along once so the plugin session knows the plan; the server
+  // validates it with Polar and keeps only the expiry.
+  return postAccount('approve', token, { code, libraries, licenceKey: getLicenceKey() ?? undefined })
 }
 
 /** After a successful publish, so the plugin's list includes this library. Best-effort. */

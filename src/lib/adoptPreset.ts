@@ -13,7 +13,7 @@
 // theme you are not looking at), or make the style real first. Only the third is
 // both editable and honest.
 
-import { mintTheme, slotsFromAccent } from '../components/configurator/ThemePanel'
+import { mintTheme, slotsFromAccent } from './themeMint'
 import { useDesignStore } from '../store/useDesignStore'
 import { loadGoogleFont } from './fonts'
 import { resetThemeSemantics, withStyleSemantics } from './stylePreviewOverlay'
