@@ -153,7 +153,10 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
 // stale brand color. A theme that reads a CUSTOM family instead retints that
 // family: the theme owns no colour, so editing "its" accent means editing the
 // primitive it points at (which every other theme on that family sees too).
-export function useApplyAccentColor() {
+/** The accent retint itself, outside React — `useApplyAccentColor` returns it
+ *  and the plugin studio's server build (`pluginStudio.ts`) calls it directly.
+ *  Reads the store fresh on every call, so there is no render to close over. */
+export function applyAccentColor(hex: string, linked = true, themeKey = 'light') {
   const {
     setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds,
     mergeThemeTokens,
@@ -161,111 +164,115 @@ export function useApplyAccentColor() {
     setPageBackground, setDarkBackground,
     gradients, updateGradient,
     colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint,
-  } = useDesignStore()
+  } = useDesignStore.getState()
+  try {
+    if (applyScopedAccentColor(hex, linked, themeKey)) return
 
-  return useCallback((hex: string, linked = true, themeKey = 'light') => {
-    try {
-      if (applyScopedAccentColor(hex, linked, themeKey)) return
+    // The page follows the BASE, not the accent — so it only moves when the
+    // base does, i.e. while the link is on. Unlinked, the user's base (and the
+    // page computed from it) is theirs to keep.
+    const neutral = linked ? neutralFromBrand(hex, neutralTint) : null
+    const nextBg = neutral ? backgroundFromBase(neutral, 'light', neutralTint) : pageBackground
+    const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark', neutralTint) : darkBackground
+    const pageMoved = nextBg !== pageBackground
+    // Every ramp is re-anchored to whatever page we land on — tone 1 grows
+    // out of it, so a moved page that only rebuilt the brand would leave the
+    // status ramps anchored to the old one.
+    const gen = (base: string) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg)
+    const scale = gen(hex)
+    // Every coloured family keeps a dark twin in step with its light ramp.
+    const genDark = (base: string) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg)
+    const scaleDark = genDark(hex)
+    // The NEUTRAL's own ramps pass the tint; the coloured families above
+    // deliberately don't. `chromaLink` means "continue from the page's
+    // chroma", which is only meaningful for the family the page is DERIVED
+    // from — same hue. Feeding it to the accent would paint the page's
+    // chroma at the accent's hue and turn its step 2 into a saturated fill.
+    const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, 'light', neutralTint) : null
+    // The dark twin — same neutral (so it carries the accent's hue), but grown
+    // out of the dark page instead of the light one.
+    const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null
 
-      // The page follows the BASE, not the accent — so it only moves when the
-      // base does, i.e. while the link is on. Unlinked, the user's base (and the
-      // page computed from it) is theirs to keep.
-      const neutral = linked ? neutralFromBrand(hex, neutralTint) : null
-      const nextBg = neutral ? backgroundFromBase(neutral, 'light', neutralTint) : pageBackground
-      const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark', neutralTint) : darkBackground
-      const pageMoved = nextBg !== pageBackground
-      // Every ramp is re-anchored to whatever page we land on — tone 1 grows
-      // out of it, so a moved page that only rebuilt the brand would leave the
-      // status ramps anchored to the old one.
-      const gen = (base: string) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg)
-      const scale = gen(hex)
-      // Every coloured family keeps a dark twin in step with its light ramp.
-      const genDark = (base: string) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg)
-      const scaleDark = genDark(hex)
-      // The NEUTRAL's own ramps pass the tint; the coloured families above
-      // deliberately don't. `chromaLink` means "continue from the page's
-      // chroma", which is only meaningful for the family the page is DERIVED
-      // from — same hue. Feeding it to the accent would paint the page's
-      // chroma at the accent's hue and turn its step 2 into a saturated fill.
-      const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, 'light', neutralTint) : null
-      // The dark twin — same neutral (so it carries the accent's hue), but grown
-      // out of the dark page instead of the light one.
-      const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null
-
-      if (pageMoved) setPageBackground(nextBg)
-      if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
-      setPrimaryColor(hex)
-      setPrimaryScale(scale)
-      setPrimaryDarkScale(scaleDark)
-      if (pageMoved) {
-        const s = useDesignStore.getState()
-        const owned = privateFamilyKeys(s.themeSources)
-        s.customColors.forEach((c) => {
-          if (owned.has(c.key)) return
-          s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) })
-        })
-      }
-      // States (error/warning/success/info) optionally track the accent too —
-      // same contract as the neutral link just above, for the four status
-      // primitives. Linked, `recommendStateColors` blends the NEW accent's
-      // chroma into each canonical hue (hue + lightness stay put, so red stays
-      // red) — the exact math the old one-shot "match states" button ran, now
-      // re-applied on every accent edit instead of a manual click. Unlinked, a
-      // state's own colour is left untouched but its ramp still re-anchors when
-      // the page moved, same as every other coloured family above.
-      // Read the flag live — a pack pick turns the link on in the same tick,
-      // and a closed-over value would skip the state re-derive.
-      const statesLinked = useDesignStore.getState().linkStatesToAccent
-      if (statesLinked || pageMoved) {
-        const s = useDesignStore.getState()
-        const rec = statesLinked ? recommendStateColors(hex) : null
-        const nextError = rec?.error ?? s.errorColor
-        const nextWarning = rec?.warning ?? s.warningColor
-        const nextSuccess = rec?.success ?? s.successColor
-        const nextInfo = rec?.info ?? s.infoColor
-        if (rec) s.setErrorColor(nextError)
-        s.setErrorScale(gen(nextError)); s.setErrorDarkScale(genDark(nextError))
-        if (rec) s.setWarningColor(nextWarning)
-        s.setWarningScale(gen(nextWarning)); s.setWarningDarkScale(genDark(nextWarning))
-        if (rec) s.setSuccessColor(nextSuccess)
-        s.setSuccessScale(gen(nextSuccess)); s.setSuccessDarkScale(genDark(nextSuccess))
-        if (rec) s.setInfoColor(nextInfo)
-        s.setInfoScale(gen(nextInfo)); s.setInfoDarkScale(genDark(nextInfo))
-      }
-      for (const t of themeOrder) {
-        // Only themes reading the GLOBAL accent follow this change.
-        if ((themeSources[t]?.brand ?? 'accent') !== 'accent') continue
-        const kind = themeKinds[t] ?? 'light'
-        const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind)
-        // Each theme kind re-tints its gray tokens from its own neutral ramp,
-        // so dark surfaces track the accent just like the light ones do.
-        const ramp = kind === 'dark' ? gDark : gScale
-        if (ramp) Object.assign(updates, grayTokenUpdates(ramp, themes[t] ?? {}, kind))
-        if (Object.keys(updates).length) mergeThemeTokens(t, updates)
-      }
-      if (neutral && gScale && gDark) {
-        setGrayBaseColor(neutral)
-        setGrayLightScale(gScale)
-        setGrayDarkScale(gDark)
-      }
-      // Keep the accent-linked gradients on-brand. The link is an explicit
-      // per-gradient lock (`linked`, toggled in the Gradients editor) — an
-      // unlocked gradient is the user's to keep, whatever its colors.
-      // Re-resolved against the new RAMP, passing the current stops so the
-      // user's own tones, positions and stop count survive the retint — a
-      // linked gradient tracks the accent, it isn't reset by it.
-      for (const g of gradients) {
-        if (!g.linked) continue
-        // Both ramps: one `tone` reference, resolved into a light value AND a
-        // dark one, so a linked gradient tracks the accent in both appearances
-        // rather than going stale the moment the preview flips to dark.
-        const stops = linkedStopsFor(g.id, scale, g.stops, scaleDark)
-        if (stops) updateGradient(g.id, { stops })
-      }
-    } catch {
-      /* invalid hex — ignore */
+    if (pageMoved) setPageBackground(nextBg)
+    if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
+    setPrimaryColor(hex)
+    setPrimaryScale(scale)
+    setPrimaryDarkScale(scaleDark)
+    if (pageMoved) {
+      const s = useDesignStore.getState()
+      const owned = privateFamilyKeys(s.themeSources)
+      s.customColors.forEach((c) => {
+        if (owned.has(c.key)) return
+        s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) })
+      })
     }
-  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
+    // States (error/warning/success/info) optionally track the accent too —
+    // same contract as the neutral link just above, for the four status
+    // primitives. Linked, `recommendStateColors` blends the NEW accent's
+    // chroma into each canonical hue (hue + lightness stay put, so red stays
+    // red) — the exact math the old one-shot "match states" button ran, now
+    // re-applied on every accent edit instead of a manual click. Unlinked, a
+    // state's own colour is left untouched but its ramp still re-anchors when
+    // the page moved, same as every other coloured family above.
+    // Read the flag live — a pack pick turns the link on in the same tick,
+    // and a closed-over value would skip the state re-derive.
+    const statesLinked = useDesignStore.getState().linkStatesToAccent
+    if (statesLinked || pageMoved) {
+      const s = useDesignStore.getState()
+      const rec = statesLinked ? recommendStateColors(hex) : null
+      const nextError = rec?.error ?? s.errorColor
+      const nextWarning = rec?.warning ?? s.warningColor
+      const nextSuccess = rec?.success ?? s.successColor
+      const nextInfo = rec?.info ?? s.infoColor
+      if (rec) s.setErrorColor(nextError)
+      s.setErrorScale(gen(nextError)); s.setErrorDarkScale(genDark(nextError))
+      if (rec) s.setWarningColor(nextWarning)
+      s.setWarningScale(gen(nextWarning)); s.setWarningDarkScale(genDark(nextWarning))
+      if (rec) s.setSuccessColor(nextSuccess)
+      s.setSuccessScale(gen(nextSuccess)); s.setSuccessDarkScale(genDark(nextSuccess))
+      if (rec) s.setInfoColor(nextInfo)
+      s.setInfoScale(gen(nextInfo)); s.setInfoDarkScale(genDark(nextInfo))
+    }
+    for (const t of themeOrder) {
+      // Only themes reading the GLOBAL accent follow this change.
+      if ((themeSources[t]?.brand ?? 'accent') !== 'accent') continue
+      const kind = themeKinds[t] ?? 'light'
+      const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind)
+      // Each theme kind re-tints its gray tokens from its own neutral ramp,
+      // so dark surfaces track the accent just like the light ones do.
+      const ramp = kind === 'dark' ? gDark : gScale
+      if (ramp) Object.assign(updates, grayTokenUpdates(ramp, themes[t] ?? {}, kind))
+      if (Object.keys(updates).length) mergeThemeTokens(t, updates)
+    }
+    if (neutral && gScale && gDark) {
+      setGrayBaseColor(neutral)
+      setGrayLightScale(gScale)
+      setGrayDarkScale(gDark)
+    }
+    // Keep the accent-linked gradients on-brand. The link is an explicit
+    // per-gradient lock (`linked`, toggled in the Gradients editor) — an
+    // unlocked gradient is the user's to keep, whatever its colors.
+    // Re-resolved against the new RAMP, passing the current stops so the
+    // user's own tones, positions and stop count survive the retint — a
+    // linked gradient tracks the accent, it isn't reset by it.
+    for (const g of gradients) {
+      if (!g.linked) continue
+      // Both ramps: one `tone` reference, resolved into a light value AND a
+      // dark one, so a linked gradient tracks the accent in both appearances
+      // rather than going stale the moment the preview flips to dark.
+      const stops = linkedStopsFor(g.id, scale, g.stops, scaleDark)
+      if (stops) updateGradient(g.id, { stops })
+    }
+  } catch {
+    /* invalid hex — ignore */
+  }
+}
+
+export function useApplyAccentColor() {
+  // Subscribed so a caller re-renders with the store, as it did when this read
+  // the values for a closure; the function itself reads the store fresh.
+  useDesignStore()
+  return useCallback(applyAccentColor, [])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives

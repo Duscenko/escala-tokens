@@ -12,7 +12,7 @@
 // `startNewSystem()` and the final `generateTokenJSON`.
 
 import { useDesignStore } from '../store/useDesignStore'
-import { ensureColorScales } from './colorActions'
+import { ensureColorScales, applyAccentColor } from './colorActions'
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
 import { generateTokenJSON } from './tokenGenerator'
@@ -111,6 +111,14 @@ export function buildStudioTokens(
     : mintTheme(slotsFromAccent(choices.accent as string, s0.neutralTint), kind, name, null, s0.neutralTint)
   if ('error' in minted) return { error: minted.error }
   const key = minted.key
+  // A style brings its own accent; an accent sent WITH it is the user's change
+  // on top. The same retint the web's Accent row runs: a theme on its own brand
+  // family retints that family, one on the global accent moves the whole system
+  // (neutral link, pages, states and gradients included).
+  if (preset && typeof choices.accent === 'string' && HEX.test(choices.accent)
+    && choices.accent.toLowerCase() !== preset.accent.toLowerCase()) {
+    applyAccentColor(choices.accent.toLowerCase(), useDesignStore.getState().linkNeutralToAccent, key)
+  }
   const patch = (partial: Parameters<typeof s0.patchThemeFoundations>[1]) =>
     useDesignStore.getState().patchThemeFoundations(key, partial)
   const resolved = () => resolveThemeFoundations(useDesignStore.getState(), key)

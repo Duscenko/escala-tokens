@@ -46,6 +46,17 @@ describe('plugin studio build', () => {
       }
     }
   })
+  it('an accent sent with a style retints it', () => {
+    const o = studioOptions()
+    const id = o.styles[0].id
+    const plain = buildStudioTokens({ style: id }, 'pro')
+    const tinted = buildStudioTokens({ style: id, accent: '#e0457b' }, 'pro')
+    if ('error' in plain || 'error' in tinted) throw new Error('build failed')
+    const nine = (t: unknown) => Object.entries((t as { colors: { primitive: Record<string, string> } }).colors.primitive)
+      .filter(([k]) => /-9$/.test(k) && !/dark|gray|error|warning|success|info/.test(k)).map(([, v]) => v)
+    expect(nine(tinted.tokens)).toContain('#e0457b')
+    expect(nine(plain.tokens)).not.toContain('#e0457b')
+  })
   it('rejects a bad accent', () => {
     expect('error' in buildStudioTokens({ accent: 'blue' }, 'free')).toBe(true)
   })

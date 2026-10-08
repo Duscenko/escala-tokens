@@ -5074,12 +5074,168 @@ function resolveFamilyPages(s, familyKey) {
 
 // src/lib/colorActions.ts
 var BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === "brand");
+function brandTokenUpdates(scale, targetTokens, kind = "light") {
+  const updates = {};
+  for (const role of BRAND_ROLES) {
+    if (!targetTokens[role.key]) continue;
+    const t = recToneFor(role, kind, scale);
+    if (scale[t]) updates[role.key] = scale[t];
+  }
+  return updates;
+}
 var GRAY_ROLES = ALL_ROLES.filter((r) => r.scale === "gray");
+function grayTokenUpdates(scale, targetTokens, kind = "light") {
+  const updates = {};
+  for (const role of GRAY_ROLES) {
+    if (!targetTokens[role.key]) continue;
+    const t = kind === "dark" ? recDarkTone(role) : role.tone;
+    if (scale[t]) updates[role.key] = scale[t];
+  }
+  return updates;
+}
+function privateFamilyKeys(themeSources) {
+  const keys = /* @__PURE__ */ new Set();
+  const global = new Set(Object.values(GLOBAL_FAMILY));
+  for (const refs of Object.values(themeSources)) {
+    if (!refs) continue;
+    for (const slot of FAMILY_SLOTS) {
+      if (refs[slot] && !global.has(refs[slot])) keys.add(refs[slot]);
+    }
+    for (const rank of BRAND_EXTRA_RANKS) {
+      const extra = refs[rank];
+      if (extra && !global.has(extra)) keys.add(extra);
+    }
+  }
+  return keys;
+}
 function customScalePair(hex, s, pages, isGray) {
   return {
     scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light", isGray ? s.neutralTint : void 0),
     darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
+}
+function applyScopedAccentColor(hex, linked, themeKey) {
+  const s = useDesignStore.getState();
+  const refs = s.themeSources[themeKey];
+  if (!refs || refs.brand === GLOBAL_FAMILY.brand) return false;
+  const pages = resolveThemePages(s, themeKey, linked ? hex : null);
+  s.updateCustomColor(refs.brand, {
+    base: hex,
+    ...customScalePair(hex, s, pages, false)
+  });
+  if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
+    s.updateCustomColor(refs.gray, {
+      base: pages.nextNeutral,
+      ...customScalePair(pages.nextNeutral, s, pages, true)
+    });
+  }
+  const skip = /* @__PURE__ */ new Set([refs.brand, ...pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray ? [refs.gray] : []]);
+  for (const slot of FAMILY_SLOTS) {
+    const key = refs[slot];
+    if (!key || key === GLOBAL_FAMILY[slot] || skip.has(key)) continue;
+    const fam = s.customColors.find((c) => c.key === key);
+    if (!fam) continue;
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === "gray"));
+  }
+  const latest = useDesignStore.getState();
+  for (const rank of BRAND_EXTRA_RANKS) {
+    const key = refs[rank];
+    if (!key) continue;
+    const fam = latest.customColors.find((c) => c.key === key);
+    if (!fam) continue;
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, false));
+  }
+  return true;
+}
+function applyAccentColor(hex, linked = true, themeKey = "light") {
+  const {
+    setPrimaryColor,
+    setPrimaryScale,
+    setPrimaryDarkScale,
+    themes,
+    themeOrder,
+    themeSources,
+    themeKinds,
+    mergeThemeTokens,
+    setGrayBaseColor,
+    setGrayLightScale,
+    setGrayDarkScale,
+    setPageBackground,
+    setDarkBackground,
+    gradients,
+    updateGradient,
+    colorAlgorithm,
+    contrastShift,
+    pageBackground,
+    darkBackground,
+    neutralTint
+  } = useDesignStore.getState();
+  try {
+    if (applyScopedAccentColor(hex, linked, themeKey)) return;
+    const neutral = linked ? neutralFromBrand(hex, neutralTint) : null;
+    const nextBg = neutral ? backgroundFromBase(neutral, "light", neutralTint) : pageBackground;
+    const nextDarkBg = neutral ? backgroundFromBase(neutral, "dark", neutralTint) : darkBackground;
+    const pageMoved = nextBg !== pageBackground;
+    const gen = (base) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg);
+    const scale = gen(hex);
+    const genDark = (base) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg);
+    const scaleDark = genDark(hex);
+    const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, "light", neutralTint) : null;
+    const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null;
+    if (pageMoved) setPageBackground(nextBg);
+    if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg);
+    setPrimaryColor(hex);
+    setPrimaryScale(scale);
+    setPrimaryDarkScale(scaleDark);
+    if (pageMoved) {
+      const s = useDesignStore.getState();
+      const owned = privateFamilyKeys(s.themeSources);
+      s.customColors.forEach((c) => {
+        if (owned.has(c.key)) return;
+        s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) });
+      });
+    }
+    const statesLinked = useDesignStore.getState().linkStatesToAccent;
+    if (statesLinked || pageMoved) {
+      const s = useDesignStore.getState();
+      const rec = statesLinked ? recommendStateColors(hex) : null;
+      const nextError = rec?.error ?? s.errorColor;
+      const nextWarning = rec?.warning ?? s.warningColor;
+      const nextSuccess = rec?.success ?? s.successColor;
+      const nextInfo = rec?.info ?? s.infoColor;
+      if (rec) s.setErrorColor(nextError);
+      s.setErrorScale(gen(nextError));
+      s.setErrorDarkScale(genDark(nextError));
+      if (rec) s.setWarningColor(nextWarning);
+      s.setWarningScale(gen(nextWarning));
+      s.setWarningDarkScale(genDark(nextWarning));
+      if (rec) s.setSuccessColor(nextSuccess);
+      s.setSuccessScale(gen(nextSuccess));
+      s.setSuccessDarkScale(genDark(nextSuccess));
+      if (rec) s.setInfoColor(nextInfo);
+      s.setInfoScale(gen(nextInfo));
+      s.setInfoDarkScale(genDark(nextInfo));
+    }
+    for (const t of themeOrder) {
+      if ((themeSources[t]?.brand ?? "accent") !== "accent") continue;
+      const kind = themeKinds[t] ?? "light";
+      const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind);
+      const ramp = kind === "dark" ? gDark : gScale;
+      if (ramp) Object.assign(updates, grayTokenUpdates(ramp, themes[t] ?? {}, kind));
+      if (Object.keys(updates).length) mergeThemeTokens(t, updates);
+    }
+    if (neutral && gScale && gDark) {
+      setGrayBaseColor(neutral);
+      setGrayLightScale(gScale);
+      setGrayDarkScale(gDark);
+    }
+    for (const g of gradients) {
+      if (!g.linked) continue;
+      const stops = linkedStopsFor(g.id, scale, g.stops, scaleDark);
+      if (stops) updateGradient(g.id, { stops });
+    }
+  } catch {
+  }
 }
 function ensureColorScales() {
   const s = useDesignStore.getState();
@@ -7783,6 +7939,9 @@ function buildStudioTokens(choices, tier) {
   const minted = preset ? adoptPreset(preset, choices.kind ? kind : preset.preferredAppearance, { track: false }) : mintTheme(slotsFromAccent(choices.accent, s0.neutralTint), kind, name, null, s0.neutralTint);
   if ("error" in minted) return { error: minted.error };
   const key = minted.key;
+  if (preset && typeof choices.accent === "string" && HEX.test(choices.accent) && choices.accent.toLowerCase() !== preset.accent.toLowerCase()) {
+    applyAccentColor(choices.accent.toLowerCase(), useDesignStore.getState().linkNeutralToAccent, key);
+  }
   const patch = (partial) => useDesignStore.getState().patchThemeFoundations(key, partial);
   const resolved = () => resolveThemeFoundations(useDesignStore.getState(), key);
   const known = (family) => family && FONT_PRESETS.some((f) => f.value === family) ? family : void 0;
