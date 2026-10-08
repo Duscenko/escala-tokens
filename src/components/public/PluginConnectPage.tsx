@@ -56,7 +56,7 @@ export function PluginConnectPage() {
   useEffect(() => {
     applyDocumentHead({
       title: `${t('Connect Figma')} — Escala Tokens`,
-      description: t('Sign in so the Figma plugin can list your libraries and sync.'),
+      description: t('Sign in so the Figma plugin can list your folders and sync.'),
       canonicalPath: '/plugin',
       robots: 'noindex, nofollow',
     })
@@ -121,7 +121,7 @@ export function PluginConnectPage() {
                 {t('Plugin connected')}
               </h1>
               <p className="mt-2 text-ui leading-relaxed text-fg-muted">
-                {t('Back in Figma, pick a library and press Sync. You can close this tab.')}
+                {t('Back in Figma, pick a folder and press Sync. You can close this tab.')}
               </p>
               <a href={FIGMA_WEB} onClick={goToFigma} className={`mt-6 ${PRIMARY}`}>{t('Go to Figma')}</a>
               <a href="/docs/figma" className={`mt-2 ${SECONDARY}`}>{t('How Figma sync works')}</a>
@@ -144,7 +144,7 @@ export function PluginConnectPage() {
                   <dd className="truncate font-medium">{user?.email}</dd>
                 </div>
                 <div className="px-3.5 py-2.5">
-                  <dt className="text-fg-muted">{t('Libraries the plugin will list')}</dt>
+                  <dt className="text-fg-muted">{t('Folders the plugin will list')}</dt>
                   <dd className="mt-1.5">
                     {libraries.length ? (
                       <ul className="flex flex-wrap gap-1.5">

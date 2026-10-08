@@ -115,7 +115,7 @@ function SyncStuckHelp() {
       </button>
       {open ? (
         <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
-          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this library.')}</li>
+          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this folder.')}</li>
           <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself — Live Sync will not rewrite a pasted import.')}</li>
           <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
         </ol>
@@ -512,7 +512,7 @@ export default function FigmaSyncView({
           <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
             {publishedState === 'missing'
               ? t('Nothing published yet. Press Sync now, then sign in from the Escala plugin in Figma.')
-              : t('In Figma, open the Escala plugin and sign in. This library shows up there — press Sync to start.')}
+              : t('In Figma, open the Escala plugin and sign in. This folder shows up there — press Sync to start.')}
           </p>
         </div>
         {publishState === 'publishing' && (
@@ -543,10 +543,10 @@ export default function FigmaSyncView({
             <span className="mt-0.5 text-status-success" aria-hidden>✓</span>
             <div className="min-w-0">
               <p className="text-caption font-semibold text-fg">
-                {t('Published. Sign in from the plugin to sync this library.')}
+                {t('Published. Sign in from the plugin to sync this folder.')}
               </p>
               <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this library.')}
+                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this folder.')}
               </p>
             </div>
           </div>

@@ -303,7 +303,7 @@ function CreateThemeCard({ disabled, onClick }: { disabled: boolean; onClick: ()
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
       </span>
       <span className="flex flex-col gap-1">
-        <span className="text-body font-semibold text-fg">{t('Create file')}</span>
+        <span className="text-body font-semibold text-fg">{t('Create theme')}</span>
         <span className="text-caption text-fg-faint">{t('A new theme in this folder.')}</span>
       </span>
     </button>
@@ -364,8 +364,8 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={t('Library options')}
-        title={t('Library options')}
+        aria-label={t('Folder options')}
+        title={t('Folder options')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${open ? 'bg-elevated text-fg' : ''}`}
@@ -380,7 +380,7 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
             exit={{ opacity: 0, scale: 0.98, y: -4 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             role="menu"
-            aria-label={t('Library options')}
+            aria-label={t('Folder options')}
             className="absolute right-0 top-full z-[60] mt-1.5 w-48 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
           >
             {onReset && (
@@ -412,7 +412,7 @@ function GuestAccountCard() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-line bg-surface px-4 py-3.5">
       <p className="min-w-[14rem] flex-1 text-caption text-fg-muted">
-        {t('Create an account to keep your libraries and open them on any device.')}
+        {t('Create an account to keep your folders and open them on any device.')}
       </p>
       <div className="flex flex-shrink-0 items-center gap-2">
         <a href={loginHref({ next: 'library' })} className={LINK}>{t('Sign in')}</a>
@@ -499,7 +499,7 @@ function SaveLibraryButton() {
         disabled={Boolean(saved && same && !justSaved)}
         className={PRIMARY}
       >
-        {justSaved ? t('Saved') : t('Save library')}
+        {justSaved ? t('Saved') : t('Save folder')}
       </button>
     </div>
   )
@@ -1149,7 +1149,7 @@ export default function ThemeLibraryPage({
         )}
         {libs.length > 0 && (
           <section aria-labelledby="home-recent-libraries" className="flex flex-col gap-3">
-            <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other libraries')}</SectionTitle>
+            <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other folders')}</SectionTitle>
             {libraryList(libs)}
           </section>
         )}
@@ -1219,7 +1219,7 @@ export default function ThemeLibraryPage({
         <section aria-labelledby="home-saved" className="flex flex-col gap-3">
           <SectionTitle id="home-saved" count={list.length}>{t('Saved')}</SectionTitle>
           {list.length === 0
-            ? <EmptyNote>{query ? t('No folder matches “{q}”.', { q: query }) : t('Nothing else saved yet. New folder starts another system; Save library keeps a copy of this one.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No folder matches “{q}”.', { q: query }) : t('Nothing else saved yet. New folder starts another system; Save folder keeps a copy of this one.')}</EmptyNote>
             : libraryList(list)}
         </section>
       </>
@@ -1245,7 +1245,7 @@ export default function ThemeLibraryPage({
                     if (e.key === 'Enter') commitLibraryName()
                     if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
                   }}
-                  aria-label={t('Library name')}
+                  aria-label={t('Folder name')}
                   className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                 />
               ) : (
@@ -1254,8 +1254,8 @@ export default function ThemeLibraryPage({
                   <button
                     type="button"
                     onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
-                    aria-label={t('Rename library')}
-                    title={t('Rename library')}
+                    aria-label={t('Rename folder')}
+                    title={t('Rename folder')}
                     className={MENU_BTN}
                   >
                     <PencilGlyph />
@@ -1276,7 +1276,7 @@ export default function ThemeLibraryPage({
                 className={LINK}
               >
                 <PlusGlyph />
-                {t('Create file')}
+                {t('Create theme')}
               </button>
               <button
                 type="button"
@@ -1330,7 +1330,7 @@ export default function ThemeLibraryPage({
           right={confirmSaved ? (
             <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
               <span className="text-caption text-fg-muted">
-                {confirmSaved === 'load' ? t('Replace what is on screen?') : t('Delete this library from this browser?')}
+                {confirmSaved === 'load' ? t('Replace what is on screen?') : t('Delete this folder from this browser?')}
               </span>
               <button
                 type="button"
@@ -1359,7 +1359,7 @@ export default function ThemeLibraryPage({
                 <PinGlyph />
               </button>
               <button type="button" onClick={() => setConfirmSaved('delete')} className={`${ACTION} hover:text-status-danger`}>{t('Delete')}</button>
-              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load library')}</button>
+              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load folder')}</button>
             </>
           )}
         />

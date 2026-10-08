@@ -1031,7 +1031,7 @@ export default function ExportWizard({
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
-                    {isGitHubDestination ? 'GitHub exporter' : <>Save library <span className="normal-case font-medium tracking-normal">(optional)</span></>}
+                    {isGitHubDestination ? 'GitHub exporter' : <>Save folder <span className="normal-case font-medium tracking-normal">(optional)</span></>}
                   </span>
                   {!isGitHubDestination && savedEntry && (
                     <span className="text-caption text-fg-faint flex-shrink-0">
@@ -1046,7 +1046,7 @@ export default function ExportWizard({
                 ) : (
                 <div className="flex items-center gap-2">
                   {themeScope ? (
-                    <div aria-label="Library name (matches the theme)" className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
+                    <div aria-label="Folder name (matches the theme)" className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
                       <span className="flex-shrink-0 text-caption text-fg-faint">Name</span>
                       <span className="truncate text-ui font-medium text-fg">{snapshotName}</span>
                     </div>
@@ -1065,7 +1065,7 @@ export default function ExportWizard({
                       justSaved ? 'border-status-success bg-status-success-solid text-white' : 'border-line-strong bg-app text-fg hover:bg-elevated'
                     }`}
                   >
-                    {justSaved ? '✓ Saved' : 'Save library'}
+                    {justSaved ? '✓ Saved' : 'Save folder'}
                   </button>
                 </div>
                 )}

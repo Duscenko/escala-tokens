@@ -221,7 +221,7 @@ export default function IntegrationStatusRail({
                   layout="stacked"
                   version={PLUGIN_VERSION}
                   updateAvailable={pluginUpdateAvailable}
-                  info="Sign in from the Escala plugin. Your libraries show up there — press Sync to start, Pause to stop. File and modes travel in the published payload."
+                  info="Sign in from the Escala plugin. Your folders show up there — press Sync to start, Pause to stop. File and modes travel in the published payload."
                 />
                 </div>
               ) : null}

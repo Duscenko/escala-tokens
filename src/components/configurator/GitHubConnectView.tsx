@@ -460,7 +460,7 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
         {pushError && <p className="text-xs text-status-danger">{pushError}</p>}
         {pushState === 'done' && githubRepo && (
           <div className="flex flex-col gap-1">
-            <p className="text-xs text-status-success">✓ Saved to My libraries</p>
+            <p className="text-xs text-status-success">✓ Saved to My folders</p>
             <a
               href={`https://github.com/${githubRepo}`}
               target="_blank"

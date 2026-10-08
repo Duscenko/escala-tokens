@@ -92,7 +92,7 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
               onClick={() => { setMenuOpen(false); onOpenLibrary() }}
               className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}
             >
-              {t('Saved libraries')}
+              {t('Saved folders')}
               {savedCount > 0 && <span className="text-caption text-fg-faint">{savedCount}</span>}
             </button>
           )}
