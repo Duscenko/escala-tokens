@@ -6,7 +6,7 @@
  * so the API and the connect page share one list.
  */
 
-import { canonicalizePublishId } from './publishId'
+import { canonicalizePublishId } from './publishId.js'
 
 export interface PluginLibrary {
   id: string
