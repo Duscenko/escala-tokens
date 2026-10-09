@@ -79,7 +79,7 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INA
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
-import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
+import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
 import { goToLogin, useAccess } from '../../lib/access'
@@ -832,30 +832,6 @@ function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
   )
 }
 
-function RandomThemeButton({ onClick }: { onClick: () => void }) {
-  const { t } = useI18n()
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={t('Random tweak')}
-      title={t('Random tweak')}
-      className="relative flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-line text-mini font-normal text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-    >
-      <span
-        aria-hidden
-        className="relative z-[1] block size-[14px] bg-current"
-        style={{
-          WebkitMask: "url('/icons/settings/random.svg') center / contain no-repeat",
-          mask: "url('/icons/settings/random.svg') center / contain no-repeat",
-        }}
-      />
-      <span className="relative z-[1]">{t('Random tweak')}</span>
-      <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
-    </button>
-  )
-}
-
 function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
   label?: string
   hint?: string
@@ -1566,6 +1542,8 @@ export default function ThemeQuickSettingsRail({
   overlapSize = 'md',
   onOverlapSizeChange,
   embed = false,
+  exploringRandom = false,
+  onExploringRandomEnd,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1608,6 +1586,9 @@ export default function ThemeQuickSettingsRail({
   /** Render in the page column instead of the inspector. The create studio
    *  uses the inspector for the step list, so the edition sits in the card. */
   embed?: boolean
+  /** Home → Random: the footer is Random / Save theme, not Update theme. */
+  exploringRandom?: boolean
+  onExploringRandomEnd?: () => void
 }) {
   const { t } = useI18n()
   const inInspector = useInInspector()
@@ -2097,7 +2078,7 @@ export default function ThemeQuickSettingsRail({
               onChange={(next) => onColorAppearanceChange?.(next)}
             />
           }
-          footer={(
+          footer={exploringRandom ? undefined : (
             <div className="border-t border-line px-3 pb-2.5 pt-2">
               <RandomThemeButton onClick={applyRandomTheme} />
             </div>
@@ -2586,7 +2567,13 @@ export default function ThemeQuickSettingsRail({
 
       {/* Undo + Save / Update theme — shared with Variables. Hidden while a
           System Style is only tried on (that overlay is not the store). */}
-      {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : <ThemeSaveBar />)}
+      {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : (
+        <ThemeSaveBar
+          exploringRandom={exploringRandom}
+          onRandom={exploringRandom ? applyRandomTheme : undefined}
+          onSaved={onExploringRandomEnd}
+        />
+      ))}
       </div>
     </aside>
   )

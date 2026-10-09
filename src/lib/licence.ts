@@ -34,13 +34,9 @@ export interface LicenceState {
   hasKey: boolean
 }
 
-// Same test as `figmaSync.isLiveEnvironment`, restated here because that module
-// imports THIS one (to send the key) and a cycle would leave both half-loaded.
-function isLive(): boolean {
-  if (typeof window === 'undefined') return false
-  const o = window.location.origin
-  return !o.includes('localhost') && !o.includes('127.0.0.1')
-}
+// `vite dev` replaces this when `.env.local` has VITE_DEV_LICENCE_KEY.
+// Production builds leave it null, so a local test key never ships.
+let DEV_LICENCE: string | null = null /* dev-licence-slot */
 
 function readKey(): string | null {
   try {
@@ -60,7 +56,15 @@ function writeKey(key: string | null): void {
   }
 }
 
-let memoryKey: string | null = readKey()
+function initialKey(): string | null {
+  if (DEV_LICENCE) {
+    if (readKey() !== DEV_LICENCE) writeKey(DEV_LICENCE)
+    return DEV_LICENCE
+  }
+  return readKey()
+}
+
+let memoryKey: string | null = initialKey()
 let state: LicenceState = { status: memoryKey ? 'checking' : 'none', expiresAt: null, hasKey: Boolean(memoryKey) }
 const listeners = new Set<() => void>()
 let checkedOnce = false
@@ -132,9 +136,10 @@ export function clearLicence(): void {
 }
 
 /** One validation per page load for a key that was saved earlier. Not polled:
- *  an expiry is a date, and the server re-checks on every publish anyway. */
+ *  an expiry is a date, and the server re-checks on every publish anyway.
+ *  Localhost is included: a key left on `checking` is not Pro. */
 export function ensureLicenceChecked(): void {
-  if (checkedOnce || !memoryKey || !isLive()) return
+  if (checkedOnce || !memoryKey) return
   checkedOnce = true
   void validate(memoryKey).then(setState)
 }

@@ -461,6 +461,7 @@ export default function ThemePreviewHub({
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
+  exploringRandom = false, onExploringRandomEnd,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
@@ -507,6 +508,8 @@ export default function ThemePreviewHub({
   onGithubPushStateChange: (state: GitHubPushState) => void
   docsExits: Parameters<typeof DocsView>[0]['exits']
   onCreateTheme?: () => void
+  exploringRandom?: boolean
+  onExploringRandomEnd?: () => void
 }) {
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
@@ -683,6 +686,8 @@ export default function ThemePreviewHub({
           onPreviewPlatformChange={onPreviewPlatformChange}
           overlapSize={overlapSize}
           onOverlapSizeChange={setOverlapSize}
+          exploringRandom={exploringRandom}
+          onExploringRandomEnd={onExploringRandomEnd}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (

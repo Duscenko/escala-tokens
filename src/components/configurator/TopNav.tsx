@@ -180,6 +180,9 @@ interface TopNavProps {
    *  (export/connect views), so the block sizes to its content and drops the
    *  border rather than leaving a rule that leads nowhere. */
   brandWidth?: number | null
+  /** Home keeps the 260px lockup so the mark sits over the file menu, but
+   *  drops the rule — the card already has its own edge. */
+  brandEdge?: boolean
   chromeAppearance: 'light' | 'dark'
   onChromeAppearanceChange: (appearance: 'light' | 'dark') => void
   /** Opens one of Docs' focused subpages. Docs itself is a menu trigger, not
@@ -573,7 +576,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 }
 
 export default function TopNav({
-  nav, onNav, railCollapsed = false, brandWidth = null,
+  nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary,
   hamburgerNav = false,
 }: TopNavProps) {
@@ -589,7 +592,7 @@ export default function TopNav({
           truncated: "Escala Tokens" is the product name, not a title that can
           ellipsize inside its own lockup. */}
       <div
-        className={`flex flex-shrink-0 items-center transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
+        className={`flex flex-shrink-0 items-center transition-[width] duration-200 ${brandWidth && brandEdge ? 'border-r border-line' : ''} ${
           railCollapsed ? 'justify-center px-0' : 'px-3'
         }`}
         style={brandWidth ? { width: brandWidth } : undefined}

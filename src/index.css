@@ -477,6 +477,12 @@
   --color-5: oklch(90.7% 0.231 133);
 }
 
+/* Home file browser — left column + shell (dark reference frame only). */
+.dark [data-home] {
+  --nav: #100e13;
+  --app: #100e13;
+}
+
 html {
   background: var(--app);
   color: var(--fg);

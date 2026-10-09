@@ -11,17 +11,69 @@ import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 
+/** Color edition and the Random-explore footer share this mark. */
+export function RandomThemeButton({
+  onClick,
+  label,
+  variant = 'tweak',
+}: {
+  onClick: () => void
+  /** Color edition says "Random tweak"; the explore footer says "Random". */
+  label?: string
+  variant?: 'tweak' | 'bar'
+}) {
+  const { t } = useI18n()
+  const text = label ?? t('Random tweak')
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={text}
+      title={text}
+      className={`relative flex h-8 items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        variant === 'bar'
+          ? 'min-w-0 flex-1 text-caption font-semibold'
+          : 'w-full text-mini font-normal'
+      }`}
+    >
+      <span
+        aria-hidden
+        className="relative z-[1] block size-[14px] flex-shrink-0 bg-current"
+        style={{
+          WebkitMask: "url('/icons/settings/random.svg') center / contain no-repeat",
+          mask: "url('/icons/settings/random.svg') center / contain no-repeat",
+        }}
+      />
+      <span className="relative z-[1] truncate">{text}</span>
+      <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
+    </button>
+  )
+}
+
 /**
  * The inspector's pinned footer on every EDITING tab (Theme and Variables):
  * Undo beside Save / Update theme. Persistence and the way back are not a
  * property of one edition, so they sit under whichever panel is open. Undo
  * walks the same edit history as the canvas header's Undo and ⌘Z, so the
  * doors can't disagree about where you are.
+ *
+ * Home → Random lands here in explore mode: Random is the primary action
+ * (spin another look on this theme) and Save theme is how you keep one.
  */
-export default function ThemeSaveBar({ inactive = false }: {
+export default function ThemeSaveBar({
+  inactive = false,
+  exploringRandom = false,
+  onRandom,
+  onSaved,
+}: {
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
   inactive?: boolean
+  /** A theme minted from Home → Random, not yet saved. */
+  exploringRandom?: boolean
+  onRandom?: () => void
+  /** After a successful save while exploring — the shell leaves this mode. */
+  onSaved?: () => void
 }) {
   const { t } = useI18n()
   const access = useAccess()
@@ -57,28 +109,46 @@ export default function ThemeSaveBar({ inactive = false }: {
           <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
         </svg>
       </button>
-      <button
-        type="button"
-        onClick={() => {
-          // A guest signs up first; the shell finishes the save on return.
-          if (access.gated) { goToLogin('save-library'); return }
-          useDesignStore.getState().saveCurrentSystem()
-          setJustSaved(true)
-        }}
-        disabled={inactive || (saved && !justSaved)}
-        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-          inactive ? 'cursor-not-allowed bg-chip-rest text-fg-faint' : 'bg-accent-solid text-accent-ink disabled:opacity-50'
-        }`}
-      >
-        {/* Saved → a check beside the label, so the dimmed button reads as
-            "done", not "unavailable". */}
-        {(saved || justSaved) && (
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M2.5 6.5 5 9l4.5-5.5" />
-          </svg>
-        )}
-        <span className="truncate">{label}</span>
-      </button>
+      {exploringRandom && onRandom && !inactive ? (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              if (access.gated) { goToLogin('save-library'); return }
+              useDesignStore.getState().saveCurrentSystem()
+              setJustSaved(true)
+              onSaved?.()
+            }}
+            className="flex h-8 flex-shrink-0 items-center rounded-lg border border-line px-2.5 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Save theme')}
+          </button>
+          <RandomThemeButton onClick={onRandom} label={t('Random')} variant="bar" />
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            // A guest signs up first; the shell finishes the save on return.
+            if (access.gated) { goToLogin('save-library'); return }
+            useDesignStore.getState().saveCurrentSystem()
+            setJustSaved(true)
+          }}
+          disabled={inactive || (saved && !justSaved)}
+          className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            inactive ? 'cursor-not-allowed bg-chip-rest text-fg-faint' : 'bg-accent-solid text-accent-ink disabled:opacity-50'
+          }`}
+        >
+          {/* Saved → a check beside the label, so the dimmed button reads as
+              "done", not "unavailable". */}
+          {(saved || justSaved) && (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M2.5 6.5 5 9l4.5-5.5" />
+            </svg>
+          )}
+          <span className="truncate">{label}</span>
+        </button>
+      )}
     </div>
   )
 }

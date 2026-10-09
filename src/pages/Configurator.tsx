@@ -642,6 +642,8 @@ export default function Configurator() {
   // door that used to open the Customize sheet goes there and bumps this, which
   // Home reads as "open the create form".
   const [createPending, setCreatePending] = useState(false)
+  /** Theme key minted from Home → Random, until the designer saves one. */
+  const [exploringRandomKey, setExploringRandomKey] = useState<string | null>(null)
   const openCreateTheme = () => {
     if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     setStylePreview(null)
@@ -819,6 +821,9 @@ export default function Configurator() {
     previewSelection.theme,
     previewSelection.appearance,
   )
+  useEffect(() => {
+    if (exploringRandomKey && exploringRandomKey !== previewTheme) setExploringRandomKey(null)
+  }, [previewTheme, exploringRandomKey])
   const previewAppearance = previewSelection.theme === previewTheme
     ? previewSelection.appearance
     : (themeKinds[previewTheme] ?? 'light')
@@ -1758,6 +1763,9 @@ export default function Configurator() {
   const homeRailOnly = themeWorkspaceTab === 'library'
     || themeWorkspaceTab === 'code'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
+  const [homeCreating, setHomeCreating] = useState(false)
+  const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating
+  const homePage = homeFileBrowser
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
    *  all nine tables. Code, Docs and Home show only the Home tile. */
@@ -1810,7 +1818,7 @@ export default function Configurator() {
   }
 
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
+    <div data-home={homePage ? '' : undefined} className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
           (Theme workspace destinations, Color/Type/Layout hub, PreviewPanel). */}
       <ChromeTabDefs />
@@ -1837,7 +1845,8 @@ export default function Configurator() {
             onConnectMcp={openMcpPage}
           />
         ) : undefined}
-        brandWidth={themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
+        brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
+        brandEdge={!homePage}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
@@ -1895,6 +1904,13 @@ export default function Configurator() {
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {/* Home has no rail: the foundations belong to a theme being edited, and the
               way HOME itself is reached is the theme avatar in the top bar. */}
+          {homePage && (
+            <aside
+              ref={setInspectorSlot}
+              className="flex w-[260px] shrink-0 flex-col overflow-hidden bg-transparent"
+              aria-label={t('Home')}
+            />
+          )}
           {themeWorkspaceRailVisible && !homeRailOnly && (
             // Home is the top tile on every Generator surface that shows this
             // rail. Theme and Variables keep the foundation icons under it.
@@ -1928,7 +1944,9 @@ export default function Configurator() {
               app's own light/dark; only the covers inside show each theme's look. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+              ? homePage
+                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -1967,6 +1985,8 @@ export default function Configurator() {
                     onSurfaceChange={setThemeHubSurface}
                     onGetCode={() => openCodeForTheme(previewTheme)}
                     onCreateTheme={openCreateTheme}
+                    exploringRandom={exploringRandomKey === previewTheme}
+                    onExploringRandomEnd={() => setExploringRandomKey(null)}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     previewPlatform={previewPlatform}
@@ -2037,6 +2057,7 @@ export default function Configurator() {
                       setStylePreview(null)
                       setThemeHubSurface('artefacts')
                       setActiveFoundation('color')
+                      setExploringRandomKey(key)
                       changePreviewTheme(key)
                       changeThemeWorkspaceTab('preview')
                     }}
@@ -2047,6 +2068,7 @@ export default function Configurator() {
                     onImport={() => setImportOpen(true)}
                     enterFolderTick={enterFolderTick}
                     onEditFoundation={selectFoundation}
+                    onCreatingChange={setHomeCreating}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (
@@ -2139,7 +2161,7 @@ export default function Configurator() {
               )}
             </div>
           </main>
-          {themesCanvas && (
+          {themesCanvas && !homePage && (
             <WorkspaceInspector
               value={inspectorTab}
               onChange={changeInspectorTab}
