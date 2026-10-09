@@ -161,7 +161,7 @@ guardar, sincronizar ni servir por MCP** sin Pro. Es suficiente.
 - Docs: primera sección.
 - Export: pide login.
 - Save theme: login y al volver guarda.
-- Customize: sin cuenta, la sección My themes no se ve y "Edit theme" lleva al login.
+- Customize: sin cuenta, My themes no se ve. El primer sistema se añade en local y abre la edición rápida; Variables, Code y Docs piden la cuenta en un diálogo.
 
 **F3. Guardar con cuenta Free**
 - *Opción rápida*: con sesión, guardar sigue siendo local (como hoy), solo que exige estar logueado.
@@ -199,8 +199,11 @@ guardar, sincronizar ni servir por MCP** sin Pro. Es suficiente.
 5. **Guardar Free: local con login (rápido) o nube (`api/systems`)**. La nube es lo que da sentido
    a la cuenta ("ábrelo en otro equipo"), pero es la fase 4 de accounts y requiere Supabase Pro
    antes de la primera licencia real.
-6. **¿Anónimo puede adoptar otro System Style?** Propuesta: previsualizar sí; "Edit theme" lleva al
-   login. Encaja con la nota roja de tu captura.
+6. **¿Anónimo puede adoptar otro System Style?** Resuelto (2026-10-09): el primer sistema se
+   añade en local ("Add design system" abre solo la edición rápida). Variables, Code y Docs
+   abren un diálogo de registro encima del previsualizador. Al volver de `/login` se abre
+   ese tema (`themes/<key>`). Descargar sí, con la cuenta. Sync alojado y un segundo tema
+   siguen pidiendo Pro.
 7. **Calendario**: ¿el muro de login sale antes del 31-oct (durante la promo) o el 1-nov junto con
    los de upgrade? Recomiendo **antes**: así medimos el embudo de login sin mezclarlo con el precio.
 
@@ -224,7 +227,8 @@ guardar, sincronizar ni servir por MCP** sin Pro. Es suficiente.
 - `lib/access.ts` (`useAccess`: anon / free / pro; `goToLogin(intent)`) y `ui/LoginWall` (fundido + tarjeta, bloquea la rueda).
 - Variables, Code y Docs (en el Generator): parcial + "Create a free account".
 - Pide login: Export (pill y wizard), Copy page de Code y de Docs (solo dentro del Generator), el menú de exportar por rampa de Primitives, **Sync now** a Figma, Save theme (panel Theme) y Save library.
-- Customize: My themes oculto; Edit theme y "+" llevan al login.
+- Customize: My themes oculto. El primer "Add design system" abre la edición rápida sin salir;
+  Variables, Code y Docs piden la cuenta en un diálogo. Un segundo tema sigue en Pro.
 - `loginReturn`: destino `workspace` que vuelve a la MISMA sección (validada contra la gramática de `workspaceLink`, sin redirección abierta) + intenciones `export` y `save-library`, que el shell termina al volver.
 - Textos del login actualizados ("Free. An account lets you…").
 

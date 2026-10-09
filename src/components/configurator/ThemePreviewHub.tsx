@@ -31,6 +31,7 @@ import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
 import { myThemeKeys } from '../../lib/themeLibrary'
+import { useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
@@ -110,7 +111,9 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  * the previewed theme's brand solid and stays open reading **Exit inspector**,
  * so the way out is written on the control itself, not only in a tooltip.
  */
-function InspectorToggle({ active, onChange, accent, ink }: {
+const HEADER_CONTROL_DISABLED = 'opacity-40 pointer-events-none'
+
+function InspectorToggle({ active, onChange, accent, ink, disabled = false, disabledTitle }: {
   active: boolean
   onChange: (v: boolean) => void
   /** The PREVIEWED theme's brand solid + its solved label ink. This is the one
@@ -118,30 +121,39 @@ function InspectorToggle({ active, onChange, accent, ink }: {
    *  armed, it is the theme's own accent telling you what you're inspecting. */
   accent?: string
   ink?: string
+  disabled?: boolean
+  disabledTitle?: string
 }) {
   const { t } = useI18n()
   const label = active ? t('Exit inspector') : t('Inspector')
+  const hint = disabled && disabledTitle
+    ? disabledTitle
+    : active
+      ? t('Return to normal interaction on the canvas')
+      : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`
   return (
     <div
-      className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
-        active ? (accent ? '' : 'border-accent-ui/50') : 'border-line hover:border-line-strong'
+      className={`flex h-8 items-center rounded-lg border p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
+        disabled
+          ? `border-line ${HEADER_CONTROL_DISABLED}`
+          : `border-dashed ${active ? (accent ? '' : 'border-accent-ui/50') : 'border-line hover:border-line-strong'}`
       }`}
-      style={active && accent ? { borderColor: `color-mix(in srgb, ${accent} 50%, transparent)` } : undefined}
+      style={active && accent && !disabled ? { borderColor: `color-mix(in srgb, ${accent} 50%, transparent)` } : undefined}
     >
       <button
         type="button"
         onClick={() => onChange(!active)}
+        disabled={disabled}
         aria-pressed={active}
+        aria-disabled={disabled}
         aria-label={label}
-        title={active
-          ? t('Return to normal interaction on the canvas')
-          : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`}
+        title={hint}
         className={`${HEADER_CONTROL_BTN} ${
-          active
+          active && !disabled
             ? (accent ? '' : 'bg-accent-solid text-accent-ink')
-            : `text-fg ${CHROME_CONTROL_HOVER}`
+            : `text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`
         }`}
-        style={active && accent ? { backgroundColor: accent, color: ink } : undefined}
+        style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
       >
         <InspectGlyph size={16} hint={!active} />
         <RevealLabel open={active}>{label}</RevealLabel>
@@ -159,7 +171,7 @@ function InspectorToggle({ active, onChange, accent, ink }: {
  * · amber pulsing publishing · red needs attention. Colour is never the only
  * carrier: `aria-label` / `title` say the state in words.
  */
-function FigmaSyncButton({ publishState, onOpen }: { publishState: FigmaPublishState; onOpen: () => void }) {
+function FigmaSyncButton({ publishState, onOpen, disabled = false, disabledTitle }: { publishState: FigmaPublishState; onOpen: () => void; disabled?: boolean; disabledTitle?: string }) {
   const { t } = useI18n()
   const published = useDesignStore((s) => Boolean(s.figmaLastPublishAt))
   const autoSync = useDesignStore((s) => s.autoSyncFigma)
@@ -175,23 +187,25 @@ function FigmaSyncButton({ publishState, onOpen }: { publishState: FigmaPublishS
         ? t('Figma sync active')
         : t('Sync with Figma')
   const dot = error ? 'bg-status-danger-solid' : busy ? 'bg-status-warning-solid animate-pulse' : 'bg-status-success-solid'
+  const title = disabled && disabledTitle ? disabledTitle : status
   return (
-    <div className="flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong">
+    <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${disabled ? HEADER_CONTROL_DISABLED : 'hover:border-line-strong'}`}>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={status}
-        title={status}
-        className={`${HEADER_CONTROL_BTN} text-fg ${CHROME_CONTROL_HOVER}`}
+        disabled={disabled}
+        aria-label={title}
+        title={title}
+        className={`${HEADER_CONTROL_BTN} text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`}
       >
         {/* A 16px-wide box so the glyph centres exactly like Inspect's; the
             38×57 mark fills its height, so 14 reads level with a 16 square. */}
         <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
           <FigmaGlyph className="h-3.5 w-auto" />
         </span>
-        <RevealLabel open={showStatus}>
+        <RevealLabel open={showStatus && !disabled}>
           {t('Sync')}
-          {showStatus && <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />}
+          {showStatus && !disabled && <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />}
         </RevealLabel>
       </button>
     </div>
@@ -203,17 +217,19 @@ function FigmaSyncButton({ publishState, onOpen }: { publishState: FigmaPublishS
  * rest, hover/focus slides out the label. A plain action — the Code tab it
  * opens replaces this view, so there's no state left for it to show.
  */
-export function GetCodeButton({ onOpen }: { onOpen: () => void }) {
+export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onOpen: () => void; disabled?: boolean; disabledTitle?: string }) {
   const { t } = useI18n()
   const label = t('Get code')
+  const title = disabled && disabledTitle ? disabledTitle : label
   return (
-    <div className="flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong">
+    <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${disabled ? HEADER_CONTROL_DISABLED : 'hover:border-line-strong'}`}>
       <button
         type="button"
         onClick={onOpen}
+        disabled={disabled}
         aria-label={label}
-        title={label}
-        className={`${HEADER_CONTROL_BTN} text-fg ${CHROME_CONTROL_HOVER}`}
+        title={title}
+        className={`${HEADER_CONTROL_BTN} text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`}
       >
         <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -457,7 +473,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onStylePreviewChange, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
@@ -476,6 +492,8 @@ export default function ThemePreviewHub({
   onPreviewPlatformChange?: (platform: GridViewport) => void
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
   stylePreview: StylePreview | null
+  onStylePreviewChange?: (preview: StylePreview) => void
+  onNeedAccount?: () => void
   /** A tried-on style was adopted into the system — re-point the preview at it
    *  and drop the ephemeral try-on. */
   onAdoptStyle: (themeKey: string) => void
@@ -515,6 +533,10 @@ export default function ThemePreviewHub({
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
   const { gated: docsGated } = useAccess()
+  const setupStep = useSetupStep(previewTheme)
+  /** Same gate as Variables / Code / Docs tabs — first customization pass. */
+  const headerActionsLocked = docsGated || setupStep != null
+  const headerActionsLockedHint = t('Finish customizing your theme to see full Variables and Docs.')
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -524,6 +546,9 @@ export default function ThemePreviewHub({
   // back to ordinary interaction. Not persisted and not part of
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
   const [inspecting, setInspecting] = useState(true)
+  useEffect(() => {
+    if (headerActionsLocked) setInspecting(false)
+  }, [headerActionsLocked])
   const [contrastOpen, setContrastOpen] = useState(false)
   // Which overlap size the board's avatar card shows. The Spacing edition's
   // Overlap bar drives it; view state, like `inspecting`, never persisted.
@@ -676,6 +701,8 @@ export default function ThemePreviewHub({
           onOpenAdvanced={onEditFoundation}
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
+          onStylePreviewChange={onStylePreviewChange}
+          onNeedAccount={onNeedAccount}
           onAdoptStyle={onAdoptStyle}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
@@ -741,7 +768,9 @@ export default function ThemePreviewHub({
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
+                  {/* A guest already has Undo beside Random in the inspector
+                      footer. Reset for that flow lives in the theme settings. */}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !docsGated && (
                     <EditHistoryControls previewTheme={previewTheme} />
                   )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
@@ -750,13 +779,24 @@ export default function ThemePreviewHub({
                       onChange={setInspecting}
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
+                      disabled={headerActionsLocked}
+                      disabledTitle={headerActionsLockedHint}
                     />
                   )}
                   {!needsMyTheme && !contrastOpen && onGetCode && (
-                    <GetCodeButton onOpen={onGetCode} />
+                    <GetCodeButton
+                      onOpen={onGetCode}
+                      disabled={headerActionsLocked}
+                      disabledTitle={headerActionsLockedHint}
+                    />
                   )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
-                    <FigmaSyncButton publishState={figmaPublishState} onOpen={() => onSurfaceChange('figma')} />
+                    <FigmaSyncButton
+                      publishState={figmaPublishState}
+                      onOpen={() => onSurfaceChange('figma')}
+                      disabled={headerActionsLocked}
+                      disabledTitle={headerActionsLockedHint}
+                    />
                   )}
                 </div>
               </div>

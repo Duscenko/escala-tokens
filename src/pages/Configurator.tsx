@@ -5,7 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { themeDisplayName } from '../lib/themeSources'
-import { defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
+import { FIGMA_SYNC_MODE_CAP, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { applyDocumentHead } from '../lib/documentHead'
@@ -30,7 +30,8 @@ import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
 import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
-import { type StylePreview } from '../lib/stylePreviewOverlay'
+import { guestStarterPreview, type StylePreview } from '../lib/stylePreviewOverlay'
+import { openStyleForEditing } from '../lib/adoptPreset'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
@@ -40,7 +41,7 @@ import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { FooterLinks } from '../components/configurator/FooterLinks'
-import { hasOnboarded, markOnboarded } from '../lib/onboarding'
+import { markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
@@ -49,9 +50,9 @@ import type { ThemeAppearance } from '../lib/themeModes'
 import type { GridFrameAlias, GridViewport } from '../lib/layoutTokens'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
-// ('about' — the landing surface for new visitors, see `hasOnboarded()`
-// below), EDIT the system ('foundations' — the Variables Generator), browse
+// ('about'), EDIT the system ('foundations' — the Variables Generator), browse
 // the catalogue ('components'), or read the token reference ('docs').
+// A visitor with no account lands on the theme previewer, not About.
 // Components and Docs used to be folded into one 'docs' tab (a single rail
 // with two groups); split back into their own tabs, each with its own
 // single-purpose rail.
@@ -86,9 +87,10 @@ import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
 import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../lib/access'
 import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
-import { hasStoredSession } from '../lib/auth'
+import { hasStoredSession, useAuth } from '../lib/auth'
+import { reopenAccountFiles } from '../lib/accountFiles'
 import { takeLoginIntent } from '../lib/loginReturn'
-import { LoginWall } from '../components/ui/LoginWall'
+import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
 import { showToast } from '../components/ui/Toast'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
@@ -571,6 +573,7 @@ export default function Configurator() {
   // Anonymous wall (design-plans/login-funnel.md): Variables / Code / Docs show
   // a part, Export and Save ask for a free account first.
   const access = useAccess()
+  const { user: authUser, event: authEvent } = useAuth()
   const needsAnotherThemePro = useNeedsProForAnotherTheme()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
@@ -595,28 +598,16 @@ export default function Configurator() {
   // once. Hoisted to the shell for the same reason the regenerate hook is:
   // it can't be orphaned by which surface you happen to open first.
   useEnsureColorScales()
-  // This browser had never entered the workspace when the shell first rendered.
-  // Captured HERE, before anything below can write the persist key (something
-  // in the hook/state setup between here and where `stylePreview` initialises
-  // does — checked: the store key exists by that point even on a wiped
-  // browser), and read from this one value everywhere first-run behaviour
-  // branches. `markOnboarded()` flips `hasOnboarded()` the instant the user
-  // leaves About, so a second call is worthless; the affordances it gates
-  // (About as the landing tab, the Themes Library collapsed to just
-  // "Create your theme") must hold for the whole session.
-  const [firstRun] = useState(() => !hasOnboarded())
   // App deep-link (`?project=&section=`). Per-window, not Zustand — two
   // windows can sit on two sections of the same system. A shared section
   // wins over the first-visit About landing.
   const [incomingWorkspace] = useState(() => parseWorkspaceSearch(window.location.search))
   const incomingPlace = incomingWorkspace.place
-  // Signed-in with no `?section=`: Home is the account entry. Anonymous `/`
-  // still follows hasOnboarded (About once, then Theme). A deep link wins.
+  // Signed-in with no `?section=`: Home is the account entry. A visitor with
+  // no account lands on the theme previewer. A deep link wins. About stays
+  // a tab they can open; it is no longer the first screen.
   const [signedInEntry] = useState(() => hasStoredSession())
-  // Every session lands on Variables · Color — EXCEPT a first-time visitor,
-  // who lands on About instead, and EXCEPT a signed-in visit with no section,
-  // which opens Home. About is a real tab a returning user can still switch to.
-  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? (signedInEntry ? 'foundations' : firstRun ? 'about' : 'foundations'))
+  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? 'foundations')
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -883,6 +874,9 @@ export default function Configurator() {
     [setFigmaSyncSelection],
   )
   const syncThemeKey = syncThemes.join('|')
+  const seenSyncThemes = useRef(syncThemes)
+  const figmaSyncModesRef = useRef(figmaSyncModes)
+  figmaSyncModesRef.current = figmaSyncModes
   useEffect(() => {
     if (!figmaFileNameDirty) {
       setFigmaFileName(
@@ -893,26 +887,29 @@ export default function Configurator() {
     }
   }, [figmaFileNameDirty, syncThemes, store.themeLabels, store.projectName, syncThemeKey])
   useEffect(() => {
-    setFigmaSyncModes((current) => {
-      const valid = current.filter((mode) => syncThemes.includes(mode.theme))
-      const next =
-        // Every theme the selection named is gone (deleted, renamed, or a
-        // different system loaded), so there is no choice left to respect.
-        !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds)
-        // A choice is never re-derived — only pruned of themes that no longer
-        // exist. This effect reruns on any semantic edit (`syncThemes` is
-        // rebuilt from `themes`), so anything else here overwrites the user's
-        // own picks mid-session.
-        : figmaSyncModesDirty ? valid
-        // Untouched: keep tracking the default, which grows with the library.
-        // Otherwise a session that started as one theme stays pinned to two
-        // columns after four more are added.
-        : defaultFigmaSyncModes(syncThemes, themeKinds)
-      // Preserve identity when nothing moved: this array feeds the auto-sync
-      // publish payload.
-      return sameFigmaSyncModes(next, current) ? current : next
-    })
-  }, [syncThemeKey, syncThemes, themeKinds, figmaSyncModesDirty])
+    const newcomers = syncThemes.filter((theme) => !seenSyncThemes.current.includes(theme))
+    seenSyncThemes.current = syncThemes
+    const current = figmaSyncModesRef.current
+    const valid = current.filter((mode) => syncThemes.includes(mode.theme))
+    const room = FIGMA_SYNC_MODE_CAP - valid.length
+    const added = newcomers.length && room > 0
+      ? defaultFigmaSyncModes(newcomers, themeKinds).slice(0, room)
+      : []
+    const withNew = added.length ? valid.concat(added) : valid
+    const next =
+      // Every theme the selection named is gone (deleted, renamed, or a
+      // different system loaded), so there is no choice left to respect.
+      !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds)
+      // A choice is never re-derived. Themes that already existed stay as the
+      // user left them — including ones they unchecked. A theme created after
+      // that choice is appended once and saved, so the next publish carries it.
+      : figmaSyncModesDirty ? withNew
+      // Untouched: keep tracking the default, which grows with the library.
+      : defaultFigmaSyncModes(syncThemes, themeKinds)
+    if (sameFigmaSyncModes(next, current)) return
+    setFigmaSyncModes(next)
+    if (figmaSyncModesDirty && added.length) setFigmaSyncSelection({ modes: next })
+  }, [syncThemeKey, syncThemes, themeKinds, figmaSyncModesDirty, setFigmaSyncSelection])
   const figmaPublishBase = useMemo(() => ({
     theme: previewTheme,
     modes: figmaSyncModes,
@@ -926,10 +923,18 @@ export default function Configurator() {
   //
   //
   // Empty My themes is a real state (delete the last one, or a fresh
-  // session). Do not auto-adopt Core here: that fought last-theme delete
-  // and locked Free at the one-theme cap. Theme Preview / Variables show
-  // NeedMyThemeEmpty until the user creates one or tries on a System style.
-  const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
+  // session). Do not auto-adopt a style here: that fought last-theme delete
+  // and locked Free at the one-theme cap. A visitor with no account and no
+  // theme of their own starts on a try-on of Cupertino / Glass — the board
+  // is real, the store is untouched until they add the design system.
+  const [stylePreview, setStylePreview] = useState<StylePreview | null>(() => {
+    if (hasStoredSession()) return null
+    if (incomingPlace && (incomingPlace.tab !== 'foundations' || (incomingPlace.workspace && incomingPlace.workspace !== 'preview'))) return null
+    const live = useDesignStore.getState()
+    if (myThemeKeys(live.themeOrder, live.themes).length > 0) return null
+    return guestStarterPreview()
+  })
+  const [registerOpen, setRegisterOpen] = useState(false)
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
     // Read the LIVE store, never this render's `themeKinds`. A theme that
@@ -989,6 +994,27 @@ export default function Configurator() {
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
+  // Same account signing back in opens the files sign-out closed. This runs
+  // before the intent below is taken, so a save/export return still sees the
+  // work that was on screen.
+  useEffect(() => {
+    if (!authUser?.id) return
+    if (authEvent !== 'SIGNED_IN' && authEvent !== 'INITIAL_SESSION') return
+    reopenAccountFiles(authUser.id)
+  }, [authUser?.id, authEvent])
+  // Sign-out already blanked the store. Close whatever editor was holding one
+  // of those themes and land on Home, where the file list is now empty.
+  useEffect(() => {
+    if (authEvent !== 'SIGNED_OUT') return
+    setThemeEditor(false)
+    setStylePreview(null)
+    setCreatePending(false)
+    setExploringRandomKey(null)
+    setSectionExportOpen(false)
+    setExportMode(null)
+    setTab('foundations')
+    setThemeWorkspaceTab('library')
+  }, [authEvent])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -1183,6 +1209,15 @@ export default function Configurator() {
     done: SETUP_STEPS.slice(0, setupStep) as readonly string[],
     current: SETUP_STEPS[setupStep] as string,
   }
+  /** Variables, Docs and Get code wait until the theme is yours and finished.
+   *  During creation the tabs stay dimmed and a short toast explains why. */
+  const themeTablesBlocked = (): string | null => {
+    if (stylePreview) return t('Add this style to open Variables and Docs')
+    if (setupStep != null || access.gated) {
+      return t('Finish customizing your theme to see full Variables and Docs.')
+    }
+    return null
+  }
   const selectWorkspaceFoundation = (key: string) => {
     // During guided setup only the current step is open (the rail locks the rest).
     if (railGuide && previewWidgetKey(key) !== railGuide.current) return
@@ -1214,6 +1249,13 @@ export default function Configurator() {
     }
   }
   const openCodeForTheme = (key: string) => {
+    if (themeWorkspaceTab === 'preview') {
+      const reason = themeTablesBlocked()
+      if (reason) { showToast(reason, undefined, true); return }
+    } else if (access.gated) {
+      setRegisterOpen(true)
+      return
+    }
     changePreviewTheme(key)
     setThemeWorkspaceTab('code')
   }
@@ -1280,6 +1322,13 @@ export default function Configurator() {
     setThemeHubSurface('github')
   }
   const openGetCodePage = () => {
+    if (themeWorkspaceTab === 'preview') {
+      const reason = themeTablesBlocked()
+      if (reason) { showToast(reason, undefined, true); return }
+    } else if (access.gated) {
+      setRegisterOpen(true)
+      return
+    }
     leaveExportWizard()
     commitVisit()
     setExportMode(null)
@@ -1828,10 +1877,28 @@ export default function Configurator() {
     : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts'
       ? (docsPanelOpen && !stylePreview ? 'docs' : 'theme')
       : null
+  const continueToAccount = (mode: 'signup' | 'signin') => {
+    let key = previewTheme
+    if (stylePreview) {
+      const result = openStyleForEditing(stylePreview.preset, stylePreview.appearance)
+      if ('error' in result) {
+        showToast(t(result.error))
+        return
+      }
+      key = result.key
+      changePreviewTheme(result.key)
+    }
+    setRegisterOpen(false)
+    goToLogin(undefined, mode, `themes/${key}`)
+  }
   const changeInspectorTab = (next: InspectorTab) => {
-    // A try-on has no store ramps: Variables and Docs would show the open
-    // system under the previewed style's name. Theme stays the only door.
-    if (stylePreview && (next === 'variables' || next === 'docs')) return
+    if (next === 'variables' || next === 'code' || next === 'docs') {
+      const reason = themeTablesBlocked()
+      if (reason) {
+        showToast(reason, undefined, true)
+        return
+      }
+    }
     if (next === 'variables') changeThemeWorkspaceTab('primitives')
     else if (next === 'code') openGetCodePage()
     else {
@@ -2018,18 +2085,28 @@ export default function Configurator() {
                     previewPlatform={previewPlatform}
                     onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
+                    onStylePreviewChange={setStylePreview}
+                    onNeedAccount={() => setRegisterOpen(true)}
                     onAdoptStyle={changePreviewTheme}
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}
-                    onEditFoundation={selectFoundation}
+                    onEditFoundation={(key) => {
+                      const reason = themeTablesBlocked()
+                      if (reason) { showToast(reason, undefined, true); return }
+                      selectFoundation(key)
+                    }}
                     onSyncFoundationFromDoc={(key) => {
                       commitVisit()
                       setActiveFoundation(key)
                     }}
                     activeFoundation={previewWidgetKey(activeFoundation)}
                     onOpenPrimitiveFamily={openPrimitiveFamily}
-                    onOpenInVariables={openTokenInVariables}
+                    onOpenInVariables={(tokenId) => {
+                      const reason = themeTablesBlocked()
+                      if (reason) { showToast(reason, undefined, true); return }
+                      openTokenInVariables(tokenId)
+                    }}
                     figmaPublishState={figmaPublishState}
                     workspaceSection={workspaceSection}
                     onRequestFigmaSync={publishFigmaNow}
@@ -2188,8 +2265,8 @@ export default function Configurator() {
               onChange={changeInspectorTab}
               onSlot={setInspectorSlot}
               showTabs={themeWorkspaceTab !== 'library'}
-              disabledTabs={stylePreview && themeWorkspaceTab === 'preview' ? ['variables', 'docs'] : undefined}
-              disabledReason={stylePreview ? t('Add this style to open Variables and Docs') : undefined}
+              disabledTabs={themeWorkspaceTab === 'preview' && themeTablesBlocked() ? ['variables', 'code', 'docs'] : undefined}
+              disabledReason={themeTablesBlocked() ?? undefined}
             />
           )}
           </div>
@@ -2355,6 +2432,7 @@ export default function Configurator() {
 
 
       <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      <RegisterToContinueDialog open={registerOpen} onClose={() => setRegisterOpen(false)} onContinue={continueToAccount} />
 
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>

@@ -143,29 +143,25 @@ const BOARD_COLUMNS = 4
 const BOARD_MIN_COLUMN = 140
 
 /**
- * COLOR STYLE — the palette at a glance: the accent as the lead block, then
- * three readings of its own ramp (soft · deep · tint), over the neutral ramp.
- * Read straight off the previewed theme's ramps, so it can't show a colour
- * the system doesn't ship.
+ * COLOR STYLE — the palette at a glance: the accent as a 12-step ramp
+ * (same height as before, equal bands like the gradient strip), over the
+ * neutral ramp. Read straight off the previewed theme's ramps, so it can't
+ * show a colour the system doesn't ship.
  */
 function ColorStyleSpecimen({ t }: { t: PreviewTokens }) {
   const brand = t.brandRamp ?? {}
   const neutral = t.neutralRamp ?? {}
   const radius = nestedRadius(t)
-  const blocks: { color: string; grow: number }[] = [
-    { color: t.brandSolid, grow: 4 },
-    { color: brand[5] ?? t.brandSolid, grow: 1 },
-    { color: brand[12] ?? t.neutralText, grow: 1 },
-    { color: brand[3] ?? t.neutralFill, grow: 1 },
-  ]
+  const accent = Array.from({ length: 12 }, (_, i) => brand[i + 1]).filter(Boolean)
   const steps = Array.from({ length: 12 }, (_, i) => neutral[i + 1]).filter(Boolean)
+  const accentBands = accent.length > 0 ? accent : [t.brandSolid]
   // `flex-1` below so a stretched card hands its spare height to the blocks, not
   // to the padding — the surface inset has to read the same on all four sides.
   return (
     <TokenInspector component="Card">
       <div className="flex flex-1 flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
         <div className="flex flex-1 overflow-hidden" style={{ minHeight: 120, borderRadius: radius }}>
-          {blocks.map((b, i) => <span key={i} style={{ flex: `${b.grow} 1 0`, background: b.color }} />)}
+          {accentBands.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
         </div>
         {steps.length > 0 && (
           <div className="flex overflow-hidden" style={{ height: 40, borderRadius: radius }}>

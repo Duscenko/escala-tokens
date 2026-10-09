@@ -7,7 +7,9 @@ import {
   randomAccentVoice,
   randomBoardAppearance,
   randomTheme,
+  stylePreviewFromRecipe,
 } from '../randomTheme'
+import { guestStarterPreview } from '../stylePreviewOverlay'
 import { THEME_STYLE_PRESETS } from '../themePresets'
 import { TYPE_SCALE_MODES, inferTypeScaleMode } from '../typographyStandard'
 
@@ -87,6 +89,27 @@ describe('randomTheme', () => {
     const typeMoved = recipe.bodyFont !== 'Inter' || recipe.headingFont !== 'Inter'
     const scaleMoved = recipe.typeScale !== 'default'
     expect(typeMoved || scaleMoved).toBe(true)
+  })
+
+  it('paints a recipe onto the try-on without leaving the scaffold id', () => {
+    const current = guestStarterPreview()
+    const recipe = randomTheme({
+      accent: current.preset.accent,
+      avoidScaffold: current.preset.id,
+      rng: sequence(3),
+    })
+    const next = stylePreviewFromRecipe(current, recipe, 'light')
+    expect(next.preset.id).toBe(recipe.scaffoldId)
+    expect(next.preset.accent).toBe(recipe.accent)
+    expect(next.preset.neutralTint).toBe(recipe.neutralTint)
+    expect(next.appearance).toBe('light')
+    expect(next.preset.id).not.toBe(current.preset.id)
+  })
+
+  it('starts a visitor on Cupertino / Glass', () => {
+    const preview = guestStarterPreview()
+    expect(preview.preset.id).toBe('cupertino-glass')
+    expect(preview.appearance).toBe(preview.preset.preferredAppearance)
   })
 
   it('flips the whole artefacts board to light or dark', () => {

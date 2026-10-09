@@ -13,7 +13,7 @@ import { backgroundFromBase, colorAtHue, readHuePosition, type HuePosition, type
 import { FONT_PRESETS, loadGoogleFont } from './fonts'
 import { myThemeKeys } from './themeLibrary'
 import { mintTheme, slotsFromAccent } from './themeMint'
-import { resetThemeSemantics } from './stylePreviewOverlay'
+import { resetThemeSemantics, type StylePreview } from './stylePreviewOverlay'
 import { useDesignStore } from '../store/useDesignStore'
 import { randomHue } from './randomAccent'
 import {
@@ -185,6 +185,27 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
         weights: { ...(baseType?.weights ?? {}) },
         roles: { ...(baseType?.roles ?? {}) },
       },
+    },
+  }
+}
+
+/** A Random tweak on a try-on: the scaffold's geometry and severities, with
+ *  the recipe's accent, tint, type and border recipe painted on top. The id
+ *  stays the scaffold's, so adopting it files the theme under that style. */
+export function stylePreviewFromRecipe(
+  current: StylePreview,
+  recipe: RandomThemeRecipe,
+  appearance: ThemeAppearance,
+): StylePreview {
+  const scaffold = THEME_STYLE_PRESETS.find((preset) => preset.id === recipe.scaffoldId) ?? current.preset
+  return {
+    appearance,
+    preset: {
+      ...scaffold,
+      accent: recipe.accent,
+      neutralTint: recipe.neutralTint,
+      foundations: recipe.foundations,
+      semantics: recipe.semantics,
     },
   }
 }

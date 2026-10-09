@@ -110,8 +110,11 @@ Nunca automático: puede haber libraries de otra persona en un equipo compartido
 
 ### 6. Cerrar sesión
 
-Las libraries de la cuenta desaparecen de la lista; lo que está en pantalla se queda (es el store
-local). My libraries vuelve al estado invitado.
+Al salir, los themes y las carpetas de esa cuenta se cierran: Home queda en un sistema en blanco
+(sin My themes, sin carpetas guardadas, sin pines). La copia se aparca en este navegador bajo el
+id de la cuenta y se vuelve a abrir al entrar la misma persona. Un retorno de login con una acción
+pendiente (guardar o exportar) no pisa lo que hay en pantalla: esos archivos aparcados pasan a
+carpetas al lado. My libraries vuelve al estado invitado mientras no hay sesión.
 
 ## Otras páginas que muestran libraries guardadas
 

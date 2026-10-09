@@ -63,7 +63,7 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
-import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
+import { randomTheme, randomBoardAppearance, stylePreviewFromRecipe } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
@@ -79,10 +79,11 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INA
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
-import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
+import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
+import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
-import { goToLogin, useAccess } from '../../lib/access'
+import { useAccess } from '../../lib/access'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 /**
@@ -756,18 +757,18 @@ export function RailCard({ title, trailing, footer, flush, children }: {
  * The "Go to advanced edition" button is `selectFoundation` in disguise —
  * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
  * lands on the very foundation you were adjusting. Color edition puts Light/
- * Dark in that header slot (the board + ramps share one appearance) and
- * replaces the footer with Random.
+ * Dark in that header slot (the board + ramps share one appearance). Random
+ * lives on the guest previewer and the Random-create save bar — never here.
  *
  * Sits on `WORKSPACE_CHROME`. Do not wrap this in `RailCard` — that `--app`
  * fill is for the integration rail's Connection / Protocol blocks.
  */
-function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, children }: {
+function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, children }: {
   title: string
   foundationKey: string
   /** Header slot — Color edition puts Light/Dark here. */
   trailing?: React.ReactNode
-  /** Replaces the default Advanced footer. Color edition puts Random here. */
+  /** Replaces the default Advanced footer. */
   footer?: React.ReactNode
   /** No row rules — Color edition groups with its own hairlines. */
   flush?: boolean
@@ -775,6 +776,8 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   /** Guided setup keeps you on the board: the advanced edition waits until
    *  the theme is finished. */
   advancedDisabled?: boolean
+  /** Guests stay on quick edition — Variables is gated, so hide the door. */
+  showAdvancedEdition?: boolean
   children: React.ReactNode
 }) {
   const { t } = useI18n()
@@ -785,30 +788,26 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
         {trailing}
       </div>
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
-      {footer ?? (
-        <div className="border-t border-line px-3 pb-2.5 pt-2">
-          <button
-            type="button"
-            onClick={() => onOpenAdvanced(foundationKey)}
-            disabled={advancedDisabled}
-            title={advancedDisabled ? t('Available once the theme is finished') : undefined}
-            className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-input-bg disabled:hover:text-fg-muted ${RAIL_SURFACE_RADIUS}`}
-          >
-            <AdvancedIcon />
-            {t('Go to advanced edition')}
-          </button>
-        </div>
-      )}
+      {footer !== undefined
+        ? footer
+        : showAdvancedEdition ? (
+          <div className="border-t border-line px-3 pb-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => onOpenAdvanced(foundationKey)}
+              disabled={advancedDisabled}
+              title={advancedDisabled ? t('Available once the theme is finished') : undefined}
+              className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-input-bg disabled:hover:text-fg-muted ${RAIL_SURFACE_RADIUS}`}
+            >
+              <AdvancedIcon />
+              {t('Go to advanced edition')}
+            </button>
+          </div>
+        ) : null}
     </section>
   )
 }
 
-/**
- * Color edition's Random footer — Figma 40:1365. Fill is the same 6% wash
- * as `--line`. The stroke is that designed rainbow, traveling the perimeter
- * as a comet (`.random-theme-border` in index.css) so the button reads as
- * the one generative action without a static rainbow sitting on every row.
- */
 const CONTRAST_THUMB_STEPS = [3, 9, 12] as const
 
 function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
@@ -1437,11 +1436,14 @@ export function formatShift(n: number): string {
  * pulled together on the left, pushed apart on the right.
  */
 export function ContrastSlider({
-  hueHex, value, onChange,
+  hueHex, value, onChange, showMarks = true,
 }: {
   hueHex: string
   value: number
   onChange: (n: number) => void
+  /** Caption row under the track. Off when the parent already labels the row
+   *  the same way Saturation and Brightness do, so the three stay one height. */
+  showMarks?: boolean
 }) {
   const soft = `color-mix(in oklab, ${hueHex} 45%, #a3a3a3)`
   const deep = `color-mix(in oklab, ${hueHex} 55%, #000)`
@@ -1465,11 +1467,13 @@ export function ContrastSlider({
           className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
         />
       </div>
-      <div className="mt-1 flex justify-between text-micro font-medium uppercase tracking-wide text-fg-faint" aria-hidden>
-        {marks.map(([label, at]) => (
-          <span key={label} className={(at === 0 ? value === 0 : Math.sign(value) === at) ? 'text-fg' : undefined}>{label}</span>
-        ))}
-      </div>
+      {showMarks && (
+        <div className="mt-1 flex justify-between text-micro font-medium uppercase tracking-wide text-fg-faint" aria-hidden>
+          {marks.map(([label, at]) => (
+            <span key={label} className={(at === 0 ? value === 0 : Math.sign(value) === at) ? 'text-fg' : undefined}>{label}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -1502,7 +1506,7 @@ export function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
         <span>{label}</span>
         <span className="tabular-nums">{Math.round(current * 100)}</span>
       </div>
-      <div className="relative h-4 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
+      <div className="relative h-5 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
         <input
           type="range"
           aria-label={label}
@@ -1531,6 +1535,8 @@ export default function ThemeQuickSettingsRail({
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
+  onStylePreviewChange,
+  onNeedAccount,
   onAdoptStyle,
   onQuickEditOpenChange,
   containedDrawerRootRef,
@@ -1562,6 +1568,11 @@ export default function ThemeQuickSettingsRail({
    *  the style is added to My themes; the preview canvas still renders the
    *  preset via `resolveStylePreviewTokens`. */
   stylePreview?: StylePreview | null
+  /** Random / Undo on a try-on rewrite the overlay. Nothing is stored. */
+  onStylePreviewChange?: (preview: StylePreview) => void
+  /** Variables, Docs, or a second theme while signed out. The shell opens the
+   *  register dialog and stays on this screen. */
+  onNeedAccount?: () => void
   /** Fired when a try-on is adopted into the system (auto-adopt, or Reset on a
    *  previewed style). The shell re-points `previewTheme` and drops the
    *  ephemeral preview. */
@@ -1597,6 +1608,7 @@ export default function ThemeQuickSettingsRail({
   const applyNeutral = useApplyGrayColor()
   const applyState = useApplyStateColor()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
+  const [fineOpen, setFineOpen] = useState(false)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   const rampAppearance = colorAppearance ?? previewAppearance
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
@@ -1607,6 +1619,9 @@ export default function ThemeQuickSettingsRail({
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const lastRandomScaffold = useRef<string | undefined>(undefined)
+  const randomPast = useRef<StylePreview[]>([])
+  const lastRandomKey = useRef<string | null>(null)
+  const [canUndoRandom, setCanUndoRandom] = useState(false)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
@@ -1622,6 +1637,10 @@ export default function ThemeQuickSettingsRail({
   const tryOn = stylePreview ?? null
   const setupStep = useSetupStep(previewTheme)
   const access = useAccess()
+  // Guest canvas header no longer carries Undo / Redo / Reset. Undo sits in
+  // the save bar; Reset belongs with this theme's settings (back to Core).
+  const themeReset = useThemeReset(previewTheme, access.gated && !tryOn && setupStep == null)
+  const showAdvancedEdition = !access.gated
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
@@ -1743,12 +1762,14 @@ export default function ThemeQuickSettingsRail({
     return resolveListedTheme(store.themeOrder, store.themes, store.themeKinds, listed[listed.length - 1], previewAppearance)
   }
 
-  /** Edit theme — the rail's twin of the sheet's button, same helper. */
+  /** Edit theme — the rail's twin of the sheet's button, same helper.
+   *  The first design system is added locally so quick edition opens on this
+   *  screen. A second theme, and Variables / Docs, ask for an account. */
   const editTryOn = () => {
     if (!tryOn) return
-    // A guest previews freely; making a style theirs starts with an account.
-    if (access.gated) { goToLogin(); return }
-    const result = openStyleForEditing(tryOn.preset, previewAppearance)
+    const ownedCount = myThemeKeys(store.themeOrder, store.themes).length
+    if (access.gated && ownedCount > 0) { onNeedAccount?.(); return }
+    const result = openStyleForEditing(tryOn.preset, tryOn.appearance)
     if ('error' in result) { setAdoptError(t(result.error, { count: ownThemeCount })); return }
     setAdoptError(null)
     if (result.created) announceAdopted(result.name)
@@ -1964,6 +1985,54 @@ export default function ThemeQuickSettingsRail({
     current: chipRefs.current[id] ?? null,
   })
 
+  const randomPreviewKey = (preview: StylePreview) =>
+    `${preview.preset.id}|${preview.preset.accent}|${preview.preset.neutralTint}|${preview.preset.foundations.typography?.fontFamily ?? ''}|${preview.preset.foundations.typography?.headingFontFamily ?? ''}`
+
+  useEffect(() => {
+    if (!tryOn) {
+      randomPast.current = []
+      lastRandomKey.current = null
+      setCanUndoRandom(false)
+      return
+    }
+    const key = randomPreviewKey(tryOn)
+    if (lastRandomKey.current === key) return
+    if (lastRandomKey.current != null) {
+      randomPast.current = []
+      setCanUndoRandom(false)
+    }
+    lastRandomKey.current = key
+  }, [tryOn])
+
+  const applyGuestRandom = () => {
+    if (!tryOn || !onStylePreviewChange) return
+    const rng = Math.random
+    const recipe = randomTheme({
+      accent: tryOn.preset.accent,
+      bodyFont: tryOn.preset.foundations.typography?.fontFamily,
+      headingFont: tryOn.preset.foundations.typography?.headingFontFamily,
+      typeScale: inferTypeScaleMode(tryOn.preset.foundations.typography?.sizes ?? {}),
+      avoidScaffold: lastRandomScaffold.current ?? tryOn.preset.id,
+      rng,
+    })
+    lastRandomScaffold.current = recipe.scaffoldId
+    const next = stylePreviewFromRecipe(tryOn, recipe, randomBoardAppearance(rng))
+    randomPast.current.push(tryOn)
+    lastRandomKey.current = randomPreviewKey(next)
+    setCanUndoRandom(true)
+    loadGoogleFont(recipe.bodyFont)
+    loadGoogleFont(recipe.headingFont)
+    onStylePreviewChange(next)
+  }
+
+  const undoGuestRandom = () => {
+    const prev = randomPast.current.pop()
+    if (!prev || !onStylePreviewChange) return
+    lastRandomKey.current = randomPreviewKey(prev)
+    setCanUndoRandom(randomPast.current.length > 0)
+    onStylePreviewChange(prev)
+  }
+
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
     const rng = Math.random
@@ -2060,8 +2129,12 @@ export default function ThemeQuickSettingsRail({
           <StyleOverview
             compact
             preset={tryOn.preset}
-            appearance={previewAppearance}
+            appearance={tryOn.appearance}
             owned={myThemeKeys(store.themeOrder, store.themes).some((key) => store.themeOrigin?.[key] === tryOn.preset.id)}
+            firstSystem={myThemeKeys(store.themeOrder, store.themes).length === 0}
+            onRandom={applyGuestRandom}
+            onUndoRandom={undoGuestRandom}
+            canUndoRandom={canUndoRandom}
             onEdit={editTryOn}
           />
         </section>
@@ -2072,22 +2145,18 @@ export default function ThemeQuickSettingsRail({
           foundationKey="color"
           flush
           onOpenAdvanced={onOpenAdvanced}
+          showAdvancedEdition={showAdvancedEdition}
           trailing={
             <ColorAppearanceSwitch
               value={rampAppearance}
               onChange={(next) => onColorAppearanceChange?.(next)}
             />
           }
-          footer={exploringRandom ? undefined : (
-            <div className="border-t border-line px-3 pb-2.5 pt-2">
-              <RandomThemeButton onClick={applyRandomTheme} />
-            </div>
-          )}
         >
           <div className="divide-y divide-line">
-            <div className="flex flex-col px-3 py-2.5">
+            <div className="flex flex-col gap-3 px-3 py-3">
+              <div>
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Brand accent')}</p>
-              <div className="flex flex-col gap-2">
               <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <SpectrumSlider
@@ -2132,20 +2201,10 @@ export default function ThemeQuickSettingsRail({
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
               </div>
+              </div>
 
-              {/* Hue above, Saturation here — the two a first pass needs.
-                  Brightness and Ramp contrast are fine-tuning and live with the
-                  Contrast grid, where their effect can be checked. Each axis
-                  moves ONE coordinate of the hue-relative position
-                  (`readHuePosition`), so nothing leaves sRGB or ratchets. */}
-              <AccentAxisSlider
-                axis="saturation"
-                label={t('Saturation')}
-                value={liveAccent}
-                onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
-                onCommit={commitAccent}
-              />
-
+              <div>
+              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Neutral')}</p>
               <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <TintSlider
@@ -2201,25 +2260,80 @@ export default function ThemeQuickSettingsRail({
               </div>
             </div>
 
-            {/* Contrast grid — and, while it is open, the two fine-tuning
-                controls whose effect it shows: the accent's Brightness and how
-                far apart the ramp's tones sit. Closed, Colour reads as three
-                decisions (accent, neutral, states) instead of six sliders. */}
-            <div className="flex flex-col px-3 py-2.5">
+            {/* Fine-tune stays closed so Colour reads as accent, neutral and
+                states. Show opens Saturation, Brightness and Ramp contrast at
+                one height. The Contrast grid only opens the board overlay. */}
+            <div className="flex flex-col px-3 py-3">
+              <button
+                type="button"
+                onClick={() => setFineOpen((open) => !open)}
+                aria-expanded={fineOpen}
+                className="group flex w-full min-w-0 items-center gap-2 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
+                  <span className="block truncate text-mini text-fg-faint">{t('Saturation · Brightness · Ramp contrast')}</span>
+                </span>
+                <span
+                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
+                    fineOpen
+                      ? 'border border-line text-fg-muted group-hover:text-fg'
+                      : 'bg-elevated text-fg ring-1 ring-line-strong'
+                  }`}
+                >
+                  {fineOpen ? t('Hide') : t('Show')}
+                </span>
+              </button>
+              {fineOpen && (
+                <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+                  <AccentAxisSlider
+                    axis="saturation"
+                    label={t('Saturation')}
+                    value={liveAccent}
+                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
+                    onCommit={commitAccent}
+                  />
+                  <AccentAxisSlider
+                    axis="lightness"
+                    label={t('Brightness')}
+                    value={liveAccent}
+                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
+                    onCommit={commitAccent}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
+                      <span title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</span>
+                      <button
+                        type="button"
+                        onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
+                        disabled={contrastShift === 0}
+                        title={t('Reset contrast shift')}
+                        aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
+                        className="tabular-nums transition-colors hover:text-fg disabled:cursor-default disabled:hover:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                      >
+                        {formatShift(contrastShift)}
+                      </button>
+                    </div>
+                    <ContrastSlider
+                      hueHex={liveNeutral}
+                      value={contrastShift}
+                      showMarks={false}
+                      onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
+                    />
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => onContrastOpenChange?.(!contrastOpen)}
                 aria-pressed={contrastOpen}
                 aria-expanded={contrastOpen}
-                className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
+                className="group mt-3 flex w-full min-w-0 items-center gap-2 border-t border-line pt-3 text-left"
               >
                 <ContrastGridThumb tones={contrastThumbTones} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
-                  <span className="block truncate text-mini text-fg-faint">{t('Brightness · Ramp contrast')}</span>
-                </span>
+                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
                 <span
-                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
+                  className={`flex h-6 flex-shrink-0 items-center rounded-md px-2 text-mini font-semibold transition-colors ${
                     contrastOpen
                       ? 'border border-line text-fg-muted group-hover:text-fg'
                       : 'bg-elevated text-fg ring-1 ring-line-strong'
@@ -2228,40 +2342,6 @@ export default function ThemeQuickSettingsRail({
                   {contrastOpen ? t('Hide') : t('Show')}
                 </span>
               </button>
-              {contrastOpen && (
-                <div className="mt-2.5 flex flex-col gap-3 border-t border-line pt-2.5">
-                  <AccentAxisSlider
-                    axis="lightness"
-                    label={t('Brightness')}
-                    value={liveAccent}
-                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
-                    onCommit={commitAccent}
-                  />
-                  <div>
-                    <p className="mb-1 text-micro font-medium uppercase tracking-wide text-fg-faint" title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</p>
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <ContrastSlider
-                          hueHex={liveNeutral}
-                          value={contrastShift}
-                          onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
-                        />
-                      </div>
-                      {/* The readout is the reset — 0 is the generator's own. */}
-                      <button
-                        type="button"
-                        onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
-                        disabled={contrastShift === 0}
-                        title={t('Reset contrast shift')}
-                        aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
-                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                      >
-                        {formatShift(contrastShift)}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="px-3 py-2.5">
@@ -2391,7 +2471,7 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null} trailing={platformSwitch}>
+        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null} trailing={platformSwitch}>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2429,7 +2509,7 @@ export default function ThemeQuickSettingsRail({
         })()}
 
         {activePanel === 'radius' && (
-        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
+        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
           <SettingItem label="Radius" hint="The preset sets the scale; boxes, fields and selectors then round independently on it.">
             <RadiusCard
               radius={radius}
@@ -2442,7 +2522,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'shadow' && (
-        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
+        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
           <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
               shadows={shadows}
@@ -2453,7 +2533,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'sizes' && (
-        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null} trailing={platformSwitch}>
+        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null} trailing={platformSwitch}>
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -2522,7 +2602,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'icons' && (
-        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced} advancedDisabled={setupStep != null}>
+        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
           <div className="px-3 pt-1 pb-2">
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
@@ -2561,6 +2641,11 @@ export default function ThemeQuickSettingsRail({
             Reset sizes to the standard ramp
           </button>
         )}
+        {themeReset.show && (
+          <div className="px-3 pt-1">
+            <ThemeResetButton wide mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />
+          </div>
+        )}
       </div>
       )}
       </ThemeRailScrollRegion>
@@ -2570,7 +2655,7 @@ export default function ThemeQuickSettingsRail({
       {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : (
         <ThemeSaveBar
           exploringRandom={exploringRandom}
-          onRandom={exploringRandom ? applyRandomTheme : undefined}
+          onRandom={exploringRandom || access.gated ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
         />
       ))}

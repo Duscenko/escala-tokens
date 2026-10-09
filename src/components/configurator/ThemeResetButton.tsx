@@ -54,23 +54,25 @@ export function useThemeReset(previewTheme: string, enabled = true) {
 }
 
 export function ThemeResetButton({
-  mode, target, onClick,
+  mode, target, onClick, wide = false,
 }: {
   mode: 'reset' | 'undo'
   target: string
   onClick: () => void
+  /** Settings row: the control spans the column. The canvas header stays a pill. */
+  wide?: boolean
 }) {
   const { t } = useI18n()
   const label = mode === 'undo' ? t('Undo reset') : t('Reset theme')
   const title = mode === 'undo' ? label : `${label} — ${t(target)}`
   return (
-    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
+    <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 ${wide ? 'w-full' : ''}`}>
       <button
         type="button"
         onClick={onClick}
         aria-label={title}
         title={title}
-        className="flex h-7 items-center rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className={`flex h-7 items-center rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${wide ? 'w-full justify-center' : ''}`}
       >
         {label}
       </button>

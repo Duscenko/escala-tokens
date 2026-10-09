@@ -125,6 +125,13 @@ export function pendingNext(): LoginNext | null {
   return readPending()?.next ?? null
 }
 
+/** The action waiting to be finished, without forgetting it. Sign-in uses
+ *  this to leave the work on screen alone when someone came back to save
+ *  or export it. */
+export function peekLoginIntent(): LoginIntent | null {
+  return readPending()?.intent ?? null
+}
+
 /** Called once by the destination after it sees a session: returns the intent
  *  to finish (if any) and forgets the whole return so it can't fire twice. */
 export function takeLoginIntent(next: LoginNext): LoginIntent | null {

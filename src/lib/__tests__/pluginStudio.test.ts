@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildStudioTokens, studioOptions, readCode, harmonyFor } from '../pluginStudio'
+import { buildStudioTokens, studioOptions, studioLook, readCode, harmonyFor } from '../pluginStudio'
 
 type Payload = { colors: { themeOrder: string[] }; viewports?: string[]; radiusRoles?: Record<string, string>; typography: { fontFamily: string }; shadows: Record<string, string> }
 
@@ -103,5 +103,34 @@ describe('plugin studio build', () => {
     const prim = Object.values((out.tokens as { colors: { primitive: Record<string, string> } }).colors.primitive)
     for (const hex of Object.values(h.states)) expect(prim).toContain(hex)
     expect(harmonyFor('nope')).toBeNull()
+  })
+  it('studioLook matches the web radius, spacing, solid and dark shadow', () => {
+    const pill = studioLook({ radiusPreset: 'Pill', spacingMode: 'quiet', accent: '#9522e9', kind: 'light', shadow: 'Strong' })
+    expect(pill.box).toBe(32)
+    expect(pill.field).toBe(32)
+    expect(pill.control).toBe(8)
+    expect(pill.controlH).toBe(40)
+    expect(pill.pad).toBe(20)
+    expect(pill.accentRamp).toHaveLength(12)
+    expect(pill.accentRamp[8].toLowerCase()).toBe('#9522e9')
+    expect(pill.page.toLowerCase()).toBe(pill.neutralRamp[0].toLowerCase())
+    expect(pill.accent.toLowerCase()).toBe('#9522e9')
+    const dark = studioLook({ accent: '#9522e9', kind: 'dark', shadow: 'Strong' })
+    expect(dark.shadow).not.toBe(pill.shadow)
+    expect(dark.shadow.startsWith('0 0 0 1px')).toBe(true)
+    expect(dark.page).not.toBe(pill.page)
+    const sharp = studioLook({ radiusPreset: 'Sharp', spacingMode: 'compact', accent: '#9522e9' })
+    expect(sharp.box).toBe(0)
+    expect(sharp.controlH).toBe(35)
+    expect(sharp.pad).toBe(12)
+    const o = studioOptions()
+    const quiet = o.spacingModes.find((m) => m.id === 'quiet')
+    expect(quiet?.controlH).toBe(40)
+    expect(quiet?.pad).toBe(20)
+    expect(o.shadows.find((s) => s.label === 'Strong')?.mdDark).toBe(dark.shadow)
+    const core = o.styles.find((s) => s.id === 'core-minimal')
+    const styled = studioLook({ style: 'core-minimal' })
+    expect(styled.box).toBe(core?.radius.boxes)
+    expect(styled.accentRamp[8].toLowerCase()).toBe(core?.accent.toLowerCase())
   })
 })

@@ -87,6 +87,19 @@ export async function signInWithProvider(provider: AuthProvider): Promise<AuthRe
 }
 
 export async function signOut(): Promise<void> {
+  // Park first, while the session still names the account. Closing only
+  // happens after that write succeeds — a failed park must not be the moment
+  // the only copy disappears. No session means there is nothing of this
+  // account's to close. The import is deferred: account files reach the
+  // store, and the store reaches this module through the free-theme check.
+  if (supabase) {
+    const { data } = await supabase.auth.getSession()
+    const userId = data.session?.user?.id
+    if (userId) {
+      const { parkAccountFiles, closeAccountFiles } = await import('./accountFiles')
+      if (parkAccountFiles(userId)) closeAccountFiles()
+    }
+  }
   await supabase?.auth.signOut()
 }
 

@@ -3,14 +3,15 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 export type ToastAction = { label: string; onClick: () => void }
 
-type Toast = { id: number; message: string; action?: ToastAction }
+type Toast = { id: number; message: string; action?: ToastAction; notice?: boolean }
 
-let push: ((message: string, action?: ToastAction) => void) | null = null
+let push: ((message: string, action?: ToastAction, notice?: boolean) => void) | null = null
 let seq = 0
 
-/** Fire a quiet confirmation. Safe to call from click handlers. */
-export function showToast(message: string, action?: ToastAction) {
-  push?.(message, action)
+/** Fire a quiet confirmation. Safe to call from click handlers.
+ *  `notice` drops the success mark — a lock, not a done. */
+export function showToast(message: string, action?: ToastAction, notice = false) {
+  push?.(message, action, notice)
 }
 
 /** Mount once at the app root. Renders the live toast above the workspace. */
@@ -19,7 +20,7 @@ export function ToastHost() {
   const [toast, setToast] = useState<Toast | null>(null)
 
   useEffect(() => {
-    push = (message, action) => setToast({ id: ++seq, message, action })
+    push = (message, action, notice) => setToast({ id: ++seq, message, action, notice })
     return () => { push = null }
   }, [])
 
@@ -44,7 +45,7 @@ export function ToastHost() {
               toast.action ? 'pointer-events-auto' : 'pointer-events-none'
             }`}
           >
-            <span className="text-status-success" aria-hidden>✓</span>
+            {!toast.notice && <span className="text-status-success" aria-hidden>✓</span>}
             <span>{toast.message}</span>
             {toast.action && (
               <button

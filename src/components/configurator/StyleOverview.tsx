@@ -9,6 +9,7 @@ import { THEME_STYLE_PRESETS, presetStates, type ThemeStylePreset } from '../../
 import { ThemeAvatar } from './ThemeLibraryRail'
 import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProNotice } from './UpgradeToProNotice'
+import { RandomThemeButton } from './ThemeSaveBar'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
@@ -27,6 +28,7 @@ export const PRESET_AVATAR_RAMPS = Object.fromEntries(
  *  to count yet, so the library's primitive/token/CSS numbers don't exist. */
 export function StyleOverview({
   preset, appearance, owned, onEdit, compact = false,
+  firstSystem = false, onRandom, onUndoRandom, canUndoRandom = false,
 }: {
   preset: ThemeStylePreset
   appearance: 'light' | 'dark'
@@ -34,6 +36,12 @@ export function StyleOverview({
   onEdit: () => void
   /** The 240px quick-settings rail: tighter padding. */
   compact?: boolean
+  /** No theme of their own yet. The button names the design system, and
+   *  Random / Undo sit on this card so a skipped look can be stepped back. */
+  firstSystem?: boolean
+  onRandom?: () => void
+  onUndoRandom?: () => void
+  canUndoRandom?: boolean
 }) {
   const { t } = useI18n()
   // Free keeps one theme: a style that isn't already yours needs Pro to add.
@@ -81,6 +89,26 @@ export function StyleOverview({
         <UpgradeToProNotice />
       ) : (
         <>
+          {firstSystem && onRandom && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onUndoRandom}
+                disabled={!canUndoRandom}
+                aria-label={t('Undo')}
+                title={t('Undo')}
+                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color] hover:border-line-strong hover:text-fg disabled:pointer-events-none disabled:opacity-35 ${FOCUS}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M5.5 3.5 2.5 6.5l3 3" />
+                  <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+                </svg>
+              </button>
+              <div className="min-w-0 flex-1">
+                <RandomThemeButton onClick={onRandom} />
+              </div>
+            </div>
+          )}
           <button
             type="button"
             onClick={onEdit}
@@ -95,9 +123,13 @@ export function StyleOverview({
                 <path d="M7 3v8M3 7h8" />
               </svg>
             )}
-            {owned ? t('Edit theme') : t('Add theme')}
+            {owned ? t('Edit theme') : firstSystem ? t('Add design system') : t('Add theme')}
           </button>
-          {!owned && <p className="-mt-2 text-center text-caption text-fg-faint">{t('Adds it to My themes.')}</p>}
+          {!owned && (
+            <p className="-mt-2 text-center text-caption text-fg-faint">
+              {firstSystem ? t('Opens quick edition on this system.') : t('Adds it to My themes.')}
+            </p>
+          )}
         </>
       )}
     </div>

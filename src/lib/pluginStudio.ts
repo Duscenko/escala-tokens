@@ -25,11 +25,11 @@ import { SHADOW_PRESETS } from './shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from './phosphorIcons'
 import {
   INSET_SURFACE_ROLE, RADIUS_GROUPS, RADIUS_GROUP_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD,
-  SPACING_MODES, SPACING_STEPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
-  radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep,
+  SPACING_DEFAULT_BASE, SPACING_MODES, SPACING_STEPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
+  radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
-import { backgroundFromBase, type NeutralTint } from './colorUtils'
+import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
 import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
@@ -82,8 +82,9 @@ export function studioOptions() {
     radiusSteps: RADIUS_GROUP_STEPS.map((step) => ({ step, px: parseFloat(radius[step] ?? '0') || 0 })),
     spacingModes: SPACING_MODES.map((m) => ({
       id: m.id, label: m.label, description: m.description, fieldBase: m.fieldBase, insetStep: m.insetStep, border: m.border,
+      ...spacingPaint(m),
     })),
-    shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md })),
+    shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md, mdDark: darkShadow(p.values.md) })),
     iconWeights: [...PHOSPHOR_WEIGHTS],
     neutralTints: ['pure', 'subtle', 'tinted', 'vivid'],
     contrast: { min: -1, max: 1, step: 0.05 },
@@ -117,6 +118,7 @@ function styleSummary(p: ThemeStylePreset, standard: Record<string, string>) {
     spacing: mode?.label ?? 'Custom',
     shadow: (f.shadows && matchShadowPreset(f.shadows)) ?? 'Custom',
     shadowMd: f.shadows?.md ?? 'none',
+    shadowMdDark: darkShadow(f.shadows?.md ?? 'none'),
     iconWeight: f.iconWeight ?? 'regular',
   }
 }
@@ -325,4 +327,161 @@ export function harmonyFor(accent: string, tint?: string): { neutral: string; st
   const t = TINTS.includes(tint as NeutralTint) ? tint as NeutralTint : 'subtle'
   const s = slotsFromAccent(accent.toLowerCase(), t)
   return { neutral: s.gray, states: { error: s.error, warning: s.warning, success: s.success, info: s.info } }
+}
+
+/** Control height is the field base × 10 (Quiet → 40). Card padding is the
+ *  inset step on the 4px spacing base (step 5 → 20). Both are what the web
+ *  writes; the preview must not invent a second scale. */
+function spacingPaint(mode: SpacingMode): { controlH: number; pad: number } {
+  return {
+    controlH: Math.round(mode.fieldBase * 10),
+    pad: Math.round(Number(mode.insetStep) * SPACING_DEFAULT_BASE),
+  }
+}
+
+const SOLID_INKS = ['#ffffff', '#0a0d12']
+
+function rampList(scale: Record<number, string>): string[] {
+  const out: string[] = []
+  for (let i = 1; i <= 12; i++) out.push(scale[i] || '')
+  return out
+}
+
+function solidOf(scale: Record<number, string>): { fill: string; ink: string } {
+  const pair = brandSolidPair(scale, SOLID_INKS, 9, ACTION_LABEL_TARGET)
+  return { fill: scale[pair.tone] || scale[9] || '', ink: SOLID_INKS[pair.ink] ?? '#ffffff' }
+}
+
+export interface StudioLook {
+  page: string
+  card: string
+  fg: string
+  muted: string
+  line: string
+  accent: string
+  ink: string
+  accentRamp: string[]
+  neutralRamp: string[]
+  states: Record<'error' | 'warning' | 'success' | 'info', string>
+  stateInk: Record<'error' | 'warning' | 'success' | 'info', string>
+  box: number
+  field: number
+  control: number
+  controlH: number
+  pad: number
+  border: number
+  shadow: string
+  factor: number
+  heading: string
+  body: string
+}
+
+/** The bento, from the same helpers the web and `buildStudioTokens` use.
+ *  Pure: it does not touch the store, so a hue drag can call it. */
+export function studioLook(choices: StudioChoices | null | undefined): StudioLook {
+  const c = choices ?? {}
+  const preset = c.style ? themeStylePreset(c.style) : undefined
+  const TINTS: NeutralTint[] = ['pure', 'subtle', 'tinted', 'vivid']
+  const tint: NeutralTint = TINTS.includes(c.neutralTint as NeutralTint)
+    ? c.neutralTint as NeutralTint
+    : (preset?.neutralTint ?? 'subtle')
+  const accent = (typeof c.accent === 'string' && HEX.test(c.accent) ? c.accent : preset?.accent ?? '#7f56d9').toLowerCase()
+  const accentMoved = !!preset && accent !== preset.accent.toLowerCase()
+  const kind: 'light' | 'dark' = c.kind === 'dark' || c.kind === 'light'
+    ? c.kind
+    : (preset?.preferredAppearance === 'dark' ? 'dark' : 'light')
+  const shift = typeof c.contrastShift === 'number' && Number.isFinite(c.contrastShift)
+    ? Math.max(-1, Math.min(1, c.contrastShift)) : 0
+
+  const derived = harmonyFor(accent, tint)
+  const styled = !accentMoved && preset ? presetHarmony(preset) : null
+  const gray = styled?.neutral || derived?.neutral || '#8b8d98'
+  const seeded = !accentMoved && preset ? presetStates(preset) : derived?.states
+  const stateSeed = (slot: 'error' | 'warning' | 'success' | 'info', fallback: string) => {
+    const picked = c.states?.[slot]
+    if (typeof picked === 'string' && HEX.test(picked)) return picked.toLowerCase()
+    return seeded?.[slot] || fallback
+  }
+  const seeds = {
+    error: stateSeed('error', '#e5484d'),
+    warning: stateSeed('warning', '#f5a524'),
+    success: stateSeed('success', '#30a46c'),
+    info: stateSeed('info', '#3b82f6'),
+  }
+
+  const pageLight = backgroundFromBase(gray, 'light', tint)
+  const pageDark = backgroundFromBase(gray, 'dark', tint)
+  const page = kind === 'dark' ? pageDark : pageLight
+  const brand = kind === 'dark'
+    ? generateFamilyDarkScale(accent, 'radix', shift, pageDark)
+    : generateColorScale(accent, 'radix', shift, pageLight)
+  const neutral = kind === 'dark'
+    ? generateDarkColorScale(gray, 'radix', shift, pageDark, tint)
+    : generateColorScale(gray, 'radix', shift, pageLight, 'light', tint)
+  const family = (hex: string) => kind === 'dark'
+    ? generateFamilyDarkScale(hex, 'radix', shift, pageDark)
+    : generateColorScale(hex, 'radix', shift, pageLight)
+  const brandSolid = solidOf(brand)
+  const states = {} as StudioLook['states']
+  const stateInk = {} as StudioLook['stateInk']
+  for (const slot of ['error', 'warning', 'success', 'info'] as const) {
+    const solid = solidOf(family(seeds[slot]))
+    states[slot] = solid.fill
+    stateInk[slot] = solid.ink
+  }
+
+  let box = 16, field = 8, control = 4
+  if (c.radiusAxes && (c.radiusAxes.boxes || c.radiusAxes.fields || c.radiusAxes.selectors)) {
+    const pxOf = (step: string | undefined, fallback: number) => {
+      const n = parseFloat(step ? (RADIUS_STANDARD as Record<string, string>)[step] ?? '' : '')
+      return Number.isFinite(n) ? n : fallback
+    }
+    box = pxOf(c.radiusAxes.boxes, box)
+    field = pxOf(c.radiusAxes.fields, field)
+    control = pxOf(c.radiusAxes.selectors, control)
+  } else if (c.radiusPreset) {
+    const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c.radiusPreset)
+    if (hit) { const px = radiusPresetPx(hit); box = px[0]; field = px[1]; control = px[2] }
+  } else if (preset) {
+    const summary = styleSummary(preset, RADIUS_STANDARD as Record<string, string>)
+    box = summary.radius.boxes
+    field = summary.radius.fields
+    control = summary.radius.selectors
+  }
+
+  const modeId = c.spacingMode
+    || (preset ? matchSpacingMode(preset.foundations.sizes, preset.foundations.spacingRoles, preset.foundations.stroke) : null)
+    || 'quiet'
+  const mode = SPACING_MODES.find((m) => m.id === modeId) ?? SPACING_MODES[1]
+  const paint = spacingPaint(mode)
+
+  let shadowCss = SHADOW_PRESETS.find((p) => p.label === 'Soft')!.values.md
+  const named = c.shadow ? SHADOW_PRESETS.find((p) => p.label === c.shadow) : undefined
+  if (named) shadowCss = named.values.md
+  else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md
+
+  const scale = Number.isInteger(c.typeScale) ? TYPE_SCALE_MODES[c.typeScale as number] : undefined
+  const summaryFonts = preset ? styleSummary(preset, RADIUS_STANDARD as Record<string, string>) : null
+
+  return {
+    page: neutral[1] || page,
+    card: neutral[2] || page,
+    fg: neutral[12] || '#18181b',
+    muted: neutral[11] || '#71717a',
+    line: neutral[6] || '#d4d4d8',
+    accent: brandSolid.fill,
+    ink: brandSolid.ink,
+    accentRamp: rampList(brand),
+    neutralRamp: rampList(neutral),
+    states,
+    stateInk,
+    box, field, control,
+    controlH: paint.controlH,
+    pad: paint.pad,
+    border: mode.border,
+    shadow: kind === 'dark' ? darkShadow(shadowCss) : shadowCss,
+    factor: scale?.factor ?? 1,
+    heading: c.headingFont || summaryFonts?.heading || 'Inter',
+    body: c.bodyFont || summaryFonts?.font || 'Inter',
+  }
 }

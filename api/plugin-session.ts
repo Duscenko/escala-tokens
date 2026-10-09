@@ -306,6 +306,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(out)
   }
 
+  // The bento asks for this on every colour change. Same helpers as the build,
+  // no store write, so it stays off the build's rate limit.
+  if (op === 'studio-look' && req.method === 'POST') {
+    if (rateLimited(`${ip}:plugin-studio-look`, 180)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+    const studio = await import('./_pluginStudio.mjs') as typeof import('../src/lib/pluginStudio.js')
+    return res.status(200).json(studio.studioLook(jsonBody(req) as unknown as StudioChoices))
+  }
+
   if ((op === 'studio-options' && req.method === 'GET') || (op === 'studio-build' && req.method === 'POST') || (op === 'studio-code' && req.method === 'POST')) {
     // No account needed: anyone can build ONE theme in ONE mode in the plugin
     // (the Free scope). A token, when sent, must still be a live session — a

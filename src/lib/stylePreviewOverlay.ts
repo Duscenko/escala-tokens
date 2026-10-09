@@ -18,12 +18,19 @@ import {
 } from './colorUtils'
 import { resolvePreviewTokens } from './previewTokens'
 import type { GridViewport } from './layoutTokens'
-import { presetHarmony, presetStates, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
+import { presetHarmony, presetStates, THEME_STYLE_PRESETS, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
 import { themeModeKey, type ThemeAppearance } from './themeModes'
 import type { useDesignStore } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
+
+/** The board a visitor with no theme of their own lands on. Cupertino / Glass
+ *  is the first screen: a real system style, nothing written to the store. */
+export function guestStarterPreview(): StylePreview {
+  const preset = THEME_STYLE_PRESETS.find((item) => item.id === 'cupertino-glass') ?? THEME_STYLE_PRESETS[0]
+  return { preset, appearance: preset.preferredAppearance }
+}
 
 /**
  * What the Themes Library hands the preview: a preset AND the appearance to

@@ -124,10 +124,9 @@ export default function WorkspaceInspector({
                 role="tab"
                 aria-selected={active}
                 aria-disabled={disabled || undefined}
-                disabled={disabled}
                 title={disabled ? disabledReason : undefined}
                 tabIndex={disabled ? -1 : (active || (value == null && item.key === 'theme') ? 0 : -1)}
-                onClick={() => { if (!disabled) onChange(item.key) }}
+                onClick={() => onChange(item.key)}
                 className={`relative flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg px-1 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                   // The label's weight and ink change on the BUTTON; the sliding
                   // pill below carries the fill and the edge.

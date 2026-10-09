@@ -45,9 +45,9 @@ export function useAccess(): Access {
 /** Leave for `/login` (sign-up first), coming back to THIS Generator section
  *  and finishing `intent` there. The edits on screen live in the persisted
  *  store, so the round trip loses nothing. */
-export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'signup'): void {
-  const section = new URLSearchParams(window.location.search).get(WORKSPACE_SECTION_PARAM)
-  rememberReturn('workspace', intent ?? null, section)
+export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'signup', section?: string): void {
+  const fromUrl = new URLSearchParams(window.location.search).get(WORKSPACE_SECTION_PARAM)
+  rememberReturn('workspace', intent ?? null, section ?? fromUrl)
   window.location.assign(loginHref({ next: 'workspace', mode }))
 }
 
