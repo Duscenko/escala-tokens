@@ -9,7 +9,7 @@ import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { PRICING_PATH } from '../../lib/entitlement'
-import { CONTACT_PATH } from '../../lib/legal'
+import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
@@ -45,12 +45,12 @@ import { FooterLinks } from './FooterLinks'
 
 export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'legal'
 
-/** The creator's contact details — the one place they're defined. The public
- *  "contact" block leads with LinkedIn and X; `email` is kept only as the
- *  target for Docs' FAQ "report a bug" CTA (a prefilled mail draft), not shown
- *  as a raw address anywhere. Any of these set to null just drops its row. */
+/** The creator's contact details — the one place they're defined. `email` is
+ *  `PUBLIC_CONTACT_EMAIL` in `legal.ts`; import from there if you only need the
+ *  address. Any of these set to null just drops its row. */
 export const CONTACT = {
   site: 'duscenko.com',
+  email: PUBLIC_CONTACT_EMAIL,
   linkedin: 'https://www.linkedin.com/in/cesar-durango/' as string | null,
   x: 'https://x.com/duscenko' as string | null,
 }
@@ -474,6 +474,9 @@ export function AboutContact({ pad = 'px-5' }: { pad?: string }) {
         {t('design systems and design engineering.')}
       </P>
       <div className="flex flex-col mt-0.5">
+        {CONTACT.email && (
+          <ContactRow icon={<MailIcon />} label={CONTACT.email} href={PUBLIC_CONTACT_MAILTO} />
+        )}
         <ContactRow icon={<MailIcon />} label={t('Contact form')} href="/contact" />
         {CONTACT.linkedin && (
           <ContactRow icon={<LinkedInIcon />} label="LinkedIn" href={CONTACT.linkedin} />
@@ -763,6 +766,7 @@ function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
   const social: FooterItem[] = [
     ...(CONTACT.linkedin ? [{ label: 'LinkedIn', href: CONTACT.linkedin, external: true }] : []),
     ...(CONTACT.x ? [{ label: 'X', href: CONTACT.x, external: true }] : []),
+    ...(CONTACT.email ? [{ label: CONTACT.email, href: PUBLIC_CONTACT_MAILTO, external: false }] : []),
     { label: CONTACT.site, href: `https://${CONTACT.site}`, external: true },
     // No "Source": the colophon strip (`FooterLinks`) already carries it, and
     // nothing in that strip is repeated here.
@@ -1101,10 +1105,18 @@ export function AboutHome({
             {t('Built and maintained by Cesar Durango')}
           </h2>
           <p className="text-ui leading-relaxed text-fg-muted">{t('Design systems and design engineering.')}</p>
-          <a href={CONTACT_PATH} className={`${secondaryCta} mt-2`}>
-            {t('Contact form')}
-            <ArrowGlyph />
-          </a>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            {CONTACT.email && (
+              <a href={PUBLIC_CONTACT_MAILTO} className={secondaryCta}>
+                {CONTACT.email}
+                <ArrowGlyph />
+              </a>
+            )}
+            <a href={CONTACT_PATH} className={secondaryCta}>
+              {t('Contact form')}
+              <ArrowGlyph />
+            </a>
+          </div>
         </section>
 
         {/* ── Footer — NAVIGATION back into the product. The shell's 28px strip

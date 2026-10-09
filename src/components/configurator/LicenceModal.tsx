@@ -2,19 +2,19 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
+import { useAuth } from '../../lib/auth'
 import { activateLicence, clearLicence } from '../../lib/licence'
-import { POLAR_CHECKOUT_URL } from '../../lib/polar'
+import { checkoutUrl } from '../../lib/polar'
 import { PRICING_PATH, PRO_PRICE_USD } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 
 // "Paste your licence key" — the only place a key enters the app.
 //
-// Two jobs in one dialog because they are the two halves of one trip: buy
-// (Polar emails the key), then paste it here. No account, no sign-in.
-//
-// The BUY half stays out of sight only while the free-for-everyone period is
-// still on. Once it has ended the button shows the price in force ($45 until
-// 15 Nov, then $69) and the field under it is where the emailed key is pasted.
+// Polar's confirmation email ("Access purchase") opens Polar's own page and
+// shows the key. It does not tell this app anything: the chip stays Free until
+// the key is pasted here and `/api/license` gets `granted` back. Paste is the
+// first thing on screen for that reason. Buying is the other half of the same
+// dialog, under the field, for someone who does not have a key yet.
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
@@ -24,6 +24,7 @@ function formatDate(iso: string, locale: string): string {
 
 export function LicenceModal({ onClose }: { onClose: () => void }) {
   const { t, locale } = useI18n()
+  const { user } = useAuth()
   const entitlement = useEntitlement()
   const { licence } = entitlement
   const titleId = useId()
@@ -86,9 +87,13 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
               {active ? t('Escala Pro is active') : t('Activate Escala Pro')}
             </h2>
             <p className="mt-1 text-body leading-relaxed text-fg-muted">
-              {active && licence.expiresAt
-                ? t('Hosted sync, live MCP and updates are included until {date}.', { date: formatDate(licence.expiresAt, locale) })
-                : t('One payment. Includes 12 months of hosted sync, live MCP and updates.')}
+              {active
+                ? (licence.expiresAt
+                  ? t('Hosted sync, live MCP and updates are included until {date}.', { date: formatDate(licence.expiresAt, locale) })
+                  : t('One payment. Includes 12 months of hosted sync, live MCP and updates.'))
+                : entitlement.promo
+                  ? t('One payment. Includes 12 months of hosted sync, live MCP and updates.')
+                  : t('The purchase email opens Polar and shows the key. Paste it here to turn this browser into Pro.')}
             </p>
           </div>
           <button
@@ -102,29 +107,6 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
             </svg>
           </button>
         </div>
-
-        {!active && !entitlement.promo && (
-          <div className="flex flex-col gap-2">
-            <p className="text-body font-semibold text-fg">{t('1. Buy a licence')}</p>
-            <a
-              href={POLAR_CHECKOUT_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={`flex min-h-11 items-center justify-between rounded-lg bg-accent-solid px-4 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
-            >
-              <span>{t('Buy Escala Pro')} · <span className="tabular-nums">${entitlement.priceUsd}</span></span>
-            </a>
-            {entitlement.launchPrice && (
-              <p className="text-caption text-fg-muted">
-                {t('After November 15, ${price}.', { price: String(PRO_PRICE_USD) })}
-              </p>
-            )}
-            <p className="text-caption text-fg-faint">
-              {t('Secure checkout by Polar. The key arrives by email.')}{' '}
-              <a href={PRICING_PATH} className="text-accent-ui underline-offset-2 hover:underline">{t('See pricing')}</a>
-            </p>
-          </div>
-        )}
 
         {active ? (
           <div className="flex items-center justify-end gap-2">
@@ -146,7 +128,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-2">
             <label htmlFor={`${titleId}-key`} className="text-body font-semibold text-fg">
-              {entitlement.promo ? t('Paste your licence key') : t('2. Paste your licence key')}
+              {t('Paste your licence key')}
             </label>
             <div className="flex gap-2">
               <input
@@ -177,7 +159,42 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
                 {t('No account needed. The key stays in this browser; paste it again on another device.')}
               </p>
             )}
+            <details className="group">
+              <summary className={`flex cursor-pointer list-none items-center gap-1.5 rounded-md text-caption font-medium text-accent-ui [&::-webkit-details-marker]:hidden ${FOCUS}`}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden className="flex-shrink-0 transition-transform group-open:rotate-90">
+                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {t('How do I find the key?')}
+              </summary>
+              <ol className="mt-2 flex list-decimal flex-col gap-1.5 pl-5 text-caption leading-relaxed text-fg-muted">
+                <li>{t('Open the Polar email for this order.')}</li>
+                <li>{t('Click Access purchase.')}</li>
+                <li>{t('Under Benefit grants, copy the Escala Pro licence key.')}</li>
+                <li>{t('Paste it in the field above and press Activate.')}</li>
+              </ol>
+            </details>
           </form>
+        )}
+
+        {!active && !entitlement.promo && (
+          <div className="flex flex-col gap-2 border-t border-line pt-4">
+            <p className="text-body font-semibold text-fg">{t("Don't have a key yet?")}</p>
+            <a
+              href={checkoutUrl(user?.email)}
+              className={`flex min-h-11 items-center justify-between rounded-lg border border-line px-4 text-ui font-semibold text-fg transition-colors hover:border-line-strong ${FOCUS}`}
+            >
+              <span>{t('Buy Escala Pro')} · <span className="tabular-nums">${entitlement.priceUsd}</span></span>
+            </a>
+            {entitlement.launchPrice && (
+              <p className="text-caption text-fg-muted">
+                {t('After November 15, ${price}.', { price: String(PRO_PRICE_USD) })}
+              </p>
+            )}
+            <p className="text-caption text-fg-faint">
+              {t('Secure checkout by Polar. The email opens the page where the key is shown.')}{' '}
+              <a href={PRICING_PATH} className="text-accent-ui underline-offset-2 hover:underline">{t('See pricing')}</a>
+            </p>
+          </div>
         )}
       </motion.div>
     </motion.div>,

@@ -4,7 +4,9 @@ import { signOut, useAuth } from '../../lib/auth'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
-import { useLicence } from '../../lib/licence'
+import { useLicence, type LicenceStatus } from '../../lib/licence'
+import { consumeLicenceReturn, lookupPurchase } from '../../lib/licencePurchase'
+import { LicenceModal } from './LicenceModal'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
 // TopNav's account entry: a "Sign in" link to /login when signed out, an initial
@@ -13,6 +15,21 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayo
 // unchanged until ACCOUNTS_LIVE flips. The login itself is a page, not a dialog.
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+/** Closing the paste dialog silences the automatic open for this tab only.
+ *  A new visit asks again until the key is valid. */
+const PROMPT_DISMISS = 'sd-licence-prompt'
+
+function promptDismissed(): boolean {
+  try { return sessionStorage.getItem(PROMPT_DISMISS) === '1' } catch { return false }
+}
+
+function dismissPrompt(): void {
+  try { sessionStorage.setItem(PROMPT_DISMISS, '1') } catch { /* private mode */ }
+}
+
+function needsKey(status: LicenceStatus): boolean {
+  return status === 'none' || status === 'expired' || status === 'invalid'
+}
 
 export default function AccountControl({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
   if (!accountsEnabled) return null
@@ -27,7 +44,30 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   // still unlock product features, but they are not a paid plan to badge.
   const { status: licenceStatus } = useLicence()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [licenceOpen, setLicenceOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (consumeLicenceReturn()) setLicenceOpen(true)
+  }, [])
+
+  useEffect(() => {
+    const email = user?.email
+    if (loading || !email || !needsKey(licenceStatus)) return
+    let cancel = false
+    const ask = () => {
+      if (cancel || promptDismissed()) return
+      void lookupPurchase(email).then((purchased) => {
+        if (!cancel && purchased && !promptDismissed()) setLicenceOpen(true)
+      })
+    }
+    ask()
+    window.addEventListener('focus', ask)
+    return () => {
+      cancel = true
+      window.removeEventListener('focus', ask)
+    }
+  }, [loading, user?.email, licenceStatus])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -41,17 +81,23 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
     }
   }, [menuOpen])
 
-  if (loading) return null
+  const closeLicence = () => { dismissPrompt(); setLicenceOpen(false) }
+  const licenceDialog = licenceOpen ? <LicenceModal onClose={closeLicence} /> : null
+
+  if (loading) return licenceDialog
 
   if (!user) {
     return (
-      <a
-        href={loginHref({ next: 'library' })}
-        onClick={() => rememberReturn('library')}
-        className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-medium text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
-      >
-        {t('Sign in')}
-      </a>
+      <>
+        <a
+          href={loginHref({ next: 'library' })}
+          onClick={() => rememberReturn('library')}
+          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-medium text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
+        >
+          {t('Sign in')}
+        </a>
+        {licenceDialog}
+      </>
     )
   }
 
@@ -99,6 +145,14 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
           <button
             type="button"
             role="menuitem"
+            onClick={() => { setMenuOpen(false); setLicenceOpen(true) }}
+            className={`rounded-lg px-2.5 py-2 text-left text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+          >
+            {licensed ? t('Manage licence') : t('Activate licence')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={() => { setMenuOpen(false); void signOut() }}
             className={`rounded-lg px-2.5 py-2 text-left text-ui text-fg-muted transition-colors hover:bg-elevated hover:text-fg ${FOCUS}`}
           >
@@ -106,6 +160,7 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
           </button>
         </div>
       )}
+      {licenceDialog}
     </div>
   )
 }

@@ -9,6 +9,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { CONTACT } from '../AboutMenu'
+import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../../lib/legal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../../ui/accordion'
 import { DocHeader, DocTitle, Prose, type TocEntry } from './blocks'
 import {
@@ -116,13 +117,25 @@ const FAQ_ITEMS: {
     id: 'report',
     q: 'I found a bug, how do I report it?',
     paras: [
-      "Send it to me on X. Reports genuinely shape what gets fixed next. Say what happened, what you expected, your browser, and the plugin version if it's relevant. The button below opens a post with those fields ready, addressed to me.",
+      `Email ${PUBLIC_CONTACT_EMAIL}, use the contact form, or send it on X. Reports genuinely shape what gets fixed next. Say what happened, what you expected, your browser, and the plugin version if it's relevant.`,
     ],
     // `extra` rather than `body`: the prose above must stay in `paras` so it
     // goes through `t()` like every other answer. Only the CTA — which has no
     // prose equivalent — is markup, and it takes `t` so its label translates.
     extra: (t) => (
-      <div className="pt-1">
+      <div className="pt-1 flex flex-wrap items-center gap-3">
+        <a
+          href={PUBLIC_CONTACT_MAILTO}
+          className="inline-flex items-center gap-2 rounded-xl border border-line-strong bg-elevated px-4 py-2 text-ui font-medium text-fg hover:bg-surface transition-colors"
+        >
+          {PUBLIC_CONTACT_EMAIL}
+        </a>
+        <a
+          href={CONTACT_PATH}
+          className="inline-flex items-center gap-2 rounded-xl border border-line-strong bg-elevated px-4 py-2 text-ui font-medium text-fg hover:bg-surface transition-colors"
+        >
+          {t('Contact form')}
+        </a>
         <a
           href={BUG_TWEET}
           target="_blank"

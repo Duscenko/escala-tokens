@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { POLAR_CHECKOUT_URL, POLAR_ORGANIZATION_ID, interpretValidation } from '../polar'
+import {
+  LICENCE_RETURN_URL, POLAR_CHECKOUT_URL, POLAR_ORGANIZATION_ID,
+  checkoutUrl, customerIdForEmail, hasGrantedLicence, interpretValidation, licenceReturnPath,
+} from '../polar'
 
 const NOW = new Date('2026-12-01T00:00:00Z')
 
@@ -39,5 +42,50 @@ describe('Polar identifiers', () => {
   it('uses a v4 UUID organization id (what Polar validates) and an https checkout link', () => {
     expect(POLAR_ORGANIZATION_ID).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
     expect(POLAR_CHECKOUT_URL).toMatch(/^https:\/\/buy\.polar\.sh\/polar_cl_[A-Za-z0-9]+$/)
+    expect(LICENCE_RETURN_URL).toBe('https://www.escalatokens.com/?licence=pending')
+  })
+})
+
+describe('checkoutUrl', () => {
+  it('leaves the link alone when there is no email', () => {
+    expect(checkoutUrl(null)).toBe(POLAR_CHECKOUT_URL)
+    expect(checkoutUrl('  ')).toBe(POLAR_CHECKOUT_URL)
+  })
+
+  it('prefills the signed-in email', () => {
+    const url = new URL(checkoutUrl('  Buyer@Example.com '))
+    expect(url.origin + url.pathname).toBe(POLAR_CHECKOUT_URL)
+    expect(url.searchParams.get('customer_email')).toBe('Buyer@Example.com')
+  })
+})
+
+describe('licenceReturnPath', () => {
+  it('strips only the pending flag and keeps the rest of the address', () => {
+    expect(licenceReturnPath('https://www.escalatokens.com/?project=x&licence=pending#a'))
+      .toEqual({ pending: true, next: '/?project=x#a' })
+    expect(licenceReturnPath('https://www.escalatokens.com/?licence=pending'))
+      .toEqual({ pending: true, next: '/' })
+  })
+
+  it('ignores any other value', () => {
+    expect(licenceReturnPath('https://www.escalatokens.com/?licence=yes')).toEqual({
+      pending: false,
+      next: '/?licence=yes',
+    })
+  })
+})
+
+describe('purchase lookup', () => {
+  const NOW = new Date('2026-12-01T00:00:00Z')
+
+  it('matches the customer by email and ignores a granted key that has expired', () => {
+    const customers = { items: [{ id: 'cus_1', email: 'Buyer@Example.com' }, { id: 'cus_2', email: 'other@example.com' }] }
+    expect(customerIdForEmail(customers, 'buyer@example.com')).toBe('cus_1')
+    expect(customerIdForEmail(customers, 'missing@example.com')).toBeNull()
+    expect(customerIdForEmail({}, 'buyer@example.com')).toBeNull()
+    expect(hasGrantedLicence({ items: [{ status: 'granted', expires_at: '2027-10-09T00:00:00Z', key: 'secret' }] }, NOW)).toBe(true)
+    expect(hasGrantedLicence({ items: [{ status: 'granted', expires_at: '2026-01-01T00:00:00Z' }] }, NOW)).toBe(false)
+    expect(hasGrantedLicence({ items: [{ status: 'revoked' }] }, NOW)).toBe(false)
+    expect(hasGrantedLicence(null, NOW)).toBe(false)
   })
 })

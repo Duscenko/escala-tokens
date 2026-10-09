@@ -25,7 +25,8 @@ import {
   FREE_MAX_THEMES, PRICING_PATH, PRO_LAUNCH_PRICE_USD, PRO_MAX_THEMES, PRO_PRICE_USD,
 } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
-import { POLAR_CHECKOUT_URL } from '../../lib/polar'
+import { useAuth } from '../../lib/auth'
+import { checkoutUrl } from '../../lib/polar'
 
 const PRICING_TITLE = 'Pricing — Escala Tokens'
 const PRICING_DESCRIPTION = 'Escala is free to build and export. Pro adds what runs on our servers: hosted sync to Figma, the live MCP, and up to 10 themes with every platform mode.'
@@ -205,6 +206,7 @@ function Faq({ q, children }: { q: string; children: ReactNode }) {
 
 export function PricingPage() {
   const { t } = useI18n()
+  const { user } = useAuth()
   const entitlement = useEntitlement()
 
   useEffect(() => {
@@ -363,7 +365,7 @@ export function PricingPage() {
                       <p className="text-caption text-fg-muted">{t('No licence needed during the launch offer.')}</p>
                     </>
                   ) : (
-                    <a href={POLAR_CHECKOUT_URL} className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>
+                    <a href={checkoutUrl(user?.email)} className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>
                       {t('Get Pro')} · ${entitlement.priceUsd}<Arrow />
                     </a>
                   )}
@@ -428,7 +430,7 @@ export function PricingPage() {
               <Faq q={t('Is Escala open source?')}>{t('Partly. The configurator, the CLI and the MCP server are MIT, so you can fork and self-host them. The Figma plugin is proprietary: free to install, source not published. Pro pays for the service we host and the plugin, not for the configurator code. If you host the configurator yourself, you set your own limits.')}</Faq>
               <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro, hosted sync stops; you can still import tokens.json in the plugin by hand, with one theme in Desktop mode.')}</Faq>
               <Faq q={t('Why does Figma show fewer modes than I chose?')}>{t('Figma limits modes per collection by its own plan: Starter allows 1, Professional 4. Escala sends what you choose; Figma decides how many columns a file can hold.')}</Faq>
-              <Faq q={t('Do I need an account?')}>{t('No. You get a licence key by email after paying and paste it once in the app.')}</Faq>
+              <Faq q={t('Do I need an account?')}>{t('No. After you pay, Polar shows a licence key. Open the account menu, choose Activate licence, and paste it once. It stays in this browser.')}</Faq>
             </div>
           </section>
         </main>

@@ -17,8 +17,9 @@ import { clientIp, rateLimited } from './_blob.js'
 // side. The message is relayed once by email; logs carry the topic and the
 // outcome, never the sender, their address or the message.
 //
-// Env: RESEND_API_KEY, CONTACT_TO (inbox), CONTACT_FROM (verified sender on
-// escalatokens.com, e.g. "Escala Tokens <contact@escalatokens.com>").
+// Env: RESEND_API_KEY, CONTACT_TO (inbox, e.g. hi@escalatokens.com),
+// CONTACT_FROM (verified sender on mail.escalatokens.com, e.g.
+// "Escala Tokens <contact@mail.escalatokens.com>").
 
 const TOPIC_LABEL: Record<ContactTopic, string> = {
   general: 'General',

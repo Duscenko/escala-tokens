@@ -28,7 +28,7 @@ import { DocHeader, DocSection, DocTitle, OnThisPage, type TocEntry } from '../c
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { ACCOUNTS_LIVE, CONTACT_PATH, LEGAL, LEGAL_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
+import { ACCOUNTS_LIVE, CONTACT_PATH, LEGAL, LEGAL_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 
 export type LegalKind = 'legal' | 'privacy' | 'terms'
 
@@ -63,8 +63,18 @@ function Ul({ items }: { items: ReactNode[] }) {
   )
 }
 
-/** The contact channel is the form: no inbox is published anywhere. */
+const contactEmailLink = <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>
 const contactLink = (l: Locale) => <A href={CONTACT_PATH}>{{ fr: 'formulaire de contact', en: 'contact form', es: 'formulario de contacto' }[l]}</A>
+const contactChannels = (l: Locale) => (
+  <>
+    {contactEmailLink}
+    {' '}
+    {{ fr: '(ou le', en: '(or the', es: '(o el' }[l]}
+    {' '}
+    {contactLink(l)}
+    {{ fr: ')', en: ')', es: ')' }[l]}
+  </>
+)
 const hostLink = <A href={LEGAL.host.site} external>{LEGAL.host.site.replace('https://', '')}</A>
 const cnil = <A href="https://www.cnil.fr/fr/plaintes" external>cnil.fr</A>
 
@@ -79,7 +89,7 @@ function identity(l: Locale): ReactNode[] {
   if (LEGAL.tradeName) lines.push(<>{{ fr: 'Nom commercial', en: 'Trading name', es: 'Nombre comercial' }[l]}{colon(l)} {LEGAL.tradeName}</>)
   if (LEGAL.siret) lines.push(<>SIRET{colon(l)} {LEGAL.siret}</>)
   if (LEGAL.address) lines.push(<>{LEGAL.address}</>)
-  lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactLink(l)}</>)
+  lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactChannels(l)}</>)
   return lines
 }
 

@@ -15,10 +15,7 @@ export const LEGAL = {
   address: 'Traverse de la Gouffonne, 13009 Marseille' as string | null,
   /** Nom commercial registered with the SIRET. */
   tradeName: 'Duscenko Design' as string | null,
-  /** How people reach the publisher. Deliberately NOT a personal email: a
-   *  public legal page is scraped for addresses. If an email is ever needed
-   *  (RGPD requests are easier by mail), use a forwarding alias on the
-   *  escalatokens.com domain, never the personal inbox. */
+  /** Public inbox on the escalatokens.com domain (Zoho alias), not a personal address. */
   linkedin: 'https://www.linkedin.com/in/cesar-durango/',
   host: {
     name: 'Vercel Inc.',
@@ -31,6 +28,11 @@ export const LEGAL = {
 
 /** Contact form topics — shared by /contact and api/contact.ts so the form
  *  can't offer a topic the server rejects. */
+/** Public contact address shown on the site and used as CONTACT_TO in production. */
+export const PUBLIC_CONTACT_EMAIL = 'hi@escalatokens.com'
+
+export const PUBLIC_CONTACT_MAILTO = `mailto:${PUBLIC_CONTACT_EMAIL}`
+
 export const CONTACT_TOPICS = ['general', 'privacy', 'delete', 'bug', 'business'] as const
 export type ContactTopic = (typeof CONTACT_TOPICS)[number]
 

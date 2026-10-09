@@ -1,6 +1,5 @@
-// `/contact` — the publisher's only contact channel. No inbox is published:
-// the form posts to api/contact.ts, which relays the message by email from the
-// server. Same page anatomy as /legal and /privacy (PublicHeader + docs blocks).
+// `/contact` — write via the form (api/contact.ts relays to hi@) or mailto
+// hi@escalatokens.com directly. Same page anatomy as /legal and /privacy.
 //
 // No cookies, no CAPTCHA: spam is handled by a hidden honeypot field, a minimum
 // fill time (`renderedAt`) and a per-IP limit — see api/contact.ts.
@@ -15,7 +14,7 @@ import { DocHeader, DocSection, DocTitle } from '../configurator/docs/blocks'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { CONTACT_PATH, CONTACT_TOPICS, LEGAL, PRIVACY_PATH, type ContactTopic } from '../../lib/legal'
+import { CONTACT_PATH, CONTACT_TOPICS, LEGAL, PRIVACY_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, type ContactTopic } from '../../lib/legal'
 
 type Copy = {
   title: string
@@ -38,7 +37,7 @@ type Copy = {
   another: string
   notice: (privacy: ReactNode) => ReactNode
   errors: { invalid_email: string; invalid_message: string; rate_limited: string; generic: string }
-  unavailable: (linkedin: ReactNode) => ReactNode
+  unavailable: (email: ReactNode, linkedin: ReactNode) => ReactNode
 }
 
 const COPY: Record<Locale, Copy> = {
@@ -57,7 +56,7 @@ const COPY: Record<Locale, Copy> = {
     sent: 'Message envoyé', sentBody: 'Merci. Nous vous répondrons à l’adresse indiquée.', another: 'Écrire un autre message',
     notice: (privacy) => <>Vos données servent uniquement à vous répondre et ne sont pas stockées sur nos serveurs. Aucun cookie. Détails dans la {privacy}.</>,
     errors: { invalid_email: 'Vérifiez l’adresse e-mail.', invalid_message: 'Le message doit contenir entre 10 et 5 000 caractères.', rate_limited: 'Trop de messages envoyés. Réessayez dans une heure.', generic: 'L’envoi a échoué. Réessayez dans un instant.' },
-    unavailable: (linkedin) => <>Le formulaire est momentanément indisponible. Vous pouvez nous écrire sur {linkedin}.</>,
+    unavailable: (email, linkedin) => <>Le formulaire est momentanément indisponible. Écrivez-nous à {email} ou sur {linkedin}.</>,
   },
   es: {
     title: 'Contacto',
@@ -74,7 +73,7 @@ const COPY: Record<Locale, Copy> = {
     sent: 'Mensaje enviado', sentBody: 'Gracias. Le responderemos a la dirección indicada.', another: 'Escribir otro mensaje',
     notice: (privacy) => <>Sus datos solo sirven para responderle y no se guardan en nuestros servidores. Sin cookies. Detalles en la {privacy}.</>,
     errors: { invalid_email: 'Revise la dirección de correo.', invalid_message: 'El mensaje debe tener entre 10 y 5.000 caracteres.', rate_limited: 'Demasiados mensajes enviados. Inténtelo de nuevo en una hora.', generic: 'No se pudo enviar. Inténtelo de nuevo en un momento.' },
-    unavailable: (linkedin) => <>El formulario no está disponible en este momento. Puede escribirnos por {linkedin}.</>,
+    unavailable: (email, linkedin) => <>El formulario no está disponible en este momento. Escríbanos a {email} o por {linkedin}.</>,
   },
   en: {
     title: 'Contact',
@@ -91,7 +90,7 @@ const COPY: Record<Locale, Copy> = {
     sent: 'Message sent', sentBody: 'Thank you. We’ll reply to the address you gave.', another: 'Write another message',
     notice: (privacy) => <>Your data is used only to answer you and is not stored on our servers. No cookies. Details in the {privacy}.</>,
     errors: { invalid_email: 'Check the email address.', invalid_message: 'The message must be between 10 and 5,000 characters.', rate_limited: 'Too many messages sent. Try again in an hour.', generic: 'Sending failed. Try again in a moment.' },
-    unavailable: (linkedin) => <>The form is temporarily unavailable. You can reach us on {linkedin}.</>,
+    unavailable: (email, linkedin) => <>The form is temporarily unavailable. Email {email} or reach us on {linkedin}.</>,
   },
 }
 
@@ -188,10 +187,18 @@ export function ContactPage() {
         <article className="w-full min-w-0 max-w-4xl mx-auto px-5 @min-[760px]:px-8 py-7 flex flex-col gap-8">
           <DocHeader section={t('About')} kind={t('Legal & data')} title={c.title} actions={null} />
           <DocTitle title={c.title} eyebrow="Escala Tokens" lead={c.lead} />
+          <p className="text-ui text-fg-muted -mt-4 max-w-2xl">
+            <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>
+          </p>
 
           <DocSection id="form" title={status.kind === 'sent' ? c.sent : c.formTitle}>
             {available === null ? null : !available ? (
-              <p className="text-ui text-fg-muted leading-relaxed max-w-2xl">{c.unavailable(<A href={LEGAL.linkedin} external>LinkedIn</A>)}</p>
+              <p className="text-ui text-fg-muted leading-relaxed max-w-2xl">
+                {c.unavailable(
+                  <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>,
+                  <A href={LEGAL.linkedin} external>LinkedIn</A>,
+                )}
+              </p>
             ) : status.kind === 'sent' ? (
               <div role="status" className="flex flex-col items-start gap-3 max-w-xl">
                 <p className="text-ui text-fg-muted leading-relaxed">{c.sentBody}</p>
