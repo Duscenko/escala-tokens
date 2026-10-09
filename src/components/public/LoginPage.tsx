@@ -15,7 +15,7 @@ import { BrandMark, DocsNavMenu, type DocsMenuPage } from '../configurator/TopNa
 import { useI18n } from '../../lib/i18n'
 import {
   MIN_PASSWORD,
-  requestPasswordReset,
+  sendPasswordReset,
   setNewPassword,
   signInWithEmail,
   signInWithProvider,
@@ -26,7 +26,7 @@ import {
 } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
-import { accountsEnabled, authProviders, type AuthProvider } from '../../lib/supabase'
+import { accountsEnabled, authProviders, supabase, type AuthProvider } from '../../lib/supabase'
 import { pathForNext, pendingNext, readLoginSearch, rememberReturn } from '../../lib/loginReturn'
 
 const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
@@ -37,6 +37,10 @@ const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
 }
 
 type Mode = 'signin' | 'signup' | 'reset' | 'recovery'
+
+// Survives the dev double-mount so a recovery link is redeemed once and the
+// mounted page still hears the result.
+let pendingRecovery: Promise<'ok' | 'invalid'> | null = null
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const FIELD = `h-12 w-full rounded-2xl border border-line bg-surface px-4 text-ui text-fg placeholder:text-fg-faint transition-colors hover:border-line-strong focus:border-line-strong ${FOCUS}`
@@ -135,7 +139,7 @@ function ShowcasePanel() {
 }
 
 export function LoginPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { user, loading, event } = useAuth()
   const titleId = useId()
   const emailRef = useRef<HTMLInputElement>(null)
@@ -151,7 +155,8 @@ export function LoginPage() {
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | null>(null)
+  const [capsOn, setCapsOn] = useState(false)
+  const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | 'reset_link_invalid' | null>(null)
   const [done, setDone] = useState<string | null>(null)
 
   // A reset link lands here with a recovery session; show "choose a password".
@@ -181,9 +186,9 @@ export function LoginPage() {
   // (`pathForNext(null)` → `/?section=library`). A pending `workspace` return
   // (export, save, the section they left) still wins. Recovery stays here.
   useEffect(() => {
-    if (loading || !user || event === 'PASSWORD_RECOVERY') return
+    if (loading || !user || event === 'PASSWORD_RECOVERY' || mode === 'recovery') return
     window.location.replace(pathForNext(pendingNext()))
-  }, [loading, user, event])
+  }, [loading, user, event, mode])
 
   const afterSignIn = () => window.location.assign(pathForNext(pendingNext()))
 
@@ -191,6 +196,53 @@ export function LoginPage() {
     if (done) return
     ;(view === 'recovery' ? passwordRef : emailRef).current?.focus()
   }, [view, done, loading])
+
+  // A recovery mail links here with ?token_hash=&type=recovery. Redeem it once,
+  // then drop it from the address bar so a refresh cannot reuse it.
+  useEffect(() => {
+    if (!supabase) return
+    const params = new URLSearchParams(window.location.search)
+    const tokenHash = params.get('token_hash')
+    if (tokenHash && params.get('type') === 'recovery' && !pendingRecovery) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('token_hash')
+      url.searchParams.delete('type')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+      pendingRecovery = supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(
+        ({ error }) => (error ? 'invalid' : 'ok'),
+        () => 'invalid' as const,
+      )
+    }
+    if (!pendingRecovery) return
+    let live = true
+    void pendingRecovery.then((result) => {
+      if (!live) return
+      pendingRecovery = null
+      if (result === 'invalid') {
+        setMode('reset')
+        setProblem('reset_link_invalid')
+      } else {
+        setMode('recovery')
+      }
+    })
+    return () => { live = false }
+  }, [])
+
+  // Caps Lock is only readable from a key event. While a password field is on
+  // screen, any key (including Caps Lock itself) refreshes the warning.
+  useEffect(() => {
+    if (view === 'reset' || done) return
+    const sync = (e: KeyboardEvent) => {
+      if (typeof e.getModifierState !== 'function') return
+      setCapsOn(e.getModifierState('CapsLock'))
+    }
+    window.addEventListener('keydown', sync)
+    window.addEventListener('keyup', sync)
+    return () => {
+      window.removeEventListener('keydown', sync)
+      window.removeEventListener('keyup', sync)
+    }
+  }, [view, done])
 
   if (!accountsEnabled) return null
 
@@ -225,7 +277,7 @@ export function LoginPage() {
       else if (r.value.needsConfirmation) setDone(t('We sent a confirmation link to {email}. Open it to finish creating your account.', { email: address }))
       else afterSignIn()
     } else if (view === 'reset') {
-      const r = await requestPasswordReset(address)
+      const r = await sendPasswordReset(address, locale)
       setBusy(false)
       if (!r.ok) setProblem(r.problem)
       else setDone(t('If an account exists for {email}, we sent a link to reset the password.', { email: address }))
@@ -249,8 +301,15 @@ export function LoginPage() {
     : problem === 'weak_password' || problem === 'short_password' ? t('Use at least {n} characters.', { n: MIN_PASSWORD })
     : problem === 'password_mismatch' ? t('The passwords do not match.')
     : problem === 'rate_limited' ? t('Too many attempts. Try again in a few minutes.')
+    : problem === 'reset_link_invalid' ? t('This reset link has expired or was already used. Send a new one.')
     : problem === 'unavailable' ? t('Something went wrong. Try again in a moment.')
     : null
+
+  const showCaps = capsOn && view !== 'reset' && !done
+  const describedBy = [
+    showCaps ? `${titleId}-caps` : null,
+    message ? `${titleId}-err` : null,
+  ].filter(Boolean).join(' ') || undefined
 
   const heading =
     view === 'signup' ? t('Create your account')
@@ -287,7 +346,7 @@ export function LoginPage() {
 
         <main className="flex flex-1 items-center justify-center px-6 py-12 lg:px-10">
           <section aria-labelledby={titleId} className="flex w-full max-w-[420px] flex-col gap-8">
-            {user && !recovering ? (
+            {user && view !== 'recovery' ? (
               <div className="flex flex-col gap-6">
                 <div>
                   <h1 id={titleId} className="text-[clamp(30px,3.4vw,40px)] font-semibold leading-[1.1] tracking-[-0.02em] text-fg">{t('You are signed in')}</h1>
@@ -368,7 +427,8 @@ export function LoginPage() {
                               autoComplete={view === 'signin' ? 'current-password' : 'new-password'}
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
-                              aria-describedby={message ? `${titleId}-err` : undefined}
+                              aria-invalid={message ? true : undefined}
+                              aria-describedby={describedBy}
                               className={`${FIELD} pr-12`}
                             />
                             <button
@@ -381,6 +441,11 @@ export function LoginPage() {
                               <EyeIcon off={showPassword} />
                             </button>
                           </div>
+                          {showCaps && (
+                            <p id={`${titleId}-caps`} role="status" className="text-caption text-status-warning">
+                              {t('Caps Lock is on.')}
+                            </p>
+                          )}
                         </div>
                       )}
                       {(view === 'signup' || view === 'recovery') && (
@@ -396,13 +461,22 @@ export function LoginPage() {
                             autoComplete="new-password"
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
-                            aria-invalid={problem === 'password_mismatch' || undefined}
-                            aria-describedby={message ? `${titleId}-err` : undefined}
+                            aria-invalid={problem === 'password_mismatch' || (message ? true : undefined)}
+                            aria-describedby={describedBy}
                             className={FIELD}
                           />
                         </div>
                       )}
-                      {message && <p id={`${titleId}-err`} role="alert" className="text-body text-status-danger">{message}</p>}
+                      {message && (
+                        <div id={`${titleId}-err`} role="alert" className="flex flex-col items-start gap-1.5">
+                          <p className="text-body text-status-danger">{message}</p>
+                          {problem === 'invalid_credentials' && (
+                            <button type="button" onClick={() => go('reset')} className={`text-body ${LINK}`}>
+                              {t('Reset your password')}
+                            </button>
+                          )}
+                        </div>
+                      )}
 
                       <button type="submit" disabled={busy} className={`mt-1 ${PRIMARY}`}>{cta}</button>
                     </form>

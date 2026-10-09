@@ -55,6 +55,25 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
   return error && problemOf(error) === 'rate_limited' ? fail(error) : ok(undefined)
 }
 
+/** Branded mail from /api/password-reset (header, footer, link on this site).
+ *  A 503 or a missing route means that sender is not configured, so Supabase's
+ *  own mail is the fallback — the person still gets a link. */
+export async function sendPasswordReset(email: string, locale: 'en' | 'es' | 'fr'): Promise<AuthResult> {
+  try {
+    const res = await fetch('/api/password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, locale }),
+    })
+    if (res.status === 429) return { ok: false, problem: 'rate_limited' }
+    if (res.ok) return ok(undefined)
+    if (res.status === 503 || res.status === 404) return requestPasswordReset(email)
+    return { ok: false, problem: 'unavailable' }
+  } catch {
+    return requestPasswordReset(email)
+  }
+}
+
 export async function setNewPassword(password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, problem: 'unavailable' }
   const { error } = await supabase.auth.updateUser({ password })

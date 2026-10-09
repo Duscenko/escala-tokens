@@ -30,6 +30,24 @@ emails an hour, so custom SMTP is needed for real traffic anyway.
 </div>
 ```
 
+## Recovery email
+
+The mail people receive is rendered by `src/lib/authEmail.ts` and sent by
+`POST /api/password-reset` (Resend). The link opens
+`https://www.escalatokens.com/login?token_hash=…&type=recovery`, which is what
+stops inboxes treating a `*.supabase.co` reset link as phishing. Header is the
+dark "Escala Tokens" band; footer is the "ignore this" line plus the site,
+privacy and terms.
+
+That route needs `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` and `AUTH_FROM`
+(or `CONTACT_FROM`). Until those are set, the browser falls back to Supabase's
+Recovery template — paste the same HTML, with this button href, or the fallback
+is the bare default again:
+
+`{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery`
+
+Subject: `Reset your Escala Tokens password`.
+
 ## 2. Google — dropped (2026-10-06)
 Sign-in is email + GitHub only. Google would need a published OAuth app and still shows the
 supabase.co host without a paid custom domain. The Google Cloud project `escala-tokens` and its

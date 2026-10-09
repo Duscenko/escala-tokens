@@ -534,6 +534,7 @@ const es: Record<string, string> = {
   'Coming soon': 'Próximamente',
   'This key has expired. Renew it, or keep working on Free.': 'Esta clave ha caducado. Renuévela o siga trabajando en Gratis.',
   'That key was not recognised. Check it and try again.': 'No se reconoce esa clave. Revísela e inténtelo de nuevo.',
+  'This browser is past the activation limit for this key. Free one in Polar, or keep working on Free.': 'Este navegador supera el número de activaciones de esta clave. Libere una en Polar, o siga en Gratis.',
   'Could not check the key right now. Try again in a moment.': 'No se pudo comprobar la clave ahora. Inténtelo de nuevo en un momento.',
   'Escala Pro is active': 'Escala Pro está activo',
   'Activate Escala Pro': 'Activar Escala Pro',
@@ -948,6 +949,8 @@ const es: Record<string, string> = {
   'If an account exists for {email}, we sent a link to reset the password.': 'Si existe una cuenta para {email}, enviamos un enlace para restablecer la contraseña.',
   'Password updated. You are signed in.': 'Contraseña actualizada. Ya ha iniciado sesión.',
   'Wrong email or password.': 'Correo o contraseña incorrectos.',
+  'Caps Lock is on.': 'Bloq Mayús está activado.',
+  'This reset link has expired or was already used. Send a new one.': 'Este enlace caducó o ya se usó. Envíe uno nuevo.',
   'Confirm your email first. Check your inbox.': 'Confirme primero su correo. Revise su bandeja de entrada.',
   'Use at least {n} characters.': 'Use al menos {n} caracteres.',
   'Too many attempts. Try again in a few minutes.': 'Demasiados intentos. Vuelva a probar en unos minutos.',
@@ -1589,6 +1592,7 @@ const fr: Record<string, string> = {
   'Coming soon': 'Bientôt',
   'This key has expired. Renew it, or keep working on Free.': 'Cette clé a expiré. Renouvelez-la ou continuez en Gratuit.',
   'That key was not recognised. Check it and try again.': 'Cette clé n’est pas reconnue. Vérifiez-la et réessayez.',
+  'This browser is past the activation limit for this key. Free one in Polar, or keep working on Free.': 'Ce navigateur dépasse le nombre d’activations de cette clé. Libérez-en une dans Polar, ou continuez en Gratuit.',
   'Could not check the key right now. Try again in a moment.': 'Impossible de vérifier la clé pour le moment. Réessayez dans un instant.',
   'Escala Pro is active': 'Escala Pro est actif',
   'Activate Escala Pro': 'Activer Escala Pro',
@@ -2046,6 +2050,10 @@ const fr: Record<string, string> = {
   'Load folder': 'Charger le dossier',
   'No theme matches “{q}”.': 'Aucun thème ne correspond à « {q} ».',
   'This library has no themes of its own yet.': 'Cette bibliothèque n’a pas encore de thèmes à elle.',
+  'Caps Lock is on.': 'Le verrouillage des majuscules est activé.',
+  'This reset link has expired or was already used. Send a new one.': 'Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.',
+  'Reset your password': 'Réinitialisez votre mot de passe',
+  'Wrong email or password.': 'E-mail ou mot de passe incorrect.',
 }
 
 /** English is normally empty — an unmatched key falls through to the source
