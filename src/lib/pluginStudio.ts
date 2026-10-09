@@ -455,7 +455,7 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
   const mode = SPACING_MODES.find((m) => m.id === modeId) ?? SPACING_MODES[1]
   const paint = spacingPaint(mode)
 
-  let shadowCss = SHADOW_PRESETS.find((p) => p.label === 'Soft')!.values.md
+  let shadowCss: string = SHADOW_PRESETS.find((p) => p.label === 'Soft')!.values.md
   const named = c.shadow ? SHADOW_PRESETS.find((p) => p.label === c.shadow) : undefined
   if (named) shadowCss = named.values.md
   else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md
