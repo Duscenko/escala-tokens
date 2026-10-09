@@ -88,6 +88,7 @@ import { useI18n } from '../lib/i18n'
 import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../lib/access'
 import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
 import { hasStoredSession, useAuth } from '../lib/auth'
+import { accountsEnabled } from '../lib/supabase'
 import { reopenAccountFiles } from '../lib/accountFiles'
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
@@ -574,6 +575,12 @@ export default function Configurator() {
   // a part, Export and Save ask for a free account first.
   const access = useAccess()
   const { user: authUser, event: authEvent } = useAuth()
+  // Home is the signed-in file browser — never for a guest, including the gap
+  // after sign-out before `authEvent` propagates or when the session expires.
+  const sessionAllowsHome =
+    !accountsEnabled
+    || Boolean(authUser)
+    || (accountsEnabled && access.loading && hasStoredSession())
   const needsAnotherThemePro = useNeedsProForAnotherTheme()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
@@ -621,6 +628,9 @@ export default function Configurator() {
   // only after the user deliberately opens one of the other tabs.
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
     const w = incomingPlace?.workspace
+    // Home is the signed-in file list. A leftover `?section=library` after
+    // sign-out must not bring it back.
+    if (w === 'library' && !signedInEntry) return 'preview'
     if (w) return w === 'documentation' ? 'preview' : w
     return signedInEntry ? 'library' : 'preview'
   })
@@ -929,7 +939,9 @@ export default function Configurator() {
   // is real, the store is untouched until they add the design system.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(() => {
     if (hasStoredSession()) return null
-    if (incomingPlace && (incomingPlace.tab !== 'foundations' || (incomingPlace.workspace && incomingPlace.workspace !== 'preview'))) return null
+    // A signed-out `library` link is the guest board, not an empty Home.
+    const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
+    if (place && (place.tab !== 'foundations' || (place.workspace && place.workspace !== 'preview'))) return null
     const live = useDesignStore.getState()
     if (myThemeKeys(live.themeOrder, live.themes).length > 0) return null
     return guestStarterPreview()
@@ -1002,19 +1014,29 @@ export default function Configurator() {
     if (authEvent !== 'SIGNED_IN' && authEvent !== 'INITIAL_SESSION') return
     reopenAccountFiles(authUser.id)
   }, [authUser?.id, authEvent])
-  // Sign-out already blanked the store. Close whatever editor was holding one
-  // of those themes and land on Home, where the file list is now empty.
-  useEffect(() => {
-    if (authEvent !== 'SIGNED_OUT') return
+  const leaveHomeForGuest = useCallback(() => {
     setThemeEditor(false)
-    setStylePreview(null)
+    setStylePreview(guestStarterPreview())
     setCreatePending(false)
     setExploringRandomKey(null)
     setSectionExportOpen(false)
     setExportMode(null)
+    setDocsPanelOpen(false)
     setTab('foundations')
-    setThemeWorkspaceTab('library')
-  }, [authEvent])
+    setThemeHubSurface('artefacts')
+    setThemeWorkspaceTab('preview')
+  }, [])
+  // Sign-out already blanked the store. Home is that file list, so it leaves
+  // with the session. The board is the same first screen a visitor sees.
+  useEffect(() => {
+    if (authEvent !== 'SIGNED_OUT') return
+    leaveHomeForGuest()
+  }, [authEvent, leaveHomeForGuest])
+  useEffect(() => {
+    if (!accountsEnabled || access.loading || authUser) return
+    if (themeWorkspaceTab !== 'library') return
+    leaveHomeForGuest()
+  }, [accountsEnabled, access.loading, authUser, themeWorkspaceTab, leaveHomeForGuest])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -1341,6 +1363,10 @@ export default function Configurator() {
     setThemeWorkspaceTab('code')
   }
   const openLibraryPage = () => {
+    if (accountsEnabled && !sessionAllowsHome) {
+      goToLogin()
+      return
+    }
     leaveExportWizard()
     commitVisit()
     setExportMode(null)
@@ -1832,11 +1858,11 @@ export default function Configurator() {
   // and Home omit the foundation icons — a Color click there would leave the
   // page. Docs still jumps sections from the inspector TOC (`OnThisPage`).
   const themeWorkspaceRailVisible = themesCanvas && !themeHubConnecting
-  const homeRailOnly = themeWorkspaceTab === 'library'
+  const homeRailOnly = (themeWorkspaceTab === 'library' && sessionAllowsHome)
     || themeWorkspaceTab === 'code'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
   const [homeCreating, setHomeCreating] = useState(false)
-  const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating
+  const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
   const homePage = homeFileBrowser
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
@@ -2063,7 +2089,7 @@ export default function Configurator() {
                   NEW header for the fade-out duration — a title/content mismatch.
                   Opacity only — a y-nudge on the whole canvas made Groups and
                   the icon rail jump even after they were the same layout. */}
-              {themesCanvas && themeWorkspaceTab === 'preview' ? (
+              {themesCanvas && (themeWorkspaceTab === 'preview' || (themeWorkspaceTab === 'library' && !sessionAllowsHome)) ? (
                 <motion.div
                   key="theme-preview"
                   className="h-full"
@@ -2131,7 +2157,7 @@ export default function Configurator() {
                     }}
                   />
                 </motion.div>
-              ) : themesCanvas && themeWorkspaceTab === 'library' ? (
+              ) : themesCanvas && themeWorkspaceTab === 'library' && sessionAllowsHome ? (
                 <motion.div
                   key="theme-library"
                   className="h-full"

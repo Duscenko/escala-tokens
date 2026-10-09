@@ -72,10 +72,6 @@ export function ThemeCover({ t }: { t: PreviewTokens }) {
               className="absolute -bottom-[6cqw] -right-[4cqw] h-[22cqw] w-[22cqw]"
               style={{ background: t.onBrand, opacity: 0.18, borderRadius: box }}
             />
-            <span
-              className="absolute bottom-[3cqw] left-[3cqw] h-[7cqw] w-[7cqw] rounded-full"
-              style={{ border: `0.6cqw solid ${t.onBrand}`, opacity: 0.9 }}
-            />
           </div>
           <div className="grid grid-cols-4 gap-[2cqw]">
             {swatches.map((color, i) => (

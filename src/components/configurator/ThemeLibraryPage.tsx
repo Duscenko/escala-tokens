@@ -573,25 +573,27 @@ function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGo
       style={{ height: INSPECTOR_TABS_H }}
       aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
     >
-      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-fg-muted" aria-hidden>
-        <HomeGlyph />
-      </span>
-      {trail ? (
-        <>
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="flex-shrink-0 rounded-sm text-body font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            {t('Home')}
-          </button>
-          <span className="flex-shrink-0 text-body text-fg-faint" aria-hidden>/</span>
-          <h1 className="min-w-0 flex-1 truncate text-left text-title font-semibold text-fg">{trail}</h1>
-        </>
-      ) : (
-        <h1 className="min-w-0 flex-1 truncate text-left text-title font-semibold text-fg">{t('Home')}</h1>
-      )}
-      {action && <div className="ml-auto flex-shrink-0">{action}</div>}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-fg-muted" aria-hidden>
+          <HomeGlyph />
+        </span>
+        {trail ? (
+          <>
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="flex-shrink-0 rounded-sm text-body font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              {t('Home')}
+            </button>
+            <span className="flex-shrink-0 text-body text-fg-faint" aria-hidden>/</span>
+            <h1 className="min-w-0 truncate text-left text-title font-semibold text-fg">{trail}</h1>
+          </>
+        ) : (
+          <h1 className="min-w-0 truncate text-left text-title font-semibold text-fg">{t('Home')}</h1>
+        )}
+      </div>
+      {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   )
 }

@@ -7,6 +7,8 @@ import { LegalPage } from './components/public/LegalPage'
 import { ContactPage } from './components/public/ContactPage'
 import { PricingPage } from './components/public/PricingPage'
 import { LoginPage } from './components/public/LoginPage'
+import { AccountPage } from './components/public/AccountPage'
+import { matchAccountPath } from './lib/accountRoutes'
 import { PluginConnectPage } from './components/public/PluginConnectPage'
 import { PRICING_PATH } from './lib/entitlement'
 import { CONTACT_PATH, LEGAL_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
@@ -109,6 +111,15 @@ function App() {
     return (
       <>
         <PluginConnectPage />
+        <ToastHost />
+      </>
+    )
+  }
+
+  if (matchAccountPath(path)) {
+    return (
+      <>
+        <AccountPage />
         <ToastHost />
       </>
     )

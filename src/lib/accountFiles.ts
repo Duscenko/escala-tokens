@@ -1,9 +1,10 @@
 // Signing out ends the Supabase session only. Themes and folders live in the
-// persisted design store, so Home kept showing the account's files after the
-// person left. Close them with the session. The copy is parked under the user
-// id and opened again on the next sign-in of that same account — close, not
-// delete. A login that came back to finish a save or an export keeps the work
-// on screen and shelves the parked files beside it.
+// persisted design store, so they would stay on screen after the person left.
+// Close them with the session. The copy is parked under the user id and opened
+// again on the next sign-in of that same account — close, not delete. Home
+// itself leaves with the session (the shell opens the guest board). A login
+// that came back to finish a save or an export keeps the work on screen and
+// shelves the parked files beside it.
 
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from './figmaSyncModes'
 import { peekLoginIntent } from './loginReturn'

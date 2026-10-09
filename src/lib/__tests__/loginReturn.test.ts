@@ -44,7 +44,9 @@ describe('loginReturn', () => {
     expect(pathForNext(null)).toBe('/?section=library')
     expect(pathForNext('library')).toBe('/?section=library')
     expect(pathForNext('plugin')).toBe('/plugin')
+    expect(pathForNext('account')).toBe('/account')
     expect(readLoginSearch('?next=plugin').next).toBe('plugin')
+    expect(readLoginSearch('?next=account').next).toBe('account')
   })
 
   it('header Sign in (next=library, no intent) opens Home', () => {

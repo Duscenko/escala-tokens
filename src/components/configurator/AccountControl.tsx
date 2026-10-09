@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../lib/i18n'
+import { accountHref } from '../../lib/accountRoutes'
 import { signOut, useAuth } from '../../lib/auth'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
@@ -131,6 +132,7 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
             <p className="text-caption text-fg-faint">{t('Signed in as')}</p>
             <p className="truncate text-ui font-medium text-fg">{user.email}</p>
           </div>
+          <a role="menuitem" href={accountHref()} className={`rounded-lg px-2.5 py-2 text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}>{t('Account')}</a>
           {onOpenLibrary && (
             <button
               type="button"
@@ -142,14 +144,6 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
               {savedCount > 0 && <span className="text-caption text-fg-faint">{savedCount}</span>}
             </button>
           )}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => { setMenuOpen(false); setLicenceOpen(true) }}
-            className={`rounded-lg px-2.5 py-2 text-left text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}
-          >
-            {licensed ? t('Manage licence') : t('Activate licence')}
-          </button>
           <button
             type="button"
             role="menuitem"

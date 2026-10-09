@@ -11,6 +11,7 @@ import { LOGIN_PATH } from './legal'
 export type AuthProblem =
   | 'invalid_credentials'
   | 'email_not_confirmed'
+  | 'email_in_use'
   | 'weak_password'
   | 'rate_limited'
   | 'unavailable'
@@ -19,6 +20,7 @@ function problemOf(error: { code?: string; status?: number } | null): AuthProble
   const code = error?.code
   if (code === 'invalid_credentials') return 'invalid_credentials'
   if (code === 'email_not_confirmed') return 'email_not_confirmed'
+  if (code === 'email_exists' || code === 'user_already_exists') return 'email_in_use'
   if (code === 'weak_password') return 'weak_password'
   if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || error?.status === 429) return 'rate_limited'
   return 'unavailable'
@@ -77,6 +79,52 @@ export async function sendPasswordReset(email: string, locale: 'en' | 'es' | 'fr
 export async function setNewPassword(password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, problem: 'unavailable' }
   const { error } = await supabase.auth.updateUser({ password })
+  return error ? fail(error) : ok(undefined)
+}
+
+/** Check the current password, then replace it. A wrong current password is
+ *  the same `invalid_credentials` a sign-in would return. */
+export async function replacePassword(email: string, current: string, next: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, problem: 'unavailable' }
+  const { error } = await supabase.auth.signInWithPassword({ email, password: current })
+  if (error) return fail(error)
+  return setNewPassword(next)
+}
+
+const NAME_KEYS = ['display_name', 'full_name', 'name'] as const
+
+/** The name the account pages show. `display_name` is what this app writes;
+ *  the other two are what GitHub (and similar) already stored. */
+export function displayNameOf(user: { user_metadata?: Record<string, unknown> | null }): string {
+  const meta = user.user_metadata ?? {}
+  for (const key of NAME_KEYS) {
+    const value = meta[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return ''
+}
+
+/** True when this account can sign in with an email and a password. A
+ *  GitHub-only account has no password to replace. */
+export function hasEmailPassword(user: { identities?: { provider?: string }[] | null }): boolean {
+  return Boolean(user.identities?.some((identity) => identity.provider === 'email'))
+}
+
+export async function saveDisplayName(name: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, problem: 'unavailable' }
+  const display_name = name.trim().slice(0, 80)
+  const { error } = await supabase.auth.updateUser({ data: { display_name } })
+  return error ? fail(error) : ok(undefined)
+}
+
+export async function resendSignupEmail(email: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, problem: 'unavailable' }
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim(),
+    options: { emailRedirectTo: redirectTo() },
+  })
+  if (error && problemOf(error) === 'rate_limited') return fail(error)
   return error ? fail(error) : ok(undefined)
 }
 
