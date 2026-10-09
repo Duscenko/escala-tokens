@@ -27,8 +27,9 @@ export const LICENCE_SEAL_MS = 30 * 24 * 60 * 60 * 1000
 interface Stamp { until: string | null; sealed?: string }
 
 /** The payload with the stamp added. `until` is the key's expiry, or null for a
- *  key that does not expire. `sealed` is when this publish happened. Never
- *  mutates the caller's object. */
+ *  key that does not expire. `sealed` is when this publish happened. A Polar
+ *  refund webhook strips this stamp the same day; the seal is the fallback
+ *  when that webhook has not run. Never mutates the caller's object. */
 export function stampLicence<T extends object>(body: T, until: string | null, sealedAt: Date = new Date()): T & Record<typeof LICENCE_STAMP, Stamp> {
   return { ...body, [LICENCE_STAMP]: { until, sealed: sealedAt.toISOString() } } as T & Record<typeof LICENCE_STAMP, Stamp>
 }

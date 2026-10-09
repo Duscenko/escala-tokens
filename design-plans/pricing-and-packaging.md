@@ -327,7 +327,7 @@ Recomendación:
 |---|---|---|
 | **Antes del 31-oct** | **Compra de prueba real** en Polar (y reembólsala): comprobar que la clave llega por correo, que se activa en la app y que publicar con ella funciona. Todo lo anterior se probó con Polar simulado | tú |
 | Antes del 31-oct | Abrir `https://www.escalatokens.com/api/entitlement` ya desplegado y ver que `now` es la hora del servidor | tú |
-| Antes del 31-oct | Regla de Firewall de Vercel para `/api/license` (ver "Vulnerabilidades"): el límite en memoria no basta en serverless | tú |
+| Hecho el 9-oct | Firewall en producción: `/api/license` a 10/min por IP, delante del tope de 100/min en `/api`. `/api/contact` ya estaba a 10/hora | — |
 | 24-oct | Mensaje: "queda una semana gratis" | tú |
 | **31-oct 23:59 (París)** | Termina la promo. Es automático: desde ese segundo `POST`/`GET /api/tokens` y el MCP exigen licencia | automático |
 | 1-nov | Se abren las ventas a $59: el botón "Get Pro" de `/pricing` pasa solo al checkout de Polar. Mensaje de apertura | tú |
@@ -341,23 +341,32 @@ Recomendación:
 
 Ordenados por lo que más duele. Lo que no se puede cerrar desde este repo queda **pendiente**.
 
-1. **Una clave se puede compartir.** **Pendiente el tope.** No hay límite de activaciones:
-   activarlo es un ajuste del beneficio en Polar («Limit Activations») y, solo entonces,
-   enviar `activation_id` desde `api/license.ts` y `api/tokens.ts`. **Hecho el aviso:** el log
-   `evt: license` guarda `keyHash` (nunca la clave) y, en una publicación, el slug
-   (`op: publish`, `project`), así que «la misma clave, muchos slugs» se ve sin abrir Polar.
-2. **Un reembolso no cortaba el sync al instante.** **Hecho el sello de 30 días.** Cada
-   publicación reescribe `sealed`; `isServable` deja de servir cuando pasan 30 días o cuando
-   vence la clave, lo que ocurra antes. Quien deja de publicar pierde el sync hasta que
-   vuelve a publicar (Polar tiene que seguir diciendo `granted`). **Pendiente:** un webhook
-   `benefit_grant.revoked` que borre el sello el mismo día, y los blobs ya publicados antes
-   de este sello (no traen `sealed` y siguen su `until` de hasta 12 meses).
+1. **Una clave se puede compartir.** **Hecho el código; pendiente el interruptor en Polar.**
+   `checkLicenceKey` valida sin `activation_id`. Solo si la respuesta trae `limit_activations`
+   como número llama a `/activate` (etiqueta `Escala`) o revalida el id de este navegador
+   (`sd-licence-activation`, no es la clave). Con el límite apagado no se llama a activate:
+   Polar responde 403 y dejaría fuera a toda clave buena. Activar «Limit Activations» en el
+   beneficio es un ajuste del panel de Polar. **Hecho el aviso:** el log `evt: license`
+   guarda `keyHash` (nunca la clave) y, en una publicación, el slug.
+2. **Un reembolso no cortaba el sync al instante.** **Hecho el sello de 30 días y el webhook.**
+   Cada publicación reescribe `sealed` y anota el slug bajo la huella de la clave
+   (`licence-slugs/<hash>.json`, sin la clave). `POST /api/polar-webhook` verifica la firma
+   Standard Webhooks y, en `benefit_grant.revoked` (o una clave pasada a `revoked`), quita
+   el sello: el payload sigue, la siguiente lectura es 402. **Pendiente de configuración:**
+   `POLAR_WEBHOOK_SECRET` (`whsec_…`) en Vercel y la URL
+   `https://www.escalatokens.com/api/polar-webhook` en Polar. Sin el secreto el endpoint
+   responde 503 y no toca nada. Los blobs publicados antes del índice no están en esa lista
+   hasta la próxima publicación con clave.
 3. **La URL directa del blob se salta el 402.** **Pendiente.** `PUT` sigue en
    `access: 'public'`. Cerrarlo exige Blob privado, y eso ya rompió la escritura del claim
-   (`writeClaim`).
-4. **Adivinar claves.** **Pendiente.** El límite de `/api/license` es 10 por minuto y vive
-   en memoria de cada instancia. La regla de Firewall de Vercel para `/api/license` (y la de
-   `/api/contact`, si aún no está) hay que crearla en el panel. Las claves llevan UUID.
+   (`writeClaim`). La lectura usa la URL pública a propósito para no gastar el cupo de
+   `head()` del plan Hobby.
+4. **Adivinar claves.** **Hecho en el Firewall de producción** (proyecto
+   `scalable-designs`, publicado el 9-oct). `Licence key limit` va la primera: 10 peticiones
+   por minuto y por IP en las rutas que empiezan por `/api/license`; si se pasa, rate limit.
+   Detrás sigue `API rate limit` (100/min en `/api/`, el sondeo del plugin cabe) y
+   `Contact form limit` (10/hora), que ya existía. El límite en memoria de cada instancia
+   se queda como segunda capa. No cabe en `vercel.json`. Las claves llevan UUID.
 5. **El recorte de la descarga es blando.** **Hecho en Export → AI:** con cuenta Free, Skill
    y el paquete de agente pasan por `freeFigmaScope` igual que el JSON de Figma. **Pendiente
    y aceptado:** un fork quita ese recorte, y el JavaScript compilado del plugin se puede
@@ -368,9 +377,12 @@ Ordenados por lo que más duele. Lo que no se puede cerrar desde este repo queda
 7. **Un plugin ya instalado seguía pidiendo el blob tras un 402.** **Hecho en el plugin
    nuevo:** el primer 402 para el temporizador y no reanuda al abrir el archivo. **Pendiente
    para copias ya instaladas:** no se actualizan solas; hay que volver a instalar el zip.
-8. **La clave está en `localStorage` (`sd-licence-key`).** **Pendiente.** Un XSS la leería,
-   igual que el token de GitHub. No va en el store ni en ningún export. Las SVG subidas se
-   sanean. No hay un XSS conocido. Sacarla de ahí exige una sesión, no un cambio local.
+8. **La clave estaba en `localStorage` (`sd-licence-key`).** **Hecho.** Ahora va en la cookie
+   HttpOnly `sd_licence` (SameSite=Lax, un año, `Secure` solo en producción). La página no
+   la lee. Una clave antigua se envía una vez y se borra si el servidor responde `stored`.
+   Si la red falla, se queda en localStorage para que publicar pueda mandar la cabecera.
+   El token de GitHub sigue en localStorage. La política de privacidad (la francesa es la
+   vinculante) dice que hay una cookie estrictamente necesaria y ninguna de seguimiento.
 9. **Fechas fijas en `entitlement.ts`.** **Pendiente como recordatorio; los desfases de hoy
    están bien.** `PROMO_ENDS_AT` es el 7 de octubre de 2026, +02:00 (aún horario de verano;
    el cambio es el 25 de octubre) y ya pasó. `PRO_LAUNCH_ENDS_AT` es el 15 de noviembre,

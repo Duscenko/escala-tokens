@@ -13,6 +13,9 @@ import { entitlementAt } from '../src/lib/entitlement.js'
 import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
+import { rememberLicenceSlug } from './_licenceIndex.js'
+import { readLicenceCookie } from '../src/lib/licenceCookie.js'
+import { isActivationId } from '../src/lib/polar.js'
 
 // Vercel compiles this to ESM (`package.json` "type": "module"). Node then
 // loads `/var/task/api/tokens.js` and requires a `.js` specifier for every
@@ -23,7 +26,7 @@ import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-escala-license',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-escala-license, x-escala-activation',
 }
 
 /** A full system serialises to a few hundred KB; anything far past that is
@@ -168,12 +171,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Blob read or write, so a refused request costs a Polar lookup at most.
     let licenceUntil: string | null | undefined
     if (!entitlementAt(new Date()).promo) {
-      const raw = req.headers['x-escala-license']
-      const licenceKey = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? ''
-      if (!licenceKey || licenceKey.length > 200) {
+      const headerKey = req.headers['x-escala-license']
+      const fromHeader = (Array.isArray(headerKey) ? headerKey[0] : headerKey)?.trim() ?? ''
+      const licenceKey = (fromHeader || readLicenceCookie(req.headers.cookie)).slice(0, 200)
+      if (!licenceKey) {
         return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
       }
-      const licence = await checkLicenceKey(licenceKey)
+      const activationRaw = req.headers['x-escala-activation']
+      const activationId = (Array.isArray(activationRaw) ? activationRaw[0] : activationRaw)?.trim() ?? ''
+      const licence = await checkLicenceKey(licenceKey, isActivationId(activationId) ? activationId : null)
       if (licence.reason === 'unavailable') {
         logLicence(licenceKey, project, false, 'unavailable')
         // Polar is down: that is not the customer's fault, so say "retry", not "pay".
@@ -185,10 +191,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(402).json({
           error: licence.reason === 'expired'
             ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
-            : LICENCE_REQUIRED_MESSAGE,
+            : licence.reason === 'activation_limit'
+              ? 'This licence has no free activation left. Free one in Polar, or import tokens.json in the plugin by hand.'
+              : LICENCE_REQUIRED_MESSAGE,
         })
       }
       logLicence(licenceKey, project, true, null)
+      try { await rememberLicenceSlug(licenceKey, project) } catch { /* the refund webhook misses this slug; the publish itself stands */ }
       licenceUntil = licence.expiresAt
     }
 

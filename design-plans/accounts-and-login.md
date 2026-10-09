@@ -367,8 +367,8 @@ Al activar el login, **en el mismo cambio**:
 - [ ] `ACCOUNTS_LIVE = true` y subir `LEGAL.updated`.
 - [ ] Reescribir "no accounts" en `SECURITY.md`, el copy de About → Legal & data y la clave i18n
       "your system is stored in your own browser… there are no accounts…" (en/es/fr).
-- [ ] Aviso legal y Privacy: "El sitio no instala cookies" sigue siendo cierto; la sesión va en
-      `localStorage` y ya lo dice la cláusula de cuenta.
+- [ ] Aviso legal y Privacy: la sesión de cuenta sigue en `localStorage` (la cláusula de cuenta
+      ya lo dice). Hay una cookie HttpOnly `sd_licence` para la clave Pro; no es de seguimiento.
 - [ ] `NOTICE`: `@supabase/supabase-js`.
 - [ ] Rellenar `siret` y `address` en `LEGAL` si ya se cobra como actividad profesional.
 - [ ] Revisión por alguien con criterio legal de `/terms` (límite de responsabilidad, 12 meses de

@@ -20,10 +20,18 @@ describe('licence key handling', () => {
   beforeEach(() => { mem = stubStorage(); __resetLicenceForTests(null) })
   afterEach(() => { vi.unstubAllGlobals() })
 
-  it('keeps a key the server accepts, and says when it ends', async () => {
-    answer(200, { valid: true, expiresAt: '2027-11-02T10:00:00Z' })
+  it('moves an accepted key into the cookie and drops the local copy', async () => {
+    answer(200, { valid: true, expiresAt: '2027-11-02T10:00:00Z', stored: true, hasKey: true, activationId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' })
     const r = await activateLicence('  ESCALA-ABC  ')
     expect(r).toMatchObject({ status: 'valid', expiresAt: '2027-11-02T10:00:00Z', hasKey: true })
+    expect(getLicenceKey()).toBeNull()
+    expect(mem.has('sd-licence-key')).toBe(false)
+    expect(mem.get('sd-licence-activation')).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
+  })
+
+  it('keeps the key locally when the server has not taken it', async () => {
+    answer(200, { valid: true, expiresAt: '2027-11-02T10:00:00Z' })
+    await activateLicence('ESCALA-ABC')
     expect(getLicenceKey()).toBe('ESCALA-ABC')
     expect(mem.get('sd-licence-key')).toBe('ESCALA-ABC')
   })
@@ -43,9 +51,16 @@ describe('licence key handling', () => {
   })
 
   it('keeps the key when the validator is down — that says nothing about the key', async () => {
-    answer(502, { valid: false, reason: 'unavailable' })
+    answer(502, { valid: false, reason: 'unavailable', stored: false })
     expect(await activateLicence('ESCALA-GOOD')).toMatchObject({ status: 'unavailable', hasKey: true })
     expect(getLicenceKey()).toBe('ESCALA-GOOD')
+  })
+
+  it('names an activation limit without treating the key as unknown', async () => {
+    answer(200, { valid: false, reason: 'activation_limit', stored: true, hasKey: true })
+    expect(await activateLicence('ESCALA-CAP')).toMatchObject({ status: 'activation_limit', hasKey: true })
+    expect(getLicenceKey()).toBeNull()
+    expect(mem.has('sd-licence-key')).toBe(false)
   })
 
   it('treats a network failure as unavailable, never as valid', async () => {

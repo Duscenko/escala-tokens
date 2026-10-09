@@ -107,7 +107,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'directeur', h: 'Directeur de la publication', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Hébergeur', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Propriété intellectuelle', body: <P>Le code source d’Escala Tokens est publié sous licence MIT. Les systèmes de design que vous créez avec l’outil vous appartiennent : les tokens et fichiers exportés ne sont soumis à aucune licence ni obligation d’attribution de notre part. Le plugin Figma est un produit propriétaire distinct, et le service hébergé est régi par les <A href={TERMS_PATH}>conditions d’utilisation</A>. Figma est une marque de Figma, Inc. ; ce projet n’est ni affilié à Figma ni approuvé par elle.</P> },
-      { id: 'donnees', h: 'Données personnelles', body: <P>Le traitement des données respecte le Règlement général sur la protection des données (RGPD) et la loi Informatique et Libertés ; il est décrit dans la <A href={PRIVACY_PATH}>politique de confidentialité</A>. Le site ne dépose aucun cookie.</P> },
+      { id: 'donnees', h: 'Données personnelles', body: <P>Le traitement des données respecte le Règlement général sur la protection des données (RGPD) et la loi Informatique et Libertés ; il est décrit dans la <A href={PRIVACY_PATH}>politique de confidentialité</A>. Le site dépose un seul cookie, strictement nécessaire, pour la clé de licence Pro.</P> },
       { id: 'droit', h: 'Droit applicable', body: <P>Le site et les présentes mentions sont soumis au droit français. Tout litige relève des juridictions françaises compétentes, sous réserve des règles protectrices dont bénéficie le consommateur dans son pays de résidence au sein de l’Union européenne.</P> },
     ],
   }
@@ -121,7 +121,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'directeur', h: 'Director de la publicación', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Alojamiento', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Propiedad intelectual', body: <P>El código fuente de Escala Tokens se publica bajo licencia MIT. Los sistemas de diseño que usted crea con la herramienta son suyos: los tokens y archivos exportados no llevan ninguna licencia ni obligación de atribución por nuestra parte. El plugin de Figma es un producto propietario aparte, y el servicio alojado se rige por los <A href={TERMS_PATH}>términos de uso</A>. Figma es una marca de Figma, Inc.; este proyecto no está afiliado a Figma ni respaldado por ella.</P> },
-      { id: 'donnees', h: 'Datos personales', body: <P>El tratamiento de datos cumple el Reglamento General de Protección de Datos (RGPD) y la ley francesa Informatique et Libertés; se describe en la <A href={PRIVACY_PATH}>política de privacidad</A>. El sitio no usa cookies.</P> },
+      { id: 'donnees', h: 'Datos personales', body: <P>El tratamiento de datos cumple el Reglamento General de Protección de Datos (RGPD) y la ley francesa Informatique et Libertés; se describe en la <A href={PRIVACY_PATH}>política de privacidad</A>. El sitio instala una sola cookie, estrictamente necesaria, para la clave de la licencia Pro.</P> },
       { id: 'droit', h: 'Ley aplicable', body: <P>El sitio y este aviso se rigen por el derecho francés. Cualquier litigio corresponde a los tribunales franceses competentes, sin perjuicio de las normas de protección de las que goza el consumidor en su país de residencia dentro de la Unión Europea.</P> },
     ],
   }
@@ -135,7 +135,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'directeur', h: 'Publication director', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Host', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Intellectual property', body: <P>The Escala Tokens source code is published under the MIT License. The design systems you build with the tool are yours: exported tokens and files carry no licence or attribution requirement from us. The Figma plugin is a separate proprietary product, and the hosted service is governed by the <A href={TERMS_PATH}>terms of use</A>. Figma is a trademark of Figma, Inc.; this project is not affiliated with or endorsed by Figma.</P> },
-      { id: 'donnees', h: 'Personal data', body: <P>Data is handled in line with the EU General Data Protection Regulation (GDPR) and the French Data Protection Act (loi Informatique et Libertés), as described in the <A href={PRIVACY_PATH}>privacy policy</A>. The site sets no cookies.</P> },
+      { id: 'donnees', h: 'Personal data', body: <P>Data is handled in line with the EU General Data Protection Regulation (GDPR) and the French Data Protection Act (loi Informatique et Libertés), as described in the <A href={PRIVACY_PATH}>privacy policy</A>. The site sets one cookie, strictly necessary, for the Escala Pro licence key.</P> },
       { id: 'droit', h: 'Governing law', body: <P>The site and this notice are governed by French law. Any dispute falls under the competent French courts, without prejudice to the protective rules a consumer enjoys in their country of residence within the European Union.</P> },
     ],
   }
@@ -147,7 +147,7 @@ function privacyBase(l: Locale): Doc {
   if (l === 'fr') return {
     title: 'Politique de confidentialité',
     description: 'Données traitées par Escala Tokens, service édité en France, conformément au RGPD : aucun cookie, aucune publicité, aucun profilage.',
-    lead: 'En bref : pas de compte, pas de cookie, pas de publicité, pas de profilage, pas de revente de données. Votre système de design reste dans votre navigateur. Escala Tokens est édité en France et applique le RGPD (règlement (UE) 2016/679) et la loi Informatique et Libertés.',
+    lead: 'En bref : pas de compte, pas de cookie de suivi, pas de publicité, pas de profilage, pas de revente de données. Votre système de design reste dans votre navigateur. Escala Tokens est édité en France et applique le RGPD (règlement (UE) 2016/679) et la loi Informatique et Libertés.',
     sections: [
       { id: 'responsable', h: 'Responsable du traitement', body: <>
         <Ul items={identity('fr')} />
@@ -157,6 +157,7 @@ function privacyBase(l: Locale): Doc {
       { id: 'tokens', h: '2. Tokens publiés (synchronisation Figma et MCP)', body: <>
         <P>Uniquement si vous cliquez sur « Sync now » ou activez la synchronisation automatique, le contenu de vos tokens est envoyé et stocké chez notre hébergeur (Vercel Blob) sous un identifiant de système. Une empreinte chiffrée (SHA-256) d’une clé de publication est stockée pour empêcher qu’un tiers écrase votre système.</P>
         <P><span className="text-fg">Important :</span> les tokens publiés sont lisibles par toute personne qui connaît l’identifiant du système — c’est ce qui permet au plugin Figma et aux agents IA de les lire. N’indiquez pas d’informations confidentielles dans le nom de votre système.</P>
+        <P>L’empreinte courte de la clé de licence est conservée avec l’identifiant du système tant que celui-ci est publié, afin qu’un remboursement interrompe la synchronisation. La clé elle-même n’y figure pas.</P>
         <Ul items={['Base légale : exécution du service que vous demandez (art. 6.1.b RGPD).', 'Durée : jusqu’à votre demande de suppression.']} />
       </> },
       { id: 'github', h: '3. GitHub', body: <P>Si vous connectez GitHub, votre jeton d’accès reste dans votre navigateur et n’est envoyé qu’à GitHub. Lors d’une connexion OAuth, notre serveur échange le code contre un jeton et vous le transmet sans le conserver. Les fichiers sont poussés dans le dépôt que vous choisissez ; GitHub est alors responsable de son propre traitement.</P> },
@@ -171,7 +172,7 @@ function privacyBase(l: Locale): Doc {
         <P>Lorsque vous nous écrivez via le {contactLink('fr')}, nous recevons votre adresse e-mail, votre message, le sujet choisi et, si vous les indiquez, votre nom et l’identifiant de votre système. Ces données servent uniquement à vous répondre.</P>
         <Ul items={['Base légale : intérêt légitime à répondre à votre demande (art. 6.1.f RGPD) ; obligation légale pour les demandes d’exercice de droits (art. 6.1.c).', 'Aucun stockage sur nos serveurs : le message est transmis une seule fois par e-mail via Resend, puis conservé dans la messagerie de l’éditeur le temps de traiter la demande, et au maximum 3 ans après le dernier échange.', 'Protection anti-spam sans cookie ni CAPTCHA : champ invisible, délai minimal de saisie et limite de messages par adresse IP.']} />
       </> },
-      { id: 'cookies', h: 'Cookies et stockage local', body: <P>Le site ne dépose aucun cookie. Il utilise le stockage local de votre navigateur uniquement pour des fonctions que vous demandez : votre système de design, la langue, le thème clair/sombre, votre clé de publication et, si vous le fournissez, votre jeton GitHub. Ces usages sont strictement nécessaires au service demandé et ne requièrent pas de consentement (art. 82 de la loi Informatique et Libertés, directive ePrivacy).</P> },
+      { id: 'cookies', h: 'Cookies et stockage local', body: <P>Le site dépose un seul cookie, strictement nécessaire : la clé de licence Pro, marquée HttpOnly, de sorte qu’un script de la page ne peut pas la lire. Il est effacé lorsque vous retirez la licence, ou au bout d’un an. Le reste — système de design, langue, thème clair/sombre, clé de publication et, si vous le fournissez, jeton GitHub — reste dans le stockage local. Un identifiant d’appareil, qui n’est pas la clé, y est aussi gardé et n’est envoyé à Polar que si la limite d’activations de la licence est activée. Ces usages sont strictement nécessaires au service demandé et ne requièrent pas de consentement (art. 82 de la loi Informatique et Libertés, directive ePrivacy).</P> },
       { id: 'profilage', h: 'Absence de profilage', body: <P>Aucune décision automatisée ni aucun profilage au sens de l’article 22 du RGPD. Aucune donnée n’est vendue, louée ni utilisée à des fins publicitaires.</P> },
       { id: 'transferts', h: 'Sous-traitants et transferts hors UE', body: <>
         <Ul items={['Vercel Inc. (États-Unis) — hébergement, stockage des tokens publiés, mesure d’audience, journaux.', 'Google LLC (États-Unis) — polices Google Fonts.', 'GitHub, Inc. (États-Unis) — uniquement si vous connectez GitHub.', 'Resend, Inc. (États-Unis) — acheminement des messages du formulaire de contact.']} />
@@ -183,8 +184,8 @@ function privacyBase(l: Locale): Doc {
   }
   if (l === 'es') return {
     title: 'Política de privacidad',
-    description: 'Datos que trata Escala Tokens, servicio editado en Francia, conforme al RGPD: sin cookies, sin publicidad, sin perfiles.',
-    lead: 'En resumen: sin cuentas, sin cookies, sin publicidad, sin perfiles y sin venta de datos. Su sistema de diseño se queda en su navegador. Escala Tokens se edita en Francia y aplica el RGPD (Reglamento (UE) 2016/679) y la ley francesa Informatique et Libertés.',
+    description: 'Datos que trata Escala Tokens, servicio editado en Francia, conforme al RGPD: sin cookies de seguimiento, sin publicidad, sin perfiles.',
+    lead: 'En resumen: sin cuentas, sin cookies de seguimiento, sin publicidad, sin perfiles y sin venta de datos. Su sistema de diseño se queda en su navegador. Escala Tokens se edita en Francia y aplica el RGPD (Reglamento (UE) 2016/679) y la ley francesa Informatique et Libertés.',
     note: 'Traducción informativa. La versión francesa es la que tiene valor legal.',
     sections: [
       { id: 'responsable', h: 'Responsable del tratamiento', body: <>
@@ -195,6 +196,7 @@ function privacyBase(l: Locale): Doc {
       { id: 'tokens', h: '2. Tokens publicados (sincronización con Figma y MCP)', body: <>
         <P>Solo si pulsa «Sync now» o activa la sincronización automática, el contenido de sus tokens se envía y se guarda en nuestro proveedor (Vercel Blob) bajo un identificador de sistema. Se guarda una huella cifrada (SHA-256) de una clave de publicación para impedir que un tercero sobrescriba su sistema.</P>
         <P><span className="text-fg">Importante:</span> los tokens publicados pueden leerlos quienes conozcan el identificador del sistema; así es como el plugin de Figma y los agentes de IA los leen. No incluya información confidencial en el nombre de su sistema.</P>
+        <P>La huella corta de la clave de licencia se conserva junto al identificador del sistema mientras este siga publicado, para que un reembolso corte la sincronización. La clave en sí no se guarda.</P>
         <Ul items={['Base legal: ejecución del servicio que usted solicita (art. 6.1.b RGPD).', 'Plazo: hasta que solicite su eliminación.']} />
       </> },
       { id: 'github', h: '3. GitHub', body: <P>Si conecta GitHub, su token de acceso se queda en su navegador y solo se envía a GitHub. En una conexión OAuth, nuestro servidor intercambia el código por un token y se lo entrega sin guardarlo. Los archivos se suben al repositorio que usted elige; a partir de ahí GitHub es responsable de su propio tratamiento.</P> },
@@ -209,7 +211,7 @@ function privacyBase(l: Locale): Doc {
         <P>Cuando nos escribe mediante el {contactLink('es')}, recibimos su dirección de correo, su mensaje, el tema elegido y, si los indica, su nombre y el identificador de su sistema. Estos datos solo sirven para responderle.</P>
         <Ul items={['Base legal: interés legítimo en responder a su solicitud (art. 6.1.f RGPD); obligación legal para las solicitudes de ejercicio de derechos (art. 6.1.c).', 'Sin almacenamiento en nuestros servidores: el mensaje se transmite una sola vez por correo mediante Resend y se conserva en el buzón del editor mientras se atiende la solicitud, y como máximo 3 años tras el último intercambio.', 'Protección anti-spam sin cookies ni CAPTCHA: campo invisible, tiempo mínimo de escritura y límite de mensajes por dirección IP.']} />
       </> },
-      { id: 'cookies', h: 'Cookies y almacenamiento local', body: <P>El sitio no instala cookies. Usa el almacenamiento local de su navegador solo para funciones que usted solicita: su sistema de diseño, el idioma, el tema claro/oscuro, su clave de publicación y, si lo proporciona, su token de GitHub. Son usos estrictamente necesarios para el servicio solicitado y no requieren consentimiento (art. 82 de la ley Informatique et Libertés, directiva ePrivacy).</P> },
+      { id: 'cookies', h: 'Cookies y almacenamiento local', body: <P>El sitio instala una sola cookie, estrictamente necesaria: la clave de la licencia Pro, marcada HttpOnly, de modo que un script de la página no puede leerla. Se borra cuando usted retira la licencia, o al cabo de un año. Lo demás — sistema de diseño, idioma, tema claro/oscuro, clave de publicación y, si lo proporciona, token de GitHub — sigue en el almacenamiento local. También se guarda un identificador de dispositivo, que no es la clave, y solo se envía a Polar si el límite de activaciones de la licencia está activado. Son usos estrictamente necesarios para el servicio solicitado y no requieren consentimiento (art. 82 de la ley Informatique et Libertés, directiva ePrivacy).</P> },
       { id: 'profilage', h: 'Sin perfiles', body: <P>No hay decisiones automatizadas ni elaboración de perfiles en el sentido del artículo 22 del RGPD. Ningún dato se vende, se alquila ni se usa con fines publicitarios.</P> },
       { id: 'transferts', h: 'Encargados y transferencias fuera de la UE', body: <>
         <Ul items={['Vercel Inc. (EE. UU.): alojamiento, almacenamiento de tokens publicados, medición de audiencia, registros.', 'Google LLC (EE. UU.): fuentes de Google Fonts.', 'GitHub, Inc. (EE. UU.): solo si conecta GitHub.', 'Resend, Inc. (EE. UU.): envío de los mensajes del formulario de contacto.']} />
@@ -221,8 +223,8 @@ function privacyBase(l: Locale): Doc {
   }
   return {
     title: 'Privacy policy',
-    description: 'Data processed by Escala Tokens, a service published from France, under the GDPR: no cookies, no advertising, no profiling.',
-    lead: 'In short: no accounts, no cookies, no advertising, no profiling, no selling of data. Your design system stays in your browser. Escala Tokens is published from France and applies the GDPR (Regulation (EU) 2016/679) and the French Data Protection Act.',
+    description: 'Data processed by Escala Tokens, a service published from France, under the GDPR: no tracking cookies, no advertising, no profiling.',
+    lead: 'In short: no accounts, no tracking cookies, no advertising, no profiling, no selling of data. Your design system stays in your browser. Escala Tokens is published from France and applies the GDPR (Regulation (EU) 2016/679) and the French Data Protection Act.',
     note: 'Informative translation. The French version is the legally binding one.',
     sections: [
       { id: 'responsable', h: 'Data controller', body: <>
@@ -233,6 +235,7 @@ function privacyBase(l: Locale): Doc {
       { id: 'tokens', h: '2. Published tokens (Figma sync and MCP)', body: <>
         <P>Only when you click “Sync now” or turn on auto-sync, your token payload is sent to and stored by our host (Vercel Blob) under a system ID. A hashed (SHA-256) publish key is stored so nobody else can overwrite your system.</P>
         <P><span className="text-fg">Important:</span> published tokens can be read by anyone who knows the system ID — that is how the Figma plugin and AI agents read them. Don’t put confidential information in your system’s name.</P>
+        <P>The short hash of the licence key is kept with the system id for as long as that system stays published, so a refund can stop sync. The key itself is not stored.</P>
         <Ul items={['Legal basis: performance of the service you request (GDPR art. 6.1.b).', 'Retention: until you ask for deletion.']} />
       </> },
       { id: 'github', h: '3. GitHub', body: <P>If you connect GitHub, your access token stays in your browser and is only ever sent to GitHub. During an OAuth sign-in, our server exchanges the code for a token and hands it to you without keeping it. Files are pushed to the repository you choose; GitHub is then responsible for its own processing.</P> },
@@ -247,7 +250,7 @@ function privacyBase(l: Locale): Doc {
         <P>When you write to us through the {contactLink('en')}, we receive your email address, your message, the topic you chose and, if you provide them, your name and your system ID. This data is used only to answer you.</P>
         <Ul items={['Legal basis: legitimate interest in answering your request (GDPR art. 6.1.f); legal obligation for requests to exercise your rights (art. 6.1.c).', 'Nothing is stored on our servers: the message is relayed once by email through Resend, then kept in the publisher’s mailbox while the request is handled, and at most 3 years after the last exchange.', 'Spam protection without cookies or CAPTCHA: a hidden field, a minimum typing time and a per-IP message limit.']} />
       </> },
-      { id: 'cookies', h: 'Cookies and local storage', body: <P>The site sets no cookies. It uses your browser’s local storage only for features you ask for: your design system, language, light/dark theme, your publish key and, if you provide one, your GitHub token. These uses are strictly necessary for the service you request and need no consent (art. 82 of the French Data Protection Act, ePrivacy Directive).</P> },
+      { id: 'cookies', h: 'Cookies and local storage', body: <P>The site sets one cookie, strictly necessary: the Escala Pro licence key, marked HttpOnly, so a script on the page cannot read it. It is cleared when you remove the licence, or after one year. Everything else — your design system, language, light/dark theme, publish key and, if you provide one, your GitHub token — stays in local storage. A device id, which is not the key, is kept there too and is sent to Polar only if the licence’s activation limit is on. These uses are strictly necessary for the service you request and need no consent (art. 82 of the French Data Protection Act, ePrivacy Directive).</P> },
       { id: 'profilage', h: 'No profiling', body: <P>No automated decision-making or profiling within the meaning of GDPR article 22. No data is sold, rented or used for advertising.</P> },
       { id: 'transferts', h: 'Processors and transfers outside the EU', body: <>
         <Ul items={['Vercel Inc. (United States) — hosting, storage of published tokens, audience measurement, logs.', 'Google LLC (United States) — Google Fonts.', 'GitHub, Inc. (United States) — only if you connect GitHub.', 'Resend, Inc. (United States) — delivery of contact-form messages.']} />

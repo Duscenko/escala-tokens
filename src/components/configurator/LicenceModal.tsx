@@ -35,7 +35,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   /** What the LAST attempt in this dialog said — not the saved key's status,
    *  so reopening the dialog never greets someone with a stale rejection. */
-  const [attempt, setAttempt] = useState<'expired' | 'invalid' | 'unavailable' | null>(null)
+  const [attempt, setAttempt] = useState<'expired' | 'invalid' | 'unavailable' | 'activation_limit' | null>(null)
 
   const active = licence.status === 'valid'
 
@@ -55,7 +55,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
     const result = await activateLicence(value)
     setBusy(false)
     if (result.status === 'valid') { setValue(''); return }
-    if (result.status === 'expired' || result.status === 'invalid' || result.status === 'unavailable') {
+    if (result.status === 'expired' || result.status === 'invalid' || result.status === 'unavailable' || result.status === 'activation_limit') {
       setAttempt(result.status)
     }
   }
@@ -63,6 +63,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
   const message =
     attempt === 'expired' ? t('This key has expired. Renew it, or keep working on Free.')
     : attempt === 'invalid' ? t('That key was not recognised. Check it and try again.')
+    : attempt === 'activation_limit' ? t('This browser is past the activation limit for this key. Free one in Polar, or keep working on Free.')
     : attempt === 'unavailable' ? t('Could not check the key right now. Try again in a moment.')
     : null
 

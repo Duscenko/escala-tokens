@@ -11,6 +11,7 @@ import {
 } from '../src/lib/pluginSession.js'
 import { proUntilForEmail } from './_accountPlan.js'
 import { checkLicenceKey } from './_licence.js'
+import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob } from './_blob.js'
@@ -246,7 +247,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'This sign-in expired. Press Sign in in the plugin again.' })
     }
     const token = randomBytes(32).toString('base64url')
-    const licenceKey = typeof body.licenceKey === 'string' ? body.licenceKey.trim().slice(0, 200) : ''
+    const postedKey = typeof body.licenceKey === 'string' ? body.licenceKey.trim() : ''
+    const licenceKey = (postedKey || readLicenceCookie(req.headers.cookie)).slice(0, 200)
     const checked = licenceKey ? await checkLicenceKey(licenceKey) : null
     const emailUntil = await proUntilForEmail(user.email)
     const proUntil = pluginProUntil(checked, emailUntil)

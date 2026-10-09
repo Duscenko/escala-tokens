@@ -46,8 +46,9 @@ export function licenceReturnPath(href: string): { pending: boolean; next: strin
 }
 
 export const POLAR_VALIDATE_URL = 'https://api.polar.sh/v1/customer-portal/license-keys/validate'
+export const POLAR_ACTIVATE_URL = 'https://api.polar.sh/v1/customer-portal/license-keys/activate'
 
-export type LicenceReason = 'unknown' | 'expired' | 'revoked' | 'unavailable'
+export type LicenceReason = 'unknown' | 'expired' | 'revoked' | 'unavailable' | 'activation_limit'
 
 export interface LicenceResult {
   valid: boolean
@@ -117,4 +118,43 @@ export function grantedLicenceUntil(body: unknown, now: Date): string | null {
  *  granted key that has not expired. The key itself is never read. */
 export function hasGrantedLicence(body: unknown, now: Date): boolean {
   return grantedLicenceUntil(body, now) !== null
+}
+
+const ACTIVATION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+/** Polar's activation id is a UUID. Anything else is ignored, so a bad header
+ *  cannot be sent on as `activation_id` and turn a good key into a 422. */
+export function isActivationId(value: unknown): value is string {
+  return typeof value === 'string' && ACTIVATION_UUID.test(value)
+}
+
+/** `null` means the benefit does not limit activations. A number means it does,
+ *  and only then may this server call Polar's activate endpoint. */
+export function limitActivations(body: unknown): number | null {
+  if (!body || typeof body !== 'object') return null
+  const n = (body as { limit_activations?: unknown }).limit_activations
+  return typeof n === 'number' && Number.isFinite(n) ? n : null
+}
+
+export type LicenceFollowup =
+  | { kind: 'done'; result: LicenceResult }
+  | { kind: 'activate' }
+  | { kind: 'revalidate'; activationId: string }
+
+/** What to do after one validate call that did NOT send an activation id.
+ *  Activating while the benefit has no limit makes Polar answer 403, so that
+ *  path runs only once `limit_activations` is a number. */
+export function licenceFollowup(
+  httpStatus: number,
+  body: unknown,
+  activationId: string | null,
+  now: Date,
+): LicenceFollowup {
+  const limit = limitActivations(body)
+  if (httpStatus === 403 && limit !== null) {
+    return isActivationId(activationId) ? { kind: 'revalidate', activationId } : { kind: 'activate' }
+  }
+  const result = interpretValidation(httpStatus, body, now)
+  if (limit === null || !result.valid) return { kind: 'done', result }
+  return isActivationId(activationId) ? { kind: 'revalidate', activationId } : { kind: 'activate' }
 }

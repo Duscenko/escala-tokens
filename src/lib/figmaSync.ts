@@ -6,7 +6,7 @@ import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 import { isPublishId } from './publishId'
 import { trackEvent } from './analytics'
-import { getLicenceKey, onLicenceChange } from './licence'
+import { getLicenceActivation, getLicenceKey, onLicenceChange } from './licence'
 
 /** Ephemeral UI feedback for an explicit user-initiated Figma publish. This
  * deliberately does not live in the persisted design-system store: a spinner
@@ -202,6 +202,8 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     if (claim) headers.Authorization = `Bearer ${claim}`
     const licence = getLicenceKey()
     if (licence) headers['x-escala-license'] = licence
+    const activation = getLicenceActivation()
+    if (activation) headers['x-escala-activation'] = activation
     try {
       return await fetch(`/api/tokens?project=${encodeURIComponent(key)}`, {
         method: 'POST', headers, body,

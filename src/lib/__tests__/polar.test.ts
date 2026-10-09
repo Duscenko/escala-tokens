@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   LICENCE_RETURN_URL, POLAR_CHECKOUT_URL, POLAR_ORGANIZATION_ID,
-  checkoutUrl, customerIdForEmail, grantedLicenceUntil, hasGrantedLicence, interpretValidation, licenceReturnPath,
+  checkoutUrl, customerIdForEmail, grantedLicenceUntil, hasGrantedLicence,   interpretValidation, isActivationId, licenceFollowup, licenceReturnPath, limitActivations,
 } from '../polar'
 
 const NOW = new Date('2026-12-01T00:00:00Z')
@@ -35,6 +35,42 @@ describe('interpretValidation', () => {
     expect(interpretValidation(422, { detail: [] }, NOW)).toMatchObject({ valid: false, reason: 'unavailable' })
     expect(interpretValidation(200, null, NOW)).toMatchObject({ valid: false, reason: 'unavailable' })
     expect(interpretValidation(200, {}, NOW)).toMatchObject({ valid: false })
+  })
+})
+
+const DEVICE = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
+
+describe('licenceFollowup', () => {
+  const granted = { status: 'granted', expires_at: '2027-11-02T10:00:00Z' }
+
+  it('does not activate when the benefit has no activation limit', () => {
+    expect(limitActivations(granted)).toBeNull()
+    expect(licenceFollowup(200, granted, null, NOW)).toEqual({
+      kind: 'done',
+      result: { valid: true, expiresAt: '2027-11-02T10:00:00Z' },
+    })
+    expect(licenceFollowup(200, { ...granted, limit_activations: null }, DEVICE, NOW).kind).toBe('done')
+  })
+
+  it('activates only once Polar reports a numeric limit and this browser has no id', () => {
+    expect(licenceFollowup(200, { ...granted, limit_activations: 3 }, null, NOW)).toEqual({ kind: 'activate' })
+    expect(licenceFollowup(403, { limit_activations: 3 }, null, NOW)).toEqual({ kind: 'activate' })
+  })
+
+  it('revalidates with the id this browser already has', () => {
+    expect(isActivationId(DEVICE)).toBe(true)
+    expect(isActivationId('not-a-uuid')).toBe(false)
+    expect(licenceFollowup(200, { ...granted, limit_activations: 3 }, DEVICE, NOW)).toEqual({
+      kind: 'revalidate',
+      activationId: DEVICE,
+    })
+  })
+
+  it('stops on a revoked key even when a limit is set', () => {
+    expect(licenceFollowup(200, { status: 'revoked', expires_at: null, limit_activations: 3 }, null, NOW)).toMatchObject({
+      kind: 'done',
+      result: { valid: false, reason: 'revoked' },
+    })
   })
 })
 

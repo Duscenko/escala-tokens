@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { licenceCookieHeader, readLicenceCookie } from '../src/lib/licenceCookie.js'
+import { isActivationId } from '../src/lib/polar.js'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
 import { clientIp, rateLimited } from './_blob.js'
-import { checkLicenceKey, licenceKeyHash } from './_licence.js'
+import { checkLicenceKey, licenceKeyHash, type CheckedLicence } from './_licence.js'
 
 // POST { key } → { valid, expiresAt, reason? }.
 //
@@ -11,9 +13,10 @@ import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 // third party directly, to rate-limit guessing, and to put one interpretation
 // of Polar's answer (`interpretValidation`) in front of every consumer.
 //
-// Nothing is stored and the key is never logged. The log carries the outcome
-// plus a short hash of the key, so one key used from many places can be seen
-// without the key itself appearing. The privacy page states that.
+// A good key is stored as an HttpOnly cookie (`sd_licence`), not returned to
+// the page. The log carries the outcome plus a short hash of the key, so one
+// key used from many places can be seen without the key itself appearing. The
+// privacy page states both.
 //
 // Phase 2 of design-plans/pricing-and-packaging.md. Nothing calls this for
 // enforcement yet — `api/tokens.ts` starts requiring it in phase 3.
@@ -31,27 +34,66 @@ function requestOrigins(req: VercelRequest): string[] {
   ])
 }
 
+function headerOne(req: VercelRequest, name: string): string {
+  const raw = req.headers[name]
+  return (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? ''
+}
+
+function activationOf(req: VercelRequest): string | null {
+  const fromBody = req.body && typeof req.body === 'object'
+    ? (req.body as Record<string, unknown>).activationId
+    : undefined
+  const raw = typeof fromBody === 'string' ? fromBody : headerOne(req, 'x-escala-activation')
+  return isActivationId(raw) ? raw : null
+}
+
+function answer(res: VercelResponse, result: CheckedLicence, stored: boolean) {
+  return res.status(result.reason === 'unavailable' ? 502 : 200).json({
+    valid: result.valid,
+    expiresAt: result.expiresAt,
+    ...(result.reason ? { reason: result.reason } : {}),
+    ...(result.activationId ? { activationId: result.activationId } : {}),
+    stored,
+    hasKey: stored,
+  })
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
   if (req.method === 'OPTIONS') return res.status(204).end()
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST, OPTIONS')
+  if (req.method !== 'POST' && req.method !== 'GET' && req.method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, POST, DELETE, OPTIONS')
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  if (!originAllowed(req.headers.origin, requestOrigins(req))) {
+  // POST always carries Origin. A same-origin GET often does not, and that GET
+  // is how the page learns the HttpOnly cookie is there. A present Origin that
+  // is not this site is still refused.
+  const originOk = !req.headers.origin || originAllowed(req.headers.origin, requestOrigins(req))
+  if (req.method === 'POST' ? !originAllowed(req.headers.origin, requestOrigins(req)) : !originOk) {
     return res.status(403).json({ error: 'forbidden' })
+  }
+  if (req.method === 'DELETE') {
+    res.setHeader('Set-Cookie', licenceCookieHeader('', process.env.VERCEL_ENV === 'production'))
+    return res.status(204).end()
   }
   if (rateLimited(`license:${clientIp(req.headers)}`, PER_MINUTE)) {
     res.setHeader('Retry-After', '60')
     return res.status(429).json({ error: 'rate_limited' })
   }
 
-  const raw = (req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>).key : undefined)
-  const key = typeof raw === 'string' ? raw.trim() : ''
+  const posted = req.body && typeof req.body === 'object'
+    ? (req.body as Record<string, unknown>).key
+    : undefined
+  const key = req.method === 'POST'
+    ? (typeof posted === 'string' ? posted.trim() : '')
+    : readLicenceCookie(req.headers.cookie)
+  if (req.method === 'GET' && !key) {
+    return res.status(200).json({ valid: false, expiresAt: null, hasKey: false, stored: false })
+  }
   if (!key || key.length > MAX_KEY) return res.status(400).json({ error: 'invalid_key' })
 
   try {
-    const result = await checkLicenceKey(key)
+    const result = await checkLicenceKey(key, activationOf(req))
     console.info(JSON.stringify({
       evt: 'license',
       op: 'check',
@@ -59,9 +101,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       valid: result.valid,
       reason: result.reason ?? null,
     }))
-    // `unavailable` is a 502 so the client can tell "your key is wrong" from
-    // "the validator is down" and never tells someone a good key is bad.
-    return res.status(result.reason === 'unavailable' ? 502 : 200).json(result)
+    // Keep the key when it is good, when Polar is down, or when this browser
+    // is over the activation cap (the key itself is fine). A GET that finds
+    // the key rejected clears the cookie. A POST of a typo does not.
+    const keep = result.valid || result.reason === 'unavailable' || result.reason === 'activation_limit'
+    const secure = process.env.VERCEL_ENV === 'production'
+    if (keep) res.setHeader('Set-Cookie', licenceCookieHeader(key, secure))
+    else if (req.method === 'GET') res.setHeader('Set-Cookie', licenceCookieHeader('', secure))
+    return answer(res, result, keep)
   } catch {
     console.info(JSON.stringify({
       evt: 'license',
@@ -70,6 +117,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       valid: false,
       reason: 'network',
     }))
-    return res.status(502).json({ valid: false, expiresAt: null, reason: 'unavailable' })
+    return res.status(502).json({ valid: false, expiresAt: null, reason: 'unavailable', stored: false, hasKey: false })
   }
 }
