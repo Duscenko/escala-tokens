@@ -9,8 +9,12 @@
 // RADIUS_GROUP_STEPS via the style's own roles, shadows/strokes/sizes from
 // the borrowed style, semantics from that style's documented recipe.
 
-import { colorAtHue, readHuePosition, type HuePosition, type NeutralTint } from './colorUtils'
-import { FONT_PRESETS } from './fonts'
+import { backgroundFromBase, colorAtHue, readHuePosition, type HuePosition, type NeutralTint } from './colorUtils'
+import { FONT_PRESETS, loadGoogleFont } from './fonts'
+import { myThemeKeys } from './themeLibrary'
+import { mintTheme, slotsFromAccent } from './themeMint'
+import { resetThemeSemantics } from './stylePreviewOverlay'
+import { useDesignStore } from '../store/useDesignStore'
 import { randomHue } from './randomAccent'
 import {
   THEME_STYLE_PRESETS,
@@ -194,6 +198,49 @@ export function randomBoardAppearance(
   rng: () => number = Math.random,
 ): ThemeAppearance {
   return rng() < 0.5 ? 'light' : 'dark'
+}
+
+export type RandomThemeStart =
+  | { status: 'upgrade' }
+  | { status: 'open'; key: string }
+  | { status: 'error'; error: string }
+
+/**
+ * The Home "Random" door. Free keeps the one theme it already has and opens
+ * that instead of minting; with no theme of its own the caller shows Pro.
+ * Otherwise mint the recipe, write its foundations, and return the new key.
+ */
+export function startRandomTheme(previewTheme: string, needsPro: boolean): RandomThemeStart {
+  if (needsPro) {
+    const s = useDesignStore.getState()
+    const own = myThemeKeys(s.themeOrder, s.themes)
+    const key = own.includes(previewTheme) ? previewTheme : own[0]
+    if (key) return { status: 'open', key }
+    return { status: 'upgrade' }
+  }
+  const s = useDesignStore.getState()
+  const recipe = randomTheme({ accent: s.primaryColor })
+  const slots = slotsFromAccent(recipe.accent, recipe.neutralTint)
+  const res = mintTheme(
+    slots,
+    randomBoardAppearance(),
+    '',
+    null,
+    recipe.neutralTint,
+    {
+      light: backgroundFromBase(slots.gray, 'light', recipe.neutralTint),
+      dark: backgroundFromBase(slots.gray, 'dark', recipe.neutralTint),
+    },
+  )
+  if ('error' in res) return { status: 'error', error: res.error }
+  const next = useDesignStore.getState()
+  next.setThemeFoundations(res.key, recipe.foundations)
+  useDesignStore.setState({
+    architectureOverrides: resetThemeSemantics(next.architectureOverrides, recipe.semantics, res.key),
+  })
+  loadGoogleFont(recipe.bodyFont)
+  loadGoogleFont(recipe.headingFont)
+  return { status: 'open', key: res.key }
 }
 
 /** Guard: every pairing names a family the type picker actually ships. */

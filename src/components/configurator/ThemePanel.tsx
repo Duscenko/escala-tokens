@@ -875,6 +875,7 @@ export function ThemeForm({
           total={6}
           continueLabel={t('Continue')}
           last={false}
+          onCancel={onClose}
           onSkip={() => {
             if (isEdit && editKey && holdAfterCreate) { onFinishEarly?.(editKey); return }
             handleSubmit('done')

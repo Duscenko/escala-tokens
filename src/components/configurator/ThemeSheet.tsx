@@ -5,7 +5,8 @@
 // on. The words stay visible at the preview's real width (the shell is already
 // desktop-only). A long name truncates inside the chip. Light/dark lives in TopNav's ☰.
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useDesignStore } from '../../store/useDesignStore'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { myThemeKeys } from '../../lib/themeLibrary'
@@ -86,6 +87,145 @@ function SwapChevron() {
   )
 }
 
+function BlankGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="5" y="5" width="14" height="14" rx="3" />
+    </svg>
+  )
+}
+
+function SparkGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M6.3 17.7l2.5-2.5M15.2 8.8l2.5-2.5" />
+    </svg>
+  )
+}
+
+function MaskGlyph({ src }: { src: string }) {
+  return (
+    <span
+      aria-hidden
+      className="block h-3.5 w-3.5 bg-current"
+      style={{
+        WebkitMask: `url('${src}') center / contain no-repeat`,
+        mask: `url('${src}') center / contain no-repeat`,
+      }}
+    />
+  )
+}
+
+function StartMark({ children, accent }: { children: ReactNode; accent?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md ${
+        accent ? 'bg-accent-ui/15 text-accent-ui' : 'bg-fg/[0.06] text-fg-muted'
+      }`}
+    >
+      {children}
+    </span>
+  )
+}
+
+const START_ITEM = 'flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-body font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+
+/** The "How do you want to start?" choices. Home's New design system button
+ *  and the theme chip's Add new theme both render this, so the four doors
+ *  cannot drift. */
+export function StartDesignChoices({
+  onBlank,
+  onRandom,
+  onFromCode,
+  onSystemStyles,
+}: {
+  onBlank: () => void
+  onRandom: () => void
+  onFromCode: () => void
+  onSystemStyles: () => void
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-col gap-0.5">
+      <button type="button" onClick={onBlank} className={START_ITEM}>
+        <StartMark><BlankGlyph /></StartMark>
+        {t('Blank')}
+      </button>
+      <button type="button" onClick={onRandom} className={START_ITEM}>
+        <StartMark accent><MaskGlyph src="/icons/settings/random.svg" /></StartMark>
+        {t('Random')}
+      </button>
+      <button type="button" onClick={onFromCode} className={START_ITEM}>
+        <StartMark><MaskGlyph src="/icons/theme-hub-icons/Icon/code.svg" /></StartMark>
+        {t('From code')}
+      </button>
+      <button type="button" onClick={onSystemStyles} className={START_ITEM}>
+        <StartMark><SparkGlyph /></StartMark>
+        {t('System styles')}
+      </button>
+    </div>
+  )
+}
+
+export function StartDesignModal({
+  open,
+  onClose,
+  onBlank,
+  onRandom,
+  onFromCode,
+  onSystemStyles,
+}: {
+  open: boolean
+  onClose: () => void
+  onBlank: () => void
+  onRandom: () => void
+  onFromCode: () => void
+  onSystemStyles: () => void
+}) {
+  const { t } = useI18n()
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+  if (!open) return null
+  const pick = (fn: () => void) => () => {
+    onClose()
+    fn()
+  }
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="start-design-title"
+        className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id="start-design-title" className="px-1 pb-3 text-title font-semibold text-fg">
+          {t('How do you want to start?')}
+        </h2>
+        <StartDesignChoices
+          onBlank={pick(onBlank)}
+          onRandom={pick(onRandom)}
+          onFromCode={pick(onFromCode)}
+          onSystemStyles={pick(onSystemStyles)}
+        />
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 h-8 w-full rounded-lg text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          {t('Cancel')}
+        </button>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 export function ThemeAppearanceControl({
   previewTheme,
   stylePreview,
@@ -94,6 +234,9 @@ export function ThemeAppearanceControl({
   onOpenLibrary,
   onOpenTheme,
   onCreateTheme,
+  onStartRandom,
+  onImport,
+  onOpenStyles,
   onOpenComponents,
   onSyncFigma,
   onGetCode,
@@ -106,7 +249,14 @@ export function ThemeAppearanceControl({
   themeOpen: boolean
   onOpenLibrary: () => void
   onOpenTheme: () => void
+  /** Blank — the create studio. */
   onCreateTheme: () => void
+  /** Random — mint (or, on Free, open the one theme). */
+  onStartRandom: () => void
+  /** From code — the Import JSON modal. */
+  onImport: () => void
+  /** System styles — Home's styles section. */
+  onOpenStyles: () => void
   onOpenComponents: () => void
   onSyncFigma: () => void
   onGetCode: () => void
@@ -116,6 +266,7 @@ export function ThemeAppearanceControl({
   const store = useDesignStore()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [startOpen, setStartOpen] = useState(false)
 
   const tryOn = stylePreview
   const ownKeys = myThemeKeys(store.themeOrder, store.themes)
@@ -144,8 +295,12 @@ export function ThemeAppearanceControl({
   const canSwitch = ownKeys.length > 1
   const hasShipActions = ownKeys.length > 0
 
-  const go = (action: () => void) => {
+  const closeMenu = () => {
     setMenuOpen(false)
+    setStartOpen(false)
+  }
+  const go = (action: () => void) => {
+    closeMenu()
     action()
   }
 
@@ -189,7 +344,7 @@ export function ThemeAppearanceControl({
       </button>
       <ChromeAnchoredDropdown
         open={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={closeMenu}
         anchorRef={triggerRef}
         align="right"
         gap={8}
@@ -208,7 +363,7 @@ export function ThemeAppearanceControl({
         <div className="my-1 border-t border-line" role="separator" />
         {empty ? (
           <>
-            <button type="button" role="menuitem" onClick={() => go(onCreateTheme)} className={MENU_ITEM}>
+            <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setStartOpen(true) }} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><PlusGlyph /></span>
               {t('Set up a system')}
             </button>
@@ -241,7 +396,7 @@ export function ThemeAppearanceControl({
                 </button>
               </>
             )}
-            <button type="button" role="menuitem" onClick={() => go(onCreateTheme)} className={MENU_ITEM}>
+            <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setStartOpen(true) }} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><PlusGlyph /></span>
               {t('Add new theme')}
             </button>
@@ -273,6 +428,14 @@ export function ThemeAppearanceControl({
           </>
         )}
       </ChromeAnchoredDropdown>
+      <StartDesignModal
+        open={startOpen}
+        onClose={() => setStartOpen(false)}
+        onBlank={onCreateTheme}
+        onRandom={onStartRandom}
+        onFromCode={onImport}
+        onSystemStyles={onOpenStyles}
+      />
     </>
   )
 }

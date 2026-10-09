@@ -26,6 +26,8 @@ import {
   type ThemeAppearance,
 } from '../../lib/themeModes'
 import VariableCollectionRail from './VariableCollectionRail'
+import { useNeedsProForAnotherTheme } from '../../lib/access'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -783,7 +785,11 @@ export default function Step3_SemanticTokens({
   // every entry point here and from Primitives' own "+ New theme" CTA — see
   // `ThemePanel`. The triggers therefore pass no anchor element.
   const [addThemeOpen, setAddThemeOpen] = useState<boolean | string>(false)
+  const needsAnotherThemePro = useNeedsProForAnotherTheme()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const openAddTheme = (editKey?: string) => {
+    // A pencil edits the theme already on screen. Only the bare "+" mints.
+    if (!editKey && needsAnotherThemePro) { setUpgradeOpen(true); return }
     const next = editKey ?? true
     setAddThemeOpen((cur) => (cur === next ? false : next))
   }
@@ -1795,6 +1801,7 @@ export default function Step3_SemanticTokens({
           setAddThemeOpen((cur) => (cur === oldKey ? newKey : cur))
         }}
       />}
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }

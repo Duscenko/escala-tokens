@@ -44,6 +44,7 @@ import {
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
 import { canAddMyTheme, isScaffoldTheme, myThemeKeys } from '../lib/themeLibrary'
+import { freeAnotherThemeBlockedNow } from '../lib/freeThemeLimit'
 import { generatePublishId, isPublishId } from '../lib/publishId'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
 // store's constants), so a value import here would create a runtime cycle.
@@ -1273,7 +1274,7 @@ export const useDesignStore = create<DesignStore>()(
         const state = get()
         if (isScaffoldTheme(sourceKey) || !state.themes[sourceKey]) return null
         const listed = myThemeKeys(state.themeOrder, state.themes)
-        if (!listed.includes(sourceKey) || !canAddMyTheme(listed.length)) return null
+        if (!listed.includes(sourceKey) || freeAnotherThemeBlockedNow(listed.length) || !canAddMyTheme(listed.length)) return null
         const sourceLabel = state.themeLabels[sourceKey] ?? sourceKey.replace(/-/g, ' ')
         const usedLabels = new Set(Object.values(state.themeLabels))
         let label = `${sourceLabel} ${copyWord}`

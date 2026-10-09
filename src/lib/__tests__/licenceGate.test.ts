@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LICENCE_STAMP, isServable, stampLicence, stripLicence } from '../licenceGate'
+import { LICENCE_SEAL_MS, LICENCE_STAMP, isServable, stampLicence, stripLicence } from '../licenceGate'
 
 const PROMO = new Date('2026-10-05T12:00:00Z')
 const AFTER = new Date('2026-11-05T12:00:00Z')
@@ -21,8 +21,23 @@ describe('who may read a published system', () => {
     expect(isServable(stampLicence(payload, '2027-11-02T00:00:00Z'), new Date('2027-11-03T00:00:00Z'))).toBe(false)
   })
 
-  it('serves a licence that never expires', () => {
-    expect(isServable(stampLicence(payload, null), new Date('2035-01-01T00:00:00Z'))).toBe(true)
+  it('serves a licence that never expires while its seal is still fresh', () => {
+    const now = new Date('2026-11-05T12:00:00Z')
+    expect(isServable(stampLicence(payload, null, now), now)).toBe(true)
+  })
+
+  it('stops serving 30 days after the last publish, even when the licence runs longer', () => {
+    const sealed = new Date('2026-11-05T12:00:00.000Z')
+    const stamped = stampLicence(payload, '2027-11-02T00:00:00Z', sealed)
+    expect(isServable(stamped, new Date(sealed.getTime() + LICENCE_SEAL_MS - 1))).toBe(true)
+    expect(isServable(stamped, new Date(sealed.getTime() + LICENCE_SEAL_MS))).toBe(false)
+    expect(isServable(stampLicence(payload, null, sealed), new Date(sealed.getTime() + LICENCE_SEAL_MS))).toBe(false)
+  })
+
+  it('still honours a stamp written before seals existed, until the licence date', () => {
+    const legacy = { ...payload, [LICENCE_STAMP]: { until: '2027-11-02T00:00:00Z' } }
+    expect(isServable(legacy, new Date('2027-11-01T00:00:00Z'))).toBe(true)
+    expect(isServable(legacy, new Date('2027-11-03T00:00:00Z'))).toBe(false)
   })
 
   it('ignores a malformed stamp rather than trusting it', () => {

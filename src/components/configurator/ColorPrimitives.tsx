@@ -34,7 +34,8 @@ import {
   curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL, THEME_BAND_H,
 } from './colorControls'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
-import { goToLogin, useAccess } from '../../lib/access'
+import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import {
@@ -828,6 +829,8 @@ export default function ColorPrimitives({
   // Adding a theme is a colour decision (it mints the primitive families the
   // new theme reads), so it belongs on this rail too, not only in Semantics.
   const [addThemeOpen, setAddThemeOpen] = useState(false)
+  const needsAnotherThemePro = useNeedsProForAnotherTheme()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   // A family created elsewhere (NewTokenWizard) requests focus — switch to it
   // so the table actually shows the family + names the user just picked,
@@ -2010,7 +2013,10 @@ export default function ColorPrimitives({
         {!railCollapsed && !managedThemesExternally && (
           <button
             type="button"
-            onClick={() => setAddThemeOpen((v) => !v)}
+            onClick={() => {
+              if (needsAnotherThemePro) { setUpgradeOpen(true); return }
+              setAddThemeOpen((v) => !v)
+            }}
             aria-haspopup="dialog"
             aria-expanded={addThemeOpen}
             className="mt-2 mx-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 py-2 text-body font-medium text-fg-faint hover:text-fg hover:border-fg-faint hover:bg-elevated/40 transition-colors"
@@ -2277,6 +2283,7 @@ export default function ColorPrimitives({
         railCollapsed={railCollapsed}
         onCreated={(key) => { onPreviewThemeChange?.(key); setAddThemeOpen(false) }}
       />}
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }

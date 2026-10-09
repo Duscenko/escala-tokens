@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
 import { clientIp, rateLimited } from './_blob.js'
-import { checkLicenceKey } from './_licence.js'
+import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 
 // POST { key } → { valid, expiresAt, reason? }.
 //
@@ -11,8 +11,9 @@ import { checkLicenceKey } from './_licence.js'
 // third party directly, to rate-limit guessing, and to put one interpretation
 // of Polar's answer (`interpretValidation`) in front of every consumer.
 //
-// Nothing is stored and the key is never logged: logs carry the outcome only,
-// the same contract the privacy page states for the contact form.
+// Nothing is stored and the key is never logged. The log carries the outcome
+// plus a short hash of the key, so one key used from many places can be seen
+// without the key itself appearing. The privacy page states that.
 //
 // Phase 2 of design-plans/pricing-and-packaging.md. Nothing calls this for
 // enforcement yet — `api/tokens.ts` starts requiring it in phase 3.
@@ -51,12 +52,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const result = await checkLicenceKey(key)
-    console.info(JSON.stringify({ evt: 'license', valid: result.valid, reason: result.reason ?? null }))
+    console.info(JSON.stringify({
+      evt: 'license',
+      op: 'check',
+      keyHash: licenceKeyHash(key),
+      valid: result.valid,
+      reason: result.reason ?? null,
+    }))
     // `unavailable` is a 502 so the client can tell "your key is wrong" from
     // "the validator is down" and never tells someone a good key is bad.
     return res.status(result.reason === 'unavailable' ? 502 : 200).json(result)
   } catch {
-    console.info(JSON.stringify({ evt: 'license', valid: false, reason: 'network' }))
+    console.info(JSON.stringify({
+      evt: 'license',
+      op: 'check',
+      keyHash: licenceKeyHash(key),
+      valid: false,
+      reason: 'network',
+    }))
     return res.status(502).json({ valid: false, expiresAt: null, reason: 'unavailable' })
   }
 }

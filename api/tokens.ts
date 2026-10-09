@@ -12,7 +12,7 @@ import {
 import { entitlementAt } from '../src/lib/entitlement.js'
 import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
-import { checkLicenceKey } from './_licence.js'
+import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 
 // Vercel compiles this to ESM (`package.json` "type": "module"). Node then
 // loads `/var/task/api/tokens.js` and requires a `.js` specifier for every
@@ -45,6 +45,17 @@ function hashClaim(claim: string): string {
 
 function generateClaim(): string {
   return randomBytes(24).toString('base64url')
+}
+
+function logLicence(key: string, project: string, valid: boolean, reason: string | null) {
+  console.info(JSON.stringify({
+    evt: 'license',
+    op: 'publish',
+    keyHash: licenceKeyHash(key),
+    project,
+    valid,
+    reason,
+  }))
 }
 
 function requestOrigins(req: VercelRequest): string[] {
@@ -164,17 +175,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const licence = await checkLicenceKey(licenceKey)
       if (licence.reason === 'unavailable') {
+        logLicence(licenceKey, project, false, 'unavailable')
         // Polar is down: that is not the customer's fault, so say "retry", not "pay".
         res.setHeader('Retry-After', '30')
         return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
       }
       if (!licence.valid) {
+        logLicence(licenceKey, project, false, licence.reason ?? 'invalid')
         return res.status(402).json({
           error: licence.reason === 'expired'
             ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
             : LICENCE_REQUIRED_MESSAGE,
         })
       }
+      logLicence(licenceKey, project, true, null)
       licenceUntil = licence.expiresAt
     }
 

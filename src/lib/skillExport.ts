@@ -4,6 +4,7 @@
 
 import { withAgentEnvelope } from './aiContext'
 import { buildAgentBundle, buildAgentProductBundle, type ProductPackage, type SkillPackage } from './agentBundle'
+import type { FigmaScope } from './freeFigmaScope'
 import { generateTokenJSON } from './tokenGenerator'
 import { useDesignStore, type DesignSnapshot } from '../store/useDesignStore'
 
@@ -20,8 +21,9 @@ function storeOpts() {
 export function buildSkillExport(
   _colorFormat: 'hex' | 'rgba' | 'hsl' | 'oklch' = 'hex',
   source?: DesignSnapshot | ReturnType<typeof useDesignStore.getState>,
+  scope?: FigmaScope,
 ): SkillPackage {
-  const json = generateTokenJSON(source)
+  const json = generateTokenJSON(source, scope)
   const opts = source
     ? { projectFallback: source.projectName, iconKey: source.iconAiSource }
     : storeOpts()
@@ -37,6 +39,9 @@ export function buildCopyPageContext(): string {
 }
 
 /** Five-layer zip (AGENTS.md + Skill + task skills + templates + checker). */
-export function buildAgentProductExport(_colorFormat: 'hex' | 'rgba' | 'hsl' | 'oklch' = 'hex'): ProductPackage {
-  return buildAgentProductBundle(generateTokenJSON(), storeOpts())
+export function buildAgentProductExport(
+  _colorFormat: 'hex' | 'rgba' | 'hsl' | 'oklch' = 'hex',
+  scope?: FigmaScope,
+): ProductPackage {
+  return buildAgentProductBundle(generateTokenJSON(undefined, scope), storeOpts())
 }

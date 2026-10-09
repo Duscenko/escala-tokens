@@ -3,12 +3,12 @@
 // screen) and the Desktop viewport with its one grid style, XL Desktop — the
 // free tier on /pricing. Pro ships both columns of up to ten themes.
 //
-// A SOFT limit, and meant to be understood as one: the exporter and the plugin
-// are MIT, so anyone can lift it. The hard limits live on the server (hosted
-// sync, live MCP). The same cut is applied to every download a Free account
-// can take — Figma JSON, CSS, W3C, Tailwind and Markdown — and it is simply
-// absent whenever the account is Pro (or accounts are off, so a local checkout
-// stays whole).
+// A SOFT limit, and meant to be understood as one: the exporter is MIT, so a
+// fork can lift it, and the compiled plugin can still be read. The hard limits
+// live on the server (hosted sync, live MCP). The same cut is applied to every
+// download a Free account can take — Figma JSON, CSS, W3C, Tailwind, Markdown,
+// the Skill zip and the agent package — and it is simply absent whenever the
+// account is Pro (or accounts are off, so a local checkout stays whole).
 
 import type { ThemeAppearance } from './themeModes'
 import { figmaSyncThemeKeys } from './themeLibrary'

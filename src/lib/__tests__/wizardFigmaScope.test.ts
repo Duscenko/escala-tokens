@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { useDesignStore } from '../../store/useDesignStore'
+import { unzipStore } from '../zipStore'
 import { buildCSS } from '../exporters'
 import { ALL_WIZARD_COLLECTIONS, buildWizardExport, type WizardSelection } from '../exportWizard'
 import type { FigmaScope } from '../freeFigmaScope'
@@ -53,9 +54,28 @@ describe('Escala JSON for Figma without Pro', () => {
     expect(md).not.toMatch(/\|\s*Mobile\s*\|/)
   })
 
+  it('cuts Skill and the agent package to the same one theme', () => {
+    const open = modesLine(buildWizardExport({ ...base, format: 'skill' }))
+    expect(open).toMatch(/Light/)
+    expect(open).toMatch(/Dark/)
+    for (const format of ['skill', 'agent-bundle'] as const) {
+      const cut = modesLine(buildWizardExport({ ...base, format, figmaScope: freeScope }))
+      expect(cut).toMatch(/Light/)
+      expect(cut).not.toMatch(/Dark/)
+    }
+  })
+
   it('drops viewport media from CSS when desktopOnly', () => {
     const store = useDesignStore.getState()
     expect(buildCSS(store)).toContain('@media (max-width')
     expect(buildCSS(store, { desktopOnly: true })).not.toContain('@media (max-width')
   })
 })
+
+function modesLine(files: { binary?: Uint8Array }[]): string {
+  const hit = unzipStore(files[0]!.binary!).find((f) => f.path === 'references/tokens.md')
+  if (!hit) throw new Error('references/tokens.md missing')
+  const line = new TextDecoder().decode(hit.data).split('\n').find((l) => l.startsWith('**Modes'))
+  if (!line) throw new Error('modes line missing')
+  return line
+}

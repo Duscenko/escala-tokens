@@ -6,11 +6,10 @@
 //     PRO_MAX_THEMES), the same constants the sync screen and, from phase 3,
 //     `api/tokens.ts` read — so this page cannot promise a number the server
 //     disagrees with.
-//   - Nothing is shown that does not exist yet. During the free promo (to Oct 31)
-//     the Pro CTA opens the configurator; once it ends it goes to the Polar
-//     checkout (`lib/polar.ts`);
-//     Library · Figma has no published price, so it says so instead of a
-//     placeholder; the refund policy is not on the page until it is decided.
+//   - Nothing is shown that does not exist yet. The free promo ended 7 Oct 2026;
+//     the Pro CTA goes to the Polar checkout (`lib/polar.ts`).
+//     Library · Figma has no published price, so it says Coming soon.
+//     Refunds are 14 days, the same sentence as /terms.
 //
 // A public reading page like /legal: `PublicHeader` on top, one scrolling
 // column, readable on a phone (the one place, with About, where that matters).
@@ -346,6 +345,9 @@ export function PricingPage() {
                       ? t('launch price until November 15, then ${price}', { price: String(PRO_PRICE_USD) })
                       : t('one payment, no subscription')}
                   </p>
+                  <p className="text-caption text-fg-muted">
+                    {t('14-day refund, on request through the contact form. Polar is the merchant of record.')}
+                  </p>
                 </div>
                 <div className="relative border-t border-line pt-7">
                   <Features items={[
@@ -431,6 +433,7 @@ export function PricingPage() {
               <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro, hosted sync stops; you can still import tokens.json in the plugin by hand, with one theme in Desktop mode.')}</Faq>
               <Faq q={t('Why does Figma show fewer modes than I chose?')}>{t('Figma limits modes per collection by its own plan: Starter allows 1, Professional 4. Escala sends what you choose; Figma decides how many columns a file can hold.')}</Faq>
               <Faq q={t('Do I need an account?')}>{t('No. After you pay, Polar shows a licence key. Open the account menu, choose Activate licence, and paste it once. It stays in this browser.')}</Faq>
+              <Faq q={t('Can I get a refund?')}>{t('Yes. 14 days from purchase, on request through the contact form. Polar is the merchant of record: payment, invoicing and VAT follow Polar’s terms.')}</Faq>
             </div>
           </section>
         </main>

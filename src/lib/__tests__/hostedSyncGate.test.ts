@@ -35,7 +35,7 @@ function polar(status: number, body: unknown) {
   vi.stubGlobal('fetch', vi.fn(async () => ({ status, json: async () => body })))
 }
 
-function call(method: 'GET' | 'POST', opts: { body?: unknown; licence?: string } = {}) {
+function call(method: 'GET' | 'POST', opts: { body?: unknown; licence?: string; claim?: string } = {}) {
   let code = 0
   let json: unknown
   const headers: Record<string, string> = {}
@@ -53,6 +53,7 @@ function call(method: 'GET' | 'POST', opts: { body?: unknown; licence?: string }
       host: 'www.escalatokens.com',
       origin: 'https://www.escalatokens.com',
       ...(opts.licence ? { 'x-escala-license': opts.licence } : {}),
+      ...(opts.claim ? { authorization: `Bearer ${opts.claim}` } : {}),
     },
     body: opts.body,
   }
@@ -122,6 +123,18 @@ describe('after the promo', () => {
     const read = await call('GET')
     expect(read.code).toBe(402)
     expect(read.headers['Cache-Control']).toBe('no-store')
+  })
+
+  it('stops serving 30 days after the last publish, and a new publish renews the seal', async () => {
+    vi.setSystemTime(new Date(AFTER))
+    polar(200, { status: 'granted', expires_at: '2027-11-02T00:00:00Z' })
+    const first = await call('POST', { body: tokens, licence: KEY })
+    expect(first.code).toBe(200)
+    const claim = typeof first.json.claim === 'string' ? first.json.claim : ''
+    vi.setSystemTime(new Date('2026-12-06T12:00:00Z'))
+    expect((await call('GET')).code).toBe(402)
+    expect((await call('POST', { body: tokens, licence: KEY, claim })).code).toBe(200)
+    expect((await call('GET')).code).toBe(200)
   })
 
   it('stops serving a licensed blob once the licence has expired', async () => {

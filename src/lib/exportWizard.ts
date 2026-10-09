@@ -542,7 +542,7 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   }
 
   if (sel.format === 'skill') {
-    const pack = buildSkillExport(sel.colorFormat)
+    const pack = buildSkillExport(sel.colorFormat, undefined, sel.figmaScope)
     return [{
       name: `${pack.name}.zip`,
       content: pack.skillMd,
@@ -552,7 +552,7 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   }
 
   if (sel.format === 'agent-bundle') {
-    const pack = buildAgentProductExport(sel.colorFormat)
+    const pack = buildAgentProductExport(sel.colorFormat, sel.figmaScope)
     return [{
       name: `${pack.name}-agent-bundle.zip`,
       content: pack.skillMd,

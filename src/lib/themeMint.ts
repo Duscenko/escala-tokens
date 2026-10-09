@@ -10,6 +10,7 @@ import {
 } from './colorUtils'
 import { slugify } from './utils'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
+import { FREE_ANOTHER_THEME_ERROR, freeAnotherThemeBlockedNow } from './freeThemeLimit'
 import { INDUSTRY_SPECTRUM } from './industryPacks'
 
 export function uniqueKey(wanted: string, taken: Set<string>): string {
@@ -115,8 +116,12 @@ export function mintTheme(
   rampShift?: number,
 ): { key: string; renamedFrom?: string } | { error: string } {
   const s = useDesignStore.getState()
-  if (!editKey && !canAddMyTheme(myThemeKeys(s.themeOrder, s.themes).length)) {
-    return { error: MY_THEME_FULL_ERROR }
+  if (!editKey) {
+    const count = myThemeKeys(s.themeOrder, s.themes).length
+    // Free keeps the themes it already has and cannot mint another. Edit
+    // (editKey set) is a write to one of those, so it stays open.
+    if (freeAnotherThemeBlockedNow(count)) return { error: FREE_ANOTHER_THEME_ERROR }
+    if (!canAddMyTheme(count)) return { error: MY_THEME_FULL_ERROR }
   }
   const typed = nameLabel.trim()
   // An unnamed theme still gets a name: the accent's own industry label, or

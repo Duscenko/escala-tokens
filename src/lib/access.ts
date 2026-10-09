@@ -11,8 +11,10 @@
 // in the browser. The hard limits stay on the server (hosted sync, MCP). No
 // component reads `useAuth` / `useEntitlement` to make this call on its own.
 
-import { useAuth } from './auth'
+import { hasStoredSession, useAuth } from './auth'
 import { accountsEnabled } from './supabase'
+import { FREE_MY_THEME_LIMIT, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
+import { useLicence } from './licence'
 import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
 import { WORKSPACE_SECTION_PARAM } from './workspaceLink'
@@ -49,9 +51,6 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
   window.location.assign(loginHref({ next: 'workspace', mode }))
 }
 
-/** Free keeps ONE theme of its own (see the tier table above). True when
- *  adding another — a System Style, say — needs Pro. Never with accounts off:
- *  a local checkout has no plan to upgrade to. */
 /** Signed in, not Pro, accounts actually on. Export, MCP and File & modes use
  *  this — `!entitlement.pro` alone would wall a fork that has no account to
  *  upgrade. While the session is loading this is false, so the full view
@@ -61,9 +60,23 @@ export function useFreeTier(): boolean {
   return accountsEnabled && !loading && tier === 'free'
 }
 
-export const FREE_MY_THEME_LIMIT = 1
+export { FREE_MY_THEME_LIMIT }
+
+/** True when this signed-in Free account already has a theme and must not
+ *  mint or duplicate another. Existing themes stay listed. A stored session
+ *  counts while auth is still loading, so an already-open account cannot open
+ *  the create form in that gap. A key Polar has not answered yet is not Free.
+ *  Accounts off never asks for Pro. */
 export function useNeedsProForAnotherTheme(): boolean {
-  const { tier } = useAccess()
+  const { user, loading } = useAuth()
+  const { pro } = useEntitlement()
+  const licence = useLicence()
   const count = useDesignStore((s) => myThemeKeys(s.themeOrder, s.themes).length)
-  return accountsEnabled && tier === 'free' && count >= FREE_MY_THEME_LIMIT
+  const signedIn = Boolean(user) || (accountsEnabled && loading && hasStoredSession())
+  return freeAnotherThemeBlocked({
+    accountsOn: accountsEnabled,
+    signedIn,
+    pro: pro || licenceStillOpen(licence.status, licence.hasKey),
+    count,
+  })
 }

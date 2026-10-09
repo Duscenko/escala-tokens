@@ -217,13 +217,14 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
 }
 
 /** Create-studio footer on the canvas card — same language as the plugin
- *  setup bar: which step this is, Skip setup, and a Continue that names
- *  what it keeps ("Use Inter →"). */
+ *  setup bar: which step this is, Cancel (discard the theme being made),
+ *  Skip setup, and a Continue that names what it keeps ("Use Inter →"). */
 export function CreateStudioBar({
   stepIndex,
   total,
   continueLabel,
   last,
+  onCancel,
   onSkip,
   onContinue,
 }: {
@@ -231,6 +232,8 @@ export function CreateStudioBar({
   total: number
   continueLabel: string
   last: boolean
+  /** Leave without keeping the theme. The caller deletes it if it was already minted. */
+  onCancel: () => void
   onSkip: () => void
   onContinue: () => void
 }) {
@@ -246,6 +249,13 @@ export function CreateStudioBar({
         </span>
       </div>
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          {t('Cancel')}
+        </button>
         <button
           type="button"
           onClick={onSkip}

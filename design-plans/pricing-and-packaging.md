@@ -215,7 +215,7 @@ en el lado duro**: sync alojado y MCP en vivo (Escala Pro) y la Library (archivo
 | Límite blando de 1 tema + solo Desktop en el JSON para Figma sin Pro (Export wizard › Figma, y Save › tokens.json) | hecho (`lib/freeFigmaScope.ts`; solo la carga a Figma, no CSS/W3C/AI/GitHub) |
 | Plugin: mensaje del 402 | hecho sin tocar el plugin: ya imprime `HTTP 402 — <error del servidor>` |
 | Account Review de Polar | **aprobado** (producto en el catálogo) |
-| Plugin: pausar el polling de Live Sync tras un 402 | opcional. Cada poll de un plugin viejo sigue costando una lectura de blob aunque responda 402; un plugin nuevo podría parar al primer 402 |
+| Plugin: pausar el polling de Live Sync tras un 402 | hecho en el plugin nuevo (para el temporizador y no reanuda al abrir). Las copias ya instaladas siguen hasta que se reinstala el zip |
 | Producto de renovación (la clave caduca a los 12 meses) | pendiente, antes de oct-2027 |
 
 **Decisión (2026-10-03): Free no tiene sync alojado.** Sin clave válida, `POST /api/tokens`
@@ -337,53 +337,52 @@ Recomendación:
 | **Sep-2027** | **Crear el producto "Escala Pro · renovación"** en Polar. Las primeras claves (compradas el 1-nov-2026) caducan el 1-nov-2027 y no hay forma de renovar | tú |
 | Oct-2027 | Aviso a los compradores de que su año termina (la app ya muestra "Active until…") | tú |
 
-## Vulnerabilidades y riesgos abiertos (revisados el 2026-10-03)
+## Vulnerabilidades y riesgos (revisados el 2026-10-09)
 
-Ordenados por lo que más duele. Ninguno bloquea el lanzamiento; todos son decisiones tomadas
-a sabiendas.
+Ordenados por lo que más duele. Lo que no se puede cerrar desde este repo queda **pendiente**.
 
-1. **Una clave se puede compartir.** No hay límite de activaciones (decidido: menos código).
-   Una clave sirve a todo un equipo. *Si se ve abuso*: activar "Limit Activations" en el
-   beneficio de Polar y enviar `activation_id` desde `api/license.ts`/`api/tokens.ts`; o
-   atar cada clave a N slugs publicados. Señal para vigilar: muchas publicaciones distintas
-   con una misma clave en los logs (`evt: license`).
-2. **Un reembolso no corta el sync alojado.** El sello de licencia guarda la caducidad de la
-   clave, no su estado. Un cliente reembolsado sigue sirviendo su blob hasta la fecha de
-   caducidad (hasta 12 meses). Se acepta mientras los reembolsos sean raros. *Arreglo
-   futuro*: webhook de Polar (`benefit_grant.revoked`) que borre el sello, o acortar el sello
-   a 30 días renovables en cada publicación (cuesta: quien deja de publicar pierde el sync).
-3. **Los blobs publicados son públicos por diseño** (`access: 'public'`). La puerta es
-   `/api/tokens`, pero quien conozca la URL directa del Blob la lee sin pasar por ella, y el
-   plugin acepta cualquier URL. Un cliente Pro podría repartir esa URL. Mismo orden de
-   riesgo que el punto 1. No se puede cerrar sin pasar a Blob privado (ya dio problemas, ver
-   `writeClaim`).
-4. **Adivinar claves en `/api/license`.** El limitador es en memoria y por instancia, y en
-   serverless hay varias; el límite real tiene que ser una regla de Firewall de Vercel
-   (como la de `/api/contact`). Las claves llevan un UUID, así que adivinar una es
-   impracticable, pero cada intento le cuesta una llamada a Polar. *Acción*: crear la regla.
-5. **El límite de 1 tema / Desktop en la carga manual es blando.** El exportador del
-   configurador es MIT; se quita editando el JSON o con un fork del configurador. El plugin ya es
-   privado (2026-10-04), así que esa vía se cerró, pero su JavaScript compilado sigue siendo
-   legible. Es una decisión (ver más arriba): el valor de pago está en el servidor.
-6. **Polar caído = no se puede publicar** (responde 503 "reintenta", nunca "paga"). Leer no
-   se ve afectado: el sello viaja en el blob. La clave se cachea 10 min en memoria.
-7. **Plugins ya instalados siguen consultando tras un 402.** Un plugin con Live Sync abierto
-   hace una petición cada 10 s y cada una lee el blob aunque responda 402. Un plugin nuevo
-   podría pausarse al primer 402 (toca el otro repo y refrescar `public/escala-figma-plugin.zip`).
-8. **La clave vive en `localStorage`** (`sd-licence-key`), con el mismo riesgo que el token de
-   GitHub: un XSS la leería. Hoy no hay forma conocida (las SVG subidas se sanean). No va en
-   el store ni en ningún export.
-9. **Fechas fijas en el código** (`PROMO_ENDS_AT`, `PRO_LAUNCH_ENDS_AT`, en `lib/entitlement.ts`).
-   Están en +01:00 porque ambas caen después del cambio de hora del 25-oct. Si alguna se
-   mueve a una fecha en horario de verano hay que cambiar el desfase a +02:00. El test de
-   `entitlement.test.ts` fija los instantes UTC y avisaría.
-10. **El producto de renovación no existe** (ver recordatorios): hasta que se cree, una clave
-    caducada solo se puede reemplazar comprando otra.
-11. **Reembolsos y desistimiento UE.** No hay política publicada. Polar actúa como merchant of
-    record, pero la página no la menciona. Decidir y publicar antes de vender (el plan
-    proponía 14 días).
-12. **Library (Figma/código) no está construida.** `/pricing` la muestra como "Coming soon"
-    sin precio; no vender nada de ella hasta que exista.
+1. **Una clave se puede compartir.** **Pendiente el tope.** No hay límite de activaciones:
+   activarlo es un ajuste del beneficio en Polar («Limit Activations») y, solo entonces,
+   enviar `activation_id` desde `api/license.ts` y `api/tokens.ts`. **Hecho el aviso:** el log
+   `evt: license` guarda `keyHash` (nunca la clave) y, en una publicación, el slug
+   (`op: publish`, `project`), así que «la misma clave, muchos slugs» se ve sin abrir Polar.
+2. **Un reembolso no cortaba el sync al instante.** **Hecho el sello de 30 días.** Cada
+   publicación reescribe `sealed`; `isServable` deja de servir cuando pasan 30 días o cuando
+   vence la clave, lo que ocurra antes. Quien deja de publicar pierde el sync hasta que
+   vuelve a publicar (Polar tiene que seguir diciendo `granted`). **Pendiente:** un webhook
+   `benefit_grant.revoked` que borre el sello el mismo día, y los blobs ya publicados antes
+   de este sello (no traen `sealed` y siguen su `until` de hasta 12 meses).
+3. **La URL directa del blob se salta el 402.** **Pendiente.** `PUT` sigue en
+   `access: 'public'`. Cerrarlo exige Blob privado, y eso ya rompió la escritura del claim
+   (`writeClaim`).
+4. **Adivinar claves.** **Pendiente.** El límite de `/api/license` es 10 por minuto y vive
+   en memoria de cada instancia. La regla de Firewall de Vercel para `/api/license` (y la de
+   `/api/contact`, si aún no está) hay que crearla en el panel. Las claves llevan UUID.
+5. **El recorte de la descarga es blando.** **Hecho en Export → AI:** con cuenta Free, Skill
+   y el paquete de agente pasan por `freeFigmaScope` igual que el JSON de Figma. **Pendiente
+   y aceptado:** un fork quita ese recorte, y el JavaScript compilado del plugin se puede
+   leer. El límite que aguanta es el del servidor (sync y MCP).
+6. **Polar caído.** **Pendiente, a propósito.** Publicar responde 503 «reintenta», nunca
+   «paga». La lectura no se entera: el sello va dentro del blob. La clave buena se recuerda
+   10 minutos. No cambiarlo a «paga».
+7. **Un plugin ya instalado seguía pidiendo el blob tras un 402.** **Hecho en el plugin
+   nuevo:** el primer 402 para el temporizador y no reanuda al abrir el archivo. **Pendiente
+   para copias ya instaladas:** no se actualizan solas; hay que volver a instalar el zip.
+8. **La clave está en `localStorage` (`sd-licence-key`).** **Pendiente.** Un XSS la leería,
+   igual que el token de GitHub. No va en el store ni en ningún export. Las SVG subidas se
+   sanean. No hay un XSS conocido. Sacarla de ahí exige una sesión, no un cambio local.
+9. **Fechas fijas en `entitlement.ts`.** **Pendiente como recordatorio; los desfases de hoy
+   están bien.** `PROMO_ENDS_AT` es el 7 de octubre de 2026, +02:00 (aún horario de verano;
+   el cambio es el 25 de octubre) y ya pasó. `PRO_LAUNCH_ENDS_AT` es el 15 de noviembre,
+   +01:00. Si una fecha se mueve a horario de verano, el desfase vuelve a +02:00. El test
+   fija los instantes UTC.
+10. **No existe el producto de renovación.** **Pendiente.** Crearlo en Polar antes de
+    septiembre de 2027. Hasta entonces una clave caducada solo se sustituye comprando otra.
+11. **Política de reembolso.** **Hecho.** 14 días, a petición por el formulario de contacto.
+    Polar es el vendedor oficial. Está en `/terms` y en `/pricing` (bajo el precio y en las
+    preguntas).
+12. **La Library no está construida.** **Pendiente.** `/pricing` la muestra como Coming soon.
+    No se vende.
 
 ## En evaluación: cuentas y login (2026-10-04)
 

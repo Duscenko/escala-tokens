@@ -27,7 +27,8 @@ import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvide
 import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
-import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
+import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
+import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
@@ -650,6 +651,23 @@ export default function Configurator() {
     openLibraryPage()
     setCreatePending(true)
   }
+  const openRandomTheme = (key: string) => {
+    setStylePreview(null)
+    setThemeHubSurface('artefacts')
+    setActiveFoundation('color')
+    setExploringRandomKey(key)
+    changePreviewTheme(key)
+    changeThemeWorkspaceTab('preview')
+  }
+  const startRandomFromMenu = () => {
+    const result = startRandomTheme(previewTheme, needsAnotherThemePro)
+    if (result.status === 'upgrade') { setUpgradeOpen(true); return }
+    if (result.status === 'error') {
+      showToast(t(result.error, { count: MY_THEME_HARD_CAP }))
+      return
+    }
+    openRandomTheme(result.key)
+  }
   const [resetOpen, setResetOpen] = useState(false)
   // The Generator's right-hand inspector column — the DOM node every view's
   // side panel portals into (see WorkspaceInspector). State, not a ref, so the
@@ -993,6 +1011,7 @@ export default function Configurator() {
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
   const [enterFolderTick, setEnterFolderTick] = useState(0)
+  const [openStylesRequest, setOpenStylesRequest] = useState(false)
   // Components catalogue — filters the master list by label/key. ONE search
   // state now: Documentation carried a second, identical one (`docsSearch`)
   // over the same catalogue, so a filter typed in one section was invisible in
@@ -1278,6 +1297,10 @@ export default function Configurator() {
     setExportMode(null)
     setTab('foundations')
     setThemeWorkspaceTab('library')
+  }
+  const openSystemStyles = () => {
+    openLibraryPage()
+    setOpenStylesRequest(true)
   }
   const openThemePreviewPage = () => {
     leaveExportWizard()
@@ -1866,6 +1889,9 @@ export default function Configurator() {
             onOpenLibrary={openLibraryPage}
             onOpenTheme={openThemePreviewPage}
             onCreateTheme={openCreateTheme}
+            onStartRandom={startRandomFromMenu}
+            onImport={() => setImportOpen(true)}
+            onOpenStyles={openSystemStyles}
             onOpenComponents={() => changeTab('components')}
             onSyncFigma={() => syncFigmaForTheme(previewTheme)}
             onGetCode={() => openCodeForTheme(previewTheme)}
@@ -2053,20 +2079,15 @@ export default function Configurator() {
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     figmaThemes={figmaSyncModes.map((mode) => mode.theme)}
                     onCreateTheme={openCreateTheme}
-                    onOpenRandom={(key) => {
-                      setStylePreview(null)
-                      setThemeHubSurface('artefacts')
-                      setActiveFoundation('color')
-                      setExploringRandomKey(key)
-                      changePreviewTheme(key)
-                      changeThemeWorkspaceTab('preview')
-                    }}
+                    onOpenRandom={openRandomTheme}
                     createPending={createPending}
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
                     enterFolderTick={enterFolderTick}
+                    openStylesRequest={openStylesRequest}
+                    onStylesRequestHandled={() => setOpenStylesRequest(false)}
                     onEditFoundation={selectFoundation}
                     onCreatingChange={setHomeCreating}
                   />

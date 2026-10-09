@@ -7,10 +7,8 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import { openStyleForEditing } from '../../lib/adoptPreset'
-import { COLLAGE_TILE_COUNT, randomBoardAppearance, randomTheme } from '../../lib/randomTheme'
-import { slotsFromAccent, mintTheme } from '../../lib/themeMint'
+import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
-import { loadGoogleFont } from '../../lib/fonts'
 import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
@@ -36,6 +34,7 @@ import {
   DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
+import { StartDesignModal } from './ThemeSheet'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
 // (Its section id stays `library`, so every old `?section=library` link and the
@@ -121,36 +120,6 @@ const HomeGlyph = () => (
     <path d="M3 9.5 12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" />
   </svg>
 )
-const BlankGlyph = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="5" y="5" width="14" height="14" rx="3" />
-  </svg>
-)
-function MaskGlyph({ src }: { src: string }) {
-  return (
-    <span
-      aria-hidden
-      className="block h-3.5 w-3.5 bg-current"
-      style={{
-        WebkitMask: `url('${src}') center / contain no-repeat`,
-        mask: `url('${src}') center / contain no-repeat`,
-      }}
-    />
-  )
-}
-function StartMark({ children, accent }: { children: ReactNode; accent?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md ${
-        accent ? 'bg-accent-ui/15 text-accent-ui' : 'bg-fg/[0.06] text-fg-muted'
-      }`}
-    >
-      {children}
-    </span>
-  )
-}
-
 // ── Theme card ───────────────────────────────────────────────────────────────
 
 function SyncBadge({ state, service, icon }: { state: SyncState; service: string; icon: ReactNode }) {
@@ -572,66 +541,25 @@ function NewDesignSystemButton({
 }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-  const item = 'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
-  const pick = (fn: () => void) => () => { setOpen(false); fn() }
   return (
-    <div ref={rootRef} className="relative">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
+        onClick={() => setOpen(true)}
         className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#5B1EBF] px-3.5 text-caption font-semibold text-white transition-colors hover:bg-[#4c19a3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >
         {t('New design system')}
         <PlusGlyph />
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -4 }}
-            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            role="menu"
-            aria-label={t('New design system')}
-            className="absolute right-0 top-full z-[60] mt-1.5 w-56 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
-          >
-            <p className="px-2.5 pb-1.5 pt-0.5 text-micro text-fg-faint">{t('How do you want to start?')}</p>
-            <button type="button" role="menuitem" onClick={pick(onBlank)} className={item}>
-              <StartMark><BlankGlyph /></StartMark>
-              {t('Blank')}
-            </button>
-            <button type="button" role="menuitem" onClick={pick(onRandom)} className={item}>
-              <StartMark accent><MaskGlyph src="/icons/settings/random.svg" /></StartMark>
-              {t('Random')}
-            </button>
-            <button type="button" role="menuitem" onClick={pick(onFromCode)} className={item}>
-              <StartMark><MaskGlyph src="/icons/theme-hub-icons/Icon/code.svg" /></StartMark>
-              {t('From code')}
-            </button>
-            <button type="button" role="menuitem" onClick={pick(onSystemStyles)} className={item}>
-              <StartMark><SparkGlyph /></StartMark>
-              {t('System styles')}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      <StartDesignModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onBlank={onBlank}
+        onRandom={onRandom}
+        onFromCode={onFromCode}
+        onSystemStyles={onSystemStyles}
+      />
+    </>
   )
 }
 
@@ -1209,6 +1137,8 @@ export default function ThemeLibraryPage({
   onNewSystem,
   onImport,
   enterFolderTick = 0,
+  openStylesRequest = false,
+  onStylesRequestHandled,
   onEditFoundation,
   onCreatingChange,
 }: {
@@ -1243,6 +1173,9 @@ export default function ThemeLibraryPage({
   onImport: () => void
   /** After a new folder is created, open that folder so a file can be added inside it. */
   enterFolderTick?: number
+  /** The theme chip asked for System styles. Applied once, then cleared. */
+  openStylesRequest?: boolean
+  onStylesRequestHandled?: () => void
   /** "Go to advanced edition" leaves the studio for that foundation's table. */
   onEditFoundation?: (foundationKey: string) => void
   /** Create studio uses the right inspector; Home's left file menu must yield. */
@@ -1288,46 +1221,14 @@ export default function ThemeLibraryPage({
     setCreating(true)
   }
   const openRandom = () => {
-    // Free is one theme: Random explores that theme instead of minting another.
-    if (needsPro) {
-      const s = useDesignStore.getState()
-      const own = myThemeKeys(s.themeOrder, s.themes)
-      const key = own.includes(previewTheme) ? previewTheme : own[0]
-      if (key) {
-        setStyleError(null)
-        onOpenRandom(key)
-        return
-      }
-      setUpgradeOpen(true)
+    const result = startRandomTheme(previewTheme, needsPro)
+    if (result.status === 'upgrade') { setUpgradeOpen(true); return }
+    if (result.status === 'error') {
+      setStyleError(t(result.error, { count: MY_THEME_HARD_CAP }))
       return
     }
-    const s = useDesignStore.getState()
-    const recipe = randomTheme({ accent: s.primaryColor })
-    const slots = slotsFromAccent(recipe.accent, recipe.neutralTint)
-    const res = mintTheme(
-      slots,
-      randomBoardAppearance(),
-      '',
-      null,
-      recipe.neutralTint,
-      {
-        light: backgroundFromBase(slots.gray, 'light', recipe.neutralTint),
-        dark: backgroundFromBase(slots.gray, 'dark', recipe.neutralTint),
-      },
-    )
-    if ('error' in res) {
-      setStyleError(t(res.error, { count: MY_THEME_HARD_CAP }))
-      return
-    }
-    const next = useDesignStore.getState()
-    next.setThemeFoundations(res.key, recipe.foundations)
-    useDesignStore.setState({
-      architectureOverrides: resetThemeSemantics(next.architectureOverrides, recipe.semantics, res.key),
-    })
-    loadGoogleFont(recipe.bodyFont)
-    loadGoogleFont(recipe.headingFont)
     setStyleError(null)
-    onOpenRandom(res.key)
+    onOpenRandom(result.key)
   }
   const { themeOrder, themes, removeTheme, themeUpdatedAt, pinned, togglePinned } = store
   const currentId = activeLibraryId(store)
@@ -1339,6 +1240,13 @@ export default function ThemeLibraryPage({
     if (!enterFolderTick) return
     setSection({ kind: 'library', id: currentId })
   }, [enterFolderTick, currentId])
+  const stylesHandledRef = useRef(onStylesRequestHandled)
+  stylesHandledRef.current = onStylesRequestHandled
+  useEffect(() => {
+    if (!openStylesRequest) return
+    setSection({ kind: 'styles' })
+    stylesHandledRef.current?.()
+  }, [openStylesRequest])
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
@@ -1783,6 +1691,14 @@ export default function ThemeLibraryPage({
     setCreating(false)
     onOpenPreview(key)
   }
+  /** Leave the studio and drop the theme if Colour already minted one. */
+  const cancelCreate = () => {
+    if (createdKey) {
+      finishThemeSetup(createdKey)
+      deleteTheme(createdKey)
+    }
+    setCreating(false)
+  }
   const skipCreate = () => {
     if (createStep === 'color' || !createdKey) {
       skipHandle.current?.()
@@ -1816,7 +1732,7 @@ export default function ThemeLibraryPage({
             <div className="flex h-full min-h-0 flex-col">
               <div ref={setIdentityHost} className="flex-shrink-0 border-b border-line">
                 {!(createStep === 'color' || !createdKey) && createdKey && (
-                  <MintedThemeIdentity themeKey={createdKey} onClose={() => setCreating(false)} />
+                  <MintedThemeIdentity themeKey={createdKey} onClose={cancelCreate} />
                 )}
               </div>
               <CreateStepNav step={createStep} onPick={pickCreateStep} />
@@ -1833,7 +1749,7 @@ export default function ThemeLibraryPage({
                     submitHandle={submitHandle}
                     skipHandle={skipHandle}
                     appearance={chromeAppearance}
-                    onClose={() => setCreating(false)}
+                    onClose={cancelCreate}
                     onCreated={onColorCommitted}
                     onFinishEarly={finishCreate}
                     onDraftChange={onDraftChange}
@@ -1854,6 +1770,7 @@ export default function ThemeLibraryPage({
                 total={CREATE_STEPS.length}
                 continueLabel={continueLabel}
                 last={createStep === 'icons' && !!createdKey}
+                onCancel={cancelCreate}
                 onSkip={skipCreate}
                 onContinue={() => {
                   if (createStep === 'color' || !createdKey) submitHandle.current?.()

@@ -79,6 +79,11 @@ export function getLicenceKey(): string | null {
   return memoryKey
 }
 
+/** Current licence snapshot, for a write that cannot wait on React. */
+export function readLicenceState(): LicenceState {
+  return state
+}
+
 /** Subscribe to licence changes outside React (auto-sync uses it to resume). */
 export function onLicenceChange(listener: () => void): () => void {
   listeners.add(listener)

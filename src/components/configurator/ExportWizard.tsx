@@ -261,10 +261,11 @@ export default function ExportWizard({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Free downloads the same cut as the Figma JSON: one theme, the appearance
-  // on screen, Desktop. The AI zips stay the whole system.
+  // Free downloads the same cut everywhere: one theme, the appearance on
+  // screen, Desktop. Skill and the agent package included — a Free account
+  // was shipping every theme through Export → AI.
   const free = useFreeTier()
-  const figmaScope = free && format !== 'skill' && format !== 'agent-bundle'
+  const figmaScope = free
     ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance)
     : undefined
   // Every family picked = unscoped, so an untouched export keeps producing the

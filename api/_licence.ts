@@ -15,6 +15,12 @@ const BAD_TTL_MS = 60_000
 
 const cache = new Map<string, { at: number; result: LicenceResult }>()
 
+/** Short hash for logs. Correlates one key across checks and slugs without
+ *  writing the key itself. 16 hex chars is enough to tell keys apart. */
+export function licenceKeyHash(key: string): string {
+  return createHash('sha256').update(key).digest('hex').slice(0, 16)
+}
+
 export async function checkLicenceKey(key: string): Promise<LicenceResult> {
   const id = createHash('sha256').update(key).digest('hex')
   const hit = cache.get(id)
