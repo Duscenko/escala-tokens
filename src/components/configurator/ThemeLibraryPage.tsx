@@ -41,9 +41,10 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 // (Its section id stays `library`, so every old `?section=library` link and the
 // login return keep working; only the name on screen changed.)
 //
-// Organised the way a design tool's file browser is: the MENU lives in the
-// right-hand panel (portaled into the inspector, like every other view's side
-// panel), the content in the card.
+// Organised the way a design tool's file browser is: the MENU (search, recents,
+// folders, pinned) sits on the LEFT, on the page background, with no card of
+// its own. The content is the Home panel on the right. The menu still portals
+// into a slot the shell owns, so the create studio can take that same column.
 //   · Recents       — My themes, last edited first, plus recently saved libraries.
 //   · System styles — the curated styles a theme can start from.
 //   · Folders       — the system on screen is the DEFAULT folder: files
@@ -110,6 +111,18 @@ const StackGlyph = svg('M12 3 3 8l9 5 9-5-9-5ZM3 13l9 5 9-5')
 const PinGlyph = svg('M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 15v5')
 const PlusGlyph = svg('M12 5v14M5 12h14')
 const ImportGlyph = svg('M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4')
+const CodeGlyph = svg('M9 8 4 12l5 4M15 8l5 4-5 4')
+const HomeGlyph = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" />
+  </svg>
+)
+const DiceGlyph = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+    <path d="M8 8h.01M12 12h.01M16 16h.01" strokeWidth="2.4" />
+  </svg>
+)
 const SearchGlyph = svg('M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-3.5-3.5')
 const PencilGlyph = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -525,13 +538,14 @@ function SaveLibraryButton() {
   )
 }
 
-/** Pins to the top of the Home card — same band as Theme preview's canvas
- *  header. Solid `--app` fill, full width; the file list scrolls under it. */
-function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: () => void }) {
+/** Pins to the top of the Home panel. Transparent, so it stays the panel's
+ *  own fill; the file list scrolls under it. `z-20` keeps the start menu,
+ *  which hangs out of this row, above that list. */
+function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGoHome: () => void; action?: ReactNode }) {
   const { t } = useI18n()
   return (
     <div
-      className="flex flex-shrink-0 items-center gap-2 border-b border-line bg-app px-8"
+      className="relative z-20 flex flex-shrink-0 items-center gap-2 border-b border-line bg-transparent px-8"
       style={{ height: INSPECTOR_TABS_H }}
       aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
     >
@@ -545,11 +559,96 @@ function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: ()
             {t('Home')}
           </button>
           <span className="flex-shrink-0 text-body text-fg-faint" aria-hidden>/</span>
-          <h1 className="min-w-0 truncate text-left text-heading font-semibold text-fg">{trail}</h1>
+          <h1 className="min-w-0 truncate text-left text-title font-semibold text-fg">{trail}</h1>
         </>
       ) : (
-        <h1 className="min-w-0 truncate text-left text-heading font-semibold text-fg">{t('Home')}</h1>
+        <h1 className="flex min-w-0 items-center gap-2 truncate text-left text-title font-semibold text-fg">
+          <span className="text-fg-muted"><HomeGlyph /></span>
+          {t('Home')}
+        </h1>
       )}
+      {action && <div className="ml-auto flex-shrink-0">{action}</div>}
+    </div>
+  )
+}
+
+/** "New design system" — one button, then the four ways to begin. */
+function NewDesignSystemButton({
+  canCreate,
+  disabledTitle,
+  onBlank,
+  onRandom,
+  onFromCode,
+  onStyles,
+}: {
+  canCreate: boolean
+  disabledTitle?: string
+  onBlank: () => void
+  onRandom: () => void
+  onFromCode: () => void
+  onStyles: () => void
+}) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+  const choose = (run: () => void) => { setOpen(false); run() }
+  const item = 'flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-ui font-medium text-fg transition-colors hover:bg-[#7468EF1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7468EF]/40 disabled:cursor-not-allowed disabled:opacity-40'
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('How do you want to start?')}
+        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#5B1EBF] px-3 text-caption font-semibold text-white transition-colors hover:bg-[#4c19a3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B1EBF]/60"
+      >
+        {t('New design system')}
+        <PlusGlyph />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -4 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            role="menu"
+            aria-label={t('How do you want to start?')}
+            className="absolute right-0 top-full z-30 mt-1.5 w-56 origin-top-right rounded-xl border border-line bg-surface p-1.5 shadow-xl dark:border-white/[0.08] dark:bg-[#1c1c1f]"
+          >
+            <button type="button" role="menuitem" disabled={!canCreate} title={!canCreate ? disabledTitle : undefined} onClick={() => choose(onBlank)} className={item}>
+              <span className="text-fg-muted"><PlusGlyph /></span>
+              {t('Blank')}
+            </button>
+            <button type="button" role="menuitem" disabled={!canCreate} title={!canCreate ? disabledTitle : undefined} onClick={() => choose(onRandom)} className={item}>
+              <span className="text-fg-muted"><DiceGlyph /></span>
+              {t('Random')}
+            </button>
+            <button type="button" role="menuitem" onClick={() => choose(onFromCode)} className={item}>
+              <span className="text-fg-muted"><CodeGlyph /></span>
+              {t('From code')}
+            </button>
+            <button type="button" role="menuitem" onClick={() => choose(onStyles)} className={item}>
+              <span className="text-fg-muted"><SparkGlyph /></span>
+              {t('System styles')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -630,7 +729,7 @@ function LibraryRow({ sys, onOpen, pinned, onTogglePin }: {
   )
 }
 
-// ── Right-panel menu ─────────────────────────────────────────────────────────
+// ── Left menu (search, folders, pinned) — no card, sits on the page ─────────
 
 function NavRow({ on, icon, label, trailing, onClick, title }: {
   on: boolean
@@ -646,8 +745,8 @@ function NavRow({ on, icon, label, trailing, onClick, title }: {
       onClick={onClick}
       aria-current={on ? 'page' : undefined}
       title={title ?? label}
-      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-        on ? 'bg-fg/[0.08] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7468EF]/40 ${
+        on ? 'bg-[#7468EF1A] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
       }`}
     >
       <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">{icon}</span>
@@ -814,7 +913,7 @@ function HomeNav({
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder={t('Search')}
-            className="h-8 w-full rounded-lg border border-line bg-app pl-8 pr-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            className="h-8 w-full rounded-lg border border-line bg-transparent pl-8 pr-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7468EF]/40 dark:border-white/[0.08]"
           />
         </label>
         <div className="flex flex-col gap-0.5">
@@ -1317,7 +1416,7 @@ export default function ThemeLibraryPage({
           <SectionTitle id="home-recently" count={themesShown.length}>
             {t('Recently')}
           </SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, true)}
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
         </section>
         {!query && (
           <>
@@ -1710,7 +1809,20 @@ export default function ThemeLibraryPage({
         onImport={onImport}
       />
       <div className="flex min-h-0 flex-1 flex-col">
-        <HomeStickyBar trail={homeTrail} onGoHome={() => setSection({ kind: 'recents' })} />
+        <HomeStickyBar
+          trail={homeTrail}
+          onGoHome={() => setSection({ kind: 'recents' })}
+          action={(
+            <NewDesignSystemButton
+              canCreate={canAddMyTheme(mine.length)}
+              disabledTitle={t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP })}
+              onBlank={openCreate}
+              onRandom={openRandom}
+              onFromCode={onImport}
+              onStyles={() => setSection({ kind: 'styles' })}
+            />
+          )}
+        />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6">
             {body}

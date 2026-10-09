@@ -64,8 +64,8 @@ export default function WorkspaceInspector({
   value: InspectorTab | null
   onChange: (tab: InspectorTab) => void
   onSlot: (el: HTMLElement | null) => void
-  /** Home fills this column with its file menu and does not draw the
-   *  Theme · Variables · Code · Docs strip. */
+  /** Home does not mount this column — its file menu is a left column on
+   *  the page. Other views hide the Theme · Variables · Docs strip here. */
   showTabs?: boolean
   /** A System Style try-on has no live ramps to edit or document. */
   disabledTabs?: readonly InspectorTab[]

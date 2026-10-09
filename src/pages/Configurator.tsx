@@ -1758,6 +1758,8 @@ export default function Configurator() {
   const homeRailOnly = themeWorkspaceTab === 'library'
     || themeWorkspaceTab === 'code'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
+  /** Home's file menu is a left column on the page, not the right inspector. */
+  const homePage = themesCanvas && themeWorkspaceTab === 'library'
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
    *  all nine tables. Code, Docs and Home show only the Home tile. */
@@ -1810,7 +1812,7 @@ export default function Configurator() {
   }
 
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
+    <div data-home={homePage ? '' : undefined} className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
           (Theme workspace destinations, Color/Type/Layout hub, PreviewPanel). */}
       <ChromeTabDefs />
@@ -1893,8 +1895,22 @@ export default function Configurator() {
         >
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
-          {/* Home has no rail: the foundations belong to a theme being edited, and the
-              way HOME itself is reached is the theme avatar in the top bar. */}
+          {/* Home's menu (search, folders, pinned) is this column: no card, on
+              the page background. The slot is the same portal the create studio
+              uses, so that flow still lands here. */}
+          {homePage && (
+            <aside
+              aria-label={t('Home')}
+              className="flex w-[260px] min-h-0 flex-shrink-0 flex-col overflow-hidden"
+            >
+              <div
+                ref={setInspectorSlot}
+                className="relative flex min-h-0 flex-1 flex-col overflow-hidden [&>*]:!h-auto [&>*]:!min-h-0 [&>*]:!w-full [&>*]:!flex-1 [&>*]:!border-r-0"
+              />
+            </aside>
+          )}
+          {/* Home has no foundation rail: the foundations belong to a theme being
+              edited, and the way HOME itself is reached is the theme avatar. */}
           {themeWorkspaceRailVisible && !homeRailOnly && (
             // Home is the top tile on every Generator surface that shows this
             // rail. Theme and Variables keep the foundation icons under it.
@@ -1928,7 +1944,9 @@ export default function Configurator() {
               app's own light/dark; only the covers inside show each theme's look. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border ${homePage
+                ? 'ml-3 mr-3 border-line bg-surface dark:border-white/[0.08] dark:bg-[#161617]'
+                : `${homeRailOnly ? 'ml-3' : ''} border-line bg-app`} ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -2139,7 +2157,7 @@ export default function Configurator() {
               )}
             </div>
           </main>
-          {themesCanvas && (
+          {themesCanvas && !homePage && (
             <WorkspaceInspector
               value={inspectorTab}
               onChange={changeInspectorTab}

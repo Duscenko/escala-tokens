@@ -477,6 +477,15 @@
   --color-5: oklch(90.7% 0.231 133);
 }
 
+/* Home file browser, dark only. The menu column has no card of its own, so
+   the shell behind it is the page (#100E13). The Home panel is one step up
+   (#161617) — that fill is on the panel, not a token, so it stays put when
+   this override repaints --app / --nav. */
+.dark [data-home] {
+  --nav: #100E13;
+  --app: #100E13;
+}
+
 html {
   background: var(--app);
   color: var(--fg);
