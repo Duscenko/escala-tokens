@@ -3,6 +3,8 @@ import {
   collectPluginLibraries,
   isPluginPairCode,
   librariesFromPersist,
+  pluginProUntil,
+  pluginProUntilRefresh,
   upsertPluginLibraries,
 } from '../pluginSession'
 
@@ -57,5 +59,25 @@ describe('plugin session libraries', () => {
       name: `L${i}`,
     }))
     expect(upsertPluginLibraries([], rows, now)).toHaveLength(40)
+  })
+})
+
+describe('plugin plan', () => {
+  const now = new Date('2026-10-09T12:00:00Z')
+
+  it('a validated key wins, otherwise the account email grant', () => {
+    expect(pluginProUntil({ valid: true, expiresAt: '2027-01-01T00:00:00Z' }, null)).toBe('2027-01-01T00:00:00Z')
+    expect(pluginProUntil({ valid: true, expiresAt: null }, '2027-06-01T00:00:00Z')).toBe('lifetime')
+    expect(pluginProUntil({ valid: false, expiresAt: null }, 'lifetime')).toBe('lifetime')
+    expect(pluginProUntil(null, 'unknown')).toBeUndefined()
+    expect(pluginProUntil(null, null)).toBeUndefined()
+  })
+
+  it('a later open upgrades Free and does not strip a live plan when Polar is down', () => {
+    expect(pluginProUntilRefresh(undefined, 'lifetime', now)).toBe('lifetime')
+    expect(pluginProUntilRefresh(undefined, 'unknown', now)).toBeUndefined()
+    expect(pluginProUntilRefresh('lifetime', null, now)).toBe('lifetime')
+    expect(pluginProUntilRefresh('2026-01-01T00:00:00Z', '2027-01-01T00:00:00Z', now)).toBe('2027-01-01T00:00:00Z')
+    expect(pluginProUntilRefresh('lifetime', 'unknown', now)).toBe('lifetime')
   })
 })

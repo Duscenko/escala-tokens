@@ -90,17 +90,31 @@ export function customerIdForEmail(body: unknown, email: string): string | null 
   return null
 }
 
+/** Expiry of a granted key on this customer, or null. No `expires_at` is
+ *  `'lifetime'`. Several grants keep the one that lasts longest. The key
+ *  itself is never read. */
+export function grantedLicenceUntil(body: unknown, now: Date): string | null {
+  if (!body || typeof body !== 'object') return null
+  const items = (body as { items?: unknown }).items
+  if (!Array.isArray(items)) return null
+  let best: string | null = null
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue
+    const row = item as { status?: unknown; expires_at?: unknown }
+    if (row.status !== 'granted') continue
+    if (typeof row.expires_at === 'string') {
+      if (Date.parse(row.expires_at) <= now.getTime()) continue
+      if (best === 'lifetime') continue
+      if (!best || Date.parse(row.expires_at) > Date.parse(best)) best = row.expires_at
+    } else {
+      best = 'lifetime'
+    }
+  }
+  return best
+}
+
 /** True when the licence-key list (already scoped to one customer) contains a
  *  granted key that has not expired. The key itself is never read. */
 export function hasGrantedLicence(body: unknown, now: Date): boolean {
-  if (!body || typeof body !== 'object') return false
-  const items = (body as { items?: unknown }).items
-  if (!Array.isArray(items)) return false
-  return items.some((item) => {
-    if (!item || typeof item !== 'object') return false
-    const row = item as { status?: unknown; expires_at?: unknown }
-    if (row.status !== 'granted') return false
-    if (typeof row.expires_at === 'string' && Date.parse(row.expires_at) <= now.getTime()) return false
-    return true
-  })
+  return grantedLicenceUntil(body, now) !== null
 }

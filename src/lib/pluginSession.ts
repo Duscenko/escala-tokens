@@ -76,6 +76,33 @@ export function librariesFromPersist(raw: unknown): Array<{ id: string; name: st
   return collectPluginLibraries(rows)
 }
 
+/** What a new plugin session should store as `proUntil`.
+ *  A key Polar just accepted wins. Otherwise a grant on the signed-in email.
+ *  `'unknown'` (Polar unreachable) stores nothing — never a fake Free. */
+export function pluginProUntil(
+  key: { valid: boolean; expiresAt: string | null } | null,
+  emailUntil: string | null | 'unknown',
+): string | undefined {
+  if (key?.valid) return key.expiresAt ?? 'lifetime'
+  if (typeof emailUntil === 'string' && emailUntil.length > 0 && emailUntil !== 'unknown') return emailUntil
+  return undefined
+}
+
+/** Refresh of a session that is already connected.
+ *  A definite grant upgrades Free. Polar being unreachable leaves the stored
+ *  expiry alone. A live expiry is not stripped here: the pasted key may be
+ *  the proof, and this call only knows the account email. */
+export function pluginProUntilRefresh(
+  current: string | undefined,
+  emailUntil: string | null | 'unknown',
+  now: Date,
+): string | undefined {
+  const live = !!current && (current === 'lifetime' || Date.parse(current) > now.getTime())
+  if (emailUntil === 'unknown' || live) return current
+  if (typeof emailUntil === 'string' && emailUntil.length > 0) return emailUntil
+  return current
+}
+
 /** Incoming rows replace the same id and move to the front. A blank name keeps the one already stored. Capped. */
 export function upsertPluginLibraries(
   current: PluginLibrary[],

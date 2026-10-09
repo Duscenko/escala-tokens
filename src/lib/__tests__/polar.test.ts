@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   LICENCE_RETURN_URL, POLAR_CHECKOUT_URL, POLAR_ORGANIZATION_ID,
-  checkoutUrl, customerIdForEmail, hasGrantedLicence, interpretValidation, licenceReturnPath,
+  checkoutUrl, customerIdForEmail, grantedLicenceUntil, hasGrantedLicence, interpretValidation, licenceReturnPath,
 } from '../polar'
 
 const NOW = new Date('2026-12-01T00:00:00Z')
@@ -87,5 +87,16 @@ describe('purchase lookup', () => {
     expect(hasGrantedLicence({ items: [{ status: 'granted', expires_at: '2026-01-01T00:00:00Z' }] }, NOW)).toBe(false)
     expect(hasGrantedLicence({ items: [{ status: 'revoked' }] }, NOW)).toBe(false)
     expect(hasGrantedLicence(null, NOW)).toBe(false)
+  })
+
+  it('reports how long the grant lasts, and prefers a lifetime key', () => {
+    expect(grantedLicenceUntil({ items: [{ status: 'granted', expires_at: '2027-10-09T00:00:00Z' }] }, NOW)).toBe('2027-10-09T00:00:00Z')
+    expect(grantedLicenceUntil({
+      items: [
+        { status: 'granted', expires_at: '2027-01-01T00:00:00Z' },
+        { status: 'granted', expires_at: null },
+      ],
+    }, NOW)).toBe('lifetime')
+    expect(grantedLicenceUntil({ items: [{ status: 'revoked' }] }, NOW)).toBeNull()
   })
 })

@@ -4,9 +4,12 @@ import { put } from '@vercel/blob'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import {
   isPluginPairCode,
+  pluginProUntil,
+  pluginProUntilRefresh,
   upsertPluginLibraries,
   type PluginLibrary,
 } from '../src/lib/pluginSession.js'
+import { proUntilForEmail } from './_accountPlan.js'
 import { checkLicenceKey } from './_licence.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
@@ -39,8 +42,9 @@ type PairRecord = {
 // Polar gave it no expiry). The licence KEY is never stored: this blob is public.
 type SessionRecord = { userId: string; email: string; revoked?: boolean; proUntil?: string }
 
-/** What this plugin session may do. Pro is the launch promo OR a licence the
- *  browser vouched for at sign-in. Free keeps ONE theme in ONE mode. */
+/** What this plugin session may do. Pro is the launch promo, a licence the
+ *  browser vouched for, or a Polar grant on the signed-in email. Free keeps
+ *  ONE theme in ONE mode. */
 function tierOf(session: Pick<SessionRecord, 'proUntil'> | null | undefined, now = new Date()) {
   const promo = entitlementAt(now).promo
   const licensed = !!session?.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())
@@ -242,12 +246,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'This sign-in expired. Press Sign in in the plugin again.' })
     }
     const token = randomBytes(32).toString('base64url')
-    let proUntil: string | undefined
     const licenceKey = typeof body.licenceKey === 'string' ? body.licenceKey.trim().slice(0, 200) : ''
-    if (licenceKey) {
-      const checked = await checkLicenceKey(licenceKey)
-      if (checked.valid) proUntil = checked.expiresAt ?? 'lifetime'
-    }
+    const checked = licenceKey ? await checkLicenceKey(licenceKey) : null
+    const emailUntil = await proUntilForEmail(user.email)
+    const proUntil = pluginProUntil(checked, emailUntil)
     // The blob is public. The raw token is sealed with the secret's hash,
     // which poll reconstructs from the secret only the plugin holds.
     const sealed = seal(pair.secretHash, token)
@@ -354,8 +356,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       return res.status(200).json({ ok: true })
     }
-    const libraries = await readLibraries(session.userId).catch(() => [])
-    return res.status(200).json({ email: session.email, libraries, ...tierOf(session) })
+    const emailUntil = await proUntilForEmail(session.email)
+    const proUntil = pluginProUntilRefresh(session.proUntil, emailUntil, new Date())
+    let current = session
+    if (proUntil !== session.proUntil) {
+      current = {
+        userId: session.userId,
+        email: session.email,
+        ...(session.revoked ? { revoked: true } : {}),
+        ...(proUntil ? { proUntil } : {}),
+      }
+      try {
+        await writeJson(sessionKey(sha256(token)), current)
+      } catch {
+        current = session
+      }
+    }
+    const libraries = await readLibraries(current.userId).catch(() => [])
+    return res.status(200).json({ email: current.email, libraries, ...tierOf(current) })
   }
 
   return res.status(405).json({ error: 'Method not allowed.' })
