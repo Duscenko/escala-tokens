@@ -473,11 +473,11 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onStylePreviewChange, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
-  exploringRandom = false, onExploringRandomEnd,
+  exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
@@ -492,7 +492,6 @@ export default function ThemePreviewHub({
   onPreviewPlatformChange?: (platform: GridViewport) => void
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
   stylePreview: StylePreview | null
-  onStylePreviewChange?: (preview: StylePreview) => void
   onNeedAccount?: () => void
   /** A tried-on style was adopted into the system — re-point the preview at it
    *  and drop the ephemeral try-on. */
@@ -528,6 +527,10 @@ export default function ThemePreviewHub({
   onCreateTheme?: () => void
   exploringRandom?: boolean
   onExploringRandomEnd?: () => void
+  /** The theme on screen was minted by Random and is not saved yet. */
+  randomDraft?: boolean
+  /** Drop the unsaved Random theme and go back to Home. */
+  onDiscardRandom?: () => void
 }) {
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
@@ -535,8 +538,12 @@ export default function ThemePreviewHub({
   const { gated: docsGated } = useAccess()
   const setupStep = useSetupStep(previewTheme)
   /** Same gate as Variables / Code / Docs tabs — first customization pass. */
-  const headerActionsLocked = docsGated || setupStep != null
-  const headerActionsLockedHint = t('Finish customizing your theme to see full Variables and Docs.')
+  // A Random theme is a draft until it is saved: code, Figma sync and the
+  // inspector describe a design system that does not exist yet.
+  const headerActionsLocked = docsGated || setupStep != null || randomDraft
+  const headerActionsLockedHint = randomDraft
+    ? t('Save this theme to open code, Figma sync, Variables and Docs.')
+    : t('Finish customizing your theme to see full Variables and Docs.')
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -701,7 +708,6 @@ export default function ThemePreviewHub({
           onOpenAdvanced={onEditFoundation}
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
-          onStylePreviewChange={onStylePreviewChange}
           onNeedAccount={onNeedAccount}
           onAdoptStyle={onAdoptStyle}
           onQuickEditOpenChange={setQuickEditOpen}
@@ -715,6 +721,7 @@ export default function ThemePreviewHub({
           onOverlapSizeChange={setOverlapSize}
           exploringRandom={exploringRandom}
           onExploringRandomEnd={onExploringRandomEnd}
+          onDiscardRandom={onDiscardRandom}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (

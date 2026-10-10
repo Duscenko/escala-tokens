@@ -22,8 +22,9 @@ import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, colorAtHue, darkShadow, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
+import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
   BASE_UNIT_RANGE,
@@ -63,7 +64,7 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
-import { randomTheme, randomBoardAppearance, stylePreviewFromRecipe } from '../../lib/randomTheme'
+import { randomTheme, randomBoardAppearance, randomLabelAfterTweak } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
@@ -75,7 +76,7 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -1350,6 +1351,12 @@ function RadiusCard({
 
 function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; onChange: (value: Record<string, string>) => void }) {
   const active = matchShadowPreset(shadows)
+  // These tiles sit on the CHROME, so they follow the chrome's appearance, not
+  // the previewed theme's. The stored ramp is the LIGHT one — a near-black
+  // shadow that is mathematically the dark page — so in dark chrome every
+  // option read as the same flat square. `darkShadow` is the same twin the
+  // board, the export and Variables' Shadow table use.
+  const chromeDark = useTheme() === 'dark'
   return (
     <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Shadow depth">
       {SHADOW_PRESETS.map((preset) => {
@@ -1363,7 +1370,11 @@ function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; on
             onClick={() => onChange({ ...preset.values })}
             className={`flex min-w-0 flex-col items-center gap-2 rounded-lg border px-1 py-2 text-micro font-medium transition-[border-color,background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-line-strong bg-elevated text-fg' : 'border-line bg-app text-fg-faint hover:border-line-strong hover:text-fg'}`}
           >
-            <span className="h-5 w-5 rounded bg-surface" style={{ boxShadow: preset.values.md }} aria-hidden />
+            <span
+              className="h-6 w-6 rounded bg-surface"
+              style={{ boxShadow: chromeDark ? darkShadow(preset.values.md) : preset.values.md }}
+              aria-hidden
+            />
             <span className="truncate">{preset.label}</span>
           </button>
         )
@@ -1535,7 +1546,6 @@ export default function ThemeQuickSettingsRail({
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
-  onStylePreviewChange,
   onNeedAccount,
   onAdoptStyle,
   onQuickEditOpenChange,
@@ -1550,6 +1560,7 @@ export default function ThemeQuickSettingsRail({
   embed = false,
   exploringRandom = false,
   onExploringRandomEnd,
+  onDiscardRandom,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1569,7 +1580,6 @@ export default function ThemeQuickSettingsRail({
    *  preset via `resolveStylePreviewTokens`. */
   stylePreview?: StylePreview | null
   /** Random / Undo on a try-on rewrite the overlay. Nothing is stored. */
-  onStylePreviewChange?: (preview: StylePreview) => void
   /** Variables, Docs, or a second theme while signed out. The shell opens the
    *  register dialog and stays on this screen. */
   onNeedAccount?: () => void
@@ -1600,6 +1610,7 @@ export default function ThemeQuickSettingsRail({
   /** Home → Random: the footer is Random / Save theme, not Update theme. */
   exploringRandom?: boolean
   onExploringRandomEnd?: () => void
+  onDiscardRandom?: () => void
 }) {
   const { t } = useI18n()
   const inInspector = useInInspector()
@@ -1619,9 +1630,6 @@ export default function ThemeQuickSettingsRail({
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const lastRandomScaffold = useRef<string | undefined>(undefined)
-  const randomPast = useRef<StylePreview[]>([])
-  const lastRandomKey = useRef<string | null>(null)
-  const [canUndoRandom, setCanUndoRandom] = useState(false)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
@@ -1985,54 +1993,6 @@ export default function ThemeQuickSettingsRail({
     current: chipRefs.current[id] ?? null,
   })
 
-  const randomPreviewKey = (preview: StylePreview) =>
-    `${preview.preset.id}|${preview.preset.accent}|${preview.preset.neutralTint}|${preview.preset.foundations.typography?.fontFamily ?? ''}|${preview.preset.foundations.typography?.headingFontFamily ?? ''}`
-
-  useEffect(() => {
-    if (!tryOn) {
-      randomPast.current = []
-      lastRandomKey.current = null
-      setCanUndoRandom(false)
-      return
-    }
-    const key = randomPreviewKey(tryOn)
-    if (lastRandomKey.current === key) return
-    if (lastRandomKey.current != null) {
-      randomPast.current = []
-      setCanUndoRandom(false)
-    }
-    lastRandomKey.current = key
-  }, [tryOn])
-
-  const applyGuestRandom = () => {
-    if (!tryOn || !onStylePreviewChange) return
-    const rng = Math.random
-    const recipe = randomTheme({
-      accent: tryOn.preset.accent,
-      bodyFont: tryOn.preset.foundations.typography?.fontFamily,
-      headingFont: tryOn.preset.foundations.typography?.headingFontFamily,
-      typeScale: inferTypeScaleMode(tryOn.preset.foundations.typography?.sizes ?? {}),
-      avoidScaffold: lastRandomScaffold.current ?? tryOn.preset.id,
-      rng,
-    })
-    lastRandomScaffold.current = recipe.scaffoldId
-    const next = stylePreviewFromRecipe(tryOn, recipe, randomBoardAppearance(rng))
-    randomPast.current.push(tryOn)
-    lastRandomKey.current = randomPreviewKey(next)
-    setCanUndoRandom(true)
-    loadGoogleFont(recipe.bodyFont)
-    loadGoogleFont(recipe.headingFont)
-    onStylePreviewChange(next)
-  }
-
-  const undoGuestRandom = () => {
-    const prev = randomPast.current.pop()
-    if (!prev || !onStylePreviewChange) return
-    lastRandomKey.current = randomPreviewKey(prev)
-    setCanUndoRandom(randomPast.current.length > 0)
-    onStylePreviewChange(prev)
-  }
-
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
     const rng = Math.random
@@ -2066,6 +2026,9 @@ export default function ThemeQuickSettingsRail({
       if (Object.keys(next.themes).length === 1 && recipe.foundations.typography) {
         setTypography(themeKey, recipe.foundations.typography)
       }
+      // The look is random now, so the style's name would be wrong.
+      const label = randomLabelAfterTweak(themeKey, next.themeLabels, next.themeOrigin?.[themeKey])
+      if (label) useDesignStore.getState().setThemeLabel(themeKey, label)
     })
   }
 
@@ -2132,9 +2095,6 @@ export default function ThemeQuickSettingsRail({
             appearance={tryOn.appearance}
             owned={myThemeKeys(store.themeOrder, store.themes).some((key) => store.themeOrigin?.[key] === tryOn.preset.id)}
             firstSystem={myThemeKeys(store.themeOrder, store.themes).length === 0}
-            onRandom={applyGuestRandom}
-            onUndoRandom={undoGuestRandom}
-            canUndoRandom={canUndoRandom}
             onEdit={editTryOn}
           />
         </section>
@@ -2274,13 +2234,7 @@ export default function ThemeQuickSettingsRail({
                   <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
                   <span className="block truncate text-mini text-fg-faint">{t('Saturation · Brightness · Ramp contrast')}</span>
                 </span>
-                <span
-                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
-                    fineOpen
-                      ? 'border border-line text-fg-muted group-hover:text-fg'
-                      : 'bg-elevated text-fg ring-1 ring-line-strong'
-                  }`}
-                >
+                <span className={discloseChip(fineOpen)}>
                   {fineOpen ? t('Hide') : t('Show')}
                 </span>
               </button>
@@ -2332,13 +2286,7 @@ export default function ThemeQuickSettingsRail({
               >
                 <ContrastGridThumb tones={contrastThumbTones} />
                 <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
-                <span
-                  className={`flex h-6 flex-shrink-0 items-center rounded-md px-2 text-mini font-semibold transition-colors ${
-                    contrastOpen
-                      ? 'border border-line text-fg-muted group-hover:text-fg'
-                      : 'bg-elevated text-fg ring-1 ring-line-strong'
-                  }`}
-                >
+                <span className={discloseChip(contrastOpen)}>
                   {contrastOpen ? t('Hide') : t('Show')}
                 </span>
               </button>
@@ -2657,6 +2605,7 @@ export default function ThemeQuickSettingsRail({
           exploringRandom={exploringRandom}
           onRandom={exploringRandom || access.gated ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
+          onDiscard={onDiscardRandom}
         />
       ))}
       </div>

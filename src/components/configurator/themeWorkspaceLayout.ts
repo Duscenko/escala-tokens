@@ -118,3 +118,15 @@ export const SELECT_LIST = 'rounded-lg border border-line-strong bg-app shadow-l
 export const SELECT_OPTION = 'w-full px-2.5 py-1.5 rounded-md text-left transition-colors'
 export const SELECT_OPTION_ON = 'bg-elevated text-fg font-medium'
 export const SELECT_OPTION_OFF = 'text-fg-muted hover:bg-surface hover:text-fg'
+
+/** The Show / Hide pill that discloses a section (Fine-tune, Contrast grid).
+ *  One size for every disclosure in the panels, taken from the Contrast grid's
+ *  — `h-6 px-2 text-mini` — so two stacked rows never carry two buttons. Open
+ *  is the quiet outline (the thing it reveals is the focus); closed is the
+ *  filled invitation. Put it on a `group` row so hover reaches the label. */
+export const discloseChip = (open: boolean) =>
+  `flex h-6 flex-shrink-0 items-center rounded-md px-2 text-mini font-semibold transition-colors ${
+    open
+      ? 'border border-line text-fg-muted group-hover:text-fg'
+      : 'bg-elevated text-fg ring-1 ring-line-strong'
+  }`

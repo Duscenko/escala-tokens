@@ -25,6 +25,7 @@ import {
   type AuthProblem,
 } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
+import { authLinkType } from '../../lib/authEmail'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 import { accountsEnabled, authProviders, supabase, type AuthProvider } from '../../lib/supabase'
 import { forgetLoginReturn, pathForNext, pendingNext, readLoginSearch, rememberReturn, workspaceReturnContext } from '../../lib/loginReturn'
@@ -38,9 +39,9 @@ const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
 
 type Mode = 'signin' | 'signup' | 'reset' | 'recovery'
 
-// Survives the dev double-mount so a recovery link is redeemed once and the
+// Survives the dev double-mount so a mailed link is redeemed once and the
 // mounted page still hears the result.
-let pendingRecovery: Promise<'ok' | 'invalid'> | null = null
+let pendingLink: Promise<'recovery' | 'session' | 'invalid-recovery' | 'invalid-other'> | null = null
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const FIELD = `h-12 w-full rounded-2xl border border-line bg-surface px-4 text-ui text-fg placeholder:text-fg-faint transition-colors hover:border-line-strong focus:border-line-strong ${FOCUS}`
@@ -160,7 +161,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [capsOn, setCapsOn] = useState(false)
-  const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | 'reset_link_invalid' | null>(null)
+  const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | 'reset_link_invalid' | 'confirm_link_invalid' | null>(null)
   const [done, setDone] = useState<string | null>(null)
 
   // A reset link lands here with a recovery session; show "choose a password".
@@ -201,32 +202,38 @@ export function LoginPage() {
     ;(view === 'recovery' ? passwordRef : emailRef).current?.focus()
   }, [view, done, loading])
 
-  // A recovery mail links here with ?token_hash=&type=recovery. Redeem it once,
-  // then drop it from the address bar so a refresh cannot reuse it.
+  // A mailed link lands here with ?token_hash=&type=. Recovery asks for a new
+  // password; confirmation, magic link and email change sign the person in.
+  // Redeem it once, then drop it from the address bar so a refresh cannot reuse it.
   useEffect(() => {
     if (!supabase) return
     const params = new URLSearchParams(window.location.search)
     const tokenHash = params.get('token_hash')
-    if (tokenHash && params.get('type') === 'recovery' && !pendingRecovery) {
+    const otpType = authLinkType(params.get('type'))
+    if (tokenHash && otpType && !pendingLink) {
       const url = new URL(window.location.href)
       url.searchParams.delete('token_hash')
       url.searchParams.delete('type')
       window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
-      pendingRecovery = supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(
-        ({ error }) => (error ? 'invalid' : 'ok'),
-        () => 'invalid' as const,
+      pendingLink = supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType }).then(
+        ({ error }) => {
+          if (error) return otpType === 'recovery' ? 'invalid-recovery' as const : 'invalid-other' as const
+          return otpType === 'recovery' ? 'recovery' as const : 'session' as const
+        },
+        () => (otpType === 'recovery' ? 'invalid-recovery' as const : 'invalid-other' as const),
       )
     }
-    if (!pendingRecovery) return
+    if (!pendingLink) return
     let live = true
-    void pendingRecovery.then((result) => {
+    void pendingLink.then((result) => {
       if (!live) return
-      pendingRecovery = null
-      if (result === 'invalid') {
+      pendingLink = null
+      if (result === 'recovery') setMode('recovery')
+      else if (result === 'invalid-recovery') {
         setMode('reset')
         setProblem('reset_link_invalid')
-      } else {
-        setMode('recovery')
+      } else if (result === 'invalid-other') {
+        setProblem('confirm_link_invalid')
       }
     })
     return () => { live = false }
@@ -275,7 +282,7 @@ export function LoginPage() {
       if (r.ok) afterSignIn()
       else setProblem(r.problem)
     } else if (view === 'signup') {
-      const r = await signUpWithEmail(address, password)
+      const r = await signUpWithEmail(address, password, locale)
       setBusy(false)
       if (!r.ok) setProblem(r.problem)
       else if (r.value.needsConfirmation) setDone(t('We sent a confirmation link to {email}. Open it to finish creating your account.', { email: address }))
@@ -306,6 +313,7 @@ export function LoginPage() {
     : problem === 'password_mismatch' ? t('The passwords do not match.')
     : problem === 'rate_limited' ? t('Too many attempts. Try again in a few minutes.')
     : problem === 'reset_link_invalid' ? t('This reset link has expired or was already used. Send a new one.')
+    : problem === 'confirm_link_invalid' ? t('This confirmation link has expired or was already used. Send a new one.')
     : problem === 'unavailable' ? t('Something went wrong. Try again in a moment.')
     : null
 

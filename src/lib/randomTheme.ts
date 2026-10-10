@@ -210,6 +210,34 @@ export function stylePreviewFromRecipe(
   }
 }
 
+/** A theme that came out of Random has no name of its own: it is called
+ *  "Random" (then "Random 2", "Random 3"…) until the designer names it. */
+export const RANDOM_THEME_LABEL = 'Random'
+
+export function nextRandomLabel(labels: Record<string, string>): string {
+  const taken = new Set(Object.values(labels).map((label) => label.trim()))
+  if (!taken.has(RANDOM_THEME_LABEL)) return RANDOM_THEME_LABEL
+  let n = 2
+  while (taken.has(`${RANDOM_THEME_LABEL} ${n}`)) n++
+  return `${RANDOM_THEME_LABEL} ${n}`
+}
+
+/** Label to give `themeKey` after a Random tweak, or null to keep its name.
+ *  Only a name the designer never chose is replaced: the style's own label
+ *  ("Core / Minimalist" — now a lie, the look is random) or none at all. A
+ *  name they typed stays, and a theme already called Random stays as it is. */
+export function randomLabelAfterTweak(
+  themeKey: string,
+  labels: Record<string, string>,
+  origin: string | undefined,
+): string | null {
+  const current = labels[themeKey]?.trim()
+  if (current && (current === RANDOM_THEME_LABEL || current.startsWith(`${RANDOM_THEME_LABEL} `))) return null
+  const styleLabel = origin ? THEME_STYLE_PRESETS.find((preset) => preset.id === origin)?.label : undefined
+  const untouched = !current || current === styleLabel
+  return untouched ? nextRandomLabel(labels) : null
+}
+
 /** Module count on the Theme Preview artefacts board — keep in sync with
  *  `SystemCollage`'s `ScaledModule` rows. */
 export const COLLAGE_TILE_COUNT = 24
@@ -223,7 +251,8 @@ export function randomBoardAppearance(
 
 export type RandomThemeStart =
   | { status: 'upgrade' }
-  | { status: 'open'; key: string }
+  /** `minted`: a brand-new draft theme, not one the designer already had. */
+  | { status: 'open'; key: string; minted: boolean }
   | { status: 'error'; error: string }
 
 /**
@@ -236,7 +265,7 @@ export function startRandomTheme(previewTheme: string, needsPro: boolean): Rando
     const s = useDesignStore.getState()
     const own = myThemeKeys(s.themeOrder, s.themes)
     const key = own.includes(previewTheme) ? previewTheme : own[0]
-    if (key) return { status: 'open', key }
+    if (key) return { status: 'open', key, minted: false }
     return { status: 'upgrade' }
   }
   const s = useDesignStore.getState()
@@ -256,12 +285,13 @@ export function startRandomTheme(previewTheme: string, needsPro: boolean): Rando
   if ('error' in res) return { status: 'error', error: res.error }
   const next = useDesignStore.getState()
   next.setThemeFoundations(res.key, recipe.foundations)
+  next.setThemeLabel(res.key, nextRandomLabel(next.themeLabels))
   useDesignStore.setState({
     architectureOverrides: resetThemeSemantics(next.architectureOverrides, recipe.semantics, res.key),
   })
   loadGoogleFont(recipe.bodyFont)
   loadGoogleFont(recipe.headingFont)
-  return { status: 'open', key: res.key }
+  return { status: 'open', key: res.key, minted: true }
 }
 
 /** Guard: every pairing names a family the type picker actually ships. */

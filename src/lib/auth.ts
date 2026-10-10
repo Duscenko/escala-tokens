@@ -43,10 +43,29 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return error ? fail(error) : ok(undefined)
 }
 
-/** `needsConfirmation` is true when Supabase wants the email confirmed before a session exists. */
-export async function signUpWithEmail(email: string, password: string): Promise<AuthResult<{ needsConfirmation: boolean }>> {
+/** `needsConfirmation` is true when the account is waiting on the emailed link.
+ *  The branded sender (`/api/signup`) is the same card as password reset.
+ *  A 503 or a missing route falls back to Supabase's own mail. */
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  locale?: 'en' | 'es' | 'fr',
+): Promise<AuthResult<{ needsConfirmation: boolean }>> {
   if (!supabase) return { ok: false, problem: 'unavailable' }
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo() } })
+  const branded = await postAuthMail('/api/signup', { email, password, locale })
+  if (branded === 'ok') return ok({ needsConfirmation: true })
+  if (branded === 'rate_limited') return { ok: false, problem: 'rate_limited' }
+  if (branded === 'email_in_use') return { ok: false, problem: 'email_in_use' }
+  if (branded === 'weak_password') return { ok: false, problem: 'weak_password' }
+  if (branded === 'failed') return { ok: false, problem: 'unavailable' }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: redirectTo(),
+      data: locale ? { locale } : undefined,
+    },
+  })
   return error ? fail(error) : ok({ needsConfirmation: !data.session })
 }
 
@@ -61,18 +80,34 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
  *  A 503 or a missing route means that sender is not configured, so Supabase's
  *  own mail is the fallback — the person still gets a link. */
 export async function sendPasswordReset(email: string, locale: 'en' | 'es' | 'fr'): Promise<AuthResult> {
+  const branded = await postAuthMail('/api/password-reset', { email, locale })
+  if (branded === 'ok') return ok(undefined)
+  if (branded === 'rate_limited') return { ok: false, problem: 'rate_limited' }
+  if (branded === 'fallback') return requestPasswordReset(email)
+  return { ok: false, problem: 'unavailable' }
+}
+
+type Branded = 'ok' | 'fallback' | 'rate_limited' | 'email_in_use' | 'weak_password' | 'failed'
+
+async function postAuthMail(path: '/api/password-reset' | '/api/signup', body: Record<string, unknown>): Promise<Branded> {
   try {
-    const res = await fetch('/api/password-reset', {
+    const res = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, locale }),
+      body: JSON.stringify(body),
     })
-    if (res.status === 429) return { ok: false, problem: 'rate_limited' }
-    if (res.ok) return ok(undefined)
-    if (res.status === 503 || res.status === 404) return requestPasswordReset(email)
-    return { ok: false, problem: 'unavailable' }
+    if (res.status === 429) return 'rate_limited'
+    if (res.ok) return 'ok'
+    if (res.status === 409) return 'email_in_use'
+    if (res.status === 422) return 'weak_password'
+    if (res.status === 503 || res.status === 404) {
+      const data = await res.json().catch(() => null) as { error?: unknown } | null
+      if (data?.error === 'send_failed') return 'failed'
+      return 'fallback'
+    }
+    return 'failed'
   } catch {
-    return requestPasswordReset(email)
+    return 'fallback'
   }
 }
 
@@ -117,8 +152,12 @@ export async function saveDisplayName(name: string): Promise<AuthResult> {
   return error ? fail(error) : ok(undefined)
 }
 
-export async function resendSignupEmail(email: string): Promise<AuthResult> {
+export async function resendSignupEmail(email: string, locale?: 'en' | 'es' | 'fr'): Promise<AuthResult> {
   if (!supabase) return { ok: false, problem: 'unavailable' }
+  const branded = await postAuthMail('/api/signup', { email: email.trim(), locale, resend: true })
+  if (branded === 'ok') return ok(undefined)
+  if (branded === 'rate_limited') return { ok: false, problem: 'rate_limited' }
+  if (branded === 'failed') return { ok: false, problem: 'unavailable' }
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email: email.trim(),

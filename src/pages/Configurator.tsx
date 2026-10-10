@@ -431,6 +431,24 @@ function ExportMenuGlyph({ src }: { src: string }) {
   return <span aria-hidden className="h-3.5 w-3.5 flex-shrink-0 bg-current" style={{ WebkitMask: mask, mask }} />
 }
 
+/** Components with no design system: there is nothing to export yet, so the
+ *  primary action is the way to make one. Same white pill as Export. */
+function GoToGeneratorButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-caption font-medium text-black transition-opacity hover:opacity-90 active:scale-[0.98] ${EXPORT_FOCUS}`}
+    >
+      <span>{t('Go to generator')}</span>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 8h10M9 4l4 4-4 4" />
+      </svg>
+    </button>
+  )
+}
+
 function ExportPill({
   onExport,
   onSyncFigma,
@@ -634,7 +652,25 @@ export default function Configurator() {
   const [activeFoundation, setActiveFoundation] = useState<string>(() => incomingPlace?.foundation ?? 'color')
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
+  // A visitor with no account and no theme of their own lands in the CREATE
+  // STUDIO (Home's first step: style + accent on an unminted draft), not on a
+  // try-on card. Nothing is written until Continue, so there is no theme to
+  // re-mint after a delete and no Free slot spent on a look nobody chose.
+  const [guestFirstRun] = useState(() => {
+    if (!accountsEnabled || hasStoredSession()) return false
+    // A signed-out `library` link is the guest's first screen, not an empty Home.
+    const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
+    if (place && (place.tab !== 'foundations' || (place.workspace && place.workspace !== 'preview'))) return false
+    const live = useDesignStore.getState()
+    return myThemeKeys(live.themeOrder, live.themes).length === 0
+  })
+  /** The studio is open for someone with no session. Home's file list stays
+   *  an account surface; only its create studio is shown. */
+  const [guestStudio, setGuestStudio] = useState(guestFirstRun)
+  // Home's create studio is open (it takes the inspector; the file list yields).
+  const [homeCreating, setHomeCreating] = useState(guestFirstRun)
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
+    if (guestFirstRun) return 'library'
     const w = incomingPlace?.workspace
     // Home is the signed-in file list. A leftover `?section=library` after
     // sign-out must not bring it back.
@@ -657,10 +693,30 @@ export default function Configurator() {
   const openCreateTheme = () => {
     if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     setStylePreview(null)
+    if (accountsEnabled && !sessionAllowsHome) {
+      const live = useDesignStore.getState()
+      // A first system is made without an account. A second one asks for it.
+      if (myThemeKeys(live.themeOrder, live.themes).length === 0) openGuestStudio()
+      else goToLogin()
+      return
+    }
     openLibraryPage()
     setCreatePending(true)
   }
-  const openRandomTheme = (key: string) => {
+  /** The Random theme that was MINTED by pressing Random and is not saved yet.
+   *  Free reopens the one theme it already has instead — that is not a draft,
+   *  so nothing locks and nothing is discarded. */
+  const [randomDraftKey, setRandomDraftKey] = useState<string | null>(null)
+  const openRandomTheme = (key: string, minted = false) => {
+    // Random always lands IN the editor. It used to set only the workspace tab,
+    // so from Components (or Docs, About, an export) the theme was minted
+    // behind the page you were on and the editor never opened — a Random theme
+    // that existed without ever being seen, and could not be discarded.
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setRandomDraftKey(minted ? key : null)
     setStylePreview(null)
     setThemeHubSurface('artefacts')
     setActiveFoundation('color')
@@ -668,14 +724,35 @@ export default function Configurator() {
     changePreviewTheme(key)
     changeThemeWorkspaceTab('preview')
   }
+  /** Why code, Figma and the inspector wait while a Random theme is a draft. */
+  const randomDraftHint = t('Save this theme to open code, Figma sync, Variables and Docs.')
+  /** Drop the unsaved Random theme and land on Home, where "New design system"
+   *  offers Blank, From code and the rest. The theme was minted the moment
+   *  Random was pressed, so leaving without this would keep it in My themes. */
+  const discardRandomTheme = () => {
+    const key = randomDraftKey
+    if (!key) return
+    const live = useDesignStore.getState()
+    const next = myThemeKeys(live.themeOrder, live.themes).find((k) => k !== key)
+      ?? live.themeOrder.find((k) => k !== key && live.themes[k])
+    setExploringRandomKey(null)
+    setRandomDraftKey(null)
+    if (next) changePreviewTheme(next)
+    live.removeTheme(key)
+    openLibraryPage()
+    showToast(t('Random theme discarded.'))
+  }
   const startRandomFromMenu = () => {
+    // "Add new theme → Random" makes ANOTHER theme. Free has its one: ask for
+    // Pro instead of reopening or re-rolling the theme you are standing in.
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     const result = startRandomTheme(previewTheme, needsAnotherThemePro)
     if (result.status === 'upgrade') { setUpgradeOpen(true); return }
     if (result.status === 'error') {
       showToast(t(result.error, { count: MY_THEME_HARD_CAP }))
       return
     }
-    openRandomTheme(result.key)
+    openRandomTheme(result.key, result.minted)
   }
   const [resetOpen, setResetOpen] = useState(false)
   // The Generator's right-hand inspector column — the DOM node every view's
@@ -850,7 +927,8 @@ export default function Configurator() {
   )
   useEffect(() => {
     if (exploringRandomKey && exploringRandomKey !== previewTheme) setExploringRandomKey(null)
-  }, [previewTheme, exploringRandomKey])
+    if (randomDraftKey && randomDraftKey !== previewTheme) setRandomDraftKey(null)
+  }, [previewTheme, exploringRandomKey, randomDraftKey])
   const previewAppearance = previewSelection.theme === previewTheme
     ? previewSelection.appearance
     : (themeKinds[previewTheme] ?? 'light')
@@ -946,7 +1024,7 @@ export default function Configurator() {
   // theme of their own starts on a try-on of Cupertino / Glass — the board
   // is real, the store is untouched until they add the design system.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(() => {
-    if (hasStoredSession()) return null
+    if (guestFirstRun || hasStoredSession()) return null
     // A signed-out `library` link is the guest board, not an empty Home.
     const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
     if (place && (place.tab !== 'foundations' || (place.workspace && place.workspace !== 'preview'))) return null
@@ -1023,16 +1101,22 @@ export default function Configurator() {
     reopenAccountFiles(authUser.id)
   }, [authUser?.id, authEvent])
   const leaveHomeForGuest = useCallback(() => {
+    const live = useDesignStore.getState()
+    const studio = accountsEnabled && myThemeKeys(live.themeOrder, live.themes).length === 0
     setThemeEditor(false)
-    setStylePreview(guestStarterPreview())
     setCreatePending(false)
     setExploringRandomKey(null)
+    setRandomDraftKey(null)
     setSectionExportOpen(false)
     setExportMode(null)
     setDocsPanelOpen(false)
     setTab('foundations')
     setThemeHubSurface('artefacts')
-    setThemeWorkspaceTab('preview')
+    // No theme left: the same first screen a new visitor gets, the studio.
+    setStylePreview(studio ? null : guestStarterPreview())
+    setGuestStudio(studio)
+    setHomeCreating(studio)
+    setThemeWorkspaceTab(studio ? 'library' : 'preview')
   }, [])
   // Sign-out already blanked the store. Home is that file list, so it leaves
   // with the session. The board is the same first screen a visitor sees.
@@ -1042,9 +1126,9 @@ export default function Configurator() {
   }, [authEvent, leaveHomeForGuest])
   useEffect(() => {
     if (!accountsEnabled || access.loading || authUser) return
-    if (themeWorkspaceTab !== 'library') return
+    if (themeWorkspaceTab !== 'library' || guestStudio) return
     leaveHomeForGuest()
-  }, [accountsEnabled, access.loading, authUser, themeWorkspaceTab, leaveHomeForGuest])
+  }, [accountsEnabled, access.loading, authUser, themeWorkspaceTab, guestStudio, leaveHomeForGuest])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -1065,6 +1149,11 @@ export default function Configurator() {
   }, [access.loading, access.tier])
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
+  // From code adds another system, so it is a Pro door on Free, like Blank.
+  const openImport = () => {
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
+    setImportOpen(true)
+  }
   const [newSystemOpen, setNewSystemOpen] = useState(false)
   const [enterFolderTick, setEnterFolderTick] = useState(0)
   const [openStylesRequest, setOpenStylesRequest] = useState(false)
@@ -1242,6 +1331,7 @@ export default function Configurator() {
   /** Variables, Docs and Get code wait until the theme is yours and finished.
    *  During creation the tabs stay dimmed and a short toast explains why. */
   const themeTablesBlocked = (): string | null => {
+    if (randomDraftKey && randomDraftKey === previewTheme) return randomDraftHint
     if (stylePreview) return t('Add this style to open Variables and Docs')
     if (setupStep != null || access.gated) {
       return t('Finish customizing your theme to see full Variables and Docs.')
@@ -1279,6 +1369,10 @@ export default function Configurator() {
     }
   }
   const openCodeForTheme = (key: string) => {
+    if (randomDraftKey && randomDraftKey === key) {
+      showToast(randomDraftHint, undefined, true)
+      return
+    }
     if (themeWorkspaceTab === 'preview') {
       const reason = themeTablesBlocked()
       if (reason) { showToast(reason, undefined, true); return }
@@ -1307,6 +1401,10 @@ export default function Configurator() {
    * checked, and it is a user-editable field with its own default rule.
    */
   const syncFigmaForTheme = (key: string) => {
+    if (randomDraftKey && randomDraftKey === key) {
+      showToast(randomDraftHint, undefined, true)
+      return
+    }
     changePreviewTheme(key)
     chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds))
     setThemeWorkspaceTab('preview')
@@ -1381,7 +1479,19 @@ export default function Configurator() {
     setTab('foundations')
     setThemeWorkspaceTab('library')
   }
+  const openGuestStudio = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setStylePreview(null)
+    setGuestStudio(true)
+    setHomeCreating(true)
+    setThemeWorkspaceTab('library')
+  }
   const openSystemStyles = () => {
+    // A System style is a way to START another theme, so it is Pro on Free.
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     openLibraryPage()
     setOpenStylesRequest(true)
   }
@@ -1608,7 +1718,7 @@ export default function Configurator() {
     header = { Icon: SaveIcon, title: 'System library', subtitle: 'Save, restore and manage your design systems.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
-        <SaveView onImport={() => setImportOpen(true)} onNewSystem={() => setNewSystemOpen(true)} />
+        <SaveView onImport={openImport} onNewSystem={() => setNewSystemOpen(true)} />
       </div>
     )
     centerKey = 'export-save'
@@ -1740,9 +1850,9 @@ export default function Configurator() {
           <button
             type="button"
             onClick={() => selectFoundation('color')}
-            className="h-8 px-2 text-body font-medium text-fg-muted hover:text-fg transition-colors flex-shrink-0"
+            className="h-8 rounded-lg border border-line bg-app px-2.5 text-body font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
-            Edit Color
+            {t('Edit Color')}
           </button>
           <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-44 lg:w-52 min-w-[8rem] focus-within:border-line-strong transition-colors">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
@@ -1837,6 +1947,9 @@ export default function Configurator() {
     : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
+  // Components before any design system exists: no Export (nothing to ship),
+  // and the section tags live in ☰. "Go to generator" is the way forward.
+  const componentsWithoutSystem = tab === 'components' && myThemeKeys(themeOrder, themes).length === 0
   const handleNav = (key: TopNavKey) => {
     if (key === 'pricing') window.location.assign(PRICING_PATH)
     else if (key === 'variables') {
@@ -1866,11 +1979,22 @@ export default function Configurator() {
   // and Home omit the foundation icons — a Color click there would leave the
   // page. Docs still jumps sections from the inspector TOC (`OnThisPage`).
   const themeWorkspaceRailVisible = themesCanvas && !themeHubConnecting
-  const homeRailOnly = (themeWorkspaceTab === 'library' && sessionAllowsHome)
+  const homeAllowed = sessionAllowsHome || guestStudio
+  const homeRailOnly = (themeWorkspaceTab === 'library' && homeAllowed)
     || themeWorkspaceTab === 'code'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
-  const [homeCreating, setHomeCreating] = useState(false)
   const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
+  // The guest studio ends when the visitor leaves it. Away from the Generator
+  // with a theme already made (step 1 mints it), coming back opens that theme
+  // on the board, not a second studio.
+  useEffect(() => {
+    if (!guestStudio) return
+    if (themeWorkspaceTab !== 'library') { setGuestStudio(false); return }
+    if (themesCanvas) return
+    if (myThemeKeys(themeOrder, themes).length === 0) return
+    setGuestStudio(false)
+    setThemeWorkspaceTab('preview')
+  }, [guestStudio, themeWorkspaceTab, themesCanvas, themeOrder, themes])
   const homePage = homeFileBrowser
   // ── The theme's accent, scoped to the Generator's rail + canvas card ──
   // The PLATFORM (TopNav, inspector, Home) keeps Escala's violet on `:root`.
@@ -1980,11 +2104,14 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
+        navInMenu={componentsWithoutSystem}
         onOpenLibrary={openLibraryPage}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.
-        exportAction={((tab === 'foundations' && !(themesCanvas && themeWorkspaceTab === 'library')) || tab === 'components') ? (
+        exportAction={componentsWithoutSystem ? (
+          <GoToGeneratorButton onClick={() => handleNav('variables')} />
+        ) : ((tab === 'foundations' && !(themesCanvas && themeWorkspaceTab === 'library')) || tab === 'components') ? (
           <ExportPill
             onExport={openSectionExport}
             onSyncFigma={openFigmaSyncPage}
@@ -1994,7 +2121,9 @@ export default function Configurator() {
           />
         ) : undefined}
         brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
-        brandEdge={!homePage}
+        // No divider in the header when the section tags are folded into ☰:
+        // the brand block is just a title there, not the head of a column.
+        brandEdge={!homePage && !componentsWithoutSystem}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
@@ -2015,7 +2144,7 @@ export default function Configurator() {
             onOpenTheme={openThemePreviewPage}
             onCreateTheme={openCreateTheme}
             onStartRandom={startRandomFromMenu}
-            onImport={() => setImportOpen(true)}
+            onImport={openImport}
             onOpenStyles={openSystemStyles}
             onOpenComponents={() => changeTab('components')}
             onSyncFigma={() => syncFigmaForTheme(previewTheme)}
@@ -2098,12 +2227,26 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly || !themeWorkspaceRailVisible ? 'ml-3' : ''} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
                 title, and the tab strip above owns the header row. */}
-            {!skipCenterHeader && (
+            {/* Components uses Variables' header band — same 52px / px-4 shell,
+                the section named at the left (the active category, where
+                Variables names its collection) and the controls at the right —
+                so the two canvases read as one product. */}
+            {tab === 'components' && !skipCenterHeader && (
+              <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
+                <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
+                  {t(activeComponent?.category ?? 'Components')}
+                </h2>
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                  {header.right}
+                </div>
+              </div>
+            )}
+            {!skipCenterHeader && tab !== 'components' && (
               <CenterHeader
                 Icon={header.Icon}
                 title={header.title}
@@ -2122,7 +2265,7 @@ export default function Configurator() {
                   NEW header for the fade-out duration — a title/content mismatch.
                   Opacity only — a y-nudge on the whole canvas made Groups and
                   the icon rail jump even after they were the same layout. */}
-              {themesCanvas && (themeWorkspaceTab === 'preview' || (themeWorkspaceTab === 'library' && !sessionAllowsHome)) ? (
+              {themesCanvas && (themeWorkspaceTab === 'preview' || (themeWorkspaceTab === 'library' && !homeAllowed)) ? (
                 <motion.div
                   key="theme-preview"
                   className="h-full"
@@ -2138,13 +2281,14 @@ export default function Configurator() {
                     onGetCode={() => openCodeForTheme(previewTheme)}
                     onCreateTheme={openCreateTheme}
                     exploringRandom={exploringRandomKey === previewTheme}
-                    onExploringRandomEnd={() => setExploringRandomKey(null)}
+                    onExploringRandomEnd={() => { setExploringRandomKey(null); setRandomDraftKey(null) }}
+                    randomDraft={randomDraftKey === previewTheme}
+                    onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     previewPlatform={previewPlatform}
                     onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
-                    onStylePreviewChange={setStylePreview}
                     onNeedAccount={() => setRegisterOpen(true)}
                     onAdoptStyle={changePreviewTheme}
                     onSelectTheme={changePreviewTheme}
@@ -2190,7 +2334,7 @@ export default function Configurator() {
                     }}
                   />
                 </motion.div>
-              ) : themesCanvas && themeWorkspaceTab === 'library' && sessionAllowsHome ? (
+              ) : themesCanvas && themeWorkspaceTab === 'library' && homeAllowed ? (
                 <motion.div
                   key="theme-library"
                   className="h-full"
@@ -2199,6 +2343,8 @@ export default function Configurator() {
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <ThemeLibraryPage
+                    key={guestStudio ? 'guest-studio' : 'home'}
+                    studioOnly={guestStudio}
                     previewTheme={previewTheme}
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
@@ -2220,7 +2366,7 @@ export default function Configurator() {
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
-                    onImport={() => setImportOpen(true)}
+                    onImport={openImport}
                     enterFolderTick={enterFolderTick}
                     openStylesRequest={openStylesRequest}
                     onStylesRequestHandled={() => setOpenStylesRequest(false)}

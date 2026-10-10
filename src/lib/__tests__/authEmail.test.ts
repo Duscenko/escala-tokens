@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PUBLIC_SITE, RECOVERY_TEMPLATE_HREF, recoveryEmail, recoveryPageUrl } from '../authEmail'
+import {
+  AUTH_LOGO_URL,
+  PUBLIC_SITE,
+  RECOVERY_TEMPLATE_HREF,
+  SIGNUP_TEMPLATE_HREF,
+  authActionEmail,
+  confirmationEmail,
+  recoveryEmail,
+  recoveryPageUrl,
+} from '../authEmail'
 
 const { resetPasswordForEmail } = vi.hoisted(() => ({
   resetPasswordForEmail: vi.fn(async () => ({ error: null })),
@@ -29,6 +38,7 @@ describe('recoveryEmail', () => {
       const mail = recoveryEmail({ locale, email: 'ada@studio.com', url: LINK })
       expect(mail.subject.toLowerCase()).toContain('escala')
       expect(mail.html).toContain('Escala Tokens')
+      expect(mail.html).toContain(`src="${AUTH_LOGO_URL}"`)
       expect(mail.html).toContain('background:#18181b')
       expect(mail.html).toContain(`${PUBLIC_SITE}/privacy`)
       expect(mail.html).toContain(`${PUBLIC_SITE}/terms`)
@@ -36,6 +46,26 @@ describe('recoveryEmail', () => {
       expect(mail.text).toContain(LINK)
       expect(mail.text).toContain('ada@studio.com')
     }
+  })
+
+  it('paints confirmation with the same card as recovery', () => {
+    const confirmUrl = 'https://www.escalatokens.com/login?token_hash=abc&type=signup'
+    for (const locale of ['en', 'es', 'fr'] as const) {
+      const reset = recoveryEmail({ locale, email: 'ada@studio.com', url: LINK })
+      const confirm = confirmationEmail({ locale, email: 'ada@studio.com', url: confirmUrl })
+      expect(confirm.subject.toLowerCase()).toContain('escala')
+      expect(confirm.html).toContain(`src="${AUTH_LOGO_URL}"`)
+      expect(confirm.html).toContain('background:#18181b')
+      expect(confirm.html).toContain('background:#7f56d9')
+      expect(confirm.html).toContain(`${PUBLIC_SITE}/privacy`)
+      expect(confirm.html).toContain(`${PUBLIC_SITE}/terms`)
+      expect(confirm.html).toContain('href="https://www.escalatokens.com/login?token_hash=abc&amp;type=signup"')
+      const resetHeader = reset.html.slice(reset.html.indexOf('background:#18181b'), reset.html.indexOf('background:#7f56d9'))
+      const confirmHeader = confirm.html.slice(confirm.html.indexOf('background:#18181b'), confirm.html.indexOf('background:#7f56d9'))
+      expect(confirmHeader).toBe(resetHeader)
+    }
+    const template = confirmationEmail({ locale: 'en', email: '{{ .Email }}', url: SIGNUP_TEMPLATE_HREF })
+    expect(template.html).toContain(`href="${SIGNUP_TEMPLATE_HREF}"`)
   })
 
   it('keeps a raw ampersand in the Supabase template href', () => {
@@ -54,6 +84,29 @@ describe('recoveryEmail', () => {
     expect(mail.html).not.toContain('a<b>')
     expect(mail.html).toContain('a&lt;b&gt;&amp;&quot;@x.com')
     expect(mail.html).toContain('token_hash=1&amp;type=recovery')
+  })
+})
+
+describe('authActionEmail', () => {
+  it('uses the brand card for every action the hook can send', () => {
+    const url = 'https://www.escalatokens.com/login?token_hash=abc&type=magiclink'
+    for (const action of ['signup', 'invite', 'magiclink', 'recovery', 'email_change'] as const) {
+      const mail = authActionEmail({ locale: 'en', email: 'ada@studio.com', action, url })
+      expect(mail.html).toContain(`src="${AUTH_LOGO_URL}"`)
+      expect(mail.html).toContain('background:#18181b')
+      expect(mail.html).toContain('ada@studio.com')
+    }
+    const code = authActionEmail({
+      locale: 'es',
+      email: 'ada@studio.com',
+      action: 'reauthentication',
+      url: '',
+      code: '305805',
+    })
+    expect(code.html).toContain(`src="${AUTH_LOGO_URL}"`)
+    expect(code.html).toContain('305805')
+    expect(code.text).toContain('305805')
+    expect(code.subject.toLowerCase()).toContain('escala')
   })
 })
 
