@@ -1,33 +1,28 @@
-// The Escala Pro licence key, as this browser knows it.
+// Escala Pro, as this page knows it.
+//
+// Pro belongs to the ACCOUNT. Every check below carries the session, and the
+// server answers `valid` when the account is Pro — whether or not this browser
+// holds a key. So signing in on another browser, or on the other host, is
+// enough. The key is how an account BECOMES Pro, once:
 //
 // Polar emails a key after payment and the person pastes it once. The server
-// stores it in an HttpOnly cookie (`sd_licence`) that this page cannot read.
+// stores it in an HttpOnly cookie (`sd_licence`) that this page cannot read,
+// and records the signed-in account as Pro (`api/_accountPlan.ts`).
 // A key left in localStorage (`sd-licence-key`) from before that cookie is
 // posted once and then deleted. It is NEVER in the zustand store — same rule
 // as the GitHub token and the publish claims: a credential must not ride along
 // in an exported snapshot, a saved system or a GitHub push.
 //
 // Whether a key is GOOD is the server's call (`/api/license` → Polar). This
-// module asks once per page load and tells React what it learned. Nothing here
-// enforces anything: `api/tokens.ts` does that.
+// module asks once per page load, and again when the signed-in account
+// changes, and tells React what it learned. Nothing here enforces anything:
+// `api/tokens.ts` does that.
 
 import { useSyncExternalStore } from 'react'
+import { supabase } from './supabase'
 
 const STORAGE_KEY = 'sd-licence-key'
 const ACTIVATION_KEY = 'sd-licence-activation'
-/** Which account the server has recorded as holding this browser's key
- *  (`useAccountPlanSync`). An id, not a credential. Dropped whenever the key
- *  changes, so the next good key is recorded again. */
-export const ACCOUNT_RECORDED_KEY = 'sd-licence-account'
-
-function forgetAccountRecorded(): void {
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(ACCOUNT_RECORDED_KEY)
-  } catch {
-    // Nothing stored, nothing to drop.
-  }
-}
-
 export type LicenceStatus =
   /** No key saved. */
   | 'none'
@@ -48,6 +43,9 @@ export interface LicenceState {
   expiresAt: string | null
   /** Whether a key is saved (the key itself is never handed to the UI). */
   hasKey: boolean
+  /** What made it `valid`: a key in this browser, or the signed-in account's
+   *  own record. Absent while not valid. */
+  source?: 'key' | 'account'
 }
 
 // `vite dev` replaces this when `.env.local` has VITE_DEV_LICENCE_KEY.
@@ -139,9 +137,30 @@ interface ServerAnswer {
   stored?: unknown
   activationId?: unknown
   hasKey?: unknown
+  via?: unknown
 }
 
 let lastStored = false
+
+/** The account this page is signed in as, when there is one. `null` when
+ *  signed out or when accounts are off. */
+async function sessionOf(): Promise<{ userId: string; token: string } | null> {
+  try {
+    const session = (await supabase?.auth.getSession())?.data.session
+    return session?.access_token && session.user?.id ? { userId: session.user.id, token: session.access_token } : null
+  } catch {
+    return null
+  }
+}
+
+/** The licence check sends the session so the server can answer for the
+ *  account. Also remembers WHO the answer is for (`checkedFor`). */
+let checkedFor: string | null = null
+async function sessionHeaders(): Promise<Record<string, string>> {
+  const session = await sessionOf()
+  checkedFor = session?.userId ?? null
+  return session ? { Authorization: `Bearer ${session.token}` } : {}
+}
 
 function fromAnswer(res: { status: number }, body: ServerAnswer | null, fallbackHasKey: boolean): LicenceState {
   const expiresAt = typeof body?.expiresAt === 'string' ? body.expiresAt : null
@@ -156,7 +175,11 @@ function fromAnswer(res: { status: number }, body: ServerAnswer | null, fallback
     return { status: 'unavailable', expiresAt: null, hasKey }
   }
   const hasKey = body.stored === true || body.hasKey === true || fallbackHasKey
-  if (body.valid === true) return { status: 'valid', expiresAt, hasKey: true }
+  if (body.valid === true) {
+    // Pro by the account: there may be no key here at all.
+    if (body.via === 'account') return { status: 'valid', expiresAt, hasKey: body.stored === true, source: 'account' }
+    return { status: 'valid', expiresAt, hasKey: true, source: 'key' }
+  }
   if (body.reason === 'expired') return { status: 'expired', expiresAt, hasKey: body.stored === true }
   if (body.reason === 'activation_limit') return { status: 'activation_limit', expiresAt, hasKey: true }
   if (body.reason === 'unavailable') return { status: 'unavailable', expiresAt: null, hasKey }
@@ -168,7 +191,7 @@ async function postKey(key: string): Promise<LicenceState> {
   const activation = readActivation()
   const res = await fetch('/api/license', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await sessionHeaders()) },
     body: JSON.stringify({ key, ...(activation ? { activationId: activation } : {}) }),
   })
   const body = (await res.json().catch(() => null)) as ServerAnswer | null
@@ -176,7 +199,7 @@ async function postKey(key: string): Promise<LicenceState> {
 }
 
 async function readCookieLicence(): Promise<LicenceState> {
-  const res = await fetch('/api/license')
+  const res = await fetch('/api/license', { headers: await sessionHeaders() })
   const body = (await res.json().catch(() => null)) as ServerAnswer | null
   return fromAnswer(res, body, false)
 }
@@ -187,7 +210,6 @@ async function readCookieLicence(): Promise<LicenceState> {
 export async function activateLicence(raw: string): Promise<LicenceState> {
   const key = raw.trim()
   if (!key) return state
-  forgetAccountRecorded()
   setState({ status: 'checking', expiresAt: null, hasKey: true })
   lastStored = false
   let result: LicenceState
@@ -212,22 +234,48 @@ export function clearLicence(): void {
   memoryKey = null
   writeKey(null)
   writeActivation(null)
-  forgetAccountRecorded()
   checkedOnce = true
   setState({ status: 'none', expiresAt: null, hasKey: false })
-  void fetch('/api/license', { method: 'DELETE' }).catch(() => {})
+  // The key leaves this browser. An account that is Pro stays Pro, so ask
+  // again once the cookie is gone.
+  void fetch('/api/license', { method: 'DELETE' })
+    .then(() => readCookieLicence())
+    .then(setState)
+    .catch(() => {})
 }
 
-/** One validation per page load. A key still in localStorage is posted once
- *  so it can move into the cookie. With no local key, GET asks whether the
- *  cookie is there — the page cannot see an HttpOnly cookie itself. */
-export function ensureLicenceChecked(): void {
-  if (checkedOnce) return
-  checkedOnce = true
+function runCheck(): void {
   const job = memoryKey
     ? postKey(memoryKey).catch(() => ({ status: 'unavailable' as const, expiresAt: null, hasKey: true }))
     : readCookieLicence().catch(() => state)
   void job.then(setState)
+}
+
+let watchingAccount = false
+/** The answer is per account, so a sign-in or a sign-out on this page asks
+ *  again. Supabase repeats SIGNED_IN on every tab focus: only a CHANGE of
+ *  account counts, or this would hammer a rate-limited endpoint. */
+function watchAccount(): void {
+  if (watchingAccount || !supabase) return
+  watchingAccount = true
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'INITIAL_SESSION') return
+    const userId = session?.user?.id ?? null
+    if (userId === checkedFor) return
+    checkedFor = userId
+    runCheck()
+  })
+}
+
+/** One validation per page load, plus one per change of account. A key still
+ *  in localStorage is posted once so it can move into the cookie. With no
+ *  local key, GET asks whether the cookie is there — the page cannot see an
+ *  HttpOnly cookie itself — and whether the account is Pro without one. */
+export function ensureLicenceChecked(): void {
+  if (checkedOnce) return
+  checkedOnce = true
+  watchAccount()
+  runCheck()
 }
 
 function subscribe(listener: () => void): () => void {

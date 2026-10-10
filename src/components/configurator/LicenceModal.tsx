@@ -122,13 +122,17 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
 
         {active ? (
           <div className="mt-5 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => { clearLicence(); setAttempt(null) }}
-              className={`min-w-0 truncate rounded-md px-1 py-1 text-left text-caption font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS}`}
-            >
-              {t('Remove key from this browser')}
-            </button>
+            {/* Pro by the account, with no key here: there is nothing in this
+                browser to remove. */}
+            {licence.hasKey && (
+              <button
+                type="button"
+                onClick={() => { clearLicence(); setAttempt(null) }}
+                className={`min-w-0 truncate rounded-md px-1 py-1 text-left text-caption font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS}`}
+              >
+                {t('Remove key from this browser')}
+              </button>
+            )}
             <button
               ref={doneRef}
               type="button"

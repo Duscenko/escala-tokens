@@ -7,6 +7,7 @@ import { slugify } from './utils'
 import { isPublishId } from './publishId'
 import { trackEvent } from './analytics'
 import { getLicenceActivation, getLicenceKey, onLicenceChange } from './licence'
+import { supabase } from './supabase'
 
 /** Ephemeral UI feedback for an explicit user-initiated Figma publish. This
  * deliberately does not live in the persisted design-system store: a spinner
@@ -196,6 +197,8 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     ...(opts.section ? { section: opts.section } : {}),
   }))
 
+  const session = (await supabase?.auth.getSession().catch(() => null))?.data.session?.access_token ?? ''
+
   async function postTo(key: string): Promise<Response | null> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     const claim = getStoredClaim(key)
@@ -204,6 +207,9 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     if (licence) headers['x-escala-license'] = licence
     const activation = getLicenceActivation()
     if (activation) headers['x-escala-activation'] = activation
+    // Pro belongs to the account: a browser with no key still publishes when
+    // the signed-in account is Pro. `Authorization` is taken by the claim.
+    if (session) headers['x-escala-session'] = session
     try {
       return await fetch(`/api/tokens?project=${encodeURIComponent(key)}`, {
         method: 'POST', headers, body,

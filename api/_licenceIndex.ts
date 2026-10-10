@@ -28,7 +28,13 @@ async function writePublic(key: string, json: string): Promise<void> {
 
 /** Best-effort. A failure here must not turn a successful publish into a 500. */
 export async function rememberLicenceSlug(key: string, project: string): Promise<void> {
-  const blobKey = licenceSlugKey(licenceKeyHash(key))
+  await rememberLicenceSlugHash(licenceKeyHash(key), project)
+}
+
+/** The same index, for a publish that was allowed by the account's record:
+ *  the server holds that key's hash, never the key. */
+export async function rememberLicenceSlugHash(hash: string, project: string): Promise<void> {
+  const blobKey = licenceSlugKey(hash)
   const existing = await readJsonBlob<{ projects?: unknown }>(blobKey)
   const projects = Array.isArray(existing?.projects)
     ? existing.projects.filter((p): p is string => typeof p === 'string' && p.length > 0)

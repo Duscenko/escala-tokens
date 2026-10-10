@@ -298,7 +298,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // This browser holds a good key: record it against the account, so the
     // next sign-in is Pro from a browser that does not.
     if (decision.via === 'key' && licenceKey) {
-      await bindAccountPlan(user.id, licenceKeyHash(licenceKey), checked?.expiresAt ?? null, now)
+      await bindAccountPlan(user.id, licenceKeyHash(licenceKey), checked?.expiresAt ?? null, now, { claim: true })
     }
     // The one line that explains a Pro account signing in as Free: which host
     // opened, whether a key came with it, and which proofs had an answer.

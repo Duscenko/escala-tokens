@@ -2904,6 +2904,7 @@ function readLicenceState() {
 var STORAGE_KEY, DEV_LICENCE, memoryKey, state;
 var init_licence = __esm({
   "src/lib/licence.ts"() {
+    init_supabase();
     STORAGE_KEY = "sd-licence-key";
     DEV_LICENCE = null;
     memoryKey = initialKey();

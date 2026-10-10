@@ -7,8 +7,9 @@ import {
 } from '../src/lib/accountPlan.js'
 import { forgetBlob, learnBlobBase, readJsonBlob } from './_blob.js'
 
-// "Does this account have Escala Pro?" Two answers live here, and plugin
-// sign-in asks both.
+// "Does this account have Escala Pro?" Two answers live here. The web's
+// licence check, a publish and plugin sign-in all ask both, so an account is
+// Pro in every browser it signs in to, not only in the one that holds the key.
 //
 // 1. The account's own record. A signed-in browser proved a key, so the server
 //    wrote "this account is Pro until <date>" (`lib/accountPlan.ts`). It needs
@@ -130,24 +131,32 @@ export async function accountPlanFor(userId: string, now = new Date()): Promise<
 
 /** Record that this account holds a key Polar just accepted. Best-effort: a
  *  failure here must not fail the licence check or the sign-in around it.
- *  Skips the write when the record already says the same thing. */
+ *  Skips the write when the record already says the same thing.
+ *
+ *  `claim` is for a key that only RODE ALONG in the browser's cookie, as
+ *  opposed to one the person just pasted. It records the account only when the
+ *  key has no account yet (or already names this one). Without that, signing
+ *  a second account in on a browser that holds someone's key — which the
+ *  plugin's "Switch account" makes one click — would hand that account Pro
+ *  everywhere, for good. */
 export async function bindAccountPlan(
   userId: string,
   keyHash: string,
   expiresAt: string | null,
   now = new Date(),
+  opts: { claim?: boolean } = {},
 ): Promise<boolean> {
   if (!userId || !keyHash) return false
   try {
-    const next = accountPlanRecord(expiresAt, keyHash, now)
-    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(userId), { fresh: true })
-    if (!accountPlanChanged(stored, next)) return true
-    await writePublic(accountPlanKey(userId), next)
+    const id = accountId(userId)
     const index = await readJsonBlob<{ accounts?: unknown }>(licenceAccountsKey(keyHash), { fresh: true })
     const accounts = Array.isArray(index?.accounts)
       ? index.accounts.filter((a): a is string => typeof a === 'string' && a.length > 0)
       : []
-    const id = accountId(userId)
+    if (opts.claim && accounts.length > 0 && !accounts.includes(id)) return false
+    const next = accountPlanRecord(expiresAt, keyHash, now)
+    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(userId), { fresh: true })
+    if (accountPlanChanged(stored, next)) await writePublic(accountPlanKey(userId), next)
     if (!accounts.includes(id)) {
       accounts.push(id)
       await writePublic(licenceAccountsKey(keyHash), { accounts: accounts.slice(-MAX_ACCOUNTS_PER_KEY) })
@@ -156,6 +165,39 @@ export async function bindAccountPlan(
   } catch {
     return false
   }
+}
+
+export interface AccountPro {
+  /** ISO instant, or `'lifetime'`. */
+  until: string
+  via: 'account' | 'email'
+  /** The key that proved it, when the proof is the account's record. A publish
+   *  indexes the system under it so a refund can find it. */
+  keyHash?: string
+}
+
+/** Is this signed-in account Pro, whatever browser is asking? The account's
+ *  record first, then a Polar grant on its email. `null` is a definite no.
+ *  `'unknown'` means a proof could not be read, and must not become Free. */
+export async function accountPro(
+  user: { id: string; email: string },
+  now = new Date(),
+): Promise<AccountPro | null | 'unknown'> {
+  let record: AccountPlanRecord | null = null
+  let recordUnknown = false
+  try {
+    record = await readJsonBlob<AccountPlanRecord>(accountPlanKey(user.id), { fresh: true })
+  } catch {
+    recordUnknown = true
+  }
+  const state = accountPlanState(record, now)
+  if (typeof state === 'string' && state !== 'revoked') {
+    return { until: state, via: 'account', ...(record?.keyHash ? { keyHash: record.keyHash } : {}) }
+  }
+  const emailUntil = await proUntilForEmail(user.email, now)
+  if (typeof emailUntil === 'string' && emailUntil !== 'unknown') return { until: emailUntil, via: 'email' }
+  if (recordUnknown || emailUntil === 'unknown') return 'unknown'
+  return null
 }
 
 /** A refund: mark every account that proved this key. Returns how many. */

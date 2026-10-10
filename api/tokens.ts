@@ -13,7 +13,9 @@ import { entitlementAt } from '../src/lib/entitlement.js'
 import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
-import { rememberLicenceSlug } from './_licenceIndex.js'
+import { rememberLicenceSlug, rememberLicenceSlugHash } from './_licenceIndex.js'
+import { accountPro } from './_accountPlan.js'
+import { userFromJwt } from './_authUser.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import { isActivationId } from '../src/lib/polar.js'
 
@@ -26,7 +28,7 @@ import { isActivationId } from '../src/lib/polar.js'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-escala-license, x-escala-activation',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-escala-license, x-escala-activation, x-escala-session',
 }
 
 /** A full system serialises to a few hundred KB; anything far past that is
@@ -174,31 +176,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const headerKey = req.headers['x-escala-license']
       const fromHeader = (Array.isArray(headerKey) ? headerKey[0] : headerKey)?.trim() ?? ''
       const licenceKey = (fromHeader || readLicenceCookie(req.headers.cookie)).slice(0, 200)
-      if (!licenceKey) {
-        return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
-      }
       const activationRaw = req.headers['x-escala-activation']
       const activationId = (Array.isArray(activationRaw) ? activationRaw[0] : activationRaw)?.trim() ?? ''
-      const licence = await checkLicenceKey(licenceKey, isActivationId(activationId) ? activationId : null)
-      if (licence.reason === 'unavailable') {
+      const licence = licenceKey
+        ? await checkLicenceKey(licenceKey, isActivationId(activationId) ? activationId : null)
+        : null
+      if (licence?.reason === 'unavailable') {
         logLicence(licenceKey, project, false, 'unavailable')
         // Polar is down: that is not the customer's fault, so say "retry", not "pay".
         res.setHeader('Retry-After', '30')
         return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
       }
-      if (!licence.valid) {
-        logLicence(licenceKey, project, false, licence.reason ?? 'invalid')
-        return res.status(402).json({
-          error: licence.reason === 'expired'
-            ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
-            : licence.reason === 'activation_limit'
-              ? 'This licence has no free activation left. Free one in Polar, or import tokens.json in the plugin by hand.'
-              : LICENCE_REQUIRED_MESSAGE,
-        })
+      if (licence?.valid) {
+        logLicence(licenceKey, project, true, null)
+        try { await rememberLicenceSlug(licenceKey, project) } catch { /* the refund webhook misses this slug; the publish itself stands */ }
+        licenceUntil = licence.expiresAt
+      } else {
+        // No good key in this browser. Pro belongs to the account, so a
+        // signed-in publish asks the account before it is refused: the page
+        // sends its session, and the same record the licence check reads
+        // decides. Otherwise the UI would say Pro and the publish would 402.
+        const sessionRaw = req.headers['x-escala-session']
+        const session = (Array.isArray(sessionRaw) ? sessionRaw[0] : sessionRaw)?.trim() ?? ''
+        const user = session ? await userFromJwt(session) : null
+        const plan = user && user !== 'unconfigured' ? await accountPro(user) : null
+        if (plan === 'unknown') {
+          res.setHeader('Retry-After', '30')
+          return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
+        }
+        if (!plan) {
+          if (licenceKey) logLicence(licenceKey, project, false, licence?.reason ?? 'invalid')
+          return res.status(402).json({
+            error: licence?.reason === 'expired'
+              ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
+              : licence?.reason === 'activation_limit'
+                ? 'This licence has no free activation left. Free one in Polar, or import tokens.json in the plugin by hand.'
+                : LICENCE_REQUIRED_MESSAGE,
+          })
+        }
+        console.info(JSON.stringify({ evt: 'license', op: 'publish', project, valid: true, via: plan.via }))
+        if (plan.keyHash) {
+          try { await rememberLicenceSlugHash(plan.keyHash, project) } catch { /* as above */ }
+        }
+        licenceUntil = plan.until === 'lifetime' ? null : plan.until
       }
-      logLicence(licenceKey, project, true, null)
-      try { await rememberLicenceSlug(licenceKey, project) } catch { /* the refund webhook misses this slug; the publish itself stands */ }
-      licenceUntil = licence.expiresAt
     }
 
     const key = tokenBlobKey(project)

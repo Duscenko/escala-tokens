@@ -7,7 +7,6 @@ import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLicence, type LicenceStatus } from '../../lib/licence'
 import { consumeLicenceReturn, lookupPurchase } from '../../lib/licencePurchase'
-import { useAccountPlanSync } from '../../lib/useAccountPlanSync'
 import { LicenceModal } from './LicenceModal'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
@@ -45,7 +44,6 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   // PRO on this chip is a bought licence only. Promo / launch entitlements
   // still unlock product features, but they are not a paid plan to badge.
   const { status: licenceStatus } = useLicence()
-  useAccountPlanSync()
   const [menuOpen, setMenuOpen] = useState(false)
   const [licenceOpen, setLicenceOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)

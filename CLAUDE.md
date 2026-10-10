@@ -84,19 +84,32 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   (`API_BASE`), so an uncommitted change does nothing. Check `vercel ls --prod` before
 >   concluding a plugin-side fix "did not work".
 >
-> The rule now: a signed-in browser whose key Polar accepts records the ACCOUNT as Pro —
-> `account-plan/<sha256(userId)>.json` (`lib/accountPlan.ts`, `api/_accountPlan.ts`), written
-> by `/api/license` when the check carries the session (`useAccountPlanSync`) and by
-> `plugin-session?op=approve` when that browser holds the key. Plugin sign-in and every later
-> refresh (`withFreshPlan`) read three proofs in order: key in this browser → Polar grant on
-> the email → the account's record. The key itself is never stored; `keyHash` is how the
-> refund webhook finds the accounts to revoke (`revokeAccountPlans`). `approve` returns the
-> plan and logs one `plugin_plan` line naming which proofs had an answer — that line is how
-> this is diagnosed next time. `pluginSignInPlan.test.ts` runs the real handlers end to end.
-> - **The WEB's own Pro is still the key in this browser** (now shared across both hosts).
->   The account record feeds the plugin only: publishing still needs the key
->   (`api/tokens.ts`), so a web UI that said Pro from the record alone would promise a
->   publish that then 402s.
+> **The rule now: Pro belongs to the ACCOUNT, in every browser, on both hosts.** The first
+> version of this fix fed the account record to the PLUGIN only and left the web on the key
+> cookie — reported the same day as "Pro in one browser, Free in every other", which is the
+> same bug seen from the web. One record, three readers:
+> - **The record** is `account-plan/<sha256(userId)>.json` (`lib/accountPlan.ts`,
+>   `api/_accountPlan.ts`). The key is never stored; `keyHash` is how the refund webhook
+>   finds the accounts to revoke (`revokeAccountPlans`). `accountPro(user)` is the ONE
+>   question — the record first, then a Polar grant on the email.
+> - **The web** (`/api/license`): every licence check carries the session
+>   (`licence.ts` → `sessionHeaders`), and a browser with NO key gets `valid` with
+>   `via: 'account'`. `licence.ts` asks again when the signed-in account CHANGES
+>   (`watchAccount` — Supabase repeats SIGNED_IN on every tab focus, so it compares user ids
+>   or it would hammer a rate-limited endpoint). `LicenceState.source` says which proof it was.
+> - **A publish** (`api/tokens.ts`): with no good key, the `x-escala-session` header is
+>   checked against the same record before the 402. Without this the page would say Pro and
+>   the publish would refuse. `Authorization` there is the publish claim, hence the header.
+> - **The plugin** (`plugin-session`): sign-in and every later open (`withFreshPlan`) read
+>   key in this browser → email grant → the record. `approve` returns the plan and logs one
+>   `plugin_plan` line naming which proofs had an answer.
+> - **Who gets recorded:** a key someone PASTES while signed in always records that account.
+>   A key that only rode along in the cookie records the account only if the key has no
+>   account yet (`bindAccountPlan … { claim: true }`). Otherwise signing a second account in
+>   on a browser that holds a key — one click with the plugin's "Switch account" — would hand
+>   it Pro everywhere, for good. That second account is still Pro IN that browser, as before.
+> - `pluginSignInPlan.test.ts` runs the real handlers end to end for all of the above.
+>   Diagnose with `vercel logs -q plugin_plan` / `-q account_plan` before changing anything.
 > - **Decided 2026-10-10: NO host redirect yet.** One canonical host is still the right end
 >   state — a session and a design store on the apex do not exist on `www` — but themes,
 >   folders and the parked account files (`sd-account-files:*`) live ONLY in that origin's
