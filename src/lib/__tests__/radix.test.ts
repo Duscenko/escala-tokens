@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { generateRadixColors } from '../../../test-fixtures/upstream-generate-radix-colors'
@@ -132,7 +132,22 @@ describe('the generated reference table is current', () => {
     const path = resolve(root, 'src/lib/color/radixReference.ts')
     const before = readFileSync(path, 'utf8')
     execFileSync('npx', ['tsx', 'scripts/gen-radix-reference.ts'], { cwd: root, stdio: 'pipe' })
-    expect(readFileSync(path, 'utf8')).toBe(before)
+    const after = readFileSync(path, 'utf8')
+    // The generator is a pile of `**` / `atan2` / `hypot`, whose last 1–2 ulps
+    // differ between libm builds: the committed file (macOS) and CI (Linux)
+    // disagree at the 15th–16th digit (`0.9090384012946823` vs `…825`). Byte
+    // equality made CI red on every push for a table that was correct.
+    // So the SHAPE (every token that is not a number) must match exactly, and
+    // each number to 1e-9 — five orders below one 8-bit channel step, so a
+    // stale or hand-edited table still cannot pass.
+    writeFileSync(path, before)
+    const NUMBER = /-?\d+\.\d+(?:e[-+]?\d+)?/g
+    expect(after.replace(NUMBER, '#')).toBe(before.replace(NUMBER, '#'))
+    const a = after.match(NUMBER) ?? []
+    const b = before.match(NUMBER) ?? []
+    expect(a.length).toBe(b.length)
+    const worst = a.reduce((max, v, i) => Math.max(max, Math.abs(Number(v) - Number(b[i]))), 0)
+    expect(worst).toBeLessThan(1e-9)
   }, 60_000)
 })
 
