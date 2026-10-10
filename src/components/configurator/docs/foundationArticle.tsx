@@ -13,7 +13,7 @@ import { type ReactNode, useMemo, useState } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { useThemeHubHeaderActions } from '../themeHubHeaderActions'
 import {
-  DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
+  DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
 import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
@@ -217,8 +217,9 @@ export function OverviewArticle({
     : title?.trim()
       ? t('The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
       : t(SYSTEM_REFERENCE_LEAD)
-  const headerActions = useMemo(() => <DownloadSkillButton />, [])
-  useThemeHubHeaderActions(hubMode ? headerActions : null)
+  // No Copy page here: the reference sheet sits under the hub's own Get code
+  // door, and a second copy control beside it read as two ways to do one thing.
+  useThemeHubHeaderActions(null)
 
   return (
     <div className="min-w-0 flex flex-col gap-8">
@@ -227,7 +228,7 @@ export function OverviewArticle({
           section={t('Docs')}
           kind={t('Reference')}
           title={heading}
-          actions={headerActions}
+          actions={null}
         />
       ) : null}
 

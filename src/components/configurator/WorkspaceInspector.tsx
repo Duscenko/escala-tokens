@@ -47,10 +47,13 @@ export function InspectorPortal({ children }: { children: ReactNode }) {
 
 // Code is a tab KEY (the view still exists) but not a tab in the strip: its door is
 // the Get code icon in each canvas header. On Code, no tab reads as selected.
-const TABS: { key: InspectorTab; label: string }[] = [
+// `verbatim`: "Docs" stays "Docs" in Spanish and French — "Documentación" /
+// "Documentation" is wider than its third of the 288px strip and overflowed
+// the pill. The same word elsewhere (top menu, pages) still translates.
+const TABS: { key: InspectorTab; label: string; verbatim?: boolean }[] = [
   { key: 'theme', label: 'Theme' },
   { key: 'variables', label: 'Variables' },
-  { key: 'docs', label: 'Docs' },
+  { key: 'docs', label: 'Docs', verbatim: true },
 ]
 
 export default function WorkspaceInspector({
@@ -148,7 +151,7 @@ export default function WorkspaceInspector({
                 {/* Centred by the button's flex, not by its padding: a label wider
                     than the padded box (Variables, semibold, ~51px in a 46px
                     one) used to overflow to the RIGHT and read off-centre. */}
-                <span className="relative whitespace-nowrap">{t(item.label)}</span>
+                <span className="relative whitespace-nowrap">{item.verbatim ? item.label : t(item.label)}</span>
               </button>
             )
           })}
