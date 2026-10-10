@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react'
 import { BrandMark } from '../configurator/TopNav'
 import { FigmaLogo } from '../configurator/figmaShared'
-import { useAuth } from '../../lib/auth'
+import { signOut, useAuth } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { loginHref, pathForNext, rememberReturn } from '../../lib/loginReturn'
 import { accountHref } from '../../lib/accountRoutes'
@@ -41,7 +41,14 @@ export function PluginConnectPage() {
   const { user, loading } = useAuth()
   const [code] = useState(readCode)
   const [libraries] = useState(librariesOnThisBrowser)
-  const [phase, setPhase] = useState<'ask' | 'working' | 'done' | 'error'>('ask')
+  // `leaving` is the moment between "Use another account" and the login page.
+  const [phase, setPhase] = useState<'ask' | 'working' | 'leaving' | 'done' | 'error'>('ask')
+  // The plugin's "Switch account" opens this page with `switch=1`: the person
+  // is already signed in there and asked for a DIFFERENT account, so confirming
+  // the one this browser holds is the second choice, not the first. Read once —
+  // the flag does not survive the trip through `/login`, and must not: the
+  // account that comes back is the one they chose.
+  const [switching] = useState(() => new URLSearchParams(window.location.search).get('switch') === '1')
   const [error, setError] = useState('')
   // The plan the server gave the plugin session. Shown on the last screen so a
   // paying account that connected as Free is told here, with the way out.
@@ -67,7 +74,7 @@ export function PluginConnectPage() {
   }, [loading, user, code])
 
   async function connect() {
-    if (!code || phase === 'working') return
+    if (!code || phase === 'working' || phase === 'leaving') return
     setPhase('working')
     setError('')
     const result = await approvePluginSignIn(code, libraries)
@@ -81,8 +88,24 @@ export function PluginConnectPage() {
     setPhase('done')
   }
 
+  // Ends the web session too: one browser holds one account. Its folders are
+  // parked, not deleted (`lib/auth.signOut`). The effect above then sees no
+  // account and goes to `/login`, which comes back here with the same code.
+  async function switchAccount() {
+    if (phase === 'working' || phase === 'leaving') return
+    setPhase('leaving')
+    setError('')
+    try {
+      await signOut()
+    } catch {
+      setPhase('error')
+      setError(t('Could not sign out. Try again.'))
+    }
+  }
+
   const home = pathForNext('library')
   const waitingForAccount = !!code && (loading || !user)
+  const busy = phase === 'working' || phase === 'leaving'
 
   return (
     <div className="flex min-h-screen flex-col bg-app text-fg">
@@ -146,9 +169,11 @@ export function PluginConnectPage() {
             </>
           ) : (
             <>
-              <h1 className="mt-6 text-heading font-semibold">{t('Connect the Figma plugin')}</h1>
+              <h1 className="mt-6 text-heading font-semibold">{switching ? t('Switch account') : t('Connect the Figma plugin')}</h1>
               <p className="mt-2 text-ui leading-relaxed text-fg-muted">
-                {t('Only continue if you just pressed Sign in in the Escala plugin.')}
+                {switching
+                  ? t('This browser is signed in with the account below. Choose which one the plugin uses.')
+                  : t('Only continue if you just pressed Sign in in the Escala plugin.')}
               </p>
 
               <dl className="mt-5 divide-y divide-line rounded-xl border border-line text-ui">
@@ -177,15 +202,46 @@ export function PluginConnectPage() {
                   {error} {t('If it keeps failing, press Sign in in the plugin again.')}
                 </p>
               ) : null}
-              <button
-                type="button"
-                className={`mt-6 ${PRIMARY}`}
-                disabled={loading || !user || phase === 'working'}
-                onClick={() => { void connect() }}
-              >
-                {phase === 'working' ? t('Connecting…') : phase === 'error' ? t('Try again') : t('Connect plugin')}
-              </button>
-              <a href={home} className={`mt-2 ${SECONDARY}`}>{t('Cancel')}</a>
+              {switching ? (
+                <>
+                  <button
+                    type="button"
+                    className={`mt-6 ${PRIMARY}`}
+                    disabled={loading || !user || busy}
+                    onClick={() => { void switchAccount() }}
+                  >
+                    {phase === 'leaving' ? t('Signing out…') : t('Use another account')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`mt-2 ${SECONDARY} disabled:opacity-60`}
+                    disabled={loading || !user || busy}
+                    onClick={() => { void connect() }}
+                  >
+                    {phase === 'working' ? t('Connecting…') : t('Keep this account')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={`mt-6 ${PRIMARY}`}
+                    disabled={loading || !user || busy}
+                    onClick={() => { void connect() }}
+                  >
+                    {phase === 'working' ? t('Connecting…') : phase === 'error' ? t('Try again') : t('Connect plugin')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`mt-2 ${SECONDARY} disabled:opacity-60`}
+                    disabled={loading || !user || busy}
+                    onClick={() => { void switchAccount() }}
+                  >
+                    {phase === 'leaving' ? t('Signing out…') : t('Use another account')}
+                  </button>
+                </>
+              )}
+              <a href={home} className={`mt-3 block text-center text-caption text-fg-muted underline-offset-2 hover:text-fg hover:underline ${FOCUS}`}>{t('Cancel')}</a>
             </>
           )}
         </div>
