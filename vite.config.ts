@@ -6,7 +6,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { licenceCookieHeaders, readLicenceCookie } from './src/lib/licenceCookie.ts'
 import {
   POLAR_ACTIVATE_URL, POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL,
-  interpretValidation, isActivationId, licenceFollowup,
+  interpretValidation, isActivationId, licenceCustomerEmail, licenceFollowup,
 } from './src/lib/polar.ts'
 
 function devLicenceKey(): string {
@@ -38,9 +38,28 @@ async function polarPost(url: string, body: Record<string, string>) {
 
 // Same follow-up as `api/_licence.ts`: validate first, and activate only when
 // Polar says this benefit limits activations.
+/** Who Polar sold each key to, as its last validate answer said. */
+const devKeyOwner = new Map<string, string>()
+
+/** The email inside the page's session token. Read, not verified: this runs on
+ *  localhost only, to tell two of the developer's own accounts apart. */
+function devSessionEmail(authorization: string | undefined): string | null {
+  const token = authorization?.replace(/^Bearer\s+/i, '').trim()
+  const payload = token?.split('.')[1]
+  if (!payload) return null
+  try {
+    const email = (JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { email?: unknown }).email
+    return typeof email === 'string' && email ? email.trim().toLowerCase() : null
+  } catch {
+    return null
+  }
+}
+
 async function devCheck(licence: string, activationId: string | null) {
   const org = { key: licence, organization_id: POLAR_ORGANIZATION_ID }
   const first = await polarPost(POLAR_VALIDATE_URL, org)
+  const owner = licenceCustomerEmail(first.body)
+  if (owner) devKeyOwner.set(licence, owner)
   const plan = licenceFollowup(first.status, first.body, activationId, new Date())
   if (plan.kind === 'done') return plan.result
   if (plan.kind === 'revalidate') {
@@ -113,6 +132,18 @@ function devLicence(): Plugin {
           }
           const activationId = isActivationId(parsed.activationId) ? parsed.activationId : null
           const result = await devCheck(licence, activationId)
+          // Production's rule, without its storage: Pro belongs to the account,
+          // so the key counts for the account Polar sold it to. The test key is
+          // injected into every page here, and without this any account signed
+          // in on localhost looked Pro — a Free account could not be tested.
+          const owner = devKeyOwner.get(licence)
+          const signedInAs = devSessionEmail(req.headers.authorization)
+          if (result.valid && owner && signedInAs && signedInAs !== owner) {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ valid: false, expiresAt: null, hasKey: false, stored: false }))
+            return
+          }
           const keep = result.valid || result.reason === 'unavailable' || result.reason === 'activation_limit'
           if (keep) res.setHeader('Set-Cookie', licenceCookieHeaders(licence))
           else if (req.method === 'GET') res.setHeader('Set-Cookie', licenceCookieHeaders(''))

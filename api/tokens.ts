@@ -14,7 +14,7 @@ import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { rememberLicenceSlug, rememberLicenceSlugHash } from './_licenceIndex.js'
-import { accountPro } from './_accountPlan.js'
+import { accountPro, claimKeyForAccount } from './_accountPlan.js'
 import { userFromJwt } from './_authUser.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import { isActivationId } from '../src/lib/polar.js'
@@ -187,25 +187,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.setHeader('Retry-After', '30')
         return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
       }
-      if (licence?.valid) {
+      // Pro belongs to the account. The page sends its session
+      // (`x-escala-session`; `Authorization` is the publish claim), and the
+      // same rule the licence check applies decides here: a good key counts
+      // when it is this account's, and an account that is Pro publishes from a
+      // browser that holds no key. A publish with no session (the CLI, an
+      // older page) is still judged on the key alone.
+      const sessionRaw = req.headers['x-escala-session']
+      const session = (Array.isArray(sessionRaw) ? sessionRaw[0] : sessionRaw)?.trim() ?? ''
+      const asked = session ? await userFromJwt(session) : null
+      const user = asked && asked !== 'unconfigured' ? asked : null
+      const claim = licence?.valid && user
+        ? await claimKeyForAccount(user, { hash: licenceKeyHash(licenceKey), expiresAt: licence.expiresAt, customerEmail: licence.customerEmail }, 'cookie')
+        : null
+      if (licence?.valid && claim !== 'refused') {
         logLicence(licenceKey, project, true, null)
         try { await rememberLicenceSlug(licenceKey, project) } catch { /* the refund webhook misses this slug; the publish itself stands */ }
         licenceUntil = licence.expiresAt
       } else {
-        // No good key in this browser. Pro belongs to the account, so a
-        // signed-in publish asks the account before it is refused: the page
-        // sends its session, and the same record the licence check reads
-        // decides. Otherwise the UI would say Pro and the publish would 402.
-        const sessionRaw = req.headers['x-escala-session']
-        const session = (Array.isArray(sessionRaw) ? sessionRaw[0] : sessionRaw)?.trim() ?? ''
-        const user = session ? await userFromJwt(session) : null
-        const plan = user && user !== 'unconfigured' ? await accountPro(user) : null
+        // No key of this account's in this browser: ask the account itself.
+        // Otherwise the UI would say Pro and the publish would 402.
+        const plan = user ? await accountPro(user) : null
         if (plan === 'unknown') {
           res.setHeader('Retry-After', '30')
           return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
         }
         if (!plan) {
-          if (licenceKey) logLicence(licenceKey, project, false, licence?.reason ?? 'invalid')
+          if (licenceKey) logLicence(licenceKey, project, false, claim === 'refused' ? 'other_account' : licence?.reason ?? 'invalid')
           return res.status(402).json({
             error: licence?.reason === 'expired'
               ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'

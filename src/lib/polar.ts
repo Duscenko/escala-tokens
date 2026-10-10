@@ -74,6 +74,18 @@ export function interpretValidation(httpStatus: number, body: unknown, now: Date
   return { valid: true, expiresAt }
 }
 
+/** The email of the customer a key was sold to, lower-cased, as Polar's
+ *  validate answer names it. Null when the answer does not carry one. It is
+ *  what ties a key to an account without anyone pasting it twice — and what
+ *  keeps a different account, signed in on the same browser, from borrowing it. */
+export function licenceCustomerEmail(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null
+  const customer = (body as { customer?: unknown }).customer
+  if (!customer || typeof customer !== 'object') return null
+  const email = (customer as { email?: unknown }).email
+  return typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null
+}
+
 /** Id of the customer whose email matches, or null. A list that does not
  *  contain that email is "no", never "take the first row". */
 export function customerIdForEmail(body: unknown, email: string): string | null {

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import {
   POLAR_ACTIVATE_URL, POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL,
-  interpretValidation, isActivationId, licenceFollowup, limitActivations, type LicenceResult,
+  interpretValidation, isActivationId, licenceCustomerEmail, licenceFollowup, limitActivations, type LicenceResult,
 } from '../src/lib/polar.js'
 
 // One question — "is this key good?" — asked of Polar from the server, with a
@@ -16,7 +16,9 @@ const GOOD_TTL_MS = 10 * 60_000
  *  after a typo should not wait ten minutes. */
 const BAD_TTL_MS = 60_000
 
-export type CheckedLicence = LicenceResult & { activationId?: string }
+/** `customerEmail` is who Polar sold the key to. Server-side only: it decides
+ *  which account a key belongs to, and is never sent to the page or logged. */
+export type CheckedLicence = LicenceResult & { activationId?: string; customerEmail?: string }
 
 const cache = new Map<string, { at: number; result: CheckedLicence }>()
 
@@ -64,6 +66,19 @@ export async function checkLicenceKey(
   activationId?: string | null,
   opts?: { activate?: boolean },
 ): Promise<CheckedLicence> {
+  const result = await checkLicence(key, activationId, opts)
+  const owner = ownerByKey.get(cacheId(key, ''))
+  return owner && !result.customerEmail ? { ...result, customerEmail: owner } : result
+}
+
+/** Who bought each key seen by this instance, by the same hash the cache uses. */
+const ownerByKey = new Map<string, string>()
+
+async function checkLicence(
+  key: string,
+  activationId?: string | null,
+  opts?: { activate?: boolean },
+): Promise<CheckedLicence> {
   const asked = isActivationId(activationId) ? activationId : ''
   const hit = cache.get(cacheId(key, asked))
   const now = Date.now()
@@ -75,6 +90,12 @@ export async function checkLicenceKey(
     first = await polarPost(POLAR_VALIDATE_URL, org)
   } catch {
     return unavailable
+  }
+
+  const owner = licenceCustomerEmail(first.body)
+  if (owner) {
+    if (ownerByKey.size > 2_000) ownerByKey.clear()
+    ownerByKey.set(cacheId(key, ''), owner)
   }
 
   const plan = licenceFollowup(first.status, first.body, asked || null, new Date())

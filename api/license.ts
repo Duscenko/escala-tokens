@@ -3,7 +3,7 @@ import { licenceCookieHeaders, readLicenceCookie } from '../src/lib/licenceCooki
 import { isActivationId } from '../src/lib/polar.js'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import { clientIp, rateLimited } from './_blob.js'
-import { accountPro, bindAccountPlan, type AccountPro } from './_accountPlan.js'
+import { accountPro, claimKeyForAccount, type AccountPro } from './_accountPlan.js'
 import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash, type CheckedLicence } from './_licence.js'
 
@@ -154,20 +154,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (keep) res.setHeader('Set-Cookie', licenceCookieHeaders(key, cookieOpts))
     else if (req.method === 'GET') res.setHeader('Set-Cookie', licenceCookieHeaders('', cookieOpts))
     const user = result.reason === 'unavailable' ? null : await sessionUser(req)
-    if (user && result.valid) {
-      // A signed-in browser with a good key: the account is Pro from here on,
-      // wherever it signs in next. A pasted key always records the account. A
-      // key that only rode along in the cookie claims an unclaimed key and
-      // nothing more (`bindAccountPlan`).
-      const recorded = await bindAccountPlan(user.id, licenceKeyHash(key), result.expiresAt, new Date(), { claim: req.method === 'GET' })
-      console.info(JSON.stringify({ evt: 'account_plan', op: 'bind', keyHash: licenceKeyHash(key), ok: recorded }))
-    } else if (user) {
-      // The key here is not good (a typo, an expired one, a full device cap),
-      // but the account is Pro by another proof. The account wins.
+    // Signed in, the question is about the ACCOUNT. A good key in this browser
+    // counts only when it is this account's (`claimKeyForAccount`). A key that
+    // belongs to another account leaves this one to its own record: without
+    // that, a Free account signed in on a browser that held a key showed Pro.
+    const claim = user && result.valid
+      ? await claimKeyForAccount(
+        user,
+        { hash: licenceKeyHash(key), expiresAt: result.expiresAt, customerEmail: result.customerEmail },
+        req.method === 'POST' ? 'pasted' : 'cookie',
+      )
+      : null
+    if (claim) console.info(JSON.stringify({ evt: 'account_plan', op: 'bind', keyHash: licenceKeyHash(key), result: claim }))
+    if (user && (!result.valid || claim === 'refused')) {
+      // No key of this account's here (a typo, an expired one, a full device
+      // cap, someone else's). The account may still be Pro by its own record.
       const plan = await accountPro(user)
       if (plan && plan !== 'unknown') {
         console.info(JSON.stringify({ evt: 'account_plan', op: 'read', via: plan.via, host: requestHost(req) }))
         return answerAccount(res, plan, keep)
+      }
+      if (claim === 'refused') {
+        // The cookie stays: it is the other account's, on this same browser.
+        return res.status(plan === 'unknown' ? 502 : 200).json({
+          valid: false,
+          expiresAt: null,
+          ...(plan === 'unknown' ? { reason: 'unavailable' } : {}),
+          hasKey: false,
+          stored: false,
+        })
       }
     }
     return answer(res, result, keep)

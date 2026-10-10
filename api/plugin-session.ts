@@ -10,7 +10,7 @@ import {
   type PluginLibrary,
   type PluginPlanDecision,
 } from '../src/lib/pluginSession.js'
-import { accountPlanFor, bindAccountPlan, polarLookupConfigured, proUntilForEmail } from './_accountPlan.js'
+import { accountPlanFor, claimKeyForAccount, polarLookupConfigured, proUntilForEmail } from './_accountPlan.js'
 import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
@@ -288,18 +288,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const postedActivation = typeof body.activationId === 'string' ? body.activationId : ''
     // Do not activate here. A full device cap is still a real key, and spending
     // a slot on every plugin login is what turned Pro into activation_limit.
-    const checked = licenceKey ? await checkLicenceKey(licenceKey, postedActivation, { activate: false }) : null
+    const seen = licenceKey ? await checkLicenceKey(licenceKey, postedActivation, { activate: false }) : null
     const now = new Date()
+    // A good key in this browser counts only when it is THIS account's
+    // (`claimKeyForAccount` also records it, so the next sign-in is Pro from a
+    // browser that holds no key). Someone else's key is not this account's
+    // plan: the account is judged on its own record below.
+    const keyGood = !!seen && (seen.valid || seen.reason === 'activation_limit')
+    const claim = keyGood
+      ? await claimKeyForAccount(user, { hash: licenceKeyHash(licenceKey), expiresAt: seen.expiresAt, customerEmail: seen.customerEmail }, 'cookie', now)
+      : null
+    const checked = claim === 'refused' ? null : seen
     const [emailUntil, account] = await Promise.all([
       proUntilForEmail(user.email, now),
       accountPlanFor(user.id, now),
     ])
     const decision = pluginPlan(checked, emailUntil, now, account)
-    // This browser holds a good key: record it against the account, so the
-    // next sign-in is Pro from a browser that does not.
-    if (decision.via === 'key' && licenceKey) {
-      await bindAccountPlan(user.id, licenceKeyHash(licenceKey), checked?.expiresAt ?? null, now, { claim: true })
-    }
     // The one line that explains a Pro account signing in as Free: which host
     // opened, whether a key came with it, and which proofs had an answer.
     console.info(JSON.stringify({
@@ -308,7 +312,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       plan: decision.plan,
       via: decision.via,
       host: req.headers.host ?? '',
-      key: !licenceKey ? 'none' : checked?.valid || checked?.reason === 'activation_limit' ? 'good' : (checked?.reason ?? 'rejected'),
+      key: !licenceKey ? 'none' : claim === 'refused' ? 'other_account' : keyGood ? 'good' : (seen?.reason ?? 'rejected'),
       account: account === null ? 'none' : account === 'revoked' || account === 'unknown' ? account : 'live',
       email: !polarLookupConfigured() ? 'unconfigured' : emailUntil === 'unknown' ? 'unknown' : emailUntil ? 'grant' : 'none',
     }))

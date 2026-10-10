@@ -103,11 +103,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > - **The plugin** (`plugin-session`): sign-in and every later open (`withFreshPlan`) read
 >   key in this browser → email grant → the record. `approve` returns the plan and logs one
 >   `plugin_plan` line naming which proofs had an answer.
-> - **Who gets recorded:** a key someone PASTES while signed in always records that account.
->   A key that only rode along in the cookie records the account only if the key has no
->   account yet (`bindAccountPlan … { claim: true }`). Otherwise signing a second account in
->   on a browser that holds a key — one click with the plugin's "Switch account" — would hand
->   it Pro everywhere, for good. That second account is still Pro IN that browser, as before.
+> - **A key in the browser is NOT Pro for whoever signs in there** (`claimKeyForAccount`).
+>   Signed in, a good key counts only when it is that account's: it was recorded before, the
+>   person just PASTED it, or Polar's validate answer names that account's email as the
+>   buyer (`licenceCustomerEmail` — no Polar token needed). A key Polar sold to someone else
+>   is `refused`: the account is judged on its own record, Free if it has none, in the
+>   licence check, in a publish and at plugin sign-in alike. The cookie stays for its owner.
+>   This was a THIRD report the same day — the Free test account signed in on the browser
+>   that held the Pro key and showed PRO. Keeping "the cookie still makes this browser Pro"
+>   for compatibility was the bug. Signed OUT, the key still answers for itself.
+> - **`vite dev` follows the same rule** (`devLicence` in `vite.config.ts`): the injected
+>   `VITE_DEV_LICENCE_KEY` is Pro only for the account Polar sold it to. It used to make
+>   every account on localhost Pro, so a Free account could not be tested there at all —
+>   and that is where the report came from.
 > - `pluginSignInPlan.test.ts` runs the real handlers end to end for all of the above.
 >   Diagnose with `vercel logs -q plugin_plan` / `-q account_plan` before changing anything.
 > - **Decided 2026-10-10: NO host redirect yet.** One canonical host is still the right end

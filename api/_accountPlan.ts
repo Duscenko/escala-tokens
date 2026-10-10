@@ -129,41 +129,47 @@ export async function accountPlanFor(userId: string, now = new Date()): Promise<
   }
 }
 
-/** Record that this account holds a key Polar just accepted. Best-effort: a
- *  failure here must not fail the licence check or the sign-in around it.
- *  Skips the write when the record already says the same thing.
+/** May this signed-in account use this key — and if so, record it.
  *
- *  `claim` is for a key that only RODE ALONG in the browser's cookie, as
- *  opposed to one the person just pasted. It records the account only when the
- *  key has no account yet (or already names this one). Without that, signing
- *  a second account in on a browser that holds someone's key — which the
- *  plugin's "Switch account" makes one click — would hand that account Pro
- *  everywhere, for good. */
-export async function bindAccountPlan(
-  userId: string,
-  keyHash: string,
-  expiresAt: string | null,
+ *  Pro belongs to the account, so a key sitting in a browser's cookie is not
+ *  Pro for whoever signs in there. `recorded` means the key is this account's:
+ *  - it was recorded before, or
+ *  - the person just PASTED it (`pasted`), which is the act of activating, or
+ *  - Polar sold the key to this account's email, or
+ *  - Polar names no buyer and no account holds the key yet (an answer without
+ *    a customer cannot be judged, so the first account in that browser has it).
+ *  When Polar DOES name the buyer and it is someone else, being first is not
+ *  enough: that account pastes the key to take it, on purpose.
+ *  `refused` means the key belongs to someone else: this account is judged on
+ *  its own record, and is Free if it has none. Without this, signing a second
+ *  account in on a browser that holds a key showed it as Pro.
+ *  `failed` is a storage error. The caller must not read it as either. */
+export async function claimKeyForAccount(
+  user: { id: string; email: string },
+  key: { hash: string; expiresAt: string | null; customerEmail?: string },
+  how: 'pasted' | 'cookie',
   now = new Date(),
-  opts: { claim?: boolean } = {},
-): Promise<boolean> {
-  if (!userId || !keyHash) return false
+): Promise<'recorded' | 'refused' | 'failed'> {
+  if (!user.id || !key.hash) return 'failed'
   try {
-    const id = accountId(userId)
-    const index = await readJsonBlob<{ accounts?: unknown }>(licenceAccountsKey(keyHash), { fresh: true })
+    const id = accountId(user.id)
+    const index = await readJsonBlob<{ accounts?: unknown }>(licenceAccountsKey(key.hash), { fresh: true })
     const accounts = Array.isArray(index?.accounts)
       ? index.accounts.filter((a): a is string => typeof a === 'string' && a.length > 0)
       : []
-    if (opts.claim && accounts.length > 0 && !accounts.includes(id)) return false
-    const next = accountPlanRecord(expiresAt, keyHash, now)
-    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(userId), { fresh: true })
-    if (accountPlanChanged(stored, next)) await writePublic(accountPlanKey(userId), next)
-    if (!accounts.includes(id)) {
+    const member = accounts.includes(id)
+    const buyer = !!key.customerEmail && key.customerEmail === user.email.trim().toLowerCase()
+    if (!member && how === 'cookie' && !buyer && (key.customerEmail || accounts.length > 0)) return 'refused'
+    const next = accountPlanRecord(key.expiresAt, key.hash, now)
+    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(user.id), { fresh: true })
+    if (accountPlanChanged(stored, next)) await writePublic(accountPlanKey(user.id), next)
+    if (!member) {
       accounts.push(id)
-      await writePublic(licenceAccountsKey(keyHash), { accounts: accounts.slice(-MAX_ACCOUNTS_PER_KEY) })
+      await writePublic(licenceAccountsKey(key.hash), { accounts: accounts.slice(-MAX_ACCOUNTS_PER_KEY) })
     }
-    return true
+    return 'recorded'
   } catch {
-    return false
+    return 'failed'
   }
 }
 

@@ -47,8 +47,9 @@ function fakeFetch(input: unknown, init?: { headers?: Record<string, string>; bo
   }
   if (url.endsWith('/license-keys/validate')) {
     const key = (JSON.parse(init?.body ?? '{}') as { key?: string }).key
+    // Polar names the customer a key was sold to. Ana bought this one.
     return Promise.resolve(key === GOOD_KEY
-      ? json(200, { status: 'granted', expires_at: null, limit_activations: null })
+      ? json(200, { status: 'granted', expires_at: null, limit_activations: null, customer: { email: 'Ana@Example.com' } })
       : json(404, { detail: 'not found' }))
   }
   return Promise.reject(new Error(`unexpected request: ${url}`))
@@ -211,14 +212,34 @@ describe('the web, in a browser that holds no key', () => {
     expect(typo.body).toMatchObject({ valid: true, via: 'account' })
   })
 
-  it('a second account signing in on the browser that holds the key is not handed Pro everywhere', async () => {
+  // Reported the same day: signed in as the Free account, on the browser
+  // where the Pro account's key sits, and it showed Pro.
+  it('a Free account signed in on the browser that holds another account’s key is Free', async () => {
     await pageLoad({ jwt: 'jwt-ana', cookie: true })
-    // Bo signs in on Ana's browser. The cookie still makes THAT browser Pro…
-    expect((await pageLoad({ jwt: 'jwt-bo', cookie: true })).body).toMatchObject({ valid: true, via: 'key' })
-    // …but Bo's account was not recorded: elsewhere, and in the plugin, Bo is Free.
+    const bo = await pageLoad({ jwt: 'jwt-bo', cookie: true })
+    expect(bo.status).toBe(200)
+    expect(bo.body).toMatchObject({ valid: false, hasKey: false })
+    // The key stays in the browser for the account it belongs to.
+    expect(bo.cookies.at(-1)).toContain(`sd_licence=${GOOD_KEY}`)
+    expect((await pageLoad({ jwt: 'jwt-ana', cookie: true })).body).toMatchObject({ valid: true, via: 'key' })
+    // Free everywhere else too, and in the plugin, with or without that cookie.
     expect((await pageLoad({ jwt: 'jwt-bo' })).body).toMatchObject({ valid: false })
-    expect((await signInFromPlugin({ jwt: 'jwt-bo', cookie: `sd_licence=${GOOD_KEY}` })).tier).toBe('pro')
+    expect((await signInFromPlugin({ jwt: 'jwt-bo', cookie: `sd_licence=${GOOD_KEY}` })).tier).toBe('free')
     expect((await signInFromPlugin({ jwt: 'jwt-bo' })).tier).toBe('free')
+  })
+
+  it('being the first to sign in on that browser does not take a key Polar sold to someone else', async () => {
+    // Nobody holds the key yet. Bo gets there first, and is still Free.
+    expect((await pageLoad({ jwt: 'jwt-bo', cookie: true })).body).toMatchObject({ valid: false, hasKey: false })
+    expect((await signInFromPlugin({ jwt: 'jwt-bo', cookie: `sd_licence=${GOOD_KEY}` })).tier).toBe('free')
+    // The buyer has it the moment they sign in there, with nothing to paste.
+    expect((await pageLoad({ jwt: 'jwt-ana', cookie: true })).body).toMatchObject({ valid: true, via: 'key' })
+    expect((await pageLoad({ jwt: 'jwt-ana' })).body).toMatchObject({ valid: true, via: 'account' })
+  })
+
+  it('with nobody signed in, the key in the browser still answers for itself', async () => {
+    await pageLoad({ jwt: 'jwt-ana', cookie: true })
+    expect((await pageLoad({ cookie: true })).body).toMatchObject({ valid: true, via: 'key' })
   })
 
   it('an account that pastes the key itself is recorded, even after another account', async () => {
@@ -242,6 +263,13 @@ describe('publishing from a browser that holds no key', () => {
     expect((await publish({})).status).toBe(402)
     expect((await publish({ session: 'jwt-bo' })).status).toBe(402)
     expect((await publish({ session: 'not-a-session' })).status).toBe(402)
+  })
+
+  it('is refused for a Free account even when the browser holds another account’s key', async () => {
+    await pageLoad({ jwt: 'jwt-ana', cookie: true })
+    expect((await publish({ session: 'jwt-bo', cookie: true })).status).toBe(402)
+    expect([...store.keys()].some((k) => k.startsWith('tokens/'))).toBe(false)
+    expect((await publish({ session: 'jwt-ana', cookie: true })).status).toBe(200)
   })
 
   it('goes through for an account that is Pro, so the page never says Pro and then 402s', async () => {
