@@ -6,45 +6,55 @@ import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { SETUP_SAVE_LABEL, SETUP_STEPS, advanceThemeSetup, finishThemeSetup, useSetupStep, useStepChanged } from '../../lib/themeSetup'
+import { SETUP_SAVE_LABEL, SETUP_STEPS, advanceThemeSetup, finishThemeSetup, retreatThemeSetup, useSetupStep, useStepChanged } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 
-/** Guest previewer (Random tweak) and the Random-create save bar share this mark. */
+/** Two crossing arrows — the shuffle mark every "surprise me" control uses. */
+function ShuffleGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="relative z-[1] flex-shrink-0">
+      <path d="M2 4.5h2.3a3 3 0 0 1 2.5 1.3l2.4 3.4a3 3 0 0 0 2.5 1.3H14" />
+      <path d="M12.2 8.4 14 10.5l-1.8 2.1" />
+      <path d="M2 11.5h2.3a3 3 0 0 0 2.2-1" />
+      <path d="M9.5 5.7a3 3 0 0 1 2.5-.7H14" />
+      <path d="M12.2 2.9 14 5l-1.8 2.1" />
+    </svg>
+  )
+}
+
+/** Random, in one shape everywhere: the shuffle mark inside the animated
+ *  conic border. `icon` is the icon-only square (next to a Style select or in
+ *  the save bar); `tweak` keeps its label for the guest previewer card. */
 export function RandomThemeButton({
   onClick,
   label,
   variant = 'tweak',
+  className = '',
 }: {
   onClick: () => void
-  /** Guest card says "Random tweak"; the explore footer says "Random". */
+  /** Accessible name; also the visible text in the `tweak` variant. */
   label?: string
-  variant?: 'tweak' | 'bar'
+  variant?: 'tweak' | 'icon'
+  /** Size override for the `icon` variant (default 32px square). */
+  className?: string
 }) {
   const { t } = useI18n()
   const text = label ?? t('Random tweak')
+  const icon = variant === 'icon'
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={text}
       title={text}
-      className={`relative flex h-8 items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        variant === 'bar'
-          ? 'min-w-0 flex-1 text-caption font-semibold'
-          : 'w-full text-mini font-normal'
+      className={`relative flex items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        icon ? `h-8 w-8 flex-shrink-0 ${className}` : 'h-8 w-full text-mini font-normal'
       }`}
     >
-      <span
-        aria-hidden
-        className="relative z-[1] block size-[14px] flex-shrink-0 bg-current"
-        style={{
-          WebkitMask: "url('/icons/settings/random.svg') center / contain no-repeat",
-          mask: "url('/icons/settings/random.svg') center / contain no-repeat",
-        }}
-      />
-      <span className="relative z-[1] truncate">{text}</span>
+      <ShuffleGlyph />
+      {!icon && <span className="relative z-[1] truncate">{text}</span>}
       <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
     </button>
   )
@@ -118,7 +128,7 @@ export default function ThemeSaveBar({
         </svg>
       </button>
       {showRandom && onRandom ? (
-        <RandomThemeButton onClick={onRandom} label={t('Random')} variant="bar" />
+        <RandomThemeButton onClick={onRandom} label={t('Random')} variant="icon" />
       ) : null}
       <button
         type="button"
@@ -144,6 +154,25 @@ export default function ThemeSaveBar({
         <span className="truncate">{exploringRandom ? t('Save theme') : label}</span>
       </button>
     </div>
+  )
+}
+
+/** Previous step — an icon square so it never competes with the primary
+ *  action for the footer's width. Named for assistive tech and hover. */
+function BackButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t('Back')}
+      title={t('Back')}
+      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M13 8H3M7 4 3 8l4 4" />
+      </svg>
+    </button>
   )
 }
 
@@ -185,6 +214,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
         </span>
       </div>
       <div className="flex items-center gap-2">
+        {step > 0 && <BackButton onClick={() => retreatThemeSetup(themeKey)} />}
         <button
           type="button"
           onClick={() => { finishThemeSetup(themeKey); done() }}
@@ -219,6 +249,7 @@ export function CreateStudioBar({
   continueLabel,
   last,
   onCancel,
+  onBack,
   onSkip,
   onContinue,
 }: {
@@ -228,6 +259,9 @@ export function CreateStudioBar({
   last: boolean
   /** Leave without keeping the theme. The caller deletes it if it was already minted. */
   onCancel: () => void
+  /** Previous step. When given it replaces Cancel: past the first step the
+   *  way out is Skip setup, and the way BACK is this — one door per intent. */
+  onBack?: () => void
   onSkip: () => void
   onContinue: () => void
 }) {
@@ -243,13 +277,17 @@ export function CreateStudioBar({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          {t('Cancel')}
-        </button>
+        {onBack ? (
+          <BackButton onClick={onBack} />
+        ) : (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Cancel')}
+          </button>
+        )}
         <button
           type="button"
           onClick={onSkip}

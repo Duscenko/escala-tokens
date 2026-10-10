@@ -1689,6 +1689,10 @@ export default function ThemeLibraryPage({
       onOpenPreview(createdKey)
     }
   }
+  const goBackCreateStep = () => {
+    const prev = CREATE_STEPS[createIndex - 1]
+    if (prev) setCreateStep(prev.key)
+  }
   const finishCreate = (key: string) => {
     setCreating(false)
     onOpenPreview(key)
@@ -1734,7 +1738,7 @@ export default function ThemeLibraryPage({
             <div className="flex h-full min-h-0 flex-col">
               <div ref={setIdentityHost} className="flex-shrink-0 border-b border-line">
                 {!(createStep === 'color' || !createdKey) && createdKey && (
-                  <MintedThemeIdentity themeKey={createdKey} onClose={cancelCreate} />
+                  <MintedThemeIdentity themeKey={createdKey} />
                 )}
               </div>
               <CreateStepNav step={createStep} onPick={pickCreateStep} />
@@ -1773,6 +1777,7 @@ export default function ThemeLibraryPage({
                 continueLabel={continueLabel}
                 last={createStep === 'icons' && !!createdKey}
                 onCancel={cancelCreate}
+                onBack={createIndex > 0 ? goBackCreateStep : undefined}
                 onSkip={skipCreate}
                 onContinue={() => {
                   if (createStep === 'color' || !createdKey) submitHandle.current?.()

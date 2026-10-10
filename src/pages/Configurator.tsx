@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
-import { themeDisplayName } from '../lib/themeSources'
+import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
 import { FIGMA_SYNC_MODE_CAP, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
@@ -30,7 +30,7 @@ import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
 import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
-import { guestStarterPreview, type StylePreview } from '../lib/stylePreviewOverlay'
+import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../lib/adoptPreset'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
@@ -1872,6 +1872,30 @@ export default function Configurator() {
   const [homeCreating, setHomeCreating] = useState(false)
   const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
   const homePage = homeFileBrowser
+  // ── The theme's accent, scoped to the Generator's rail + canvas card ──
+  // The PLATFORM (TopNav, inspector, Home) keeps Escala's violet on `:root`.
+  // The rail's icons and the card's accent fills/ink repaint with the theme
+  // being edited by re-declaring the same three vars on a `display: contents`
+  // wrapper. Custom properties inherit through it, and the inspector is a
+  // sibling OUTSIDE the wrapper, so portaled side panels stay violet. The ramp
+  // is read in the CARD's appearance and solved with the same rules as the
+  // chrome (`chromeAccent` for ink, `brandSolidPair` for the fill).
+  const canvasAccentStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!themesCanvas || homeFileBrowser) return undefined
+    const appearance = stylePreview ? stylePreview.appearance : previewAppearance
+    const ramp = stylePreview
+      ? stylePreviewBrandRamp(store, stylePreview.preset, stylePreview.appearance)
+      : themeBrandRamp(previewTheme, store.themeSources, themeKinds, store, appearance)
+    if (!ramp || !ramp[BASE_TONE]) return undefined
+    const dark = appearance === 'dark'
+    const ui = chromeAccent(ramp, dark ? '#161617' : '#ffffff', ramp[BASE_TONE])
+    const solid = ramp[brandSolidPair(ramp, ['#ffffff', '#0a0d12']).tone] ?? ramp[BASE_TONE]
+    return {
+      '--accent-ui': ui,
+      '--accent-solid': solid,
+      '--accent-ink': readableInk(solid),
+    } as CSSProperties
+  }, [themesCanvas, homeFileBrowser, stylePreview, previewAppearance, previewTheme, store, themeKinds])
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
    *  all nine tables. Code, Docs and Home show only the Home tile. */
@@ -2038,6 +2062,7 @@ export default function Configurator() {
               aria-label={t('Home')}
             />
           )}
+          <div className="contents" style={canvasAccentStyle}>
           {themeWorkspaceRailVisible && !homeRailOnly && (
             // Home is the top tile on every Generator surface that shows this
             // rail. Theme and Variables keep the foundation icons under it.
@@ -2293,11 +2318,13 @@ export default function Configurator() {
               )}
             </div>
           </main>
+          </div>
           {themesCanvas && !homePage && (
             <WorkspaceInspector
               value={inspectorTab}
               onChange={changeInspectorTab}
               onSlot={setInspectorSlot}
+              slotStyle={canvasAccentStyle}
               showTabs={themeWorkspaceTab !== 'library'}
               disabledTabs={themeWorkspaceTab === 'preview' && themeTablesBlocked() ? ['variables', 'code', 'docs'] : undefined}
               disabledReason={themeTablesBlocked() ?? undefined}

@@ -25,7 +25,8 @@ import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover, STATE_PRESETS,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
-import { CreateStudioBar } from './ThemeSaveBar'
+import { CreateStudioBar, RandomThemeButton } from './ThemeSaveBar'
+import { randomTheme } from '../../lib/randomTheme'
 
 const STATE_ROLES = ['error', 'warning', 'success', 'info'] as const
 
@@ -335,7 +336,7 @@ export function ThemeIdentityBar({
 }
 
 /** Name and appearance of a theme that already exists — the studio's later steps. */
-export function MintedThemeIdentity({ themeKey, onClose }: { themeKey: string; onClose: () => void }) {
+export function MintedThemeIdentity({ themeKey, onClose }: { themeKey: string; onClose?: () => void }) {
   const store = useDesignStore()
   const label = themeDisplayName(themeKey, store.themeLabels)
   const [name, setName] = useState(label)
@@ -458,6 +459,34 @@ export function ThemeForm({
     setSlots(next)
     setKind(preset.preferredAppearance)
     setDerived(new Set())
+  }
+  // Random sits beside Style: it is "pick a style for me", so it writes the
+  // same fields `pickStyle` does (style, tint, slots, appearance) with a fresh
+  // accent on top. Each spin remembers what it replaced, so one icon steps back.
+  const randomPast = useRef<{ styleId: string; slots: Record<FamilySlot, string>; derived: Set<FamilySlot>; tint: NeutralTint; kind: 'light' | 'dark' }[]>([])
+  const [canUndoRandom, setCanUndoRandom] = useState(false)
+  function spinRandom() {
+    randomPast.current.push({ styleId, slots, derived, tint, kind })
+    const recipe = randomTheme({ accent: slots.brand, avoidScaffold: styleId || undefined })
+    const preset = THEME_STYLE_PRESETS.find((p) => p.id === recipe.scaffoldId)
+    setErr(null)
+    setStyleId(recipe.scaffoldId)
+    setTint(recipe.neutralTint)
+    setSlots(slotsFromAccent(recipe.accent, recipe.neutralTint, preset ? presetStates(preset) : undefined))
+    setDerived(new Set())
+    if (preset) setKind(preset.preferredAppearance)
+    setCanUndoRandom(true)
+  }
+  function undoRandom() {
+    const prev = randomPast.current.pop()
+    if (!prev) return
+    setErr(null)
+    setStyleId(prev.styleId)
+    setSlots(prev.slots)
+    setDerived(prev.derived)
+    setTint(prev.tint)
+    setKind(prev.kind)
+    setCanUndoRandom(randomPast.current.length > 0)
   }
   function setTintLevel(next: NeutralTint) {
     setTint(next)
@@ -615,7 +644,21 @@ export function ThemeForm({
             far you scrolled. */}
         {firstStep && !isEdit && (
           <div className="flex-shrink-0">
-            <StylePicker value={styleId} onChange={pickStyle} />
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1"><StylePicker value={styleId} onChange={pickStyle} /></div>
+              {canUndoRandom && (
+                <button
+                  type="button"
+                  onClick={undoRandom}
+                  aria-label={t('Undo random')}
+                  title={t('Undo random')}
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
+                </button>
+              )}
+              <RandomThemeButton onClick={spinRandom} label={t('Random')} variant="icon" className="!h-10 !w-10 !rounded-xl" />
+            </div>
             {startPreset && <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">{startPreset.detail}</p>}
           </div>
         )}
@@ -629,7 +672,7 @@ export function ThemeForm({
               pages={themePages}
               nameLocked={nameLocked}
               onSubmit={() => handleSubmit()}
-              onClose={pinIdentity ? onClose : undefined}
+              onClose={undefined}
               autoFocus={!nameLocked}
               padded={pinIdentity}
             />

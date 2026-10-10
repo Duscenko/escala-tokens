@@ -60,10 +60,14 @@ export default function WorkspaceInspector({
   showTabs = true,
   disabledTabs,
   disabledReason,
+  slotStyle,
 }: {
   value: InspectorTab | null
   onChange: (tab: InspectorTab) => void
   onSlot: (el: HTMLElement | null) => void
+  /** Custom properties for the panel slot only (the Generator passes the edited
+   *  theme's accent here). The tab strip above stays on the platform's accent. */
+  slotStyle?: CSSProperties
   /** Home fills the left file-menu column (not this inspector) and does not
    *  draw the Theme · Variables · Code · Docs strip. */
   showTabs?: boolean
@@ -155,6 +159,7 @@ export default function WorkspaceInspector({
         // A callback ref feeding STATE in the shell (not a plain ref), so the
         // portals re-render once the target exists.
         ref={onSlot}
+        style={slotStyle}
         // Each panel was sized as a fixed-width left column (inline width,
         // border-r). `!` beats the inline style: here the column owns both.
         className={`relative flex min-h-0 flex-1 flex-col overflow-hidden ${showTabs ? 'border-t border-line' : ''} [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}

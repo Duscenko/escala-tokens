@@ -82,6 +82,15 @@ export function advanceThemeSetup(key: string): boolean {
   return false
 }
 
+/** One step back. Everything set so far stays set (edits live in the store,
+ *  and Undo still walks them); only the guide moves. Stops at the first step. */
+export function retreatThemeSetup(key: string) {
+  const { drafts } = useThemeSetup.getState()
+  const at = drafts[key]
+  if (at == null || at <= 0) return
+  commit({ ...drafts, [key]: at - 1 }, key)
+}
+
 /** Leave setup: the theme keeps whatever is set, the rest stays at default. */
 export function finishThemeSetup(key: string) {
   const drafts = { ...useThemeSetup.getState().drafts }
