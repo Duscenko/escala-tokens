@@ -23,7 +23,7 @@
 //     the Pro licence are covered by /terms. Keep the three statements in step
 //     with LICENSE, the plugin's LICENSE, README and PricingPage's FAQ.
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { DocHeader, DocSection, DocTitle, OnThisPage, type TocEntry } from '../configurator/docs/blocks'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
@@ -93,6 +93,32 @@ function identity(l: Locale): ReactNode[] {
   return lines
 }
 
+/** The publisher's identity is required by LCEN art. 6-III and stays one click
+ *  away, but it is not printed on first sight. It is MOUNTED only after the
+ *  click — a closed `<details>` would keep the address and SIRET in the markup. */
+function Reveal({ l, children }: { l: Locale; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const label = open
+    ? { fr: 'Masquer les informations', en: 'Hide publisher details', es: 'Ocultar los datos' }[l]
+    : { fr: 'Afficher les informations de l’éditeur', en: 'Show publisher details', es: 'Mostrar los datos del editor' }[l]
+  return (
+    <div className="flex flex-col gap-2.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex w-fit items-center gap-1.5 rounded-md text-ui font-medium text-accent-ui hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden className={`flex-shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}>
+          <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {label}
+      </button>
+      {open && children}
+    </div>
+  )
+}
+
 const hostItems = [<span className="text-fg">{LEGAL.host.name}</span>, LEGAL.host.address, hostLink]
 
 // ── Mentions légales ────────────────────────────────────────────────────────
@@ -103,7 +129,7 @@ function legalDoc(l: Locale): Doc {
     description: 'Éditeur, directeur de la publication et hébergeur d’Escala Tokens, service édité en France.',
     lead: 'Escala Tokens est un service en ligne édité en France. Cette page donne les informations exigées par la loi pour la confiance dans l’économie numérique (LCEN, art. 6-III).',
     sections: [
-      { id: 'editeur', h: 'Éditeur du site', body: <Ul items={identity('fr')} /> },
+      { id: 'editeur', h: 'Éditeur du site', body: <Reveal l="fr"><Ul items={identity('fr')} /></Reveal> },
       { id: 'directeur', h: 'Directeur de la publication', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Hébergeur', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Propriété intellectuelle', body: <P>Le code source d’Escala Tokens est publié sous licence MIT. Les systèmes de design que vous créez avec l’outil vous appartiennent : les tokens et fichiers exportés ne sont soumis à aucune licence ni obligation d’attribution de notre part. Le plugin Figma est un produit propriétaire distinct, et le service hébergé est régi par les <A href={TERMS_PATH}>conditions d’utilisation</A>. Figma est une marque de Figma, Inc. ; ce projet n’est ni affilié à Figma ni approuvé par elle.</P> },
@@ -117,7 +143,7 @@ function legalDoc(l: Locale): Doc {
     lead: 'Escala Tokens es un servicio en línea editado en Francia. Esta página recoge la información que exige la ley francesa sobre la confianza en la economía digital (LCEN, art. 6-III).',
     note: 'Traducción informativa. La versión francesa (Mentions légales) es la que tiene valor legal.',
     sections: [
-      { id: 'editeur', h: 'Editor del sitio', body: <Ul items={identity('es')} /> },
+      { id: 'editeur', h: 'Editor del sitio', body: <Reveal l="es"><Ul items={identity('es')} /></Reveal> },
       { id: 'directeur', h: 'Director de la publicación', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Alojamiento', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Propiedad intelectual', body: <P>El código fuente de Escala Tokens se publica bajo licencia MIT. Los sistemas de diseño que usted crea con la herramienta son suyos: los tokens y archivos exportados no llevan ninguna licencia ni obligación de atribución por nuestra parte. El plugin de Figma es un producto propietario aparte, y el servicio alojado se rige por los <A href={TERMS_PATH}>términos de uso</A>. Figma es una marca de Figma, Inc.; este proyecto no está afiliado a Figma ni respaldado por ella.</P> },
@@ -131,7 +157,7 @@ function legalDoc(l: Locale): Doc {
     lead: 'Escala Tokens is an online service published from France. This page gives the information required by French law on confidence in the digital economy (LCEN, art. 6-III).',
     note: 'Informative translation. The French version (Mentions légales) is the legally binding one.',
     sections: [
-      { id: 'editeur', h: 'Publisher', body: <Ul items={identity('en')} /> },
+      { id: 'editeur', h: 'Publisher', body: <Reveal l="en"><Ul items={identity('en')} /></Reveal> },
       { id: 'directeur', h: 'Publication director', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Host', body: <Ul items={hostItems} /> },
       { id: 'propriete', h: 'Intellectual property', body: <P>The Escala Tokens source code is published under the MIT License. The design systems you build with the tool are yours: exported tokens and files carry no licence or attribution requirement from us. The Figma plugin is a separate proprietary product, and the hosted service is governed by the <A href={TERMS_PATH}>terms of use</A>. Figma is a trademark of Figma, Inc.; this project is not affiliated with or endorsed by Figma.</P> },

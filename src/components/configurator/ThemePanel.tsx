@@ -20,13 +20,13 @@ import SpectrumSlider from '../ui/SpectrumSlider'
 import { AccentAxisSlider, ContrastSlider, TintSlider, formatShift } from './ThemeQuickSettingsRail'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
-import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL, discloseChip } from './themeWorkspaceLayout'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover, STATE_PRESETS,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { CreateStudioBar, RandomThemeButton } from './ThemeSaveBar'
-import { randomTheme } from '../../lib/randomTheme'
+import { nextRandomLabel, randomAccentVoice, randomTheme } from '../../lib/randomTheme'
 
 const STATE_ROLES = ['error', 'warning', 'success', 'info'] as const
 
@@ -208,7 +208,14 @@ type ThemeFormProps = {
 
 /** "Style · Scratch ⇅" — one row that opens the list of Escala's styles.
  *  Scratch first; each style shows its accent and its one-line description. */
-function StylePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+function StylePicker({ value, accent, onChange }: {
+  value: string
+  /** The accent in the form right now. The trigger shows THIS, not the style's
+   *  shipped accent: after Random or a moved slider the two differ, and a dot
+   *  in the old colour said the board and the form disagreed. */
+  accent: string
+  onChange: (id: string) => void
+}) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -236,7 +243,7 @@ function StylePicker({ value, onChange }: { value: string; onChange: (id: string
       >
         <span className="text-ui text-fg-muted">{t('Style')}</span>
         <span className="ml-auto flex min-w-0 items-center gap-1.5 text-ui font-medium text-fg">
-          {current && <span aria-hidden className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: current.accent }} />}
+          {current && <span aria-hidden className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: accent }} />}
           <span className="truncate">{current ? current.shortLabel : t('Scratch')}</span>
         </span>
         <svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint"><path d="M2 5l3-3 3 3M2 9l3 3 3-3" /></svg>
@@ -286,7 +293,7 @@ export function ThemeIdentityBar({
 }) {
   const { t } = useI18n()
   return (
-    <div className={`flex items-center gap-1.5 ${padded ? 'px-3 py-2' : ''}`}>
+    <div className={`flex w-full items-center gap-1.5 ${padded ? 'px-3' : ''}`}>
       <input
         type="text"
         value={name}
@@ -298,9 +305,9 @@ export function ThemeIdentityBar({
         title={nameLocked ? t('Locked — reserved export key') : undefined}
         autoFocus={autoFocus}
         spellCheck={false}
-        className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 py-1.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint focus:border-fg disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-surface px-2.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint hover:border-line-strong focus:border-fg disabled:cursor-not-allowed disabled:opacity-60"
       />
-      <div className="flex flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme mode')}>
+      <div className="flex h-8 flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme mode')}>
         {(['light', 'dark'] as const).map((k) => {
           const on = kind === k
           const bg = k === 'dark' ? pages.dark : pages.light
@@ -310,7 +317,7 @@ export function ThemeIdentityBar({
               type="button"
               onClick={() => onKind(k)}
               aria-pressed={on}
-              className={`px-2 py-1.5 text-caption font-medium capitalize transition-colors ${
+              className={`h-full px-2.5 text-caption font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60 ${
                 on ? '' : 'bg-surface text-fg-muted hover:text-fg'
               }`}
               style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
@@ -434,6 +441,13 @@ export function ThemeForm({
   // style fills the colours here and — once created — every edition of the
   // setup, which then walks its six steps from there.
   const [styleId, setStyleId] = useState('')
+  // A style the user CHOSE in the list is theirs to keep: Random then varies
+  // the colour inside it. A style Random landed on is not a choice, so the
+  // next spin may replace it.
+  const [stylePinned, setStylePinned] = useState(false)
+  // The draft's look came from a free Random spin, so it has no style name to
+  // inherit: unless one is typed it is filed as "Random".
+  const [randomized, setRandomized] = useState(false)
   // Neutral tint for THIS theme. It rides with the mint — it does not rewrite
   // the system already on screen. A style seeds its own level.
   const [tint, setTint] = useState<NeutralTint>(neutralTint)
@@ -445,6 +459,8 @@ export function ThemeForm({
     setErr(null)
     setStyleId(id)
     const preset = id ? THEME_STYLE_PRESETS.find((p) => p.id === id) : undefined
+    setStylePinned(Boolean(preset))
+    setRandomized(false)
     if (!preset) {
       const level = useDesignStore.getState().neutralTint
       setTint(level)
@@ -460,17 +476,30 @@ export function ThemeForm({
     setKind(preset.preferredAppearance)
     setDerived(new Set())
   }
-  // Random sits beside Style: it is "pick a style for me", so it writes the
-  // same fields `pickStyle` does (style, tint, slots, appearance) with a fresh
-  // accent on top. Each spin remembers what it replaced, so one icon steps back.
-  const randomPast = useRef<{ styleId: string; slots: Record<FamilySlot, string>; derived: Set<FamilySlot>; tint: NeutralTint; kind: 'light' | 'dark' }[]>([])
+  // Random sits beside Style. With no style chosen it is "pick a style for
+  // me": it writes the same fields `pickStyle` does (style, tint, slots,
+  // appearance) with a fresh accent on top. With a style chosen it keeps that
+  // style, its tint and its appearance, and only spins the accent — the two
+  // controls used to fight, each spin replacing the style just picked. Each
+  // spin remembers what it replaced, so one icon steps back.
+  const randomPast = useRef<{ styleId: string; slots: Record<FamilySlot, string>; derived: Set<FamilySlot>; tint: NeutralTint; kind: 'light' | 'dark'; randomized: boolean }[]>([])
   const [canUndoRandom, setCanUndoRandom] = useState(false)
   function spinRandom() {
-    randomPast.current.push({ styleId, slots, derived, tint, kind })
+    randomPast.current.push({ styleId, slots, derived, tint, kind, randomized })
+    if (stylePinned && startPreset) {
+      const next = slotsFromAccent(randomAccentVoice(slots.brand), tint, presetStates(startPreset))
+      if (startPreset.neutral) next.gray = startPreset.neutral
+      setErr(null)
+      setSlots(next)
+      setDerived(new Set())
+      setCanUndoRandom(true)
+      return
+    }
     const recipe = randomTheme({ accent: slots.brand, avoidScaffold: styleId || undefined })
     const preset = THEME_STYLE_PRESETS.find((p) => p.id === recipe.scaffoldId)
     setErr(null)
     setStyleId(recipe.scaffoldId)
+    setRandomized(true)
     setTint(recipe.neutralTint)
     setSlots(slotsFromAccent(recipe.accent, recipe.neutralTint, preset ? presetStates(preset) : undefined))
     setDerived(new Set())
@@ -486,6 +515,7 @@ export function ThemeForm({
     setDerived(prev.derived)
     setTint(prev.tint)
     setKind(prev.kind)
+    setRandomized(prev.randomized)
     setCanUndoRandom(randomPast.current.length > 0)
   }
   function setTintLevel(next: NeutralTint) {
@@ -576,6 +606,10 @@ export function ThemeForm({
       }
       if ('error' in res) { setErr(t(res.error, { count: MY_THEME_HARD_CAP })); return }
       if (name.trim()) useDesignStore.getState().setThemeLabel(res.key, name.trim())
+      else if (randomized) {
+        const labels = useDesignStore.getState().themeLabels
+        useDesignStore.getState().setThemeLabel(res.key, nextRandomLabel(labels))
+      }
       if (then === 'done') onFinishEarly?.(res.key)
       else onCreated?.(res.key)
       if (!holdAfterCreate) onClose()
@@ -645,7 +679,7 @@ export function ThemeForm({
         {firstStep && !isEdit && (
           <div className="flex-shrink-0">
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><StylePicker value={styleId} onChange={pickStyle} /></div>
+              <div className="min-w-0 flex-1"><StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} /></div>
               {canUndoRandom && (
                 <button
                   type="button"
@@ -657,9 +691,17 @@ export function ThemeForm({
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
                 </button>
               )}
-              <RandomThemeButton onClick={spinRandom} label={t('Random')} variant="icon" className="!h-10 !w-10 !rounded-xl" />
+              <RandomThemeButton onClick={spinRandom} label={stylePinned ? t('Random accent') : t('Random')} variant="icon" className="!h-10 !w-10 !rounded-xl" />
             </div>
-            {startPreset && <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">{startPreset.detail}</p>}
+            {/* The style's blurb names its own accent ("a poster red…"), so it
+                only stands while that accent is the one in the form. */}
+            {startPreset && (
+              <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
+                {slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
+                  ? startPreset.detail
+                  : t('{name}, with your own accent.', { name: startPreset.shortLabel })}
+              </p>
+            )}
           </div>
         )}
         {(() => {
@@ -784,13 +826,7 @@ export function ThemeForm({
                 <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
                 <span className="block truncate text-mini text-fg-faint">{t('Brightness · Ramp contrast')}</span>
               </span>
-              <span
-                className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
-                  fineOpen
-                    ? 'border border-line text-fg-muted group-hover:text-fg'
-                    : 'bg-elevated text-fg ring-1 ring-line-strong'
-                }`}
-              >
+              <span className={discloseChip(fineOpen)}>
                 {fineOpen ? t('Hide') : t('Show')}
               </span>
             </button>

@@ -177,7 +177,10 @@ export default function FoundationIconRail({
             key={group.label ?? gi}
             className={vertical
               ? `flex w-full flex-col items-center gap-1 ${
-                gi > 0 ? 'mt-3 pt-3' : headerDivider ? 'pt-[22px]' : ''
+                // Groups share the tiles' own `gap-1`: the Variables / Styles
+                // split is data, not a visual break, so no extra air between
+                // the fourth and fifth icon.
+                gi > 0 ? 'mt-1' : headerDivider ? 'pt-[22px]' : ''
               }`
               : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
           >

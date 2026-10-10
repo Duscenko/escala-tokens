@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -815,12 +815,58 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
   }
 }
 
+/** The studio's title lives on the CANVAS, not in the inspector: it names the
+ *  screen, and the inspector is the tool you use on it. The number is the step
+ *  the footer counts, so the two never disagree. The hint is behind "?" —
+ *  one sentence nobody needs twice. */
+function CreateBoardHeader({ step, title, stepLabel, hint }: {
+  step: number
+  title: string
+  stepLabel: string
+  hint?: string
+}) {
+  const { t } = useI18n()
+  const hintId = useId()
+  return (
+    <div
+      className="flex flex-shrink-0 items-center gap-2 border-b border-line px-5"
+      style={{ height: INSPECTOR_TABS_H }}
+    >
+      <h2 className="flex min-w-0 items-baseline gap-2 text-ui font-semibold text-fg">
+        <span className="tabular-nums text-fg-faint">{step}.</span>
+        <span className="truncate">{title}</span>
+        <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
+      </h2>
+      {hint && (
+        <span className="group relative flex-shrink-0">
+          <button
+            type="button"
+            aria-label={t('About this step')}
+            aria-describedby={hintId}
+            className="grid h-5 w-5 place-items-center rounded-full border border-line-strong text-mini font-semibold text-fg-muted transition-colors hover:border-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            ?
+          </button>
+          <span
+            id={hintId}
+            role="tooltip"
+            className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-lg border border-line bg-elevated px-3 py-2 text-caption leading-relaxed text-fg opacity-0 shadow-lg transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100"
+          >
+            {hint}
+          </span>
+        </span>
+      )}
+    </div>
+  )
+}
+
 function CreateBoard({
-  store, themeKey, appearance,
+  store, themeKey, appearance, header,
 }: {
   store: ReturnType<typeof useDesignStore.getState>
   themeKey: string
   appearance: 'light' | 'dark'
+  header?: ReactNode
 }) {
   const tokensByAppearance = useMemo(() => ({
     light: resolvePreviewTokens(store, themeKey, 'light', 'desktop'),
@@ -834,6 +880,7 @@ function CreateBoard({
   const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
   return (
     <div className={`flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
+      {header}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <SystemCollage
           layout="board"
@@ -1143,6 +1190,7 @@ export default function ThemeLibraryPage({
   onStylesRequestHandled,
   onEditFoundation,
   onCreatingChange,
+  studioOnly = false,
 }: {
   previewTheme: string
   /** Themes the live Figma sync publishes (File & modes). */
@@ -1158,7 +1206,7 @@ export default function ThemeLibraryPage({
   /** Opens the theme sheet on its create view (owned by the shell). */
   onCreateTheme: () => void
   /** A minted random theme: open it on Theme preview, Color edition (Random lives there). */
-  onOpenRandom: (key: string) => void
+  onOpenRandom: (key: string, minted: boolean) => void
   /** Continue on the first step: open the new theme on the Theme board to set
    *  the rest. Without it, creating only selects the theme. */
   onStartTheme?: (key: string) => void
@@ -1182,6 +1230,9 @@ export default function ThemeLibraryPage({
   onEditFoundation?: (foundationKey: string) => void
   /** Create studio uses the right inspector; Home's left file menu must yield. */
   onCreatingChange?: (creating: boolean) => void
+  /** A visitor with no account and no theme: only the create studio is shown,
+   *  never the file list, and there is nothing to cancel back to. */
+  studioOnly?: boolean
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
@@ -1190,7 +1241,7 @@ export default function ThemeLibraryPage({
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const store = useDesignStore()
   const chromeAppearance = useTheme() === 'dark' ? 'dark' : 'light'
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(studioOnly)
   const [identityHost, setIdentityHost] = useState<HTMLDivElement | null>(null)
   const [createDraft, setCreateDraft] = useState<CreateDraft | null>(null)
   const onDraftChange = useCallback((draft: CreateDraft) => setCreateDraft(draft), [])
@@ -1230,7 +1281,7 @@ export default function ThemeLibraryPage({
       return
     }
     setStyleError(null)
-    onOpenRandom(result.key)
+    onOpenRandom(result.key, result.minted)
   }
   const { themeOrder, themes, removeTheme, themeUpdatedAt, pinned, togglePinned } = store
   const currentId = activeLibraryId(store)
@@ -1713,6 +1764,9 @@ export default function ThemeLibraryPage({
     finishCreate(createdKey)
   }
   const createIndex = CREATE_STEPS.findIndex((item) => item.key === createStep)
+  // The first system this browser makes: the studio says so, and what is on
+  // the board is a draft until Continue.
+  const firstSystem = mine.every((key) => key === createdKey)
   const createFont = createdKey
     ? resolveThemeFoundations(store, createdKey).typography.fontFamily
     : ''
@@ -1736,9 +1790,15 @@ export default function ThemeLibraryPage({
         <>
           <InspectorPortal>
             <div className="flex h-full min-h-0 flex-col">
-              <div ref={setIdentityHost} className="flex-shrink-0 border-b border-line">
+              {/* Same band as the canvas header beside it (`CreateBoardHeader`):
+                  one height, so the two rules meet in one line across the gap. */}
+              <div
+                ref={setIdentityHost}
+                className="flex flex-shrink-0 items-center border-b border-line"
+                style={{ height: INSPECTOR_TABS_H }}
+              >
                 {!(createStep === 'color' || !createdKey) && createdKey && (
-                  <MintedThemeIdentity themeKey={createdKey} />
+                  <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} /></div>
                 )}
               </div>
               <CreateStepNav step={createStep} onPick={pickCreateStep} />
@@ -1776,7 +1836,7 @@ export default function ThemeLibraryPage({
                 total={CREATE_STEPS.length}
                 continueLabel={continueLabel}
                 last={createStep === 'icons' && !!createdKey}
-                onCancel={cancelCreate}
+                onCancel={studioOnly ? undefined : cancelCreate}
                 onBack={createIndex > 0 ? goBackCreateStep : undefined}
                 onSkip={skipCreate}
                 onContinue={() => {
@@ -1792,9 +1852,17 @@ export default function ThemeLibraryPage({
             appearance={createdKey
               ? (store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light')
               : (createDraft?.kind ?? 'dark')}
+            header={(
+              <CreateBoardHeader
+                step={Math.max(0, createIndex) + 1}
+                title={firstSystem ? t('Customize your design system') : t('New theme')}
+                stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
+                hint={createdKey ? undefined : t('Start from a style or your own colour. Nothing is saved until you continue.')}
+              />
+            )}
           />
         </>
-      ) : (
+      ) : studioOnly ? null : (
       <div className="flex min-h-0 flex-1 flex-row">
         <HomeNav
           section={viewing}

@@ -10,6 +10,11 @@ import { consumeLicenceReturn, lookupPurchase } from '../../lib/licencePurchase'
 import { LicenceModal } from './LicenceModal'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
+/** The tile is `h-6 w-6` = 1.5rem = 27px at the 18px root, × `AVATAR_RADIUS`
+ *  (8/31). Inlined, not imported: ThemeLibraryRail pulls half the workspace in,
+ *  and this header control must not. */
+const AVATAR_TILE_RADIUS = 27 * (8 / 31)
+
 // TopNav's account entry: a "Sign in" link to /login when signed out, an initial
 // that opens a small menu (email · Sign out) when signed in. Renders NOTHING
 // while accounts are off (`accountsEnabled`), so the production header is
@@ -119,7 +124,12 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
       >
         {/* Same chip as ☰ / appearance: nested tile is elevated chrome, not
             the canvas `--app`. Radius = outer 8 − inset 4. */}
-        <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded border border-line bg-elevated text-caption font-semibold uppercase leading-none text-fg">
+        <span
+          className="grid h-6 w-6 flex-shrink-0 place-items-center border border-line bg-elevated text-caption font-semibold uppercase leading-none text-fg"
+          // The theme chip's avatar corner (`ThemeAvatar`: 8/31 of its box), so
+          // the two 24px tiles in the header share one proportion.
+          style={{ borderRadius: AVATAR_TILE_RADIUS }}
+        >
           {initial}
         </span>
         <span className={`text-caption font-semibold leading-none ${licensed ? 'text-accent-ui' : 'text-current'}`}>

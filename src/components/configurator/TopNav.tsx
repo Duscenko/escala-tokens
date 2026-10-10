@@ -208,6 +208,9 @@ interface TopNavProps {
    *  “Escala Tokens Beta | Generator”. About · Components · Docs · Pricing
    *  keep the tagged top menu (☰ only below 1080px). */
   hamburgerNav?: boolean
+  /** Components with no design system yet: there is nothing to browse around
+   *  in, so the section tags fold into ☰ and the brand names the page. */
+  navInMenu?: boolean
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -578,7 +581,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary,
-  hamburgerNav = false,
+  hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
 
@@ -603,10 +606,10 @@ export default function TopNav({
             <div className="flex items-baseline gap-1.5 whitespace-nowrap leading-none">
               <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>
               <span className="text-mini font-light leading-none text-fg-faint">Beta</span>
-              {hamburgerNav && (
+              {(hamburgerNav || navInMenu) && (
                 <>
                   <span className="mx-0.5 text-mini font-light leading-none text-fg-faint" aria-hidden>|</span>
-                  <span className="text-ui font-medium leading-none text-fg">{t('Generator')}</span>
+                  <span className="text-ui font-medium leading-none text-fg">{hamburgerNav ? t('Generator') : t('Components')}</span>
                 </>
               )}
             </div>
@@ -622,7 +625,7 @@ export default function TopNav({
           longer overlap. Below 1080px (measured: Spanish labels need ~1060) the compact menu takes over. */}
       <nav
         aria-label={t('Sections')}
-        className={`${hamburgerNav ? 'hidden' : 'hidden min-[1080px]:flex'} min-w-0 flex-shrink-0 items-center gap-3 pl-5 lg:gap-5 lg:pl-6`}
+        className={`${hamburgerNav || navInMenu ? 'hidden' : 'hidden min-[1080px]:flex'} min-w-0 flex-shrink-0 items-center gap-3 pl-5 lg:gap-5 lg:pl-6`}
       >
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
@@ -655,13 +658,10 @@ export default function TopNav({
             onOpenLanguages={onOpenLanguages}
             chromeAppearance={chromeAppearance}
             onChromeAppearanceChange={onChromeAppearanceChange}
-            always={hamburgerNav}
+            always={hamburgerNav || navInMenu}
           />
-          {/* Language stays a header icon from 1080px; narrow viewports use ☰.
-              Light/dark is ONLY inside ☰ (never a second sun/moon icon). */}
-          <div className="hidden min-[1080px]:flex items-center gap-2">
-            <LanguageMenu onOpen={onOpenLanguages} />
-          </div>
+          {/* Language lives in ☰ at every width (its Language section). Light/dark
+              is ONLY inside ☰ too — the header keeps no second icon for either. */}
           {themeControl}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}

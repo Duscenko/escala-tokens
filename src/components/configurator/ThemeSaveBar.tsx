@@ -75,6 +75,7 @@ export default function ThemeSaveBar({
   exploringRandom = false,
   onRandom,
   onSaved,
+  onDiscard,
 }: {
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
@@ -84,6 +85,9 @@ export default function ThemeSaveBar({
   onRandom?: () => void
   /** After a successful save while exploring — the shell leaves this mode. */
   onSaved?: () => void
+  /** While exploring: throw the draft away and go back to Home to start from
+   *  Blank, code or a style. */
+  onDiscard?: () => void
 }) {
   const { t } = useI18n()
   const access = useAccess()
@@ -113,7 +117,23 @@ export default function ThemeSaveBar({
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
     // stretches a portaled panel): as a direct slot child (Variables) the bar
     // must stay its own height, pinned under the scrolling nav.
-    <div className={`flex flex-shrink-0 [&&]:!flex-none items-center gap-2 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+      {exploringRandom && onDiscard && (
+        // The way out of a draft: Random mints a real theme the moment it is
+        // pressed, and Save is the only other door. Discard removes it and
+        // returns to Home, where Blank and From code live.
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-caption text-fg-muted">{t('Random draft · not saved')}</p>
+          <button
+            type="button"
+            onClick={onDiscard}
+            className="h-7 flex-shrink-0 rounded-lg px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Discard')}
+          </button>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={() => undoEdit()}
@@ -153,6 +173,7 @@ export default function ThemeSaveBar({
         )}
         <span className="truncate">{exploringRandom ? t('Save theme') : label}</span>
       </button>
+      </div>
     </div>
   )
 }
@@ -257,8 +278,9 @@ export function CreateStudioBar({
   total: number
   continueLabel: string
   last: boolean
-  /** Leave without keeping the theme. The caller deletes it if it was already minted. */
-  onCancel: () => void
+  /** Leave without keeping the theme. The caller deletes it if it was already
+   *  minted. Omitted when there is nowhere to go back to (a first visit). */
+  onCancel?: () => void
   /** Previous step. When given it replaces Cancel: past the first step the
    *  way out is Skip setup, and the way BACK is this — one door per intent. */
   onBack?: () => void
@@ -279,7 +301,7 @@ export function CreateStudioBar({
       <div className="flex items-center gap-2">
         {onBack ? (
           <BackButton onClick={onBack} />
-        ) : (
+        ) : onCancel && (
           <button
             type="button"
             onClick={onCancel}

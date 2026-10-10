@@ -30,6 +30,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
   const titleId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const doneRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion() ?? false
   const [value, setValue] = useState('')
   const [busy, setBusy] = useState(false)
@@ -40,9 +41,31 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
   const active = licence.status === 'valid'
 
   useEffect(() => {
+    // Hand focus back to whatever opened the dialog when it closes.
+    const opener = document.activeElement as HTMLElement | null
+    return () => opener?.focus?.()
+  }, [])
+
+  useEffect(() => {
     if (active) doneRef.current?.focus()
     else inputRef.current?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { onClose(); return }
+      if (event.key !== 'Tab') return
+      // Tab stays inside: a modal that lets focus fall through to the page
+      // behind the scrim is not modal for keyboard users.
+      const items = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), summary',
+        ) ?? [],
+      )
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const at = document.activeElement
+      if (event.shiftKey && at === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && at === last) { event.preventDefault(); first.focus() }
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose, active])
@@ -77,9 +100,12 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1 }}
       transition={fade}
       onMouseDown={onClose}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-fg/40 p-4"
+      // A scrim is DARK in both chromes. `bg-fg` flips with the theme, so in
+      // dark mode it painted a pale wash over the page instead of dimming it.
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
     >
       <motion.div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -88,9 +114,21 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         transition={rise}
         onMouseDown={(event) => event.stopPropagation()}
-        className="flex w-full max-w-[400px] flex-col rounded-2xl border border-line-strong bg-elevated p-5 shadow-2xl"
+        className="flex w-full max-w-[420px] flex-col rounded-2xl border border-line bg-elevated p-6 shadow-2xl"
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3.5">
+          <span
+            aria-hidden
+            className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl ${
+              active ? 'bg-status-success/15 text-status-success' : 'bg-accent-ui/15 text-accent-ui'
+            }`}
+          >
+            {active ? (
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7" /></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="10.5" r="2.5" /><path d="M7.3 8.7 13 3m-2.2 2.2L12.5 7m-4-1.5 1.5 1.5" /></svg>
+            )}
+          </span>
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-strong font-semibold tracking-tight text-fg">
               {active ? t('Escala Pro is active') : t('Activate Escala Pro')}
@@ -112,7 +150,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label={t('Close')}
-            className={`-mr-1 -mt-1 grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg ${FOCUS}`}
+            className={`-mr-2 -mt-1.5 grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg active:scale-95 ${FOCUS}`}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -121,7 +159,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {active ? (
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-6 flex items-center gap-3">
             {/* Pro by the account, with no key here: there is nothing in this
                 browser to remove. */}
             {licence.hasKey && (
@@ -143,7 +181,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={submit} className="mt-5 flex flex-col gap-2">
+          <form onSubmit={submit} className="mt-6 flex flex-col gap-2">
             <label htmlFor={`${titleId}-key`} className="text-caption font-semibold text-fg">
               {t('Paste your licence key')}
             </label>
@@ -159,12 +197,16 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
                 spellCheck={false}
                 aria-invalid={message ? true : undefined}
                 aria-describedby={message ? `${titleId}-err` : `${titleId}-hint`}
-                className="h-9 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 font-mono text-caption text-fg outline-none placeholder:text-fg-faint focus:ring-2 focus:ring-accent-ui/50"
+                className={`h-10 min-w-0 flex-1 rounded-lg border bg-surface px-3 font-mono text-caption text-fg outline-none transition-colors placeholder:text-fg-faint focus:ring-2 ${
+                  message
+                    ? 'border-status-danger focus:ring-status-danger/40'
+                    : 'border-line-strong hover:border-fg-faint focus:border-accent-ui focus:ring-accent-ui/40'
+                }`}
               />
               <button
                 type="submit"
                 disabled={!value.trim() || busy}
-                className={`h-9 rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
+                className={`h-10 flex-shrink-0 rounded-lg bg-accent-solid px-4 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
               >
                 {busy ? t('Checking…') : t('Activate')}
               </button>
@@ -194,13 +236,18 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
         )}
 
         {!active && !entitlement.promo && (
-          <div className="mt-5 flex flex-col gap-2 border-t border-line pt-4">
+          <div className="mt-6 flex flex-col gap-2.5 border-t border-line pt-5">
             <p className="text-caption font-semibold text-fg">{t("Don't have a key yet?")}</p>
+            {/* A secondary FILL, like every other secondary button in the
+                product: the outline-only version read as an input. The price
+                sits on the right so the label can stay the action. */}
             <a
               href={checkoutUrl(user?.email)}
-              className={`flex h-9 items-center justify-between rounded-lg border border-line-strong px-3.5 text-caption font-semibold text-fg transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
+              className={`flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3.5 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated ${FOCUS}`}
             >
-              <span>{t('Buy Escala Pro')} · <span className="tabular-nums">${entitlement.priceUsd}</span></span>
+              <span className="min-w-0 flex-1 truncate">{t('Buy Escala Pro')}</span>
+              <span className="tabular-nums text-fg-muted">${entitlement.priceUsd}</span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
             </a>
             {entitlement.launchPrice && (
               <p className="text-caption text-fg-muted">

@@ -4,7 +4,9 @@ import { FONT_PRESETS } from '../fonts'
 import { hueDelta, MIN_HUE_DELTA } from '../randomAccent'
 import {
   fontPairingsAreCatalogued,
+  nextRandomLabel,
   randomAccentVoice,
+  randomLabelAfterTweak,
   randomBoardAppearance,
   randomTheme,
   stylePreviewFromRecipe,
@@ -117,5 +119,25 @@ describe('randomTheme', () => {
     const second = randomBoardAppearance(sequence(5))
     expect(first === 'light' || first === 'dark').toBe(true)
     expect(second).toBe(first)
+  })
+})
+
+describe('random theme naming', () => {
+  it('calls the first Random "Random" and numbers the rest', () => {
+    expect(nextRandomLabel({})).toBe('Random')
+    expect(nextRandomLabel({ a: 'Random' })).toBe('Random 2')
+    expect(nextRandomLabel({ a: 'Random', b: 'Random 2' })).toBe('Random 3')
+  })
+
+  it('replaces a name the designer never chose', () => {
+    const style = THEME_STYLE_PRESETS[0]
+    expect(randomLabelAfterTweak('t', { t: style.label }, style.id)).toBe('Random')
+    expect(randomLabelAfterTweak('t', {}, undefined)).toBe('Random')
+  })
+
+  it('keeps a name that was typed, and one already Random', () => {
+    const style = THEME_STYLE_PRESETS[0]
+    expect(randomLabelAfterTweak('t', { t: 'Acme brand' }, style.id)).toBeNull()
+    expect(randomLabelAfterTweak('t', { t: 'Random 2' }, undefined)).toBeNull()
   })
 })

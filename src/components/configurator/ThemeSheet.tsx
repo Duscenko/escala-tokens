@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { myThemeKeys } from '../../lib/themeLibrary'
@@ -184,11 +185,34 @@ export function StartDesignModal({
   onSystemStyles: () => void
 }) {
   const { t } = useI18n()
+  const reduceMotion = useReducedMotion()
+  const dialogRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    // Keyboard users land inside the dialog, Tab stays in it, and closing hands
+    // focus back to whatever opened it (a modal with none of that leaves the
+    // page behind it reachable).
+    const opener = document.activeElement as HTMLElement | null
+    const focusables = () => Array.from(
+      dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [],
+    )
+    focusables()[0]?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { onClose(); return }
+      if (event.key !== 'Tab') return
+      const items = focusables()
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && active === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus() }
+    }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      opener?.focus?.()
+    }
   }, [open, onClose])
   if (!open) return null
   const pick = (fn: () => void) => () => {
@@ -196,12 +220,16 @@ export function StartDesignModal({
     fn()
   }
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6" onClick={onClose}>
-      <div
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="start-design-title"
-        className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-xl"
+        className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-2xl"
+        initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="start-design-title" className="px-1 pb-3 text-title font-semibold text-fg">
@@ -213,14 +241,16 @@ export function StartDesignModal({
           onFromCode={pick(onFromCode)}
           onSystemStyles={pick(onSystemStyles)}
         />
+        {/* A filled secondary — the same surface/border pair "Skip setup" uses —
+            so Cancel reads as a button and not as loose text under the list. */}
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 h-8 w-full rounded-lg text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="mt-4 h-10 w-full rounded-xl border border-line bg-surface text-body font-medium text-fg transition-colors hover:bg-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Cancel')}
         </button>
-      </div>
+      </motion.div>
     </div>,
     document.body,
   )
@@ -329,10 +359,13 @@ export function ThemeAppearanceControl({
         title={themeLabel}
         className={`${themeOpen || menuOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''} flex h-8 max-w-[13.5rem] flex-shrink-0 items-center gap-1.5 rounded-lg pl-1 pr-2 text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
       >
+        {/* The same tile as the account avatar beside it: `h-6 w-6` is 1.5rem,
+            which is 27px at this app's 18px root. The cover was drawn at 18px
+            inside that box, so it read as a smaller sibling of "D". */}
         <span className="grid h-6 w-6 flex-shrink-0 place-items-center">
           {empty
-            ? <EmptySystemAvatar size={18} />
-            : <ThemeAvatar size={18} ramp={ramp} appearance={kind} fallback={tryOn?.preset.accent ?? store.primaryColor} />}
+            ? <EmptySystemAvatar size={27} />
+            : <ThemeAvatar size={27} ramp={ramp} appearance={kind} fallback={tryOn?.preset.accent ?? store.primaryColor} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col items-start leading-none">
           <span className="w-full truncate text-left text-caption font-semibold text-fg">{name}</span>
