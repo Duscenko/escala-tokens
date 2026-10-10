@@ -510,7 +510,7 @@ function EmailStatus({ user }: { user: User }) {
     setBusy(true)
     setProblem(null)
     setNotice(null)
-    const result = await resendSignupEmail(user.email)
+    const result = await resendSignupEmail(user.email, locale)
     setBusy(false)
     if (!result.ok) setProblem(result.problem)
     else setNotice(t('Confirmation sent. Check your inbox.'))
