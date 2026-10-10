@@ -133,6 +133,58 @@ export function peekLoginIntent(): LoginIntent | null {
   return readPending()?.intent ?? null
 }
 
+/** What the login page tells someone who was sent here from the Generator:
+ *  the action they were about to finish and where they will land. Read-only —
+ *  the destination still owns consuming the intent. `null` for any return that
+ *  did not start in the workspace (header Sign in, plugin, account). */
+export interface WorkspaceReturnContext {
+  intent: LoginIntent | null
+  /** English words of the place, widest first (`['Variables', 'Color']`);
+   *  empty when the return has no section, i.e. the editor's front door. */
+  place: string[]
+  /** Where the page's "Back to editor" goes. */
+  href: string
+}
+
+const FOUNDATION_LABEL: Record<string, string> = {
+  color: 'Color',
+  typography: 'Typography',
+  dimensions: 'Dimensions',
+  radius: 'Radius',
+  spacing: 'Spacing',
+  grid: 'Grid',
+  sizes: 'Sizes',
+  stroke: 'Stroke',
+  shadow: 'Shadow',
+  icons: 'Icons',
+}
+
+export function placeWords(section: string | undefined): string[] {
+  const place = section ? decodeWorkspaceSection(section) : null
+  if (!place) return []
+  if (place.tab === 'components') return ['Components']
+  if (place.tab === 'docs') return ['Docs']
+  if (place.tab === 'about') return ['About']
+  if (place.workspace === 'primitives') {
+    const foundation = place.foundation ? FOUNDATION_LABEL[place.foundation] : undefined
+    return foundation ? ['Variables', foundation] : ['Variables']
+  }
+  if (place.workspace === 'code') return ['Code']
+  if (place.workspace === 'documentation') return ['Docs']
+  if (place.workspace === 'library') return ['Home']
+  return ['Theme']
+}
+
+export function workspaceReturnContext(): WorkspaceReturnContext | null {
+  const pending = readPending()
+  if (!pending || pending.next !== 'workspace') return null
+  return {
+    intent: pending.intent,
+    place: placeWords(pending.section),
+    href: pathForNext('workspace'),
+  }
+}
+
 /** Called once by the destination after it sees a session: returns the intent
  *  to finish (if any) and forgets the whole return so it can't fire twice. */
 export function takeLoginIntent(next: LoginNext): LoginIntent | null {

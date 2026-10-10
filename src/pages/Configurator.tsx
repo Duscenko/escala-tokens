@@ -575,12 +575,20 @@ export default function Configurator() {
   // a part, Export and Save ask for a free account first.
   const access = useAccess()
   const { user: authUser, event: authEvent } = useAuth()
-  // Home is the signed-in file browser — never for a guest, including the gap
-  // after sign-out before `authEvent` propagates or when the session expires.
+  // Home is the signed-in file browser. `hasStoredSession()` during the FIRST
+  // auth read prevents a signed-in reload from flashing Theme preview — but it
+  // must not keep Home up after sign-out when the token is gone or stale.
+  const [authStillBooting, setAuthStillBooting] = useState(() => accountsEnabled)
+  useEffect(() => {
+    if (!accountsEnabled || !access.loading) setAuthStillBooting(false)
+  }, [access.loading])
+  useEffect(() => {
+    if (authEvent === 'SIGNED_OUT') setAuthStillBooting(false)
+  }, [authEvent])
   const sessionAllowsHome =
     !accountsEnabled
     || Boolean(authUser)
-    || (accountsEnabled && access.loading && hasStoredSession())
+    || (authStillBooting && hasStoredSession())
   const needsAnotherThemePro = useNeedsProForAnotherTheme()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
@@ -1977,7 +1985,7 @@ export default function Configurator() {
           <ThemeAppearanceControl
             previewTheme={previewTheme}
             stylePreview={stylePreview}
-            homeOpen={themesCanvas && themeWorkspaceTab === 'library'}
+            homeOpen={themesCanvas && themeWorkspaceTab === 'library' && sessionAllowsHome}
             themeOpen={themesCanvas && themeWorkspaceTab === 'preview'}
             onOpenLibrary={openLibraryPage}
             onOpenTheme={openThemePreviewPage}
@@ -2470,7 +2478,7 @@ export default function Configurator() {
               // A new folder: stay on Home and open it so a file (theme) is created inside.
               setExportMode(null)
               setTab('foundations')
-              setThemeWorkspaceTab('library')
+              openLibraryPage()
               setEnterFolderTick((n) => n + 1)
             }}
           />

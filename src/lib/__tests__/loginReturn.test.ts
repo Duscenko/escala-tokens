@@ -6,6 +6,7 @@ import {
   readLoginSearch,
   rememberReturn,
   takeLoginIntent,
+  workspaceReturnContext,
 } from '../loginReturn'
 
 // vitest runs in `node`: give the module the one browser API it touches.
@@ -92,6 +93,39 @@ describe('loginReturn', () => {
       rememberReturn('workspace', 'save-library', 'code/core--minimalist')
       rememberReturn('workspace')
       expect(pathForNext('workspace')).toBe('/?section=code%2Fcore--minimalist')
+      expect(takeLoginIntent('workspace')).toBe('save-library')
+    })
+  })
+
+  describe('workspace return context (login page copy)', () => {
+    it('names the action and the place the person will land on', () => {
+      rememberReturn('workspace', 'export', 'variables/core--minimalist/color/semantics')
+      expect(workspaceReturnContext()).toEqual({
+        intent: 'export',
+        place: ['Variables', 'Color'],
+        href: '/?section=variables%2Fcore--minimalist%2Fcolor%2Fsemantics',
+      })
+    })
+
+    it('maps the other areas and falls back to the editor with no section', () => {
+      rememberReturn('workspace', null, 'code/core')
+      expect(workspaceReturnContext()?.place).toEqual(['Code'])
+      rememberReturn('workspace', null, 'docs/__guide-mcp')
+      expect(workspaceReturnContext()?.place).toEqual(['Docs'])
+      window.sessionStorage.clear()
+      rememberReturn('workspace')
+      expect(workspaceReturnContext()).toEqual({ intent: null, place: [], href: '/' })
+    })
+
+    it('is null for returns that did not start in the workspace', () => {
+      expect(workspaceReturnContext()).toBeNull()
+      rememberReturn('library')
+      expect(workspaceReturnContext()).toBeNull()
+    })
+
+    it('does not consume the intent', () => {
+      rememberReturn('workspace', 'save-library', 'code')
+      workspaceReturnContext()
       expect(takeLoginIntent('workspace')).toBe('save-library')
     })
   })

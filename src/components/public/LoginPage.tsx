@@ -27,7 +27,7 @@ import {
 import { applyDocumentHead } from '../../lib/documentHead'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 import { accountsEnabled, authProviders, supabase, type AuthProvider } from '../../lib/supabase'
-import { pathForNext, pendingNext, readLoginSearch, rememberReturn } from '../../lib/loginReturn'
+import { forgetLoginReturn, pathForNext, pendingNext, readLoginSearch, rememberReturn, workspaceReturnContext } from '../../lib/loginReturn'
 
 const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
   mcp: '/docs/mcp',
@@ -148,6 +148,10 @@ export function LoginPage() {
   // (closed list, see lib/loginReturn). Read once — the page never rewrites it.
   const [search] = useState(() => readLoginSearch(window.location.search))
   const [mode, setMode] = useState<Mode>(search.mode)
+  // Sent here from the Generator: say what is waiting and where they land, so
+  // the page reads as a step of that action rather than a different place.
+  // Read once — an OAuth return reaches this page with the same record.
+  const [fromEditor] = useState(() => workspaceReturnContext())
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   // Create account and "choose a new password" ask twice: a typo there locks
@@ -338,7 +342,13 @@ export function LoginPage() {
             <span className="text-strong font-semibold">Escala Tokens</span>
           </a>
           <nav aria-label={t('Sections')} className="flex items-center gap-5">
-            <a href="/" className={`${NAV_LINK} inline-flex items-center gap-1.5`}><ArrowLeft />{t('Home')}</a>
+            {fromEditor ? (
+              // Backing out ends the pending action: nothing is left to fire on
+              // a sign-in someone makes later from somewhere else.
+              <a href={fromEditor.href} onClick={() => forgetLoginReturn()} className={`${NAV_LINK} inline-flex items-center gap-1.5`}><ArrowLeft />{t('Back to editor')}</a>
+            ) : (
+              <a href="/" className={`${NAV_LINK} inline-flex items-center gap-1.5`}><ArrowLeft />{t('Home')}</a>
+            )}
             <DocsNavMenu onOpenDocsPage={(page) => window.location.assign(DOCS_PAGE_PATH[page])} />
             <a href={CONTACT_PATH} className={NAV_LINK}>{t('Need help?')}</a>
           </nav>
@@ -360,6 +370,16 @@ export function LoginPage() {
                 <div>
                   <h1 id={titleId} className="text-[clamp(30px,3.4vw,40px)] font-semibold leading-[1.1] tracking-[-0.02em] text-fg">{done ? t('Check your email') : heading}</h1>
                   {!done && sub && <p className="mt-3 text-ui leading-relaxed text-fg-muted">{sub}</p>}
+                  {!done && fromEditor && (view === 'signin' || view === 'signup') && (
+                    <p role="note" className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg-muted">
+                      {fromEditor.intent === 'export' ? `${t('You were about to export your system.')} `
+                        : fromEditor.intent === 'save-library' ? `${t('You were about to save your theme.')} `
+                        : ''}
+                      {fromEditor.place.length
+                        ? t('You will go back to {place}.', { place: fromEditor.place.map((w) => t(w)).join(' · ') })
+                        : t('You will go back to the editor.')}
+                    </p>
+                  )}
                 </div>
 
                 {done ? (
