@@ -1880,9 +1880,9 @@ export default function ThemeLibraryPage({
             action={viewing.kind === 'recents' ? (
               <NewDesignSystemButton
                 onBlank={openCreate}
-                onRandom={openRandom}
-                onFromCode={onImport}
-                onSystemStyles={() => setSection({ kind: 'styles' })}
+                onRandom={() => { if (needsPro) { setUpgradeOpen(true); return } openRandom() }}
+                onFromCode={() => { if (needsPro) { setUpgradeOpen(true); return } onImport() }}
+                onSystemStyles={() => { if (needsPro) { setUpgradeOpen(true); return } setSection({ kind: 'styles' }) }}
               />
             ) : undefined}
           />

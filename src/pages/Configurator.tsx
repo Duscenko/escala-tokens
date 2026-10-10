@@ -743,6 +743,9 @@ export default function Configurator() {
     showToast(t('Random theme discarded.'))
   }
   const startRandomFromMenu = () => {
+    // "Add new theme → Random" makes ANOTHER theme. Free has its one: ask for
+    // Pro instead of reopening or re-rolling the theme you are standing in.
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     const result = startRandomTheme(previewTheme, needsAnotherThemePro)
     if (result.status === 'upgrade') { setUpgradeOpen(true); return }
     if (result.status === 'error') {
@@ -1146,6 +1149,11 @@ export default function Configurator() {
   }, [access.loading, access.tier])
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
+  // From code adds another system, so it is a Pro door on Free, like Blank.
+  const openImport = () => {
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
+    setImportOpen(true)
+  }
   const [newSystemOpen, setNewSystemOpen] = useState(false)
   const [enterFolderTick, setEnterFolderTick] = useState(0)
   const [openStylesRequest, setOpenStylesRequest] = useState(false)
@@ -1482,6 +1490,8 @@ export default function Configurator() {
     setThemeWorkspaceTab('library')
   }
   const openSystemStyles = () => {
+    // A System style is a way to START another theme, so it is Pro on Free.
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     openLibraryPage()
     setOpenStylesRequest(true)
   }
@@ -1708,7 +1718,7 @@ export default function Configurator() {
     header = { Icon: SaveIcon, title: 'System library', subtitle: 'Save, restore and manage your design systems.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
-        <SaveView onImport={() => setImportOpen(true)} onNewSystem={() => setNewSystemOpen(true)} />
+        <SaveView onImport={openImport} onNewSystem={() => setNewSystemOpen(true)} />
       </div>
     )
     centerKey = 'export-save'
@@ -2134,7 +2144,7 @@ export default function Configurator() {
             onOpenTheme={openThemePreviewPage}
             onCreateTheme={openCreateTheme}
             onStartRandom={startRandomFromMenu}
-            onImport={() => setImportOpen(true)}
+            onImport={openImport}
             onOpenStyles={openSystemStyles}
             onOpenComponents={() => changeTab('components')}
             onSyncFigma={() => syncFigmaForTheme(previewTheme)}
@@ -2356,7 +2366,7 @@ export default function Configurator() {
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
-                    onImport={() => setImportOpen(true)}
+                    onImport={openImport}
                     enterFolderTick={enterFolderTick}
                     openStylesRequest={openStylesRequest}
                     onStylesRequestHandled={() => setOpenStylesRequest(false)}
