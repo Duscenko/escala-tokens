@@ -15,6 +15,18 @@ import { useSyncExternalStore } from 'react'
 
 const STORAGE_KEY = 'sd-licence-key'
 const ACTIVATION_KEY = 'sd-licence-activation'
+/** Which account the server has recorded as holding this browser's key
+ *  (`useAccountPlanSync`). An id, not a credential. Dropped whenever the key
+ *  changes, so the next good key is recorded again. */
+export const ACCOUNT_RECORDED_KEY = 'sd-licence-account'
+
+function forgetAccountRecorded(): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(ACCOUNT_RECORDED_KEY)
+  } catch {
+    // Nothing stored, nothing to drop.
+  }
+}
 
 export type LicenceStatus =
   /** No key saved. */
@@ -175,6 +187,7 @@ async function readCookieLicence(): Promise<LicenceState> {
 export async function activateLicence(raw: string): Promise<LicenceState> {
   const key = raw.trim()
   if (!key) return state
+  forgetAccountRecorded()
   setState({ status: 'checking', expiresAt: null, hasKey: true })
   lastStored = false
   let result: LicenceState
@@ -199,6 +212,7 @@ export function clearLicence(): void {
   memoryKey = null
   writeKey(null)
   writeActivation(null)
+  forgetAccountRecorded()
   checkedOnce = true
   setState({ status: 'none', expiresAt: null, hasKey: false })
   void fetch('/api/license', { method: 'DELETE' }).catch(() => {})

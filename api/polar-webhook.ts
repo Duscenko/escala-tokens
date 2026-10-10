@@ -1,11 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { revokeAccountPlans } from './_accountPlan.js'
 import { licenceKeyHash } from './_licence.js'
 import { revokeLicenceStamps } from './_licenceIndex.js'
 import { licenceKeyFromWebhook, verifyPolarWebhook, webhookShouldRevoke } from './_polarWebhook.js'
 
 // Polar → POST /api/polar-webhook. `benefit_grant.revoked` (and a key moved to
 // revoked) strips the licence stamp from every system that key published.
-// The payload stays; the next read of /api/tokens is a 402.
+// The payload stays; the next read of /api/tokens is a 402. The accounts that
+// proved the key stop being Pro in the plugin on their next refresh.
 //
 // POLAR_WEBHOOK_SECRET is the Standard Webhooks secret (`whsec_…`). If it is
 // unset this answers 503 and does nothing, so Polar retries after the secret
@@ -57,11 +59,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const projects = await revokeLicenceStamps(key)
+    const accounts = await revokeAccountPlans(licenceKeyHash(key))
     console.info(JSON.stringify({
       evt: 'license',
       op: 'revoke',
       keyHash: licenceKeyHash(key),
       projects,
+      accounts,
     }))
     return res.status(200).json({ ok: true, cleared: projects.length })
   } catch {

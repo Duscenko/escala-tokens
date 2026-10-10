@@ -53,6 +53,29 @@ describe('checkLicenceKey', () => {
     expect(sent).toHaveLength(2)
   })
 
+  it('does not activate when the caller only needs the plan', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      urls.push(String(url))
+      return { status: 200, json: async () => ({ status: 'granted', expires_at: '2027-06-01T00:00:00Z', limit_activations: 2 }) }
+    }))
+    const result = await checkLicenceKey('KEY-NOACT-1', null, { activate: false })
+    expect(result).toMatchObject({ valid: true, expiresAt: '2027-06-01T00:00:00Z', reason: 'activation_limit' })
+    expect(urls).toHaveLength(1)
+    expect(urls[0]).toMatch(/\/validate$/)
+  })
+
+  it('treats a full device cap as a real key when activation is skipped', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      urls.push(String(url))
+      return { status: 403, json: async () => ({ detail: 'limit', limit_activations: 1, expires_at: '2027-08-01T00:00:00Z' }) }
+    }))
+    const result = await checkLicenceKey('KEY-CAP-SKIP-1', null, { activate: false })
+    expect(result).toMatchObject({ valid: true, expiresAt: '2027-08-01T00:00:00Z', reason: 'activation_limit' })
+    expect(urls).toHaveLength(1)
+  })
+
   it('reports the activation cap when Polar refuses to activate', async () => {
     const urls: string[] = []
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {

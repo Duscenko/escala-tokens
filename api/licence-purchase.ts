@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
-import { customerIdForEmail, hasGrantedLicence, POLAR_ORGANIZATION_ID } from '../src/lib/polar.js'
 import { clientIp, rateLimited } from './_blob.js'
+import { proUntilForEmail } from './_accountPlan.js'
 
 // POST { email } → { purchased }.
 //
@@ -25,14 +25,6 @@ function requestOrigins(req: VercelRequest): string[] {
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
     process.env.VERCEL_URL,
   ])
-}
-
-async function polarGet(path: string, token: string): Promise<unknown | null> {
-  const r = await fetch(`https://api.polar.sh/v1${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-  })
-  if (!r.ok) return null
-  return r.json().catch(() => null)
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -63,17 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const customers = await polarGet(`/customers/?email=${encodeURIComponent(email)}`, token)
-    const customerId = customerIdForEmail(customers, email)
-    if (!customerId) {
-      console.info(JSON.stringify({ evt: 'licence_purchase', purchased: false }))
+    const until = await proUntilForEmail(email)
+    if (until === 'unknown') {
+      console.info(JSON.stringify({ evt: 'licence_purchase', purchased: false, reason: 'network' }))
       return res.status(200).json({ purchased: false })
     }
-    const keys = await polarGet(
-      `/license-keys/?organization_id=${POLAR_ORGANIZATION_ID}&customer_id=${encodeURIComponent(customerId)}`,
-      token,
-    )
-    const purchased = hasGrantedLicence(keys, new Date())
+    const purchased = until !== null
     console.info(JSON.stringify({ evt: 'licence_purchase', purchased }))
     return res.status(200).json({ purchased })
   } catch {

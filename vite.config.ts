@@ -3,7 +3,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
-import { licenceCookieHeader, readLicenceCookie } from './src/lib/licenceCookie.ts'
+import { licenceCookieHeaders, readLicenceCookie } from './src/lib/licenceCookie.ts'
 import {
   POLAR_ACTIVATE_URL, POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL,
   interpretValidation, isActivationId, licenceFollowup,
@@ -80,7 +80,7 @@ function devLicence(): Plugin {
         if (path !== '/api/license') return next()
         res.setHeader('Cache-Control', 'no-store')
         if (req.method === 'DELETE') {
-          res.setHeader('Set-Cookie', licenceCookieHeader(''))
+          res.setHeader('Set-Cookie', licenceCookieHeaders(''))
           res.statusCode = 204
           res.end()
           return
@@ -114,8 +114,8 @@ function devLicence(): Plugin {
           const activationId = isActivationId(parsed.activationId) ? parsed.activationId : null
           const result = await devCheck(licence, activationId)
           const keep = result.valid || result.reason === 'unavailable' || result.reason === 'activation_limit'
-          if (keep) res.setHeader('Set-Cookie', licenceCookieHeader(licence))
-          else if (req.method === 'GET') res.setHeader('Set-Cookie', licenceCookieHeader(''))
+          if (keep) res.setHeader('Set-Cookie', licenceCookieHeaders(licence))
+          else if (req.method === 'GET') res.setHeader('Set-Cookie', licenceCookieHeaders(''))
           res.statusCode = result.reason === 'unavailable' ? 502 : 200
           res.setHeader('Content-Type', 'application/json')
           res.end(JSON.stringify({ ...result, stored: keep, hasKey: keep }))

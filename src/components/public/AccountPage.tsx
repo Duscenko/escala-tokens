@@ -24,6 +24,7 @@ import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { useLicence } from '../../lib/licence'
+import { useAccountPlanSync } from '../../lib/useAccountPlanSync'
 import { accountsEnabled } from '../../lib/supabase'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
@@ -113,6 +114,7 @@ export function AccountPage() {
 function AccountHome({ user }: { user: User }) {
   const { t, locale } = useI18n()
   const { status } = useLicence()
+  useAccountPlanSync()
   const licensed = status === 'valid'
   const initialFocus = accountFocus(window.location.pathname, window.location.hash)
   const [open, setOpen] = useState<AccountFocus | null>(initialFocus === 'plan' ? null : initialFocus)

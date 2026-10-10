@@ -12,7 +12,8 @@ import { FigmaLogo } from '../configurator/figmaShared'
 import { useAuth } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { loginHref, pathForNext, rememberReturn } from '../../lib/loginReturn'
-import { approvePluginSignIn, librariesOnThisBrowser, PLUGIN_CODE_KEY } from '../../lib/pluginAccount'
+import { accountHref } from '../../lib/accountRoutes'
+import { approvePluginSignIn, librariesOnThisBrowser, PLUGIN_CODE_KEY, type ConnectedPlan } from '../../lib/pluginAccount'
 import { isPluginPairCode } from '../../lib/pluginSession'
 import { accountsEnabled } from '../../lib/supabase'
 import { useI18n } from '../../lib/i18n'
@@ -42,6 +43,9 @@ export function PluginConnectPage() {
   const [libraries] = useState(librariesOnThisBrowser)
   const [phase, setPhase] = useState<'ask' | 'working' | 'done' | 'error'>('ask')
   const [error, setError] = useState('')
+  // The plan the server gave the plugin session. Shown on the last screen so a
+  // paying account that connected as Free is told here, with the way out.
+  const [plan, setPlan] = useState<ConnectedPlan>('unknown')
 
   useEffect(() => {
     applyDocumentHead({
@@ -73,6 +77,7 @@ export function PluginConnectPage() {
       return
     }
     try { window.sessionStorage.removeItem(PLUGIN_CODE_KEY) } catch { /* ignore */ }
+    setPlan(result.plan)
     setPhase('done')
   }
 
@@ -110,7 +115,29 @@ export function PluginConnectPage() {
                 </span>
                 {t('Plugin connected')}
               </h1>
-              <p className="mt-2 text-ui leading-relaxed text-fg-muted">{t('You can close this tab.')}</p>
+              <dl className="mt-5 divide-y divide-line rounded-xl border border-line text-ui">
+                <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <dt className="text-fg-muted">{t('Account')}</dt>
+                  <dd className="truncate font-medium">{user?.email}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <dt className="text-fg-muted">{t('Plan in the plugin')}</dt>
+                  <dd className="font-medium">
+                    {plan === 'pro' ? 'Escala Pro' : plan === 'free' ? t('Free') : t('Not confirmed yet')}
+                  </dd>
+                </div>
+              </dl>
+              {plan === 'free' ? (
+                <p className="mt-3 text-caption leading-relaxed text-fg-muted" role="note">
+                  {t('Bought Escala Pro? Add your licence key to this account. The plugin becomes Pro the next time you open it.')}{' '}
+                  <a href={`${accountHref()}#plan`} className={`font-medium text-fg underline underline-offset-2 ${FOCUS}`}>{t('Add licence key')}</a>
+                </p>
+              ) : plan === 'unknown' ? (
+                <p className="mt-3 text-caption leading-relaxed text-fg-muted" role="note">
+                  {t('Your plan could not be checked just now. The plugin checks again each time it opens.')}
+                </p>
+              ) : null}
+              <p className="mt-4 text-ui leading-relaxed text-fg-muted">{t('You can close this tab.')}</p>
             </>
           ) : waitingForAccount ? (
             <>

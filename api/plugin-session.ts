@@ -4,13 +4,15 @@ import { put } from '@vercel/blob'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import {
   isPluginPairCode,
-  pluginProUntil,
-  pluginProUntilRefresh,
+  pluginPlan,
+  pluginPlanRefresh,
   upsertPluginLibraries,
   type PluginLibrary,
+  type PluginPlanDecision,
 } from '../src/lib/pluginSession.js'
-import { proUntilForEmail } from './_accountPlan.js'
-import { checkLicenceKey } from './_licence.js'
+import { accountPlanFor, bindAccountPlan, polarLookupConfigured, proUntilForEmail } from './_accountPlan.js'
+import { userFromJwt } from './_authUser.js'
+import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
@@ -37,20 +39,75 @@ type PairRecord = {
   userId?: string
   email?: string
   sealed?: string
+  /** Written with `ready`. Poll reads this instead of a second blob. */
+  plan?: 'pro' | 'free' | 'unknown'
 }
 
 // `proUntil` is the instant a validated licence stops working ('lifetime' when
-// Polar gave it no expiry). The licence KEY is never stored: this blob is public.
-type SessionRecord = { userId: string; email: string; revoked?: boolean; proUntil?: string }
+// Polar gave it no expiry). `plan` is the classified answer. Neither field
+// means the login could not be classified — unknown, not Free. The licence
+// KEY is never stored: this blob is public.
+type SessionRecord = {
+  userId: string
+  email: string
+  revoked?: boolean
+  plan?: 'pro' | 'free'
+  proUntil?: string
+}
 
-/** What this plugin session may do. Pro is the launch promo, a licence the
- *  browser vouched for, or a Polar grant on the signed-in email. Free keeps
- *  ONE theme in ONE mode. */
-function tierOf(session: Pick<SessionRecord, 'proUntil'> | null | undefined, now = new Date()) {
-  const promo = entitlementAt(now).promo
-  const licensed = !!session?.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())
-  const pro = promo || licensed
-  return { tier: pro ? 'pro' as const : 'free' as const, maxThemes: pro ? PRO_MAX_THEMES : FREE_MAX_THEMES }
+type PluginTier = 'pro' | 'free' | 'unknown'
+
+/** What this plugin session may do. Pro is the launch promo or a licence that
+ *  is still live. Free is only an explicit `plan: 'free'`. A missing session,
+ *  one that was never classified, or a Pro whose date has passed is unknown
+ *  until the next refresh says which it is. */
+function tierPayload(tier: PluginTier): { tier: PluginTier; maxThemes: number } {
+  return { tier, maxThemes: tier === 'free' ? FREE_MAX_THEMES : PRO_MAX_THEMES }
+}
+
+function tierOf(session: Pick<SessionRecord, 'proUntil' | 'plan'> | null | undefined, now = new Date()): { tier: PluginTier; maxThemes: number } {
+  if (entitlementAt(now).promo) return tierPayload('pro')
+  if (!session) return tierPayload('unknown')
+  const licensed = !!session.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())
+  if (licensed) return tierPayload('pro')
+  if (session.plan === 'free') return tierPayload('free')
+  return tierPayload('unknown')
+}
+
+function sessionFromPlan(
+  session: { userId: string; email: string; revoked?: boolean },
+  decision: PluginPlanDecision,
+): SessionRecord {
+  const base: SessionRecord = {
+    userId: session.userId,
+    email: session.email,
+    ...(session.revoked ? { revoked: true } : {}),
+  }
+  if (decision.plan === 'pro' && decision.proUntil) return { ...base, plan: 'pro', proUntil: decision.proUntil }
+  if (decision.plan === 'free') return { ...base, plan: 'free' }
+  return base
+}
+
+/** Re-ask the account's record and Polar, and persist when the answer moved.
+ *  This is what turns a session that signed in as Free into Pro once the
+ *  account proves a key on the web. A write failure keeps the session already
+ *  in hand so a blip cannot erase a live Pro. */
+async function withFreshPlan(token: string, session: SessionRecord): Promise<SessionRecord> {
+  const now = new Date()
+  const [emailUntil, account] = await Promise.all([
+    proUntilForEmail(session.email, now),
+    accountPlanFor(session.userId, now),
+  ])
+  const decision = pluginPlanRefresh(session, emailUntil, now, account)
+  const next = sessionFromPlan(session, decision)
+  if (next.plan === session.plan && next.proUntil === session.proUntil) return session
+  console.info(JSON.stringify({ evt: 'plugin_plan', op: 'refresh', from: session.plan ?? 'unknown', to: decision.plan }))
+  try {
+    await writeJson(sessionKey(sha256(token)), next)
+    return next
+  } catch {
+    return session
+  }
 }
 type LibraryRecord = { libraries: PluginLibrary[] }
 
@@ -111,32 +168,6 @@ async function writeJson(key: string, value: unknown): Promise<void> {
   })
   learnBlobBase(out.url, key)
   forgetBlob(key)
-}
-
-function supabaseEnv(): { url: string; key: string } | null {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
-  const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-  if (!url || !key) return null
-  return { url, key }
-}
-
-async function userFromJwt(jwt: string): Promise<{ id: string; email: string } | 'unconfigured' | null> {
-  const env = supabaseEnv()
-  if (!env) return 'unconfigured'
-  if (!jwt || jwt.length > 8192) return null
-  let res: Response
-  try {
-    res = await fetch(`${env.url}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${jwt}`, apikey: env.key },
-    })
-  } catch {
-    return null
-  }
-  if (!res.ok) return null
-  const body = await res.json().catch(() => null) as { id?: unknown; email?: unknown } | null
-  if (!body || typeof body.id !== 'string' || !body.id) return null
-  const email = typeof body.email === 'string' ? body.email.slice(0, 200) : ''
-  return { id: body.id, email }
 }
 
 function readOp(req: VercelRequest): string {
@@ -223,8 +254,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // wipe leaves a sealed blob that still needs the poll secret.
     }
     const libraries = await readLibraries(pair.userId).catch(() => [])
-    const fresh = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
-    return res.status(200).json({ token, email: pair.email ?? '', libraries, ...tierOf(fresh) })
+    // The pair blob is the one this poll already waited to see as `ready`.
+    // The plan rides on it. A second read of the session can miss and used
+    // to answer Free for a Pro login that had just been written.
+    const announced = pair.plan === 'pro' || pair.plan === 'free' || pair.plan === 'unknown'
+      ? tierPayload(pair.plan)
+      : tierOf(await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null))
+    return res.status(200).json({ token, email: pair.email ?? '', libraries, ...announced })
   }
 
   // ── Signed-in browser confirms the code and registers libraries. ──
@@ -249,9 +285,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = randomBytes(32).toString('base64url')
     const postedKey = typeof body.licenceKey === 'string' ? body.licenceKey.trim() : ''
     const licenceKey = (postedKey || readLicenceCookie(req.headers.cookie)).slice(0, 200)
-    const checked = licenceKey ? await checkLicenceKey(licenceKey) : null
-    const emailUntil = await proUntilForEmail(user.email)
-    const proUntil = pluginProUntil(checked, emailUntil)
+    const postedActivation = typeof body.activationId === 'string' ? body.activationId : ''
+    // Do not activate here. A full device cap is still a real key, and spending
+    // a slot on every plugin login is what turned Pro into activation_limit.
+    const checked = licenceKey ? await checkLicenceKey(licenceKey, postedActivation, { activate: false }) : null
+    const now = new Date()
+    const [emailUntil, account] = await Promise.all([
+      proUntilForEmail(user.email, now),
+      accountPlanFor(user.id, now),
+    ])
+    const decision = pluginPlan(checked, emailUntil, now, account)
+    // This browser holds a good key: record it against the account, so the
+    // next sign-in is Pro from a browser that does not.
+    if (decision.via === 'key' && licenceKey) {
+      await bindAccountPlan(user.id, licenceKeyHash(licenceKey), checked?.expiresAt ?? null, now)
+    }
+    // The one line that explains a Pro account signing in as Free: which host
+    // opened, whether a key came with it, and which proofs had an answer.
+    console.info(JSON.stringify({
+      evt: 'plugin_plan',
+      op: 'approve',
+      plan: decision.plan,
+      via: decision.via,
+      host: req.headers.host ?? '',
+      key: !licenceKey ? 'none' : checked?.valid || checked?.reason === 'activation_limit' ? 'good' : (checked?.reason ?? 'rejected'),
+      account: account === null ? 'none' : account === 'revoked' || account === 'unknown' ? account : 'live',
+      email: !polarLookupConfigured() ? 'unconfigured' : emailUntil === 'unknown' ? 'unknown' : emailUntil ? 'grant' : 'none',
+    }))
+    const stored = sessionFromPlan({ userId: user.id, email: user.email }, decision)
     // The blob is public. The raw token is sealed with the secret's hash,
     // which poll reconstructs from the secret only the plugin holds.
     const sealed = seal(pair.secretHash, token)
@@ -259,7 +320,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const libraries = upsertPluginLibraries(await readLibraries(user.id), incoming, new Date().toISOString())
       await writeJson(librariesKey(user.id), { libraries } satisfies LibraryRecord)
-      await writeJson(sessionKey(sha256(token)), { userId: user.id, email: user.email, ...(proUntil ? { proUntil } : {}) } satisfies SessionRecord)
+      await writeJson(sessionKey(sha256(token)), stored)
       await writeJson(pairKey(code), {
         secretHash: pair.secretHash,
         expiresAt: pair.expiresAt,
@@ -267,11 +328,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         userId: user.id,
         email: user.email,
         sealed,
+        plan: tierOf(stored).tier,
       } satisfies PairRecord)
     } catch {
       return res.status(503).json({ error: 'Could not connect the plugin. Try again.' })
     }
-    return res.status(200).json({ ok: true })
+    // The page says which plan the plugin just got, so a mismatch is seen
+    // here and not three screens later inside Figma.
+    return res.status(200).json({ ok: true, plan: tierOf(stored).tier })
   }
 
   // ── A later Sync now adds the library without a new pairing. ──
@@ -350,7 +414,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', '60')
       return res.status(429).json({ error: 'Too many requests.' })
     }
-    const built = studio.buildStudioTokens(jsonBody(req) as unknown as StudioChoices, session ? tierOf(session).tier : 'free')
+    let tier: 'pro' | 'free' = 'free'
+    if (session) {
+      const decided = tierOf(await withFreshPlan(token, session)).tier
+      // Polar could not say. Building Free here would ship a Pro user the
+      // one-theme scope. The plugin shows this error as-is.
+      if (decided === 'unknown') {
+        return res.status(503).json({ error: 'Could not confirm your plan. Try again in a moment.' })
+      }
+      tier = decided
+    }
+    const built = studio.buildStudioTokens(jsonBody(req) as unknown as StudioChoices, tier)
     if ('error' in built) return res.status(400).json({ error: built.error })
     return res.status(200).json(built)
   }
@@ -369,22 +443,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       return res.status(200).json({ ok: true })
     }
-    const emailUntil = await proUntilForEmail(session.email)
-    const proUntil = pluginProUntilRefresh(session.proUntil, emailUntil, new Date())
-    let current = session
-    if (proUntil !== session.proUntil) {
-      current = {
-        userId: session.userId,
-        email: session.email,
-        ...(session.revoked ? { revoked: true } : {}),
-        ...(proUntil ? { proUntil } : {}),
-      }
-      try {
-        await writeJson(sessionKey(sha256(token)), current)
-      } catch {
-        current = session
-      }
-    }
+    const current = await withFreshPlan(token, session)
     const libraries = await readLibraries(current.userId).catch(() => [])
     return res.status(200).json({ email: current.email, libraries, ...tierOf(current) })
   }

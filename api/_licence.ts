@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import {
   POLAR_ACTIVATE_URL, POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL,
-  interpretValidation, isActivationId, licenceFollowup, type LicenceResult,
+  interpretValidation, isActivationId, licenceFollowup, limitActivations, type LicenceResult,
 } from '../src/lib/polar.js'
 
 // One question — "is this key good?" — asked of Polar from the server, with a
@@ -56,8 +56,14 @@ const unavailable: CheckedLicence = { valid: false, expiresAt: null, reason: 'un
  *  The first call always validates WITHOUT it. Activate runs only when Polar's
  *  own answer says the benefit limits activations (`limit_activations` is a
  *  number). Calling it while the limit is off returns 403 and would lock
- *  every good key out. */
-export async function checkLicenceKey(key: string, activationId?: string | null): Promise<CheckedLicence> {
+ *  every good key out.
+ *  `{ activate: false }` answers "is this key Pro?" without spending a slot.
+ *  That result is not cached: the browser's real check still has to activate. */
+export async function checkLicenceKey(
+  key: string,
+  activationId?: string | null,
+  opts?: { activate?: boolean },
+): Promise<CheckedLicence> {
   const asked = isActivationId(activationId) ? activationId : ''
   const hit = cache.get(cacheId(key, asked))
   const now = Date.now()
@@ -72,6 +78,17 @@ export async function checkLicenceKey(key: string, activationId?: string | null)
   }
 
   const plan = licenceFollowup(first.status, first.body, asked || null, new Date())
+  if (plan.kind === 'activate' && opts?.activate === false) {
+    const judged = interpretValidation(first.status, first.body, new Date())
+    if (judged.valid) return { ...judged, reason: 'activation_limit' }
+    if (first.status === 403 && limitActivations(first.body) !== null) {
+      const raw = first.body && typeof first.body === 'object'
+        ? (first.body as { expires_at?: unknown }).expires_at
+        : null
+      return { valid: true, expiresAt: typeof raw === 'string' ? raw : null, reason: 'activation_limit' }
+    }
+    return judged.reason === 'unavailable' ? unavailable : remember(key, asked, judged)
+  }
   if (plan.kind === 'done') return remember(key, asked, plan.result)
 
   if (plan.kind === 'revalidate') {

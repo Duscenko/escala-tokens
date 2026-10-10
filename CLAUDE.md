@@ -66,6 +66,45 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `/docs/*`, `/components`, `/pricing`) stay fully open. Plan, decisions and what is left:
 > `design-plans/login-funnel.md`.
 
+> **UPDATE (2026-10-10): the PLUGIN's plan comes from the ACCOUNT, not from the browser it
+> happens to open.** Reported as a Pro account signing in from the Figma plugin and showing
+> Free. Measured in production logs before anything changed, and it was three faults at once:
+> - **Pro was a per-browser, per-HOST cookie.** `sd_licence` had no `Domain`, and the site
+>   answers on `escalatokens.com` AND `www.escalatokens.com` with no redirect between them —
+>   two origins, two cookie jars, two Supabase sessions, two design stores. The valid key sat
+>   on the apex; the plugin always opens `www` (`CONFIGURATOR_URL`). `licenceCookieHeaders`
+>   now sets the cookie for the whole site (and expires the host-only copy in the same
+>   response, in that order — browsers disagree on whether the two are one cookie).
+> - **The account-level fallback did not exist in production.** `proUntilForEmail` needs
+>   `POLAR_ACCESS_TOKEN`; Vercel has none (`licence_purchase … "reason":"unconfigured"`).
+>   A missing token answers `null` ("this source has nothing to say"), NOT `'unknown'`:
+>   `'unknown'` left every keyless signed-in account unclassified for good, and `studio-build`
+>   refuses a plan it cannot confirm — Free users could not build at all.
+> - **The fix that was written was never deployed.** The plugin talks to production
+>   (`API_BASE`), so an uncommitted change does nothing. Check `vercel ls --prod` before
+>   concluding a plugin-side fix "did not work".
+>
+> The rule now: a signed-in browser whose key Polar accepts records the ACCOUNT as Pro —
+> `account-plan/<sha256(userId)>.json` (`lib/accountPlan.ts`, `api/_accountPlan.ts`), written
+> by `/api/license` when the check carries the session (`useAccountPlanSync`) and by
+> `plugin-session?op=approve` when that browser holds the key. Plugin sign-in and every later
+> refresh (`withFreshPlan`) read three proofs in order: key in this browser → Polar grant on
+> the email → the account's record. The key itself is never stored; `keyHash` is how the
+> refund webhook finds the accounts to revoke (`revokeAccountPlans`). `approve` returns the
+> plan and logs one `plugin_plan` line naming which proofs had an answer — that line is how
+> this is diagnosed next time. `pluginSignInPlan.test.ts` runs the real handlers end to end.
+> - **The WEB's own Pro is still the key in this browser** (now shared across both hosts).
+>   The account record feeds the plugin only: publishing still needs the key
+>   (`api/tokens.ts`), so a web UI that said Pro from the record alone would promise a
+>   publish that then 402s.
+> - **Decided 2026-10-10: NO host redirect yet.** One canonical host is still the right end
+>   state — a session and a design store on the apex do not exist on `www` — but themes,
+>   folders and the parked account files (`sd-account-files:*`) live ONLY in that origin's
+>   `localStorage`. A redirect strands all of it on the losing host with no server copy.
+>   It ships together with a hand-off of that data, or not at all. And never redirect
+>   `/api/*` on either host — installed plugins call `www` cross-origin (a redirect fails
+>   CORS) and MCP clients are configured with the apex.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —

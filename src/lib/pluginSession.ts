@@ -76,31 +76,87 @@ export function librariesFromPersist(raw: unknown): Array<{ id: string; name: st
   return collectPluginLibraries(rows)
 }
 
-/** What a new plugin session should store as `proUntil`.
- *  A key Polar just accepted wins. Otherwise a grant on the signed-in email.
- *  `'unknown'` (Polar unreachable) stores nothing — never a fake Free. */
-export function pluginProUntil(
-  key: { valid: boolean; expiresAt: string | null } | null,
-  emailUntil: string | null | 'unknown',
-): string | undefined {
-  if (key?.valid) return key.expiresAt ?? 'lifetime'
+export type PluginPlanName = 'pro' | 'free' | 'unknown'
+
+export interface PluginPlanDecision {
+  plan: PluginPlanName
+  /** Set only for `pro`. `'lifetime'` when Polar gave the grant no expiry. */
+  proUntil?: string
+}
+
+type KeyProof = { valid: boolean; expiresAt: string | null; reason?: string } | null
+
+function emailGrant(emailUntil: string | null | 'unknown'): string | undefined {
   if (typeof emailUntil === 'string' && emailUntil.length > 0 && emailUntil !== 'unknown') return emailUntil
   return undefined
 }
 
-/** Refresh of a session that is already connected.
- *  A definite grant upgrades Free. Polar being unreachable leaves the stored
- *  expiry alone. A live expiry is not stripped here: the pasted key may be
- *  the proof, and this call only knows the account email. */
-export function pluginProUntilRefresh(
-  current: string | undefined,
+function liveUntil(value: string | undefined, now: Date): boolean {
+  return !!value && (value === 'lifetime' || Date.parse(value) > now.getTime())
+}
+
+/** What the account's own record says (`lib/accountPlan.ts`), or `'unknown'`
+ *  when the record could not be read. */
+export type AccountProof = string | null | 'revoked' | 'unknown'
+
+function accountGrant(account: AccountProof | undefined, now: Date): string | undefined {
+  if (typeof account !== 'string' || account === 'revoked' || account === 'unknown') return undefined
+  return liveUntil(account, now) ? account : undefined
+}
+
+/** Which proof made the decision. Logged, so a Pro account that signs in as
+ *  Free can be traced to the source that was missing. */
+export type PluginPlanVia = 'key' | 'email' | 'account' | 'none'
+
+/** Plan to store when the plugin signs in. Three proofs, in this order:
+ *  a key Polar accepted in THIS browser (including one this login must not
+ *  activate — `activation_limit`, the key is real, the device cap is full),
+ *  a grant on the signed-in email, then the account's own record of a key it
+ *  proved in some other browser. A proof that could not be asked is
+ *  `unknown`, never Free. Free is only a definite miss on all three. */
+export function pluginPlan(
+  key: KeyProof,
+  emailUntil: string | null | 'unknown',
+  now = new Date(),
+  account?: AccountProof,
+): PluginPlanDecision & { via: PluginPlanVia } {
+  if (key?.valid || key?.reason === 'activation_limit') {
+    const until = key.expiresAt ?? 'lifetime'
+    if (until === 'lifetime' || Date.parse(until) > now.getTime()) return { plan: 'pro', proUntil: until, via: 'key' }
+  }
+  const grant = emailGrant(emailUntil)
+  if (grant) return { plan: 'pro', proUntil: grant, via: 'email' }
+  const bound = accountGrant(account, now)
+  if (bound) return { plan: 'pro', proUntil: bound, via: 'account' }
+  if (emailUntil === 'unknown' || account === 'unknown' || key?.reason === 'unavailable') return { plan: 'unknown', via: 'none' }
+  return { plan: 'free', via: 'none' }
+}
+
+/** Plan on a later open. A definite grant (email, or the account's record)
+ *  upgrades Free. A refund on the account's key ends Pro. A proof that could
+ *  not be asked keeps a live Pro and an already-recorded Free. A live expiry
+ *  is not stripped when neither proof has a grant: the pasted key may be the
+ *  proof. A session that was never classified becomes Free only on a definite
+ *  miss, so the next open can correct a login nothing could answer. */
+export function pluginPlanRefresh(
+  current: { proUntil?: string; plan?: 'pro' | 'free' },
   emailUntil: string | null | 'unknown',
   now: Date,
-): string | undefined {
-  const live = !!current && (current === 'lifetime' || Date.parse(current) > now.getTime())
-  if (emailUntil === 'unknown' || live) return current
-  if (typeof emailUntil === 'string' && emailUntil.length > 0) return emailUntil
-  return current
+  account?: AccountProof,
+): PluginPlanDecision {
+  const live = liveUntil(current.proUntil, now)
+  const grant = emailGrant(emailUntil)
+  if (grant) return { plan: 'pro', proUntil: grant }
+  const bound = accountGrant(account, now)
+  if (bound) return { plan: 'pro', proUntil: bound }
+  if (account === 'revoked') return { plan: 'free' }
+  if (emailUntil === 'unknown' || account === 'unknown') {
+    if (live) return { plan: 'pro', proUntil: current.proUntil }
+    if (current.plan === 'free') return { plan: 'free' }
+    return { plan: 'unknown' }
+  }
+  if (live) return { plan: 'pro', proUntil: current.proUntil }
+  return { plan: 'free' }
 }
 
 /** Incoming rows replace the same id and move to the front. A blank name keeps the one already stored. Capped. */
