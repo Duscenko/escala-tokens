@@ -95,6 +95,7 @@ export default function ThemeSaveBar({
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
   const canUndo = useEditHistory((h) => h.past.length > 0)
   const [justSaved, setJustSaved] = useState(false)
+  const saveRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (!justSaved) return
     const id = window.setTimeout(() => setJustSaved(false), 2000)
@@ -151,16 +152,29 @@ export default function ThemeSaveBar({
         <RandomThemeButton onClick={onRandom} label={t('Random')} variant="icon" />
       ) : null}
       <button
+        ref={saveRef}
         type="button"
         onClick={() => {
           // A guest signs up first; the shell finishes the save on return.
           if (access.gated) { goToLogin('save-library'); return }
-          useDesignStore.getState().saveCurrentSystem()
+          const s = useDesignStore.getState()
+          s.saveCurrentSystem()
           setJustSaved(true)
+          // The kept theme throws its OWN colours: accent first, then states.
+          const accent = saveRef.current
+            ? getComputedStyle(saveRef.current).getPropertyValue('--accent-solid').trim()
+            : ''
+          burstConfetti(saveRef.current, [
+            accent || s.primaryColor, accent || s.primaryColor,
+            s.successColor, s.warningColor, s.infoColor, s.errorColor,
+          ])
+          showToast(t('Theme saved'))
           if (exploringRandom) onSaved?.()
         }}
         disabled={inactive || (saved && !justSaved && !access.gated)}
-        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-[opacity,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+          justSaved ? 'shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-solid)_35%,transparent)]' : ''
+        } ${
           inactive ? 'cursor-not-allowed bg-chip-rest text-fg-faint' : 'bg-accent-solid text-accent-ink disabled:opacity-50'
         }`}
       >

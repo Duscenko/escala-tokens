@@ -2227,7 +2227,7 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly || !themeWorkspaceRailVisible ? 'ml-3' : ''} border border-line bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly || !themeWorkspaceRailVisible ? 'ml-3' : ''} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
