@@ -3,8 +3,10 @@
 // The plugin cannot hold the website's session. It opens this URL; if there
 // is no account yet, we go through `/login` and come back. Confirming binds
 // the code to the account and sends the libraries stored in this browser.
+// The plugin polls that result on its own and starts the file from there, so
+// this page does not ask anyone to switch windows or open Figma again.
 
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { BrandMark } from '../configurator/TopNav'
 import { FigmaLogo } from '../configurator/figmaShared'
 import { useAuth } from '../../lib/auth'
@@ -18,15 +20,6 @@ import { useI18n } from '../../lib/i18n'
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const SECONDARY = `flex h-11 w-full items-center justify-center rounded-2xl border border-line-strong px-4 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`
 const PRIMARY = `flex h-12 w-full items-center justify-center rounded-2xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
-
-const FIGMA_WEB = 'https://www.figma.com/files'
-
-// The plugin is already open in the Figma window and polls for this
-// confirmation. `figma://` only asks the desktop app to come forward — it
-// cannot open the plugin, and the file browser on the web is a different
-// place, so it is never opened automatically. The button changes label in
-// the same click; the short wait only decides whether to say the app
-// didn't come forward.
 
 function readCode(): string {
   const fromUrl = new URLSearchParams(window.location.search).get('code') ?? ''
@@ -49,7 +42,6 @@ export function PluginConnectPage() {
   const [libraries] = useState(librariesOnThisBrowser)
   const [phase, setPhase] = useState<'ask' | 'working' | 'done' | 'error'>('ask')
   const [error, setError] = useState('')
-  const [figmaReturn, setFigmaReturn] = useState<'idle' | 'opening' | 'stuck'>('idle')
 
   useEffect(() => {
     applyDocumentHead({
@@ -82,24 +74,6 @@ export function PluginConnectPage() {
     }
     try { window.sessionStorage.removeItem(PLUGIN_CODE_KEY) } catch { /* ignore */ }
     setPhase('done')
-  }
-
-  function goToFigma(e: MouseEvent) {
-    e.preventDefault()
-    setFigmaReturn('opening')
-    let left = false
-    const markHidden = () => {
-      if (document.visibilityState === 'hidden') left = true
-    }
-    const markBlur = () => { left = true }
-    document.addEventListener('visibilitychange', markHidden)
-    window.addEventListener('blur', markBlur)
-    window.location.href = 'figma://'
-    window.setTimeout(() => {
-      document.removeEventListener('visibilitychange', markHidden)
-      window.removeEventListener('blur', markBlur)
-      if (!left && document.visibilityState === 'visible') setFigmaReturn('stuck')
-    }, 700)
   }
 
   const home = pathForNext('library')
@@ -136,27 +110,7 @@ export function PluginConnectPage() {
                 </span>
                 {t('Plugin connected')}
               </h1>
-              <p className="mt-2 text-ui leading-relaxed text-fg-muted">
-                {libraries.length === 1
-                  ? t('Switch back to the Figma window. The plugin picks this up as soon as that window is in front, and starts syncing “{name}” if the file is empty. A file that already has a system stays as it is. You can close this tab.', { name: libraries[0].name || libraries[0].id })
-                  : libraries.length > 1
-                    ? t('Switch back to the Figma window and press Sync on the folder you want. The plugin is already connected. You can close this tab.')
-                    : t('Switch back to the Figma window. You’re signed in. Create a theme there, or publish a folder on the web and it will show up. You can close this tab.')}
-              </p>
-              {figmaReturn === 'stuck' ? (
-                <p className="mt-3 text-caption leading-relaxed text-fg-muted" role="status">
-                  {t('Figma didn’t come forward. Click the Figma window — the Escala plugin is already open there and starts on its own. Opening Figma in the browser only shows your files and does not start the plugin.')}
-                </p>
-              ) : null}
-              <button type="button" onClick={goToFigma} className={`mt-6 ${PRIMARY}`}>
-                {figmaReturn === 'opening'
-                  ? t('Opening Figma…')
-                  : figmaReturn === 'stuck'
-                    ? t('Try the Figma app again')
-                    : t('Go to Figma')}
-              </button>
-              <a href={FIGMA_WEB} target="_blank" rel="noopener noreferrer" className={`mt-2 ${SECONDARY}`}>{t('Open Figma in the browser')}</a>
-              <a href="/docs/figma" className={`mt-2 ${SECONDARY}`}>{t('How Figma sync works')}</a>
+              <p className="mt-2 text-ui leading-relaxed text-fg-muted">{t('You can close this tab.')}</p>
             </>
           ) : waitingForAccount ? (
             <>
