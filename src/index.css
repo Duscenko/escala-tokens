@@ -687,7 +687,9 @@ body {
   transition: opacity 150ms var(--ease-out-quint);
 }
 button:hover > .random-theme-border,
-button:focus-visible > .random-theme-border {
+button:focus-visible > .random-theme-border,
+.random-border-host:hover > .random-theme-border,
+.random-border-host:focus-within > .random-theme-border {
   opacity: 0.65;
 }
 

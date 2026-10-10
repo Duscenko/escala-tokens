@@ -584,6 +584,7 @@ export default function TopNav({
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
+  const always = hamburgerNav || navInMenu
 
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
@@ -651,6 +652,18 @@ export default function TopNav({
 
       <div className="flex flex-shrink-0 items-center gap-2 pl-2 pr-3 xl:pr-4">
           {search}
+          {/* With the section tags on screen (≥1080px) there is no ☰ — it would
+              sit beside the very links it duplicates. Language and Appearance
+              are plain icons there; below 1080px the tags fold into ☰, which
+              then carries them too. The Generator (`always`) keeps ☰ at every
+              width, because it never shows the tags. */}
+          {!always && (
+            <div className="hidden min-[1080px]:flex items-center gap-2">
+              <LanguageMenu onOpen={onOpenLanguages} />
+              <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+            </div>
+          )}
+          <div className={always ? 'flex' : 'flex min-[1080px]:hidden'}>
           <TopNavCompactMenu
             nav={nav}
             onNav={onNav}
@@ -658,10 +671,9 @@ export default function TopNav({
             onOpenLanguages={onOpenLanguages}
             chromeAppearance={chromeAppearance}
             onChromeAppearanceChange={onChromeAppearanceChange}
-            always={hamburgerNav || navInMenu}
+            always={always}
           />
-          {/* Language lives in ☰ at every width (its Language section). Light/dark
-              is ONLY inside ☰ too — the header keeps no second icon for either. */}
+          </div>
           {themeControl}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}

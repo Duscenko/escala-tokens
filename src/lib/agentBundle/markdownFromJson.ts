@@ -84,9 +84,66 @@ function primitiveOf(json: TokenJSON, category: string, key: string): string {
   return ref ? `\`${ref.replace(/^\{|\}$/g, '')}\`` : '—'
 }
 
-/** Figma variable · Value · Primitive for one category of lengths. */
-function lengthTable(json: TokenJSON, category: string, map: Record<string, string>, name: (k: string) => string): string {
-  return table(['Figma variable', 'Value', 'Primitive'], Object.entries(map).map(([k, v]) => [`\`${name(k)}\``, `\`${v}\``, primitiveOf(json, category, k)]))
+/** Figma variable · CSS · Value · Primitive for one category of lengths. */
+function lengthTable(json: TokenJSON, category: string, map: Record<string, string>, name: (k: string) => string, cssPrefix: string): string {
+  return table(
+    ['Figma variable', 'CSS', 'Value', 'Primitive'],
+    Object.entries(map).map(([k, v]) => [`\`${name(k)}\``, `\`var(--${cssPrefix}-${k})\``, `\`${v}\``, primitiveOf(json, category, k)]),
+  )
+}
+
+/** A role's stored value → what it points at and the px it resolves to.
+ *  A value is a step of the family's scale or a pinned `dimension-<key>`. */
+function roleTarget(value: string, steps: Record<string, string>): [string, string] {
+  const pinned = /^dimension-(.+)$/.exec(value)
+  if (pinned) return [`\`dimension.${pinned[1]}\``, `\`${Number(pinned[1].replace('_', '.'))}px\``]
+  return [`\`${value}\``, steps[value] ? `\`${steps[value]}\`` : '—']
+}
+
+/** Figma variable · CSS · Step · Value for one family's roles. */
+function roleTable(group: string, cssPrefix: string, roles: Record<string, string> | undefined, steps: Record<string, string>): string[] {
+  const entries = Object.entries(roles ?? {})
+  if (!entries.length) return []
+  return [
+    `### ${group} roles — bind these, not the steps`,
+    '',
+    table(
+      ['Figma variable', 'CSS', 'Step', 'Value'],
+      entries.map(([k, v]) => [`\`${figmaDimensionName(group, `role/${k}`)}\``, `\`var(--${cssPrefix}-${k})\``, ...roleTarget(v, steps)]),
+    ),
+    '',
+  ]
+}
+
+/** Token · Desktop · Tablet · Mobile for a responsive map (values are steps). */
+function responsiveTable(map: Record<string, Record<string, string>> | undefined, label: string): string[] {
+  const entries = Object.entries(map ?? {})
+  if (!entries.length) return []
+  return [
+    `### ${label}`,
+    '',
+    'Each token reads a static step per viewport. Roles on one of these step down with it.',
+    '',
+    table(
+      ['Token', 'Desktop', 'Tablet', 'Mobile'],
+      entries.map(([k, v]) => [`\`${k}\``, `\`${v.desktop ?? '—'}\``, `\`${v.tablet ?? '—'}\``, `\`${v.mobile ?? '—'}\``]),
+    ),
+    '',
+  ]
+}
+
+function px(n: number | undefined): string {
+  return n == null ? '—' : `\`${n}px\``
+}
+
+/** Responsive spacing token → its Desktop px, so a role on one shows a value. */
+function responsiveDesktop(json: TokenJSON): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [token, by] of Object.entries(json.spacingResponsive ?? {})) {
+    const value = json.spacing[by.desktop]
+    if (value) out[token] = value
+  }
+  return out
 }
 
 /** Same text the Skill zip ships as `references/foundations.md`. */
@@ -96,20 +153,21 @@ export function buildFoundationsMd(json: TokenJSON): string {
   const parts: string[] = [
     `# ${json.project} — foundations`,
     '',
-    'Everything that is not a color role: type, spacing, radius, size, grid, shadows, gradients. Names match the Escala Figma plugin.',
+    'Everything that is not a color role: type, spacing, radius, stroke (border width), size, selector, grid, shadows, gradients, icons. Figma names match the Escala plugin; the CSS column is the custom property in `variables.css`.',
     '',
     '## Typography (`Typography` collection)',
     '',
-    `- \`family\` = \`${t.fontFamily}\``,
-    `- \`heading-family\` = \`${t.headingFontFamily ?? t.fontFamily}\``,
+    `- \`family\` = \`${t.fontFamily}\` · CSS \`var(--font-family-body)\``,
+    `- \`heading-family\` = \`${t.headingFontFamily ?? t.fontFamily}\` · CSS \`var(--font-family-heading)\``,
     '',
     '### Sizes → also text styles `{project}/Type/{key}`',
     '',
     table(
-      ['Figma variable', 'Text style', 'Size', 'Line height'],
+      ['Figma variable', 'Text style', 'CSS', 'Size', 'Line height'],
       Object.entries(t.sizes).map(([k, v]) => [
         `\`size/${k}\``,
         `\`${prefix}/Type/${k}\``,
+        `\`var(--font-size-${k})\` · \`var(--line-height-${k})\``,
         `\`${v}\``,
         `\`${t.lineHeights?.[k] ?? 'AUTO'}\``,
       ]),
@@ -117,19 +175,18 @@ export function buildFoundationsMd(json: TokenJSON): string {
     '',
     '### Weights',
     '',
-    table(['Figma variable', 'Value'], Object.entries(t.weights).map(([k, v]) => [`\`weight/${k}\``, `\`${v}\``])),
+    table(['Figma variable', 'CSS', 'Value'], Object.entries(t.weights).map(([k, v]) => [`\`weight/${k}\``, `\`var(--font-weight-${k})\``, `\`${v}\``])),
     '',
-    '### Text roles → `{project}/Type/{role}` (Desktop / Mobile)',
+    '### Text roles → `{project}/Type/{role}` (Desktop / Tablet / Mobile)',
     '',
-    'Each role aliases primitive size, weight and family. Do not store a second px.',
+    'Each role aliases primitive size, weight and family. Do not store a second px. In CSS a role is four properties: `--text-<role>-font-family`, `-font-size`, `-font-weight`, `-line-height` (the **CSS** column is the prefix).',
     '',
     table(
-      ['Role', 'Desktop', 'Mobile'],
-      Object.entries(t.roles ?? {}).map(([k, m]) => [
-        `\`${prefix}/Type/${k}\``,
-        `\`${m.desktop.size}\` · ${m.desktop.weight} · ${m.desktop.family}`,
-        `\`${m.mobile.size}\` · ${m.mobile.weight} · ${m.mobile.family}`,
-      ]),
+      ['Role', 'CSS', 'Desktop', 'Tablet', 'Mobile'],
+      Object.entries(t.roles ?? {}).map(([k, m]) => {
+        const cell = (a: { size: string; weight: string; family: string }) => `\`${a.size}\` · ${a.weight} · ${a.family}`
+        return [`\`${prefix}/Type/${k}\``, `\`--text-${k}-*\``, cell(m.desktop), cell(m.tablet ?? m.desktop), cell(m.mobile)]
+      }),
     ),
     '',
     ...(json.dimensions && Object.keys(json.dimensions).length
@@ -144,33 +201,96 @@ export function buildFoundationsMd(json: TokenJSON): string {
       : []),
     '## Spacing (`Dimension Semantics` → `Spacing/`)',
     '',
-    lengthTable(json, 'spacing', json.spacing, figmaSpacingName),
+    lengthTable(json, 'spacing', json.spacing, figmaSpacingName, 'spacing'),
     '',
+    ...roleTable('Spacing', 'spacing', json.spacingRoleRefs ?? json.spacingRoles, { ...responsiveDesktop(json), ...json.spacing }),
+    ...responsiveTable(json.spacingResponsive, 'Responsive spacing (`Spacing/<family>/<size>`, CSS `--spacing-<family>-<size>`)'),
   ]
 
   if (json.padding && Object.keys(json.padding).length) {
     parts.push('### Padding', '')
-    parts.push(lengthTable(json, 'padding', json.padding, (k) => figmaDimensionName('Spacing', `padding/${k}`)), '')
+    parts.push(lengthTable(json, 'padding', json.padding, (k) => figmaDimensionName('Spacing', `padding/${k}`), 'padding'), '')
   }
 
   parts.push(
     '## Radius (`Dimension Semantics` → `Radius/`)',
     '',
-    lengthTable(json, 'radius', json.radius, (k) => figmaDimensionName('Radius', k)),
+    lengthTable(json, 'radius', json.radius, (k) => figmaDimensionName('Radius', k), 'radius'),
     '',
-    '## Size (`Dimension Semantics` → `Size/`)',
+    ...roleTable('Radius', 'radius', json.radiusRoles, json.radius),
+    ...responsiveTable(json.radiusResponsive, 'Responsive radius (a role on a step follows it per viewport)'),
+  )
+
+  if (json.stroke && Object.keys(json.stroke).length) {
+    parts.push(
+      '## Stroke — border width (`Dimension Semantics` → `Stroke/`)',
+      '',
+      'Border **width** only. Border **color** is a Color Semantics role (`border.*` in `references/tokens.md`).',
+      '',
+      lengthTable(json, 'stroke', json.stroke, (k) => figmaDimensionName('Stroke', k), 'stroke'),
+      '',
+      ...roleTable('Stroke', 'stroke', json.strokeRoles, json.stroke),
+    )
+  }
+
+  parts.push(
+    '## Size — control height (`Dimension Semantics` → `Size/`)',
     '',
-    lengthTable(json, 'sizes', json.sizes ?? {}, (k) => figmaDimensionName('Size', k)),
+    lengthTable(json, 'sizes', json.sizes ?? {}, (k) => figmaDimensionName('Size', k), 'size'),
     '',
+    ...roleTable('Size', 'size', json.sizeRoles, json.sizes ?? {}),
+  )
+
+  if (json.selector && Object.keys(json.selector).length) {
+    parts.push(
+      '## Selector — checkbox, radio, switch knob (`Dimension Semantics` → `Selector/`)',
+      '',
+      lengthTable(json, 'selector', json.selector, (k) => figmaDimensionName('Selector', k), 'selector'),
+      '',
+      ...roleTable('Selector', 'selector', json.selectorRoles, json.selector),
+    )
+  }
+
+  parts.push(
     '## Grid (`Dimension Semantics` → `Grid/`)',
     '',
-    lengthTable(json, 'grid', json.grid ?? {}, (k) => figmaDimensionName('Grid', k)),
+    lengthTable(json, 'grid', json.grid ?? {}, (k) => figmaDimensionName('Grid', k), 'grid'),
     '',
+  )
+
+  if (json.gridStyles?.length) {
+    parts.push(
+      '### Grid styles (Figma layout grid styles `Grid/<name>`)',
+      '',
+      table(
+        ['Style', 'Viewport', 'Columns', 'Column', 'Gutter', 'Margin', 'Width'],
+        json.gridStyles.map((g) => [
+          `\`Grid/${g.label ?? g.key}\``,
+          g.viewport ?? '—',
+          String(g.columns ?? '—'),
+          px(g.column),
+          px(g.gutter),
+          px(g.margin),
+          g.sidebar ? `${px(g.width)} (sidebar ${px(g.sidebar)})` : px(g.width),
+        ]),
+      ),
+      '',
+    )
+  }
+
+  const dark = json.shadowsDark ?? {}
+  const hasDark = Object.keys(dark).length > 0
+  parts.push(
     '## Shadows (effect styles — not variables)',
     '',
     table(
-      ['Figma style', 'CSS'],
-      Object.entries(json.shadows ?? {}).map(([k, v]) => [`\`${prefix}/Shadow/${k}\``, `\`${v}\``]),
+      ['Figma style', 'CSS', 'Light', ...(hasDark ? ['Dark'] : [])],
+      Object.entries(json.shadows ?? {}).map(([k, v]) => [
+        `\`${prefix}/Shadow/${k}\``,
+        `\`var(--shadow-${k})\``,
+        `\`${v}\``,
+        ...(hasDark ? [`\`${dark[k] ?? v}\``] : []),
+      ]),
     ),
     '',
   )
@@ -182,10 +302,10 @@ export function buildFoundationsMd(json: TokenJSON): string {
       '## Gradients (paint styles — not variables)',
       '',
       table(
-        ['Figma style', 'CSS', 'Assigned to'],
+        ['Figma style', 'CSS', 'Value', 'Assigned to'],
         Object.entries(gradients).map(([slug, css]) => {
           const tags = (['cover', 'avatar'] as const).filter((s) => assigned[s] === slug).join(', ')
-          return [`\`${prefix}/Gradient/${slug}\``, `\`${css}\``, tags || '—']
+          return [`\`${prefix}/Gradient/${slug}\``, `\`var(--gradient-${slug})\``, `\`${css}\``, tags || '—']
         }),
       ),
       '',
@@ -202,7 +322,20 @@ export function buildFoundationsMd(json: TokenJSON): string {
       `- **Set:** ${ai.label}`,
       `- **Repo:** ${ai.repo}`,
       `- **Package:** \`${ai.npm}\``,
+      ...(json.icons?.weight ? [`- **Weight:** \`${json.icons.weight}\``] : []),
       '',
+    )
+  }
+
+  const iconScale = json.icons?.sizes?.scale ?? {}
+  if (Object.keys(iconScale).length) {
+    const min = json.icons?.sizes?.minWeight
+    parts.push(
+      '### Icon sizes (`Dimension Semantics` → `Icon/role/`)',
+      '',
+      table(['Figma variable', 'CSS', 'Value'], Object.entries(iconScale).map(([k, v]) => [`\`Icon/role/${k}\``, `\`var(--icon-${k})\``, `\`${v}\``])),
+      '',
+      ...(min?.belowPx && min.weight ? [`Below ${min.belowPx}px a thin or light icon renders \`${min.weight}\`.`, ''] : []),
     )
   }
 
