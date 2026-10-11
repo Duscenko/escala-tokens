@@ -67,10 +67,12 @@ Home counters and card, rule A, 119 strings renamed in en/es/fr.
 
 ## Not done
 
-- **The plugin** still says "Modes for this brand" and "Color modes of {brand}". It should say
-  themes, and read `brandThemes` once the payload carries it. The web does not ship the field
-  in tokens.json yet: Sync already sends only the chosen columns, which is all the plugin
-  needs today.
+- **The plugin's wording** is done in `escala-figma-plugin/src/ui.html` (23 lines): "Add a
+  brand" asks "Themes this brand ships", counts themes, and says "mode" only for Figma's own
+  limit. Still to do there: it is built (`dist/`) but not committed (the repo carries other
+  uncommitted work), and the downloadable zip here is not refreshed (`npm run bundle:plugin`).
+  The plugin does not read `brandThemes`: the web ships only the chosen columns, which is all
+  it needs today.
 - **`api/_pluginStudio.mjs`** is a generated bundle and still holds the old upgrade sentence.
   `node scripts/build-plugin-studio.mjs` rewrites it.
 - **Prose that is not in the dictionaries**: Docs articles, the retired views, the About
