@@ -675,8 +675,11 @@ export default function Configurator() {
   const [guestFirstRun] = useState(() => {
     if (!accountsEnabled || hasStoredSession()) return false
     // A signed-out `library` link is the guest's first screen, not an empty Home.
-    const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
-    if (place && (place.tab !== 'foundations' || (place.workspace && place.workspace !== 'preview'))) return false
+    // The workspace URL is rewritten as you move (`?section=variables`,
+    // `code`…), so a refresh always carries one. Inside the Generator none of
+    // them is a reason to skip the studio: with no brand there is nothing for
+    // those sections to show. Only About / Components / Docs deep links stay.
+    if (incomingPlace && incomingPlace.tab !== 'foundations') return false
     const live = useDesignStore.getState()
     return myThemeKeys(live.themeOrder, live.themes).length === 0
   })
@@ -1170,6 +1173,17 @@ export default function Configurator() {
     if (themeWorkspaceTab !== 'library' || guestStudio) return
     leaveHomeForGuest()
   }, [accountsEnabled, access.loading, authUser, themeWorkspaceTab, guestStudio, leaveHomeForGuest])
+  // A visitor with no account and no brand never sees an empty board: the
+  // studio is the one first screen (first visit, refresh, or after deleting
+  // the last brand). "Add a brand to My brands" asked them to decide before
+  // they had seen anything.
+  useEffect(() => {
+    if (!accountsEnabled || access.loading || authUser || hasStoredSession()) return
+    if (tab !== 'foundations' || guestStudio || exportMode) return
+    if (!useDesignStore.persist.hasHydrated()) return
+    if (myThemeKeys(themeOrder, themes).length > 0) return
+    leaveHomeForGuest()
+  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, leaveHomeForGuest])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
