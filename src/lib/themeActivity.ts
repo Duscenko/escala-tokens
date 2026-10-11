@@ -24,6 +24,8 @@ const PER_THEME = [
 const NOT_DESIGN = new Set<keyof DesignSnapshot>([
   ...PER_THEME, 'themeUpdatedAt', 'themeOrder', 'projectName', 'projectDescription', 'publishId',
   'figmaLastPublishAt', 'githubRepo', 'githubLastPushAt', 'savedColors', 'completedFoundations', 'selectedComponents',
+  // Governance, not design: a status decision or a release changes no token.
+  'elementStatus', 'releases', 'releaseBaseline',
 ])
 
 export interface ThemeFingerprints {

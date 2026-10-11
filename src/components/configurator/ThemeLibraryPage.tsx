@@ -36,6 +36,9 @@ import {
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
 import { StartDesignModal } from './ThemeSheet'
+import SystemDashboard, { BrandSelect } from './dashboard/SystemDashboard'
+import { DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
+import { NavGroup, NavRow } from './dashboard/parts'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
 // (Its section id stays `library`, so every old `?section=library` link and the
@@ -692,31 +695,6 @@ function LibraryRow({ sys, onOpen, pinned, onTogglePin }: {
 
 // ── Left-column menu (inspector home slot) ───────────────────────────────────
 
-function NavRow({ on, icon, label, trailing, onClick, title }: {
-  on: boolean
-  icon: ReactNode
-  label: string
-  trailing?: ReactNode
-  onClick: () => void
-  title?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={on ? 'page' : undefined}
-      title={title ?? label}
-      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-        on ? 'bg-[#7468EF1A] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
-      }`}
-    >
-      <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">{icon}</span>
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {trailing}
-    </button>
-  )
-}
-
 const CREATE_STEPS = [
   { key: 'color', label: 'Color' },
   { key: 'typography', label: 'Font' },
@@ -906,18 +884,6 @@ function CreateBoard({
           projectName={store.projectName}
         />
       </div>
-    </div>
-  )
-}
-
-function NavGroup({ label, action, children }: { label: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5 border-t border-line pt-3">
-      <div className="flex h-6 items-center justify-between pl-2.5 pr-1">
-        <span className="text-micro font-semibold text-fg-faint">{label}</span>
-        {action}
-      </div>
-      {children}
     </div>
   )
 }
@@ -1171,6 +1137,8 @@ export default function ThemeLibraryPage({
   onEditFoundation,
   onCreatingChange,
   studioOnly = false,
+  onOpenComponent,
+  onOpenAgentDocs,
 }: {
   previewTheme: string
   /** Themes the live Figma sync publishes (File & modes). */
@@ -1213,6 +1181,10 @@ export default function ThemeLibraryPage({
   /** A visitor with no account and no theme: only the create studio is shown,
    *  never the file list, and there is nothing to cancel back to. */
   studioOnly?: boolean
+  /** Dashboard: open a component's own page. */
+  onOpenComponent?: (key: string) => void
+  /** Dashboard: open the guide for connecting an AI agent. */
+  onOpenAgentDocs?: () => void
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
@@ -1281,6 +1253,9 @@ export default function ThemeLibraryPage({
     setSection({ kind: 'styles' })
     stylesHandledRef.current?.()
   }, [openStylesRequest])
+  // The design system on screen opens as a dashboard; this is its open page.
+  // Kept while Home is open, so coming back resumes on the same page.
+  const [dashPage, setDashPage] = useState<DashPage>('overview')
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [brandStartOpen, setBrandStartOpen] = useState(false)
@@ -1400,7 +1375,7 @@ export default function ThemeLibraryPage({
     if (viewing.kind === 'styles') return t('System styles')
     if (viewing.kind === 'libraries') return t('All design systems')
     if (viewing.kind === 'library') {
-      if (viewing.id === currentId) return store.projectName
+      if (viewing.id === currentId) return `${store.projectName} · ${t(DASH_PAGE_LABEL[dashPage])}`
       return others.find((s) => s.id === viewing.id)?.name ?? viewing.id
     }
     return null
@@ -1509,84 +1484,103 @@ export default function ThemeLibraryPage({
     )
   } else if (viewing.id === currentId) {
     // The DEFAULT library: the system on screen, with My themes inside it.
-    const themesShown = recent.filter(themeMatches)
+    // The dashboard has no search field, so Home's query does not filter here.
+    const themesShown = recent
     const libPinned = pinned.includes(`library:${currentId}`)
+    // The system on screen opens as its dashboard. Home's own title row and
+    // brand cards are handed to it and shown on Overview.
     body = (
-      <>
-        <ViewHeader
-          crumb={libraryCrumb}
-          title={(
-            <>
-              <span className="text-fg-muted"><FolderIcon size={18} /></span>
-              {renamingLibrary ? (
-                <input
-                  autoFocus
-                  value={libraryDraft}
-                  onChange={(e) => setLibraryDraft(e.target.value)}
-                  onBlur={commitLibraryName}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitLibraryName()
-                    if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
-                  }}
-                  aria-label={t('Design system name')}
-                  className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                />
-              ) : (
+      <SystemDashboard
+        page={dashPage}
+        onPage={setDashPage}
+        brand={previewTheme}
+        onBack={() => setSection({ kind: 'libraries' })}
+        timeAgo={timeAgo}
+        figmaThemes={figmaThemes}
+        onSyncFigma={() => onSyncFigma(previewTheme)}
+        onOpenGithub={() => onShareGithub(previewTheme)}
+        onEditFoundation={onEditFoundation}
+        onOpenComponent={onOpenComponent}
+        onOpenAgentDocs={onOpenAgentDocs}
+        overviewHeader={(
+          <>
+            <ViewHeader
+              title={(
                 <>
-                  <span className="min-w-0 truncate">{store.projectName}</span>
-                  <button
-                    type="button"
-                    onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
-                    aria-label={t('Rename design system')}
-                    title={t('Rename design system')}
-                    className={MENU_BTN}
-                  >
-                    <PencilGlyph />
-                  </button>
+                  <span className="text-fg-muted"><FolderIcon size={18} /></span>
+                  {renamingLibrary ? (
+                    <input
+                      autoFocus
+                      value={libraryDraft}
+                      onChange={(e) => setLibraryDraft(e.target.value)}
+                      onBlur={commitLibraryName}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitLibraryName()
+                        if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
+                      }}
+                      aria-label={t('Design system name')}
+                      className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                    />
+                  ) : (
+                    <>
+                      <span className="min-w-0 truncate">{store.projectName}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
+                        aria-label={t('Rename design system')}
+                        title={t('Rename design system')}
+                        className={MENU_BTN}
+                      >
+                        <PencilGlyph />
+                      </button>
+                    </>
+                  )}
+                  <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
                 </>
               )}
-              <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
-            </>
-          )}
-          detail={t('The design system you are working in. Its brands share foundations and ship together to one Figma file.')}
-          right={(
-            <>
-              <button
-                type="button"
-                onClick={() => togglePinned(`library:${currentId}`)}
-                aria-pressed={libPinned}
-                aria-label={libPinned ? t('Unpin') : t('Pin to Home')}
-                title={libPinned ? t('Unpin') : t('Pin to Home')}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${libPinned ? 'bg-elevated text-fg' : 'text-fg-muted'}`}
-              >
-                <PinGlyph />
-              </button>
-              <SaveLibraryButton />
-              <LibraryOptions
-                hasOwnThemes={mine.length > 0}
-                onReset={onOpenReset}
-                onDeleteMyThemes={() => setConfirmDeleteAll(true)}
-              />
-            </>
-          )}
-        />
-        <AnimatePresence initial={false}>
-          {confirmDeleteAll && (
-            <div className="max-w-sm self-end">
-              <DeleteMyThemesConfirmation
-                count={mine.length}
-                onCancel={() => setConfirmDeleteAll(false)}
-                onConfirm={deleteMyThemes}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-        <GuestAccountCard />
-        <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
-          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Brands')}</SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No brand matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
-        </section>
-      </>
+              detail={t('The design system you are working in. Its brands share foundations and ship together to one Figma file.')}
+              right={(
+                <>
+                  <button
+                    type="button"
+                    onClick={() => togglePinned(`library:${currentId}`)}
+                    aria-pressed={libPinned}
+                    aria-label={libPinned ? t('Unpin') : t('Pin to Home')}
+                    title={libPinned ? t('Unpin') : t('Pin to Home')}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${libPinned ? 'bg-elevated text-fg' : 'text-fg-muted'}`}
+                  >
+                    <PinGlyph />
+                  </button>
+                  <SaveLibraryButton />
+                  <LibraryOptions
+                    hasOwnThemes={mine.length > 0}
+                    onReset={onOpenReset}
+                    onDeleteMyThemes={() => setConfirmDeleteAll(true)}
+                  />
+                </>
+              )}
+            />
+            <AnimatePresence initial={false}>
+              {confirmDeleteAll && (
+                <div className="max-w-sm self-end">
+                  <DeleteMyThemesConfirmation
+                    count={mine.length}
+                    onCancel={() => setConfirmDeleteAll(false)}
+                    onConfirm={deleteMyThemes}
+                  />
+                </div>
+              )}
+            </AnimatePresence>
+            <GuestAccountCard />
+          </>
+        )}
+        brands={(
+          <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
+            <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Brands')}</SectionTitle>
+            {themeGrid(themesShown, true)}
+          </section>
+        )}
+      />
     )
   } else {
     // A saved library: look inside, then load it to edit.
@@ -1649,6 +1643,8 @@ export default function ThemeLibraryPage({
       </>
     )
   }
+
+  const onDashboard = viewing.kind === 'library' && viewing.id === currentId
 
   const onColorCommitted = (key: string) => {
     setCreatedKey(key)
@@ -1798,7 +1794,7 @@ export default function ThemeLibraryPage({
         </>
       ) : studioOnly ? null : (
       <div className="flex min-h-0 flex-1 flex-row">
-        <HomeNav
+        {!onDashboard && <HomeNav
           section={viewing}
           onSection={setSection}
           query={query}
@@ -1806,13 +1802,15 @@ export default function ThemeLibraryPage({
           onOpenTheme={onOpenPreview}
           onNewSystem={onNewSystem}
           onImport={onImport}
-        />
+        />}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <HomeStickyBar
             trail={homeTrail}
             onGoHome={() => setSection({ kind: 'recents' })}
             action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
               <NewDesignSystemButton onClick={onNewSystem} />
+            ) : onDashboard ? (
+              <BrandSelect brand={previewTheme} onSelect={onSelectTheme} />
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-y-auto">

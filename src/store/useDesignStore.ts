@@ -46,6 +46,7 @@ import { slugify } from '../lib/utils'
 import { canAddMyTheme, isScaffoldTheme, myThemeKeys } from '../lib/themeLibrary'
 import { freeAnotherThemeBlockedNow } from '../lib/freeThemeLimit'
 import { generatePublishId, isPublishId } from '../lib/publishId'
+import { RELEASE_HISTORY_LIMIT, type ElementDecision, type ElementStatus, type ReleaseRecord } from '../lib/systemDashboardTypes'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
 // store's constants), so a value import here would create a runtime cycle.
 import type { SemanticArchitecture } from '../lib/semanticArchitectures'
@@ -427,6 +428,16 @@ export interface DesignSnapshot {
    *  sync. Design data: it travels with a saved library. Absent = not edited
    *  since this field existed. */
   themeUpdatedAt: Record<string, string>
+  /** Status board decisions (element id → status). Only what someone DECIDED
+   *  is stored; an element with no entry takes its status from the system
+   *  (see lib/systemDashboard.ts). Travels with a saved design system. */
+  elementStatus: Record<string, ElementDecision>
+  /** Published releases of this design system, newest first. */
+  releases: ReleaseRecord[]
+  /** The tokens as they stood at the last release (path → value). The draft
+   *  on the Releases page is the difference between this and the system on
+   *  screen. Null until a first release is published. */
+  releaseBaseline: Record<string, string> | null
   typography: TypographyTokens
   spacing: Record<string, string>
   radius: Record<string, string>
@@ -577,6 +588,9 @@ export function makeDesignDefaults(): DesignSnapshot {
     themeOrigin: {},
     brandThemes: {},
     themeUpdatedAt: {},
+    elementStatus: {},
+    releases: [],
+    releaseBaseline: null,
     typography: {
       fontFamily: 'Inter',
       headingFontFamily: 'Inter',
@@ -774,6 +788,15 @@ interface DesignStore {
   themeUpdatedAt: Record<string, string>
   /** Stamps `themeUpdatedAt` for the given themes (see useThemeActivity). */
   stampThemesUpdated: (keys: string[], iso: string) => void
+  /** Same three fields as the snapshot (design system dashboard). */
+  elementStatus: Record<string, ElementDecision>
+  releases: ReleaseRecord[]
+  releaseBaseline: Record<string, string> | null
+  /** Status board: record a decision, or pass null to hand the element back
+   *  to the automatic status. */
+  setElementStatus: (id: string, status: ElementStatus | null) => void
+  /** Releases: file a release and make the tokens it shipped the new baseline. */
+  publishRelease: (release: ReleaseRecord, baseline: Record<string, string>) => void
   // Home's Pinned shortcuts: `theme:<key>` / `library:<id>`. A global
   // preference (not per-system) — an id the system on screen no longer has is
   // simply not shown, the same pruning-on-read figmaSyncSelection does.
@@ -1122,6 +1145,21 @@ export const useDesignStore = create<DesignStore>()(
         for (const key of keys) next[key] = iso
         return { themeUpdatedAt: next }
       }),
+      setElementStatus: (id, status) => set((st) => {
+        const next = { ...(st.elementStatus ?? {}) }
+        if (status) next[id] = { status, at: new Date().toISOString() }
+        else delete next[id]
+        return { elementStatus: next }
+      }),
+      // An element someone Approved ships with the release, so its decision
+      // is spent: it goes back to the automatic status, which is now Live.
+      publishRelease: (release, baseline) => set((st) => ({
+        releases: [release, ...(st.releases ?? [])].slice(0, RELEASE_HISTORY_LIMIT),
+        releaseBaseline: baseline,
+        elementStatus: Object.fromEntries(
+          Object.entries(st.elementStatus ?? {}).filter(([, decision]) => decision.status !== 'approved'),
+        ),
+      })),
       pinned: [],
       togglePinned: (id) => set((st) => ({
         pinned: st.pinned.includes(id) ? st.pinned.filter((p) => p !== id) : [...st.pinned, id],
@@ -1808,7 +1846,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 85,
+      version: 86,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3231,6 +3269,21 @@ export const useDesignStore = create<DesignStore>()(
           // Changes already made were not counted. Existing sessions start at
           // zero rather than guessing a number that would lock them out.
           if (typeof persisted.freeEditCount !== 'number') persisted.freeEditCount = 0
+        }
+        if (version < 86) {
+          // Design system dashboard: status decisions and releases. Nothing is
+          // invented for an existing system: no decision was ever taken and no
+          // release was ever published, so both start empty.
+          const seed = (target: any) => {
+            if (!target) return
+            if (!target.elementStatus || typeof target.elementStatus !== 'object') target.elementStatus = {}
+            if (!Array.isArray(target.releases)) target.releases = []
+            if (target.releaseBaseline === undefined) target.releaseBaseline = null
+          }
+          seed(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seed(sys?.snapshot)
+          }
         }
         return persisted
       },

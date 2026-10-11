@@ -4,27 +4,54 @@
     {
       "name": "Vite Dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "Vite Dev (accounts off)",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "VITE_SUPABASE_URL=",
+        "VITE_SUPABASE_ANON_KEY=",
+        "npm",
+        "run",
+        "dev"
+      ],
+      "port": 5183,
       "autoPort": true
     },
     {
       "name": "Vite Preview",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
+      "runtimeArgs": [
+        "run",
+        "preview"
+      ],
       "port": 4173,
       "autoPort": true
     },
     {
       "name": "Escala Plugin UI",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5199", "--directory", "/Users/duscenko/sync-ds-platform/escala-figma-plugin/dist"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5199",
+        "--directory",
+        "/Users/duscenko/sync-ds-platform/escala-figma-plugin/dist"
+      ],
       "port": 5199
     },
     {
       "name": "Vercel Dev",
       "runtimeExecutable": "vercel",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
       "port": 3000
     }
   ]

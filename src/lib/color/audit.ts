@@ -158,7 +158,7 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 // `fgBackdrop` still throws, so a genuine ink-as-wash modelling error stays
 // loud. Defaults to `bg` — a border is measured for the contrast it creates
 // against the surface it sits on.
-type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string }
+export type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string }
 
 const OPAQUE_HEX = /^#[0-9a-f]{6}$/i
 const TRANSLUCENT_HEX = /^#[0-9a-f]{8}$/i
@@ -254,8 +254,33 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
     }
   }
 
-  const out: CuratedFinding[] = []
-  for (const theme of view.modeKeys as ('light' | 'dark')[]) {
+  return auditResolvedRoles(resolved, view.modeKeys, pairings, { system: sys.name, architecture: arch }) as CuratedFinding[]
+}
+
+/** A finding whose `theme` is whatever mode key the caller resolved — the
+ *  matrix passes 'light' / 'dark', a live system passes its own mode keys. */
+export type ResolvedFinding = Omit<CuratedFinding, 'theme'> & { theme: string }
+
+/**
+ * Scores every pairing against roles that are ALREADY resolved (role id →
+ * mode → css). The matrix above builds that map from a seed; the design system
+ * dashboard builds it from the system on screen, so both measure with this one
+ * loop.
+ *
+ * `lenient` skips a pairing that cannot be measured instead of throwing. The
+ * matrix stays strict (a hole there is a modelling error); a live system can
+ * hold a hand-made override that leaves a wash without an opaque backdrop, and
+ * one such row must not take the whole report down.
+ */
+export function auditResolvedRoles(
+  resolved: Map<string, Record<string, string>>,
+  modeKeys: readonly string[],
+  pairings: readonly Pairing[],
+  meta: { system: string; architecture: string; lenient?: boolean },
+): ResolvedFinding[] {
+  const { system, architecture: arch, lenient = false } = meta
+  const out: ResolvedFinding[] = []
+  for (const theme of modeKeys) {
     for (const p of pairings) {
       const fg = resolved.get(p.fg)?.[theme]
       const rawBg = resolved.get(p.bg)?.[theme]
@@ -271,6 +296,7 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
         const backdropRole = p.backdrop ?? 'surface.page'
         const backdrop = resolved.get(backdropRole)?.[theme]
         if (!backdrop || !OPAQUE_HEX.test(backdrop)) {
+          if (lenient) continue
           throw new Error(
             `audit: ${p.bg} is translucent in ${theme} and its backdrop "${backdropRole}" did not resolve to an opaque colour — a wash cannot be measured without one.`,
           )
@@ -287,11 +313,13 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
       if (!OPAQUE_HEX.test(fg)) {
         if (TRANSLUCENT_HEX.test(fg)) {
           if (!p.fg.startsWith('border.')) {
+            if (lenient) continue
             throw new Error(`audit: ${p.fg} resolved translucent (${fg}) in ${theme} — a non-border foreground must be opaque.`)
           }
           const fgBackdropRole = p.fgBackdrop ?? p.bg
           const fgBackdrop = resolved.get(fgBackdropRole)?.[theme]
           if (!fgBackdrop || !OPAQUE_HEX.test(fgBackdrop)) {
+            if (lenient) continue
             throw new Error(
               `audit: ${p.fg} is a translucent border in ${theme} and its backdrop "${fgBackdropRole}" did not resolve to an opaque colour.`,
             )
@@ -304,7 +332,7 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
       if (!OPAQUE_HEX.test(bg)) continue
       const v = evaluate(measuredFg, bg, p.intent)
       out.push({
-        architecture: arch, system: sys.name, theme, role: p.fg, against: p.bg,
+        architecture: arch, system, theme, role: p.fg, against: p.bg,
         intent: p.intent, fg: measuredFg, bg, tone: -1,
         wcag: Number(v.wcag.toFixed(2)), apcaLc: Number(v.apcaLc.toFixed(1)),
         passesWcag: v.passesWcag, passesApca: v.passesApca,

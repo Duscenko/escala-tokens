@@ -2429,6 +2429,11 @@ export default function Configurator() {
                     onStylesRequestHandled={() => setOpenStylesRequest(false)}
                     onEditFoundation={selectFoundation}
                     onCreatingChange={setHomeCreating}
+                    onOpenComponent={(key) => {
+                      const def = COMPONENTS.find((c) => c.key === key)
+                      if (def) selectComponent(def)
+                    }}
+                    onOpenAgentDocs={() => openDocsPage('mcp')}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (

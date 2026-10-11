@@ -148,6 +148,31 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > - Plan, and what is not done (the plugin's wording, prose outside the dictionaries):
 >   `design-plans/brands-and-themes.md`.
 
+> **UPDATE (2026-10-11): opening the design system on screen in Home shows its DASHBOARD.**
+> Home's `library` section for the system on screen renders `dashboard/SystemDashboard`: its own
+> left menu (Measure · Govern · Build · Ship) replaces Home's, and the old title row and brand
+> cards live on Overview. A SAVED system that is not on screen keeps the look-inside view; load
+> it to open its dashboard. Pages: Overview · Status board · Foundations · Components ·
+> Releases · Integrations.
+> - **Every figure is derived, in `lib/systemDashboard.ts`** (pure, tested), from the tokens,
+>   the catalogue and the status decisions. Contrast is the audit's own loop
+>   (`auditResolvedRoles` in `color/audit.ts`, `lenient` for a live system). Roles for one
+>   brand come from `lib/themeArchitecture.ts`, which `useArchitectureTokens` also calls.
+> - **Not built, on purpose: Adoption, Quality (hardcoded values), team XP, Storybook, code
+>   scanner.** Escala has no source for them (they need the plugin to scan product files).
+>   Do not add a page that shows a number with no source.
+> - **Status** (`elementStatus`, store v86): only DECISIONS are stored. With none, an element
+>   is Proposed if it changed since the last release and Live otherwise; before a first
+>   release it is Approved until something was published. There is no AI: the checks are
+>   contrast, naming, shared values and usage.
+> - **Releases** (`releases`, `releaseBaseline`): a release is a record in the snapshot, it
+>   sends nothing anywhere. The draft is the diff between `releaseTokenMap(store)` and the
+>   baseline. The map leaves the root foundation maps out because they mirror the brand on
+>   screen. Publishing turns Approved decisions back to automatic.
+> - These three fields are in `NOT_DESIGN` (`themeActivity.ts`): a status change is not a
+>   design edit, so it stamps no theme and spends no Free change.
+> - To see Home locally without signing in, use the `Vite Dev (accounts off)` preview config.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —
