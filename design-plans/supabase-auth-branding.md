@@ -45,6 +45,16 @@ Emails → SMTP Settings): e.g. Resend with `escalatokens.com` verified
 (SPF + DKIM), sender `Escala Tokens <hello@escalatokens.com>`. The built-in
 sender is also rate-limited to a few emails an hour.
 
+## Dashboard templates (pasted 2026-10-11)
+
+Production has no `RESEND_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / auth hook, so the routes above
+answer "not configured" and Supabase sends. The six Auth templates (Confirm sign up, Invite user,
+Magic link, Change email, Reset password, Reauthentication) therefore carry the same card as
+`src/lib/authEmail.ts`, pasted in the dashboard (EN only). They live in Supabase, not in the repo:
+when `layout()` changes, paste again. Sender stays `hello@mail.escalatokens.com` via Supabase SMTP
+(Resend verifies only `mail.escalatokens.com`); `Reply-To` is support@escalatokens.com on the
+routes that send from the repo.
+
 ## 2. Google — dropped (2026-10-06)
 Sign-in is email + GitHub only. Google would need a published OAuth app and still shows the
 supabase.co host without a paid custom domain. The Google Cloud project `escala-tokens` and its
