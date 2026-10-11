@@ -1048,7 +1048,7 @@ export default function ExportWizard({
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
-                    {isGitHubDestination ? 'GitHub exporter' : <>Save design system <span className="normal-case font-medium tracking-normal">(optional)</span></>}
+                    {isGitHubDestination ? 'GitHub exporter' : <>Save a copy <span className="normal-case font-medium tracking-normal">(optional)</span></>}
                   </span>
                   {!isGitHubDestination && savedEntry && (
                     <span className="text-caption text-fg-faint flex-shrink-0">
@@ -1082,7 +1082,7 @@ export default function ExportWizard({
                       justSaved ? 'border-status-success bg-status-success-solid text-white' : 'border-line-strong bg-app text-fg hover:bg-elevated'
                     }`}
                   >
-                    {justSaved ? '✓ Saved' : 'Save design system'}
+                    {justSaved ? '✓ Saved' : 'Save a copy'}
                   </button>
                 </div>
                 )}

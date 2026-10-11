@@ -1,11 +1,12 @@
-// New folder — name a saved system. Confirming resets to a fresh system
-// (same as the old bare "New" click) and applies the name on top. Accent
-// lives on the files (themes) inside, not on the folder.
+// New design system — name it. Confirming resets to a fresh system and applies
+// the name on top. Colour lives on the brands inside, not on the system, so
+// this asks for nothing else: how a brand starts is asked by Create brand.
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { slugify } from '../../lib/utils'
+import { myThemeKeys } from '../../lib/themeLibrary'
 
 export default function NewSystemModal({
   onClose,
@@ -15,13 +16,15 @@ export default function NewSystemModal({
   /** Called after the new system is created — the shell stays on Home. */
   onCreated: () => void
 }) {
-  const { startNewSystem, savedSystems, githubRepo, projectName } = useDesignStore()
+  const { startNewSystem, savedSystems, githubRepo, projectName, themeOrder, themes } = useDesignStore()
 
   const [name, setName] = useState('')
 
   // The outgoing system is lost unless it was saved (registry or GitHub push).
   const savedId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
   const currentSaved = savedSystems.some((s) => s.id === savedId)
+  // A system with no brands has nothing to lose, so it gets no warning.
+  const currentEmpty = myThemeKeys(themeOrder, themes).length === 0
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -62,7 +65,7 @@ export default function NewSystemModal({
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold text-fg">New design system</h2>
           <p className="text-xs text-fg-faint leading-relaxed">
-            A folder holds files — each file is a theme. Name it, then create a file inside.
+            A design system holds brands, and they ship together to one Figma file. Name it, then create a brand inside.
           </p>
         </div>
 
@@ -82,9 +85,9 @@ export default function NewSystemModal({
           </p>
         </div>
 
-        {!currentSaved && (
+        {!currentSaved && !currentEmpty && (
           <p className="text-caption leading-relaxed text-status-warning bg-status-warning/10 rounded-lg px-3 py-2">
-            Your current system isn't saved — creating a new one replaces it. Save it first from the Save hub if you want to keep it.
+            Your current system isn't saved — creating a new one replaces it. Save a copy first if you want to keep it.
           </p>
         )}
 
@@ -100,7 +103,7 @@ export default function NewSystemModal({
             disabled={!trimmed}
             className="px-4 py-2 rounded-lg text-xs font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Create folder
+            Create design system
           </button>
         </div>
       </motion.div>

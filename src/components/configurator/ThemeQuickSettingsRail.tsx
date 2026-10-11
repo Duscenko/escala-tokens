@@ -49,6 +49,8 @@ import {
   roleValuePx,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
+  RADIUS_ROLE_PRESETS,
+  radiusPresetPx,
   matchRadiusRolePreset,
   radiusPresetPatch,
   radiusGroupStep,
@@ -61,7 +63,7 @@ import {
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { shippedThemes } from '../../lib/brandThemes'
+import { brandThemeDef, normalizeBrandThemes, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
@@ -72,8 +74,6 @@ import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { PlatformSwitch } from './PlatformRail'
-import RailSelect from '../ui/RailSelect'
-import { radiusPresetOptions } from './radiusPresetOptions'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
@@ -86,7 +86,7 @@ import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
-import { useAccess } from '../../lib/access'
+import { useAccess, useFreeTier } from '../../lib/access'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 /**
@@ -1195,34 +1195,25 @@ function TypeScaleCard({
   )
 }
 
-// One base (`lg`) grades the Tailwind/HeroUI ramp. Named presets are points
-// on that formula (Sharp=8, Soft=12, Rounded=16, Pill=24), so the gallery,
-// the slider and Variables' Preset dropdown can never disagree. 40 is the
-// ceiling StepRadius already uses.
-const RADIUS_TILE = 33 // Figma node 4185:21283
-
 /**
- * Radius as THREE independent axes — Boxes / Fields / Selectors.
+ * Radius as presets + THREE independent axes — Boxes / Fields / Selectors.
  *
- * The dial this replaced graded the whole ramp from a single `lg`, so every
- * role moved together: choosing Pill turned the CARD into a stadium along with
- * the checkbox, which is unreadable and was the reported defect. The three-axis
- * MODEL is DaisyUI's (`--radius-box` / `--radius-field` / `--radius-selector`),
- * mapped onto the roles this system already ships, so the token contract is
- * unchanged and only WHICH step each role aliases is picked per axis.
+ * This is the Figma plugin's own Radius step, drawn the same way, because the
+ * quick edition is what the plugin executes: four ready-made presets in a 2×2
+ * grid (corner sample · name · Boxes · Fields · Selectors px), and below them a
+ * disclosure, "Fine-tune each corner", with one row per axis — the header
+ * carries the resolved px ("Boxes · 16px"), the hint sits right, and five bare
+ * corners (an L of top + left border at that step's radius) with the picked one
+ * in the accent and a round px badge.
  *
- * The PRESENTATION is Figma node 4185:21283, adapted: each option is a 33px
- * well whose TOP-LEFT corner is drawn at that step's radius (an L of
- * left + top border, other corners square, so the arc IS the sample). The
- * selected well fills, its L goes accent and doubles in weight, gets an inset
- * press shadow, and carries a small round badge with the resolved px. The
- * design's hardcoded hexes map to chrome tokens: `#737375` L → `--fg` at 22%,
- * `#285cc3` selected L → `--accent-ui`, `#2a2a2d` fill → `--elevated`,
- * `rgba(40,92,195,0.24)` badge → `--accent-ui` at 22%. The ramp is not edited
- * here — five steps meaning the same pixels on every axis is what makes the
- * axes comparable; regrading belongs in the advanced editor.
+ * The MODEL is DaisyUI's (`--radius-box` / `--radius-field` /
+ * `--radius-selector`) over the roles this system ships, so the token contract
+ * is unchanged. The ramp is not edited here: five steps meaning the same pixels
+ * on every axis is what makes the axes comparable.
  */
-function RadiusTile({
+const CORNER_MAX = 26 // the plugin caps the drawn arc so `full` stays a corner
+
+function RadiusCorner({
   px, step, value, groupLabel, selected, onClick,
 }: {
   px: number
@@ -1232,8 +1223,6 @@ function RadiusTile({
   selected: boolean
   onClick: () => void
 }) {
-  // Cap so `full` (9999) draws a quarter circle rather than overflowing.
-  const r = Math.min(px, RADIUS_TILE)
   return (
     <button
       type="button"
@@ -1241,37 +1230,24 @@ function RadiusTile({
       aria-label={`${groupLabel} radius ${step} (${value})`}
       title={`${step} — ${value}`}
       onClick={onClick}
-      className="relative shrink-0 transition-[border-color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-      style={{
-        width: RADIUS_TILE,
-        height: RADIUS_TILE,
-        borderStyle: 'solid',
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: selected ? 2 : 1,
-        borderTopWidth: selected ? 2 : 1,
-        borderTopLeftRadius: r,
-        // Figma's selected L is a saturated accent stroke (#285cc3), which is
-        // `--accent-solid` (the brand), not `--accent-ui` (which walks toward
-        // the page for text contrast and reads pastel here).
-        borderColor: selected
-          ? 'var(--accent-solid)'
-          : 'color-mix(in srgb, var(--fg) 22%, transparent)',
-        background: selected
-          ? 'var(--elevated)'
-          : 'color-mix(in srgb, var(--elevated) 55%, transparent)',
-        // A pressed-well cue — dark in both themes, so the hardcode is correct.
-        boxShadow: selected ? 'inset 0 4px 4px rgba(0,0,0,0.25)' : undefined,
-      }}
+      className="relative h-11 w-12 flex-shrink-0 transition-transform duration-150 ease-[var(--ease-out-quint)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
+      <span
+        aria-hidden
+        className="absolute inset-0 border-l border-t"
+        style={{
+          borderTopLeftRadius: Math.min(px, CORNER_MAX),
+          borderColor: selected ? 'var(--accent-solid)' : 'var(--line-strong)',
+          borderLeftWidth: selected ? 2 : 1,
+          borderTopWidth: selected ? 2 : 1,
+        }}
+      />
       {selected && (
         <span
           aria-hidden
-          className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[8px] font-medium leading-none tabular-nums"
+          className="absolute left-1/2 top-1/2 flex h-[22px] min-w-[22px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[11px] font-medium tabular-nums"
           style={{
-            width: 16,
-            height: 16,
-            background: 'color-mix(in srgb, var(--accent-solid) 20%, transparent)',
+            background: 'color-mix(in srgb, var(--accent-solid) 22%, transparent)',
             color: 'var(--accent-ui)',
           }}
         >
@@ -1291,62 +1267,99 @@ function RadiusCard({
   /** Apply a preset — the three axis picks on the standard ramp. */
   onPreset: (label: string) => void
 }) {
-  // `gap-3` (13.5px here), not the design's literal 15px — a one-off arbitrary
-  // value in a column where every other gap is a scale step is a 2px difference
-  // nobody can see and one more number to keep in step.
+  const { t } = useI18n()
+  const matched = matchRadiusRolePreset(radiusRoles)
+  const [fineOpen, setFineOpen] = useState(matched === null)
   return (
     <div className="flex flex-col gap-3">
-      {/* The same select the Variables rail carries. A preset IS a set of the
-          three axis picks below, so choosing one moves those rows, and moving a
-          row off the bundle reads Custom. */}
-      <div className="min-w-0">
-        <span className="mb-1 block text-micro font-medium text-fg-muted">Preset</span>
-        <RailSelect
-          value={matchRadiusRolePreset(radiusRoles)}
-          options={radiusPresetOptions()}
-          onChange={onPreset}
-          ariaLabel="Radius preset"
-        />
+      <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Radius preset">
+        {RADIUS_ROLE_PRESETS.map((preset) => {
+          const [boxes, fields, selectors] = radiusPresetPx(preset)
+          const on = matched === preset.label
+          return (
+            <button
+              key={preset.label}
+              type="button"
+              aria-pressed={on}
+              title={`Boxes ${boxes} · Fields ${fields} · Selectors ${selectors}`}
+              onClick={() => onPreset(preset.label)}
+              className={`flex min-w-0 flex-col items-start gap-1.5 rounded-lg border p-2 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                on
+                  ? 'border-accent-ui bg-accent-ui/[0.08] text-fg'
+                  : 'border-line text-fg-muted hover:border-line-strong hover:bg-elevated'
+              }`}
+            >
+              <span aria-hidden className="flex h-[34px] w-full items-end">
+                <span
+                  className="block h-full w-full border-l-2 border-t-2"
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--fg) 55%, transparent)',
+                    borderTopLeftRadius: Math.min(boxes, CORNER_MAX),
+                    background: 'color-mix(in srgb, var(--fg) 5%, transparent)',
+                  }}
+                />
+              </span>
+              <span>{preset.label}</span>
+              <small className="-mt-0.5 block text-micro tabular-nums opacity-65">{boxes} · {fields} · {selectors}</small>
+            </button>
+          )
+        })}
       </div>
-      {RADIUS_GROUPS.map((group) => {
-        const current = radiusGroupStep(group, radiusRoles)
-        return (
-          <div key={group.key} className="min-w-0">
-            <div className="mb-1 flex min-w-0 items-center gap-1.5">
-              {/* Muted, like every other label in this rail — see the rule
-                  under `SettingItem`'s own label. At `text-fg` these 9px axis
-                  names read STRONGER than the 11px row label above them, which
-                  inverts the hierarchy: the only full-strength text in a card
-                  is its title and its resolved values (here, the px badge on
-                  the selected tile). */}
-              <span className="min-w-0 flex-shrink-0 text-micro font-medium text-fg-muted">{group.label}</span>
-              <span className="min-w-0 flex-1 truncate text-nano text-fg-faint">{group.hint}</span>
-              {/* The Figma has no header readout — the badge on the selected
-                  well carries the value. `Custom` is the one case it does not
-                  cover (roles off the ladder), so it stays here. */}
-              {current === null && (
-                <span className="flex-shrink-0 text-nano text-fg-faint">Custom</span>
-              )}
+      {matched === null && (
+        <p className="text-mini text-fg-faint">Custom — corners were set by hand below.</p>
+      )}
+      {/* Same disclosure as Colour's Fine-tune: a title, what is inside it, and
+          a Show / Hide chip. Opens by itself when the corners were set by hand,
+          since that is the state the presets cannot describe. */}
+      <div className="flex min-w-0 flex-col border-t border-line pt-3">
+        <button
+          type="button"
+          onClick={() => setFineOpen((open) => !open)}
+          aria-expanded={fineOpen}
+          className="group flex w-full min-w-0 items-center gap-2 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
+            <span className="block truncate text-mini text-fg-faint">
+              {RADIUS_GROUPS.map((group) => group.label).join(' · ')}
+            </span>
+          </span>
+          <span className={discloseChip(fineOpen)}>{fineOpen ? t('Hide') : t('Show')}</span>
+        </button>
+        {fineOpen && (
+          <div className="mt-3 flex flex-col gap-3.5 border-t border-line pt-3">
+        {RADIUS_GROUPS.map((group) => {
+          const current = radiusGroupStep(group, radiusRoles)
+          const px = current ? Math.round(parseFloat(radius[current] ?? '0') || 0) : null
+          return (
+            <div key={group.key} className="min-w-0">
+              <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2 text-caption font-medium text-fg-muted">
+                <span className="flex-shrink-0">{group.label}{px !== null ? ` · ${px}px` : ''}</span>
+                <small className="min-w-0 truncate text-mini font-normal text-fg-faint">{group.hint}</small>
+              </div>
+              <div className="flex items-center justify-between" role="group" aria-label={`${group.label} radius`}>
+                {RADIUS_GROUP_STEPS.map((step) => {
+                  const value = radius[step] ?? '0px'
+                  return (
+                    <RadiusCorner
+                      key={step}
+                      px={parseFloat(value) || 0}
+                      step={step}
+                      value={value}
+                      groupLabel={group.label}
+                      selected={current === step}
+                      onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
+                    />
+                  )
+                })}
+              </div>
             </div>
-            <div className="flex items-center justify-between" role="group" aria-label={`${group.label} radius`}>
-              {RADIUS_GROUP_STEPS.map((step) => {
-                const value = radius[step] ?? '0px'
-                return (
-                  <RadiusTile
-                    key={step}
-                    px={parseFloat(value) || 0}
-                    step={step}
-                    value={value}
-                    groupLabel={group.label}
-                    selected={current === step}
-                    onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
-                  />
-                )
-              })}
-            </div>
+          )
+        })}
           </div>
-        )
-      })}
+        )}
+      </div>
+      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it.</p>
     </div>
   )
 }
@@ -1627,6 +1640,20 @@ export default function ThemeQuickSettingsRail({
   const [fineOpen, setFineOpen] = useState(false)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   const rampAppearance = colorAppearance ?? previewAppearance
+  // The brand's DEFAULT theme (`themeKinds`) and, when it ships a single one
+  // under this plan, which. The Light/Dark switch and "Themes this brand
+  // ships" both read these, so they cannot disagree.
+  const free = useFreeTier()
+  const leadTheme: ThemeAppearance = store.themeKinds[previewTheme] === 'dark' ? 'dark' : 'light'
+  const plannedShips = plannedBrandThemes(shippedThemes(store.brandThemes, previewTheme), leadTheme, free)
+  const shipsOne: ThemeAppearance | undefined = plannedShips.length === 1 ? brandThemeDef(plannedShips[0])?.base : undefined
+  /** Make `appearance` the brand's default theme and show it. */
+  const leadWith = (appearance: ThemeAppearance) => {
+    const live = useDesignStore.getState()
+    const sources = live.themeSources[previewTheme]
+    if (sources && live.themeKinds[previewTheme] !== appearance) live.updateTheme(previewTheme, appearance, sources)
+    onColorAppearanceChange?.(appearance)
+  }
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
@@ -2114,7 +2141,18 @@ export default function ThemeQuickSettingsRail({
           trailing={
             <ColorAppearanceSwitch
               value={rampAppearance}
-              onChange={(next) => onColorAppearanceChange?.(next)}
+              onChange={(next) => {
+                // Linked to "Themes this brand ships": a brand that ships ONE
+                // theme is edited in that theme, so switching here moves what
+                // it ships. With both shipped this is only the view; the
+                // default is asked below.
+                if (!tryOn && shipsOne && shipsOne !== next) {
+                  if (normalizeBrandThemes(store.brandThemes?.[previewTheme]).length === 1) store.setBrandThemes(previewTheme, [next])
+                  leadWith(next)
+                  return
+                }
+                onColorAppearanceChange?.(next)
+              }}
             />
           }
         >
@@ -2306,8 +2344,15 @@ export default function ThemeQuickSettingsRail({
               <div className="px-3 py-2.5">
                 <BrandThemesPicker
                   value={shippedThemes(store.brandThemes, previewTheme)}
-                  lead={store.themeKinds[previewTheme] === 'dark' ? 'dark' : 'light'}
-                  onChange={(ids) => store.setBrandThemes(previewTheme, ids)}
+                  lead={leadTheme}
+                  onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
+                  onChange={(ids) => {
+                    store.setBrandThemes(previewTheme, ids)
+                    // A brand that ships one theme leads with it, and the
+                    // editor shows it.
+                    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
+                    if (only) leadWith(only)
+                  }}
                 />
               </div>
             )}

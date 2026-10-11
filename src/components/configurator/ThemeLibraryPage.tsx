@@ -521,8 +521,9 @@ function SaveLibraryButton() {
       : t('Unsaved changes')
   return (
     <div className="flex flex-shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-      <span role="status" className={`text-caption ${saved && !same ? 'text-fg-muted' : 'text-fg-faint'}`}>
-        {saved && !same && <span aria-hidden className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-ui align-middle" />}
+      {saved && (
+      <span role="status" className={`text-caption ${!same ? 'text-fg-muted' : 'text-fg-faint'}`}>
+        {!same && <span aria-hidden className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-ui align-middle" />}
         {status}
         {guest && saved && (
           <>
@@ -537,6 +538,7 @@ function SaveLibraryButton() {
           </>
         )}
       </span>
+      )}
       <button
         type="button"
         onClick={() => {
@@ -550,46 +552,29 @@ function SaveLibraryButton() {
           setJustSaved(true)
         }}
         disabled={Boolean(saved && same && !justSaved)}
-        className={PRIMARY}
+        title={t('Keeps a copy of this design system in your list. Your work on screen is already kept in this browser.')}
+        className={ACTION}
       >
-        {justSaved ? t('Saved') : t('Save design system')}
+        {justSaved ? t('Saved') : t('Save a copy')}
       </button>
     </div>
   )
 }
 
-function NewDesignSystemButton({
-  onBlank,
-  onRandom,
-  onFromCode,
-  onSystemStyles,
-}: {
-  onBlank: () => void
-  onRandom: () => void
-  onFromCode: () => void
-  onSystemStyles: () => void
-}) {
+/** The one "New design system" button. It makes a design system — naming it
+ *  is all it asks. How a BRAND starts (blank, random, from code, a system
+ *  style) is asked where brands are made: the Create brand card inside one. */
+function NewDesignSystemButton({ onClick }: { onClick: () => void }) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(false)
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#5B1EBF] px-3.5 text-caption font-semibold text-white transition-colors hover:bg-[#4c19a3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-      >
-        {t('New design system')}
-        <PlusGlyph />
-      </button>
-      <StartDesignModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onBlank={onBlank}
-        onRandom={onRandom}
-        onFromCode={onFromCode}
-        onSystemStyles={onSystemStyles}
-      />
-    </>
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#5B1EBF] px-3.5 text-caption font-semibold text-white transition-colors hover:bg-[#4c19a3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      {t('New design system')}
+      <PlusGlyph />
+    </button>
   )
 }
 
@@ -1097,15 +1082,6 @@ function ThemeKeyCoverThumb({ themeKey }: { themeKey: string }) {
   )
 }
 
-function StyleCoverThumb({ preset, appearance }: { preset: ThemeStylePreset; appearance: 'light' | 'dark' }) {
-  const tokens = useMemo(() => styleCoverTokens(preset, appearance), [preset, appearance])
-  return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-line/70">
-      <ThemeCover t={tokens} />
-    </div>
-  )
-}
-
 /** Default library on screen — My themes live here (e.g. Escala). */
 function DefaultLibraryFolderCard({
   name,
@@ -1135,31 +1111,6 @@ function DefaultLibraryFolderCard({
         {Array.from({ length: pads }, (_, i) => <ThemeCoverThumbPlaceholder key={`pad-${i}`} />)}
       </div>
       <FolderCardFooter title={name} detail={detail} kind="library" />
-    </button>
-  )
-}
-
-/** Curated styles as one folder: three covers on top, name on the bottom row. */
-function SystemStylesFolderCard({
-  presets,
-  appearance,
-  onOpen,
-}: {
-  presets: ThemeStylePreset[]
-  appearance: 'light' | 'dark'
-  onOpen: () => void
-}) {
-  const { t } = useI18n()
-  const thumbs = presets.slice(0, 3)
-  const detail = t('{count} system styles', { count: presets.length })
-  return (
-    <button type="button" onClick={onOpen} className={FOLDER_CARD_BTN}>
-      <div className="grid grid-cols-3 gap-2 p-3">
-        {thumbs.map((preset) => (
-          <StyleCoverThumb key={preset.id} preset={preset} appearance={appearance} />
-        ))}
-      </div>
-      <FolderCardFooter title={t('System styles')} detail={detail} kind="styles" />
     </button>
   )
 }
@@ -1335,6 +1286,7 @@ export default function ThemeLibraryPage({
   }, [openStylesRequest])
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
+  const [brandStartOpen, setBrandStartOpen] = useState(false)
   const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
   const [renamingLibrary, setRenamingLibrary] = useState(false)
   const [libraryDraft, setLibraryDraft] = useState(store.projectName)
@@ -1398,35 +1350,19 @@ export default function ThemeLibraryPage({
         />
       ))}
       {withCreate && (
-        <>
-          <StartDoor
-            title={t('Blank')}
+        <StartDoor
+            title={t('Create brand')}
             hint={t('Six quick steps')}
             titleClass="text-fg"
             disabled={!canAddMyTheme(mine.length)}
             disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
-            onClick={openCreate}
+            onClick={() => setBrandStartOpen(true)}
             mark={(
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
                 <path d="M12 5v14M5 12h14" />
               </svg>
             )}
           />
-          <StartDoor
-            title={t('Random')}
-            titleClass="text-[#e946ff]"
-            disabled={!canAddMyTheme(mine.length)}
-            disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
-            onClick={openRandom}
-            mark={(
-              <span className="text-[#e946ff]">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden>
-                  <path d="M12 2.8 14.9 8.9l6.6.6-5 4.3 1.5 6.5L12 17.2 6 20.3l1.5-6.5-5-4.3 6.6-.6L12 2.8z" />
-                </svg>
-              </span>
-            )}
-          />
-        </>
       )}
     </div>
   )
@@ -1489,31 +1425,12 @@ export default function ThemeLibraryPage({
           <>
             <div className="border-t border-line" role="separator" />
             <section aria-labelledby="home-files" className="flex flex-col gap-3">
-              <SectionTitle
-                id="home-files"
-                right={(
-                  <button
-                    type="button"
-                    onClick={onNewSystem}
-                    className={LINK}
-                  >
-                    <PlusGlyph />
-                    {t('Create design system')}
-                  </button>
-                )}
-              >
-                {t('Design systems')}
-              </SectionTitle>
+              <SectionTitle id="home-files">{t('Design systems')}</SectionTitle>
               <div className="flex flex-wrap gap-4">
                 <DefaultLibraryFolderCard
                   name={store.projectName}
                   themeKeys={recent}
                   onOpen={() => setSection({ kind: 'library', id: currentId })}
-                />
-                <SystemStylesFolderCard
-                  presets={THEME_STYLE_PRESETS}
-                  appearance={chromeAppearance}
-                  onOpen={() => setSection({ kind: 'styles' })}
                 />
               </div>
             </section>
@@ -1561,10 +1478,7 @@ export default function ThemeLibraryPage({
           title={t('All design systems')}
           detail={t('A design system holds brands, and they ship together to one Figma file. One design system is on screen at a time.')}
           right={(
-            <>
-              <button type="button" onClick={onImport} className={LINK}><ImportGlyph />{t('Import JSON')}</button>
-              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New design system')}</button>
-            </>
+            <button type="button" onClick={onImport} className={LINK}><ImportGlyph />{t('Import JSON')}</button>
           )}
         />
         <GuestAccountCard />
@@ -1591,7 +1505,7 @@ export default function ThemeLibraryPage({
         <section aria-labelledby="home-saved" className="flex flex-col gap-3">
           <SectionTitle id="home-saved" count={list.length}>{t('Saved')}</SectionTitle>
           {list.length === 0
-            ? <EmptyNote>{query ? t('No design system matches “{q}”.', { q: query }) : t('Nothing else saved yet. New design system starts another one; Save design system keeps a copy of this one.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No design system matches “{q}”.', { q: query }) : t('Nothing else saved yet. New design system starts another one; Save a copy keeps a copy of this one.')}</EmptyNote>
             : libraryList(list)}
         </section>
       </>
@@ -1640,16 +1554,6 @@ export default function ThemeLibraryPage({
           detail={t('The design system you are working in. Its brands share foundations and ship together to one Figma file.')}
           right={(
             <>
-              <button
-                type="button"
-                onClick={openCreate}
-                disabled={!canAddMyTheme(mine.length)}
-                title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : undefined}
-                className={LINK}
-              >
-                <PlusGlyph />
-                {t('Create brand')}
-              </button>
               <button
                 type="button"
                 onClick={() => togglePinned(`library:${currentId}`)}
@@ -1910,13 +1814,8 @@ export default function ThemeLibraryPage({
           <HomeStickyBar
             trail={homeTrail}
             onGoHome={() => setSection({ kind: 'recents' })}
-            action={viewing.kind === 'recents' ? (
-              <NewDesignSystemButton
-                onBlank={openCreate}
-                onRandom={() => { if (needsPro) { setUpgradeOpen(true); return } openRandom() }}
-                onFromCode={() => { if (needsPro) { setUpgradeOpen(true); return } onImport() }}
-                onSystemStyles={() => { if (needsPro) { setUpgradeOpen(true); return } setSection({ kind: 'styles' }) }}
-              />
+            action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
+              <NewDesignSystemButton onClick={onNewSystem} />
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1928,6 +1827,17 @@ export default function ThemeLibraryPage({
       </div>
       )}
       <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      {/* Create brand asks how the brand starts. Everything here makes a brand
+          in the design system on screen. */}
+      <StartDesignModal
+        open={brandStartOpen}
+        onClose={() => setBrandStartOpen(false)}
+        title={t('How do you want to start this brand?')}
+        onBlank={openCreate}
+        onRandom={() => { if (needsPro) { setUpgradeOpen(true); return } openRandom() }}
+        onFromCode={() => { if (needsPro) { setUpgradeOpen(true); return } onImport() }}
+        onSystemStyles={() => { if (needsPro) { setUpgradeOpen(true); return } setSection({ kind: 'styles' }) }}
+      />
     </div>
   )
 }

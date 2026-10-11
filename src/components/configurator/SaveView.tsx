@@ -476,7 +476,7 @@ export function SaveSidePanel({
             className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
             style={{ backgroundColor: justSaved ? '#10b981' : primaryColor, ['--tw-ring-color' as string]: primaryColor }}
           >
-            {justSaved ? '✓ Saved' : 'Save design system'}
+            {justSaved ? '✓ Saved' : 'Save a copy'}
           </motion.button>
           <span className="text-xs text-fg-faint text-center">
             {justSaved

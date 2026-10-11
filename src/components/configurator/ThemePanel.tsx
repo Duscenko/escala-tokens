@@ -754,7 +754,7 @@ export function ThemeForm({
         })()}
 
         <div className="flex-shrink-0">
-          <BrandThemesPicker value={ships} lead={kind} onChange={pickShips} />
+          <BrandThemesPicker value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
         </div>
 
         {/* Accent — the one required decision. `.light`/`.dark` are the app's

@@ -176,9 +176,12 @@ export function StartDesignModal({
   onRandom,
   onFromCode,
   onSystemStyles,
+  title,
 }: {
   open: boolean
   onClose: () => void
+  /** The question, when the host can name what is being started. */
+  title?: string
   onBlank: () => void
   onRandom: () => void
   onFromCode: () => void
@@ -233,7 +236,7 @@ export function StartDesignModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="start-design-title" className="px-1 pb-3 text-title font-semibold text-fg">
-          {t('How do you want to start?')}
+          {title ?? t('How do you want to start?')}
         </h2>
         <StartDesignChoices
           onBlank={pick(onBlank)}
@@ -389,7 +392,12 @@ export function ThemeAppearanceControl({
             ? <EmptySystemAvatar size={22} />
             : <ThemeAvatar size={22} ramp={ramp} appearance={kind} fallback={tryOn?.preset.accent ?? store.primaryColor} />}
           <div className="min-w-0">
-            <p className="truncate text-caption font-semibold text-fg">{name}</p>
+            <p className="truncate text-caption font-semibold text-fg">
+              {/* Design system / brand — the two levels, in order. A style that
+                  is only tried on, or nothing at all, belongs to no system. */}
+              {!empty && !tryOn && <span className="font-medium text-fg-muted">{store.projectName} / </span>}
+              {name}
+            </p>
             <p className="truncate text-micro text-fg-muted">{menuSubtitle}</p>
           </div>
         </div>
@@ -464,6 +472,7 @@ export function ThemeAppearanceControl({
       <StartDesignModal
         open={startOpen}
         onClose={() => setStartOpen(false)}
+        title={empty ? undefined : t('How do you want to start this brand?')}
         onBlank={onCreateTheme}
         onRandom={onStartRandom}
         onFromCode={onImport}

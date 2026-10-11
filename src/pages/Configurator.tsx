@@ -692,8 +692,13 @@ export default function Configurator() {
   /** Theme key minted from Home → Random, until the designer saves one. */
   const [exploringRandomKey, setExploringRandomKey] = useState<string | null>(null)
   // Rule A: Free holds one design system. The door stays; it opens the notice.
+  // Naming an EMPTY system is not a second one — the count stays at one, so
+  // Free may do it. Without this the one "New design system" button would open
+  // the Pro notice for someone who has made nothing yet.
   const openNewSystem = () => {
-    if (needsAnotherSystemPro) { setUpgradeOpen(true); return }
+    const live = useDesignStore.getState()
+    const nothingYet = myThemeKeys(live.themeOrder, live.themes).length === 0 && live.savedSystems.length === 0
+    if (needsAnotherSystemPro && !nothingYet) { setUpgradeOpen(true); return }
     setNewSystemOpen(true)
   }
   const openCreateTheme = () => {
