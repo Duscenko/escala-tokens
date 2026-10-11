@@ -8,6 +8,8 @@ import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
 import { FIGMA_SYNC_MODE_CAP, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
+import { canonicalizePublishId } from '../lib/publishId'
+import { adoptBridgedProject } from '../lib/pluginBridgeOpen'
 import { applyDocumentHead } from '../lib/documentHead'
 import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
@@ -87,6 +89,7 @@ import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
 import { goToLogin, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
 import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
+import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
 import { reopenAccountFiles } from '../lib/accountFiles'
@@ -610,6 +613,7 @@ export default function Configurator() {
   const needsAnotherThemePro = useNeedsProForAnotherTheme()
   const needsAnotherSystemPro = useNeedsProForAnotherSystem()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const proAsk = useProAsk()
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
   const { markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = store
@@ -637,6 +641,17 @@ export default function Configurator() {
   // wins over the first-visit About landing.
   const [incomingWorkspace] = useState(() => parseWorkspaceSearch(window.location.search))
   const incomingPlace = incomingWorkspace.place
+  // A theme synced from the plugin opens on its publish id. The blob still
+  // carries the choices (`studio`) until this browser publishes over them.
+  useEffect(() => {
+    const id = incomingWorkspace.project ? canonicalizePublishId(incomingWorkspace.project) : null
+    if (!id) return
+    let cancel = false
+    const run = () => { if (!cancel) void adoptBridgedProject(id) }
+    if (useDesignStore.persist.hasHydrated()) run()
+    const unsub = useDesignStore.persist.onFinishHydration(run)
+    return () => { cancel = true; unsub() }
+  }, [incomingWorkspace.project])
   // Signed-in with no `?section=`: Home is the account entry. A visitor with
   // no account lands on the theme previewer. A deep link wins. About stays
   // a tab they can open; it is no longer the first screen.
@@ -2666,7 +2681,11 @@ export default function Configurator() {
       </AnimatePresence>
 
 
-      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      <UpgradeToProDialog
+        open={upgradeOpen || proAsk.open}
+        detail={proAsk.open ? proAsk.detail : undefined}
+        onClose={() => { setUpgradeOpen(false); proAsk.close() }}
+      />
       <RegisterToContinueDialog open={registerOpen} onClose={() => setRegisterOpen(false)} onContinue={continueToAccount} />
 
       {/* New-design-system window — name + accent, then straight into Foundations */}

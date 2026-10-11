@@ -8,7 +8,6 @@ import {
 } from '../../lib/exportWizard'
 import { type ColorFormat } from '../../lib/sectionExport'
 import { slugify, FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
-import { COMPONENTS, CATEGORIES, COMPONENT_KEYS, isInFigmaSample } from '../../lib/componentCatalogue'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { AppearanceGlyph } from './colorControls'
@@ -20,6 +19,7 @@ import { useFreeTier } from '../../lib/access'
 import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
+import { SEGMENT_INACTIVE } from './themeWorkspaceLayout'
 
 // ── Guided export (Source → Where → Export) ────────────────────────────────
 // Replaces the one-shot "here's your file" window with a three-step flow, so
@@ -46,6 +46,35 @@ function CheckIcon({ className = '' }: { className?: string }) {
     <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       <path d="M2.5 7.5l3 3 6-7" />
     </svg>
+  )
+}
+
+/** All / None for a checklist. The pressed one is the list's current
+ *  extent — everything, or nothing. A partial pick presses neither. */
+function BulkSelect({
+  allOn,
+  noneOn,
+  onAll,
+  onNone,
+}: {
+  allOn: boolean
+  noneOn: boolean
+  onAll: () => void
+  onNone: () => void
+}) {
+  const item = (on: boolean) =>
+    `h-6 rounded-md px-2 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55 ${
+      on ? 'bg-accent-solid font-semibold text-accent-ink' : SEGMENT_INACTIVE
+    }`
+  return (
+    <div role="group" aria-label="Selection" className="flex items-center gap-0.5 rounded-lg bg-chip-rest p-0.5">
+      <button type="button" aria-pressed={allOn} onClick={onAll} className={item(allOn)}>
+        All
+      </button>
+      <button type="button" aria-pressed={noneOn} onClick={onNone} className={item(noneOn)}>
+        None
+      </button>
+    </div>
   )
 }
 
@@ -169,7 +198,6 @@ export default function ExportWizard({
   const {
     projectName, setProjectName, saveCurrentSystem, saveCurrentSystemAsTheme, savedSystems,
     githubRepo, githubLastPushAt,
-    selectedComponents, toggleComponent, setSelectedComponents,
   } = store
 
   // A theme-scoped run has ONE name: the label edited in Theme Preview's
@@ -178,13 +206,6 @@ export default function ExportWizard({
   // field directly to `projectName`.
   const snapshotName = themeScope ? (themeScopeLabel ?? themeScope) : projectName
   const meta = useMemo(() => collectionMeta(), [store])
-  // Of the selected components, how many the live Figma import actually
-  // renders as real component nodes today (the fixed 9-item sample sheet) —
-  // vs. how many ship as spec-only for code/agents. See isInFigmaSample.
-  const figmaRenderedCount = useMemo(
-    () => selectedComponents.filter(isInFigmaSample).length,
-    [selectedComponents],
-  )
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
   const figmaBrands = myThemeKeys(store.themeOrder, store.themes)
   const figmaThemeCount = countShippedThemes(figmaBrands, store.brandThemes)
@@ -230,16 +251,9 @@ export default function ExportWizard({
   const [structure, setStructure] = useState<WizardStructure>('single')
   const [colorFormat] = useState<ColorFormat>('hex')
   const [includeAliases, setIncludeAliases] = useState(true)
-  // Defaults to true — matches the pre-toggle behavior (every selected
-  // component always shipped); this just adds the option to narrow or drop
-  // them, it doesn't flip the default off.
-  const [includeComponents, setIncludeComponents] = useState(true)
-  const [componentSearch, setComponentSearch] = useState('')
-  // Step 1 used to stack Foundations (10 rows) and Components (58 rows) in one
-  // scroll — too much to scan in one glance. Split into a tab switcher instead,
-  // same pill pattern as ColorHub's — one list on screen at a time, with a live
-  // count on each pill so the OTHER tab's state is never a mystery.
-  const [sourceTab, setSourceTab] = useState<'foundations' | 'components'>('foundations')
+  // Components are not a question in Export. Figma still receives the system's
+  // current `selectedComponents` (the catalogue defaults) as `atoms`.
+  const includeComponents = true
   const [done, setDone] = useState(false)
   const [copied, setCopied] = useState(false)
   const [preview, setPreview] = useState(false)
@@ -406,46 +420,11 @@ export default function ExportWizard({
             <>
               <h2 className="text-title font-semibold text-fg">What do you want to export?</h2>
               <p className="text-ui text-fg-muted mt-1">
-                {sourceTab === 'foundations'
-                  ? 'Foundations are your design tokens — colors, typography, spacing…'
-                  : 'Components are the UI elements built from those tokens.'}
+                Foundations are your design tokens — colors, typography, spacing…
               </p>
 
-              {/* Foundations (10 rows) and Components (58 rows) used to stack
-                  in one long scroll — everything to choose from at once. Split
-                  into a tab switcher instead, same pill pattern as ColorHub's,
-                  so only one list is on screen at a time. Each pill carries a
-                  live count, so switching away never loses track of what the
-                  other side has selected. */}
-              <div className="mt-5 flex items-center gap-1 p-1 rounded-full bg-elevated/60 border border-line">
-                <button
-                  onClick={() => setSourceTab('foundations')}
-                  aria-pressed={sourceTab === 'foundations'}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-ui font-medium transition-colors ${
-                    sourceTab === 'foundations' ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  Foundations
-                  <span className="text-caption font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
-                    {collections.length}/{meta.length}
-                  </span>
-                </button>
-                <button
-                  onClick={() => setSourceTab('components')}
-                  aria-pressed={sourceTab === 'components'}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-ui font-medium transition-colors ${
-                    sourceTab === 'components' ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  Components
-                  <span className="text-caption font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
-                    {includeComponents ? selectedComponents.length : 0}/{COMPONENT_KEYS.length}
-                  </span>
-                </button>
-              </div>
-
-              {sourceTab === 'foundations' && (
-                <>
+              {/* Components stay out of this step. The Figma payload still
+                  ships the system's current component list as `atoms`. */}
                   {/* All / None lives INSIDE the checklist card now, paired with
                       a count label — same header-row shape Families and
                       Components already use just below (label left, All/None
@@ -459,20 +438,12 @@ export default function ExportWizard({
                       <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
                         {collections.length} of {meta.length} selected
                       </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setCollections(meta.map((c) => c.key))}
-                          className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                        >
-                          All
-                        </button>
-                        <button
-                          onClick={() => setCollections([])}
-                          className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                        >
-                          None
-                        </button>
-                      </div>
+                      <BulkSelect
+                        allOn={meta.length > 0 && collections.length === meta.length}
+                        noneOn={collections.length === 0}
+                        onAll={() => setCollections(meta.map((c) => c.key))}
+                        onNone={() => setCollections([])}
+                      />
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {meta.map((c) => {
@@ -513,20 +484,12 @@ export default function ExportWizard({
                     <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
                       <div className="flex items-center justify-between gap-2 px-1 pb-2">
                         <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">Families</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setFamilies(famMeta.map((f) => f.key))}
-                            className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                          >
-                            All
-                          </button>
-                          <button
-                            onClick={() => setFamilies([])}
-                            className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                          >
-                            None
-                          </button>
-                        </div>
+                        <BulkSelect
+                          allOn={famMeta.length > 0 && families.length === famMeta.length}
+                          noneOn={families.length === 0}
+                          onAll={() => setFamilies(famMeta.map((f) => f.key))}
+                          onNone={() => setFamilies([])}
+                        />
                       </div>
                       <span className="block px-1 pb-2 text-body text-fg-muted">Color · Primitives</span>
                       <div className="flex flex-wrap gap-2 px-1">
@@ -563,20 +526,12 @@ export default function ExportWizard({
                       <div className="flex items-center justify-between gap-2 px-1 pb-2">
                         <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">My brands</span>
                         {allModes.length > 1 && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => setModes(allModes)}
-                              className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                            >
-                              All
-                            </button>
-                            <button
-                              onClick={() => setModes([])}
-                              className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                            >
-                              None
-                            </button>
-                          </div>
+                          <BulkSelect
+                            allOn={allModes.length > 0 && modes.length === allModes.length}
+                            noneOn={modes.length === 0}
+                            onAll={() => setModes(allModes)}
+                            onNone={() => setModes([])}
+                          />
                         )}
                       </div>
                       <span className="block px-1 pb-2 text-body text-fg-muted">Color · Semantics</span>
@@ -623,100 +578,6 @@ export default function ExportWizard({
                       ) : null}
                     </div>
                   )}
-                </>
-              )}
-
-              {/* Components — the checkboxes write straight through to
-                  `selectedComponents`/`toggleComponent`, the SAME field the
-                  Components tab edits, so there's one list of "which
-                  components," not a second one that can drift from it. This
-                  toggle only takes effect on Escala JSON (Step 2) — the only
-                  format with a component payload. */}
-              {sourceTab === 'components' && (
-                <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
-                  <button
-                    onClick={() => setIncludeComponents((v) => !v)}
-                    aria-pressed={includeComponents}
-                    className={`flex items-center gap-3 px-2.5 h-11 rounded-lg text-left transition-colors w-full ${
-                      includeComponents ? 'bg-accent-ui/[0.07]' : 'hover:bg-elevated/60'
-                    }`}
-                  >
-                    <CheckBox on={includeComponents} />
-                    <span className="flex-1 min-w-0">
-                      <span className={`block text-ui ${includeComponents ? 'text-fg font-medium' : 'text-fg-muted'}`}>
-                        Include components in this export
-                      </span>
-                    </span>
-                    <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
-                      {selectedComponents.length}/{COMPONENT_KEYS.length}
-                    </span>
-                  </button>
-
-                  {includeComponents && (
-                    <div className="mt-3 pt-3 border-t border-line flex flex-col gap-2.5">
-                      <div className="flex items-center gap-2 px-1">
-                        <input
-                          value={componentSearch}
-                          onChange={(e) => setComponentSearch(e.target.value)}
-                          placeholder="Search components"
-                          aria-label="Search components"
-                          className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-line bg-surface text-body text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
-                        />
-                        <button
-                          onClick={() => setSelectedComponents(COMPONENT_KEYS)}
-                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                        >
-                          All
-                        </button>
-                        <button
-                          onClick={() => setSelectedComponents([])}
-                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                        >
-                          None
-                        </button>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto flex flex-col gap-2 px-1">
-                        {(() => {
-                          const q = componentSearch.trim().toLowerCase()
-                          const cats = CATEGORIES.map((cat) => ({
-                            cat,
-                            items: COMPONENTS.filter(
-                              (c) => c.category === cat && (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
-                            ),
-                          })).filter((g) => g.items.length > 0)
-                          if (cats.length === 0) {
-                            return <p className="text-body text-fg-faint py-2">No components match "{componentSearch}".</p>
-                          }
-                          return cats.map(({ cat, items }) => (
-                            <div key={cat} className="flex flex-col gap-0.5">
-                              <span className="text-mini text-fg-faint uppercase tracking-widest">{cat}</span>
-                              {items.map((c) => {
-                                const on = selectedComponents.includes(c.key)
-                                return (
-                                  <button
-                                    key={c.key}
-                                    onClick={() => toggleComponent(c.key)}
-                                    aria-pressed={on}
-                                    className={`flex items-center gap-2.5 px-2 h-8 rounded-lg text-left transition-colors ${
-                                      on ? 'bg-accent-ui/[0.07]' : 'hover:bg-elevated/60'
-                                    }`}
-                                  >
-                                    <CheckBox on={on} />
-                                    <span className={`text-body truncate ${on ? 'text-fg' : 'text-fg-muted'}`}>{c.label}</span>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          ))
-                        })()}
-                      </div>
-                      {selectedComponents.length === 0 && (
-                        <p className="px-1 text-body text-fg-faint">No components selected — none will ship.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </>
           )}
 
@@ -906,9 +767,6 @@ export default function ExportWizard({
                     <p className="px-3 py-2 text-body text-fg-muted">
                       Figma always ships the whole document (typography, spacing, radius…) regardless of
                       the collections picked above — the plugin needs the full contract to import cleanly.
-                      Components are the one part Step 1&apos;s toggle controls: on ships{' '}
-                      {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
-                      as <code className="font-mono">atoms</code>, off ships none.
                     </p>
                     {/* What the Figma file carries, already filled from what each
                         brand ships — the same answer Sync's File & modes shows.
@@ -928,15 +786,6 @@ export default function ExportWizard({
                         <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (${figmaScope.modes?.[0]?.appearance === 'dark' ? 'Dark' : 'Light'} only)` : 'one brand'} and Desktop.</span>{' '}
                         Up to {PRO_MAX_THEMES} brands and every viewport come with Escala Pro.{' '}
                         <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
-                      </p>
-                    )}
-                    {includeComponents && selectedComponents.length > 0 && (
-                      <p className="px-3 pb-2 text-body text-fg-muted">
-                        Of those, the import renders <strong className="text-fg font-medium">{figmaRenderedCount}</strong> as real
-                        components in the file today (the '⬡ Components Overview' sample sheet — building
-                        all 58 as variants locks Figma on import). The remaining{' '}
-                        {selectedComponents.length - figmaRenderedCount} still ship as full specs for your
-                        coding agent.
                       </p>
                     )}
                   </>
@@ -1009,18 +858,6 @@ export default function ExportWizard({
                     value={includeAliases && collections.includes('primitives') ? 'Included' : 'Resolved to hex'}
                   />
                 )}
-                <SummaryRow
-                  label="Components"
-                  value={
-                    isGitHubDestination
-                      ? 'Included in tokens.json'
-                      : format !== 'escala'
-                      ? 'Not shipped — Figma only'
-                      : includeComponents
-                        ? `${selectedComponents.length} of ${COMPONENT_KEYS.length} · ${figmaRenderedCount} render in Figma`
-                        : 'Not included'
-                  }
-                />
               </div>
 
               {done && !isGitHubDestination && (

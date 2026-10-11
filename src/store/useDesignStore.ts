@@ -766,6 +766,10 @@ interface DesignStore {
   // null until the first download so a first-time user sees no false "update".
   pluginBuildSeen: string | null
   setPluginBuildSeen: (build: string) => void
+  /** Settled edits on this design system. Free may make `FREE_EDIT_LIMIT`;
+   *  the next one, and the agent context of it, ask for Pro. Not part of a
+   *  snapshot — a saved system must not carry someone else's budget. */
+  freeEditCount: number
   /** When each theme last changed (theme key → ISO). Same field as the snapshot. */
   themeUpdatedAt: Record<string, string>
   /** Stamps `themeUpdatedAt` for the given themes (see useThemeActivity). */
@@ -1111,6 +1115,7 @@ export const useDesignStore = create<DesignStore>()(
       setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
       pluginBuildSeen: null,
       setPluginBuildSeen: (build) => set({ pluginBuildSeen: build }),
+      freeEditCount: 0,
       stampThemesUpdated: (keys, iso) => set((st) => {
         if (!keys.length) return {}
         const next = { ...st.themeUpdatedAt }
@@ -1803,7 +1808,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 84,
+      version: 85,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3221,6 +3226,11 @@ export const useDesignStore = create<DesignStore>()(
               if (sys?.snapshot && !sys.snapshot.brandThemes) sys.snapshot.brandThemes = {}
             }
           }
+        }
+        if (version < 85) {
+          // Changes already made were not counted. Existing sessions start at
+          // zero rather than guessing a number that would lock them out.
+          if (typeof persisted.freeEditCount !== 'number') persisted.freeEditCount = 0
         }
         return persisted
       },

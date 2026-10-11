@@ -1053,9 +1053,6 @@ function FolderCardFooter({ title, detail, kind }: { title: string; detail: stri
     : <FolderIcon size={14} />
   return (
     <div className="flex items-start gap-2.5 border-t border-line px-3 py-2.5">
-      <span className="mt-0.5 flex-shrink-0 text-fg-muted" aria-hidden>
-        <FolderIcon size={14} />
-      </span>
       <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-accent-ui/[0.14] text-accent-ui" aria-hidden>
         {accent}
       </span>

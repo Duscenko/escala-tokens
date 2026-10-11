@@ -109,8 +109,8 @@ export interface DestinationOption {
 /** Wizard step 2 — where the system is going, not what the file is called. */
 export const WIZARD_DESTINATIONS: DestinationOption[] = [
   { key: 'escala', label: 'Figma', hint: 'Escala plugin — variables land in the file you design in' },
-  { key: 'github', label: 'GitHub repository', hint: 'Version tokens, CSS and documentation in your product repo' },
   { key: 'w3c', label: 'Code & other tools', hint: 'W3C JSON for Style Dictionary, Tokens Studio, Figma native import' },
+  { key: 'github', label: 'GitHub repository', hint: 'Version tokens, CSS and documentation in your product repo' },
   { key: 'agent-bundle', label: 'AI assistant', hint: 'Full context for Cursor & Claude so the agent stops inventing hex' },
 ]
 

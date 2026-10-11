@@ -1,7 +1,10 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
-import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
+import { originAllowed, originsForHosts, parseBearer, tokenBlobKey } from '../src/lib/publishTrust.js'
+import { generatePublishId } from '../src/lib/publishId.js'
+import { bridgePayload } from '../src/lib/pluginBridge.js'
+import { LICENCE_REQUIRED_MESSAGE, stampLicence } from '../src/lib/licenceGate.js'
 import {
   isPluginPairCode,
   pluginPlan,
@@ -16,7 +19,7 @@ import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
-import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob } from './_blob.js'
+import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 // The Figma plugin cannot share the browser session. Sign-in is a short-lived
 // code opened on escalatokens.com; this handler binds it to the account and
@@ -359,6 +362,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: 'Could not save the library list.' })
     }
     return res.status(200).json({ ok: true })
+  }
+
+  // ── Plugin, signed in: publish the theme in this file so the web can open
+  //    it, and the file can pull what the web publishes next. No claim is
+  //    written — the browser that opens the system claims the slug on its
+  //    first Sync, the same way a first publish from the configurator does.
+  if (op === 'bridge' && req.method === 'POST') {
+    const token = parseBearer(req.headers.authorization) ?? ''
+    if (!token || token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
+    if (rateLimited(`${ip}:plugin-bridge`, 10)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+    const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
+    if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
+    const fresh = await withFreshPlan(token, session)
+    const tier = tierOf(fresh)
+    if (tier.tier === 'unknown') {
+      return res.status(503).json({ error: 'Could not confirm your plan. Try again in a moment.' })
+    }
+    if (tier.tier !== 'pro') return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+    const payload = bridgePayload(jsonBody(req))
+    if ('error' in payload) return res.status(400).json({ error: payload.error })
+    const id = generatePublishId()
+    const slug = slugifyProject(id)
+    if (!slug) return res.status(500).json({ error: 'Could not start sync.' })
+    const now = new Date()
+    const promo = entitlementAt(now).promo
+    const until = fresh.proUntil === 'lifetime' || !fresh.proUntil ? null : fresh.proUntil
+    const stored = promo ? payload.tokens : stampLicence(payload.tokens, until, now)
+    const key = tokenBlobKey(slug)
+    try {
+      const out = await put(key, JSON.stringify(stored), {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'application/json',
+        allowOverwrite: true,
+      })
+      learnBlobBase(out.url, key)
+      forgetBlob(key)
+      const libraries = upsertPluginLibraries(
+        await readLibraries(fresh.userId),
+        [{ id, name: payload.name }],
+        now.toISOString(),
+      )
+      await writeJson(librariesKey(fresh.userId), { libraries } satisfies LibraryRecord)
+    } catch {
+      return res.status(503).json({ error: 'Could not sync this theme. Try again.' })
+    }
+    return res.status(200).json({ id, name: payload.name })
   }
 
   // ── Plugin, signed in: the native theme setup. Options are the web's own

@@ -2844,7 +2844,7 @@ var init_themeLibrary = __esm({
 var PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, ACCOUNTS_LIVE;
 var init_legal = __esm({
   "src/lib/legal.ts"() {
-    PUBLIC_CONTACT_EMAIL = "hi@escalatokens.com";
+    PUBLIC_CONTACT_EMAIL = "support@escalatokens.com";
     PUBLIC_CONTACT_MAILTO = `mailto:${PUBLIC_CONTACT_EMAIL}`;
     ACCOUNTS_LIVE = true;
   }

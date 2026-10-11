@@ -1,25 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
-import { CONTACT_TOPICS, type ContactTopic } from '../src/lib/legal.js'
+import { CONTACT_TOPICS, PUBLIC_CONTACT_EMAIL, type ContactTopic } from '../src/lib/legal.js'
+import { CONTACT_EMAIL_RE, CONTACT_LIMITS } from '../src/lib/contactMail.js'
 import { clientIp, rateLimited } from './_blob.js'
 
-// Contact form → the publisher's inbox, without the inbox ever being public.
+// Contact form → the publisher's inbox.
 //
-// The destination address exists ONLY as the CONTACT_TO env var, read here on
-// the server. The browser never receives it, and the reply-to is the sender, so
-// answering is a normal "Reply" in the mail client.
-//
-//   GET  ?check=1 → 200 when sending is configured, else 404 (the page shows
-//                   the form only then — same gate as /api/github-oauth).
-//   POST          → validate, spam-check, send through Resend's REST API.
+//   GET  → 200 when Resend is configured, else 404. The page always shows the
+//          form; a 404 means Send opens a mailto to the public inbox instead.
+//   POST → validate, spam-check, send through Resend. Reply-to is the sender,
+//          so answering is a normal "Reply" in the mail client.
 //
 // Privacy (stated in /privacy — keep both in step): nothing is stored on our
 // side. The message is relayed once by email; logs carry the topic and the
 // outcome, never the sender, their address or the message.
 //
-// Env: RESEND_API_KEY, CONTACT_TO (inbox, e.g. hi@escalatokens.com),
-// CONTACT_FROM (verified sender on mail.escalatokens.com, e.g.
-// "Escala Tokens <contact@mail.escalatokens.com>").
+// Env: RESEND_API_KEY, and CONTACT_FROM or AUTH_FROM (a verified sender, e.g.
+// "Escala Tokens <contact@mail.escalatokens.com>"). CONTACT_TO overrides the
+// public inbox (PUBLIC_CONTACT_EMAIL) when the relay should land elsewhere.
 
 const TOPIC_LABEL: Record<ContactTopic, string> = {
   general: 'General',
@@ -29,17 +27,21 @@ const TOPIC_LABEL: Record<ContactTopic, string> = {
   business: 'Business / partnership',
 }
 
-const LIMITS = { name: 100, email: 254, message: 5000, system: 80 }
-const MIN_MESSAGE = 10
 /** A human needs longer than this to read the form and type a message. */
 const MIN_FILL_MS = 3000
 /** Per-instance soft cap; the Firewall rule on /api/contact is the real one. */
 const PER_HOUR = 10
 
-const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/
+function fromAddress(): string {
+  return process.env.CONTACT_FROM || process.env.AUTH_FROM || ''
+}
+
+function toAddress(): string {
+  return process.env.CONTACT_TO || PUBLIC_CONTACT_EMAIL
+}
 
 function configured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY && process.env.CONTACT_TO && process.env.CONTACT_FROM)
+  return Boolean(process.env.RESEND_API_KEY && fromAddress())
 }
 
 function requestOrigins(req: VercelRequest): string[] {
@@ -96,13 +98,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const topic = (CONTACT_TOPICS as readonly string[]).includes(str(body.topic)) ? (str(body.topic) as ContactTopic) : 'general'
-  const name = oneLine(str(body.name), LIMITS.name)
-  const email = oneLine(str(body.email), LIMITS.email)
-  const system = oneLine(str(body.system), LIMITS.system)
+  const name = oneLine(str(body.name), CONTACT_LIMITS.name)
+  const email = oneLine(str(body.email), CONTACT_LIMITS.email)
+  const system = oneLine(str(body.system), CONTACT_LIMITS.system)
   const message = str(body.message).trim()
 
-  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'invalid_email' })
-  if (message.length < MIN_MESSAGE || message.length > LIMITS.message) {
+  if (!CONTACT_EMAIL_RE.test(email)) return res.status(400).json({ error: 'invalid_email' })
+  if (message.length < CONTACT_LIMITS.minMessage || message.length > CONTACT_LIMITS.message) {
     return res.status(400).json({ error: 'invalid_message' })
   }
 
@@ -127,8 +129,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.CONTACT_FROM,
-        to: [process.env.CONTACT_TO],
+        from: fromAddress(),
+        to: [toAddress()],
         reply_to: email,
         subject: oneLine(`[Escala · ${TOPIC_LABEL[topic]}] ${name || email}`, 160),
         text,

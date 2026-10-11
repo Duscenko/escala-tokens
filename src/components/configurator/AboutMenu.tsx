@@ -1321,7 +1321,7 @@ export function AboutScaffold({
             screen; each link keeps a 24px target (WCAG 2.2). */}
         <FooterLinks className="flex-wrap -mx-0.5 gap-x-3 gap-y-0" linkClassName="min-h-6" />
         <p className="text-caption text-fg-faint">
-          {COPYRIGHT_LINE} · {t('Figma is a trademark of Figma, Inc.')}
+          {COPYRIGHT_LINE}
         </p>
       </footer>
     </div>
@@ -1401,7 +1401,7 @@ export default function AboutMenu({
 
         <div className="flex-shrink-0 px-5 py-3 border-t border-line flex items-center justify-between gap-3">
           <p className="text-caption text-fg-faint truncate">
-            {COPYRIGHT_LINE} · {t('Figma is a trademark of Figma, Inc.')}
+            {COPYRIGHT_LINE}
           </p>
           {/* The one shareable link to this content — the drawer itself has no
               URL, so anyone asked "what is this?" gets /about instead. */}

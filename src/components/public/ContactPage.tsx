@@ -1,20 +1,20 @@
-// `/contact` — write via the form (api/contact.ts relays to hi@) or mailto
-// hi@escalatokens.com directly. Same page anatomy as /legal and /privacy.
+// `/contact` — write via the form. Same page anatomy as /legal and /privacy.
 //
 // No cookies, no CAPTCHA: spam is handled by a hidden honeypot field, a minimum
 // fill time (`renderedAt`) and a per-IP limit — see api/contact.ts.
 //
-// The form only renders when the server reports sending is configured
-// (GET /api/contact → 200). Otherwise the page says so and offers LinkedIn, so
-// it can never collect a message that would go nowhere. In local dev (no
-// serverless functions under Vite) the form renders anyway, to work on the UI.
+// GET /api/contact → 200 only when Resend is configured. The form always
+// renders. When the relay is up, Send posts to it. When it is not (production
+// without RESEND_API_KEY / CONTACT_FROM, or local Vite), Send opens a mailto
+// to the public inbox so the message still has somewhere to go.
 
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { DocHeader, DocSection, DocTitle } from '../configurator/docs/blocks'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { CONTACT_PATH, CONTACT_TOPICS, LEGAL, PRIVACY_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, type ContactTopic } from '../../lib/legal'
+import { contactDraftError, contactMailto } from '../../lib/contactMail'
+import { CONTACT_PATH, CONTACT_TOPICS, PRIVACY_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, type ContactTopic } from '../../lib/legal'
 
 type Copy = {
   title: string
@@ -34,10 +34,12 @@ type Copy = {
   sending: string
   sent: string
   sentBody: string
+  opened: string
+  openedBody: string
+  mailHint: string
   another: string
   notice: (privacy: ReactNode) => ReactNode
   errors: { invalid_email: string; invalid_message: string; rate_limited: string; generic: string }
-  unavailable: (email: ReactNode, linkedin: ReactNode) => ReactNode
 }
 
 const COPY: Record<Locale, Copy> = {
@@ -53,10 +55,12 @@ const COPY: Record<Locale, Copy> = {
     system: 'Identifiant du système', systemHint: 'Utile pour une suppression ou une demande RGPD — il ressemble à esc_7K2M-9QX4-N3PD.',
     message: 'Message',
     send: 'Envoyer', sending: 'Envoi…',
-    sent: 'Message envoyé', sentBody: 'Merci. Nous vous répondrons à l’adresse indiquée.', another: 'Écrire un autre message',
+    sent: 'Message envoyé', sentBody: 'Merci. Nous vous répondrons à l’adresse indiquée.',
+    opened: 'Terminez dans votre e-mail', openedBody: `Votre application de messagerie contient ce message, adressé à ${PUBLIC_CONTACT_EMAIL}. Envoyez-le pour terminer.`,
+    mailHint: 'Envoyer ouvre votre application de messagerie.',
+    another: 'Écrire un autre message',
     notice: (privacy) => <>Vos données servent uniquement à vous répondre et ne sont pas stockées sur nos serveurs. Aucun cookie. Détails dans la {privacy}.</>,
     errors: { invalid_email: 'Vérifiez l’adresse e-mail.', invalid_message: 'Le message doit contenir entre 10 et 5 000 caractères.', rate_limited: 'Trop de messages envoyés. Réessayez dans une heure.', generic: 'L’envoi a échoué. Réessayez dans un instant.' },
-    unavailable: (email, linkedin) => <>Le formulaire est momentanément indisponible. Écrivez-nous à {email} ou sur {linkedin}.</>,
   },
   es: {
     title: 'Contacto',
@@ -70,10 +74,12 @@ const COPY: Record<Locale, Copy> = {
     system: 'Identificador del sistema', systemHint: 'Útil para una eliminación o una solicitud RGPD; tiene este aspecto: esc_7K2M-9QX4-N3PD.',
     message: 'Mensaje',
     send: 'Enviar', sending: 'Enviando…',
-    sent: 'Mensaje enviado', sentBody: 'Gracias. Le responderemos a la dirección indicada.', another: 'Escribir otro mensaje',
+    sent: 'Mensaje enviado', sentBody: 'Gracias. Le responderemos a la dirección indicada.',
+    opened: 'Termine en su correo', openedBody: `Su aplicación de correo tiene este mensaje, dirigido a ${PUBLIC_CONTACT_EMAIL}. Envíelo para terminar.`,
+    mailHint: 'Enviar abre su aplicación de correo.',
+    another: 'Escribir otro mensaje',
     notice: (privacy) => <>Sus datos solo sirven para responderle y no se guardan en nuestros servidores. Sin cookies. Detalles en la {privacy}.</>,
     errors: { invalid_email: 'Revise la dirección de correo.', invalid_message: 'El mensaje debe tener entre 10 y 5.000 caracteres.', rate_limited: 'Demasiados mensajes enviados. Inténtelo de nuevo en una hora.', generic: 'No se pudo enviar. Inténtelo de nuevo en un momento.' },
-    unavailable: (email, linkedin) => <>El formulario no está disponible en este momento. Escríbanos a {email} o por {linkedin}.</>,
   },
   en: {
     title: 'Contact',
@@ -87,10 +93,12 @@ const COPY: Record<Locale, Copy> = {
     system: 'System ID', systemHint: 'Helpful for a deletion or GDPR request — it looks like esc_7K2M-9QX4-N3PD.',
     message: 'Message',
     send: 'Send', sending: 'Sending…',
-    sent: 'Message sent', sentBody: 'Thank you. We’ll reply to the address you gave.', another: 'Write another message',
+    sent: 'Message sent', sentBody: 'Thank you. We’ll reply to the address you gave.',
+    opened: 'Finish in your email', openedBody: `Your email app has this message, addressed to ${PUBLIC_CONTACT_EMAIL}. Send it there to finish.`,
+    mailHint: 'Send opens your email app.',
+    another: 'Write another message',
     notice: (privacy) => <>Your data is used only to answer you and is not stored on our servers. No cookies. Details in the {privacy}.</>,
     errors: { invalid_email: 'Check the email address.', invalid_message: 'The message must be between 10 and 5,000 characters.', rate_limited: 'Too many messages sent. Try again in an hour.', generic: 'Sending failed. Try again in a moment.' },
-    unavailable: (email, linkedin) => <>The form is temporarily unavailable. Email {email} or reach us on {linkedin}.</>,
   },
 }
 
@@ -118,14 +126,28 @@ function initialTopic(): ContactTopic {
   return (CONTACT_TOPICS as readonly string[]).includes(q ?? '') ? (q as ContactTopic) : 'general'
 }
 
-type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { kind: 'error'; code: keyof Copy['errors'] }
+type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { kind: 'opened' } | { kind: 'error'; code: keyof Copy['errors'] }
+
+/** 200 with an empty body is api/contact.ts saying Resend is configured.
+ *  Vite serves that file as JavaScript on GET, which must not count. */
+async function relayConfigured(): Promise<boolean> {
+  try {
+    const r = await fetch('/api/contact', { method: 'GET' })
+    if (!r.ok) return false
+    const type = r.headers.get('content-type') || ''
+    if (type.includes('text/html') || type.includes('javascript')) return false
+    return (await r.text()).length === 0
+  } catch {
+    return false
+  }
+}
 
 export function ContactPage() {
   const { t, locale } = useI18n()
   const c = COPY[locale]
   const id = useId()
   const renderedAt = useRef(Date.now())
-  const [available, setAvailable] = useState<boolean | null>(import.meta.env.DEV ? true : null)
+  const [relay, setRelay] = useState<boolean | null>(null)
   const [topic, setTopic] = useState<ContactTopic>(initialTopic)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -139,20 +161,49 @@ export function ContactPage() {
   }, [c.title, c.description])
 
   useEffect(() => {
-    if (import.meta.env.DEV) return
-    fetch('/api/contact', { method: 'GET' })
-      .then((r) => setAvailable(r.ok))
-      .catch(() => setAvailable(false))
+    let cancelled = false
+    relayConfigured().then((ok) => { if (!cancelled) setRelay(ok) })
+    return () => { cancelled = true }
   }, [])
 
   const showSystem = topic === 'delete' || topic === 'privacy'
   const emailError = status.kind === 'error' && status.code === 'invalid_email'
   const messageError = status.kind === 'error' && status.code === 'invalid_message'
+  const done = status.kind === 'sent' || status.kind === 'opened'
+
+  function draftMailto(): string {
+    return contactMailto({
+      topicLabel: c.topics[topic],
+      name,
+      email,
+      system: showSystem ? system : '',
+      message,
+    })
+  }
+
+  function openMailApp() {
+    window.location.href = draftMailto()
+    setStatus({ kind: 'opened' })
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (status.kind === 'sending') return
+    if (website) {
+      setStatus({ kind: 'sent' })
+      return
+    }
+    const invalid = contactDraftError(email, message)
+    if (invalid) {
+      setStatus({ kind: 'error', code: invalid })
+      return
+    }
     setStatus({ kind: 'sending' })
+    const viaApi = relay ?? await relayConfigured()
+    if (!viaApi) {
+      openMailApp()
+      return
+    }
     try {
       const r = await fetch('/api/contact', {
         method: 'POST',
@@ -161,6 +212,10 @@ export function ContactPage() {
       })
       if (r.ok) {
         setStatus({ kind: 'sent' })
+        return
+      }
+      if (r.status === 503) {
+        openMailApp()
         return
       }
       const data = (await r.json().catch(() => ({}))) as { error?: string }
@@ -191,17 +246,10 @@ export function ContactPage() {
             <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>
           </p>
 
-          <DocSection id="form" title={status.kind === 'sent' ? c.sent : c.formTitle}>
-            {available === null ? null : !available ? (
-              <p className="text-ui text-fg-muted leading-relaxed max-w-2xl">
-                {c.unavailable(
-                  <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>,
-                  <A href={LEGAL.linkedin} external>LinkedIn</A>,
-                )}
-              </p>
-            ) : status.kind === 'sent' ? (
+          <DocSection id="form" title={status.kind === 'sent' ? c.sent : status.kind === 'opened' ? c.opened : c.formTitle}>
+            {done ? (
               <div role="status" className="flex flex-col items-start gap-3 max-w-xl">
-                <p className="text-ui text-fg-muted leading-relaxed">{c.sentBody}</p>
+                <p className="text-ui text-fg-muted leading-relaxed">{status.kind === 'sent' ? c.sentBody : c.openedBody}</p>
                 <button type="button" onClick={reset} className="text-ui text-accent-ui hover:underline underline-offset-2">{c.another}</button>
               </div>
             ) : (
@@ -221,7 +269,7 @@ export function ContactPage() {
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor={`${id}-email`} className={LABEL}>{c.email}</label>
                     <input
-                      id={`${id}-email`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      id={`${id}-email`} type="email" required value={email} onChange={(e) => { setEmail(e.target.value); if (emailError) setStatus({ kind: 'idle' }) }}
                       maxLength={254} autoComplete="email" aria-invalid={emailError || undefined}
                       aria-describedby={`${id}-email-hint`} className={FIELD}
                     />
@@ -240,7 +288,7 @@ export function ContactPage() {
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${id}-message`} className={LABEL}>{c.message}</label>
                   <textarea
-                    id={`${id}-message`} required rows={7} value={message} onChange={(e) => setMessage(e.target.value)}
+                    id={`${id}-message`} required rows={7} value={message} onChange={(e) => { setMessage(e.target.value); if (messageError) setStatus({ kind: 'idle' }) }}
                     minLength={10} maxLength={5000} aria-invalid={messageError || undefined}
                     aria-describedby={messageError ? `${id}-message-error` : undefined}
                     className={`${FIELD} resize-y leading-relaxed`}
@@ -269,6 +317,7 @@ export function ContactPage() {
                       {status.kind === 'error' && (status.code === 'rate_limited' || status.code === 'generic') ? c.errors[status.code] : ''}
                     </span>
                   </div>
+                  {relay === false && <p className="text-caption text-fg-muted leading-relaxed">{c.mailHint}</p>}
                   <p className="text-caption text-fg-faint leading-relaxed">{c.notice(privacy)}</p>
                 </div>
               </form>

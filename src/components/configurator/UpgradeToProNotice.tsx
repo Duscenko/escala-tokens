@@ -7,7 +7,7 @@ const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 
 /** The one upgrade notice. Styles already showed it; Create, Duplicate,
  *  File & modes and the agent connection use the same words. */
-export function UpgradeToProNotice() {
+export function UpgradeToProNotice({ detail }: { detail?: string | null }) {
   const { t } = useI18n()
   return (
     <div className="flex flex-col items-stretch gap-2">
@@ -17,12 +17,12 @@ export function UpgradeToProNotice() {
       >
         {t('Upgrade to Pro')}
       </a>
-      <p className="text-center text-caption text-fg-faint">{t('Free includes one design system with one brand. Pro adds brands and systems.')}</p>
+      <p className="text-center text-caption text-fg-faint">{t(detail || 'Free includes one design system with one brand. Pro adds brands and systems.')}</p>
     </div>
   )
 }
 
-export function UpgradeToProDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function UpgradeToProDialog({ open, onClose, detail }: { open: boolean; onClose: () => void; detail?: string | null }) {
   const { t } = useI18n()
   useEffect(() => {
     if (!open) return
@@ -40,7 +40,7 @@ export function UpgradeToProDialog({ open, onClose }: { open: boolean; onClose: 
         className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <UpgradeToProNotice />
+        <UpgradeToProNotice detail={detail} />
         <button
           type="button"
           onClick={onClose}

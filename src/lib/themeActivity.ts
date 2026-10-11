@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { captureSnapshot, useDesignStore, type DesignSnapshot } from '../store/useDesignStore'
+import { askProForMoreEdits, freeEditLimitAppliesNow, noteFreeEdit } from './freeEditBudget'
 
 // WHEN EACH THEME LAST CHANGED — derived from the store, never stamped by hand.
 //
@@ -73,6 +74,9 @@ export function useThemeActivity(onScreen: string): void {
     let seenStamps = useDesignStore.getState().themeUpdatedAt
     let timer: ReturnType<typeof setTimeout> | null = null
     let writing = false
+    // The state before this burst, so a change past the free allowance can be
+    // put back. One snapshot per burst: a slider settles as a single change.
+    let burstBefore: DesignSnapshot | null = null
     const settle = () => {
       timer = null
       const state = useDesignStore.getState()
@@ -82,10 +86,26 @@ export function useThemeActivity(onScreen: string): void {
       if (state.themeUpdatedAt !== seenStamps) {
         baseline = next
         seenStamps = state.themeUpdatedAt
+        burstBefore = null
         return
       }
       const changed = changedThemes(baseline, next, onScreenRef.current)
+      if (changed.length && freeEditLimitAppliesNow()) {
+        if (noteFreeEdit() === 'blocked') {
+          if (burstBefore) {
+            writing = true
+            useDesignStore.setState(burstBefore)
+            writing = false
+          }
+          baseline = themeFingerprints(useDesignStore.getState())
+          seenStamps = useDesignStore.getState().themeUpdatedAt
+          burstBefore = null
+          askProForMoreEdits()
+          return
+        }
+      }
       baseline = next
+      burstBefore = null
       if (changed.length) {
         writing = true
         state.stampThemesUpdated(changed, new Date().toISOString())
@@ -100,10 +120,12 @@ export function useThemeActivity(onScreen: string): void {
         // pending settle can read the loaded system as an edit.
         if (timer) clearTimeout(timer)
         timer = null
+        burstBefore = null
         baseline = themeFingerprints(state)
         seenStamps = state.themeUpdatedAt
         return
       }
+      if (!burstBefore) burstBefore = captureSnapshot(prev as unknown as DesignSnapshot)
       if (timer) clearTimeout(timer)
       timer = setTimeout(settle, SETTLE_MS)
     })

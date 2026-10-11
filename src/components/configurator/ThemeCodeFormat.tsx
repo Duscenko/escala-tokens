@@ -15,18 +15,19 @@ import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
+import { FREE_EDIT_LIMIT_DETAIL, freeAgentContextBlocked, useProAsk } from '../../lib/freeEditBudget'
 import { shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { LoginWall } from '../ui/LoginWall'
 import { showToast } from '../ui/Toast'
 import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
-import ThemeCodeScopeRail, { resolveCodeTheme, type CodeThemeScope } from './ThemeCodeScopeRail'
+import ThemeCodeScopeRail, { FormatGlyph, resolveCodeTheme, type CodeFormatKey, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
 
 export type { CodeThemeScope }
 export { resolveCodeTheme }
 
-type Format = 'css' | 'markdown' | 'agent'
+type Format = CodeFormatKey
 
 const FORMATS: { key: Format; label: string; file: string }[] = [
   // Agent context leads and is the default: this page is where a theme is
@@ -71,12 +72,19 @@ function openHandoff(url: string) {
 
 /** Copies the file on screen. The destinations that used to hide in this
  *  button's dropdown are the hand-off strip above the file now. */
-function CopyPageButton({ disabled, pageContent }: { disabled: boolean; pageContent: string }) {
+function CopyPageButton({ disabled, pageContent, block = false, agentContext = false }: { disabled: boolean; pageContent: string; block?: boolean; agentContext?: boolean }) {
   const { t } = useI18n()
   // Copying the file IS taking it: anonymous → sign up first, like Export.
   const { gated } = useAccess()
+  const free = useFreeTier()
+  const editCount = useDesignStore((s) => s.freeEditCount)
+  const askPro = useProAsk((s) => s.ask)
   const [copied, setCopied] = useState(false)
   const copyPage = async () => {
+    if (agentContext && freeAgentContextBlocked(editCount, free)) {
+      askPro(FREE_EDIT_LIMIT_DETAIL)
+      return
+    }
     if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(pageContent))) {
       showToast(t('Couldn’t copy — try again'))
@@ -91,7 +99,7 @@ function CopyPageButton({ disabled, pageContent }: { disabled: boolean; pageCont
       type="button"
       disabled={disabled}
       onClick={() => void copyPage()}
-      className={`inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg disabled:pointer-events-none disabled:opacity-40 ${COPY_FOCUS}`}
+      className={`inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg disabled:pointer-events-none disabled:opacity-40 ${block ? 'w-full justify-center' : 'flex-shrink-0'} ${COPY_FOCUS}`}
     >
       <CopyIcon done={copied} />
       {copied ? t('Copied') : t('Copy page')}
@@ -118,9 +126,19 @@ function AgentHandoff({
 }) {
   const { t } = useI18n()
   const { gated } = useAccess()
+  const free = useFreeTier()
+  const editCount = useDesignStore((s) => s.freeEditCount)
+  const askPro = useProAsk((s) => s.ask)
   const [copied, setCopied] = useState(false)
+  const contextBlocked = freeAgentContextBlocked(editCount, free)
+  const refuseContext = () => {
+    if (!contextBlocked) return false
+    askPro(FREE_EDIT_LIMIT_DETAIL)
+    return true
+  }
 
   const openWithPrompt = async (client: 'claude' | 'cursor') => {
+    if (refuseContext()) return
     if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), client)
     const copiedOk = await writeClipboard(prompt)
@@ -131,6 +149,7 @@ function AgentHandoff({
   }
 
   const openFigmaAgent = async () => {
+    if (refuseContext()) return
     if (gated) { goToLogin('export'); return }
     const copiedOk = await writeClipboard(`${figmaAgentLead(projectName)}${skillMd}`)
     openHandoff(FIGMA_MAKE_URL)
@@ -140,6 +159,7 @@ function AgentHandoff({
   }
 
   const copyContext = async () => {
+    if (refuseContext()) return
     if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(context))) {
       showToast(t('Couldn’t copy — try again'))
@@ -407,6 +427,9 @@ export default function ThemeCodeFormat({
         <ThemeCodeScopeRail
           scope={effectiveScope}
           previewTheme={previewTheme}
+          formats={FORMATS}
+          format={format}
+          onFormat={selectFormat}
           onScopeChange={onScopeChange}
           onPreviewThemeChange={onPreviewThemeChange}
           onBack={onBack}
@@ -438,6 +461,24 @@ export default function ThemeCodeFormat({
         ) : null}
         <div className="flex min-h-0 flex-1 p-3 pt-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
+            {showScopeRail ? (
+              <header className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-line px-3">
+                <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{active.file}</p>
+                {lines.length > 0 ? (
+                  <span className="flex-shrink-0 text-caption text-fg-muted">{lines.length} lines</span>
+                ) : null}
+                {expanded ? (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(false)}
+                    className="flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+                  >
+                    Collapse
+                  </button>
+                ) : null}
+                <CopyPageButton disabled={!effectiveScope} pageContent={content} agentContext={format === 'agent'} />
+              </header>
+            ) : (
             <header className="flex min-h-[54px] flex-shrink-0 items-center gap-4 border-b border-line px-3 foundation-layer-bar">
               <div
                 className="flex h-8 flex-shrink-0 items-center gap-0.5 rounded-lg border border-line bg-tab-bar p-0.5"
@@ -455,8 +496,9 @@ export default function ThemeCodeFormat({
                       aria-selected={selected}
                       tabIndex={selected ? 0 : -1}
                       onClick={() => selectFormat(item.key)}
-                      className={`h-7 rounded-md px-3 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${WORKSPACE_CHIP_ACTIVE} shadow-sm` : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
+                      className={`inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${WORKSPACE_CHIP_ACTIVE} shadow-sm` : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
                     >
+                      <FormatGlyph format={item.key} />
                       {item.label}
                     </button>
                   )
@@ -474,8 +516,9 @@ export default function ThemeCodeFormat({
                 ) : null}
               </div>
               {expanded ? <button type="button" onClick={() => setExpanded(false)} className="ml-auto flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">Collapse</button> : <span className="ml-auto" />}
-              <CopyPageButton disabled={!effectiveScope} pageContent={content} />
+              <CopyPageButton disabled={!effectiveScope} pageContent={content} agentContext={format === 'agent'} />
             </header>
+            )}
       {/* The fade + "Show full file" is a SIBLING of the scroller, inside a
           `relative` wrapper — it used to be a child of it, `absolute bottom-0`.
           Inside a scroll container that resolves against the UNSCROLLED padding

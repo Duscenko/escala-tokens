@@ -1,8 +1,8 @@
-// `/legal` (Mentions légales) and `/privacy` (Politique de confidentialité).
+// `/legal`, `/privacy`, `/terms` and `/licence`.
 //
-// Built from the SAME article blocks as the Docs destination (`DocHeader`,
-// `DocTitle`, `DocSection`, `OnThisPage`) under the shared `PublicHeader`, so a
-// legal page reads as one more page of this site — not a bolted-on template.
+// A single reading column under `PublicHeader`: last-updated line, title, lead,
+// numbered sections, then a contact block (email and publisher name). The
+// publisher's postal address is never rendered.
 //
 // Written per locale rather than through `t()` keys: these are legal documents,
 // reviewed as whole texts, and a sentence-by-sentence dictionary would let one
@@ -20,17 +20,17 @@
 //   - Google Fonts: src/lib/fonts.ts (loaded on demand from Google's CDN)
 //   - accounts: ACCOUNTS_LIVE in src/lib/legal.ts gates every account clause here
 //   - licences: MIT covers the CODE of this repo; the hosted service, the Figma plugin and
-//     the Pro licence are covered by /terms. Keep the three statements in step
+//     the Pro licence are covered by /terms and /licence. Keep the statements in step
 //     with LICENSE, the plugin's LICENSE, README and PricingPage's FAQ.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { DocHeader, DocSection, DocTitle, OnThisPage, type TocEntry } from '../configurator/docs/blocks'
+import { useEffect, useState, type ReactNode } from 'react'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
+import { PRICING_PATH } from '../../lib/entitlement'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { ACCOUNTS_LIVE, CONTACT_PATH, LEGAL, LEGAL_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
+import { ACCOUNTS_LIVE, CONTACT_PATH, LEGAL, LEGAL_PATH, LICENSE_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 
-export type LegalKind = 'legal' | 'privacy' | 'terms'
+export type LegalKind = 'legal' | 'privacy' | 'terms' | 'licence'
 
 type Section = { id: string; h: string; body: ReactNode }
 type Doc = { title: string; description: string; lead: string; note?: string; sections: Section[] }
@@ -63,6 +63,21 @@ function Ul({ items }: { items: ReactNode[] }) {
   )
 }
 
+function Rules({ kind, items }: { kind: 'yes' | 'no'; items: ReactNode[] }) {
+  const mark = kind === 'yes' ? '✓' : '✕'
+  const ink = kind === 'yes' ? 'text-status-success' : 'text-status-danger'
+  return (
+    <ul className="flex flex-col gap-2 max-w-2xl">
+      {items.map((it, i) => (
+        <li key={i} className="flex gap-2.5 text-ui text-fg-muted leading-relaxed">
+          <span className={`w-4 flex-shrink-0 font-semibold ${ink}`} aria-hidden>{mark}</span>
+          <span>{it}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 const contactEmailLink = <A href={PUBLIC_CONTACT_MAILTO}>{PUBLIC_CONTACT_EMAIL}</A>
 const contactLink = (l: Locale) => <A href={CONTACT_PATH}>{{ fr: 'formulaire de contact', en: 'contact form', es: 'formulario de contacto' }[l]}</A>
 const contactChannels = (l: Locale) => (
@@ -88,14 +103,20 @@ function identity(l: Locale): ReactNode[] {
   const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {status}</>]
   if (LEGAL.tradeName) lines.push(<>{{ fr: 'Nom commercial', en: 'Trading name', es: 'Nombre comercial' }[l]}{colon(l)} {LEGAL.tradeName}</>)
   if (LEGAL.siret) lines.push(<>SIRET{colon(l)} {LEGAL.siret}</>)
-  if (LEGAL.address) lines.push(<>{LEGAL.address}</>)
   lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactChannels(l)}</>)
   return lines
 }
 
-/** The publisher's identity is required by LCEN art. 6-III and stays one click
- *  away, but it is not printed on first sight. It is MOUNTED only after the
- *  click — a closed `<details>` would keep the address and SIRET in the markup. */
+/** Name, trade name and email. No postal address, no SIRET — that stays on the legal notice. */
+function publicPublisher(l: Locale): ReactNode[] {
+  const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {{ fr: 'France', en: 'France', es: 'Francia' }[l]}</>]
+  if (LEGAL.tradeName) lines.push(<>{LEGAL.tradeName}</>)
+  lines.push(<>{{ fr: 'E-mail', en: 'Email', es: 'Correo' }[l]}{colon(l)} {contactEmailLink}</>)
+  return lines
+}
+
+/** SIRET stays one click away and is mounted only after the click — a closed
+ *  `<details>` would keep it in the markup. The postal address is never included. */
 function Reveal({ l, children }: { l: Locale; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const label = open
@@ -176,8 +197,8 @@ function privacyBase(l: Locale): Doc {
     lead: 'En bref : pas de compte, pas de cookie de suivi, pas de publicité, pas de profilage, pas de revente de données. Votre système de design reste dans votre navigateur. Escala Tokens est édité en France et applique le RGPD (règlement (UE) 2016/679) et la loi Informatique et Libertés.',
     sections: [
       { id: 'responsable', h: 'Responsable du traitement', body: <>
-        <Ul items={identity('fr')} />
-        <P>Autorité de contrôle compétente : la Commission nationale de l’informatique et des libertés (CNIL). Compte tenu de la nature du traitement, la désignation d’un délégué à la protection des données n’est pas obligatoire.</P>
+        <Ul items={publicPublisher('fr')} />
+        <P>L’identité déclarée de l’éditeur, avec le SIRET, figure dans les <A href={LEGAL_PATH}>mentions légales</A>. Autorité de contrôle compétente : la Commission nationale de l’informatique et des libertés (CNIL). Compte tenu de la nature du traitement, la désignation d’un délégué à la protection des données n’est pas obligatoire.</P>
       </> },
       { id: 'systeme', h: '1. Votre système de design', body: <P>Ce que vous configurez (couleurs, typographie, espacements…) est enregistré uniquement dans le stockage local de votre navigateur (localStorage). Nous n’y avons pas accès et il n’existe aucun profil côté serveur. Vous l’effacez en vidant les données du site dans votre navigateur.</P> },
       { id: 'tokens', h: '2. Tokens publiés (synchronisation Figma et MCP)', body: <>
@@ -215,8 +236,8 @@ function privacyBase(l: Locale): Doc {
     note: 'Traducción informativa. La versión francesa es la que tiene valor legal.',
     sections: [
       { id: 'responsable', h: 'Responsable del tratamiento', body: <>
-        <Ul items={identity('es')} />
-        <P>Autoridad de control competente: la Commission nationale de l’informatique et des libertés (CNIL), en Francia. Dada la naturaleza del tratamiento, no es obligatorio designar un delegado de protección de datos.</P>
+        <Ul items={publicPublisher('es')} />
+        <P>La identidad declarada del editor, con el SIRET, figura en el <A href={LEGAL_PATH}>aviso legal</A>. Autoridad de control competente: la Commission nationale de l’informatique et des libertés (CNIL), en Francia. Dada la naturaleza del tratamiento, no es obligatorio designar un delegado de protección de datos.</P>
       </> },
       { id: 'systeme', h: '1. Su sistema de diseño', body: <P>Lo que usted configura (colores, tipografía, espaciados…) se guarda únicamente en el almacenamiento local de su navegador (localStorage). No tenemos acceso y no existe ningún perfil en el servidor. Lo borra eliminando los datos del sitio en su navegador.</P> },
       { id: 'tokens', h: '2. Tokens publicados (sincronización con Figma y MCP)', body: <>
@@ -254,8 +275,8 @@ function privacyBase(l: Locale): Doc {
     note: 'Informative translation. The French version is the legally binding one.',
     sections: [
       { id: 'responsable', h: 'Data controller', body: <>
-        <Ul items={identity('en')} />
-        <P>Lead supervisory authority: the Commission nationale de l’informatique et des libertés (CNIL), France. Given the nature of the processing, appointing a Data Protection Officer is not required.</P>
+        <Ul items={publicPublisher('en')} />
+        <P>The publisher’s declared identity, including the SIRET, is on the <A href={LEGAL_PATH}>legal notice</A>. Lead supervisory authority: the Commission nationale de l’informatique et des libertés (CNIL), France. Given the nature of the processing, appointing a Data Protection Officer is not required.</P>
       </> },
       { id: 'systeme', h: '1. Your design system', body: <P>What you configure (colours, type, spacing…) is stored only in your browser’s local storage (localStorage). We have no access to it and there is no server-side profile. You erase it by clearing this site’s data in your browser.</P> },
       { id: 'tokens', h: '2. Published tokens (Figma sync and MCP)', body: <>
@@ -328,11 +349,11 @@ function privacyDoc(l: Locale): Doc {
 function termsDoc(l: Locale): Doc {
   const acc = ACCOUNTS_LIVE
   if (l === 'fr') return {
-    title: 'Conditions d’utilisation',
-    description: 'Conditions d’utilisation d’Escala Tokens : ce que couvre la licence MIT, le service hébergé, le plugin Figma, la licence Pro et vos contenus.',
-    lead: 'Escala Tokens se compose de plusieurs choses qui n’ont pas la même licence. Cette page dit laquelle est régie par quoi, pour qu’il n’y ait pas de doute.',
+    title: 'Conditions générales',
+    description: 'Conditions générales d’Escala Tokens : ce que couvre la licence MIT, le service hébergé, le plugin Figma, la licence Pro et vos contenus.',
+    lead: 'Lisez ces conditions avant d’utiliser le service. Escala Tokens se compose de plusieurs choses qui n’ont pas la même licence : cette page dit laquelle est régie par quoi.',
     sections: [
-      { id: 'portee', h: '1. Ce que couvrent ces conditions', body: <P>Elles régissent le service hébergé sur escalatokens.com : le configurateur en ligne, la synchronisation, le serveur MCP en direct{acc ? ', les comptes' : ''} et la licence Pro. Elles ne modifient pas la licence du code source (article 2). En utilisant le service, vous les acceptez.</P> },
+      { id: 'portee', h: '1. Ce que couvrent ces conditions', body: <P>Elles régissent le service hébergé sur escalatokens.com : le configurateur en ligne, la synchronisation, le serveur MCP en direct{acc ? ', les comptes' : ''} et la licence Pro. Elles ne modifient pas la licence du code source (article 2). En utilisant le service, vous les acceptez. Ce que le produit permet et interdit est détaillé dans le <A href={LICENSE_PATH}>contrat de licence</A>.</P> },
       { id: 'mit', h: '2. Le code : licence MIT', body: <P>Le configurateur, la CLI et le serveur MCP publiés sur GitHub sont sous <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>licence MIT</A> : vous pouvez les copier, les modifier, les héberger vous-même et les utiliser commercialement, en conservant la mention de licence. Cette licence couvre le code, pas le service que nous hébergeons : si vous hébergez votre propre instance, vous n’obtenez ni compte, ni sauvegarde en ligne, ni synchronisation, ni licence Pro d’escalatokens.com, et vous fixez vos propres limites.</P> },
       { id: 'plugin', h: '3. Le plugin Figma : licence propriétaire', body: <P>Le plugin Figma est un produit distinct, gratuit à installer, dont le code source n’est pas publié et n’est pas sous licence MIT. Il est fourni sous une licence d’utilisation qui interdit de le copier, de le modifier, de le redistribuer ou d’en faire des œuvres dérivées. Les fonctions qu’il reçoit du service hébergé relèvent de la licence Pro (article 6).</P> },
       { id: 'contenu', h: '4. Vos contenus', body: <P>Les systèmes de design que vous créez, les tokens et fichiers que vous exportez vous appartiennent. Nous ne demandons ni licence ni attribution et nous ne les utilisons pas pour entraîner des modèles. Vous nous accordez seulement le droit technique de les stocker et de les servir pour fournir le service que vous demandez (par exemple la synchronisation). Les tokens publiés sont lisibles par quiconque connaît l’identifiant du système : n’y mettez pas d’information confidentielle.</P> },
@@ -348,12 +369,12 @@ function termsDoc(l: Locale): Doc {
     ],
   }
   if (l === 'es') return {
-    title: 'Términos de uso',
-    description: 'Términos de uso de Escala Tokens: qué cubre la licencia MIT, el servicio alojado, el plugin de Figma, la licencia Pro y sus contenidos.',
-    lead: 'Escala Tokens se compone de varias cosas que no tienen la misma licencia. Esta página dice cuál se rige por qué, para que no haya dudas.',
+    title: 'Términos y condiciones',
+    description: 'Términos y condiciones de Escala Tokens: qué cubre la licencia MIT, el servicio alojado, el plugin de Figma, la licencia Pro y sus contenidos.',
+    lead: 'Lea estos términos antes de usar el servicio. Escala Tokens se compone de varias cosas que no tienen la misma licencia: esta página dice cuál se rige por qué.',
     note: 'Traducción informativa. La versión francesa es la que tiene valor legal.',
     sections: [
-      { id: 'portee', h: '1. Qué cubren estos términos', body: <P>Rigen el servicio alojado en escalatokens.com: el configurador en línea, la sincronización, el servidor MCP en vivo{acc ? ', las cuentas' : ''} y la licencia Pro. No modifican la licencia del código fuente (artículo 2). Al usar el servicio, los acepta.</P> },
+      { id: 'portee', h: '1. Qué cubren estos términos', body: <P>Rigen el servicio alojado en escalatokens.com: el configurador en línea, la sincronización, el servidor MCP en vivo{acc ? ', las cuentas' : ''} y la licencia Pro. No modifican la licencia del código fuente (artículo 2). Al usar el servicio, los acepta. Lo que el producto permite y prohíbe está en el <A href={LICENSE_PATH}>contrato de licencia</A>.</P> },
       { id: 'mit', h: '2. El código: licencia MIT', body: <P>El configurador, la CLI y el servidor MCP publicados en GitHub están bajo <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>licencia MIT</A>: puede copiarlos, modificarlos, alojarlos usted y usarlos comercialmente, conservando el aviso de licencia. Esa licencia cubre el código, no el servicio que alojamos: si aloja su propia instancia no obtiene cuenta, guardado en línea, sincronización ni licencia Pro de escalatokens.com, y fija sus propios límites.</P> },
       { id: 'plugin', h: '3. El plugin de Figma: licencia propietaria', body: <P>El plugin de Figma es un producto aparte, gratuito de instalar, cuyo código fuente no se publica y no está bajo licencia MIT. Se ofrece con una licencia de uso que prohíbe copiarlo, modificarlo, redistribuirlo o crear obras derivadas. Las funciones que recibe del servicio alojado dependen de la licencia Pro (artículo 6).</P> },
       { id: 'contenu', h: '4. Sus contenidos', body: <P>Los sistemas de diseño que usted crea y los tokens y archivos que exporta son suyos. No pedimos licencia ni atribución y no los usamos para entrenar modelos. Solo nos concede el derecho técnico de almacenarlos y servirlos para prestar el servicio que solicita (por ejemplo, la sincronización). Los tokens publicados los puede leer quien conozca el identificador del sistema: no incluya información confidencial.</P> },
@@ -369,12 +390,12 @@ function termsDoc(l: Locale): Doc {
     ],
   }
   return {
-    title: 'Terms of use',
-    description: 'Escala Tokens terms of use: what the MIT licence covers, the hosted service, the Figma plugin, the Pro licence and your content.',
-    lead: 'Escala Tokens is several things that do not share one licence. This page says which is governed by what, so there is no doubt.',
+    title: 'Terms and conditions',
+    description: 'Escala Tokens terms and conditions: what the MIT licence covers, the hosted service, the Figma plugin, the Pro licence and your content.',
+    lead: 'Please read these terms before using the service. Escala Tokens is several things that do not share one licence, and this page says which is governed by what.',
     note: 'Informative translation. The French version is the legally binding one.',
     sections: [
-      { id: 'portee', h: '1. What these terms cover', body: <P>They govern the service hosted at escalatokens.com: the online configurator, sync, the live MCP server{acc ? ', accounts' : ''} and the Pro licence. They do not change the licence of the source code (section 2). By using the service you accept them.</P> },
+      { id: 'portee', h: '1. What these terms cover', body: <P>They govern the service hosted at escalatokens.com: the online configurator, sync, the live MCP server{acc ? ', accounts' : ''} and the Pro licence. They do not change the licence of the source code (section 2). By using the service you accept them. What the product allows and forbids is set out in the <A href={LICENSE_PATH}>licence agreement</A>.</P> },
       { id: 'mit', h: '2. The code: MIT licence', body: <P>The configurator, the CLI and the MCP server published on GitHub are under the <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>MIT License</A>: you may copy, modify, self-host and use them commercially, keeping the licence notice. That licence covers the code, not the service we host: if you host your own instance you get no account, online saving, sync or Pro licence from escalatokens.com, and you set your own limits.</P> },
       { id: 'plugin', h: '3. The Figma plugin: proprietary licence', body: <P>The Figma plugin is a separate product, free to install, whose source code is not published and is not under the MIT licence. It is provided under a licence of use that forbids copying, modifying, redistributing it or creating derivative works. The features it receives from the hosted service fall under the Pro licence (section 6).</P> },
       { id: 'contenu', h: '4. Your content', body: <P>The design systems you build and the tokens and files you export are yours. We ask for no licence or attribution and do not use them to train models. You only grant us the technical right to store and serve them to provide the service you ask for (for example sync). Published tokens can be read by anyone who knows the system ID: do not put confidential information in them.</P> },
@@ -391,28 +412,167 @@ function termsDoc(l: Locale): Doc {
   }
 }
 
-const UPDATED_LABEL: Record<Locale, string> = { fr: 'Mis à jour le', en: 'Updated', es: 'Actualizado el' }
+/** Product licence. Same facts as /terms, laid out as what you may and may not do.
+ *  French is binding. Do not add a seat count, a payment processor or a
+ *  governing law that the terms do not already state. */
+function licenceDoc(l: Locale): Doc {
+  const pricing = <A href={PRICING_PATH}>{{ fr: 'page Tarifs', en: 'Pricing page', es: 'página de Precios' }[l]}</A>
+  const terms = <A href={TERMS_PATH}>{{ fr: 'conditions générales', en: 'terms and conditions', es: 'términos y condiciones' }[l]}</A>
+  const mit = <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>MIT</A>
+  if (l === 'fr') return {
+    title: 'Contrat de licence',
+    description: 'Licence d’utilisation d’Escala Tokens et du plugin Figma : produits, niveaux Gratuit et Pro, usages permis et interdits.',
+    lead: 'Ce contrat décrit l’usage autorisé d’Escala Tokens et du plugin Figma. Il prend effet le jour où vous achetez une licence ou accédez au produit. Le droit applicable est le droit français. Les conditions générales précisent le service hébergé.',
+    sections: [
+      { id: 'produits', h: '1. Les produits', body: <>
+        <P>Escala se compose de deux produits, vendus séparément de la licence du code publié.</P>
+        <Ul items={[
+          'Le configurateur Escala Tokens, sur escalatokens.com.',
+          'Le plugin Figma, compagnon qui importe les tokens dans un fichier Figma.',
+        ]} />
+        <P>Le code publié sur GitHub (configurateur, CLI, serveur MCP) est sous licence {mit}. Cette licence-ci couvre le service que nous hébergeons et le plugin, dont le code source n’est pas publié.</P>
+      </> },
+      { id: 'niveaux', h: '2. Niveaux de licence', body: <>
+        <P>Selon l’achat, vous recevez une licence non exclusive et incessible.</P>
+        <Ul items={[
+          'Gratuit. Un système de design et une marque, en clair ou en sombre. Sans Pro, l’import manuel dans le plugin reste possible, avec cette marque et le mode Bureau.',
+          'Pro. Paiement unique via Polar, vendeur officiel (paiement, facture, TVA). Synchronisation hébergée, serveur MCP en direct, jusqu’à 10 marques et tous les modes de plateforme. Le prix est celui de la page Tarifs au moment de l’achat.',
+        ]} />
+      </> },
+      { id: 'permis', h: '3. Usage permis', body: <Rules kind="yes" items={[
+        'Créer des systèmes de design pour vous, votre entreprise ou vos clients.',
+        'Exporter les tokens et les utiliser dans vos produits.',
+        'Facturer vos clients pour le design produit avec Escala.',
+        <>Copier, modifier et héberger le code publié sous {mit}, en conservant la mention de licence.</>,
+      ]} /> },
+      { id: 'interdit', h: '4. Usage interdit', body: <Rules kind="no" items={[
+        'Redistribuer, revendre ou partager le plugin ou une clé Pro.',
+        'Utiliser une clé pour plusieurs acheteurs. Une clé est liée à un seul compte.',
+        'Revendre l’accès à l’API ou au serveur MCP.',
+        'Décompiler le plugin, le modifier ou en faire une œuvre dérivée.',
+        'Surcharger le service, contourner ses limites ou publier des contenus illicites.',
+      ]} /> },
+      { id: 'maj', h: '5. Mises à jour', body: <P>Pro inclut les mises à jour et le support pendant 12 mois à compter de l’achat. Passé ce délai, la clé reste valable pour ce qui ne dépend pas du service hébergé. La synchronisation hébergée et le MCP en direct exigent une licence en cours de validité. Le prix et le détail sont sur la {pricing}.</P> },
+      { id: 'fin', h: '6. Fin', body: <P>Vous pouvez cesser d’utiliser Escala à tout moment. Si vous ne respectez pas ce contrat, nous pouvons suspendre l’accès au service hébergé et révoquer la clé. Le remboursement se demande dans les 14 jours suivant l’achat, via le formulaire de contact. Le service est fourni en l’état, dans les limites décrites par les {terms}.</P> },
+    ],
+  }
+  if (l === 'es') return {
+    title: 'Contrato de licencia',
+    description: 'Licencia de uso de Escala Tokens y del plugin de Figma: productos, niveles Gratis y Pro, usos permitidos y prohibidos.',
+    lead: 'Este contrato describe el uso autorizado de Escala Tokens y del plugin de Figma. Entra en vigor el día en que compra una licencia o accede al producto. La ley aplicable es la francesa. Los términos y condiciones precisan el servicio alojado.',
+    note: 'Traducción informativa. La versión francesa es la que tiene valor legal.',
+    sections: [
+      { id: 'produits', h: '1. Los productos', body: <>
+        <P>Escala se compone de dos productos, distintos de la licencia del código publicado.</P>
+        <Ul items={[
+          'El configurador Escala Tokens, en escalatokens.com.',
+          'El plugin de Figma, que importa los tokens en un archivo de Figma.',
+        ]} />
+        <P>El código publicado en GitHub (configurador, CLI, servidor MCP) está bajo licencia {mit}. Este contrato cubre el servicio que alojamos y el plugin, cuyo código fuente no se publica.</P>
+      </> },
+      { id: 'niveaux', h: '2. Niveles de licencia', body: <>
+        <P>Según la compra, recibe una licencia no exclusiva e intransferible.</P>
+        <Ul items={[
+          'Gratis. Un sistema de diseño y una marca, en claro o en oscuro. Sin Pro, la importación manual en el plugin sigue siendo posible, con esa marca y el modo Escritorio.',
+          'Pro. Pago único a través de Polar, vendedor oficial (pago, factura, IVA). Sincronización alojada, servidor MCP en vivo, hasta 10 marcas y todos los modos de plataforma. El precio es el de la página de Precios en el momento de la compra.',
+        ]} />
+      </> },
+      { id: 'permis', h: '3. Uso permitido', body: <Rules kind="yes" items={[
+        'Crear sistemas de diseño para usted, su empresa o sus clientes.',
+        'Exportar los tokens y usarlos en sus productos.',
+        'Cobrar a sus clientes por el diseño producido con Escala.',
+        <>Copiar, modificar y alojar el código publicado bajo {mit}, conservando el aviso de licencia.</>,
+      ]} /> },
+      { id: 'interdit', h: '4. Uso prohibido', body: <Rules kind="no" items={[
+        'Redistribuir, revender o compartir el plugin o una clave Pro.',
+        'Usar una clave para varios compradores. Una clave se vincula a una sola cuenta.',
+        'Revender el acceso a la API o al servidor MCP.',
+        'Descompilar el plugin, modificarlo o crear obras derivadas.',
+        'Sobrecargar el servicio, eludir sus límites o publicar contenidos ilícitos.',
+      ]} /> },
+      { id: 'maj', h: '5. Actualizaciones', body: <P>Pro incluye actualizaciones y soporte durante 12 meses desde la compra. Pasado ese plazo, la clave sigue valiendo para lo que no depende del servicio alojado. La sincronización alojada y el MCP en vivo exigen una licencia vigente. El precio y el detalle están en la {pricing}.</P> },
+      { id: 'fin', h: '6. Fin', body: <P>Puede dejar de usar Escala en cualquier momento. Si no cumple este contrato, podemos suspender el acceso al servicio alojado y revocar la clave. El reembolso se solicita en los 14 días siguientes a la compra, mediante el formulario de contacto. El servicio se presta tal cual, dentro de los límites que describen los {terms}.</P> },
+    ],
+  }
+  return {
+    title: 'Licence agreement',
+    description: 'Licence for Escala Tokens and the Figma plugin: products, Free and Pro tiers, permitted and prohibited use.',
+    lead: 'This agreement sets out the permitted use of Escala Tokens and the Figma plugin. It takes effect on the day you buy a licence or access the product. French law governs it. The terms and conditions cover the hosted service.',
+    note: 'Informative translation. The French version is the legally binding one.',
+    sections: [
+      { id: 'produits', h: '1. The products', body: <>
+        <P>Escala is two products, separate from the licence of the published code.</P>
+        <Ul items={[
+          'The Escala Tokens configurator, at escalatokens.com.',
+          'The Figma plugin, which imports the tokens into a Figma file.',
+        ]} />
+        <P>The code published on GitHub (configurator, CLI, MCP server) is under the {mit} licence. This agreement covers the service we host and the plugin, whose source is not published.</P>
+      </> },
+      { id: 'niveaux', h: '2. Licence tiers', body: <>
+        <P>Depending on the purchase, you receive a non-exclusive, non-transferable licence.</P>
+        <Ul items={[
+          'Free. One design system and one brand, in Light or Dark. Without Pro, a manual import in the plugin remains possible, with that brand and Desktop mode.',
+          'Pro. A one-time payment through Polar, the merchant of record (payment, invoice, VAT). Hosted sync, the live MCP server, up to 10 brands and every platform mode. The price is the one on the Pricing page at the time of purchase.',
+        ]} />
+      </> },
+      { id: 'permis', h: '3. Permitted use', body: <Rules kind="yes" items={[
+        'Create design systems for yourself, your company or your clients.',
+        'Export the tokens and use them in your products.',
+        'Charge your clients for the design you produce with Escala.',
+        <>Copy, modify and self-host the code published under {mit}, keeping the licence notice.</>,
+      ]} /> },
+      { id: 'interdit', h: '4. Prohibited use', body: <Rules kind="no" items={[
+        'Redistribute, resell or share the plugin or a Pro key.',
+        'Use one key for more than one buyer. A key is tied to a single account.',
+        'Resell access to the API or the MCP server.',
+        'Decompile the plugin, modify it or make derivative works from it.',
+        'Overload the service, bypass its limits or publish unlawful content.',
+      ]} /> },
+      { id: 'maj', h: '5. Updates', body: <P>Pro includes updates and support for 12 months from purchase. After that, the key stays valid for whatever does not depend on the hosted service. Hosted sync and the live MCP require a licence in date. Price and detail are on the {pricing}.</P> },
+      { id: 'fin', h: '6. Ending', body: <P>You can stop using Escala at any time. If you breach this agreement, we may suspend access to the hosted service and revoke the key. A refund is requested within 14 days of purchase, through the contact form. The service is provided as is, within the limits set out in the {terms}.</P> },
+    ],
+  }
+}
+
+const UPDATED_LABEL: Record<Locale, string> = { fr: 'Dernière mise à jour', en: 'Last updated', es: 'Última actualización' }
 
 function formatDate(iso: string, l: Locale): string {
   return new Date(`${iso}T12:00:00Z`).toLocaleDateString(l, { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+function ContactClose({ l }: { l: Locale }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-[22px] font-semibold tracking-tight text-fg">
+        {{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}
+      </h2>
+      <ul className="flex flex-col gap-1.5 text-ui text-fg-muted leading-relaxed">
+        <li><span className="text-fg">{{ fr: 'E-mail', en: 'Email', es: 'Correo' }[l]}</span>{colon(l)} {contactEmailLink}</li>
+        <li>
+          <span className="text-fg">{{ fr: 'Éditeur', en: 'Publisher', es: 'Editor' }[l]}</span>
+          {colon(l)} {LEGAL.publisher}{LEGAL.tradeName ? ` · ${LEGAL.tradeName}` : ''}
+        </li>
+      </ul>
+    </section>
+  )
+}
+
+const CANONICAL: Record<LegalKind, string> = {
+  legal: LEGAL_PATH,
+  privacy: PRIVACY_PATH,
+  terms: TERMS_PATH,
+  licence: LICENSE_PATH,
+}
+
 export function LegalPage({ kind }: { kind: LegalKind }) {
-  const { t, locale } = useI18n()
-  const articleRef = useRef<HTMLDivElement>(null)
-  const doc = kind === 'legal' ? legalDoc(locale) : kind === 'terms' ? termsDoc(locale) : privacyDoc(locale)
-  const other = kind === 'privacy'
-    ? { href: TERMS_PATH, label: termsDoc(locale).title }
-    : kind === 'terms'
-      ? { href: PRIVACY_PATH, label: privacyDoc(locale).title }
-      : { href: PRIVACY_PATH, label: privacyDoc(locale).title }
-  const toc: TocEntry[] = doc.sections.map((s) => ({ id: s.id, label: s.h }))
+  const { locale } = useI18n()
+  const doc = kind === 'legal' ? legalDoc(locale) : kind === 'terms' ? termsDoc(locale) : kind === 'licence' ? licenceDoc(locale) : privacyDoc(locale)
 
   useEffect(() => {
     applyDocumentHead({
       title: `${doc.title} — Escala Tokens`,
       description: doc.description,
-      canonicalPath: kind === 'legal' ? LEGAL_PATH : kind === 'terms' ? TERMS_PATH : PRIVACY_PATH,
+      canonicalPath: CANONICAL[kind],
       robots: 'index, follow',
     })
   }, [doc.title, doc.description, kind])
@@ -420,29 +580,26 @@ export function LegalPage({ kind }: { kind: LegalKind }) {
   return (
     <div className="h-screen bg-app text-fg flex flex-col">
       <PublicHeader />
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        <div ref={articleRef} className="@container flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain">
-          <article className="w-full min-w-0 max-w-4xl mx-auto px-5 @min-[760px]:px-8 py-7 flex flex-col gap-8">
-            <DocHeader
-              section={t('About')}
-              kind={t('Legal & data')}
-              title={doc.title}
-              actions={<span className="text-body"><A href={other.href}>{other.label}</A></span>}
-            />
-            <DocTitle
-              title={doc.title}
-              eyebrow={`${UPDATED_LABEL[locale]} ${formatDate(LEGAL.updated, locale)}`}
-              lead={doc.lead}
-            />
-            {doc.note && <p className="-mt-5 text-body text-fg-faint max-w-xl">{doc.note}</p>}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <article className="w-full max-w-[40rem] mx-auto px-6 pt-14 pb-20 sm:pt-16">
+          <p className="text-mini font-medium uppercase tracking-[0.16em] text-fg-faint">
+            {UPDATED_LABEL[locale]} · {formatDate(LEGAL.updated, locale)}
+          </p>
+          <h1 className="mt-5 text-[32px] sm:text-[40px] font-semibold leading-[1.15] tracking-[-0.02em] text-fg">
+            {doc.title}
+          </h1>
+          <p className="mt-4 text-ui text-fg-muted leading-relaxed">{doc.lead}</p>
+          {doc.note && <p className="mt-3 text-body text-fg-faint">{doc.note}</p>}
+          <div className="mt-12 flex flex-col gap-10">
             {doc.sections.map((s) => (
-              <DocSection key={s.id} id={s.id} title={s.h}>{s.body}</DocSection>
+              <section key={s.id} className="flex flex-col gap-3">
+                <h2 id={s.id} className="text-[22px] font-semibold tracking-tight text-fg scroll-mt-6">{s.h}</h2>
+                {s.body}
+              </section>
             ))}
-          </article>
-        </div>
-        <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
-          <OnThisPage entries={toc} scrollRoot={articleRef} />
-        </div>
+            <ContactClose l={locale} />
+          </div>
+        </article>
       </div>
     </div>
   )

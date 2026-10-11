@@ -11,7 +11,7 @@ import {
 
 describe('wizard destinations, not file formats', () => {
   it('offers Figma, GitHub, code, and AI — not Markdown or Skill as peers', () => {
-    expect(WIZARD_DESTINATIONS.map((d) => d.key)).toEqual(['escala', 'github', 'w3c', 'agent-bundle'])
+    expect(WIZARD_DESTINATIONS.map((d) => d.key)).toEqual(['escala', 'w3c', 'github', 'agent-bundle'])
     expect(WIZARD_FORMATS.map((d) => d.key)).toEqual(['escala', 'w3c', 'agent-bundle'])
     expect(WIZARD_DESTINATIONS.some((d) => d.key === 'github')).toBe(true)
     expect(WIZARD_DESTINATIONS.map((d) => d.key)).not.toContain('md')

@@ -2,17 +2,15 @@
 // lives, so the two pages (and any footer) can't disagree.
 //
 // French law (LCEN art. 6-III) requires a site to name its publisher, its
-// publication director and its host. A private individual publishing
-// non-professionally may give a contact instead of a home address. The moment
-// Escala charges money it becomes a professional activity: fill in `siret` and
-// `address` (a domiciliation address is fine) and both render automatically.
+// publication director and its host. The publisher is named, with the SIRET,
+// on the legal notice. The postal address is deliberately not published.
 
 export const LEGAL = {
   publisher: 'Cesar Durango',
   /** null while the site is a free, non-professional project. */
   siret: '103 797 577 00014' as string | null,
-  /** Postal address — null until a professional activity (use a domiciliation). */
-  address: 'Traverse de la Gouffonne, 13009 Marseille' as string | null,
+  /** Postal address is not published. Leave null. */
+  address: null as string | null,
   /** Nom commercial registered with the SIRET. */
   tradeName: 'Duscenko Design' as string | null,
   /** Public inbox on the escalatokens.com domain (Zoho alias), not a personal address. */
@@ -23,13 +21,13 @@ export const LEGAL = {
     site: 'https://vercel.com',
   },
   /** Bump whenever either page's substance changes. */
-  updated: '2026-10-08',
+  updated: '2026-10-11',
 }
 
 /** Contact form topics — shared by /contact and api/contact.ts so the form
  *  can't offer a topic the server rejects. */
 /** Public contact address shown on the site and used as CONTACT_TO in production. */
-export const PUBLIC_CONTACT_EMAIL = 'hi@escalatokens.com'
+export const PUBLIC_CONTACT_EMAIL = 'support@escalatokens.com'
 
 export const PUBLIC_CONTACT_MAILTO = `mailto:${PUBLIC_CONTACT_EMAIL}`
 
@@ -40,6 +38,7 @@ export const CONTACT_PATH = '/contact'
 export const LEGAL_PATH = '/legal'
 export const PRIVACY_PATH = '/privacy'
 export const TERMS_PATH = '/terms'
+export const LICENSE_PATH = '/licence'
 export const LOGIN_PATH = '/login'
 
 /** Flip to true in the SAME change that ships login (design-plans/accounts-and-login.md).
