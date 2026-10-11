@@ -165,8 +165,8 @@ export function buildCSS(
   lines.push('\n  /* Selectors — checkbox / radio / switch glyph, a square not a height */')
   Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
 
-  lines.push('\n  /* Icon sizes — small 24 · medium 32 · large 40, the same in every viewport */')
-  iconSizeCssVars().forEach((l) => lines.push(l))
+  lines.push('\n  /* Icon sizes — scaled to the md control height, the same in every viewport */')
+  iconSizeCssVars(sizes).forEach((l) => lines.push(l))
 
   lines.push('\n  /* Stroke — border-width / ring spread, not paint */')
   // A sub-pixel value is declared at its true weight and floored to 1px below

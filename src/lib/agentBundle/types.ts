@@ -12,7 +12,7 @@ export interface TypeRoleAlias {
   weight: string
 }
 
-/** Three icon sizes (`small` 24px · `medium` 32px · `large` 40px).
+/** Three icon sizes (`small` 16px · `medium` 20px · `large` 24px at a 40px control).
  *  `viewports` repeats them per Desktop · Tablet · Mobile; they hold. */
 export interface IconSizeBlock {
   scale?: Record<string, string>

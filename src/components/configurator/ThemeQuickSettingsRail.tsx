@@ -2586,8 +2586,8 @@ export default function ThemeQuickSettingsRail({
               onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
             />
           </SettingItem>
-          <SettingItem label="Icon sizes" hint="Small 24, medium 32, large 40. The same size on Desktop, Tablet and Mobile — a control's height does not step, so the glyph holds with it.">
-            <IconSizeLadder weight={iconWeight ?? 'regular'} />
+          <SettingItem label="Icon sizes" hint="Three sizes that follow your control height — larger buttons and fields get larger glyphs, smaller ones smaller. The same size on Desktop, Tablet and Mobile.">
+            <IconSizeLadder weight={iconWeight ?? 'regular'} sizes={sizes} />
           </SettingItem>
         </EditionCard>
         )}

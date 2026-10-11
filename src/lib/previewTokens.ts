@@ -3,7 +3,7 @@
 // component docs render from the exact same resolved values. Fallbacks cover
 // empty semantic tokens so previews never render with undefined colors.
 
-import { anatomyIconPx, ICON_SIZE_PX, iconRoleForControlStep, iconRoleForHeight, type IconRole } from './iconSizing'
+import { anatomyIconPx, controlMdOf, iconRoleForControlStep, iconRoleForHeight, iconSizesFor, type IconRole } from './iconSizing'
 import { useEffect, type CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
@@ -491,20 +491,21 @@ export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): st
  */
 /** An icon size's px — `small` 24 · `medium` 32 · `large` 40. The same number
  *  in every viewport (`lib/iconSizing`). */
-export function iconRoleOf(_t: PreviewTokens, role: IconRole): number {
-  return ICON_SIZE_PX[role]
+export function iconRoleOf(t: PreviewTokens, role: IconRole): number {
+  return iconSizesFor(t.sizes)[role]
 }
 
-/** The icon size for a control of a given height — one of 24 / 32 / 40, picked
+/** The icon size for a control of a given height — one of the three icon sizes, picked
  *  so the glyph stays inside the control. */
-export function iconForControl(height: number | string): number {
+export function iconForControl(height: number | string, t?: PreviewTokens): number {
   const h = typeof height === 'number' ? height : parseFloat(height)
-  return ICON_SIZE_PX[iconRoleForHeight(Number.isFinite(h) ? h : 40)]
+  const md = controlMdOf(t?.sizes)
+  return iconSizesFor(md)[iconRoleForHeight(Number.isFinite(h) ? h : md, md)]
 }
 
 /** The icon size a control step (sm / md / lg / xl) uses. */
-export function iconForControlStep(step: string): number {
-  return ICON_SIZE_PX[iconRoleForControlStep(step)]
+export function iconForControlStep(step: string, t?: PreviewTokens): number {
+  return iconSizesFor(t?.sizes)[iconRoleForControlStep(step)]
 }
 
 /** A specimen's literal icon size snapped onto the anatomy ladder — a chevron

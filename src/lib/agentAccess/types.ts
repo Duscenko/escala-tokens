@@ -76,7 +76,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   {
     name: 'list_icons',
     description:
-      'Icon source for a published system: library, Phosphor weight, three sizes (small 24 · medium 32 · large 40, the same on every viewport), per-theme overrides, and custom icon names. project is required.',
+      'Icon source for a published system: library, Phosphor weight, three sizes that follow the control height (small 16 · medium 20 · large 24 at a 40px control, the same on every viewport), per-theme overrides, and custom icon names. project is required.',
     inputSchema: {
       type: 'object',
       properties: {

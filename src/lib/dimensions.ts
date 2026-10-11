@@ -21,6 +21,7 @@
 // layer just had with status alphas (semanticPrimitiveLink.test.ts).
 
 import { resolveThemeFoundations, type FoundationSource } from './themeFoundations'
+import { iconSizesFor } from './iconSizing'
 
 /** Shown even when nothing uses them, so the collection reads as a complete
  *  palette (negatives for overlaps and shadow spreads, 9999 for pills). */
@@ -139,7 +140,13 @@ export function dimensionRefsOf(maps: DimensionMaps): Partial<Record<DimensionCa
  *  the themes they ship, so the two can't carry different collections. */
 export function dimensionScaleForStore(store: FoundationSource, themeKeys: readonly string[]): Record<string, string> {
   const sources: DimensionMaps[] = [store, ...themeKeys.map((t) => resolveThemeFoundations(store, t))]
-  return buildDimensionScale(collectDimensions(sources))
+  // The icon sizes scale with the md control, so each source's own three
+  // sizes must be on the ladder for `--icon-*` to alias a primitive.
+  const values = collectDimensions(sources)
+  for (const src of sources) {
+    for (const px of Object.values(iconSizesFor(src.sizes))) values.add(px)
+  }
+  return buildDimensionScale(values)
 }
 
 /** CSS declarations for exactly the primitives a block of lines references —

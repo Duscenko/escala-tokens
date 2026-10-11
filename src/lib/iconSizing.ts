@@ -1,10 +1,11 @@
 // ── Icon sizing ──────────────────────────────────────────────────────────────
-// Three sizes, and only three. A glyph is small, medium or large — 24, 32, 40.
+// Three sizes, and only three. A glyph is small, medium or large — 16, 20, 24 at the
+// reference control, i.e. about half the height of the control it sits in.
 // The old ladder (control-sm … control-xl, inline, feature, derived from the
 // control height × 0.42) put six roles in Dimension Semantics that all read
 // the same number in every viewport. That was more vocabulary than a size.
 //
-// Each size aliases one Dimension primitive (`dimension-24` …). There is no
+// Each size aliases one Dimension primitive (`dimension-16` …). There is no
 // second scale underneath the role: the role IS the size.
 //
 // Viewports: Desktop, Tablet and Mobile carry the SAME px. A control's height
@@ -17,31 +18,55 @@ import type { PhosphorWeight } from './phosphorIcons'
 export const ICON_ROLES = ['small', 'medium', 'large'] as const
 export type IconRole = (typeof ICON_ROLES)[number]
 
-/** Published icon sizes, in px. On the Dimension primitive ladder. */
+/** Published icon sizes at the REFERENCE control (md = 40px), in px. This is
+ *  what a system with default controls ships; `iconSizesFor` scales it. */
 export const ICON_SIZE_PX: Record<IconRole, number> = {
-  small: 24, medium: 32, large: 40,
+  small: 16, medium: 20, large: 24,
+}
+
+/** The md control height the 16 / 20 / 24 triple was drawn against. */
+export const ICON_REFERENCE_CONTROL_PX = 40
+
+/** The md control height of a `sizes` map (`{ md: '40px', … }`). */
+export function controlMdOf(sizes?: Record<string, string> | null): number {
+  const n = parseFloat(sizes?.md ?? '')
+  return Number.isFinite(n) && n > 0 ? n : ICON_REFERENCE_CONTROL_PX
+}
+
+/** The three icon sizes for a system whose md control is `controlMd` tall.
+ *  Icons keep their proportion to the controls they sit in: larger buttons
+ *  and fields get larger glyph options, smaller ones smaller. Even px, on the
+ *  Dimension ladder (every value is pinned there); at the reference control
+ *  the result is exactly 16 · 20 · 24. */
+export function iconSizesFor(controlMd: number | Record<string, string> | null | undefined = ICON_REFERENCE_CONTROL_PX): Record<IconRole, number> {
+  const md = typeof controlMd === 'number' ? controlMd : controlMdOf(controlMd)
+  const k = Math.min(1.6, Math.max(0.6, (Number.isFinite(md) && md > 0 ? md : ICON_REFERENCE_CONTROL_PX) / ICON_REFERENCE_CONTROL_PX))
+  const out = {} as Record<IconRole, number>
+  for (const role of ICON_ROLES) out[role] = Math.max(12, Math.round((ICON_SIZE_PX[role] * k) / 2) * 2)
+  return out
 }
 
 export const ICON_VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
 export type IconViewport = (typeof ICON_VIEWPORTS)[number]
 
 export const ICON_ROLE_DESCRIPTION: Record<IconRole, string> = {
-  small: 'Small glyph — 24px. Compact controls and field icons.',
-  medium: 'Medium glyph — 32px. The default control icon.',
-  large: 'Large glyph — 40px. Large controls and feature icons.',
+  small: 'Small glyph — compact controls and field icons. About half the control height.',
+  medium: 'Medium glyph — the default control icon. Scales with the control height.',
+  large: 'Large glyph — large controls and feature icons. Scales with the control height.',
 }
 
 /** The px of an icon size in a viewport. Every viewport returns the same
  *  number: the glyph does not step. */
-export function iconSizePx(role: IconRole, _viewport: IconViewport = 'desktop'): number {
-  return ICON_SIZE_PX[role]
+export function iconSizePx(role: IconRole, _viewport: IconViewport = 'desktop', controlMd?: number | Record<string, string> | null): number {
+  return iconSizesFor(controlMd)[role]
 }
 
 /** Which of the three sizes a control of height `h` uses, so the glyph stays
- *  inside the control: under 40px → 24, under 48px → 32, otherwise 40. */
-export function iconRoleForHeight(h: number): IconRole {
-  if (!Number.isFinite(h) || h < 40) return 'small'
-  if (h < 48) return 'medium'
+ *  inside the control: below the md control → small, up to 1.2× md → medium,
+ *  otherwise large (under 40 / 48px at the reference control). */
+export function iconRoleForHeight(h: number, controlMd: number = ICON_REFERENCE_CONTROL_PX): IconRole {
+  if (!Number.isFinite(h) || h < controlMd) return 'small'
+  if (h < controlMd * 1.2) return 'medium'
   return 'large'
 }
 
@@ -82,8 +107,9 @@ export function anatomyIconPx(px: number): number {
 
 /** CSS: each size aliases its Dimension primitive. One declaration, every
  *  viewport — the values do not differ, so there is no tablet/mobile override. */
-export function iconSizeCssVars(): string[] {
-  return ICON_ROLES.map((role) => `  --icon-${role}: var(--dimension-${ICON_SIZE_PX[role]});`)
+export function iconSizeCssVars(controlMd?: number | Record<string, string> | null): string[] {
+  const px = iconSizesFor(controlMd)
+  return ICON_ROLES.map((role) => `  --icon-${role}: var(--dimension-${px[role]});`)
 }
 
 export interface IconSizeViewportMap {
@@ -95,17 +121,18 @@ export interface IconSizeViewportMap {
 /** The `tokens.json` block. `scale` and `roles` name the same three sizes
  *  (the role points at the scale step of the same name). `viewports` repeats
  *  the px per mode so a consumer can see that Tablet and Mobile hold. */
-export function iconSizeTokens(): {
+export function iconSizeTokens(controlMd?: number | Record<string, string> | null): {
   scale: Record<IconRole, string>
   roles: Record<IconRole, IconRole>
   viewports: IconSizeViewportMap
   minWeight: { belowPx: number; weight: PhosphorWeight }
 } {
-  const px = (role: IconRole, viewport: IconViewport) => `${iconSizePx(role, viewport)}px`
+  const sizes = iconSizesFor(controlMd)
+  const px = (role: IconRole, _viewport: IconViewport) => `${sizes[role]}px`
   const at = (viewport: IconViewport) =>
     Object.fromEntries(ICON_ROLES.map((role) => [role, px(role, viewport)])) as Record<IconRole, string>
   return {
-    scale: Object.fromEntries(ICON_ROLES.map((role) => [role, `${ICON_SIZE_PX[role]}px`])) as Record<IconRole, string>,
+    scale: Object.fromEntries(ICON_ROLES.map((role) => [role, `${sizes[role]}px`])) as Record<IconRole, string>,
     roles: Object.fromEntries(ICON_ROLES.map((role) => [role, role])) as Record<IconRole, IconRole>,
     viewports: { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') },
     minWeight: { belowPx: ICON_MIN_WEIGHT_PX, weight: 'regular' },

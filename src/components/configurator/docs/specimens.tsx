@@ -12,7 +12,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { effectiveIconWeight, ICON_ROLES, ICON_SIZE_PX, type IconRole } from '../../../lib/iconSizing'
+import { effectiveIconWeight, ICON_ROLES, iconSizesFor, type IconRole } from '../../../lib/iconSizing'
 import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
@@ -516,15 +516,16 @@ const ICON_STYLE_OVERVIEW: IconConcept[] = [
 ]
 
 /**
- * The three icon sizes — small 24, medium 32, large 40 — at the theme's
+ * The three icon sizes — about half a control's height — at the theme's
  * weight. The same px on every viewport.
  */
-export function IconSizeLadder({ weight = 'regular' }: { weight?: PhosphorWeight }) {
+export function IconSizeLadder({ weight = 'regular', sizes }: { weight?: PhosphorWeight; sizes?: Record<string, string> }) {
+  const icon = iconSizesFor(sizes)
   return (
     <PhosphorWeightProvider weight={weight}>
       <div className="flex items-end justify-between gap-1.5" role="img" aria-label="Icon sizes">
         {ICON_ROLES.map((role) => {
-          const px = ICON_SIZE_PX[role]
+          const px = icon[role]
           return (
             <div key={role} className="flex min-w-0 flex-col items-center gap-1">
               <span
@@ -637,7 +638,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
   // One of the three icon sizes, picked from the button's own size step
   // (sm → 24, md → 32, lg/xl → 40) so the glyph stays inside the control.
-  const iconPx = iconForControlStep(sz.sizeKey)
+  const iconPx = iconForControlStep(sz.sizeKey, t)
   const disabled = state === 'Disabled'
   const loading = state === 'Loading'
   const slots = ICON_SLOTS.Button
@@ -793,7 +794,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
           transition: STATE_TRANSITION,
         }}
       >
-        {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconForControl(h)} color={iconColor} />}
+        {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconForControl(h, t)} color={iconColor} />}
         {meta.prefix && <span style={{ ...typeOf(t, 'placeholder'), color: t.fgMuted, borderRight: `${strokeControl(t)} solid ${t.border}`, paddingRight: spaceOf(t, 8) }}>{meta.prefix}</span>}
         {/* Lead (@, ⌕) is supporting ink — `content.secondary` — not the
             placeholder tier. The plugin paints this slot as `textTertiary`
@@ -823,7 +824,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
             cursor: disabled ? 'not-allowed' : 'text',
           }}
         />
-        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconForControl(h)} color={iconColor} />}
+        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconForControl(h, t)} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
       </div>
       {!hideHint && (

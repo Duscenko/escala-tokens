@@ -2,7 +2,7 @@
 // Markdown so designers can copy a single slice into an AI prompt or codebase.
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
-import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, ICON_SIZE_PX, iconSizeCssVars, iconSizePx } from './iconSizing'
+import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
 import chroma from 'chroma-js'
 import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -323,8 +323,8 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
       `/* Install: npm i ${ai.npm} */`,
     ]
     if (store.customIcons.length) lines.push(`/* Custom icons: ${store.customIcons.map((i) => i.name).join(', ')} */`)
-    lines.push('/* Icon sizes — small 24 · medium 32 · large 40. Same px on Desktop, Tablet and Mobile. */')
-    lines.push(...iconSizeCssVars().map((l) => l.trim()))
+    lines.push('/* Icon sizes — scaled to the md control height. Same px on Desktop, Tablet and Mobile. */')
+    lines.push(...iconSizeCssVars(store.sizes).map((l) => l.trim()))
     return lines
   }
   if (section === 'gradients') {
@@ -714,10 +714,10 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       opts.desktopOnly ? '| Role | Desktop | Use |' : '| Role | Desktop | Tablet | Mobile | Use |',
       opts.desktopOnly ? '|---|---|---|' : '|---|---|---|---|---|',
       ...ICON_ROLES.map((r) => opts.desktopOnly
-        ? `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${ICON_ROLE_DESCRIPTION[r]} |`
-        : `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${iconSizePx(r, 'tablet')}px | ${iconSizePx(r, 'mobile')}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
+        ? `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`
+        : `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${iconSizePx(r, 'tablet', store.sizes)}px | ${iconSizePx(r, 'mobile', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
       '',
-      `Each aliases a Dimension primitive (\`--icon-small: var(--dimension-${ICON_SIZE_PX.small})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
+      `Each aliases a Dimension primitive (\`--icon-small: var(--dimension-${iconSizePx('small', 'desktop', store.sizes)})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
     ].join('\n')
     return `${ctx.markdown}${extra}${sizesMd}`
   }

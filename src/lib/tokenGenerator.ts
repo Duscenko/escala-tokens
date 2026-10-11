@@ -462,7 +462,7 @@ export function generateTokenJSON(
       // theme's own control heights, so a Compact style ships smaller control
       // icons than an Airy one — the plugin binds `Icon/*` from these.
       iconWeight: resolved.iconWeight,
-      iconSizes: iconSizeTokens(),
+      iconSizes: iconSizeTokens(resolved.sizes),
       // Which Dimension primitive each length of THIS theme aliases. Per theme
       // because a style's radius/spacing differ — the primitives themselves
       // (`dimensions`) never do.
@@ -776,7 +776,7 @@ export function generateTokenJSON(
       // Additive (no schemaVersion bump, the `shadowsDark` precedent): the icon
       // scale, the roles it resolves to for THIS system's control heights, and
       // the small-icon weight rule. An older plugin ignores the key.
-      sizes: iconSizeTokens(),
+      sizes: iconSizeTokens(store.sizes),
       // The Phosphor weight the system renders (thin … duotone). Additive too.
       weight: store.iconWeight,
     },

@@ -432,16 +432,16 @@ describe('resolve_token matches the current payload', () => {
     const role = resolveToken(json, 'Icon/role/medium')
     expect(role.css).toBe('var(--icon-medium)')
     expect(role.figma).toBe('Icon/role/medium')
-    expect(role.values[theme]).toBe('32px')
-    expect(role.aliases?.[theme]).toBe('dimension.32')
+    expect(role.values[theme]).toBe('20px')
+    expect(role.aliases?.[theme]).toBe('dimension.20')
     expect(role.viewports).toBeUndefined()
 
     const small = resolveToken(json, 'icon.small')
-    expect(small.values[theme]).toBe('24px')
+    expect(small.values[theme]).toBe('16px')
     const large = resolveToken(json, 'var(--icon-large)')
-    expect(large.values[theme]).toBe('40px')
+    expect(large.values[theme]).toBe('24px')
     expect(json.icons?.sizes?.viewports?.tablet?.medium).toBe(json.icons?.sizes?.viewports?.desktop?.medium)
-    expect(json.icons?.sizes?.viewports?.mobile?.large).toBe('40px')
+    expect(json.icons?.sizes?.viewports?.mobile?.large).toBe('24px')
   })
 
   it('resolves a type role, including the mobile cut named in the CSS variable', () => {
@@ -509,9 +509,9 @@ describe('resolve_token matches the current payload', () => {
       themes: Record<string, { weight?: string }>
     }
     expect(icons.weight).toBeTruthy()
-    expect(icons.sizes.scale.small).toBe('24px')
-    expect(icons.sizes.scale.medium).toBe('32px')
-    expect(icons.sizes.scale.large).toBe('40px')
+    expect(icons.sizes.scale.small).toBe('16px')
+    expect(icons.sizes.scale.medium).toBe('20px')
+    expect(icons.sizes.scale.large).toBe('24px')
     expect(icons.sizes.viewports?.mobile?.small).toBe(icons.sizes.scale.small)
     expect(icons.themes.light?.weight ?? icons.themes[json.colors.themeOrder?.[0] ?? '']?.weight).toBeTruthy()
   })

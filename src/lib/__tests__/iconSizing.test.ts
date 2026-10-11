@@ -8,7 +8,7 @@ import {
 describe('icon sizing', () => {
   it('publishes only small, medium and large, each a Dimension primitive', () => {
     expect(ICON_ROLES).toEqual(['small', 'medium', 'large'])
-    expect(ICON_SIZE_PX).toEqual({ small: 24, medium: 32, large: 40 })
+    expect(ICON_SIZE_PX).toEqual({ small: 16, medium: 20, large: 24 })
     for (const role of ICON_ROLES) expect(DIMENSION_STANDARD).toContain(ICON_SIZE_PX[role])
   })
 
@@ -48,9 +48,9 @@ describe('icon sizing', () => {
 
   it('CSS aliases each size to its dimension, with no raw px and no per-viewport override', () => {
     const css = iconSizeCssVars().join('\n')
-    expect(css).toContain('--icon-small: var(--dimension-24);')
-    expect(css).toContain('--icon-medium: var(--dimension-32);')
-    expect(css).toContain('--icon-large: var(--dimension-40);')
+    expect(css).toContain('--icon-small: var(--dimension-16);')
+    expect(css).toContain('--icon-medium: var(--dimension-20);')
+    expect(css).toContain('--icon-large: var(--dimension-24);')
     expect(css).not.toMatch(/:\s*\d+px;/)
     expect(css).not.toContain('control-')
   })
@@ -70,10 +70,10 @@ describe('W3C icon group', () => {
     })
     const doc = JSON.parse(file.content)
     const resolve = (ref: string) => ref.slice(1, -1).split('.').reduce((n: any, k) => n?.[k], doc)
-    expect(doc.icon.small.$value).toBe('{dimension.24}')
-    expect(resolve(doc.icon.small.$value)?.$value).toBe('24px')
-    expect(doc.icon.medium.$value).toBe('{dimension.32}')
-    expect(doc.icon.large.$value).toBe('{dimension.40}')
+    expect(doc.icon.small.$value).toBe('{dimension.16}')
+    expect(resolve(doc.icon.small.$value)?.$value).toBe('16px')
+    expect(doc.icon.medium.$value).toBe('{dimension.20}')
+    expect(doc.icon.large.$value).toBe('{dimension.24}')
     expect(doc.icon.role).toBeUndefined()
     expect(doc.icon.size).toBeUndefined()
     expect(Object.keys(doc.icon.glyph)).toEqual([...W3C_TEST_GLYPHS])
