@@ -121,7 +121,12 @@ describe('authActionEmail', () => {
   })
 })
 
+import { PUBLIC_CONTACT_EMAIL } from '../legal'
+
 describe('sender', () => {
+  it('support address matches the public contact address', () => {
+    expect(MAIL_SUPPORT).toBe(PUBLIC_CONTACT_EMAIL)
+  })
   it('is the verified sender unless AUTH_FROM says otherwise', () => {
     expect(MAIL_FROM_DEFAULT).toBe('Escala Tokens <support@mail.escalatokens.com>')
     expect(mailFrom(undefined)).toBe(MAIL_FROM_DEFAULT)

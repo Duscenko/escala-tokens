@@ -9,8 +9,6 @@
 // Both open on www.escalatokens.com. A link that stays on *.supabase.co
 // is what inboxes flag as phishing.
 
-import { PUBLIC_CONTACT_EMAIL } from './legal'
-
 export const PUBLIC_SITE = 'https://www.escalatokens.com'
 
 /** The mark on its dark tile (144px, shown at 44). Email clients do not render SVG. */
@@ -18,7 +16,10 @@ export const AUTH_LOGO_URL = `${PUBLIC_SITE}/email/escala-logo.png`
 
 /** Every message the product sends comes from the support inbox, and a reply
  *  to any of them lands in the same Zoho mailbox people already read. */
-export const MAIL_SUPPORT = PUBLIC_CONTACT_EMAIL
+/** Same address as PUBLIC_CONTACT_EMAIL (legal.ts). Not imported: this file is
+ *  loaded by Vercel functions as ESM, where an extensionless relative import
+ *  fails at runtime and takes every auth route down with it. A test pins them. */
+export const MAIL_SUPPORT = 'support@escalatokens.com'
 /** Resend only verifies mail.escalatokens.com today. Once escalatokens.com is
  *  verified there, set AUTH_FROM to `Escala Tokens <support@escalatokens.com>`. */
 export const MAIL_FROM_DEFAULT = 'Escala Tokens <support@mail.escalatokens.com>'
