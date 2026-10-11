@@ -278,16 +278,43 @@ const splitFlat = (name: string): [string, string] => {
   return i < 0 ? [name, name] : [name.slice(0, i), name.slice(i + 1)]
 }
 
+/** The folder a primitive family sits in — Accents · Neutrals · States, the
+ *  same three groups the plugin's Color Primitives and the platform's
+ *  Primitives nav use. Figma's native "Import variables" turns the JSON tree
+ *  into groups, so a flat list of families (`holi`, `holi-dark`, `holi-gray`…)
+ *  landed as an unordered pile; nested under these three it reads in the
+ *  platform's order. Accents first, then Neutrals, then States. */
+export const PRIMITIVE_GROUPS = ['Accents', 'Neutrals', 'States'] as const
+export function primitiveGroupOf(family: string): (typeof PRIMITIVE_GROUPS)[number] {
+  let raw = family
+  if (raw.endsWith('-dark')) raw = raw.slice(0, -5)
+  if (raw.endsWith('-a') && raw !== 'black-a' && raw !== 'white-a') raw = raw.slice(0, -2)
+  if (raw === 'black-a' || raw === 'white-a' || raw === 'black' || raw === 'white') return 'Neutrals'
+  if (raw === 'accent' || raw === 'brand') return 'Accents'
+  if (raw === 'neutral' || raw === 'gray') return 'Neutrals'
+  const STATES = ['error', 'warning', 'success', 'info']
+  if (STATES.includes(raw)) return 'States'
+  const seg = raw.replace(/-\d+$/, '').split('-').pop() ?? ''
+  if (seg === 'gray') return 'Neutrals'
+  if (STATES.includes(seg)) return 'States'
+  return 'Accents'
+}
+const GROUP_RANK: Record<string, number> = { Accents: 0, Neutrals: 1, States: 2 }
+
 function w3cPrimitives(full: TokenJSON, families?: string[], appearance?: 'light' | 'dark'): W3CNode {
-  const out: Record<string, Record<string, W3CNode>> = {}
+  const out: Record<string, Record<string, Record<string, W3CNode>>> = {}
   for (const [name, hex] of Object.entries(pickedPrimitives(full, families, appearance))) {
     const [family, tone] = splitFlat(name)
-    ;(out[family] ??= {})[tone] = token(hex, 'color')
+    const group = primitiveGroupOf(family)
+    ;((out[group] ??= {})[family] ??= {})[tone] = token(hex, 'color')
   }
-  return out as W3CNode
+  // Accents → Neutrals → States, whatever order the tokens arrived in.
+  const ordered: Record<string, Record<string, Record<string, W3CNode>>> = {}
+  for (const g of Object.keys(out).sort((a, b) => GROUP_RANK[a] - GROUP_RANK[b])) ordered[g] = out[g]
+  return ordered as unknown as W3CNode
 }
 
-/** hex → `{color.<family>.<tone>}` over the exported primitives (first hit wins).
+/** hex → `{color.<group>.<family>.<tone>}` over the exported primitives (first hit wins).
  *  Scoped to the families actually shipping, so an alias can never reference a
  *  token this file left out. */
 function aliasMap(full: TokenJSON, families?: string[]): Map<string, string> {
@@ -295,7 +322,7 @@ function aliasMap(full: TokenJSON, families?: string[]): Map<string, string> {
   for (const [name, hex] of Object.entries(pickedPrimitives(full, families))) {
     const [family, tone] = splitFlat(name)
     const key = hex.toLowerCase()
-    if (!map.has(key)) map.set(key, `{color.${family}.${tone}}`)
+    if (!map.has(key)) map.set(key, `{color.${primitiveGroupOf(family)}.${family}.${tone}}`)
   }
   return map
 }
