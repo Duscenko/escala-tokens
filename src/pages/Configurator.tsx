@@ -2330,6 +2330,8 @@ export default function Configurator() {
                       setActiveFoundation(key)
                     }}
                     activeFoundation={previewWidgetKey(activeFoundation)}
+                    onSelectFoundation={selectWorkspaceFoundation}
+                    editionIcons={Object.fromEntries(FOUNDATIONS.filter((f) => (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(f.key)).map((f) => [f.key, <f.Icon key={f.key} />]))}
                     onOpenPrimitiveFamily={openPrimitiveFamily}
                     onOpenInVariables={(tokenId) => {
                       const reason = themeTablesBlocked()

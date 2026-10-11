@@ -108,7 +108,10 @@ export default function ThemeSaveBar({
 
   const saved = status === 'saved'
   const guestPrimary = access.gated && !exploringRandom
-  const use = Boolean(onUse) && !inactive
+  // "Use this brand" only exists once the brand is in the library: a draft
+  // (Random / Blank, status `none`) says Save brand first, flashes Saved, and
+  // only then offers Use.
+  const use = Boolean(onUse) && !inactive && status !== 'none' && !justSaved
   const label = use
     ? t('Use this brand')
     : justSaved || saved
@@ -182,6 +185,7 @@ export default function ThemeSaveBar({
           ])
           showToast(t('Brand saved'))
           if (exploringRandom) onSaved?.()
+          // Dirty brand: "Use this brand" keeps the edits and opens Code.
           if (use) onUse?.()
         }}
         disabled={inactive || (!use && saved && !justSaved && !access.gated)}

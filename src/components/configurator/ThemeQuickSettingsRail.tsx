@@ -14,7 +14,7 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit } from '../../lib/editHistory'
-import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
@@ -63,7 +63,7 @@ import {
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { brandThemeDef, normalizeBrandThemes, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
+import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
@@ -86,7 +86,7 @@ import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
-import { useAccess, useFreeTier } from '../../lib/access'
+import { useAccess, useOneThemePlan } from '../../lib/access'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 /**
@@ -754,6 +754,87 @@ export function RailCard({ title, trailing, footer, flush, children }: {
   )
 }
 
+/** Each edition's name in the switcher, by panel — the same six the foundation icon rail
+ *  lists, so the header menu cannot offer one the rail does not. */
+const EDITION_NAMES: Record<QuickPanelFoundation, string> = {
+  color: 'Color',
+  typography: 'Font',
+  radius: 'Radius',
+  sizes: 'Spacing',
+  shadow: 'Shadow',
+  icons: 'Style',
+}
+
+/** Set by the rail when its host can switch editions: the handler, plus each
+ *  edition's mark (they live with the shell's FOUNDATIONS, beside the icon
+ *  rail's). Null (guided setup, an embed) leaves the title as plain text. */
+const EditionSwitchContext = createContext<{
+  select: (key: QuickPanelFoundation) => void
+  icons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
+} | null>(null)
+
+/** The edition card's title, as the switcher between editions. It is the same
+ *  boxed select the create-brand panel uses (icon · name · chevron, full
+ *  width), so "which edition am I in" reads as a control, not as a heading. It
+ *  writes the SAME state the foundation icon rail does, so the two cannot
+ *  disagree. */
+function EditionTitle({ title, foundationKey }: { title: string; foundationKey: string }) {
+  const { t } = useI18n()
+  const ctx = useContext(EditionSwitchContext)
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  if (!ctx) return <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
+  const icons = ctx.icons
+  return (
+    <div ref={ref} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t(title)} — ${t('Switch edition')}`}
+        className={`${SELECT_TRIGGER} ${open ? 'border-line-strong bg-elevated' : ''}`}
+      >
+        {icons?.[foundationKey as QuickPanelFoundation] && (
+          <span className="flex flex-shrink-0 items-center text-fg-muted">{icons[foundationKey as QuickPanelFoundation]}</span>
+        )}
+        <span className="min-w-0 flex-1 truncate text-ui text-fg">{t(EDITION_NAMES[foundationKey as QuickPanelFoundation] ?? title)}</span>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && (
+        <div role="listbox" aria-label={t('Switch edition')} className={`absolute left-0 top-full z-40 mt-1.5 flex w-full flex-col ${SELECT_LIST}`}>
+          {QUICK_PANEL_FOUNDATIONS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="option"
+              aria-selected={key === foundationKey}
+              onClick={() => { setOpen(false); if (key !== foundationKey) ctx.select(key) }}
+              className={`${SELECT_OPTION} flex items-center gap-2 text-ui ${key === foundationKey ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+            >
+              {icons?.[key] && <span className="flex flex-shrink-0 items-center text-fg-muted">{icons[key]}</span>}
+              <span className="min-w-0 flex-1 truncate">{t(EDITION_NAMES[key])}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /**
  * One foundation's quick panel: title, widgets, and the door to Variables.
  *
@@ -786,8 +867,8 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   const { t } = useI18n()
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible">
-      <div className="flex min-h-8 items-center justify-between gap-2 border-b border-line px-3 pb-2">
-        <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
+      <div className="flex min-h-8 items-center justify-between gap-2 border-b border-line px-3 pb-2.5">
+        <EditionTitle title={title} foundationKey={foundationKey} />
         {trailing}
       </div>
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
@@ -1558,6 +1639,8 @@ export default function ThemeQuickSettingsRail({
   colorAppearance,
   onColorAppearanceChange,
   activePanel = 'color',
+  onSelectPanel,
+  editionIcons,
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
@@ -1585,6 +1668,10 @@ export default function ThemeQuickSettingsRail({
   onColorAppearanceChange?: (appearance: ThemeAppearance) => void
   /** Which edition card the foundation icon rail asked for. */
   activePanel?: QuickPanelFoundation
+  /** Switch edition from the card's own title. Same handler as the icon rail. */
+  onSelectPanel?: (key: QuickPanelFoundation) => void
+  /** Each edition's mark for the switcher (the shell's FOUNDATIONS icons). */
+  editionIcons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
   /** Opens the Variables tab on a foundation — ONE handler where there used to
    *  be five `onOpen*` props plus a per-`SettingItem` `advancedLabel`, and
    *  where `stroke` had none of its own (it borrowed Sizes'). Each panel now
@@ -1643,7 +1730,7 @@ export default function ThemeQuickSettingsRail({
   // The brand's DEFAULT theme (`themeKinds`) and, when it ships a single one
   // under this plan, which. The Light/Dark switch and "Themes this brand
   // ships" both read these, so they cannot disagree.
-  const free = useFreeTier()
+  const free = useOneThemePlan()
   const leadTheme: ThemeAppearance = store.themeKinds[previewTheme] === 'dark' ? 'dark' : 'light'
   const plannedShips = plannedBrandThemes(shippedThemes(store.brandThemes, previewTheme), leadTheme, free)
   const shipsOne: ThemeAppearance | undefined = plannedShips.length === 1 ? brandThemeDef(plannedShips[0])?.base : undefined
@@ -2138,25 +2225,38 @@ export default function ThemeQuickSettingsRail({
           flush
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
-          trailing={
-            <ColorAppearanceSwitch
-              value={rampAppearance}
-              onChange={(next) => {
-                // Linked to "Themes this brand ships": a brand that ships ONE
-                // theme is edited in that theme, so switching here moves what
-                // it ships. With both shipped this is only the view; the
-                // default is asked below.
-                if (!tryOn && shipsOne && shipsOne !== next) {
-                  if (normalizeBrandThemes(store.brandThemes?.[previewTheme]).length === 1) store.setBrandThemes(previewTheme, [next])
-                  leadWith(next)
-                  return
-                }
-                onColorAppearanceChange?.(next)
-              }}
-            />
-          }
+          // ONE Light/Dark control. A brand that ships a single theme is
+          // edited in that theme, so "Themes this brand ships" (first row
+          // below) is the switch and the header carries none. Only a brand
+          // that ships both — or a style that is only tried on, which ships
+          // nothing yet — needs a separate "which one am I looking at".
+          trailing={tryOn || !shipsOne ? (
+            <ColorAppearanceSwitch value={rampAppearance} onChange={(next) => onColorAppearanceChange?.(next)} />
+          ) : undefined}
         >
           <div className="divide-y divide-line">
+            {/* What this brand ships — the answer given when it was created,
+                changed here afterwards. Both themes stay editable either way;
+                this only decides what leaves for Figma and the downloads. A
+                style that is only tried on is not a brand yet, so it has no
+                answer to show. */}
+            {!tryOn && (
+              <div className="px-3 py-2.5">
+                <BrandThemesPicker
+                  value={shippedThemes(store.brandThemes, previewTheme)}
+                  lead={leadTheme}
+                  onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
+                  onChange={(ids) => {
+                    store.setBrandThemes(previewTheme, ids)
+                    // A brand that ships one theme leads with it, and the
+                    // editor shows it.
+                    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
+                    if (only) leadWith(only)
+                  }}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-3 px-3 py-3">
               <div>
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Brand accent')}</p>
@@ -2334,28 +2434,6 @@ export default function ThemeQuickSettingsRail({
                 </span>
               </button>
             </div>
-
-            {/* What this brand ships — the answer given when it was created,
-                changed here afterwards. Both themes stay editable either way;
-                this only decides what leaves for Figma and the downloads. A
-                style that is only tried on is not a brand yet, so it has no
-                answer to show. */}
-            {!tryOn && (
-              <div className="px-3 py-2.5">
-                <BrandThemesPicker
-                  value={shippedThemes(store.brandThemes, previewTheme)}
-                  lead={leadTheme}
-                  onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
-                  onChange={(ids) => {
-                    store.setBrandThemes(previewTheme, ids)
-                    // A brand that ships one theme leads with it, and the
-                    // editor shows it.
-                    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
-                    if (only) leadWith(only)
-                  }}
-                />
-              </div>
-            )}
 
             <div className="px-3 py-2.5">
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('States')}</p>
@@ -2677,5 +2755,9 @@ export default function ThemeQuickSettingsRail({
       </div>
     </aside>
   )
-  return embed ? aside : <InspectorPortal>{aside}</InspectorPortal>
+  // Guided setup opens one step at a time, so the title stays plain text there.
+  const switchable = (
+    <EditionSwitchContext.Provider value={setupStep == null && onSelectPanel ? { select: onSelectPanel, icons: editionIcons } : null}>{aside}</EditionSwitchContext.Provider>
+  )
+  return embed ? switchable : <InspectorPortal>{switchable}</InspectorPortal>
 }

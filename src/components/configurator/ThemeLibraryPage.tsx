@@ -9,7 +9,7 @@ import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePrese
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
-import { goToLogin, useAccess, useFreeTier, useNeedsProForAnotherTheme } from '../../lib/access'
+import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
@@ -66,7 +66,7 @@ function useBrandsLine(): (
   themeKinds: Record<string, string | undefined> | undefined,
 ) => string {
   const { t } = useI18n()
-  const free = useFreeTier()
+  const free = useOneThemePlan()
   return (brands, brandThemes, themeKinds) => {
     // Through the plan, like the brand card beside it: on Free a brand ships
     // one theme, and a line saying "2 themes" over a card saying "Dark only"
@@ -205,7 +205,7 @@ function ThemeCard({
   const tokens = useMemo(() => resolvePreviewTokens(store, themeKey, kind), [store, themeKey, kind])
   const name = themeDisplayName(themeKey, store.themeLabels)
   const updatedAt = store.themeUpdatedAt?.[themeKey]
-  const free = useFreeTier()
+  const free = useOneThemePlan()
   // A theme still in guided setup is a DRAFT: say how far it got and resume it.
   const setupStep = useSetupStep(themeKey)
   const menuBtnRef = useRef<HTMLButtonElement>(null)

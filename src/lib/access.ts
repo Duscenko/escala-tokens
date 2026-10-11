@@ -60,6 +60,15 @@ export function useFreeTier(): boolean {
   return accountsEnabled && !loading && tier === 'free'
 }
 
+/** A brand ships ONE theme: every account that is not Pro, and a visitor with
+ *  no account at all. `useFreeTier` covers only the signed-in half, which left
+ *  an anonymous visitor free to pick Light + Dark. Accounts off, or the session
+ *  still loading, is never limited. */
+export function useOneThemePlan(): boolean {
+  const { tier, loading } = useAccess()
+  return accountsEnabled && !loading && tier !== 'pro'
+}
+
 export { FREE_MY_THEME_LIMIT }
 
 /** True when this signed-in Free account already has a theme and must not

@@ -436,7 +436,7 @@ export default function ThemePreviewHub({
   onDocsOpenChange,
   surface, onSurfaceChange,
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
-  onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
+  onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, editionIcons, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
   exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom,
@@ -467,6 +467,9 @@ export default function ThemePreviewHub({
   onSyncFoundationFromDoc: (foundationKey: string) => void
   /** Foundation the workspace icon rail has selected — drives the contextual doc. */
   activeFoundation?: QuickPanelFoundation
+  /** Switch the quick edition — the icon rail's own handler. */
+  onSelectFoundation?: (key: QuickPanelFoundation) => void
+  editionIcons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
   /** Jump to a family's ramp in Color · Primitives from the Semantics
    *  Token Details drawer (family vocabulary name). */
   onOpenPrimitiveFamily: (family: string) => void
@@ -663,6 +666,8 @@ export default function ThemePreviewHub({
           colorAppearance={effectiveBoardAppearance}
           onColorAppearanceChange={handleAppearanceChange}
           activePanel={activeFoundation ?? 'color'}
+          onSelectPanel={onSelectFoundation}
+          editionIcons={editionIcons}
           // "Go to advanced edition" IS `selectFoundation` — the shell handler
           // that switches to the Variables tab on a given foundation. Passing
           // it straight through is what makes the button land on the very
