@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../lib/i18n'
 import { accountHref } from '../../lib/accountRoutes'
-import { signOut, useAuth } from '../../lib/auth'
+import { displayNameOf, initialOf, signOut, useAuth } from '../../lib/auth'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -109,7 +109,8 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
 
   const licensed = licenceStatus === 'valid'
   const planLabel = licensed ? 'PRO' : t('Free')
-  const initial = (user.email ?? '?').charAt(0)
+  const initial = initialOf(user)
+  const name = displayNameOf(user)
 
   return (
     <div ref={rootRef} className="relative">
@@ -119,7 +120,7 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={`${t('Account')} — ${planLabel}`}
-        title={user.email ?? t('Account')}
+        title={name || user.email || t('Account')}
         className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-lg p-1 pr-2 text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
       >
         {/* Same chip as ☰ / appearance: nested tile is elevated chrome, not
@@ -140,7 +141,8 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
         <div role="menu" className="absolute right-0 top-full z-50 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-line bg-app p-2 shadow-2xl">
           <div className="px-2.5 py-2">
             <p className="text-caption text-fg-faint">{t('Signed in as')}</p>
-            <p className="truncate text-ui font-medium text-fg">{user.email}</p>
+            <p className="truncate text-ui font-medium text-fg">{name || user.email}</p>
+            {name && <p className="truncate text-caption text-fg-faint">{user.email}</p>}
           </div>
           <a role="menuitem" href={accountHref()} className={`rounded-lg px-2.5 py-2 text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}>{t('Account')}</a>
           {onOpenLibrary && (

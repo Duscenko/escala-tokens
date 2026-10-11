@@ -16,6 +16,7 @@ import { setTheme, useTheme } from '../../lib/theme'
 import {
   MIN_PASSWORD,
   displayNameOf,
+  initialOf,
   hasEmailPassword,
   replacePassword,
   resendSignupEmail,
@@ -167,7 +168,7 @@ function AccountHome({ user }: { user: User }) {
   }
 
   const name = displayNameOf(user)
-  const initial = (name || user.email || '?').charAt(0)
+  const initial = initialOf(user)
   const since = formatWhen(user.created_at, locale, false)
   const confirmed = Boolean(user.email_confirmed_at)
   const methods = signInMethods(user, t)
@@ -387,7 +388,7 @@ function ProfilePanel({ user, licensed, onPlan }: { user: User; licensed: boolea
   const { t, locale, setLocale } = useI18n()
   const chrome = useTheme()
   const name = displayNameOf(user)
-  const initial = (name || user.email || '?').charAt(0)
+  const initial = initialOf(user)
   const since = formatWhen(user.created_at, locale, false)
   const last = formatWhen(user.last_sign_in_at, locale, true)
   const methods = signInMethods(user, t)

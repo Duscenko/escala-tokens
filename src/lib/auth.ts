@@ -139,6 +139,14 @@ export function displayNameOf(user: { user_metadata?: Record<string, unknown> | 
   return ''
 }
 
+/** The one letter an account's avatar shows: the first letter of the display
+ *  name (what the person chose, or what GitHub stored), else of the email.
+ *  Every avatar goes through here so a rename moves them all together. */
+export function initialOf(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {
+  const source = displayNameOf(user) || user.email?.trim() || '?'
+  return (Array.from(source)[0] ?? '?').toLocaleUpperCase()
+}
+
 /** True when this account can sign in with an email and a password. A
  *  GitHub-only account has no password to replace. */
 export function hasEmailPassword(user: { identities?: { provider?: string }[] | null }): boolean {
