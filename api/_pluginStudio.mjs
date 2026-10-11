@@ -3560,6 +3560,7 @@ var init_useDesignStore = __esm({
           setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
           pluginBuildSeen: null,
           setPluginBuildSeen: (build) => set({ pluginBuildSeen: build }),
+          freeEditCount: 0,
           stampThemesUpdated: (keys, iso) => set((st) => {
             if (!keys.length) return {};
             const next = { ...st.themeUpdatedAt };
@@ -4094,7 +4095,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 84,
+          version: 85,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -5112,6 +5113,9 @@ var init_useDesignStore = __esm({
                   if (sys?.snapshot && !sys.snapshot.brandThemes) sys.snapshot.brandThemes = {};
                 }
               }
+            }
+            if (version < 85) {
+              if (typeof persisted.freeEditCount !== "number") persisted.freeEditCount = 0;
             }
             return persisted;
           }

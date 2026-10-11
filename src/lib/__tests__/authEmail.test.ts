@@ -68,11 +68,12 @@ describe('recoveryEmail', () => {
       expect(confirm.html).toContain('href="https://www.escalatokens.com/login?token_hash=abc&amp;type=signup"')
       const headerOf = (html: string) => html.slice(html.indexOf('<body'), html.indexOf('<h1'))
       const footerOf = (html: string) => html.slice(html.indexOf('mailto:'), html.indexOf('</body>'))
+      expect(confirm.html).not.toContain('You are receiving')
       expect(headerOf(confirm.html).replace(/<div style="display:none.*?<\/div>/s, '')).toBe(
         headerOf(reset.html).replace(/<div style="display:none.*?<\/div>/s, ''),
       )
-      expect(footerOf(confirm.html).split('<p style="margin:0 0 14px;color:#a1a1aa;">')[0]).toBe(
-        footerOf(reset.html).split('<p style="margin:0 0 14px;color:#a1a1aa;">')[0],
+      expect(footerOf(confirm.html)).toBe(
+        footerOf(reset.html),
       )
     }
     const template = confirmationEmail({ locale: 'en', email: '{{ .Email }}', url: SIGNUP_TEMPLATE_HREF })

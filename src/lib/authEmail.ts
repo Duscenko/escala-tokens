@@ -263,7 +263,6 @@ function hrefOf(url: string): { href: string; shown: string } {
 
 type Footer = {
   help: string
-  why: string
   privacy: string
   terms: string
   legal: string
@@ -274,7 +273,6 @@ type Footer = {
 const FOOTER: Record<MailLocale, Footer> = {
   en: {
     help: 'Questions? Reply to this email or write to',
-    why: 'You are receiving this message because of an action on your Escala Tokens account ({email}). It is a service message, not marketing.',
     privacy: 'Privacy',
     terms: 'Terms',
     legal: 'Legal notice',
@@ -283,7 +281,6 @@ const FOOTER: Record<MailLocale, Footer> = {
   },
   es: {
     help: '¿Dudas? Responda a este correo o escriba a',
-    why: 'Recibe este mensaje por una acción en su cuenta de Escala Tokens ({email}). Es un mensaje de servicio, no publicidad.',
     privacy: 'Privacidad',
     terms: 'Términos',
     legal: 'Aviso legal',
@@ -292,7 +289,6 @@ const FOOTER: Record<MailLocale, Footer> = {
   },
   fr: {
     help: 'Une question ? Répondez à ce message ou écrivez à',
-    why: 'Vous recevez ce message à la suite d’une action sur votre compte Escala Tokens ({email}). C’est un message de service, pas de la publicité.',
     privacy: 'Confidentialité',
     terms: 'Conditions',
     legal: 'Mentions légales',
@@ -383,7 +379,6 @@ function layout(input: {
                 &nbsp;&middot;&nbsp;<a href="${legal}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.legal)}</a>
                 &nbsp;&middot;&nbsp;<a href="${contact}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.contact)}</a>
               </p>
-              <p style="margin:0 0 14px;color:#a1a1aa;">${fill(escapeHtml(f.why), email)}</p>
               <p style="margin:0;color:#a1a1aa;">&copy; ${new Date().getFullYear()} Escala Tokens &middot; ${escapeHtml(f.company)}</p>
             </td>
           </tr>
@@ -411,7 +406,6 @@ function layout(input: {
     `${f.privacy}: ${privacy}`,
     `${f.terms}: ${terms}`,
     `${f.legal}: ${legal}`,
-    fill(f.why, input.email),
   ].join('\n')
 
   return { subject: input.copy.subject, html, text }
