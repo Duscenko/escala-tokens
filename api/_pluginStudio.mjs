@@ -2330,6 +2330,10 @@ function buildScale(baseHex, spec, shift, background, appearance = "light", tint
           out.push(page);
           continue;
         }
+        if (baseC < 0.01) {
+          out.push(page);
+          continue;
+        }
         const rawPageH = chroma(page).oklch()[2];
         const pH = Number.isNaN(rawPageH) ? baseH : rawPageH;
         let dH = Math.abs(pH - baseH);
@@ -3017,6 +3021,14 @@ var init_publishId = __esm({
   }
 });
 
+// src/lib/systemDashboardTypes.ts
+var RELEASE_HISTORY_LIMIT;
+var init_systemDashboardTypes = __esm({
+  "src/lib/systemDashboardTypes.ts"() {
+    RELEASE_HISTORY_LIMIT = 30;
+  }
+});
+
 // src/lib/iconLibraries.ts
 function getIconAiSource(key2) {
   return ICON_AI_SOURCES.find((s) => s.key === key2) ?? ICON_AI_SOURCES[0];
@@ -3152,6 +3164,9 @@ function makeDesignDefaults() {
     themeOrigin: {},
     brandThemes: {},
     themeUpdatedAt: {},
+    elementStatus: {},
+    releases: [],
+    releaseBaseline: null,
     typography: {
       fontFamily: "Inter",
       headingFontFamily: "Inter",
@@ -3264,6 +3279,7 @@ var init_useDesignStore = __esm({
     init_themeLibrary();
     init_freeThemeLimit();
     init_publishId();
+    init_systemDashboardTypes();
     init_iconLibraries();
     init_themeModes();
     init_brandThemes();
@@ -3567,6 +3583,21 @@ var init_useDesignStore = __esm({
             for (const key2 of keys) next[key2] = iso;
             return { themeUpdatedAt: next };
           }),
+          setElementStatus: (id, status) => set((st) => {
+            const next = { ...st.elementStatus ?? {} };
+            if (status) next[id] = { status, at: (/* @__PURE__ */ new Date()).toISOString() };
+            else delete next[id];
+            return { elementStatus: next };
+          }),
+          // An element someone Approved ships with the release, so its decision
+          // is spent: it goes back to the automatic status, which is now Live.
+          publishRelease: (release, baseline) => set((st) => ({
+            releases: [release, ...st.releases ?? []].slice(0, RELEASE_HISTORY_LIMIT),
+            releaseBaseline: baseline,
+            elementStatus: Object.fromEntries(
+              Object.entries(st.elementStatus ?? {}).filter(([, decision]) => decision.status !== "approved")
+            )
+          })),
           pinned: [],
           togglePinned: (id) => set((st) => ({
             pinned: st.pinned.includes(id) ? st.pinned.filter((p) => p !== id) : [...st.pinned, id]
@@ -4095,7 +4126,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 85,
+          version: 86,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -5117,6 +5148,18 @@ var init_useDesignStore = __esm({
             if (version < 85) {
               if (typeof persisted.freeEditCount !== "number") persisted.freeEditCount = 0;
             }
+            if (version < 86) {
+              const seed = (target) => {
+                if (!target) return;
+                if (!target.elementStatus || typeof target.elementStatus !== "object") target.elementStatus = {};
+                if (!Array.isArray(target.releases)) target.releases = [];
+                if (target.releaseBaseline === void 0) target.releaseBaseline = null;
+              };
+              seed(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) seed(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -5402,8 +5445,8 @@ function resolveThemePages(s, themeKey, linkedAccentHex) {
   const grayFamily = grayKey !== GLOBAL_FAMILY.gray ? s.customColors.find((c) => c.key === grayKey) : void 0;
   if (grayFamily) {
     return {
-      light: backgroundFromBase(grayFamily.base, "light", s.neutralTint),
-      dark: backgroundFromBase(grayFamily.base, "dark", s.neutralTint),
+      light: grayFamily.scale?.[1] ?? backgroundFromBase(grayFamily.base, "light", s.neutralTint),
+      dark: grayFamily.darkScale?.[1] ?? backgroundFromBase(grayFamily.base, "dark", s.neutralTint),
       nextNeutral: null
     };
   }
@@ -5528,14 +5571,14 @@ function applyAccentColor(hex, linked = true, themeKey = "light") {
     const neutral = linked ? neutralFromBrand(hex, neutralTint) : null;
     const nextBg = neutral ? backgroundFromBase(neutral, "light", neutralTint) : pageBackground;
     const nextDarkBg = neutral ? backgroundFromBase(neutral, "dark", neutralTint) : darkBackground;
-    const pageMoved = nextBg !== pageBackground;
+    const pageMoved = nextBg !== pageBackground || nextDarkBg !== darkBackground;
     const gen = (base) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg);
     const scale = gen(hex);
     const genDark = (base) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg);
     const scaleDark = genDark(hex);
     const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, "light", neutralTint) : null;
     const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null;
-    if (pageMoved) setPageBackground(nextBg);
+    if (nextBg !== pageBackground) setPageBackground(nextBg);
     if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg);
     setPrimaryColor(hex);
     setPrimaryScale(scale);

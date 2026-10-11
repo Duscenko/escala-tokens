@@ -402,9 +402,16 @@ export function resolveThemePages(
     ? s.customColors.find((c) => c.key === grayKey)
     : undefined
   if (grayFamily) {
+    // Tone 1 of a theme's neutral IS that theme's page, so read it back
+    // rather than re-deriving it. Re-deriving needs a tint, and the only one
+    // in the store is the SYSTEM's: a `tinted` System Style adopted into a
+    // `subtle` system minted on its own paper (#08161a) and then regenerated
+    // every later edit — and solved every exported alpha twin — against a
+    // different one (#091113). The derivation stays as the fallback for a
+    // family with no ramp yet.
     return {
-      light: backgroundFromBase(grayFamily.base, 'light', s.neutralTint),
-      dark: backgroundFromBase(grayFamily.base, 'dark', s.neutralTint),
+      light: grayFamily.scale?.[1] ?? backgroundFromBase(grayFamily.base, 'light', s.neutralTint),
+      dark: grayFamily.darkScale?.[1] ?? backgroundFromBase(grayFamily.base, 'dark', s.neutralTint),
       nextNeutral: null,
     }
   }

@@ -258,6 +258,12 @@ function buildScale(
       // systems must not move.
       if (i === 1) {
         if (chromaLink > 0 || pageC < 0.01) { out.push(page); continue }
+        // An achromatic family (a grey, black or white custom) has no hue to
+        // rematch onto: OKLCH reports NaN, which fell through to hue 0 and
+        // painted the page's chroma RED — measured, #808080 on a violet
+        // `tinted` page gave tone 1 #210c13 over a pure-grey tone 2. With no
+        // hue of its own it takes the page as it is, like the Neutral does.
+        if (baseC < 0.01) { out.push(page); continue }
         const rawPageH = chroma(page).oklch()[2]
         const pH = Number.isNaN(rawPageH) ? baseH : rawPageH
         let dH = Math.abs(pH - baseH)

@@ -174,7 +174,11 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
     const neutral = linked ? neutralFromBrand(hex, neutralTint) : null
     const nextBg = neutral ? backgroundFromBase(neutral, 'light', neutralTint) : pageBackground
     const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark', neutralTint) : darkBackground
-    const pageMoved = nextBg !== pageBackground
+    // EITHER page. At `subtle` the light page quantises to a handful of hexes
+    // while the dark one keeps moving — measured, 25 of 179 adjacent accents
+    // share a light page and differ in dark. Gating on the light page alone
+    // left the status and custom DARK ramps on the previous dark paper.
+    const pageMoved = nextBg !== pageBackground || nextDarkBg !== darkBackground
     // Every ramp is re-anchored to whatever page we land on — tone 1 grows
     // out of it, so a moved page that only rebuilt the brand would leave the
     // status ramps anchored to the old one.
@@ -193,7 +197,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
     // out of the dark page instead of the light one.
     const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null
 
-    if (pageMoved) setPageBackground(nextBg)
+    if (nextBg !== pageBackground) setPageBackground(nextBg)
     if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
     setPrimaryColor(hex)
     setPrimaryScale(scale)
