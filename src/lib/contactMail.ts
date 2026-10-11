@@ -4,7 +4,7 @@
 // the page opens this mailto so a message still reaches the public inbox
 // (a Zoho alias — see PUBLIC_CONTACT_EMAIL) instead of the form disappearing.
 
-import { PUBLIC_CONTACT_EMAIL } from './legal'
+import { PUBLIC_CONTACT_EMAIL } from './legal.js'
 
 export const CONTACT_LIMITS = { name: 100, email: 254, message: 5000, system: 80, minMessage: 10 } as const
 
