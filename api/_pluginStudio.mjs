@@ -27,6 +27,50 @@ var init_themeModes = __esm({
   }
 });
 
+// src/lib/brandThemes.ts
+function brandThemeDef(id) {
+  return BRAND_THEME_DEFS.find((def) => def.id === id);
+}
+function brandThemeLabel(id) {
+  return brandThemeDef(id)?.label ?? id;
+}
+function normalizeBrandThemes(ids) {
+  const kept = BRAND_THEME_IDS.filter((id) => ids?.includes(id));
+  return kept.length ? kept : [...BRAND_THEME_IDS];
+}
+function shippedThemes(brandThemes, brand, preferred) {
+  const ids = normalizeBrandThemes(brandThemes?.[brand]);
+  if (!preferred || !ids.includes(preferred)) return ids;
+  return [preferred, ...ids.filter((id) => id !== preferred)];
+}
+function shipsEveryTheme(ids) {
+  return BRAND_THEME_IDS.every((id) => ids.includes(id));
+}
+function brandThemesSummary(ids) {
+  const list = normalizeBrandThemes(ids);
+  return list.length === 1 ? `${brandThemeLabel(list[0])} only` : list.map(brandThemeLabel).join(" + ");
+}
+function soleShippedAppearance(brandThemes, brand) {
+  const stored = brandThemes?.[brand];
+  if (!stored) return void 0;
+  const ids = normalizeBrandThemes(stored);
+  return ids.length === 1 ? brandThemeDef(ids[0])?.base : void 0;
+}
+var BRAND_THEME_DEFS, BRAND_THEME_IDS, BRAND_THEME_CHOICES;
+var init_brandThemes = __esm({
+  "src/lib/brandThemes.ts"() {
+    BRAND_THEME_DEFS = [
+      { id: "light", label: "Light", base: "light" },
+      { id: "dark", label: "Dark", base: "dark" }
+    ];
+    BRAND_THEME_IDS = BRAND_THEME_DEFS.map((def) => def.id);
+    BRAND_THEME_CHOICES = [
+      { id: BRAND_THEME_IDS.join("+"), ids: [...BRAND_THEME_IDS], label: brandThemesSummary(BRAND_THEME_IDS) },
+      ...BRAND_THEME_DEFS.map((def) => ({ id: def.id, ids: [def.id], label: brandThemesSummary([def.id]) }))
+    ];
+  }
+});
+
 // src/lib/figmaSyncModes.ts
 function figmaSyncModeId(mode) {
   return themeModeKey(mode.theme, mode.appearance);
@@ -38,11 +82,13 @@ function uniqueThemesFromModes(modes) {
 function clampFigmaSyncModes(modes) {
   return modes.slice(0, FIGMA_SYNC_MODE_CAP);
 }
-function defaultFigmaSyncModes(themes, themeKinds) {
+function defaultFigmaSyncModes(themes, themeKinds, brandThemes) {
   const next = [];
   for (const theme of themes) {
     const preferred = themeKinds[theme] === "dark" ? "dark" : "light";
+    const shipped = shippedThemes(brandThemes, theme);
     for (const appearance of appearanceOrder(preferred)) {
+      if (!shipped.includes(appearance)) continue;
       if (next.length >= FIGMA_SYNC_MODE_CAP) return next;
       next.push({ theme, appearance });
     }
@@ -63,6 +109,7 @@ var FIGMA_SYNC_MODE_CAP, FIGMA_VIEWPORTS;
 var init_figmaSyncModes = __esm({
   "src/lib/figmaSyncModes.ts"() {
     init_themeModes();
+    init_brandThemes();
     FIGMA_SYNC_MODE_CAP = 10;
     FIGMA_VIEWPORTS = ["desktop", "tablet", "mobile"];
   }
@@ -621,12 +668,12 @@ var init_componentCatalogue = __esm({
         key: "Icon",
         label: "Icon",
         category: "Indicators",
-        description: "A glyph from the system icon set, at one of three sizes: small 24, medium 32, large 40.",
+        description: "A glyph from the system icon set, at one of three sizes that follow the control height (16 \xB7 20 \xB7 24 at a 40px control).",
         usage: "Small inside a compact control, medium on a default button, large on a large control or as a feature glyph. The same px on Desktop, Tablet and Mobile. Pair an icon-only control with an accessible label; a decorative icon next to text is aria-hidden.",
         axes: [{ name: "Size", values: ["SM", "MD", "LG"] }],
         figmaSets: ["Icon"],
         props: [
-          { name: "size", type: '"sm" | "md" | "lg"', description: "small 24px \xB7 medium 32px \xB7 large 40px (Icon/role/small \xB7 medium \xB7 large)" },
+          { name: "size", type: '"sm" | "md" | "lg"', description: "small 16px \xB7 medium 20px \xB7 large 24px at a 40px control (Icon/role/small \xB7 medium \xB7 large)" },
           { name: "weight", type: '"thin" | "light" | "regular" | "bold" | "fill" | "duotone"', description: "Defaults to the theme's icon weight; below 16px thin/light render regular" },
           { name: "aria-label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative" }
         ],
@@ -2934,7 +2981,7 @@ var init_freeThemeLimit = __esm({
     init_licence();
     init_supabase();
     FREE_MY_THEME_LIMIT = 1;
-    FREE_ANOTHER_THEME_ERROR = "Free includes one theme. Pro adds this style and as many as you need.";
+    FREE_ANOTHER_THEME_ERROR = "Free includes one design system with one brand. Pro adds brands and systems.";
   }
 });
 
@@ -3103,6 +3150,7 @@ function makeDesignDefaults() {
     themeSources: {},
     themeFoundations: {},
     themeOrigin: {},
+    brandThemes: {},
     themeUpdatedAt: {},
     typography: {
       fontFamily: "Inter",
@@ -3181,6 +3229,7 @@ function scopeSnapshotToTheme(snapshot, themeKey) {
     themeSources: snapshot.themeSources[themeKey] ? { [themeKey]: snapshot.themeSources[themeKey] } : {},
     themeFoundations: snapshot.themeFoundations[themeKey] ? { [themeKey]: snapshot.themeFoundations[themeKey] } : {},
     themeOrigin: snapshot.themeOrigin?.[themeKey] ? { [themeKey]: snapshot.themeOrigin[themeKey] } : {},
+    brandThemes: snapshot.brandThemes?.[themeKey] ? { [themeKey]: snapshot.brandThemes[themeKey] } : {},
     architectureOverrides
   };
 }
@@ -3217,6 +3266,7 @@ var init_useDesignStore = __esm({
     init_publishId();
     init_iconLibraries();
     init_themeModes();
+    init_brandThemes();
     RESERVED_COLOR_KEYS = ["accent", "neutral", "error", "warning", "success", "info"];
     DEFAULT_THEME_SOURCES = {
       brand: "accent",
@@ -3700,6 +3750,7 @@ var init_useDesignStore = __esm({
               themeSources: state2.themeSources[sourceKey] ? { ...state2.themeSources, [key2]: clone(state2.themeSources[sourceKey]) } : state2.themeSources,
               themeFoundations: state2.themeFoundations[sourceKey] ? { ...state2.themeFoundations, [key2]: clone(state2.themeFoundations[sourceKey]) } : state2.themeFoundations,
               themeOrigin: state2.themeOrigin?.[sourceKey] ? { ...state2.themeOrigin, [key2]: state2.themeOrigin[sourceKey] } : state2.themeOrigin,
+              brandThemes: state2.brandThemes?.[sourceKey] ? { ...state2.brandThemes, [key2]: [...state2.brandThemes[sourceKey]] } : state2.brandThemes,
               architectureOverrides
             });
             return key2;
@@ -3718,6 +3769,11 @@ var init_useDesignStore = __esm({
           setThemeOrigin: (key2, presetId) => set((state2) => {
             const { [key2]: _, ...rest } = state2.themeOrigin ?? {};
             return { themeOrigin: presetId ? { ...rest, [key2]: presetId } : rest };
+          }),
+          setBrandThemes: (brand, ids) => set((state2) => {
+            const { [brand]: _, ...rest } = state2.brandThemes ?? {};
+            const next = normalizeBrandThemes(ids);
+            return { brandThemes: shipsEveryTheme(next) ? rest : { ...rest, [brand]: next } };
           }),
           setThemeFoundations: (key2, foundations) => set((state2) => {
             if (!state2.themes[key2]) return state2;
@@ -3742,6 +3798,7 @@ var init_useDesignStore = __esm({
             const { [key2]: _____, ...themeSources } = state2.themeSources;
             const { [key2]: ______, ...themeFoundations } = state2.themeFoundations;
             const { [key2]: _______, ...themeOrigin } = state2.themeOrigin ?? {};
+            const { [key2]: ________, ...brandThemes } = state2.brandThemes ?? {};
             const deletedSlots = new Set(Object.values(state2.themeSources[key2] ?? {}).filter(Boolean));
             const stillUsed = (famKey) => Object.values(themeSources).some(
               (refs) => ["brand", "gray", "error", "warning", "success", "info"].some((s) => refs[s] === famKey) || refs.secondary === famKey || refs.tertiary === famKey
@@ -3766,6 +3823,7 @@ var init_useDesignStore = __esm({
               themeSources,
               themeFoundations,
               themeOrigin,
+              brandThemes,
               architectureOverrides,
               themeOrder: state2.themeOrder.filter((t) => t !== key2),
               customColors
@@ -3790,6 +3848,7 @@ var init_useDesignStore = __esm({
             const { [oldKey]: sources, ...restSources } = state2.themeSources;
             const { [oldKey]: foundations, ...restFoundations } = state2.themeFoundations;
             const { [oldKey]: origin, ...restOrigin } = state2.themeOrigin ?? {};
+            const { [oldKey]: shipped, ...restShipped } = state2.brandThemes ?? {};
             return {
               themes: { ...restThemes, [newKey]: tokens },
               themeSemantics: modes ? { ...restModeThemes, [newKey]: modes } : restModeThemes,
@@ -3798,6 +3857,7 @@ var init_useDesignStore = __esm({
               themeSources: sources ? { ...restSources, [newKey]: sources } : restSources,
               themeFoundations: foundations ? { ...restFoundations, [newKey]: foundations } : restFoundations,
               themeOrigin: origin ? { ...restOrigin, [newKey]: origin } : restOrigin,
+              brandThemes: shipped ? { ...restShipped, [newKey]: shipped } : restShipped,
               themeOrder: state2.themeOrder.map((t) => t === oldKey ? newKey : t)
             };
           }),
@@ -4034,7 +4094,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 83,
+          version: 84,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -5033,6 +5093,26 @@ var init_useDesignStore = __esm({
                 }
               }
             }
+            if (version < 84) {
+              if (!persisted.brandThemes || typeof persisted.brandThemes !== "object") persisted.brandThemes = {};
+              const savedModes = persisted.figmaSyncSelection?.modes;
+              if (Array.isArray(savedModes)) {
+                const picked = {};
+                for (const mode of savedModes) {
+                  if (!mode || typeof mode.theme !== "string" || !persisted.themes?.[mode.theme]) continue;
+                  (picked[mode.theme] ??= []).push(mode.appearance);
+                }
+                for (const [brand, ids] of Object.entries(picked)) {
+                  const next = normalizeBrandThemes(ids);
+                  if (!shipsEveryTheme(next) && !persisted.brandThemes[brand]) persisted.brandThemes[brand] = next;
+                }
+              }
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) {
+                  if (sys?.snapshot && !sys.snapshot.brandThemes) sys.snapshot.brandThemes = {};
+                }
+              }
+            }
             return persisted;
           }
         }
@@ -5800,7 +5880,7 @@ function titleCaseKey(key2) {
 }
 function labelForAccent(hex) {
   const h = hex.slice(0, 7).toLowerCase();
-  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? "Theme";
+  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? "Brand";
 }
 function slotsFromAccent(hex, tint, states) {
   const h = previewHarmony(hex, tint);
@@ -5939,19 +6019,29 @@ init_useDesignStore();
 // src/lib/iconSizing.ts
 var ICON_ROLES = ["small", "medium", "large"];
 var ICON_SIZE_PX = {
-  small: 24,
-  medium: 32,
-  large: 40
+  small: 16,
+  medium: 20,
+  large: 24
 };
-function iconSizePx(role, _viewport = "desktop") {
-  return ICON_SIZE_PX[role];
+var ICON_REFERENCE_CONTROL_PX = 40;
+function controlMdOf(sizes) {
+  const n = parseFloat(sizes?.md ?? "");
+  return Number.isFinite(n) && n > 0 ? n : ICON_REFERENCE_CONTROL_PX;
+}
+function iconSizesFor(controlMd = ICON_REFERENCE_CONTROL_PX) {
+  const md = typeof controlMd === "number" ? controlMd : controlMdOf(controlMd);
+  const k = Math.min(1.6, Math.max(0.6, (Number.isFinite(md) && md > 0 ? md : ICON_REFERENCE_CONTROL_PX) / ICON_REFERENCE_CONTROL_PX));
+  const out = {};
+  for (const role of ICON_ROLES) out[role] = Math.max(12, Math.round(ICON_SIZE_PX[role] * k / 2) * 2);
+  return out;
 }
 var ICON_MIN_WEIGHT_PX = 16;
-function iconSizeTokens() {
-  const px = (role, viewport) => `${iconSizePx(role, viewport)}px`;
+function iconSizeTokens(controlMd) {
+  const sizes = iconSizesFor(controlMd);
+  const px = (role, _viewport) => `${sizes[role]}px`;
   const at = (viewport) => Object.fromEntries(ICON_ROLES.map((role) => [role, px(role, viewport)]));
   return {
-    scale: Object.fromEntries(ICON_ROLES.map((role) => [role, `${ICON_SIZE_PX[role]}px`])),
+    scale: Object.fromEntries(ICON_ROLES.map((role) => [role, `${sizes[role]}px`])),
     roles: Object.fromEntries(ICON_ROLES.map((role) => [role, role])),
     viewports: { desktop: at("desktop"), tablet: at("tablet"), mobile: at("mobile") },
     minWeight: { belowPx: ICON_MIN_WEIGHT_PX, weight: "regular" }
@@ -6080,7 +6170,11 @@ function dimensionRefsOf(maps) {
 }
 function dimensionScaleForStore(store, themeKeys) {
   const sources = [store, ...themeKeys.map((t) => resolveThemeFoundations(store, t))];
-  return buildDimensionScale(collectDimensions(sources));
+  const values = collectDimensions(sources);
+  for (const src of sources) {
+    for (const px of Object.values(iconSizesFor(src.sizes))) values.add(px);
+  }
+  return buildDimensionScale(values);
 }
 
 // src/lib/tokenGenerator.ts
@@ -7163,7 +7257,7 @@ function generateTokenJSON(source, opts) {
       // theme's own control heights, so a Compact style ships smaller control
       // icons than an Airy one — the plugin binds `Icon/*` from these.
       iconWeight: resolved.iconWeight,
-      iconSizes: iconSizeTokens(),
+      iconSizes: iconSizeTokens(resolved.sizes),
       // Which Dimension primitive each length of THIS theme aliases. Per theme
       // because a style's radius/spacing differ — the primitives themselves
       // (`dimensions`) never do.
@@ -7427,7 +7521,7 @@ function generateTokenJSON(source, opts) {
       // Additive (no schemaVersion bump, the `shadowsDark` precedent): the icon
       // scale, the roles it resolves to for THIS system's control heights, and
       // the small-icon weight rule. An older plugin ignores the key.
-      sizes: iconSizeTokens(),
+      sizes: iconSizeTokens(store.sizes),
       // The Phosphor weight the system renders (thin … duotone). Additive too.
       weight: store.iconWeight
     },
@@ -7446,11 +7540,13 @@ function generateTokenJSON(source, opts) {
 
 // src/lib/freeFigmaScope.ts
 init_themeLibrary();
-function freeFigmaScope(preferred, themeOrder, themes, themeKinds, appearance) {
+init_brandThemes();
+function freeFigmaScope(preferred, themeOrder, themes, themeKinds, appearance, brandThemes) {
   const keys = figmaSyncThemeKeys(themeOrder, themes);
   const theme = preferred && keys.includes(preferred) ? preferred : keys[0];
   if (!theme) return { viewports: ["desktop"], gridStyles: ["xl-desktop"] };
-  return { themes: [theme], modes: [{ theme, appearance: appearance ?? (themeKinds[theme] === "dark" ? "dark" : "light") }], viewports: ["desktop"], gridStyles: ["xl-desktop"] };
+  const one = soleShippedAppearance(brandThemes, theme) ?? appearance ?? (themeKinds[theme] === "dark" ? "dark" : "light");
+  return { themes: [theme], modes: [{ theme, appearance: one }], viewports: ["desktop"], gridStyles: ["xl-desktop"] };
 }
 
 // src/lib/pluginStudio.ts

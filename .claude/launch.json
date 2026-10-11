@@ -16,6 +16,12 @@
       "autoPort": true
     },
     {
+      "name": "Escala Plugin UI",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5199", "--directory", "/Users/duscenko/sync-ds-platform/escala-figma-plugin/dist"],
+      "port": 5199
+    },
+    {
       "name": "Vercel Dev",
       "runtimeExecutable": "vercel",
       "runtimeArgs": ["dev"],
