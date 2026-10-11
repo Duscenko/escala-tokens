@@ -33,7 +33,7 @@ function serviceKey(): string {
 }
 
 function fromAddress(): string {
-  return mailFrom(process.env.AUTH_FROM)
+  return mailFrom(process.env.AUTH_FROM || process.env.CONTACT_FROM)
 }
 
 function requestOrigins(req: VercelRequest): string[] {

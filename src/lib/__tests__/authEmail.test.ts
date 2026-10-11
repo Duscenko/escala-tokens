@@ -122,8 +122,8 @@ describe('authActionEmail', () => {
 })
 
 describe('sender', () => {
-  it('is the support inbox unless AUTH_FROM says otherwise', () => {
-    expect(MAIL_FROM_DEFAULT).toBe('Escala Tokens <support@escalatokens.com>')
+  it('is the verified sender unless AUTH_FROM says otherwise', () => {
+    expect(MAIL_FROM_DEFAULT).toBe('Escala Tokens <support@mail.escalatokens.com>')
     expect(mailFrom(undefined)).toBe(MAIL_FROM_DEFAULT)
     expect(mailFrom('  ')).toBe(MAIL_FROM_DEFAULT)
     expect(mailFrom('Escala <x@y.com>')).toBe('Escala <x@y.com>')

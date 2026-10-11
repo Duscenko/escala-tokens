@@ -34,7 +34,7 @@ const MIN_FILL_MS = 3000
 const PER_HOUR = 10
 
 function fromAddress(): string {
-  return mailFrom(process.env.AUTH_FROM)
+  return mailFrom(process.env.CONTACT_FROM || process.env.AUTH_FROM)
 }
 
 function toAddress(): string {

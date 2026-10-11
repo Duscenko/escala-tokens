@@ -19,9 +19,11 @@ export const AUTH_LOGO_URL = `${PUBLIC_SITE}/email/escala-logo.png`
 /** Every message the product sends comes from the support inbox, and a reply
  *  to any of them lands in the same Zoho mailbox people already read. */
 export const MAIL_SUPPORT = PUBLIC_CONTACT_EMAIL
-export const MAIL_FROM_DEFAULT = `Escala Tokens <${PUBLIC_CONTACT_EMAIL}>`
+/** Resend only verifies mail.escalatokens.com today. Once escalatokens.com is
+ *  verified there, set AUTH_FROM to `Escala Tokens <support@escalatokens.com>`. */
+export const MAIL_FROM_DEFAULT = 'Escala Tokens <support@mail.escalatokens.com>'
 
-/** `AUTH_FROM` wins when set; otherwise the support address. One rule for the
+/** `AUTH_FROM` wins when set; otherwise the verified sending subdomain. One rule for the
  *  three auth routes and the contact form, so none of them can drift. */
 export function mailFrom(fromEnv: string | undefined): string {
   return (fromEnv || '').trim() || MAIL_FROM_DEFAULT

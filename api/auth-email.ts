@@ -25,7 +25,7 @@ export const config = { api: { bodyParser: false } }
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/
 
 function fromAddress(): string {
-  return mailFrom(process.env.AUTH_FROM)
+  return mailFrom(process.env.AUTH_FROM || process.env.CONTACT_FROM)
 }
 
 async function rawBody(req: VercelRequest): Promise<string> {
