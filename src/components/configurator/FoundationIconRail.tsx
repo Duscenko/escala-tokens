@@ -98,7 +98,9 @@ export function RailTile({
       <span
         className={`relative flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] w-9 h-9 ${on
           ? 'bg-accent-ui/[0.16] text-accent-ui'
-          : 'text-fg-muted group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
+          // Resting glyphs sit one step quieter than their label (fg-faint vs
+          // fg-muted): the selected tile is the only strong mark in the rail.
+          : 'text-fg-faint group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
       >
         <span className={`flex transition-transform duration-200 ease-out motion-reduce:transition-none ${on ? 'scale-[1.2]' : ''}`}>
           {children}
