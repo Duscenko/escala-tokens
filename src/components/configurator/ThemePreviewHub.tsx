@@ -35,7 +35,7 @@ import { useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
-import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
+import { redoEdit, resetEditHistory, undoEdit } from '../../lib/editHistory'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -247,59 +247,17 @@ export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onO
   )
 }
 
-function HistoryGlyph({ redo = false }: { redo?: boolean }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={redo ? { transform: 'scaleX(-1)' } : undefined}>
-      <path d="M5.5 3.5 2.5 6.5l3 3" />
-      <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-    </svg>
-  )
-}
-
 /**
- * Undo · Redo · Reset — the way back while customising. Appears only once the
- * theme has something to go back FROM: an edit in the history, or the theme
- * differing from the style it was made from. Undo / Redo walk the edit history
- * (`lib/editHistory`, one step per rail edit, slider drag or token pick, ⌘Z /
- * ⇧⌘Z); Reset is the existing whole-theme reset back to its origin, itself one
- * step in that history.
+ * Reset — the whole-theme way back to its origin, shown only once the theme
+ * differs from the style it was made from. Undo and Redo are NOT here: the
+ * footer beside "Use this theme" already carries Undo, and two Undo buttons on
+ * one screen read as two different things (reported). ⌘Z / ⇧⌘Z still walk the
+ * same history from the keyboard.
  */
 function EditHistoryControls({ previewTheme }: { previewTheme: string }) {
-  const { t } = useI18n()
-  const past = useEditHistory((s) => s.past)
-  const future = useEditHistory((s) => s.future)
   const reset = useThemeReset(previewTheme)
-  if (!past.length && !future.length && !reset.show) return null
-  const lastUndo = past[past.length - 1]?.label
-  const lastRedo = future[future.length - 1]?.label
-  const btn = 'flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
-  return (
-    <>
-      <div className="flex h-8 items-center gap-0.5 rounded-lg border border-line p-0.5">
-        <button
-          type="button"
-          onClick={() => undoEdit()}
-          disabled={!past.length}
-          aria-label={lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')}
-          title={lastUndo ? `${t('Undo')} — ${lastUndo} (⌘Z)` : `${t('Undo')} (⌘Z)`}
-          className={btn}
-        >
-          <HistoryGlyph />
-        </button>
-        <button
-          type="button"
-          onClick={() => redoEdit()}
-          disabled={!future.length}
-          aria-label={lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')}
-          title={lastRedo ? `${t('Redo')} — ${lastRedo} (⇧⌘Z)` : `${t('Redo')} (⇧⌘Z)`}
-          className={btn}
-        >
-          <HistoryGlyph redo />
-        </button>
-      </div>
-      {reset.show && <ThemeResetButton mode={reset.mode} target={reset.target} onClick={reset.onClick} />}
-    </>
-  )
+  if (!reset.show) return null
+  return <ThemeResetButton mode={reset.mode} target={reset.target} onClick={reset.onClick} />
 }
 
 // Hue dragging is a VIEW-ONLY optimistic paint on resolved preview tokens.
