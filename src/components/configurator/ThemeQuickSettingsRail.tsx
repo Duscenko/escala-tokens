@@ -1586,16 +1586,25 @@ export function ContrastSlider({
 }
 
 
+/** Where Fine-tune's Reset puts Saturation and Brightness. Brightness 0.5 is
+ *  the hue's own cusp — the lightness at which that hue can be most vivid — and
+ *  saturation sits just short of the gamut wall, where the colour is vivid but
+ *  not neon and its ramp keeps room at both ends. Both are relative to the hue
+ *  (see `readHuePosition`), so the same pair is "ideal" at every angle. */
+export const FINE_TUNE_IDEAL = { saturation: 0.85, lightness: 0.5 } as const
+
 /** One axis of the accent — Saturation or Brightness — over its own hue. The
  *  track is drawn from the same `colorAtHue` the value is, so what the thumb
  *  sits on is the colour it will commit. Preview while dragging, commit once
  *  on release, like the hue slider beside it. */
-export function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
+export function AccentAxisSlider({ axis, label, value, onPreview, onCommit, action }: {
   axis: 'saturation' | 'lightness'
   label: string
   value: string
   onPreview: (hex: string) => void
   onCommit: (hex: string) => void
+  /** Trailing control beside the track (a reset), same slot Ramp contrast uses. */
+  action?: React.ReactNode
 }) {
   // Frozen at pointer-down: a grey (saturation 0) has no hue to read back, so
   // re-reading mid-drag would snap the hue to red and ratchet.
@@ -1613,21 +1622,24 @@ export function AccentAxisSlider({ axis, label, value, onPreview, onCommit }: {
         <span>{label}</span>
         <span className="tabular-nums">{Math.round(current * 100)}</span>
       </div>
-      <div className="relative h-5 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
-        <input
-          type="range"
-          aria-label={label}
-          min={0}
-          max={1}
-          step={0.01}
-          value={current}
-          onPointerDown={() => { frozen.current = readHuePosition(value) }}
-          onChange={(e) => { const hex = at(Number(e.target.value)); pending.current = hex; onPreview(hex) }}
-          onPointerUp={commit}
-          onKeyUp={commit}
-          onBlur={commit}
-          className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative h-5 min-w-0 flex-1 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
+          <input
+            type="range"
+            aria-label={label}
+            min={0}
+            max={1}
+            step={0.01}
+            value={current}
+            onPointerDown={() => { frozen.current = readHuePosition(value) }}
+            onChange={(e) => { const hex = at(Number(e.target.value)); pending.current = hex; onPreview(hex) }}
+            onPointerUp={commit}
+            onKeyUp={commit}
+            onBlur={commit}
+            className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+          />
+        </div>
+        {action}
       </div>
     </div>
   )
@@ -2072,6 +2084,24 @@ export default function ThemeQuickSettingsRail({
   const liveNeutral = linkNeutralToAccent
     ? neutralFromBrand(liveAccent, activeTint)
     : neutral
+  // Fine-tune Reset: Saturation + Brightness back to the ideal point (hue kept)
+  // and Ramp contrast back to 0, as ONE undoable edit. Disabled once all three
+  // already sit there — a control that vanishes reads as broken.
+  const accentReading = readHuePosition(liveAccent)
+  const fineIsIdeal =
+    Math.abs(accentReading.position.saturation - FINE_TUNE_IDEAL.saturation) < 0.015
+    && Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
+    && contrastShift === 0
+  const resetFineTune = () => {
+    const idealHex = colorAtHue(FINE_TUNE_IDEAL, accentReading.hue)
+    commit('Fine-tune reset', (themeKey) => {
+      // Shift first: the accent's ramps are generated with it.
+      setContrastShift(0)
+      writeAccent(themeKey, idealHex)
+    })
+    setAccentPreview(null)
+    onAccentPreview?.(null)
+  }
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
   const themeRefs = themeSources[previewTheme]
@@ -2383,6 +2413,17 @@ export default function ThemeQuickSettingsRail({
               </button>
               {fineOpen && (
                 <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+                  <div className="-mb-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={resetFineTune}
+                      disabled={fineIsIdeal}
+                      title={t('Reset saturation, brightness and ramp contrast to their ideal point')}
+                      className="text-micro font-medium uppercase tracking-wide text-fg-faint transition-colors hover:text-fg disabled:cursor-default disabled:opacity-50 disabled:hover:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                    >
+                      {t('Reset')}
+                    </button>
+                  </div>
                   <AccentAxisSlider
                     axis="saturation"
                     label={t('Saturation')}

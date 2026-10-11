@@ -19,7 +19,8 @@ import { BRAND_THEME_IDS, brandThemeDef, shippedThemes, type BrandThemeId } from
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import SpectrumSlider from '../ui/SpectrumSlider'
-import { AccentAxisSlider, ContrastSlider, TintSlider, formatShift } from './ThemeQuickSettingsRail'
+import { AccentAxisSlider, ContrastSlider, FINE_TUNE_IDEAL, TintSlider, formatShift } from './ThemeQuickSettingsRail'
+import { colorAtHue, readHuePosition } from '../../lib/colorUtils'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL, discloseChip } from './themeWorkspaceLayout'
@@ -560,6 +561,10 @@ export function ThemeForm({
     dark: backgroundFromBase(slots.gray, 'dark', tint),
   }), [slots.gray, tint])
 
+  // Fine-tune resets: each slider has a circular reset beside it, same slot.
+  const accentReading = readHuePosition(slots.brand)
+  const brightnessIsIdeal = Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
+
   function setAccent(hex: string) {
     setErr(null)
     setSlots((prev) => {
@@ -865,9 +870,26 @@ export function ThemeForm({
                   value={slots.brand}
                   onPreview={setAccent}
                   onCommit={setAccent}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => setAccent(colorAtHue({ ...accentReading.position, lightness: FINE_TUNE_IDEAL.lightness }, accentReading.hue))}
+                      disabled={brightnessIsIdeal}
+                      title={t('Reset brightness')}
+                      aria-label={t('Reset brightness')}
+                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:border-line disabled:hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+                      </svg>
+                    </button>
+                  }
                 />
-                <div>
-                  <p className="mb-1 text-micro font-medium uppercase tracking-wide text-fg-faint">{t('Ramp contrast')}</p>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
+                    <span title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</span>
+                    <span className="tabular-nums">{formatShift(shift)}</span>
+                  </div>
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
                       <ContrastSlider hueHex={slots.gray} value={shift} onChange={setShift} />
@@ -878,12 +900,13 @@ export function ThemeForm({
                       disabled={shift === 0}
                       title={t('Reset contrast shift')}
                       aria-label={`${t('Contrast shift')} ${shift.toFixed(2)} — ${t('Reset contrast shift')}`}
-                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                      className="-mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:border-line disabled:hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
                     >
-                      {formatShift(shift)}
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+                      </svg>
                     </button>
                   </div>
-                  <p className="mt-1.5 text-mini text-fg-faint">{t('How far apart the twelve tones of every ramp sit — not the accent itself.')}</p>
                 </div>
               </div>
             )}
