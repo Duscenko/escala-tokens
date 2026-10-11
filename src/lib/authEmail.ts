@@ -9,10 +9,23 @@
 // Both open on www.escalatokens.com. A link that stays on *.supabase.co
 // is what inboxes flag as phishing.
 
+import { PUBLIC_CONTACT_EMAIL } from './legal'
+
 export const PUBLIC_SITE = 'https://www.escalatokens.com'
 
-/** White BrandMark, 2× the 32px header slot. Email clients do not render SVG. */
-export const AUTH_LOGO_URL = `${PUBLIC_SITE}/email/escala-mark.png`
+/** The mark on its dark tile (144px, shown at 44). Email clients do not render SVG. */
+export const AUTH_LOGO_URL = `${PUBLIC_SITE}/email/escala-logo.png`
+
+/** Every message the product sends comes from the support inbox, and a reply
+ *  to any of them lands in the same Zoho mailbox people already read. */
+export const MAIL_SUPPORT = PUBLIC_CONTACT_EMAIL
+export const MAIL_FROM_DEFAULT = `Escala Tokens <${PUBLIC_CONTACT_EMAIL}>`
+
+/** `AUTH_FROM` wins when set; otherwise the support address. One rule for the
+ *  three auth routes and the contact form, so none of them can drift. */
+export function mailFrom(fromEnv: string | undefined): string {
+  return (fromEnv || '').trim() || MAIL_FROM_DEFAULT
+}
 
 export type MailLocale = 'en' | 'es' | 'fr'
 
@@ -245,9 +258,48 @@ function hrefOf(url: string): { href: string; shown: string } {
   return { href, shown: isTemplate ? href : escapeHtml(url) }
 }
 
-function termsLabel(locale: MailLocale): string {
-  return locale === 'es' ? 'Términos' : locale === 'fr' ? 'Conditions' : 'Terms'
+type Footer = {
+  help: string
+  why: string
+  privacy: string
+  terms: string
+  legal: string
+  contact: string
+  company: string
 }
+
+const FOOTER: Record<MailLocale, Footer> = {
+  en: {
+    help: 'Questions? Reply to this email or write to',
+    why: 'You are receiving this message because of an action on your Escala Tokens account ({email}). It is a service message, not marketing.',
+    privacy: 'Privacy',
+    terms: 'Terms',
+    legal: 'Legal notice',
+    contact: 'Contact',
+    company: 'Design tokens for product teams',
+  },
+  es: {
+    help: '¿Dudas? Responda a este correo o escriba a',
+    why: 'Recibe este mensaje por una acción en su cuenta de Escala Tokens ({email}). Es un mensaje de servicio, no publicidad.',
+    privacy: 'Privacidad',
+    terms: 'Términos',
+    legal: 'Aviso legal',
+    contact: 'Contacto',
+    company: 'Design tokens para equipos de producto',
+  },
+  fr: {
+    help: 'Une question ? Répondez à ce message ou écrivez à',
+    why: 'Vous recevez ce message à la suite d’une action sur votre compte Escala Tokens ({email}). C’est un message de service, pas de la publicité.',
+    privacy: 'Confidentialité',
+    terms: 'Conditions',
+    legal: 'Mentions légales',
+    contact: 'Contact',
+    company: 'Design tokens pour les équipes produit',
+  },
+}
+
+const FONT = "Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"
+const INK = '#18181b'
 
 function layout(input: {
   locale: MailLocale
@@ -259,64 +311,77 @@ function layout(input: {
   const { href, shown } = hrefOf(input.url)
   const privacy = `${PUBLIC_SITE}/privacy`
   const terms = `${PUBLIC_SITE}/terms`
-  const termsName = termsLabel(input.locale)
+  const legal = `${PUBLIC_SITE}/legal`
+  const contact = `${PUBLIC_SITE}/contact`
+  const f = FOOTER[input.locale]
   const email = escapeHtml(input.email)
-  const body = fill(input.copy.body, email)
+  const body = fill(input.copy.body, `<strong style="color:#18181b;font-weight:600;">${email}</strong>`)
   const code = input.code ? escapeHtml(input.code) : ''
   const action = code
     ? `<p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#71717a;">${escapeHtml(REAUTH[input.locale].codeLabel)}</p>
-              <p style="margin:0 0 24px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:28px;line-height:1.2;font-weight:600;letter-spacing:0.18em;color:#18181b;">${code}</p>`
-    : `<a href="${href}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 20px;border-radius:12px;">${escapeHtml(input.copy.button)}</a>
-              <p style="margin:28px 0 0;font-size:13px;line-height:1.5;color:#71717a;">${escapeHtml(input.copy.fallback)}</p>
-              <p style="margin:8px 0 24px;font-size:13px;line-height:1.5;word-break:break-all;"><a href="${href}" style="color:#7f56d9;text-decoration:underline;">${shown}</a></p>`
+              <p style="margin:0 0 8px;padding:16px 20px;background:#f4f4f5;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:30px;line-height:1.2;font-weight:600;letter-spacing:0.22em;color:#18181b;text-align:center;">${code}</p>`
+    : `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:${INK};border-radius:10px;">
+                    <a href="${href}" style="display:inline-block;padding:14px 26px;font-family:${FONT};font-size:15px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;">${escapeHtml(input.copy.button)}</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:#71717a;">${escapeHtml(input.copy.fallback)}</p>
+              <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all;"><a href="${href}" style="color:${INK};text-decoration:underline;">${shown}</a></p>`
 
   const html = `<!DOCTYPE html>
 <html lang="${input.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
 <title>${escapeHtml(input.copy.subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f4f5;">
+<body style="margin:0;padding:0;background:#f4f4f5;-webkit-text-size-adjust:100%;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(input.copy.preheader)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;">
+      <td align="center" style="padding:40px 16px 48px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
           <tr>
-            <td style="background:#18181b;padding:20px 28px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <td style="padding:0 4px 20px;">
+              <a href="${PUBLIC_SITE}" style="text-decoration:none;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="vertical-align:middle;padding:0 12px 0 0;">
+                      <img src="${AUTH_LOGO_URL}" width="44" height="44" alt="Escala Tokens" style="display:block;border:0;outline:none;border-radius:12px;">
+                    </td>
+                    <td style="vertical-align:middle;font-family:${FONT};font-size:18px;font-weight:700;letter-spacing:-0.01em;color:#18181b;">Escala Tokens</td>
+                  </tr>
+                </table>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;border:1px solid #e4e4e7;border-radius:16px;padding:40px 36px 36px;font-family:${FONT};color:#18181b;">
+              <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-0.015em;color:#18181b;">${escapeHtml(input.copy.heading)}</h1>
+              <p style="margin:0 0 28px;font-size:16px;line-height:1.6;color:#3f3f46;">${body}</p>
+              ${action}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;border-top:1px solid #e4e4e7;">
                 <tr>
-                  <td style="vertical-align:middle;padding:0 12px 0 0;">
-                    <img src="${AUTH_LOGO_URL}" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;">
-                  </td>
-                  <td style="vertical-align:middle;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;letter-spacing:0.01em;color:#ffffff;">
-                    Escala Tokens
-                  </td>
+                  <td style="padding-top:20px;font-family:${FONT};font-size:13px;line-height:1.55;color:#71717a;">${escapeHtml(input.copy.ignore)}</td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td style="height:3px;background:#7f56d9;font-size:0;line-height:0;">&nbsp;</td>
-          </tr>
-          <tr>
-            <td style="padding:32px 28px 8px;font-family:Inter,Arial,sans-serif;color:#18181b;">
-              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:600;">${escapeHtml(input.copy.heading)}</h1>
-              <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3f3f46;">${body}</p>
-              ${action}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 28px 24px;background:#fafafa;border-top:1px solid #e4e4e7;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.55;color:#71717a;">
-              <p style="margin:0 0 12px;">${escapeHtml(input.copy.ignore)}</p>
-              <p style="margin:0;">
-                <a href="${PUBLIC_SITE}" style="color:#3f3f46;text-decoration:none;font-weight:600;">Escala Tokens</a>
-                &nbsp;·&nbsp;
-                <a href="${privacy}" style="color:#71717a;text-decoration:underline;">${escapeHtml(input.copy.privacy)}</a>
-                &nbsp;·&nbsp;
-                <a href="${terms}" style="color:#71717a;text-decoration:underline;">${escapeHtml(termsName)}</a>
+            <td style="padding:28px 8px 0;font-family:${FONT};font-size:12px;line-height:1.6;color:#71717a;text-align:center;">
+              <p style="margin:0 0 14px;">${escapeHtml(f.help)} <a href="mailto:${MAIL_SUPPORT}" style="color:#3f3f46;font-weight:600;text-decoration:underline;">${MAIL_SUPPORT}</a></p>
+              <p style="margin:0 0 18px;">
+                <a href="${PUBLIC_SITE}" style="color:#3f3f46;text-decoration:none;font-weight:600;">escalatokens.com</a>
+                &nbsp;&middot;&nbsp;<a href="${privacy}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.privacy)}</a>
+                &nbsp;&middot;&nbsp;<a href="${terms}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.terms)}</a>
+                &nbsp;&middot;&nbsp;<a href="${legal}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.legal)}</a>
+                &nbsp;&middot;&nbsp;<a href="${contact}" style="color:#71717a;text-decoration:underline;">${escapeHtml(f.contact)}</a>
               </p>
+              <p style="margin:0 0 14px;color:#a1a1aa;">${fill(escapeHtml(f.why), email)}</p>
+              <p style="margin:0;color:#a1a1aa;">&copy; ${new Date().getFullYear()} Escala Tokens &middot; ${escapeHtml(f.company)}</p>
             </td>
           </tr>
         </table>
@@ -337,9 +402,13 @@ function layout(input: {
     '',
     input.copy.ignore,
     '',
+    '--',
+    `${f.help} ${MAIL_SUPPORT}`,
     `Escala Tokens · ${PUBLIC_SITE}`,
-    `${input.copy.privacy}: ${privacy}`,
-    `${termsName}: ${terms}`,
+    `${f.privacy}: ${privacy}`,
+    `${f.terms}: ${terms}`,
+    `${f.legal}: ${legal}`,
+    fill(f.why, input.email),
   ].join('\n')
 
   return { subject: input.copy.subject, html, text }

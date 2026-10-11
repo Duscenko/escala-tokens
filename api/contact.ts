@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
 import { CONTACT_TOPICS, PUBLIC_CONTACT_EMAIL, type ContactTopic } from '../src/lib/legal.js'
+import { mailFrom } from '../src/lib/authEmail.js'
 import { CONTACT_EMAIL_RE, CONTACT_LIMITS } from '../src/lib/contactMail.js'
 import { clientIp, rateLimited } from './_blob.js'
 
@@ -33,7 +34,7 @@ const MIN_FILL_MS = 3000
 const PER_HOUR = 10
 
 function fromAddress(): string {
-  return process.env.CONTACT_FROM || process.env.AUTH_FROM || ''
+  return mailFrom(process.env.AUTH_FROM)
 }
 
 function toAddress(): string {

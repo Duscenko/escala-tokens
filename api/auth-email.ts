@@ -4,6 +4,8 @@ import {
   authActionEmail,
   authLinkType,
   authPageUrl,
+  MAIL_SUPPORT,
+  mailFrom,
   mailLocale,
   type AuthMailAction,
 } from '../src/lib/authEmail.js'
@@ -23,7 +25,7 @@ export const config = { api: { bodyParser: false } }
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/
 
 function fromAddress(): string {
-  return process.env.AUTH_FROM || process.env.CONTACT_FROM || ''
+  return mailFrom(process.env.AUTH_FROM)
 }
 
 async function rawBody(req: VercelRequest): Promise<string> {
@@ -99,6 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         from: fromAddress(),
+        reply_to: MAIL_SUPPORT,
         to: [email],
         subject: mail.subject,
         html: mail.html,

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   AUTH_LOGO_URL,
+  MAIL_FROM_DEFAULT,
+  MAIL_SUPPORT,
+  mailFrom,
   PUBLIC_SITE,
   RECOVERY_TEMPLATE_HREF,
   SIGNUP_TEMPLATE_HREF,
@@ -39,9 +42,12 @@ describe('recoveryEmail', () => {
       expect(mail.subject.toLowerCase()).toContain('escala')
       expect(mail.html).toContain('Escala Tokens')
       expect(mail.html).toContain(`src="${AUTH_LOGO_URL}"`)
-      expect(mail.html).toContain('background:#18181b')
+      expect(mail.html).not.toContain('#6941c6')
       expect(mail.html).toContain(`${PUBLIC_SITE}/privacy`)
       expect(mail.html).toContain(`${PUBLIC_SITE}/terms`)
+      expect(mail.html).toContain(`${PUBLIC_SITE}/legal`)
+      expect(mail.html).toContain(`mailto:${MAIL_SUPPORT}`)
+      expect(mail.text).toContain(MAIL_SUPPORT)
       expect(mail.html).toContain('href="https://www.escalatokens.com/login?token_hash=abc&amp;type=recovery"')
       expect(mail.text).toContain(LINK)
       expect(mail.text).toContain('ada@studio.com')
@@ -55,14 +61,19 @@ describe('recoveryEmail', () => {
       const confirm = confirmationEmail({ locale, email: 'ada@studio.com', url: confirmUrl })
       expect(confirm.subject.toLowerCase()).toContain('escala')
       expect(confirm.html).toContain(`src="${AUTH_LOGO_URL}"`)
+      expect(confirm.html).not.toContain('#6941c6')
       expect(confirm.html).toContain('background:#18181b')
-      expect(confirm.html).toContain('background:#7f56d9')
       expect(confirm.html).toContain(`${PUBLIC_SITE}/privacy`)
       expect(confirm.html).toContain(`${PUBLIC_SITE}/terms`)
       expect(confirm.html).toContain('href="https://www.escalatokens.com/login?token_hash=abc&amp;type=signup"')
-      const resetHeader = reset.html.slice(reset.html.indexOf('background:#18181b'), reset.html.indexOf('background:#7f56d9'))
-      const confirmHeader = confirm.html.slice(confirm.html.indexOf('background:#18181b'), confirm.html.indexOf('background:#7f56d9'))
-      expect(confirmHeader).toBe(resetHeader)
+      const headerOf = (html: string) => html.slice(html.indexOf('<body'), html.indexOf('<h1'))
+      const footerOf = (html: string) => html.slice(html.indexOf('mailto:'), html.indexOf('</body>'))
+      expect(headerOf(confirm.html).replace(/<div style="display:none.*?<\/div>/s, '')).toBe(
+        headerOf(reset.html).replace(/<div style="display:none.*?<\/div>/s, ''),
+      )
+      expect(footerOf(confirm.html).split('<p style="margin:0 0 14px;color:#a1a1aa;">')[0]).toBe(
+        footerOf(reset.html).split('<p style="margin:0 0 14px;color:#a1a1aa;">')[0],
+      )
     }
     const template = confirmationEmail({ locale: 'en', email: '{{ .Email }}', url: SIGNUP_TEMPLATE_HREF })
     expect(template.html).toContain(`href="${SIGNUP_TEMPLATE_HREF}"`)
@@ -71,7 +82,7 @@ describe('recoveryEmail', () => {
   it('keeps a raw ampersand in the Supabase template href', () => {
     const mail = recoveryEmail({ locale: 'en', email: '{{ .Email }}', url: RECOVERY_TEMPLATE_HREF })
     expect(mail.html).toContain(`href="${RECOVERY_TEMPLATE_HREF}"`)
-    expect(mail.html).toContain('background:#18181b')
+    expect(mail.html).not.toContain('#6941c6')
     expect(mail.html).toContain('If you did not ask for this')
   })
 
@@ -93,7 +104,7 @@ describe('authActionEmail', () => {
     for (const action of ['signup', 'invite', 'magiclink', 'recovery', 'email_change'] as const) {
       const mail = authActionEmail({ locale: 'en', email: 'ada@studio.com', action, url })
       expect(mail.html).toContain(`src="${AUTH_LOGO_URL}"`)
-      expect(mail.html).toContain('background:#18181b')
+      expect(mail.html).not.toContain('#6941c6')
       expect(mail.html).toContain('ada@studio.com')
     }
     const code = authActionEmail({
@@ -107,6 +118,15 @@ describe('authActionEmail', () => {
     expect(code.html).toContain('305805')
     expect(code.text).toContain('305805')
     expect(code.subject.toLowerCase()).toContain('escala')
+  })
+})
+
+describe('sender', () => {
+  it('is the support inbox unless AUTH_FROM says otherwise', () => {
+    expect(MAIL_FROM_DEFAULT).toBe('Escala Tokens <support@escalatokens.com>')
+    expect(mailFrom(undefined)).toBe(MAIL_FROM_DEFAULT)
+    expect(mailFrom('  ')).toBe(MAIL_FROM_DEFAULT)
+    expect(mailFrom('Escala <x@y.com>')).toBe('Escala <x@y.com>')
   })
 })
 

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
-import { mailLocale, PUBLIC_SITE, recoveryEmail, recoveryPageUrl } from '../src/lib/authEmail.js'
+import { MAIL_SUPPORT, mailFrom, mailLocale, PUBLIC_SITE, recoveryEmail, recoveryPageUrl } from '../src/lib/authEmail.js'
 import { clientIp, rateLimited } from './_blob.js'
 
 // Branded password-recovery mail. Supabase's built-in Recovery template is a
@@ -33,7 +33,7 @@ function serviceKey(): string {
 }
 
 function fromAddress(): string {
-  return process.env.AUTH_FROM || process.env.CONTACT_FROM || ''
+  return mailFrom(process.env.AUTH_FROM)
 }
 
 function requestOrigins(req: VercelRequest): string[] {
@@ -145,6 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         from: fromAddress(),
+        reply_to: MAIL_SUPPORT,
         to: [email],
         subject: mail.subject,
         html: mail.html,

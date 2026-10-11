@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
-import { authPageUrl, confirmationEmail, mailLocale, PUBLIC_SITE } from '../src/lib/authEmail.js'
+import { authPageUrl, confirmationEmail, MAIL_SUPPORT, mailFrom, mailLocale, PUBLIC_SITE } from '../src/lib/authEmail.js'
 import { clientIp, rateLimited } from './_blob.js'
 
 // Branded account-confirmation mail. Supabase's Confirm signup template is a
@@ -31,7 +31,7 @@ function serviceKey(): string {
 }
 
 function fromAddress(): string {
-  return process.env.AUTH_FROM || process.env.CONTACT_FROM || ''
+  return mailFrom(process.env.AUTH_FROM)
 }
 
 function requestOrigins(req: VercelRequest): string[] {
@@ -116,6 +116,7 @@ async function send(email: string, locale: ReturnType<typeof mailLocale>, token:
     },
     body: JSON.stringify({
       from: fromAddress(),
+      reply_to: MAIL_SUPPORT,
       to: [email],
       subject: mail.subject,
       html: mail.html,
