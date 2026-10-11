@@ -102,12 +102,11 @@ function identity(l: Locale): ReactNode[] {
     : { fr: 'personne physique, France', en: 'private individual, France', es: 'persona física, Francia' }[l]
   const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {status}</>]
   if (LEGAL.tradeName) lines.push(<>{{ fr: 'Nom commercial', en: 'Trading name', es: 'Nombre comercial' }[l]}{colon(l)} {LEGAL.tradeName}</>)
-  if (LEGAL.siret) lines.push(<>SIRET{colon(l)} {LEGAL.siret}</>)
   lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactChannels(l)}</>)
   return lines
 }
 
-/** Name, trade name and email. No postal address, no SIRET — that stays on the legal notice. */
+/** Name, trade name and email. No postal address, no SIRET. */
 function publicPublisher(l: Locale): ReactNode[] {
   const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {{ fr: 'France', en: 'France', es: 'Francia' }[l]}</>]
   if (LEGAL.tradeName) lines.push(<>{LEGAL.tradeName}</>)
@@ -115,8 +114,8 @@ function publicPublisher(l: Locale): ReactNode[] {
   return lines
 }
 
-/** SIRET stays one click away and is mounted only after the click — a closed
- *  `<details>` would keep it in the markup. The postal address is never included. */
+/** Publisher details stay one click away and are mounted only after the click — a closed
+ *  `<details>` would keep them in the markup. Neither the postal address nor the SIRET is shown. */
 function Reveal({ l, children }: { l: Locale; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const label = open
@@ -198,7 +197,7 @@ function privacyBase(l: Locale): Doc {
     sections: [
       { id: 'responsable', h: 'Responsable du traitement', body: <>
         <Ul items={publicPublisher('fr')} />
-        <P>L’identité déclarée de l’éditeur, avec le SIRET, figure dans les <A href={LEGAL_PATH}>mentions légales</A>. Autorité de contrôle compétente : la Commission nationale de l’informatique et des libertés (CNIL). Compte tenu de la nature du traitement, la désignation d’un délégué à la protection des données n’est pas obligatoire.</P>
+        <P>L’identité déclarée de l’éditeur figure dans les <A href={LEGAL_PATH}>mentions légales</A>. Autorité de contrôle compétente : la Commission nationale de l’informatique et des libertés (CNIL). Compte tenu de la nature du traitement, la désignation d’un délégué à la protection des données n’est pas obligatoire.</P>
       </> },
       { id: 'systeme', h: '1. Votre système de design', body: <P>Ce que vous configurez (couleurs, typographie, espacements…) est enregistré uniquement dans le stockage local de votre navigateur (localStorage). Nous n’y avons pas accès et il n’existe aucun profil côté serveur. Vous l’effacez en vidant les données du site dans votre navigateur.</P> },
       { id: 'tokens', h: '2. Tokens publiés (synchronisation Figma et MCP)', body: <>
@@ -237,7 +236,7 @@ function privacyBase(l: Locale): Doc {
     sections: [
       { id: 'responsable', h: 'Responsable del tratamiento', body: <>
         <Ul items={publicPublisher('es')} />
-        <P>La identidad declarada del editor, con el SIRET, figura en el <A href={LEGAL_PATH}>aviso legal</A>. Autoridad de control competente: la Commission nationale de l’informatique et des libertés (CNIL), en Francia. Dada la naturaleza del tratamiento, no es obligatorio designar un delegado de protección de datos.</P>
+        <P>La identidad declarada del editor figura en el <A href={LEGAL_PATH}>aviso legal</A>. Autoridad de control competente: la Commission nationale de l’informatique et des libertés (CNIL), en Francia. Dada la naturaleza del tratamiento, no es obligatorio designar un delegado de protección de datos.</P>
       </> },
       { id: 'systeme', h: '1. Su sistema de diseño', body: <P>Lo que usted configura (colores, tipografía, espaciados…) se guarda únicamente en el almacenamiento local de su navegador (localStorage). No tenemos acceso y no existe ningún perfil en el servidor. Lo borra eliminando los datos del sitio en su navegador.</P> },
       { id: 'tokens', h: '2. Tokens publicados (sincronización con Figma y MCP)', body: <>
@@ -276,7 +275,7 @@ function privacyBase(l: Locale): Doc {
     sections: [
       { id: 'responsable', h: 'Data controller', body: <>
         <Ul items={publicPublisher('en')} />
-        <P>The publisher’s declared identity, including the SIRET, is on the <A href={LEGAL_PATH}>legal notice</A>. Lead supervisory authority: the Commission nationale de l’informatique et des libertés (CNIL), France. Given the nature of the processing, appointing a Data Protection Officer is not required.</P>
+        <P>The publisher’s declared identity is on the <A href={LEGAL_PATH}>legal notice</A>. Lead supervisory authority: the Commission nationale de l’informatique et des libertés (CNIL), France. Given the nature of the processing, appointing a Data Protection Officer is not required.</P>
       </> },
       { id: 'systeme', h: '1. Your design system', body: <P>What you configure (colours, type, spacing…) is stored only in your browser’s local storage (localStorage). We have no access to it and there is no server-side profile. You erase it by clearing this site’s data in your browser.</P> },
       { id: 'tokens', h: '2. Published tokens (Figma sync and MCP)', body: <>

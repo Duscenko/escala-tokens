@@ -2,8 +2,8 @@
 // lives, so the two pages (and any footer) can't disagree.
 //
 // French law (LCEN art. 6-III) requires a site to name its publisher, its
-// publication director and its host. The publisher is named, with the SIRET,
-// on the legal notice. The postal address is deliberately not published.
+// publication director and its host. The publisher is named on the legal
+// notice; the SIRET is kept here (it sets the "sole trader" status) but not displayed. The postal address is deliberately not published.
 
 export const LEGAL = {
   publisher: 'Cesar Durango',
