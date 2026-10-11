@@ -76,6 +76,7 @@ export default function ThemeSaveBar({
   onRandom,
   onSaved,
   onDiscard,
+  onUse,
 }: {
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
@@ -88,6 +89,9 @@ export default function ThemeSaveBar({
   /** While exploring: throw the draft away and go back to Home to start from
    *  Blank, code or a style. */
   onDiscard?: () => void
+  /** Makes the primary action "Use this theme": keep it (if it has unsaved
+   *  edits) and open Code, where the theme is handed to an agent. */
+  onUse?: () => void
 }) {
   const { t } = useI18n()
   const access = useAccess()
@@ -104,7 +108,10 @@ export default function ThemeSaveBar({
 
   const saved = status === 'saved'
   const guestPrimary = access.gated && !exploringRandom
-  const label = justSaved || saved
+  const use = Boolean(onUse) && !inactive
+  const label = use
+    ? t('Use this theme')
+    : justSaved || saved
     ? t('Saved')
     : guestPrimary
       ? t('Add theme')
@@ -112,7 +119,10 @@ export default function ThemeSaveBar({
         ? t('Update theme')
         : t('Save theme')
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
-  const showRandom = Boolean(onRandom) && !inactive && (exploringRandom || guestPrimary)
+  // Random rewrites the theme in place. Once it is in the library — saved, or
+  // saved and edited since — that would overwrite the kept design system, so
+  // the door closes. It exists only on a draft (never saved: `none`).
+  const showRandom = Boolean(onRandom) && !inactive && status === 'none' && (exploringRandom || guestPrimary)
 
   return (
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
@@ -157,6 +167,8 @@ export default function ThemeSaveBar({
         onClick={() => {
           // A guest signs up first; the shell finishes the save on return.
           if (access.gated) { goToLogin('save-library'); return }
+          // Already kept: nothing to save, go straight to Code.
+          if (use && saved) { onUse?.(); return }
           const s = useDesignStore.getState()
           s.saveCurrentSystem()
           setJustSaved(true)
@@ -170,8 +182,9 @@ export default function ThemeSaveBar({
           ])
           showToast(t('Theme saved'))
           if (exploringRandom) onSaved?.()
+          if (use) onUse?.()
         }}
-        disabled={inactive || (saved && !justSaved && !access.gated)}
+        disabled={inactive || (!use && saved && !justSaved && !access.gated)}
         className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-[opacity,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           justSaved ? 'shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-solid)_35%,transparent)]' : ''
         } ${
@@ -180,12 +193,17 @@ export default function ThemeSaveBar({
       >
         {/* Saved → a check beside the label, so the dimmed button reads as
             "done", not "unavailable". */}
-        {(saved || justSaved) && (
+        {!use && (saved || justSaved) && (
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2.5 6.5 5 9l4.5-5.5" />
           </svg>
         )}
-        <span className="truncate">{exploringRandom ? t('Save theme') : label}</span>
+        <span className="truncate">{exploringRandom && !use ? t('Save theme') : label}</span>
+        {use && (
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 8h10M9 4l4 4-4 4" />
+          </svg>
+        )}
       </button>
       </div>
     </div>

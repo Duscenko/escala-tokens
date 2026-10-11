@@ -1560,6 +1560,7 @@ export default function ThemeQuickSettingsRail({
   embed = false,
   exploringRandom = false,
   onExploringRandomEnd,
+  onUseTheme,
   onDiscardRandom,
 }: {
   previewTheme: string
@@ -1610,6 +1611,8 @@ export default function ThemeQuickSettingsRail({
   /** Home → Random: the footer is Random / Save theme, not Update theme. */
   exploringRandom?: boolean
   onExploringRandomEnd?: () => void
+  /** Save bar's primary action: keep the theme and open Code. */
+  onUseTheme?: () => void
   onDiscardRandom?: () => void
 }) {
   const { t } = useI18n()
@@ -2605,6 +2608,7 @@ export default function ThemeQuickSettingsRail({
           exploringRandom={exploringRandom}
           onRandom={exploringRandom || access.gated ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
+          onUse={onUseTheme}
           onDiscard={onDiscardRandom}
         />
       ))}

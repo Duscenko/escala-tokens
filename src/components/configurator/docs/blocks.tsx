@@ -10,7 +10,6 @@
 // pre-merge Documentation/Components split once did.
 
 import { useState, type ReactNode } from 'react'
-import { buildCopyPageContext } from '../../../lib/skillExport'
 import { AIContextButton } from '../../ui/AIContextButton'
 import { useI18n } from '../../../lib/i18n'
 import type { UseIt, UseItDestId } from './useIt'
@@ -48,13 +47,6 @@ export function CopyButton({
 /** Component article header — `AIContextButton` scoped to one catalogue page. */
 export function CopyAgentContextButton({ text }: { text: string }) {
   return <AIContextButton scope="component" markdown={text} />
-}
-
-/** Overview header — same chrome, global Skill markdown (zip still lives in Export).
- *  Labelled paste-only: install lives on Docs → Use in code. */
-export function DownloadSkillButton() {
-  const { t } = useI18n()
-  return <AIContextButton scope="global" label={t('Copy page')} markdown={buildCopyPageContext} />
 }
 
 // ── Page chrome ──────────────────────────────────────────────────────────────

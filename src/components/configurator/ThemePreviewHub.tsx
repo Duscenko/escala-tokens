@@ -222,7 +222,11 @@ export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onO
   const label = t('Get code')
   const title = disabled && disabledTitle ? disabledTitle : label
   return (
-    <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${disabled ? HEADER_CONTROL_DISABLED : 'hover:border-line-strong'}`}>
+    // The travelling conic border is Random's (`.random-theme-border`): Code is
+    // where a finished theme is handed to an agent, so it wears the same "this
+    // is the next move" mark. It overlays the pill's own 1px border (-inset-px).
+    <div className={`random-border-host relative flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${disabled ? HEADER_CONTROL_DISABLED : 'hover:border-line-strong'}`}>
+      {!disabled && <span aria-hidden className="random-theme-border pointer-events-none absolute -inset-px rounded-lg" />}
       <button
         type="button"
         onClick={onOpen}
@@ -721,6 +725,7 @@ export default function ThemePreviewHub({
           onOverlapSizeChange={setOverlapSize}
           exploringRandom={exploringRandom}
           onExploringRandomEnd={onExploringRandomEnd}
+          onUseTheme={onGetCode}
           onDiscardRandom={onDiscardRandom}
         />
       )}
