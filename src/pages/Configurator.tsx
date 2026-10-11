@@ -5,7 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
-import { FIGMA_SYNC_MODE_CAP, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
+import { FIGMA_SYNC_MODE_CAP, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { applyDocumentHead } from '../lib/documentHead'
@@ -85,7 +85,7 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../lib/access'
+import { goToLogin, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
 import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
@@ -377,11 +377,11 @@ function PreviewThemeSwitch({
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={`Preview theme ${themeLabel(current)}`}
+        aria-label={`Preview brand ${themeLabel(current)}`}
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg border border-line bg-app text-body font-medium hover:border-line-strong transition-colors"
       >
-        <span className="text-fg-faint font-normal">Theme</span>
+        <span className="text-fg-faint font-normal">Brand</span>
         <span className="text-fg truncate max-w-[8rem]">{themeLabel(current)}</span>
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" className="text-fg-faint" strokeWidth="1.6" aria-hidden>
           <path d="M3 4.5 6 8l3-3.5" />
@@ -390,7 +390,7 @@ function PreviewThemeSwitch({
       {open && (
         <ul
           role="listbox"
-          aria-label="Preview theme"
+          aria-label="Preview brand"
           className="absolute right-0 top-full mt-1 z-50 w-56 max-h-64 overflow-y-auto py-1 rounded-lg border border-line bg-surface shadow-[0_12px_32px_-12px_rgba(0,0,0,0.28)]"
         >
           {themes.map((t) => {
@@ -608,6 +608,7 @@ export default function Configurator() {
     || Boolean(authUser)
     || (authStillBooting && hasStoredSession())
   const needsAnotherThemePro = useNeedsProForAnotherTheme()
+  const needsAnotherSystemPro = useNeedsProForAnotherSystem()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
@@ -690,6 +691,11 @@ export default function Configurator() {
   const [createPending, setCreatePending] = useState(false)
   /** Theme key minted from Home → Random, until the designer saves one. */
   const [exploringRandomKey, setExploringRandomKey] = useState<string | null>(null)
+  // Rule A: Free holds one design system. The door stays; it opens the notice.
+  const openNewSystem = () => {
+    if (needsAnotherSystemPro) { setUpgradeOpen(true); return }
+    setNewSystemOpen(true)
+  }
   const openCreateTheme = () => {
     if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     setStylePreview(null)
@@ -725,7 +731,7 @@ export default function Configurator() {
     changeThemeWorkspaceTab('preview')
   }
   /** Why code, Figma and the inspector wait while a Random theme is a draft. */
-  const randomDraftHint = t('Save this theme to open code, Figma sync, Variables and Docs.')
+  const randomDraftHint = t('Save this brand to open code, Figma sync, Variables and Docs.')
   /** Drop the unsaved Random theme and land on Home, where "New design system"
    *  offers Blank, From code and the rest. The theme was minted the moment
    *  Random was pressed, so leaving without this would keep it in My themes. */
@@ -740,7 +746,7 @@ export default function Configurator() {
     if (next) changePreviewTheme(next)
     live.removeTheme(key)
     openLibraryPage()
-    showToast(t('Random theme discarded.'))
+    showToast(t('Random brand discarded.'))
   }
   const startRandomFromMenu = () => {
     // "Add new theme → Random" makes ANOTHER theme. Free has its one: ask for
@@ -948,17 +954,26 @@ export default function Configurator() {
   const setFigmaSyncSelection = useDesignStore((s) => s.setFigmaSyncSelection)
   const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() => {
     const saved = savedSyncSelection.modes?.filter((m) => syncThemes.includes(m.theme))
-    return saved?.length ? saved : defaultFigmaSyncModes(syncThemes, themeKinds)
+    return saved?.length ? saved : defaultFigmaSyncModes(syncThemes, themeKinds, store.brandThemes)
   })
   // Whether the user has picked columns themselves. Same signal as
   // `figmaFileNameDirty` above, for the same reason: everything below may
   // re-derive a DEFAULT, and nothing may re-derive a CHOICE.
   const [figmaSyncModesDirty, setFigmaSyncModesDirty] = useState(() => savedSyncSelection.modes !== null)
-  const chooseFigmaSyncModes = useCallback((modes: FigmaSyncMode[]) => {
+  const brandThemes = store.brandThemes
+  const setBrandThemes = store.setBrandThemes
+  const chooseFigmaSyncModes = useCallback((modes: FigmaSyncMode[], planCut = false) => {
     setFigmaSyncModesDirty(true)
     setFigmaSyncModes(modes)
     setFigmaSyncSelection({ modes })
-  }, [setFigmaSyncSelection])
+    // Checking or unchecking a theme here IS changing what that brand ships:
+    // one answer, shown on the brand's card and here. A brand left with no
+    // column only left Sync, so what it ships is untouched. `planCut` is the
+    // Free narrowing, which is the plan talking, not the person: it must not
+    // rewrite what the brand ships, or going Pro would find Dark already gone.
+    if (planCut) return
+    for (const [brand, ids] of Object.entries(brandThemesFromSyncModes(modes))) setBrandThemes(brand, ids)
+  }, [setFigmaSyncSelection, setBrandThemes])
   // Which viewports Dimension Semantics + Typography get as Figma modes. All
   // three until the user narrows it (a Starter plan holds one mode per collection).
   const figmaViewports = useMemo<FigmaViewport[]>(
@@ -989,23 +1004,29 @@ export default function Configurator() {
     const valid = current.filter((mode) => syncThemes.includes(mode.theme))
     const room = FIGMA_SYNC_MODE_CAP - valid.length
     const added = newcomers.length && room > 0
-      ? defaultFigmaSyncModes(newcomers, themeKinds).slice(0, room)
+      ? defaultFigmaSyncModes(newcomers, themeKinds, brandThemes).slice(0, room)
       : []
-    const withNew = added.length ? valid.concat(added) : valid
+    // A brand whose shipped themes changed elsewhere (its form, its card)
+    // gets its columns rewritten; a brand absent from the selection stays out.
+    const inStep = syncThemes.reduce(
+      (list, theme) => applyBrandThemesToSyncModes(list, theme, themeKinds, brandThemes),
+      valid,
+    )
+    const withNew = added.length ? inStep.concat(added) : inStep
     const next =
       // Every theme the selection named is gone (deleted, renamed, or a
       // different system loaded), so there is no choice left to respect.
-      !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds)
+      !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes)
       // A choice is never re-derived. Themes that already existed stay as the
       // user left them — including ones they unchecked. A theme created after
       // that choice is appended once and saved, so the next publish carries it.
       : figmaSyncModesDirty ? withNew
       // Untouched: keep tracking the default, which grows with the library.
-      : defaultFigmaSyncModes(syncThemes, themeKinds)
+      : defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes)
     if (sameFigmaSyncModes(next, current)) return
     setFigmaSyncModes(next)
-    if (figmaSyncModesDirty && added.length) setFigmaSyncSelection({ modes: next })
-  }, [syncThemeKey, syncThemes, themeKinds, figmaSyncModesDirty, setFigmaSyncSelection])
+    if (figmaSyncModesDirty) setFigmaSyncSelection({ modes: next })
+  }, [syncThemeKey, syncThemes, themeKinds, brandThemes, figmaSyncModesDirty, setFigmaSyncSelection])
   const figmaPublishBase = useMemo(() => ({
     theme: previewTheme,
     modes: figmaSyncModes,
@@ -1143,7 +1164,7 @@ export default function Configurator() {
       setSectionExportOpen(true)
     } else if (intent === 'save-library') {
       useDesignStore.getState().saveCurrentSystem()
-      showToast(t('Theme saved'))
+      showToast(t('Brand saved'))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access.loading, access.tier])
@@ -1334,7 +1355,7 @@ export default function Configurator() {
     if (randomDraftKey && randomDraftKey === previewTheme) return randomDraftHint
     if (stylePreview) return t('Add this style to open Variables and Docs')
     if (setupStep != null || access.gated) {
-      return t('Finish customizing your theme to see full Variables and Docs.')
+      return t('Finish customizing your brand to see full Variables and Docs.')
     }
     return null
   }
@@ -1406,7 +1427,7 @@ export default function Configurator() {
       return
     }
     changePreviewTheme(key)
-    chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds))
+    chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds, store.brandThemes))
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }
@@ -1718,7 +1739,7 @@ export default function Configurator() {
     header = { Icon: SaveIcon, title: 'System library', subtitle: 'Save, restore and manage your design systems.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
-        <SaveView onImport={openImport} onNewSystem={() => setNewSystemOpen(true)} />
+        <SaveView onImport={openImport} onNewSystem={openNewSystem} />
       </div>
     )
     centerKey = 'export-save'
@@ -2365,7 +2386,7 @@ export default function Configurator() {
                     createPending={createPending}
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
-                    onNewSystem={() => setNewSystemOpen(true)}
+                    onNewSystem={openNewSystem}
                     onImport={openImport}
                     enterFolderTick={enterFolderTick}
                     openStylesRequest={openStylesRequest}
@@ -2410,7 +2431,7 @@ export default function Configurator() {
                 <LoginWall
                   active={access.gated}
                   title={t('See every token')}
-                  detail={t('Create a free account to see the full table, export it and save your theme.')}
+                  detail={t('Create a free account to see the full table, export it and save your brand.')}
                 >
                 <PreviewPlatformProvider
                   value={{

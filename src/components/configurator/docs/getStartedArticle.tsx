@@ -161,7 +161,7 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
       <DocSection
         id="configured"
         title={t('What you configured')}
-        description={t('A token system, not a component library. Primitive ramps hold the raw values; semantic roles are what a screen is allowed to name. Light and dark (and any extra theme) are modes of those roles — not a second palette.')}
+        description={t('A token system, not a component library. Primitive ramps hold the raw values; semantic roles are what a screen is allowed to name. Light and dark (and any extra brand) are modes of those roles — not a second palette.')}
       >
         <ul className="flex flex-col gap-1.5 text-ui text-fg-muted leading-relaxed pl-4 list-disc">
           <li>{t('Foundations you set in the Variables Generator — color, type, space, radius, size, stroke, grid, icons.')}</li>

@@ -51,7 +51,7 @@ export function InspectorPortal({ children }: { children: ReactNode }) {
 // "Documentation" is wider than its third of the 288px strip and overflowed
 // the pill. The same word elsewhere (top menu, pages) still translates.
 const TABS: { key: InspectorTab; label: string; verbatim?: boolean }[] = [
-  { key: 'theme', label: 'Theme' },
+  { key: 'theme', label: 'Brand' },
   { key: 'variables', label: 'Variables' },
   { key: 'docs', label: 'Docs', verbatim: true },
 ]
@@ -103,7 +103,7 @@ export default function WorkspaceInspector({
       >
         <div
           role="tablist"
-          aria-label={t('Theme workspace')}
+          aria-label={t('Brand workspace')}
           className="flex w-full min-w-0 gap-0.5 rounded-xl bg-chip-rest p-1"
           onKeyDown={(event) => {
             if (enabledTabs.length === 0) return

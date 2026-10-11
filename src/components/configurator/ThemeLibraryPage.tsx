@@ -9,7 +9,7 @@ import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePrese
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
-import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
+import { goToLogin, useAccess, useFreeTier, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
@@ -34,6 +34,7 @@ import {
   DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
+import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
 import { StartDesignModal } from './ThemeSheet'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
@@ -55,6 +56,32 @@ import { StartDesignModal } from './ThemeSheet'
 // selects on click and OPENS on double-click — the Open button does the same.
 
 const CARD_MIN = 248
+
+/** "3 brands · 4 themes in Figma" — what a design system holds and what it
+ *  costs in Figma, where every shipped theme is one mode of Color Semantics.
+ *  The second number is counted from what each brand ships, never brands × 2. */
+function useBrandsLine(): (
+  brands: readonly string[],
+  brandThemes: BrandThemes | undefined,
+  themeKinds: Record<string, string | undefined> | undefined,
+) => string {
+  const { t } = useI18n()
+  const free = useFreeTier()
+  return (brands, brandThemes, themeKinds) => {
+    // Through the plan, like the brand card beside it: on Free a brand ships
+    // one theme, and a line saying "2 themes" over a card saying "Dark only"
+    // would be two answers for one brand.
+    const themes = brands.reduce(
+      (total, brand) => total + plannedBrandThemes(
+        shippedThemes(brandThemes, brand), themeKinds?.[brand] === 'dark' ? 'dark' : 'light', free,
+      ).length,
+      0,
+    )
+    const brandsPart = brands.length === 1 ? t('1 brand') : t('{count} brands', { count: brands.length })
+    const themesPart = themes === 1 ? t('1 theme in Figma') : t('{count} themes in Figma', { count: themes })
+    return brands.length ? `${brandsPart} · ${themesPart}` : brandsPart
+  }
+}
 
 type HomeSection =
   | { kind: 'recents' }
@@ -178,6 +205,7 @@ function ThemeCard({
   const tokens = useMemo(() => resolvePreviewTokens(store, themeKey, kind), [store, themeKey, kind])
   const name = themeDisplayName(themeKey, store.themeLabels)
   const updatedAt = store.themeUpdatedAt?.[themeKey]
+  const free = useFreeTier()
   // A theme still in guided setup is a DRAFT: say how far it got and resume it.
   const setupStep = useSetupStep(themeKey)
   const menuBtnRef = useRef<HTMLButtonElement>(null)
@@ -206,7 +234,7 @@ function ThemeCard({
           // The file-browser gesture: one click picks, two open.
           onDoubleClick={onOpenPreview}
           aria-pressed={active}
-          aria-label={t('Select {name} theme', { name })}
+          aria-label={t('Select {name} brand', { name })}
           title={t('Double-click to open')}
           className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60"
         />
@@ -246,8 +274,8 @@ function ThemeCard({
           ref={menuBtnRef}
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
-          aria-label={t('Theme options')}
-          title={t('Theme options')}
+          aria-label={t('Brand options')}
+          title={t('Brand options')}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           className={`${MENU_BTN} ${menuOpen ? 'bg-elevated text-fg' : ''}`}
@@ -278,6 +306,8 @@ function ThemeCard({
           </span>
         ) : (
         <span className="min-w-0 flex-1 truncate">
+          <span className="text-fg-muted" title={t('Themes this brand ships')}>{t(brandThemesSummary(plannedBrandThemes(shippedThemes(store.brandThemes, themeKey), store.themeKinds[themeKey] === 'dark' ? 'dark' : 'light', free)))}</span>
+          {' · '}
           {updatedAt ? t('Edited {when}', { when: timeAgo(updatedAt) }) : t('Not edited yet')}
         </span>
         )}
@@ -387,8 +417,8 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={t('Folder options')}
-        title={t('Folder options')}
+        aria-label={t('Design system options')}
+        title={t('Design system options')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${open ? 'bg-elevated text-fg' : ''}`}
@@ -403,7 +433,7 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
             exit={{ opacity: 0, scale: 0.98, y: -4 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             role="menu"
-            aria-label={t('Folder options')}
+            aria-label={t('Design system options')}
             className="absolute right-0 top-full z-[60] mt-1.5 w-48 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
           >
             {onReset && (
@@ -418,7 +448,7 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
               onClick={() => { setOpen(false); onDeleteMyThemes() }}
               className={`${item} text-status-danger hover:bg-status-danger/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-status-danger/50`}
             >
-              {t('Delete my themes')}
+              {t('Delete my brands')}
             </button>
           </motion.div>
         )}
@@ -435,7 +465,7 @@ function GuestAccountCard() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-line bg-surface px-4 py-3.5">
       <p className="min-w-[14rem] flex-1 text-caption text-fg-muted">
-        {t('Create an account to keep your folders and open them on any device.')}
+        {t('Create an account to keep your design systems and open them on any device.')}
       </p>
       <div className="flex flex-shrink-0 items-center gap-2">
         <a href={loginHref({ next: 'library' })} className={LINK}>{t('Sign in')}</a>
@@ -522,7 +552,7 @@ function SaveLibraryButton() {
         disabled={Boolean(saved && same && !justSaved)}
         className={PRIMARY}
       >
-        {justSaved ? t('Saved') : t('Save folder')}
+        {justSaved ? t('Saved') : t('Save design system')}
       </button>
     </div>
   )
@@ -640,7 +670,8 @@ function LibraryRow({ sys, onOpen, pinned, onTogglePin }: {
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
-  const themeCount = myThemeKeys(sys.snapshot.themeOrder ?? [], sys.snapshot.themes ?? {}).length
+  const brandsLine = useBrandsLine()
+  const brandKeys = myThemeKeys(sys.snapshot.themeOrder ?? [], sys.snapshot.themes ?? {})
   return (
     <li className="group relative flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 transition-colors hover:border-line-strong">
       <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-elevated text-fg-muted">
@@ -653,7 +684,7 @@ function LibraryRow({ sys, onOpen, pinned, onTogglePin }: {
       >
         <span className="w-full truncate text-body font-semibold text-fg">{sys.name}</span>
         <span className="w-full truncate text-caption text-fg-faint">
-          {themeCount === 1 ? t('1 theme') : t('{count} themes', { count: themeCount })}
+          {brandsLine(brandKeys, sys.snapshot.brandThemes, sys.snapshot.themeKinds)}
           {' · '}
           {sys.repo || t('Saved in this browser')}
           {' · '}
@@ -936,7 +967,7 @@ function HomeNav({
       <nav aria-label={t('Home')} className="flex min-h-0 flex-col gap-3 overflow-y-auto px-3 pb-4 pt-3">
         <label className="relative flex items-center">
           <span className="pointer-events-none absolute left-2.5 text-fg-faint"><SearchGlyph /></span>
-          <span className="sr-only">{t('Search files and folders')}</span>
+          <span className="sr-only">{t('Search brands and design systems')}</span>
           <input
             type="search"
             value={query}
@@ -950,11 +981,11 @@ function HomeNav({
           <NavRow on={isOn('styles')} icon={<SparkGlyph />} label={t('System styles')} onClick={() => onSection({ kind: 'styles' })} />
         </div>
         <NavGroup
-          label={t('Folders')}
+          label={t('Design systems')}
           action={(
             <span className="flex items-center">
               <button type="button" onClick={onImport} aria-label={t('Import JSON')} title={t('Import JSON')} className={iconBtn}><ImportGlyph /></button>
-              <button type="button" onClick={onNewSystem} aria-label={t('New folder')} title={t('New folder')} className={iconBtn}><PlusGlyph /></button>
+              <button type="button" onClick={onNewSystem} aria-label={t('New design system')} title={t('New design system')} className={iconBtn}><PlusGlyph /></button>
             </span>
           )}
         >
@@ -962,7 +993,7 @@ function HomeNav({
             on={isOn('library', currentId)}
             icon={<FolderIcon size={13} />}
             label={store.projectName}
-            title={t('{name} — the folder on screen', { name: store.projectName })}
+            title={t('{name} — the design system on screen', { name: store.projectName })}
             onClick={() => onSection({ kind: 'library', id: currentId })}
             trailing={(
               <span className="flex flex-shrink-0 items-center gap-1.5">
@@ -980,11 +1011,11 @@ function HomeNav({
               onClick={() => onSection({ kind: 'library', id: sys.id })}
             />
           ))}
-          <NavRow on={isOn('libraries')} icon={<StackGlyph />} label={t('All folders')} onClick={() => onSection({ kind: 'libraries' })} />
+          <NavRow on={isOn('libraries')} icon={<StackGlyph />} label={t('All design systems')} onClick={() => onSection({ kind: 'libraries' })} />
         </NavGroup>
         <NavGroup label={t('Pinned')}>
           {pinnedThemes.length + pinnedLibraries.length === 0 ? (
-            <p className="px-2.5 py-1 text-micro leading-relaxed text-fg-faint">{t('Pin a file or a folder from its menu to keep it here.')}</p>
+            <p className="px-2.5 py-1 text-micro leading-relaxed text-fg-faint">{t('Pin a brand or a design system from its menu to keep it here.')}</p>
           ) : (
             <>
               {pinnedThemes.map((key) => (
@@ -1088,9 +1119,10 @@ function DefaultLibraryFolderCard({
   const { t } = useI18n()
   const thumbs = themeKeys.slice(0, 3)
   const pads = Math.max(0, 3 - thumbs.length)
-  const count = themeKeys.length
-  const themesLine = count === 1 ? t('1 theme') : t('{count} themes', { count })
-  const detail = `${themesLine} · ${t('On screen')}`
+  const brandsLine = useBrandsLine()
+  const brandThemes = useDesignStore((s) => s.brandThemes)
+  const themeKinds = useDesignStore((s) => s.themeKinds)
+  const detail = `${brandsLine(themeKeys, brandThemes, themeKinds)} · ${t('On screen')}`
   return (
     <button
       type="button"
@@ -1144,7 +1176,7 @@ function StyleCard({ preset, owned, appearance, onPreview, onOpen }: {
   // need to follow every edit to the open system.
   const tokens = useMemo(() => styleCoverTokens(preset, appearance), [preset, appearance])
   const action = owned ? onOpen : onPreview
-  const detail = owned ? t('In My themes') : preset.description
+  const detail = owned ? t('In My brands') : preset.description
   return (
     <article className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface">
       <div className="relative overflow-hidden">
@@ -1238,6 +1270,7 @@ export default function ThemeLibraryPage({
   const timeAgo = useTimeAgo()
   const { gated } = useAccess()
   const needsPro = useNeedsProForAnotherTheme()
+  const brandsLine = useBrandsLine()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const store = useDesignStore()
   const chromeAppearance = useTheme() === 'dark' ? 'dark' : 'light'
@@ -1422,7 +1455,7 @@ export default function ThemeLibraryPage({
     </button>
   )
   const homeRecentsCrumb = sectionBackCrumb(t('Home'), () => setSection({ kind: 'recents' }))
-  const libraryCrumb = sectionBackCrumb(t('All folders'), () => setSection({ kind: 'libraries' }))
+  const libraryCrumb = sectionBackCrumb(t('All design systems'), () => setSection({ kind: 'libraries' }))
   const commitLibraryName = () => {
     const next = libraryDraft.trim()
     if (next && next !== store.projectName) store.setProjectName(next)
@@ -1432,7 +1465,7 @@ export default function ThemeLibraryPage({
   const homeTrail = (() => {
     if (viewing.kind === 'recents') return null
     if (viewing.kind === 'styles') return t('System styles')
-    if (viewing.kind === 'libraries') return t('All folders')
+    if (viewing.kind === 'libraries') return t('All design systems')
     if (viewing.kind === 'library') {
       if (viewing.id === currentId) return store.projectName
       return others.find((s) => s.id === viewing.id)?.name ?? viewing.id
@@ -1450,7 +1483,7 @@ export default function ThemeLibraryPage({
           <SectionTitle id="home-recently" count={themesShown.length}>
             {t('Recently')}
           </SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No brand matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
         </section>
         {!query && (
           <>
@@ -1465,11 +1498,11 @@ export default function ThemeLibraryPage({
                     className={LINK}
                   >
                     <PlusGlyph />
-                    {t('Create folder')}
+                    {t('Create design system')}
                   </button>
                 )}
               >
-                {t('Files')}
+                {t('Design systems')}
               </SectionTitle>
               <div className="flex flex-wrap gap-4">
                 <DefaultLibraryFolderCard
@@ -1488,7 +1521,7 @@ export default function ThemeLibraryPage({
         )}
         {libs.length > 0 && (
           <section aria-labelledby="home-recent-libraries" className="flex flex-col gap-3">
-            <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other folders')}</SectionTitle>
+            <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other design systems')}</SectionTitle>
             {libraryList(libs)}
           </section>
         )}
@@ -1501,7 +1534,7 @@ export default function ThemeLibraryPage({
         <ViewHeader
           crumb={homeRecentsCrumb}
           title={t('System styles')}
-          detail={t('Curated starting points. Preview one on the board, then add it to My themes.')}
+          detail={t('Curated starting points. Preview one on the board, then add it to My brands.')}
         />
         {styleError && <p role="alert" className="text-caption text-status-danger">{styleError}</p>}
         {presets.length === 0 ? <EmptyNote>{t('No style matches “{q}”.', { q: query })}</EmptyNote> : (
@@ -1525,12 +1558,12 @@ export default function ThemeLibraryPage({
     body = (
       <>
         <ViewHeader
-          title={t('All folders')}
-          detail={t('A folder holds files — each file is a theme. One folder is on screen at a time.')}
+          title={t('All design systems')}
+          detail={t('A design system holds brands, and they ship together to one Figma file. One design system is on screen at a time.')}
           right={(
             <>
               <button type="button" onClick={onImport} className={LINK}><ImportGlyph />{t('Import JSON')}</button>
-              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New folder')}</button>
+              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New design system')}</button>
             </>
           )}
         />
@@ -1549,7 +1582,7 @@ export default function ThemeLibraryPage({
               >
                 <span className="w-full truncate text-body font-semibold text-fg">{store.projectName}</span>
                 <span className="w-full truncate text-caption text-fg-faint">
-                  {mine.length === 1 ? t('1 theme') : t('{count} themes', { count: mine.length })}
+                  {brandsLine(mine, store.brandThemes, store.themeKinds)}
                 </span>
               </button>
             </li>
@@ -1558,7 +1591,7 @@ export default function ThemeLibraryPage({
         <section aria-labelledby="home-saved" className="flex flex-col gap-3">
           <SectionTitle id="home-saved" count={list.length}>{t('Saved')}</SectionTitle>
           {list.length === 0
-            ? <EmptyNote>{query ? t('No folder matches “{q}”.', { q: query }) : t('Nothing else saved yet. New folder starts another system; Save folder keeps a copy of this one.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No design system matches “{q}”.', { q: query }) : t('Nothing else saved yet. New design system starts another one; Save design system keeps a copy of this one.')}</EmptyNote>
             : libraryList(list)}
         </section>
       </>
@@ -1584,7 +1617,7 @@ export default function ThemeLibraryPage({
                     if (e.key === 'Enter') commitLibraryName()
                     if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
                   }}
-                  aria-label={t('Folder name')}
+                  aria-label={t('Design system name')}
                   className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                 />
               ) : (
@@ -1593,8 +1626,8 @@ export default function ThemeLibraryPage({
                   <button
                     type="button"
                     onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
-                    aria-label={t('Rename folder')}
-                    title={t('Rename folder')}
+                    aria-label={t('Rename design system')}
+                    title={t('Rename design system')}
                     className={MENU_BTN}
                   >
                     <PencilGlyph />
@@ -1604,7 +1637,7 @@ export default function ThemeLibraryPage({
               <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
             </>
           )}
-          detail={t('The folder you are working in. Every file here is a theme that shares its foundations and ships together.')}
+          detail={t('The design system you are working in. Its brands share foundations and ship together to one Figma file.')}
           right={(
             <>
               <button
@@ -1615,7 +1648,7 @@ export default function ThemeLibraryPage({
                 className={LINK}
               >
                 <PlusGlyph />
-                {t('Create theme')}
+                {t('Create brand')}
               </button>
               <button
                 type="button"
@@ -1649,8 +1682,8 @@ export default function ThemeLibraryPage({
         </AnimatePresence>
         <GuestAccountCard />
         <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
-          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Files')}</SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
+          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Brands')}</SectionTitle>
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No brand matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
         </section>
       </>
     )
@@ -1669,7 +1702,7 @@ export default function ThemeLibraryPage({
           right={confirmSaved ? (
             <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
               <span className="text-caption text-fg-muted">
-                {confirmSaved === 'load' ? t('Replace what is on screen?') : t('Delete this folder from this browser?')}
+                {confirmSaved === 'load' ? t('Replace what is on screen?') : t('Delete this design system from this browser?')}
               </span>
               <button
                 type="button"
@@ -1698,14 +1731,14 @@ export default function ThemeLibraryPage({
                 <PinGlyph />
               </button>
               <button type="button" onClick={() => setConfirmSaved('delete')} className={`${ACTION} hover:text-status-danger`}>{t('Delete')}</button>
-              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load folder')}</button>
+              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load design system')}</button>
             </>
           )}
         />
         <section aria-labelledby="home-saved-themes" className="flex flex-col gap-3">
-          <SectionTitle id="home-saved-themes" count={shown.length}>{t('Files')}</SectionTitle>
+          <SectionTitle id="home-saved-themes" count={shown.length}>{t('Brands')}</SectionTitle>
           {shown.length === 0
-            ? <EmptyNote>{query ? t('No theme matches “{q}”.', { q: query }) : t('This folder has no files of its own yet.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No brand matches “{q}”.', { q: query }) : t('This design system has no brands of its own yet.')}</EmptyNote>
             : (
               <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
                 {shown.map((key) => <SavedThemeCard key={key} snapshot={sys.snapshot} themeKey={key} />)}
@@ -1855,7 +1888,7 @@ export default function ThemeLibraryPage({
             header={(
               <CreateBoardHeader
                 step={Math.max(0, createIndex) + 1}
-                title={firstSystem ? t('Customize your design system') : t('New theme')}
+                title={firstSystem ? t('Customize your design system') : t('New brand')}
                 stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
                 hint={createdKey ? undefined : t('Start from a style or your own colour. Nothing is saved until you continue.')}
               />

@@ -136,7 +136,7 @@ export default function DocsView({
                 aria-current={pageKey === OVERVIEW_KEY ? 'page' : undefined}
                 className={`rounded-md py-0.5 text-left text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${pageKey === OVERVIEW_KEY ? 'font-medium text-fg' : 'text-fg-muted hover:text-fg'}`}
               >
-                {overviewTitle?.trim() || t('Theme reference')}
+                {overviewTitle?.trim() || t('Brand reference')}
               </button>
               {FOUNDATION_DOCS.map((foundation) => (
                 <button

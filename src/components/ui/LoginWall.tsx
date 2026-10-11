@@ -123,7 +123,7 @@ export function RegisterToContinueDialog({
       >
         <p id="register-to-continue-title" className="m-0 text-ui font-semibold text-fg">{title}</p>
         <p className="m-0 text-caption leading-relaxed text-fg-muted">
-          {t('A free account opens Variables and Docs for this design system. You can download it after you sign in. Sync and extra themes are part of Pro.')}
+          {t('A free account opens Variables and Docs for this design system. You can download it after you sign in. Sync and extra brands are part of Pro.')}
         </p>
         <button
           type="button"

@@ -52,5 +52,5 @@ export function freeScopeFor(
   preferred: string | undefined,
   appearance?: ThemeAppearance,
 ): FigmaScope {
-  return freeFigmaScope(preferred, store.themeOrder, store.themes, store.themeKinds, appearance)
+  return freeFigmaScope(preferred, store.themeOrder, store.themes, store.themeKinds, appearance, store.brandThemes)
 }

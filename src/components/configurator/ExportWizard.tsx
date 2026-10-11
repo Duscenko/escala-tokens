@@ -12,6 +12,8 @@ import { COMPONENTS, CATEGORIES, COMPONENT_KEYS, isInFigmaSample } from '../../l
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { AppearanceGlyph } from './colorControls'
+import { brandThemesSummary, countShippedThemes, shippedThemes } from '../../lib/brandThemes'
+import { myThemeKeys } from '../../lib/themeLibrary'
 import AgentInstallPanel from './AgentInstallPanel'
 import { freeFigmaScope } from '../../lib/freeFigmaScope'
 import { useFreeTier } from '../../lib/access'
@@ -184,6 +186,8 @@ export default function ExportWizard({
     [selectedComponents],
   )
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
+  const figmaBrands = myThemeKeys(store.themeOrder, store.themes)
+  const figmaThemeCount = countShippedThemes(figmaBrands, store.brandThemes)
   // A theme key is not a name: `themeOrder` carries slugs (`core-copy`,
   // `theme`), so the picker was asking "which of these ship?" while showing
   // strings nobody had typed. Each chip now identifies its theme the way the
@@ -266,7 +270,7 @@ export default function ExportWizard({
   // was shipping every theme through Export → AI.
   const free = useFreeTier()
   const figmaScope = free
-    ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance)
+    ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance, store.brandThemes)
     : undefined
   // Every family picked = unscoped, so an untouched export keeps producing the
   // exact same payload it did before family scoping existed.
@@ -557,7 +561,7 @@ export default function ExportWizard({
                           answers "where's Core?" without a sentence about it.
                           All / None is the "bundle every theme" shortcut. */}
                       <div className="flex items-center justify-between gap-2 px-1 pb-2">
-                        <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">My themes</span>
+                        <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">My brands</span>
                         {allModes.length > 1 && (
                           <div className="flex items-center gap-1">
                             <button
@@ -584,7 +588,7 @@ export default function ExportWizard({
                               key={th.key}
                               onClick={() => toggleMode(th.key)}
                               aria-pressed={on}
-                              title={`${th.label} — ${th.kind} theme`}
+                              title={`${th.label} — leads with its ${th.kind} theme`}
                               className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full text-ui font-medium border transition-colors ${
                                 on ? 'border-accent-ui text-accent-ui bg-accent-ui/[0.07]' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
                               }`}
@@ -608,13 +612,13 @@ export default function ExportWizard({
                         })}
                       </div>
                       {modes.length === 0 ? (
-                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one theme to ship the semantic layer.</p>
+                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one brand to ship the semantic layer.</p>
                       ) : modes.length < allModes.length ? (
                         // Only the previewed theme is on by default. Say the
                         // others exist and how to add them — otherwise a full
                         // multi-theme export looks unavailable.
                         <p className="px-1 pt-2.5 text-body text-fg-faint">
-                          Shipping {modes.length === 1 ? 'this theme only' : `${modes.length} of ${allModes.length} themes`}. Tap another to include it, or <button type="button" onClick={() => setModes(allModes)} className="font-medium text-fg-muted underline decoration-line-strong underline-offset-2 hover:text-accent-ui transition-colors">add all {allModes.length}</button>.
+                          Shipping {modes.length === 1 ? 'this brand only' : `${modes.length} of ${allModes.length} brands`}. Tap another to include it, or <button type="button" onClick={() => setModes(allModes)} className="font-medium text-fg-muted underline decoration-line-strong underline-offset-2 hover:text-accent-ui transition-colors">add all {allModes.length}</button>.
                         </p>
                       ) : null}
                     </div>
@@ -906,10 +910,23 @@ export default function ExportWizard({
                       {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
                       as <code className="font-mono">atoms</code>, off ships none.
                     </p>
+                    {/* What the Figma file carries, already filled from what each
+                        brand ships — the same answer Sync's File & modes shows.
+                        A brand is changed on its own card, not here. */}
+                    {!figmaScope && format === 'escala' && figmaBrands.length > 0 && (
+                      <p className="mx-3 mb-2 rounded-lg bg-fg/[0.05] px-3 py-2 text-body text-fg-muted">
+                        <span className="font-semibold text-fg">
+                          {figmaBrands.length} {figmaBrands.length === 1 ? 'brand' : 'brands'} · {figmaThemeCount} {figmaThemeCount === 1 ? 'theme' : 'themes'} in Figma
+                        </span>
+                        {': '}
+                        {figmaBrands.map((key) => `${themeDisplayName(key, store.themeLabels)} ${brandThemesSummary(shippedThemes(store.brandThemes, key)).replace(/ only$/, '')}`).join(' · ')}
+                        . Each theme is one mode of Color Semantics.
+                      </p>
+                    )}
                     {figmaScope && (
                       <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
-                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (${figmaScope.modes?.[0]?.appearance === 'dark' ? 'Dark' : 'Light'} only)` : 'one theme'} and Desktop.</span>{' '}
-                        Up to {PRO_MAX_THEMES} themes and every viewport come with Escala Pro.{' '}
+                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (${figmaScope.modes?.[0]?.appearance === 'dark' ? 'Dark' : 'Light'} only)` : 'one brand'} and Desktop.</span>{' '}
+                        Up to {PRO_MAX_THEMES} brands and every viewport come with Escala Pro.{' '}
                         <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
                       </p>
                     )}
@@ -963,7 +980,7 @@ export default function ExportWizard({
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
                 {(collections.includes('semantics') || ai || isGitHubDestination) && (
                   <SummaryRow
-                    label="Themes"
+                    label="Brands"
                     // Display names, not `themeOrder` slugs — the summary is the
                     // last thing read before a download, so it has to name what
                     // the picker named.
@@ -975,7 +992,7 @@ export default function ExportWizard({
                 {format === 'escala' && !isGitHubDestination && (
                   <>
                     <SummaryRow
-                      label="Themes"
+                      label="Brands"
                       value={figmaScope?.themes?.[0] ? themeDisplayName(figmaScope.themes[0], store.themeLabels) : 'All'}
                     />
                     <SummaryRow label="Viewports" value={figmaScope ? 'Desktop' : 'Desktop, Tablet, Mobile'} />
@@ -1031,7 +1048,7 @@ export default function ExportWizard({
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
-                    {isGitHubDestination ? 'GitHub exporter' : <>Save folder <span className="normal-case font-medium tracking-normal">(optional)</span></>}
+                    {isGitHubDestination ? 'GitHub exporter' : <>Save design system <span className="normal-case font-medium tracking-normal">(optional)</span></>}
                   </span>
                   {!isGitHubDestination && savedEntry && (
                     <span className="text-caption text-fg-faint flex-shrink-0">
@@ -1046,7 +1063,7 @@ export default function ExportWizard({
                 ) : (
                 <div className="flex items-center gap-2">
                   {themeScope ? (
-                    <div aria-label="Folder name (matches the theme)" className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
+                    <div aria-label="Design system name (matches the brand)" className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
                       <span className="flex-shrink-0 text-caption text-fg-faint">Name</span>
                       <span className="truncate text-ui font-medium text-fg">{snapshotName}</span>
                     </div>
@@ -1065,7 +1082,7 @@ export default function ExportWizard({
                       justSaved ? 'border-status-success bg-status-success-solid text-white' : 'border-line-strong bg-app text-fg hover:bg-elevated'
                     }`}
                   >
-                    {justSaved ? '✓ Saved' : 'Save folder'}
+                    {justSaved ? '✓ Saved' : 'Save design system'}
                   </button>
                 </div>
                 )}

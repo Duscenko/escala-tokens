@@ -222,7 +222,7 @@ export function PricingPage() {
     {
       title: t('Build'),
       rows: [
-        { label: t('Configurator, every foundation, unlimited themes while editing'), free: true, pro: true },
+        { label: t('Configurator, every foundation, unlimited brands while editing'), free: true, pro: true },
         { label: t('System Styles'), free: t('All 12'), pro: t('All 12') },
         { label: t('Exports: tokens.json, CSS, W3C, Tailwind, Markdown'), free: true, pro: true },
         { label: t('Generated documentation (Figma doc pages, system README)'), free: null, pro: true },
@@ -231,7 +231,7 @@ export function PricingPage() {
     {
       title: 'Figma',
       rows: [
-        { label: t('Themes in one Figma file'), free: t('{n} (Light or Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
+        { label: t('Brands in one Figma file'), free: t('{n} (Light or Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
         { label: t('Platform modes'), free: 'Desktop', pro: 'Desktop, Tablet, Mobile' },
         { label: t('Manual import of tokens.json'), free: true, pro: true },
         { label: t('Hosted sync (Live Sync and auto-publish)'), free: null, pro: t('12 months') },
@@ -283,7 +283,7 @@ export function PricingPage() {
               {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
             </h1>
             <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro pays for what we run for you: hosted sync to Figma, the live MCP, and every theme and platform mode.')}
+              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro pays for what we run for you: hosted sync to Figma, the live MCP, and every brand, theme and platform mode.')}
             </p>
           </section>
 
@@ -307,10 +307,10 @@ export function PricingPage() {
                 </p>
                 <div className="border-t border-line pt-7">
                   <Features items={[
-                    t('All 12 System Styles, unlimited themes while editing'),
+                    t('All 12 System Styles, unlimited brands while editing'),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
                     t('Open-source Figma plugin, manual import'),
-                    t('{n} theme in Light or Dark, and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
+                    t('{n} brand in Light or Dark, and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>
@@ -352,7 +352,7 @@ export function PricingPage() {
                 <div className="relative border-t border-line pt-7">
                   <Features items={[
                     t('Everything in Free'),
-                    t('Up to {max} themes in Figma, each with Light + Dark', { max }),
+                    t('Up to {max} brands in Figma, each with Light + Dark', { max }),
                     t('Desktop, Tablet and Mobile platform modes'),
                     t('Hosted sync: Figma updates when you edit'),
                     t('Live MCP for Cursor, Claude Code and VS Code'),
@@ -430,7 +430,7 @@ export function PricingPage() {
             <h2 id="pricing-faq" className="text-heading font-semibold">{t('Questions')}</h2>
             <div className="border-t border-line">
               <Faq q={t('Is Escala open source?')}>{t('Partly. The configurator, the CLI and the MCP server are MIT, so you can fork and self-host them. The Figma plugin is proprietary: free to install, source not published. Pro pays for the service we host and the plugin, not for the configurator code. If you host the configurator yourself, you set your own limits.')}</Faq>
-              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro, hosted sync stops; you can still import tokens.json in the plugin by hand, with one theme in Desktop mode.')}</Faq>
+              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro, hosted sync stops; you can still import tokens.json in the plugin by hand, with one brand in one theme and Desktop mode.')}</Faq>
               <Faq q={t('Why does Figma show fewer modes than I chose?')}>{t('Figma limits modes per collection by its own plan: Starter allows 1, Professional 4. Escala sends what you choose; Figma decides how many columns a file can hold.')}</Faq>
               <Faq q={t('Do I need an account?')}>{t('No. After you pay, Polar shows a licence key. Open the menu and choose Account, then Activate licence. It stays in this browser.')}</Faq>
               <Faq q={t('Can I get a refund?')}>{t('Yes. 14 days from purchase, on request through the contact form. Polar is the merchant of record: payment, invoicing and VAT follow Polar’s terms.')}</Faq>

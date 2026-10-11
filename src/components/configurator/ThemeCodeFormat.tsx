@@ -165,7 +165,7 @@ function AgentHandoff({
   ]
 
   return (
-    <section aria-label={t('Give this theme to your agent')} className="mx-3 mb-3 flex-shrink-0 rounded-xl border border-line-strong bg-surface p-4">
+    <section aria-label={t('Give this brand to your agent')} className="mx-3 mb-3 flex-shrink-0 rounded-xl border border-line-strong bg-surface p-4">
       <h3 className="text-strong font-semibold text-fg">{t('Give {name} to your agent', { name: themeName })}</h3>
       <p className="mt-0.5 text-caption text-fg-muted">{t('Pick where you build. Escala copies the setup and opens it — the agent then uses your tokens instead of inventing values.')}</p>
       <div className="mt-3 grid grid-cols-2 gap-2 min-[1180px]:grid-cols-4">
@@ -300,7 +300,7 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
         className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
       >
         <EditIcon />
-        {t('Edit theme')}
+        {t('Edit brand')}
       </button>
     </header>
   )
@@ -384,7 +384,7 @@ export default function ThemeCodeFormat({
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
     ? themeDisplayName(effectiveScope, store.themeLabels)
-    : t('Add a theme to get its code.')
+    : t('Add a brand to get its code.')
 
   const selectFormat = (key: Format) => {
     setFormat(key)
@@ -423,7 +423,7 @@ export default function ThemeCodeFormat({
         {showBreadcrumb ? (
           <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint">
-              <span>Theme</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span>
+              <span>Brand</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span>
               <span className="font-medium text-fg">{active.label}</span>
             </nav>
           </header>
@@ -502,7 +502,7 @@ export default function ThemeCodeFormat({
               <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
                 {effectiveScope
                   ? visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)
-                  : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a theme to get its code.')}</p>}
+                  : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a brand to get its code.')}</p>}
               </div>
               </LoginWall>
               {!gated && !expanded && lines.length > PREVIEW_LINE_LIMIT ? (

@@ -110,14 +110,14 @@ export default function ThemeSaveBar({
   const guestPrimary = access.gated && !exploringRandom
   const use = Boolean(onUse) && !inactive
   const label = use
-    ? t('Use this theme')
+    ? t('Use this brand')
     : justSaved || saved
     ? t('Saved')
     : guestPrimary
-      ? t('Add theme')
+      ? t('Add brand')
       : status === 'dirty'
-        ? t('Update theme')
-        : t('Save theme')
+        ? t('Update brand')
+        : t('Save brand')
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   // Random rewrites the theme in place. Once it is in the library — saved, or
   // saved and edited since — that would overwrite the kept design system, so
@@ -180,7 +180,7 @@ export default function ThemeSaveBar({
             accent || s.primaryColor, accent || s.primaryColor,
             s.successColor, s.warningColor, s.infoColor, s.errorColor,
           ])
-          showToast(t('Theme saved'))
+          showToast(t('Brand saved'))
           if (exploringRandom) onSaved?.()
           if (use) onUse?.()
         }}
@@ -198,7 +198,7 @@ export default function ThemeSaveBar({
             <path d="M2.5 6.5 5 9l4.5-5.5" />
           </svg>
         )}
-        <span className="truncate">{exploringRandom && !use ? t('Save theme') : label}</span>
+        <span className="truncate">{exploringRandom && !use ? t('Save brand') : label}</span>
         {use && (
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M3 8h10M9 4l4 4-4 4" />
@@ -249,7 +249,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
     : changed ? t(SETUP_SAVE_LABEL[current]) : keep
 
   const finishRef = useRef<HTMLButtonElement>(null)
-  const done = () => showToast(t('Your theme is ready — every edition is open now.'))
+  const done = () => showToast(t('Your brand is ready — every edition is open now.'))
   // The finished theme throws its OWN colours: accent first, then the states.
   const celebrate = () => {
     const s = useDesignStore.getState()

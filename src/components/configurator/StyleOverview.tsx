@@ -98,11 +98,11 @@ export function StyleOverview({
                 <path d="M7 3v8M3 7h8" />
               </svg>
             )}
-            {owned ? t('Edit theme') : firstSystem ? t('Add design system') : t('Add theme')}
+            {owned ? t('Edit brand') : firstSystem ? t('Add design system') : t('Add brand')}
           </button>
           {!owned && (
             <p className="-mt-2 text-center text-mini text-fg-faint">
-              {firstSystem ? t('Opens quick edition on this system.') : t('Adds it to My themes.')}
+              {firstSystem ? t('Opens quick edition on this system.') : t('Adds it to My brands.')}
             </p>
           )}
         </>

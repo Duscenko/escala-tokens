@@ -163,7 +163,7 @@ export function useAboutSections(): {
           <Tier
             n={2}
             name={t('Semantics')}
-            detail={t('Named roles that point AT a primitive tone, per theme. A theme is a reading of the primitives; it stores which family fills each slot, never a hex of its own.')}
+            detail={t('Named roles that point AT a primitive tone, per brand. A brand is a reading of the primitives; it stores which family fills each slot, never a hex of its own.')}
             example="text-primary → neutral-12"
           />
           <Tier
@@ -1013,7 +1013,7 @@ export function AboutHome({
         <FeatureSection
           eyebrow={t('04 · Code and agents')}
           title={t('Real files for your repo. Live tokens for your agent.')}
-          body={t('Each theme as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or let an agent read the published system over MCP.')}
+          body={t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or let an agent read the published system over MCP.')}
           points={[
             t('CSS variables with light and dark in one file'),
             t('W3C design tokens that keep their aliases'),
@@ -1039,7 +1039,7 @@ export function AboutHome({
           flip
           eyebrow={t('05 · Sync with Figma')}
           title={t('Your system in Figma, one mode per theme and viewport.')}
-          body={t('Sign in from the Escala plugin. Your folders show up there — press Sync and variables, text styles, effect styles, grids and components land in your file, with Light and Dark per theme and Desktop, Tablet and Mobile for every length.')}
+          body={t('Sign in from the Escala plugin. Your design systems show up there — press Sync and variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
           points={[
             t('Sign in once. Sync starts the file, Pause stops it'),
             t('Pick which themes and viewports ship'),

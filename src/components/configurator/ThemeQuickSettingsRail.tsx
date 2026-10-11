@@ -61,6 +61,8 @@ import {
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import { shippedThemes } from '../../lib/brandThemes'
+import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
@@ -214,7 +216,7 @@ function ThemeNameFieldShell({
           ref={inputRef}
           value={draftName}
           maxLength={48}
-          aria-label={t('Theme name')}
+          aria-label={t('Brand name')}
           aria-invalid={nameError || undefined}
           onChange={(event) => { setDraftName(event.target.value); setNameError(false) }}
           onBlur={() => finishEdit(true)}
@@ -568,7 +570,7 @@ function ColorAppearanceSwitch({ value, onChange }: {
       className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
       role="group"
       aria-label={t('Preview appearance')}
-      title={t('Choose which appearance of this theme the artefacts display.')}
+      title={t('Choose which theme of this brand the artefacts display.')}
     >
       {(['light', 'dark'] as const).map((mode) => (
         <button
@@ -797,7 +799,7 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
               type="button"
               onClick={() => onOpenAdvanced(foundationKey)}
               disabled={advancedDisabled}
-              title={advancedDisabled ? t('Available once the theme is finished') : undefined}
+              title={advancedDisabled ? t('Available once the brand is finished') : undefined}
               className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-input-bg disabled:hover:text-fg-muted ${RAIL_SURFACE_RADIUS}`}
             >
               <AdvancedIcon />
@@ -1750,7 +1752,7 @@ export default function ThemeQuickSettingsRail({
   }, [previewTheme, onAccentPreview])
 
   const announceAdopted = (name: string) =>
-    showToast(t('{name} added to My themes', { name }))
+    showToast(t('{name} added to My brands', { name }))
 
   const showUndo = (snapshot: DesignSnapshot, label: string) => {
     // Every rail edit is one step of the Undo / Redo history — the header's
@@ -2088,9 +2090,9 @@ export default function ThemeQuickSettingsRail({
         // A previewed style isn't yours yet, so there is nothing to edit — show
         // what it is and the one way to make it yours, instead of controls
         // that would have to adopt it behind your back.
-        <section aria-label={t('EscalaUI themes')} className="min-w-0">
+        <section aria-label={t('EscalaUI styles')} className="min-w-0">
           <div className="flex min-h-8 items-center border-b border-line px-3 pb-2 mb-3">
-            <span className="min-w-0 truncate text-caption font-normal text-fg">{t('EscalaUI themes')}</span>
+            <span className="min-w-0 truncate text-caption font-normal text-fg">{t('EscalaUI styles')}</span>
           </div>
           <StyleOverview
             compact
@@ -2294,6 +2296,21 @@ export default function ThemeQuickSettingsRail({
                 </span>
               </button>
             </div>
+
+            {/* What this brand ships — the answer given when it was created,
+                changed here afterwards. Both themes stay editable either way;
+                this only decides what leaves for Figma and the downloads. A
+                style that is only tried on is not a brand yet, so it has no
+                answer to show. */}
+            {!tryOn && (
+              <div className="px-3 py-2.5">
+                <BrandThemesPicker
+                  value={shippedThemes(store.brandThemes, previewTheme)}
+                  lead={store.themeKinds[previewTheme] === 'dark' ? 'dark' : 'light'}
+                  onChange={(ids) => store.setBrandThemes(previewTheme, ids)}
+                />
+              </div>
+            )}
 
             <div className="px-3 py-2.5">
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('States')}</p>

@@ -27,7 +27,7 @@ function titleCaseKey(key: string) {
 
 function labelForAccent(hex: string): string {
   const h = hex.slice(0, 7).toLowerCase()
-  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? 'Theme'
+  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? 'Brand'
 }
 
 /** Derive the five non-accent slots from an accent, the way "one colour, a

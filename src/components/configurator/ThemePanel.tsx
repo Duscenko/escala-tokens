@@ -15,6 +15,8 @@ import {
 import { slugify } from '../../lib/utils'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
+import { BRAND_THEME_IDS, brandThemeDef, shippedThemes, type BrandThemeId } from '../../lib/brandThemes'
+import { BrandThemesPicker } from './BrandThemesPicker'
 import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { AccentAxisSlider, ContrastSlider, TintSlider, formatShift } from './ThemeQuickSettingsRail'
@@ -301,13 +303,13 @@ export function ThemeIdentityBar({
         onChange={(e) => onName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') onSubmit?.() }}
         placeholder={t('Name')}
-        aria-label={t('Theme name')}
+        aria-label={t('Brand name')}
         title={nameLocked ? t('Locked — reserved export key') : undefined}
         autoFocus={autoFocus}
         spellCheck={false}
         className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-surface px-2.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint hover:border-line-strong focus:border-fg disabled:cursor-not-allowed disabled:opacity-60"
       />
-      <div className="flex h-8 flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme mode')}>
+      <div className="flex h-8 flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme')}>
         {(['light', 'dark'] as const).map((k) => {
           const on = kind === k
           const bg = k === 'dark' ? pages.dark : pages.light
@@ -425,6 +427,25 @@ export function ThemeForm({
 
   const [name, setName] = useState(editKey ?? '')
   const [kind, setKind] = useState<'light' | 'dark'>(seed?.kind ?? appearance)
+  // Which themes this brand SHIPS (Light, Dark or both) — a list, see
+  // lib/brandThemes.ts. The form still edits both: this only decides what
+  // leaves for Figma and the downloads.
+  const [shipsPick, setShipsPick] = useState<BrandThemeId[]>(
+    () => (editKey ? shippedThemes(store.brandThemes, editKey) : [...BRAND_THEME_IDS]),
+  )
+  // Free ships one theme: what is SAVED for a brand left on "both" is still
+  // both, so going Pro finds Dark there. The plan narrows what leaves.
+  const ships = shipsPick
+  const pickShips = (ids: BrandThemeId[]) => {
+    setShipsPick(ids)
+    // A brand that ships one theme leads with it.
+    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
+    if (only) setKind(only)
+  }
+  const pickKind = (next: 'light' | 'dark') => {
+    setKind(next)
+    if (shipsPick.length === 1) setShipsPick([next])
+  }
   const [slots, setSlots] = useState<Record<FamilySlot, string>>(
     () => seed?.slots ?? slotsFromAccent(primaryColor, neutralTint),
   )
@@ -605,6 +626,7 @@ export function ThemeForm({
         if (!('error' in res)) useDesignStore.getState().setThemeFoundations(res.key, startPreset.foundations)
       }
       if ('error' in res) { setErr(t(res.error, { count: MY_THEME_HARD_CAP })); return }
+      useDesignStore.getState().setBrandThemes(res.key, ships)
       if (name.trim()) useDesignStore.getState().setThemeLabel(res.key, name.trim())
       else if (randomized) {
         const labels = useDesignStore.getState().themeLabels
@@ -623,6 +645,7 @@ export function ThemeForm({
     // The key is a slug ("test guide"); the name on screen is what was typed,
     // capitals included ("Test Guide").
     if (!isEdit && name.trim()) useDesignStore.getState().setThemeLabel(result.key, name.trim())
+    useDesignStore.getState().setBrandThemes(result.key, ships)
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
     if (then === 'done') onFinishEarly?.(result.key)
     else if (!isEdit || holdAfterCreate) onCreated?.(result.key)
@@ -653,7 +676,7 @@ export function ThemeForm({
       {!(firstStep && hideFooter) && <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
         <span className={SWATCH} style={{ backgroundColor: slots.brand }} />
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">
-          {isEdit && !holdAfterCreate ? 'Edit theme' : 'New theme'}
+          {isEdit && !holdAfterCreate ? 'Edit brand' : 'New brand'}
         </h2>
         <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
           {slots.brand.toUpperCase()}
@@ -710,7 +733,7 @@ export function ThemeForm({
               name={name}
               onName={(value) => { setName(value); setErr(null) }}
               kind={kind}
-              onKind={setKind}
+              onKind={pickKind}
               pages={themePages}
               nameLocked={nameLocked}
               onSubmit={() => handleSubmit()}
@@ -729,6 +752,10 @@ export function ThemeForm({
             </>
           )
         })()}
+
+        <div className="flex-shrink-0">
+          <BrandThemesPicker value={ships} lead={kind} onChange={pickShips} />
+        </div>
 
         {/* Accent — the one required decision. `.light`/`.dark` are the app's
             own token sets (index.css); `.light` exists precisely so a subtree
@@ -976,7 +1003,7 @@ export function ThemeForm({
           onClick={() => handleSubmit('next')}
           className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          {isEdit ? 'Save changes' : 'Create theme'}
+          {isEdit ? 'Save changes' : 'Create brand'}
         </button>
       </div>
       )}
@@ -1125,7 +1152,7 @@ export default function ThemePanel({
           exit={{ opacity: 0, x: slide }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
           role="dialog"
-          aria-label={editKey ? 'Edit theme' : 'New theme'}
+          aria-label={editKey ? 'Edit brand' : 'New brand'}
           style={{
             position: 'fixed',
             ...(right ? { right: dockInset } : { left: dockLeft }),

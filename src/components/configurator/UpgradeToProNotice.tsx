@@ -17,7 +17,7 @@ export function UpgradeToProNotice() {
       >
         {t('Upgrade to Pro')}
       </a>
-      <p className="text-center text-caption text-fg-faint">{t('Free includes one theme. Pro adds this style and as many as you need.')}</p>
+      <p className="text-center text-caption text-fg-faint">{t('Free includes one design system with one brand. Pro adds brands and systems.')}</p>
     </div>
   )
 }

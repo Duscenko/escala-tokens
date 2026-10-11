@@ -1,4 +1,5 @@
 import { appearanceOrder, themeModeKey, type ThemeAppearance } from './themeModes'
+import { shippedThemes, type BrandThemes } from './brandThemes'
 
 /**
  * How many Color Semantics columns Sync will offer — five themes, each as a
@@ -64,16 +65,45 @@ export function clampFigmaSyncModes(modes: readonly FigmaSyncMode[]): FigmaSyncM
 export function defaultFigmaSyncModes(
   themes: readonly string[],
   themeKinds: Record<string, string | undefined>,
+  /** What each brand ships. Omitted = every brand ships Light and Dark. */
+  brandThemes?: BrandThemes,
 ): FigmaSyncMode[] {
   const next: FigmaSyncMode[] = []
   for (const theme of themes) {
     const preferred: ThemeAppearance = themeKinds[theme] === 'dark' ? 'dark' : 'light'
+    const shipped = shippedThemes(brandThemes, theme)
     for (const appearance of appearanceOrder(preferred)) {
+      if (!shipped.includes(appearance)) continue
       if (next.length >= FIGMA_SYNC_MODE_CAP) return next
       next.push({ theme, appearance })
     }
   }
   return next
+}
+
+/** The selection after one brand changed what it ships: that brand's columns
+ *  are replaced in place by the new list, every other brand is left exactly
+ *  as the user had it. A brand the user unchecked from Sync stays out. */
+export function applyBrandThemesToSyncModes(
+  modes: readonly FigmaSyncMode[],
+  theme: string,
+  themeKinds: Record<string, string | undefined>,
+  brandThemes: BrandThemes | undefined,
+): FigmaSyncMode[] {
+  const at = modes.findIndex((mode) => mode.theme === theme)
+  if (at < 0) return [...modes]
+  const own = defaultFigmaSyncModes([theme], themeKinds, brandThemes)
+  const rest = modes.filter((mode) => mode.theme !== theme)
+  return clampFigmaSyncModes([...rest.slice(0, at), ...own, ...rest.slice(at)])
+}
+
+/** What a selection says each of its brands ships — the write-back when File
+ *  & modes checks or unchecks a theme. A brand with no column in the
+ *  selection is not listed: leaving Sync does not change what it ships. */
+export function brandThemesFromSyncModes(modes: readonly FigmaSyncMode[]): BrandThemes {
+  const out: BrandThemes = {}
+  for (const mode of modes) (out[mode.theme] ??= []).push(mode.appearance)
+  return out
 }
 
 /** Same columns, same order. Lets a caller keep its existing array identity

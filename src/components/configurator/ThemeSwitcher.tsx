@@ -242,7 +242,7 @@ export function ThemeSwitcher({
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t('Switch theme')}
+        aria-label={t('Switch brand')}
         title={chipRenameable ? `${chipName} — ${t('double-click to rename')}` : chipName}
         onClick={(event) => { if (event.detail < 2) setOpen((v) => !v) }}
         onDoubleClick={() => {
@@ -264,7 +264,7 @@ export function ThemeSwitcher({
             <motion.div
               ref={menuRef}
               role="menu"
-              aria-label={t('Switch theme')}
+              aria-label={t('Switch brand')}
               initial={reduceMotion ? false : { opacity: 0, y: place.up ? 4 : -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: place.up ? 4 : -4 }}
@@ -293,8 +293,8 @@ export function ThemeSwitcher({
               }}
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <div role="group" aria-label={t('My themes')}>
-                  <p className="px-2.5 pb-1 pt-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('My themes')}</p>
+                <div role="group" aria-label={t('My brands')}>
+                  <p className="px-2.5 pb-1 pt-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('My brands')}</p>
                   <button
                     type="button"
                     role="menuitem"
@@ -309,7 +309,7 @@ export function ThemeSwitcher({
                     >
                       <PlusIcon />
                     </span>
-                    <span className="min-w-0 flex-1 truncate font-medium text-fg">{t('Create your theme')}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium text-fg">{t('Create your brand')}</span>
                   </button>
                   {listed.map((key) => {
                     const selected = !tryOn && key === previewTheme
@@ -443,7 +443,7 @@ export function ThemeSwitcher({
                   }}
                   className={`${ITEM} disabled:cursor-not-allowed disabled:opacity-40`}
                 >
-                  {t('Duplicate current theme')}
+                  {t('Duplicate current brand')}
                 </button>
                 <button
                   type="button"
@@ -499,7 +499,7 @@ function RenameField({
         autoFocus
         value={draft}
         maxLength={40}
-        aria-label={t('Theme name')}
+        aria-label={t('Brand name')}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
         onBlur={commit}

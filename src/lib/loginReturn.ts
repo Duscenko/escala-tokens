@@ -172,7 +172,7 @@ export function placeWords(section: string | undefined): string[] {
   if (place.workspace === 'code') return ['Code']
   if (place.workspace === 'documentation') return ['Docs']
   if (place.workspace === 'library') return ['Home']
-  return ['Theme']
+  return ['Brand']
 }
 
 export function workspaceReturnContext(): WorkspaceReturnContext | null {

@@ -1836,7 +1836,7 @@ export function DeleteThemeModal({
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       role="alertdialog"
       aria-modal="true"
-      aria-label="Delete theme"
+      aria-label="Delete brand"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }}

@@ -51,6 +51,7 @@ import { generatePublishId, isPublishId } from '../lib/publishId'
 import type { SemanticArchitecture } from '../lib/semanticArchitectures'
 import { aiSourceFromLegacyLibrary, type IconAiSourceKey } from '../lib/iconLibraries'
 import { themeModeKey, type ThemeAppearance, type ThemeSemanticModes } from '../lib/themeModes'
+import { normalizeBrandThemes, shipsEveryTheme, type BrandThemeId, type BrandThemes } from '../lib/brandThemes'
 import type { ThemeFoundationOverride } from '../lib/themeFoundations'
 
 interface ColorScale {
@@ -416,6 +417,10 @@ export interface DesignSnapshot {
    *  Design data, not chrome: it is what "Reset" resets TO. A theme with no
    *  entry was made by hand and resets to the system defaults instead. */
   themeOrigin: Record<string, string>
+  /** Which themes (Light, Dark) each brand SHIPS — brand key → theme ids. A
+   *  list, never a boolean: see lib/brandThemes.ts. A brand with no entry
+   *  ships them all, which is what every system did before this field. */
+  brandThemes: BrandThemes
   /** When each theme last changed (theme key → ISO). Stamped by
    *  `useThemeActivity` from what actually changed, never by hand, so Home can
    *  sort My themes by recency and compare against the last Figma / GitHub
@@ -570,6 +575,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     themeSources: {},
     themeFoundations: {},
     themeOrigin: {},
+    brandThemes: {},
     themeUpdatedAt: {},
     typography: {
       fontFamily: 'Inter',
@@ -677,6 +683,7 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
     themeSources: snapshot.themeSources[themeKey] ? { [themeKey]: snapshot.themeSources[themeKey] } : {},
     themeFoundations: snapshot.themeFoundations[themeKey] ? { [themeKey]: snapshot.themeFoundations[themeKey] } : {},
     themeOrigin: snapshot.themeOrigin?.[themeKey] ? { [themeKey]: snapshot.themeOrigin[themeKey] } : {},
+    brandThemes: snapshot.brandThemes?.[themeKey] ? { [themeKey]: snapshot.brandThemes[themeKey] } : {},
     architectureOverrides,
   }
 }
@@ -872,6 +879,9 @@ interface DesignStore {
   themeFoundations: Record<string, ThemeFoundationOverride>
   themeOrigin: Record<string, string>
   setThemeOrigin: (key: string, presetId: string | null) => void
+  brandThemes: BrandThemes
+  /** Sets the themes a brand ships. An empty or unknown list means all. */
+  setBrandThemes: (brand: string, ids: BrandThemeId[]) => void
   setThemeToken: (theme: string, key: string, value: string) => void
   mergeThemeTokens: (theme: string, partial: Record<string, string>) => void
   setThemeModeToken: (theme: string, appearance: ThemeAppearance, key: string, value: string) => void
@@ -1319,6 +1329,9 @@ export const useDesignStore = create<DesignStore>()(
           themeOrigin: state.themeOrigin?.[sourceKey]
             ? { ...state.themeOrigin, [key]: state.themeOrigin[sourceKey] }
             : state.themeOrigin,
+          brandThemes: state.brandThemes?.[sourceKey]
+            ? { ...state.brandThemes, [key]: [...state.brandThemes[sourceKey]] }
+            : state.brandThemes,
           architectureOverrides,
         })
         return key
@@ -1340,6 +1353,13 @@ export const useDesignStore = create<DesignStore>()(
         set((state) => {
           const { [key]: _, ...rest } = state.themeOrigin ?? {}
           return { themeOrigin: presetId ? { ...rest, [key]: presetId } : rest }
+        }),
+      setBrandThemes: (brand, ids) =>
+        set((state) => {
+          const { [brand]: _, ...rest } = state.brandThemes ?? {}
+          const next = normalizeBrandThemes(ids)
+          // Shipping everything is the default, so it is stored as no entry.
+          return { brandThemes: shipsEveryTheme(next) ? rest : { ...rest, [brand]: next } }
         }),
       setThemeFoundations: (key, foundations) =>
         set((state) => {
@@ -1370,6 +1390,7 @@ export const useDesignStore = create<DesignStore>()(
           const { [key]: _____, ...themeSources } = state.themeSources
           const { [key]: ______, ...themeFoundations } = state.themeFoundations
           const { [key]: _______, ...themeOrigin } = state.themeOrigin ?? {}
+          const { [key]: ________, ...brandThemes } = state.brandThemes ?? {}
           // Sweep the families THIS theme minted for itself (Add-to-system /
           // "+Theme" both mint one per slot it doesn't share with a global —
           // see familySlotFor) once nothing references them any more. Deleting
@@ -1431,6 +1452,7 @@ export const useDesignStore = create<DesignStore>()(
             themeSources,
             themeFoundations,
             themeOrigin,
+            brandThemes,
             architectureOverrides,
             themeOrder: state.themeOrder.filter((t) => t !== key),
             customColors,
@@ -1457,6 +1479,7 @@ export const useDesignStore = create<DesignStore>()(
           const { [oldKey]: sources, ...restSources } = state.themeSources
           const { [oldKey]: foundations, ...restFoundations } = state.themeFoundations
           const { [oldKey]: origin, ...restOrigin } = state.themeOrigin ?? {}
+          const { [oldKey]: shipped, ...restShipped } = state.brandThemes ?? {}
           return {
             themes: { ...restThemes, [newKey]: tokens },
             themeSemantics: modes ? { ...restModeThemes, [newKey]: modes } : restModeThemes,
@@ -1469,6 +1492,7 @@ export const useDesignStore = create<DesignStore>()(
               ? { ...restFoundations, [newKey]: foundations }
               : restFoundations,
             themeOrigin: origin ? { ...restOrigin, [newKey]: origin } : restOrigin,
+            brandThemes: shipped ? { ...restShipped, [newKey]: shipped } : restShipped,
             themeOrder: state.themeOrder.map((t) => (t === oldKey ? newKey : t)),
           }
         }),
@@ -1779,7 +1803,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 83,
+      version: 84,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3168,6 +3192,33 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) {
               if (sys?.snapshot && !sys.snapshot.themeUpdatedAt) sys.snapshot.themeUpdatedAt = {}
+            }
+          }
+        }
+        if (version < 84) {
+          // Which themes each brand ships. Empty = every brand ships Light and
+          // Dark, which is what every system did before the field existed, so
+          // nothing a user had is narrowed by the upgrade.
+          if (!persisted.brandThemes || typeof persisted.brandThemes !== 'object') persisted.brandThemes = {}
+          // The one exception: a File & modes choice already on disk. Someone
+          // who unticked Dark for a brand said what that brand ships, and Sync
+          // now reads this field — without the backfill the upgrade would put
+          // the column they removed back into their next publish.
+          const savedModes = persisted.figmaSyncSelection?.modes
+          if (Array.isArray(savedModes)) {
+            const picked: Record<string, string[]> = {}
+            for (const mode of savedModes) {
+              if (!mode || typeof mode.theme !== 'string' || !persisted.themes?.[mode.theme]) continue
+              ;(picked[mode.theme] ??= []).push(mode.appearance)
+            }
+            for (const [brand, ids] of Object.entries(picked)) {
+              const next = normalizeBrandThemes(ids)
+              if (!shipsEveryTheme(next) && !persisted.brandThemes[brand]) persisted.brandThemes[brand] = next
+            }
+          }
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys?.snapshot && !sys.snapshot.brandThemes) sys.snapshot.brandThemes = {}
             }
           }
         }

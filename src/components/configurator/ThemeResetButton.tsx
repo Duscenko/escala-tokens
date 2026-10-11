@@ -44,7 +44,7 @@ export function useThemeReset(previewTheme: string, enabled = true) {
     const snapshot = captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot)
     resetThemeToOrigin(previewTheme, applyAccent)
     // A reset is one step of the edit history too, so ⌘Z undoes it as well.
-    recordEdit(snapshot, 'Reset theme')
+    recordEdit(snapshot, 'Reset brand')
     setUndo(snapshot)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setUndo(null), UNDO_MS)
@@ -63,7 +63,7 @@ export function ThemeResetButton({
   wide?: boolean
 }) {
   const { t } = useI18n()
-  const label = mode === 'undo' ? t('Undo reset') : t('Reset theme')
+  const label = mode === 'undo' ? t('Undo reset') : t('Reset brand')
   const title = mode === 'undo' ? label : `${label} — ${t(target)}`
   return (
     <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 ${wide ? 'w-full' : ''}`}>
@@ -190,7 +190,7 @@ export function ResetScopeControl({
                 disabled={!themeEdited}
                 className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:enabled:border-line-strong hover:enabled:bg-elevated disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
               >
-                <span className="text-caption font-medium text-fg">{t('This theme')}</span>
+                <span className="text-caption font-medium text-fg">{t('This brand')}</span>
                 <span className="text-caption text-fg-muted">
                   {themeEdited
                     ? `${t('Back to')} ${themeTarget}. ${t('The rest of the system is untouched.')}`
@@ -205,7 +205,7 @@ export function ResetScopeControl({
               >
                 <span className="text-caption font-medium text-status-danger">{t('Whole system')}</span>
                 <span className="text-caption text-fg-muted">
-                  {t('Every theme and foundation back to defaults.')}
+                  {t('Every brand and foundation back to defaults.')}
                 </span>
               </button>
             </div>
@@ -228,7 +228,7 @@ export function ResetScopeControl({
     ? createPortal(
       <div className="fixed bottom-10 left-1/2 z-[70] flex h-9 -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-line-strong bg-elevated px-3 shadow-lg">
         <span className="min-w-0 truncate text-caption text-fg-muted">
-          {undo.scope === 'theme' ? t('Theme reset') : t('System reset')}
+          {undo.scope === 'theme' ? t('Brand reset') : t('System reset')}
         </span>
         <button
           type="button"

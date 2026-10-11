@@ -13,7 +13,7 @@
 
 import { hasStoredSession, useAuth } from './auth'
 import { accountsEnabled } from './supabase'
-import { FREE_MY_THEME_LIMIT, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
+import { FREE_MY_THEME_LIMIT, FREE_SYSTEM_LIMIT, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
 import { useLicence } from './licence'
 import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
@@ -78,5 +78,24 @@ export function useNeedsProForAnotherTheme(): boolean {
     signedIn,
     pro: pro || licenceStillOpen(licence.status, licence.hasKey),
     count,
+  })
+}
+
+/** Rule A: Free is ONE design system with ONE brand. The system on screen is
+ *  that one, so starting another always asks for Pro — the door stays visible
+ *  and opens the upgrade notice. Without this a Free account could keep five
+ *  one-brand systems and have multibrand in five Figma files. Same session and
+ *  licence reading as `useNeedsProForAnotherTheme`; systems already saved stay
+ *  listed and open. */
+export function useNeedsProForAnotherSystem(): boolean {
+  const { user, loading } = useAuth()
+  const { pro } = useEntitlement()
+  const licence = useLicence()
+  const signedIn = Boolean(user) || (accountsEnabled && loading && hasStoredSession())
+  return freeAnotherThemeBlocked({
+    accountsOn: accountsEnabled,
+    signedIn,
+    pro: pro || licenceStillOpen(licence.status, licence.hasKey),
+    count: FREE_SYSTEM_LIMIT,
   })
 }

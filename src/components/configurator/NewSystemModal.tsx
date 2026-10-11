@@ -49,7 +49,7 @@ export default function NewSystemModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="New folder"
+      aria-label="New design system"
     >
       <motion.div
         initial={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -60,14 +60,14 @@ export default function NewSystemModal({
         className="w-full max-w-md rounded-2xl border border-line bg-app shadow-2xl p-6 flex flex-col gap-5"
       >
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-fg">New folder</h2>
+          <h2 className="text-lg font-semibold text-fg">New design system</h2>
           <p className="text-xs text-fg-faint leading-relaxed">
             A folder holds files — each file is a theme. Name it, then create a file inside.
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="new-ds-name" className="text-xs text-fg-muted">Folder name</label>
+          <label htmlFor="new-ds-name" className="text-xs text-fg-muted">Design system name</label>
           <input
             id="new-ds-name"
             autoFocus

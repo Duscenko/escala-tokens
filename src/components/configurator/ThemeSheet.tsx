@@ -311,12 +311,12 @@ export function ThemeAppearanceControl({
     ? PRESET_AVATAR_RAMPS[`${tryOn.preset.id}:${tryOn.appearance}`]
     : themeBrandRamp(previewTheme, store.themeSources, store.themeKinds, store)
   const homeLabel = t('Home')
-  const themeLabel = empty ? t('No system yet') : t('Theme preview — {name}', { name })
+  const themeLabel = empty ? t('No system yet') : t('Brand preview — {name}', { name })
   const menuSubtitle = empty
     ? t('Nothing set up here')
     : tryOn
       ? t('System style')
-      : t('In this folder')
+      : t('In this design system')
   const chipSubtitle = empty
     ? t('Set one up')
     : tryOn
@@ -431,14 +431,14 @@ export function ThemeAppearanceControl({
             )}
             <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setStartOpen(true) }} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><PlusGlyph /></span>
-              {t('Add new theme')}
+              {t('Add new brand')}
             </button>
           </>
         )}
         {canSwitch && (
           <>
             <div className="my-1 border-t border-line" role="separator" />
-            <p className="px-2.5 pb-1 pt-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Switch theme')}</p>
+            <p className="px-2.5 pb-1 pt-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Switch brand')}</p>
             {ownKeys.map((key) => {
               const selected = !tryOn && key === previewTheme
               const rowKind = store.themeKinds[key] ?? 'light'

@@ -126,6 +126,28 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   `/api/*` on either host — installed plugins call `www` cross-origin (a redirect fails
 >   CORS) and MCP clients are configured with the apex.
 
+> **UPDATE (2026-10-11): the words on screen are Design system → Brand → Theme.** Supersedes
+> every note below that says "My themes", "folder", "file" or "Theme" for the tab. A **design
+> system** (was: folder) holds **brands** (was: themes), and a brand ships **themes** (Light,
+> Dark — was: appearances / modes). "Mode" is Figma's word and appears only there.
+> **Only the visible strings changed**: theme keys, `themeOrder`, `ThemeAppearance`, routes,
+> the tab key `preview` and the `theme::appearance` payload keys are untouched. So in this
+> file and in the code, "theme" in an identifier still means a brand, and older notes read
+> with the old words.
+> - **What a brand ships is `brandThemes[brand]`, a LIST of theme ids** (`lib/brandThemes.ts`,
+>   store v84) — never a `hasDark` boolean. `BRAND_THEME_DEFS` is the registry; a third theme
+>   is one more entry. No entry = every theme. The editor always has both; the list decides
+>   what leaves.
+> - **Asked once, when a brand is added** (`BrandThemesPicker`: Light + Dark · Light only ·
+>   Dark only, the plugin's own words), shown on the brand's card, changed in Color edition.
+>   Sync and Export open already filled with it; File & modes writes the same property. Do not
+>   add a second question on the way out — auto-sync cannot answer one.
+> - **Free = one design system, one brand, one theme (rule A).** "New design system" is gated
+>   too (`useNeedsProForAnotherSystem`). The plan never rewrites the stored list — read it
+>   through `plannedBrandThemes`.
+> - Plan, and what is not done (the plugin's wording, prose outside the dictionaries):
+>   `design-plans/brands-and-themes.md`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —

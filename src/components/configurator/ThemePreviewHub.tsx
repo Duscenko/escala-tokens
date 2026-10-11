@@ -59,16 +59,16 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
         <button
           type="button"
           onClick={onBack}
-          aria-label={t('Back to Theme')}
+          aria-label={t('Back to Brand')}
           className="inline-flex min-w-0 items-center gap-1 rounded px-1 py-1 -ml-1 font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M7.5 2.5 4 6l3.5 3.5" />
           </svg>
-          <span className="truncate">{t('Theme')}</span>
+          <span className="truncate">{t('Brand')}</span>
         </button>
       ) : (
-        <span className="truncate">{t('Theme')}</span>
+        <span className="truncate">{t('Brand')}</span>
       )}
       <span aria-hidden>/</span>
       <span className="truncate font-medium text-fg">{section}</span>
@@ -546,8 +546,8 @@ export default function ThemePreviewHub({
   // inspector describe a design system that does not exist yet.
   const headerActionsLocked = docsGated || setupStep != null || randomDraft
   const headerActionsLockedHint = randomDraft
-    ? t('Save this theme to open code, Figma sync, Variables and Docs.')
-    : t('Finish customizing your theme to see full Variables and Docs.')
+    ? t('Save this brand to open code, Figma sync, Variables and Docs.')
+    : t('Finish customizing your brand to see full Variables and Docs.')
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -622,9 +622,9 @@ export default function ThemePreviewHub({
     ? t('Contrast grid')
     : docsOpen
       ? (activeDocKey === OVERVIEW_KEY
-        ? t('Theme reference')
+        ? t('Brand reference')
         : t(activeDocKey === 'sizes' ? 'Spacing' : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? 'Docs')))
-      : t('Theme preview')
+      : t('Brand preview')
   // Flip the PREVIEW's appearance (the board), not the workspace chrome.
   // Color edition's Light/Dark is the control. Clearing `accentPreview`
   // mirrors the rail's own wrapper so an optimistic hue paint doesn't linger.
@@ -695,7 +695,7 @@ export default function ThemePreviewHub({
     ?? boardCanvasTokens.surface
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
-  return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme')}>
+  return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Brand')}>
     <div className="flex-1 min-h-0 flex">
       {surface === 'artefacts' && !needsMyTheme && !docsOpen && (
         <ThemeQuickSettingsRail
@@ -752,7 +752,7 @@ export default function ThemePreviewHub({
             style={needsMyTheme ? undefined : { background: pageCanvasColor }}
           >
             <section
-              aria-label={needsMyTheme ? t('Theme') : `${themeName} preview canvas`}
+              aria-label={needsMyTheme ? t('Brand') : `${themeName} preview canvas`}
               className={`flex h-full min-h-0 flex-col overflow-hidden ${needsMyTheme ? 'rounded-xl border border-line bg-app' : ''}`}
             >
               {/* One header band for every hub view — the active view's NAME
@@ -826,7 +826,7 @@ export default function ThemePreviewHub({
                     active={docsGated}
                     visible={420}
                     title={t('Read the full docs')}
-                    detail={t('Create a free account to read every section of this theme’s reference.')}
+                    detail={t('Create a free account to read every section of this brand’s reference.')}
                   >
                   <DocumentationView
                     active={activeDocKey}

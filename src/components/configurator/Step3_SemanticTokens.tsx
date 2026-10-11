@@ -1396,8 +1396,8 @@ export default function Step3_SemanticTokens({
                   {!managedThemesExternally ? (
                     <button
                       onClick={() => openAddTheme()}
-                      aria-label="Add a theme"
-                      title="Add a theme — its roles resolve through the primary colors"
+                      aria-label="Add a brand"
+                      title="Add a brand — its roles resolve through the primary colors"
                       className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
                     >
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
@@ -1611,8 +1611,8 @@ export default function Step3_SemanticTokens({
               <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
                 {!managedThemesExternally && <button
                   onClick={() => openAddTheme()}
-                  aria-label="Add a theme"
-                  title="Add a theme — its roles resolve through the primary colors"
+                  aria-label="Add a brand"
+                  title="Add a brand — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>

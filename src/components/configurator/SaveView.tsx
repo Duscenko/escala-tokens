@@ -105,7 +105,7 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             </div>
             {confirmingDelete === sys.id && (
               <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                <span className="text-caption text-fg-faint flex-1">Delete this folder from this browser? The repository is untouched.</span>
+                <span className="text-caption text-fg-faint flex-1">Delete this design system from this browser? The repository is untouched.</span>
                 <button
                   onClick={() => { removeSavedSystem(sys.id); setConfirmingDelete(null) }}
                   className="text-caption font-medium text-status-danger hover:text-status-danger transition-colors"
@@ -462,7 +462,7 @@ export function SaveSidePanel({
         {/* System overview */}
         <div className="grid grid-cols-2 gap-2">
           <SummaryChip label="Accent" value={primaryColor} swatch={primaryColor} />
-          <SummaryChip label="Themes" value={`${themeOrder.length} (${themeOrder.join(', ')})`} />
+          <SummaryChip label="Brands" value={`${themeOrder.length} (${themeOrder.join(', ')})`} />
           <SummaryChip label="Components" value={`${selectedComponents.length} of ${COMPONENT_KEYS.length}`} />
           <SummaryChip label="Icons" value={getIconLibrary(iconLibrary)?.label ?? iconLibrary} />
         </div>
@@ -476,7 +476,7 @@ export function SaveSidePanel({
             className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
             style={{ backgroundColor: justSaved ? '#10b981' : primaryColor, ['--tw-ring-color' as string]: primaryColor }}
           >
-            {justSaved ? '✓ Saved' : 'Save folder'}
+            {justSaved ? '✓ Saved' : 'Save design system'}
           </motion.button>
           <span className="text-xs text-fg-faint text-center">
             {justSaved

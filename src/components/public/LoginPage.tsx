@@ -171,7 +171,7 @@ export function LoginPage() {
   useEffect(() => {
     applyDocumentHead({
       title: `${t('Sign in')} — Escala Tokens`,
-      description: t('Free. An account lets you see every token, export your system and save your theme.'),
+      description: t('Free. An account lets you see every token, export your system and save your brand.'),
       canonicalPath: LOGIN_PATH,
       robots: 'noindex, nofollow',
     })
@@ -329,7 +329,7 @@ export function LoginPage() {
     : view === 'recovery' ? t('Choose a new password')
     : t('Sign in to Escala')
   const sub =
-    view === 'signup' ? t('Free. An account lets you see every token, export your system and save your theme.')
+    view === 'signup' ? t('Free. An account lets you see every token, export your system and save your brand.')
     : view === 'reset' ? t('Enter your email and we will send you a link to choose a new password.')
     : view === 'recovery' ? null
     : t('Sign in or create a free account to see every token, export and save.')
@@ -381,7 +381,7 @@ export function LoginPage() {
                   {!done && fromEditor && (view === 'signin' || view === 'signup') && (
                     <p role="note" className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg-muted">
                       {fromEditor.intent === 'export' ? `${t('You were about to export your system.')} `
-                        : fromEditor.intent === 'save-library' ? `${t('You were about to save your theme.')} `
+                        : fromEditor.intent === 'save-library' ? `${t('You were about to save your brand.')} `
                         : ''}
                       {fromEditor.place.length
                         ? t('You will go back to {place}.', { place: fromEditor.place.map((w) => t(w)).join(' · ') })

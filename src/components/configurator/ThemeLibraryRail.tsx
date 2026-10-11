@@ -103,7 +103,7 @@ function ThemeLibraryOptionsPopover({
       initial={{ opacity: 0, scale: 0.98, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -4 }}
       transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
       className="absolute inset-x-0 top-full z-[60] mt-1.5 origin-top overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
-      role="menu" aria-label={t('Theme library options')}
+      role="menu" aria-label={t('Brand library options')}
     >
           {onReset && (
             <button
@@ -133,7 +133,7 @@ function ThemeLibraryOptionsPopover({
             className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-status-danger transition-colors hover:bg-status-danger/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger/50"
           >
             <TrashIcon />
-            <span className="text-caption font-medium">{t('Delete my themes')}</span>
+            <span className="text-caption font-medium">{t('Delete my brands')}</span>
           </button>
     </motion.div>
   )
@@ -154,13 +154,13 @@ export function DeleteMyThemesConfirmation({ count, onCancel, onConfirm }: { cou
       initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
       className="w-full rounded-xl border border-status-danger/25 bg-status-danger/[0.045] p-2.5"
-      role="alertdialog" aria-modal="false" aria-label={t('Delete my themes')}
+      role="alertdialog" aria-modal="false" aria-label={t('Delete my brands')}
     >
       <h2 className="text-caption font-semibold text-fg">{t(count === 1 ? 'Delete {count} custom theme?' : 'Delete {count} custom themes?', { count })}</h2>
-      <p className="mt-1 text-mini leading-relaxed text-fg-muted">{t('Their semantic values and theme-specific foundations will be removed. This cannot be undone.')}</p>
+      <p className="mt-1 text-mini leading-relaxed text-fg-muted">{t('Their semantic values and brand-specific foundations will be removed. This cannot be undone.')}</p>
       <div className="mt-2 flex flex-col gap-1.5">
         <button ref={cancelRef} type="button" onClick={onCancel} className="h-7 w-full rounded-md border border-line bg-app px-2.5 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">{t('Cancel')}</button>
-        <button type="button" onClick={onConfirm} className="h-7 w-full rounded-md bg-status-danger-solid px-2.5 text-mini font-semibold text-white transition-colors hover:bg-status-danger-solid/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50">{t('Delete themes')}</button>
+        <button type="button" onClick={onConfirm} className="h-7 w-full rounded-md bg-status-danger-solid px-2.5 text-mini font-semibold text-white transition-colors hover:bg-status-danger-solid/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50">{t('Delete brands')}</button>
       </div>
     </motion.div>
   )
@@ -193,16 +193,16 @@ export function DeleteThemeConfirmation({
     >
       <h2 className="text-caption font-semibold text-fg">{t('Delete {name}?', { name })}</h2>
       <p className="mt-1 text-mini leading-relaxed text-fg-muted">
-        {t('Every semantic value mapped to this theme will be deleted too. This cannot be undone.')}
+        {t('Every semantic value mapped to this brand will be deleted too. This cannot be undone.')}
         {isLast
-          ? ` ${t('My themes will be empty until you create one or add a System style.')}`
+          ? ` ${t('My brands will be empty until you create one or add a System style.')}`
           : isPreviewed
-            ? ` ${t('The preview will switch to another theme.')}`
+            ? ` ${t('The preview will switch to another brand.')}`
             : ''}
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
         <button ref={cancelRef} type="button" onClick={onCancel} className="h-7 w-full rounded-md border border-line bg-app px-2.5 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">{t('Cancel')}</button>
-        <button type="button" onClick={onConfirm} className="h-7 w-full rounded-md bg-status-danger-solid px-2.5 text-mini font-semibold text-white transition-colors hover:bg-status-danger-solid/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50">{t('Delete theme')}</button>
+        <button type="button" onClick={onConfirm} className="h-7 w-full rounded-md bg-status-danger-solid px-2.5 text-mini font-semibold text-white transition-colors hover:bg-status-danger-solid/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50">{t('Delete brand')}</button>
       </div>
     </motion.div>
   )
@@ -361,7 +361,7 @@ export function ThemeOptionsMenu({
           exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98, y: place.up ? 4 : -4 }}
           transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
           role="menu"
-          aria-label={t('Theme options')}
+          aria-label={t('Brand options')}
           className={`z-[60] w-44 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl ${
             place.up ? 'origin-bottom-right' : 'origin-top-right'
           }`}
@@ -507,8 +507,8 @@ function ThemeLibraryRow({
         <button
           type="button"
           onClick={onEdit}
-          aria-label={t('Edit {name} theme', { name: label })}
-          title={t('Edit {name} theme', { name: label })}
+          aria-label={t('Edit {name} brand', { name: label })}
+          title={t('Edit {name} brand', { name: label })}
           className="flex-shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
         >
           <ThemeAvatar ramp={ramp} appearance={kind} fallback={fallback} />
@@ -518,7 +518,7 @@ function ThemeLibraryRow({
             autoFocus
             value={draft}
             maxLength={40}
-            aria-label={t('Theme name')}
+            aria-label={t('Brand name')}
             onChange={(e) => setDraft(e.target.value)}
             onFocus={(e) => e.currentTarget.select()}
             onBlur={commitRename}
@@ -547,8 +547,8 @@ function ThemeLibraryRow({
             ref={menuBtnRef}
             type="button"
             onClick={onToggleMenu}
-            aria-label={t('Theme options')}
-            title={t('Theme options')}
+            aria-label={t('Brand options')}
+            title={t('Brand options')}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             className={`${THEME_RAIL_ICON_BTN} ${menuOpen ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
@@ -610,7 +610,7 @@ function CreateThemeButton({
         <PlusIcon />
       </span>
       <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">
-        {t('Create your theme')}
+        {t('Create your brand')}
       </span>
     </motion.button>
   )
@@ -774,16 +774,16 @@ export default function ThemeLibraryRail({
       // darker column.
       className={`flex h-full w-full min-h-0 flex-col border-r border-line ${WORKSPACE_CHROME} outline-none`}
       style={{ width }}
-      aria-label={t('Themes library')}
+      aria-label={t('Brands library')}
     >
       <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3.5 border-b border-line">
-        <h2 className="min-w-0 text-ui font-semibold text-fg truncate">{t('Themes library')}</h2>
+        <h2 className="min-w-0 text-ui font-semibold text-fg truncate">{t('Brands library')}</h2>
         <div className="flex-shrink-0">
           <button
             type="button"
             onClick={() => setOptionsOpen((open) => !open)}
-            aria-label={t('Theme library options')}
-            title={t('Theme library options')}
+            aria-label={t('Brand library options')}
+            title={t('Brand library options')}
             aria-haspopup="menu"
             aria-expanded={optionsOpen}
             className={`${THEME_RAIL_ICON_BTN} ${optionsOpen ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
@@ -806,21 +806,21 @@ export default function ThemeLibraryRail({
         </AnimatePresence>
       </div>
 
-      <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
+      <nav aria-label="Brands" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
         <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
           {allOpen ? (
             <button
               type="button"
               onClick={() => { setAllOpen(false); setThemeQuery('') }}
-              aria-label={t('Back to My themes')}
-              title={t('Back to My themes')}
+              aria-label={t('Back to My brands')}
+              title={t('Back to My brands')}
               className="flex min-w-0 items-center gap-1.5 rounded-md text-caption font-semibold text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               <BackIcon />
-              <span className="truncate">{t('All themes')}</span>
+              <span className="truncate">{t('All brands')}</span>
             </button>
           ) : (
-            <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
+            <span className="text-caption font-semibold text-fg-muted">{t('My brands')}</span>
           )}
           {/* Counts every owned theme, not the 5 the rail shows. */}
           <span
@@ -843,17 +843,17 @@ export default function ThemeLibraryRail({
           <p className={`mb-2 px-2 text-mini leading-relaxed ${room === 'full' ? 'text-status-warning' : 'text-fg-faint'}`}>
             {room === 'full'
               ? t(MY_THEME_FULL_ERROR, { count: listedThemes.length })
-              : t('A large theme list makes the editor and export heavier.')}
+              : t('A large brand list makes the editor and export heavier.')}
           </p>
         )}
         {allOpen && listedThemes.length > MY_THEME_RAIL_LIMIT && (
           <label className="mb-2 block px-0.5">
-            <span className="sr-only">{t('Search themes')}</span>
+            <span className="sr-only">{t('Search brands')}</span>
             <input
               type="search"
               value={themeQuery}
               onChange={(event) => setThemeQuery(event.target.value)}
-              placeholder={t('Search themes')}
+              placeholder={t('Search brands')}
               className="h-8 w-full rounded-lg border border-line-strong bg-app px-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             />
           </label>
@@ -892,7 +892,7 @@ export default function ThemeLibraryRail({
               onClick={() => { setRowMenuKey(null); setAllOpen(true) }}
               className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
-              <span>{t('All themes')} ({listedThemes.length})</span>
+              <span>{t('All brands')} ({listedThemes.length})</span>
               <span className="tabular-nums text-micro text-fg-faint">+{listedThemes.length - railThemes.length}</span>
             </button>
           )}

@@ -12,6 +12,7 @@
 
 import type { ThemeAppearance } from './themeModes'
 import { figmaSyncThemeKeys } from './themeLibrary'
+import { soleShippedAppearance, type BrandThemes } from './brandThemes'
 import type { GenerateTokenOptions } from './tokenGenerator'
 
 export type FigmaScope = Pick<GenerateTokenOptions, 'themes' | 'modes' | 'viewports' | 'gridStyles'>
@@ -27,11 +28,16 @@ export function freeFigmaScope(
   themes: Record<string, unknown>,
   themeKinds: Record<string, string | undefined>,
   appearance?: ThemeAppearance,
+  /** What each brand ships. A brand set to one theme ships THAT one — the
+   *  person chose it, so it outranks the appearance that happens to be on
+   *  screen. A brand that ships several keeps the on-screen rule. */
+  brandThemes?: BrandThemes,
 ): FigmaScope {
   const keys = figmaSyncThemeKeys(themeOrder, themes)
   const theme = preferred && keys.includes(preferred) ? preferred : keys[0]
   if (!theme) return { viewports: ['desktop'], gridStyles: ['xl-desktop'] }
-  return { themes: [theme], modes: [{ theme, appearance: appearance ?? (themeKinds[theme] === 'dark' ? 'dark' : 'light') }], viewports: ['desktop'], gridStyles: ['xl-desktop'] }
+  const one = soleShippedAppearance(brandThemes, theme) ?? appearance ?? (themeKinds[theme] === 'dark' ? 'dark' : 'light')
+  return { themes: [theme], modes: [{ theme, appearance: one }], viewports: ['desktop'], gridStyles: ['xl-desktop'] }
 }
 
 /** The store `buildCSS` / `buildMarkdown` actually read: one theme, and the

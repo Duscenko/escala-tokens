@@ -18,6 +18,9 @@
 
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
+import { shippedThemes, shipsEveryTheme } from './brandThemes'
+import { defaultFigmaSyncModes } from './figmaSyncModes'
+import { myThemeKeys } from './themeLibrary'
 import { primitiveDisplayLabel } from './themeSources'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
@@ -515,6 +518,19 @@ function desktopOnlyPayload(full: TokenJSON): boolean {
   return Array.isArray(viewports) && viewports.length > 0 && viewports.every((viewport) => viewport === 'desktop')
 }
 
+/** The Figma file honours what each brand ships: a brand set to "Light only"
+ *  leaves its Dark theme out, exactly as live Sync does (same `modes` scope,
+ *  same column shape). While every brand ships everything — the default, and
+ *  every system before `brandThemes` — the whole-system payload is returned
+ *  untouched, so that download does not change by a byte. */
+function brandScopedFigmaDoc(whole: TokenJSON): TokenJSON {
+  const s = useDesignStore.getState()
+  const brands = myThemeKeys(s.themeOrder, s.themes)
+  const narrowed = brands.some((brand) => !shipsEveryTheme(shippedThemes(s.brandThemes, brand)))
+  if (!narrowed) return whole
+  return generateTokenJSON(undefined, { modes: defaultFigmaSyncModes(brands, s.themeKinds, s.brandThemes) })
+}
+
 export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   const unscoped = generateTokenJSON()
   const full = sel.figmaScope ? generateTokenJSON(undefined, sel.figmaScope) : unscoped
@@ -536,7 +552,7 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // `atoms`, the one field Step 1's "Include components" toggle controls:
     // off ships an empty array so the plugin's importComponents phase
     // no-ops, same as unchecking every component individually.
-    const doc = full
+    const doc = sel.figmaScope ? full : brandScopedFigmaDoc(full)
     const payload = sel.includeComponents ? doc : { ...doc, atoms: [] }
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
   }

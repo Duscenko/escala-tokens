@@ -215,7 +215,7 @@ export function OverviewArticle({
   const lead = hubMode
     ? t(HUB_REFERENCE_LEAD)
     : title?.trim()
-      ? t('The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
+      ? t('The full specification of this brand, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
       : t(SYSTEM_REFERENCE_LEAD)
   // No Copy page here: the reference sheet sits under the hub's own Get code
   // door, and a second copy control beside it read as two ways to do one thing.

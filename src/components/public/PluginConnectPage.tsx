@@ -57,7 +57,7 @@ export function PluginConnectPage() {
   useEffect(() => {
     applyDocumentHead({
       title: `${t('Connect Figma')} — Escala Tokens`,
-      description: t('Sign in so the Figma plugin can list your folders and sync.'),
+      description: t('Sign in so the Figma plugin can list your design systems and sync.'),
       canonicalPath: '/plugin',
       robots: 'noindex, nofollow',
     })
@@ -182,7 +182,7 @@ export function PluginConnectPage() {
                   <dd className="truncate font-medium">{user?.email}</dd>
                 </div>
                 <div className="px-3.5 py-2.5">
-                  <dt className="text-fg-muted">{t('Folders the plugin will list')}</dt>
+                  <dt className="text-fg-muted">{t('Design systems the plugin will list')}</dt>
                   <dd className="mt-1.5">
                     {libraries.length ? (
                       <ul className="flex flex-wrap gap-1.5">

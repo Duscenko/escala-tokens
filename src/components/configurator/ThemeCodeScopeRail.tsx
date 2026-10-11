@@ -54,7 +54,7 @@ export default function ThemeCodeScopeRail({
     <aside
       className={`flex h-full min-h-0 flex-shrink-0 flex-col overflow-y-auto border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: COLOR_RAIL_WIDTH }}
-      aria-label={t('Themes')}
+      aria-label={t('Brands')}
     >
       {/* Same header band, section heading and row treatment as the
           Variables rail (`FoundationWorkbench` + `VariableCollectionRail` +
@@ -66,11 +66,11 @@ export default function ThemeCodeScopeRail({
       <div className="px-3 py-3">
         <section aria-labelledby="code-themes-heading">
           <h2 id="code-themes-heading" className="flex items-baseline justify-between px-1 pb-2 text-ui font-semibold text-fg">
-            <span>{t('Themes')}</span>
+            <span>{t('Brands')}</span>
             <span className="text-caption font-mono font-normal tabular-nums text-fg-faint">{listed.length}</span>
           </h2>
           {listed.length === 0 ? (
-            <p className="px-1 py-2 text-caption text-fg-faint">{t('Add a theme to get its code.')}</p>
+            <p className="px-1 py-2 text-caption text-fg-faint">{t('Add a brand to get its code.')}</p>
           ) : (
             <div className="flex flex-col gap-0.5" role="radiogroup" aria-labelledby="code-themes-heading">
               {listed.map((key) => {

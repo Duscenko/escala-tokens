@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -7,6 +7,7 @@ import { BASE_TONE } from '../../lib/colorUtils'
 import { figmaSyncThemeKeys } from '../../lib/themeLibrary'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import {
+  brandThemesFromSyncModes,
   FIGMA_SYNC_MODE_CAP,
   FIGMA_VIEWPORTS,
   FIGMA_VIEWPORT_LABEL,
@@ -17,6 +18,7 @@ import {
   toggleFigmaSyncTheme,
   type FigmaSyncMode,
 } from '../../lib/figmaSyncModes'
+import { brandThemesSummary, soleShippedAppearance } from '../../lib/brandThemes'
 import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
@@ -50,7 +52,8 @@ interface FigmaSyncViewProps {
   onFileNameChange: (name: string) => void
   /** Selected Figma columns — theme × Light/Dark, capped at `FIGMA_SYNC_MODE_CAP`. */
   syncModes: FigmaSyncMode[]
-  onSyncModesChange: (modes: FigmaSyncMode[]) => void
+  /** `planCut` marks the Free narrowing: it changes what Sync publishes, not what the brand ships. */
+  onSyncModesChange: (modes: FigmaSyncMode[], planCut?: boolean) => void
   /** Viewports that become Dimension Semantics' Figma modes (≥ 1). */
   viewports: FigmaViewport[]
   onViewportsChange: (viewports: FigmaViewport[]) => void
@@ -120,7 +123,7 @@ function SyncStuckHelp() {
       </button>
       {open ? (
         <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
-          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this folder.')}</li>
+          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this design system.')}</li>
           <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself — Live Sync will not rewrite a pasted import.')}</li>
           <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
         </ol>
@@ -173,9 +176,9 @@ function PromoBanner({ daysLeft }: { daysLeft: number }) {
         PRO
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-fg">{t('Every theme and viewport is free until October 31')}</p>
+        <p className="text-body font-semibold text-fg">{t('Every brand, theme and viewport is free until October 31')}</p>
         <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-          {t('After that: 1 theme and Desktop are free. Up to {max} themes and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}{' '}
+          {t('After that: 1 brand in one theme and Desktop are free. Up to {max} brands and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}{' '}
           <a href={PRICING_PATH} className={`text-accent-ui underline-offset-2 hover:underline ${SYNC_FOCUS}`}>{t('See pricing')}</a>
         </p>
       </div>
@@ -201,7 +204,7 @@ function ProRequiredBanner({ onOpenLicence }: { onOpenLicence: () => void }) {
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold text-fg">{t('Hosted sync is part of Escala Pro')}</p>
         <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-          {t('You can still import tokens.json in the plugin by hand: 1 theme and Desktop are free.')}
+          {t('You can still import tokens.json in the plugin by hand: 1 brand in one theme and Desktop are free.')}
         </p>
       </div>
       <div className="flex flex-shrink-0 items-center gap-2">
@@ -262,6 +265,13 @@ export default function FigmaSyncView({
   const free = useFreeTier()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [licenceOpen, setLicenceOpen] = useState(false)
+  // The one theme a Free brand ships: the one it was set to, and only when it
+  // was never narrowed, the one on screen.
+  const brandThemes = store.brandThemes
+  const freeThemeOf = useCallback(
+    (brand: string) => soleShippedAppearance(brandThemes, brand) ?? previewAppearance,
+    [brandThemes, previewAppearance],
+  )
   // A selection saved while Pro was on (or during the beta) must not keep
   // shipping the other appearance or a phone viewport once the account is Free.
   useEffect(() => {
@@ -269,24 +279,40 @@ export default function FigmaSyncView({
     const nextModes: FigmaSyncMode[] = []
     const seen = new Set<string>()
     for (const mode of syncModes) {
-      if (mode.appearance === previewAppearance) {
+      const keep = freeThemeOf(mode.theme)
+      if (mode.appearance === keep) {
         const id = `${mode.theme}::${mode.appearance}`
         if (seen.has(id)) continue
         seen.add(id)
         nextModes.push(mode)
         continue
       }
-      const id = `${mode.theme}::${previewAppearance}`
-      if (seen.has(id) || syncModes.some((other) => other.theme === mode.theme && other.appearance === previewAppearance)) continue
+      const id = `${mode.theme}::${keep}`
+      if (seen.has(id) || syncModes.some((other) => other.theme === mode.theme && other.appearance === keep)) continue
       seen.add(id)
-      nextModes.push({ theme: mode.theme, appearance: previewAppearance })
+      nextModes.push({ theme: mode.theme, appearance: keep })
     }
     const modesSame = nextModes.length === syncModes.length
       && nextModes.every((mode, index) => mode.theme === syncModes[index]?.theme && mode.appearance === syncModes[index]?.appearance)
-    if (!modesSame) onSyncModesChange(nextModes)
+    if (!modesSame) onSyncModesChange(nextModes, true)
     if (viewports.length !== 1 || viewports[0] !== 'desktop') onViewportsChange(['desktop'])
-  }, [free, previewAppearance, syncModes, viewports, onSyncModesChange, onViewportsChange])
+  }, [free, freeThemeOf, syncModes, viewports, onSyncModesChange, onViewportsChange])
   const entitlement = useEntitlement()
+  // "3 brands · 4 themes: Acme Light + Dark · Kids Light · Partner Dark" —
+  // what this publish carries, read off the selection itself so the sentence
+  // and the checkboxes under it cannot disagree.
+  const syncSummary = useMemo(() => {
+    const byBrand = brandThemesFromSyncModes(syncModes)
+    const brands = syncThemes.filter((key) => byBrand[key]?.length)
+    const brandsPart = brands.length === 1 ? t('1 brand') : t('{count} brands', { count: String(brands.length) })
+    const themesPart = syncModes.length === 1 ? t('1 theme') : t('{count} themes', { count: String(syncModes.length) })
+    return {
+      head: `${brandsPart} · ${themesPart}`,
+      detail: brands
+        .map((key) => `${themeDisplayName(key, themeLabels)} ${t(brandThemesSummary(byBrand[key]).replace(/ only$/, ''))}`)
+        .join(' · '),
+    }
+  }, [syncModes, syncThemes, themeLabels, t])
   const fileHintId = useId()
   const fileNameRef = useRef<HTMLInputElement>(null)
   // ── Does this ID actually serve anything? ─────────────────────────────────
@@ -369,11 +395,17 @@ export default function FigmaSyncView({
             <div className="flex flex-col gap-1.5">
               <p className="text-caption text-fg-faint leading-relaxed">
                 {cannotSync
-                  ? t('Add a System style or create a theme. Trying one on does not add it.')
-                  : t('Figma gets Light and Dark as columns for each selected theme. Pick up to {max} modes.', { max: String(FIGMA_SYNC_MODE_CAP) })}
+                  ? t('Add a System style or create a brand. Trying one on does not add it.')
+                  : t('Each brand ships the themes checked here. In Figma every theme is one mode of Color Semantics. Pick up to {max}.', { max: String(FIGMA_SYNC_MODE_CAP) })}
               </p>
+              {!cannotSync && (
+                <p className="text-caption leading-relaxed text-fg-muted" aria-live="polite">
+                  <span className="font-semibold text-fg">{syncSummary.head}</span>
+                  {syncSummary.detail ? `: ${syncSummary.detail}` : ''}
+                </p>
+              )}
               {cannotSync ? (
-                <p className="text-body font-medium text-fg-muted">{t('Nothing in My themes yet.')}</p>
+                <p className="text-body font-medium text-fg-muted">{t('Nothing in My brands yet.')}</p>
               ) : (
               <div role="group" aria-label={t('Modes to sync')} className="flex flex-col gap-1">
                 {syncThemes.map((key) => {
@@ -416,7 +448,7 @@ export default function FigmaSyncView({
                       <div className="flex flex-shrink-0 items-center gap-1">
                         {(['light', 'dark'] as const).map((appearance) => {
                           const on = appearance === 'light' ? lightOn : darkOn
-                          const locked = free && appearance !== previewAppearance
+                          const locked = free && appearance !== freeThemeOf(key)
                           const blocked = !locked && !on && atCap
                           return (
                             <button
@@ -547,13 +579,13 @@ export default function FigmaSyncView({
           </div>
           {cannotSync && (
             <p className="text-caption leading-relaxed text-status-warning">
-              {t('Add a System style to My themes first — there is nothing to publish yet.')}
+              {t('Add a System style to My brands first — there is nothing to publish yet.')}
             </p>
           )}
           <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
             {publishedState === 'missing'
               ? t('Nothing published yet. Press Sync now, then sign in from the Escala plugin in Figma.')
-              : t('In Figma, open the Escala plugin and sign in. This folder shows up there — press Sync to start.')}
+              : t('In Figma, open the Escala plugin and sign in. This design system shows up there — press Sync to start.')}
           </p>
         </div>
         {publishState === 'publishing' && (
@@ -584,10 +616,10 @@ export default function FigmaSyncView({
             <span className="mt-0.5 text-status-success" aria-hidden>✓</span>
             <div className="min-w-0">
               <p className="text-caption font-semibold text-fg">
-                {t('Published. Sign in from the plugin to sync this folder.')}
+                {t('Published. Sign in from the plugin to sync this design system.')}
               </p>
               <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this folder.')}
+                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this design system.')}
               </p>
             </div>
           </div>
