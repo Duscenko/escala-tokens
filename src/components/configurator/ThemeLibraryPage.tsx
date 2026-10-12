@@ -16,7 +16,7 @@ import { accountsEnabled } from '../../lib/supabase'
 import { loginHref, rememberReturn, takeLoginIntent } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
 import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
-import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep } from '../../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
 import { useSavedBrandKeys, useUnsavedBrands } from '../../lib/libraryStatus'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
@@ -1424,7 +1424,12 @@ export default function ThemeLibraryPage({
       .sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))[0]
     : undefined
   const adoptableId = adoptable?.id
+  // Once, when Home opens: deleting the last brand later must leave the system
+  // empty, not bring another saved system back brand after brand.
+  const adoptCheckedRef = useRef(false)
   useEffect(() => {
+    if (adoptCheckedRef.current) return
+    adoptCheckedRef.current = true
     if (adoptableId) useDesignStore.getState().loadSystem(adoptableId)
   }, [adoptableId])
   const firstRun = useIsFirstRun()
@@ -1482,6 +1487,24 @@ export default function ThemeLibraryPage({
     }
     removeTheme(key)
   }
+  // A brand that was never saved does not outlive the screen it was made on:
+  // opening Home drops whatever draft is left behind, so Recently and the
+  // system never disagree about what exists.
+  const draftCleanupRef = useRef(false)
+  useEffect(() => {
+    if (draftCleanupRef.current || systemOnly || studioOnly || creating) return
+    draftCleanupRef.current = true
+    const stale = mine.filter((key) => unsavedBrands.has(key))
+    stale.forEach((key) => {
+      finishThemeSetup(key)
+      forgetUnsavedBrand(key)
+      deleteTheme(key)
+    })
+    Object.keys(useThemeSetup.getState().unsaved)
+      .filter((key) => !mine.includes(key))
+      .forEach((key) => forgetUnsavedBrand(key))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const deleteMyThemes = () => {
     const fallback = themeOrder.find((k) => !mine.includes(k) && themes[k])
     if (mine.includes(previewTheme) && fallback) onSelectTheme(fallback)
@@ -1588,7 +1611,7 @@ export default function ThemeLibraryPage({
 
   let body: ReactNode
   if (viewing.kind === 'recents') {
-    const themesShown = recent.filter(themeMatches)
+    const themesShown = recentSaved.filter(themeMatches)
     const libs = [...others].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt)).filter((s) => matches(query, s.name))
     body = (
       <>
