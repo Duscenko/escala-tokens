@@ -16,10 +16,10 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { themeDisplayName } from '../../../lib/themeSources'
 import { InspectorPortal } from '../WorkspaceInspector'
 import DocsView from '../DocsView'
-import { FOUNDATION_DOCS, foundationDoc } from '../docs/foundationDocs'
+import { foundationDoc } from '../docs/foundationDocs'
 import type { DocsExits } from '../docs/getStarted'
 import { BTN, BTN_PRIMARY, Card, NavRow, PageHeader, SourcePill } from './parts'
-import { DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashboard, type DashPage, type Dashboard } from './dashboardData'
+import { DASH_DOCS, DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashboard, type DashPage, type Dashboard } from './dashboardData'
 import OverviewPage from './OverviewPage'
 import StatusBoardPage, { type StatusFilter, type StatusKind } from './StatusBoardPage'
 import ColorVariableMap from './ColorVariableMap'
@@ -100,7 +100,7 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
               {/* Docs lists its pages while it is open: one per foundation. */}
               {key === 'docs' && page === 'docs' && (
                 <ul className="mb-1 ml-[1.125rem] flex flex-col gap-0.5 border-l border-line pl-2">
-                  {FOUNDATION_DOCS.map((doc) => (
+                  {DASH_DOCS.map((doc) => (
                     <li key={doc.key}>
                       <button
                         type="button"
@@ -227,12 +227,12 @@ export default function SystemDashboard({
     // reference sheet): only a foundation page opens here.
     // `onDocKey` sets the page too: calling `onPage` after it would write the
     // stale doc key back over the one just picked.
-    if (foundationDoc(key)) onDocKey(key)
+    if (DASH_DOCS.some((doc) => doc.key === key)) onDocKey(key)
     else onPage('docs')
   }
   // Releases has no menu entry for now; a page kept from before lands on Overview.
   const shown: DashPage = page === 'releases' ? 'overview' : page
-  const doc = foundationDoc(docKey) ? docKey : DEFAULT_DOC_KEY
+  const doc = DASH_DOCS.some((item) => item.key === docKey) ? docKey : DEFAULT_DOC_KEY
   return (
     <>
       <DashboardNav page={shown} onPage={onPage} docKey={doc} onDocKey={openDoc} onBack={onBack} />

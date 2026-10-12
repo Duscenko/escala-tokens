@@ -16,8 +16,13 @@ import { FOUNDATION_DOCS } from '../docs/foundationDocs'
 
 export type DashPage = 'overview' | 'docs' | 'status' | 'components' | 'releases' | 'integrations'
 
+/** The foundations the System tab's Docs lists. Icons is not one: its
+ *  library is picked and browsed in Variables, and a docs page for it only
+ *  repeated that. */
+export const DASH_DOCS = FOUNDATION_DOCS.filter((doc) => doc.key !== 'icons')
+
 /** The foundation Docs opens on when no page was picked yet. */
-export const DEFAULT_DOC_KEY = FOUNDATION_DOCS[0].key
+export const DEFAULT_DOC_KEY = DASH_DOCS[0].key
 
 /** The foundation doc keys whose Docs page carries a role table. Shadow, Grid
  *  and Icons do not: their own page already shows the ramp. */
