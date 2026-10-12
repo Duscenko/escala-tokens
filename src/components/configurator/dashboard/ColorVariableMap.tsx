@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { COMPONENTS } from '../../../lib/componentCatalogue'
 import { componentsByRole, findingFails, tokenElementId, tokenMapping } from '../../../lib/systemDashboard'
-import { BTN, Card, EmptyRow, Mark, ROW, StatusPill, Swatch, TD, TH, Tag } from './parts'
+import { BTN, BTN_PRIMARY, Card, EmptyRow, Mark, ROW, StatusPill, Swatch, TD, TH, Tag } from './parts'
 import { useCheckText, type Dashboard } from './dashboardData'
 
 const labelOf = (key: string) => COMPONENTS.find((c) => c.key === key)?.label ?? key
@@ -45,9 +45,11 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export default function ColorVariableMap({ dash, onOpenComponent, onOpenStatus }: {
+export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, onOpenStatus }: {
   dash: Dashboard
   onOpenComponent?: (key: string) => void
+  /** Opens this role's editor in Variables · Color semantics. */
+  onEditRole?: (roleId: string) => void
   onOpenStatus: (elementId: string) => void
 }) {
   const { t } = useI18n()
@@ -188,9 +190,16 @@ export default function ColorVariableMap({ dash, onOpenComponent, onOpenStatus }
                       <span>{checkText(contrast).text}</span>
                     </p>
                   )}
-                  <button type="button" onClick={() => onOpenStatus(tokenElementId(role.id))} className={`${BTN} self-start`}>
-                    {t('Open in status board')}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    {onEditRole && (
+                      <button type="button" onClick={() => onEditRole(role.id)} className={BTN_PRIMARY}>
+                        {t('Edit in Variables')}
+                      </button>
+                    )}
+                    <button type="button" onClick={() => onOpenStatus(tokenElementId(role.id))} className={BTN}>
+                      {t('Open in status board')}
+                    </button>
+                  </div>
                 </Card>
               </div>
             </div>

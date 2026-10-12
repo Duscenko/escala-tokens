@@ -19,10 +19,11 @@ import DocsView from '../DocsView'
 import { FOUNDATION_DOCS, foundationDoc } from '../docs/foundationDocs'
 import type { DocsExits } from '../docs/getStarted'
 import { BTN, BTN_PRIMARY, Card, NavRow, PageHeader, SourcePill } from './parts'
-import { DASH_PAGE_LABEL, DEFAULT_DOC_KEY, useDashboard, type DashPage, type Dashboard } from './dashboardData'
+import { DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashboard, type DashPage, type Dashboard } from './dashboardData'
 import OverviewPage from './OverviewPage'
 import StatusBoardPage, { type StatusFilter, type StatusKind } from './StatusBoardPage'
 import ColorVariableMap from './ColorVariableMap'
+import FoundationRolesTable from './FoundationRolesTable'
 import ComponentsPage from './ComponentsPage'
 
 const glyph = (d: string) => (
@@ -180,7 +181,7 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, brands, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onOpenComponent, docsExits,
+  onSyncFigma, onOpenGithub, onEditFoundation, onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -202,6 +203,8 @@ export default function SystemDashboard({
   onSyncFigma: () => void
   onOpenGithub: () => void
   onEditFoundation?: (key: string) => void
+  /** Opens one semantic role's editor in Variables. */
+  onEditRole?: (roleId: string) => void
   onOpenComponent?: (key: string) => void
   /** Where a Docs recipe leaves for: Figma, Export, Save, GitHub. */
   docsExits: DocsExits
@@ -221,8 +224,10 @@ export default function SystemDashboard({
   const openDoc = (key: string) => {
     // A Docs article links to pages this menu does not hold (guides, the
     // reference sheet): only a foundation page opens here.
+    // `onDocKey` sets the page too: calling `onPage` after it would write the
+    // stale doc key back over the one just picked.
     if (foundationDoc(key)) onDocKey(key)
-    onPage('docs')
+    else onPage('docs')
   }
   // Releases has no menu entry for now; a page kept from before lands on Overview.
   const shown: DashPage = page === 'releases' ? 'overview' : page
@@ -251,8 +256,10 @@ export default function SystemDashboard({
           appearance={appearance}
           docScope={{ themeKey: brand }}
           lead={doc === 'color'
-            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onOpenStatus={(id) => openStatus(id)} />
-            : undefined}
+            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole} onOpenStatus={(id) => openStatus(id)} />
+            : ROLE_TABLE_KEYS.has(doc)
+              ? <FoundationRolesTable dash={dash} foundation={doc} onEdit={onEditFoundation} />
+              : undefined}
         />
       )}
       {shown === 'status' && (

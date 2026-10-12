@@ -889,9 +889,10 @@ export default function Configurator() {
    *  table, revealed and flashed. Reuses the same `revealRole` channel the
    *  preview specimens already use, so there is one "show me this token"
    *  mechanism rather than a second one for the drawer. */
-  const openTokenInVariables = (tokenId: string) => {
+  const openTokenInVariables = (tokenId: string, edit = false) => {
     openColorCollection('semantics')
-    setColorReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1, as: 'row' }))
+    // `row` only scrolls to the row; `token` also opens its editor.
+    setColorReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1, as: edit ? 'token' : 'row' }))
   }
   // Primitives' own 198px left column (accent-color cell · Groups · family
   // nav), collapsed to a swatch strip. Lifted for the same reason `colorTab`
@@ -2424,6 +2425,11 @@ export default function Configurator() {
                     studioOnly={themeWorkspaceTab !== 'system' && guestStudio}
                     systemOnly={themeWorkspaceTab === 'system'}
                     onOpenSystem={openSystemPage}
+                    onEditRole={(roleId) => {
+                      const reason = themeTablesBlocked()
+                      if (reason) { showToast(reason, undefined, true); return }
+                      openTokenInVariables(roleId, true)
+                    }}
                     onGoHome={sessionAllowsHome ? openLibraryPage : undefined}
                     onOpenStyles={openSystemStyles}
                     systemPlace={systemPlace}

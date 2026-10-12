@@ -19,6 +19,10 @@ export type DashPage = 'overview' | 'docs' | 'status' | 'components' | 'releases
 /** The foundation Docs opens on when no page was picked yet. */
 export const DEFAULT_DOC_KEY = FOUNDATION_DOCS[0].key
 
+/** The foundation doc keys whose Docs page carries a role table. Shadow, Grid
+ *  and Icons do not: their own page already shows the ramp. */
+export const ROLE_TABLE_KEYS: ReadonlySet<string> = new Set(['typography', 'radius', 'spacing', 'sizes', 'stroke'])
+
 /** Components with a live preview: the catalogue's own specimen registry. */
 const PREVIEW_KEYS: ReadonlySet<string> = new Set(Object.keys(SPECIMENS))
 

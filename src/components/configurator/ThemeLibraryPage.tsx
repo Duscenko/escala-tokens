@@ -1153,6 +1153,7 @@ export default function ThemeLibraryPage({
   onOpenComponent,
   systemOnly = false,
   onOpenSystem,
+  onEditRole,
   onGoHome,
   onOpenStyles,
   systemPlace,
@@ -1208,6 +1209,8 @@ export default function ThemeLibraryPage({
   systemOnly?: boolean
   /** Home: the design system on screen opens on the System tab, not here. */
   onOpenSystem?: () => void
+  /** System tab: open one semantic role's editor in Variables. */
+  onEditRole?: (roleId: string) => void
   /** System tab: back to Home's file list. Absent when Home is not available. */
   onGoHome?: () => void
   /** System tab: System styles live on Home. */
@@ -1553,6 +1556,7 @@ export default function ThemeLibraryPage({
         onSyncFigma={() => onSyncFigma(previewTheme)}
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
+        onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         overviewHeader={(tokenCount) => (
           <>
