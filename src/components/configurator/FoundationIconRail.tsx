@@ -56,8 +56,8 @@ export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; cla
 /** One tile language for every button in the 64px workspace rail (foundation
  *  icons + the Themes library folder): glyph over a short label. Active = the
  *  platform accent as INK on a very subtle wash of itself — not a solid fill,
- *  so the selection reads without shouting over the canvas. Inactive = muted
- *  ink, neutral hover. `compact` drops the label (horizontal placement). */
+ *  so the selection reads without shouting over the canvas. Inactive glyph and
+ *  label share the same faint ink; hover lifts both. `compact` drops the label. */
 export function RailTile({
   on, label, onClick, children, ariaCurrent, compact = false, className = '', step, ...aria
 }: {
@@ -98,8 +98,6 @@ export function RailTile({
       <span
         className={`relative flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] w-9 h-9 ${on
           ? 'bg-accent-ui/[0.16] text-accent-ui'
-          // Resting glyphs sit one step quieter than their label (fg-faint vs
-          // fg-muted): the selected tile is the only strong mark in the rail.
           : 'text-fg-faint group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
       >
         <span className={`flex transition-transform duration-200 ease-out motion-reduce:transition-none ${on ? 'scale-[1.2]' : ''}`}>
@@ -115,7 +113,7 @@ export function RailTile({
         <span
           aria-hidden
           className={`block max-w-full truncate px-0.5 text-mini font-medium leading-tight transition-colors ${
-            on ? 'text-fg' : 'text-fg-muted group-hover:text-fg'
+            on ? 'text-fg' : 'text-fg-faint group-hover:text-fg'
           }`}
         >
           {label}

@@ -3,6 +3,8 @@ import SemanticGroupRail from './SemanticGroupRail'
 import { TABLE_CELL_DIVIDER, TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useDimensions } from '../../lib/useDimensions'
 import { sortedDimensions } from '../../lib/dimensions'
+import { usePreviewTokens } from '../../lib/previewTokens'
+import type { ThemeAppearance } from '../../lib/themeModes'
 
 // `Dimension primitives` — the ONE global collection of lengths. Radius,
 // Spacing, Sizes, Stroke and Grid don't own numbers any more: each of their
@@ -27,15 +29,18 @@ function barPct(px: number): number {
 
 export default function DimensionPrimitives({
   previewTheme,
+  previewAppearance,
   query = '',
   railCollapsed = false,
 }: {
   tabBar?: ReactNode
   previewTheme?: string
+  previewAppearance?: ThemeAppearance
   query?: string
   railCollapsed?: boolean
 }) {
   const { scale, usage } = useDimensions(previewTheme)
+  const accent = usePreviewTokens(previewTheme, previewAppearance).brandSolid
   const [group, setGroup] = useState<Group>('all')
   const all = sortedDimensions(scale)
   const used = all.filter(([k]) => usage.has(k))
@@ -86,8 +91,12 @@ export default function DimensionPrimitives({
                   <div className={`flex items-center px-3 ${TABLE_CELL_DIVIDER} ${n < 0 ? 'justify-end' : ''}`}>
                     <div className="w-full h-2 rounded-full bg-elevated overflow-hidden flex" style={{ justifyContent: n < 0 ? 'flex-end' : 'flex-start' }}>
                       <div
-                        className={`h-full rounded-full ${tokens.length ? 'bg-accent-ui/60' : 'bg-fg-faint/40'}`}
-                        style={{ width: `${n === 0 ? 0 : barPct(n)}%` }}
+                        className={`h-full rounded-full ${tokens.length ? '' : 'bg-fg-faint/40'}`}
+                        style={{
+                          width: `${n === 0 ? 0 : barPct(n)}%`,
+                          backgroundColor: tokens.length ? accent : undefined,
+                          opacity: tokens.length ? 0.6 : undefined,
+                        }}
                       />
                     </div>
                   </div>

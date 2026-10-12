@@ -18,24 +18,19 @@ const cssVarOf = (id: string) => `var(--color-${id.replace(/\./g, '-')})`
 
 const PILL = 'inline-flex h-7 min-w-0 max-w-full items-center gap-2 rounded-full border px-2.5 text-caption'
 
-/** One column of the variable map: what it holds, then its nodes. */
-function MapColumn({ label, children }: { label: string; children: React.ReactNode }) {
+/** A stage on the map's spine. The mark sits on the rule; the label names the stage. */
+function MapStep({ mark, label, step, children }: {
+  mark: string
+  label: string
+  step?: 'role' | 'use'
+  children: React.ReactNode
+}) {
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <span className="text-micro font-medium text-fg-faint">{label}</span>
+    <div className={`map-step relative flex min-w-0 flex-col gap-2 ${step === 'role' ? 'map-step-role' : step === 'use' ? 'map-step-use' : ''}`}>
+      <span aria-hidden className="absolute -left-4 top-[5px] h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fg-faint" />
+      <span className="text-micro font-medium text-fg-faint">{mark} {label}</span>
       {children}
     </div>
-  )
-}
-
-/** The link between two columns. It points right when they sit side by side and down when they stack. */
-function MapArrow() {
-  return (
-    <span aria-hidden className="flex h-5 items-center justify-center text-fg-faint @[30rem]:mt-[1.375rem] @[30rem]:h-7">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 @[30rem]:rotate-0">
-        <path d="M4 12h15M13 6l6 6-6 6" />
-      </svg>
-    </span>
   )
 }
 
@@ -84,7 +79,7 @@ function ColorPlate({ appearance, primitive, css, caption, copyLabel, onCopy }: 
 export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, onOpenStatus }: {
   dash: Dashboard
   onOpenComponent?: (key: string) => void
-  /** Opens this role's editor in Variables · Color semantics. */
+  /** Opens this role's primitive picker in the inspector. The map stays. */
   onEditRole?: (roleId: string) => void
   onOpenStatus: (elementId: string) => void
 }) {
@@ -168,6 +163,12 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
 
   const copied = role != null && copiedId === role.id
   const copyLabel = role ? `${t('Copy CSS variable')}: ${cssVarOf(role.id)}` : ''
+  // The pin, not the hover. Hover repaints the plates in place; pinning a
+  // different role remounts the spine so the path draws once more.
+  const flowKey = roleId || inCategory[0]?.id || 'map'
+  const primitivePath = role
+    ? roles.modeKeys.map((mode) => role.modes[mode]?.label).filter((label): label is string => Boolean(label)).join(' · ')
+    : ''
 
   return (
     <section aria-labelledby="color-variable-map" className="flex min-w-0 flex-col gap-4">
@@ -234,87 +235,92 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
 
               <div className="flex min-w-0 flex-col gap-4">
                 <Card title={t('Variable map')} right={element && <StatusPill status={element.status} />}>
-                  <div className="@container">
-                    <div className="grid items-start gap-x-3 gap-y-2 @[30rem]:[grid-template-columns:minmax(0,max-content)_auto_minmax(0,max-content)_auto_minmax(0,1fr)]">
-                      <MapColumn label={t('Primitive')}>
-                        <div className="flex flex-wrap gap-2">
-                          {roles.modeKeys.map((mode) => (
-                            <ColorPlate
-                              key={mode}
-                              appearance={roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}
-                              primitive={role.modes[mode]?.label ?? '—'}
-                              css={role.modes[mode]?.css ?? 'transparent'}
-                              caption={copied ? t('Copied') : (role.modes[mode]?.css ?? '—')}
-                              copyLabel={copyLabel}
-                              onCopy={() => copyVar(role.id)}
-                            />
-                          ))}
-                        </div>
-                      </MapColumn>
-                      <MapArrow />
-                      <MapColumn label={t('Role')}>
-                        <div className="flex w-max min-w-[11rem] max-w-full flex-col gap-2 self-start">
-                          <div className="flex flex-col gap-1.5 rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5">
-                            <span
-                              aria-hidden
-                              className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
-                              style={{ ...CHECKER, backgroundSize: '8px 8px' }}
-                            >
-                              {roles.modeKeys.map((mode) => (
-                                <span key={mode} className="h-full min-w-0 flex-1" style={{ background: role.modes[mode]?.css ?? 'transparent' }} />
-                              ))}
-                            </span>
-                            <span className="flex min-w-0 flex-col px-0.5 leading-tight">
-                              <span className="truncate font-mono text-micro text-fg">{role.id}</span>
-                              <button
-                                type="button"
-                                onClick={() => copyVar(role.id)}
-                                aria-label={copyLabel}
-                                className="truncate rounded text-left font-mono text-micro text-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                              >
-                                {copied ? t('Copied') : cssVarOf(role.id)}
-                              </button>
-                            </span>
-                          </div>
-                          {onEditRole && (
+                  <div key={flowKey} className="flex flex-col gap-3">
+                    <p className="font-mono text-micro text-fg">
+                      {primitivePath}
+                      <span aria-hidden className="px-1.5 text-fg-faint">→</span>
+                      {role.id}
+                    </p>
+                    <div className="map-flow relative flex flex-col gap-4 pl-5">
+                    <span aria-hidden className="pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-line" />
+                    <span aria-hidden className="map-spine pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-accent-ui" />
+                    <MapStep mark="1" label={t('Primitive')}>
+                      <div className="flex flex-wrap gap-2">
+                        {roles.modeKeys.map((mode) => (
+                          <ColorPlate
+                            key={mode}
+                            appearance={roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}
+                            primitive={role.modes[mode]?.label ?? '—'}
+                            css={role.modes[mode]?.css ?? 'transparent'}
+                            caption={copied ? t('Copied') : (role.modes[mode]?.css ?? '—')}
+                            copyLabel={copyLabel}
+                            onCopy={() => copyVar(role.id)}
+                          />
+                        ))}
+                      </div>
+                    </MapStep>
+                    <MapStep mark="2" label={t('Role')} step="role">
+                      <div className="flex w-full min-w-[11rem] max-w-sm flex-col gap-2">
+                        <div className="flex flex-col gap-1.5 rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5">
+                          <span
+                            aria-hidden
+                            className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
+                            style={{ ...CHECKER, backgroundSize: '8px 8px' }}
+                          >
+                            {roles.modeKeys.map((mode) => (
+                              <span key={mode} className="h-full min-w-0 flex-1" style={{ background: role.modes[mode]?.css ?? 'transparent' }} />
+                            ))}
+                          </span>
+                          <span className="flex min-w-0 flex-col px-0.5 leading-tight">
+                            <span className="truncate font-mono text-micro text-fg">{role.id}</span>
                             <button
                               type="button"
-                              onClick={() => onEditRole(role.id)}
-                              aria-label={`${t('Edit in Variables')}: ${role.id}`}
-                              className={`${BTN_PRIMARY} w-full justify-center whitespace-nowrap px-2`}
+                              onClick={() => copyVar(role.id)}
+                              aria-label={copyLabel}
+                              className="truncate rounded text-left font-mono text-micro text-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                             >
-                              {t('Edit in Variables')}
+                              {copied ? t('Copied') : cssVarOf(role.id)}
                             </button>
-                          )}
+                          </span>
                         </div>
-                      </MapColumn>
-                      <MapArrow />
-                      <MapColumn label={usedBy.length ? `${t('Components')} · ${usedBy.length}` : t('Components')}>
-                        {usedBy.length === 0 ? (
-                          <span className="flex h-7 items-center text-caption text-fg-faint">{t('No component in this system reads it')}</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5" onMouseLeave={() => setFocusComponent(null)}>
-                            {usedBy.map((key) => {
-                              const paints = mapping.filter((row) => row.component === key && row.role === role.id).map((row) => row.property)
-                              const on = focusComponent === key
-                              return (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  onMouseEnter={() => setFocusComponent(key)}
-                                  onClick={() => onOpenComponent?.(key)}
-                                  title={paints.join(' · ') || undefined}
-                                  className={`${PILL} border-line text-fg transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                                    on ? 'border-accent-ui/60 bg-accent-ui/[0.1]' : ''
-                                  }`}
-                                >
-                                  {labelOf(key)}
-                                </button>
-                              )
-                            })}
-                          </div>
+                        {onEditRole && (
+                          <button
+                            type="button"
+                            onClick={() => onEditRole(role.id)}
+                            aria-label={`${t('Edit in Variables')}: ${role.id}`}
+                            className={`${BTN_PRIMARY} w-full justify-center whitespace-nowrap px-2`}
+                          >
+                            {t('Edit in Variables')}
+                          </button>
                         )}
-                      </MapColumn>
+                      </div>
+                    </MapStep>
+                    <MapStep mark="3" label={usedBy.length ? `${t('Components')} · ${usedBy.length}` : t('Components')} step="use">
+                      {usedBy.length === 0 ? (
+                        <span className="flex h-7 items-center text-caption text-fg-faint">{t('No component in this system reads it')}</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5" onMouseLeave={() => setFocusComponent(null)}>
+                          {usedBy.map((key) => {
+                            const paints = mapping.filter((row) => row.component === key && row.role === role.id).map((row) => row.property)
+                            const on = focusComponent === key
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onMouseEnter={() => setFocusComponent(key)}
+                                onClick={() => onOpenComponent?.(key)}
+                                title={paints.join(' · ') || undefined}
+                                className={`${PILL} border-line text-fg transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                                  on ? 'border-accent-ui/60 bg-accent-ui/[0.1]' : ''
+                                }`}
+                              >
+                                {labelOf(key)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </MapStep>
                     </div>
                   </div>
                 </Card>

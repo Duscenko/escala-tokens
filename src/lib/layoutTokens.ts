@@ -1250,6 +1250,34 @@ export function radiusRoleValueForPx(px: number, radius: Record<string, string> 
   return dimensionRoleValue(px)
 }
 
+export interface RadiusPickerOption {
+  /** A ramp step (`sm`, `full`), or a pinned `dimension-*` kept so a hand-set value stays visible. */
+  value: string
+  px: number
+}
+
+/** The primitives a radius role may alias: the corner ramp, not the global
+ *  dimension ladder. A corner only fits a step of that ramp (`none` … `full`);
+ *  the rest of the ladder is spacing, type and viewport numbers, and offering
+ *  them turns `full` into `dimension-9999`. A stored pin that is not a step
+ *  stays on the list so the control does not hide the current value. */
+export function radiusPickerOptions(
+  radius: Record<string, string> | undefined,
+  current?: string | null,
+): RadiusPickerOption[] {
+  const options: RadiusPickerOption[] = []
+  for (const step of RADIUS_STEPS) {
+    const px = parseDimension(radius?.[step] ?? '')
+    if (px === null) continue
+    options.push({ value: step, px })
+  }
+  if (current && !options.some((option) => option.value === current)) {
+    const px = roleDimensionPx(current) ?? parseDimension(radius?.[current] ?? '')
+    if (px !== null) options.push({ value: current, px })
+  }
+  return options
+}
+
 /** Every radius role read at one viewport (steps moved down, pins kept). */
 export function radiusRolesAtViewport(
   roles: Record<string, string> | undefined,

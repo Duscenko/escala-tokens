@@ -2,7 +2,7 @@
 // `systemDashboard.ts` so the store can import them without pulling in the
 // catalogue, the token generator and the audit (which import the store).
 
-/** Proposed → In review → Approved → Live, or Deprecated. */
+/** Pending → In review → Allow sync → Live, or Disabled. */
 export type ElementStatus = 'proposed' | 'review' | 'approved' | 'live' | 'deprecated'
 
 export const ELEMENT_STATUSES: readonly ElementStatus[] = ['proposed', 'review', 'approved', 'live', 'deprecated']

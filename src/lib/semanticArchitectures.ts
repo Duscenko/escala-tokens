@@ -1166,6 +1166,10 @@ export type ArchTokenView = {
    *  Categorical carries one entry per theme passed in `themeOrder`, since its
    *  refs resolve per-theme the same way the flat catalogue's roles do. */
   modes: Record<string, ArchTokenValue>
+  /** The projection's own primitive, before a hand override. The ramp lock
+   *  reads this so a page token stays on neutral even after it was pointed
+   *  at a state ramp. Same object as `modes` until an override replaces that. */
+  schema?: Record<string, ArchTokenValue>
   /** Which modes the user re-pointed — drives the "edited" affordance. */
   edited?: Record<string, boolean>
   /** Vibrancy labels only: the opaque WCAG fallback alias, per mode — shown as
@@ -1312,6 +1316,7 @@ function applyOverrides(
       const ov = overrides[`${c.key}.${tk.key}`]
       if (!ov) return tk
       const modes = { ...tk.modes }
+      const schema = tk.schema ?? tk.modes
       const edited: Record<string, boolean> = {}
       for (const [mode, ref] of Object.entries(ov)) {
         if (!ref) { edited[mode] = false; continue }
@@ -1331,7 +1336,7 @@ function applyOverrides(
         // on rows that were never really edited.
         edited[mode] = view.label !== tk.modes[mode]?.label
       }
-      return { ...tk, modes, edited }
+      return { ...tk, modes, edited, schema }
     }),
   }))
 }
@@ -1371,12 +1376,12 @@ export function buildArchitectureView(
         key,
         label: META[key]?.[0] ?? key,
         description: META[key]?.[1] ?? '',
-        tokens: entries.map(([k, byTheme]) => ({
-          key: k,
-          modes: Object.fromEntries(
+        tokens: entries.map(([k, byTheme]) => {
+          const modes = Object.fromEntries(
             themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
-          ),
-        })),
+          )
+          return { key: k, modes, schema: modes }
+        }),
       }
     })
     const edited = applyOverrides(categories, normalizeCategoricalOverrides(overrides), lookByTheme)

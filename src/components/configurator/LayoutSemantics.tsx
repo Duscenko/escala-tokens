@@ -25,6 +25,7 @@ import { parseDimension } from '../../lib/dimensions'
 import { useDimensions } from '../../lib/useDimensions'
 import DimensionSelect from '../ui/DimensionSelect'
 import { railControlsFor } from './LayoutRailControls'
+import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 
 // The Primitive track holds `<icon> dimension-9999 <chevron>`: ~92px of mono text
@@ -118,6 +119,7 @@ export default function LayoutSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
+  previewAppearance,
 }: {
   family: LayoutFamily
   tabBar?: ReactNode
@@ -130,15 +132,17 @@ export default function LayoutSemantics({
   previewAppearance?: ThemeAppearance
   previewPlatform?: GridViewport
 }) {
-  const { store, foundations, patch } = useThemeFoundations(previewTheme)
+  const { foundations, patch } = useThemeFoundations(previewTheme)
   // A role is a semantic token: it points at a Dimension primitive, picked by name.
   const { scale: dimensionScale } = useDimensions(previewTheme)
   const {
     radius, spacing, sizes, selector, stroke, grid,
     radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles,
   } = foundations
-  const { primaryColor, primaryScale } = store
-  const accent = primaryScale[9] ?? primaryColor
+  // Specimens (the corner, the gap bar, the size square) paint the brand on
+  // screen. The root primary is a different colour once a brand points at its
+  // own family, and the platform accent is Escala's, not the brand's.
+  const accent = usePreviewTokens(previewTheme, previewAppearance).brandSolid
   const [group, setGroup] = useState<string>('all')
   // Radius renders two collections (layers) from this one component: the
   // roles and the responsive tokens they alias. Hooks run unconditionally.

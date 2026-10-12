@@ -9,13 +9,14 @@ import { useI18n } from '../../../lib/i18n'
 import { sortForDecision, statusCounts, type DashboardElement, type ElementCheck, type ElementKind, type Suggestion } from '../../../lib/systemDashboard'
 import { ELEMENT_STATUSES, type ElementStatus } from '../../../lib/systemDashboardTypes'
 import { BTN, Card, EmptyRow, Mark, PageHeader, ROW, StatusPill, Swatch, TD, TH, Tag, YesNo } from './parts'
+import { StatusMenu } from './StatusMenu'
 import { STATUS_LABEL, useCheckText, type Dashboard, type Tone } from './dashboardData'
 
 export type StatusFilter = ElementStatus | 'all'
 export type StatusKind = ElementKind
 
 const SUGGESTION_LABEL: Record<Suggestion, string> = {
-  approve: 'Approve',
+  approve: 'Allow sync',
   changes: 'Request changes',
   keep: 'Keep as is',
 }
@@ -160,7 +161,7 @@ export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, 
                               {roles.modeKeys.map((mode) => <Swatch key={mode} css={entry?.modes[mode]?.css ?? 'transparent'} size={16} />)}
                             </span>
                           </td>
-                          <td className={TD}><StatusPill status={el.status} /></td>
+                          <td className={TD}><StatusMenu element={el} /></td>
                           <td className={TD}>
                             {line && (
                               <span className="flex items-center gap-1.5 text-fg-muted">
@@ -176,7 +177,7 @@ export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, 
                     return (
                       <tr key={el.id} onClick={() => onSelect(el.id)} className={rowClass}>
                         {name}
-                        <td className={TD}><StatusPill status={el.status} /></td>
+                        <td className={TD}><StatusMenu element={el} /></td>
                         <td className={TD}><YesNo yes={checkOf(el, 'figma')?.state === 'pass'} yesLabel={t('In the Figma library')} noLabel={t('Not in the Figma library yet')} /></td>
                         <td className={TD}><YesNo yes={checkOf(el, 'docs')?.state === 'pass'} yesLabel={t('Documented')} noLabel={t('Documentation is incomplete')} /></td>
                         <td className={TD}><YesNo yes={checkOf(el, 'preview')?.state === 'pass'} yesLabel={t('Has a live preview')} noLabel={t('No live preview')} /></td>
@@ -268,8 +269,8 @@ export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, 
       <Card title={t('How status works')}>
         <p className="text-caption text-fg-muted">
           {store.releaseBaseline
-            ? t('A status nobody set follows the system: what changed since the last release is Proposed, the rest is Live.')
-            : t('A status nobody set follows the system: Approved until the system is published to Figma, Live after.')}
+            ? t('A status nobody set follows the system: what changed since the last release is Pending, the rest is Live.')
+            : t('A status nobody set follows the system: Pending until the system is published to Figma, Live after.')}
         </p>
       </Card>
     </>

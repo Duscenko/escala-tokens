@@ -492,6 +492,16 @@ describe('projectArchitecture keeps nested override ids', () => {
       .not.toBe(baseline.tokens.action['primary.default'].light)
   })
 
+  it('keeps the schema ramp after an override leaves it', () => {
+    const edited = buildArchitectureView('categorical', input, system.errorSeed, {
+      'surface.page': { dark: '{error.5}' },
+    }, ['light', 'dark'])!
+    const page = edited.categories.find((c) => c.key === 'surface')?.tokens.find((t) => t.key === 'page')
+    expect(page?.modes.dark.label).toBe('error.5')
+    expect(page?.schema?.dark.label).toBe('neutral-dark.1')
+    expect(page?.schema?.light.label).toBe(page?.modes.light.label)
+  })
+
   it('rewrites legacy action.primary overrides onto primary.default', () => {
     const nested = projectArchitecture('categorical', input, system.errorSeed, {
       'action.primary.default': { light: '{accent.1}' },

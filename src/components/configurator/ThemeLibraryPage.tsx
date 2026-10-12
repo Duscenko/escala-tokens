@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
-import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
+import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
-import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
+import { themeDisplayName } from '../../lib/themeSources'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
@@ -22,7 +22,7 @@ import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from './themeWorkspaceLayout'
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { FoundationGlyph } from './FoundationIconRail'
@@ -32,7 +32,7 @@ import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar, ThemeOptionsMenu,
+  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
@@ -157,7 +157,7 @@ const PencilGlyph = () => (
 )
 const HomeGlyph = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M3 9.5 12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" />
+    <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
   </svg>
 )
 // ── Theme card ───────────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ function ThemeCard({
         'border-line hover:border-line-strong'
       }`}
     >
-      <div className="relative">
+      <div className="group/cover relative">
         <ThemeCover t={tokens} />
         <button
           type="button"
@@ -254,11 +254,26 @@ function ThemeCard({
           title={t('Double-click to open')}
           className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60"
         />
+        {/* Hover the cover: a dark gradient and Edit, which opens the brand preview. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/10 opacity-0 transition-opacity duration-200 ease-[var(--ease-out-quint)] group-hover/cover:opacity-100 group-focus-within/cover:opacity-100 motion-reduce:transition-none"
+        />
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={onOpenPreview}
+            aria-label={t('Edit {name} brand', { name })}
+            className="pointer-events-none flex h-9 translate-y-1 items-center rounded-full bg-white px-4 text-ui font-semibold text-neutral-900 opacity-0 shadow-lg transition-[opacity,transform] duration-200 ease-[var(--ease-out-quint)] hover:bg-white/90 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 group-hover/cover:pointer-events-auto group-hover/cover:translate-y-0 group-hover/cover:opacity-100 group-focus-within/cover:pointer-events-auto group-focus-within/cover:translate-y-0 group-focus-within/cover:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-none"
+          >
+            {t('Edit')}
+          </button>
+        </div>
         {viewing && (
           <span
             aria-hidden
             title={t('On screen')}
-            className="pointer-events-none absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent-solid text-accent-ink shadow-sm"
+            className="pointer-events-none absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-accent-solid text-accent-ink shadow-sm"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M5 12.5 10 17.5 19 7.5" />
@@ -269,7 +284,7 @@ function ThemeCard({
           <span
             aria-label={t('Pinned')}
             title={t('Pinned')}
-            className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-md bg-app/90 text-fg-muted shadow-sm"
+            className="pointer-events-none absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-md bg-app/90 text-fg-muted shadow-sm"
           >
             <PinGlyph />
           </span>
@@ -516,18 +531,6 @@ function GuestAccountCard() {
   )
 }
 
-/** Whether the library on screen matches its saved copy. Shared by the Save
- *  button and the nav's on-screen dot, so the two can't disagree. */
-function useOnScreenSaved(): { saved: SavedSystem | undefined; matches: boolean } {
-  const store = useDesignStore()
-  const saved = store.savedSystems.find((s) => s.id === activeLibraryId(store))
-  const same = useMemo(
-    () => (saved ? libraryMatchesSaved(store as unknown as DesignSnapshot, saved.snapshot) : false),
-    [store, saved],
-  )
-  return { saved, matches: same }
-}
-
 /** No brand, no design system. The store always holds a default system with
  *  the scaffold light/dark and no brands; listing it (or a named but empty
  *  one) as a design system reads as work nobody did. The system on screen
@@ -537,8 +540,8 @@ function useIsFirstRun(): boolean {
 }
 
 /** The one "New design system" button. It makes a design system — naming it
- *  is all it asks. How a BRAND starts (blank, random, from code, a system
- *  style) is asked where brands are made: the Create brand card inside one. */
+ *  is all it asks. How a BRAND starts (blank, from code, a system style)
+ *  is asked where brands are made: every Add new brand door. */
 function NewDesignSystemButton({ onClick }: { onClick: () => void }) {
   const { t } = useI18n()
   return (
@@ -593,24 +596,10 @@ function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGo
 }
 
 /** Title row shared by every Home view. */
-/** The brand face a design-system tag shows — the same ramp the top-nav chip paints. */
-function brandMark(
-  brand: string,
-  snapshot: DesignSnapshot,
-): { ramp: ReturnType<typeof themeBrandRamp>; appearance: 'light' | 'dark'; fallback: string } {
-  return {
-    ramp: brand ? themeBrandRamp(brand, snapshot.themeSources, snapshot.themeKinds, snapshot) : undefined,
-    appearance: (brand && snapshot.themeKinds[brand]) || 'light',
-    fallback: snapshot.primaryColor,
-  }
-}
-
-function ViewHeader({ crumb, title, detail, extra, right }: {
+function ViewHeader({ crumb, title, detail, right }: {
   crumb?: ReactNode
   title: ReactNode
   detail?: ReactNode
-  /** Between the title and the detail. Tags live here, not inside the detail paragraph. */
-  extra?: ReactNode
   right?: ReactNode
 }) {
   return (
@@ -619,7 +608,6 @@ function ViewHeader({ crumb, title, detail, extra, right }: {
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-[16rem] flex-1 flex-col gap-2">
           <h2 className="flex items-center gap-2 text-heading font-semibold text-fg">{title}</h2>
-          {extra}
           {detail && <p className="text-body text-fg-muted">{detail}</p>}
         </div>
         {right && <div className="flex flex-shrink-0 items-center gap-2">{right}</div>}
@@ -1237,6 +1225,7 @@ export default function ThemeLibraryPage({
   openStylesRequest = false,
   onStylesRequestHandled,
   onEditFoundation,
+  onOpenBrand,
   onCreatingChange,
   studioOnly = false,
   onOpenComponent,
@@ -1286,6 +1275,8 @@ export default function ThemeLibraryPage({
   onStylesRequestHandled?: () => void
   /** "Go to advanced edition" leaves the studio for that foundation's table. */
   onEditFoundation?: (foundationKey: string) => void
+  /** Overview's Color card opens the brand preview. */
+  onOpenBrand?: () => void
   /** Create studio uses the right inspector; Home's left file menu must yield. */
   onCreatingChange?: (creating: boolean) => void
   /** A visitor with no account and no theme: only the create studio is shown,
@@ -1298,8 +1289,8 @@ export default function ThemeLibraryPage({
   systemOnly?: boolean
   /** Home: the design system on screen opens on the System tab, not here. */
   onOpenSystem?: () => void
-  /** System tab: open one semantic role's editor in Variables. */
-  onEditRole?: (roleId: string) => void
+  /** System tab: gate the role editor. Return `false` to keep it closed. */
+  onEditRole?: (roleId: string) => boolean | void
   /** System tab: back to Home's file list. Absent when Home is not available. */
   onGoHome?: () => void
   /** System tab: System styles live on Home. */
@@ -1348,11 +1339,6 @@ export default function ThemeLibraryPage({
     onCreatingChange?.(true)
     setCreating(true)
   }, [createPending, onCreateHandled, needsPro, onCreatingChange])
-  const openCreate = () => {
-    if (needsPro) { setUpgradeOpen(true); return }
-    onCreatingChange?.(true)
-    setCreating(true)
-  }
   const openRandom = () => {
     const result = startRandomTheme(previewTheme, needsPro)
     if (result.status === 'upgrade') { setUpgradeOpen(true); return }
@@ -1440,8 +1426,6 @@ export default function ThemeLibraryPage({
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [confirmDeleteSystem, setConfirmDeleteSystem] = useState(false)
-  const [switchTarget, setSwitchTarget] = useState<string | null>(null)
-  const { saved: savedCopy, matches: copyMatches } = useOnScreenSaved()
   const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
   const [renamingLibrary, setRenamingLibrary] = useState(false)
   const [libraryDraft, setLibraryDraft] = useState(store.projectName)
@@ -1535,7 +1519,7 @@ export default function ThemeLibraryPage({
             titleClass="text-fg"
             disabled={!canAddMyTheme(mine.length)}
             disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
-            onClick={() => (systemOnly ? onCreateTheme() : openCreate())}
+            onClick={onCreateTheme}
             mark={(
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
                 <path d="M12 5v14M5 12h14" />
@@ -1579,27 +1563,6 @@ export default function ThemeLibraryPage({
     }
     setRenamingLibrary(false)
   }
-  const showSystem = (id: string) => {
-    if (id === currentId) return
-    store.loadSystem(id)
-    const next = useDesignStore.getState()
-    const keys = myThemeKeys(next.themeOrder, next.themes)
-    if (keys.length > 0 && !keys.includes(previewTheme)) onSelectTheme(keys[0])
-    setSwitchTarget(null)
-  }
-  // The system on screen, then the newest saved ones, never more than three.
-  // Each tag wears its own brand, the same avatar the top nav paints.
-  const liveBrand = savedMine.includes(previewTheme) ? previewTheme : (savedMine[0] ?? '')
-  const systemTags = [
-    { id: currentId, name: store.projectName, ...brandMark(liveBrand, store) },
-    ...otherDesignSystems(store.savedSystems, store)
-      .sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))
-      .map((s) => {
-        const keys = myThemeKeys(s.snapshot.themeOrder ?? [], s.snapshot.themes ?? {})
-        return { id: s.id, name: s.name, ...brandMark(keys[0] ?? '', s.snapshot) }
-      }),
-  ].slice(0, 3)
-
   const homeTrail = (() => {
     if (viewing.kind === 'recents') return null
     if (viewing.kind === 'styles') return t('System styles')
@@ -1722,7 +1685,7 @@ export default function ThemeLibraryPage({
     // The DEFAULT library: the system on screen, with My themes inside it.
     // The dashboard has no search field, so Home's query does not filter here.
     // The system on screen opens as its dashboard. The title is the brand
-    // selector; design systems are tags under it; Add brand takes the header.
+    // selector; Add brand takes the header.
     body = (
       <SystemDashboard
         page={dashPage}
@@ -1738,6 +1701,7 @@ export default function ThemeLibraryPage({
         onSyncFigma={() => onSyncFigma(previewTheme)}
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
+        onOpenBrand={onOpenBrand}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         overviewHeader={(tokenCount) => (
@@ -1746,38 +1710,12 @@ export default function ThemeLibraryPage({
               title={savedMine.length > 0
                 ? <BrandSelect appearance="title" brand={previewTheme} onSelect={onSelectTheme} />
                 : <span className="min-w-0 truncate">{store.projectName}</span>}
-              extra={(
-                <div role="radiogroup" aria-label={t('Design system')} className="flex flex-wrap items-center gap-1.5">
-                  {systemTags.map((tag) => {
-                    const selected = tag.id === currentId
-                    return (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => {
-                          if (selected) return
-                          if (!savedCopy || !copyMatches) setSwitchTarget(tag.id)
-                          else showSystem(tag.id)
-                        }}
-                        className={`flex h-8 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg pl-1 pr-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_ACTIVE}` : ''}`}
-                      >
-                        <span className={`grid h-6 w-6 flex-shrink-0 place-items-center ${selected ? '' : 'opacity-40'}`}>
-                          <ThemeAvatar size={27} ramp={tag.ramp} appearance={tag.appearance} fallback={tag.fallback} />
-                        </span>
-                        <span className={`min-w-0 truncate text-caption font-semibold ${selected ? 'text-fg' : 'text-fg-faint'}`}>{tag.name}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
               detail={`${t('{n} tokens', { n: tokenCount })} · ${brandsLine(savedMine, store.brandThemes, store.themeKinds)}`}
               right={(
                 <>
                   <button
                     type="button"
-                    onClick={() => (systemOnly ? onCreateTheme() : openCreate())}
+                    onClick={onCreateTheme}
                     disabled={!canAddMyTheme(mine.length)}
                     title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: mine.length }) : undefined}
                     className={`${PRIMARY} items-center gap-1.5 hover:opacity-90`}
@@ -1794,13 +1732,6 @@ export default function ThemeLibraryPage({
                 </>
               )}
             />
-            {switchTarget && (
-              <div className="flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 self-end rounded-lg border border-line bg-surface px-3 py-2">
-                <span className="text-caption text-fg-muted">{t('Replace what is on screen?')}</span>
-                <button type="button" onClick={() => showSystem(switchTarget)} className="text-caption font-semibold text-accent-ui hover:underline">{t('Load')}</button>
-                <button type="button" onClick={() => setSwitchTarget(null)} className="text-caption text-fg-faint hover:text-fg">{t('Cancel')}</button>
-              </div>
-            )}
             {confirmDeleteSystem && (
               <div className="flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 self-end rounded-lg border border-line bg-surface px-3 py-2">
                 <span className="text-caption text-fg-muted">

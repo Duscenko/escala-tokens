@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
-import { parseRef, pickRampCell } from '../../components/configurator/Step3_SemanticTokens'
+import { displayHex, geometryRoles, inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
+import type { PreviewTokens } from '../../components/preview/ButtonPreview'
+import { familiesForRampLock, parseRef, pickRampCell } from '../../components/configurator/Step3_SemanticTokens'
 
 describe('resolveVariantRoles', () => {
   const arch = {
@@ -121,6 +122,12 @@ describe('rolesForPaints field index', () => {
 describe('normalizeColor', () => {
   it('equates hex and rgb of the same pixel', () => {
     expect(normalizeColor('#1a1a1f')).toBe(normalizeColor('rgb(26, 26, 31)'))
+  })
+
+  it('labels a measured paint as hex', () => {
+    expect(displayHex('rgb(26, 26, 31)')).toBe('#1a1a1f')
+    expect(displayHex('#1A1A1F')).toBe('#1a1a1f')
+    expect(displayHex('rgba(34, 197, 94, 0.12)')).toBe('#22c55e1f')
   })
 })
 
@@ -348,6 +355,29 @@ describe('parseRef', () => {
   })
 })
 
+describe('familiesForRampLock', () => {
+  const families = ['accent', 'neutral-dark', 'error', 'warning', 'success', 'info']
+
+  it('keeps a page token on its own ramp while locked', () => {
+    const rows = familiesForRampLock(families, 'neutral-dark', 'neutral-dark', true)
+    expect(rows).toEqual([{ key: 'neutral-dark', pickable: true }])
+  })
+
+  it('shows an off-ramp override without letting it be picked', () => {
+    const rows = familiesForRampLock(families, 'neutral-dark', 'error', true)
+    expect(rows).toEqual([
+      { key: 'neutral-dark', pickable: true },
+      { key: 'error', pickable: false },
+    ])
+  })
+
+  it('offers every ramp once the lock is open', () => {
+    const rows = familiesForRampLock(families, 'neutral-dark', 'neutral-dark', false)
+    expect(rows.map((row) => row.key)).toEqual(families)
+    expect(rows.every((row) => row.pickable)).toBe(true)
+  })
+})
+
 describe('pickRampCell', () => {
   const ramps = {
     accent: { 7: '#48ffe0', 9: '#00c8d0' },
@@ -373,5 +403,85 @@ describe('pickRampCell', () => {
 
   it('does not default to accent when the label is unparseable', () => {
     expect(pickRampCell({ css: 'transparent', label: '{accent.solid}' }, ramps)).toBeNull()
+  })
+})
+
+describe('geometryRoles', () => {
+  const t = {
+    radius: { sm: '4px', lg: '8px', '2xl': '16px', full: '9999px' },
+    radiusRoles: { control: 'sm', action: 'lg', container: '2xl', overlay: '2xl', pill: 'full' },
+    sizes: { xs: '24px', sm: '32px', md: '40px', lg: '48px', xl: '56px' },
+    sizeRoles: { compact: 'sm', control: 'md', touch: 'lg', hit: 'xs', fab: 'xl' },
+    typography: {
+      fontFamily: 'Inter',
+      sizes: { 'text-xs': '12px', 'text-sm': '14px', 'text-md': '16px' },
+      weights: { regular: 400, medium: 500, semibold: 600, bold: 700 },
+    },
+    previewPlatform: 'desktop',
+  } as unknown as PreviewTokens
+
+  it('names a button corner, its label and its height', () => {
+    expect(geometryRoles(t, {
+      radii: [{ px: 8, circular: false }],
+      type: [{ px: 14, weight: 600 }],
+      height: 40,
+    }).map((role) => `${role.kind}:${role.id}:${role.css}`)).toEqual([
+      'radius:radius.action:8px',
+      'text:text.button:14px',
+      'size:size.control:40px',
+    ])
+  })
+
+  it('names both axes when action and container share a pixel', () => {
+    const shared = {
+      ...t,
+      radiusRoles: { ...t.radiusRoles, action: '2xl' },
+    } as PreviewTokens
+    const roles = geometryRoles(shared, {
+      radii: [{ px: 16, circular: false }],
+      type: [],
+      height: null,
+    })
+    expect(roles.map((role) => role.id)).toEqual(['radius.action', 'radius.container'])
+  })
+
+  it('keeps one name when container and overlay share a pixel', () => {
+    const roles = geometryRoles(t, {
+      radii: [{ px: 16, circular: false }, { px: 16, circular: false }],
+      type: [],
+      height: null,
+    })
+    expect(roles.map((role) => role.id)).toEqual(['radius.container'])
+  })
+
+  it('reads a circle as pill, not as the clamped box radius', () => {
+    const roles = geometryRoles(t, {
+      radii: [{ px: 10, circular: true }],
+      type: [],
+      height: null,
+    })
+    expect(roles).toEqual([{ id: 'radius.pill', css: '9999px', kind: 'radius' }])
+  })
+
+  it('tells a button label from a field label by weight', () => {
+    const roles = geometryRoles(t, {
+      radii: [],
+      type: [{ px: 14, weight: 500 }, { px: 14, weight: 400 }],
+      height: null,
+    })
+    expect(roles.map((role) => role.id)).toEqual(['text.label', 'text.body-sm'])
+  })
+
+  it('names a shared text size once, by the earlier role', () => {
+    const roles = geometryRoles(t, {
+      radii: [],
+      type: [{ px: 12, weight: 400 }],
+      height: null,
+    })
+    expect(roles.map((role) => role.id)).toEqual(['text.caption'])
+  })
+
+  it('leaves a content-sized box off the size ramp', () => {
+    expect(geometryRoles(t, { radii: [], type: [], height: 200 })).toEqual([])
   })
 })

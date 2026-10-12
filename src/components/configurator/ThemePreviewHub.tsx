@@ -560,7 +560,10 @@ export default function ThemePreviewHub({
     const onKey = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return
       const el = event.target as HTMLElement | null
-      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+      // A text field keeps its own native undo. A <select> does not: the
+      // primitive picker stays focused after a pick, and that was swallowing
+      // the way back from a size, radius or text change.
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el.tagName))) return
       const done = event.shiftKey ? redoEdit() : undoEdit()
       if (done !== null) event.preventDefault()
     }
@@ -808,6 +811,7 @@ export default function ThemePreviewHub({
     <SemanticTokenDrawer
       previewTheme={previewTheme}
       previewAppearance={inspectedAppearance ?? effectiveBoardAppearance}
+      previewPlatform={boardPlatform}
       tokenId={surface === 'artefacts' ? editingToken : null}
       inspectedCss={inspectedCss}
       stylePreview={paintedPreview}

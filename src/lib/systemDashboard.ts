@@ -372,13 +372,13 @@ interface StatusContext {
  * The status an element has when nobody decided one.
  *
  * With a release on file, the release is the line: what changed after it is
- * Proposed, the rest is Live. Before the first release there is no line to
- * measure against, so the system is Live once it was published and Approved
- * until then.
+ * Pending, the rest is Live. Before the first release there is no line to
+ * measure against, so the system is Live once it was published and Pending
+ * until then. Allow sync and Disabled are decisions, never the automatic state.
  */
 export function automaticStatus(changedSinceRelease: boolean, ctx: Pick<StatusContext, 'published' | 'hasRelease'>): ElementStatus {
   if (ctx.hasRelease) return changedSinceRelease ? 'proposed' : 'live'
-  return ctx.published ? 'live' : 'approved'
+  return ctx.published ? 'live' : 'proposed'
 }
 
 function statusOf(id: string, changed: boolean, ctx: StatusContext) {

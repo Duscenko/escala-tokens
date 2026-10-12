@@ -1,6 +1,6 @@
 // THE DESIGN SYSTEM DASHBOARD — what Home shows when the design system on
 // screen is opened. Its menu takes Home's left column: Overview (the system at
-// a glance), Docs, Components, Status board and Integrations. Docs holds one
+// a glance), Docs, Status board and Integrations. Docs holds one
 // page per foundation: the Docs article, and for Color the variable map.
 //
 // Every number comes from `useDashboard` (lib/systemDashboard.ts), which reads
@@ -19,6 +19,7 @@ import { ThemeAvatar } from '../ThemeLibraryRail'
 import { CHROME_MENU_Z, SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON } from '../themeWorkspaceLayout'
 import { InspectorPortal } from '../WorkspaceInspector'
 import DocsView from '../DocsView'
+import SemanticTokenDrawer from '../SemanticTokenGroups'
 import type { DocsExits } from '../docs/getStarted'
 import { BTN, BTN_PRIMARY, Card, NavRow, PageHeader, SourcePill } from './parts'
 import { DASH_DOCS, DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashboard, type DashPage, type Dashboard } from './dashboardData'
@@ -26,8 +27,6 @@ import OverviewPage from './OverviewPage'
 import StatusBoardPage, { type StatusFilter, type StatusKind } from './StatusBoardPage'
 import ColorVariableMap from './ColorVariableMap'
 import FoundationRolesTable from './FoundationRolesTable'
-import ComponentsPage from './ComponentsPage'
-
 const glyph = (d: string) => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d={d} />
@@ -42,8 +41,8 @@ const PAGE_GLYPH: Record<DashPage, ReactNode> = {
   integrations: glyph('M9 7V3M15 7V3M7 7h10v5a5 5 0 0 1-10 0V7ZM12 17v4'),
 }
 
-// Releases is built (`ReleasesPage`) but not in the menu for now.
-const NAV: DashPage[] = ['overview', 'docs', 'components', 'status', 'integrations']
+// Releases and Components are built but not in the menu.
+const NAV: DashPage[] = ['overview', 'docs', 'status', 'integrations']
 
 function BrandChevron({ open }: { open: boolean }) {
   return (
@@ -208,6 +207,9 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
                 on={page === key}
                 icon={PAGE_GLYPH[key]}
                 label={t(DASH_PAGE_LABEL[key])}
+                trailing={key === 'status' ? (
+                  <span className="flex-shrink-0 text-mini font-light leading-none text-fg-faint">Beta</span>
+                ) : undefined}
                 onClick={() => onPage(key)}
               />
               {/* Docs lists its pages while it is open: one per foundation. */}
@@ -294,7 +296,7 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, brands, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onEditRole, onOpenComponent, docsExits,
+  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -316,8 +318,10 @@ export default function SystemDashboard({
   onSyncFigma: () => void
   onOpenGithub: () => void
   onEditFoundation?: (key: string) => void
-  /** Opens one semantic role's editor in Variables. */
-  onEditRole?: (roleId: string) => void
+  /** Overview's Color card: open the brand preview on the Color edition. */
+  onOpenBrand?: () => void
+  /** Gate before the role editor opens in the inspector. Return `false` to keep it closed. */
+  onEditRole?: (roleId: string) => boolean | void
   onOpenComponent?: (key: string) => void
   /** Where a Docs recipe leaves for: Figma, Export, Save, GitHub. */
   docsExits: DocsExits
@@ -329,6 +333,8 @@ export default function SystemDashboard({
   // No brand in this design system: every page that reads tokens would draw the
   // scaffold's default accent as if someone had chosen it.
   const noBrands = savedBrands.length === 0
+  // The role whose primitive picker is open in the inspector. The map stays.
+  const [editingRole, setEditingRole] = useState<string | null>(null)
   const [statusKind, setStatusKind] = useState<StatusKind>('token')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [statusSelected, setStatusSelected] = useState<string | null>(null)
@@ -347,22 +353,30 @@ export default function SystemDashboard({
     if (DASH_DOCS.some((doc) => doc.key === key)) onDocKey(key)
     else onPage('docs')
   }
-  // Releases has no menu entry for now; a page kept from before lands on Overview.
-  const shown: DashPage = page === 'releases' ? 'overview' : page
+  useEffect(() => { setEditingRole(null) }, [brand, docKey, page])
+  // Releases and Components have no menu entry; a page kept from before lands on Overview.
+  const shown: DashPage = page === 'releases' || page === 'components' ? 'overview' : page
   const doc = DASH_DOCS.some((item) => item.key === docKey) ? docKey : DEFAULT_DOC_KEY
   return (
     <>
       <DashboardNav page={shown} onPage={onPage} docKey={doc} onDocKey={openDoc} onBack={onBack} />
+      <SemanticTokenDrawer
+        previewTheme={brand}
+        previewAppearance={appearance}
+        tokenId={shown === 'docs' && doc === 'color' ? editingRole : null}
+        onClose={() => setEditingRole(null)}
+      />
       {shown === 'overview' && (
         <OverviewPage
           dash={dash}
           header={overviewHeader(noBrands ? 0 : dash.tokenCount)}
           brands={brands}
           onOpenFoundation={openDoc}
+          onOpenBrand={onOpenBrand}
           onOpenStatus={() => openStatus()}
         />
       )}
-      {noBrands && (shown === 'docs' || shown === 'status' || shown === 'components') && (
+      {noBrands && (shown === 'docs' || shown === 'status') && (
         <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center" role="status">
           <p className="text-body font-medium text-fg">{t('No brand in this design system yet')}</p>
           <p className="max-w-[22rem] text-caption leading-relaxed text-fg-muted">{t('Add a brand from Overview. Its tokens, components and status show here.')}</p>
@@ -381,7 +395,7 @@ export default function SystemDashboard({
           appearance={appearance}
           docScope={{ themeKey: brand }}
           lead={doc === 'color'
-            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole} onOpenStatus={(id) => openStatus(id)} />
+            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole ? (roleId) => { if (onEditRole(roleId) !== false) setEditingRole(roleId) } : undefined} onOpenStatus={(id) => openStatus(id)} />
             : ROLE_TABLE_KEYS.has(doc)
               ? <FoundationRolesTable dash={dash} foundation={doc} onEdit={onEditFoundation} />
               : onEditFoundation
@@ -401,7 +415,6 @@ export default function SystemDashboard({
           timeAgo={timeAgo}
         />
       )}
-      {!noBrands && shown === 'components' && <ComponentsPage dash={dash} onOpenComponent={onOpenComponent} />}
       {shown === 'integrations' && (
         <IntegrationsPage
           dash={dash}

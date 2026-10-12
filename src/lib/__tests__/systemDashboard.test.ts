@@ -99,10 +99,10 @@ describe('elements', () => {
     expect(elements.filter((el) => el.kind === 'component')).toHaveLength(state().selectedComponents.length)
   })
 
-  it('is Approved before anything was published, Live after', () => {
-    expect(automaticStatus(false, { published: false, hasRelease: false })).toBe('approved')
+  it('is Pending before anything was published, Live after', () => {
+    expect(automaticStatus(false, { published: false, hasRelease: false })).toBe('proposed')
     expect(automaticStatus(false, { published: true, hasRelease: false })).toBe('live')
-    expect(statusCounts(build()).approved).toBe(build().length)
+    expect(statusCounts(build()).proposed).toBe(build().length)
     expect(statusCounts(build({ figmaLastPublishAt: '2026-10-01T00:00:00.000Z' })).live).toBe(build().length)
   })
 

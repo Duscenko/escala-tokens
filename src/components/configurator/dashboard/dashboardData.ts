@@ -72,11 +72,11 @@ export const DASH_PAGE_LABEL: Record<DashPage, string> = {
 export type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info'
 
 export const STATUS_LABEL: Record<ElementStatus, string> = {
-  proposed: 'Proposed',
+  proposed: 'Pending',
   review: 'In review',
-  approved: 'Approved',
+  approved: 'Allow sync',
   live: 'Live',
-  deprecated: 'Deprecated',
+  deprecated: 'Disabled',
 }
 
 export const STATUS_TONE: Record<ElementStatus, Tone> = {

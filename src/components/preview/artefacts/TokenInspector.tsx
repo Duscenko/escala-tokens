@@ -53,7 +53,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  inspectElement, inspectGroup, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
+  displayHex, inspectElement, inspectGroup, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
@@ -196,6 +196,39 @@ const MIN_BADGE_H = 160
 
 const SLOT_LABEL: Record<string, string> = { fill: 'surface', ink: 'label', stroke: 'stroke' }
 
+const ROLE_GROUPS = [
+  { kind: 'color', label: 'Color' },
+  { kind: 'radius', label: 'Radius' },
+  { kind: 'text', label: 'Text' },
+  { kind: 'size', label: 'Size' },
+] as const
+
+type RoleKind = (typeof ROLE_GROUPS)[number]['kind']
+
+function roleKind(role: InspectedRole): RoleKind {
+  return role.kind ?? 'color'
+}
+
+/** A length row has no paint to swatch. The mark says which kind of token
+ *  the px belongs to: a corner, a text run, a control height. */
+function LengthMark({ kind }: { kind: 'radius' | 'text' | 'size' }) {
+  if (kind === 'text') {
+    return <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-nano font-medium text-fg-muted" aria-hidden>Aa</span>
+  }
+  if (kind === 'size') {
+    return (
+      <span className="flex h-4 w-4 flex-shrink-0 items-end justify-center" aria-hidden>
+        <span className="h-3 w-1.5 rounded-sm bg-fg-muted/70" />
+      </span>
+    )
+  }
+  return (
+    <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center" aria-hidden>
+      <span className="h-3 w-3 rounded-tl-md border-l border-t border-fg-muted" />
+    </span>
+  )
+}
+
 const INSPECT_RING_PAD = 2
 const INSPECT_RING_RX = 6
 
@@ -263,6 +296,9 @@ export function InspectorOverlay({
   const [hover, setHover] = useState<Target | null>(null)
   const [pin, setPin] = useState<Target | null>(null)
   const [focus, setFocus] = useState<FocusTarget | null>(null)
+  /** Which token kind the badge lists. The tab row switches it; the list
+   *  shows one kind at a time so Radius and Text don't stretch the panel. */
+  const [shownKind, setShownKind] = useState<RoleKind>('color')
   // Set while the pointer is inside the badge itself. Without it, reaching for
   // a role dismisses the badge on the way — the pointer leaves the specimen the
   // instant it crosses into the panel floating beside it.
@@ -335,6 +371,23 @@ export function InspectorOverlay({
     if (!roles.length) return null
     return { kind: 'page', el, label: 'Page', rect, roles, measured, appearance: appearanceFor(el) }
   }, [tokensFor, appearanceFor])
+
+  // The pin snapshots the roles it measured on click. Editing one of them in
+  // Token Details repaints the specimen in the same frame; the row has to
+  // follow, or it keeps naming the px you just replaced.
+  useEffect(() => {
+    const current = pinRef.current
+    if (!current) return
+    const next = current.kind === 'component'
+      ? buildComponent(current.el)
+      : current.kind === 'group'
+        ? buildGroup(current.el)
+        : buildPage(current.el)
+    if (!next) return
+    const stamp = (roles: { id: string; css: string }[]) => roles.map((role) => `${role.id}:${role.css}`).join('|')
+    if (stamp(current.roles) === stamp(next.roles)) return
+    setPin((prev) => (prev && prev.el === current.el ? { ...next, rect: prev.rect } : prev))
+  }, [tokensByAppearance, buildComponent, buildGroup, buildPage])
 
   useEffect(() => {
     if (!active) { clearAll(); return }
@@ -518,8 +571,9 @@ export function InspectorOverlay({
 
   const { rect, roles, label, kind, measured } = target
   const lit = pin?.kind === 'group' && focus ? new Set(focus.ids) : null
-  // 240px matches the rail it sends you to.
-  const BADGE_W = 240
+  // Wide enough that the longest role (`status.critical.surface-solid`) and
+  // its hex both fit on one row. The rail it opens stays 240.
+  const BADGE_W = 360
   // Placement is solved against the room that ACTUALLY exists, not a guessed
   // height — the badge is one row per role and a whole module reports dozens of
   // them, so a fixed estimate (this shipped at 180px first) puts the tail of a
@@ -534,7 +588,14 @@ export function InspectorOverlay({
   const top = flip ? Math.max(GAP, rect.top - GAP) : rect.bottom + GAP
   const left = Math.min(Math.max(GAP, rect.left), window.innerWidth - BADGE_W - GAP)
   const maxHeight = Math.max(flip ? roomAbove : roomBelow, MIN_BADGE_H)
-  const tableRole = focus?.ids[0] ?? roles[0]?.id
+  const isColor = (role: InspectedRole) => (role.kind ?? 'color') === 'color'
+  const colorRoles = roles.filter(isColor)
+  const presentGroups = ROLE_GROUPS.filter((group) => roles.some((role) => roleKind(role) === group.kind))
+  const activeKind = presentGroups.some((group) => group.kind === shownKind) ? shownKind : (presentGroups[0]?.kind ?? 'color')
+  const visibleRoles = roles.filter((role) => roleKind(role) === activeKind)
+  // The table button opens the colour Variables table. A length id has
+  // nowhere to go there.
+  const tableRole = (focus?.ids ?? []).find((id) => colorRoles.some((role) => role.id === id)) ?? colorRoles[0]?.id
 
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[70]">
@@ -554,7 +615,12 @@ export function InspectorOverlay({
             that scrolls away. */}
         <div className="flex flex-shrink-0 items-center gap-1.5 border-b border-line px-3 py-2">
           <InspectGlyph size={16} className="text-fg-faint" />
-          <span className="min-w-0 flex-1 truncate text-caption font-normal tracking-[0.18px] text-fg">{label}</span>
+          <span
+            className="min-w-0 flex-1 truncate text-caption font-normal tracking-[0.18px] text-fg"
+            title={focus ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit` : undefined}
+          >
+            {focus ? focus.label : label}
+          </span>
           {onOpenTable && tableRole && (
             <button
               type="button"
@@ -581,64 +647,94 @@ export function InspectorOverlay({
             </button>
           )}
         </div>
-        {/* The one line that says what the pinned union is FOR: point at a
-            control and its rows light up. Without it, level 3 is a feature you
-            have to stumble into. */}
-        {pin?.kind === 'group' && (
-          <p className="m-0 flex-shrink-0 border-b border-line/60 px-3 py-1.5 text-nano text-fg-faint">
-            {focus
-              ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit`
-              : `${pin.size} components. Point at one to light its roles.`}
-          </p>
-        )}
         {roles.length === 0 ? (
           <p className="m-0 px-3 py-2.5 text-mini text-fg-faint">
             No mapped roles. {INSPECTOR_BLIND_SPOT}
           </p>
         ) : (
+          <>
+            {presentGroups.length > 1 && (
+              <div role="tablist" aria-label="Token kind" className="flex flex-shrink-0 items-center gap-1 border-b border-line/60 px-2 py-1.5">
+                {presentGroups.map((group) => {
+                  const count = roles.filter((role) => roleKind(role) === group.kind).length
+                  const litCount = lit ? roles.filter((role) => roleKind(role) === group.kind && lit.has(role.id)).length : 0
+                  const selected = group.kind === activeKind
+                  return (
+                    <button
+                      key={group.kind}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setShownKind(group.kind)}
+                      className={`flex h-6 items-center gap-1.5 rounded-md px-2 text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                        selected ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-surface hover:text-fg'
+                      }`}
+                    >
+                      {group.label}
+                      {litCount > 0 && <span className="h-1 w-1 flex-shrink-0 rounded-full bg-accent-ui" aria-hidden />}
+                      <span className={`tabular-nums ${selected ? 'text-fg-muted' : ''}`}>{count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto p-1">
-            {roles.map((role) => {
-              const isLit = lit?.has(role.id) ?? false
-              return (
-                <li key={role.id}>
-                  <button
-                    type="button"
-                    // The ring STAYS while Token Details edits this role: the
-                    // drawer names a token, not a place, so dismissing the
-                    // highlight left the user editing `content.primary` with
-                    // nothing on screen saying which of the board's dozen
-                    // components they had picked it off.
-                    //
-                    // A HOVER target is promoted to a pin rather than kept as
-                    // hover — hover dies the moment the pointer leaves for the
-                    // drawer, and a pin ignores `pointermove`, so crossing the
-                    // board on the way there cannot retarget it either.
-                    onClick={() => {
-                      if (!pinRef.current) { setPin(target); setHover(null) }
-                      onPick(role.id, role.css, target.appearance)
-                    }}
-                    className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+                  {visibleRoles.map((role) => {
+                    const isLit = lit?.has(role.id) ?? false
+                    const rowClass = `flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors ${
                       isLit
                         ? 'bg-accent-ui/10 ring-1 ring-inset ring-accent-ui/40'
-                        : `hover:bg-surface ${lit ? 'opacity-45' : ''}`
-                    }`}
-                  >
-                    <span
-                      className="h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-black/10 dark:ring-white/15"
-                      style={role.css.length > 7 ? CHECKER : undefined}
-                      aria-hidden
-                    >
-                      <span className="block h-full w-full" style={{ background: role.css }} />
-                    </span>
-                    <span className={`min-w-0 flex-1 truncate font-mono text-mini ${isLit ? 'text-fg' : 'text-fg-muted'}`}>{role.id}</span>
-                    {role.where && (
-                      <span className="flex-shrink-0 text-nano text-fg-faint">{SLOT_LABEL[role.where]}</span>
-                    )}
-                  </button>
-                </li>
-              )
-            })}
+                        : lit ? 'opacity-45' : ''
+                    }`
+                    const name = (
+                      <>
+                        {role.kind && role.kind !== 'color'
+                          ? <LengthMark kind={role.kind} />
+                          : (
+                            <span
+                              className="h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-black/10 dark:ring-white/15"
+                              style={role.css.length > 7 ? CHECKER : undefined}
+                              aria-hidden
+                            >
+                              <span className="block h-full w-full" style={{ background: role.css }} />
+                            </span>
+                          )}
+                        <span className={`min-w-0 flex-1 truncate font-mono text-mini ${isLit ? 'text-fg' : 'text-fg-muted'}`}>{role.id}</span>
+                        <span className="w-[9ch] flex-shrink-0 font-mono text-nano tabular-nums text-fg-muted">
+                          {role.kind && role.kind !== 'color' ? role.css : displayHex(role.css)}
+                        </span>
+                        <span className="w-11 flex-shrink-0 text-right text-nano text-fg-faint">{role.where ? SLOT_LABEL[role.where] : ''}</span>
+                      </>
+                    )
+                    return (
+                      <li key={role.id}>
+                        <button
+                          type="button"
+                          // The ring STAYS while Token Details edits this role: the
+                          // drawer names a token, not a place, so dismissing the
+                          // highlight left the user editing `content.primary` with
+                          // nothing on screen saying which of the board's dozen
+                          // components they had picked it off.
+                          //
+                          // A HOVER target is promoted to a pin rather than kept as
+                          // hover — hover dies the moment the pointer leaves for the
+                          // drawer, and a pin ignores `pointermove`, so crossing the
+                          // board on the way there cannot retarget it either.
+                          // Radius, text and size open the same drawer; it picks a
+                          // primitive instead of a colour ramp.
+                          onClick={() => {
+                            if (!pinRef.current) { setPin(target); setHover(null) }
+                            onPick(role.id, role.css, target.appearance)
+                          }}
+                          className={`${rowClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${isLit ? '' : 'hover:bg-surface'}`}
+                        >
+                          {name}
+                        </button>
+                      </li>
+                    )
+                  })}
           </ul>
+          </>
         )}
         {/* Only the union can under-report; a measured list is what the element
             actually paints. */}

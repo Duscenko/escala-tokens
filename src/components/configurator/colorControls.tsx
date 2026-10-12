@@ -14,6 +14,8 @@ import { ColorPickerPanel } from '../ui/ColorField'
 import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import { useI18n } from '../../lib/i18n'
+import { undoEdit, useEditHistory } from '../../lib/editHistory'
 
 export { CHECKER } from './checker'
 
@@ -1279,6 +1281,8 @@ export function SystemRampGrid({
   onPick,
   ariaLabel,
   onOpenFamily,
+  disabledKeys,
+  disabledHint,
 }: {
   /** Families in display order; empty ramps are skipped. */
   ramps: { key: string; scale: Record<number, string> | undefined }[]
@@ -1286,6 +1290,11 @@ export function SystemRampGrid({
   selected?: { family: string; tone: number } | null
   onPick: (family: string, tone: number, hex: string) => void
   ariaLabel?: string
+  /** Families shown but not pickable — an override that already left the
+   *  schema ramp stays visible while the lock is on. */
+  disabledKeys?: ReadonlySet<string>
+  /** Title and accessible name for a cell in a disabled family. */
+  disabledHint?: string
   /** When set, each solid family's label becomes a link that jumps to that
    *  family's ramp in the Color · Primitives table — you're picking a tone
    *  here, but editing the ramp itself lives there. Omitted for alpha rows
@@ -1310,7 +1319,9 @@ export function SystemRampGrid({
       // twelve swatches.
       style={{ gridTemplateColumns: 'max-content repeat(12, minmax(0, 1fr))', columnGap: 3, rowGap: 4 }}
     >
-      {rows.map((row) => (
+      {rows.map((row) => {
+        const off = disabledKeys?.has(row.key) ?? false
+        return (
         <Fragment key={row.key}>
           {/* Platform UI font, not mono: these are family LABELS ("accent",
               "neutral-dark"), not code identifiers the way the dialog's Name
@@ -1324,7 +1335,9 @@ export function SystemRampGrid({
               onClick={() => onOpenFamily(row.key)}
               title={`Edit the ${row.key} ramp in Color · Primitives`}
               aria-label={`Edit the ${row.key} ramp in the Primitives table`}
-              className="group/fam flex items-center gap-0.5 min-w-0 pr-1 text-micro font-medium text-fg-faint hover:text-accent-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 rounded"
+              className={`group/fam flex items-center gap-0.5 min-w-0 pr-1 text-micro font-medium text-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 rounded ${
+                off ? 'opacity-50' : 'hover:text-accent-ui'
+              }`}
             >
               <span className="truncate">{row.key}</span>
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 opacity-0 group-hover/fam:opacity-100 transition-opacity">
@@ -1332,7 +1345,7 @@ export function SystemRampGrid({
               </svg>
             </button>
           ) : (
-            <span className="text-micro font-medium text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
+            <span className={`text-micro font-medium text-fg-faint truncate pr-1 ${off ? 'opacity-50' : ''}`} title={row.key}>{row.key}</span>
           )}
           {Array.from({ length: 12 }, (_, i) => i + 1).map((tone) => {
             const hex = row.scale?.[tone]
@@ -1343,14 +1356,19 @@ export function SystemRampGrid({
               <button
                 key={tone}
                 type="button"
+                disabled={off}
                 onClick={() => onPick(row.key, tone, hex)}
-                title={`${row.key}.${tone} — ${hex}`}
-                aria-label={`Use ${row.key}.${tone}`}
+                title={off ? (disabledHint ?? `${row.key}.${tone}`) : `${row.key}.${tone} — ${hex}`}
+                aria-label={off ? (disabledHint ?? `${row.key}.${tone}`) : `Use ${row.key}.${tone}`}
                 aria-pressed={on}
                 className={`h-4 w-full min-w-0 rounded-[4px] overflow-hidden transition-all ${
+                  off && !on ? 'opacity-40' : ''
+                } ${
                   on
                     ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'
-                    : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/25 dark:hover:ring-white/25'
+                    : off
+                      ? 'cursor-not-allowed ring-1 ring-black/10 dark:ring-white/10'
+                      : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/25 dark:hover:ring-white/25'
                 }`}
                 style={{ gridColumn: tone + 1, ...(alpha ? { ...CHECKER, backgroundSize: '5px 5px' } : { background: hex }) }}
               >
@@ -1359,7 +1377,8 @@ export function SystemRampGrid({
             )
           })}
         </Fragment>
-      ))}
+        )
+      })}
       {/* Shared tone axis — printed once for every ramp above it, the same
           1–12 the scale editors number. */}
       <span aria-hidden />
@@ -1485,6 +1504,11 @@ export function CssVarChip({ name }: { name: string }) {
   )
 }
 
+/** An inspector write is labelled `size.control → dimension-16` or `Reset size.control`. */
+function tokenOwnsEdit(label: string, name: string): boolean {
+  return label === `Reset ${name}` || label.startsWith(`${name} →`)
+}
+
 export function TokenDetailsModal({
   name, cssVarName, description, onReset, resetDisabled, onClose, reduce, sections, initialOpenKey,
   onOpenInTable,
@@ -1563,6 +1587,14 @@ export function TokenDetailsModal({
   // Primitives table, Semantics): one Token Details, one place. `contained`
   // (the hub's own fly-out) and an explicit `inInspector={false}` opt out.
   const docked = useInInspector() && inInspector && !contained
+  const { t } = useI18n()
+  // History that already existed when this token opened stays put. Undo here
+  // only walks edits made to THIS token since then — a size pick, a radius
+  // step, a colour ref — and each click discards that one change.
+  const past = useEditHistory((h) => h.past)
+  const openedLength = useRef(useEditHistory.getState().past.length)
+  const lastEdit = past.length > openedLength.current ? past[past.length - 1] : undefined
+  const canUndo = !!lastEdit && tokenOwnsEdit(lastEdit.label, name)
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -1689,6 +1721,21 @@ export function TokenDetailsModal({
                   <rect x="3" y="4" width="18" height="16" rx="2" />
                   <path d="M3 9.5h18M9 9.5V20" />
                 </svg>
+              </button>
+            )}
+            {canUndo && lastEdit && (
+              <button
+                type="button"
+                onClick={() => undoEdit()}
+                aria-label={`${t('Undo')} — ${lastEdit.label}`}
+                title={`${t('Undo')} — ${lastEdit.label}`}
+                className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg border border-line text-mini text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M5.5 3.5 2.5 6.5l3 3" />
+                  <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+                </svg>
+                {t('Undo')}
               </button>
             )}
             <button

@@ -29,7 +29,7 @@ import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
-import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
+import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
@@ -739,8 +739,10 @@ export default function Configurator() {
     if (needsAnotherSystemPro && !nothingYet) { setUpgradeOpen(true); return }
     setNewSystemOpen(true)
   }
-  const openCreateTheme = () => {
-    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
+  const [brandStartOpen, setBrandStartOpen] = useState(false)
+  /** Blank — the create studio. Every Add new brand door asks first. */
+  const beginBlankBrand = () => {
+    setBrandStartOpen(false)
     setStylePreview(null)
     if (accountsEnabled && !sessionAllowsHome) {
       const live = useDesignStore.getState()
@@ -751,6 +753,12 @@ export default function Configurator() {
     }
     openLibraryPage()
     setCreatePending(true)
+  }
+  /** Add new brand, from every door. Blank, from code (JSON or source), or a
+   *  system style. Random is not a start option. */
+  const openCreateTheme = () => {
+    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
+    setBrandStartOpen(true)
   }
   /** The Random theme that was MINTED by pressing Random and is not saved yet.
    *  Free reopens the one theme it already has instead — that is not a draft,
@@ -951,6 +959,27 @@ export default function Configurator() {
    *  preview specimens already use, so there is one "show me this token"
    *  mechanism rather than a second one for the drawer. */
   const openTokenInVariables = (tokenId: string, edit = false) => {
+    // Geometry roles live in their own Variables tables. Sending `radius.pill`
+    // through the colour reveal looks up a categorical id that does not exist.
+    if (tokenId.startsWith('text.')) {
+      setExportMode(null)
+      setTab('foundations')
+      setThemeWorkspaceTab('primitives')
+      setActiveFoundation('typography')
+      setFoundationCollection('typography', 'semantics')
+      setTypeReveal((prev) => ({ key: tokenId.slice('text.'.length), seq: (prev?.seq ?? 0) + 1 }))
+      return
+    }
+    const layout = tokenId.startsWith('radius.') ? 'radius' : tokenId.startsWith('size.') ? 'sizes' : null
+    if (layout) {
+      setExportMode(null)
+      setTab('foundations')
+      setThemeWorkspaceTab('primitives')
+      setActiveFoundation(layout)
+      setFoundationCollection(layout, 'semantics')
+      setLayoutReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1 }))
+      return
+    }
     openColorCollection('semantics')
     // `row` only scrolls to the row; `token` also opens its editor.
     setColorReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1, as: edit ? 'token' : 'row' }))
@@ -1651,7 +1680,7 @@ export default function Configurator() {
   }
   // An empty workspace never shows a blank board. With no brand and no style
   // tried on, Brand / Variables / Code would only say "Add a brand to My
-  // brands" — so the create studio (Blank, which has Random inside) opens once
+  // brands" — so the create studio (Blank) opens once
   // on reaching that state. Cancelling lands on Home and does not re-open it.
   const emptyStartedRef = useRef(false)
   const workspaceIsEmpty = tab === 'foundations'
@@ -1668,7 +1697,7 @@ export default function Configurator() {
     if (!useDesignStore.persist.hasHydrated()) return
     if (importOpen || newSystemOpen || themeEditor || createPending || upgradeOpen || registerOpen) return
     emptyStartedRef.current = true
-    openCreateTheme()
+    beginBlankBrand()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceIsEmpty, access.loading, guestStudio, importOpen, newSystemOpen, themeEditor, createPending, upgradeOpen, registerOpen])
   const openThemePreviewPage = () => {
@@ -1986,7 +2015,7 @@ export default function Configurator() {
         query={colorQuery}
       />
     ) : section.key === 'dimensions' ? (
-      <DimensionPrimitives previewTheme={previewTheme} query={colorQuery} railCollapsed={groupsRailCollapsed} />
+      <DimensionPrimitives previewTheme={previewTheme} previewAppearance={previewAppearance} query={colorQuery} railCollapsed={groupsRailCollapsed} />
     ) : section.key === 'icons' ? (
       <div className="h-full overflow-y-auto p-8">
         <Active />
@@ -2575,10 +2604,9 @@ export default function Configurator() {
                     studioOnly={themeWorkspaceTab !== 'system' && guestStudio}
                     systemOnly={themeWorkspaceTab === 'system'}
                     onOpenSystem={openSystemPage}
-                    onEditRole={(roleId) => {
+                    onEditRole={() => {
                       const reason = themeTablesBlocked()
-                      if (reason) { showToast(reason, undefined, true); return }
-                      openTokenInVariables(roleId, true)
+                      if (reason) { showToast(reason, undefined, true); return false }
                     }}
                     onGoHome={sessionAllowsHome ? requestHome : undefined}
                     onOpenStyles={openSystemStyles}
@@ -2617,6 +2645,10 @@ export default function Configurator() {
                     enterFolderTick={enterFolderTick}
                     openStylesRequest={openStylesRequest}
                     onStylesRequestHandled={() => setOpenStylesRequest(false)}
+                    onOpenBrand={() => {
+                      setActiveFoundation('color')
+                      openThemePreviewPage()
+                    }}
                     onEditFoundation={selectFoundation}
                     onCreatingChange={setHomeCreating}
                     onOpenComponent={(key) => {
@@ -2873,6 +2905,16 @@ export default function Configurator() {
           />
         )}
       </AnimatePresence>
+
+      {/* How a brand starts. Every Add new brand door opens this first. */}
+      <StartDesignModal
+        open={brandStartOpen}
+        onClose={() => setBrandStartOpen(false)}
+        title={savedBrandKeys.length > 0 ? t('How do you want to start this brand?') : undefined}
+        onBlank={beginBlankBrand}
+        onFromCode={openImport}
+        onSystemStyles={openSystemStyles}
+      />
 
       {/* Import-your-design-system window */}
       <AnimatePresence>

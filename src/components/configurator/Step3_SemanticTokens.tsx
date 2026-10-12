@@ -28,6 +28,7 @@ import {
 import VariableCollectionRail from './VariableCollectionRail'
 import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
+import { useI18n } from '../../lib/i18n'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -217,6 +218,28 @@ export function parseRef(label: string): [string, number] | null {
 }
 
 /**
+ * Which ramp rows a locked Token Details grid offers.
+ *
+ * Locked, a role can only be pointed at the family the schema already uses
+ * (`surface.page` stays on neutral, not error). The current family stays on
+ * screen when an override already left that ramp, but its cells do not pick.
+ * Unlocked, or with no schema family, every row picks.
+ */
+export function familiesForRampLock(
+  families: readonly string[],
+  home: string | null,
+  selected: string | undefined,
+  locked: boolean,
+): { key: string; pickable: boolean }[] {
+  if (!locked || !home || !families.includes(home)) {
+    return families.map((key) => ({ key, pickable: true }))
+  }
+  return families
+    .filter((key) => key === home || key === selected)
+    .map((key) => ({ key, pickable: key === home }))
+}
+
+/**
  * Which ramp cell Token Details should ring.
  *
  * The stored label is the answer — that is the primitive the role aliases.
@@ -247,9 +270,20 @@ export function pickRampCell(
 // The mode's name + light/dark glyph used to live here; it's the collapsible
 // section header now (see TokenDetailsModal's `sections`), so this renders the
 // grid alone rather than printing a second label inside its own card.
+function RampLockIcon({ open }: { open: boolean }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="4" y="11" width="16" height="9" rx="2" />
+      {open
+        ? <path d="M8 11V7a4 4 0 0 1 7.5-1.5" />
+        : <path d="M8 11V7a4 4 0 0 1 8 0v4" />}
+    </svg>
+  )
+}
+
 export function ArchModeEditor({
   label, value, scales, palette, kind, pageBackground, darkBackground, onPick, onOpenFamily,
-  preferCss,
+  preferCss, homeLabel, lockScope,
 }: {
   /** That mode's own palette + polarity — the grid MUST resolve through these
    *  (see `rampsOf`), or a dark mode offers light swatches. */
@@ -273,10 +307,19 @@ export function ArchModeEditor({
   /** Colour sampled on the canvas. When set, the ring follows this hex even
    *  if the stored ref names a different primitive. */
   preferCss?: string | null
+  /** Schema label for this mode (`neutral-dark.1`), before any override.
+   *  The lock keeps picks on that family. */
+  homeLabel?: string
+  /** Remounts the lock to closed when another role opens in the same editor. */
+  lockScope?: string
 }) {
+  const { t } = useI18n()
   const ramps = rampsOf(scales, palette, kind, pageBackground, darkBackground)
   const selected = pickRampCell(value, ramps, preferCss)
   const family = selected?.family
+  const home = parseRef(homeLabel ?? '')?.[0] ?? null
+  const [locked, setLocked] = useState(true)
+  useEffect(() => { setLocked(true) }, [lockScope])
 
   // `neutral` and `neutral-dark` are the only two families that mean the same
   // ROLE at opposite polarities — a role's light ref is `{neutral.N}`, its dark
@@ -284,30 +327,65 @@ export function ArchModeEditor({
   // resolves both to that palette's single gray ramp, so the grid showed two
   // byte-identical rows. Each mode card only ever writes its own polarity, so
   // drop the other neutral here (kept only if it's somehow the current ref, so
-  // an existing selection still rings).
+  // an existing selection still rings). The schema family is kept even when
+  // that drop would hide it — the lock has to have a ramp to offer.
   const pickableFamilies = ARCH_PICKABLE_FAMILIES.filter((key) => {
     const drop = kind === 'dark' ? 'neutral' : 'neutral-dark'
+    if (home && key === home) return true
     return key !== drop || key === family
   })
+  const canLock = !!home && pickableFamilies.includes(home)
+  const shown = familiesForRampLock(pickableFamilies, canLock ? home : null, family, locked && canLock)
+  const disabledKeys = new Set(shown.filter((row) => !row.pickable).map((row) => row.key))
 
   return (
     <div className="flex flex-col gap-2">
+      {canLock && home && (
+        <div className="flex items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-micro text-fg-muted">
+            {locked ? t('Only {ramp}', { ramp: home }) : t('Any ramp')}
+          </span>
+          <button
+            type="button"
+            aria-pressed={locked}
+            aria-label={locked ? t('Unlock to pick another ramp') : t('Lock to {ramp}', { ramp: home })}
+            title={locked ? t('Unlock to pick another ramp') : t('Lock to {ramp}', { ramp: home })}
+            onClick={() => setLocked((v) => !v)}
+            className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              locked
+                ? 'border-line-strong bg-surface text-fg'
+                : 'border-line text-fg-faint hover:border-line-strong hover:text-fg'
+            }`}
+          >
+            <RampLockIcon open={!locked} />
+          </button>
+        </div>
+      )}
       {/* Every family, every tone, in one grid — picking a cell writes
-          `{family.tone}` directly. This replaced a chip row ("which family?")
-          stacked over a single ScaleRow ("which tone?"): that split one choice
-          into two clicks and hid all the other families behind the active
-          chip, so you couldn't compare candidates while choosing. Same widget
-          the colour picker used to carry as its "Palette" block. */}
+          `{family.tone}` directly. While the lock is on, only the schema
+          family picks: a page token stays on its neutral ramp instead of a
+          state ramp. Unlocking shows the rest. Same widget the colour picker
+          used to carry as its "Palette" block. */}
       <SystemRampGrid
-        ramps={pickableFamilies.map((key) => ({ key, scale: ramps[key] }))}
+        ramps={shown.map((row) => ({ key: row.key, scale: ramps[row.key] }))}
         selected={selected}
-        onPick={(fam, t) => onPick(`{${fam}.${t}}`)}
+        disabledKeys={disabledKeys}
+        disabledHint={t('Unlock to pick another ramp')}
+        onPick={(fam, tone) => onPick(`{${fam}.${tone}}`)}
         ariaLabel={`Pick a token for ${label}`}
         onOpenFamily={onOpenFamily}
       />
     </div>
   )
 }
+
+// The swatch corner is 3px. The chip adds a 2px inset, so its own corner is
+// 5px — the two curves stay parallel. A shared `rounded-md` sat further out
+// than that inset and the chip read rounder than the square inside it.
+const VALUE_SWATCH =
+  'h-3.5 w-3.5 flex-shrink-0 rounded-[3px] ring-1 ring-black/10 dark:ring-white/10'
+const VALUE_CHIP =
+  'inline-flex max-w-full items-center gap-1.5 rounded-[5px] border bg-surface py-[2px] pl-[2px] pr-2 text-caption font-mono text-fg-muted'
 
 function TokenCell({
   v,
@@ -329,11 +407,11 @@ function TokenCell({
     <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
       <Chip
         {...(onEdit ? { onClick: onEdit, type: 'button' as const, title: `${v.label} — click to read from another primitive` } : {})}
-        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border text-caption font-mono text-fg-muted max-w-full ${
+        className={`${VALUE_CHIP} ${
           edited ? 'border-accent-ui' : 'border-line'
         } ${onEdit ? 'hover:border-line-strong hover:text-fg transition-colors cursor-pointer' : ''}`}
       >
-        <span className="relative w-3.5 h-3.5 rounded-[3px] flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
+        <span className={`relative overflow-hidden ${VALUE_SWATCH}`}>
           {hasAlpha && <span className="absolute inset-0" style={CHECKER_STYLE} aria-hidden />}
           <span className="absolute inset-0" style={{ background: v.css }} />
         </span>
@@ -382,9 +460,9 @@ function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: nu
     ? (tone != null ? baseLabelForTone(tone) : '—')
     : (tone != null ? toneLabel(naming, tone) : '—')
   return (
-    <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-caption font-mono text-fg-muted max-w-full">
+    <span className={`${VALUE_CHIP} border-line`}>
       <span
-        className="w-3.5 h-3.5 rounded-[3px] flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
+        className={VALUE_SWATCH}
         style={{ backgroundColor: color || 'var(--elevated)' }}
       />
       <span className="truncate tabular-nums">
@@ -553,7 +631,7 @@ function MatrixRow({
         </div>
 
         {/* One value cell per theme — the previewed theme's column is tinted */}
-        {cols.map((col, i) => {
+        {cols.map((col) => {
           const tone = toneIndexOf(col.scale, col.value)
           // A role can draw from a different family in dark mode (content-inverse,
           // border-brand-alt) — badge the family that actually resolved this cell.
@@ -562,7 +640,7 @@ function MatrixRow({
             <button
               key={col.key}
               onClick={() => onToggle(col.key)}
-              className={`flex items-center min-w-0 px-2 py-2.5 text-left ${i < cols.length - 1 ? 'border-r border-line' : ''} ${
+              className={`flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line ${
                 col.previewed ? 'bg-accent-ui/[0.06]' : ''
               }`}
               aria-label={`${col.key} value ${SCALE_META[effScale].label}-${tone ?? '?'}`}
@@ -598,12 +676,13 @@ const NAME_MIN_TRACK = '10rem'
 /** Trailing tune / add-theme track — keep overlay width in lockstep. */
 const TRAIL_TRACK = '2.75rem'
 
-/** Pinned trailing cells. The plate is the readability layer — a sibling
- *  overlay sat on top of the icons and washed them out. `backdrop-blur-xl`
- *  plus `bg-app/80` keeps the rail glassy without letting swatches collide
- *  with the sliders. The fade dissolves the mode column into that plate. */
+/** Pinned trailing cells. The plate stays readable over a mode column that
+ *  slides under it. It does not draw the column rule: that seam is the
+ *  previous cell's `border-r`, the same hairline Token name uses. A line on
+ *  this plate disappears — `backdrop-filter` composites the border into the
+ *  blur — and the old fade washed the Light column so the rule never read. */
 const STICKY_TRAIL =
-  'relative sticky right-0 z-10 border-l border-line bg-app/90 backdrop-blur-xl supports-[backdrop-filter]:bg-app/80 before:pointer-events-none before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-gradient-to-r before:from-transparent before:to-app/90'
+  'relative sticky right-0 z-10 bg-app/90 backdrop-blur-xl supports-[backdrop-filter]:bg-app/80'
 
 const MAX_DOTS = 6
 const MIN_OVERFLOW = 52
@@ -1319,7 +1398,7 @@ export default function Step3_SemanticTokens({
                     scrolls with the header's content box, so without a fill
                     here the mode labels would slide visibly under this one. */}
                 <span className="flex items-center pl-4 border-r border-line sticky left-0 z-10 bg-app">Token name</span>
-                {archModeKeys.map((mode, i) => {
+                {archModeKeys.map((mode) => {
                   const isPreviewed = activeAppearance === kindOf(mode)
                   const label = archModeLabel(mode)
                   // Categorical's columns ARE `themeOrder`, one per theme,
@@ -1329,7 +1408,7 @@ export default function Step3_SemanticTokens({
                   // per-theme concept, which is what this used to guard.)
                   const deletable = themeCols.length > 1
                   return (
-                    <span key={mode} className={`flex items-center min-w-0 px-1.5 py-1.5 ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''} ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                    <span key={mode} className={`flex items-center min-w-0 px-1.5 py-1.5 border-r border-line ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       {/* Same "whole header is the preview toggle" affordance
                           the flat matrix's columns use — 'light'/'dark' are
                           always valid theme keys, and Categorical's added
@@ -1457,13 +1536,11 @@ export default function Step3_SemanticTokens({
                           )}
                         </button>
                       </div>
-                      {archModeKeys.map((mode, i) => (
+                      {archModeKeys.map((mode) => (
                         <button
                           key={mode}
                           onClick={() => editable && (setDetailsMode(mode), setArchEditing(isOpen ? null : t.id))}
-                          // Last mode has no `border-r`: the sticky trail owns
-                          // that seam (`border-l`) so the two never stack.
-                          className={`flex items-center min-w-0 px-2 py-2.5 text-left ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''}`}
+                          className="flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line"
                         >
                           <TokenCell
                             v={t.modes[mode]}
@@ -1515,7 +1592,7 @@ export default function Step3_SemanticTokens({
                   className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize opacity-0 group-hover:opacity-100 hover:bg-accent-ui/40 transition-opacity"
                 />
               </span>
-              {themeCols.map((t, i) => {
+              {themeCols.map((t) => {
                 const isPreviewed = activeAppearance === kindOf(t)
                 const displayName = themeDisplayName(t)
                 const canDelete = !managedThemesExternally
@@ -1532,9 +1609,7 @@ export default function Step3_SemanticTokens({
                     onDragLeave={() => setDropTarget((cur) => (cur === t ? null : cur))}
                     onDrop={(e) => { e.preventDefault(); if (dragThemeRef.current) reorderColumns(dragThemeRef.current, t); dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
                     onDragEnd={() => { dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
-                    className={`group relative flex items-center gap-1 px-1.5 py-2 min-w-0 transition-colors ${
-                      i < themeCols.length - 1 ? 'border-r border-line' : ''
-                    } ${
+                    className={`group relative flex items-center gap-1 px-1.5 py-2 min-w-0 border-r border-line transition-colors ${
                       isPreviewed ? 'bg-accent-ui/[0.06]' : ''
                     } ${managedThemesExternally ? '' : 'cursor-grab active:cursor-grabbing'} ${dragTheme === t ? 'opacity-40' : ''}`}
                   >
@@ -1764,6 +1839,8 @@ export default function Step3_SemanticTokens({
                   content: (
                     <ArchModeEditor
                       value={t.modes[mode]}
+                      homeLabel={t.schema?.[mode]?.label}
+                      lockScope={`${t.id}:${mode}`}
                       scales={scales}
                       palette={resolvedPalettes[mode]}
                       kind={kindOf(mode)}

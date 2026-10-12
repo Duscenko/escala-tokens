@@ -6,6 +6,7 @@ import {
   concentricRadiusStep,
   nestedRadius,
   radiusNestingReport,
+  radiusPickerOptions,
   LAYOUT_PRIMITIVE_STEPS,
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -127,6 +128,12 @@ describe('layout primitives', () => {
       none: '0px', xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px',
       '2xl': '16px', '3xl': '24px', '4xl': '32px', '5xl': '48px', full: '9999px',
     })
+  })
+
+  it('a radius role offers the corner ramp, and keeps a pin that is not a step', () => {
+    expect(radiusPickerOptions(RADIUS_STANDARD, 'full').map((option) => option.value)).toEqual([...RADIUS_STEPS])
+    expect(radiusPickerOptions(RADIUS_STANDARD, 'full').find((option) => option.value === 'full')?.px).toBe(9999)
+    expect(radiusPickerOptions(RADIUS_STANDARD, 'dimension-22').at(-1)).toEqual({ value: 'dimension-22', px: 22 })
   })
 
   // The three axes resolve to a strictly increasing 4 · 8 · 16 ladder, and every

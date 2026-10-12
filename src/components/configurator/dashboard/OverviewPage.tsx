@@ -54,12 +54,14 @@ function FoundationCard({ title, line, tag, picture, onClick, hint, empty }: {
   )
 }
 
-export default function OverviewPage({ dash, header, brands, onOpenFoundation, onOpenStatus }: {
+export default function OverviewPage({ dash, header, brands, onOpenFoundation, onOpenBrand, onOpenStatus }: {
   dash: Dashboard
   header: ReactNode
   brands: ReactNode
   /** Opens that foundation's page in Docs. */
   onOpenFoundation: (key: string) => void
+  /** Color opens the brand preview, on the Color edition. */
+  onOpenBrand?: () => void
   onOpenStatus: () => void
 }) {
   const { t } = useI18n()
@@ -97,8 +99,8 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
             title={t('Color')}
             line={empty ? none : `${(ramp?.[9] ?? store.primaryColor).toUpperCase()} · ${themes}`}
             tag={failing > 0 ? <Tag tone="warning">{t('{n} pairs under AA', { n: failing })}</Tag> : undefined}
-            hint={openHint}
-            onClick={() => onOpenFoundation('color')}
+            hint={onOpenBrand ? t('Brand preview') : openHint}
+            onClick={() => (onOpenBrand ? onOpenBrand() : onOpenFoundation('color'))}
             picture={(
               <span className="flex h-9 w-full overflow-hidden rounded-lg border border-fg/10">
                 {TONES.map((tone) => <span key={tone} className="h-full flex-1" style={{ background: ramp?.[tone] ?? 'transparent' }} />)}

@@ -14,7 +14,9 @@
 // see `INSPECTOR_BLIND_SPOT` below.
 
 import { COMPONENT_ARCH_ROLES, COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
-import { CATEGORICAL_FIELD_ROLE } from './previewTokens'
+import { RADIUS_ROLES, SIZE_ROLES } from './layoutTokens'
+import { CATEGORICAL_FIELD_ROLE, radiusRoleOf, sizeRoleOf } from './previewTokens'
+import { TYPE_ROLES, typeStyleCss } from './typeRoles'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 
 /** Where a role was OBSERVED on the element — a fill, the ink of a glyph or
@@ -22,19 +24,28 @@ import type { PreviewTokens } from '../components/preview/ButtonPreview'
  *  the component rather than a name in a list. */
 export type PaintSlot = 'fill' | 'ink' | 'stroke'
 
+/** Colour is the measured paint. The other three are length roles matched
+ *  off the same render: a corner, a run of text, the control's own height. */
+export type InspectKind = 'color' | 'radius' | 'text' | 'size'
+
 /**
  * A role the inspector reports for a component, with its value in the theme
- * currently on screen. `css` is whatever `archTokens` resolved — an 8-digit
- * hex for the 16 alpha-backed roles, so the badge must be able to render a
- * translucent swatch (see `TokenInspector`'s checkerboard).
+ * currently on screen. For a colour, `css` is whatever `archTokens` resolved
+ * — an 8-digit hex for the 16 alpha-backed roles, so the badge must be able
+ * to render a translucent swatch (see `TokenInspector`'s checkerboard). For
+ * a length role it is the resolved px (`8px`).
  */
 export interface InspectedRole {
-  /** Fully qualified Categorical id — `action.primary.default`. */
+  /** Fully qualified id — `action.primary.default`, `radius.action`,
+   *  `text.button`, `size.control`. */
   id: string
   css: string
   /** Absent when the row comes from the component's declared UNION rather
    *  than from a colour measured on the rendered element. */
   where?: PaintSlot
+  /** Absent on a colour row. Length rows set it so the badge can group them
+   *  and so a click does not open the colour drawer. */
+  kind?: InspectKind
 }
 
 /** One element's roles, plus whether they were measured off the render. */
@@ -187,6 +198,22 @@ const rgbaKey = (r: number, g: number, b: number, a: number) =>
  * what every specimen writes for "this style has no fill/stroke", so matching
  * it would report a role for the absence of one.
  */
+/**
+ * The measured paint as the hex the rest of the app speaks (`#rrggbb`, or
+ * `#rrggbbaa` when the pixel is translucent). The swatch still paints
+ * `role.css` itself — this is only the label beside it, so `rgb()` from
+ * `getComputedStyle` and a token hex read as the same string.
+ */
+export function displayHex(css: string): string {
+  const key = normalizeColor(css)
+  if (!key) return css
+  const [r, g, b, a] = key.split(',').map(Number)
+  const channel = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')
+  const body = `#${channel(r)}${channel(g)}${channel(b)}`
+  if (!Number.isFinite(a) || a >= 0.995) return body
+  return `${body}${channel(a * 255)}`
+}
+
 export function normalizeColor(css: string | null | undefined): string | null {
   if (!css) return null
   const value = css.trim().toLowerCase()
@@ -742,6 +769,169 @@ function chromeIds(candidates: string[]): string[] {
   return preferred.length ? preferred : candidates
 }
 
+/** A corner, a text run, or the element's own height, already in px. */
+export interface GeometrySamples {
+  radii: { px: number; circular: boolean }[]
+  type: { px: number; weight: number }[]
+  height: number | null
+}
+
+function lengthPx(value: string | undefined): number | null {
+  if (!value) return null
+  const n = parseFloat(value)
+  return Number.isFinite(n) ? Math.round(n) : null
+}
+
+/**
+ * Which radius, text and size roles a render is using.
+ *
+ * Same rule as colour: the catalogue is the allow-list, the pixels on the
+ * element decide. `overlay` collapses onto `container` when they share a
+ * step; any other pair that lands on one px is named twice, because those
+ * are independent axes. A circle is `pill` even when the used radius has
+ * been clamped to the box. Caption and helper share a size; the earlier
+ * role names that pair too.
+ */
+export function geometryRoles(t: PreviewTokens, samples: GeometrySamples): InspectedRole[] {
+  const out: InspectedRole[] = []
+  const seen = new Set<string>()
+  const push = (id: string, px: number, kind: InspectKind) => {
+    if (seen.has(id)) return
+    seen.add(id)
+    out.push({ id, css: `${px}px`, kind })
+  }
+
+  const radii = t.radius
+    ? RADIUS_ROLES.flatMap((role) => {
+        const px = lengthPx(radiusRoleOf(t, role.key))
+        return px == null ? [] : [{ id: `radius.${role.key}`, px, pill: role.key === 'pill' }]
+      })
+    : []
+  // `overlay` is the one role that collapses onto `container` by design.
+  // Every other shared pixel is two axes that happen to sit on the same
+  // step, and both names belong on the row.
+  const containerPx = radii.find((role) => role.id === 'radius.container')?.px
+  const seenRadius = new Set<number>()
+  for (const sample of samples.radii) {
+    if (!(sample.px > 0)) continue
+    if (sample.circular) {
+      const pill = radii.find((role) => role.pill)
+      if (pill) push(pill.id, pill.px, 'radius')
+      continue
+    }
+    if (seenRadius.has(sample.px)) continue
+    seenRadius.add(sample.px)
+    for (const hit of radii) {
+      if (hit.pill || hit.px !== sample.px) continue
+      if (hit.id === 'radius.overlay' && hit.px === containerPx) continue
+      push(hit.id, hit.px, 'radius')
+    }
+  }
+
+  const viewport = t.previewPlatform ?? 'desktop'
+  const primitives = t.typography
+  const type = primitives
+    ? TYPE_ROLES.flatMap((role) => {
+        const css = typeStyleCss(primitives, primitives.roles, role.key, { viewport, leading: false })
+        const px = lengthPx(css.size)
+        return px == null ? [] : [{ id: `text.${role.key}`, px, weight: css.weight }]
+      })
+    : []
+  const seenType = new Set<string>()
+  for (const sample of samples.type) {
+    const key = `${sample.px}|${sample.weight}`
+    if (seenType.has(key)) continue
+    seenType.add(key)
+    const hit = type.find((role) => role.px === sample.px && role.weight === sample.weight)
+    if (hit) push(hit.id, hit.px, 'text')
+  }
+
+  if (samples.height != null && samples.height > 0 && t.sizes) {
+    const hit = SIZE_ROLES.flatMap((role) => {
+      const px = lengthPx(sizeRoleOf(t, role.key))
+      return px == null ? [] : [{ id: `size.${role.key}`, px }]
+    }).find((role) => role.px === samples.height)
+    if (hit) push(hit.id, hit.px, 'size')
+  }
+
+  return out
+}
+
+function nestedInspect(node: Element, root: Element): boolean {
+  const owner = node.closest('[data-inspect]')
+  return !!owner && owner !== root
+}
+
+/** Corners, text runs and the outer height of one marker. Descendants that
+ *  belong to a nested `[data-inspect]` are left for that marker. */
+function readGeometry(root: Element): GeometrySamples {
+  const radii: GeometrySamples['radii'] = []
+  const type: GeometrySamples['type'] = []
+  const seenRadius = new Set<string>()
+  const seenType = new Set<string>()
+  const nodes = [root, ...Array.from(root.querySelectorAll('*')).slice(0, MAX_NODES)]
+  for (const node of nodes) {
+    if (node !== root && nestedInspect(node, root)) continue
+    const cs = getComputedStyle(node)
+    if (cs.display === 'contents') continue
+    const radius = Math.round(parseFloat(cs.borderTopLeftRadius))
+    if (radius > 0) {
+      const w = parseFloat(cs.width)
+      const h = parseFloat(cs.height)
+      const circular = radius >= 999 || (w > 0 && h > 0 && radius * 2 >= Math.min(w, h) - 1)
+      const key = circular ? 'pill' : String(radius)
+      if (!seenRadius.has(key)) {
+        seenRadius.add(key)
+        radii.push({ px: radius, circular })
+      }
+    }
+    if (paintsText(node)) {
+      const px = Math.round(parseFloat(cs.fontSize))
+      const weight = parseInt(cs.fontWeight, 10)
+      if (px > 0 && Number.isFinite(weight)) {
+        const key = `${px}|${weight}`
+        if (!seenType.has(key)) {
+          seenType.add(key)
+          type.push({ px, weight })
+        }
+      }
+    }
+  }
+  return { radii, type, height: outerHeight(root) }
+}
+
+function outerHeight(el: Element): number | null {
+  // Layout height, not the transformed box. The collage scales modules with
+  // `transform`, and `getBoundingClientRect` would report the photograph
+  // (a 40px control reading as 17px) instead of the token.
+  const layout = (node: Element) => (node as HTMLElement).offsetHeight
+  if (getComputedStyle(el).display !== 'contents') {
+    const own = layout(el)
+    if (own > 1) return own
+  }
+  let h = 0
+  for (const kid of Array.from(el.children)) {
+    if (nestedInspect(kid, el)) continue
+    h = Math.max(h, layout(kid))
+  }
+  return h > 1 ? h : null
+}
+
+function measureGeometry(t: PreviewTokens, el: Element): InspectedRole[] {
+  if (typeof getComputedStyle !== 'function') return []
+  return geometryRoles(t, readGeometry(el))
+}
+
+function withGeometry(inspection: Inspection, geometry: InspectedRole[]): Inspection {
+  if (!geometry.length) return inspection
+  const roles = inspection.roles.slice()
+  for (const role of geometry) {
+    if (roles.some((existing) => existing.id === role.id)) continue
+    roles.push(role)
+  }
+  return { ...inspection, roles }
+}
+
 /**
  * The roles ONE rendered element paints, ordered the way it paints them.
  *
@@ -754,14 +944,15 @@ function chromeIds(candidates: string[]): string[] {
 export function inspectElement(
   t: PreviewTokens, componentKey: string, el: Element,
 ): Inspection {
+  const geometry = measureGeometry(t, el)
   const arch = t.archTokens
-  if (!arch) return { roles: [], measured: false }
+  if (!arch) return { roles: geometry, measured: geometry.length > 0 }
   const declared = rolesForComponent(componentKey)
   const paints = observePaints(el)
   const variant = parseInspectVariant(el)
   if (variant) {
     const explicit = resolveVariantRoles(t, componentKey, variant, paints)
-    if (explicit?.length) return { roles: explicit, measured: true }
+    if (explicit?.length) return withGeometry({ roles: explicit, measured: true }, geometry)
   }
   const fields = COMPONENT_COLOR_FIELDS[componentKey] ?? []
   const fieldIndex = fieldRoleIndex(t, fields)
@@ -770,14 +961,14 @@ export function inspectElement(
     roles = pairButtonScopes(arch, roles, paints)
     // A Button answers with its surface and its label. Falling through to
     // the specimen's UNION would list every severity the axis can paint.
-    return { roles, measured: true }
+    return withGeometry({ roles, measured: true }, geometry)
   }
   if (componentKey === 'TabMenu') {
     roles = pairTabMenuScopes(arch, roles, paints)
-    return { roles, measured: true }
+    return withGeometry({ roles, measured: true }, geometry)
   }
-  if (roles.length) return { roles, measured: true }
-  return { roles: inspectComponent(t, componentKey), measured: false }
+  if (roles.length) return withGeometry({ roles, measured: true }, geometry)
+  return withGeometry({ roles: inspectComponent(t, componentKey), measured: false }, geometry)
 }
 
 /**
@@ -841,6 +1032,12 @@ export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
       if (roles.some((existing) => existing.id === role.id)) continue
       roles.push(role)
     }
+  }
+  // The frame itself — a module's own corner, a title that isn't a
+  // component. Nested markers were already measured above.
+  for (const role of measureGeometry(t, el)) {
+    if (roles.some((existing) => existing.id === role.id)) continue
+    roles.push(role)
   }
   return { roles, members }
 }

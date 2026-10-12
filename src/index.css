@@ -721,15 +721,42 @@ button:focus-visible > .generator-cue-live {
   transform: none;
 }
 
+/* Variable map. The spine draws once, top to bottom, and each stage arrives
+   as the line reaches it — so Primitive → Role → Components reads in order.
+   It plays when a role is pinned, then the accent recedes and the quiet rule
+   stays. Transform + opacity only. */
+@keyframes map-spine {
+  0% { transform: scaleY(0); opacity: 1; }
+  72% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+@keyframes map-arrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.map-spine {
+  transform-origin: top center;
+  animation: map-spine 640ms var(--ease-out-quint) both;
+}
+.map-flow .map-step {
+  animation: map-arrive 240ms var(--ease-out-quint) both;
+}
+.map-flow .map-step-role { animation-delay: 180ms; }
+.map-flow .map-step-use { animation-delay: 380ms; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
   .animate-rainbow,
   .inspect-ring-stroke,
   .random-theme-border,
-  .generator-cue-live {
+  .generator-cue-live,
+  .map-spine,
+  .map-flow .map-step {
     animation: none !important;
   }
-  .generator-cue-live {
+  .generator-cue-live,
+  .map-spine,
+  .map-flow .map-step {
     opacity: 1;
     transform: none;
   }
