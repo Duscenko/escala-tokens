@@ -42,22 +42,25 @@ export type HeadSource = {
   descriptionVars?: Record<string, string | number>
 }
 
-const DOC_PATH_BY_KEY: Record<string, string> = {
-  [GET_STARTED_KEY]: '/docs',
-  [GUIDE_FIGMA_KEY]: '/docs/figma',
-  [GUIDE_MCP_KEY]: '/docs/mcp',
-  [CHANGELOG_KEY]: '/docs/changelog',
-  [FAQ_KEY]: '/docs/faq',
-  [OVERVIEW_KEY]: '/docs/system',
+/** Built on use, not at import. `faqArticle` pulls About, which pulls this
+ *  module back, so a key read while that cycle is still opening is `undefined`
+ *  and `/docs/faq` never gets registered. */
+function docPathByKey(): Record<string, string> {
+  const paths: Record<string, string> = {
+    [GET_STARTED_KEY]: '/docs',
+    [GUIDE_FIGMA_KEY]: '/docs/figma',
+    [GUIDE_MCP_KEY]: '/docs/mcp',
+    [CHANGELOG_KEY]: '/docs/changelog',
+    [FAQ_KEY]: '/docs/faq',
+    [OVERVIEW_KEY]: '/docs/system',
+  }
+  for (const doc of FOUNDATION_DOCS) paths[doc.key] = `/docs/${doc.key}`
+  return paths
 }
 
-for (const doc of FOUNDATION_DOCS) {
-  DOC_PATH_BY_KEY[doc.key] = `/docs/${doc.key}`
+function docKeyByPath(): Record<string, string> {
+  return Object.fromEntries(Object.entries(docPathByKey()).map(([key, path]) => [path, key]))
 }
-
-const DOC_KEY_BY_PATH: Record<string, string> = Object.fromEntries(
-  Object.entries(DOC_PATH_BY_KEY).map(([key, path]) => [path, key]),
-)
 
 const COMPONENT_BY_KEY = new Map(COMPONENTS.map((c) => [c.key, c]))
 
@@ -68,7 +71,8 @@ export function normalizePublicPath(pathname: string): string {
 
 export function matchPublicPath(pathname: string): PublicPage | null {
   const path = normalizePublicPath(pathname)
-  if (DOC_KEY_BY_PATH[path]) return { kind: 'doc', docKey: DOC_KEY_BY_PATH[path] }
+  const docKey = docKeyByPath()[path]
+  if (docKey) return { kind: 'doc', docKey }
   if (path === '/components') return { kind: 'components-index' }
   if (path.startsWith('/components/')) {
     const key = path.slice('/components/'.length)
@@ -79,13 +83,13 @@ export function matchPublicPath(pathname: string): PublicPage | null {
 }
 
 export function publicDocPath(docKey: string): string | null {
-  return DOC_PATH_BY_KEY[docKey] ?? null
+  return docPathByKey()[docKey] ?? null
 }
 
 export function publicPathForPage(page: PublicPage): string {
   if (page.kind === 'components-index') return '/components'
   if (page.kind === 'component') return `/components/${page.key}`
-  return DOC_PATH_BY_KEY[page.docKey] ?? '/docs'
+  return docPathByKey()[page.docKey] ?? '/docs'
 }
 
 /** Workspace section id for this reading page. Already in the protocol. */
@@ -105,7 +109,7 @@ export function pageForWorkspaceSection(section: string): PublicPage | null {
   if (section === 'docs') return { kind: 'doc', docKey: GET_STARTED_KEY }
   if (section.startsWith('docs/')) {
     const docKey = section.slice('docs/'.length)
-    if (!docKey || docKey.includes('/') || !DOC_PATH_BY_KEY[docKey]) return null
+    if (!docKey || docKey.includes('/') || !docPathByKey()[docKey]) return null
     return { kind: 'doc', docKey }
   }
   return null

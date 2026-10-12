@@ -334,7 +334,7 @@ export function ArchModeEditor({
     if (home && key === home) return true
     return key !== drop || key === family
   })
-  const canLock = !!home && pickableFamilies.includes(home)
+  const canLock = !!home && pickableFamilies.some((key) => key === home)
   const shown = familiesForRampLock(pickableFamilies, canLock ? home : null, family, locked && canLock)
   const disabledKeys = new Set(shown.filter((row) => !row.pickable).map((row) => row.key))
 
