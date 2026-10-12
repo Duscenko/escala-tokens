@@ -1,22 +1,18 @@
-// The foundation article — the same page shape a component article has, so the
-// docs site reads as one thing: breadcrumb · title · Overview · Use it · Why ·
-// Usage · the foundation's own sections · prev/next, with the TOC on the
-// right. Content and token bodies come from `foundationDocs.tsx`.
+// The foundation article: breadcrumb · title · Why · Usage · the
+// foundation's own sections · prev/next, with the TOC on the right. Content and
+// token bodies come from `foundationDocs.tsx`.
 //
-// "Use it" replaced the old "Ships as" section AND moved up to sit directly
-// under the lead: it answers "how do I consume this" (Figma · Code · the
-// agent brief) with live values, which is the question you have before any
-// of the conceptual copy — the same slot Create UI gives Installation.
-// Copy context to Agents lives in that block, beside Code. See `useIt.ts`.
+// There is no "Use it" block here. How to take a brand's tokens out is one
+// door, Get code, anchored in the System tab's header; a second copy of it on
+// every page read as two ways to do one thing. Component articles keep theirs.
 
 import { type ReactNode, useMemo, useState } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { useThemeHubHeaderActions } from '../themeHubHeaderActions'
 import {
-  DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
+  DocHeader, DocTitle, DocSection, CodeBlock, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
-import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 import {
   FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, presentFoundationDoc, PrimitiveRamp,
   type FoundationDoc, type SystemDoc,
@@ -50,16 +46,13 @@ export function EditTokensPill({ label, onEdit }: { label: string; onEdit: () =>
  *  Default identity so a caller that has no locale in hand still compiles. */
 type Translate = (source: string, vars?: Record<string, string | number>) => string
 
-/** Color reads palette-first: its Primitives sit directly under the intro, and
- *  "Use it" closes the page after the semantic tables — you need to see the
- *  colours, then the roles built on them, before "how do I consume this" has
- *  anything to point at. Every other foundation keeps Use it up top. */
+/** Color reads palette-first: its Primitives sit directly under the intro,
+ *  before the why and the usage. */
 const PALETTE_FIRST = new Set(['color'])
 
 export function foundationToc(doc: FoundationDoc, t: Translate = (s) => s): TocEntry[] {
   const why = { id: 'why', label: t('Why {foundation} tokens', { foundation: t(doc.label).toLowerCase() }) }
   const usage = { id: 'usage', label: t('Usage') }
-  const useIt = { id: USE_IT_ID, label: t(USE_IT_TITLE) }
   const entry = (s: FoundationDoc['sections'][number], sub = true) => ({ id: s.id, label: t(s.title), sub })
   if (PALETTE_FIRST.has(doc.key)) {
     const [first, ...rest] = doc.sections
@@ -68,12 +61,11 @@ export function foundationToc(doc: FoundationDoc, t: Translate = (s) => s): TocE
       ...(first ? [entry(first, false)] : []),
       why, usage,
       ...rest.map((s) => entry(s)),
-      useIt,
     ]
   }
   return [
     { id: 'description', label: t('Overview') },
-    useIt, why, usage,
+    why, usage,
     ...doc.sections.map((s) => entry(s)),
   ]
 }
@@ -122,15 +114,6 @@ export function FoundationArticle({
       {section.render(system)}
     </DocSection>
   )
-  const useItSection = (
-    <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
-      <UseItBlock
-        useIt={useItForFoundation(page)}
-        trailingActions={hubMode ? <EditTokensPill label={page.codeSection === 'spacing' ? 'Sizes' : page.label} onEdit={() => onEdit(doc.key)} /> : undefined}
-      />
-    </DocSection>
-  )
-
   return (
     <div className="min-w-0 flex flex-col gap-8">
       {!hubMode ? (
@@ -155,11 +138,7 @@ export function FoundationArticle({
 
       {lead}
 
-      {/* Create UI's slot for this: immediately after the description, before
-          any conceptual copy — you can't act on a page until you know how to
-          consume what it documents. (Color moves it to the foot: see
-          `PALETTE_FIRST`.) */}
-      {paletteFirst ? page.sections.slice(0, 1).map(renderSection) : useItSection}
+      {paletteFirst ? page.sections.slice(0, 1).map(renderSection) : null}
 
       <DocSection
         id="why"
@@ -172,8 +151,6 @@ export function FoundationArticle({
       </DocSection>
 
       {(paletteFirst ? page.sections.slice(1) : page.sections).map(renderSection)}
-
-      {paletteFirst ? useItSection : null}
 
       <Pager
         prev={prev && { key: prev.key, label: prev.label }}

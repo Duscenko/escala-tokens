@@ -36,6 +36,7 @@ import {
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
 import { StartDesignModal } from './ThemeSheet'
+import { GetCodeButton } from './ThemePreviewHub'
 import SystemDashboard, { BrandSelect } from './dashboard/SystemDashboard'
 import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
 import { LoginWall } from '../ui/LoginWall'
@@ -1866,7 +1867,15 @@ export default function ThemeLibraryPage({
             action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
               <NewDesignSystemButton onClick={onNewSystem} />
             ) : onDashboard ? (
-              <BrandSelect brand={previewTheme} onSelect={onSelectTheme} />
+              <div className="flex items-center gap-4">
+                <BrandSelect brand={previewTheme} onSelect={onSelectTheme} />
+                {/* The one door to the brand's code: no per-page copy of it. */}
+                <GetCodeButton
+                  onOpen={() => onGetCode(previewTheme)}
+                  disabled={gated}
+                  disabledTitle={t('Create a free account to get the code')}
+                />
+              </div>
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-hidden">

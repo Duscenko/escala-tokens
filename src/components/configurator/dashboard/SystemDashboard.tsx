@@ -209,6 +209,7 @@ export default function SystemDashboard({
   /** Where a Docs recipe leaves for: Figma, Export, Save, GitHub. */
   docsExits: DocsExits
 }) {
+  const { t } = useI18n()
   const dash = useDashboard(brand)
   const { themeLabels } = useDesignStore()
   const [statusKind, setStatusKind] = useState<StatusKind>('token')
@@ -259,7 +260,9 @@ export default function SystemDashboard({
             ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole} onOpenStatus={(id) => openStatus(id)} />
             : ROLE_TABLE_KEYS.has(doc)
               ? <FoundationRolesTable dash={dash} foundation={doc} onEdit={onEditFoundation} />
-              : undefined}
+              : onEditFoundation
+                ? <button type="button" onClick={() => onEditFoundation(doc)} className={`${BTN} self-start`}>{t('Edit in Variables')}</button>
+                : undefined}
         />
       )}
       {shown === 'status' && (
