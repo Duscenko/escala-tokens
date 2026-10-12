@@ -2,7 +2,7 @@
 // (System reference + one article per foundation). The master list lives in
 // `DocsRail` (owned by Configurator); this view is the article + TOC.
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
@@ -21,7 +21,7 @@ export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
   activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits, allowReference = true,
-  overviewTitle, hubMode, docScope, appearance = 'light',
+  overviewTitle, hubMode, docScope, appearance = 'light', rail = true, lead,
 }: {
   /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
    *  (the whole-system sheet), or a foundation key. */
@@ -47,6 +47,11 @@ export default function DocsView({
   docScope?: SystemDocScope
   /** Hub sheet paints the previewed appearance's ramps and shadows. */
   appearance?: 'light' | 'dark'
+  /** False when the caller lists the pages itself (the System tab's menu):
+   *  no page list and no "On this page" are drawn here. */
+  rail?: boolean
+  /** Drawn under a foundation page's title, before its sections. */
+  lead?: ReactNode
 }) {
   const { t } = useI18n()
   const system = useSystemDoc(docScope ?? {})
@@ -109,6 +114,7 @@ export default function DocsView({
               onOpen={onSelectFoundationKey}
               onEdit={onEditFoundation}
               hubMode={hubMode}
+              lead={lead}
             />
           ) : allowReference ? (
             <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} hubMode={hubMode} appearance={appearance} />
@@ -125,7 +131,7 @@ export default function DocsView({
       {/* On the Generator (`hubMode` with an inspector mounted) the TOC is the
           Docs tab's inspector content instead of a third column in the card —
           the card keeps its full width for the ramps. */}
-      {hubMode && inInspector ? (
+      {!rail ? null : hubMode && inInspector ? (
         <InspectorPortal>
           <div className="flex flex-col gap-6 overflow-y-auto p-5">
             <nav aria-label={t('Foundations')} className="flex flex-col gap-0.5">

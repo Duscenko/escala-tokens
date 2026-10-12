@@ -150,10 +150,39 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 > **UPDATE (2026-10-11): opening the design system on screen in Home shows its DASHBOARD.**
 > Home's `library` section for the system on screen renders `dashboard/SystemDashboard`: its own
-> left menu (Measure · Govern · Build · Ship) replaces Home's, and the old title row and brand
-> cards live on Overview. A SAVED system that is not on screen keeps the look-inside view; load
-> it to open its dashboard. Pages: Overview · Status board · Foundations · Components ·
-> Releases · Integrations.
+> left menu replaces Home's, and the old title row and brand cards live on Overview. A SAVED
+> system that is not on screen keeps the look-inside view; load it to open its dashboard.
+> Pages: Overview · Foundations · Components · Status board · Integrations.
+> - **UPDATE (2026-10-12): the dashboard was simplified.** Reported as too dense: counters
+>   that stress more than they invite. **Overview is VISUAL** (`OverviewPage`): one card per
+>   foundation with a small picture (accent ramp, "Aa", corner, bars, a shadow), the same
+>   shape as the plugin's own overview, then the brands. No KPI row, no status counters, no
+>   "Fix next"; a number shows only when a contrast pair fails. Card lines come from
+>   `foundationFacts` (`lib/systemDashboard.ts`). **Status board is TWO boards, Tokens and
+>   Components, never one list**: own counters, own columns, no "All" kind. **Releases is
+>   hidden** from the menu (`ReleasesPage` and the store fields stay); without a release the
+>   automatic status is Approved until published, Live after. **Integrations is Figma and
+>   GitHub only** (the AI agents and Figma plugin cards were removed). The menu is a flat
+>   list with no group captions and no Sources box. Don't add a counter back to Overview.
+> - **UPDATE (2026-10-12): the dashboard is the Generator's SYSTEM tab.** The inspector strip
+>   is **Brand · Variables · System** (`InspectorTab` `system`, `ThemeWorkspaceTab` `system`,
+>   URL `?section=system` or `system/<foundation>`). The Docs tab is gone: **Docs is a page of
+>   the System menu**, one row per foundation, shown while Docs is open. Brand and Variables
+>   are about the brand on screen; System is the whole design system.
+>   - **One dashboard, two doors.** `ThemeLibraryPage` draws it with `systemOnly` (it owns the
+>     title row and the brand cards). Opening the system on screen from Home calls
+>     `onOpenSystem` and lands on the tab; Home no longer draws its own copy. The menu portals
+>     into the right inspector like every other Generator panel.
+>   - **Docs and the old Foundations page were MERGED.** A Docs page is `DocsView` (`hubMode`,
+>     `rail={false}`: the menu lists the pages, and there is no "On this page"). Color adds
+>     `ColorVariableMap` under its title (`lead`): roles, the Primitive → Role → Components
+>     flow, the inspector and the token mapping. The other foundations add nothing, because
+>     their Docs page already lists every role. Overview's cards open the foundation's page.
+>   - **The open page is held by the shell** (`systemPlace`), so the tab resumes where it was.
+>   - **Without an account** Overview is open; Docs, Components, Status board and
+>     Integrations sit behind `LoginWall`.
+>   - An old brand-Docs link (`themes/<brand>/documentation`) opens System · Docs.
+>     `docsPanelOpen` and the hub's Docs branch in `ThemePreviewHub` are no longer reachable.
 > - **Every figure is derived, in `lib/systemDashboard.ts`** (pure, tested), from the tokens,
 >   the catalogue and the status decisions. Contrast is the audit's own loop
 >   (`auditResolvedRoles` in `color/audit.ts`, `lenient` for a live system). Roles for one

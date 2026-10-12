@@ -1,16 +1,18 @@
-// STATUS BOARD — every role and component of the system, its checks and its
-// status. The checks recommend; the person decides. A status nobody decided
-// follows the system (see `automaticStatus`).
+// STATUS BOARD — two boards, never one list: the semantic roles (Tokens) and
+// the components. Each has its own counters and its own columns, because a
+// role is judged on its colours and a component on what exists for it.
+// The checks recommend; the person decides. A status nobody decided follows
+// the system (see `automaticStatus`).
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useI18n } from '../../../lib/i18n'
-import { sortForDecision, type Suggestion } from '../../../lib/systemDashboard'
+import { sortForDecision, statusCounts, type DashboardElement, type ElementCheck, type ElementKind, type Suggestion } from '../../../lib/systemDashboard'
 import { ELEMENT_STATUSES, type ElementStatus } from '../../../lib/systemDashboardTypes'
-import { BTN, Card, EmptyRow, Mark, PageHeader, ROW, StatusPill, Swatch, TD, TH, Tag } from './parts'
-import { STATUS_LABEL, headlineCheck, useCheckText, type Dashboard, type Tone } from './dashboardData'
+import { BTN, Card, EmptyRow, Mark, PageHeader, ROW, StatusPill, Swatch, TD, TH, Tag, YesNo } from './parts'
+import { STATUS_LABEL, useCheckText, type Dashboard, type Tone } from './dashboardData'
 
 export type StatusFilter = ElementStatus | 'all'
-type KindFilter = 'all' | 'token' | 'component'
+export type StatusKind = ElementKind
 
 const SUGGESTION_LABEL: Record<Suggestion, string> = {
   approve: 'Approve',
@@ -21,14 +23,18 @@ const SUGGESTION_TONE: Record<Suggestion, Tone> = { approve: 'success', changes:
 /** The status a suggestion maps to. `keep` changes nothing. */
 const SUGGESTED_STATUS: Record<Suggestion, ElementStatus | null> = { approve: 'approved', changes: 'review', keep: null }
 
-const KINDS: { key: KindFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
+const KINDS: { key: StatusKind; label: string }[] = [
   { key: 'token', label: 'Tokens' },
   { key: 'component', label: 'Components' },
 ]
 
-export default function StatusBoardPage({ dash, filter, onFilter, selected, onSelect, timeAgo }: {
+const checkOf = <K extends ElementCheck['kind']>(el: DashboardElement, kind: K) =>
+  el.checks.find((check): check is Extract<ElementCheck, { kind: K }> => check.kind === kind)
+
+export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, selected, onSelect, timeAgo }: {
   dash: Dashboard
+  kind: StatusKind
+  onKind: (next: StatusKind) => void
   filter: StatusFilter
   onFilter: (next: StatusFilter) => void
   selected: string | null
@@ -37,15 +43,19 @@ export default function StatusBoardPage({ dash, filter, onFilter, selected, onSe
 }) {
   const { t } = useI18n()
   const checkText = useCheckText()
-  const [kind, setKind] = useState<KindFilter>('all')
-  const { store, elements, counts, roles } = dash
+  const { store, elements, roles } = dash
+  const tokens = kind === 'token'
+  // Everything below reads one kind only: its elements, its counters.
+  const ofKind = useMemo(() => elements.filter((el) => el.kind === kind), [elements, kind])
+  const counts = useMemo(() => statusCounts(ofKind), [ofKind])
 
   const shown = useMemo(
-    () => sortForDecision(elements).filter((el) => (filter === 'all' || el.status === filter) && (kind === 'all' || el.kind === kind)),
-    [elements, filter, kind],
+    () => sortForDecision(ofKind).filter((el) => filter === 'all' || el.status === filter),
+    [ofKind, filter],
   )
   const current = shown.find((el) => el.id === selected) ?? shown[0] ?? null
-  const role = current?.kind === 'token' ? roles.roles.find((r) => r.id === current.name) : undefined
+  const roleById = useMemo(() => new Map(roles.roles.map((r) => [r.id, r])), [roles])
+  const role = current && tokens ? roleById.get(current.name) : undefined
 
   const counter = (key: StatusFilter, label: string, count: number) => (
     <button
@@ -68,17 +78,19 @@ export default function StatusBoardPage({ dash, filter, onFilter, selected, onSe
     <>
       <PageHeader
         title={t('Status board')}
-        detail={t('Every role and component of this design system, with the checks Escala runs on it. The checks recommend a status; you decide.')}
+        detail={tokens
+          ? t('Every semantic role of this brand, with its colours and its contrast. The checks recommend a status; you decide.')
+          : t('Every component of this design system, and what exists for it: Figma, documentation, a live preview. The checks recommend a status; you decide.')}
         right={(
           <div role="group" aria-label={t('Element type')} className="flex h-8 items-center rounded-lg border border-line p-0.5">
             {KINDS.map((item) => (
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setKind(item.key)}
+                onClick={() => onKind(item.key)}
                 aria-pressed={kind === item.key}
                 className={`h-7 rounded-md px-2.5 text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                  kind === item.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
+                  kind === item.key ? 'bg-fg/[0.10] text-fg' : 'text-fg-muted hover:text-fg'
                 }`}
               >
                 {t(item.label)}
@@ -89,52 +101,86 @@ export default function StatusBoardPage({ dash, filter, onFilter, selected, onSe
       />
 
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))]">
-        {counter('all', t('All'), elements.length)}
+        {counter('all', t('All'), ofKind.length)}
         {ELEMENT_STATUSES.map((status) => counter(status, t(STATUS_LABEL[status]), counts[status]))}
       </div>
 
       <div className="grid items-start gap-4 lg:[grid-template-columns:minmax(0,1fr)_20rem]">
-        <Card title={t('Elements')} right={<span className="text-caption text-fg-faint">{t('What needs a decision comes first')}</span>}>
-          {shown.length === 0 ? <EmptyRow>{t('No element has this status.')}</EmptyRow> : (
+        <Card title={tokens ? t('Tokens') : t('Components')} right={<span className="text-caption text-fg-faint">{t('What needs a decision comes first')}</span>}>
+          {shown.length === 0 ? <EmptyRow>{tokens ? t('No token has this status.') : t('No component has this status.')}</EmptyRow> : (
             <div className="-mx-1 overflow-x-auto">
               <table className="w-full min-w-[34rem] border-collapse">
                 <thead>
-                  <tr>
-                    <th className={TH}>{t('Element')}</th>
-                    <th className={TH}>{t('Status')}</th>
-                    <th className={TH}>{t('Check')}</th>
-                    <th className={TH}>{t('Suggested')}</th>
-                  </tr>
+                  {tokens ? (
+                    <tr>
+                      <th className={TH}>{t('Token')}</th>
+                      <th className={TH}>{t('Values')}</th>
+                      <th className={TH}>{t('Status')}</th>
+                      <th className={TH}>{t('Contrast')}</th>
+                      <th className={TH}>{t('Suggested')}</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className={TH}>{t('Component')}</th>
+                      <th className={TH}>{t('Status')}</th>
+                      <th className={TH}>Figma</th>
+                      <th className={TH}>{t('Docs')}</th>
+                      <th className={TH}>{t('Preview')}</th>
+                      <th className={TH}>{t('Suggested')}</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody>
                   {shown.map((el) => {
-                    const line = checkText(headlineCheck(el.checks))
                     const on = current?.id === el.id
+                    const name = (
+                      <td className={TD}>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onSelect(el.id) }}
+                          aria-current={on ? 'true' : undefined}
+                          className="flex flex-col items-start rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                        >
+                          <span className={`font-semibold text-fg ${tokens ? 'font-mono text-micro' : ''}`}>{el.name}</span>
+                          <span className="text-micro text-fg-faint">{el.group}</span>
+                        </button>
+                      </td>
+                    )
+                    const suggested = <td className={TD}><Tag tone={SUGGESTION_TONE[el.suggestion]}>{t(SUGGESTION_LABEL[el.suggestion])}</Tag></td>
+                    const rowClass = `${ROW} cursor-pointer transition-colors ${on ? 'bg-accent-ui/[0.08]' : 'hover:bg-fg/[0.03]'}`
+                    if (tokens) {
+                      const contrast = checkOf(el, 'contrast')
+                      const line = contrast ? checkText(contrast) : null
+                      const entry = roleById.get(el.name)
+                      return (
+                        <tr key={el.id} onClick={() => onSelect(el.id)} className={rowClass}>
+                          {name}
+                          <td className={TD}>
+                            <span className="flex items-center gap-1">
+                              {roles.modeKeys.map((mode) => <Swatch key={mode} css={entry?.modes[mode]?.css ?? 'transparent'} size={16} />)}
+                            </span>
+                          </td>
+                          <td className={TD}><StatusPill status={el.status} /></td>
+                          <td className={TD}>
+                            {line && (
+                              <span className="flex items-center gap-1.5 text-fg-muted">
+                                <Mark state={line.state} />
+                                <span className="min-w-0">{line.text}</span>
+                              </span>
+                            )}
+                          </td>
+                          {suggested}
+                        </tr>
+                      )
+                    }
                     return (
-                      <tr
-                        key={el.id}
-                        onClick={() => onSelect(el.id)}
-                        className={`${ROW} cursor-pointer transition-colors ${on ? 'bg-accent-ui/[0.08]' : 'hover:bg-fg/[0.03]'}`}
-                      >
-                        <td className={TD}>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); onSelect(el.id) }}
-                            aria-current={on ? 'true' : undefined}
-                            className="flex flex-col items-start rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                          >
-                            <span className={`font-semibold text-fg ${el.kind === 'token' ? 'font-mono text-micro' : ''}`}>{el.name}</span>
-                            <span className="text-micro text-fg-faint">{el.kind === 'token' ? t('Token') : t('Component')} · {el.group}</span>
-                          </button>
-                        </td>
+                      <tr key={el.id} onClick={() => onSelect(el.id)} className={rowClass}>
+                        {name}
                         <td className={TD}><StatusPill status={el.status} /></td>
-                        <td className={TD}>
-                          <span className="flex items-center gap-1.5 text-fg-muted">
-                            <Mark state={line.state} />
-                            <span className="min-w-0">{line.text}</span>
-                          </span>
-                        </td>
-                        <td className={TD}><Tag tone={SUGGESTION_TONE[el.suggestion]}>{t(SUGGESTION_LABEL[el.suggestion])}</Tag></td>
+                        <td className={TD}><YesNo yes={checkOf(el, 'figma')?.state === 'pass'} yesLabel={t('In the Figma library')} noLabel={t('Not in the Figma library yet')} /></td>
+                        <td className={TD}><YesNo yes={checkOf(el, 'docs')?.state === 'pass'} yesLabel={t('Documented')} noLabel={t('Documentation is incomplete')} /></td>
+                        <td className={TD}><YesNo yes={checkOf(el, 'preview')?.state === 'pass'} yesLabel={t('Has a live preview')} noLabel={t('No live preview')} /></td>
+                        {suggested}
                       </tr>
                     )
                   })}
@@ -147,7 +193,7 @@ export default function StatusBoardPage({ dash, filter, onFilter, selected, onSe
         {current && (
           <Card
             className="lg:sticky lg:top-0"
-            title={<span className={current.kind === 'token' ? 'font-mono text-caption' : ''}>{current.name}</span>}
+            title={<span className={tokens ? 'font-mono text-caption' : ''}>{current.name}</span>}
             right={<StatusPill status={current.status} />}
           >
             {role && (
@@ -221,7 +267,9 @@ export default function StatusBoardPage({ dash, filter, onFilter, selected, onSe
 
       <Card title={t('How status works')}>
         <p className="text-caption text-fg-muted">
-          {t('A status nobody set follows the system: what changed since the last release is Proposed, the rest is Live. Before the first release, everything is Approved until it is published. Publishing a release turns Approved into Live.')}
+          {store.releaseBaseline
+            ? t('A status nobody set follows the system: what changed since the last release is Proposed, the rest is Live.')
+            : t('A status nobody set follows the system: Approved until the system is published to Figma, Live after.')}
         </p>
       </Card>
     </>

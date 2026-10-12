@@ -12,8 +12,12 @@ import {
 } from '../../../lib/systemDashboard'
 import type { ElementStatus } from '../../../lib/systemDashboardTypes'
 import { SPECIMENS } from '../docs/specimens'
+import { FOUNDATION_DOCS } from '../docs/foundationDocs'
 
-export type DashPage = 'overview' | 'status' | 'foundations' | 'components' | 'releases' | 'integrations'
+export type DashPage = 'overview' | 'docs' | 'status' | 'components' | 'releases' | 'integrations'
+
+/** The foundation Docs opens on when no page was picked yet. */
+export const DEFAULT_DOC_KEY = FOUNDATION_DOCS[0].key
 
 /** Components with a live preview: the catalogue's own specimen registry. */
 const PREVIEW_KEYS: ReadonlySet<string> = new Set(Object.keys(SPECIMENS))
@@ -50,7 +54,7 @@ export type Dashboard = ReturnType<typeof useDashboard>
 export const DASH_PAGE_LABEL: Record<DashPage, string> = {
   overview: 'Overview',
   status: 'Status board',
-  foundations: 'Foundations',
+  docs: 'Docs',
   components: 'Components',
   releases: 'Releases',
   integrations: 'Integrations',

@@ -37,6 +37,10 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
 import { StartDesignModal } from './ThemeSheet'
 import SystemDashboard, { BrandSelect } from './dashboard/SystemDashboard'
+import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
+import { LoginWall } from '../ui/LoginWall'
+import type { DocsExits } from './docs/getStarted'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
 import { NavGroup, NavRow } from './dashboard/parts'
 
@@ -85,6 +89,10 @@ function useBrandsLine(): (
     return brands.length ? `${brandsPart} · ${themesPart}` : brandsPart
   }
 }
+
+const noop = () => {}
+/** Home never draws Docs; the System tab passes the real exits. */
+const NO_DOCS_EXITS: DocsExits = { onOpenFigmaDownload: noop, onOpenFigmaSync: noop, onOpenExport: noop, onOpenSave: noop, onOpenGithub: noop }
 
 type HomeSection =
   | { kind: 'recents' }
@@ -583,7 +591,7 @@ function NewDesignSystemButton({ onClick }: { onClick: () => void }) {
 
 /** Pins to the top of the Home card — same band as Theme preview's canvas
  *  header. Transparent fill; the file list scrolls under it. */
-function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGoHome: () => void; action?: ReactNode }) {
+function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGoHome?: () => void; action?: ReactNode }) {
   const { t } = useI18n()
   return (
     <div
@@ -592,10 +600,14 @@ function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGo
       aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
     >
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-fg-muted" aria-hidden>
-          <HomeGlyph />
-        </span>
-        {trail ? (
+        {(onGoHome || !trail) && (
+          <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-fg-muted" aria-hidden>
+            <HomeGlyph />
+          </span>
+        )}
+        {trail && !onGoHome ? (
+          <h1 className="min-w-0 truncate text-left text-title font-semibold text-fg">{trail}</h1>
+        ) : trail ? (
           <>
             <button
               type="button"
@@ -1123,6 +1135,7 @@ export default function ThemeLibraryPage({
   onGetCode,
   onSyncFigma,
   onShareGithub,
+  onCreateTheme,
   onOpenRandom,
   onStartTheme,
   createPending = false,
@@ -1138,7 +1151,14 @@ export default function ThemeLibraryPage({
   onCreatingChange,
   studioOnly = false,
   onOpenComponent,
-  onOpenAgentDocs,
+  systemOnly = false,
+  onOpenSystem,
+  onGoHome,
+  onOpenStyles,
+  systemPlace,
+  onSystemPlace,
+  previewAppearance = 'light',
+  docsExits,
 }: {
   previewTheme: string
   /** Themes the live Figma sync publishes (File & modes). */
@@ -1183,8 +1203,21 @@ export default function ThemeLibraryPage({
   studioOnly?: boolean
   /** Dashboard: open a component's own page. */
   onOpenComponent?: (key: string) => void
-  /** Dashboard: open the guide for connecting an AI agent. */
-  onOpenAgentDocs?: () => void
+  /** The Generator's System tab: only the dashboard of the design system on
+   *  screen, with its menu in the inspector. Home's file list is not drawn. */
+  systemOnly?: boolean
+  /** Home: the design system on screen opens on the System tab, not here. */
+  onOpenSystem?: () => void
+  /** System tab: back to Home's file list. Absent when Home is not available. */
+  onGoHome?: () => void
+  /** System tab: System styles live on Home. */
+  onOpenStyles?: () => void
+  /** The dashboard's open page and Docs page, held by the shell so the tab resumes where it was. */
+  systemPlace?: { page: DashPage; doc: string }
+  onSystemPlace?: (next: { page: DashPage; doc: string }) => void
+  /** Docs paints the brand's ramps in this appearance. */
+  previewAppearance?: ThemeAppearance
+  docsExits?: DocsExits
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
@@ -1241,21 +1274,35 @@ export default function ThemeLibraryPage({
   const mine = myThemeKeys(themeOrder, themes)
   const recent = byRecent(mine, themeUpdatedAt ?? {})
   const others = store.savedSystems.filter((s) => s.id !== currentId)
-  const [section, setSection] = useState<HomeSection>({ kind: 'recents' })
+  const [section, setSectionState] = useState<HomeSection>({ kind: 'recents' })
+  // The design system on screen has ONE dashboard, on the Generator's System
+  // tab. Asking for it from Home goes there.
+  const openSystemRef = useRef(onOpenSystem)
+  useEffect(() => { openSystemRef.current = onOpenSystem })
+  const setSection = useCallback((next: HomeSection) => {
+    if (next.kind === 'library' && next.id === currentId && openSystemRef.current) {
+      openSystemRef.current()
+      return
+    }
+    setSectionState(next)
+  }, [currentId])
   useEffect(() => {
     if (!enterFolderTick) return
     setSection({ kind: 'library', id: currentId })
-  }, [enterFolderTick, currentId])
+  }, [enterFolderTick, currentId, setSection])
   const stylesHandledRef = useRef(onStylesRequestHandled)
   stylesHandledRef.current = onStylesRequestHandled
   useEffect(() => {
     if (!openStylesRequest) return
-    setSection({ kind: 'styles' })
+    setSectionState({ kind: 'styles' })
     stylesHandledRef.current?.()
   }, [openStylesRequest])
   // The design system on screen opens as a dashboard; this is its open page.
   // Kept while Home is open, so coming back resumes on the same page.
-  const [dashPage, setDashPage] = useState<DashPage>('overview')
+  const [localPlace, setLocalPlace] = useState<{ page: DashPage; doc: string }>({ page: 'overview', doc: DEFAULT_DOC_KEY })
+  const place = systemPlace ?? localPlace
+  const setPlace = onSystemPlace ?? setLocalPlace
+  const dashPage = place.page
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [brandStartOpen, setBrandStartOpen] = useState(false)
@@ -1265,9 +1312,11 @@ export default function ThemeLibraryPage({
   const [styleError, setStyleError] = useState<string | null>(null)
   // A saved library that was loaded (or deleted) under an open view: the id
   // either became the one on screen or no longer exists — fall back sanely.
-  const viewing: HomeSection = section.kind === 'library' && section.id !== currentId && !others.some((s) => s.id === section.id)
-    ? { kind: 'recents' }
-    : section
+  const viewing: HomeSection = systemOnly
+    ? { kind: 'library', id: currentId }
+    : section.kind === 'library' && section.id !== currentId && !others.some((s) => s.id === section.id)
+      ? { kind: 'recents' }
+      : section
   useEffect(() => { setConfirmSaved(null) }, [section])
 
   const deleteTheme = (key: string) => {
@@ -1492,17 +1541,20 @@ export default function ThemeLibraryPage({
     body = (
       <SystemDashboard
         page={dashPage}
-        onPage={setDashPage}
+        onPage={(page) => setPlace({ ...place, page })}
+        docKey={place.doc}
+        onDocKey={(doc) => setPlace({ page: 'docs', doc })}
         brand={previewTheme}
-        onBack={() => setSection({ kind: 'libraries' })}
+        appearance={previewAppearance}
+        docsExits={docsExits ?? NO_DOCS_EXITS}
+        onBack={systemOnly ? onGoHome : () => setSectionState({ kind: 'libraries' })}
         timeAgo={timeAgo}
         figmaThemes={figmaThemes}
         onSyncFigma={() => onSyncFigma(previewTheme)}
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenComponent={onOpenComponent}
-        onOpenAgentDocs={onOpenAgentDocs}
-        overviewHeader={(
+        overviewHeader={(tokenCount) => (
           <>
             <ViewHeader
               title={(
@@ -1538,7 +1590,7 @@ export default function ThemeLibraryPage({
                   <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
                 </>
               )}
-              detail={t('The design system you are working in. Its brands share foundations and ship together to one Figma file.')}
+              detail={`${t('{n} tokens', { n: tokenCount })} · ${brandsLine(mine, store.brandThemes, store.themeKinds)}`}
               right={(
                 <>
                   <button
@@ -1806,17 +1858,32 @@ export default function ThemeLibraryPage({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <HomeStickyBar
             trail={homeTrail}
-            onGoHome={() => setSection({ kind: 'recents' })}
+            onGoHome={systemOnly ? onGoHome : () => setSection({ kind: 'recents' })}
             action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
               <NewDesignSystemButton onClick={onNewSystem} />
             ) : onDashboard ? (
               <BrandSelect brand={previewTheme} onSelect={onSelectTheme} />
             ) : undefined}
           />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6">
-              {body}
-            </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {/* Without an account the System tab shows Overview; the other pages ask for one. */}
+            <LoginWall
+              active={systemOnly && gated && dashPage !== 'overview'}
+              visible={420}
+              title={t('See the whole design system')}
+              detail={t('Create a free account to read the docs and follow the status of every token and component.')}
+            >
+              {onDashboard && dashPage === 'docs' ? (
+                // A Docs article scrolls itself and sets its own column.
+                <div className="h-full min-h-0">{body}</div>
+              ) : (
+                <div className="h-full min-h-0 overflow-y-auto">
+                  <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6">
+                    {body}
+                  </div>
+                </div>
+              )}
+            </LoginWall>
           </div>
         </div>
       </div>
@@ -1828,10 +1895,14 @@ export default function ThemeLibraryPage({
         open={brandStartOpen}
         onClose={() => setBrandStartOpen(false)}
         title={t('How do you want to start this brand?')}
-        onBlank={openCreate}
+        onBlank={systemOnly ? onCreateTheme : openCreate}
         onRandom={() => { if (needsPro) { setUpgradeOpen(true); return } openRandom() }}
         onFromCode={() => { if (needsPro) { setUpgradeOpen(true); return } onImport() }}
-        onSystemStyles={() => { if (needsPro) { setUpgradeOpen(true); return } setSection({ kind: 'styles' }) }}
+        onSystemStyles={() => {
+          if (needsPro) { setUpgradeOpen(true); return }
+          if (systemOnly) onOpenStyles?.()
+          else setSection({ kind: 'styles' })
+        }}
       />
     </div>
   )

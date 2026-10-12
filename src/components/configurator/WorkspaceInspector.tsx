@@ -22,7 +22,7 @@ export const INSPECTOR_WIDTH = 288
 /** Stable hook for things docked against the column (ThemePanel). */
 export const INSPECTOR_ID = 'workspace-inspector'
 
-export type InspectorTab = 'theme' | 'variables' | 'code' | 'docs'
+export type InspectorTab = 'theme' | 'variables' | 'code' | 'system'
 
 const SlotContext = createContext<HTMLElement | null>(null)
 
@@ -47,13 +47,12 @@ export function InspectorPortal({ children }: { children: ReactNode }) {
 
 // Code is a tab KEY (the view still exists) but not a tab in the strip: its door is
 // the Get code icon in each canvas header. On Code, no tab reads as selected.
-// `verbatim`: "Docs" stays "Docs" in Spanish and French — "Documentación" /
-// "Documentation" is wider than its third of the 288px strip and overflowed
-// the pill. The same word elsewhere (top menu, pages) still translates.
+// Brand and Variables are about the brand on screen; System is the whole
+// design system: its overview, docs, components, status and integrations.
 const TABS: { key: InspectorTab; label: string; verbatim?: boolean }[] = [
   { key: 'theme', label: 'Brand' },
   { key: 'variables', label: 'Variables' },
-  { key: 'docs', label: 'Docs', verbatim: true },
+  { key: 'system', label: 'System' },
 ]
 
 export default function WorkspaceInspector({

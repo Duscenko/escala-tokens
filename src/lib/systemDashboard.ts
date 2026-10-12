@@ -10,6 +10,8 @@
 //   · foundations— which components consume which role, and the reverse.
 //   · releases   — the tokens as a flat map, and the difference to the map
 //                  stored at the last release.
+//   · facts      — one line per foundation for Overview's cards (the fonts,
+//                  the three radius axes, the spacing mode, the shadow preset).
 
 import type { useDesignStore } from '../store/useDesignStore'
 import { buildThemeArchitecture } from './themeArchitecture'
@@ -21,6 +23,9 @@ import { COLOR_FIELD_INFO } from './previewColorFields'
 import { CATEGORICAL_FIELD_ROLE } from './previewTokens'
 import { rolesForComponent } from './tokenInspector'
 import { generateTokenJSON } from './tokenGenerator'
+import { resolveThemeFoundations } from './themeFoundations'
+import { SPACING_MODES, matchSpacingMode, mergeLayoutRoles, resolveLayoutRole } from './layoutTokens'
+import { matchShadowPreset } from './shadowTokens'
 import {
   RELEASE_CHANGE_LIMIT,
   type ElementDecision, type ElementStatus, type ReleaseBump, type ReleaseChange, type ReleaseRecord,
@@ -508,4 +513,37 @@ export function latestChange(updatedAt: Readonly<Record<string, string>> | undef
 export function sourceState(sentAt: string | null, changedAt: string | null): SourceState {
   if (!sentAt) return 'never'
   return changedAt && Date.parse(changedAt) > Date.parse(sentAt) ? 'stale' : 'synced'
+}
+
+// ── Overview facts ───────────────────────────────────────────────────────────
+
+/** What Overview's foundation cards say about one brand. A `null` label means
+ *  the values match no preset: the card says Custom. */
+export interface FoundationFacts {
+  fonts: { body: string; heading: string }
+  /** Resolved Desktop px of the three radius axes. */
+  radius: { boxes: number; fields: number; selectors: number }
+  /** A `SPACING_MODES` label. */
+  spacing: string | null
+  /** The standard control height (`size-md`). */
+  fieldHeight: string
+  /** A `SHADOW_PRESETS` label. */
+  shadow: string | null
+  /** The middle step of the light shadow ramp, to draw the card with. */
+  shadowMd: string
+}
+
+export function foundationFacts(store: StoreState, brand: string): FoundationFacts {
+  const f = resolveThemeFoundations(store, brand)
+  const radiusRoles = mergeLayoutRoles('radius', f.radiusRoles)
+  const px = (role: string) => parseFloat(resolveLayoutRole('radius', radiusRoles, f.radius, role, '0')) || 0
+  const mode = matchSpacingMode(f.sizes, f.spacingRoles, f.stroke)
+  return {
+    fonts: { body: f.typography.fontFamily, heading: f.typography.headingFontFamily || f.typography.fontFamily },
+    radius: { boxes: px('container'), fields: px('action'), selectors: px('control') },
+    spacing: SPACING_MODES.find((m) => m.id === mode)?.label ?? null,
+    fieldHeight: f.sizes.md ?? '',
+    shadow: matchShadowPreset(f.shadows),
+    shadowMd: f.shadows.md ?? 'none',
+  }
 }

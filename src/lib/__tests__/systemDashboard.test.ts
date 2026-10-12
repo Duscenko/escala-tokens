@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
   automaticStatus, buildElements, buildRelease, changeCounts, componentRows, componentsByRole, contrastSummary,
-  diffTokenMaps, nextVersion, releaseDraft, releaseTokenMap, resolveSystemRoles, sortForDecision, sourceState,
+  diffTokenMaps, foundationFacts, nextVersion, releaseDraft, releaseTokenMap, resolveSystemRoles, sortForDecision, sourceState,
   statusCounts, suggestedBump, tokenElementId, tokenMapping, componentElementId,
 } from '../systemDashboard'
 import { COMPONENTS } from '../componentCatalogue'
@@ -131,5 +131,20 @@ describe('sources', () => {
     expect(sourceState('2026-10-03T00:00:00.000Z', '2026-10-02T00:00:00.000Z')).toBe('synced')
     expect(sourceState('2026-10-01T00:00:00.000Z', '2026-10-02T00:00:00.000Z')).toBe('stale')
     expect(sourceState('2026-10-01T00:00:00.000Z', null)).toBe('synced')
+  })
+})
+
+describe('overview facts', () => {
+  it('reads the default system: three ascending radius axes, the standard spacing and a named shadow', () => {
+    const facts = foundationFacts(state(), 'light')
+    expect(facts.radius).toEqual({ boxes: 16, fields: 8, selectors: 4 })
+    expect(facts.spacing).toBe('Quiet')
+    expect(facts.shadow).not.toBeNull()
+    expect(facts.fonts.body).toBe(state().typography.fontFamily)
+  })
+
+  it('says Custom, not a preset, once a shadow step is hand-edited', () => {
+    const store = { ...state(), shadows: { ...state().shadows, md: '0 0 0 3px red' } }
+    expect(foundationFacts(store, 'light').shadow).toBeNull()
   })
 })

@@ -87,7 +87,7 @@ export function overviewToc(t: Translate = (s) => s): TocEntry[] {
 }
 
 export function FoundationArticle({
-  doc, system, onOpen, onEdit, hubMode,
+  doc, system, onOpen, onEdit, hubMode, lead,
 }: {
   doc: FoundationDoc
   system: SystemDoc
@@ -96,6 +96,8 @@ export function FoundationArticle({
   onEdit: (foundationKey: string) => void
   /** Theme Preview hub — page actions render in the fixed header band. */
   hubMode?: boolean
+  /** Drawn right under the title, before the article's own sections. */
+  lead?: ReactNode
 }) {
   const { t } = useI18n()
   const page = presentFoundationDoc(doc, hubMode)
@@ -150,6 +152,8 @@ export function FoundationArticle({
           </CountBadge>
         }
       />
+
+      {lead}
 
       {/* Create UI's slot for this: immediately after the description, before
           any conceptual copy — you can't act on a page until you know how to

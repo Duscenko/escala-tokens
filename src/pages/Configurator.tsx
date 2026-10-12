@@ -25,6 +25,7 @@ import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import { SETUP_STEPS, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
 import ThemePanel from '../components/configurator/ThemePanel'
+import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
 import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
@@ -332,7 +333,7 @@ type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | '
 // reachable only from Theme preview's header, i.e. not from Variables at all.
 // `sync` is not a workspace of its own: it lights while Theme preview shows
 // its Figma surface.
-type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code' | 'library'
+type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code' | 'library' | 'system'
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -691,10 +692,12 @@ export default function Configurator() {
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
     if (guestFirstRun) return 'library'
     const w = incomingPlace?.workspace
+    // The brand's Docs moved into the System tab: an old Docs link opens there.
+    if (w === 'documentation' || (incomingPlace?.tab === 'foundations' && incomingPlace.surface === 'documentation')) return 'system'
     // Home is the signed-in file list. A leftover `?section=library` after
     // sign-out must not bring it back.
     if (w === 'library' && !signedInEntry) return 'preview'
-    if (w) return w === 'documentation' ? 'preview' : w
+    if (w) return w
     return signedInEntry ? 'library' : 'preview'
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
@@ -793,9 +796,15 @@ export default function Configurator() {
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
     return surface
   })
-  const [docsPanelOpen, setDocsPanelOpen] = useState(() => {
+  // Docs is a page of the System tab now. Nothing opens it on the brand board.
+  const [docsPanelOpen, setDocsPanelOpen] = useState(false)
+  // The System tab's open page, and the foundation its Docs page shows. Held
+  // here so leaving the tab and coming back resumes on the same place.
+  const [systemPlace, setSystemPlace] = useState<{ page: DashPage; doc: string }>(() => {
     const place = incomingPlace
-    return place?.surface === 'documentation' || place?.workspace === 'documentation'
+    const docs = place?.workspace === 'documentation' || place?.surface === 'documentation'
+      || (place?.workspace === 'system' && Boolean(place.doc))
+    return { page: docs ? 'docs' : 'overview', doc: (place?.workspace === 'system' && place.doc) || DEFAULT_DOC_KEY }
   })
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? COMPONENTS.find((c) => c.key === 'Button') ?? null,
@@ -1400,7 +1409,7 @@ export default function Configurator() {
     setActiveFoundation(key)
     // From the Themes library page, a foundation icon means "edit this", which
     // lives in Theme preview's widget panel.
-    if (themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library') {
+    if (themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system') {
       setThemeWorkspaceTab('preview')
       setThemeHubSurface('artefacts')
       return
@@ -1503,6 +1512,16 @@ export default function Configurator() {
     setTab('foundations')
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('github')
+  }
+  /** The System tab: the dashboard of the design system on screen. */
+  const openSystemPage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setThemeHubSurface('artefacts')
+    setDocsPanelOpen(false)
+    setThemeWorkspaceTab('system')
   }
   const openGetCodePage = () => {
     if (themeWorkspaceTab === 'preview') {
@@ -1620,7 +1639,9 @@ export default function Configurator() {
     foundation: activeFoundation,
     collection: activeCollection,
     component: activeComponent?.key,
-    doc: docFoundationKey,
+    doc: themeWorkspaceTab === 'system' && tab === 'foundations'
+      ? (systemPlace.page === 'docs' ? systemPlace.doc : undefined)
+      : docFoundationKey,
   })
   useEffect(() => {
     syncWorkspaceSearch({ project: syncProjectId(figmaFileName), section: workspaceSection })
@@ -2037,6 +2058,7 @@ export default function Configurator() {
   const homeAllowed = sessionAllowsHome || guestStudio
   const homeRailOnly = (themeWorkspaceTab === 'library' && homeAllowed)
     || themeWorkspaceTab === 'code'
+    || themeWorkspaceTab === 'system'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
   const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
   // The guest studio ends when the visitor leaves it. Away from the Generator
@@ -2111,8 +2133,8 @@ export default function Configurator() {
   const inspectorTab: InspectorTab | null =
     themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
-    : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts'
-      ? (docsPanelOpen && !stylePreview ? 'docs' : 'theme')
+    : themeWorkspaceTab === 'system' ? 'system'
+    : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts' ? 'theme'
       : null
   const continueToAccount = (mode: 'signup' | 'signin') => {
     let key = previewTheme
@@ -2129,7 +2151,7 @@ export default function Configurator() {
     goToLogin(undefined, mode, `themes/${key}`)
   }
   const changeInspectorTab = (next: InspectorTab) => {
-    if (next === 'variables' || next === 'code' || next === 'docs') {
+    if (next === 'variables' || next === 'code' || next === 'system') {
       const reason = themeTablesBlocked()
       if (reason) {
         showToast(reason, undefined, true)
@@ -2138,10 +2160,8 @@ export default function Configurator() {
     }
     if (next === 'variables') changeThemeWorkspaceTab('primitives')
     else if (next === 'code') openGetCodePage()
-    else {
-      changeThemeWorkspaceTab('preview')
-      setDocsPanelOpen(next === 'docs')
-    }
+    else if (next === 'system') openSystemPage()
+    else changeThemeWorkspaceTab('preview')
   }
 
   return (
@@ -2391,17 +2411,31 @@ export default function Configurator() {
                     }}
                   />
                 </motion.div>
-              ) : themesCanvas && themeWorkspaceTab === 'library' && homeAllowed ? (
+              ) : themesCanvas && (themeWorkspaceTab === 'system' || (themeWorkspaceTab === 'library' && homeAllowed)) ? (
                 <motion.div
-                  key="theme-library"
+                  key={themeWorkspaceTab === 'system' ? 'theme-system' : 'theme-library'}
                   className="h-full"
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <ThemeLibraryPage
-                    key={guestStudio ? 'guest-studio' : 'home'}
-                    studioOnly={guestStudio}
+                    key={themeWorkspaceTab === 'system' ? 'system' : guestStudio ? 'guest-studio' : 'home'}
+                    studioOnly={themeWorkspaceTab !== 'system' && guestStudio}
+                    systemOnly={themeWorkspaceTab === 'system'}
+                    onOpenSystem={openSystemPage}
+                    onGoHome={sessionAllowsHome ? openLibraryPage : undefined}
+                    onOpenStyles={openSystemStyles}
+                    systemPlace={systemPlace}
+                    onSystemPlace={setSystemPlace}
+                    previewAppearance={previewAppearance}
+                    docsExits={{
+                      onOpenFigmaDownload: () => openExport('figma-download'),
+                      onOpenFigmaSync: () => syncFigmaForTheme(previewTheme),
+                      onOpenExport: openSectionExport,
+                      onOpenSave: () => openExport('save'),
+                      onOpenGithub: openGithubPage,
+                    }}
                     previewTheme={previewTheme}
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
@@ -2433,7 +2467,6 @@ export default function Configurator() {
                       const def = COMPONENTS.find((c) => c.key === key)
                       if (def) selectComponent(def)
                     }}
-                    onOpenAgentDocs={() => openDocsPage('mcp')}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (
@@ -2534,7 +2567,7 @@ export default function Configurator() {
               onSlot={setInspectorSlot}
               slotStyle={canvasAccentStyle}
               showTabs={themeWorkspaceTab !== 'library'}
-              disabledTabs={themeWorkspaceTab === 'preview' && themeTablesBlocked() ? ['variables', 'code', 'docs'] : undefined}
+              disabledTabs={themeWorkspaceTab === 'preview' && themeTablesBlocked() ? ['variables', 'code', 'system'] : undefined}
               disabledReason={themeTablesBlocked() ?? undefined}
             />
           )}
