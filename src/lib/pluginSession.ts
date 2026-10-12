@@ -190,3 +190,20 @@ export function upsertPluginLibraries(
   })
   return ordered.slice(0, PLUGIN_LIBRARY_CAP)
 }
+
+/** Rows without the given publish ids. Anything that is not a publish id is ignored. */
+export function removePluginLibraries(
+  current: PluginLibrary[],
+  ids: unknown[],
+): PluginLibrary[] {
+  const drop = new Set<string>()
+  for (const raw of ids) {
+    const id = typeof raw === 'string' ? canonicalizePublishId(raw) : null
+    if (id) drop.add(id)
+  }
+  if (drop.size === 0) return current
+  return current.filter((row) => {
+    const id = canonicalizePublishId(row.id)
+    return !id || !drop.has(id)
+  })
+}

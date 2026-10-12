@@ -43,6 +43,7 @@ import {
   LEGACY_MOSS_GLOW_STOPS,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
+import { reconcileSavedSystems, withoutLibraryPins } from '../lib/savedSystemList'
 import { canAddMyTheme, isScaffoldTheme, myThemeKeys } from '../lib/themeLibrary'
 import { freeAnotherThemeBlockedNow } from '../lib/freeThemeLimit'
 import { generatePublishId, isPublishId } from '../lib/publishId'
@@ -706,6 +707,14 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
  *  GitHub-connected, else a slug of the project name. One expression, so a
  *  "Save library" button's saved/unsaved readout can't look up a different
  *  entry than the save itself writes. */
+/** Take deleted systems off the plugin's account list. Best-effort and lazy:
+ *  pluginAccount pulls in the licence module, which reads this store. */
+function forgetPluginLibraries(ids: Array<string | undefined>): void {
+  const clean = ids.filter((id): id is string => typeof id === 'string' && id.length > 0)
+  if (clean.length === 0 || typeof window === 'undefined') return
+  void import('../lib/pluginAccount').then((m) => m.unregisterPublishedLibraries(clean)).catch(() => {})
+}
+
 export function activeLibraryId(state: { githubRepo: string | null; projectName: string }): string {
   return state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
 }
@@ -1087,6 +1096,9 @@ interface DesignStore {
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
   saveCurrentSystem: () => void
+  /** Fold a renamed system's old entry into the one on screen, so Home
+   *  does not list it as another design system. */
+  reconcileSavedSystems: () => void
   // Same save, scoped to ONE theme (see `scopeSnapshotToTheme`) — the "just
   // this theme" half of the Kits save-scope choice, for systems carrying more
   // than one theme.
@@ -1497,6 +1509,12 @@ export const useDesignStore = create<DesignStore>()(
               ),
             ]),
           )
+          const themeOrder = state.themeOrder.filter((t) => t !== key)
+          // The last brand left. The saved folder was this system; keeping it
+          // would list it under Other design systems the moment the name changes.
+          const saved = myThemeKeys(themeOrder, themes).length === 0
+            ? reconcileSavedSystems(state.savedSystems, state, 'drop')
+            : null
           return {
             themes,
             themeSemantics,
@@ -1507,8 +1525,14 @@ export const useDesignStore = create<DesignStore>()(
             themeOrigin,
             brandThemes,
             architectureOverrides,
-            themeOrder: state.themeOrder.filter((t) => t !== key),
+            themeOrder,
             customColors,
+            ...(saved
+              ? {
+                  savedSystems: saved.savedSystems,
+                  pinned: withoutLibraryPins(state.pinned, saved.droppedIds),
+                }
+              : {}),
           }
         }),
       setThemeOrder: (order) =>
@@ -1699,8 +1723,12 @@ export const useDesignStore = create<DesignStore>()(
             ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
             : [...state.savedSystems, entry],
         })),
-      removeSavedSystem: (id) =>
-        set((state) => ({ savedSystems: state.savedSystems.filter((s) => s.id !== id) })),
+      removeSavedSystem: (id) => {
+        const gone = useDesignStore.getState().savedSystems.find((s) => s.id === id)
+        // A deleted system must not stay in the Figma plugin's list.
+        forgetPluginLibraries([gone?.snapshot?.publishId])
+        set((state) => ({ savedSystems: state.savedSystems.filter((s) => s.id !== id) }))
+      },
       loadSystem: (id) =>
         set((state) => {
           const sys = state.savedSystems.find((s) => s.id === id)
@@ -1802,13 +1830,17 @@ export const useDesignStore = create<DesignStore>()(
       startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true, systemStarted: true }),
       deleteCurrentSystem: () =>
         set((state) => {
-          const id = activeLibraryId(state)
+          const dropped = reconcileSavedSystems(state.savedSystems, state, 'drop')
+          forgetPluginLibraries([
+            state.publishId,
+            ...state.savedSystems.filter((s) => dropped.droppedIds.includes(s.id)).map((s) => s.snapshot?.publishId),
+          ])
           return {
             ...makeDesignDefaults(),
             projectCreated: true,
             systemStarted: false,
-            savedSystems: state.savedSystems.filter((s) => s.id !== id),
-            pinned: state.pinned.filter((p) => p !== `library:${id}`),
+            savedSystems: dropped.savedSystems,
+            pinned: withoutLibraryPins(state.pinned, dropped.droppedIds),
           }
         }),
       // See the interface comment for why identity/connection fields are
@@ -1822,14 +1854,26 @@ export const useDesignStore = create<DesignStore>()(
           githubLastPushAt: state.githubLastPushAt,
           figmaLastPublishAt: state.figmaLastPublishAt,
         })),
+      reconcileSavedSystems: () =>
+        set((state) => {
+          const next = reconcileSavedSystems(state.savedSystems, state)
+          if (next.savedSystems === state.savedSystems) return state
+          return {
+            savedSystems: next.savedSystems,
+            pinned: withoutLibraryPins(state.pinned, next.droppedIds),
+          }
+        }),
       saveCurrentSystem: () =>
         set((state) => {
           const snapshot = captureSnapshot(state as unknown as DesignSnapshot)
           const entry = buildSavedSystemEntry(state, snapshot)
+          const upserted = state.savedSystems.some((s) => s.id === entry.id)
+            ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
+            : [...state.savedSystems, entry]
+          const next = reconcileSavedSystems(upserted, state)
           return {
-            savedSystems: state.savedSystems.some((s) => s.id === entry.id)
-              ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
-              : [...state.savedSystems, entry],
+            savedSystems: next.savedSystems,
+            pinned: withoutLibraryPins(state.pinned, next.droppedIds),
           }
         }),
       saveCurrentSystemAsTheme: (themeKey, name) =>
@@ -1867,7 +1911,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 87,
+      version: 88,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3310,6 +3354,21 @@ export const useDesignStore = create<DesignStore>()(
           // Any session that already exists has seen its Escala system; hiding
           // it as "first run" would make a system someone has vanish.
           persisted.systemStarted = true
+        }
+        if (version < 88 && Array.isArray(persisted.savedSystems)) {
+          // Folders left by a rename, a deleted brand, or a draft that was
+          // never saved. Home only keeps design systems that still have a brand.
+          const next = reconcileSavedSystems(persisted.savedSystems, {
+            projectName: typeof persisted.projectName === 'string' ? persisted.projectName : 'Escala',
+            githubRepo: typeof persisted.githubRepo === 'string' ? persisted.githubRepo : null,
+            publishId: typeof persisted.publishId === 'string' ? persisted.publishId : '',
+            themeOrder: Array.isArray(persisted.themeOrder) ? persisted.themeOrder : [],
+            themes: persisted.themes && typeof persisted.themes === 'object' ? persisted.themes : {},
+          })
+          persisted.savedSystems = next.savedSystems
+          if (Array.isArray(persisted.pinned)) {
+            persisted.pinned = withoutLibraryPins(persisted.pinned, next.droppedIds)
+          }
         }
         return persisted
       },

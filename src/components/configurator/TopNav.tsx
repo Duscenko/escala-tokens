@@ -160,6 +160,24 @@ export function ChromeAnchoredDropdown({
 export type TopNavKey = 'about' | 'variables' | 'components' | 'docs' | 'pricing'
 export type DocsMenuPage = 'mcp' | 'figma' | 'changelog' | 'faq'
 
+/** The product hexagon, cropped out of `BrandMark`. It sits beside Generator
+ *  and eases up in scale on a slow rest, so that word is the one item in the
+ *  row that asks to be opened. Still while that section is current. */
+function GeneratorMark({ live }: { live: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      aria-hidden
+      className={`generator-cue -mt-px flex-shrink-0 ${live ? 'generator-cue-live text-accent-solid' : 'text-current'}`}
+    >
+      <path d="M28 9.01611V22.9839L15.9033 29.9683L3.80664 22.9839V9.01611L15.9033 2.03174L28 9.01611ZM5.80664 10.1704V21.8286L15.9033 27.6587L26 21.8286V10.1704L15.9033 4.34033L5.80664 10.1704Z" />
+    </svg>
+  )
+}
+
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'about', label: 'About' },
   { key: 'variables', label: 'Generator' },
@@ -447,6 +465,7 @@ function TopNavCompactMenu({
                 onClick={() => { onNav(key); close() }}
                 className={`${COMPACT_MENU_ITEM} ${on ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
               >
+                {key === 'variables' && <GeneratorMark live={!on} />}
                 {t(label)}
               </button>
             )
@@ -642,10 +661,11 @@ export default function TopNav({
                 key={key}
                 onClick={() => onNav(key)}
                 aria-current={on ? 'page' : undefined}
-                className={`rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
                   on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
                 }`}
               >
+                {key === 'variables' && <GeneratorMark live={!on} />}
                 {t(label)}
               </button>
             )

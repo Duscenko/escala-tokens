@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { useDesignStore } from '../../store/useDesignStore'
+import { DEFAULT_THEME_SOURCES, makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
+import { otherDesignSystems } from '../savedSystemList'
 import { resolvePreviewTokens } from '../previewTokens'
 
 /**
@@ -96,5 +97,62 @@ describe('previewTheme against a theme-scoped system', () => {
     expect(stale.surface).not.toBe(clamped.surface)
     // Sanity on which is which — the dark theme's page is the dark one.
     expect(clamped.surface).toBe(state.darkBackground)
+  })
+})
+
+describe('Home lists only design systems that still have a brand', () => {
+  beforeEach(() => {
+    useDesignStore.setState({
+      ...makeDesignDefaults(),
+      projectCreated: true,
+      savedSystems: [],
+      pinned: [],
+      githubRepo: null,
+    })
+  })
+
+  function saveNamed(name: string, brand: string) {
+    const store = useDesignStore.getState()
+    store.setProjectName(name)
+    store.addTheme(brand, 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    store.saveCurrentSystem()
+  }
+
+  it('folds a renamed system so the old folder is not another design system', () => {
+    saveNamed('Default Escala', 'plio')
+    useDesignStore.getState().setProjectName('Nature')
+    useDesignStore.getState().reconcileSavedSystems()
+    const state = useDesignStore.getState()
+    expect(state.savedSystems.map((s) => s.id)).toEqual(['local:nature'])
+    expect(state.savedSystems[0]?.name).toBe('Nature')
+    expect(otherDesignSystems(state.savedSystems, state)).toEqual([])
+  })
+
+  it('keeps a saved system whose brands are different', () => {
+    saveNamed('Nature', 'plio')
+    const nature = useDesignStore.getState().savedSystems[0]
+    useDesignStore.setState({
+      ...makeDesignDefaults(),
+      projectCreated: true,
+      projectName: 'Cedar',
+      savedSystems: [nature],
+      githubRepo: null,
+    })
+    useDesignStore.getState().addTheme('cedar', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    const state = useDesignStore.getState()
+    expect(otherDesignSystems(state.savedSystems, state).map((s) => s.name)).toEqual(['Nature'])
+  })
+
+  it('drops the saved folder when the last brand is deleted', () => {
+    saveNamed('Nature', 'plio')
+    useDesignStore.getState().removeTheme('plio')
+    expect(useDesignStore.getState().savedSystems).toEqual([])
+  })
+
+  it('drops the old folder when the system on screen is deleted', () => {
+    saveNamed('Default Escala', 'plio')
+    useDesignStore.getState().setProjectName('Nature')
+    useDesignStore.getState().deleteCurrentSystem()
+    expect(useDesignStore.getState().savedSystems).toEqual([])
   })
 })

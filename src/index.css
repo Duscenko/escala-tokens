@@ -693,12 +693,45 @@ button:focus-visible > .random-theme-border,
   opacity: 0.65;
 }
 
+/* Generator's nav mark. It rests, then rises once — an invitation, not a
+   spinner. Transform + opacity only; the timing lives on the keyframes so
+   the rise eases out and the fall does too. */
+@keyframes generator-cue {
+  0%, 64% {
+    transform: scale(1);
+    animation-timing-function: var(--ease-out-quint);
+  }
+  76% {
+    transform: scale(1.16);
+    animation-timing-function: var(--ease-out-quint);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.generator-cue-live {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: generator-cue 3.4s infinite;
+}
+button:hover > .generator-cue-live,
+button:focus-visible > .generator-cue-live {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
   .animate-rainbow,
   .inspect-ring-stroke,
-  .random-theme-border {
+  .random-theme-border,
+  .generator-cue-live {
     animation: none !important;
+  }
+  .generator-cue-live {
+    opacity: 1;
+    transform: none;
   }
   .color-hub-tab,
   .color-hub-tab::before,

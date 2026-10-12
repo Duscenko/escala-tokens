@@ -10,6 +10,7 @@ import {
   pluginPlan,
   pluginPlanRefresh,
   upsertPluginLibraries,
+  removePluginLibraries,
   type PluginLibrary,
   type PluginPlanDecision,
 } from '../src/lib/pluginSession.js'
@@ -384,6 +385,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: 'Could not save the library list.' })
     }
     return res.status(200).json({ ok: true })
+  }
+
+  // ── A system was deleted: drop it from the plugin's list. The plugin calls
+  //    this with its own token (Remove on a row); the web calls it with the
+  //    account JWT when a design system is deleted. Sync now re-registers it. ──
+  if (op === 'unregister' && req.method === 'POST') {
+    const bearer = parseBearer(req.headers.authorization) ?? ''
+    if (!bearer || bearer.length > 4000) return res.status(401).json({ error: 'Sign in again.' })
+    let userId = ''
+    const session = bearer.length <= 200
+      ? await readJsonBlob<SessionRecord>(sessionKey(sha256(bearer)), { fresh: true }).catch(() => null)
+      : null
+    if (session && !session.revoked && session.userId) {
+      userId = session.userId
+    } else {
+      if (!originAllowed(req.headers.origin, requestOrigins(req))) {
+        return res.status(403).json({ error: 'Remove only from this app.' })
+      }
+      const user = await userFromJwt(bearer)
+      if (user === 'unconfigured') return res.status(503).json({ error: 'Accounts are not configured on the server.' })
+      if (!user) return res.status(401).json({ error: 'Sign in again.' })
+      userId = user.id
+    }
+    const body = jsonBody(req)
+    const ids = Array.isArray(body.ids) ? body.ids.slice(0, 100) : []
+    try {
+      const current = await readLibraries(userId)
+      const libraries = removePluginLibraries(current, ids)
+      if (libraries.length !== current.length) {
+        await writeJson(librariesKey(userId), { libraries } satisfies LibraryRecord)
+      }
+      return res.status(200).json({ ok: true, libraries })
+    } catch {
+      return res.status(503).json({ error: 'Could not update the list. Try again.' })
+    }
   }
 
   // ── Plugin, signed in: publish the theme in this file so the web can open

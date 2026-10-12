@@ -70,4 +70,20 @@ export async function registerPublishedLibrary(id: string, name: string): Promis
   await postAccount('register', token, { libraries: [{ id, name }] })
 }
 
+/** A design system was deleted here: take it off the plugin's list too. Best-effort. */
+export async function unregisterPublishedLibraries(ids: string[]): Promise<void> {
+  const clean = ids.filter((id) => typeof id === 'string' && id)
+  if (clean.length === 0) return
+  const token = (await supabase?.auth.getSession())?.data.session?.access_token
+  if (!token) return
+  try {
+    await fetch('/api/plugin-session?op=unregister', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids: clean }),
+    })
+  } catch { /* the plugin's own Remove covers it */ }
+}
+
 export type { PluginLibrary }

@@ -44,6 +44,7 @@ import type { DocsExits } from './docs/getStarted'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
 import { NavGroup, NavRow } from './dashboard/parts'
+import { otherDesignSystems } from '../../lib/savedSystemList'
 
 // HOME — what the rail's Home tile opens, and where a signed-in session lands.
 // (Its section id stays `library`, so every old `?section=library` link and the
@@ -899,7 +900,7 @@ function HomeNav({
   const firstRun = useIsFirstRun()
   // Free holds ONE design system: no list of "others" beside it.
   const oneSystemOnly = useNeedsProForAnotherSystem()
-  const others = oneSystemOnly ? [] : store.savedSystems.filter((s) => s.id !== currentId)
+  const others = oneSystemOnly ? [] : otherDesignSystems(store.savedSystems, store)
   const mine = myThemeKeys(store.themeOrder, store.themes)
   const pinnedThemes = store.pinned.filter((p) => p.startsWith('theme:')).map((p) => p.slice(6)).filter((k) => mine.includes(k))
   const pinnedLibraries = store.pinned
@@ -1053,7 +1054,8 @@ function DefaultLibraryFolderCard({
   const themeKinds = useDesignStore((s) => s.themeKinds)
   const detail = `${brandsLine(themeKeys, brandThemes, themeKinds)} · ${t('On screen')}`
   const projectName = useDesignStore((s) => s.projectName)
-  const setProjectName = useDesignStore((s) => s.setProjectName)
+  const renameActiveSystem = useDesignStore((s) => s.renameActiveSystem)
+  const reconcileSavedSystems = useDesignStore((s) => s.reconcileSavedSystems)
   const deleteCurrentSystem = useDesignStore((s) => s.deleteCurrentSystem)
   const [menuOpen, setMenuOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -1075,7 +1077,10 @@ function DefaultLibraryFolderCard({
   }, [menuOpen])
   const commitRename = () => {
     const next = draft.trim()
-    if (next && next !== projectName) setProjectName(next)
+    if (next && next !== projectName) {
+      if (renameActiveSystem(next).ok) reconcileSavedSystems()
+      else setDraft(projectName)
+    }
     setRenaming(false)
   }
   const item = 'flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset'
@@ -1382,7 +1387,7 @@ export default function ThemeLibraryPage({
   // the system that is editable, never an "other". When the system on screen
   // is empty, the saved one is brought on screen instead of listed beside it.
   const oneSystemOnly = useNeedsProForAnotherSystem()
-  const others = oneSystemOnly ? [] : store.savedSystems.filter((s) => s.id !== currentId)
+  const others = oneSystemOnly ? [] : otherDesignSystems(store.savedSystems, store)
   const adoptable = oneSystemOnly && mine.length === 0 && !creating
     ? [...store.savedSystems]
       .filter((s) => s.id !== currentId && myThemeKeys(s.snapshot.themeOrder ?? [], s.snapshot.themes ?? {}).length > 0)
@@ -1475,6 +1480,7 @@ export default function ThemeLibraryPage({
     Object.keys(useThemeSetup.getState().unsaved)
       .filter((key) => !mine.includes(key))
       .forEach((key) => forgetUnsavedBrand(key))
+    useDesignStore.getState().reconcileSavedSystems()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const deleteMyThemes = () => {
@@ -1567,7 +1573,10 @@ export default function ThemeLibraryPage({
   const libraryCrumb = sectionBackCrumb(t('All design systems'), () => setSection({ kind: 'libraries' }))
   const commitLibraryName = () => {
     const next = libraryDraft.trim()
-    if (next && next !== store.projectName) store.setProjectName(next)
+    if (next && next !== store.projectName) {
+      if (store.renameActiveSystem(next).ok) store.reconcileSavedSystems()
+      else setLibraryDraft(store.projectName)
+    }
     setRenamingLibrary(false)
   }
   const showSystem = (id: string) => {
@@ -1583,8 +1592,7 @@ export default function ThemeLibraryPage({
   const liveBrand = savedMine.includes(previewTheme) ? previewTheme : (savedMine[0] ?? '')
   const systemTags = [
     { id: currentId, name: store.projectName, ...brandMark(liveBrand, store) },
-    ...[...store.savedSystems]
-      .filter((s) => s.id !== currentId)
+    ...otherDesignSystems(store.savedSystems, store)
       .sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))
       .map((s) => {
         const keys = myThemeKeys(s.snapshot.themeOrder ?? [], s.snapshot.themes ?? {})

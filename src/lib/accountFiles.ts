@@ -8,9 +8,8 @@
 
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from './figmaSyncModes'
 import { peekLoginIntent } from './loginReturn'
-import { myThemeKeys } from './themeLibrary'
+import { savedSystemBrandKeys } from './savedSystemList'
 import {
-  activeLibraryId,
   captureSnapshot,
   makeDesignDefaults,
   useDesignStore,
@@ -111,26 +110,15 @@ function uniqueId(id: string, taken: Set<string>): string {
   return `${id}-${n}`
 }
 
-/** The open system stays (someone is about to save or export it). Parked
- *  themes become folders next to it so signing in does not throw them away. */
+/** The open system stays (someone is about to save or export it). Only
+ *  design systems that were already saved — and still have a brand — are
+ *  shelved beside it. A parked draft is not filed as a folder. */
 function shelveBesideLive(parked: ParkedAccountFiles): void {
   const state = useDesignStore.getState()
   const taken = new Set(state.savedSystems.map((s) => s.id))
   const shelved: SavedSystem[] = []
-  if (myThemeKeys(parked.snapshot.themeOrder, parked.snapshot.themes).length > 0) {
-    const id = uniqueId(activeLibraryId(parked.snapshot), taken)
-    taken.add(id)
-    shelved.push({
-      id,
-      name: parked.snapshot.projectName,
-      description: parked.snapshot.projectDescription,
-      repo: parked.snapshot.githubRepo ?? '',
-      savedAt: new Date().toISOString(),
-      snapshot: parked.snapshot,
-      source: parked.snapshot.githubRepo ? 'github' : 'local',
-    })
-  }
   for (const sys of parked.savedSystems) {
+    if (savedSystemBrandKeys(sys).length === 0) continue
     const id = uniqueId(sys.id, taken)
     taken.add(id)
     shelved.push(id === sys.id ? sys : { ...sys, id })

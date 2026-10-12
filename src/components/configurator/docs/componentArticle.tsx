@@ -14,7 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -24,6 +24,8 @@ import { agentContextMarkdown } from '../../../lib/agentContext'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
+import type { ThemeAppearance } from '../../../lib/themeModes'
+import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
   CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
@@ -135,7 +137,7 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
 // once by the parent and passed down, is what makes that impossible again.
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing,
+  headerTrailing, appearance: appearanceProp, onInspectRole,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -152,9 +154,15 @@ export function ComponentCatalogueHero({
   /** Replaces the default Copy snippet control — e.g. Theme preview's link to
    *  the full Components destination. */
   headerTrailing?: ReactNode
+  /** The previewed brand's appearance — the inspector resolves roles against it. */
+  appearance?: ThemeAppearance
+  /** A role named by the hover badge. Opens that token in Variables. */
+  onInspectRole?: (roleId: string) => void
 }) {
   const { t } = useI18n()
   const [view, setView] = useState<'preview' | 'code'>('preview')
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const appearance = appearanceProp ?? 'light'
 
   const slots = ICON_SLOTS[def.key]
   const Specimen = SPECIMENS[def.key]
@@ -180,7 +188,8 @@ export function ComponentCatalogueHero({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
-      <div className="flex-1 min-w-0 rounded-xl border border-line overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+      <div className="rounded-xl border border-line overflow-hidden">
         <BlockChrome
           left={
             <div className="flex items-center gap-2.5 min-w-0">
@@ -193,26 +202,53 @@ export function ComponentCatalogueHero({
         </BlockChrome>
 
         {view === 'preview' ? (
-          <div
-            className="min-h-[300px] flex items-center justify-center p-10 relative overflow-hidden"
-            style={canvasStyle}
-          >
-            {Specimen ? (
-              <Specimen t={tokens} v={values} icons={icons} />
-            ) : (
-              <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
-            )}
-            {variantCount > 1 && (
-              <span className="absolute top-3 right-3 text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line">
-                {t('{index} of {total} variants', { index: variantIndex(def, values), total: variantCount })}
-              </span>
-            )}
-          </div>
+          <InspectorModeProvider active>
+            <div
+              ref={canvasRef}
+              className="min-h-[300px] flex items-center justify-center p-10 relative overflow-hidden"
+              style={{ ...canvasStyle, cursor: 'crosshair' }}
+            >
+              {/* The empty canvas is not a page to inspect. Only the specimen
+                  answers; pointing at the padding clears the badge. */}
+              <div data-inspect-exempt="" className="absolute inset-0" aria-hidden />
+              {Specimen ? (
+                <div className="relative">
+                  <TokenInspector component={def.key} variant={values}>
+                    <Specimen t={tokens} v={values} icons={icons} />
+                  </TokenInspector>
+                </div>
+              ) : (
+                <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
+              )}
+              {variantCount > 1 && (
+                <span
+                  data-inspect-exempt=""
+                  className="absolute top-3 right-3 text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line"
+                >
+                  {t('{index} of {total} variants', { index: variantIndex(def, values), total: variantCount })}
+                </span>
+              )}
+            </div>
+            <InspectorOverlay
+              active
+              rootRef={canvasRef}
+              tokensByAppearance={{ light: tokens, dark: tokens }}
+              defaultAppearance={appearance}
+              onPick={(roleId) => onInspectRole?.(roleId)}
+              onOpenTable={onInspectRole}
+            />
+          </InspectorModeProvider>
         ) : (
           // The snippet tracks the controls, so "Code" is the code for the
           // variant on screen — the reason the two blocks were worth fusing.
           <CodePane code={snippet} minH={300} />
         )}
+      </div>
+      {view === 'preview' && (
+        <p className="px-1 text-mini text-fg-faint">
+          {t('Hover the component to see its borders and the tokens that paint it.')}
+        </p>
+      )}
       </div>
 
       {hasControls && (
@@ -463,8 +499,14 @@ export function componentToc(def: ComponentDef, t: Translate = (s) => s): TocEnt
 // ── The page ─────────────────────────────────────────────────────────────────
 
 export function ComponentArticle({
-  def, tokens, onOpen,
-}: { def: ComponentDef; tokens: PreviewTokens; onOpen: (c: ComponentDef) => void }) {
+  def, tokens, onOpen, appearance, onInspectRole,
+}: {
+  def: ComponentDef
+  tokens: PreviewTokens
+  onOpen: (c: ComponentDef) => void
+  appearance?: ThemeAppearance
+  onInspectRole?: (roleId: string) => void
+}) {
   const { t } = useI18n()
   // The live playground's own selection — OWNED here, not inside `Hero` (see
   // that component's note). This is what makes "the snippet you copy is the
@@ -523,6 +565,8 @@ export function ComponentArticle({
         trailingIcon={trailingIcon}
         onTrailingIconChange={setTrailingIcon}
         snippet={heroCode}
+        appearance={appearance}
+        onInspectRole={onInspectRole}
       />
 
       {/* Use it — Figma · Code · the agent brief, same as a foundation page.

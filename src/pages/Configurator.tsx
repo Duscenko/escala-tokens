@@ -2072,6 +2072,7 @@ export default function Configurator() {
         previewTheme={previewTheme}
         active={activeComponent}
         onSelect={selectComponent}
+        onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
       />
     )
     // Constant, NOT keyed on the open component: the view owns its own article

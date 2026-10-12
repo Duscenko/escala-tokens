@@ -87,4 +87,17 @@ describe('account files on sign-out', () => {
     const shelved = next.savedSystems.find((s) => s.name === 'My files')
     expect(myThemeKeys(shelved?.snapshot.themeOrder ?? [], shelved?.snapshot.themes ?? {})).toEqual(['aurora'])
   })
+
+  it('does not file a parked draft as a design system', () => {
+    const store = useDesignStore.getState()
+    store.setProjectName('Draft')
+    store.addTheme('plio', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    expect(parkAccountFiles('user-1')).toBe(true)
+    closeAccountFiles()
+    useDesignStore.getState().setProjectName('Nature')
+    rememberReturn('library', 'save-library')
+    reopenAccountFiles('user-1')
+    expect(useDesignStore.getState().savedSystems).toEqual([])
+    expect(useDesignStore.getState().projectName).toBe('Nature')
+  })
 })

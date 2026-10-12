@@ -6,6 +6,7 @@ import {
   pluginPlan,
   pluginPlanRefresh,
   upsertPluginLibraries,
+  removePluginLibraries,
 } from '../pluginSession'
 
 const ID = 'esc_7K2M-9QX4-N3PD'
@@ -119,5 +120,15 @@ describe('plugin plan', () => {
     expect(pluginPlanRefresh({ plan: 'pro', proUntil: 'lifetime' }, null, now, 'unknown')).toEqual({ plan: 'pro', proUntil: 'lifetime' })
     expect(pluginPlanRefresh({ plan: 'free' }, null, now, 'unknown')).toEqual({ plan: 'free' })
     expect(pluginPlanRefresh({}, null, now, 'unknown')).toEqual({ plan: 'unknown' })
+  })
+})
+
+describe('removePluginLibraries', () => {
+  it('drops the named ids and keeps the rest', () => {
+    const now = '2026-10-12T00:00:00.000Z'
+    const rows = upsertPluginLibraries([], [{ id: ID, name: 'A' }, { id: OTHER, name: 'B' }], now)
+    const next = removePluginLibraries(rows, [ID, 'not-an-id', 7])
+    expect(next.map((r) => r.id)).toEqual([OTHER])
+    expect(removePluginLibraries(rows, ['nope'])).toBe(rows)
   })
 })

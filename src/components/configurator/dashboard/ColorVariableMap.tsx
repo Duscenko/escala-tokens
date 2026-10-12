@@ -253,26 +253,40 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                       </MapColumn>
                       <MapArrow />
                       <MapColumn label={t('Role')}>
-                        <button
-                          type="button"
-                          onClick={() => copyVar(role.id)}
-                          aria-label={copyLabel}
-                          className="flex w-[11rem] max-w-full flex-col gap-1.5 self-start rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5 text-left transition-colors hover:border-accent-ui focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                        >
-                          <span
-                            aria-hidden
-                            className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
-                            style={{ ...CHECKER, backgroundSize: '8px 8px' }}
-                          >
-                            {roles.modeKeys.map((mode) => (
-                              <span key={mode} className="h-full min-w-0 flex-1" style={{ background: role.modes[mode]?.css ?? 'transparent' }} />
-                            ))}
-                          </span>
-                          <span className="flex min-w-0 flex-col px-0.5 leading-tight">
-                            <span className="truncate font-mono text-micro text-fg">{role.id}</span>
-                            <span className="truncate font-mono text-micro text-fg-faint">{copied ? t('Copied') : cssVarOf(role.id)}</span>
-                          </span>
-                        </button>
+                        <div className="flex w-max min-w-[11rem] max-w-full flex-col gap-2 self-start">
+                          <div className="flex flex-col gap-1.5 rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5">
+                            <span
+                              aria-hidden
+                              className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
+                              style={{ ...CHECKER, backgroundSize: '8px 8px' }}
+                            >
+                              {roles.modeKeys.map((mode) => (
+                                <span key={mode} className="h-full min-w-0 flex-1" style={{ background: role.modes[mode]?.css ?? 'transparent' }} />
+                              ))}
+                            </span>
+                            <span className="flex min-w-0 flex-col px-0.5 leading-tight">
+                              <span className="truncate font-mono text-micro text-fg">{role.id}</span>
+                              <button
+                                type="button"
+                                onClick={() => copyVar(role.id)}
+                                aria-label={copyLabel}
+                                className="truncate rounded text-left font-mono text-micro text-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                              >
+                                {copied ? t('Copied') : cssVarOf(role.id)}
+                              </button>
+                            </span>
+                          </div>
+                          {onEditRole && (
+                            <button
+                              type="button"
+                              onClick={() => onEditRole(role.id)}
+                              aria-label={`${t('Edit in Variables')}: ${role.id}`}
+                              className={`${BTN_PRIMARY} w-full justify-center whitespace-nowrap px-2`}
+                            >
+                              {t('Edit in Variables')}
+                            </button>
+                          )}
+                        </div>
                       </MapColumn>
                       <MapArrow />
                       <MapColumn label={usedBy.length ? `${t('Components')} · ${usedBy.length}` : t('Components')}>
@@ -332,11 +346,6 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    {onEditRole && (
-                      <button type="button" onClick={() => onEditRole(role.id)} className={BTN_PRIMARY}>
-                        {t('Edit in Variables')}
-                      </button>
-                    )}
                     <button type="button" onClick={() => onOpenStatus(tokenElementId(role.id))} className={BTN}>
                       {t('Open in status board')}
                     </button>
