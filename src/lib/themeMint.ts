@@ -11,6 +11,8 @@ import {
 import { slugify } from './utils'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
 import { FREE_ANOTHER_THEME_ERROR, freeAnotherThemeBlockedNow } from './freeThemeLimit'
+import { savedBrandKeysFrom } from './libraryStatus'
+import { finishThemeSetup, forgetUnsavedBrand, useThemeSetup } from './themeSetup'
 import { INDUSTRY_SPECTRUM } from './industryPacks'
 
 export function uniqueKey(wanted: string, taken: Set<string>): string {
@@ -115,13 +117,28 @@ export function mintTheme(
   /** Local Fine-tune shift. Does not rewrite the open system's `contrastShift`. */
   rampShift?: number,
 ): { key: string; renamedFrom?: string } | { error: string } {
-  const s = useDesignStore.getState()
+  let s = useDesignStore.getState()
   if (!editKey) {
-    const count = myThemeKeys(s.themeOrder, s.themes).length
+    // Free counts SAVED brands only. A draft left by an interrupted studio or a
+    // Random roll is hidden from every view, so counting it refused a first
+    // brand on a system that looked empty.
+    const saved = savedBrandKeysFrom(s).length
     // Free keeps the themes it already has and cannot mint another. Edit
     // (editKey set) is a write to one of those, so it stays open.
-    if (freeAnotherThemeBlockedNow(count)) return { error: FREE_ANOTHER_THEME_ERROR }
-    if (!canAddMyTheme(count)) return { error: MY_THEME_FULL_ERROR }
+    if (freeAnotherThemeBlockedNow(saved)) return { error: FREE_ANOTHER_THEME_ERROR }
+    // On Free this brand fills the one slot, so a stale draft cannot ride
+    // along and be saved as a second brand. Pro keeps every draft.
+    if (freeAnotherThemeBlockedNow(1)) {
+      const kept = new Set(savedBrandKeysFrom(s))
+      for (const key of Object.keys(useThemeSetup.getState().unsaved)) {
+        if (kept.has(key) || !s.themes[key]) continue
+        finishThemeSetup(key)
+        forgetUnsavedBrand(key)
+        s.removeTheme(key)
+      }
+    }
+    s = useDesignStore.getState()
+    if (!canAddMyTheme(myThemeKeys(s.themeOrder, s.themes).length)) return { error: MY_THEME_FULL_ERROR }
   }
   const typed = nameLabel.trim()
   // An unnamed theme still gets a name: the accent's own industry label, or

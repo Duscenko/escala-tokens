@@ -19,7 +19,7 @@ import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
 import { WORKSPACE_SECTION_PARAM } from './workspaceLink'
 import { useDesignStore } from '../store/useDesignStore'
-import { myThemeKeys } from './themeLibrary'
+import { useSavedBrandKeys } from './libraryStatus'
 
 export type AccessTier = 'anon' | 'free' | 'pro'
 
@@ -80,7 +80,9 @@ export function useNeedsProForAnotherTheme(): boolean {
   const { user, loading } = useAuth()
   const { pro } = useEntitlement()
   const licence = useLicence()
-  const count = useDesignStore((s) => myThemeKeys(s.themeOrder, s.themes).length)
+  // Drafts the create studio or Random left behind are not brands yet: they
+  // are hidden everywhere, so they must not spend the Free allowance either.
+  const count = useSavedBrandKeys().length
   const signedIn = Boolean(user) || (accountsEnabled && loading && hasStoredSession())
   return freeAnotherThemeBlocked({
     accountsOn: accountsEnabled,

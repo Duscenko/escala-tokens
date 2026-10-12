@@ -32,3 +32,27 @@ describe('free theme create gate', () => {
     expect(freeAnotherThemeBlockedNow(4)).toBe(false)
   })
 })
+
+describe('Free allowance counts saved brands, not studio drafts', () => {
+  const base = {
+    themeOrder: ['light', 'dark', 'draft'],
+    themes: { light: {}, dark: {}, draft: {} },
+    savedSystems: [],
+    githubRepo: null,
+    projectName: 'Escala',
+  }
+
+  it('a draft left behind does not spend the one brand', async () => {
+    const { savedBrandKeysFrom } = await import('../libraryStatus')
+    expect(savedBrandKeysFrom(base, { draft: true })).toEqual([])
+  })
+
+  it('a brand the saved copy already holds still counts', async () => {
+    const { savedBrandKeysFrom } = await import('../libraryStatus')
+    const saved = {
+      ...base,
+      savedSystems: [{ id: 'local:escala', snapshot: { themeOrder: ['light', 'dark', 'draft'] } }],
+    }
+    expect(savedBrandKeysFrom(saved, { draft: true })).toEqual(['draft'])
+  })
+})
