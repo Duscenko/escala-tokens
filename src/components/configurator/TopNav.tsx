@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
+import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
 
@@ -211,6 +212,9 @@ interface TopNavProps {
   /** Components with no design system yet: there is nothing to browse around
    *  in, so the section tags fold into ☰ and the brand names the page. */
   navInMenu?: boolean
+  /** Signed in: the Plugin pill opens the workspace's Figma sync page instead
+   *  of the Community listing (the account already has the plugin flow). */
+  onOpenFigmaSync?: () => void
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -580,7 +584,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, onOpenFigmaSync,
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
@@ -675,6 +679,33 @@ export default function TopNav({
           />
           </div>
           {themeControl}
+          {/* The plugin lives on Figma Community, so this is a link OUT, not a
+              workspace destination. The label drops before the glyph does. */}
+          {(() => {
+            const cls = 'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line px-2 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+            const inner = (
+              <>
+                <FigmaGlyph className="h-3 w-auto" />
+                <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
+              </>
+            )
+            return onOpenFigmaSync ? (
+              <button type="button" onClick={onOpenFigmaSync} title={t('Sync with Figma')} aria-label={t('Plugin')} className={cls}>
+                {inner}
+              </button>
+            ) : (
+              <a
+                href={FIGMA_PLUGIN_COMMUNITY}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t('Get the Escala Tokens plugin on Figma Community')}
+                aria-label={t('Plugin')}
+                className={cls}
+              >
+                {inner}
+              </a>
+            )
+          })()}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}
       </div>

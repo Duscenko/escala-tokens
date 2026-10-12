@@ -16,7 +16,6 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { PublicHeader } from './PublicReadingPage'
-import TopBanner from '../configurator/TopBanner'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
 import { CONTACT_PATH } from '../../lib/legal'
@@ -255,26 +254,6 @@ export function PricingPage() {
 
   return (
     <div className="flex h-screen flex-col bg-app text-fg">
-      {(entitlement.promo || entitlement.launchPrice) && (() => {
-        // Oct: the free promo. Nov 1–15: the launch price. After: nothing —
-        // the regular price needs no banner. Same strip as the Figma plugin
-        // bar (`TopBanner`), above the header; not dismissible, since this
-        // page is where the offer is being read.
-        const days = entitlement.promo ? entitlement.daysLeft : entitlement.launchDaysLeft
-        return (
-          <TopBanner>
-            <Badge solid>{t('Launch')}</Badge>
-            <span>
-              {entitlement.promo
-                ? t('Everything in Pro is free for everyone until October 31.')
-                : t('Escala Pro is ${launch} until November 15, then ${price}.', { launch: String(PRO_LAUNCH_PRICE_USD), price: String(PRO_PRICE_USD) })}
-            </span>
-            <span className="font-mono tabular-nums text-accent-ui">
-              {days === 1 ? t('1 day left') : t('{n} days left', { n: String(days) })}
-            </span>
-          </TopBanner>
-        )
-      })()}
       <PublicHeader current="pricing" />
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-4 py-14 md:px-8">

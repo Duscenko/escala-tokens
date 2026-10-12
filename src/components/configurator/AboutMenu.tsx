@@ -13,7 +13,7 @@ import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../..
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
-import PluginCommunityBanner from './PluginCommunityBanner'
+import PromoBanner from './PromoBanner'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H, type DocsMenuPage } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
@@ -1281,7 +1281,7 @@ export function AboutScaffold({
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
-      <PluginCommunityBanner />
+      <PromoBanner />
       {/* Appearance and language, the two chrome preferences that mean
           something here. They live in `TopNav` for everyone else, and `TopNav`
           is inside the desktop shell — same components, not copies. */}

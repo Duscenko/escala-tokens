@@ -40,7 +40,7 @@ import { openStyleForEditing } from '../lib/adoptPreset'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
-import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
+import PromoBanner from '../components/configurator/PromoBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
@@ -2256,7 +2256,7 @@ export default function Configurator() {
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 
-      <PluginCommunityBanner />
+      <PromoBanner />
 
       {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav
@@ -2265,6 +2265,7 @@ export default function Configurator() {
         hamburgerNav={tab === 'foundations'}
         navInMenu={componentsWithoutSystem}
         onOpenLibrary={requestHome}
+        onOpenFigmaSync={access.tier !== 'anon' ? openFigmaSyncPage : undefined}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.

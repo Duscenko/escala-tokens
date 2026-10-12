@@ -163,56 +163,6 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
 }
 
 /**
- * The Figma door, last (rightmost) in the header, in the same 32px shell as
- * Inspect. Icon-only at rest; hover/focus slides out **Sync**. While sync runs
- * (a payload published AND auto sync on — the same honest "active"
- * `IntegrationStatusRail` uses, never `figmaLastPublishAt` alone), or while a
- * publish is in flight or failed, it stays open with a status dot: green active
- * · amber pulsing publishing · red needs attention. Colour is never the only
- * carrier: `aria-label` / `title` say the state in words.
- */
-function FigmaSyncButton({ publishState, onOpen, disabled = false, disabledTitle }: { publishState: FigmaPublishState; onOpen: () => void; disabled?: boolean; disabledTitle?: string }) {
-  const { t } = useI18n()
-  const published = useDesignStore((s) => Boolean(s.figmaLastPublishAt))
-  const autoSync = useDesignStore((s) => s.autoSyncFigma)
-  const busy = publishState === 'publishing'
-  const error = publishState === 'error'
-  const active = published && autoSync
-  const showStatus = active || busy || error
-  const status = error
-    ? t('Figma sync needs attention')
-    : busy
-      ? t('Publishing to Figma…')
-      : active
-        ? t('Figma sync active')
-        : t('Sync with Figma')
-  const dot = error ? 'bg-status-danger-solid' : busy ? 'bg-status-warning-solid animate-pulse' : 'bg-status-success-solid'
-  const title = disabled && disabledTitle ? disabledTitle : status
-  return (
-    <div className={`flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${disabled ? HEADER_CONTROL_DISABLED : 'hover:border-line-strong'}`}>
-      <button
-        type="button"
-        onClick={onOpen}
-        disabled={disabled}
-        aria-label={title}
-        title={title}
-        className={`${HEADER_CONTROL_BTN} text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`}
-      >
-        {/* A 16px-wide box so the glyph centres exactly like Inspect's; the
-            38×57 mark fills its height, so 14 reads level with a 16 square. */}
-        <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
-          <FigmaGlyph className="h-3.5 w-auto" />
-        </span>
-        <RevealLabel open={showStatus && !disabled}>
-          {t('Sync')}
-          {showStatus && !disabled && <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />}
-        </RevealLabel>
-      </button>
-    </div>
-  )
-}
-
-/**
  * Get code, beside the Figma door and in the same 32px shell: icon-only at
  * rest, hover/focus slides out the label. A plain action — the Code tab it
  * opens replaces this view, so there's no state left for it to show.
@@ -787,14 +737,6 @@ export default function ThemePreviewHub({
                   {!needsMyTheme && !contrastOpen && onGetCode && (
                     <GetCodeButton
                       onOpen={onGetCode}
-                      disabled={headerActionsLocked}
-                      disabledTitle={headerActionsLockedHint}
-                    />
-                  )}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && (
-                    <FigmaSyncButton
-                      publishState={figmaPublishState}
-                      onOpen={() => onSurfaceChange('figma')}
                       disabled={headerActionsLocked}
                       disabledTitle={headerActionsLockedHint}
                     />
