@@ -695,7 +695,8 @@ export function ColorPickerPopover({
   dynamicAccentPalette,
   neutralRampFrom,
   accentHueFrom,
-  contained = false,
+  contained: containedProp = false,
+  dockInInspector = false,
   containedRootRef,
   containedDockLeft = COLOR_RAIL_WIDTH,
 }: {
@@ -714,6 +715,10 @@ export function ColorPickerPopover({
   accentHueFrom?: string
   /** Theme Preview: dock beside the quick-settings rail like `TokenDetailsModal`. */
   contained?: boolean
+  /** Inside the workspace inspector, open over the WHOLE column like Token
+   *  Details instead of floating beside the trigger (where a ~540px panel
+   *  runs under the top bar and the step footer). Outside it, unchanged. */
+  dockInInspector?: boolean
   containedRootRef?: RefObject<HTMLElement | null>
   containedDockLeft?: number
 }) {
@@ -724,7 +729,8 @@ export function ColorPickerPopover({
   // with a left-dock silhouette and painted in the previewed theme's
   // appearance. With an inspector mounted it opens IN it instead, covering the
   // panel it was opened from — the same slot Token Details uses.
-  const docked = useInInspector() && contained
+  const docked = useInInspector() && (containedProp || dockInInspector)
+  const contained = containedProp || docked
   const place = usePopoverPlacement(anchor, open && !contained)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)

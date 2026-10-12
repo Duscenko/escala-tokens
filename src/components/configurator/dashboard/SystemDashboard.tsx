@@ -11,7 +11,7 @@
 import { useState, type ReactNode } from 'react'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { useI18n } from '../../../lib/i18n'
-import { myThemeKeys } from '../../../lib/themeLibrary'
+import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { themeDisplayName } from '../../../lib/themeSources'
 import { InspectorPortal } from '../WorkspaceInspector'
@@ -45,8 +45,8 @@ const NAV: DashPage[] = ['overview', 'docs', 'components', 'status', 'integratio
 /** Which brand the dashboard reads. One brand: its name, with nothing to pick. */
 export function BrandSelect({ brand, onSelect }: { brand: string; onSelect: (key: string) => void }) {
   const { t } = useI18n()
-  const { themeOrder, themes, themeLabels } = useDesignStore()
-  const mine = myThemeKeys(themeOrder, themes)
+  const { themeLabels } = useDesignStore()
+  const mine = useSavedBrandKeys()
   if (mine.length === 0) return null
   if (mine.length === 1) {
     return <span className="text-caption text-fg-muted">{t('Brand')}: <span className="font-medium text-fg">{themeDisplayName(mine[0], themeLabels)}</span></span>
@@ -211,6 +211,10 @@ export default function SystemDashboard({
   const { t } = useI18n()
   const dash = useDashboard(brand)
   const { themeLabels } = useDesignStore()
+  const savedBrands = useSavedBrandKeys()
+  // No brand in this design system: every page that reads tokens would draw the
+  // scaffold's default accent as if someone had chosen it.
+  const noBrands = savedBrands.length === 0
   const [statusKind, setStatusKind] = useState<StatusKind>('token')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [statusSelected, setStatusSelected] = useState<string | null>(null)
@@ -238,13 +242,20 @@ export default function SystemDashboard({
       {shown === 'overview' && (
         <OverviewPage
           dash={dash}
-          header={overviewHeader(dash.tokenCount)}
+          header={overviewHeader(noBrands ? 0 : dash.tokenCount)}
           brands={brands}
           onOpenFoundation={openDoc}
           onOpenStatus={() => openStatus()}
         />
       )}
-      {shown === 'docs' && (
+      {noBrands && (shown === 'docs' || shown === 'status' || shown === 'components') && (
+        <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center" role="status">
+          <p className="text-body font-medium text-fg">{t('No brand in this design system yet')}</p>
+          <p className="max-w-[22rem] text-caption leading-relaxed text-fg-muted">{t('Add a brand from Overview. Its tokens, components and status show here.')}</p>
+          <button type="button" onClick={() => onPage('overview')} className={`${BTN} self-center`}>{t('Back to Overview')}</button>
+        </div>
+      )}
+      {!noBrands && shown === 'docs' && (
         <DocsView
           activeFoundationKey={doc}
           onSelectFoundationKey={openDoc}
@@ -264,7 +275,7 @@ export default function SystemDashboard({
                 : undefined}
         />
       )}
-      {shown === 'status' && (
+      {!noBrands && shown === 'status' && (
         <StatusBoardPage
           dash={dash}
           kind={statusKind}
@@ -276,7 +287,7 @@ export default function SystemDashboard({
           timeAgo={timeAgo}
         />
       )}
-      {shown === 'components' && <ComponentsPage dash={dash} onOpenComponent={onOpenComponent} />}
+      {!noBrands && shown === 'components' && <ComponentsPage dash={dash} onOpenComponent={onOpenComponent} />}
       {shown === 'integrations' && (
         <IntegrationsPage
           dash={dash}

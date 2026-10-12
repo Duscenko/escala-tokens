@@ -46,7 +46,30 @@ function write(drafts: Record<string, number>) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts)) } catch { /* private mode */ }
 }
 
+// UNSAVED BRANDS — a brand made in the create studio (or minted by Random) is
+// a draft until the designer saves it. Skipping setup or finishing the steps
+// does NOT make it part of the design system: the System tab and Variables
+// ignore it until the system holding it is saved (`useUnsavedBrands`). Same
+// storage rule as the drafts above: onboarding state, not design state.
+const UNSAVED_KEY = 'sd-brand-unsaved'
+
+function readUnsaved(): Record<string, true> {
+  try {
+    const raw = localStorage.getItem(UNSAVED_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeUnsaved(unsaved: Record<string, true>) {
+  try { localStorage.setItem(UNSAVED_KEY, JSON.stringify(unsaved)) } catch { /* private mode */ }
+}
+
 type SetupState = {
+  /** Theme keys made here and not saved yet. */
+  unsaved: Record<string, true>
   /** Theme key → index of its CURRENT step in `SETUP_STEPS`. */
   drafts: Record<string, number>
   /** Edit-history length when the current step began, per theme: an edit since
@@ -55,7 +78,7 @@ type SetupState = {
   stepStart: Record<string, number>
 }
 
-export const useThemeSetup = create<SetupState>(() => ({ drafts: read(), stepStart: {} }))
+export const useThemeSetup = create<SetupState>(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }))
 
 function historyLength() {
   return useEditHistory.getState().past.length
@@ -64,6 +87,22 @@ function historyLength() {
 function commit(drafts: Record<string, number>, key: string) {
   write(drafts)
   useThemeSetup.setState((s) => ({ drafts, stepStart: { ...s.stepStart, [key]: historyLength() } }))
+}
+
+/** A brand was just made and is not saved yet. */
+export function markBrandUnsaved(key: string) {
+  const unsaved = { ...useThemeSetup.getState().unsaved, [key]: true as const }
+  writeUnsaved(unsaved)
+  useThemeSetup.setState({ unsaved })
+}
+
+/** The brand is gone or no longer a draft. */
+export function forgetUnsavedBrand(key: string) {
+  const unsaved = { ...useThemeSetup.getState().unsaved }
+  if (!(key in unsaved)) return
+  delete unsaved[key]
+  writeUnsaved(unsaved)
+  useThemeSetup.setState({ unsaved })
 }
 
 /** Begin setup for a theme just created with its colour: Color is done. */

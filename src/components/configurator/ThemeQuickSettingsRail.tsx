@@ -1593,6 +1593,31 @@ export function ContrastSlider({
  *  (see `readHuePosition`), so the same pair is "ideal" at every angle. */
 export const FINE_TUNE_IDEAL = { saturation: 0.85, lightness: 0.5 } as const
 
+/** The circular reset beside a Fine-tune slider. ONE control for the quick rail
+ *  and the create/edit form, so the two editors cannot drift apart. Disabled at
+ *  the default rather than hidden: a control that vanishes reads as broken. */
+export function FineResetButton({ label, disabled, onClick, className = '' }: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:border-line disabled:hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 ${className}`}
+    >
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+      </svg>
+    </button>
+  )
+}
+
 /** One axis of the accent — Saturation or Brightness — over its own hue. The
  *  track is drawn from the same `colorAtHue` the value is, so what the thumb
  *  sits on is the colour it will commit. Preview while dragging, commit once
@@ -2084,23 +2109,14 @@ export default function ThemeQuickSettingsRail({
   const liveNeutral = linkNeutralToAccent
     ? neutralFromBrand(liveAccent, activeTint)
     : neutral
-  // Fine-tune Reset: Saturation + Brightness back to the ideal point (hue kept)
-  // and Ramp contrast back to 0, as ONE undoable edit. Disabled once all three
-  // already sit there — a control that vanishes reads as broken.
+  // Fine-tune resets: one circular icon beside each slider (same as the
+  // create/edit form). Saturation and Brightness go back to the ideal point of
+  // THIS hue, so the hue is never touched; Ramp contrast goes back to 0.
   const accentReading = readHuePosition(liveAccent)
-  const fineIsIdeal =
-    Math.abs(accentReading.position.saturation - FINE_TUNE_IDEAL.saturation) < 0.015
-    && Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
-    && contrastShift === 0
-  const resetFineTune = () => {
-    const idealHex = colorAtHue(FINE_TUNE_IDEAL, accentReading.hue)
-    commit('Fine-tune reset', (themeKey) => {
-      // Shift first: the accent's ramps are generated with it.
-      setContrastShift(0)
-      writeAccent(themeKey, idealHex)
-    })
-    setAccentPreview(null)
-    onAccentPreview?.(null)
+  const saturationIsIdeal = Math.abs(accentReading.position.saturation - FINE_TUNE_IDEAL.saturation) < 0.015
+  const brightnessIsIdeal = Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
+  const resetAxis = (axis: 'saturation' | 'lightness') => {
+    commitAccent(colorAtHue({ ...accentReading.position, [axis]: FINE_TUNE_IDEAL[axis] }, accentReading.hue))
   }
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
@@ -2413,23 +2429,13 @@ export default function ThemeQuickSettingsRail({
               </button>
               {fineOpen && (
                 <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
-                  <div className="-mb-1 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={resetFineTune}
-                      disabled={fineIsIdeal}
-                      title={t('Reset saturation, brightness and ramp contrast to their ideal point')}
-                      className="text-micro font-medium uppercase tracking-wide text-fg-faint transition-colors hover:text-fg disabled:cursor-default disabled:opacity-50 disabled:hover:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                    >
-                      {t('Reset')}
-                    </button>
-                  </div>
                   <AccentAxisSlider
                     axis="saturation"
                     label={t('Saturation')}
                     value={liveAccent}
                     onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
                     onCommit={commitAccent}
+                    action={<FineResetButton label={t('Reset saturation')} disabled={saturationIsIdeal} onClick={() => resetAxis('saturation')} />}
                   />
                   <AccentAxisSlider
                     axis="lightness"
@@ -2437,27 +2443,29 @@ export default function ThemeQuickSettingsRail({
                     value={liveAccent}
                     onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
                     onCommit={commitAccent}
+                    action={<FineResetButton label={t('Reset brightness')} disabled={brightnessIsIdeal} onClick={() => resetAxis('lightness')} />}
                   />
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
                       <span title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</span>
-                      <button
-                        type="button"
-                        onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
-                        disabled={contrastShift === 0}
-                        title={t('Reset contrast shift')}
-                        aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
-                        className="tabular-nums transition-colors hover:text-fg disabled:cursor-default disabled:hover:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                      >
-                        {formatShift(contrastShift)}
-                      </button>
+                      <span className="tabular-nums">{formatShift(contrastShift)}</span>
                     </div>
-                    <ContrastSlider
-                      hueHex={liveNeutral}
-                      value={contrastShift}
-                      showMarks={false}
-                      onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
-                    />
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <ContrastSlider
+                          hueHex={liveNeutral}
+                          value={contrastShift}
+                          showMarks={false}
+                          onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
+                        />
+                      </div>
+                      <FineResetButton
+                        label={t('Reset contrast shift')}
+                        disabled={contrastShift === 0}
+                        onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
+                        className="-mt-0.5"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

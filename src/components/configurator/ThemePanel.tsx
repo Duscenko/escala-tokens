@@ -19,11 +19,11 @@ import { BRAND_THEME_IDS, brandThemeDef, shippedThemes, type BrandThemeId } from
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import SpectrumSlider from '../ui/SpectrumSlider'
-import { AccentAxisSlider, ContrastSlider, FINE_TUNE_IDEAL, TintSlider, formatShift } from './ThemeQuickSettingsRail'
+import { AccentAxisSlider, ContrastSlider, FINE_TUNE_IDEAL, FineResetButton, TintSlider, formatShift } from './ThemeQuickSettingsRail'
 import { colorAtHue, readHuePosition } from '../../lib/colorUtils'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
-import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL, discloseChip } from './themeWorkspaceLayout'
+import { SELECT_CARD, SELECT_FOCUS, SELECT_LIST, SELECT_SHELL, discloseChip } from './themeWorkspaceLayout'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover, STATE_PRESETS,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
@@ -96,6 +96,7 @@ function SlotRow({
           value={value}
           onChange={onChange}
           palette={curatedPaletteFor(family)}
+          dockInInspector
         />
       </div>
       <div className="flex-1 min-w-0">
@@ -140,6 +141,7 @@ function StateChip({
         onChange={onChange}
         palette={STATE_PRESETS[role]}
         appearance={appearance}
+        dockInInspector
       />
     </div>
   )
@@ -177,6 +179,9 @@ type ThemeFormProps = {
   holdAfterCreate?: boolean
   /** Skip setup: mint (if needed) then leave the remaining steps at defaults. */
   skipHandle?: MutableRefObject<(() => void) | null>
+  /** Mirrors the form's error, so a host with its own pinned footer can show
+   *  why Continue / Skip did nothing instead of burying it in the scroll. */
+  onErrorChange?: (message: string | null) => void
   /** Studio owns the Step n of 6 bar; hide this form's own Cancel/Continue. */
   hideFooter?: boolean
   /** Fired after a skip-mint so the studio can open the board. */
@@ -242,7 +247,7 @@ function StylePicker({ value, accent, onChange }: {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className={`flex h-9 w-full items-center gap-2 px-2.5 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`}
       >
         <span className="text-ui text-fg-muted">{t('Style')}</span>
         <span className="ml-auto flex min-w-0 items-center gap-1.5 text-ui font-medium text-fg">
@@ -386,6 +391,7 @@ export function ThemeForm({
   holdAfterCreate = false,
   submitHandle,
   skipHandle,
+  onErrorChange,
   hideFooter = false,
   onFinishEarly,
   onDraftChange,
@@ -551,6 +557,7 @@ export function ThemeForm({
   const [moreOpen, setMoreOpen] = useState(!firstStep)
   const curated = useMemo(() => accentCuratedPalette(slots.brand), [slots.brand])
   const [err, setErr] = useState<string | null>(null)
+  useEffect(() => { onErrorChange?.(err) }, [err, onErrorChange])
 
   // A theme's page belongs to its Neutral, not to whichever system happened
   // to be open while the theme was created. Tone 1 is the page anchor for
@@ -696,7 +703,10 @@ export function ThemeForm({
         </button>
       </header>}
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4 flex flex-col gap-3">
+      {/* Inside the create inspector the identity band and the foundation
+          select above are `px-3`; the body takes the same inset so every
+          block shares one left and right edge. */}
+      <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always flex flex-col gap-3 ${pinIdentity ? 'px-3 py-4' : 'p-4'}`}>
         {/* Identity — name + mode on one row. `flex-shrink-0` on every child
             of this scroll column: it is a COLUMN flex container, so a child with
             the default `flex-shrink: 1` gets crushed when the siblings overflow.
@@ -714,12 +724,12 @@ export function ThemeForm({
                   onClick={undoRandom}
                   aria-label={t('Undo random')}
                   title={t('Undo random')}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                  className={`flex h-9 w-9 flex-shrink-0 items-center justify-center text-fg-muted hover:text-fg ${SELECT_SHELL} ${SELECT_FOCUS}`}
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
                 </button>
               )}
-              <RandomThemeButton onClick={spinRandom} label={stylePinned ? t('Random accent') : t('Random')} variant="icon" className="!h-10 !w-10 !rounded-xl" />
+              <RandomThemeButton onClick={spinRandom} label={stylePinned ? t('Random accent') : t('Random')} variant="icon" className="!h-9 !w-9 !rounded-lg" />
             </div>
             {/* The style's blurb names its own accent ("a poster red…"), so it
                 only stands while that accent is the one in the form. */}
@@ -834,20 +844,14 @@ export function ThemeForm({
         </section>
 
         {firstStep && (
-          <section
-            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
-            style={{ backgroundColor: page }}
-          >
+          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
             <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Neutral')}</p>
             <TintSlider hueHex={slots.gray} value={tint} onChange={setTintLevel} />
           </section>
         )}
 
         {firstStep && (
-          <section
-            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
-            style={{ backgroundColor: page }}
-          >
+          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
             <button
               type="button"
               onClick={() => setFineOpen((v) => !v)}
@@ -871,18 +875,11 @@ export function ThemeForm({
                   onPreview={setAccent}
                   onCommit={setAccent}
                   action={
-                    <button
-                      type="button"
-                      onClick={() => setAccent(colorAtHue({ ...accentReading.position, lightness: FINE_TUNE_IDEAL.lightness }, accentReading.hue))}
+                    <FineResetButton
+                      label={t('Reset brightness')}
                       disabled={brightnessIsIdeal}
-                      title={t('Reset brightness')}
-                      aria-label={t('Reset brightness')}
-                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:border-line disabled:hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
-                      </svg>
-                    </button>
+                      onClick={() => setAccent(colorAtHue({ ...accentReading.position, lightness: FINE_TUNE_IDEAL.lightness }, accentReading.hue))}
+                    />
                   }
                 />
                 <div className="flex flex-col gap-1">
@@ -894,18 +891,12 @@ export function ThemeForm({
                     <div className="min-w-0 flex-1">
                       <ContrastSlider hueHex={slots.gray} value={shift} onChange={setShift} />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShift(0)}
+                    <FineResetButton
+                      label={t('Reset contrast shift')}
                       disabled={shift === 0}
-                      title={t('Reset contrast shift')}
-                      aria-label={`${t('Contrast shift')} ${shift.toFixed(2)} — ${t('Reset contrast shift')}`}
-                      className="-mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:border-line disabled:hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
-                      </svg>
-                    </button>
+                      onClick={() => setShift(0)}
+                      className="-mt-0.5"
+                    />
                   </div>
                 </div>
               </div>
@@ -914,10 +905,7 @@ export function ThemeForm({
         )}
 
         {firstStep && (
-          <section
-            className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3`}
-            style={{ backgroundColor: page }}
-          >
+          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
             <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('States')}</p>
             <div className="grid grid-cols-4 gap-2">
               {STATE_ROLES.map((role) => (

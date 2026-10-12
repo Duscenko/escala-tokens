@@ -761,6 +761,11 @@ interface DesignStore {
   // Gates Home between the onboarding card and the overview dashboard.
   projectCreated: boolean
   setProjectCreated: (v: boolean) => void
+  // The person made (or loaded) a design system. Without it a fresh browser
+  // holds only the default "Escala" scaffold, which Home must not list as
+  // something they created. Never reset by `resetToDefaults`/`startNewSystem`
+  // going back to a blank scaffold: only `deleteCurrentSystem` clears it.
+  systemStarted: boolean
 
   // Connection status (shown on Home; written by the connect views)
   figmaLastPublishAt: string | null // ISO timestamp of the last successful POST to /api/tokens
@@ -1059,6 +1064,10 @@ interface DesignStore {
   // than `setProjectName` anywhere a rename is a deliberate action.
   renameActiveSystem: (name: string) => { ok: boolean; error?: string }
   startNewSystem: () => void
+  // Delete the design system on screen: its brands, its saved copy and its pin.
+  // What is left is the blank first-run state, so a system someone made by
+  // mistake (or no longer wants) has a way out.
+  deleteCurrentSystem: () => void
   // Put every DESIGN foundation back to its default — the purple accent, the
   // plain light/dark theme pair, the semantic roles, and every other foundation
   // `makeDesignDefaults` seeds — while leaving this system's IDENTITY and its
@@ -1123,6 +1132,7 @@ export const useDesignStore = create<DesignStore>()(
       // name-first onboarding gate. (Kept in the store for the multi-system flow.)
       projectCreated: true,
       setProjectCreated: (v) => set({ projectCreated: v }),
+      systemStarted: false,
 
       // A successful publish is the moment the user has declared "keep Figma in
       // sync" — turning auto-sync on here (rather than leaving it behind a
@@ -1696,7 +1706,7 @@ export const useDesignStore = create<DesignStore>()(
           const sys = state.savedSystems.find((s) => s.id === id)
           if (!sys) return state
           // Clone so editing the loaded system never mutates the saved entry.
-          return { ...deepClone(sys.snapshot), projectCreated: true }
+          return { ...deepClone(sys.snapshot), projectCreated: true, systemStarted: true }
         }),
       // Renames a SAVED entry only — see the DesignStore interface comment for
       // why this never touches live editor state. `set`'s updater form is the
@@ -1789,7 +1799,18 @@ export const useDesignStore = create<DesignStore>()(
         })
         return result
       },
-      startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true }),
+      startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true, systemStarted: true }),
+      deleteCurrentSystem: () =>
+        set((state) => {
+          const id = activeLibraryId(state)
+          return {
+            ...makeDesignDefaults(),
+            projectCreated: true,
+            systemStarted: false,
+            savedSystems: state.savedSystems.filter((s) => s.id !== id),
+            pinned: state.pinned.filter((p) => p !== `library:${id}`),
+          }
+        }),
       // See the interface comment for why identity/connection fields are
       // carried over instead of reset.
       resetToDefaults: () =>
@@ -1846,7 +1867,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 86,
+      version: 87,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3284,6 +3305,11 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seed(sys?.snapshot)
           }
+        }
+        if (version < 87) {
+          // Any session that already exists has seen its Escala system; hiding
+          // it as "first run" would make a system someone has vanish.
+          persisted.systemStarted = true
         }
         return persisted
       },

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore } from '../store/useDesignStore'
+import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
@@ -23,10 +23,12 @@ import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/Th
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
-import { SETUP_STEPS, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
+import { useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
+import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
@@ -689,6 +691,9 @@ export default function Configurator() {
   const [guestStudio, setGuestStudio] = useState(guestFirstRun)
   // Home's create studio is open (it takes the inspector; the file list yields).
   const [homeCreating, setHomeCreating] = useState(guestFirstRun)
+  /** Bumped when Home is pressed while the create studio is open: remounts
+   *  the Home page so the studio closes. */
+  const [homeResetTick, setHomeResetTick] = useState(0)
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
     if (guestFirstRun) return 'library'
     const w = incomingPlace?.workspace
@@ -718,7 +723,13 @@ export default function Configurator() {
   // the Pro notice for someone who has made nothing yet.
   const openNewSystem = () => {
     const live = useDesignStore.getState()
-    const nothingYet = myThemeKeys(live.themeOrder, live.themes).length === 0 && live.savedSystems.length === 0
+    // "Nothing yet" is about CONTENT, not about a registry row: a copy of this
+    // same empty system saved earlier (or a saved system with no brands) does
+    // not make this a second system. Only a system that holds a brand counts.
+    const currentId = activeLibraryId(live)
+    const otherWithBrands = live.savedSystems.some((sys) => sys.id !== currentId
+      && myThemeKeys(sys.snapshot.themeOrder, sys.snapshot.themes).length > 0)
+    const nothingYet = myThemeKeys(live.themeOrder, live.themes).length === 0 && !otherWithBrands
     if (needsAnotherSystemPro && !nothingYet) { setUpgradeOpen(true); return }
     setNewSystemOpen(true)
   }
@@ -749,6 +760,7 @@ export default function Configurator() {
     setExportMode(null)
     setTab('foundations')
     setRandomDraftKey(minted ? key : null)
+    if (minted) markBrandUnsaved(key)
     setStylePreview(null)
     setThemeHubSurface('artefacts')
     setActiveFoundation('color')
@@ -758,6 +770,18 @@ export default function Configurator() {
   }
   /** Why code, Figma and the inspector wait while a Random theme is a draft. */
   const randomDraftHint = t('Save this brand to open code, Figma sync, Variables and Docs.')
+  /** A brand made here and not saved yet — a Random draft or one from the
+   *  create studio. Skipping setup does not make it part of the system. */
+  const unsavedBrands = useUnsavedBrands()
+  const brandIsDraft = (key: string) => unsavedBrands.has(key) || randomDraftKey === key
+  const savedBrandKeys = useSavedBrandKeys()
+  // No brand, no design system: its System page has nothing to show, so a link
+  // or a reload that lands there goes to Home, where the first brand is made.
+  useEffect(() => {
+    if (themeWorkspaceTab !== 'system' || savedBrandKeys.length > 0) return
+    if (access.loading || !useDesignStore.persist.hasHydrated()) return
+    setThemeWorkspaceTab('library')
+  }, [themeWorkspaceTab, savedBrandKeys.length, access.loading])
   /** Drop the unsaved Random theme and land on Home, where "New design system"
    *  offers Blank, From code and the rest. The theme was minted the moment
    *  Random was pressed, so leaving without this would keep it in My themes. */
@@ -773,6 +797,37 @@ export default function Configurator() {
     live.removeTheme(key)
     openLibraryPage()
     showToast(t('Random brand discarded.'))
+  }
+  /** Brands that Home would throw away: the draft on the board, or the one the
+   *  create studio already minted. Nothing saved is ever in this list. */
+  const draftsLeftBehind = (): string[] => {
+    const mineNow = myThemeKeys(themeOrder, themes)
+    if (themeWorkspaceTab !== 'library') {
+      return mineNow.includes(previewTheme) && brandIsDraft(previewTheme) ? [previewTheme] : []
+    }
+    return homeCreating ? mineNow.filter((key) => unsavedBrands.has(key)) : []
+  }
+  const [leaveDraftOpen, setLeaveDraftOpen] = useState(false)
+  /** Every user-facing Home door: a draft asks before it is lost. */
+  const requestHome = () => {
+    if (draftsLeftBehind().length > 0) { setLeaveDraftOpen(true); return }
+    openLibraryPage()
+  }
+  const leaveAndDiscardDrafts = () => {
+    const keys = draftsLeftBehind()
+    setLeaveDraftOpen(false)
+    const live = useDesignStore.getState()
+    const next = myThemeKeys(live.themeOrder, live.themes).find((k) => !keys.includes(k))
+      ?? live.themeOrder.find((k) => !keys.includes(k) && live.themes[k])
+    setExploringRandomKey(null)
+    setRandomDraftKey(null)
+    if (next) changePreviewTheme(next)
+    keys.forEach((key) => {
+      finishThemeSetup(key)
+      forgetUnsavedBrand(key)
+      live.removeTheme(key)
+    })
+    openLibraryPage()
   }
   const startRandomFromMenu = () => {
     // "Add new theme → Random" makes ANOTHER theme. Free has its one: ask for
@@ -1396,7 +1451,7 @@ export default function Configurator() {
   /** Variables, Docs and Get code wait until the theme is yours and finished.
    *  During creation the tabs stay dimmed and a short toast explains why. */
   const themeTablesBlocked = (): string | null => {
-    if (randomDraftKey && randomDraftKey === previewTheme) return randomDraftHint
+    if (brandIsDraft(previewTheme)) return randomDraftHint
     if (stylePreview) return t('Add this style to open Variables and Docs')
     if (setupStep != null || access.gated) {
       return t('Finish customizing your brand to see full Variables and Docs.')
@@ -1434,7 +1489,7 @@ export default function Configurator() {
     }
   }
   const openCodeForTheme = (key: string) => {
-    if (randomDraftKey && randomDraftKey === key) {
+    if (brandIsDraft(key)) {
       showToast(randomDraftHint, undefined, true)
       return
     }
@@ -1466,7 +1521,7 @@ export default function Configurator() {
    * checked, and it is a user-editable field with its own default rule.
    */
   const syncFigmaForTheme = (key: string) => {
-    if (randomDraftKey && randomDraftKey === key) {
+    if (brandIsDraft(key)) {
       showToast(randomDraftHint, undefined, true)
       return
     }
@@ -1552,6 +1607,12 @@ export default function Configurator() {
     commitVisit()
     setExportMode(null)
     setTab('foundations')
+    // Already on Home with the create studio open: Home is the way out of it.
+    // (A guest's first studio has nowhere else to stand, so it stays.)
+    if (themeWorkspaceTab === 'library' && homeCreating && !guestStudio) {
+      setHomeCreating(false)
+      setHomeResetTick((n) => n + 1)
+    }
     setThemeWorkspaceTab('library')
   }
   const openGuestStudio = () => {
@@ -1570,6 +1631,28 @@ export default function Configurator() {
     openLibraryPage()
     setOpenStylesRequest(true)
   }
+  // An empty workspace never shows a blank board. With no brand and no style
+  // tried on, Brand / Variables / Code would only say "Add a brand to My
+  // brands" — so the create studio (Blank, which has Random inside) opens once
+  // on reaching that state. Cancelling lands on Home and does not re-open it.
+  const emptyStartedRef = useRef(false)
+  const workspaceIsEmpty = tab === 'foundations'
+    && themeWorkspaceTab !== 'library'
+    // An empty system's own page is viewable (its Overview has Create brand);
+    // bouncing it into the studio made Home and System fight each other.
+    && themeWorkspaceTab !== 'system'
+    && !stylePreview
+    && !exportMode
+    && myThemeKeys(themeOrder, themes).length === 0
+  useEffect(() => {
+    if (!workspaceIsEmpty) { emptyStartedRef.current = false; return }
+    if (emptyStartedRef.current || access.loading || guestStudio) return
+    if (!useDesignStore.persist.hasHydrated()) return
+    if (importOpen || newSystemOpen || themeEditor || createPending || upgradeOpen || registerOpen) return
+    emptyStartedRef.current = true
+    openCreateTheme()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceIsEmpty, access.loading, guestStudio, importOpen, newSystemOpen, themeEditor, createPending, upgradeOpen, registerOpen])
   const openThemePreviewPage = () => {
     leaveExportWizard()
     commitVisit()
@@ -2181,7 +2264,7 @@ export default function Configurator() {
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
         navInMenu={componentsWithoutSystem}
-        onOpenLibrary={openLibraryPage}
+        onOpenLibrary={requestHome}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.
@@ -2216,12 +2299,9 @@ export default function Configurator() {
             stylePreview={stylePreview}
             homeOpen={themesCanvas && themeWorkspaceTab === 'library' && sessionAllowsHome}
             themeOpen={themesCanvas && themeWorkspaceTab === 'preview'}
-            onOpenLibrary={openLibraryPage}
+            onOpenLibrary={requestHome}
             onOpenTheme={openThemePreviewPage}
             onCreateTheme={openCreateTheme}
-            onStartRandom={startRandomFromMenu}
-            onImport={openImport}
-            onOpenStyles={openSystemStyles}
             onOpenComponents={() => changeTab('components')}
             onSyncFigma={() => syncFigmaForTheme(previewTheme)}
             onGetCode={() => openCodeForTheme(previewTheme)}
@@ -2358,7 +2438,9 @@ export default function Configurator() {
                     onCreateTheme={openCreateTheme}
                     exploringRandom={exploringRandomKey === previewTheme}
                     onExploringRandomEnd={() => { setExploringRandomKey(null); setRandomDraftKey(null) }}
-                    randomDraft={randomDraftKey === previewTheme}
+                    randomDraft={brandIsDraft(previewTheme)}
+                    onBackHome={() => { setStylePreview(null); openLibraryPage() }}
+                    onBackToStyles={() => { setStylePreview(null); openLibraryPage(); setOpenStylesRequest(true) }}
                     onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
@@ -2421,7 +2503,7 @@ export default function Configurator() {
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <ThemeLibraryPage
-                    key={themeWorkspaceTab === 'system' ? 'system' : guestStudio ? 'guest-studio' : 'home'}
+                    key={themeWorkspaceTab === 'system' ? 'system' : guestStudio ? 'guest-studio' : `home-${homeResetTick}`}
                     studioOnly={themeWorkspaceTab !== 'system' && guestStudio}
                     systemOnly={themeWorkspaceTab === 'system'}
                     onOpenSystem={openSystemPage}
@@ -2430,7 +2512,7 @@ export default function Configurator() {
                       if (reason) { showToast(reason, undefined, true); return }
                       openTokenInVariables(roleId, true)
                     }}
-                    onGoHome={sessionAllowsHome ? openLibraryPage : undefined}
+                    onGoHome={sessionAllowsHome ? requestHome : undefined}
                     onOpenStyles={openSystemStyles}
                     systemPlace={systemPlace}
                     onSystemPlace={setSystemPlace}
@@ -2739,6 +2821,12 @@ export default function Configurator() {
       </AnimatePresence>
 
 
+      <LeaveDraftDialog
+        open={leaveDraftOpen}
+        names={draftsLeftBehind().map((key) => themeDisplayName(key, store.themeLabels))}
+        onStay={() => setLeaveDraftOpen(false)}
+        onLeave={leaveAndDiscardDrafts}
+      />
       <UpgradeToProDialog
         open={upgradeOpen || proAsk.open}
         detail={proAsk.open ? proAsk.detail : undefined}
@@ -2753,11 +2841,12 @@ export default function Configurator() {
             onClose={() => setNewSystemOpen(false)}
             onCreated={() => {
               setNewSystemOpen(false)
-              // A new folder: stay on Home and open it so a file (theme) is created inside.
+              // A design system exists once it holds a brand: the name is kept
+              // and the first brand is made right away.
               setExportMode(null)
               setTab('foundations')
               openLibraryPage()
-              setEnterFolderTick((n) => n + 1)
+              setCreatePending(true)
             }}
           />
         )}

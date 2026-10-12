@@ -112,6 +112,10 @@ export function measureShellDrawerInsets(): ShellDrawerInsets {
 // A trigger composes `SELECT_SHELL` + `SELECT_FOCUS` with its own size/padding;
 // a plain text select uses `SELECT_TRIGGER`.
 export const SELECT_SHELL = 'rounded-lg border border-line-strong/80 bg-elevated/70 hover:border-line-strong hover:bg-elevated transition-colors'
+/** A static card (Neutral, Fine-tune, States…) in the SAME gray as the selectors
+ *  above it — fill and edge from `SELECT_SHELL`, minus the hover — so a widget
+ *  and the dropdown beside it are one surface language. */
+export const SELECT_CARD = 'rounded-lg border border-line-strong/80 bg-elevated/70'
 export const SELECT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 export const SELECT_TRIGGER = `w-full h-9 px-2.5 flex items-center gap-2 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`
 export const SELECT_LIST = 'rounded-lg border border-line-strong bg-app shadow-lg p-1'

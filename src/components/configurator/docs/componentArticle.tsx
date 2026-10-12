@@ -26,7 +26,7 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
-  CopyButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
+  CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
   ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
   type TocEntry,
 } from './blocks'
@@ -482,9 +482,11 @@ export function ComponentArticle({
 
   const heroCode = snippetFor(def, values, icons)
   const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
-  // The Use it brief is this page: identity, live tokens, API, and the
-  // snippet on screen. Built here rather than inside `useIt` because
-  // `agentContextMarkdown` lives in `lib/` and must not import this module.
+  // The brief is this page: identity, live tokens, API, and the snippet on
+  // screen. ONE string feeds both the header's "Copy context to Agents" and
+  // the Use it block's third tab, so the two can't disagree. Built here rather
+  // than inside `useIt` because `agentContextMarkdown` lives in `lib/` and must
+  // not import this module.
   const agentBrief = agentContextMarkdown(def, heroCode, tokens)
   const useIt = useItForComponent(def, heroCode, agentBrief)
   const idx = COMPONENTS.findIndex((c) => c.key === def.key)
@@ -497,7 +499,7 @@ export function ComponentArticle({
         section={t('Components')}
         kind={t(def.category)}
         title={def.label}
-        actions={null}
+        actions={<CopyAgentContextButton text={agentBrief} />}
       />
 
       {/* `def.label` is NOT translated: it is the plugin's own component name

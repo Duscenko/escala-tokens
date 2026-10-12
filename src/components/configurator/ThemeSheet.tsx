@@ -117,148 +117,6 @@ function MaskGlyph({ src }: { src: string }) {
   )
 }
 
-function StartMark({ children, accent }: { children: ReactNode; accent?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md ${
-        accent ? 'bg-accent-ui/15 text-accent-ui' : 'bg-fg/[0.06] text-fg-muted'
-      }`}
-    >
-      {children}
-    </span>
-  )
-}
-
-const START_ITEM = 'flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-body font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
-
-/** The "How do you want to start?" choices. Home's New design system button
- *  and the theme chip's Add new theme both render this, so the four doors
- *  cannot drift. */
-export function StartDesignChoices({
-  onBlank,
-  onRandom,
-  onFromCode,
-  onSystemStyles,
-}: {
-  onBlank: () => void
-  onRandom: () => void
-  onFromCode: () => void
-  onSystemStyles: () => void
-}) {
-  const { t } = useI18n()
-  return (
-    <div className="flex flex-col gap-0.5">
-      <button type="button" onClick={onBlank} className={START_ITEM}>
-        <StartMark><BlankGlyph /></StartMark>
-        {t('Blank')}
-      </button>
-      <button type="button" onClick={onRandom} className={START_ITEM}>
-        <StartMark accent><MaskGlyph src="/icons/settings/random.svg" /></StartMark>
-        {t('Random')}
-      </button>
-      <button type="button" onClick={onFromCode} className={START_ITEM}>
-        <StartMark><MaskGlyph src="/icons/theme-hub-icons/Icon/code.svg" /></StartMark>
-        {t('From code')}
-      </button>
-      <button type="button" onClick={onSystemStyles} className={START_ITEM}>
-        <StartMark><SparkGlyph /></StartMark>
-        {t('System styles')}
-      </button>
-    </div>
-  )
-}
-
-export function StartDesignModal({
-  open,
-  onClose,
-  onBlank,
-  onRandom,
-  onFromCode,
-  onSystemStyles,
-  title,
-}: {
-  open: boolean
-  onClose: () => void
-  /** The question, when the host can name what is being started. */
-  title?: string
-  onBlank: () => void
-  onRandom: () => void
-  onFromCode: () => void
-  onSystemStyles: () => void
-}) {
-  const { t } = useI18n()
-  const reduceMotion = useReducedMotion()
-  const dialogRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    // Keyboard users land inside the dialog, Tab stays in it, and closing hands
-    // focus back to whatever opened it (a modal with none of that leaves the
-    // page behind it reachable).
-    const opener = document.activeElement as HTMLElement | null
-    const focusables = () => Array.from(
-      dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [],
-    )
-    focusables()[0]?.focus()
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { onClose(); return }
-      if (event.key !== 'Tab') return
-      const items = focusables()
-      if (!items.length) return
-      const first = items[0]
-      const last = items[items.length - 1]
-      const active = document.activeElement
-      if (event.shiftKey && active === first) { event.preventDefault(); last.focus() }
-      else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus() }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      opener?.focus?.()
-    }
-  }, [open, onClose])
-  if (!open) return null
-  const pick = (fn: () => void) => () => {
-    onClose()
-    fn()
-  }
-  return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="start-design-title"
-        className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-2xl"
-        initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 id="start-design-title" className="px-1 pb-3 text-title font-semibold text-fg">
-          {title ?? t('How do you want to start?')}
-        </h2>
-        <StartDesignChoices
-          onBlank={pick(onBlank)}
-          onRandom={pick(onRandom)}
-          onFromCode={pick(onFromCode)}
-          onSystemStyles={pick(onSystemStyles)}
-        />
-        {/* A filled secondary — the same surface/border pair "Skip setup" uses —
-            so Cancel reads as a button and not as loose text under the list. */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-4 h-10 w-full rounded-xl border border-line bg-surface text-body font-medium text-fg transition-colors hover:bg-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          {t('Cancel')}
-        </button>
-      </motion.div>
-    </div>,
-    document.body,
-  )
-}
-
 export function ThemeAppearanceControl({
   previewTheme,
   stylePreview,
@@ -267,9 +125,6 @@ export function ThemeAppearanceControl({
   onOpenLibrary,
   onOpenTheme,
   onCreateTheme,
-  onStartRandom,
-  onImport,
-  onOpenStyles,
   onOpenComponents,
   onSyncFigma,
   onGetCode,
@@ -284,12 +139,6 @@ export function ThemeAppearanceControl({
   onOpenTheme: () => void
   /** Blank — the create studio. */
   onCreateTheme: () => void
-  /** Random — mint (or, on Free, open the one theme). */
-  onStartRandom: () => void
-  /** From code — the Import JSON modal. */
-  onImport: () => void
-  /** System styles — Home's styles section. */
-  onOpenStyles: () => void
   onOpenComponents: () => void
   onSyncFigma: () => void
   onGetCode: () => void
@@ -299,7 +148,6 @@ export function ThemeAppearanceControl({
   const store = useDesignStore()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [startOpen, setStartOpen] = useState(false)
 
   const tryOn = stylePreview
   const ownKeys = myThemeKeys(store.themeOrder, store.themes)
@@ -330,7 +178,6 @@ export function ThemeAppearanceControl({
 
   const closeMenu = () => {
     setMenuOpen(false)
-    setStartOpen(false)
   }
   const go = (action: () => void) => {
     closeMenu()
@@ -404,7 +251,7 @@ export function ThemeAppearanceControl({
         <div className="my-1 border-t border-line" role="separator" />
         {empty ? (
           <>
-            <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setStartOpen(true) }} className={MENU_ITEM}>
+            <button type="button" role="menuitem" onClick={() => go(onCreateTheme)} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><PlusGlyph /></span>
               {t('Set up a system')}
             </button>
@@ -437,7 +284,7 @@ export function ThemeAppearanceControl({
                 </button>
               </>
             )}
-            <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setStartOpen(true) }} className={MENU_ITEM}>
+            <button type="button" role="menuitem" onClick={() => go(onCreateTheme)} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><PlusGlyph /></span>
               {t('Add new brand')}
             </button>
@@ -469,15 +316,6 @@ export function ThemeAppearanceControl({
           </>
         )}
       </ChromeAnchoredDropdown>
-      <StartDesignModal
-        open={startOpen}
-        onClose={() => setStartOpen(false)}
-        title={empty ? undefined : t('How do you want to start this brand?')}
-        onBlank={onCreateTheme}
-        onRandom={onStartRandom}
-        onFromCode={onImport}
-        onSystemStyles={onOpenStyles}
-      />
     </>
   )
 }

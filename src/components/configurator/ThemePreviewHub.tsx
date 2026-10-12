@@ -439,7 +439,7 @@ export default function ThemePreviewHub({
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, editionIcons, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
-  exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom,
+  exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom, onBackHome, onBackToStyles,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
@@ -494,6 +494,10 @@ export default function ThemePreviewHub({
   onExploringRandomEnd?: () => void
   /** The theme on screen was minted by Random and is not saved yet. */
   randomDraft?: boolean
+  /** A System style is only tried on: this returns to Home without adding it. */
+  onBackHome?: () => void
+  /** …and this one to Home's System styles list it was picked from. */
+  onBackToStyles?: () => void
   /** Drop the unsaved Random theme and go back to Home. */
   onDiscardRandom?: () => void
 }) {
@@ -730,6 +734,28 @@ export default function ThemePreviewHub({
                     section={activeDocKey === OVERVIEW_KEY ? hubViewLabel : t(hubViewLabel)}
                     onBack={() => onDocsOpenChange(false)}
                   />
+                ) : stylePreview && onBackHome ? (
+                  // A System style is only tried on: say where it sits and let
+                  // every level above it be a way back.
+                  <nav aria-label={t('Breadcrumb')} className="flex min-w-0 items-center gap-1.5 text-ui text-fg-faint">
+                    <button
+                      type="button"
+                      onClick={onBackHome}
+                      className="flex-shrink-0 rounded px-1.5 py-1 font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                    >
+                      {t('Home')}
+                    </button>
+                    <span aria-hidden>/</span>
+                    <button
+                      type="button"
+                      onClick={onBackToStyles ?? onBackHome}
+                      className="flex-shrink-0 rounded px-1.5 py-1 font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                    >
+                      {t('System styles')}
+                    </button>
+                    <span aria-hidden>/</span>
+                    <span aria-current="page" className="min-w-0 truncate px-1.5 font-semibold text-fg">{stylePreview.preset.label}</span>
+                  </nav>
                 ) : (
                   // The board's title is the THEME, editable in place, plus whether
                   // it is saved — the tab strip already says this is Theme.

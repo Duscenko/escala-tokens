@@ -4,6 +4,7 @@
 
 import { useMemo, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
+import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import { useOneThemePlan } from '../../../lib/access'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes } from '../../../lib/brandThemes'
 import { fontStack } from '../../../lib/fonts'
@@ -14,14 +15,27 @@ import type { Dashboard } from './dashboardData'
 
 const TONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const
 
-function FoundationCard({ title, line, tag, picture, onClick, hint }: {
+function FoundationCard({ title, line, tag, picture, onClick, hint, empty }: {
   title: string
   line: string
   tag?: ReactNode
   picture: ReactNode
   onClick: () => void
   hint: string
+  /** No brand yet: a quiet placeholder, not a picture of the scaffold. */
+  empty?: boolean
 }) {
+  if (empty) {
+    return (
+      <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-dashed border-line bg-surface/40 p-4">
+        <span aria-hidden className="mb-2 flex h-20 items-center justify-center">
+          <span className="block h-9 w-full rounded-lg border border-dashed border-line/70 bg-elevated/30" />
+        </span>
+        <span className="text-ui font-semibold text-fg-muted">{title}</span>
+        <span className="truncate text-caption text-fg-faint">{line}</span>
+      </div>
+    )
+  }
   return (
     <button
       type="button"
@@ -59,7 +73,12 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
   const fonts = facts.fonts.heading === facts.fonts.body
     ? facts.fonts.body
     : `${facts.fonts.heading} · ${facts.fonts.body}`
-  const failing = contrast.failing.length
+  // The store keeps scaffold `light`/`dark` with the default accent when no
+  // brand was added; reading those would draw a brand nobody made.
+  const savedBrands = useSavedBrandKeys()
+  const empty = savedBrands.length === 0
+  const failing = empty ? 0 : contrast.failing.length
+  const none = t('Not set yet')
   const openHint = t('Open in Docs')
 
   return (
@@ -70,8 +89,9 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
         <h3 id="overview-foundations" className="text-ui font-semibold text-fg">{t('Foundations')}</h3>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr))]">
           <FoundationCard
+            empty={empty}
             title={t('Color')}
-            line={`${(ramp?.[9] ?? store.primaryColor).toUpperCase()} · ${themes}`}
+            line={empty ? none : `${(ramp?.[9] ?? store.primaryColor).toUpperCase()} · ${themes}`}
             tag={failing > 0 ? <Tag tone="warning">{t('{n} pairs under AA', { n: failing })}</Tag> : undefined}
             hint={openHint}
             onClick={() => onOpenFoundation('color')}
@@ -82,15 +102,17 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
             )}
           />
           <FoundationCard
+            empty={empty}
             title={t('Typography')}
-            line={fonts}
+            line={empty ? none : fonts}
             hint={openHint}
             onClick={() => onOpenFoundation('typography')}
             picture={<span className="text-[40px] font-semibold leading-none text-fg" style={{ fontFamily: fontStack(facts.fonts.heading) }}>Aa</span>}
           />
           <FoundationCard
+            empty={empty}
             title={t('Radius')}
-            line={`${facts.radius.boxes} · ${facts.radius.fields} · ${facts.radius.selectors}`}
+            line={empty ? none : `${facts.radius.boxes} · ${facts.radius.fields} · ${facts.radius.selectors}`}
             hint={`${t('Boxes')} ${facts.radius.boxes} · ${t('Fields')} ${facts.radius.fields} · ${t('Selectors')} ${facts.radius.selectors}`}
             onClick={() => onOpenFoundation('radius')}
             picture={(
@@ -101,8 +123,9 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
             )}
           />
           <FoundationCard
+            empty={empty}
             title={t('Spacing')}
-            line={`${facts.spacing ? t(facts.spacing) : t('Custom')}${facts.fieldHeight ? ` · ${t('Fields')} ${facts.fieldHeight}` : ''}`}
+            line={empty ? none : `${facts.spacing ? t(facts.spacing) : t('Custom')}${facts.fieldHeight ? ` · ${t('Fields')} ${facts.fieldHeight}` : ''}`}
             hint={openHint}
             onClick={() => onOpenFoundation('spacing')}
             picture={(
@@ -112,8 +135,9 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
             )}
           />
           <FoundationCard
+            empty={empty}
             title={t('Shadow')}
-            line={facts.shadow ? t(facts.shadow) : t('Custom')}
+            line={empty ? none : facts.shadow ? t(facts.shadow) : t('Custom')}
             hint={openHint}
             onClick={() => onOpenFoundation('shadow')}
             picture={(

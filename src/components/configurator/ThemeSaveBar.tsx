@@ -309,7 +309,10 @@ export function CreateStudioBar({
   onBack,
   onSkip,
   onContinue,
+  error,
 }: {
+  /** Why the last action did nothing (a plan limit, a taken name). */
+  error?: string | null
   stepIndex: number
   total: number
   continueLabel: string
@@ -325,7 +328,8 @@ export function CreateStudioBar({
 }) {
   const { t } = useI18n()
   return (
-    <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-4 py-3">
+    <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-3 py-3">
+      {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       <div className="flex items-center gap-2">
         <span className="text-caption font-semibold text-fg">{t('Step {n} of {total}', { n: stepIndex + 1, total })}</span>
         <span className="flex flex-1 gap-1" aria-hidden>
