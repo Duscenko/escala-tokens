@@ -560,7 +560,7 @@ const SHOTS = {
   contrast: { file: 'contrast', size: [1200, 900], alt: 'The contrast grid: every pair of the twelve accent steps measured with APCA' },
   type: { file: 'type', size: [1360, 850], alt: 'The Font edition panel: body and heading font and a five-step text scale slider' },
   radius: { file: 'radius', size: [1360, 850], alt: 'The Radius edition panel with Fields at the roundest step while Boxes keep theirs' },
-  spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing responsive table with the Mobile platform selected' },
+  spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing semantics table with the Mobile platform selected' },
   components: { file: 'components', size: [1360, 850], alt: 'The Button page in Components: a live playground with colour, style, size and state controls' },
   docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page, built from the system\'s own accent ramps' },
   code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the theme\'s variables.css with CSS, Markdown and Agent context views' },
