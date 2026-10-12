@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { put } from '@vercel/blob'
 import { customerIdForEmail, grantedLicenceUntil, POLAR_ORGANIZATION_ID } from '../src/lib/polar.js'
 import {
-  accountPlanChanged, accountPlanRecord, accountPlanState,
+  accountPlanChanged, accountPlanRecord, accountPlanState, accountProofToWrite,
   type AccountPlanRecord, type AccountPlanState,
 } from '../src/lib/accountPlan.js'
 import { forgetBlob, learnBlobBase, readJsonBlob } from './_blob.js'
@@ -143,31 +143,60 @@ export async function accountPlanFor(userId: string, now = new Date()): Promise<
  *  `refused` means the key belongs to someone else: this account is judged on
  *  its own record, and is Free if it has none. Without this, signing a second
  *  account in on a browser that holds a key showed it as Pro.
- *  `failed` is a storage error. The caller must not read it as either. */
+ *  `failed` is a storage error before this account's right to the key could
+ *  be decided. The caller must not record Pro from it: the key may be
+ *  someone else's. `unwritten` means the key IS this account's and the
+ *  record did not land — the caller writes it again. */
 export async function claimKeyForAccount(
   user: { id: string; email: string },
   key: { hash: string; expiresAt: string | null; customerEmail?: string },
   how: 'pasted' | 'cookie',
   now = new Date(),
-): Promise<'recorded' | 'refused' | 'failed'> {
+): Promise<'recorded' | 'refused' | 'failed' | 'unwritten'> {
   if (!user.id || !key.hash) return 'failed'
+  const id = accountId(user.id)
+  let accounts: string[]
+  let stored: AccountPlanRecord | null
   try {
-    const id = accountId(user.id)
     const index = await readJsonBlob<{ accounts?: unknown }>(licenceAccountsKey(key.hash), { fresh: true })
-    const accounts = Array.isArray(index?.accounts)
+    accounts = Array.isArray(index?.accounts)
       ? index.accounts.filter((a): a is string => typeof a === 'string' && a.length > 0)
       : []
-    const member = accounts.includes(id)
-    const buyer = !!key.customerEmail && key.customerEmail === user.email.trim().toLowerCase()
-    if (!member && how === 'cookie' && !buyer && (key.customerEmail || accounts.length > 0)) return 'refused'
-    const next = accountPlanRecord(key.expiresAt, key.hash, now)
-    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(user.id), { fresh: true })
+    stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(user.id), { fresh: true })
+  } catch {
+    return 'failed'
+  }
+  const member = accounts.includes(id)
+  const buyer = !!key.customerEmail && key.customerEmail === user.email.trim().toLowerCase()
+  if (!member && how === 'cookie' && !buyer && (key.customerEmail || accounts.length > 0)) return 'refused'
+  const next = accountPlanRecord(key.expiresAt, key.hash, now)
+  try {
     if (accountPlanChanged(stored, next)) await writePublic(accountPlanKey(user.id), next)
     if (!member) {
       accounts.push(id)
       await writePublic(licenceAccountsKey(key.hash), { accounts: accounts.slice(-MAX_ACCOUNTS_PER_KEY) })
     }
     return 'recorded'
+  } catch {
+    return 'unwritten'
+  }
+}
+
+/** Copy a proof the account already earned onto its record, when that record
+ *  does not already say so. A plugin session used to be the only copy: the
+ *  web asks the record, so the account stayed Free. A refund is not undone. */
+export async function ensureAccountProof(
+  userId: string,
+  proof: { until: string; keyHash?: string },
+  now = new Date(),
+): Promise<'written' | 'kept' | 'failed'> {
+  if (!userId || !proof.until) return 'failed'
+  try {
+    const stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(userId), { fresh: true })
+    const next = accountProofToWrite(stored, proof, now)
+    if (!next || !accountPlanChanged(stored, next)) return 'kept'
+    await writePublic(accountPlanKey(userId), next)
+    return 'written'
   } catch {
     return 'failed'
   }

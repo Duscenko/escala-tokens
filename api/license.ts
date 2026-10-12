@@ -3,7 +3,7 @@ import { licenceCookieHeaders, readLicenceCookie } from '../src/lib/licenceCooki
 import { isActivationId } from '../src/lib/polar.js'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import { clientIp, rateLimited } from './_blob.js'
-import { accountPro, claimKeyForAccount, type AccountPro } from './_accountPlan.js'
+import { accountPro, claimKeyForAccount, ensureAccountProof, type AccountPro } from './_accountPlan.js'
 import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash, type CheckedLicence } from './_licence.js'
 
@@ -166,6 +166,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
       : null
     if (claim) console.info(JSON.stringify({ evt: 'account_plan', op: 'bind', keyHash: licenceKeyHash(key), result: claim }))
+    // The key is theirs and the record did not land. Write it once more, so
+    // this browser being Pro does not leave every other browser Free.
+    if (user && claim === 'unwritten' && result.valid) {
+      const saved = await ensureAccountProof(user.id, { until: result.expiresAt ?? 'lifetime', keyHash: licenceKeyHash(key) })
+      if (saved === 'written') console.info(JSON.stringify({ evt: 'account_plan', op: 'promote', via: 'key' }))
+    }
     if (user && (!result.valid || claim === 'refused')) {
       // No key of this account's here (a typo, an expired one, a full device
       // cap, someone else's). The account may still be Pro by its own record.

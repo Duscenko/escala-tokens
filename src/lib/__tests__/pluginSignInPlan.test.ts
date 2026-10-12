@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Pro belongs to the ACCOUNT. The real handlers, with Blob, Supabase and Polar
@@ -176,6 +177,34 @@ describe('plugin sign-in plan', () => {
     const check = await call(licence, { method: 'POST', jwt: 'jwt-ana', body: { key: 'ESCALA-TYPO' } })
     expect(check.body).toMatchObject({ valid: false, reason: 'unknown' })
     expect((await signInFromPlugin({ jwt: 'jwt-ana' })).tier).toBe('free')
+  })
+
+  // Merche: Polar had already validated the key into the plugin session, and
+  // the account record — what the web reads — did not exist. Opening the
+  // plugin must copy that proof across, or the web stays Free.
+  it('a plugin session that already proved Pro is copied onto the account', async () => {
+    const first = await signInFromPlugin({ jwt: 'jwt-ana' })
+    expect(first.tier).toBe('free')
+    const key = [...store.keys()].find((k) => k.startsWith('plugin-session/'))
+    const session = JSON.parse(store.get(key!)!) as { userId: string; email: string }
+    store.set(key!, JSON.stringify({ userId: session.userId, email: session.email, proUntil: '2027-10-09T12:30:58.485Z' }))
+
+    const opened = await call(pluginSession, { method: 'GET', op: 'libraries', bearer: first.token })
+    expect(opened.body).toMatchObject({ tier: 'pro', email: 'ana@example.com' })
+    expect((await pageLoad({ jwt: 'jwt-ana' })).body).toMatchObject({ valid: true, via: 'account', hasKey: false })
+  })
+
+  it('a refund is not undone by a plugin session that still says Pro', async () => {
+    const first = await signInFromPlugin({ jwt: 'jwt-ana' })
+    const key = [...store.keys()].find((k) => k.startsWith('plugin-session/'))!
+    const session = JSON.parse(store.get(key)!) as { userId: string; email: string }
+    store.set(key, JSON.stringify({ userId: session.userId, email: session.email, proUntil: '2027-10-09T12:30:58.485Z' }))
+    const account = `account-plan/${createHash('sha256').update('user-ana').digest('hex')}.json`
+    store.set(account, JSON.stringify({ until: 'lifetime', keyHash: '80ba052feca013b8', provenAt: '2026-10-01T00:00:00.000Z', revoked: true }))
+
+    expect((await call(pluginSession, { method: 'GET', op: 'libraries', bearer: first.token })).body.tier).toBe('free')
+    expect(JSON.parse(store.get(account)!).revoked).toBe(true)
+    expect((await pageLoad({ jwt: 'jwt-ana' })).body).toMatchObject({ valid: false, hasKey: false })
   })
 })
 

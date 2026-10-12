@@ -49,3 +49,45 @@ export function accountPlanChanged(stored: unknown, next: AccountPlanRecord): bo
   const r = stored as Partial<AccountPlanRecord>
   return r.revoked === true || r.until !== next.until || r.keyHash !== next.keyHash
 }
+
+/** A proof that came from a plugin session (or an email grant) and not from a
+ *  key we can hash. A later paste of the real key replaces it, because the
+ *  hashes differ. It is not 16 hex, so it can never be mistaken for one. */
+export const SESSION_PROOF_HASH = 'session-proof'
+
+/** The short hash `licenceKeyHash` writes. Anything else is a placeholder. */
+export function isLicenceKeyHash(value: string): boolean {
+  return /^[0-9a-f]{16}$/.test(value)
+}
+
+/** The account record to write so a proof that already made this account Pro
+ *  is visible to the web, not only to the plugin session that happened to
+ *  hold it. `null` means leave storage alone.
+ *
+ *  A refund stands: a session must not un-revoke. A live record is never
+ *  shortened, and a placeholder hash never replaces a real key hash — that
+ *  hash is how a refund finds the account. */
+export function accountProofToWrite(
+  stored: unknown,
+  proof: { until: string; keyHash?: string },
+  now: Date,
+): AccountPlanRecord | null {
+  const until = proof.until === 'lifetime' || (Number.isFinite(Date.parse(proof.until)) && Date.parse(proof.until) > now.getTime())
+    ? proof.until
+    : ''
+  if (!until) return null
+  const state = accountPlanState(stored, now)
+  if (state === 'revoked') return null
+  const given = typeof proof.keyHash === 'string' && proof.keyHash ? proof.keyHash : ''
+  const keyHash = isLicenceKeyHash(given) ? given : SESSION_PROOF_HASH
+  if (state === null) return accountPlanRecord(until === 'lifetime' ? null : until, keyHash, now)
+  const storedHash = stored && typeof stored === 'object' && typeof (stored as Partial<AccountPlanRecord>).keyHash === 'string'
+    ? (stored as AccountPlanRecord).keyHash
+    : ''
+  const longer = until === 'lifetime' ? state !== 'lifetime' : state !== 'lifetime' && Date.parse(until) > Date.parse(state)
+  const upgrading = isLicenceKeyHash(keyHash) && !isLicenceKeyHash(storedHash)
+  if (!longer && !upgrading) return null
+  const keptUntil = longer ? until : state
+  const keptHash = upgrading ? keyHash : (isLicenceKeyHash(storedHash) ? storedHash : keyHash)
+  return accountPlanRecord(keptUntil === 'lifetime' ? null : keptUntil, keptHash, now)
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accountPlanChanged, accountPlanRecord, accountPlanState } from '../accountPlan'
+import { accountPlanChanged, accountPlanRecord, accountPlanState, accountProofToWrite, SESSION_PROOF_HASH } from '../accountPlan'
 import { licenceCookieDomain, licenceCookieHeaders, readLicenceCookie } from '../licenceCookie'
 
 const now = new Date('2026-10-10T08:00:00Z')
@@ -30,6 +30,28 @@ describe('account plan record', () => {
     expect(accountPlanChanged(stored, accountPlanRecord(null, 'other', now))).toBe(true)
     expect(accountPlanChanged({ ...stored, revoked: true }, accountPlanRecord(null, 'h', now))).toBe(true)
     expect(accountPlanChanged(null, accountPlanRecord(null, 'h', now))).toBe(true)
+  })
+
+  it('copies a session proof onto an account that has no record, and nowhere else', () => {
+    const proof = { until: '2027-10-09T12:30:58.485Z' }
+    expect(accountProofToWrite(null, proof, now)).toMatchObject({ until: proof.until, keyHash: SESSION_PROOF_HASH })
+    expect(accountProofToWrite(null, { until: 'lifetime' }, now)).toMatchObject({ until: 'lifetime', keyHash: SESSION_PROOF_HASH })
+    expect(accountProofToWrite(null, { until: '2020-01-01T00:00:00Z' }, now)).toBeNull()
+    expect(accountProofToWrite(null, { until: '' }, now)).toBeNull()
+    const revoked = { ...accountPlanRecord(null, '80ba052feca013b8', now), revoked: true }
+    expect(accountProofToWrite(revoked, { until: 'lifetime' }, now)).toBeNull()
+    const live = accountPlanRecord(proof.until, '80ba052feca013b8', now)
+    expect(accountProofToWrite(live, proof, now)).toBeNull()
+    expect(accountProofToWrite(live, { until: 'lifetime', keyHash: SESSION_PROOF_HASH }, now)).toMatchObject({
+      until: 'lifetime', keyHash: '80ba052feca013b8',
+    })
+    expect(accountProofToWrite(accountPlanRecord('2027-01-01T00:00:00Z', '80ba052feca013b8', now), proof, now)).toMatchObject({
+      until: proof.until, keyHash: '80ba052feca013b8',
+    })
+    const placeholder = accountPlanRecord(proof.until, SESSION_PROOF_HASH, now)
+    expect(accountProofToWrite(placeholder, { ...proof, keyHash: '80ba052feca013b8' }, now)).toMatchObject({
+      until: proof.until, keyHash: '80ba052feca013b8',
+    })
   })
 })
 

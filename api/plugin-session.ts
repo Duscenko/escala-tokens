@@ -13,7 +13,7 @@ import {
   type PluginLibrary,
   type PluginPlanDecision,
 } from '../src/lib/pluginSession.js'
-import { accountPlanFor, claimKeyForAccount, polarLookupConfigured, proUntilForEmail } from './_accountPlan.js'
+import { accountPlanFor, claimKeyForAccount, ensureAccountProof, polarLookupConfigured, proUntilForEmail } from './_accountPlan.js'
 import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
@@ -102,6 +102,13 @@ async function withFreshPlan(token: string, session: SessionRecord): Promise<Ses
     accountPlanFor(session.userId, now),
   ])
   const decision = pluginPlanRefresh(session, emailUntil, now, account)
+  // The session can already say Pro while the account record — the thing the
+  // web reads — was never written. Copy the proof across. A refund
+  // (`revoked`) and a record we could not read (`unknown`) are left untouched.
+  if (decision.plan === 'pro' && decision.proUntil && account === null) {
+    const saved = await ensureAccountProof(session.userId, { until: decision.proUntil }, now)
+    if (saved === 'written') console.info(JSON.stringify({ evt: 'account_plan', op: 'promote', via: 'session' }))
+  }
   const next = sessionFromPlan(session, decision)
   if (next.plan === session.plan && next.proUntil === session.proUntil) return session
   console.info(JSON.stringify({ evt: 'plugin_plan', op: 'refresh', from: session.plan ?? 'unknown', to: decision.plan }))
@@ -301,12 +308,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const claim = keyGood
       ? await claimKeyForAccount(user, { hash: licenceKeyHash(licenceKey), expiresAt: seen.expiresAt, customerEmail: seen.customerEmail }, 'cookie', now)
       : null
-    const checked = claim === 'refused' ? null : seen
+    // `failed` is "we could not tell whose key this is". It must not become a
+    // Pro session: the next open would copy that session onto the account.
+    const checked = claim === 'refused' || claim === 'failed' ? null : seen
     const [emailUntil, account] = await Promise.all([
       proUntilForEmail(user.email, now),
       accountPlanFor(user.id, now),
     ])
     const decision = pluginPlan(checked, emailUntil, now, account)
+    // A key that is this account's but did not get written, and a Polar grant
+    // on the email, both have to land on the account record. Otherwise the
+    // plugin is Pro and the web is Free. A key that failed BEFORE we knew it
+    // was theirs is not recorded here.
+    if (decision.plan === 'pro' && decision.proUntil && account === null
+      && (decision.via === 'email' || claim === 'unwritten')) {
+      const saved = await ensureAccountProof(
+        user.id,
+        { until: decision.proUntil, ...(claim === 'unwritten' ? { keyHash: licenceKeyHash(licenceKey) } : {}) },
+        now,
+      )
+      if (saved === 'written') console.info(JSON.stringify({ evt: 'account_plan', op: 'promote', via: decision.via }))
+    }
     // The one line that explains a Pro account signing in as Free: which host
     // opened, whether a key came with it, and which proofs had an answer.
     console.info(JSON.stringify({
@@ -315,7 +337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       plan: decision.plan,
       via: decision.via,
       host: req.headers.host ?? '',
-      key: !licenceKey ? 'none' : claim === 'refused' ? 'other_account' : keyGood ? 'good' : (seen?.reason ?? 'rejected'),
+      key: !licenceKey ? 'none' : claim === 'refused' ? 'other_account' : claim === 'failed' ? 'unreadable' : claim === 'unwritten' ? 'unwritten' : keyGood ? 'good' : (seen?.reason ?? 'rejected'),
       account: account === null ? 'none' : account === 'revoked' || account === 'unknown' ? account : 'live',
       email: !polarLookupConfigured() ? 'unconfigured' : emailUntil === 'unknown' ? 'unknown' : emailUntil ? 'grant' : 'none',
     }))
