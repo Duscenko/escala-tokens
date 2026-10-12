@@ -1,19 +1,140 @@
-// COMPONENTS — the catalogue seen from this design system: which components
-// are in it, and for each one whether Figma, a live preview and documentation
-// exist. A row opens the component's own page.
+// COMPONENTS — the catalogue of this design system, grouped by category.
+// A row opens the component. Status stays on the row. Figma, preview and
+// docs are on the component's own page, not repeated as columns here.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useI18n } from '../../../lib/i18n'
 import { CATEGORIES } from '../../../lib/componentCatalogue'
-import { componentElementId } from '../../../lib/systemDashboard'
-import { BTN, Card, EmptyRow, Kpi, KpiRow, PageHeader, ROW, StatusPill, TD, TH, Tag, YesNo } from './parts'
-import type { Dashboard } from './dashboardData'
+import { componentElementId, type DashboardElement, type Suggestion } from '../../../lib/systemDashboard'
+import { ELEMENT_STATUSES, type ElementStatus } from '../../../lib/systemDashboardTypes'
+import { useDesignStore } from '../../../store/useDesignStore'
+import { EmptyRow, StatusPill } from './parts'
+import { STATUS_LABEL, type Dashboard } from './dashboardData'
 
 type Scope = 'system' | 'all'
 
-function csvCell(value: string | number | boolean): string {
-  const text = String(value)
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+/** The status a check suggests. `keep` changes nothing. Same map as the status board. */
+const SUGGESTED_STATUS: Record<Suggestion, ElementStatus | null> = { approve: 'approved', changes: 'review', keep: null }
+
+/** The status pill as a menu. A choice is the same decision the status board stores. */
+function StatusMenu({ element }: { element: DashboardElement }) {
+  const { t } = useI18n()
+  const setElementStatus = useDesignStore((s) => s.setElementStatus)
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<{ top: number; left: number; up: boolean } | null>(null)
+  const suggested = SUGGESTED_STATUS[element.suggestion]
+
+  useEffect(() => {
+    if (!open || !btnRef.current) return
+    const place = () => {
+      const rect = btnRef.current!.getBoundingClientRect()
+      const up = window.innerHeight - rect.bottom < 220 && rect.top > 220
+      const menuW = 180
+      setBox({
+        top: up ? rect.top - 4 : rect.bottom + 4,
+        left: Math.max(8, Math.min(rect.right - menuW, window.innerWidth - menuW - 8)),
+        up,
+      })
+    }
+    place()
+    const close = () => setOpen(false)
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      btnRef.current?.focus({ preventScroll: true })
+      setOpen(false)
+    }
+    const onDoc = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (btnRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', close, true)
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDoc)
+    const focus = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"], button')?.focus({ preventScroll: true })
+    })
+    return () => {
+      window.cancelAnimationFrame(focus)
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', close, true)
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDoc)
+    }
+  }, [open])
+
+  function choose(status: ElementStatus | null) {
+    setElementStatus(element.id, status)
+    btnRef.current?.focus({ preventScroll: true })
+    setOpen(false)
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t('Set status')}: ${element.name}`}
+        onClick={() => setOpen((value) => !value)}
+        className="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <StatusPill status={element.status} />
+      </button>
+      {open && box && createPortal(
+        <div
+          ref={menuRef}
+          role="listbox"
+          aria-label={t('Set status')}
+          data-status-menu
+          style={{ top: box.top, left: box.left, transform: box.up ? 'translateY(-100%)' : undefined }}
+          className="fixed z-50 flex w-40 flex-col gap-0.5 rounded-lg border border-line bg-elevated p-1 shadow-lg"
+        >
+          {ELEMENT_STATUSES.map((status) => {
+            const on = element.decided && element.status === status
+            const hinted = !on && suggested === status
+            return (
+              <button
+                key={status}
+                type="button"
+                role="option"
+                aria-selected={on}
+                title={hinted ? t('The checks suggest this') : undefined}
+                onClick={() => choose(status)}
+                className={`h-7 rounded-md px-2 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                  on
+                    ? 'bg-accent-solid text-accent-ink'
+                    : hinted
+                      ? 'text-accent-ui hover:bg-accent-ui/[0.08]'
+                      : 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+                }`}
+              >
+                {t(STATUS_LABEL[status])}
+              </button>
+            )
+          })}
+          {element.decided && (
+            <>
+              <div className="my-0.5 border-t border-line" />
+              <button
+                type="button"
+                onClick={() => choose(null)}
+                className="h-7 rounded-md px-2 text-left text-caption text-fg-muted hover:bg-fg/[0.05] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              >
+                {t('Back to automatic')}
+              </button>
+            </>
+          )}
+        </div>,
+        document.body,
+      )}
+    </>
+  )
 }
 
 export default function ComponentsPage({ dash, onOpenComponent }: {
@@ -21,64 +142,37 @@ export default function ComponentsPage({ dash, onOpenComponent }: {
   onOpenComponent?: (key: string) => void
 }) {
   const { t } = useI18n()
-  const { components, elements, store } = dash
+  const { components, elements } = dash
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('all')
   const [scope, setScope] = useState<Scope>('system')
 
-  const included = components.filter((row) => row.included)
-  const statusOf = useMemo(() => new Map(elements.map((el) => [el.id, el.status])), [elements])
+  const elementOf = useMemo(
+    () => new Map(elements.filter((el) => el.kind === 'component').map((el) => [el.id, el])),
+    [elements],
+  )
   const q = query.trim().toLowerCase()
   const shown = components.filter((row) =>
     (scope === 'all' || row.included)
-    && (category === 'all' || row.category === category)
     && (!q || row.label.toLowerCase().includes(q) || row.key.toLowerCase().includes(q)),
   )
-
-  const share = (count: number) => (included.length ? count / included.length : 0)
-  const inFigma = included.filter((row) => row.figmaSets > 0).length
-  const withPreview = included.filter((row) => row.preview).length
-  const documented = included.filter((row) => row.documented).length
-
-  const exportReport = () => {
-    const head = ['Component', 'Category', 'In system', 'Status', 'Figma sets', 'Live preview', 'Documented', 'Variants', 'Colour roles']
-    const lines = components.map((row) => [
-      row.label, row.category, row.included, statusOf.get(componentElementId(row.key)) ?? '',
-      row.figmaSets, row.preview, row.documented, row.variants, row.roles,
-    ].map(csvCell).join(','))
-    const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${store.projectName || 'design-system'}-components.csv`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
+  const known = new Set<string>(CATEGORIES)
+  const groups = [
+    ...CATEGORIES.map((name) => ({ name, rows: shown.filter((row) => row.category === name) })),
+    ...shown
+      .filter((row) => !known.has(row.category))
+      .reduce<{ name: string; rows: typeof shown }[]>((acc, row) => {
+        const group = acc.find((item) => item.name === row.category)
+        if (group) group.rows.push(row)
+        else acc.push({ name: row.category, rows: [row] })
+        return acc
+      }, []),
+  ].filter((group) => group.rows.length > 0)
 
   return (
     <>
-      <PageHeader
-        title={t('Components')}
-        detail={t('Which components are in this design system, and whether each one exists in Figma, has a live preview and is documented.')}
-        right={<button type="button" onClick={exportReport} className={BTN}>{t('Export report')}</button>}
-      />
-
-      <KpiRow>
-        <Kpi
-          label={t('In this system')}
-          value={`${included.length} / ${components.length}`}
-          meter={components.length ? included.length / components.length : 0}
-          detail={t('Components this design system ships, out of the catalogue.')}
-        />
-        <Kpi label={t('In Figma')} value={`${inFigma} / ${included.length}`} meter={share(inFigma)} detail={t('The plugin builds them as component sets.')} />
-        <Kpi label={t('Live preview')} value={`${withPreview} / ${included.length}`} meter={share(withPreview)} detail={t('Rendered from your tokens in Components.')} />
-        <Kpi label={t('Documented')} value={`${documented} / ${included.length}`} meter={share(documented)} detail={t('Usage, accessibility and props are written.')} />
-      </KpiRow>
-
-      <Card
-        title={scope === 'system' ? t('Components in this system') : t('All components')}
-        right={(
-          <>
+      <header className="flex flex-col gap-3">
+        <h2 className="text-heading font-semibold text-fg">{t('Components')}</h2>
+        <div className="flex flex-wrap items-center gap-2">
             <div role="group" aria-label={t('Which components')} className="flex h-8 items-center rounded-lg border border-line p-0.5">
               {(['system', 'all'] as const).map((key) => (
                 <button
@@ -94,71 +188,47 @@ export default function ComponentsPage({ dash, onOpenComponent }: {
                 </button>
               ))}
             </div>
-            <select
-              aria-label={t('Category')}
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="h-8 rounded-lg border border-line bg-surface px-2 text-caption text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-            >
-              <option value="all">{t('All categories')}</option>
-              {CATEGORIES.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('Search')}
               aria-label={t('Search components')}
-              className="h-8 w-40 rounded-lg border border-line bg-transparent px-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              className="h-8 w-52 rounded-lg border border-line bg-transparent px-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             />
-          </>
-        )}
-      >
-        {shown.length === 0 ? <EmptyRow>{t('No component matches.')}</EmptyRow> : (
-          <div className="-mx-1 overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse">
-              <thead>
-                <tr>
-                  <th className={TH}>{t('Component')}</th>
-                  <th className={TH}>{t('Status')}</th>
-                  <th className={TH}>{t('Figma')}</th>
-                  <th className={TH}>{t('Preview')}</th>
-                  <th className={TH}>{t('Docs')}</th>
-                  <th className={`${TH} text-right`}>{t('Variants')}</th>
-                  <th className={`${TH} text-right`}>{t('Colour roles')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((row) => {
-                  const status = statusOf.get(componentElementId(row.key))
+        </div>
+      </header>
+
+      {groups.length === 0 ? <EmptyRow>{t('No component matches.')}</EmptyRow> : (
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => (
+            <section key={group.name} aria-labelledby={`components-${group.name.replace(/\W+/g, '-')}`} className="flex flex-col">
+              <h3 id={`components-${group.name.replace(/\W+/g, '-')}`} className="px-2 pb-1 text-micro font-semibold text-fg-faint">
+                {group.name}
+              </h3>
+              <ul>
+                {group.rows.map((row) => {
+                  const element = elementOf.get(componentElementId(row.key))
                   return (
-                    <tr key={row.key} className={`${ROW} transition-colors hover:bg-fg/[0.03]`}>
-                      <td className={TD}>
-                        <button
-                          type="button"
-                          onClick={() => onOpenComponent?.(row.key)}
-                          title={t('Open {name}', { name: row.label })}
-                          className="flex flex-col items-start rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                        >
-                          <span className="font-semibold text-fg hover:underline">{row.label}</span>
-                          <span className="text-micro text-fg-faint">{row.category}</span>
-                        </button>
-                      </td>
-                      <td className={TD}>{status ? <StatusPill status={status} /> : <Tag>{t('Not in this system')}</Tag>}</td>
-                      <td className={TD}><YesNo yes={row.figmaSets > 0} yesLabel={t('In Figma')} noLabel={t('Not in Figma')} /></td>
-                      <td className={TD}><YesNo yes={row.preview} yesLabel={t('Has a live preview')} noLabel={t('No live preview')} /></td>
-                      <td className={TD}><YesNo yes={row.documented} yesLabel={t('Documented')} noLabel={t('Documentation is incomplete')} /></td>
-                      <td className={`${TD} text-right tabular-nums`}>{row.variants}</td>
-                      <td className={`${TD} text-right tabular-nums`}>{row.roles}</td>
-                    </tr>
+                    <li key={row.key} className="flex h-9 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-fg/[0.04]">
+                      <button
+                        type="button"
+                        onClick={() => onOpenComponent?.(row.key)}
+                        title={t('Open {name}', { name: row.label })}
+                        aria-label={row.included ? undefined : `${row.label}, ${t('Not in this system')}`}
+                        className="flex h-full min-w-0 flex-1 items-center rounded-sm text-left text-ui font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                      >
+                        <span className={`truncate ${row.included ? 'text-fg' : 'text-fg-muted'}`}>{row.label}</span>
+                      </button>
+                      {element && <StatusMenu element={element} />}
+                    </li>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="text-caption text-fg-faint">{t('A dash means it is missing. Select a component to open its page: variants, tokens, usage and code.')}</p>
-      </Card>
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
     </>
   )
 }

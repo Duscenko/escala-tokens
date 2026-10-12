@@ -3562,6 +3562,7 @@ var init_useDesignStore = __esm({
           // name-first onboarding gate. (Kept in the store for the multi-system flow.)
           projectCreated: true,
           setProjectCreated: (v) => set({ projectCreated: v }),
+          systemStarted: false,
           // A successful publish is the moment the user has declared "keep Figma in
           // sync" — turning auto-sync on here (rather than leaving it behind a
           // buried toggle) is what makes the FIRST publish also the LAST manual one.
@@ -4003,7 +4004,7 @@ var init_useDesignStore = __esm({
           loadSystem: (id) => set((state2) => {
             const sys = state2.savedSystems.find((s) => s.id === id);
             if (!sys) return state2;
-            return { ...deepClone(sys.snapshot), projectCreated: true };
+            return { ...deepClone(sys.snapshot), projectCreated: true, systemStarted: true };
           }),
           // Renames a SAVED entry only — see the DesignStore interface comment for
           // why this never touches live editor state. `set`'s updater form is the
@@ -4080,7 +4081,17 @@ var init_useDesignStore = __esm({
             });
             return result;
           },
-          startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true }),
+          startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true, systemStarted: true }),
+          deleteCurrentSystem: () => set((state2) => {
+            const id = activeLibraryId(state2);
+            return {
+              ...makeDesignDefaults(),
+              projectCreated: true,
+              systemStarted: false,
+              savedSystems: state2.savedSystems.filter((s) => s.id !== id),
+              pinned: state2.pinned.filter((p) => p !== `library:${id}`)
+            };
+          }),
           // See the interface comment for why identity/connection fields are
           // carried over instead of reset.
           resetToDefaults: () => set((state2) => ({
@@ -4126,7 +4137,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 86,
+          version: 87,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -5159,6 +5170,9 @@ var init_useDesignStore = __esm({
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) seed(sys?.snapshot);
               }
+            }
+            if (version < 87) {
+              persisted.systemStarted = true;
             }
             return persisted;
           }

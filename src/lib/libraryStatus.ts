@@ -3,6 +3,22 @@ import { myThemeKeys } from './themeLibrary'
 import { useThemeSetup } from './themeSetup'
 import { activeLibraryId, libraryMatchesSaved, type DesignSnapshot, useDesignStore } from '../store/useDesignStore'
 
+/** Own brands that a saved library already holds — everything else in
+ *  `sd-brand-unsaved` is still a studio draft. Sync helper for first paint
+ *  and persist hydration; `useSavedBrandKeys` is the live subscription. */
+export function savedBrandKeysFrom(state: {
+  themeOrder: string[]
+  themes: Record<string, unknown>
+  savedSystems: { id: string; snapshot: { themeOrder?: string[] } }[]
+  githubRepo: string | null
+  projectName: string
+}, unsaved: Record<string, true> = useThemeSetup.getState().unsaved): string[] {
+  const entry = state.savedSystems.find((item) => item.id === activeLibraryId(state))
+  const savedKeys = new Set(entry?.snapshot.themeOrder ?? [])
+  const drafts = new Set(Object.keys(unsaved).filter((key) => !savedKeys.has(key)))
+  return myThemeKeys(state.themeOrder, state.themes).filter((key) => !drafts.has(key))
+}
+
 /**
  * Where the system on screen stands against its entry in My libraries:
  * `none` (never saved), `dirty` (saved, edited since) or `saved` (matches).
@@ -39,6 +55,12 @@ export function useUnsavedBrands(): Set<string> {
 export function useSavedBrandKeys(): string[] {
   const themeOrder = useDesignStore((s) => s.themeOrder)
   const themes = useDesignStore((s) => s.themes)
-  const unsaved = useUnsavedBrands()
-  return useMemo(() => myThemeKeys(themeOrder, themes).filter((key) => !unsaved.has(key)), [themeOrder, themes, unsaved])
+  const savedSystems = useDesignStore((s) => s.savedSystems)
+  const githubRepo = useDesignStore((s) => s.githubRepo)
+  const projectName = useDesignStore((s) => s.projectName)
+  const unsaved = useThemeSetup((s) => s.unsaved)
+  return useMemo(
+    () => savedBrandKeysFrom({ themeOrder, themes, savedSystems, githubRepo, projectName }, unsaved),
+    [themeOrder, themes, savedSystems, githubRepo, projectName, unsaved],
+  )
 }

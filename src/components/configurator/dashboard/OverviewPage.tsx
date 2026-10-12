@@ -1,6 +1,7 @@
 // OVERVIEW — the design system at a glance: one card per foundation, each a
-// small picture of what the brand on screen holds, then the brands. No counters
-// and no checklist: a number appears only where something needs attention.
+// small picture of what the brand on screen holds. The brand switcher and
+// Add brand live in the page header. No counters and no checklist:
+// a number appears only where something needs attention.
 
 import { useMemo, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
@@ -86,7 +87,10 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
       {header}
 
       <section aria-labelledby="overview-foundations" className="flex flex-col gap-3">
-        <h3 id="overview-foundations" className="text-ui font-semibold text-fg">{t('Foundations')}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h3 id="overview-foundations" className="text-ui font-semibold text-fg">{t('Foundations')}</h3>
+          {brands}
+        </div>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr))]">
           <FoundationCard
             empty={empty}
@@ -152,8 +156,6 @@ export default function OverviewPage({ dash, header, brands, onOpenFoundation, o
           <button type="button" onClick={onOpenStatus} className={`${TEXT_LINK} self-start`}>{t('See what fails')}</button>
         )}
       </section>
-
-      {brands}
     </>
   )
 }

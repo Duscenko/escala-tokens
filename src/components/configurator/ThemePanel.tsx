@@ -286,6 +286,7 @@ function StylePicker({ value, accent, onChange }: {
 
 export function ThemeIdentityBar({
   name, onName, kind, onKind, pages, nameLocked = false, onSubmit, onClose, autoFocus = false, padded = false,
+  caption, placeholder,
 }: {
   name: string
   onName: (value: string) => void
@@ -298,24 +299,32 @@ export function ThemeIdentityBar({
   autoFocus?: boolean
   /** Studio host: the row is the panel's top bar, so it carries its own inset. */
   padded?: boolean
+  /** Eyebrow over the field — "Design system name" on the first brand. */
+  caption?: string
+  placeholder?: string
 }) {
   const { t } = useI18n()
+  const rowClass = caption ? 'h-7' : 'h-8'
   return (
-    <div className={`flex w-full items-center gap-1.5 ${padded ? 'px-3' : ''}`}>
+    <div className={`flex w-full min-w-0 flex-col justify-center gap-1 ${padded ? 'px-3' : ''}`}>
+      {caption && (
+        <p className="text-micro font-semibold uppercase tracking-widest leading-none text-fg-faint">{caption}</p>
+      )}
+      <div className="flex w-full items-center gap-1.5">
       <input
         type="text"
         value={name}
         disabled={nameLocked}
         onChange={(e) => onName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') onSubmit?.() }}
-        placeholder={t('Name')}
-        aria-label={t('Brand name')}
+        placeholder={placeholder ?? t('Name')}
+        aria-label={caption ?? t('Brand name')}
         title={nameLocked ? t('Locked — reserved export key') : undefined}
         autoFocus={autoFocus}
         spellCheck={false}
-        className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-surface px-2.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint hover:border-line-strong focus:border-fg disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${rowClass} min-w-0 flex-1 rounded-lg border border-line bg-surface px-2.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint hover:border-line-strong focus:border-fg disabled:cursor-not-allowed disabled:opacity-60`}
       />
-      <div className="flex h-8 flex-shrink-0 overflow-hidden rounded-lg border border-line" role="group" aria-label={t('Theme')}>
+      <div className={`flex ${rowClass} flex-shrink-0 overflow-hidden rounded-lg border border-line`} role="group" aria-label={t('Theme')}>
         {(['light', 'dark'] as const).map((k) => {
           const on = kind === k
           const bg = k === 'dark' ? pages.dark : pages.light
@@ -346,6 +355,7 @@ export function ThemeIdentityBar({
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M10 2 2 10M2 2l8 8" /></svg>
         </button>
       )}
+      </div>
     </div>
   )
 }
@@ -432,7 +442,13 @@ export function ThemeForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const [name, setName] = useState(editKey ?? '')
+  // The first brand of an empty system takes the design system name. A later
+  // brand starts blank — repeating that name would collide with the first key.
+  const [name, setName] = useState(() => {
+    if (editKey) return editKey
+    const s = useDesignStore.getState()
+    return myThemeKeys(s.themeOrder, s.themes).length === 0 ? s.projectName : ''
+  })
   const [kind, setKind] = useState<'light' | 'dark'>(seed?.kind ?? appearance)
   // Which themes this brand SHIPS (Light, Dark or both) — a list, see
   // lib/brandThemes.ts. The form still edits both: this only decides what
@@ -624,6 +640,17 @@ export function ThemeForm({
 
   function handleSubmit(then: 'next' | 'done' = 'next') {
     setErr(null)
+    const live = useDesignStore.getState()
+    const firstBrand = !isEdit && myThemeKeys(live.themeOrder, live.themes).length === 0
+    // Blank on the first brand means "keep the design system name".
+    const brandName = name.trim() || (firstBrand ? live.projectName.trim() : '')
+    if (firstBrand && brandName && brandName !== live.projectName) {
+      const renamed = live.renameActiveSystem(brandName)
+      if (!renamed.ok) {
+        setErr(renamed.error ?? 'Could not rename')
+        return
+      }
+    }
     if (startPreset && !isEdit) {
       // Untouched colour → the style exactly as the web adopts it. A moved
       // accent → minted from these colours, with the style's foundations on top.
@@ -634,12 +661,12 @@ export function ThemeForm({
       if (untouched) {
         res = adoptPreset(startPreset, kind)
       } else {
-        res = mintTheme(slots, kind, name || startPreset.label, null, tint, themePages, shift)
+        res = mintTheme(slots, kind, brandName || startPreset.label, null, tint, themePages, shift)
         if (!('error' in res)) useDesignStore.getState().setThemeFoundations(res.key, startPreset.foundations)
       }
       if ('error' in res) { setErr(t(res.error, { count: MY_THEME_HARD_CAP })); return }
       useDesignStore.getState().setBrandThemes(res.key, ships)
-      if (name.trim()) useDesignStore.getState().setThemeLabel(res.key, name.trim())
+      if (brandName) useDesignStore.getState().setThemeLabel(res.key, brandName)
       else if (randomized) {
         const labels = useDesignStore.getState().themeLabels
         useDesignStore.getState().setThemeLabel(res.key, nextRandomLabel(labels))
@@ -649,14 +676,14 @@ export function ThemeForm({
       if (!holdAfterCreate) onClose()
       return
     }
-    const result = mintTheme(slots, kind, name, editKey, tint, themePages, shift)
+    const result = mintTheme(slots, kind, brandName, editKey, tint, themePages, shift)
     if ('error' in result) {
       setErr(t(result.error, { count: MY_THEME_HARD_CAP }))
       return
     }
     // The key is a slug ("test guide"); the name on screen is what was typed,
     // capitals included ("Test Guide").
-    if (!isEdit && name.trim()) useDesignStore.getState().setThemeLabel(result.key, name.trim())
+    if (!isEdit && brandName) useDesignStore.getState().setThemeLabel(result.key, brandName)
     useDesignStore.getState().setBrandThemes(result.key, ships)
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
     if (then === 'done') onFinishEarly?.(result.key)
@@ -743,6 +770,7 @@ export function ThemeForm({
           </div>
         )}
         {(() => {
+          const firstBrand = !isEdit && myThemeKeys(store.themeOrder, store.themes).length === 0
           const identity = (
             <ThemeIdentityBar
               name={name}
@@ -755,6 +783,8 @@ export function ThemeForm({
               onClose={undefined}
               autoFocus={!nameLocked}
               padded={pinIdentity}
+              caption={isEdit ? undefined : t(firstBrand ? 'Design system name' : 'Brand name')}
+              placeholder={firstBrand ? store.projectName : undefined}
             />
           )
           if (pinIdentity) return identityHost ? createPortal(identity, identityHost) : null

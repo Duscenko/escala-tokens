@@ -84,7 +84,7 @@ function AboutPage() {
   }, [t])
 
   return (
-    <AboutScaffold />
+    <AboutScaffold headerMode="workspace" />
   )
 }
 
@@ -155,7 +155,7 @@ function App() {
   if (path === '/about') {
     return (
       <>
-        <main className="min-h-screen bg-app text-fg">
+        <main className="h-screen overflow-hidden bg-app text-fg">
           <AboutPage />
         </main>
         <ToastHost />

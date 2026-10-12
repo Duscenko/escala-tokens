@@ -21,6 +21,7 @@ import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
 import AgentInstallPanel from './AgentInstallPanel'
 import { FooterLinks } from './FooterLinks'
+import { PublicHeader } from '../public/PublicReadingPage'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -1263,12 +1264,14 @@ function DesktopHandoffHint() {
  *  the colophon the shell would otherwise print. Links that open the workspace
  *  in the shell go to the public pages instead (`/docs/*`, `/components`). */
 export function AboutScaffold({
-  wrapperClassName, notice,
+  wrapperClassName, notice, headerMode = 'minimal',
 }: {
   /** e.g. `md:hidden` for the mobile-only caller; omitted = always visible. */
   wrapperClassName?: string
   /** The phone screen's lead: the app needs a laptop, everything else is here. */
   notice?: { heading: string; subheading: string }
+  /** `/about` on desktop uses the same `TopNav` as other public reading pages. */
+  headerMode?: 'minimal' | 'workspace'
 }) {
   const { t } = useI18n()
   const theme = useTheme()
@@ -1280,50 +1283,61 @@ export function AboutScaffold({
   }
 
   return (
-    <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
-      <PromoBanner />
-      {/* Appearance and language, the two chrome preferences that mean
-          something here. They live in `TopNav` for everyone else, and `TopNav`
-          is inside the desktop shell — same components, not copies. */}
-      <div className="flex h-14 items-center justify-between gap-3 border-b border-line px-4">
-        <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
-          <BrandMark size={24} />
-          <span className="text-ui font-semibold text-fg">Escala Tokens</span>
-        </a>
-        <div className="flex items-center gap-2">
-          <LanguageMenu />
-          <AppearanceToggle value={theme} onChange={setTheme} />
-        </div>
+    <div className={cn('flex h-screen flex-col bg-app text-fg', wrapperClassName)}>
+      {/* Promo + TopNav stay pinned — same shell as `/pricing` and `/contact`. */}
+      <div className="flex-shrink-0">
+        {headerMode === 'workspace' ? (
+          <PublicHeader current="about" openEditor="/" />
+        ) : (
+          <>
+            <PromoBanner />
+            {/* Phone + narrow reading: brand + language + appearance only. */}
+            <div className="flex h-14 items-center justify-between gap-3 border-b border-line px-4">
+              <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+                <BrandMark size={24} />
+                <span className="text-ui font-semibold text-fg">Escala Tokens</span>
+              </a>
+              <div className="flex items-center gap-2">
+                <LanguageMenu />
+                <AppearanceToggle value={theme} onChange={setTheme} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {notice && (
-        <div className="px-6 pt-6">
-          <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
-            <h2 className="text-ui font-semibold text-fg">{notice.heading}</h2>
-            <p className="text-body leading-relaxed text-fg-muted">{notice.subheading}</p>
-            <DesktopHandoffHint />
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        {notice && (
+          <div className="px-6 pt-6">
+            <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
+              <h2 className="text-ui font-semibold text-fg">{notice.heading}</h2>
+              <p className="text-body leading-relaxed text-fg-muted">{notice.subheading}</p>
+              <DesktopHandoffHint />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <AboutHome
-        scroll={false}
-        videoTapToPlay={Boolean(notice)}
-        onStart={start}
-        onLearnAI={() => go('/docs/mcp')}
-        onOpenDocsPage={(page) => go(`/docs/${page}`)}
-        onOpenComponents={() => go('/components')}
-      />
+        <AboutHome
+          scroll={false}
+          videoTapToPlay={Boolean(notice)}
+          onStart={start}
+          onLearnAI={() => go('/docs/mcp')}
+          onOpenDocsPage={(page) => go(`/docs/${page}`)}
+          onOpenComponents={() => go('/components')}
+        />
 
-      <footer className="mt-auto flex flex-col gap-2 border-t border-line px-5 py-4">
-        {/* Same links as the desktop shell's footer — off the shell this is
-            the only door to Contact / Legal / Privacy. Wraps on a narrow
-            screen; each link keeps a 24px target (WCAG 2.2). */}
-        <FooterLinks className="flex-wrap -mx-0.5 gap-x-3 gap-y-0" linkClassName="min-h-6" />
-        <p className="text-caption text-fg-faint">
-          {COPYRIGHT_LINE}
-        </p>
-      </footer>
+        <footer className="flex flex-col gap-2 border-t border-line px-5 py-4 md:flex-row md:items-center md:gap-3 md:px-4 md:py-0 lg:px-5 md:min-h-7">
+          {/* Same row as the desktop shell footer (`Configurator`): copyright
+              left, colophon links right. Phone keeps links above the line. */}
+          <p className="order-2 text-caption text-fg-faint md:order-1 md:min-w-0 md:flex-1 md:truncate">
+            {COPYRIGHT_LINE}
+          </p>
+          <FooterLinks
+            className="order-1 flex-wrap -mx-0.5 gap-x-3 gap-y-0 md:order-2 md:flex-shrink-0"
+            linkClassName="min-h-6"
+          />
+        </footer>
+      </div>
     </div>
   )
 }

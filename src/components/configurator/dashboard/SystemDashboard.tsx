@@ -8,12 +8,15 @@
 // source Escala does not have yet (adoption in product files, hardcoded
 // values, Storybook) are not built, on purpose: no page shows a made-up figure.
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { useI18n } from '../../../lib/i18n'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import type { ThemeAppearance } from '../../../lib/themeModes'
-import { themeDisplayName } from '../../../lib/themeSources'
+import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
+import { ThemeAvatar } from '../ThemeLibraryRail'
+import { CHROME_MENU_Z, SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON } from '../themeWorkspaceLayout'
 import { InspectorPortal } from '../WorkspaceInspector'
 import DocsView from '../DocsView'
 import type { DocsExits } from '../docs/getStarted'
@@ -42,26 +45,137 @@ const PAGE_GLYPH: Record<DashPage, ReactNode> = {
 // Releases is built (`ReleasesPage`) but not in the menu for now.
 const NAV: DashPage[] = ['overview', 'docs', 'components', 'status', 'integrations']
 
-/** Which brand the dashboard reads. One brand: its name, with nothing to pick. */
-export function BrandSelect({ brand, onSelect }: { brand: string; onSelect: (key: string) => void }) {
-  const { t } = useI18n()
-  const { themeLabels } = useDesignStore()
-  const mine = useSavedBrandKeys()
-  if (mine.length === 0) return null
-  if (mine.length === 1) {
-    return <span className="text-caption text-fg-muted">{t('Brand')}: <span className="font-medium text-fg">{themeDisplayName(mine[0], themeLabels)}</span></span>
-  }
+function BrandChevron({ open }: { open: boolean }) {
   return (
-    <label className="flex items-center gap-2 text-caption text-fg-muted">
-      {t('Brand')}
-      <select
-        value={mine.includes(brand) ? brand : mine[0]}
-        onChange={(e) => onSelect(e.target.value)}
-        className="h-8 rounded-lg border border-line bg-surface px-2 text-caption font-medium text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 text-fg-faint transition-transform duration-150 ease-out motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
+/** Which brand the dashboard reads. One brand still names it. `title` is the
+ *  Overview heading: avatar and name, the same face as the top-nav chip, with
+ *  the menu only as the way to pick another. */
+export function BrandSelect({ brand, onSelect, appearance = 'inline' }: {
+  brand: string
+  onSelect: (key: string) => void
+  appearance?: 'inline' | 'title'
+}) {
+  const { t } = useI18n()
+  const store = useDesignStore()
+  const mine = useSavedBrandKeys()
+  const [open, setOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLUListElement>(null)
+  const value = mine.includes(brand) ? brand : mine[0]
+  const title = appearance === 'title'
+
+  useLayoutEffect(() => {
+    if (!open) { setMenuPos(null); return }
+    const place = () => {
+      const rect = triggerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setMenuPos({ top: rect.bottom + 6, left: rect.left })
+    }
+    place()
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  if (mine.length === 0 || !value) return null
+  if (!title && mine.length === 1) {
+    return <span className="text-caption text-fg-muted">{t('Brand')}: <span className="font-medium text-fg">{themeDisplayName(mine[0], store.themeLabels)}</span></span>
+  }
+
+  const face = (key: string) => ({
+    ramp: themeBrandRamp(key, store.themeSources, store.themeKinds, store),
+    appearance: store.themeKinds[key] ?? 'light' as const,
+  })
+  const current = face(value)
+
+  return (
+    <div ref={rootRef} className="relative min-w-0">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t('Brand')}: ${themeDisplayName(value, store.themeLabels)}`}
+        onClick={() => setOpen((v) => !v)}
+        className={`flex min-w-0 items-center rounded-lg text-left transition-colors duration-150 ease-out ${SELECT_FOCUS} ${
+          title
+            ? `h-8 max-w-[18rem] gap-2 pl-1 pr-2 ${open ? 'bg-chip-rest' : 'hover:bg-chip-rest'}`
+            : `h-8 max-w-[14rem] gap-1.5 pl-1 pr-2 ${open ? 'bg-chip-rest' : 'hover:bg-chip-rest'}`
+        }`}
       >
-        {mine.map((key) => <option key={key} value={key}>{themeDisplayName(key, themeLabels)}</option>)}
-      </select>
-    </label>
+        <span className="grid h-6 w-6 flex-shrink-0 place-items-center">
+          <ThemeAvatar size={27} ramp={current.ramp} appearance={current.appearance} fallback={store.primaryColor} />
+        </span>
+        <span className={`min-w-0 flex-1 truncate ${title ? 'text-heading font-semibold text-fg' : 'text-caption font-medium text-fg'}`}>
+          {themeDisplayName(value, store.themeLabels)}
+        </span>
+        <BrandChevron open={open} />
+      </button>
+      {open && menuPos && createPortal(
+        <ul
+          ref={menuRef}
+          role="listbox"
+          aria-label={t('Brand')}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: CHROME_MENU_Z }}
+          className={`flex w-[15rem] flex-col ${SELECT_LIST}`}
+        >
+          <li className="px-2.5 pb-1 pt-1.5 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Brand')}</li>
+          {mine.map((key) => {
+            const row = face(key)
+            const selected = key === value
+            return (
+              <li key={key}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => { onSelect(key); setOpen(false) }}
+                  className={`${SELECT_OPTION} flex h-8 items-center gap-2 ${selected ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                >
+                  <ThemeAvatar size={18} ramp={row.ramp} appearance={row.appearance} fallback={store.primaryColor} />
+                  <span className="min-w-0 flex-1 truncate text-caption">{themeDisplayName(key, store.themeLabels)}</span>
+                  {selected && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg">
+                      <path d="M5 12.5 10 17.5 19 7.5" />
+                    </svg>
+                  )}
+                </button>
+              </li>
+            )
+          })}
+        </ul>,
+        document.body,
+      )}
+    </div>
   )
 }
 
@@ -193,7 +307,7 @@ export default function SystemDashboard({
   appearance: ThemeAppearance
   /** Home's own title row for the design system, given the token count to state. */
   overviewHeader: (tokenCount: number) => ReactNode
-  /** Home's brand cards, shown on Overview. */
+  /** Brand switcher and Add brand, on the Foundations heading. */
   brands: ReactNode
   onBack?: () => void
   timeAgo: (iso: string) => string

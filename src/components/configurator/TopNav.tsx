@@ -682,10 +682,17 @@ export default function TopNav({
           {/* The plugin lives on Figma Community, so this is a link OUT, not a
               workspace destination. The label drops before the glyph does. */}
           {(() => {
-            const cls = 'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line px-2 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+            // Icon-only: same 32×32 square as ☰ / Language / Appearance; label
+            // widens the control from 1320px up.
+            const cls = [
+              GLOBAL_ICON_ACTION,
+              'min-[1320px]:inline-flex min-[1320px]:w-auto min-[1320px]:gap-1.5',
+              'min-[1320px]:border min-[1320px]:border-line min-[1320px]:px-2',
+              'text-caption font-medium hover:text-fg',
+            ].join(' ')
             const inner = (
               <>
-                <FigmaGlyph className="h-3 w-auto" />
+                <FigmaGlyph className="h-3 w-auto min-[1320px]:h-3.5" />
                 <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
               </>
             )

@@ -264,7 +264,7 @@ export function ThemeAppearanceControl({
           <>
             <button type="button" role="menuitem" onClick={() => go(onOpenTheme)} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><OverviewGlyph /></span>
-              {t('Overview')}
+              {t('Brand preview')}
             </button>
             <button type="button" role="menuitem" onClick={() => go(onOpenComponents)} className={MENU_ITEM}>
               <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><ComponentsGlyph /></span>

@@ -23,12 +23,12 @@ export const TEXT_LINK =
 
 // ── Layout ───────────────────────────────────────────────────────────────────
 
-export function PageHeader({ title, detail, right }: { title: ReactNode; detail: ReactNode; right?: ReactNode }) {
+export function PageHeader({ title, detail, right }: { title: ReactNode; detail?: ReactNode; right?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-[16rem] flex-1 flex-col gap-1">
         <h2 className="text-heading font-semibold text-fg">{title}</h2>
-        <p className="text-body text-fg-muted">{detail}</p>
+        {detail && <p className="text-body text-fg-muted">{detail}</p>}
       </div>
       {right && <div className="flex flex-shrink-0 flex-wrap items-center gap-2">{right}</div>}
     </header>

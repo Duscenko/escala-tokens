@@ -24,7 +24,7 @@ import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
-import { useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
+import { savedBrandKeysFrom, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
@@ -660,6 +660,11 @@ export default function Configurator() {
   // a tab they can open; it is no longer the first screen.
   const [signedInEntry] = useState(() => hasStoredSession())
   const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? 'foundations')
+  // Set when a component article was opened from the System tab (its component
+  // list, or a Docs page such as the color variable map). The Components
+  // header then offers the way back. A direct Components visit from the top
+  // nav does not set it — there is nothing to return to.
+  const [componentFromSystem, setComponentFromSystem] = useState(false)
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -683,8 +688,9 @@ export default function Configurator() {
     // them is a reason to skip the studio: with no brand there is nothing for
     // those sections to show. Only About / Components / Docs deep links stay.
     if (incomingPlace && incomingPlace.tab !== 'foundations') return false
-    const live = useDesignStore.getState()
-    return myThemeKeys(live.themeOrder, live.themes).length === 0
+    // A mint from studio step 1 is still a draft. Counting it as a system
+    // opened Theme preview after refresh and looked like work nobody saved.
+    return savedBrandKeysFrom(useDesignStore.getState()).length === 0
   })
   /** The studio is open for someone with no session. Home's file list stays
    *  an account surface; only its create studio is shown. */
@@ -1138,7 +1144,7 @@ export default function Configurator() {
     const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
     if (place && (place.tab !== 'foundations' || (place.workspace && place.workspace !== 'preview'))) return null
     const live = useDesignStore.getState()
-    if (myThemeKeys(live.themeOrder, live.themes).length > 0) return null
+    if (savedBrandKeysFrom(live).length > 0) return null
     return guestStarterPreview()
   })
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -1211,7 +1217,7 @@ export default function Configurator() {
   }, [authUser?.id, authEvent])
   const leaveHomeForGuest = useCallback(() => {
     const live = useDesignStore.getState()
-    const studio = accountsEnabled && myThemeKeys(live.themeOrder, live.themes).length === 0
+    const studio = accountsEnabled && savedBrandKeysFrom(live).length === 0
     setThemeEditor(false)
     setCreatePending(false)
     setExploringRandomKey(null)
@@ -1244,11 +1250,23 @@ export default function Configurator() {
   // they had seen anything.
   useEffect(() => {
     if (!accountsEnabled || access.loading || authUser || hasStoredSession()) return
-    if (tab !== 'foundations' || guestStudio || exportMode) return
+    if (tab !== 'foundations' || exportMode) return
     if (!useDesignStore.persist.hasHydrated()) return
-    if (myThemeKeys(themeOrder, themes).length > 0) return
+    if (savedBrandKeys.length > 0) {
+      if (guestStudio) {
+        setGuestStudio(false)
+        setHomeCreating(false)
+        setThemeWorkspaceTab(
+          incomingPlace?.workspace === 'library' || incomingPlace?.workspace === 'documentation'
+            ? 'preview'
+            : (incomingPlace?.workspace ?? 'preview'),
+        )
+      }
+      return
+    }
+    if (guestStudio) return
     leaveHomeForGuest()
-  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, leaveHomeForGuest])
+  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, savedBrandKeys.length, leaveHomeForGuest, incomingPlace])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -1643,7 +1661,7 @@ export default function Configurator() {
     && themeWorkspaceTab !== 'system'
     && !stylePreview
     && !exportMode
-    && myThemeKeys(themeOrder, themes).length === 0
+    && savedBrandKeys.length === 0
   useEffect(() => {
     if (!workspaceIsEmpty) { emptyStartedRef.current = false; return }
     if (emptyStartedRef.current || access.loading || guestStudio) return
@@ -1659,6 +1677,14 @@ export default function Configurator() {
     setExportMode(null)
     setTab('foundations')
     changeThemeWorkspaceTab('preview')
+  }
+  const returnToSystem = () => {
+    setComponentFromSystem(false)
+    openSystemPage()
+  }
+  const returnToBrand = () => {
+    setComponentFromSystem(false)
+    openThemePreviewPage()
   }
   const openMcpPage = () => {
     leaveExportWizard()
@@ -1683,7 +1709,10 @@ export default function Configurator() {
   }
   const changeTab = (t: Tab) => {
     commitVisit()
-    if (t === 'components') markFoundationComplete('components')
+    if (t === 'components') {
+      markFoundationComplete('components')
+      setComponentFromSystem(false)
+    }
     setExportMode(null)
     setTab(t)
   }
@@ -1890,6 +1919,10 @@ export default function Configurator() {
     body = (
       <AboutHome
         onStart={() => {
+          if (accountsEnabled && !hasStoredSession() && savedBrandKeys.length === 0) {
+            openGuestStudio()
+            return
+          }
           commitVisit()
           setExportMode(null)
           setTab('foundations')
@@ -2113,6 +2146,10 @@ export default function Configurator() {
   const handleNav = (key: TopNavKey) => {
     if (key === 'pricing') window.location.assign(PRICING_PATH)
     else if (key === 'variables') {
+      if (accountsEnabled && !hasStoredSession() && savedBrandKeys.length === 0) {
+        openGuestStudio()
+        return
+      }
       commitVisit()
       setExportMode(null)
       setTab('foundations')
@@ -2145,17 +2182,17 @@ export default function Configurator() {
     || themeWorkspaceTab === 'system'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
   const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
-  // The guest studio ends when the visitor leaves it. Away from the Generator
-  // with a theme already made (step 1 mints it), coming back opens that theme
-  // on the board, not a second studio.
+  // The guest studio ends when they leave it for another Generator tab, or
+  // when persist hydrates a SAVED system. A mint from studio step 1 is still
+  // a draft — refresh must keep the studio, not the finished-looking board.
   useEffect(() => {
     if (!guestStudio) return
     if (themeWorkspaceTab !== 'library') { setGuestStudio(false); return }
-    if (themesCanvas) return
-    if (myThemeKeys(themeOrder, themes).length === 0) return
+    if (savedBrandKeys.length === 0) return
     setGuestStudio(false)
+    setHomeCreating(false)
     setThemeWorkspaceTab('preview')
-  }, [guestStudio, themeWorkspaceTab, themesCanvas, themeOrder, themes])
+  }, [guestStudio, themeWorkspaceTab, savedBrandKeys.length])
   const homePage = homeFileBrowser
   // ── The theme's accent, scoped to the Generator's rail + canvas card ──
   // The PLATFORM (TopNav, inspector, Home) keeps Escala's violet on `:root`.
@@ -2395,9 +2432,38 @@ export default function Configurator() {
                 so the two canvases read as one product. */}
             {tab === 'components' && !skipCenterHeader && (
               <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
-                <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                  {t(activeComponent?.category ?? 'Components')}
-                </h2>
+                <div className="flex min-w-0 items-center gap-2">
+                  {componentFromSystem && (
+                    <div role="group" aria-label={t('Back to')} className="flex flex-shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={returnToSystem}
+                        aria-label={t('Back to System')}
+                        className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M7.5 2.5 4 6l3.5 3.5" />
+                        </svg>
+                        {t('System')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={returnToBrand}
+                        aria-label={t('Back to Brand')}
+                        className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M7.5 2.5 4 6l3.5 3.5" />
+                        </svg>
+                        {t('Brand')}
+                      </button>
+                    </div>
+                  )}
+                  {componentFromSystem && <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>}
+                  <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
+                    {t(activeComponent?.category ?? 'Components')}
+                  </h2>
+                </div>
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                   {header.right}
                 </div>
@@ -2554,7 +2620,9 @@ export default function Configurator() {
                     onCreatingChange={setHomeCreating}
                     onOpenComponent={(key) => {
                       const def = COMPONENTS.find((c) => c.key === key)
-                      if (def) selectComponent(def)
+                      if (!def) return
+                      setComponentFromSystem(true)
+                      selectComponent(def)
                     }}
                   />
                 </motion.div>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
-import { themeDisplayName } from '../../lib/themeSources'
+import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
@@ -13,7 +13,7 @@ import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme, useN
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
-import { loginHref, rememberReturn, takeLoginIntent } from '../../lib/loginReturn'
+import { loginHref } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
 import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
@@ -22,7 +22,7 @@ import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { INSPECTOR_TABS_H, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from './themeWorkspaceLayout'
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { FoundationGlyph } from './FoundationIconRail'
@@ -32,7 +32,7 @@ import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
+  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
@@ -181,6 +181,7 @@ function SyncBadge({ state, service, icon }: { state: SyncState; service: string
 function ThemeCard({
   themeKey,
   active,
+  viewing,
   isLast,
   pinned,
   figma,
@@ -196,6 +197,8 @@ function ThemeCard({
 }: {
   themeKey: string
   active: boolean
+  /** This is the brand the overview is showing, and there is more than one to tell apart. */
+  viewing?: boolean
   /** The only theme left — the confirmation says what deleting it leaves. */
   isLast: boolean
   pinned: boolean
@@ -250,6 +253,17 @@ function ThemeCard({
           title={t('Double-click to open')}
           className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60"
         />
+        {viewing && (
+          <span
+            aria-hidden
+            title={t('On screen')}
+            className="pointer-events-none absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent-solid text-accent-ink shadow-sm"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 12.5 10 17.5 19 7.5" />
+            </svg>
+          </span>
+        )}
         {pinned && (
           <span
             aria-label={t('Pinned')}
@@ -521,75 +535,6 @@ function useIsFirstRun(): boolean {
   return useSavedBrandKeys().length === 0
 }
 
-/** Save the system on screen (every theme) as a library, with its state beside it. */
-function SaveLibraryButton() {
-  const { t } = useI18n()
-  const timeAgo = useTimeAgo()
-  const store = useDesignStore()
-  const { saved, matches: same } = useOnScreenSaved()
-  const [justSaved, setJustSaved] = useState(false)
-  const { user, loading } = useAuth()
-  const guest = accountsEnabled && !loading && !user
-  // Back from /login after "Keep it in your account": finish the save.
-  useEffect(() => {
-    if (loading || !user) return
-    if (takeLoginIntent('library') === 'save-library') {
-      useDesignStore.getState().saveCurrentSystem()
-      setJustSaved(true)
-    }
-  }, [loading, user])
-  useEffect(() => {
-    if (!justSaved) return
-    const id = window.setTimeout(() => setJustSaved(false), 2000)
-    return () => window.clearTimeout(id)
-  }, [justSaved])
-  const status = !saved
-    ? t('Not saved yet')
-    : same
-      ? t('Saved {when}', { when: timeAgo(saved.savedAt) })
-      : t('Unsaved changes')
-  return (
-    <div className="flex flex-shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-      {saved && (
-      <span role="status" className={`text-caption ${!same ? 'text-fg-muted' : 'text-fg-faint'}`}>
-        {!same && <span aria-hidden className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-ui align-middle" />}
-        {status}
-        {guest && saved && (
-          <>
-            {' · '}
-            <a
-              href={loginHref({ next: 'library', mode: 'signup' })}
-              onClick={() => rememberReturn('library', 'save-library')}
-              className="font-medium text-accent-ui underline-offset-2 hover:underline"
-            >
-              {t('Keep it in your account')}
-            </a>
-          </>
-        )}
-      </span>
-      )}
-      <button
-        type="button"
-        onClick={() => {
-          // Saving needs a free account (design-plans/login-funnel.md).
-          if (guest) {
-            rememberReturn('library', 'save-library')
-            window.location.assign(loginHref({ next: 'library', mode: 'signup' }))
-            return
-          }
-          store.saveCurrentSystem()
-          setJustSaved(true)
-        }}
-        disabled={Boolean(saved && same && !justSaved)}
-        title={t('Keeps a copy of this design system in your list. Your work on screen is already kept in this browser.')}
-        className={ACTION}
-      >
-        {justSaved ? t('Saved') : t('Save a copy')}
-      </button>
-    </div>
-  )
-}
-
 /** The one "New design system" button. It makes a design system — naming it
  *  is all it asks. How a BRAND starts (blank, random, from code, a system
  *  style) is asked where brands are made: the Create brand card inside one. */
@@ -647,13 +592,33 @@ function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGo
 }
 
 /** Title row shared by every Home view. */
-function ViewHeader({ crumb, title, detail, right }: { crumb?: ReactNode; title: ReactNode; detail?: ReactNode; right?: ReactNode }) {
+/** The brand face a design-system tag shows — the same ramp the top-nav chip paints. */
+function brandMark(
+  brand: string,
+  snapshot: DesignSnapshot,
+): { ramp: ReturnType<typeof themeBrandRamp>; appearance: 'light' | 'dark'; fallback: string } {
+  return {
+    ramp: brand ? themeBrandRamp(brand, snapshot.themeSources, snapshot.themeKinds, snapshot) : undefined,
+    appearance: (brand && snapshot.themeKinds[brand]) || 'light',
+    fallback: snapshot.primaryColor,
+  }
+}
+
+function ViewHeader({ crumb, title, detail, extra, right }: {
+  crumb?: ReactNode
+  title: ReactNode
+  detail?: ReactNode
+  /** Between the title and the detail. Tags live here, not inside the detail paragraph. */
+  extra?: ReactNode
+  right?: ReactNode
+}) {
   return (
     <header className="flex flex-col gap-2">
       {crumb}
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="flex min-w-[16rem] flex-1 flex-col gap-1">
+        <div className="flex min-w-[16rem] flex-1 flex-col gap-2">
           <h2 className="flex items-center gap-2 text-heading font-semibold text-fg">{title}</h2>
+          {extra}
           {detail && <p className="text-body text-fg-muted">{detail}</p>}
         </div>
         {right && <div className="flex flex-shrink-0 items-center gap-2">{right}</div>}
@@ -919,7 +884,7 @@ function CreateBoard({
 }
 
 function HomeNav({
-  section, onSection, query, onQuery, onOpenTheme, onNewSystem, onImport,
+  section, onSection, query, onQuery, onOpenTheme, onNewSystem,
 }: {
   section: HomeSection
   onSection: (next: HomeSection) => void
@@ -927,12 +892,10 @@ function HomeNav({
   onQuery: (q: string) => void
   onOpenTheme: (key: string) => void
   onNewSystem: () => void
-  onImport: () => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
   const currentId = activeLibraryId(store)
-  const { saved, matches: same } = useOnScreenSaved()
   const firstRun = useIsFirstRun()
   // Free holds ONE design system: no list of "others" beside it.
   const oneSystemOnly = useNeedsProForAnotherSystem()
@@ -967,10 +930,7 @@ function HomeNav({
         <NavGroup
           label={t('Design systems')}
           action={(
-            <span className="flex items-center">
-              <button type="button" onClick={onImport} aria-label={t('Import JSON')} title={t('Import JSON')} className={iconBtn}><ImportGlyph /></button>
-              <button type="button" onClick={onNewSystem} aria-label={t('New design system')} title={t('New design system')} className={iconBtn}><PlusGlyph /></button>
-            </span>
+            <button type="button" onClick={onNewSystem} aria-label={t('New design system')} title={t('New design system')} className={iconBtn}><PlusGlyph /></button>
           )}
         >
           {firstRun && (
@@ -982,12 +942,6 @@ function HomeNav({
             label={store.projectName}
             title={t('{name} — the design system on screen', { name: store.projectName })}
             onClick={() => onSection({ kind: 'library', id: currentId })}
-            trailing={(
-              <span className="flex flex-shrink-0 items-center gap-1.5">
-                {(!saved || !same) && <span aria-label={t('Unsaved changes')} title={t('Unsaved changes')} className="h-1.5 w-1.5 rounded-full bg-accent-ui" />}
-                <span className="text-micro font-normal tabular-nums text-fg-faint">{mine.length}</span>
-              </span>
-            )}
           />}
           {others.map((sys) => (
             <NavRow
@@ -1411,6 +1365,17 @@ export default function ThemeLibraryPage({
   // Brands made here and not saved yet stay out of the design system's own
   // views (its card, its dashboard) until the designer saves.
   const unsavedBrands = useUnsavedBrands()
+  // Refresh in the guest studio: Colour already minted a draft. Resume that
+  // brand instead of starting a second Colour step on top of it.
+  useEffect(() => {
+    if (!studioOnly || createdKey) return
+    const key = mine.find((item) => unsavedBrands.has(item))
+    if (!key) return
+    setCreatedKey(key)
+    const at = useThemeSetup.getState().drafts[key]
+    const step = at != null ? SETUP_STEPS[at] : 'color'
+    if (step && CREATE_STEPS.some((item) => item.key === step)) setCreateStep(step)
+  }, [studioOnly, createdKey, mine, unsavedBrands])
   const savedMine = mine.filter((key) => !unsavedBrands.has(key))
   const recentSaved = recent.filter((key) => !unsavedBrands.has(key))
   // Rule A: Free holds ONE design system, and a saved one is THE one — it is
@@ -1440,11 +1405,16 @@ export default function ThemeLibraryPage({
   useEffect(() => { openSystemRef.current = onOpenSystem })
   const setSection = useCallback((next: HomeSection) => {
     if (next.kind === 'library' && next.id === currentId && openSystemRef.current) {
+      // Entering the design system starts on Overview, the first section.
+      // The System tab itself still resumes the page you left.
+      const overview = { page: 'overview' as const, doc: DEFAULT_DOC_KEY }
+      setLocalPlace(overview)
+      onSystemPlace?.(overview)
       openSystemRef.current()
       return
     }
     setSectionState(next)
-  }, [currentId])
+  }, [currentId, onSystemPlace])
   useEffect(() => {
     if (!enterFolderTick) return
     setSection({ kind: 'library', id: currentId })
@@ -1465,6 +1435,8 @@ export default function ThemeLibraryPage({
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [confirmDeleteSystem, setConfirmDeleteSystem] = useState(false)
+  const [switchTarget, setSwitchTarget] = useState<string | null>(null)
+  const { saved: savedCopy, matches: copyMatches } = useOnScreenSaved()
   const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
   const [renamingLibrary, setRenamingLibrary] = useState(false)
   const [libraryDraft, setLibraryDraft] = useState(store.projectName)
@@ -1535,6 +1507,7 @@ export default function ThemeLibraryPage({
           key={key}
           themeKey={key}
           active={key === previewTheme}
+          viewing={keys.length > 1 && key === previewTheme}
           isLast={mine.length <= 1}
           pinned={pinned.includes(`theme:${key}`)}
           figma={syncStateOf(store.figmaLastPublishAt, figmaThemes.includes(key), themeUpdatedAt?.[key])}
@@ -1597,6 +1570,27 @@ export default function ThemeLibraryPage({
     if (next && next !== store.projectName) store.setProjectName(next)
     setRenamingLibrary(false)
   }
+  const showSystem = (id: string) => {
+    if (id === currentId) return
+    store.loadSystem(id)
+    const next = useDesignStore.getState()
+    const keys = myThemeKeys(next.themeOrder, next.themes)
+    if (keys.length > 0 && !keys.includes(previewTheme)) onSelectTheme(keys[0])
+    setSwitchTarget(null)
+  }
+  // The system on screen, then the newest saved ones, never more than three.
+  // Each tag wears its own brand, the same avatar the top nav paints.
+  const liveBrand = savedMine.includes(previewTheme) ? previewTheme : (savedMine[0] ?? '')
+  const systemTags = [
+    { id: currentId, name: store.projectName, ...brandMark(liveBrand, store) },
+    ...[...store.savedSystems]
+      .filter((s) => s.id !== currentId)
+      .sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))
+      .map((s) => {
+        const keys = myThemeKeys(s.snapshot.themeOrder ?? [], s.snapshot.themes ?? {})
+        return { id: s.id, name: s.name, ...brandMark(keys[0] ?? '', s.snapshot) }
+      }),
+  ].slice(0, 3)
 
   const homeTrail = (() => {
     if (viewing.kind === 'recents') return null
@@ -1719,10 +1713,8 @@ export default function ThemeLibraryPage({
   } else if (viewing.id === currentId) {
     // The DEFAULT library: the system on screen, with My themes inside it.
     // The dashboard has no search field, so Home's query does not filter here.
-    const themesShown = recentSaved
-    const libPinned = pinned.includes(`library:${currentId}`)
-    // The system on screen opens as its dashboard. Home's own title row and
-    // brand cards are handed to it and shown on Overview.
+    // The system on screen opens as its dashboard. The title is the brand
+    // selector; design systems are tags under it; Add brand takes the header.
     body = (
       <SystemDashboard
         page={dashPage}
@@ -1743,53 +1735,48 @@ export default function ThemeLibraryPage({
         overviewHeader={(tokenCount) => (
           <>
             <ViewHeader
-              title={(
-                <>
-                  <span className="text-fg-muted"><FolderIcon size={18} /></span>
-                  {renamingLibrary ? (
-                    <input
-                      autoFocus
-                      value={libraryDraft}
-                      onChange={(e) => setLibraryDraft(e.target.value)}
-                      onBlur={commitLibraryName}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') commitLibraryName()
-                        if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
-                      }}
-                      aria-label={t('Design system name')}
-                      className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                    />
-                  ) : (
-                    <>
-                      <span className="min-w-0 truncate">{store.projectName}</span>
+              title={savedMine.length > 0
+                ? <BrandSelect appearance="title" brand={previewTheme} onSelect={onSelectTheme} />
+                : <span className="min-w-0 truncate">{store.projectName}</span>}
+              extra={(
+                <div role="radiogroup" aria-label={t('Design system')} className="flex flex-wrap items-center gap-1.5">
+                  {systemTags.map((tag) => {
+                    const selected = tag.id === currentId
+                    return (
                       <button
+                        key={tag.id}
                         type="button"
-                        onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
-                        aria-label={t('Rename design system')}
-                        title={t('Rename design system')}
-                        className={MENU_BTN}
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => {
+                          if (selected) return
+                          if (!savedCopy || !copyMatches) setSwitchTarget(tag.id)
+                          else showSystem(tag.id)
+                        }}
+                        className={`flex h-8 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg pl-1 pr-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_ACTIVE}` : ''}`}
                       >
-                        <PencilGlyph />
+                        <span className={`grid h-6 w-6 flex-shrink-0 place-items-center ${selected ? '' : 'opacity-40'}`}>
+                          <ThemeAvatar size={27} ramp={tag.ramp} appearance={tag.appearance} fallback={tag.fallback} />
+                        </span>
+                        <span className={`min-w-0 truncate text-caption font-semibold ${selected ? 'text-fg' : 'text-fg-faint'}`}>{tag.name}</span>
                       </button>
-                    </>
-                  )}
-                  <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
-                </>
+                    )
+                  })}
+                </div>
               )}
               detail={`${t('{n} tokens', { n: tokenCount })} · ${brandsLine(savedMine, store.brandThemes, store.themeKinds)}`}
               right={(
                 <>
                   <button
                     type="button"
-                    onClick={() => togglePinned(`library:${currentId}`)}
-                    aria-pressed={libPinned}
-                    aria-label={libPinned ? t('Unpin') : t('Pin to Home')}
-                    title={libPinned ? t('Unpin') : t('Pin to Home')}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${libPinned ? 'bg-elevated text-fg' : 'text-fg-muted'}`}
+                    onClick={() => (systemOnly ? onCreateTheme() : openCreate())}
+                    disabled={!canAddMyTheme(mine.length)}
+                    title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: mine.length }) : undefined}
+                    className={`${PRIMARY} items-center gap-1.5 hover:opacity-90`}
                   >
-                    <PinGlyph />
+                    <PlusGlyph />
+                    {t('Add new brand')}
                   </button>
-                  <SaveLibraryButton />
                   <LibraryOptions
                     hasOwnThemes={savedMine.length > 0}
                     onReset={onOpenReset}
@@ -1799,6 +1786,13 @@ export default function ThemeLibraryPage({
                 </>
               )}
             />
+            {switchTarget && (
+              <div className="flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 self-end rounded-lg border border-line bg-surface px-3 py-2">
+                <span className="text-caption text-fg-muted">{t('Replace what is on screen?')}</span>
+                <button type="button" onClick={() => showSystem(switchTarget)} className="text-caption font-semibold text-accent-ui hover:underline">{t('Load')}</button>
+                <button type="button" onClick={() => setSwitchTarget(null)} className="text-caption text-fg-faint hover:text-fg">{t('Cancel')}</button>
+              </div>
+            )}
             {confirmDeleteSystem && (
               <div className="flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 self-end rounded-lg border border-line bg-surface px-3 py-2">
                 <span className="text-caption text-fg-muted">
@@ -1835,12 +1829,7 @@ export default function ThemeLibraryPage({
             <GuestAccountCard />
           </>
         )}
-        brands={(
-          <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
-            <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Brands')}</SectionTitle>
-            {themeGrid(themesShown, true)}
-          </section>
-        )}
+        brands={null}
       />
     )
   } else {
@@ -2067,7 +2056,6 @@ export default function ThemeLibraryPage({
           onQuery={setQuery}
           onOpenTheme={onOpenPreview}
           onNewSystem={onNewSystem}
-          onImport={onImport}
         />}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <HomeStickyBar
