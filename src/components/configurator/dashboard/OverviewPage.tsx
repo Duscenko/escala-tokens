@@ -164,17 +164,17 @@ export default function OverviewPage({
     <>
       {header}
 
-      <section aria-labelledby="overview-system" className="flex flex-col gap-3">
+      <section aria-labelledby="overview-system" className="flex w-full min-w-0 flex-col gap-3">
         <h3 id="overview-system" className="text-ui font-semibold text-fg">{t('Design system')}</h3>
-        <div className="max-w-full overflow-x-auto">
+        <div className="min-w-0 w-full overflow-x-auto">
           <table
-            className="w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-line"
-            style={{ minWidth: `calc(9rem + ${columns.length} * 18rem + 3rem)` }}
+            className="w-full min-w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-line"
+            style={{ minWidth: `max(100%, calc(9rem + ${columns.length} * 18rem + 11rem))` }}
           >
             <colgroup>
               <col className="w-36" />
               {columns.map((column) => <col key={column.key} style={{ width: '18rem' }} />)}
-              <col />
+              <col style={{ width: '11rem' }} />
             </colgroup>
             <thead>
               <tr>
@@ -218,17 +218,23 @@ export default function OverviewPage({
                     </th>
                   )
                 })}
-                <th scope="col" className={`border-b border-l ${RULE} bg-surface p-0 text-right ${ROW_H}`}>
+                <th scope="col" className={`border-b border-l ${RULE} bg-app p-0 ${ROW_H}`}>
                   <div className="flex h-full items-center justify-end px-3">
                     <button
                       type="button"
                       onClick={onCreateBrand}
                       disabled={!canCreateBrand}
-                      aria-label={t('Add new brand')}
-                      title={canCreateBrand ? t('Add new brand') : createBrandTitle}
-                      className={`flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-fg/[0.06] hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-muted ${FOCUS}`}
+                      title={canCreateBrand ? t('Add brand') : createBrandTitle}
+                      className={`inline-flex h-8 min-w-0 max-w-full items-center gap-2 rounded-lg px-2.5 text-left text-caption font-medium transition-colors ${FOCUS} ${
+                        canCreateBrand
+                          ? 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+                          : 'cursor-not-allowed opacity-40'
+                      }`}
                     >
-                      <PlusGlyph />
+                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-solid text-accent-ink shadow-sm" aria-hidden>
+                        <PlusGlyph />
+                      </span>
+                      <span className="truncate">{t('Add brand')}</span>
                     </button>
                   </div>
                 </th>
@@ -269,7 +275,7 @@ export default function OverviewPage({
                         </td>
                       )
                     })}
-                    <td className={`border-l ${RULE} bg-surface ${ROW_H} ${last ? '' : 'border-b'}`} />
+                    <td className={`border-l ${RULE} bg-app ${ROW_H} ${last ? '' : 'border-b'}`} />
                   </tr>
                 )
               })}

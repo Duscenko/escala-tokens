@@ -1958,7 +1958,13 @@ export default function ThemeLibraryPage({
                 <div className="h-full min-h-0">{body}</div>
               ) : (
                 <div className="h-full min-h-0 overflow-y-auto">
-                  <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6">
+                  <div
+                    className={
+                      onDashboard
+                        ? 'flex w-full min-w-0 flex-col gap-8 px-5 pb-7 pt-6'
+                        : 'mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-7 pt-6'
+                    }
+                  >
                     {body}
                   </div>
                 </div>
