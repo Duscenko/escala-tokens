@@ -1,8 +1,9 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
-import { originAllowed, originsForHosts, parseBearer, tokenBlobKey } from '../src/lib/publishTrust.js'
-import { generatePublishId } from '../src/lib/publishId.js'
+import { claimBlobKey, originAllowed, originsForHosts, parseBearer, tokenBlobKey } from '../src/lib/publishTrust.js'
+import { deletedPayload, isDeletedSystem } from '../src/lib/deletedSystem.js'
+import { canonicalizePublishId, generatePublishId } from '../src/lib/publishId.js'
 import { bridgePayload } from '../src/lib/pluginBridge.js'
 import { LICENCE_REQUIRED_MESSAGE, stampLicence } from '../src/lib/licenceGate.js'
 import {
@@ -11,6 +12,7 @@ import {
   pluginPlanRefresh,
   upsertPluginLibraries,
   removePluginLibraries,
+  PLUGIN_LIBRARY_CAP,
   type PluginLibrary,
   type PluginPlanDecision,
 } from '../src/lib/pluginSession.js'
@@ -196,6 +198,111 @@ async function readLibraries(userId: string): Promise<PluginLibrary[]> {
   return stored && Array.isArray(stored.libraries) ? stored.libraries : []
 }
 
+/**
+ * Replace the published tokens of deleted systems with the deleted marker, so
+ * the plugin files already syncing them stop reading a system that is gone.
+ *
+ * Who may do it: the blob has no owner field, so ownership is the publish
+ * claim. A claimed system needs its claim (the browser that published it holds
+ * it); a system nobody claimed — one the plugin created and the web never
+ * opened — needs to be on the caller's own list. Anything else is left alone
+ * and reported in `kept`, never erased.
+ */
+async function eraseSystems(
+  rawIds: unknown[],
+  current: PluginLibrary[],
+  rawClaims: unknown,
+): Promise<{ erased: string[]; kept: string[] }> {
+  const claims = rawClaims && typeof rawClaims === 'object' && !Array.isArray(rawClaims)
+    ? rawClaims as Record<string, unknown>
+    : {}
+  const listed = new Set(current.map((lib) => canonicalizePublishId(lib.id)).filter((id): id is string => !!id))
+  const erased: string[] = []
+  const kept: string[] = []
+  for (const raw of rawIds) {
+    const id = typeof raw === 'string' ? canonicalizePublishId(raw) : null
+    const slug = id ? slugifyProject(id) : null
+    if (!id || !slug) continue
+    try {
+      // Nothing published (or already deleted): there is nothing to protect.
+      const data = await readJsonBlob<unknown>(tokenBlobKey(slug), { fresh: true })
+      if (data === null || isDeletedSystem(data)) { erased.push(id); continue }
+      const claim = await readJsonBlob<{ hash?: unknown }>(claimBlobKey(slug), { fresh: true })
+      const presented = typeof claims[raw as string] === 'string' ? claims[raw as string] as string
+        : typeof claims[id] === 'string' ? claims[id] as string : ''
+      const allowed = claim && typeof claim.hash === 'string'
+        ? !!presented && presented.length <= 200 && sha256(presented) === claim.hash
+        : listed.has(id)
+      if (!allowed) { kept.push(id); continue }
+      await writeJson(tokenBlobKey(slug), deletedPayload())
+      erased.push(id)
+    } catch {
+      kept.push(id)
+    }
+  }
+  return { erased, kept }
+}
+
+/** Is the published system behind a library still there? `unknown` when the
+ *  read failed — a blip must never prune a live library. */
+async function systemState(id: string): Promise<'live' | 'gone' | 'unknown'> {
+  const slug = slugifyProject(id)
+  if (!slug) return 'gone'
+  try {
+    // Fresh: a cached miss from before a publish would read a new system as gone.
+    const data = await readJsonBlob<unknown>(tokenBlobKey(slug), { fresh: true })
+    return data === null || isDeletedSystem(data) ? 'gone' : 'live'
+  } catch {
+    return 'unknown'
+  }
+}
+
+/** The rows whose published tokens exist. A read that fails keeps the row. */
+async function onlyPublished(
+  rows: Array<{ id?: unknown; name?: unknown }>,
+): Promise<Array<{ id?: unknown; name?: unknown }>> {
+  const capped = rows.slice(0, PLUGIN_LIBRARY_CAP)
+  const states: Array<'live' | 'gone' | 'unknown'> = []
+  const idOf = (row: { id?: unknown }) => (typeof row.id === 'string' ? canonicalizePublishId(row.id) ?? '' : '')
+  if (capped.length > 0) states.push(await systemState(idOf(capped[0])))
+  states.push(...await Promise.all(capped.slice(1).map((row) => systemState(idOf(row)))))
+  return capped.filter((_, i) => states[i] !== 'gone')
+}
+
+/**
+ * The list the plugin shows as "My themes".
+ *  - Free: nothing. The folders are a Pro feature; `locked` says why.
+ *  - Unknown plan: the stored list as it is — never limit on a guess.
+ *  - Pro: only systems whose published blob still exists. A deleted or
+ *    never-published id is dropped from the stored list too, so it does not
+ *    come back on the next read.
+ */
+async function visibleLibraries(
+  userId: string,
+  tier: PluginTier,
+): Promise<{ libraries: PluginLibrary[]; locked?: true }> {
+  if (tier === 'free') return { libraries: [], locked: true }
+  const stored = await readLibraries(userId).catch(() => [])
+  if (tier !== 'pro' || stored.length === 0) return { libraries: stored }
+  // The first read learns the store's base URL (`head`, a quota-counted
+  // operation); the rest then go straight to it. Serial first, parallel after.
+  const states: Array<'live' | 'gone' | 'unknown'> = []
+  states.push(await systemState(stored[0].id))
+  states.push(...await Promise.all(stored.slice(1).map((lib) => systemState(lib.id))))
+  const gone = stored.filter((_, i) => states[i] === 'gone').map((lib) => lib.id)
+  if (gone.length === 0) return { libraries: stored }
+  try {
+    // Re-read before writing, so a library registered while the checks ran is
+    // not written over.
+    const now = await readLibraries(userId)
+    const next = removePluginLibraries(now, gone)
+    if (next.length !== now.length) await writeJson(librariesKey(userId), { libraries: next } satisfies LibraryRecord)
+    return { libraries: next }
+  } catch {
+    return { libraries: removePluginLibraries(stored, gone) }
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS_HEADERS).end()
@@ -264,14 +371,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // The token is already in the plugin's hands on the next line. A failed
       // wipe leaves a sealed blob that still needs the poll secret.
     }
-    const libraries = await readLibraries(pair.userId).catch(() => [])
     // The pair blob is the one this poll already waited to see as `ready`.
     // The plan rides on it. A second read of the session can miss and used
     // to answer Free for a Pro login that had just been written.
     const announced = pair.plan === 'pro' || pair.plan === 'free' || pair.plan === 'unknown'
       ? tierPayload(pair.plan)
       : tierOf(await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null))
-    return res.status(200).json({ token, email: pair.email ?? '', libraries, ...announced })
+    const { libraries, locked } = await visibleLibraries(pair.userId, announced.tier)
+    return res.status(200).json({ token, email: pair.email ?? '', libraries, ...(locked ? { locked } : {}), ...announced })
   }
 
   // ── Signed-in browser confirms the code and registers libraries. ──
@@ -346,7 +453,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // The blob is public. The raw token is sealed with the secret's hash,
     // which poll reconstructs from the secret only the plugin holds.
     const sealed = seal(pair.secretHash, token)
-    const incoming = Array.isArray(body.libraries) ? body.libraries as Array<{ id?: unknown; name?: unknown }> : []
+    const offered = Array.isArray(body.libraries) ? body.libraries as Array<{ id?: unknown; name?: unknown }> : []
+    // Only systems with something published behind them reach the list. The
+    // browser sends every id it holds, including ones minted by opening the
+    // Figma page; those used to be stored and shown as folders that never sync.
+    const incoming = await onlyPublished(offered)
     try {
       const libraries = upsertPluginLibraries(await readLibraries(user.id), incoming, new Date().toISOString())
       await writeJson(librariesKey(user.id), { libraries } satisfies LibraryRecord)
@@ -412,11 +523,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ids = Array.isArray(body.ids) ? body.ids.slice(0, 100) : []
     try {
       const current = await readLibraries(userId)
+      // `deleteSystems` is the web saying the system itself is gone, not just
+      // unlisted. The plugin's own Remove never sends it: that row comes back
+      // with Sync now, and the published system stays up.
+      const erased = body.deleteSystems === true
+        ? await eraseSystems(ids, current, body.claims)
+        : { erased: [] as string[], kept: [] as string[] }
       const libraries = removePluginLibraries(current, ids)
       if (libraries.length !== current.length) {
         await writeJson(librariesKey(userId), { libraries } satisfies LibraryRecord)
       }
-      return res.status(200).json({ ok: true, libraries })
+      return res.status(200).json({ ok: true, libraries, erased: erased.erased, kept: erased.kept })
     } catch {
       return res.status(503).json({ error: 'Could not update the list. Try again.' })
     }
@@ -559,8 +676,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true })
     }
     const current = await withFreshPlan(token, session)
-    const libraries = await readLibraries(current.userId).catch(() => [])
-    return res.status(200).json({ email: current.email, libraries, ...tierOf(current) })
+    const plan = tierOf(current)
+    const { libraries, locked } = await visibleLibraries(current.userId, plan.tier)
+    return res.status(200).json({ email: current.email, libraries, ...(locked ? { locked } : {}), ...plan })
   }
 
   return res.status(405).json({ error: 'Method not allowed.' })

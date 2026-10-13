@@ -96,6 +96,8 @@ import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotic
 import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
+import { isPublishId } from '../lib/publishId'
+import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../lib/publishSignals'
 import { reopenAccountFiles } from '../lib/accountFiles'
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
@@ -1245,6 +1247,21 @@ export default function Configurator() {
     if (!authUser?.id) return
     if (authEvent !== 'SIGNED_IN' && authEvent !== 'INITIAL_SESSION') return
     reopenAccountFiles(authUser.id)
+  // Take down what this browser published and no longer has a system for: the
+  // tokens a reset or a replaced system left behind, still listed in the Figma
+  // plugin and still synced by any file that had them. Once per session, after
+  // the account's files are back on screen (the sweep reads what is stored, so
+  // a closed workspace must not be mistaken for a deleted one).
+  useEffect(() => {
+    if (!authUser?.id || !accountsEnabled) return
+    const flag = `sd-orphan-sweep:${authUser.id}`
+    try { if (window.sessionStorage.getItem(flag)) return } catch { /* sweep anyway */ }
+    const timer = window.setTimeout(() => {
+      try { window.sessionStorage.setItem(flag, '1') } catch { /* once per mount then */ }
+      void import('../lib/pluginAccount').then((m) => m.sweepOrphanedPublishes()).catch(() => {})
+    }, 20_000)
+    return () => window.clearTimeout(timer)
+  }, [authUser?.id])
   }, [authUser?.id, authEvent])
   const leaveHomeForGuest = useCallback(() => {
     const live = useDesignStore.getState()
@@ -1821,6 +1838,46 @@ export default function Configurator() {
     setExportMode('figma-sync')
     publishFigmaNow()
   }, [publishFigmaNow])
+  // Keep what is published in step with two deliberate acts that auto-sync
+  // cannot see (it is off, or it reads the result as "nothing changed"):
+  //  - a brand was deleted: the published blob must stop carrying it, so a
+  //    Figma file stops reading a brand that is gone;
+  //  - a system whose publication was erased is live again (Undo, a brand
+  //    added back): its tokens go back, or a file reads "deleted" for a system
+  //    on screen. Exactly the user's own system, under its own id and claim.
+  // Quiet on a licence refusal — nobody asked to publish, so no toast and no
+  // switching auto-sync off.
+  const republishQuietly = useCallback(() => {
+    if (access.gated || !isLiveEnvironment() || !figmaSyncModes.length) return
+    const live = useDesignStore.getState()
+    if (!isPublishId(live.publishId)) return
+    clearPublishErased(live.publishId)
+    handleFigmaPublishState('publishing')
+    void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => {
+      if (result.superseded) return
+      if (!result.ok && result.reason === 'licence') { handleFigmaPublishState('idle'); return }
+      handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
+    })
+  }, [access.gated, figmaSyncModes, figmaPublishBase, workspaceSection, handleFigmaPublishState])
+  const republishRef = useRef(republishQuietly)
+  republishRef.current = republishQuietly
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const schedule = () => {
+      if (timer) clearTimeout(timer)
+      // After the sync selection has settled on the new brand list.
+      timer = setTimeout(() => republishRef.current(), 1000)
+    }
+    const offSignal = onRepublishRequested(schedule)
+    const offStore = useDesignStore.subscribe((s) => {
+      if (wasPublishErased(s.publishId) && myThemeKeys(s.themeOrder, s.themes).length > 0) schedule()
+    })
+    return () => {
+      offSignal()
+      offStore()
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
   const handleGithubPushState = useCallback((next: GitHubPushState) => {
     if (githubPushResetTimer.current) {
       clearTimeout(githubPushResetTimer.current)

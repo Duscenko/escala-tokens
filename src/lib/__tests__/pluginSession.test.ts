@@ -3,6 +3,8 @@ import {
   collectPluginLibraries,
   isPluginPairCode,
   librariesFromPersist,
+  orphanedPublishIds,
+  publishIdsInPersist,
   pluginPlan,
   pluginPlanRefresh,
   upsertPluginLibraries,
@@ -30,13 +32,14 @@ describe('plugin session libraries', () => {
     ])).toEqual([{ id: ID, name: 'Core' }])
   })
 
-  it('reads the system on screen and saved libraries out of the persist blob', () => {
+  it('reads the published system on screen and published saved libraries out of the persist blob', () => {
     const libs = librariesFromPersist({
       state: {
         publishId: ID,
+        figmaLastPublishAt: '2026-10-14T10:00:00Z',
         projectName: 'On screen',
         savedSystems: [
-          { name: 'Saved', snapshot: { publishId: OTHER, projectName: 'Other' } },
+          { name: 'Saved', snapshot: { publishId: OTHER, figmaLastPublishAt: '2026-10-01T10:00:00Z', projectName: 'Other' } },
           { name: 'Never published', snapshot: { publishId: '', projectName: 'Nope' } },
         ],
       },
@@ -45,6 +48,27 @@ describe('plugin session libraries', () => {
       { id: ID, name: 'On screen' },
       { id: OTHER, name: 'Saved' },
     ])
+  })
+
+  it('does not list an id that was only minted — opening the Figma page does that', () => {
+    expect(librariesFromPersist({
+      state: {
+        publishId: ID,
+        figmaLastPublishAt: null,
+        projectName: 'Never synced',
+        savedSystems: [{ name: 'Copy', snapshot: { publishId: OTHER, figmaLastPublishAt: null, projectName: 'Copy' } }],
+      },
+    })).toEqual([])
+  })
+
+  it('finds orphaned claims: ids this browser published and no system uses', () => {
+    const inUse = [
+      ...publishIdsInPersist({ state: { publishId: ID, savedSystems: [{ snapshot: { publishId: OTHER } }] } }),
+      // another account's parked files still count as in use
+      ...publishIdsInPersist({ snapshot: { publishId: 'esc_5PQR-STVW-XYZ0' }, savedSystems: [] }),
+    ]
+    expect(orphanedPublishIds([ID, OTHER, 'esc_5pqr-stvw-xyz0', 'esc_4ABC-DEFG-HJKM', 'legacy-name'], inUse))
+      .toEqual(['esc_4ABC-DEFG-HJKM'])
   })
 
   it('moves an updated library to the front and caps the list', () => {

@@ -6,6 +6,7 @@ import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 import { isPublishId } from './publishId'
 import { trackEvent } from './analytics'
+import { clearPublishErased } from './publishSignals'
 import { getLicenceActivation, getLicenceKey, onLicenceChange } from './licence'
 import { supabase } from './supabase'
 
@@ -241,6 +242,8 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     const legacy = legacyProjectId(opts.project ?? undefined)
     if (legacy && legacy !== slug && getStoredClaim(legacy)) await postTo(legacy)
     useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
+    // Back on the platform: nothing left to put back for this id.
+    clearPublishErased(slug)
     // The plugin lists libraries by account. A publish that isn't registered
     // never shows up there — the id stays internal either way.
     const { registerPublishedLibrary } = await import('./pluginAccount')

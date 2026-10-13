@@ -48,8 +48,9 @@ export function collectPluginLibraries(
 /**
  * Libraries sitting in this browser. Reads the Zustand persist blob
  * (`scalable-designs-store`): the system on screen, then each saved library
- * that already has a publish id. A library that was never published is absent
- * — there is nothing for the plugin to sync.
+ * that was PUBLISHED. An id alone is not enough — opening the Figma page mints
+ * one with nothing behind it, and listing that put a folder in the plugin that
+ * could never sync. `figmaLastPublishAt` is the proof something was published.
  */
 export function librariesFromPersist(raw: unknown): Array<{ id: string; name: string }> {
   const root = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null
@@ -57,10 +58,8 @@ export function librariesFromPersist(raw: unknown): Array<{ id: string; name: st
     ? root.state as Record<string, unknown>
     : root
   if (!state) return []
-  const rows: Array<{ id?: unknown; name?: unknown }> = [{
-    id: state.publishId,
-    name: state.projectName,
-  }]
+  const rows: Array<{ id?: unknown; name?: unknown }> = []
+  if (state.figmaLastPublishAt) rows.push({ id: state.publishId, name: state.projectName })
   const saved = Array.isArray(state.savedSystems) ? state.savedSystems : []
   for (const entry of saved) {
     if (!entry || typeof entry !== 'object') continue
@@ -68,12 +67,55 @@ export function librariesFromPersist(raw: unknown): Array<{ id: string; name: st
     const snapshot = record.snapshot && typeof record.snapshot === 'object'
       ? record.snapshot as Record<string, unknown>
       : null
+    if (!snapshot?.figmaLastPublishAt) continue
     const named = typeof record.name === 'string' && record.name.trim()
       ? record.name
       : snapshot?.projectName
     rows.push({ id: snapshot?.publishId, name: named })
   }
   return collectPluginLibraries(rows)
+}
+
+/**
+ * Every publish id a persisted blob still holds, published or not: the system
+ * on screen and each saved copy. `raw` is either the store's own persist blob
+ * or a parked account file (`{ snapshot, savedSystems }`).
+ */
+export function publishIdsInPersist(raw: unknown): string[] {
+  const root = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null
+  if (!root) return []
+  const state = root.state && typeof root.state === 'object' ? root.state as Record<string, unknown> : root
+  const ids: unknown[] = [state.publishId]
+  const parkedSnapshot = state.snapshot && typeof state.snapshot === 'object'
+    ? state.snapshot as Record<string, unknown>
+    : null
+  if (parkedSnapshot) ids.push(parkedSnapshot.publishId)
+  for (const entry of Array.isArray(state.savedSystems) ? state.savedSystems : []) {
+    const snapshot = entry && typeof entry === 'object' ? (entry as Record<string, unknown>).snapshot : null
+    if (snapshot && typeof snapshot === 'object') ids.push((snapshot as Record<string, unknown>).publishId)
+  }
+  const out = new Set<string>()
+  for (const id of ids) {
+    const canonical = typeof id === 'string' ? canonicalizePublishId(id) : null
+    if (canonical) out.add(canonical)
+  }
+  return [...out]
+}
+
+/**
+ * Publish ids this browser holds a claim for but no system uses any more —
+ * reset before the id was kept, replaced by a new system, deleted somewhere
+ * the plugin was never told. A claim is proof the browser published it, so
+ * these are exactly the ones it is entitled to take down.
+ */
+export function orphanedPublishIds(claimed: string[], inUse: string[]): string[] {
+  const alive = new Set(inUse)
+  const out = new Set<string>()
+  for (const raw of claimed) {
+    const id = canonicalizePublishId(raw)
+    if (id && !alive.has(id)) out.add(id)
+  }
+  return [...out]
 }
 
 export type PluginPlanName = 'pro' | 'free' | 'unknown'

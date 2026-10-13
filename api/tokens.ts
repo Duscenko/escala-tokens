@@ -11,6 +11,7 @@ import {
 } from '../src/lib/publishTrust.js'
 import { entitlementAt } from '../src/lib/entitlement.js'
 import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
+import { DELETED_SYSTEM_MESSAGE, isDeletedSystem } from '../src/lib/deletedSystem.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { rememberLicenceSlug, rememberLicenceSlugHash } from './_licenceIndex.js'
@@ -130,6 +131,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (data === null) {
       res.setHeader('Cache-Control', 'no-store')
       return res.status(404).json({ error: 'No tokens published yet.' })
+    }
+    // Deleted by its owner: 410, not 404 ("never published") and not a system.
+    // Checked before the licence gate — a deleted system has no stamp to read.
+    if (isDeletedSystem(data)) {
+      res.setHeader('Cache-Control', 'no-store')
+      return res.status(410).json({ error: DELETED_SYSTEM_MESSAGE, deleted: true })
     }
     // Hosted sync is Pro once the launch promo is over (design-plans/
     // pricing-and-packaging.md). The answer rides inside the blob we just read

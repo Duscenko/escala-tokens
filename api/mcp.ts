@@ -3,6 +3,7 @@ import { handleMcpMessage, mcpDiscovery } from '../src/lib/agentAccess/mcp.js'
 import type { TokenJSON } from '../src/lib/agentBundle/types.js'
 import { tokenBlobKey } from '../src/lib/publishTrust.js'
 import { isServable, stripLicence } from '../src/lib/licenceGate.js'
+import { isDeletedSystem } from '../src/lib/deletedSystem.js'
 import { clientIp, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 const CORS_HEADERS = {
@@ -23,7 +24,7 @@ async function loadTokens(project?: string | null): Promise<TokenJSON | null> {
   // Live MCP is an Escala Pro feature once the launch promo is over: an
   // unlicensed system reads as "not published", the same answer an agent
   // already handles. See lib/licenceGate.ts.
-  if (!data || !isServable(data, new Date())) return null
+  if (!data || isDeletedSystem(data) || !isServable(data, new Date())) return null
   return stripLicence(data)
 }
 

@@ -4841,6 +4841,53 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
 ---
 
+> **UPDATE (2026-10-14): the plugin's "My themes" is PRO-only and lists only systems that still
+> exist.** Reported as deleted systems that kept appearing — and kept syncing — in the plugin.
+> - **The list was append-only** (`plugin-libraries/<sha(userId)>.json`: `approve` / `register` /
+>   `bridge` add, only `unregister` removes) and the published blob outlived the system, so a
+>   deleted system was still readable at `/api/tokens?project=<id>` forever.
+> - **`op=libraries` and `poll` go through `visibleLibraries`** (`api/plugin-session.ts`): Free →
+>   `libraries: []` + `locked: true` (the plugin disables the row and hides "Your folders");
+>   unknown plan → the stored list untouched; Pro → each id's blob is read FRESH and one that is
+>   gone (404) or deleted is dropped from the response AND the stored list. A read that errors is
+>   `unknown` and keeps the row — a blip never prunes. Never use the cached read here: a cached
+>   miss would read a just-published system as gone.
+> - **A web delete now erases the system** (`lib/deletedSystem.ts`): `unregisterPublishedLibraries`
+>   sends `deleteSystems: true` + this browser's publish claims, and the server overwrites the blob
+>   with `{ escalaDeleted: { at } }`. `GET /api/tokens` answers **410** (distinct from 404 "never
+>   published"), `api/mcp.ts` reads it as not published, and the plugin stops live sync on 410.
+>   A claimed system needs its claim; an unclaimed one (plugin-born, never opened on the web)
+>   needs to be on the caller's own list. The plugin's own **Remove** still only unlists.
+> - **A saved copy sharing the live system's `publishId` is never erased** (`forgetPluginLibraries`
+>   takes `survivors`). A later publish with the claim overwrites the marker, so Undo revives it.
+> - **Ghosts are closed at the source, not only filtered** (same day, second pass):
+>   - **`resetToDefaults` carries `publishId`.** It is the system's identity: every Figma file keeps
+>     following the reset system. Dropping it minted a new id and orphaned the old one.
+>   - **Replacing the system on screen erases what it published** unless a saved copy still holds that
+>     id: `startNewSystem`, `loadSystem`, `applyImportedSystem`, `regeneratePublishId`, and removing
+>     the LAST brand (`removeTheme`, id kept, the next publish revives it). `forgetPluginLibraries`
+>     takes `survivors` for that. **Do NOT turn this into a store subscription on `publishId`**:
+>     sign-out (`closeAccountFiles`) and sign-in (`reopenAccountFiles`) swap it legitimately, and a
+>     watcher would erase a person's system every time they signed out.
+>   - **Only published ids reach the list**: `librariesFromPersist` needs `figmaLastPublishAt`
+>     (opening `FigmaSyncView` still mints an id for the "ID to plugin" field, deliberately), and
+>     `approve` drops ids whose blob is gone (`onlyPublished`).
+>   - **`sweepOrphanedPublishes`** (`lib/pluginAccount.ts`, run once per session 20s after sign-in
+>     from `Configurator`) takes down what earlier resets left behind: a publish claim in this
+>     browser whose id no system uses. "In use" = the persist blob + every `sd-account-files:*`
+>     parked file; anything unreadable aborts the sweep. The server re-checks the claim. A system
+>     that exists only in a GitHub repo is erased too, and comes back with its claim on the next publish.
+>   - **The platform follows two deliberate acts auto-sync cannot see** (`lib/publishSignals.ts`,
+>     `republishQuietly` in `Configurator`): deleting a brand that is not the last one, on a system
+>     that was published, republishes (1s debounce) so a Figma file stops reading it; and a system
+>     whose publication was erased this session that is live again with a brand (Undo, a brand
+>     added back) is published again. Undo can land on the exact payload last published, which
+>     auto-sync skips as "nothing changed" — hence the explicit signal. Quiet on a licence refusal
+>     (no toast, auto-sync is not switched off). The last brand also sets `figmaLastPublishAt: null`:
+>     nothing is published any more, and the Figma status says so.
+>   - **The plugin keeps the link on a 410** (stopped, `autoStart` false): a system that comes back
+>     resumes from the same folder with a Sync, and the next open does not poll a system that is gone.
+
 ## Design Principles
 
 1. **No bloat** — every feature should earn its place. If it doesn't help the designer configure tokens, it doesn't belong.

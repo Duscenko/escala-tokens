@@ -47,6 +47,7 @@ import { reconcileSavedSystems, withoutLibraryPins } from '../lib/savedSystemLis
 import { canAddMyTheme, isScaffoldTheme, myThemeKeys } from '../lib/themeLibrary'
 import { freeAnotherThemeBlockedNow } from '../lib/freeThemeLimit'
 import { generatePublishId, isPublishId } from '../lib/publishId'
+import { markPublishErased, requestRepublish } from '../lib/publishSignals'
 import { RELEASE_HISTORY_LIMIT, type ElementDecision, type ElementStatus, type ReleaseRecord } from '../lib/systemDashboardTypes'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
 // store's constants), so a value import here would create a runtime cycle.
@@ -707,12 +708,27 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
  *  GitHub-connected, else a slug of the project name. One expression, so a
  *  "Save library" button's saved/unsaved readout can't look up a different
  *  entry than the save itself writes. */
-/** Take deleted systems off the plugin's account list. Best-effort and lazy:
- *  pluginAccount pulls in the licence module, which reads this store. */
-function forgetPluginLibraries(ids: Array<string | undefined>): void {
-  const clean = ids.filter((id): id is string => typeof id === 'string' && id.length > 0)
+/** Take deleted systems off the plugin's account list, and mark their
+ *  published tokens deleted. Best-effort and lazy: pluginAccount pulls in the
+ *  licence module, which reads this store.
+ *  `survivors` are the publish ids that still exist after this delete (the
+ *  system on screen, the other saved copies). A saved copy can share its id
+ *  with the live system, and deleting one must never take the other's
+ *  published tokens down. */
+function forgetPluginLibraries(
+  ids: Array<string | undefined>,
+  survivors: Array<string | undefined> = [],
+): void {
+  const alive = new Set(survivors.filter((id): id is string => typeof id === 'string' && id.length > 0))
+  const clean = ids.filter((id): id is string => typeof id === 'string' && id.length > 0 && !alive.has(id))
   if (clean.length === 0 || typeof window === 'undefined') return
+  for (const id of clean) markPublishErased(id)
   void import('../lib/pluginAccount').then((m) => m.unregisterPublishedLibraries(clean)).catch(() => {})
+}
+
+/** The publish ids of saved copies — what still exists after a replace. */
+function savedPublishIds(saved: SavedSystem[]): Array<string | undefined> {
+  return saved.map((s) => s.snapshot?.publishId)
 }
 
 export function activeLibraryId(state: { githubRepo: string | null; projectName: string }): string {
@@ -1135,8 +1151,12 @@ export const useDesignStore = create<DesignStore>()(
         return minted
       },
       regeneratePublishId: () => {
+        const previous = get().publishId
         const minted = generatePublishId()
         set({ publishId: minted })
+        // The old id is a system nobody will publish to again. Without this it
+        // stayed on the plugin's list, readable, beside the new one.
+        forgetPluginLibraries([previous], [minted, ...savedPublishIds(get().savedSystems)])
         return minted
       },
       setProjectDescription: (d) => set({ projectDescription: d }),
@@ -1515,6 +1535,16 @@ export const useDesignStore = create<DesignStore>()(
           const saved = myThemeKeys(themeOrder, themes).length === 0
             ? reconcileSavedSystems(state.savedSystems, state, 'drop')
             : null
+          // No brand left: nothing of this system is on the platform. What it
+          // published is erased now, so a Figma file stops reading the brands
+          // that were deleted. The id stays; the next publish brings it back.
+          if (saved) forgetPluginLibraries([state.publishId])
+          // A brand left but others remain: what was published still carries
+          // the deleted one. Republish (Configurator listens) — only a system
+          // that was published at all, so a draft never goes out by deleting.
+          else if (isPublishId(state.publishId) && state.figmaLastPublishAt) {
+            setTimeout(requestRepublish, 0)
+          }
           return {
             themes,
             themeSemantics,
@@ -1531,6 +1561,8 @@ export const useDesignStore = create<DesignStore>()(
               ? {
                   savedSystems: saved.savedSystems,
                   pinned: withoutLibraryPins(state.pinned, saved.droppedIds),
+                  // Erased above: it is no longer published, and says so.
+                  figmaLastPublishAt: null,
                 }
               : {}),
           }
@@ -1724,15 +1756,22 @@ export const useDesignStore = create<DesignStore>()(
             : [...state.savedSystems, entry],
         })),
       removeSavedSystem: (id) => {
-        const gone = useDesignStore.getState().savedSystems.find((s) => s.id === id)
+        const current = useDesignStore.getState()
+        const gone = current.savedSystems.find((s) => s.id === id)
         // A deleted system must not stay in the Figma plugin's list.
-        forgetPluginLibraries([gone?.snapshot?.publishId])
+        forgetPluginLibraries(
+          [gone?.snapshot?.publishId],
+          [current.publishId, ...current.savedSystems.filter((s) => s.id !== id).map((s) => s.snapshot?.publishId)],
+        )
         set((state) => ({ savedSystems: state.savedSystems.filter((s) => s.id !== id) }))
       },
       loadSystem: (id) =>
         set((state) => {
           const sys = state.savedSystems.find((s) => s.id === id)
           if (!sys) return state
+          // The system on screen is replaced. If it was never saved it is gone,
+          // and so is what it published; a saved copy of it is not touched.
+          forgetPluginLibraries([state.publishId], [sys.snapshot?.publishId, ...savedPublishIds(state.savedSystems)])
           // Clone so editing the loaded system never mutates the saved entry.
           return { ...deepClone(sys.snapshot), projectCreated: true, systemStarted: true }
         }),
@@ -1827,14 +1866,22 @@ export const useDesignStore = create<DesignStore>()(
         })
         return result
       },
-      startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true, systemStarted: true }),
+      startNewSystem: () =>
+        set((state) => {
+          // Same as a load: an unsaved system on screen is replaced for good.
+          forgetPluginLibraries([state.publishId], savedPublishIds(state.savedSystems))
+          return { ...makeDesignDefaults(), projectCreated: true, systemStarted: true }
+        }),
       deleteCurrentSystem: () =>
         set((state) => {
           const dropped = reconcileSavedSystems(state.savedSystems, state, 'drop')
-          forgetPluginLibraries([
-            state.publishId,
-            ...state.savedSystems.filter((s) => dropped.droppedIds.includes(s.id)).map((s) => s.snapshot?.publishId),
-          ])
+          forgetPluginLibraries(
+            [
+              state.publishId,
+              ...state.savedSystems.filter((s) => dropped.droppedIds.includes(s.id)).map((s) => s.snapshot?.publishId),
+            ],
+            dropped.savedSystems.map((s) => s.snapshot?.publishId),
+          )
           return {
             ...makeDesignDefaults(),
             projectCreated: true,
@@ -1853,6 +1900,10 @@ export const useDesignStore = create<DesignStore>()(
           githubRepo: state.githubRepo,
           githubLastPushAt: state.githubLastPushAt,
           figmaLastPublishAt: state.figmaLastPublishAt,
+          // The id IS the system's identity: every Figma file syncing it keeps
+          // following the reset system. Dropping it minted a new id on the next
+          // publish and left the old one on the plugin's list, still readable.
+          publishId: state.publishId,
         })),
       reconcileSavedSystems: () =>
         set((state) => {
@@ -1890,6 +1941,7 @@ export const useDesignStore = create<DesignStore>()(
       applyImportedSystem: (snapshot) =>
         set((state) => {
           const id = `imported:${slugify(snapshot.projectName) || 'imported-system'}`
+          forgetPluginLibraries([state.publishId], [snapshot.publishId, ...savedPublishIds(state.savedSystems)])
           const entry: SavedSystem = {
             id,
             name: snapshot.projectName,
