@@ -163,9 +163,9 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
 }
 
 /**
- * Get code, beside the Figma door and in the same 32px shell: icon-only at
- * rest, hover/focus slides out the label. A plain action — the Code tab it
- * opens replaces this view, so there's no state left for it to show.
+ * Get code, beside the inspector toggle and in the same 32px shell. The
+ * label stays open — this is the way out to code, and an icon alone doesn't
+ * say that. A plain action: the Code tab it opens replaces this view.
  */
 export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onOpen: () => void; disabled?: boolean; disabledTitle?: string }) {
   const { t } = useI18n()
@@ -191,7 +191,7 @@ export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onO
             <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
           </svg>
         </span>
-        <RevealLabel open={false}>{label}</RevealLabel>
+        <RevealLabel open>{label}</RevealLabel>
       </button>
     </div>
   )

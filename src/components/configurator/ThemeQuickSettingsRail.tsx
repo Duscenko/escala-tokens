@@ -14,9 +14,9 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit } from '../../lib/editHistory'
-import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
@@ -78,7 +78,8 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { FoundationGlyph } from './FoundationIconRail'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -762,7 +763,7 @@ const EDITION_NAMES: Record<QuickPanelFoundation, string> = {
   radius: 'Radius',
   sizes: 'Spacing',
   shadow: 'Shadow',
-  icons: 'Style',
+  icons: 'Icons',
 }
 
 /** Set by the rail when its host can switch editions: the handler, plus each
@@ -773,64 +774,79 @@ const EditionSwitchContext = createContext<{
   icons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
 } | null>(null)
 
-/** The edition card's title, as the switcher between editions. It is the same
- *  boxed select the create-brand panel uses (icon · name · chevron, full
- *  width), so "which edition am I in" reads as a control, not as a heading. It
- *  writes the SAME state the foundation icon rail does, so the two cannot
- *  disagree. */
+/** The edition card's title. Same sliding pill as the create studio, but the
+ *  resting steps are the foundation glyphs — numbers stay on the create
+ *  strip only. The current step expands to its name. */
 function EditionTitle({ title, foundationKey }: { title: string; foundationKey: string }) {
   const { t } = useI18n()
   const ctx = useContext(EditionSwitchContext)
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const reduce = useReducedMotion() ?? false
   if (!ctx) return <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
-  const icons = ctx.icons
+  const current = foundationKey as QuickPanelFoundation
+
+  const move = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const index = QUICK_PANEL_FOUNDATIONS.indexOf(current)
+    let next = index
+    if (event.key === 'ArrowRight') next = (index + 1) % QUICK_PANEL_FOUNDATIONS.length
+    else if (event.key === 'ArrowLeft') next = (index + QUICK_PANEL_FOUNDATIONS.length - 1) % QUICK_PANEL_FOUNDATIONS.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = QUICK_PANEL_FOUNDATIONS.length - 1
+    else return
+    event.preventDefault()
+    const key = QUICK_PANEL_FOUNDATIONS[next]
+    if (!key || key === current) return
+    ctx.select(key)
+    const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+    requestAnimationFrame(() => tabs[next]?.focus())
+  }
+
   return (
-    <div ref={ref} className="relative min-w-0 flex-1">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={`${t(title)} — ${t('Switch edition')}`}
-        className={`${SELECT_TRIGGER} ${open ? 'border-line-strong bg-elevated' : ''}`}
-      >
-        {icons?.[foundationKey as QuickPanelFoundation] && (
-          <span className="flex flex-shrink-0 items-center text-fg-muted">{icons[foundationKey as QuickPanelFoundation]}</span>
-        )}
-        <span className="min-w-0 flex-1 truncate text-ui text-fg">{t(EDITION_NAMES[foundationKey as QuickPanelFoundation] ?? title)}</span>
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}>
-          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && (
-        <div role="listbox" aria-label={t('Switch edition')} className={`absolute left-0 top-full z-40 mt-1.5 flex w-full flex-col ${SELECT_LIST}`}>
-          {QUICK_PANEL_FOUNDATIONS.map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="option"
-              aria-selected={key === foundationKey}
-              onClick={() => { setOpen(false); if (key !== foundationKey) ctx.select(key) }}
-              className={`${SELECT_OPTION} flex items-center gap-2 text-ui ${key === foundationKey ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+    <div
+      role="tablist"
+      aria-label={t('Switch edition')}
+      className={`inline-flex h-8 w-fit max-w-full shrink-0 items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
+      onKeyDown={move}
+    >
+      {QUICK_PANEL_FOUNDATIONS.map((key) => {
+        const on = key === current
+        const shift = reduce
+          ? { duration: 0 }
+          : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
+        return (
+          <motion.button
+            key={key}
+            type="button"
+            role="tab"
+            layout
+            aria-selected={on}
+            aria-label={t(EDITION_NAMES[key])}
+            tabIndex={on ? 0 : -1}
+            onClick={() => { if (!on) ctx.select(key) }}
+            transition={{ layout: shift }}
+            className={`relative flex h-7 items-center justify-center rounded-md text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              on ? 'z-[1] shrink-0 px-2.5 font-semibold text-fg' : `w-7 shrink-0 ${SEGMENT_INACTIVE}`
+            }`}
+          >
+            {on && (
+              <motion.span
+                layoutId="edition-step-pill"
+                aria-hidden
+                className={`absolute inset-0 rounded-md ${SEGMENT_SELECTED_FILL}`}
+                transition={shift}
+              />
+            )}
+            <motion.span
+              key={on ? key : 'mark'}
+              initial={on && !reduce ? { opacity: 0 } : false}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+              className="relative flex items-center whitespace-nowrap"
             >
-              {icons?.[key] && <span className="flex flex-shrink-0 items-center text-fg-muted">{icons[key]}</span>}
-              <span className="min-w-0 flex-1 truncate">{t(EDITION_NAMES[key])}</span>
-            </button>
-          ))}
-        </div>
-      )}
+              {on ? t(EDITION_NAMES[key]) : <FoundationGlyph id={key} className="h-3.5 w-3.5" />}
+            </motion.span>
+          </motion.button>
+        )
+      })}
     </div>
   )
 }
@@ -867,9 +883,15 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   const { t } = useI18n()
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible">
-      <div className="flex min-h-8 items-center justify-between gap-2 border-b border-line px-3 pb-2.5">
-        <EditionTitle title={title} foundationKey={foundationKey} />
-        {trailing}
+      <div className="border-b border-line">
+        <div className="px-2 py-1.5">
+          <EditionTitle title={title} foundationKey={foundationKey} />
+        </div>
+        {trailing && (
+          <div className="flex justify-end px-3 pb-2">
+            {trailing}
+          </div>
+        )}
       </div>
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
       {footer !== undefined

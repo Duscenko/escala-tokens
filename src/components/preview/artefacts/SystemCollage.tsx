@@ -4,6 +4,7 @@ import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, 
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
+  overlaySurfaceStyle,
   radiusRoleOf,
   shadowOf,
   sizeOf,
@@ -173,35 +174,83 @@ function ColorStyleSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
+/** First three letters of the family name, no spaces — Inter → INT, Roboto → ROB. */
+function fontAbbrev(name: string): string {
+  return name.replace(/\s+/g, '').slice(0, 3).toUpperCase()
+}
+
 /**
- * TYPE STYLE — the faces at a glance: the heading face as a glyph specimen
- * on a soft well, the body face named and set at three weights.
+ * TYPE STYLE — body face only: abbrev + name, and Regular · Medium · Heavy.
  */
 function TypeStyleSpecimen({ t }: { t: PreviewTokens }) {
   const body = t.typography.fontFamily
-  const heading = t.typography.headingFontFamily || body
   const w = t.typography.weights ?? {}
   const ink = t.neutralText
+  const muted = t.fgMuted || ink
+  const sizes = t.typography.sizes ?? {}
+  const floor = sizes['display-md'] || '36px'
+  const caption = typeStyleOf(t, 'caption')
   const weights: [string, number][] = [
     ['Regular', w.regular ?? 400],
     ['Medium', w.medium ?? 500],
     ['Heavy', w.bold ?? 700],
   ]
-  return (
-    <div className="grid flex-1 items-stretch" style={{ gridTemplateColumns: '1fr 1fr', gap: gap(t, 'gap-group', '16px'), minHeight: 200 }}>
-      <div
-        className="flex items-center justify-center"
-        style={{ background: wellFill(t), borderRadius: nestedRadius(t), padding: spaceOf(t, 16) }}
-      >
-        <span style={{ fontFamily: fontStack(heading), fontWeight: w.bold ?? 700, fontSize: 52, lineHeight: 1.02, letterSpacing: '-0.02em', color: ink, textAlign: 'center' }}>
-          Aa<br />123<br />#&amp;!
+  const abbrevSize = (abbrev: string) =>
+    `clamp(${floor}, calc(110cqi / ${Math.max(abbrev.length, 1)}), 24cqi)`
+
+  const faceBlock = (name: string, stack: string) => {
+    const abbrev = fontAbbrev(name)
+    return (
+      <div key={name} className="flex flex-col items-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
+        <span
+          style={{
+            fontFamily: stack,
+            fontWeight: w.bold ?? 700,
+            fontSize: abbrevSize(abbrev),
+            lineHeight: 0.9,
+            letterSpacing: '-0.02em',
+            color: ink,
+          }}
+        >
+          {abbrev}
         </span>
+        <span style={{ ...caption, fontFamily: stack, color: muted }}>{name}</span>
       </div>
-      <div className="flex flex-col items-center justify-center text-center" style={{ gap: gap(t, 'gap-control', '8px') }}>
-        <span style={{ ...typeStyleOf(t, 'caption'), color: t.fgMuted || ink }}>{body}</span>
-        <span className="flex flex-col">
+    )
+  }
+
+  return (
+    <div
+      className="grid flex-1 items-stretch"
+      style={{ containerType: 'inline-size', gridTemplateColumns: '1fr 1fr', gap: gap(t, 'gap-group', '16px'), minHeight: 200 }}
+    >
+      <div className="flex flex-col items-center justify-center text-center">
+        {faceBlock(body, fontStack(body))}
+      </div>
+      <div className="flex flex-col items-center justify-center text-center">
+        <span
+          className="flex flex-col"
+          style={{
+            ...overlaySurfaceStyle(t),
+            boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'),
+            borderRadius: radiusRoleOf(t, 'overlay', '12px'),
+            width: 'max-content',
+            alignSelf: 'center',
+            padding: gap(t, 'gap-tight', '4px'),
+          }}
+        >
           {weights.map(([label, weight]) => (
-            <span key={label} style={{ fontFamily: fontStack(body), fontWeight: weight, fontSize: 32, lineHeight: 1.1, letterSpacing: '-0.01em', color: ink }}>
+            <span
+              key={label}
+              style={{
+                fontFamily: fontStack(body),
+                fontWeight: weight,
+                fontSize: 32,
+                lineHeight: 1.1,
+                letterSpacing: '-0.01em',
+                color: ink,
+              }}
+            >
               {label}
             </span>
           ))}
@@ -209,19 +258,6 @@ function TypeStyleSpecimen({ t }: { t: PreviewTokens }) {
       </div>
     </div>
   )
-}
-
-/**
- * A well that reads as a step OFF the card, in both appearances. Themes put
- * their cards on different neutral steps (Core's dark card IS step 3), so a
- * fixed step can land on the card's own tone — go two steps past the card.
- */
-function wellFill(t: PreviewTokens): string {
-  const ramp = t.neutralRamp ?? {}
-  const card = String(cardSurfaceStyle(t).background ?? '').toLowerCase()
-  const at = Object.entries(ramp).find(([, hex]) => hex.toLowerCase() === card)?.[0]
-  const step = at ? Math.min(12, Number(at) + 2) : 3
-  return ramp[step] ?? t.neutralFill
 }
 
 /** Inner corner for a block flush inside a module surface. */
