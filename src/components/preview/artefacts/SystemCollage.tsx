@@ -4,7 +4,6 @@ import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, 
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
-  overlaySurfaceStyle,
   radiusRoleOf,
   shadowOf,
   sizeOf,
@@ -227,26 +226,29 @@ function TypeStyleSpecimen({ t }: { t: PreviewTokens }) {
       <div className="flex flex-col items-center justify-center text-center">
         {faceBlock(body, fontStack(body))}
       </div>
-      <div className="flex flex-col items-center justify-center text-center">
-        <span
-          className="flex flex-col"
-          style={{
-            ...overlaySurfaceStyle(t),
-            boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'),
-            borderRadius: radiusRoleOf(t, 'overlay', '12px'),
-            width: 'max-content',
-            alignSelf: 'center',
-            padding: gap(t, 'gap-tight', '4px'),
-          }}
-        >
+      {/* The weights sit straight on a WELL that fills this half. The well
+          carries the elevation; there is no second raised card inside it. The
+          size follows the card's width so a narrow card never cuts the words. */}
+      <div
+        className="flex min-w-0 flex-col items-center justify-center overflow-hidden text-center"
+        style={{
+          // A wash of the page ink, not `neutralFill`: that one is the card's
+          // own surface in dark, so the well vanished into the module.
+          background: `color-mix(in srgb, ${ink} 7%, transparent)`,
+          boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'),
+          borderRadius: nestedRadius(t),
+          padding: gap(t, 'gap-control', '8px'),
+        }}
+      >
+        <span className="flex max-w-full flex-col">
           {weights.map(([label, weight]) => (
             <span
               key={label}
               style={{
                 fontFamily: fontStack(body),
                 fontWeight: weight,
-                fontSize: 32,
-                lineHeight: 1.1,
+                fontSize: 'clamp(14px, 7cqi, 32px)',
+                lineHeight: 1.15,
                 letterSpacing: '-0.01em',
                 color: ink,
               }}

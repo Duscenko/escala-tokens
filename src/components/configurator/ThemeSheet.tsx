@@ -314,7 +314,9 @@ export function ThemeAppearanceControl({
     ? t('Set one up')
     : tryOn
       ? t('System style')
-      : t(kind === 'dark' ? 'Dark' : 'Light')
+      // A brand's Light/Dark is a property of the board, not of which brand
+      // this is: the name alone identifies it.
+      : null
   const canSwitch = ownKeys.length > 1
   const hasShipActions = ownKeys.length > 0
 
@@ -349,7 +351,7 @@ export function ThemeAppearanceControl({
         aria-pressed={themeOpen || menuOpen}
         aria-label={themeLabel}
         title={themeLabel}
-        className={`${themeOpen || menuOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''} flex h-8 max-w-[13.5rem] flex-shrink-0 items-center gap-1.5 rounded-lg pl-1 pr-2 text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
+        className={`${themeOpen || menuOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''} flex h-8 max-w-[13.5rem] flex-shrink-0 items-center gap-1.5 rounded-lg pl-1 pr-1 text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
       >
         {/* The same tile as the account avatar beside it: `h-6 w-6` is 1.5rem,
             which is 27px at this app's 18px root. The cover was drawn at 18px
@@ -361,9 +363,15 @@ export function ThemeAppearanceControl({
         </span>
         <span className="flex min-w-0 flex-1 flex-col items-start leading-none">
           <span className="w-full truncate text-left text-caption font-semibold text-fg">{name}</span>
-          <span className="mt-0.5 w-full truncate text-left text-micro font-medium text-fg-muted">{chipSubtitle}</span>
+          {chipSubtitle && (
+            <span className="mt-0.5 w-full truncate text-left text-micro font-medium text-fg-muted">{chipSubtitle}</span>
+          )}
         </span>
-        <span className="grid flex-shrink-0 text-fg-faint">
+        {/* The chevron's drawn strokes sit ~3px inside its 12px box. The right
+            inset (pr-1) and the pull-in (-ml-1) are what make its INK land as
+            far from the edge as the account chip's label (8px), and as close
+            to the name as the name is to the avatar. */}
+        <span className="-ml-1 grid flex-shrink-0 text-fg-faint">
           <SwapChevron />
         </span>
       </button>

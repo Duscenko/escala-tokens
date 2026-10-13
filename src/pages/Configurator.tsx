@@ -16,7 +16,8 @@ import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
-import FoundationIconRail from '../components/configurator/FoundationIconRail'
+import { FOUNDATION_ICON_RAIL_WIDTH, WorkspaceNavRail, type WorkspaceNavKey } from '../components/configurator/FoundationIconRail'
+import FoundationSwitchStrip from '../components/configurator/FoundationSwitchStrip'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
@@ -27,7 +28,7 @@ import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, st
 import { savedBrandKeysFrom, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
-import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
+import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorHeaderPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
@@ -860,6 +861,7 @@ export default function Configurator() {
   // side panel portals into (see WorkspaceInspector). State, not a ref, so the
   // portals re-render once it mounts.
   const [inspectorSlot, setInspectorSlot] = useState<HTMLElement | null>(null)
+  const [inspectorHeaderSlot, setInspectorHeaderSlot] = useState<HTMLElement | null>(null)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
@@ -2194,18 +2196,6 @@ export default function Configurator() {
   // deleted (it rendered unreliably and squeezed the tables), and Theme preview
   // is where a system is looked at. Don't add a preview aside back here.
   const showPreview = exportMode === 'save'
-  // Figma / GitHub already own IntegrationStatusRail. Leaving Color · Font ·
-  // Radius beside that status column is two left rails on a connect screen,
-  // and a click on Color would bounce the surface back to artefacts — hide
-  // the switcher there so neither destination can pick a widget it doesn't
-  // render.
-  const themeHubConnecting = themeWorkspaceTab === 'preview'
-    && (themeHubSurface === 'figma' || themeHubSurface === 'github')
-  // The icon rail stays on every Generator surface except Figma / GitHub
-  // connect (those own a different column). Home is its top tile. Code, Docs
-  // and Home omit the foundation icons — a Color click there would leave the
-  // page. Docs still jumps sections from the inspector TOC (`OnThisPage`).
-  const themeWorkspaceRailVisible = themesCanvas && !themeHubConnecting
   const homeAllowed = sessionAllowsHome || guestStudio
   const homeRailOnly = (themeWorkspaceTab === 'library' && homeAllowed)
     || themeWorkspaceTab === 'code'
@@ -2279,13 +2269,15 @@ export default function Configurator() {
     if (stylePreview) setDocsPanelOpen(false)
   }, [stylePreview])
 
-  // Which inspector tab is lit. The library and the Figma / GitHub surfaces
-  // are pages reached from elsewhere (rail foot, Export menu): no tab.
-  const inspectorTab: InspectorTab | null =
-    themeWorkspaceTab === 'primitives' ? 'variables'
+  // Which nav-rail entry is lit. Home and the Figma / GitHub surfaces are
+  // pages reached from elsewhere (the top bar, the Export menu): none.
+  const workspaceNav: WorkspaceNavKey | null =
+    tab === 'components' ? 'components'
+    : !themesCanvas ? null
+    : themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
     : themeWorkspaceTab === 'system' ? 'system'
-    : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts' ? 'theme'
+    : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts' ? 'overview'
       : null
   const continueToAccount = (mode: 'signup' | 'signin') => {
     let key = previewTheme
@@ -2301,19 +2293,46 @@ export default function Configurator() {
     setRegisterOpen(false)
     goToLogin(undefined, mode, `themes/${key}`)
   }
-  const changeInspectorTab = (next: InspectorTab) => {
-    if (next === 'variables' || next === 'code' || next === 'system') {
-      const reason = themeTablesBlocked()
-      if (reason) {
-        showToast(reason, undefined, true)
-        return
-      }
+  const changeWorkspaceNav = (next: WorkspaceNavKey) => {
+    if (next === 'components') { changeTab('components'); return }
+    if (next === 'overview') { openThemePreviewPage(); return }
+    const reason = themeTablesBlocked()
+    if (reason) {
+      showToast(reason, undefined, true)
+      return
     }
-    if (next === 'variables') changeThemeWorkspaceTab('primitives')
-    else if (next === 'code') openGetCodePage()
+    if (next === 'code') openGetCodePage()
     else if (next === 'system') openSystemPage()
-    else changeThemeWorkspaceTab('preview')
+    else {
+      leaveExportWizard()
+      commitVisit()
+      setExportMode(null)
+      setTab('foundations')
+      changeThemeWorkspaceTab('primitives')
+    }
   }
+  // The rail is where you are in the product; it stays on every Generator
+  // surface and on Components, so each of its five entries leads back to the
+  // other four. Home is a file browser with its own menu, and a visitor with
+  // no system yet has nothing for Variables / System / Code to open.
+  const navRailVisible = (themesCanvas && themeWorkspaceTab !== 'library')
+    || (railVisible && tab === 'components' && !componentsWithoutSystem)
+  const navRail = navRailVisible ? (
+    <WorkspaceNavRail
+      ariaLabel={t('Workspace')}
+      active={workspaceNav}
+      onSelect={changeWorkspaceNav}
+      items={[
+        { key: 'overview', label: t('Overview') },
+        { key: 'variables', label: t('Variables') },
+        { key: 'system', label: t('System') },
+        { key: 'code', label: t('Code') },
+        { key: 'components', label: t('Components') },
+      ]}
+      dimmed={themeTablesBlocked() ? ['variables', 'system', 'code'] : undefined}
+      dimmedReason={themeTablesBlocked() ?? undefined}
+    />
+  ) : null
 
   return (
     <div data-home={homePage ? '' : undefined} className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -2347,7 +2366,7 @@ export default function Configurator() {
             onConnectMcp={openMcpPage}
           />
         ) : undefined}
-        brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
+        brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) + (navRailVisible ? FOUNDATION_ICON_RAIL_WIDTH : 0) : null}
         // No divider in the header when the section tags are folded into ☰:
         // the brand block is just a title there, not the head of a column.
         brandEdge={!homePage && !componentsWithoutSystem}
@@ -2391,6 +2410,9 @@ export default function Configurator() {
             horizontal FoundationIconRail docked in its header, freeing this
             width for a foundation's own sub-nav (Color's family Groups tree,
             promoted inside ColorPrimitives). */}
+        {!themesCanvas && navRail && (
+          <div className={`flex-shrink-0 ${SHELL_CHROME}`}>{navRail}</div>
+        )}
         {railVisible && tab === 'components' && (
           <ComponentsRail
             icons={CATEGORY_ICONS}
@@ -2404,7 +2426,7 @@ export default function Configurator() {
         <div
           className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
-          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
+          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {/* Home has no rail: the foundations belong to a theme being edited, and the
               way HOME itself is reached is the theme avatar in the top bar. */}
@@ -2416,28 +2438,22 @@ export default function Configurator() {
             />
           )}
           <div className="contents" style={canvasAccentStyle}>
-          {themeWorkspaceRailVisible && !homeRailOnly && (
-            // Home is the top tile on every Generator surface that shows this
-            // rail. Theme and Variables keep the foundation icons under it.
-            // Code, Docs and Home pass an empty group list.
-            <FoundationIconRail
-              orientation="vertical"
-              ariaLabel={homeRailOnly ? t('Home') : themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
-              active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
-              onSelect={selectWorkspaceFoundation}
-              guide={railGuide}
-              groups={homeRailOnly ? [] : [
-                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
+          {themesCanvas && navRail}
+          {/* Variables: which TABLE is open. Same strip, same band as the
+              Overview's editions, which the quick panel portals in itself. */}
+          {foundationCanvas && (
+            <InspectorHeaderPortal>
+              <FoundationSwitchStrip
+                ariaLabel="Variable foundations"
+                items={[...VARIABLE_FOUNDATIONS, ...FOUNDATIONS.filter((foundation) => ['shadow', 'icons'].includes(foundation.key))].map((foundation) => ({
                   key: foundation.key,
-                  // Theme preview's "Sizes" edition carries the room things take up
-                  // — field size, inset, border, overlap — so it reads "Spacing"
-                  // there. Variables keeps its own Spacing and Sizes entries.
-                  label: t(themeWorkspaceTab === 'preview' && foundation.key === 'sizes' ? 'Spacing' : foundation.short),
-                  Icon: foundation.Icon,
-                })) },
-                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-              ].filter((group) => group.items.length > 0)}
-            />
+                  label: t(foundation.short),
+                  icon: foundation.key === 'dimensions' ? <foundation.Icon /> : undefined,
+                }))}
+                current={activeFoundation}
+                onSelect={selectWorkspaceFoundation}
+              />
+            </InspectorHeaderPortal>
           )}
           {/* Center editor */}
           {/* On the Generator the centre is a CARD: your system, painted in the
@@ -2451,7 +2467,7 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${homeRailOnly || !themeWorkspaceRailVisible ? 'ml-3' : ''} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -2560,7 +2576,6 @@ export default function Configurator() {
                     }}
                     activeFoundation={previewWidgetKey(activeFoundation)}
                     onSelectFoundation={selectWorkspaceFoundation}
-                    editionIcons={Object.fromEntries(FOUNDATIONS.filter((f) => (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(f.key)).map((f) => [f.key, <f.Icon key={f.key} />]))}
                     onOpenPrimitiveFamily={openPrimitiveFamily}
                     onOpenInVariables={(tokenId) => {
                       const reason = themeTablesBlocked()
@@ -2752,13 +2767,10 @@ export default function Configurator() {
           </div>
           {themesCanvas && !homePage && (
             <WorkspaceInspector
-              value={inspectorTab}
-              onChange={changeInspectorTab}
               onSlot={setInspectorSlot}
+              onHeaderSlot={setInspectorHeaderSlot}
               slotStyle={canvasAccentStyle}
-              showTabs={themeWorkspaceTab !== 'library'}
-              disabledTabs={themeWorkspaceTab === 'preview' && themeTablesBlocked() ? ['variables', 'code', 'system'] : undefined}
-              disabledReason={themeTablesBlocked() ?? undefined}
+              home={themeWorkspaceTab === 'library'}
             />
           )}
           </div>

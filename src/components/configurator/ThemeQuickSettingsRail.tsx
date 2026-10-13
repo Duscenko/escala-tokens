@@ -14,9 +14,9 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit } from '../../lib/editHistory'
-import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
+import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
@@ -78,8 +78,7 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { FoundationGlyph } from './FoundationIconRail'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -88,7 +87,8 @@ import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
 import { useAccess, useOneThemePlan } from '../../lib/access'
-import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import { InspectorHeaderInline, InspectorHeaderPortal, InspectorPortal, useInInspector, useInspectorHeader } from './WorkspaceInspector'
+import FoundationSwitchStrip from './FoundationSwitchStrip'
 
 /**
  * ONE width for every left column in the Themes workspace — this rail, the
@@ -567,6 +567,10 @@ function ColorAppearanceSwitch({ value, onChange }: {
 }) {
   const { t } = useI18n()
   return (
+    // Named, so it is not read as a second "which themes ship" control: this
+    // one only picks which of the shipped themes the board is painted in.
+    <div className="flex w-full items-center justify-between gap-2">
+    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Previewing')}</span>
     <div
       className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
       role="group"
@@ -588,6 +592,7 @@ function ColorAppearanceSwitch({ value, onChange }: {
           {t(mode === 'light' ? 'Light' : 'Dark')}
         </button>
       ))}
+    </div>
     </div>
   )
 }
@@ -766,88 +771,31 @@ const EDITION_NAMES: Record<QuickPanelFoundation, string> = {
   icons: 'Icons',
 }
 
-/** Set by the rail when its host can switch editions: the handler, plus each
- *  edition's mark (they live with the shell's FOUNDATIONS, beside the icon
- *  rail's). Null (guided setup, an embed) leaves the title as plain text. */
+/** Set by the rail when its host can switch editions. `locked` is guided
+ *  setup: the strip shows where you are, and only the current step is open.
+ *  Null (an embed with no switcher) leaves the title as plain text. */
 const EditionSwitchContext = createContext<{
   select: (key: QuickPanelFoundation) => void
-  icons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
+  locked?: boolean
 } | null>(null)
 
-/** The edition card's title. Same sliding pill as the create studio, but the
- *  resting steps are the foundation glyphs — numbers stay on the create
- *  strip only. The current step expands to its name. */
-function EditionTitle({ title, foundationKey }: { title: string; foundationKey: string }) {
+/** The edition switch: a sliding pill over the foundation glyphs, the current
+ *  step opening to its name. In the Generator it sits in the inspector's top
+ *  band (`bar`); embedded in the create studio it stays inline and hugs. */
+function EditionTitle({ title, foundationKey, bar }: { title: string; foundationKey: string; bar: boolean }) {
   const { t } = useI18n()
   const ctx = useContext(EditionSwitchContext)
-  const reduce = useReducedMotion() ?? false
   if (!ctx) return <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
-  const current = foundationKey as QuickPanelFoundation
-
-  const move = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const index = QUICK_PANEL_FOUNDATIONS.indexOf(current)
-    let next = index
-    if (event.key === 'ArrowRight') next = (index + 1) % QUICK_PANEL_FOUNDATIONS.length
-    else if (event.key === 'ArrowLeft') next = (index + QUICK_PANEL_FOUNDATIONS.length - 1) % QUICK_PANEL_FOUNDATIONS.length
-    else if (event.key === 'Home') next = 0
-    else if (event.key === 'End') next = QUICK_PANEL_FOUNDATIONS.length - 1
-    else return
-    event.preventDefault()
-    const key = QUICK_PANEL_FOUNDATIONS[next]
-    if (!key || key === current) return
-    ctx.select(key)
-    const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
-    requestAnimationFrame(() => tabs[next]?.focus())
-  }
-
   return (
-    <div
-      role="tablist"
-      aria-label={t('Switch edition')}
-      className={`inline-flex h-8 w-fit max-w-full shrink-0 items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
-      onKeyDown={move}
-    >
-      {QUICK_PANEL_FOUNDATIONS.map((key) => {
-        const on = key === current
-        const shift = reduce
-          ? { duration: 0 }
-          : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
-        return (
-          <motion.button
-            key={key}
-            type="button"
-            role="tab"
-            layout
-            aria-selected={on}
-            aria-label={t(EDITION_NAMES[key])}
-            tabIndex={on ? 0 : -1}
-            onClick={() => { if (!on) ctx.select(key) }}
-            transition={{ layout: shift }}
-            className={`relative flex h-7 items-center justify-center rounded-md text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-              on ? 'z-[1] shrink-0 px-2.5 font-semibold text-fg' : `w-7 shrink-0 ${SEGMENT_INACTIVE}`
-            }`}
-          >
-            {on && (
-              <motion.span
-                layoutId="edition-step-pill"
-                aria-hidden
-                className={`absolute inset-0 rounded-md ${SEGMENT_SELECTED_FILL}`}
-                transition={shift}
-              />
-            )}
-            <motion.span
-              key={on ? key : 'mark'}
-              initial={on && !reduce ? { opacity: 0 } : false}
-              animate={{ opacity: 1 }}
-              transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="relative flex items-center whitespace-nowrap"
-            >
-              {on ? t(EDITION_NAMES[key]) : <FoundationGlyph id={key} className="h-3.5 w-3.5" />}
-            </motion.span>
-          </motion.button>
-        )
-      })}
-    </div>
+    <FoundationSwitchStrip
+      variant={bar ? 'bar' : 'hug'}
+      ariaLabel={t('Switch edition')}
+      items={QUICK_PANEL_FOUNDATIONS.map((key) => ({ key, label: t(EDITION_NAMES[key]) }))}
+      current={foundationKey}
+      onSelect={(key) => ctx.select(key as QuickPanelFoundation)}
+      lockOthers={ctx.locked}
+      lockedReason={t('Finish customizing your brand to see full Variables and Docs.')}
+    />
   )
 }
 
@@ -881,18 +829,30 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   children: React.ReactNode
 }) {
   const { t } = useI18n()
+  // In the Generator the switch lives in the inspector's top band, above this
+  // card; the card then opens straight on its controls.
+  const inBand = useInspectorHeader()
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible">
-      <div className="border-b border-line">
-        <div className="px-2 py-1.5">
-          <EditionTitle title={title} foundationKey={foundationKey} />
+      {inBand && (
+        <InspectorHeaderPortal>
+          <EditionTitle title={title} foundationKey={foundationKey} bar />
+        </InspectorHeaderPortal>
+      )}
+      {(!inBand || trailing) && (
+        <div className="border-b border-line">
+          {!inBand && (
+            <div className="px-2 py-1.5">
+              <EditionTitle title={title} foundationKey={foundationKey} bar={false} />
+            </div>
+          )}
+          {trailing && (
+            <div className={`flex justify-end px-3 pb-2 ${inBand ? 'pt-2' : ''}`}>
+              {trailing}
+            </div>
+          )}
         </div>
-        {trailing && (
-          <div className="flex justify-end px-3 pb-2">
-            {trailing}
-          </div>
-        )}
-      </div>
+      )}
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
       {footer !== undefined
         ? footer
@@ -1699,7 +1659,6 @@ export default function ThemeQuickSettingsRail({
   onColorAppearanceChange,
   activePanel = 'color',
   onSelectPanel,
-  editionIcons,
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
@@ -1731,7 +1690,6 @@ export default function ThemeQuickSettingsRail({
   /** Switch edition from the card's own title. Same handler as the icon rail. */
   onSelectPanel?: (key: QuickPanelFoundation) => void
   /** Each edition's mark for the switcher (the shell's FOUNDATIONS icons). */
-  editionIcons?: Partial<Record<QuickPanelFoundation, React.ReactNode>>
   /** Opens the Variables tab on a foundation — ONE handler where there used to
    *  be five `onOpen*` props plus a per-`SettingItem` `advancedLabel`, and
    *  where `stroke` had none of its own (it borrowed Sizes'). Each panel now
@@ -1782,6 +1740,9 @@ export default function ThemeQuickSettingsRail({
 }) {
   const { t } = useI18n()
   const inInspector = useInInspector()
+  // With the edition strip in the inspector's band the card opens straight
+  // under that band's rule: no extra top gap above the first row.
+  const inBand = useInspectorHeader()
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
@@ -2272,7 +2233,7 @@ export default function ThemeQuickSettingsRail({
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className="flex flex-1 min-h-0 flex-col">
-      <ThemeRailScrollRegion padClass="py-3">
+      <ThemeRailScrollRegion padClass={inBand ? 'pb-3' : 'py-3'}>
       {tryOn ? (
         // A previewed style isn't yours yet, so there is nothing to edit — show
         // what it is and the one way to make it yours, instead of controls
@@ -2299,12 +2260,13 @@ export default function ThemeQuickSettingsRail({
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
           advancedDisabled={editionLocked}
-          // ONE Light/Dark control. A brand that ships a single theme is
-          // edited in that theme, so "Themes this brand ships" (first row
-          // below) is the switch and the header carries none. Only a brand
-          // that ships both — or a style that is only tried on, which ships
-          // nothing yet — needs a separate "which one am I looking at".
-          trailing={tryOn || !shipsOne ? (
+          // ONE row on every plan: "Themes this brand ships" below. A brand
+          // that ships one theme is edited in it. A brand that ships both is
+          // shown in the theme it opens on, and the "Opens on ⇄" line under
+          // the row swaps it — so Pro is Free plus one line, not a second
+          // Light/Dark switch. Only a style that is merely tried on (it ships
+          // nothing yet, so it has no row) keeps a plain view switch.
+          trailing={tryOn ? (
             <ColorAppearanceSwitch value={rampAppearance} onChange={(next) => onColorAppearanceChange?.(next)} />
           ) : undefined}
         >
@@ -2832,9 +2794,11 @@ export default function ThemeQuickSettingsRail({
       </div>
     </aside>
   )
-  // Guided setup opens one step at a time, so the title stays plain text there.
+  // Guided setup opens one step at a time: the strip stays, the other steps wait.
   const switchable = (
-    <EditionSwitchContext.Provider value={setupStep == null && onSelectPanel ? { select: onSelectPanel, icons: editionIcons } : null}>{aside}</EditionSwitchContext.Provider>
+    <EditionSwitchContext.Provider value={onSelectPanel ? { select: onSelectPanel, locked: setupStep != null } : null}>{aside}</EditionSwitchContext.Provider>
   )
-  return embed ? switchable : <InspectorPortal>{switchable}</InspectorPortal>
+  return embed
+    ? <InspectorHeaderInline>{switchable}</InspectorHeaderInline>
+    : <InspectorPortal>{switchable}</InspectorPortal>
 }

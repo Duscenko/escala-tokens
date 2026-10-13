@@ -59,8 +59,10 @@ export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; cla
  *  so the selection reads without shouting over the canvas. Inactive glyph and
  *  label share the same faint ink; hover lifts both. `compact` drops the label. */
 export function RailTile({
-  on, label, onClick, children, ariaCurrent, compact = false, className = '', step, ...aria
+  on, label, onClick, children, ariaCurrent, compact = false, className = '', step, dimmed = false, ...aria
 }: {
+  /** Still clickable (the click explains why), but reads as not open yet. */
+  dimmed?: boolean
   on: boolean
   /** Guided theme setup: a finished step carries a ✓, a future one is locked. */
   step?: 'done' | 'locked'
@@ -87,7 +89,7 @@ export function RailTile({
       aria-pressed={aria['aria-pressed']}
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
-      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : ''} ${
+      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
         compact ? '' : 'w-[56px] gap-0.5 py-1'
       } ${className}`}
     >
@@ -120,6 +122,94 @@ export function RailTile({
         </span>
       )}
     </button>
+  )
+}
+
+// ── Workspace nav (the Generator's left rail) ───────────────────────────────
+// Where you are in the product: Overview (the brand's board) · Variables ·
+// System · Code · Components. WHICH foundation is being edited is the strip at
+// the top of the inspector (`FoundationSwitchStrip`), beside the controls it
+// switches.
+
+export type WorkspaceNavKey = 'overview' | 'variables' | 'system' | 'code' | 'components'
+
+const NAV_ICON_PROPS = {
+  width: 20, height: 20, viewBox: '0 0 20 20', fill: 'none', stroke: 'currentColor',
+  strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+} as const
+
+const NAV_ICONS: Record<WorkspaceNavKey, ReactNode> = {
+  overview: (
+    <svg {...NAV_ICON_PROPS}>
+      <rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1.2" />
+      <rect x="11" y="3.5" width="5.5" height="5.5" rx="1.2" />
+      <rect x="3.5" y="11" width="5.5" height="5.5" rx="1.2" />
+      <rect x="11" y="11" width="5.5" height="5.5" rx="1.2" />
+    </svg>
+  ),
+  variables: (
+    <svg {...NAV_ICON_PROPS}>
+      <path d="M10 2.6 16.4 6.3v7.4L10 17.4 3.6 13.7V6.3L10 2.6Z" />
+      <circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  system: (
+    <svg {...NAV_ICON_PROPS}>
+      <path d="M10 5.4C8.9 4.3 7.4 3.8 5.6 3.8H3.4v10.6h2.8c1.5 0 2.8.5 3.8 1.5 1-1 2.3-1.5 3.8-1.5h2.8V3.8h-2.2c-1.8 0-3.3.5-4.4 1.6Z" />
+      <path d="M10 5.4v10.5M5.6 7.2h2M5.6 10h2M12.4 7.2h2M12.4 10h2" />
+    </svg>
+  ),
+  code: (
+    <svg {...NAV_ICON_PROPS}>
+      <rect x="3.2" y="3.2" width="13.6" height="13.6" rx="2.4" />
+      <path d="M8.4 7.8 6.2 10l2.2 2.2M11.6 7.8l2.2 2.2-2.2 2.2" />
+    </svg>
+  ),
+  components: (
+    <svg {...NAV_ICON_PROPS}>
+      <path d="M6.3 3.4 9.4 9H3.2l3.1-5.6Z" />
+      <circle cx="14" cy="6.4" r="2.8" />
+      <rect x="10.8" y="11.6" width="6" height="5" rx="1.1" />
+      <path d="M3.4 12.2h4.4v4.4H3.4z" />
+    </svg>
+  ),
+}
+
+export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, dimmedReason }: {
+  /** Labels already translated. */
+  items: readonly { key: WorkspaceNavKey; label: string }[]
+  active: WorkspaceNavKey | null
+  onSelect: (key: WorkspaceNavKey) => void
+  ariaLabel: string
+  /** Not open yet (a brand still being created): dimmed, and the click says why. */
+  dimmed?: readonly WorkspaceNavKey[]
+  dimmedReason?: string
+}) {
+  return (
+    <nav
+      aria-label={ariaLabel}
+      data-shell-chrome=""
+      className="flex h-full flex-shrink-0 flex-col items-center gap-1 overflow-y-auto pt-3 pb-3 scrollbar-thin"
+      style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
+    >
+      {items.map(({ key, label }) => {
+        const on = active === key
+        const off = !on && (dimmed?.includes(key) ?? false)
+        return (
+          <RailTile
+            key={key}
+            on={on}
+            label={label}
+            onClick={() => onSelect(key)}
+            ariaCurrent={on ? 'page' : undefined}
+            dimmed={off}
+            title={off ? dimmedReason : label}
+          >
+            {NAV_ICONS[key]}
+          </RailTile>
+        )
+      })}
+    </nav>
   )
 }
 
