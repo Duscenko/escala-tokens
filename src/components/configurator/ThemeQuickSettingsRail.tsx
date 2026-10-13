@@ -2787,7 +2787,8 @@ export default function ThemeQuickSettingsRail({
           exploringRandom={exploringRandom}
           onRandom={exploringRandom || access.gated ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
-          onUse={onUseTheme}
+          onGetCode={onUseTheme}
+          themeKey={previewTheme}
           onDiscard={onDiscardRandom}
         />
       ))}

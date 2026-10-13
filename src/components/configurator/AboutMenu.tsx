@@ -13,7 +13,6 @@ import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../..
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
-import PromoBanner from './PromoBanner'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H, type DocsMenuPage } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
@@ -1284,13 +1283,12 @@ export function AboutScaffold({
 
   return (
     <div className={cn('flex h-screen flex-col bg-app text-fg', wrapperClassName)}>
-      {/* Promo + TopNav stay pinned — same shell as `/pricing` and `/contact`. */}
+      {/* TopNav stays pinned — same shell as `/pricing` and `/contact`. */}
       <div className="flex-shrink-0">
         {headerMode === 'workspace' ? (
           <PublicHeader current="about" openEditor="/" />
         ) : (
           <>
-            <PromoBanner />
             {/* Phone + narrow reading: brand + language + appearance only. */}
             <div className="flex h-14 items-center justify-between gap-3 border-b border-line px-4">
               <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">

@@ -163,9 +163,8 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
 }
 
 /**
- * Get code, beside the inspector toggle and in the same 32px shell. The
- * label stays open — this is the way out to code, and an icon alone doesn't
- * say that. A plain action: the Code tab it opens replaces this view.
+ * Get code in the 32px header shell (Variables card header). Theme preview
+ * keeps the door in the inspector footer only — one Get code per screen.
  */
 export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onOpen: () => void; disabled?: boolean; disabledTitle?: string }) {
   const { t } = useI18n()
@@ -731,13 +730,6 @@ export default function ThemePreviewHub({
                       onChange={setInspecting}
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
-                      disabled={headerActionsLocked}
-                      disabledTitle={headerActionsLockedHint}
-                    />
-                  )}
-                  {!needsMyTheme && !contrastOpen && onGetCode && (
-                    <GetCodeButton
-                      onOpen={onGetCode}
                       disabled={headerActionsLocked}
                       disabledTitle={headerActionsLockedHint}
                     />

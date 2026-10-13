@@ -25,7 +25,7 @@ import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
-import { savedBrandKeysFrom, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
+import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
 import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorHeaderPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
@@ -41,7 +41,6 @@ import { openStyleForEditing } from '../lib/adoptPreset'
 import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
-import PromoBanner from '../components/configurator/PromoBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
@@ -96,9 +95,9 @@ import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotic
 import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
+import { reopenAccountFiles } from '../lib/accountFiles'
 import { isPublishId } from '../lib/publishId'
 import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../lib/publishSignals'
-import { reopenAccountFiles } from '../lib/accountFiles'
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
 import { showToast } from '../components/ui/Toast'
@@ -1247,6 +1246,7 @@ export default function Configurator() {
     if (!authUser?.id) return
     if (authEvent !== 'SIGNED_IN' && authEvent !== 'INITIAL_SESSION') return
     reopenAccountFiles(authUser.id)
+  }, [authUser?.id, authEvent])
   // Take down what this browser published and no longer has a system for: the
   // tokens a reset or a replaced system left behind, still listed in the Figma
   // plugin and still synced by any file that had them. Once per session, after
@@ -1262,7 +1262,6 @@ export default function Configurator() {
     }, 20_000)
     return () => window.clearTimeout(timer)
   }, [authUser?.id])
-  }, [authUser?.id, authEvent])
   const leaveHomeForGuest = useCallback(() => {
     const live = useDesignStore.getState()
     const studio = accountsEnabled && savedBrandKeysFrom(live).length === 0
@@ -1820,6 +1819,7 @@ export default function Configurator() {
     })
   }, [workspaceSection, t])
   useAutoFigmaSync(handleFigmaPublishState, { ...figmaPublishBase, section: workspaceSection })
+  useAutosaveLibrary()
   useEffect(() => {
     setActiveThemeHint(previewTheme)
   }, [previewTheme])
@@ -2398,8 +2398,6 @@ export default function Configurator() {
       <ChromeTabDefs />
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
-
-      <PromoBanner />
 
       {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav

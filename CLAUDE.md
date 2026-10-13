@@ -154,9 +154,11 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > system that is not on screen keeps the look-inside view; load it to open its dashboard.
 > Pages: Overview · Foundations · Components · Status board · Integrations.
 > - **UPDATE (2026-10-12): the dashboard was simplified.** Reported as too dense: counters
->   that stress more than they invite. **Overview is VISUAL** (`OverviewPage`): one card per
->   foundation with a small picture (accent ramp, "Aa", corner, bars, a shadow), the same
->   shape as the plugin's own overview, then the brands. No KPI row, no status counters, no
+>   that stress more than they invite. **Overview is a modes table** (`OverviewPage`): one
+>   column per saved brand, one row per foundation (Color, Radius, Spacing, Shadow,
+>   Typography), each cell a short summary. The last column is only `+` (add a brand),
+>   the same slot a Figma mode column uses. The column on screen is filled. No KPI row,
+>   no status counters, no
 >   "Fix next"; a number shows only when a contrast pair fails. Card lines come from
 >   `foundationFacts` (`lib/systemDashboard.ts`). **Status board is TWO boards, Tokens and
 >   Components, never one list**: own counters, own columns, no "All" kind. **Releases is
@@ -4839,8 +4841,6 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
 **Live sync URL for plugin:** `https://www.escalatokens.com/api/tokens?project=<slug>`
 
----
-
 > **UPDATE (2026-10-14): the plugin's "My themes" is PRO-only and lists only systems that still
 > exist.** Reported as deleted systems that kept appearing — and kept syncing — in the plugin.
 > - **The list was append-only** (`plugin-libraries/<sha(userId)>.json`: `approve` / `register` /
@@ -4887,6 +4887,8 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 >     nothing is published any more, and the Figma status says so.
 >   - **The plugin keeps the link on a 410** (stopped, `autoStart` false): a system that comes back
 >     resumes from the same folder with a Sync, and the next open does not poll a system that is gone.
+
+---
 
 ## Design Principles
 

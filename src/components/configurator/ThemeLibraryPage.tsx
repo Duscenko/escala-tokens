@@ -35,8 +35,7 @@ import {
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
-import { GetCodeButton } from './ThemePreviewHub'
-import SystemDashboard, { BrandSelect } from './dashboard/SystemDashboard'
+import SystemDashboard from './dashboard/SystemDashboard'
 import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
 import { LoginWall } from '../ui/LoginWall'
 import type { DocsExits } from './docs/getStarted'
@@ -52,7 +51,7 @@ import { otherDesignSystems } from '../../lib/savedSystemList'
 // Organised the way a design tool's file browser is: the MENU lives in the
 // LEFT column (260px, portaled from `Configurator`'s home slot), the content
 // in the elevated card on the right.
-//   · Recents       — My themes, last edited first, plus recently saved libraries.
+//   · Recents       — the design system on screen (brand cards stay off this page).
 //   · System styles — the curated styles a theme can start from.
 //   · Folders       — the system on screen is the DEFAULT folder: files
 //                     (themes) live inside it. + creates another folder.
@@ -594,19 +593,25 @@ function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGo
   )
 }
 
-/** Title row shared by every Home view. */
-function ViewHeader({ crumb, title, detail, right }: {
+/** Title row shared by every Home view. `identity` is the design-system line:
+ *  folder, label, name, on one row with the menu. */
+function ViewHeader({ crumb, title, detail, right, identity }: {
   crumb?: ReactNode
   title: ReactNode
   detail?: ReactNode
   right?: ReactNode
+  identity?: boolean
 }) {
   return (
     <header className="flex flex-col gap-2">
       {crumb}
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="flex min-w-[16rem] flex-1 flex-col gap-2">
-          <h2 className="flex items-center gap-2 text-heading font-semibold text-fg">{title}</h2>
+      <div className={`flex flex-wrap justify-between gap-x-6 gap-y-3 ${identity ? 'items-center' : 'items-start'}`}>
+        <div className={`flex min-w-0 flex-1 flex-col ${identity ? '' : 'min-w-[16rem] gap-2'}`}>
+          <h2 className={identity
+            ? 'flex min-w-0 items-center gap-2.5 text-ui font-medium text-fg'
+            : 'flex items-center gap-2 text-heading font-semibold text-fg'}>
+            {title}
+          </h2>
           {detail && <p className="text-body text-fg-muted">{detail}</p>}
         </div>
         {right && <div className="flex flex-shrink-0 items-center gap-2">{right}</div>}
@@ -1487,46 +1492,6 @@ export default function ThemeLibraryPage({
     onOpenPreview(result.key)
   }
 
-  const themeGrid = (keys: string[], withCreate: boolean) => (
-    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
-      {keys.map((key) => (
-        <ThemeCard
-          key={key}
-          themeKey={key}
-          active={key === previewTheme}
-          viewing={keys.length > 1 && key === previewTheme}
-          isLast={mine.length <= 1}
-          pinned={pinned.includes(`theme:${key}`)}
-          figma={syncStateOf(store.figmaLastPublishAt, figmaThemes.includes(key), themeUpdatedAt?.[key])}
-          github={syncStateOf(store.githubRepo ? store.githubLastPushAt : null, true, themeUpdatedAt?.[key])}
-          onSelect={() => onSelectTheme(key)}
-          onOpenPreview={() => onOpenPreview(key)}
-          onGetCode={() => onGetCode(key)}
-          onSyncFigma={() => onSyncFigma(key)}
-          onShareGithub={() => onShareGithub(key)}
-          onTogglePin={() => togglePinned(`theme:${key}`)}
-          onDelete={() => { finishThemeSetup(key); deleteTheme(key) }}
-          onDuplicate={() => duplicateTheme(key)}
-        />
-      ))}
-      {withCreate && (
-        <StartDoor
-            title={t('Create brand')}
-            hint={t('Six quick steps')}
-            titleClass="text-fg"
-            disabled={!canAddMyTheme(mine.length)}
-            disabledTitle={t(MY_THEME_FULL_ERROR, { count: mine.length })}
-            onClick={onCreateTheme}
-            mark={(
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            )}
-          />
-      )}
-    </div>
-  )
-  const themeMatches = (key: string) => matches(query, themeDisplayName(key, store.themeLabels))
   const libraryList = (list: SavedSystem[]) => (
     <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]">
       {list.map((sys) => (
@@ -1573,42 +1538,36 @@ export default function ThemeLibraryPage({
 
   let body: ReactNode
   if (viewing.kind === 'recents') {
-    const themesShown = recentSaved.filter(themeMatches)
     const libs = [...others].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt)).filter((s) => matches(query, s.name))
+    const showCurrent = firstRun || matches(query, store.projectName)
     body = (
       <>
-        <section aria-labelledby="home-recently" className="flex flex-col gap-3">
-          <SectionTitle id="home-recently" count={themesShown.length}>
-            {t('Recently')}
-          </SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No brand matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
-        </section>
-        {!query && (
-          <>
-            <div className="border-t border-line" role="separator" />
-            <section aria-labelledby="home-files" className="flex flex-col gap-3">
-              <SectionTitle id="home-files">{t('Design systems')}</SectionTitle>
-              {firstRun ? (
-                <div className="rounded-xl border border-dashed border-line px-4 py-5">
-                  <p className="text-caption text-fg-muted">{t('You have no design systems yet. Create one and its brands will live here.')}</p>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  <DefaultLibraryFolderCard
-                    name={store.projectName}
-                    themeKeys={recentSaved}
-                    onOpen={() => setSection({ kind: 'library', id: currentId })}
-                  />
-                </div>
-              )}
-            </section>
-          </>
+        {showCurrent && (
+          <section aria-labelledby="home-files" className="flex flex-col gap-3">
+            <SectionTitle id="home-files">{t('Design systems')}</SectionTitle>
+            {firstRun ? (
+              <div className="rounded-xl border border-dashed border-line px-4 py-5">
+                <p className="text-caption text-fg-muted">{t('You have no design systems yet. Create one and its brands will live here.')}</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-4">
+                <DefaultLibraryFolderCard
+                  name={store.projectName}
+                  themeKeys={recentSaved}
+                  onOpen={() => setSection({ kind: 'library', id: currentId })}
+                />
+              </div>
+            )}
+          </section>
         )}
         {libs.length > 0 && (
           <section aria-labelledby="home-recent-libraries" className="flex flex-col gap-3">
             <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other design systems')}</SectionTitle>
             {libraryList(libs)}
           </section>
+        )}
+        {query && !showCurrent && libs.length === 0 && (
+          <EmptyNote>{t('No design system matches “{q}”.', { q: query })}</EmptyNote>
         )}
       </>
     )
@@ -1681,8 +1640,8 @@ export default function ThemeLibraryPage({
   } else if (viewing.id === currentId) {
     // The DEFAULT library: the system on screen, with My themes inside it.
     // The dashboard has no search field, so Home's query does not filter here.
-    // The system on screen opens as its dashboard. The title is the brand
-    // selector; Add brand takes the header.
+    // The system on screen opens as its dashboard. The title is the design
+    // system; each brand is a column on Overview, and Add brand is the last one.
     body = (
       <SystemDashboard
         page={dashPage}
@@ -1699,36 +1658,15 @@ export default function ThemeLibraryPage({
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenBrand={onOpenBrand}
+        onSelectBrand={onSelectTheme}
+        onEditBrand={onOpenPreview}
+        onCreateBrand={onCreateTheme}
+        canCreateBrand={canAddMyTheme(mine.length)}
+        createBrandTitle={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
-        overviewHeader={(tokenCount) => (
+        overviewHeader={() => (
           <>
-            <ViewHeader
-              title={savedMine.length > 0
-                ? <BrandSelect appearance="title" brand={previewTheme} onSelect={onSelectTheme} />
-                : <span className="min-w-0 truncate">{store.projectName}</span>}
-              detail={`${t('{n} tokens', { n: tokenCount })} · ${brandsLine(savedMine, store.brandThemes, store.themeKinds)}`}
-              right={(
-                <>
-                  <button
-                    type="button"
-                    onClick={onCreateTheme}
-                    disabled={!canAddMyTheme(mine.length)}
-                    title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: mine.length }) : undefined}
-                    className={`${PRIMARY} items-center gap-1.5 hover:opacity-90`}
-                  >
-                    <PlusGlyph />
-                    {t('Add new brand')}
-                  </button>
-                  <LibraryOptions
-                    hasOwnThemes={savedMine.length > 0}
-                    onReset={onOpenReset}
-                    onDeleteMyThemes={() => setConfirmDeleteAll(true)}
-                    onDeleteSystem={() => setConfirmDeleteSystem(true)}
-                  />
-                </>
-              )}
-            />
             {confirmDeleteSystem && (
               <div className="flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 self-end rounded-lg border border-line bg-surface px-3 py-2">
                 <span className="text-caption text-fg-muted">
@@ -1765,7 +1703,6 @@ export default function ThemeLibraryPage({
             <GuestAccountCard />
           </>
         )}
-        brands={null}
       />
     )
   } else {
@@ -2000,15 +1937,12 @@ export default function ThemeLibraryPage({
             action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
               <NewDesignSystemButton onClick={onNewSystem} />
             ) : onDashboard ? (
-              <div className="flex items-center gap-4">
-                <BrandSelect brand={previewTheme} onSelect={onSelectTheme} />
-                {/* The one door to the brand's code: no per-page copy of it. */}
-                <GetCodeButton
-                  onOpen={() => onGetCode(previewTheme)}
-                  disabled={gated}
-                  disabledTitle={t('Create a free account to get the code')}
-                />
-              </div>
+              <LibraryOptions
+                hasOwnThemes={savedMine.length > 0}
+                onReset={onOpenReset}
+                onDeleteMyThemes={() => setConfirmDeleteAll(true)}
+                onDeleteSystem={() => setConfirmDeleteSystem(true)}
+              />
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-hidden">

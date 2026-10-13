@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { myThemeKeys } from './themeLibrary'
 import { useThemeSetup } from './themeSetup'
-import { activeLibraryId, libraryMatchesSaved, type DesignSnapshot, useDesignStore } from '../store/useDesignStore'
+import { activeLibraryId, libraryMatchesSaved, type DesignSnapshot, type SavedSystem, useDesignStore } from '../store/useDesignStore'
 
 /** Own brands that a saved library already holds — everything else in
  *  `sd-brand-unsaved` is still a studio draft. Sync helper for first paint
@@ -63,4 +63,52 @@ export function useSavedBrandKeys(): string[] {
     () => savedBrandKeysFrom({ themeOrder, themes, savedSystems, githubRepo, projectName }, unsaved),
     [themeOrder, themes, savedSystems, githubRepo, projectName, unsaved],
   )
+}
+
+/** Pure gate for the autosave: the system on screen already has a saved copy,
+ *  that copy is behind, and no brand on screen is still a draft. A draft must
+ *  never be filed by a background write — saving it is the designer's call
+ *  (it joins the system and counts against the plan). */
+export function autosaveDue(
+  state: DesignSnapshot & { savedSystems: SavedSystem[]; githubRepo: string | null; projectName: string },
+  unsaved: Record<string, true>,
+): boolean {
+  const entry = state.savedSystems.find((item) => item.id === activeLibraryId(state))
+  if (!entry) return false
+  const savedKeys = new Set(entry.snapshot.themeOrder ?? [])
+  if (state.themeOrder.some((key) => unsaved[key] && !savedKeys.has(key))) return false
+  return !libraryMatchesSaved(state, entry.snapshot)
+}
+
+/** Longer than the activity hook's settle, so a change the Free allowance
+ *  puts back is never the one that gets filed. */
+const AUTOSAVE_MS = 1200
+
+/**
+ * Mounted once, in the shell. After the FIRST save (the explicit "Save
+ * brand"), every later edit is kept without asking: the editor, Get code,
+ * Export and the Figma sync all read the live store, so a manual "Update"
+ * only ever refreshed this copy. Keeping it current is what makes switching
+ * to another design system safe.
+ */
+export function useAutosaveLibrary(): void {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const run = () => {
+      timer = null
+      const state = useDesignStore.getState()
+      if (autosaveDue(state as never, useThemeSetup.getState().unsaved)) state.saveCurrentSystem()
+    }
+    const schedule = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(run, AUTOSAVE_MS)
+    }
+    const offStore = useDesignStore.subscribe(schedule)
+    const offSetup = useThemeSetup.subscribe(schedule)
+    return () => {
+      offStore()
+      offSetup()
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 }

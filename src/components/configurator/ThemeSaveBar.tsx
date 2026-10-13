@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { useLibraryStatus } from '../../lib/libraryStatus'
+import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
 import { undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { SETUP_SAVE_LABEL, SETUP_STEPS, advanceThemeSetup, finishThemeSetup, retreatThemeSetup, useSetupStep, useStepChanged } from '../../lib/themeSetup'
+import { SETUP_SAVE_LABEL, SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep, useStepChanged } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -62,8 +62,9 @@ export function RandomThemeButton({
 
 /**
  * The inspector's pinned footer on every EDITING tab (Theme and Variables):
- * Undo beside Save / Update theme. Persistence and the way back are not a
- * property of one edition, so they sit under whichever panel is open. Undo
+ * Undo beside Save brand (a draft) or Get code (a kept brand, whose edits
+ * save on their own). Persistence and the way back are not a property of one
+ * edition, so they sit under whichever panel is open. Undo
  * walks the same edit history as the canvas header's Undo and ⌘Z, so the
  * doors can't disagree about where you are.
  *
@@ -76,7 +77,8 @@ export default function ThemeSaveBar({
   onRandom,
   onSaved,
   onDiscard,
-  onUse,
+  onGetCode,
+  themeKey,
 }: {
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
@@ -89,13 +91,17 @@ export default function ThemeSaveBar({
   /** While exploring: throw the draft away and go back to Home to start from
    *  Blank, code or a style. */
   onDiscard?: () => void
-  /** Makes the primary action "Use this theme": keep it (if it has unsaved
-   *  edits) and open Code, where the theme is handed to an agent. */
-  onUse?: () => void
+  /** Opens Code on this brand. Once the brand is kept this IS the primary
+   *  action; without it the kept state shows a quiet "Saved". */
+  onGetCode?: () => void
+  /** The brand on screen, so a draft inside an already-saved system still
+   *  says Save brand. */
+  themeKey?: string
 }) {
   const { t } = useI18n()
   const access = useAccess()
   const status = useLibraryStatus()
+  const unsavedBrands = useUnsavedBrands()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
   const canUndo = useEditHistory((h) => h.past.length > 0)
   const [justSaved, setJustSaved] = useState(false)
@@ -106,21 +112,21 @@ export default function ThemeSaveBar({
     return () => window.clearTimeout(id)
   }, [justSaved])
 
-  const saved = status === 'saved'
   const guestPrimary = access.gated && !exploringRandom
-  // "Use this brand" only exists once the brand is in the library: a draft
-  // (Random / Blank, status `none`) says Save brand first, flashes Saved, and
-  // only then offers Use.
-  const use = Boolean(onUse) && !inactive && status !== 'none' && !justSaved
+  // Two states, not five. A DRAFT (never saved, or a brand the saved system
+  // does not hold yet) says Save brand: joining the system is a real decision.
+  // Once kept, every edit is filed on its own (`useAutosaveLibrary`), so the
+  // primary action is the way out — Get code, the header's own door.
+  const draft = status === 'none' || unsavedBrands.has(themeKey ?? '') || exploringRandom
+  const kept = !draft && !access.gated
+  const use = kept && Boolean(onGetCode) && !inactive && !justSaved
   const label = use
-    ? t('Use this brand')
-    : justSaved || saved
+    ? t('Get code')
+    : justSaved || kept
     ? t('Saved')
     : guestPrimary
       ? t('Add brand')
-      : status === 'dirty'
-        ? t('Update brand')
-        : t('Save brand')
+      : t('Save brand')
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   // Random rewrites the theme in place. Once it is in the library — saved, or
   // saved and edited since — that would overwrite the kept design system, so
@@ -170,10 +176,12 @@ export default function ThemeSaveBar({
         onClick={() => {
           // A guest signs up first; the shell finishes the save on return.
           if (access.gated) { goToLogin('save-library'); return }
-          // Already kept: nothing to save, go straight to Code.
-          if (use && saved) { onUse?.(); return }
+          // Already kept, and kept current on its own: straight to Code.
+          if (use) { onGetCode?.(); return }
+          if (kept) return
           const s = useDesignStore.getState()
           s.saveCurrentSystem()
+          if (themeKey) forgetUnsavedBrand(themeKey)
           setJustSaved(true)
           // The kept theme throws its OWN colours: accent first, then states.
           const accent = saveRef.current
@@ -185,10 +193,8 @@ export default function ThemeSaveBar({
           ])
           showToast(t('Brand saved'))
           if (exploringRandom) onSaved?.()
-          // Dirty brand: "Use this brand" keeps the edits and opens Code.
-          if (use) onUse?.()
         }}
-        disabled={inactive || (!use && saved && !justSaved && !access.gated)}
+        disabled={inactive || (kept && !use && !justSaved)}
         className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-[opacity,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           justSaved ? 'shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-solid)_35%,transparent)]' : ''
         } ${
@@ -197,19 +203,24 @@ export default function ThemeSaveBar({
       >
         {/* Saved → a check beside the label, so the dimmed button reads as
             "done", not "unavailable". */}
-        {!use && (saved || justSaved) && (
+        {!use && (kept || justSaved) && (
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2.5 6.5 5 9l4.5-5.5" />
           </svg>
         )}
-        <span className="truncate">{exploringRandom && !use ? t('Save brand') : label}</span>
+        {/* Same <> glyph as GetCodeButton elsewhere — one mark for "open Code". */}
         {use && (
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M3 8h10M9 4l4 4-4 4" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+            <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
+            <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
           </svg>
         )}
+        <span className="truncate">{label}</span>
       </button>
       </div>
+      {kept && !inactive && (
+        <p className="text-center text-mini text-fg-faint">{t('Changes save automatically')}</p>
+      )}
     </div>
   )
 }

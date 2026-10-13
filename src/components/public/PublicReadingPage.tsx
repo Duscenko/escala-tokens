@@ -116,7 +116,7 @@ export function PublicHeader({ current = null, openEditor = '/' }: { current?: T
   const theme = useTheme()
   return (
     <>
-    <PromoBanner dismissible={current !== 'pricing'} />
+    {current === 'pricing' && <PromoBanner dismissible={false} />}
     <TopNav
       nav={current}
       onNav={(key) => go(NAV_PATH[key] ?? openEditor)}

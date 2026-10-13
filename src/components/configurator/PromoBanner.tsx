@@ -14,12 +14,8 @@ function readDismissed(phase: string): boolean {
   }
 }
 
-/** The launch offer, as the strip above every screen's header (workspace,
- *  About, the public reading pages and /pricing). Oct: the free promo.
- *  Nov 1–15: the launch price. After: nothing — the regular price needs no
- *  banner. `dismissible` is off on /pricing, where the offer is being read;
- *  elsewhere a dismissal lasts the session and is keyed by phase, so moving
- *  from the promo to the launch price shows the new message again. */
+/** The launch offer — only on `/pricing` (`PublicHeader current="pricing"`).
+ *  Oct: the free promo. Nov 1–15: the launch price. After: nothing. */
 export default function PromoBanner({ dismissible = true }: { dismissible?: boolean }) {
   const { t } = useI18n()
   const entitlement = useEntitlement()

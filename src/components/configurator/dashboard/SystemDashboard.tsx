@@ -295,8 +295,9 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
 }
 
 export default function SystemDashboard({
-  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, brands, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onEditRole, onOpenComponent, docsExits,
+  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo, figmaThemes,
+  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle,
+  onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -309,8 +310,6 @@ export default function SystemDashboard({
   appearance: ThemeAppearance
   /** Home's own title row for the design system, given the token count to state. */
   overviewHeader: (tokenCount: number) => ReactNode
-  /** Brand switcher and Add brand, on the Foundations heading. */
-  brands: ReactNode
   onBack?: () => void
   timeAgo: (iso: string) => string
   /** Brands the Figma sync publishes (File & modes). */
@@ -320,6 +319,13 @@ export default function SystemDashboard({
   onEditFoundation?: (key: string) => void
   /** Overview's Color card: open the brand preview on the Color edition. */
   onOpenBrand?: () => void
+  /** Overview column header: that brand becomes the one on screen. */
+  onSelectBrand: (key: string) => void
+  /** Overview column header: open that brand in the editor. */
+  onEditBrand: (key: string) => void
+  onCreateBrand: () => void
+  canCreateBrand: boolean
+  createBrandTitle?: string
   /** Gate before the role editor opens in the inspector. Return `false` to keep it closed. */
   onEditRole?: (roleId: string) => boolean | void
   onOpenComponent?: (key: string) => void
@@ -370,10 +376,14 @@ export default function SystemDashboard({
         <OverviewPage
           dash={dash}
           header={overviewHeader(noBrands ? 0 : dash.tokenCount)}
-          brands={brands}
           onOpenFoundation={openDoc}
           onOpenBrand={onOpenBrand}
           onOpenStatus={() => openStatus()}
+          onSelectBrand={onSelectBrand}
+          onEditBrand={onEditBrand}
+          onCreateBrand={onCreateBrand}
+          canCreateBrand={canCreateBrand}
+          createBrandTitle={createBrandTitle}
         />
       )}
       {noBrands && (shown === 'docs' || shown === 'status') && (
