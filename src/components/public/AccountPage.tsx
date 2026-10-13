@@ -18,12 +18,15 @@ import {
   displayNameOf,
   initialOf,
   hasEmailPassword,
+  PASSWORD_SIGNOUT_SECONDS,
+  passwordClosingNotice,
   replacePassword,
   resendSignupEmail,
   saveDisplayName,
   setNewPassword,
   signOut,
   useAuth,
+  usePasswordChangeSignOut,
   type AuthProblem,
 } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
@@ -552,8 +555,12 @@ function PasswordForm({ user }: { user: User }) {
   const [show, setShow] = useState(false)
   const [capsOn, setCapsOn] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [armed, setArmed] = useState(false)
+  const closingIn = usePasswordChangeSignOut(armed, () => {
+    rememberReturn('account')
+    window.location.replace(loginHref({ next: 'account' }))
+  })
   const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | null>(null)
-  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const sync = (e: KeyboardEvent) => {
@@ -572,27 +579,27 @@ function PasswordForm({ user }: { user: User }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (busy || !user.email) return
-    if (password.length < MIN_PASSWORD) { setProblem('short_password'); setSaved(false); return }
-    if (password !== confirm) { setProblem('password_mismatch'); setSaved(false); return }
+    if (busy || armed || !user.email) return
+    if (password.length < MIN_PASSWORD) { setProblem('short_password'); return }
+    if (password !== confirm) { setProblem('password_mismatch'); return }
     if (withCurrent && !current) return
     setBusy(true)
     setProblem(null)
-    setSaved(false)
     const result = withCurrent
       ? await replacePassword(user.email, current, password)
       : await setNewPassword(password)
-    setBusy(false)
-    if (!result.ok) setProblem(result.problem)
-    else {
-      setCurrent('')
-      setPassword('')
-      setConfirm('')
-      setSaved(true)
+    if (!result.ok) {
+      setBusy(false)
+      setProblem(result.problem)
+      return
     }
+    // Password is saved. The notice counts down, then every session ends.
+    setArmed(true)
   }
 
   const message = problemText(problem, t)
+  const closing = armed ? passwordClosingNotice(closingIn ?? PASSWORD_SIGNOUT_SECONDS) : null
+  const locked = busy || armed
   const describedBy = [
     capsOn ? `${titleId}-caps` : null,
     message ? `${titleId}-err` : null,
@@ -612,6 +619,7 @@ function PasswordForm({ user }: { user: User }) {
             autoComplete="current-password"
             value={current}
             onChange={(e) => setCurrent(e.target.value)}
+            disabled={locked}
             className={FIELD}
           />
         </div>
@@ -625,6 +633,7 @@ function PasswordForm({ user }: { user: User }) {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={locked}
             aria-invalid={message ? true : undefined}
             aria-describedby={describedBy}
             className={`${FIELD} pr-12`}
@@ -632,6 +641,7 @@ function PasswordForm({ user }: { user: User }) {
           <button
             type="button"
             onClick={() => setShow((v) => !v)}
+            disabled={locked}
             aria-label={show ? t('Hide password') : t('Show password')}
             aria-pressed={show}
             className={`absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-fg-muted transition-colors hover:text-fg ${FOCUS}`}
@@ -639,7 +649,7 @@ function PasswordForm({ user }: { user: User }) {
             <EyeIcon off={show} />
           </button>
         </div>
-        {capsOn && (
+        {capsOn && !armed && (
           <p id={`${titleId}-caps`} role="status" className="text-caption text-status-warning">{t('Caps Lock is on.')}</p>
         )}
       </div>
@@ -651,14 +661,19 @@ function PasswordForm({ user }: { user: User }) {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
+          disabled={locked}
           aria-invalid={problem === 'password_mismatch' ? true : undefined}
           aria-describedby={describedBy}
           className={FIELD}
         />
       </div>
       {message && <Alert id={`${titleId}-err`}>{message}</Alert>}
-      {saved && <Saved>{t('Password updated.')}</Saved>}
-      <button type="submit" disabled={busy} className={PRIMARY}>
+      {closing && (
+        <p role="status" className="rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg">
+          {t(closing.text, closing.vars)}
+        </p>
+      )}
+      <button type="submit" disabled={locked} className={PRIMARY}>
         {withCurrent ? t('Save password') : t('Add password')}
       </button>
     </form>

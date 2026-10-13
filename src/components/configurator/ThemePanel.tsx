@@ -2,14 +2,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefO
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
-import { resolveThemePalette, themeDisplayName, FAMILY_SLOTS, SLOT_DISPLAY_LABEL, type FamilySlot } from '../../lib/themeSources'
+import { resolveThemePalette, themeDisplayName, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import { mintTheme, slotsFromAccent, type MintPages } from '../../lib/themeMint'
 import { THEME_STYLE_PRESETS, presetStates, type ThemeStyleSemantics } from '../../lib/themePresets'
 import type { ThemeFoundationOverride } from '../../lib/themeFoundations'
 import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
 import {
-  BASE_TONE, backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony, readableInk,
+  BASE_TONE, backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, readableInk,
   type NeutralTint,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
@@ -17,21 +17,18 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { useI18n } from '../../lib/i18n'
 import { BRAND_THEME_IDS, brandThemeDef, shippedThemes, type BrandThemeId } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
-import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
+import { accentCuratedPalette } from '../../lib/industryPacks'
 import SpectrumSlider from '../ui/SpectrumSlider'
-import { AccentAxisSlider, ContrastSlider, FINE_TUNE_IDEAL, FineResetButton, TintSlider, formatShift } from './ThemeQuickSettingsRail'
-import { colorAtHue, readHuePosition } from '../../lib/colorUtils'
+import { AccentAxisSlider } from './ThemeQuickSettingsRail'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
-import { SELECT_CARD, SELECT_FOCUS, SELECT_LIST, SELECT_SHELL, discloseChip } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
 import {
-  SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover, STATE_PRESETS,
+  SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { CreateStudioBar, RandomThemeButton } from './ThemeSaveBar'
-import { nextRandomLabel, randomAccentVoice, randomTheme } from '../../lib/randomTheme'
-
-const STATE_ROLES = ['error', 'warning', 'success', 'info'] as const
+import { daringAccent, nextRandomLabel, oppositeNeutral, randomTheme } from '../../lib/randomTheme'
 
 // The six slots a theme references, in the order they read on screen: the two
 // that define the theme's character first, then the four intents.
@@ -102,47 +99,6 @@ function SlotRow({
       <div className="flex-1 min-w-0">
         <ScaleRow scale={scale} showNumbers={false} ariaLabel={`${label} scale`} />
       </div>
-    </div>
-  )
-}
-
-function StateChip({
-  role, hex, open, onToggle, onClose, onChange, appearance,
-}: {
-  role: (typeof STATE_ROLES)[number]
-  hex: string
-  open: boolean
-  onToggle: () => void
-  onClose: () => void
-  onChange: (hex: string) => void
-  appearance: 'light' | 'dark'
-}) {
-  const { t } = useI18n()
-  const ref = useRef<HTMLDivElement>(null)
-  const label = SLOT_DISPLAY_LABEL[role]
-  return (
-    <div ref={ref} className="flex min-w-0 flex-col items-center gap-1.5">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`${t(label)} — ${hex}`}
-        className="block h-10 w-10 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-        style={{ background: hex }}
-      />
-      <span className="max-w-full truncate text-micro text-fg">{t(label)}</span>
-      <ColorPickerPopover
-        open={open}
-        onClose={onClose}
-        anchor={ref}
-        label={label}
-        value={hex}
-        onChange={onChange}
-        palette={STATE_PRESETS[role]}
-        appearance={appearance}
-        dockInInspector
-      />
     </div>
   )
 }
@@ -286,7 +242,7 @@ function StylePicker({ value, accent, onChange }: {
 
 export function ThemeIdentityBar({
   name, onName, kind, onKind, pages, nameLocked = false, onSubmit, onClose, autoFocus = false, padded = false,
-  caption, placeholder,
+  caption, placeholder, showAppearance = true,
 }: {
   name: string
   onName: (value: string) => void
@@ -299,51 +255,62 @@ export function ThemeIdentityBar({
   autoFocus?: boolean
   /** Studio host: the row is the panel's top bar, so it carries its own inset. */
   padded?: boolean
-  /** Eyebrow over the field — "Design system name" on the first brand. */
+  /** Accessible name. The visible prefix is the short "Name:". */
   caption?: string
   placeholder?: string
+  /** Colour step of the create studio: the themes picker is the only Light/Dark. */
+  showAppearance?: boolean
 }) {
   const { t } = useI18n()
-  const rowClass = caption ? 'h-7' : 'h-8'
+  const rowClass = 'h-8'
+  const fieldRef = useRef<HTMLInputElement>(null)
   return (
-    <div className={`flex w-full min-w-0 flex-col justify-center gap-1 ${padded ? 'px-3' : ''}`}>
-      {caption && (
-        <p className="text-micro font-semibold uppercase tracking-widest leading-none text-fg-faint">{caption}</p>
-      )}
-      <div className="flex w-full items-center gap-1.5">
-      <input
-        type="text"
-        value={name}
-        disabled={nameLocked}
-        onChange={(e) => onName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') onSubmit?.() }}
-        placeholder={placeholder ?? t('Name')}
-        aria-label={caption ?? t('Brand name')}
-        title={nameLocked ? t('Locked — reserved export key') : undefined}
-        autoFocus={autoFocus}
-        spellCheck={false}
-        className={`${rowClass} min-w-0 flex-1 rounded-lg border border-line bg-surface px-2.5 text-body text-fg outline-none transition-colors placeholder:text-fg-faint hover:border-line-strong focus:border-fg disabled:cursor-not-allowed disabled:opacity-60`}
-      />
-      <div className={`flex ${rowClass} flex-shrink-0 overflow-hidden rounded-lg border border-line`} role="group" aria-label={t('Theme')}>
-        {(['light', 'dark'] as const).map((k) => {
-          const on = kind === k
-          const bg = k === 'dark' ? pages.dark : pages.light
-          return (
-            <button
-              key={k}
-              type="button"
-              onClick={() => onKind(k)}
-              aria-pressed={on}
-              className={`h-full px-2.5 text-caption font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60 ${
-                on ? '' : 'bg-surface text-fg-muted hover:text-fg'
-              }`}
-              style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
-            >
-              {k}
-            </button>
-          )
-        })}
+    <div className={`flex w-full min-w-0 items-center gap-1.5 ${padded ? 'px-3' : ''}`}>
+      <div className={`flex ${rowClass} min-w-0 flex-1 items-center rounded-lg border border-line bg-surface px-2.5 transition-colors duration-200 hover:border-line-strong focus-within:border-line-strong motion-reduce:transition-none ${nameLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+        <span
+          aria-hidden
+          onMouseDown={(e) => { e.preventDefault(); if (!nameLocked) fieldRef.current?.focus() }}
+          className="shrink-0 cursor-text select-none text-body text-fg-faint"
+        >
+          {t('Name')}:
+        </span>
+        <input
+          ref={fieldRef}
+          type="text"
+          value={name}
+          disabled={nameLocked}
+          onChange={(e) => onName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') onSubmit?.() }}
+          placeholder={placeholder}
+          aria-label={caption ?? t('Brand name')}
+          title={nameLocked ? t('Locked — reserved export key') : undefined}
+          autoFocus={autoFocus}
+          spellCheck={false}
+          className="min-w-0 flex-1 bg-transparent pl-1.5 text-body text-fg outline-none disabled:cursor-not-allowed"
+        />
       </div>
+      {showAppearance && (
+        <div className={`flex ${rowClass} flex-shrink-0 overflow-hidden rounded-lg border border-line`} role="group" aria-label={t('Theme')}>
+          {(['light', 'dark'] as const).map((k) => {
+            const on = kind === k
+            const bg = k === 'dark' ? pages.dark : pages.light
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => onKind(k)}
+                aria-pressed={on}
+                className={`h-full px-2.5 text-caption font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60 ${
+                  on ? '' : 'bg-surface text-fg-muted hover:text-fg'
+                }`}
+                style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
+              >
+                {k}
+              </button>
+            )
+          })}
+        </div>
+      )}
       {onClose && (
         <button
           type="button"
@@ -355,7 +322,6 @@ export function ThemeIdentityBar({
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M10 2 2 10M2 2l8 8" /></svg>
         </button>
       )}
-      </div>
     </div>
   )
 }
@@ -496,8 +462,6 @@ export function ThemeForm({
   // the system already on screen. A style seeds its own level.
   const [tint, setTint] = useState<NeutralTint>(neutralTint)
   const [shift, setShift] = useState(contrastShift)
-  const [fineOpen, setFineOpen] = useState(false)
-  const [openState, setOpenState] = useState<(typeof STATE_ROLES)[number] | null>(null)
   const startPreset = styleId ? THEME_STYLE_PRESETS.find((p) => p.id === styleId) : undefined
   function pickStyle(id: string) {
     setErr(null)
@@ -528,26 +492,44 @@ export function ThemeForm({
   // spin remembers what it replaced, so one icon steps back.
   const randomPast = useRef<{ styleId: string; slots: Record<FamilySlot, string>; derived: Set<FamilySlot>; tint: NeutralTint; kind: 'light' | 'dark'; randomized: boolean }[]>([])
   const [canUndoRandom, setCanUndoRandom] = useState(false)
+  // A spin that already has a brand writes through, so the board (which reads
+  // the minted theme) moves with the card. Before the first mint the draft
+  // overlay does that on its own.
+  function commitLook(nextSlots: Record<FamilySlot, string>, nextTint: NeutralTint, nextKind: 'light' | 'dark') {
+    if (!editKey) return
+    const pages = {
+      light: backgroundFromBase(nextSlots.gray, 'light', nextTint),
+      dark: backgroundFromBase(nextSlots.gray, 'dark', nextTint),
+    }
+    mintTheme(nextSlots, nextKind, editKey, editKey, nextTint, pages, shift)
+  }
   function spinRandom() {
     randomPast.current.push({ styleId, slots, derived, tint, kind, randomized })
+    const rng = Math.random
+    const accent = daringAccent(slots.brand, rng)
+    const nextTint: NeutralTint = rng() < 0.5 ? 'vivid' : 'tinted'
     if (stylePinned && startPreset) {
-      const next = slotsFromAccent(randomAccentVoice(slots.brand), tint, presetStates(startPreset))
-      if (startPreset.neutral) next.gray = startPreset.neutral
+      const next = slotsFromAccent(accent, nextTint, presetStates(startPreset))
+      next.gray = oppositeNeutral(accent, nextTint, rng)
       setErr(null)
       setSlots(next)
+      setTint(nextTint)
       setDerived(new Set())
+      commitLook(next, nextTint, kind)
       setCanUndoRandom(true)
       return
     }
     const recipe = randomTheme({ accent: slots.brand, avoidScaffold: styleId || undefined })
     const preset = THEME_STYLE_PRESETS.find((p) => p.id === recipe.scaffoldId)
+    const next = slotsFromAccent(accent, nextTint, preset ? presetStates(preset) : undefined)
+    next.gray = oppositeNeutral(accent, nextTint, rng)
     setErr(null)
     setStyleId(recipe.scaffoldId)
     setRandomized(true)
-    setTint(recipe.neutralTint)
-    setSlots(slotsFromAccent(recipe.accent, recipe.neutralTint, preset ? presetStates(preset) : undefined))
+    setTint(nextTint)
+    setSlots(next)
     setDerived(new Set())
-    if (preset) setKind(preset.preferredAppearance)
+    commitLook(next, nextTint, kind)
     setCanUndoRandom(true)
   }
   function undoRandom() {
@@ -560,17 +542,12 @@ export function ThemeForm({
     setTint(prev.tint)
     setKind(prev.kind)
     setRandomized(prev.randomized)
+    commitLook(prev.slots, prev.tint, prev.kind)
     setCanUndoRandom(randomPast.current.length > 0)
   }
-  function setTintLevel(next: NeutralTint) {
-    setTint(next)
-    setSlots((prev) => {
-      if (!derived.has('gray')) return prev
-      return { ...prev, gray: slotsFromAccent(prev.brand, next).gray }
-    })
-  }
-  // First step: the compact accent chooser until the user asks for more.
-  const [moreOpen, setMoreOpen] = useState(!firstStep)
+  // Create stays on the compact accent chooser. Edit opens on the full picker
+  // and the six slots; nothing on the create step flips that.
+  const moreOpen = !firstStep
   const curated = useMemo(() => accentCuratedPalette(slots.brand), [slots.brand])
   const [err, setErr] = useState<string | null>(null)
   useEffect(() => { onErrorChange?.(err) }, [err, onErrorChange])
@@ -583,10 +560,6 @@ export function ThemeForm({
     light: backgroundFromBase(slots.gray, 'light', tint),
     dark: backgroundFromBase(slots.gray, 'dark', tint),
   }), [slots.gray, tint])
-
-  // Fine-tune resets: each slider has a circular reset beside it, same slot.
-  const accentReading = readHuePosition(slots.brand)
-  const brightnessIsIdeal = Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
 
   function setAccent(hex: string) {
     setErr(null)
@@ -715,15 +688,15 @@ export function ThemeForm({
       {!(firstStep && hideFooter) && <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
         <span className={SWATCH} style={{ backgroundColor: slots.brand }} />
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">
-          {isEdit && !holdAfterCreate ? 'Edit brand' : 'New brand'}
+          {isEdit && !holdAfterCreate ? t('Edit brand') : t('New brand')}
         </h2>
         <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
           {slots.brand.toUpperCase()}
         </span>
         <button
           onClick={onClose}
-          aria-label="Close"
-          title="Close"
+          aria-label={t('Close')}
+          title={t('Close')}
           className="ml-1 text-fg-faint hover:text-fg transition-colors w-6 h-6 flex items-center justify-center flex-shrink-0"
         >
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8" /></svg>
@@ -734,43 +707,13 @@ export function ThemeForm({
           select above are `px-3`; the body takes the same inset so every
           block shares one left and right edge. */}
       <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always flex flex-col gap-3 ${pinIdentity ? 'px-3 py-4' : 'p-4'}`}>
-        {/* Identity — name + mode on one row. `flex-shrink-0` on every child
-            of this scroll column: it is a COLUMN flex container, so a child with
-            the default `flex-shrink: 1` gets crushed when the siblings overflow.
-            The accent card is ~540px on its own, which squashed the "Adjust
-            colours" row below it to its 2px borders — present in the DOM, its
-            own button overflowing past the container, and unreachable however
-            far you scrolled. */}
-        {firstStep && !isEdit && (
-          <div className="flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} /></div>
-              {canUndoRandom && (
-                <button
-                  type="button"
-                  onClick={undoRandom}
-                  aria-label={t('Undo random')}
-                  title={t('Undo random')}
-                  className={`flex h-9 w-9 flex-shrink-0 items-center justify-center text-fg-muted hover:text-fg ${SELECT_SHELL} ${SELECT_FOCUS}`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
-                </button>
-              )}
-              <RandomThemeButton onClick={spinRandom} label={stylePinned ? t('Random accent') : t('Random')} variant="icon" className="!h-9 !w-9 !rounded-lg" />
-            </div>
-            {/* The style's blurb names its own accent ("a poster red…"), so it
-                only stands while that accent is the one in the form. */}
-            {startPreset && (
-              <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
-                {slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
-                  ? startPreset.detail
-                  : t('{name}, with your own accent.', { name: startPreset.shortLabel })}
-              </p>
-            )}
-          </div>
-        )}
+        {/* Identity — name on this step; Light/Dark stays on the themes picker.
+            `flex-shrink-0` on every child of this scroll column: it is a COLUMN
+            flex container, so a child with the default `flex-shrink: 1` gets
+            crushed when the siblings overflow. */}
         {(() => {
-          const firstBrand = !isEdit && myThemeKeys(store.themeOrder, store.themes).length === 0
+          const owned = myThemeKeys(store.themeOrder, store.themes)
+          const namesTheSystem = owned.length === 0 || (!!editKey && owned.length === 1 && owned[0] === editKey)
           const identity = (
             <ThemeIdentityBar
               name={name}
@@ -783,8 +726,8 @@ export function ThemeForm({
               onClose={undefined}
               autoFocus={!nameLocked}
               padded={pinIdentity}
-              caption={isEdit ? undefined : t(firstBrand ? 'Design system name' : 'Brand name')}
-              placeholder={firstBrand ? store.projectName : undefined}
+              caption={t(namesTheSystem ? 'Design system name' : 'Brand name')}
+              showAppearance={!firstStep}
             />
           )
           if (pinIdentity) return identityHost ? createPortal(identity, identityHost) : null
@@ -812,9 +755,25 @@ export function ThemeForm({
           style={{ backgroundColor: page }}
           aria-live="polite"
         >
-          <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-2.5">
-            {dark ? 'Dark theme' : 'Light theme'} · accent
-          </p>
+          <div className="mb-2.5 flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-mini font-semibold uppercase tracking-widest text-fg-faint">
+              {t(dark ? 'Dark theme · accent' : 'Light theme · accent')}
+            </p>
+            {firstStep && canUndoRandom && (
+              <button
+                type="button"
+                onClick={undoRandom}
+                aria-label={t('Undo random')}
+                title={t('Undo random')}
+                className={`flex h-7 w-7 flex-shrink-0 items-center justify-center text-fg-muted hover:text-fg ${SELECT_SHELL} ${SELECT_FOCUS}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
+              </button>
+            )}
+            {firstStep && (
+              <RandomThemeButton onClick={spinRandom} label={t('Random')} variant="icon" className="!h-7 !w-7 !rounded-lg" />
+            )}
+          </div>
           {/* The SAME accent picker the Primitives family-edit drawer shows
               for the Accent family: the curated palette is DYNAMIC — a strip
               tuned to the current hue with the selection box and the
@@ -825,15 +784,15 @@ export function ThemeForm({
             // at every angle (the Theme rail's own control) and six curated
             // neighbours of the current hue. The full picker is one click away.
             <div className="flex flex-col gap-3">
-              <SpectrumSlider value={slots.brand} ariaLabel="Accent hue" onCommit={setAccent} />
+              <SpectrumSlider value={slots.brand} ariaLabel={t('Accent hue')} onCommit={setAccent} />
               <AccentAxisSlider
                 axis="saturation"
-                label="Saturation"
+                label={t('Saturation')}
                 value={slots.brand}
                 onPreview={setAccent}
                 onCommit={setAccent}
               />
-              <div className="flex gap-1.5" role="group" aria-label="Curated accents">
+              <div className="flex gap-1.5" role="group" aria-label={t('Curated accents')}>
                 {curated.map((c) => {
                   const on = c.hex.toLowerCase() === slots.brand.toLowerCase()
                   return (
@@ -850,13 +809,18 @@ export function ThemeForm({
                   )
                 })}
               </div>
-              <button
-                type="button"
-                onClick={() => setMoreOpen(true)}
-                className="self-start rounded-md px-1 py-0.5 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-              >
-                More colour options
-              </button>
+              {firstStep && !isEdit && (
+                <div>
+                  <StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} />
+                  {startPreset && (
+                    <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
+                      {slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
+                        ? startPreset.detail
+                        : t('{name}, with your own accent.', { name: startPreset.shortLabel })}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
           <ColorPickerPanel
@@ -873,95 +837,9 @@ export function ThemeForm({
           )}
         </section>
 
-        {firstStep && (
-          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
-            <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Neutral')}</p>
-            <TintSlider hueHex={slots.gray} value={tint} onChange={setTintLevel} />
-          </section>
-        )}
-
-        {firstStep && (
-          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
-            <button
-              type="button"
-              onClick={() => setFineOpen((v) => !v)}
-              aria-expanded={fineOpen}
-              className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
-                <span className="block truncate text-mini text-fg-faint">{t('Brightness · Ramp contrast')}</span>
-              </span>
-              <span className={discloseChip(fineOpen)}>
-                {fineOpen ? t('Hide') : t('Show')}
-              </span>
-            </button>
-            {fineOpen && (
-              <div className="mt-2.5 flex flex-col gap-3 border-t border-line pt-2.5">
-                <AccentAxisSlider
-                  axis="lightness"
-                  label={t('Brightness')}
-                  value={slots.brand}
-                  onPreview={setAccent}
-                  onCommit={setAccent}
-                  action={
-                    <FineResetButton
-                      label={t('Reset brightness')}
-                      disabled={brightnessIsIdeal}
-                      onClick={() => setAccent(colorAtHue({ ...accentReading.position, lightness: FINE_TUNE_IDEAL.lightness }, accentReading.hue))}
-                    />
-                  }
-                />
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
-                    <span title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</span>
-                    <span className="tabular-nums">{formatShift(shift)}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="min-w-0 flex-1">
-                      <ContrastSlider hueHex={slots.gray} value={shift} onChange={setShift} />
-                    </div>
-                    <FineResetButton
-                      label={t('Reset contrast shift')}
-                      disabled={shift === 0}
-                      onClick={() => setShift(0)}
-                      className="-mt-0.5"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {firstStep && (
-          <section className={`flex-shrink-0 p-3 ${SELECT_CARD}`}>
-            <p className="mb-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('States')}</p>
-            <div className="grid grid-cols-4 gap-2">
-              {STATE_ROLES.map((role) => (
-                <StateChip
-                  key={role}
-                  role={role}
-                  hex={slots[role]}
-                  open={openState === role}
-                  onToggle={() => setOpenState((cur) => (cur === role ? null : role))}
-                  onClose={() => setOpenState(null)}
-                  onChange={(hex) => setSlot(role, hex)}
-                  appearance={kind}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-mini text-fg-faint">
-              {derived.has('error') && derived.has('warning') && derived.has('success') && derived.has('info')
-                ? t('From your accent, like the neutral. Click one to set your own.')
-                : t('Click a colour to change it.')}
-            </p>
-          </section>
-        )}
-
-        {/* The six slots — disclosed, not always-on. Five of them follow the
-            accent until touched, so the common case needs nothing here; this
-            is where you refine one, or re-point it at another family. */}
+        {/* The six slots — edit only. Create asks for the accent; neutral and
+            the four states already follow it, and Color edition is where they
+            are set once the brand exists. */}
         {moreOpen && (
         <div className="flex-shrink-0 rounded-xl border border-line overflow-hidden">
           <button
@@ -971,11 +849,11 @@ export function ThemeForm({
             className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-elevated/50 transition-colors"
           >
             <span className="flex-1 min-w-0">
-              <span className="block text-body font-medium text-fg">Adjust colours</span>
+              <span className="block text-body font-medium text-fg">{t('Adjust colours')}</span>
               <span className="block text-mini text-fg-faint">
                 {derived.size === FAMILY_SLOTS.length - 1
-                  ? 'Neutral and the four states follow the accent'
-                  : `${FAMILY_SLOTS.length - 1 - derived.size} set by hand`}
+                  ? t('Neutral and the four states follow the accent')
+                  : t('{count} set by hand', { count: String(FAMILY_SLOTS.length - 1 - derived.size) })}
               </span>
             </span>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-fg-faint flex-shrink-0 transition-transform ${adjustOpen ? '' : '-rotate-90'}`}>
@@ -993,8 +871,8 @@ export function ThemeForm({
               >
                 <section className={`${dark ? 'dark' : 'light'} border-t border-line p-3 flex flex-col gap-2.5`} style={{ backgroundColor: page }}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Slots</span>
-                    <span className="text-mini text-fg-faint">{dark ? 'Dark ramps' : 'Light ramps'}</span>
+                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Slots')}</span>
+                    <span className="text-mini text-fg-faint">{t(dark ? 'Dark ramps' : 'Light ramps')}</span>
                   </div>
                   {SLOTS.map(({ slot, label, family }) => (
                     <SlotRow

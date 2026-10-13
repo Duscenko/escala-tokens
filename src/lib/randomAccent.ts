@@ -36,6 +36,19 @@ export function randomHue(from: number, rng: () => number = Math.random): number
   return (from + offset) % 360
 }
 
+/** The opposite half of the wheel: 120°–240° from `from`. A neighbour still
+ *  reads as the same colour; Random on the colour step has to land somewhere
+ *  the eye treats as a different brand. */
+export function daringHue(from: number, rng: () => number = Math.random): number {
+  return (from + 120 + rng() * 120) % 360
+}
+
+/** Around 180° from the accent, with a little swing so two spins are not the
+ *  same complement. The neutral then carries THIS hue, not the accent's. */
+export function oppositeNeutralHue(accentHue: number, rng: () => number = Math.random): number {
+  return (accentHue + 180 + (rng() - 0.5) * 50 + 360) % 360
+}
+
 export function randomAccent(
   current: string,
   rng: () => number = Math.random,

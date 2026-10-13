@@ -2911,6 +2911,7 @@ export default function Configurator() {
         open={brandStartOpen}
         onClose={() => setBrandStartOpen(false)}
         title={savedBrandKeys.length > 0 ? t('How do you want to start this brand?') : undefined}
+        importsSystem={savedBrandKeys.length > 0}
         onBlank={beginBlankBrand}
         onFromCode={openImport}
         onSystemStyles={openSystemStyles}

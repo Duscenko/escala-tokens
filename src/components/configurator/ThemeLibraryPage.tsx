@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -22,15 +22,14 @@ import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { INSPECTOR_TABS_H, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
-import { FoundationGlyph } from './FoundationIconRail'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { CreateStudioBar } from './ThemeSaveBar'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { useTheme } from '../../lib/theme'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
@@ -689,58 +688,78 @@ const CREATE_STEPS = [
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
 
-function CreateStepNav({ step, onPick }: { step: CreateStep; onPick: (next: CreateStep) => void }) {
+function CreateStepNav({ step, onPick, committed }: { step: CreateStep; onPick: (next: CreateStep) => void; committed: boolean }) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const current = CREATE_STEPS.find((item) => item.key === step) ?? CREATE_STEPS[0]
+  const reduce = useReducedMotion() ?? false
+  const enabled = CREATE_STEPS.filter((item) => committed || item.key === 'color')
 
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const move = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const index = enabled.findIndex((item) => item.key === step)
+    let next = index
+    if (event.key === 'ArrowRight') next = (index + 1) % enabled.length
+    else if (event.key === 'ArrowLeft') next = (index + enabled.length - 1) % enabled.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = enabled.length - 1
+    else return
+    event.preventDefault()
+    const item = enabled[next]
+    if (!item || item.key === step) return
+    onPick(item.key)
+    const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)')
+    requestAnimationFrame(() => tabs[next]?.focus())
+  }
 
   return (
-    <div className="flex-shrink-0 border-b border-line px-3 py-2">
-      <div ref={ref} className="relative w-full">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-label={t('Foundations')}
-          className={SELECT_TRIGGER}
-        >
-          <FoundationGlyph id={current.key} className="h-4 w-4 flex-shrink-0 text-fg-muted" />
-          <span className="min-w-0 flex-1 truncate text-body text-fg">{t(current.label)}</span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </button>
-        {open && (
-          <div role="listbox" aria-label={t('Foundations')} className={`mt-1.5 flex w-full flex-col ${SELECT_LIST}`}>
-            {CREATE_STEPS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                role="option"
-                aria-selected={item.key === step}
-                onClick={() => { onPick(item.key); setOpen(false) }}
-                className={`${SELECT_OPTION} flex items-center gap-2 text-body ${item.key === step ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+    <div className="flex min-w-0 flex-shrink-0 border-b border-line px-2 py-1.5">
+      <div
+        role="tablist"
+        aria-label={t('Foundations')}
+        className="flex w-full min-w-0 gap-0.5 rounded-lg bg-chip-rest p-0.5"
+        onKeyDown={move}
+      >
+        {CREATE_STEPS.map((item, index) => {
+          const locked = !committed && item.key !== 'color'
+          const on = item.key === step
+          const shift = reduce
+            ? { duration: 0 }
+            : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
+          return (
+            <motion.button
+              key={item.key}
+              type="button"
+              role="tab"
+              layout
+              aria-selected={on}
+              aria-label={t(item.label)}
+              disabled={locked}
+              tabIndex={locked ? -1 : on ? 0 : -1}
+              title={locked ? t('Set the colour first') : t(item.label)}
+              onClick={() => { if (!locked && !on) onPick(item.key) }}
+              transition={{ layout: shift }}
+              className={`relative flex h-7 items-center justify-center rounded-md text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                on ? 'z-[1] min-w-0 flex-1 px-2 font-semibold text-fg' : 'w-7 shrink-0 tabular-nums'
+              } ${locked ? 'cursor-not-allowed font-medium text-fg/40' : on ? '' : SEGMENT_INACTIVE}`}
+            >
+              {on && (
+                <motion.span
+                  layoutId="create-step-pill"
+                  aria-hidden
+                  className={`absolute inset-0 rounded-md ${SEGMENT_SELECTED_FILL}`}
+                  transition={shift}
+                />
+              )}
+              <motion.span
+                key={on ? item.key : 'n'}
+                initial={on && !reduce ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className={`relative whitespace-nowrap ${on ? '' : 'tabular-nums'}`}
               >
-                <FoundationGlyph id={item.key} className="h-4 w-4 flex-shrink-0" />
-                <span className="min-w-0 flex-1 truncate">{t(item.label)}</span>
-              </button>
-            ))}
-          </div>
-        )}
+                {on ? t(item.label) : index + 1}
+              </motion.span>
+            </motion.button>
+          )
+        })}
       </div>
     </div>
   )
@@ -797,43 +816,21 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
  *  screen, and the inspector is the tool you use on it. The number is the step
  *  the footer counts, so the two never disagree. The hint is behind "?" —
  *  one sentence nobody needs twice. */
-function CreateBoardHeader({ step, title, stepLabel, hint }: {
+function CreateBoardHeader({ step, title, stepLabel }: {
   step: number
   title: string
   stepLabel: string
-  hint?: string
 }) {
-  const { t } = useI18n()
-  const hintId = useId()
   return (
     <div
-      className="flex flex-shrink-0 items-center gap-2 border-b border-line px-5"
-      style={{ height: INSPECTOR_TABS_H }}
+      className="flex flex-shrink-0 items-center border-b border-line px-5"
+      style={{ minHeight: INSPECTOR_TABS_H }}
     >
       <h2 className="flex min-w-0 items-baseline gap-2 text-ui font-semibold text-fg">
         <span className="tabular-nums text-fg-faint">{step}.</span>
         <span className="truncate">{title}</span>
         <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
       </h2>
-      {hint && (
-        <span className="group relative flex-shrink-0">
-          <button
-            type="button"
-            aria-label={t('About this step')}
-            aria-describedby={hintId}
-            className="grid h-5 w-5 place-items-center rounded-full border border-line-strong text-mini font-semibold text-fg-muted transition-colors hover:border-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            ?
-          </button>
-          <span
-            id={hintId}
-            role="tooltip"
-            className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-lg border border-line bg-elevated px-3 py-2 text-caption leading-relaxed text-fg opacity-0 shadow-lg transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100"
-          >
-            {hint}
-          </span>
-        </span>
-      )}
     </div>
   )
 }
@@ -1845,6 +1842,9 @@ export default function ThemeLibraryPage({
   }
   const pickCreateStep = (next: CreateStep) => {
     if (next === createStep) return
+    // Colour is the only write on this step. The menu stays a menu until
+    // Continue or Skip setup has minted the brand.
+    if (!createdKey) return
     if (createStep === 'color') {
       pendingStep.current = next
       submitHandle.current?.()
@@ -1892,13 +1892,11 @@ export default function ThemeLibraryPage({
   const createFont = createdKey
     ? resolveThemeFoundations(store, createdKey).typography.fontFamily
     : ''
-  const continueLabel = createStep === 'color'
-    ? t('Continue')
-    : createStep === 'icons'
-      ? t('Finish')
-      : createStep === 'typography' && createFont
-        ? t('Use {name}', { name: createFont })
-        : t('Use default')
+  const continueLabel = createStep === 'icons' && createdKey
+    ? t('Finish')
+    : createStep === 'typography' && createFont
+      ? t('Use {name}', { name: createFont })
+      : t('Continue')
   const openAdvanced = (foundation: string) => {
     if (!createdKey) return
     onSelectTheme(createdKey)
@@ -1912,8 +1910,7 @@ export default function ThemeLibraryPage({
         <>
           <InspectorPortal>
             <div className="flex h-full min-h-0 flex-col">
-              {/* Same band as the canvas header beside it (`CreateBoardHeader`):
-                  one height, so the two rules meet in one line across the gap. */}
+              {/* The name sits on the same band the canvas title used to share. */}
               <div
                 ref={setIdentityHost}
                 className="flex flex-shrink-0 items-center border-b border-line"
@@ -1923,7 +1920,7 @@ export default function ThemeLibraryPage({
                   <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} /></div>
                 )}
               </div>
-              <CreateStepNav step={createStep} onPick={pickCreateStep} />
+              <CreateStepNav step={createStep} onPick={pickCreateStep} committed={!!createdKey} />
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {createStep === 'color' || !createdKey ? (
                   <ThemeForm
@@ -1950,6 +1947,7 @@ export default function ThemeLibraryPage({
                     previewTheme={createdKey}
                     previewAppearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
                     activePanel={createStep}
+                    lockAdvanced
                     onOpenAdvanced={openAdvanced}
                   />
                 )}
@@ -1981,7 +1979,6 @@ export default function ThemeLibraryPage({
                 step={Math.max(0, createIndex) + 1}
                 title={firstSystem ? t('Customize your design system') : t('New brand')}
                 stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
-                hint={createdKey ? undefined : t('Start from a style or your own colour. Nothing is saved until you continue.')}
               />
             )}
           />

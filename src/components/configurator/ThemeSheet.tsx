@@ -130,7 +130,7 @@ function StartMark({ children, accent }: { children: ReactNode; accent?: boolean
   )
 }
 
-const START_ITEM = 'flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-body font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+const START_ITEM = 'flex w-full items-center gap-3 rounded-xl px-3 text-left text-body font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
 /** How a brand starts. Every "Add new brand" door renders this, so the
  *  choices cannot drift. Random is not one of them. "From code" is the
@@ -139,23 +139,31 @@ export function StartDesignChoices({
   onBlank,
   onFromCode,
   onSystemStyles,
+  importsSystem = false,
 }: {
   onBlank: () => void
   onFromCode: () => void
   onSystemStyles: () => void
+  /** A brand already exists: this row imports a whole system, not one brand. */
+  importsSystem?: boolean
 }) {
   const { t } = useI18n()
   return (
     <div className="flex flex-col gap-0.5">
-      <button type="button" onClick={onBlank} className={START_ITEM}>
+      <button type="button" onClick={onBlank} className={`${START_ITEM} h-11`}>
         <StartMark><BlankGlyph /></StartMark>
         {t('Blank')}
       </button>
-      <button type="button" onClick={onFromCode} className={START_ITEM}>
+      <button type="button" onClick={onFromCode} className={`${START_ITEM} ${importsSystem ? 'min-h-11 py-2' : 'h-11'}`}>
         <StartMark><MaskGlyph src="/icons/theme-hub-icons/Icon/code.svg" /></StartMark>
-        {t('From code')}
+        <span className="min-w-0 flex-1">
+          <span className="block">{t('From code')}</span>
+          {importsSystem && (
+            <span className="block text-mini font-normal text-fg-muted">{t('Imports a whole design system.')}</span>
+          )}
+        </span>
       </button>
-      <button type="button" onClick={onSystemStyles} className={START_ITEM}>
+      <button type="button" onClick={onSystemStyles} className={`${START_ITEM} h-11`}>
         <StartMark><SparkGlyph /></StartMark>
         {t('System styles')}
       </button>
@@ -170,6 +178,7 @@ export function StartDesignModal({
   onFromCode,
   onSystemStyles,
   title,
+  importsSystem = false,
 }: {
   open: boolean
   onClose: () => void
@@ -178,6 +187,8 @@ export function StartDesignModal({
   onBlank: () => void
   onFromCode: () => void
   onSystemStyles: () => void
+  /** A brand already exists: From code imports a whole system. */
+  importsSystem?: boolean
 }) {
   const { t } = useI18n()
   const reduceMotion = useReducedMotion()
@@ -233,6 +244,7 @@ export function StartDesignModal({
           onBlank={pick(onBlank)}
           onFromCode={pick(onFromCode)}
           onSystemStyles={pick(onSystemStyles)}
+          importsSystem={importsSystem}
         />
         <button
           type="button"

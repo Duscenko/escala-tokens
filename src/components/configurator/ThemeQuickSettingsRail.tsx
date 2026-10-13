@@ -1693,6 +1693,7 @@ export default function ThemeQuickSettingsRail({
   overlapSize = 'md',
   onOverlapSizeChange,
   embed = false,
+  lockAdvanced = false,
   exploringRandom = false,
   onExploringRandomEnd,
   onUseTheme,
@@ -1747,6 +1748,9 @@ export default function ThemeQuickSettingsRail({
   /** Render in the page column instead of the inspector. The create studio
    *  uses the inspector for the step list, so the edition sits in the card. */
   embed?: boolean
+  /** Create studio: advanced edition waits until the brand is finished, same
+   *  as guided setup (`setupStep`). */
+  lockAdvanced?: boolean
   /** Home → Random: the footer is Random / Save theme, not Update theme. */
   exploringRandom?: boolean
   onExploringRandomEnd?: () => void
@@ -1800,6 +1804,7 @@ export default function ThemeQuickSettingsRail({
   const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
   const tryOn = stylePreview ?? null
   const setupStep = useSetupStep(previewTheme)
+  const editionLocked = setupStep != null || lockAdvanced
   const access = useAccess()
   // Guest canvas header no longer carries Undo / Redo / Reset. Undo sits in
   // the save bar; Reset belongs with this theme's settings (back to Core).
@@ -2271,6 +2276,7 @@ export default function ThemeQuickSettingsRail({
           flush
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
+          advancedDisabled={editionLocked}
           // ONE Light/Dark control. A brand that ships a single theme is
           // edited in that theme, so "Themes this brand ships" (first row
           // below) is the switch and the header carries none. Only a brand
@@ -2611,7 +2617,7 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null} trailing={platformSwitch}>
+        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked} trailing={platformSwitch}>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2649,7 +2655,7 @@ export default function ThemeQuickSettingsRail({
         })()}
 
         {activePanel === 'radius' && (
-        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
+        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem label="Radius" hint="The preset sets the scale; boxes, fields and selectors then round independently on it.">
             <RadiusCard
               radius={radius}
@@ -2662,7 +2668,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'shadow' && (
-        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
+        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
               shadows={shadows}
@@ -2673,7 +2679,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'sizes' && (
-        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null} trailing={platformSwitch}>
+        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked} trailing={platformSwitch}>
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -2742,7 +2748,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'icons' && (
-        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={setupStep != null}>
+        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <div className="px-3 pt-1 pb-2">
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>

@@ -5,6 +5,8 @@ import { hueDelta, MIN_HUE_DELTA } from '../randomAccent'
 import {
   fontPairingsAreCatalogued,
   nextRandomLabel,
+  daringAccent,
+  oppositeNeutral,
   randomAccentVoice,
   randomLabelAfterTweak,
   randomBoardAppearance,
@@ -34,6 +36,18 @@ describe('randomTheme', () => {
     const a = randomTheme({ accent: VIVID, rng: sequence(4) })
     const b = randomTheme({ accent: VIVID, rng: sequence(4) })
     expect(a).toEqual(b)
+  })
+
+  it('puts the accent on the far side of the wheel and the paper opposite it', () => {
+    const { hue } = readHuePosition(VIVID)
+    for (let i = 0; i < 24; i++) {
+      const rng = sequence(i + 3)
+      const accent = daringAccent(VIVID, rng)
+      const accentHue = readHuePosition(accent).hue
+      expect(hueDelta(hue, accentHue)).toBeGreaterThanOrEqual(120)
+      const neutral = oppositeNeutral(accent, i % 2 === 0 ? 'vivid' : 'tinted', rng)
+      expect(hueDelta(accentHue, readHuePosition(neutral).hue)).toBeGreaterThanOrEqual(140)
+    }
   })
 
   it('lands a new accent at least MIN_HUE_DELTA away', () => {

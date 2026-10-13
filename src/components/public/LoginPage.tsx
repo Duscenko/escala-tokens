@@ -16,12 +16,16 @@ import { useI18n } from '../../lib/i18n'
 import {
   MIN_PASSWORD,
   sendPasswordReset,
+  PASSWORD_SIGNOUT_SECONDS,
+  passwordClosingNotice,
   setNewPassword,
   signInWithEmail,
   signInWithProvider,
   signOut,
   signUpWithEmail,
+  takePasswordChangedNotice,
   useAuth,
+  usePasswordChangeSignOut,
   type AuthProblem,
 } from '../../lib/auth'
 import { applyDocumentHead } from '../../lib/documentHead'
@@ -163,6 +167,13 @@ export function LoginPage() {
   const [capsOn, setCapsOn] = useState(false)
   const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | 'reset_link_invalid' | 'confirm_link_invalid' | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  // A password change signs every session out and lands here. Read once:
+  // the notice is why this page is open, and it must not survive a refresh.
+  const [passwordChanged] = useState(() => takePasswordChangedNotice())
+  const [armed, setArmed] = useState(false)
+  const closingIn = usePasswordChangeSignOut(armed, () => {
+    window.location.replace(LOGIN_PATH)
+  })
 
   // A reset link lands here with a recovery session; show "choose a password".
   const recovering = event === 'PASSWORD_RECOVERY' && mode !== 'recovery'
@@ -191,9 +202,9 @@ export function LoginPage() {
   // (`pathForNext(null)` → `/?section=library`). A pending `workspace` return
   // (export, save, the section they left) still wins. Recovery stays here.
   useEffect(() => {
-    if (loading || !user || event === 'PASSWORD_RECOVERY' || mode === 'recovery') return
+    if (loading || !user || event === 'PASSWORD_RECOVERY' || mode === 'recovery' || armed) return
     window.location.replace(pathForNext(pendingNext()))
-  }, [loading, user, event, mode])
+  }, [loading, user, event, mode, armed])
 
   const afterSignIn = () => window.location.assign(pathForNext(pendingNext()))
 
@@ -267,7 +278,7 @@ export function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (busy) return
+    if (busy || armed) return
     const address = email.trim()
     if (view !== 'recovery' && !address) return
     if ((view === 'signup' || view === 'recovery') && password.length < MIN_PASSWORD) { setProblem('short_password'); return }
@@ -294,9 +305,13 @@ export function LoginPage() {
       else setDone(t('If an account exists for {email}, we sent a link to reset the password.', { email: address }))
     } else {
       const r = await setNewPassword(password)
-      setBusy(false)
-      if (!r.ok) setProblem(r.problem)
-      else afterSignIn()
+      if (!r.ok) {
+        setBusy(false)
+        setProblem(r.problem)
+      } else {
+        // Stay on this page for the countdown. Sign-out runs when it hits zero.
+        setArmed(true)
+      }
     }
   }
 
@@ -317,7 +332,8 @@ export function LoginPage() {
     : problem === 'unavailable' ? t('Something went wrong. Try again in a moment.')
     : null
 
-  const showCaps = capsOn && view !== 'reset' && !done
+  const showCaps = capsOn && view !== 'reset' && !done && !armed
+  const closing = armed ? passwordClosingNotice(closingIn ?? PASSWORD_SIGNOUT_SECONDS) : null
   const describedBy = [
     showCaps ? `${titleId}-caps` : null,
     message ? `${titleId}-err` : null,
@@ -378,6 +394,11 @@ export function LoginPage() {
                 <div>
                   <h1 id={titleId} className="text-[clamp(30px,3.4vw,40px)] font-semibold leading-[1.1] tracking-[-0.02em] text-fg">{done ? t('Check your email') : heading}</h1>
                   {!done && sub && <p className="mt-3 text-ui leading-relaxed text-fg-muted">{sub}</p>}
+                  {!done && passwordChanged && (
+                    <p role="status" className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg-muted">
+                      {t('Password updated. Sign in with the new one.')}
+                    </p>
+                  )}
                   {!done && fromEditor && (view === 'signin' || view === 'signup') && (
                     <p role="note" className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg-muted">
                       {fromEditor.intent === 'export' ? `${t('You were about to export your system.')} `
@@ -390,7 +411,11 @@ export function LoginPage() {
                   )}
                 </div>
 
-                {done ? (
+                {closing ? (
+                  <p role="status" className="rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg">
+                    {t(closing.text, closing.vars)}
+                  </p>
+                ) : done ? (
                   <div className="flex flex-col gap-5">
                     <p role="status" className="text-ui leading-relaxed text-fg-muted">{done}</p>
                     <button type="button" onClick={() => go('signin')} className={PRIMARY}>{t('Back to sign in')}</button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import { accountsEnabled, supabase, type AuthProvider } from './supabase'
 import { LOGIN_PATH } from './legal'
@@ -111,10 +111,71 @@ async function postAuthMail(path: '/api/password-reset' | '/api/signup', body: R
   }
 }
 
+const PASSWORD_CHANGED_KEY = 'escala-password-changed'
+
+function markPasswordChanged(): void {
+  try { sessionStorage.setItem(PASSWORD_CHANGED_KEY, '1') } catch { /* the sign-out still happens */ }
+}
+
+/** True once, the first time the login page asks. A password change signs the
+ *  person out and this is how the next screen explains why. */
+export function takePasswordChangedNotice(): boolean {
+  try {
+    if (sessionStorage.getItem(PASSWORD_CHANGED_KEY) !== '1') return false
+    sessionStorage.removeItem(PASSWORD_CHANGED_KEY)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Writes the new password and leaves the session up. The screen tells the
+ *  person it changed, then `usePasswordChangeSignOut` closes every session. */
 export async function setNewPassword(password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, problem: 'unavailable' }
   const { error } = await supabase.auth.updateUser({ password })
   return error ? fail(error) : ok(undefined)
+}
+
+/** How long the "password updated" notice stays up before every session ends. */
+export const PASSWORD_SIGNOUT_SECONDS = 10
+
+export function passwordClosingNotice(seconds: number): { text: string; vars?: { n: number } } {
+  const n = Math.max(seconds, 1)
+  if (n === 1) return { text: 'Your password has been updated. Your session will close in 1 second.' }
+  return { text: 'Your password has been updated. Your session will close in {n} seconds.', vars: { n } }
+}
+
+/** Once `armed`, counts down from 10 and then revokes every session. The
+ *  notice is for the login page that opens afterwards. */
+export function usePasswordChangeSignOut(armed: boolean, onSignedOut: () => void): number | null {
+  const [left, setLeft] = useState<number | null>(null)
+  const onSignedOutRef = useRef(onSignedOut)
+  onSignedOutRef.current = onSignedOut
+  const finishing = useRef(false)
+
+  useEffect(() => {
+    if (!armed) return
+    setLeft((current) => current ?? PASSWORD_SIGNOUT_SECONDS)
+  }, [armed])
+
+  useEffect(() => {
+    if (left === null) return
+    if (left <= 0) {
+      if (finishing.current) return
+      finishing.current = true
+      void (async () => {
+        markPasswordChanged()
+        await signOut('global')
+        onSignedOutRef.current()
+      })()
+      return
+    }
+    const id = window.setTimeout(() => setLeft((n) => (n === null ? n : n - 1)), 1000)
+    return () => window.clearTimeout(id)
+  }, [left])
+
+  return left
 }
 
 /** Check the current password, then replace it. A wrong current password is
@@ -181,12 +242,14 @@ export async function signInWithProvider(provider: AuthProvider): Promise<AuthRe
   return error ? fail(error) : ok(undefined)
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut(scope: 'global' | 'local' | 'others' = 'global'): Promise<void> {
   // Park first, while the session still names the account. Closing only
   // happens after that write succeeds — a failed park must not be the moment
   // the only copy disappears. No session means there is nothing of this
   // account's to close. The import is deferred: account files reach the
   // store, and the store reaches this module through the free-theme check.
+  // `global` (the default) revokes every device, which is what a password
+  // change needs; the button uses the same default.
   if (supabase) {
     const { data } = await supabase.auth.getSession()
     const userId = data.session?.user?.id
@@ -195,7 +258,7 @@ export async function signOut(): Promise<void> {
       if (parkAccountFiles(userId)) closeAccountFiles()
     }
   }
-  await supabase?.auth.signOut()
+  await supabase?.auth.signOut({ scope })
 }
 
 /** True when this browser already has a persisted Supabase session.

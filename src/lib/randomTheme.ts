@@ -9,13 +9,13 @@
 // RADIUS_GROUP_STEPS via the style's own roles, shadows/strokes/sizes from
 // the borrowed style, semantics from that style's documented recipe.
 
-import { backgroundFromBase, colorAtHue, readHuePosition, type HuePosition, type NeutralTint } from './colorUtils'
+import { backgroundFromBase, colorAtHue, neutralFromBrand, readHuePosition, type HuePosition, type NeutralTint } from './colorUtils'
 import { FONT_PRESETS, loadGoogleFont } from './fonts'
 import { myThemeKeys } from './themeLibrary'
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resetThemeSemantics, type StylePreview } from './stylePreviewOverlay'
 import { useDesignStore } from '../store/useDesignStore'
-import { randomHue } from './randomAccent'
+import { daringHue, oppositeNeutralHue, randomHue } from './randomAccent'
 import {
   THEME_STYLE_PRESETS,
   type ThemeStylePreset,
@@ -134,6 +134,28 @@ export function randomAccentVoice(
 ): string {
   const { hue } = readHuePosition(current)
   return colorAtHue(pick(ACCENT_VOICES, rng), randomHue(hue, rng))
+}
+
+/** A brand colour on the far side of the wheel, still at a vivid voice so it
+ *  does not collapse into grey. */
+export function daringAccent(
+  current: string,
+  rng: () => number = Math.random,
+): string {
+  const { hue } = readHuePosition(current)
+  return colorAtHue(pick(ACCENT_VOICES, rng), daringHue(hue, rng))
+}
+
+/** Paper hue opposite the accent. `tinted` / `vivid` keep enough chroma that
+ *  the opposition is visible; `pure` and `subtle` would hide it. */
+export function oppositeNeutral(
+  accent: string,
+  tint: NeutralTint,
+  rng: () => number = Math.random,
+): string {
+  const { hue } = readHuePosition(accent)
+  const seed = colorAtHue({ saturation: 0.85, lightness: 0.5 }, oppositeNeutralHue(hue, rng))
+  return neutralFromBrand(seed, tint)
 }
 
 export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
