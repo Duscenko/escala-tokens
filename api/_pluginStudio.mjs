@@ -55,12 +55,6 @@ function brandThemesSummary(ids) {
   const list = normalizeBrandThemes(ids);
   return list.length === 1 ? `${brandThemeLabel(list[0])} only` : list.map(brandThemeLabel).join(" + ");
 }
-function soleShippedAppearance(brandThemes, brand) {
-  const stored = brandThemes?.[brand];
-  if (!stored) return void 0;
-  const ids = normalizeBrandThemes(stored);
-  return ids.length === 1 ? brandThemeDef(ids[0])?.base : void 0;
-}
 var BRAND_THEME_DEFS, BRAND_THEME_IDS, BRAND_THEME_CHOICES;
 var init_brandThemes = __esm({
   "src/lib/brandThemes.ts"() {
@@ -2840,12 +2834,11 @@ function myThemeKeys(themeOrder, themes) {
 function canAddMyTheme(count) {
   return count < MY_THEME_HARD_CAP;
 }
-var MY_THEME_HARD_CAP, MY_THEME_FULL_ERROR, figmaSyncThemeKeys;
+var MY_THEME_HARD_CAP, MY_THEME_FULL_ERROR;
 var init_themeLibrary = __esm({
   "src/lib/themeLibrary.ts"() {
     MY_THEME_HARD_CAP = 12;
     MY_THEME_FULL_ERROR = "This system is at {count} themes. Delete one to add another.";
-    figmaSyncThemeKeys = myThemeKeys;
   }
 });
 
@@ -3080,7 +3073,7 @@ var init_freeThemeLimit = __esm({
     init_licence();
     init_supabase();
     FREE_MY_THEME_LIMIT = 1;
-    FREE_ANOTHER_THEME_ERROR = "Free includes one design system with one brand. Pro adds brands and systems.";
+    FREE_ANOTHER_THEME_ERROR = "Free includes two design systems with one brand each. Pro adds brands and systems.";
   }
 });
 
@@ -8502,19 +8495,6 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
 // src/lib/pluginStudio.ts
 init_themeFoundations();
 init_tokenGenerator();
-
-// src/lib/freeFigmaScope.ts
-init_themeLibrary();
-init_brandThemes();
-function freeFigmaScope(preferred, themeOrder, themes, themeKinds, appearance, brandThemes) {
-  const keys = figmaSyncThemeKeys(themeOrder, themes);
-  const theme = preferred && keys.includes(preferred) ? preferred : keys[0];
-  if (!theme) return { viewports: ["desktop"], gridStyles: ["xl-desktop"] };
-  const one = soleShippedAppearance(brandThemes, theme) ?? appearance ?? (themeKinds[theme] === "dark" ? "dark" : "light");
-  return { themes: [theme], modes: [{ theme, appearance: one }], viewports: ["desktop"], gridStyles: ["xl-desktop"] };
-}
-
-// src/lib/pluginStudio.ts
 init_figmaSyncModes();
 init_themeSources();
 
@@ -9570,8 +9550,8 @@ function buildStudioTokens(choices, tier) {
   const weight = PHOSPHOR_WEIGHTS.includes(choices.iconWeight ?? "") ? choices.iconWeight : void 0;
   if (weight) patch({ iconWeight: weight });
   const s = useDesignStore.getState();
-  const appearance = s.themeKinds[key2] === "dark" ? "dark" : "light";
-  const scope = tier === "free" ? freeFigmaScope(key2, [key2], s.themes, s.themeKinds, appearance) : { themes: [key2], modes: defaultFigmaSyncModes([key2], s.themeKinds) };
+  const modes = defaultFigmaSyncModes([key2], s.themeKinds);
+  const scope = tier === "free" ? { themes: [key2], modes, viewports: ["desktop"], gridStyles: ["xl-desktop"] } : { themes: [key2], modes };
   const label = themeDisplayName(key2, s.themeLabels) || key2;
   return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) };
 }

@@ -16,7 +16,6 @@ import { ensureColorScales, applyAccentColor } from './colorActions'
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
 import { generateTokenJSON } from './tokenGenerator'
-import { freeFigmaScope } from './freeFigmaScope'
 import { defaultFigmaSyncModes } from './figmaSyncModes'
 import { themeDisplayName } from './themeSources'
 import { FONT_PRESETS } from './fonts'
@@ -246,12 +245,15 @@ export function buildStudioTokens(
   const weight = (PHOSPHOR_WEIGHTS as readonly string[]).includes(choices.iconWeight ?? '') ? (choices.iconWeight as PhosphorWeight) : undefined
   if (weight) patch({ iconWeight: weight })
 
-  // Ship it: Free is one theme in one mode on Desktop; Pro gets Light + Dark.
+  // Ship it. Free and Pro both get this brand's Light + Dark; the difference is
+  // Free's Desktop-only viewport and single grid style (more brands are gated
+  // elsewhere, in the plugin). `freeFigmaScope` still governs the web's
+  // downloads — it is not applied here.
   const s = useDesignStore.getState()
-  const appearance = s.themeKinds[key] === 'dark' ? 'dark' : 'light'
+  const modes = defaultFigmaSyncModes([key], s.themeKinds)
   const scope = tier === 'free'
-    ? freeFigmaScope(key, [key], s.themes, s.themeKinds, appearance)
-    : { themes: [key], modes: defaultFigmaSyncModes([key], s.themeKinds) }
+    ? { themes: [key], modes, viewports: ['desktop' as const], gridStyles: ['xl-desktop' as const] }
+    : { themes: [key], modes }
   const label = themeDisplayName(key, s.themeLabels) || key
   return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) }
 }

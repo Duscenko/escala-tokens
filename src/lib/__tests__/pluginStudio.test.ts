@@ -4,11 +4,11 @@ import { buildStudioTokens, studioOptions, studioLook, readCode, harmonyFor } fr
 type Payload = { colors: { themeOrder: string[] }; viewports?: string[]; radiusRoles?: Record<string, string>; typography: { fontFamily: string }; shadows: Record<string, string> }
 
 describe('plugin studio build', () => {
-  it('Free ships one theme in one mode on Desktop', () => {
+  it('Free ships one brand, Light + Dark, on Desktop', () => {
     const out = buildStudioTokens({ accent: '#2970ff', name: 'Aurora' }, 'free')
     if ('error' in out) throw new Error(out.error)
     const t = out.tokens as Payload
-    expect(t.colors.themeOrder).toEqual(['aurora::light'])
+    expect(t.colors.themeOrder).toEqual(['aurora::light', 'aurora::dark'])
     expect(t.viewports).toEqual(['desktop'])
   })
   it('Pro ships Light and Dark', () => {
@@ -33,7 +33,10 @@ describe('plugin studio build', () => {
     expect(o.styles.length).toBeGreaterThan(3)
     const out = buildStudioTokens({ style: o.styles[1].id }, 'free')
     if ('error' in out) throw new Error(out.error)
-    expect((out.tokens as Payload).colors.themeOrder).toHaveLength(1)
+    // One brand (one `<brand>::` prefix), both of its themes.
+    const order = (out.tokens as Payload).colors.themeOrder
+    expect(new Set(order.map((k: string) => k.split('::')[0])).size).toBe(1)
+    expect(order).toHaveLength(2)
     expect('error' in buildStudioTokens({ style: 'nope' }, 'free')).toBe(true)
   })
   it('ships the primitives every semantic aliases', () => {
