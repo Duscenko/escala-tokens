@@ -1,40 +1,61 @@
-import { useMemo, type ComponentType } from 'react'
+import { useMemo, useState, type ComponentType, type CSSProperties } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
-import { RAIL_COLLAPSED_WIDTH, RAIL_WIDTH } from './SectionRail'
-import { SHELL_CHROME } from './themeWorkspaceLayout'
+import { useI18n } from '../../lib/i18n'
+import FoundationSwitchStrip from './FoundationSwitchStrip'
+import { INSPECTOR_WIDTH } from './WorkspaceInspector'
+import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 
-/** Same selected chip as Themes library · My themes (`bg-app` on `bg-nav`). */
-const RAIL_ROW_ACTIVE = 'border-line-strong bg-app text-fg font-semibold shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
-const RAIL_ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
+/** Same selected chip as Themes library · My themes (`bg-app` on the panel). */
+const ROW_ACTIVE = 'border-line-strong bg-app text-fg font-medium shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
+const ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
 
-function SidebarToggleIcon() {
+/** The strip's selected step opens to its name; these fit the 288px column. */
+const CATEGORY_SHORT: Record<string, string> = {
+  'Button & Actions': 'Buttons',
+  'Form Controls': 'Forms',
+  'Indicators': 'Indicators',
+  'Content & Surfaces': 'Surfaces',
+  'Feedback': 'Feedback',
+  'Navigation': 'Navigation',
+}
+
+function Chevron({ open }: { open: boolean }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <line x1="9.5" y1="4" x2="9.5" y2="20" />
+    <svg
+      width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={`flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    >
+      <path d="M3 4.5 6 7.5l3-3" />
     </svg>
   )
 }
 
-/** Components' left rail — categories with their catalogue rows nested underneath,
- *  replacing the old split of SectionRail (categories only) + ComponentsView
- *  master list (duplicate headers). */
+/**
+ * Components' DIRECTORY — the right-hand panel, the same raised column the
+ * Generator's inspector is (288px, `bg-side-panel`, its 60px top band).
+ * The band carries the category switch (the inspector's sliding-pill strip),
+ * the body the catalogue: every category an accordion, the open component's
+ * category expanded. The canvas card in the middle is the component's page;
+ * the icon rail on the left stays where you are in the product.
+ */
 export default function ComponentsRail({
   icons,
   active,
   onSelect,
   search = '',
-  collapsed,
-  onToggleCollapse,
+  onSearch,
 }: {
   icons: Record<string, ComponentType>
   active: ComponentDef | null
   onSelect: (c: ComponentDef) => void
   search?: string
-  collapsed: boolean
-  onToggleCollapse: () => void
+  onSearch?: (q: string) => void
 }) {
-  const activeKey = active?.key ?? null
+  const { t } = useI18n()
+  const reduce = useReducedMotion() ?? false
+  const activeKey = active?.key ?? COMPONENTS[0].key
   const activeCategory = active?.category ?? CATEGORIES[0]
 
   const q = search.trim().toLowerCase()
@@ -51,101 +72,152 @@ export default function ComponentsRail({
     [q],
   )
 
+  // The open component's category is always expanded; others open on demand.
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const toggle = (cat: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+
+  const selectCategory = (cat: string) => {
+    const first = COMPONENTS.find((c) => c.category === cat)
+    if (first) onSelect(first)
+    // Picking from the strip reads as "take me there": fold the rest away.
+    setOpen(new Set())
+  }
+
+  const ease = [0.22, 1, 0.36, 1] as const
+
   return (
-    <div
-      style={{ width: collapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH }}
-      className={`flex-shrink-0 flex flex-col min-h-0 transition-[width] duration-200 ${SHELL_CHROME}`}
+    <aside
+      aria-label={t('Components')}
+      className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
+      style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
       <div
-        className={`flex items-center h-[52px] flex-shrink-0 border-b border-line ${
-          collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
-        }`}
+        className="flex flex-shrink-0 items-center border-b border-line"
+        style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
       >
-        {!collapsed && <span className="text-ui font-semibold text-fg truncate">Components</span>}
-        <button
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-expanded={!collapsed}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/40 transition-colors"
-        >
-          <SidebarToggleIcon />
-        </button>
+        <FoundationSwitchStrip
+          ariaLabel={t('Component categories')}
+          items={CATEGORIES.map((cat) => {
+            const Icon = icons[cat]
+            return {
+              key: cat,
+              label: t(CATEGORY_SHORT[cat] ?? cat),
+              icon: Icon ? <Icon /> : undefined,
+            }
+          })}
+          current={activeCategory}
+          onSelect={selectCategory}
+        />
       </div>
 
-      <nav aria-label="Components" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-3 flex flex-col gap-1">
-        {groups.length === 0 && !collapsed && (
-          <p className="text-caption text-fg-faint px-2 pt-1 leading-relaxed">No components match “{search.trim()}”.</p>
+      {onSearch && (
+        <div className="flex-shrink-0 px-3 pt-3">
+          <div className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-app px-2.5 transition-colors focus-within:border-line-strong">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-fg-faint" aria-hidden>
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => onSearch(e.target.value)}
+              placeholder={t('Search components')}
+              aria-label={t('Search components')}
+              className="min-w-0 flex-1 bg-transparent text-ui text-fg-muted outline-none placeholder:text-fg-faint"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => onSearch('')}
+                aria-label={t('Clear filter')}
+                className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-xs text-fg-faint transition-colors hover:text-fg-muted"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <nav aria-label={t('Components')} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 pb-3 pt-2">
+        {groups.length === 0 && (
+          <p className="px-2 pt-1 text-caption leading-relaxed text-fg-faint">
+            {t('No components match')} “{search.trim()}”.
+          </p>
         )}
 
-        {collapsed
-          ? groups.map(({ cat, items }) => {
-              const Icon = icons[cat]
-              const on = activeCategory === cat
-              return (
-                <button
-                  key={cat}
-                  onClick={() => onSelect(items[0])}
-                  aria-current={on ? 'page' : undefined}
-                  title={cat}
-                  className={`flex items-center h-9 w-9 mx-auto justify-center rounded-xl border transition-colors ${
-                    on ? RAIL_ROW_ACTIVE : RAIL_ROW_IDLE
-                  }`}
-                >
-                  {Icon ? (
-                    <span className={on ? '' : 'text-fg-faint'}>
-                      <Icon />
-                    </span>
-                  ) : null}
-                </button>
-              )
-            })
-          : groups.map(({ cat, items }) => {
-              const Icon = icons[cat]
-              const categoryActive = activeCategory === cat
-              const first = items[0]
-              return (
-                <div key={cat} className="flex flex-col gap-0.5">
-                  <button
-                    onClick={() => first && onSelect(first)}
-                    aria-current={categoryActive && activeKey === first?.key ? 'page' : undefined}
-                    title={cat}
-                    className={`flex items-center h-9 w-full gap-2 px-2.5 rounded-lg text-ui text-left transition-colors ${
-                      categoryActive
-                        ? 'text-fg font-semibold'
-                        : 'text-fg-muted hover:text-fg hover:bg-elevated'
-                    }`}
-                  >
-                    {Icon ? (
-                      <span className={`flex-shrink-0 ${categoryActive ? '' : 'text-fg-faint'}`}>
-                        <Icon />
-                      </span>
-                    ) : null}
-                    <span className="truncate">{cat}</span>
-                  </button>
+        {groups.map(({ cat, items }) => {
+          const Icon = icons[cat]
+          const categoryActive = activeCategory === cat
+          // A search shows every match; otherwise the accordion decides.
+          const expanded = Boolean(q) || categoryActive || open.has(cat)
+          const panelId = `components-dir-${cat.replace(/\W+/g, '-').toLowerCase()}`
+          return (
+            <div key={cat} className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => toggle(cat)}
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                className={`flex h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                  categoryActive ? 'font-semibold text-fg' : 'text-fg-muted hover:bg-elevated hover:text-fg'
+                }`}
+              >
+                {Icon ? (
+                  <span className={`flex-shrink-0 ${categoryActive ? '' : 'text-fg-faint'}`}>
+                    <Icon />
+                  </span>
+                ) : null}
+                <span className="min-w-0 flex-1 truncate">{t(cat)}</span>
+                {!categoryActive && (
+                  <span className="text-fg-faint">
+                    <Chevron open={expanded} />
+                  </span>
+                )}
+              </button>
 
-                  <div className="flex flex-col gap-0.5 pl-2 ml-2 border-l border-line">
-                    {items.map((comp) => {
-                      const isActive = comp.key === activeKey
-                      return (
-                        <button
-                          key={comp.key}
-                          type="button"
-                          aria-current={isActive ? 'page' : undefined}
-                          onClick={() => onSelect(comp)}
-                          className={`flex w-full items-center gap-1.5 px-2 py-1.5 rounded-lg border text-body text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                            isActive ? RAIL_ROW_ACTIVE : RAIL_ROW_IDLE
-                          }`}
-                        >
-                          <span className="truncate min-w-0">{comp.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.div
+                    id={panelId}
+                    key="items"
+                    initial={reduce ? false : { height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={reduce ? { height: 0, opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+                    transition={{ duration: reduce ? 0 : 0.22, ease }}
+                    className="overflow-hidden"
+                  >
+                    <div className="ml-4 flex flex-col gap-0.5 border-l border-line pb-1.5 pl-1.5">
+                      {items.map((comp) => {
+                        const isActive = comp.key === activeKey
+                        return (
+                          <button
+                            key={comp.key}
+                            type="button"
+                            aria-current={isActive ? 'page' : undefined}
+                            onClick={() => onSelect(comp)}
+                            className={`flex w-full items-center rounded-lg border px-2.5 py-1.5 text-left text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                              isActive ? ROW_ACTIVE : ROW_IDLE
+                            }`}
+                          >
+                            <span className="min-w-0 truncate">{comp.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )
+        })}
       </nav>
-    </div>
+    </aside>
   )
 }

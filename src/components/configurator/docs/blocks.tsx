@@ -11,6 +11,8 @@
 
 import { useState, type ReactNode } from 'react'
 import { AIContextButton } from '../../ui/AIContextButton'
+import type { ContextOptions } from '../../ui/ContextControls'
+import type { ContextAppearance } from '../../../lib/contextRequest'
 import { useI18n } from '../../../lib/i18n'
 import type { UseIt, UseItDestId } from './useIt'
 
@@ -44,9 +46,20 @@ export function CopyButton({
   )
 }
 
-/** Component article header — `AIContextButton` scoped to one catalogue page. */
-export function CopyAgentContextButton({ text }: { text: string }) {
-  return <AIContextButton scope="component" markdown={text} />
+/** Component article header — `AIContextButton` scoped to one catalogue page,
+ *  with Theme and Detail filters (the scope is the page itself). */
+export function CopyAgentContextButton({
+  build, fallbackAppearance,
+}: {
+  build: (opts: ContextOptions) => string
+  fallbackAppearance: ContextAppearance
+}) {
+  return (
+    <AIContextButton
+      scope="component"
+      filters={{ build, scope: 'all', fallbackAppearance }}
+    />
+  )
 }
 
 // ── Page chrome ──────────────────────────────────────────────────────────────

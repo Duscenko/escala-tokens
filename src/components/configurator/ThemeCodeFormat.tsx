@@ -1,7 +1,7 @@
-import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useState } from 'react'
+import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { captureCodeSnapshot } from '../../lib/codeScope'
-import { buildCSS, buildMarkdown } from '../../lib/exporters'
+import { buildCSS } from '../../lib/exporters'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import {
@@ -17,10 +17,14 @@ import { useI18n } from '../../lib/i18n'
 import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
 import { FREE_EDIT_LIMIT_DETAIL, freeAgentContextBlocked, useProAsk } from '../../lib/freeEditBudget'
 import { shippedBundle } from '../../lib/freeExport'
+import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, buildSystemContext, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
+import { contextTokenJson } from '../../lib/contextSource'
+import { ContextFilters, useContextOptions } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { LoginWall } from '../ui/LoginWall'
 import { showToast } from '../ui/Toast'
-import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
+import { ChromeAnchoredDropdown } from './TopNav'
 import ThemeCodeScopeRail, { FormatGlyph, resolveCodeTheme, type CodeFormatKey, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
 
@@ -34,10 +38,16 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
   // handed to an agent, and the files below are what that agent reads.
   { key: 'agent', label: 'Agent context', file: 'references/*.md' },
   { key: 'css', label: 'CSS', file: 'variables.css' },
-  { key: 'markdown', label: 'Markdown', file: 'README.md' },
+  // README.md used to be a third format here. It said what Agent context says
+  // in a different shape, and two markdown tabs read as "which one do I
+  // paste?". It still ships where files ship: Export and GitHub.
 ]
 
 const PREVIEW_LINE_LIMIT = 32
+
+/** Every scope the Agent context can be cut to: the whole brand, then one
+ *  foundation at a time. */
+const CONTEXT_SCOPES: ContextScope[] = ['all', ...CONTEXT_FOUNDATIONS.map((f) => f.key)]
 
 const COPY_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
@@ -72,7 +82,19 @@ function openHandoff(url: string) {
 
 /** Copies the file on screen. The destinations that used to hide in this
  *  button's dropdown are the hand-off strip above the file now. */
-function CopyPageButton({ disabled, pageContent, block = false, agentContext = false }: { disabled: boolean; pageContent: string; block?: boolean; agentContext?: boolean }) {
+/** What the Copy context chevron offers: the appearance to copy, the same
+ *  three the Variables popover names. `buildFor` builds the paste for one of
+ *  them on the spot, so a pick copies that theme without waiting a render. */
+type AppearanceMenu = {
+  value: ContextAppearance
+  locked: ContextAppearance | null
+  onPick: (appearance: ContextAppearance) => void
+  buildFor: (appearance: ContextAppearance) => string
+}
+
+function CopyPageButton({ disabled, pageContent, block = false, agentContext = false, appearanceMenu }: { disabled: boolean; pageContent: string; block?: boolean; agentContext?: boolean; appearanceMenu?: AppearanceMenu }) {
+  // On Agent context the file IS the context, so the button says so.
+  const idle = agentContext ? 'Copy context' : 'Copy file'
   const { t } = useI18n()
   // Copying the file IS taking it: anonymous → sign up first, like Export.
   const { gated } = useAccess()
@@ -80,30 +102,102 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
   const editCount = useDesignStore((s) => s.freeEditCount)
   const askPro = useProAsk((s) => s.ask)
   const [copied, setCopied] = useState(false)
-  const copyPage = async () => {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const copyText = async (text: string) => {
     if (agentContext && freeAgentContextBlocked(editCount, free)) {
       askPro(FREE_EDIT_LIMIT_DETAIL)
       return
     }
     if (gated) { goToLogin('export'); return }
-    if (!(await writeClipboard(pageContent))) {
+    if (!(await writeClipboard(text))) {
       showToast(t('Couldn’t copy — try again'))
       return
     }
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1800)
-    showToast(t('Copied the file on this page.'))
+    showToast(agentContext ? t('Copied the agent context. Paste it into any agent.') : t('Copied the file on this page.'))
   }
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => void copyPage()}
-      className={`inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg disabled:pointer-events-none disabled:opacity-40 ${block ? 'w-full justify-center' : 'flex-shrink-0'} ${COPY_FOCUS}`}
-    >
+  const label = (
+    <>
       <CopyIcon done={copied} />
-      {copied ? t('Copied') : t('Copy page')}
-    </button>
+      {copied ? t('Copied') : t(idle)}
+    </>
+  )
+
+  if (!appearanceMenu) {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => void copyText(pageContent)}
+        className={`inline-flex h-8 items-center gap-2 rounded-lg px-2.5 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} disabled:pointer-events-none disabled:opacity-40 ${block ? 'w-full justify-center' : 'flex-shrink-0'} ${COPY_FOCUS}`}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  // Split button, Export's shape: the label copies what is on screen, the
+  // chevron picks which theme to copy.
+  const half = `inline-flex h-full items-center transition-shadow ${CHROME_CONTROL_HOVER} disabled:pointer-events-none disabled:opacity-40 ${COPY_FOCUS}`
+  return (
+    <div ref={rootRef} className={`inline-flex h-8 flex-shrink-0 overflow-hidden rounded-lg text-caption font-medium text-fg ${CHROME_CONTROL_SHELL}`}>
+      <button type="button" disabled={disabled} onClick={() => void copyText(pageContent)} className={`${half} gap-2 pl-2.5 pr-2`}>
+        {label}
+      </button>
+      <span aria-hidden className="my-2 w-px bg-fg/15" />
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('Choose the theme to copy')}
+        title={t('Choose the theme to copy')}
+        onClick={() => setOpen((v) => !v)}
+        className={`${half} w-8 justify-center ${open ? CHROME_CONTROL_ACTIVE : ''}`}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={rootRef}
+        align="right"
+        gap={6}
+        menuAriaLabel={t('Choose the theme to copy')}
+        className="w-48 rounded-lg border border-line-strong bg-app p-1 shadow-xl"
+      >
+        <p className="px-2.5 pb-1 pt-1.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Theme')}</p>
+        {CONTEXT_APPEARANCES.map((item) => {
+          const selected = (appearanceMenu.locked ?? appearanceMenu.value) === item.key
+          const off = !!appearanceMenu.locked && appearanceMenu.locked !== item.key
+          return (
+            <button
+              key={item.key}
+              type="button"
+              role="menuitemradio"
+              aria-checked={selected}
+              disabled={off}
+              title={off ? t('Free ships one theme. Pro ships Light and Dark.') : undefined}
+              onClick={() => {
+                setOpen(false)
+                appearanceMenu.onPick(item.key)
+                void copyText(appearanceMenu.buildFor(item.key))
+              }}
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            >
+              <span className="flex-1">{t(item.label)}</span>
+              {selected ? (
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-fg"><path d="m3.25 8.25 3 3 6.5-6.5" /></svg>
+              ) : null}
+            </button>
+          )
+        })}
+      </ChromeAnchoredDropdown>
+    </div>
   )
 }
 
@@ -115,12 +209,10 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
  */
 function AgentHandoff({
   themeName,
-  context,
   skillMd,
   projectName,
 }: {
   themeName: string
-  context: string
   skillMd: string
   projectName: string
 }) {
@@ -129,7 +221,6 @@ function AgentHandoff({
   const free = useFreeTier()
   const editCount = useDesignStore((s) => s.freeEditCount)
   const askPro = useProAsk((s) => s.ask)
-  const [copied, setCopied] = useState(false)
   const contextBlocked = freeAgentContextBlocked(editCount, free)
   const refuseContext = () => {
     if (!contextBlocked) return false
@@ -158,47 +249,33 @@ function AgentHandoff({
       : t('Couldn’t copy — try again'))
   }
 
-  const copyContext = async () => {
-    if (refuseContext()) return
-    if (gated) { goToLogin('export'); return }
-    if (!(await writeClipboard(context))) {
-      showToast(t('Couldn’t copy — try again'))
-      return
-    }
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1800)
-    showToast(t('Copied the agent context. Paste it into any agent.'))
-  }
-
-  const card = `group flex min-w-0 items-center gap-3 rounded-lg border border-line bg-app px-3 py-2.5 text-left transition-[border-color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:bg-elevated active:scale-[0.99] ${COPY_FOCUS}`
+  // GHOST links, not filled chips: the page already carries a row of filled
+  // controls (filters, Copy, Edit brand), and three more fills made it read as
+  // a wall of buttons. These leave the app, so the ↗ says "opens elsewhere" —
+  // the cue that they are actions — and hover gives them the chip wash.
+  const btn = `group inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-[color,background-color] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg ${COPY_FOCUS}`
   const items: { key: string; icon: ReactNode; title: string; hint: string; run: () => void }[] = [
-    { key: 'claude', icon: <DestLogo name="claudecode" />, title: t('Open in Claude'), hint: t('Connects live over MCP'), run: () => void openWithPrompt('claude') },
-    { key: 'cursor', icon: <DestLogo name="cursor" />, title: t('Open in Cursor'), hint: t('Connects live over MCP'), run: () => void openWithPrompt('cursor') },
-    { key: 'figma', icon: <DestLogo name="figma" />, title: t('Figma Make'), hint: t('Pastes the skill'), run: () => void openFigmaAgent() },
-    {
-      key: 'copy',
-      icon: <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><CopyIcon done={copied} /></span>,
-      title: copied ? t('Copied') : t('Copy context'),
-      hint: t('Paste into any agent'),
-      run: () => void copyContext(),
-    },
+    { key: 'claude', icon: <DestLogo name="claudecode" />, title: t('Claude'), hint: t('Open in Claude — connects live over MCP'), run: () => void openWithPrompt('claude') },
+    { key: 'cursor', icon: <DestLogo name="cursor" />, title: t('Cursor'), hint: t('Open in Cursor — connects live over MCP'), run: () => void openWithPrompt('cursor') },
+    { key: 'figma', icon: <DestLogo name="figma" />, title: t('Figma Make'), hint: t('Opens Figma Make and copies the skill'), run: () => void openFigmaAgent() },
   ]
 
+  // A strip, not a card: three destinations don't need a heading and a
+  // paragraph to explain them, and every pixel spent here was taken from the
+  // file below. "Copy context" left this row — the file's own Copy button
+  // copies exactly the context on screen, so it was the same action twice.
   return (
-    <section aria-label={t('Give this brand to your agent')} className="mx-3 mb-3 flex-shrink-0 rounded-xl border border-line-strong bg-surface p-4">
-      <h3 className="text-strong font-semibold text-fg">{t('Give {name} to your agent', { name: themeName })}</h3>
-      <p className="mt-0.5 text-caption text-fg-muted">{t('Pick where you build. Escala copies the setup and opens it — the agent then uses your tokens instead of inventing values.')}</p>
-      <div className="mt-3 grid grid-cols-2 gap-2 min-[1180px]:grid-cols-4">
-        {items.map((item) => (
-          <button key={item.key} type="button" onClick={item.run} className={card}>
-            {item.icon}
-            <span className="min-w-0">
-              <span className="block truncate text-caption font-semibold text-fg">{item.title}</span>
-              <span className="block truncate text-mini text-fg-faint">{item.hint}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+    <section aria-label={t('Give {name} to your agent', { name: themeName })} className="mx-3 mb-3 flex flex-shrink-0 flex-wrap items-center gap-1">
+      <span className="mr-1 pl-2 text-caption text-fg-faint">{t('Send to your agent')}</span>
+      {items.map((item) => (
+        <button key={item.key} type="button" onClick={item.run} title={item.hint} aria-label={item.hint} className={btn}>
+          {item.icon}
+          <span className="truncate underline decoration-fg/25 underline-offset-[3px] transition-colors group-hover:decoration-fg/60">{item.title}</span>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint transition-[color,transform] duration-150 group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-fg">
+            <path d="M4 8 8 4M4.5 4H8v3.5" />
+          </svg>
+        </button>
+      ))}
     </section>
   )
 }
@@ -291,33 +368,35 @@ function EditIcon() {
  *  (number over an uppercase caption), the house eyebrow treatment. */
 function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: ExportFacts | null; onEdit: () => void }) {
   const { t } = useI18n()
+  // One line of facts under the name, not a stat row: they describe the file,
+  // and the file is what this page is for — it gets the height.
   const items = facts
     ? [
-        { value: compactCount(facts.primitives), label: t('Primitives') },
-        { value: compactCount(facts.tokens), label: t('Tokens') },
-        { value: String(facts.modes), label: t('Modes') },
-        { value: compactCount(facts.cssBytes), label: 'CSS' },
+        [compactCount(facts.primitives), t('primitives')],
+        [compactCount(facts.tokens), t('tokens')],
+        [String(facts.modes), t('modes')],
+        [compactCount(facts.cssBytes), 'CSS'],
       ]
     : []
   return (
-    <header className="flex flex-shrink-0 flex-wrap items-end justify-between gap-x-8 gap-y-4 px-5 pt-5 pb-4">
+    <header className="flex flex-shrink-0 items-center justify-between gap-4 px-5 pt-4 pb-3">
       <div className="min-w-0">
-        <h2 className="truncate text-heading font-semibold text-fg">{name}</h2>
+        <h2 className="truncate text-title font-semibold text-fg">{name}</h2>
         {items.length ? (
-          <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
-            {items.map((item) => (
-              <div key={item.label} className="flex flex-col-reverse">
-                <dt className="mt-0.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{item.label}</dt>
-                <dd className="text-title font-semibold tabular-nums text-fg">{item.value}</dd>
-              </div>
+          <p className="mt-0.5 truncate text-caption tabular-nums text-fg-faint">
+            {items.map(([value, label], i) => (
+              <Fragment key={label}>
+                {i > 0 ? <span className="px-1.5 text-fg-faint/60" aria-hidden>·</span> : null}
+                <span className="font-medium text-fg-muted">{value}</span> {label}
+              </Fragment>
             ))}
-          </dl>
+          </p>
         ) : null}
       </div>
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+        className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-3 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
         <EditIcon />
         {t('Edit brand')}
@@ -368,7 +447,7 @@ export default function ThemeCodeFormat({
     effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
   ), [store, effectiveScope])
   const artifacts = useMemo(() => {
-    if (!source) return { css: '', markdown: '', tokensMd: '', skillMd: '', facts: null }
+    if (!source) return { css: '', skillMd: '', facts: null }
     const asStore = source as ReturnType<typeof useDesignStore.getState>
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
@@ -387,19 +466,23 @@ export default function ThemeCodeFormat({
     const css = cut?.css ?? buildCSS(asStore)
     return {
       css,
-      markdown: cut?.markdown ?? buildMarkdown(asStore),
-      // Every reference file, in package order: colour, then type / spacing /
-      // radius / stroke / size / grid / shadow, then the role contract. Colour
-      // alone read as "the agent only gets colour".
-      tokensMd: files
-        .filter((file) => file.path.startsWith('references/'))
-        .map((file) => file.text.trimEnd())
-        .join('\n\n---\n\n'),
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
       facts: exportFacts(cut ? JSON.parse(cut.tokens) as typeof json : json, css),
     }
   }, [source, free, previewAppearance, effectiveScope])
-  const content = format === 'css' ? artifacts.css : format === 'markdown' ? artifacts.markdown : artifacts.tokensMd
+  // Agent context is CUT to what the person asked for — scope, theme, detail —
+  // and the file on screen is exactly the paste. `all · both · full` is the
+  // file this tab always showed (every references/ file, in package order).
+  // Free keeps one appearance, the same cut its CSS gets.
+  const freeAppearance = previewAppearance ?? store.themeKinds[effectiveScope ?? ''] ?? 'light'
+  const [ctx, setCtx] = useContextOptions('all', free ? freeAppearance : 'both')
+  const ctxAppearance = free ? freeAppearance : ctx.appearance
+  const agentMd = useMemo(() => {
+    if (!effectiveScope) return ''
+    const json = contextTokenJson(store, effectiveScope, ctxAppearance)
+    return buildSystemContext(json, { scope: ctx.scope, detail: ctx.detail }, store.projectName)
+  }, [store, effectiveScope, ctxAppearance, ctx.scope, ctx.detail])
+  const content = format === 'css' ? artifacts.css : agentMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
@@ -454,7 +537,6 @@ export default function ThemeCodeFormat({
         {effectiveScope ? (
           <AgentHandoff
             themeName={scopedLabel}
-            context={artifacts.tokensMd}
             skillMd={artifacts.skillMd}
             projectName={source?.projectName || store.projectName}
           />
@@ -462,9 +544,25 @@ export default function ThemeCodeFormat({
         <div className="flex min-h-0 flex-1 p-3 pt-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
             {showScopeRail ? (
-              <header className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-line px-3">
-                <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{active.file}</p>
-                {lines.length > 0 ? (
+              <header className="flex min-h-11 flex-shrink-0 items-center gap-3 border-b border-line px-3 py-1.5">
+                {/* On Agent context the bar IS the request: what to send, then
+                    what it costs. The file name says nothing a reader acts on. */}
+                {format === 'agent' && effectiveScope ? (
+                  <div className="min-w-0 flex-1">
+                    <ContextFilters
+                      layout="row"
+                      opts={{ ...ctx, appearance: ctxAppearance }}
+                      onChange={(patch) => { setCtx(patch); setExpanded(false) }}
+                      scopes={CONTEXT_SCOPES}
+                      lockedAppearance={free ? freeAppearance : null}
+                      // Theme is picked on Copy context's chevron, not here.
+                      showAppearance={false}
+                    />
+                  </div>
+                ) : (
+                  <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{active.file}</p>
+                )}
+                {format !== 'agent' && lines.length > 0 ? (
                   <span className="flex-shrink-0 text-caption text-fg-muted">{lines.length} lines</span>
                 ) : null}
                 {expanded ? (
@@ -476,7 +574,21 @@ export default function ThemeCodeFormat({
                     Collapse
                   </button>
                 ) : null}
-                <CopyPageButton disabled={!effectiveScope} pageContent={content} agentContext={format === 'agent'} />
+                <CopyPageButton
+                  disabled={!effectiveScope}
+                  pageContent={content}
+                  agentContext={format === 'agent'}
+                  appearanceMenu={format === 'agent' && effectiveScope ? {
+                    value: ctx.appearance,
+                    locked: free ? freeAppearance : null,
+                    onPick: (appearance) => { setCtx({ appearance }); setExpanded(false) },
+                    buildFor: (appearance) => buildSystemContext(
+                      contextTokenJson(store, effectiveScope, appearance),
+                      { scope: ctx.scope, detail: ctx.detail },
+                      store.projectName,
+                    ),
+                  } : undefined}
+                />
               </header>
             ) : (
             <header className="flex min-h-[54px] flex-shrink-0 items-center gap-4 border-b border-line px-3 foundation-layer-bar">

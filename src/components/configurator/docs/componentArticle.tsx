@@ -14,6 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
+import { createPortal } from 'react-dom'
 import { useRef, useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
@@ -21,6 +22,10 @@ import {
 } from '../../../lib/componentCatalogue'
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown } from '../../../lib/agentContext'
+import { cutComponentContext } from '../../../lib/contextRequest'
+import { resolvePreviewTokens } from '../../../lib/previewTokens'
+import { useDesignStore } from '../../../store/useDesignStore'
+import type { ContextOptions } from '../../ui/ContextControls'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -496,16 +501,44 @@ export function componentToc(def: ComponentDef, t: Translate = (s) => s): TocEnt
   )
   return entries
 }
+// ── Copy context ─────────────────────────────────────────────────────────────
+
+/** The component brief, cut to what the person asked for. The appearance on
+ *  screen reuses the page's own tokens; the other one is resolved on demand,
+ *  only when Dark (or Both) is actually copied. */
+function componentContext(
+  def: ComponentDef,
+  snippet: string,
+  theme: string,
+  current: ThemeAppearance,
+  currentTokens: PreviewTokens,
+  opts: ContextOptions,
+): string {
+  const tokensFor = (a: ThemeAppearance) => (
+    a === current ? currentTokens : resolvePreviewTokens(useDesignStore.getState(), theme, a)
+  )
+  const first: ThemeAppearance = opts.appearance === 'both' ? 'light' : opts.appearance
+  const primary = agentContextMarkdown(def, snippet, tokensFor(first))
+  const dark = opts.appearance === 'both' ? agentContextMarkdown(def, snippet, tokensFor('dark')) : undefined
+  return cutComponentContext(primary, opts, dark)
+}
+
 // ── The page ─────────────────────────────────────────────────────────────────
 
 export function ComponentArticle({
-  def, tokens, onOpen, appearance, onInspectRole,
+  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light', actionsSlot,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
   onOpen: (c: ComponentDef) => void
   appearance?: ThemeAppearance
   onInspectRole?: (roleId: string) => void
+  /** Brand the page is painted in — Copy context resolves the OTHER
+   *  appearance of it when the person asks for Light, Dark or both. */
+  previewTheme?: string
+  /** When set, "Copy context to Agents" renders there (the page header, beside
+   *  Edit Color) instead of in the article's own breadcrumb row. */
+  actionsSlot?: HTMLElement | null
 }) {
   const { t } = useI18n()
   // The live playground's own selection — OWNED here, not inside `Hero` (see
@@ -535,14 +568,22 @@ export function ComponentArticle({
   const prev = COMPONENTS[idx - 1]
   const next = COMPONENTS[idx + 1]
 
+  const contextButton = (
+    <CopyAgentContextButton
+      build={(opts) => componentContext(def, heroCode, previewTheme, appearance ?? 'light', tokens, opts)}
+      fallbackAppearance={appearance ?? 'light'}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-8">
       <DocHeader
         section={t('Components')}
         kind={t(def.category)}
         title={def.label}
-        actions={<CopyAgentContextButton text={agentBrief} />}
+        actions={actionsSlot ? null : contextButton}
       />
+      {actionsSlot && createPortal(contextButton, actionsSlot)}
 
       {/* `def.label` is NOT translated: it is the plugin's own component name
           and the key a designer matches against the Figma variant set. Its

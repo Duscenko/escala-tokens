@@ -4,10 +4,8 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live, PhosphorWeightProvider } from '../configurator/docs/specimens'
-import { CopyButton } from '../configurator/docs/blocks'
 import { ARTEFACTS, type Artefact } from './artefacts'
 import { CompactCarousel } from './artefacts/CompactCarousel'
-import { buildSectionExport, ALL_SECTIONS, type SectionKey } from '../../lib/sectionExport'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
 import { ChromeTabBackground } from '../ui/ChromeTabShape'
@@ -19,7 +17,6 @@ import type { TypeFocus } from '../configurator/TypeSemantics'
 import { GridPreview } from './atoms/GridPreview'
 import { ShadowPreview } from './atoms/ShadowPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
-import { useDesignStore } from '../../store/useDesignStore'
 import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 
 // Catalogue renderers reused verbatim — keys are plugin gates ('Toggle' ships
@@ -175,20 +172,11 @@ function ColorCollage({
 
 // ── Panel tabs ──────────────────────────────────────────────────────────────
 // The aside is the only column that is ALWAYS looking at the system you're
-// editing, which makes it the cheapest place to reach the two things that
-// otherwise cost a navigation: a real composed SCREEN built from your tokens
-// (`Artefacts`) and the section's markdown (`.MD` — otherwise: open the Export
-// wizard, pick a scope, pick a format).
-//
-// The two are scoped differently, on purpose. `.MD` follows the centre column,
-// because markdown for "the foundation you're editing" is the useful scope. An
-// artefact is whole-SYSTEM: it's the one view where every foundation is on
-// screen at once, which is the only way to see them working together.
-//
-// Everything here is a READING of what already exists — `buildSectionExport`
-// for the markdown, the catalogue's `SPECIMENS` for the artefact's controls.
-// Nothing is re-authored for this column, so the panel can't tell you something
-// the export or the Figma plugin would contradict.
+// editing: the specimen (`Preview`) and a real composed SCREEN built from your
+// tokens (`Artefacts`), which is whole-SYSTEM — the one view where every
+// foundation is on screen at once. Every control in it is a catalogue
+// `SPECIMENS` renderer, so the panel can't tell you something the Figma plugin
+// would contradict.
 //
 // A third tab, `Documentation`, used to sit here: the foundation's own Docs page
 // re-laid-out as an accordion. It was retired for this one. Nothing was lost —
@@ -196,12 +184,16 @@ function ColorCollage({
 // TOC, prev/next and side-by-side ramps a 400px column could never show, so the
 // accordion was always the lesser copy of a page one click away.
 
-export type PanelTab = 'preview' | 'artefacts' | 'md'
+// A `.MD` tab (the section's markdown) was retired too: it was one of four
+// markdown surfaces saying the same thing, and this panel is no longer
+// mounted outside Save. Copy context — with Scope · Theme · Detail — lives in
+// the Variables card header and the Code tab instead.
+
+export type PanelTab = 'preview' | 'artefacts'
 
 const PANEL_TABS: { key: PanelTab; label: string }[] = [
   { key: 'preview', label: 'Preview' },
   { key: 'artefacts', label: 'Artefacts' },
-  { key: 'md', label: '.MD' },
 ]
 
 /** Same Chrome-style strip `ColorHub` uses for Primitives / Semantics /
@@ -217,7 +209,7 @@ function PanelTabBar({
   workspace?: boolean
 }) {
   const tabs = workspace
-    ? PANEL_TABS.filter((item) => item.key !== 'md').map((item) => ({
+    ? PANEL_TABS.map((item) => ({
         ...item,
         label: item.key === 'preview' ? 'Components' : item.label,
       }))
@@ -245,37 +237,6 @@ function PanelTabBar({
           )
         })}
       </div>
-    </div>
-  )
-}
-
-/** The `.MD` tab — the active foundation's markdown, live.
- *
- *  It is the EXACT string `buildSectionExport` hands the Export wizard, not a
- *  summary written for this column, so copying from here and exporting from
- *  the wizard produce the same bytes.
- *
- *  Mounted only while its tab is open (see the switch below): rebuilding a few
- *  hundred tokens of markdown on every keystroke of a hex field is cheap but
- *  not free, and there's no reason to pay it while someone is looking at the
- *  specimen. */
-function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: string }) {
-  const store = useDesignStore()
-  const modes = store.themeOrder.filter((t) => store.themes[t])
-  const md = buildSectionExport(section, 'md', 'hex', { modes: modes.length ? modes : ['light'] })
-
-  return (
-    <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-      <div className="flex items-center gap-2 px-4 h-9 border-b border-line flex-shrink-0">
-        <span className="text-caption font-mono text-fg-faint truncate">{file}</span>
-        <span className="ml-auto flex-shrink-0"><CopyButton text={md} label="Copy" /></span>
-      </div>
-      {/* `whitespace-pre` + its own x-scroll: markdown tables are wider than
-          400px and wrapping them would destroy the alignment that makes them
-          readable as tables. */}
-      <pre className="flex-1 min-h-0 min-w-0 overflow-auto px-4 py-3 text-caption font-mono leading-relaxed text-fg-muted whitespace-pre">
-        {md}
-      </pre>
     </div>
   )
 }
@@ -338,7 +299,6 @@ export default function PreviewPanel({
   focus = null,
   typeFocus = null,
   categoryKey = null,
-  mdWholeSystem = false,
   previewTheme = 'light',
   previewAppearance,
   previewPlatform = 'desktop',
@@ -356,12 +316,6 @@ export default function PreviewPanel({
   /** Active Variables foundation key (`color`|`typography`|`radius`|…) — tailors
    *  the generic fallback below to a live specimen set for that foundation. */
   categoryKey?: string | null
-  /** Forces the `.MD` tab to the whole-system export instead of `categoryKey`'s
-   *  own section. Computed by the caller (Configurator knows Color's own
-   *  Primitives/Semantics/Gradients sub-tab; this panel deliberately doesn't)
-   *  so `.MD` can read "everything" while skimming Primitives or Gradients and
-   *  narrow to just `color.md` once Semantics is the deliberate, focused task. */
-  mdWholeSystem?: boolean
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
   previewTheme?: string
   /** Light/Dark appearance inside the selected library theme. */
@@ -390,22 +344,11 @@ export default function PreviewPanel({
   // way `previewCollapsed` has to be lifted because TopNav sizes its divider
   // from the column's width). It survives foundation switches — the panel is a
   // separate tree from the centre column's `AnimatePresence`, so editing
-  // Color then Radius keeps you on `.MD` — and resets when the whole aside is
+  // Color then Radius keeps you on Artefacts — and resets when the whole aside is
   // handed to another panel (Save, "+ Theme"), which is the right moment to
   // land back on the specimen.
   const [tab, setTab] = useState<PanelTab>(() => workspace ? 'artefacts' : 'preview')
 
-  // The section both new tabs are scoped to. `PreviewPanel` only ever renders
-  // inside the Variables Generator (see `showPreview` in Configurator), so
-  // `categoryKey` is in practice always a foundation — but it's typed nullable,
-  // and 'all' (the whole-system export) is the honest answer when it isn't set
-  // rather than picking a foundation at random. `mdWholeSystem` overrides this
-  // to 'all' even with a real `categoryKey` — Color's Primitives/Gradients tabs
-  // want the big export, only Semantics wants the narrow one.
-  const section: SectionKey | 'all' =
-    mdWholeSystem ? 'all'
-    : categoryKey && (ALL_SECTIONS as string[]).includes(categoryKey) ? (categoryKey as SectionKey) : 'all'
-  const mdFile = section === 'all' ? 'design-system.md' : `${section}.md`
 
   // One entry today, so there is nothing to pick between — see the registry.
   const artefact = ARTEFACTS[0] as Artefact | undefined
@@ -421,7 +364,6 @@ export default function PreviewPanel({
   // under you. The specific screen is already named on its own card/back row.
   const title =
     workspace ? 'Theme Preview'
-    : tab === 'md' ? mdFile
     : tab === 'artefacts' ? 'Artefacts'
     : previewTitle
   // Show which theme is on display when it isn't the default light one. Both
@@ -460,13 +402,10 @@ export default function PreviewPanel({
 
       <PanelTabBar tab={tab} onChange={setTab} workspace={workspace} />
 
-      {/* Only the ACTIVE tab is mounted. `.MD` rebuilds a few hundred tokens of
-          markdown and the artefact runs a dozen specimens — neither should pay
-          that while you're looking at the other, in a panel that repaints on
-          every token edit. */}
-      {tab === 'md' ? (
-        <MarkdownPane section={section} file={mdFile} />
-      ) : tab === 'artefacts' ? (
+      {/* Only the ACTIVE tab is mounted. The artefact runs a dozen
+          specimens — the specimen tab shouldn't pay that while you're looking
+          at it, in a panel that repaints on every token edit. */}
+      {tab === 'artefacts' ? (
         artefact ? (
           <ArtefactsPane tokens={tokens} />
         ) : (

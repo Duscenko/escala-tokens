@@ -7,13 +7,12 @@ import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { myThemeKeys } from './ThemeLibraryRail'
 import { InspectorPortal } from './WorkspaceInspector'
 
-export type CodeFormatKey = 'agent' | 'css' | 'markdown'
+export type CodeFormatKey = 'agent' | 'css'
 
 /** Existing product marks, masked so they follow the row's ink. */
 const FORMAT_ICON: Record<CodeFormatKey, string> = {
   agent: '/icons/settings/mcp.svg',
   css: '/icons/theme-hub-icons/Icon/code.svg',
-  markdown: '/icons/theme-hub-icons/Icon/doc.svg',
 }
 
 export function FormatGlyph({ format }: { format: CodeFormatKey }) {

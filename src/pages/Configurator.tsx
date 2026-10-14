@@ -102,6 +102,7 @@ import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../l
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
 import { showToast } from '../components/ui/Toast'
+import { VariablesContextButton } from '../components/configurator/VariablesContextButton'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -1366,6 +1367,9 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
+  // Where the open component's "Copy context to Agents" lands: the header band,
+  // beside Edit Color. The article owns its state, so it portals into this node.
+  const [componentActionsSlot, setComponentActionsSlot] = useState<HTMLElement | null>(null)
   // Docs exposes only focused operating pages from the top-menu. The token
   // reference stays in the preview's contextual documentation surface, so the
   // global destination never duplicates it.
@@ -2132,9 +2136,8 @@ export default function Configurator() {
       Icon: ComponentsIcon,
       title: 'Components',
       subtitle: 'One page per component — live playground, examples, accessibility, Figma and API.',
-      // Search stays last. Theme switch + Edit Color sit in the gap the
-      // subtitle already yields (`truncate`). Same `previewTheme` as the
-      // playground — not a second switcher.
+      // Search lives in the directory panel on the right (it filters that
+      // list). Same `previewTheme` as the playground — not a second switcher.
       right: (
         <div className="flex items-center gap-2">
           <PreviewThemeSwitch
@@ -2146,6 +2149,7 @@ export default function Configurator() {
             value={previewTheme}
             onChange={changePreviewTheme}
           />
+          <div ref={setComponentActionsSlot} className="flex items-center" />
           <button
             type="button"
             onClick={() => selectFoundation('color')}
@@ -2153,23 +2157,6 @@ export default function Configurator() {
           >
             {t('Edit Color')}
           </button>
-          <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-44 lg:w-52 min-w-[8rem] focus-within:border-line-strong transition-colors">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={componentSearch}
-              onChange={(e) => setComponentSearch(e.target.value)}
-              placeholder="Search components"
-              aria-label="Search components"
-              className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
-            />
-            {componentSearch && (
-              <button onClick={() => setComponentSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
         </div>
       ),
     }
@@ -2179,6 +2166,7 @@ export default function Configurator() {
         active={activeComponent}
         onSelect={selectComponent}
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
+        actionsSlot={componentActionsSlot}
       />
     )
     // Constant, NOT keyed on the open component: the view owns its own article
@@ -2223,9 +2211,11 @@ export default function Configurator() {
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
   const railVisible = projectCreated && !exportMode
-  // Components alone uses the outer left rail. Docs is a set of focused pages
-  // selected in its top-menu, so it intentionally uses the full reading width.
-  const outerRailVisible = railVisible && tab === 'components'
+  // No section uses an outer left rail any more: Components' directory moved
+  // to a right-hand panel (the Generator's inspector column), and Docs is a set
+  // of focused pages selected in its top-menu.
+  const outerRailVisible = false
+  const componentsCanvas = railVisible && tab === 'components'
   // Every Variables foundation paints a 198px Groups column (Color owns it
   // inside ColorHub; the rest wrap with FoundationWorkbench). It's not an
   // outer SectionRail, so `outerRailVisible` above stays false — but the
@@ -2250,6 +2240,7 @@ export default function Configurator() {
   // Components before any design system exists: no Export (nothing to ship),
   // and the section tags live in ☰. "Go to generator" is the way forward.
   const componentsWithoutSystem = tab === 'components' && myThemeKeys(themeOrder, themes).length === 0
+  const noSystemReason = t('Create a brand to open Variables, System and Code')
   const handleNav = (key: TopNavKey) => {
     if (key === 'pricing') window.location.assign(PRICING_PATH)
     else if (key === 'variables') {
@@ -2371,7 +2362,7 @@ export default function Configurator() {
   const changeWorkspaceNav = (next: WorkspaceNavKey) => {
     if (next === 'components') { changeTab('components'); return }
     if (next === 'overview') { openThemePreviewPage(); return }
-    const reason = themeTablesBlocked()
+    const reason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
     if (reason) {
       showToast(reason, undefined, true)
       return
@@ -2391,7 +2382,10 @@ export default function Configurator() {
   // other four. Home is a file browser with its own menu, and a visitor with
   // no system yet has nothing for Variables / System / Code to open.
   const navRailVisible = (themesCanvas && themeWorkspaceTab !== 'library')
-    || (railVisible && tab === 'components' && !componentsWithoutSystem)
+    || (railVisible && tab === 'components')
+  // Without a system yet, Components still shows the rail (it is where you are
+  // in the product); Variables / System / Code are dimmed — nothing to open.
+  const railBlockedReason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
   const navRail = navRailVisible ? (
     <WorkspaceNavRail
       ariaLabel={t('Workspace')}
@@ -2404,8 +2398,8 @@ export default function Configurator() {
         { key: 'code', label: t('Code') },
         { key: 'components', label: t('Components') },
       ]}
-      dimmed={themeTablesBlocked() ? ['variables', 'system', 'code'] : undefined}
-      dimmedReason={themeTablesBlocked() ?? undefined}
+      dimmed={railBlockedReason ? ['variables', 'system', 'code'] : undefined}
+      dimmedReason={railBlockedReason ?? undefined}
     />
   ) : null
 
@@ -2486,18 +2480,8 @@ export default function Configurator() {
         {!themesCanvas && navRail && (
           <div className={`flex-shrink-0 ${SHELL_CHROME}`}>{navRail}</div>
         )}
-        {railVisible && tab === 'components' && (
-          <ComponentsRail
-            icons={CATEGORY_ICONS}
-            active={activeComponent}
-            onSelect={selectComponent}
-            search={componentSearch}
-            collapsed={railCollapsed}
-            onToggleCollapse={() => setRailCollapsed((v) => !v)}
-          />
-        )}
         <div
-          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
@@ -2541,7 +2525,10 @@ export default function Configurator() {
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
                 : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
-              : 'flex-1 min-w-0 flex flex-col'}
+              : componentsCanvas
+                // Components reads like the Generator: [rail] [page CARD] [directory].
+                ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
+                : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
                 title, and the tab strip above owns the header row. */}
@@ -2780,6 +2767,7 @@ export default function Configurator() {
                     {t(activeFoundationCollections.find(({ key }) => key === activeCollection)?.label ?? section.variablesLabel)}
                   </h2>
                   <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                    <VariablesContextButton brand={previewTheme} appearance={previewAppearance} foundation={activeFoundation} />
                     <GetCodeButton onOpen={() => openCodeForTheme(previewTheme)} />
                     {tokenSearchField}
                   </div>
@@ -2843,6 +2831,15 @@ export default function Configurator() {
             </div>
           </main>
           </div>
+          {componentsCanvas && (
+            <ComponentsRail
+              icons={CATEGORY_ICONS}
+              active={activeComponent}
+              onSelect={selectComponent}
+              search={componentSearch}
+              onSearch={setComponentSearch}
+            />
+          )}
           {themesCanvas && !homePage && (
             <WorkspaceInspector
               onSlot={setInspectorSlot}
@@ -2896,9 +2893,6 @@ export default function Configurator() {
                   focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticFocus : null}
                   typeFocus={!exportMode && tab === 'foundations' && activeFoundation === 'typography' && activeCollection === 'semantics' ? typeFocus : null}
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
-                  mdWholeSystem={
-                    !exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab !== 'semantics'
-                  }
                   previewTheme={previewTheme}
                   previewAppearance={previewAppearance}
                   previewPlatform={previewPlatform}

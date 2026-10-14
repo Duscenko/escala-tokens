@@ -204,7 +204,43 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   design edit, so it stamps no theme and spends no Free change.
 > - To see Home locally without signing in, use the `Vite Dev (accounts off)` preview config.
 
+> **UPDATE (2026-10-14): ONE "context for agents" — Scope · Theme · Detail.** There were four
+> markdown surfaces over the same tokens (Code's Agent context, Code's README Markdown, the
+> preview panel's `.MD`, Docs' Copy context) and none let the person say what they wanted.
+> - **One request model, `lib/contextRequest.ts`** (pure): `scope` = all | a foundation,
+>   `appearance` = light | dark | both, `detail` = `tokens` (Values) | `full` (Full brief).
+>   Every output is a CUT of an existing renderer, never a new one: system/foundation cut the
+>   Skill bundle's `references/*.md` by `## ` section (`buildSystemContext`); a component cuts
+>   `agentContextMarkdown` (`cutComponentContext`). `all · both · full` is byte-identical to
+>   the old Code Agent context (tested).
+> - **Appearance narrows the STORE, not the generator** (`contextSource.ts` →
+>   `freeDownloadStore`). `generateTokenJSON`'s `modes` option keys columns `light::light`
+>   (the Figma-sync shape) and must never reach a paste.
+> - **UI: `AIContextButton` with `filters`** is a split button (copy · ⌄ popover with
+>   `ContextFilters` + "≈ N tokens" from `contextSize`). Used in the Variables card header
+>   (`VariablesContextButton`, starts on the active foundation) and on component pages (no
+>   scope row). Code's Agent context shows the same filters inline above the file, so the file
+>   on screen IS the paste. Theme + Detail are remembered per browser (`sd-context-prefs`);
+>   scope follows the page. Free locks Theme to the previewed appearance.
+> - **Retired:** the `.MD` tab (PreviewPanel only mounts under Save, so it was unreachable) and
+>   Code's Markdown/README format (README still ships via Export and GitHub). Don't re-add a
+>   second markdown surface; add a scope or a detail level instead.
+> - **Not done (phase 2):** "where is this variable used" — needs each component to declare the
+>   roles it consumes (derive from `componentColorFields.generated.ts`) before a `role` scope
+>   can exist. Copy is English-only for now (no es/fr entries yet).
+
 ## Navigation model — top-nav workspace ("Escala")
+
+> **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**
+> The catalogue directory moved from a left column to a right-hand panel (`ComponentsRail.tsx`,
+> same 288px raised `bg-side-panel` column and 60px band as `WorkspaceInspector`). The band holds
+> `FoundationSwitchStrip` over the six categories (same sliding pill; selected step opens to its
+> short name — Buttons · Forms · Indicators · Surfaces · Feedback · Navigation); below it the
+> component search, then every category as an accordion (the open component's category always
+> expanded). The centre is a card (category avatar strip + the article); its in-card "On this page"
+> column was removed. The left `WorkspaceNavRail` is unchanged. `outerRailVisible` is now always
+> false — no section has an outer left rail.
+
 
 > **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —
 > the side panels moved from the LEFT to a right-hand inspector, and the full-width

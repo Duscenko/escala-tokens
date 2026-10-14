@@ -1,5 +1,6 @@
-// Components — the component catalogue: categories + rows live in
-// `ComponentsRail` (owned by Configurator); this view is the article + TOC.
+// Components — the component catalogue: categories + rows live in the
+// right-hand directory (`ComponentsRail`, owned by Configurator); this view is
+// the page card's body — the category's avatar strip over the article.
 //
 // This used to be HALF of `DocumentationView` (the "Categories" branch,
 // alongside a "Foundations" branch). The two were split back into separate
@@ -15,21 +16,20 @@ import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { OnThisPage } from './docs/blocks'
-import { ComponentArticle, componentToc } from './docs/componentArticle'
+import { ComponentArticle } from './docs/componentArticle'
 import { ComponentAvatarStrip } from './docs/ComponentAvatars'
-import { useI18n } from '../../lib/i18n'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole,
+  previewTheme = 'light', active, onSelect, onInspectRole, actionsSlot,
 }: {
   previewTheme?: string
   active: ComponentDef | null
   onSelect: (c: ComponentDef) => void
   /** A role named on the open component. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
+  /** Header node the article's "Copy context to Agents" portals into. */
+  actionsSlot?: HTMLElement | null
 }) {
-  const { t } = useI18n()
   const tokens = usePreviewTokens(previewTheme)
   const themeKind = useDesignStore((s) => s.themeKinds[previewTheme])
   const appearance: ThemeAppearance = themeKind === 'dark' ? 'dark' : 'light'
@@ -40,8 +40,6 @@ export default function ComponentsView({
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
   }, [def.key])
-
-  const toc = componentToc(def, t)
 
   return (
     <div className="h-full flex min-h-0">
@@ -72,16 +70,14 @@ export default function ComponentsView({
               tokens={tokens}
               onOpen={onSelect}
               appearance={appearance}
+              previewTheme={previewTheme}
               onInspectRole={onInspectRole}
+              actionsSlot={actionsSlot}
             />
           </motion.div>
         </div>
       </div>
 
-      {/* On this page — stays on `xl` (1440px here, see DocsView's note). */}
-      <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
-        <OnThisPage entries={toc} scrollRoot={articleRef} />
-      </div>
     </div>
   )
 }
