@@ -9,12 +9,22 @@ import { readLicenceState, type LicenceStatus } from './licence'
 import { accountsEnabled } from './supabase'
 
 export const FREE_MY_THEME_LIMIT = 1
-/** Design systems a Free account holds: the one on screen. */
-export const FREE_SYSTEM_LIMIT = 1
+/** Design systems a Free account holds, each with one brand. */
+export const FREE_SYSTEM_LIMIT = 2
 
 /** Shown when a create is refused. Already translated in i18n. */
 export const FREE_ANOTHER_THEME_ERROR =
-  'Free includes one design system with one brand. Pro adds brands and systems.'
+  'Free includes two design systems with one brand each. Pro adds brands and systems.'
+
+/** Free may start another design system while it holds fewer than the limit. */
+export function freeAnotherSystemBlocked(input: {
+  accountsOn: boolean
+  signedIn: boolean
+  pro: boolean
+  systems: number
+}): boolean {
+  return input.accountsOn && input.signedIn && !input.pro && input.systems >= FREE_SYSTEM_LIMIT
+}
 
 export function freeAnotherThemeBlocked(input: {
   accountsOn: boolean

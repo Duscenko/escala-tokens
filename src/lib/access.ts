@@ -13,7 +13,8 @@
 
 import { hasStoredSession, useAuth } from './auth'
 import { accountsEnabled } from './supabase'
-import { FREE_MY_THEME_LIMIT, FREE_SYSTEM_LIMIT, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
+import { FREE_MY_THEME_LIMIT, freeAnotherSystemBlocked, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
+import { cloudSystemCount, type CloudFiles } from './accountCloud'
 import { useLicence } from './licence'
 import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
@@ -92,21 +93,31 @@ export function useNeedsProForAnotherTheme(): boolean {
   })
 }
 
-/** Rule A: Free is ONE design system with ONE brand. The system on screen is
- *  that one, so starting another always asks for Pro — the door stays visible
- *  and opens the upgrade notice. Without this a Free account could keep five
- *  one-brand systems and have multibrand in five Figma files. Same session and
+/** Rule A: Free holds `FREE_SYSTEM_LIMIT` design systems, one brand each.
+ *  Once it holds that many, starting another asks for Pro — the door stays
+ *  visible and opens the upgrade notice. A system counts when it has a brand,
+ *  the same count the cloud trims by (`cloudSystemCount`). Same session and
  *  licence reading as `useNeedsProForAnotherTheme`; systems already saved stay
  *  listed and open. */
 export function useNeedsProForAnotherSystem(): boolean {
   const { user, loading } = useAuth()
   const { pro } = useEntitlement()
   const licence = useLicence()
+  const themeOrder = useDesignStore((s) => s.themeOrder)
+  const themes = useDesignStore((s) => s.themes)
+  const projectName = useDesignStore((s) => s.projectName)
+  const githubRepo = useDesignStore((s) => s.githubRepo)
+  const publishId = useDesignStore((s) => s.publishId)
+  const savedSystems = useDesignStore((s) => s.savedSystems)
+  const systems = cloudSystemCount({
+    snapshot: { projectName, githubRepo, publishId, themeOrder, themes },
+    savedSystems,
+  } as unknown as CloudFiles)
   const signedIn = Boolean(user) || (accountsEnabled && loading && hasStoredSession())
-  return freeAnotherThemeBlocked({
+  return freeAnotherSystemBlocked({
     accountsOn: accountsEnabled,
     signedIn,
     pro: pro || licenceStillOpen(licence.status, licence.hasKey),
-    count: FREE_SYSTEM_LIMIT,
+    systems,
   })
 }

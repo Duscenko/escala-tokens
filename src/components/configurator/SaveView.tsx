@@ -13,6 +13,8 @@ import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { GitHubGlyph } from '../ui/icons'
+import SystemNameInput from './SystemNameInput'
+import { flushLibraryAutosave } from '../../lib/libraryStatus'
 
 interface SaveViewProps {
   /** Opens the Import-your-design-system modal (owned by the shell). */
@@ -65,10 +67,11 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             key={sys.id}
             role="button"
             tabIndex={0}
-            onClick={() => confirmingDelete !== sys.id && loadSystem(sys.id)}
+            onClick={() => { if (confirmingDelete !== sys.id) { flushLibraryAutosave(); loadSystem(sys.id) } }}
             onKeyDown={(e) => {
               if ((e.key === 'Enter' || e.key === ' ') && confirmingDelete !== sys.id) {
                 e.preventDefault()
+                flushLibraryAutosave()
                 loadSystem(sys.id)
               }
             }}
@@ -355,7 +358,7 @@ export function SaveSidePanel({
   onCollapse?: () => void
 }) {
   const {
-    projectName, setProjectName,
+    projectName,
     projectDescription, setProjectDescription,
     savedSystems, saveCurrentSystem,
     primaryColor, themeOrder, selectedComponents, iconLibrary,
@@ -399,10 +402,8 @@ export function SaveSidePanel({
           <label htmlFor="ds-name" className="text-xs text-fg-muted">
             Design system name
           </label>
-          <input
+          <SystemNameInput
             id="ds-name"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
             placeholder="e.g. Acme Design System"
             className="w-full px-3 py-2 rounded-lg border border-line bg-surface text-sm font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
           />

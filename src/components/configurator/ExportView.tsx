@@ -5,6 +5,7 @@ import { useFreeTier } from '../../lib/access'
 import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
+import SystemNameInput from './SystemNameInput'
 
 type Tab = 'tokens' | 'css' | 'markdown'
 
@@ -48,7 +49,7 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function ExportView({ initialTab = 'tokens', onClose, theme, appearance }: ExportViewProps = {}) {
-  const { projectName, primaryColor, selectedComponents, setProjectName } = useDesignStore()
+  const { projectName, primaryColor, selectedComponents } = useDesignStore()
   const free = useFreeTier()
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   const [copiedTab, setCopiedTab] = useState<Tab | null>(null)
@@ -124,11 +125,9 @@ export default function ExportView({ initialTab = 'tokens', onClose, theme, appe
         {/* Editable project name (used as the README title / token namespace) */}
         <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
           <span className="text-mini text-fg-faint uppercase tracking-wider">Project</span>
-          <input
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
+          <SystemNameInput
             placeholder="Escala"
-            aria-label="Project name"
+            ariaLabel="Project name"
             className="text-sm font-medium text-fg bg-transparent outline-none border-b border-transparent focus:border-line-strong w-full"
           />
         </div>

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { slugify } from '../../lib/utils'
 import { myThemeKeys } from '../../lib/themeLibrary'
+import { flushLibraryAutosave, useUnsavedBrands } from '../../lib/libraryStatus'
 
 export default function NewSystemModal({
   onClose,
@@ -17,6 +18,7 @@ export default function NewSystemModal({
   onCreated: () => void
 }) {
   const { startNewSystem, savedSystems, githubRepo, projectName, themeOrder, themes } = useDesignStore()
+  const unsavedBrands = useUnsavedBrands()
 
   const [name, setName] = useState('')
 
@@ -24,7 +26,9 @@ export default function NewSystemModal({
   const savedId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
   const currentSaved = savedSystems.some((s) => s.id === savedId)
   // A system with no brands has nothing to lose, so it gets no warning.
-  const currentEmpty = myThemeKeys(themeOrder, themes).length === 0
+  const ownBrands = myThemeKeys(themeOrder, themes)
+  const currentEmpty = ownBrands.length === 0
+  const draftsOnScreen = ownBrands.some((key) => unsavedBrands.has(key))
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -34,9 +38,13 @@ export default function NewSystemModal({
 
   const trimmed = name.trim()
   const slug = slugify(trimmed) || 'design-system'
+  // A saved system is filed under `local:<slug>`: a new one with the same name
+  // would be saved over it.
+  const taken = !!trimmed && savedSystems.some((s) => s.id === `local:${slug}`)
 
   function create() {
-    if (!trimmed) return
+    if (!trimmed || taken) return
+    flushLibraryAutosave()
     startNewSystem()
     useDesignStore.getState().setProjectName(trimmed)
     onCreated()
@@ -80,16 +88,26 @@ export default function NewSystemModal({
             placeholder="e.g. Escala"
             className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-surface text-base font-semibold text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
           />
-          <p className="text-caption text-fg-faint">
-            Saves as <code className="font-mono text-fg-muted">{slug}</code> — names your files, the Figma collection and the sync endpoint.
-          </p>
+          {taken ? (
+            <p role="alert" className="text-caption text-status-danger">
+              A design system named “{trimmed}” already exists. Choose another name.
+            </p>
+          ) : (
+            <p className="text-caption text-fg-faint">
+              Saves as <code className="font-mono text-fg-muted">{slug}</code> — names your files, the Figma collection and the sync endpoint.
+            </p>
+          )}
         </div>
 
-        {!currentSaved && !currentEmpty && (
+        {!currentSaved && !currentEmpty ? (
           <p className="text-caption leading-relaxed text-status-warning bg-status-warning/10 rounded-lg px-3 py-2">
             Your current system isn't saved — creating a new one replaces it. Save a copy first if you want to keep it.
           </p>
-        )}
+        ) : draftsOnScreen ? (
+          <p className="text-caption leading-relaxed text-status-warning bg-status-warning/10 rounded-lg px-3 py-2">
+            A brand on screen isn't saved yet. Creating a new system leaves it behind; save it first to keep it.
+          </p>
+        ) : null}
 
         <div className="flex items-center justify-end gap-2 pt-1">
           <button
@@ -100,7 +118,7 @@ export default function NewSystemModal({
           </button>
           <button
             onClick={create}
-            disabled={!trimmed}
+            disabled={!trimmed || taken}
             className="px-4 py-2 rounded-lg text-xs font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Create design system

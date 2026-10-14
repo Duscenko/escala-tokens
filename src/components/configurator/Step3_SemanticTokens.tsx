@@ -27,8 +27,7 @@ import {
   type ThemeAppearance,
 } from '../../lib/themeModes'
 import VariableCollectionRail from './VariableCollectionRail'
-import { useNeedsProForAnotherTheme, useOneThemePlan } from '../../lib/access'
-import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
+import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { useI18n } from '../../lib/i18n'
 
@@ -557,7 +556,6 @@ function MatrixRow({
   flash,
   gridStyle,
   naming,
-  contrast,
   onToggle,
 }: {
   role: Role
@@ -830,7 +828,6 @@ export default function Step3_SemanticTokens({
     grayLightScale, grayDarkScale, customColors,
     pageBackground, darkBackground,
     projectName,
-    brandThemes,
     themes, themeSemantics, themeOrder, themeKinds, themeSources, colorNaming,
     setThemeModeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
@@ -896,29 +893,11 @@ export default function Step3_SemanticTokens({
   // The theme's spectrum leads the matrix: dark-spectrum themes use Dark →
   // Light, while light-spectrum themes use Light → Dark. Preview selection is
   // independent and never mutates this stable per-theme ordering.
-  const oneThemePlan = useOneThemePlan()
+  // Every plan sees Light and Dark here: Free is limited in what it SHIPS
+  // (export, Figma), never in what it can read and edit.
   const themeCols = appearanceOrder(preferredAppearance)
-  const visibleAppearances = useMemo(() => {
-    const cols = appearanceOrder(preferredAppearance)
-    if (!oneThemePlan) return cols
-    const planned = plannedBrandThemes(
-      shippedThemes(brandThemes, activeTheme, preferredAppearance),
-      preferredAppearance,
-      true,
-    )
-    const allowed = new Set(
-      planned.map((id) => brandThemeDef(id)?.base).filter((base): base is ThemeAppearance => Boolean(base)),
-    )
-    const next = cols.filter((appearance) => allowed.has(appearance))
-    return next.length ? next : [activeAppearance]
-  }, [oneThemePlan, brandThemes, activeTheme, preferredAppearance, activeAppearance])
+  const visibleAppearances = themeCols
   const visibleArchThemeCols = visibleAppearances.map((appearance) => themeModeKey(activeTheme, appearance))
-  useEffect(() => {
-    if (!oneThemePlan) return
-    if (!visibleAppearances.includes(activeAppearance)) {
-      onPreviewAppearanceChange?.(visibleAppearances[0])
-    }
-  }, [oneThemePlan, visibleAppearances, activeAppearance, onPreviewAppearanceChange])
   // Columns grow evenly with the table by default. A drag only turns the
   // adjusted column into a fixed track; otherwise Light and Dark use the
   // available width homogeneously, including when the preview rail closes.

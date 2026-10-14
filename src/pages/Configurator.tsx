@@ -1743,6 +1743,9 @@ export default function Configurator() {
     && !stylePreview
     && !exportMode
     && savedBrandKeys.length === 0
+    // A draft on the board (Random, or a studio brand) is not an empty
+    // workspace: reopening the studio over it threw the brand away.
+    && !(myThemeKeys(themeOrder, themes).includes(previewTheme) && brandIsDraft(previewTheme))
   useEffect(() => {
     if (!workspaceIsEmpty) { emptyStartedRef.current = false; return }
     if (emptyStartedRef.current || access.loading || guestStudio) return

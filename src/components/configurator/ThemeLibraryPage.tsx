@@ -9,7 +9,7 @@ import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePrese
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
-import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme, useNeedsProForAnotherSystem } from '../../lib/access'
+import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
@@ -17,7 +17,7 @@ import { loginHref } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
 import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
-import { useSavedBrandKeys, useUnsavedBrands } from '../../lib/libraryStatus'
+import { flushLibraryAutosave, useSavedBrandKeys, useUnsavedBrands } from '../../lib/libraryStatus'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
@@ -908,9 +908,7 @@ function HomeNav({
   const store = useDesignStore()
   const currentId = activeLibraryId(store)
   const firstRun = useIsFirstRun()
-  // Free holds ONE design system: no list of "others" beside it.
-  const oneSystemOnly = useNeedsProForAnotherSystem()
-  const others = oneSystemOnly ? [] : otherDesignSystems(store.savedSystems, store)
+  const others = otherDesignSystems(store.savedSystems, store)
   const mine = myThemeKeys(store.themeOrder, store.themes)
   const pinnedThemes = store.pinned.filter((p) => p.startsWith('theme:')).map((p) => p.slice(6)).filter((k) => mine.includes(k))
   const pinnedLibraries = store.pinned
@@ -1329,7 +1327,7 @@ export default function ThemeLibraryPage({
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
-  const { gated } = useAccess()
+  const { gated, tier } = useAccess()
   const needsPro = useNeedsProForAnotherTheme()
   const brandsLine = useBrandsLine()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
@@ -1394,25 +1392,9 @@ export default function ThemeLibraryPage({
   }, [studioOnly, createdKey, mine, unsavedBrands])
   const savedMine = mine.filter((key) => !unsavedBrands.has(key))
   const recentSaved = recent.filter((key) => !unsavedBrands.has(key))
-  // Rule A: Free holds ONE design system, and a saved one is THE one — it is
-  // the system that is editable, never an "other". When the system on screen
-  // is empty, the saved one is brought on screen instead of listed beside it.
-  const oneSystemOnly = useNeedsProForAnotherSystem()
-  const others = oneSystemOnly ? [] : otherDesignSystems(store.savedSystems, store)
-  const adoptable = oneSystemOnly && mine.length === 0 && !creating
-    ? [...store.savedSystems]
-      .filter((s) => s.id !== currentId && myThemeKeys(s.snapshot.themeOrder ?? [], s.snapshot.themes ?? {}).length > 0)
-      .sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))[0]
-    : undefined
-  const adoptableId = adoptable?.id
-  // Once, when Home opens: deleting the last brand later must leave the system
-  // empty, not bring another saved system back brand after brand.
-  const adoptCheckedRef = useRef(false)
-  useEffect(() => {
-    if (adoptCheckedRef.current) return
-    adoptCheckedRef.current = true
-    if (adoptableId) useDesignStore.getState().loadSystem(adoptableId)
-  }, [adoptableId])
+  // Rule A caps how many systems Free may START (`useNeedsProForAnotherSystem`);
+  // the ones it holds are listed like on Pro.
+  const others = otherDesignSystems(store.savedSystems, store)
   const firstRun = useIsFirstRun()
   const [section, setSectionState] = useState<HomeSection>({ kind: 'recents' })
   // The design system on screen has ONE dashboard, on the Generator's System
@@ -1748,7 +1730,7 @@ export default function ThemeLibraryPage({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirmSaved === 'load') store.loadSystem(sys.id)
+                  if (confirmSaved === 'load') { flushLibraryAutosave(); store.loadSystem(sys.id) }
                   else store.removeSavedSystem(sys.id)
                   setConfirmSaved(null)
                   setSection(confirmSaved === 'load' ? { kind: 'library', id: sys.id } : { kind: 'libraries' })
@@ -1772,7 +1754,22 @@ export default function ThemeLibraryPage({
                 <PinGlyph />
               </button>
               <button type="button" onClick={() => setConfirmSaved('delete')} className={`${ACTION} hover:text-status-danger`}>{t('Delete')}</button>
-              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load design system')}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  // The system on screen is kept (saved, nothing still a draft):
+                  // switching loses nothing, so there is nothing to confirm.
+                  const kept = mine.length === 0
+                    || (store.savedSystems.some((s) => s.id === currentId) && !mine.some((key) => unsavedBrands.has(key)))
+                  if (!kept) { setConfirmSaved('load'); return }
+                  flushLibraryAutosave()
+                  store.loadSystem(sys.id)
+                  setSection({ kind: 'library', id: sys.id })
+                }}
+                className={PRIMARY}
+              >
+                {t('Load design system')}
+              </button>
             </>
           )}
         />
@@ -1816,16 +1813,24 @@ export default function ThemeLibraryPage({
     const index = CREATE_STEPS.findIndex((item) => item.key === createStep)
     const next = CREATE_STEPS[index + 1]
     if (next) setCreateStep(next.key)
-    else if (createdKey) {
-      setCreating(false)
-      onOpenPreview(createdKey)
-    }
+    else if (createdKey) finishCreate(createdKey)
   }
   const goBackCreateStep = () => {
     const prev = CREATE_STEPS[createIndex - 1]
     if (prev) setCreateStep(prev.key)
   }
+  // Signed in, leaving the studio forward (Finish, Skip setup, the advanced
+  // editor) keeps the brand: left as a draft, the empty-workspace guard
+  // reopened the studio and Home's cleanup deleted it. A guest still signs up
+  // first (the Save bar asks).
+  const keepCreatedBrand = (key: string) => {
+    if (tier === 'anon') return
+    finishThemeSetup(key)
+    forgetUnsavedBrand(key)
+    useDesignStore.getState().saveCurrentSystem()
+  }
   const finishCreate = (key: string) => {
+    keepCreatedBrand(key)
     setCreating(false)
     onOpenPreview(key)
   }
@@ -1855,6 +1860,7 @@ export default function ThemeLibraryPage({
   const continueLabel = lastCreateStep ? t('Finish') : t('Continue')
   const openAdvanced = (foundation: string) => {
     if (!createdKey) return
+    keepCreatedBrand(createdKey)
     onSelectTheme(createdKey)
     setCreating(false)
     onEditFoundation?.(foundation)

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { cloudSystemCount, FREE_CLOUD_SYSTEMS } from '../../lib/accountCloud'
+import { cloudSystemCount, cloudSystemLimit } from '../../lib/accountCloud'
+import { useAccess } from '../../lib/access'
 import {
   localCloudFiles,
   resolveAccountCloudConflict,
@@ -24,6 +25,7 @@ export function AccountCloudStatus() {
   const { t } = useI18n()
   const status = useAccountCloud((s) => s.status)
   const localOnly = useAccountCloud((s) => s.localOnly)
+  const { tier } = useAccess()
   const line = LINE[status]
   if (!line) return null
   const dot = line.tone === 'ok' ? 'bg-status-success-solid' : line.tone === 'warn' ? 'bg-status-warning-solid' : 'bg-fg-faint'
@@ -38,7 +40,7 @@ export function AccountCloudStatus() {
           {t(localOnly === 1
             ? '1 design system is kept only in this browser. Your plan saves {limit} to your account.'
             : '{n} design systems are kept only in this browser. Your plan saves {limit} to your account.',
-          { n: localOnly, limit: FREE_CLOUD_SYSTEMS })}
+          { n: localOnly, limit: cloudSystemLimit(tier === 'pro') })}
         </p>
       )}
     </div>

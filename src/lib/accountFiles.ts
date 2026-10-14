@@ -9,6 +9,7 @@
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from './figmaSyncModes'
 import { peekLoginIntent } from './loginReturn'
 import { savedSystemBrandKeys } from './savedSystemList'
+import { myThemeKeys } from './themeLibrary'
 import {
   captureSnapshot,
   makeDesignDefaults,
@@ -141,7 +142,12 @@ export function shelveSavedSystems(savedSystems: SavedSystem[], pinned: string[]
 export function reopenAccountFiles(userId: string): void {
   const parked = readPark(userId)
   if (!parked) return
-  if (peekLoginIntent()) shelveBesideLive(parked)
+  // An empty parked copy (every brand deleted before signing out) must not
+  // replace a system made on screen since: that was the work being lost.
+  const live = useDesignStore.getState()
+  const parkedEmpty = myThemeKeys(parked.snapshot.themeOrder, parked.snapshot.themes ?? {}).length === 0
+  const liveHasWork = myThemeKeys(live.themeOrder, live.themes).length > 0
+  if (peekLoginIntent() || (parkedEmpty && liveHasWork)) shelveBesideLive(parked)
   else {
     useDesignStore.setState({
       ...parked.snapshot,

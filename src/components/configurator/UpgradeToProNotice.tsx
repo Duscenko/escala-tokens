@@ -17,7 +17,7 @@ export function UpgradeToProNotice({ detail }: { detail?: string | null }) {
       >
         {t('Upgrade to Pro')}
       </a>
-      <p className="text-center text-caption text-fg-faint">{t(detail || 'Free includes one design system with one brand. Pro adds brands and systems.')}</p>
+      <p className="text-center text-caption text-fg-faint">{t(detail || 'Free includes two design systems with one brand each. Pro adds brands and systems.')}</p>
     </div>
   )
 }

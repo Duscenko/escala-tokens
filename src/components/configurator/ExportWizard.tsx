@@ -20,6 +20,7 @@ import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
 import { SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+import SystemNameInput from './SystemNameInput'
 
 // ── Guided export (Source → Where → Export) ────────────────────────────────
 // Replaces the one-shot "here's your file" window with a three-step flow, so
@@ -196,7 +197,7 @@ export default function ExportWizard({
   // Subscribe so counts track edits made while the wizard is open.
   const store = useDesignStore()
   const {
-    projectName, setProjectName, saveCurrentSystem, saveCurrentSystemAsTheme, savedSystems,
+    projectName, saveCurrentSystem, saveCurrentSystemAsTheme, savedSystems,
     githubRepo, githubLastPushAt,
   } = store
 
@@ -905,13 +906,13 @@ export default function ExportWizard({
                       <span className="truncate text-ui font-medium text-fg">{snapshotName}</span>
                     </div>
                   ) : (
-                    <input
-                      value={snapshotName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      placeholder="e.g. Acme Design System"
-                      aria-label="Design system name"
-                      className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-surface text-ui font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
-                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <SystemNameInput
+                        placeholder="e.g. Acme Design System"
+                        ariaLabel="Design system name"
+                        className="w-full min-w-0 px-3 py-2 rounded-lg border border-line bg-surface text-ui font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
+                      />
+                    </div>
                   )}
                   <button
                     onClick={handleSaveSystem}

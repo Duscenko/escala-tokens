@@ -84,6 +84,14 @@ export function autosaveDue(
  *  puts back is never the one that gets filed. */
 const AUTOSAVE_MS = 1200
 
+/** Files the system on screen NOW when the autosave would. Call it before
+ *  replacing the system (load another, start a new one): an edit made inside
+ *  the debounce would otherwise be lost with the screen. */
+export function flushLibraryAutosave(): void {
+  const state = useDesignStore.getState()
+  if (autosaveDue(state as never, useThemeSetup.getState().unsaved)) state.saveCurrentSystem()
+}
+
 /**
  * Mounted once, in the shell. After the FIRST save (the explicit "Save
  * brand"), every later edit is kept without asking: the editor, Get code,
