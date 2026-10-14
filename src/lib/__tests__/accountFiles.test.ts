@@ -88,6 +88,15 @@ describe('account files on sign-out', () => {
     expect(myThemeKeys(shelved?.snapshot.themeOrder ?? [], shelved?.snapshot.themes ?? {})).toEqual(['aurora'])
   })
 
+  it('parks an empty workspace after the system on screen is deleted', () => {
+    saveAurora()
+    useDesignStore.getState().deleteCurrentSystem()
+    expect(parkAccountFiles('user-1')).toBe(true)
+    closeAccountFiles()
+    expect(myThemeKeys(useDesignStore.getState().themeOrder, useDesignStore.getState().themes)).toEqual([])
+    expect(useDesignStore.getState().savedSystems).toEqual([])
+  })
+
   it('does not file a parked draft as a design system', () => {
     const store = useDesignStore.getState()
     store.setProjectName('Draft')

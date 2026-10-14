@@ -384,6 +384,55 @@ export async function flushAccountCloud(): Promise<void> {
   }
 }
 
+const SIGN_OUT_FLUSH_MS = 4_000
+
+/** One best-effort upload, then stop the engine. Sign-out must never wait on
+ *  conflict UI, retry timers, or a hung request — the session ends either way. */
+async function pushOnceForSignOut(): Promise<void> {
+  if (!running) return
+  const files = localCloudFiles()
+  const text = JSON.stringify(files)
+  if (text.length > MAX_CLOUD_BYTES) return
+  const hash = contentHash(text)
+  if (base && base.hash === hash && base.etag === known) return
+  setUi({ status: 'saving', conflict: null })
+  const answer = await request('PUT', { ifEtag: known, storeVersion: storeVersion(), files })
+  if (answer.kind === 'ok' && answer.etag) {
+    writeBase({ etag: answer.etag, hash })
+    setUi({ status: 'saved', savedAt: (answer.record as CloudRecord | null)?.savedAt ?? null, localOnly: 0, conflict: null })
+  }
+}
+
+/** Called from `signOut` instead of `flushAccountCloud` + `stopAccountCloud`. */
+export async function flushAccountCloudForSignOut(): Promise<void> {
+  if (!running) return
+  const who = running
+  if (pushTimer) {
+    clearTimeout(pushTimer)
+    pushTimer = null
+  }
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
+  }
+  try {
+    if (inflight) {
+      await Promise.race([
+        inflight,
+        new Promise<void>((resolve) => { setTimeout(resolve, SIGN_OUT_FLUSH_MS) }),
+      ])
+    } else {
+      await Promise.race([
+        pushOnceForSignOut(),
+        new Promise<void>((resolve) => { setTimeout(resolve, SIGN_OUT_FLUSH_MS) }),
+      ])
+    }
+  } catch {
+    /* sign-out continues */
+  }
+  if (running === who) stopAccountCloud()
+}
+
 /** Start for this account. Safe to call again for the same account. */
 export async function startAccountCloud(userId: string): Promise<void> {
   if (!supabase || !userId) return

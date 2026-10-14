@@ -152,6 +152,33 @@ describe('account files across browsers', () => {
     b.stopAccountCloud()
   })
 
+  it('sign-out uploads an empty workspace after the last design system is deleted', async () => {
+    const a = await openBrowser()
+    a.addBrand('aurora', 'Aurora')
+    await a.startAccountCloud('user-1')
+    a.store.getState().deleteCurrentSystem()
+    expect(a.brands()).toEqual([])
+    await a.flushAccountCloudForSignOut()
+    const { myThemeKeys } = await import('../themeLibrary')
+    const stored = cloud?.record.files as { snapshot: { themeOrder: string[]; themes: Record<string, unknown> } }
+    expect(myThemeKeys(stored.snapshot.themeOrder, stored.snapshot.themes)).toEqual([])
+  })
+
+  it('sign-out finishes while the sync UI is in conflict', async () => {
+    const a = await openBrowser()
+    a.addBrand('aurora', 'Aurora')
+    await a.startAccountCloud('user-1')
+    a.stopAccountCloud()
+
+    const b = await openBrowser()
+    b.addBrand('solo', 'Solo')
+    await b.startAccountCloud('user-1')
+    expect(b.useAccountCloud.getState().status).toBe('conflict')
+
+    await b.flushAccountCloudForSignOut()
+    expect(b.useAccountCloud.getState().status).toBe('off')
+  })
+
   it('stopping before sign-out closes the files means the blank workspace is never uploaded', async () => {
     const a = await openBrowser()
     a.addBrand('aurora', 'Aurora')

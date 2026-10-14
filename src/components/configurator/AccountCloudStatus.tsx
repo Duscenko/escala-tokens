@@ -7,6 +7,7 @@ import {
   useAccountCloud,
   type AccountCloudStatus as Status,
 } from '../../lib/accountCloudSync'
+import { signOut } from '../../lib/auth'
 import { useI18n } from '../../lib/i18n'
 
 const LINE: Partial<Record<Status, { text: string; tone: 'ok' | 'muted' | 'warn' }>> = {
@@ -104,21 +105,30 @@ export function AccountCloudConflict() {
                 </div>
               </dl>
             </div>
-            <div className="flex items-center gap-2 border-t border-line bg-surface/50 px-5 py-3.5">
+            <div className="flex flex-col gap-2 border-t border-line bg-surface/50 px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { void resolveAccountCloudConflict('local') }}
+                  className={`${button} border border-line text-fg-muted hover:border-line-strong hover:text-fg`}
+                >
+                  {t("Keep this browser's")}
+                </button>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => { void resolveAccountCloudConflict('cloud') }}
+                  className={`${button} bg-accent-solid text-accent-ink hover:bg-accent-solid/90`}
+                >
+                  {t("Use your account's")}
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => { void resolveAccountCloudConflict('local') }}
-                className={`${button} border border-line text-fg-muted hover:border-line-strong hover:text-fg`}
+                onClick={() => { void signOut() }}
+                className="w-full rounded-lg px-2 py-1.5 text-caption text-fg-faint transition-colors hover:text-fg"
               >
-                {t("Keep this browser's")}
-              </button>
-              <button
-                type="button"
-                autoFocus
-                onClick={() => { void resolveAccountCloudConflict('cloud') }}
-                className={`${button} bg-accent-solid text-accent-ink hover:bg-accent-solid/90`}
-              >
-                {t("Use your account's")}
+                {t('Sign out without saving')}
               </button>
             </div>
           </motion.div>

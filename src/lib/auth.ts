@@ -254,11 +254,11 @@ export async function signOut(scope: 'global' | 'local' | 'others' = 'global'): 
     const { data } = await supabase.auth.getSession()
     const userId = data.session?.user?.id
     if (userId) {
-      // Save what is waiting to the account, then stop the cloud BEFORE the
-      // workspace is blanked — the empty files must never be uploaded.
+      // Best-effort cloud save (including an empty workspace after the last
+      // design system was deleted), then stop the engine BEFORE the workspace
+      // is blanked — a blank screen must never be uploaded after close.
       const cloud = await import('./accountCloudSync')
-      await cloud.flushAccountCloud().catch(() => {})
-      cloud.stopAccountCloud()
+      await cloud.flushAccountCloudForSignOut().catch(() => {})
       const { parkAccountFiles, closeAccountFiles } = await import('./accountFiles')
       if (parkAccountFiles(userId)) closeAccountFiles()
     }
