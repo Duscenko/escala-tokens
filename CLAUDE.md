@@ -204,6 +204,18 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   design edit, so it stamps no theme and spends no Free change.
 > - To see Home locally without signing in, use the `Vite Dev (accounts off)` preview config.
 
+> **UPDATE (2026-10-14): a signed-in account's design systems live in the CLOUD, not per browser.**
+> One Blob file per account (`account-files/<hmac(userId)>.json`, key from `ACCOUNT_FILES_SECRET`
+> — never rotate it, every account would read empty), served by `api/account-files.ts`. The record
+> holds the system on screen + `savedSystems` + pinned + Figma sync prefs (`lib/accountCloud.ts`,
+> pure). Writes are optimistic on the Blob ETag: a stale save is a **409, never an overwrite**; the
+> client (`lib/accountCloudSync.ts`) adopts silently when this browser had no edits since its base,
+> otherwise asks (`AccountCloudConflict`) and backs up the losing side. The plan trims what the
+> cloud keeps (Free 1 system, Pro 10; unknown plan keeps 10); trimmed systems stay in this browser
+> (`trimmedIds`) and `AccountCloudStatus` says so. Saves are debounced 3s / max one per 20s
+> (Blob writes are metered). Sign-out flushes then stops the engine BEFORE parking, so the blank
+> workspace is never uploaded; the orphan-publish sweep waits for `accountCloudSettled()`.
+
 > **UPDATE (2026-10-14): ONE "context for agents" — Scope · Theme · Detail.** There were four
 > markdown surfaces over the same tokens (Code's Agent context, Code's README Markdown, the
 > preview panel's `.MD`, Docs' Copy context) and none let the person say what they wanted.

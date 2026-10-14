@@ -30,7 +30,10 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
   icons: '135%',
 }
 
-export const FOUNDATION_ICON_RAIL_WIDTH = 64
+export const FOUNDATION_ICON_RAIL_WIDTH = 80
+/** The glyph square every rail tile draws — and the brand tile above the rail,
+ *  so the logo and the icons share one centre line and one footprint. */
+export const RAIL_TILE_SIZE = 40
 
 /** The same foundation glyph the icon rail paints, at any size. */
 export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; className?: string }) {
@@ -53,9 +56,11 @@ export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; cla
   )
 }
 
-/** One tile language for every button in the 64px workspace rail (foundation
+/** One tile language for every button in the 80px workspace rail (foundation
  *  icons + the Themes library folder): glyph over a short label. Active = the
- *  platform accent as INK on a very subtle wash of itself — not a solid fill,
+ *  platform accent as a subtle wash behind the glyph; the icon stays `text-fg`
+ *  like its label so dense shapes (Components) never read louder than stroke-only
+ *  icons — not a solid accent fill,
  *  so the selection reads without shouting over the canvas. Inactive glyph and
  *  label share the same faint ink; hover lifts both. `compact` drops the label. */
 export function RailTile({
@@ -90,16 +95,16 @@ export function RailTile({
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
       className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
-        compact ? '' : 'w-[56px] gap-0.5 py-1'
+        compact ? '' : 'w-[72px] gap-1 py-1'
       } ${className}`}
     >
       {/* Only the glyph's square carries the selection — the label stays plain
           beneath it, so the rail doesn't read as a column of filled blocks.
-          The active glyph scales inside that fixed 36px box (`transform` does
+          The active glyph scales inside that fixed 40px box (`transform` does
           not change layout), so the tile's height stays put. */}
       <span
-        className={`relative flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] w-9 h-9 ${on
-          ? 'bg-accent-ui/[0.16] text-accent-ui'
+        className={`relative flex items-center justify-center rounded-[12px] transition-[color,background-color,box-shadow] w-10 h-10 ${on
+          ? 'bg-accent-ui/[0.16] text-fg'
           : 'text-fg-faint group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
       >
         <span className={`flex transition-transform duration-200 ease-out motion-reduce:transition-none ${on ? 'scale-[1.2]' : ''}`}>
@@ -167,10 +172,13 @@ const NAV_ICONS: Record<WorkspaceNavKey, ReactNode> = {
   ),
   components: (
     <svg {...NAV_ICON_PROPS}>
-      <path d="M6.3 3.4 9.4 9H3.2l3.1-5.6Z" />
-      <circle cx="14" cy="6.4" r="2.8" />
-      <rect x="10.8" y="11.6" width="6" height="5" rx="1.1" />
-      <path d="M3.4 12.2h4.4v4.4H3.4z" />
+      {/* Explicit fill="none" — closed paths default to a solid fill in some
+          engines, so this glyph read as a purple block when active while the
+          other nav icons stay stroke-only. */}
+      <path fill="none" d="M6.3 3.4 9.4 9H3.2l3.1-5.6Z" />
+      <circle fill="none" cx="14" cy="6.4" r="2.8" />
+      <rect fill="none" x="10.8" y="11.6" width="6" height="5" rx="1.1" />
+      <rect fill="none" x="3.4" y="12.2" width="4.4" height="4.4" rx="0.6" />
     </svg>
   ),
 }
@@ -189,7 +197,7 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
     <nav
       aria-label={ariaLabel}
       data-shell-chrome=""
-      className="flex h-full flex-shrink-0 flex-col items-center gap-1 overflow-y-auto pt-3 pb-3 scrollbar-thin"
+      className="flex h-full flex-shrink-0 flex-col items-center gap-2 overflow-y-auto pt-3 pb-3 scrollbar-thin"
       style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
     >
       {items.map(({ key, label }) => {

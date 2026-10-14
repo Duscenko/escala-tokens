@@ -114,6 +114,13 @@ function uniqueId(id: string, taken: Set<string>): string {
  *  design systems that were already saved — and still have a brand — are
  *  shelved beside it. A parked draft is not filed as a folder. */
 function shelveBesideLive(parked: ParkedAccountFiles): void {
+  shelveSavedSystems(parked.savedSystems, parked.pinned)
+}
+
+/** File these saved systems beside the ones in the store, renaming an id
+ *  that is already taken. The system on screen is untouched. */
+export function shelveSavedSystems(savedSystems: SavedSystem[], pinned: string[]): void {
+  const parked = { savedSystems, pinned }
   const state = useDesignStore.getState()
   const taken = new Set(state.savedSystems.map((s) => s.id))
   const shelved: SavedSystem[] = []

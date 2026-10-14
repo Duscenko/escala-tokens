@@ -7,8 +7,8 @@
 // the registry and the next system listed it as something the person had
 // created. Home shows created design systems and their brands — nothing else.
 
-import { myThemeKeys } from './themeLibrary'
-import { slugify } from './utils'
+import { myThemeKeys } from './themeLibrary.js'
+import { slugify } from './utils.js'
 
 export interface SavedSystemRecord {
   id: string

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
+import { FOUNDATION_ICON_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
 
 type ChromeMenuAlign = 'left' | 'right' | 'center'
@@ -202,6 +203,9 @@ interface TopNavProps {
   /** Home keeps the 260px lockup so the mark sits over the file menu, but
    *  drops the rule — the card already has its own edge. */
   brandEdge?: boolean
+  /** The workspace icon rail is mounted below: centre the brand tile on the
+   *  rail's own column so the logo and the rail icons share one vertical axis. */
+  railAligned?: boolean
   chromeAppearance: 'light' | 'dark'
   onChromeAppearanceChange: (appearance: 'light' | 'dark') => void
   /** Opens one of Docs' focused subpages. Docs itself is a menu trigger, not
@@ -602,7 +606,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 }
 
 export default function TopNav({
-  nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true,
+  nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true, railAligned = false,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, onOpenFigmaSync,
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
@@ -620,12 +624,20 @@ export default function TopNav({
           ellipsize inside its own lockup. */}
       <div
         className={`flex flex-shrink-0 items-center transition-[width] duration-200 ${brandWidth && brandEdge ? 'border-r border-line' : ''} ${
-          railCollapsed ? 'justify-center px-0' : 'px-3'
+          railCollapsed ? 'justify-center px-0' : railAligned ? 'pr-3' : 'px-3'
         }`}
-        style={brandWidth ? { width: brandWidth } : undefined}
+        style={{
+          ...(brandWidth ? { width: brandWidth } : null),
+          ...(railAligned && !railCollapsed ? { paddingLeft: (FOUNDATION_ICON_RAIL_WIDTH - RAIL_TILE_SIZE) / 2 } : null),
+        }}
       >
-        <div className="flex w-max items-center gap-2.5">
-          <BrandMark size={24} />
+        <div className="flex w-max items-center gap-3">
+          <span
+            className="flex flex-shrink-0 items-center justify-center rounded-lg bg-elevated"
+            style={{ width: RAIL_TILE_SIZE, height: RAIL_TILE_SIZE }}
+          >
+            <BrandMark size={24} />
+          </span>
           {!railCollapsed && (
             <div className="flex items-baseline gap-1.5 whitespace-nowrap leading-none">
               <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>

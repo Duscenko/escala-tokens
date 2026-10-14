@@ -26,6 +26,7 @@ import { INSPECTOR_TABS_H, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './the
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
+import { AccountCloudStatus } from './AccountCloudStatus'
 import { CreateStudioBar } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -1631,6 +1632,7 @@ export default function ThemeLibraryPage({
           )}
         />
         <GuestAccountCard />
+        <AccountCloudStatus />
         {!firstRun && <section aria-labelledby="home-on-screen" className="flex flex-col gap-3">
           <SectionTitle id="home-on-screen">{t('On screen')}</SectionTitle>
           <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]">
@@ -1721,6 +1723,7 @@ export default function ThemeLibraryPage({
               )}
             </AnimatePresence>
             <GuestAccountCard />
+            <AccountCloudStatus />
           </>
         )}
       />

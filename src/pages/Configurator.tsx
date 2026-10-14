@@ -97,6 +97,8 @@ import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
 import { reopenAccountFiles } from '../lib/accountFiles'
+import { accountCloudSettled, startAccountCloud, stopAccountCloud } from '../lib/accountCloudSync'
+import { AccountCloudConflict } from '../components/configurator/AccountCloudStatus'
 import { isPublishId } from '../lib/publishId'
 import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../lib/publishSignals'
 import { takeLoginIntent } from '../lib/loginReturn'
@@ -1265,7 +1267,12 @@ export default function Configurator() {
     if (!authUser?.id) return
     if (authEvent !== 'SIGNED_IN' && authEvent !== 'INITIAL_SESSION') return
     reopenAccountFiles(authUser.id)
+    // Then the account's cloud copy: the same files in every browser.
+    void startAccountCloud(authUser.id)
   }, [authUser?.id, authEvent])
+  useEffect(() => {
+    if (authEvent === 'SIGNED_OUT') stopAccountCloud()
+  }, [authEvent])
   // Take down what this browser published and no longer has a system for: the
   // tokens a reset or a replaced system left behind, still listed in the Figma
   // plugin and still synced by any file that had them. Once per session, after
@@ -1275,10 +1282,15 @@ export default function Configurator() {
     if (!authUser?.id || !accountsEnabled) return
     const flag = `sd-orphan-sweep:${authUser.id}`
     try { if (window.sessionStorage.getItem(flag)) return } catch { /* sweep anyway */ }
-    const timer = window.setTimeout(() => {
+    // Not before this browser knows what the account holds in the cloud: a
+    // system still on its way from another browser is not an orphan.
+    let timer = 0
+    const attempt = () => {
+      if (!accountCloudSettled()) { timer = window.setTimeout(attempt, 20_000); return }
       try { window.sessionStorage.setItem(flag, '1') } catch { /* once per mount then */ }
       void import('../lib/pluginAccount').then((m) => m.sweepOrphanedPublishes()).catch(() => {})
-    }, 20_000)
+    }
+    timer = window.setTimeout(attempt, 20_000)
     return () => window.clearTimeout(timer)
   }, [authUser?.id])
   const leaveHomeForGuest = useCallback(() => {
@@ -2282,14 +2294,17 @@ export default function Configurator() {
   const homePage = homeFileBrowser
   // ── The theme's accent, scoped to the Generator's rail + canvas card ──
   // The PLATFORM (TopNav, inspector, Home) keeps Escala's violet on `:root`.
-  // The rail's icons and the card's accent fills/ink repaint with the theme
-  // being edited by re-declaring the same three vars on a `display: contents`
-  // wrapper. Custom properties inherit through it, and the inspector is a
-  // sibling OUTSIDE the wrapper, so portaled side panels stay violet. The ramp
+  // The workspace nav rail + Generator card repaint with the theme on screen
+  // by re-declaring the same three accent vars (`display: contents` on the
+  // Generator; the Components column's nav rail gets the same object inline).
+  // Custom properties inherit through `contents`, and portaled inspector slots
+  // stay siblings outside, so they keep platform violet. The ramp
   // is read in the CARD's appearance and solved with the same rules as the
   // chrome (`chromeAccent` for ink, `brandSolidPair` for the fill).
   const canvasAccentStyle = useMemo<CSSProperties | undefined>(() => {
-    if (!themesCanvas || homeFileBrowser) return undefined
+    if (homeFileBrowser) return undefined
+    const componentsWithSystem = tab === 'components' && myThemeKeys(themeOrder, themes).length > 0
+    if (!themesCanvas && !componentsWithSystem) return undefined
     const appearance = stylePreview ? stylePreview.appearance : previewAppearance
     const ramp = stylePreview
       ? stylePreviewBrandRamp(store, stylePreview.preset, stylePreview.appearance)
@@ -2303,7 +2318,7 @@ export default function Configurator() {
       '--accent-solid': solid,
       '--accent-ink': readableInk(solid),
     } as CSSProperties
-  }, [themesCanvas, homeFileBrowser, stylePreview, previewAppearance, previewTheme, store, themeKinds])
+  }, [themesCanvas, homeFileBrowser, tab, themeOrder, themes, stylePreview, previewAppearance, previewTheme, store, themeKinds])
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
    *  all nine tables. Code, Docs and Home show only the Home tile. */
@@ -2437,6 +2452,7 @@ export default function Configurator() {
         // No divider in the header when the section tags are folded into ☰:
         // the brand block is just a title there, not the head of a column.
         brandEdge={!homePage && !componentsWithoutSystem}
+        railAligned={navRailVisible}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
@@ -2478,7 +2494,9 @@ export default function Configurator() {
             width for a foundation's own sub-nav (Color's family Groups tree,
             promoted inside ColorPrimitives). */}
         {!themesCanvas && navRail && (
-          <div className={`flex-shrink-0 ${SHELL_CHROME}`}>{navRail}</div>
+          <div className={`flex-shrink-0 ${SHELL_CHROME}`} style={canvasAccentStyle}>
+            {navRail}
+          </div>
         )}
         <div
           className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
@@ -3016,6 +3034,7 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
+      <AccountCloudConflict />
 
       <LeaveDraftDialog
         open={leaveDraftOpen}

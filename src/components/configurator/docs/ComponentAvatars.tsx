@@ -9,6 +9,31 @@ import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS } from './specimens'
 import { axisDefaults } from './componentArticle'
 
+function useHorizontalScrollFade<T extends HTMLElement>(contentKey: string) {
+  const ref = useRef<T>(null)
+  const [fadeRight, setFadeRight] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const sync = () => {
+      const overflow = el.scrollWidth > el.clientWidth + 1
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
+      setFadeRight(overflow && !atEnd)
+    }
+    sync()
+    el.addEventListener('scroll', sync, { passive: true })
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', sync)
+      ro.disconnect()
+    }
+  }, [contentKey])
+
+  return { ref, fadeRight }
+}
+
 export function ComponentAvatarStrip({
   category, activeKey, tokens, onSelect,
 }: {
@@ -18,14 +43,17 @@ export function ComponentAvatarStrip({
   onSelect: (c: ComponentDef) => void
 }) {
   const items = COMPONENTS.filter((c) => c.category === category)
+  const { ref: scrollRef, fadeRight } = useHorizontalScrollFade<HTMLDivElement>(category)
+
   if (items.length === 0) return null
 
   return (
-    <div className="flex-shrink-0 border-b border-line">
+    <div className="relative flex-shrink-0 border-b border-line">
       <div
+        ref={scrollRef}
         role="group"
         aria-label={category}
-        className="flex gap-2 overflow-x-auto px-6 py-3 lg:px-10"
+        className="flex gap-2 overflow-x-auto px-6 py-3 lg:px-10 scrollbar-thin"
       >
         {items.map((comp) => (
           <ComponentAvatar
@@ -37,6 +65,12 @@ export function ComponentAvatarStrip({
           />
         ))}
       </div>
+      {fadeRight && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-app via-app/80 to-transparent"
+        />
+      )}
     </div>
   )
 }
@@ -50,6 +84,7 @@ function ComponentAvatar({
   onSelect: (c: ComponentDef) => void
 }) {
   const Specimen = SPECIMENS[def.key]
+  const brand = tokens.brandSolid
   return (
     <button
       type="button"
@@ -58,9 +93,17 @@ function ComponentAvatar({
       onClick={() => onSelect(def)}
       className={`flex w-[120px] flex-shrink-0 flex-col rounded-xl border p-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
         active
-          ? 'border-accent-solid bg-accent-ui/[0.06]'
+          ? ''
           : 'border-line hover:border-line-strong hover:bg-elevated/40'
       }`}
+      style={
+        active
+          ? {
+              borderColor: brand,
+              backgroundColor: `color-mix(in srgb, ${brand} 6%, transparent)`,
+            }
+          : undefined
+      }
     >
       <span
         aria-hidden
