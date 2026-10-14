@@ -5,6 +5,7 @@ import {
   auditCategoricalView,
   contrastStatusForToken,
   contrastStatusLabel,
+  wcagGradeFromRatio,
 } from '../semanticContrast'
 
 describe('semanticContrast', () => {
@@ -41,6 +42,22 @@ describe('semanticContrast', () => {
     expect(status.status).toBe('pass')
     expect(status.wcag).toBeGreaterThan(4.5)
     expect(contrastStatusLabel(status)).toMatch(/^\d+\.\d:1$/)
-    expect(contrastStatusLabel({ status: 'none', title: 'No contrast pair to measure', wcag: null })).toBe('—')
+    expect(contrastStatusLabel({
+      status: 'none',
+      title: 'No contrast pair to measure',
+      wcag: null,
+      grade: null,
+      intent: null,
+    })).toBe('—')
+    expect(status.grade).toBeTruthy()
+  })
+
+  it('classifies WCAG grades by intent', () => {
+    expect(wcagGradeFromRatio(7, 'body-text')).toBe('AAA')
+    expect(wcagGradeFromRatio(5, 'body-text')).toBe('AA')
+    expect(wcagGradeFromRatio(4, 'body-text')).toBe('fail')
+    expect(wcagGradeFromRatio(4.5, 'large-text')).toBe('AAA')
+    expect(wcagGradeFromRatio(3.2, 'large-text')).toBe('AA')
+    expect(wcagGradeFromRatio(3, 'ui-component')).toBe('AA')
   })
 })

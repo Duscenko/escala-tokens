@@ -152,6 +152,16 @@ function statusInk(t: PreviewTokens, name: string): string {
   return (slot && t.archTokens?.[slot]) || (name === 'Brand' ? (t.brandText || t.brandSolid) : statusColor(t, name))
 }
 
+/** Toast / inverse snackbar status dot — ink on a light inverse chip, solid on a dark bar. */
+function toastStatusDot(t: PreviewTokens, status: string, inverseBg: string): string {
+  try {
+    if (chroma(inverseBg).luminance() > 0.45) return statusInk(t, status)
+  } catch {
+    /* invalid hex — fall through */
+  }
+  return statusColor(t, status)
+}
+
 // Per-severity ink, for the call sites that only ever mean ONE severity.
 //
 // These deliberately do NOT delegate to `statusInk`, and both halves of that
@@ -1054,12 +1064,13 @@ function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
   const status = v.Status ?? 'Success'
-  const c = statusColor(t, status)
   // Inverse snackbar: `surface.inverse` fill + `content.inverse` ink. Falls back
   // to the neutralText/surface pairing that already reads in both themes — see
   // the note below on why `background-overlay` is wrong here.
   const inverse = archTokenOf(t, 'surface.inverse', t.neutralText)
   const ink = archTokenOf(t, 'content.inverse', t.surface)
+  const dotRoleId = STATUS_INK_SLOT[status] ?? 'content.primary'
+  const dot = archTokenOf(t, dotRoleId, toastStatusDot(t, status, inverse))
   const rowGap = spacingRoleOf(t, 'gap-tight', '8px')
   const padBlock = spacingRoleOf(t, 'gap-control', '12px')
   const padInline = spacingRoleOf(t, 'gap-group', '14px')
@@ -1088,7 +1099,16 @@ function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
         boxSizing: 'border-box',
       }}
     >
-      <span style={{ width: 8, height: 8, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: c, flexShrink: 0 }} />
+      <span
+        aria-hidden
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: radiusRoleOf(t, 'pill', '9999px'),
+          background: dot,
+          flexShrink: 0,
+        }}
+      />
       <span
         style={{
           ...typeOf(t, 'body-sm'),
@@ -1585,6 +1605,8 @@ function InputTagSpecimen({ t, w }: SpecimenProps) {
     setTags((list) => [...list, next])
     setDraft('')
   }
+  const fieldLine = focus ? focusBorderOf(t) : (t.borderDefault ?? '#e9eaeb')
+
   return (
     <div
       onClick={() => inputRef.current?.focus()}
@@ -1592,7 +1614,8 @@ function InputTagSpecimen({ t, w }: SpecimenProps) {
         ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spaceOf(t, 6),
         width: w ?? 300, minHeight: 40, padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`,
         borderRadius: radiusRoleOf(t, 'action'),
-        border: `${strokeControl(t)} solid ${focus ? focusBorderOf(t) : (t.border ?? '#d0d5dd')}`,
+        // Same decorative stroke as PaginationSpecimen (`border.subtle`), not `border.strong`.
+        border: `${strokeControl(t)} solid ${fieldLine}`,
         background: t.inputSurface ?? inputSurfaceOf(t),
         boxShadow: focus ? `0 0 0 ${strokeFocus(t)} ${focusBorderOf(t)}26` : undefined,
         cursor: 'text', transition: STATE_TRANSITION,

@@ -38,7 +38,7 @@ import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../lib/adoptPreset'
-import ThemePreviewHub, { GetCodeButton, type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
+import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
@@ -2768,7 +2768,6 @@ export default function Configurator() {
                   </h2>
                   <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                     <VariablesContextButton brand={previewTheme} appearance={previewAppearance} foundation={activeFoundation} />
-                    <GetCodeButton onOpen={() => openCodeForTheme(previewTheme)} />
                     {tokenSearchField}
                   </div>
                 </div>

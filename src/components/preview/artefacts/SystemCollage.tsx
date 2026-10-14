@@ -226,16 +226,13 @@ function TypeStyleSpecimen({ t }: { t: PreviewTokens }) {
       <div className="flex flex-col items-center justify-center text-center">
         {faceBlock(body, fontStack(body))}
       </div>
-      {/* The weights sit straight on a WELL that fills this half. The well
-          carries the elevation; there is no second raised card inside it. The
-          size follows the card's width so a narrow card never cuts the words. */}
+      {/* Weights on a flat wash — no shadow; the module surface already carries elevation. */}
       <div
         className="flex min-w-0 flex-col items-center justify-center overflow-hidden text-center"
         style={{
           // A wash of the page ink, not `neutralFill`: that one is the card's
           // own surface in dark, so the well vanished into the module.
           background: `color-mix(in srgb, ${ink} 7%, transparent)`,
-          boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'),
           borderRadius: nestedRadius(t),
           padding: gap(t, 'gap-control', '8px'),
         }}

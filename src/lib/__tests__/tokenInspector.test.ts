@@ -82,22 +82,37 @@ describe('resolveVariantRoles', () => {
     expect(roles?.find((r) => r.id === 'status.critical.surface-solid')?.css).toBe('#b94136')
   })
 
-  it('a Success toast names the inverse chip and status solid dot', () => {
+  it('a Success toast names the inverse chip and status ink dot', () => {
     const archWithInverse = {
       ...arch,
-      'surface.inverse': '#171717',
-      'status.success.surface-solid': '#1f8340',
+      'surface.inverse': '#f2f4f1',
+      'content.inverse': '#0d1012',
+      'status.success.content': '#15803d',
     }
     const toastT = { archTokens: archWithInverse } as never
     const paints = [
-      { css: '#171717', where: 'fill' as const },
-      { css: '#e1e7dc', where: 'ink' as const },
+      { css: '#f2f4f1', where: 'fill' as const },
+      { css: '#0d1012', where: 'ink' as const },
       { css: '#15803d', where: 'fill' as const },
     ]
-    expect(resolveVariantRoles(toastT, 'Toast', { Status: 'Success' }, paints)?.map((r) => r.id)).toEqual([
+    const roles = resolveVariantRoles(toastT, 'Toast', { Status: 'Success' }, paints)
+    expect(roles?.map((r) => r.id)).toEqual([
       'surface.inverse',
       'content.inverse',
-      'status.success.surface-solid',
+      'status.success.content',
+    ])
+    expect(roles?.[2]?.css).toBe('#15803d')
+  })
+
+  it('a toast dot alone reports only status content', () => {
+    const archWithInverse = {
+      ...arch,
+      'status.critical.content': '#b42318',
+    }
+    const toastT = { archTokens: archWithInverse } as never
+    const paints = [{ css: '#b42318', where: 'fill' as const }]
+    expect(resolveVariantRoles(toastT, 'Toast', { Status: 'Error' }, paints)?.map((r) => r.id)).toEqual([
+      'status.critical.content',
     ])
   })
 })

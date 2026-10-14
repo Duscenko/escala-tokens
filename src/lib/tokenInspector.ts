@@ -321,9 +321,9 @@ function roleAt(
   // state variant, say, where the rendered fill is the hover tone rather
   // than the role's own). Slot alone is not enough the moment a component
   // paints two of the same kind: Toast asks for `surface.inverse` AND
-  // `status.<sev>.surface-solid`, both fills, and both used to resolve to
-  // the first fill observed — so the severity dot's row was stamped with
-  // the toast body's near-black instead of its own red.
+  // `status.<sev>.content` (the dot), both fills, and both used to resolve
+  // to the first fill observed — so the dot's row was stamped with the chip
+  // instead of its own red/green.
   const want = normalizeColor(arch[id])
   const paint = paints.find((p) => p.where === where && want && normalizeColor(p.css) === want)
     ?? paints.find((p) => p.where === where)
@@ -463,10 +463,18 @@ export function resolveVariantRoles(
     const status = variant.Status ?? 'Success'
     const sev = STATUS_SEV[status]
     if (!sev) return null
+    const inkRole = `status.${sev}.content`
+    const fillPaints = paints.filter((p) => p.where === 'fill')
+    const inkPaints = paints.filter((p) => p.where === 'ink')
+    // The 8px dot alone — one fill, no text on that node.
+    if (fillPaints.length === 1 && !inkPaints.length) {
+      const dot = roleAt(arch, paints, inkRole, 'fill')
+      return dot ? [dot] : null
+    }
     const roles = [
       roleAt(arch, paints, 'surface.inverse', 'fill'),
       roleAt(arch, paints, 'content.inverse', 'ink'),
-      roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
+      roleAt(arch, paints, inkRole, 'fill'),
     ].filter((r): r is InspectedRole => !!r)
     return roles.length ? roles : null
   }
@@ -941,6 +949,13 @@ function withGeometry(inspection: Inspection, geometry: InspectedRole[]): Inspec
  * An empty badge would read as "this component uses no colour", which is never
  * what happened.
  */
+/** When the pointer lands on a child (the toast dot, a label span), measure
+ *  THAT node instead of the whole `[data-inspect]` subtree. */
+export function inspectHitTarget(marker: Element, hit: Element | null): Element {
+  if (!hit || hit === marker || !marker.contains(hit)) return marker
+  return hit
+}
+
 export function inspectElement(
   t: PreviewTokens, componentKey: string, el: Element,
 ): Inspection {

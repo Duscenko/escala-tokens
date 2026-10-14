@@ -39,7 +39,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "InputGroup": ['brandText', 'neutralFill', 'neutralText', 'border', 'fgMuted', 'inputSurface'],
   "InputOTP": ['brandSolid', 'neutralText', 'border', 'inputSurface', 'borderCritical'],
   "InputStepper": ['neutralText', 'border', 'fgMuted', 'inputSurface'],
-  "InputTag": ['brandSolid', 'brandText', 'neutralText', 'border', 'inputSurface'],
+  "InputTag": ['brandSolid', 'brandText', 'neutralText', 'borderDefault', 'inputSurface'],
   "Label": ['neutralText', 'errorColor'],
   "Modal": ['onBrand', 'neutralText', 'errorColor', 'border', 'borderDefault', 'fgMuted'],
   "Navbar": ['surface', 'brandSolid', 'brandText', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted'],
@@ -64,7 +64,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Tabs": ['brandSolid', 'brandText', 'neutralText', 'borderDefault', 'fgMuted'],
   "Textarea": ['neutralText', 'errorColor', 'disabledBg', 'disabledText', 'border', 'fgMuted', 'placeholderText', 'inputSurface', 'borderHover', 'borderCritical'],
   "TextLink": ['disabledText', 'linkText', 'linkHover'],
-  "Toast": ['surface', 'brandSolid', 'neutralText', 'errorColor', 'successColor', 'warningColor', 'infoColor'],
+  "Toast": ['surface', 'brandSolid', 'brandText', 'neutralText', 'errorColor', 'successColor', 'warningColor', 'infoColor'],
   "Toggle": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'disabledBg', 'disabledText', 'inputSurface'],
   "Tooltip": ['surface', 'neutralText'],
 }
@@ -111,6 +111,6 @@ export const COMPONENT_ARCH_ROLES: Record<string, string[]> = {
   "TabMenu": ['surface.selected'],
   "Textarea": ['border.control-hover', 'border.focus', 'status.critical.border-strong', 'status.critical.content', 'surface.input'],
   "TextLink": ['content.link.default', 'content.link.hover'],
-  "Toast": ['content.inverse', 'surface.inverse'],
+  "Toast": ['content.inverse', 'content.primary', 'surface.inverse'],
   "Toggle": ['action.primary.hover', 'surface.input'],
 }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { TABLE_LAST_ROW, tableRowClass } from './tableChrome'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
@@ -32,6 +33,7 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { useI18n } from '../../lib/i18n'
 import {
   auditCategoricalView,
+  contrastGradeLabel,
   contrastStatusForFlatKey,
   contrastStatusForToken,
   contrastStatusLabel,
@@ -565,19 +567,158 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
+function ContrastInfoIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
+  )
+}
+
+function ContrastHelpPopover({
+  open,
+  onClose,
+  anchorRef,
+  titleId,
+  title,
+  body,
+}: {
+  open: boolean
+  onClose: () => void
+  anchorRef: React.RefObject<HTMLElement | null>
+  titleId: string
+  title: string
+  body: string
+}) {
+  const { t } = useI18n()
+  const popRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) return
+    const r = anchorRef.current.getBoundingClientRect()
+    const width = 288
+    const left = Math.max(8, Math.min(r.left + r.width / 2 - width / 2, window.innerWidth - width - 8))
+    setPos({ top: r.bottom + 6, left })
+  }, [open, anchorRef])
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      const node = e.target as Node
+      if (anchorRef.current?.contains(node) || popRef.current?.contains(node)) return
+      onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose, anchorRef])
+
+  if (!open) return null
+  const popover = (
+    <div
+      ref={popRef}
+      role="dialog"
+      aria-labelledby={titleId}
+      className="fixed z-[70] w-[18rem] rounded-xl border border-line bg-elevated p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.35)]"
+      style={{ top: pos.top, left: pos.left }}
+    >
+      <p id={titleId} className="text-caption font-semibold text-fg mb-1.5">
+        {title}
+      </p>
+      <p className="text-caption text-fg-muted leading-relaxed whitespace-pre-line">
+        {body}
+      </p>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2.5 text-caption font-medium text-accent-ui hover:underline"
+      >
+        {t('Close')}
+      </button>
+    </div>
+  )
+  return typeof document !== 'undefined' ? createPortal(popover, document.body) : popover
+}
+
 function ContrastStatusCell({ result }: { result: ContrastStatusResult }) {
+  const { t } = useI18n()
+  const [helpOpen, setHelpOpen] = useState(false)
+  const helpRef = useRef<HTMLButtonElement>(null)
   const color =
     result.status === 'pass' ? 'text-status-success'
       : result.status === 'warn' ? 'text-status-warning'
         : result.status === 'fail' ? 'text-status-danger'
           : 'text-fg-faint'
+  const grade = contrastGradeLabel(result)
+  const hint = result.status === 'none' ? t('No contrast pair for this role') : result.title
+
+  if (result.status === 'none') {
+    const titleId = 'contrast-missing-help-title'
+    return (
+      <span className="flex items-center justify-center gap-0.5">
+        <span className="font-mono text-micro font-semibold tabular-nums text-fg-faint" aria-hidden>
+          —
+        </span>
+        <button
+          ref={helpRef}
+          type="button"
+          onClick={() => setHelpOpen((v) => !v)}
+          aria-expanded={helpOpen}
+          aria-controls={helpOpen ? titleId : undefined}
+          aria-label={t('Why no contrast ratio')}
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-fg-faint hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <ContrastInfoIcon />
+        </button>
+        <ContrastHelpPopover
+          open={helpOpen}
+          onClose={() => setHelpOpen(false)}
+          anchorRef={helpRef}
+          titleId={titleId}
+          title={t('Why no contrast ratio')}
+          body={t('Contrast missing help')}
+        />
+      </span>
+    )
+  }
+
   return (
     <span
-      className={`font-mono text-micro font-semibold tabular-nums ${color}`}
-      title={result.title}
-      aria-label={result.title}
+      className="flex flex-col items-center justify-center gap-0.5 min-w-0 text-center"
+      title={hint}
+      aria-label={grade ? `${hint} (${grade})` : hint}
     >
-      {contrastStatusLabel(result)}
+      <span className={`font-mono text-micro font-semibold tabular-nums leading-none ${color}`}>
+        {contrastStatusLabel(result)}
+      </span>
+      {grade ? (
+        <span
+          className={`text-nano font-semibold uppercase tracking-wide leading-none ${
+            result.grade === 'fail' ? 'text-status-danger' : color
+          }`}
+        >
+          {grade}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+function ContrastColumnHeader() {
+  const { t } = useI18n()
+  return (
+    <span className="flex items-center justify-center border-r border-line px-1.5 tracking-normal min-w-0">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint whitespace-nowrap">
+        {t('Contrast')}
+      </span>
     </span>
   )
 }
@@ -707,9 +848,8 @@ const NAME_MIN_TRACK = '10rem'
 /** Trailing tune / add-theme track — keep overlay width in lockstep. */
 const TRAIL_TRACK = '2.75rem'
 /** Contrast ratio — between theme columns and the tune column. Wide enough
- *  for a tabular `15.1:1` without colliding with the tune stack; the header
- *  drops `tracking-widest` so CONTRAST sits in the same column. */
-const CONTRAST_TRACK = '3.5rem'
+ *  for a tabular `15.1:1` and the header row (label + info control). */
+const CONTRAST_TRACK = '6rem'
 
 /** Pinned trailing cells. The plate stays readable over a mode column that
  *  slides under it. It does not draw the column rule: that seam is the
@@ -1518,12 +1658,7 @@ export default function Step3_SemanticTokens({
                     </span>
                   )
                 })}
-                <span
-                  className="flex items-center justify-center border-r border-line px-1 tracking-normal"
-                  title="Contrast of this token against its declared pair"
-                >
-                  Contrast
-                </span>
+                <ContrastColumnHeader />
                 {/* Trailing header cell = "add another mode". It sits at the
                     END of the theme columns because that's where the new
                     column lands — the affordance points at its own result.
@@ -1745,12 +1880,7 @@ export default function Step3_SemanticTokens({
                   </span>
                 )
               })}
-              <span
-                className="flex items-center justify-center border-r border-line px-1 tracking-normal"
-                title="Contrast of this token against its declared pair"
-              >
-                Contrast
-              </span>
+              <ContrastColumnHeader />
               {/* Trailing header cell = "add another mode" — see the arch
                   table's matching cell above. Flat always resolves an extra
                   theme as a real column, so it's always live here.

@@ -53,7 +53,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  displayHex, inspectElement, inspectGroup, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
+  displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
@@ -329,12 +329,13 @@ export function InspectorOverlay({
     return appearance === 'dark' ? 'dark' : appearance === 'light' ? 'light' : defaultAppearance
   }, [defaultAppearance])
 
-  const buildComponent = useCallback((el: Element): Target | null => {
+  const buildComponent = useCallback((el: Element, hit?: Element | null): Target | null => {
     const label = el.getAttribute('data-inspect') || ''
-    const rect = rectOf(el)
+    const inspectEl = inspectHitTarget(el, hit ?? null)
+    const rect = rectOf(inspectEl === el ? el : inspectEl)
     if (!rect) return null
     const t = tokensFor(el)
-    const { roles, measured } = inspectElement(t, label, el)
+    const { roles, measured } = inspectElement(t, label, inspectEl)
     return { kind: 'component', el, label, rect, roles, measured, appearance: appearanceFor(el) }
   }, [tokensFor, appearanceFor])
 
@@ -355,12 +356,13 @@ export function InspectorOverlay({
     }
   }, [tokensFor, appearanceFor])
 
-  const buildFocus = useCallback((el: Element): FocusTarget | null => {
+  const buildFocus = useCallback((el: Element, hit?: Element | null): FocusTarget | null => {
     const label = el.getAttribute('data-inspect') || ''
-    const rect = rectOf(el)
+    const inspectEl = inspectHitTarget(el, hit ?? null)
+    const rect = rectOf(inspectEl === el ? el : inspectEl)
     if (!rect) return null
     const t = tokensFor(el)
-    return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
+    return { el, label, rect, ids: inspectElement(t, label, inspectEl).roles.map((role) => role.id) }
   }, [tokensFor])
 
   const buildPage = useCallback((el: Element): Target | null => {
@@ -412,7 +414,7 @@ export function InspectorOverlay({
       // new badge — level 3 in the header note.
       if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
         if (focusHeld.current) return
-        const next = buildFocus(leaf)
+        const next = buildFocus(leaf, e.target as Element)
         setFocus((prev) => (prev && prev.el === next?.el ? prev : next))
         return
       }
@@ -420,14 +422,17 @@ export function InspectorOverlay({
       // re-targets, or the pin would just be a slower hover.
       if (pinned) return
 
+      const hit = e.target as Element
       const target = leaf
-        ? buildComponent(leaf)
+        ? buildComponent(leaf, hit)
         : group
           ? (buildGroup(group) ?? buildPage(root))
           : buildPage(root)
       if (!target) { setHover(null); return }
       setHover((prev) =>
         prev && prev.el === target.el && prev.rect.top === target.rect.top && prev.rect.left === target.rect.left
+          && prev.roles.length === target.roles.length
+          && prev.roles.every((role, i) => role.id === target.roles[i]?.id)
           ? prev
           : target,
       )
@@ -451,7 +456,7 @@ export function InspectorOverlay({
       const pinned = pinRef.current
 
       if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
-        const next = buildFocus(leaf)
+        const next = buildFocus(leaf, e.target as Element)
         if (!next) return
         // Clicking the held control again releases it back to following the
         // pointer, so the same gesture undoes itself.
@@ -461,8 +466,9 @@ export function InspectorOverlay({
         return
       }
 
+      const hit = e.target as Element
       const target = leaf
-        ? buildComponent(leaf)
+        ? buildComponent(leaf, hit)
         : group
           ? (buildGroup(group) ?? buildPage(root))
           : buildPage(root)
