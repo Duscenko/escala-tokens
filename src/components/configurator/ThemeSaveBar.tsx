@@ -5,8 +5,7 @@ import { undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
-import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { SETUP_SAVE_LABEL, SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep, useStepChanged } from '../../lib/themeSetup'
+import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -247,21 +246,15 @@ function BackButton({ onClick }: { onClick: () => void }) {
 /**
  * The footer while a theme is in GUIDED SETUP (`lib/themeSetup`): which step
  * this is, the step's action and the way out. The action names what really
- * happens — "Use Inter" when the step was left as it came, "Save font" once
- * something changed — and the last step says Finish. "Skip setup" ends the
+ * happens: Continue on every step, Finish on the last. "Skip setup" ends the
  * guide at once, leaving every remaining edition at its default.
  */
 export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
   const { t } = useI18n()
   const step = useSetupStep(themeKey) ?? 0
-  const changed = useStepChanged(themeKey)
-  const fontFamily = useDesignStore((s) => resolveThemeFoundations(s, themeKey).typography.fontFamily)
-  const current = SETUP_STEPS[step]
   const last = step === SETUP_STEPS.length - 1
-  const keep = current === 'typography' && fontFamily ? t('Use {name}', { name: fontFamily }) : t('Use default')
-  const label = last
-    ? (changed ? t('Save & finish') : t('Finish'))
-    : changed ? t(SETUP_SAVE_LABEL[current]) : keep
+  // Same predictable CTA as the create studio: Continue, then Finish.
+  const label = last ? t('Finish') : t('Continue')
 
   const finishRef = useRef<HTMLButtonElement>(null)
   const done = () => showToast(t('Your brand is ready — every edition is open now.'))
@@ -371,7 +364,7 @@ export function CreateStudioBar({
         <button
           type="button"
           onClick={onContinue}
-          className="flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-8 min-w-[7rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <span className="truncate">{continueLabel}</span>
           {!last && (

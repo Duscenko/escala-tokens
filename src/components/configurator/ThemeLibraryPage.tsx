@@ -27,7 +27,6 @@ import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { CreateStudioBar } from './ThemeSaveBar'
-import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
@@ -1847,14 +1846,10 @@ export default function ThemeLibraryPage({
   // The first system this browser makes: the studio says so, and what is on
   // the board is a draft until Continue.
   const firstSystem = mine.every((key) => key === createdKey)
-  const createFont = createdKey
-    ? resolveThemeFoundations(store, createdKey).typography.fontFamily
-    : ''
-  const continueLabel = createStep === 'icons' && createdKey
-    ? t('Finish')
-    : createStep === 'typography' && createFont
-      ? t('Use {name}', { name: createFont })
-      : t('Continue')
+  // One predictable CTA: Continue on steps 1–5, Finish on the last. It never
+  // changes name to echo the step's content ("Use Inter" was one such case).
+  const lastCreateStep = createIndex === CREATE_STEPS.length - 1
+  const continueLabel = lastCreateStep ? t('Finish') : t('Continue')
   const openAdvanced = (foundation: string) => {
     if (!createdKey) return
     onSelectTheme(createdKey)
@@ -1915,7 +1910,7 @@ export default function ThemeLibraryPage({
                 stepIndex={Math.max(0, createIndex)}
                 total={CREATE_STEPS.length}
                 continueLabel={continueLabel}
-                last={createStep === 'icons' && !!createdKey}
+                last={lastCreateStep}
                 onCancel={studioOnly ? undefined : cancelCreate}
                 onBack={createIndex > 0 ? goBackCreateStep : undefined}
                 onSkip={skipCreate}
