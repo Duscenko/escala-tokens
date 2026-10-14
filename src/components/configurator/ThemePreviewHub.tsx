@@ -22,7 +22,7 @@ import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { type ThemeAppearance } from '../../lib/themeModes'
-import type { GridViewport, OverlapSize } from '../../lib/layoutTokens'
+import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
@@ -31,7 +31,6 @@ import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
 import { myThemeKeys } from '../../lib/themeLibrary'
-import { useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
@@ -238,7 +237,7 @@ const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
   previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
-  inspecting, onInspectingChange, tileAppearances, boardAppearance, overlapSize, onPickRole, onOpenRoleInVariables, editingRole,
+  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
 }: {
   previewTheme: string
   previewPlatform: GridViewport
@@ -248,8 +247,6 @@ function ArtefactsView({
   tileAppearances: ThemeAppearance[]
   /** Uniform board appearance — all tiles share light or dark. */
   boardAppearance: ThemeAppearance
-  /** The avatar card's overlap — the Spacing edition's Overlap bar. */
-  overlapSize: OverlapSize
   /** Inspector mode — point at a specimen, get the roles that paint it. Lives
    *  in the hub (the toggle is in the canvas header, a sibling of this view),
    *  never local here. */
@@ -329,7 +326,6 @@ function ArtefactsView({
               tokensByAppearance={tokensByAppearance}
               tileAppearances={tileAppearances}
               projectName={store.projectName}
-              overlapSize={overlapSize}
             />
           </InspectorModeProvider>
         </div>
@@ -453,14 +449,9 @@ export default function ThemePreviewHub({
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
   const { gated: docsGated } = useAccess()
-  const setupStep = useSetupStep(previewTheme)
-  /** Same gate as Variables / Code / Docs tabs — first customization pass. */
-  // A Random theme is a draft until it is saved: code, Figma sync and the
-  // inspector describe a design system that does not exist yet.
-  const headerActionsLocked = docsGated || setupStep != null || randomDraft
-  const headerActionsLockedHint = randomDraft
-    ? t('Save this brand to open code, Figma sync, Variables and Docs.')
-    : t('Finish customizing your brand to see full Variables and Docs.')
+  // A Random theme is a draft until it is saved: the inspector would describe
+  // a design system that does not exist yet.
+  const headerActionsLockedHint = t('Save this brand to open code, Figma sync, Variables and Docs.')
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -469,14 +460,14 @@ export default function ThemePreviewHub({
   // paint it. The header toggle is the exit — click it again and hover goes
   // back to ordinary interaction. Not persisted and not part of
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
+  // Open to guests and during the first setup pass too: naming the roles on
+  // screen is how a first-time visitor learns what the colour step is setting.
+  // Only an unsaved Random draft keeps it off.
   const [inspecting, setInspecting] = useState(true)
   useEffect(() => {
-    if (headerActionsLocked) setInspecting(false)
-  }, [headerActionsLocked])
+    if (randomDraft) setInspecting(false)
+  }, [randomDraft])
   const [contrastOpen, setContrastOpen] = useState(false)
-  // Which overlap size the board's avatar card shows. The Spacing edition's
-  // Overlap bar drives it; view state, like `inspecting`, never persisted.
-  const [overlapSize, setOverlapSize] = useState<OverlapSize>('md')
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
   /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */
@@ -638,8 +629,6 @@ export default function ThemePreviewHub({
           onContrastOpenChange={setContrastOpen}
           previewPlatform={previewPlatform}
           onPreviewPlatformChange={onPreviewPlatformChange}
-          overlapSize={overlapSize}
-          onOverlapSizeChange={setOverlapSize}
           exploringRandom={exploringRandom}
           onExploringRandomEnd={onExploringRandomEnd}
           onUseTheme={onGetCode}
@@ -730,7 +719,7 @@ export default function ThemePreviewHub({
                       onChange={setInspecting}
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
-                      disabled={headerActionsLocked}
+                      disabled={randomDraft}
                       disabledTitle={headerActionsLockedHint}
                     />
                   )}
@@ -776,7 +765,6 @@ export default function ThemePreviewHub({
                     onInspectingChange={setInspecting}
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
-                    overlapSize={overlapSize}
                     onPickRole={pickRole}
                     onOpenRoleInVariables={onOpenInVariables}
                   />

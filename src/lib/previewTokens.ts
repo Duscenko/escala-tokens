@@ -69,7 +69,9 @@ export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   // cannot name. TabMenu reads THIS field so Inspect tokens can report
   // `surface.selected` instead of dropping the pill.
   selectedSurface: 'surface.selected',
-  linkText: 'content.link.default',
+  // A selected chip's stroke. It was `brandSolid + '66'`, a local tint no
+  // role resolves to, so Inspect tokens could not name it.
+  accentBorder: 'border.accent',  linkText: 'content.link.default',
   linkHover: 'content.link.hover',
   borderHover: 'border.control-hover',
   borderCritical: 'status.critical.border-strong',

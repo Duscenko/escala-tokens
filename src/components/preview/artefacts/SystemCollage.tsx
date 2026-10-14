@@ -15,7 +15,7 @@ import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
 import { COMPONENTS } from '../../../lib/componentCatalogue'
-import { extractBreakpoints, resolveGridFrame, type GridViewport, type OverlapSize } from '../../../lib/layoutTokens'
+import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
 import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
@@ -158,18 +158,16 @@ function ColorStyleSpecimen({ t }: { t: PreviewTokens }) {
   // `flex-1` below so a stretched card hands its spare height to the blocks, not
   // to the padding — the surface inset has to read the same on all four sides.
   return (
-    <TokenInspector component="Card">
-      <div className="flex flex-1 flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-        <div className="flex flex-1 overflow-hidden" style={{ minHeight: 120, borderRadius: radius }}>
-          {accentBands.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
-        </div>
-        {steps.length > 0 && (
-          <div className="flex overflow-hidden" style={{ height: 40, borderRadius: radius }}>
-            {steps.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
-          </div>
-        )}
+    <div className="flex flex-1 flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
+      <div className="flex flex-1 overflow-hidden" style={{ minHeight: 120, borderRadius: radius }}>
+        {accentBands.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
       </div>
-    </TokenInspector>
+      {steps.length > 0 && (
+        <div className="flex overflow-hidden" style={{ height: 40, borderRadius: radius }}>
+          {steps.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -453,16 +451,14 @@ function ScaledModule({
 
 function GradientAvatar({ t, size }: { t: PreviewTokens; size: string }) {
   return (
-    <TokenInspector component="Avatar">
-      <span
-        aria-hidden
-        style={{
-          width: size, height: size, flexShrink: 0,
-          borderRadius: 999,
-          background: t.avatarGradient || t.coverGradient || t.brandSolid,
-        }}
-      />
-    </TokenInspector>
+    <span
+      aria-hidden
+      style={{
+        width: size, height: size, flexShrink: 0,
+        borderRadius: 999,
+        background: t.avatarGradient || t.coverGradient || t.brandSolid,
+      }}
+    />
   )
 }
 
@@ -518,16 +514,13 @@ function CollagePack({
  * board layout remains for tests or a future entry point.
  */
 export function SystemCollage({
-  tokensByAppearance, tileAppearances, projectName, layout = 'phones', frameTokens, overlapSize = 'md',
+  tokensByAppearance, tileAppearances, projectName, layout = 'phones', frameTokens,
 }: {
   tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
   tileAppearances: ThemeAppearance[]
   projectName: string
   layout?: 'board' | 'phones'
   frameTokens?: PreviewTokens
-  /** Which `overlap-*` role the avatar card stacks with — the Spacing
-   *  edition's Overlap bar. */
-  overlapSize?: OverlapSize
 }) {
   const { t: translate } = useI18n()
   const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
@@ -731,45 +724,39 @@ export function SystemCollage({
     profile: (
         <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
           <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
-            <TokenInspector component="Avatar">
-              <span
-                aria-hidden
-                style={{
-                  width: wellSm, height: wellSm, flexShrink: 0,
-                  borderRadius: radiusRoleOf(tile(8), 'control', '8px'),
-                  background: tile(8).coverGradient || tile(8).brandSolid,
-                }}
-              />
-            </TokenInspector>
+            {/* Not catalogue components, so no `TokenInspector` leaf: the
+                module's own group reads these paints and names their roles.
+                A borrowed label (Badge, TextLink…) made the badge list that
+                component's union instead of what is on screen. */}
+            <span
+              aria-hidden
+              style={{
+                width: wellSm, height: wellSm, flexShrink: 0,
+                borderRadius: radiusRoleOf(tile(8), 'control', '8px'),
+                background: tile(8).coverGradient || tile(8).brandSolid,
+              }}
+            />
             <div className="min-w-0 flex-1">
-              <TokenInspector component="Badge">
-                <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
-                  <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
-                  <TokenIcon t={tile(8)} concept="check" size={12} color={tile(8).brandSolid} />
-                </div>
-              </TokenInspector>
-              <TokenInspector component="TextLink">
-                <p style={{ margin: 0, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{handle}</p>
-              </TokenInspector>
+              <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
+                <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
+                <TokenIcon t={tile(8)} concept="check" size={12} color={tile(8).brandSolid} />
+              </div>
+              <p style={{ margin: 0, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{handle}</p>
             </div>
           </div>
-          <TokenInspector component="InlineAlert">
-            <p style={{ margin: 0, ...typeStyleOf(tile(8), 'body-sm', { leading: true }), color: tile(8).neutralText }}>
-              {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
-            </p>
-          </TokenInspector>
-          <TokenInspector component="Badge">
-            <div className="flex min-w-0 flex-wrap" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
-              <div>
-                <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
-                <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
-              </div>
-              <div>
-                <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>12.4K</span>
-                <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
-              </div>
+          <p style={{ margin: 0, ...typeStyleOf(tile(8), 'body-sm', { leading: true }), color: tile(8).neutralText }}>
+            {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
+          </p>
+          <div className="flex min-w-0 flex-wrap" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
+            <div>
+              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
+              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
             </div>
-          </TokenInspector>
+            <div>
+              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>12.4K</span>
+              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
+            </div>
+          </div>
         </ScaledModule>
     ),
     credits: (
@@ -865,39 +852,37 @@ export function SystemCollage({
         </ScaledModule>
     ),
   }
-  // The avatar card: four avatars stacked by the chosen `overlap-*` role. The
-  // px is the role's LIVE value (negative), so Variables edits land here too.
+  // The avatar card: four avatars stacked by the `overlap-md` role. The px is
+  // the role's LIVE value (negative), so Variables edits land here too.
   // Each avatar is ringed in the card's own colour — the ring is what keeps a
   // tucked avatar's edge legible against the one it sits under.
-  const overlapPx = parseFloat(spacingRoleOf(tile(11), `overlap-${overlapSize}`, '-8px')) || 0
+  const overlapPx = parseFloat(spacingRoleOf(tile(11), 'overlap-md', '-8px')) || 0
   const cardBg = String(cardSurfaceStyle(tile(11)).background ?? tile(11).surface)
   const teamCard = (
     <ScaledModule key="team" t={tile(11)} appearance={appearanceAt(11)}>
       <div className="flex items-baseline justify-between" style={{ gap: gap(tile(11), 'gap-control', '8px') }}>
         <span style={{ ...typeStyleOf(tile(11), 'label'), color: tile(11).neutralText }}>{translate('Team')}</span>
         <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11), fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-          {`overlap-${overlapSize} · ${overlapPx}px`}
+          {`overlap-md · ${overlapPx}px`}
         </span>
       </div>
-      <TokenInspector component="Avatar">
-        <div className="flex items-center">
-          {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
-            <span
-              key={hue}
-              style={{
-                display: 'inline-flex',
-                position: 'relative',
-                zIndex: 4 - i,
-                marginLeft: i === 0 ? 0 : overlapPx,
-                borderRadius: 999,
-                boxShadow: `0 0 0 2px ${cardBg}`,
-              }}
-            >
-              <Avatar t={tile(11)} v={{ Size: 'LG', Variant: 'Gradient', Hue: String(hue) }} />
-            </span>
-          ))}
-        </div>
-      </TokenInspector>
+      <div className="flex items-center">
+        {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
+          <span
+            key={hue}
+            style={{
+              display: 'inline-flex',
+              position: 'relative',
+              zIndex: 4 - i,
+              marginLeft: i === 0 ? 0 : overlapPx,
+              borderRadius: 999,
+              boxShadow: `0 0 0 2px ${cardBg}`,
+            }}
+          >
+            <Avatar t={tile(11)} v={{ Size: 'LG', Variant: 'Gradient', Hue: String(hue) }} />
+          </span>
+        ))}
+      </div>
     </ScaledModule>
   )
 
@@ -947,15 +932,13 @@ export function SystemCollage({
         </div>
         <Badge t={chart} v={{ Style: 'Soft', Color: 'Success', Size: 'SM' }}>+6%</Badge>
       </div>
-      <TokenInspector component="Card">
-        <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} width="100%" height={CHART_H} preserveAspectRatio="none" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
-          {[0.25, 0.55, 0.85].map((f) => (
-            <line key={f} x1={0} x2={CHART_W} y1={CHART_H * f} y2={CHART_H * f} stroke={gridColor} strokeWidth={1} vectorEffect="non-scaling-stroke" />
-          ))}
-          <path d={area} fill={chart.brandSolid} fillOpacity={0.18} />
-          <path d={line} fill="none" stroke={chart.brandSolid} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        </svg>
-      </TokenInspector>
+      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} width="100%" height={CHART_H} preserveAspectRatio="none" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
+        {[0.25, 0.55, 0.85].map((f) => (
+          <line key={f} x1={0} x2={CHART_W} y1={CHART_H * f} y2={CHART_H * f} stroke={gridColor} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+        ))}
+        <path d={area} fill={chart.brandSolid} fillOpacity={0.18} />
+        <path d={line} fill="none" stroke={chart.brandSolid} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      </svg>
       <div className="flex justify-between" style={{ ...typeStyleOf(chart, 'helper'), color: muted(10) }}>
         {['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'].map((m) => <span key={m}>{translate(m)}</span>)}
       </div>

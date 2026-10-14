@@ -53,7 +53,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
+  displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import { wcagRatio } from '../../../lib/color/apca'
 import { useI18n } from '../../../lib/i18n'
@@ -189,6 +189,9 @@ interface Target {
   measured: boolean
   /** Group only: how many inspectable components are inside. */
   size?: number
+  /** Component only: the rows the part under the pointer paints (the dot,
+   *  the label). The badge still lists the whole component. */
+  hitIds?: string[]
   /** Which appearance subtree this target was measured in — mixed collage. */
   appearance: ThemeAppearance
 }
@@ -250,11 +253,13 @@ const INSPECT_RING_RX = 6
 /** Overlay highlight — fill tint + a dashed stroke that marches around the
  *  perimeter so "what is selected" reads at a glance without a static ring
  *  getting lost on busy modules. Static when `prefers-reduced-motion`. */
-function InspectRing({ rect, variant }: { rect: DOMRect; variant: 'component' | 'group' | 'focus' }) {
-  const stroke = variant === 'group' ? 1.5 : 2
+function InspectRing({ rect, variant, editing = false }: { rect: DOMRect; variant: 'component' | 'group' | 'focus'; editing?: boolean }) {
+  const stroke = variant === 'group' ? 1.5 : editing ? 3 : 2
   const w = rect.width + INSPECT_RING_PAD * 2
   const h = rect.height + INSPECT_RING_PAD * 2
-  const fillAlpha = variant === 'group' ? 4 : variant === 'focus' ? 10 : 8
+  // The element being edited has to win over everything else on a busy
+  // board: a stronger wash and a solid halo while Token Details is open.
+  const fillAlpha = variant === 'group' ? 6 : editing ? 22 : variant === 'focus' ? 16 : 14
   const strokeOpacity = variant === 'group' ? 0.5 : 1
   const dash = variant === 'group' ? '5 4' : '8 5'
 
@@ -264,6 +269,20 @@ function InspectRing({ rect, variant }: { rect: DOMRect; variant: 'component' | 
       style={{ left: rect.left - INSPECT_RING_PAD, top: rect.top - INSPECT_RING_PAD, width: w, height: h }}
       aria-hidden
     >
+      {variant !== 'group' && (
+        <rect
+          x={-2}
+          y={-2}
+          width={w + 4}
+          height={h + 4}
+          rx={INSPECT_RING_RX + 2}
+          ry={INSPECT_RING_RX + 2}
+          fill="none"
+          stroke="var(--accent-solid)"
+          strokeOpacity={editing ? 0.45 : 0.25}
+          strokeWidth={editing ? 6 : 4}
+        />
+      )}
       <rect
         x={stroke / 2}
         y={stroke / 2}
@@ -347,12 +366,13 @@ export function InspectorOverlay({
 
   const buildComponent = useCallback((el: Element, hit?: Element | null): Target | null => {
     const label = el.getAttribute('data-inspect') || ''
-    const inspectEl = inspectHitTarget(el, hit ?? null)
-    const rect = rectOf(inspectEl === el ? el : inspectEl)
+    const rect = rectOf(el)
     if (!rect) return null
     const t = tokensFor(el)
-    const { roles, measured } = inspectElement(t, label, inspectEl)
-    return { kind: 'component', el, label, rect, roles, measured, appearance: appearanceFor(el) }
+    const { roles, measured } = inspectElement(t, label, el)
+    const inspectEl = inspectHitTarget(el, hit ?? null)
+    const hitIds = inspectEl === el ? undefined : paintedRoleIds(roles, inspectEl)
+    return { kind: 'component', el, label, rect, roles, measured, hitIds, appearance: appearanceFor(el) }
   }, [tokensFor, appearanceFor])
 
   const buildGroup = useCallback((el: Element): Target | null => {
@@ -372,13 +392,12 @@ export function InspectorOverlay({
     }
   }, [tokensFor, appearanceFor])
 
-  const buildFocus = useCallback((el: Element, hit?: Element | null): FocusTarget | null => {
+  const buildFocus = useCallback((el: Element): FocusTarget | null => {
     const label = el.getAttribute('data-inspect') || ''
-    const inspectEl = inspectHitTarget(el, hit ?? null)
-    const rect = rectOf(inspectEl === el ? el : inspectEl)
+    const rect = rectOf(el)
     if (!rect) return null
     const t = tokensFor(el)
-    return { el, label, rect, ids: inspectElement(t, label, inspectEl).roles.map((role) => role.id) }
+    return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
   }, [tokensFor])
 
   const buildPage = useCallback((el: Element): Target | null => {
@@ -430,7 +449,7 @@ export function InspectorOverlay({
       // new badge — level 3 in the header note.
       if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
         if (focusHeld.current) return
-        const next = buildFocus(leaf, e.target as Element)
+        const next = buildFocus(leaf)
         setFocus((prev) => (prev && prev.el === next?.el ? prev : next))
         return
       }
@@ -449,6 +468,7 @@ export function InspectorOverlay({
         prev && prev.el === target.el && prev.rect.top === target.rect.top && prev.rect.left === target.rect.left
           && prev.roles.length === target.roles.length
           && prev.roles.every((role, i) => role.id === target.roles[i]?.id)
+          && (prev.hitIds ?? []).join('|') === (target.hitIds ?? []).join('|')
           ? prev
           : target,
       )
@@ -472,7 +492,7 @@ export function InspectorOverlay({
       const pinned = pinRef.current
 
       if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
-        const next = buildFocus(leaf, e.target as Element)
+        const next = buildFocus(leaf)
         if (!next) return
         // Clicking the held control again releases it back to following the
         // pointer, so the same gesture undoes itself.
@@ -593,6 +613,9 @@ export function InspectorOverlay({
 
   const { rect, roles, label, kind, measured } = target
   const lit = pin?.kind === 'group' && focus ? new Set(focus.ids) : null
+  // The part under the pointer, inside one component: lit, but the other rows
+  // keep full strength — they are still on screen, just not under the cursor.
+  const touched = !lit && kind === 'component' && target.hitIds?.length ? new Set(target.hitIds) : null
   // Wide enough that the longest role (`status.critical.surface-solid`) and
   // its hex both fit on one row. The rail it opens stays 240.
   const BADGE_W = 360
@@ -625,8 +648,8 @@ export function InspectorOverlay({
       {/* A group is the coarser target, so it gets the quieter ring — with a
           control lit inside it, two rings of equal weight would compete for
           the "this is what the badge is about" reading. */}
-      <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} />
-      {focus && <InspectRing rect={focus.rect} variant="focus" />}
+      <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} editing={!!editing && !!pin && !focus} />
+      {focus && <InspectRing rect={focus.rect} variant="focus" editing={!!editing && !!pin} />}
       <div
         className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-line bg-rail-section shadow-lg"
         style={{ left, top, width: BADGE_W, maxHeight, transform: flip ? 'translateY(-100%)' : undefined }}
@@ -714,7 +737,7 @@ export function InspectorOverlay({
             )}
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto p-1">
                   {visibleRoles.map((role) => {
-                    const isLit = lit?.has(role.id) ?? false
+                    const isLit = lit?.has(role.id) ?? touched?.has(role.id) ?? false
                     const rowClass = `flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors ${
                       isLit
                         ? 'bg-accent-ui/10 ring-1 ring-inset ring-accent-ui/40'

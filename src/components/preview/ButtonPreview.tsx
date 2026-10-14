@@ -34,6 +34,7 @@ export interface PreviewTokens {
   linkText?: string // actionable link ink — `content.link.default`
   linkHover?: string // link hover ink — `content.link.hover`
   borderHover?: string // hovered control stroke — `border.control-hover`
+  accentBorder?: string // selected-control stroke in the brand accent — `border.accent`
   borderCritical?: string // invalid-field stroke — `status.critical.border-strong`
   ghostNeutralHover?: string // close / menu-item hover wash — `action.ghost.hover`
   ghostNeutralPressed?: string // close / menu-item pressed wash — `action.ghost.pressed`

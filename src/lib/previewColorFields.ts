@@ -23,7 +23,7 @@ export type PreviewColorField =
   | 'errorColor' | 'disabledBg' | 'disabledText' | 'border' | 'borderDefault'
   | 'fgMuted' | 'placeholderText' | 'successColor' | 'warningColor' | 'infoColor'
   | 'inputSurface' | 'selectedSurface'
-  | 'linkText' | 'linkHover' | 'borderHover' | 'borderCritical'
+  | 'linkText' | 'linkHover' | 'borderHover' | 'borderCritical' | 'accentBorder'
   | 'ghostNeutralHover' | 'ghostNeutralPressed'
 
 export const PREVIEW_COLOR_FIELDS: PreviewColorField[] = [
@@ -31,7 +31,7 @@ export const PREVIEW_COLOR_FIELDS: PreviewColorField[] = [
   'errorColor', 'disabledBg', 'disabledText', 'border', 'borderDefault',
   'fgMuted', 'placeholderText', 'successColor', 'warningColor', 'infoColor',
   'inputSurface', 'selectedSurface',
-  'linkText', 'linkHover', 'borderHover', 'borderCritical',
+  'linkText', 'linkHover', 'borderHover', 'borderCritical', 'accentBorder',
   'ghostNeutralHover', 'ghostNeutralPressed',
 ]
 
@@ -67,6 +67,7 @@ export const COLOR_FIELD_INFO: Record<PreviewColorField, ColorFieldInfo> = {
   linkHover:       { role: null, cssVar: '--color-content-link-hover', label: 'Link text hover' },
   borderHover:     { role: null, cssVar: '--color-border-control-hover', label: 'Control border hover' },
   borderCritical:  { role: null, cssVar: '--color-status-critical-border-strong', label: 'Invalid field border' },
+  accentBorder:    { role: null, cssVar: '--color-border-accent', label: 'Accent border' },
   ghostNeutralHover:   { role: null, cssVar: '--color-action-ghost-hover', label: 'Ghost neutral hover' },
   ghostNeutralPressed: { role: null, cssVar: '--color-action-ghost-pressed', label: 'Ghost neutral pressed' },
 }

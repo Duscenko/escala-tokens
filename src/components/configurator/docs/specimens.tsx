@@ -252,6 +252,16 @@ const strokeFocus = (t: PreviewTokens) => strokeRoleOf(t, 'focus', '2px')
 const selectorGlyph = (t: PreviewTokens, small: boolean) =>
   selectorOf(t, small ? 'sm' : 'md', small ? 15 : 18)
 
+/** Control anatomy that has no step of its own (a badge's padding, a progress
+ *  track, a stepper node) scaled by the `control` size role against its 40px
+ *  standard. The Fields dial and the spacing modes move that role, so these
+ *  grow and shrink with the buttons and inputs beside them. Exactly 1 at the
+ *  standard ramp, so a default system renders byte for byte as before. */
+function fieldPx(t: PreviewTokens, px: number): number {
+  const control = parseFloat(sizeRoleOf(t, 'control', '40px')) || 40
+  return Math.round(px * control / 40)
+}
+
 /**
  * WCAG 2.2 target size (2.5.8): the POINTER target must be at least 24×24,
  * which an 18px checkbox is not. The fix is a transparent hit area around the
@@ -726,7 +736,11 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
 
 // ── Input (Size × State × Type) ───────────────────────────────────────────────
 
-const INPUT_HEIGHTS: Record<string, number> = { MD: 40, SM: 34, XS: 28 }
+/** Field height as a share of the `control` size role. MD IS the role (the
+ *  height every other form control uses); SM/XS have no step of their own
+ *  (34 and 28 sit between ramp steps), so they scale with it — the Fields
+ *  dial then resizes inputs with the selects and buttons beside them. */
+const INPUT_HEIGHT_RATIO: Record<string, number> = { MD: 1, SM: 34 / 40, XS: 28 / 40 }
 const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: string; lead?: ReactNode }> = {
   'Default':      { label: 'Name', placeholder: 'Jane Doe' },
   'E-Mail':       { label: 'Email', placeholder: 'you@company.com', lead: '@' },
@@ -757,7 +771,8 @@ function inputSeed(type: string | undefined, state: string | undefined): string 
 function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
   const { t: translate } = useI18n()
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
-  const h = INPUT_HEIGHTS[v.Size ?? 'MD'] ?? 40
+  const control = parseFloat(sizeRoleOf(t, 'control', '40px')) || 40
+  const h = Math.round(control * (INPUT_HEIGHT_RATIO[v.Size ?? 'MD'] ?? 1))
   const inspecting = useInspectorActive()
   const inputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
@@ -975,10 +990,10 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 // ── Badge (Style × Color) ─────────────────────────────────────────────────────
 
-const BADGE_SIZE_SPECS: Record<string, { pad: string; f: number; dot: number; gap: number }> = {
-  SM: { pad: '2px 8px', f: 11, dot: 5, gap: 5 },
-  MD: { pad: '3px 10px', f: 12, dot: 6, gap: 6 },
-  LG: { pad: '4px 12px', f: 13, dot: 7, gap: 7 },
+const BADGE_SIZE_SPECS: Record<string, { padY: number; padX: number; f: number; dot: number; gap: number }> = {
+  SM: { padY: 2, padX: 8, f: 11, dot: 5, gap: 5 },
+  MD: { padY: 3, padX: 10, f: 12, dot: 6, gap: 6 },
+  LG: { padY: 4, padX: 12, f: 13, dot: 7, gap: 7 },
 }
 
 function BadgeSpecimen({ t, v, children }: SpecimenProps) {
@@ -1008,13 +1023,13 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
       style={{
         ...baseFont(t),
         display: 'inline-flex', alignItems: 'center', gap: showDot ? spaceOf(t, sz.gap) : 0,
-        padding: showDot ? sz.pad : `${sz.pad.split(' ')[0]} ${sz.dot + 6}px`,
+        padding: `${fieldPx(t, sz.padY)}px ${fieldPx(t, showDot ? sz.padX : sz.dot + 6)}px`,
         borderRadius: radiusRoleOf(t, 'pill'), background: bg, color: fg, border: `${strokeControl(t)} solid ${line}`,
         ...typeOf(t, 'caption'),
         ...(showDot ? {} : { fontVariantNumeric: 'tabular-nums', fontWeight: weightOf(t, 'medium', 500) }),
       }}
     >
-      {showDot && <span style={{ width: sz.dot, height: sz.dot, borderRadius: 999, background: style === 'Solid' ? statusOn(t, v.Color ?? 'Brand') : c }} />}
+      {showDot && <span style={{ width: fieldPx(t, sz.dot), height: fieldPx(t, sz.dot), borderRadius: 999, background: style === 'Solid' ? statusOn(t, v.Color ?? 'Brand') : c }} />}
       {children ?? (v.Color ?? 'Brand')}
     </span>
   )
@@ -1044,7 +1059,7 @@ function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const hue = Number(v.Hue)
   const background = gradient
     ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t))
-    : soft(t, t.brandSolid)
+    : (t.selectedSurface ?? soft(t, t.brandSolid))
   return (
     <span
       style={{
@@ -1142,7 +1157,7 @@ function IconSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 const SPINNER_SIZES: Record<string, number> = { SM: 16, MD: 24, LG: 32 }
 
 function SpinnerSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  return <SpecimenSpinner size={SPINNER_SIZES[v.Size ?? 'MD'] ?? 24} color={t.brandSolid} track={t.neutralFill} />
+  return <SpecimenSpinner size={fieldPx(t, SPINNER_SIZES[v.Size ?? 'MD'] ?? 24)} color={t.brandSolid} track={t.neutralFill} />
 }
 
 // ── Divider (Orientation) ─────────────────────────────────────────────────────
@@ -1289,7 +1304,7 @@ function ProgressSpecimen({ t, w }: SpecimenProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         style={{
-          height: 6,
+          height: fieldPx(t, 6),
           borderRadius: radiusRoleOf(t, 'full', '9999px'),
           background: t.neutralFill,
           overflow: 'hidden',
@@ -1677,7 +1692,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
       {open && (
         <div style={{ marginTop: spaceOf(t, 4), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: spaceOf(t, 4) }}>
           {options.map((o, i) => (
-            <span key={o} style={{ display: 'block', padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? soft(t, t.brandSolid) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
+            <span key={o} style={{ display: 'block', padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? (t.selectedSurface ?? soft(t, t.brandSolid)) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
               {o}
             </span>
           ))}
@@ -1696,7 +1711,7 @@ function CheckRow({ t, checked, onToggle, children }: { t: PreviewTokens; checke
         aria-checked={!!checked}
         onClick={onToggle}
         style={{
-          width: 18, height: 18, padding: 0, border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
+          width: selectorGlyph(t, false), height: selectorGlyph(t, false), padding: 0, border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
           borderRadius: radiusRoleOf(t, 'control'),
           background: t.inputSurface ?? inputSurfaceOf(t),
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1793,10 +1808,13 @@ function RadioGroupSpecimen({ t }: { t: PreviewTokens }) {
 }
 
 function MiniSwitch({ t, on }: { t: PreviewTokens; on: boolean }) {
+  // Scales with the Selector ramp's MD glyph (18 → a 16px knob in a 36×20 track).
+  const knob = Math.round(selectorGlyph(t, false) * 16 / 18)
+  const trackW = knob + 20
   return (
-    <span role="switch" aria-checked={on} style={{ width: 36, height: 20, borderRadius: radiusRoleOf(t, 'pill'), background: on ? t.brandSolid : t.neutralFill, position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+    <span role="switch" aria-checked={on} style={{ width: trackW, height: knob + 4, borderRadius: radiusRoleOf(t, 'pill'), background: on ? t.brandSolid : t.neutralFill, position: 'relative', display: 'inline-block', flexShrink: 0 }}>
       {/* Same rule as SwitchSpecimen's knob — see the comment there. */}
-      <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: on ? t.onBrand : t.inputSurface ?? inputSurfaceOf(t), boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
+      <span style={{ position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob, borderRadius: 999, background: on ? t.onBrand : t.inputSurface ?? inputSurfaceOf(t), boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
     </span>
   )
 }
@@ -2065,20 +2083,22 @@ function PasswordStrengthSpecimen({ t, v }: SpecimenProps) {
 
 // ── Indicators — presence, chips, rating, file plates ─────────────────────────
 
-const PRESENCE: Record<string, (t: PreviewTokens) => string> = {
-  Online: (t) => t.successColor ?? '#17b26a',
-  Away: (t) => t.warningColor ?? '#f79009',
-  Busy: (t) => t.errorColor,
+// A function declaration, not a lookup map of arrows: `gen-component-color-fields`
+// only follows declarations, and a map hid the dot's colours from the inspector.
+function presenceColor(t: PreviewTokens, status: string): string {
   // The other three presences resolve from the status ramps, so retinting
   // Success/Warning/Error moves them. Offline was a frozen grey, which meant a
   // tinted-neutral system showed three on-brand dots and one from a palette it
   // does not contain. It is the absence of a signal, so it reads as muted ink.
-  Offline: (t) => t.fgMuted ?? '#717680',
+  if (status === 'Away') return t.warningColor ?? '#f79009'
+  if (status === 'Busy') return t.errorColor
+  if (status === 'Offline') return t.fgMuted ?? '#717680'
+  return t.successColor ?? '#17b26a'
 }
 
 function StatusBadgeSpecimen({ t, v }: SpecimenProps) {
   const status = v.Status ?? 'Online'
-  const c = (PRESENCE[status] ?? PRESENCE.Online)(t)
+  const c = presenceColor(t, status)
   return (
     <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 7), padding: `${spaceOf(t, 4)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'pill', '9999px'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), ...typeOf(t, 'caption') }}>
       <span style={{ width: 8, height: 8, borderRadius: 999, background: c }} aria-hidden />
@@ -2101,9 +2121,9 @@ function ChipSpecimen({ t, v }: SpecimenProps) {
       onMouseLeave={() => setHover(false)}
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: small ? 5 : 6, padding: small ? '3px 10px' : '5px 12px', borderRadius: radiusRoleOf(t, 'pill'),
+        display: 'inline-flex', alignItems: 'center', gap: small ? 5 : 6, padding: `${fieldPx(t, small ? 3 : 5)}px ${fieldPx(t, small ? 10 : 12)}px`, borderRadius: radiusRoleOf(t, 'pill'),
         background: selected ? (t.selectedSurface ?? selectedSurfaceOf(t)) : hot ? softer(t, t.brandSolid) : 'transparent',
-        border: `${strokeControl(t)} solid ${selected ? t.brandSolid + '66' : hot ? (t.borderHover ?? borderHoverOf(t)) : (t.border ?? '#d0d5dd')}`,
+        border: `${strokeControl(t)} solid ${selected ? (t.accentBorder ?? t.brandSolid + '66') : hot ? (t.borderHover ?? borderHoverOf(t)) : (t.border ?? '#d0d5dd')}`,
         color: selected ? t.brandText : t.neutralText,
         ...typeOf(t, 'label'), cursor: 'pointer',
         transition: STATE_TRANSITION,
@@ -2422,7 +2442,7 @@ function NavbarSpecimen({ t }: { t: PreviewTokens }) {
           <span key={l} style={{ ...typeOf(t, i === 0 ? 'button' : 'body-sm'), cursor: 'pointer', color: i === 0 ? t.neutralText : t.fgMuted }}>{l}</span>
         ))}
       </nav>
-      <span style={{ width: 28, height: 28, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: soft(t, t.brandSolid), color: t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...typeOf(t, 'caption'), flexShrink: 0 }}>MD</span>
+      <span style={{ width: 28, height: 28, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: t.selectedSurface ?? soft(t, t.brandSolid), color: t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...typeOf(t, 'caption'), flexShrink: 0 }}>MD</span>
     </header>
   )
 }
@@ -2527,7 +2547,7 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         onMouseLeave={() => setHover((h) => (h === id ? null : h))}
         style={{
           position: 'relative',
-          minWidth: 32, height: sizeRoleOf(t, 'compact', '32px'), padding: `0 ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'action'),
+          minWidth: sizeRoleOf(t, 'compact', '32px'), height: sizeRoleOf(t, 'compact', '32px'), padding: `0 ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'action'),
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           border: 'none', background: 'transparent',
           ...typeOf(t, 'body-sm'),
@@ -2592,7 +2612,7 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spaceOf(t, 6), width: fill ? '100%' : 84 }}>
             <span
               style={{
-                width: 28, height: 28, borderRadius: 999,
+                width: fieldPx(t, 28), height: fieldPx(t, 28), borderRadius: 999,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 ...typeOf(t, 'button'),
                 background: s.state === 'todo' ? 'transparent' : t.brandSolid,
@@ -2700,7 +2720,7 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
               position: 'relative',
               flex: fill ? '1 1 0' : undefined,
               minWidth: fill ? 0 : undefined,
-              padding: fill ? '8px 6px' : '7px 14px',
+              padding: fill ? `${fieldPx(t, 8)}px ${fieldPx(t, 6)}px` : `${fieldPx(t, 7)}px ${fieldPx(t, 14)}px`,
               borderRadius: radiusRoleOf(t, 'full', '9999px'),
               textAlign: fill ? 'center' : undefined,
               ...typeOf(t, fill ? 'label' : 'button'),
@@ -2762,7 +2782,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
             onMouseLeave={() => setHover((h) => (h === i ? null : h))}
             style={{
               position: 'relative',
-              padding: small ? '4px 10px' : '6px 14px',
+              padding: `${fieldPx(t, small ? 4 : 6)}px ${fieldPx(t, small ? 10 : 14)}px`,
               border: 'none', background: 'transparent',
               borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'button'), cursor: 'pointer',
               color: on ? t.neutralText : hot ? t.neutralText : t.fgMuted,

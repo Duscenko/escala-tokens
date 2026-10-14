@@ -40,13 +40,9 @@ import {
   INSET_SURFACE_ROLE,
   PADDING_DEFAULT_STEP,
   insetSurfacePadding,
-  mergeLayoutRoles,
-  OVERLAP_SIZES,
   SPACING_MODES,
   matchSpacingMode,
-  type OverlapSize,
   type SpacingMode,
-  roleValuePx,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
   RADIUS_ROLE_PRESETS,
@@ -473,44 +469,6 @@ function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
         </li>
       ))}
     </ul>
-  )
-}
-
-/**
- * OVERLAP as a bar — the same shape as Border width below it: a caption + live
- * px over a 6-stop slider (xs … 2xl) with the stop names underneath. It picks
- * which `overlap-*` role the board's avatar card shows, so dragging it walks
- * the stack through the system's six overlaps. The px are the LIVE role values:
- * editing them in Variables moves the readout and the card the same frame.
- */
-function OverlapBar({ value, onChange, pxOf }: {
-  value: OverlapSize
-  onChange: (size: OverlapSize) => void
-  pxOf: (size: OverlapSize) => number
-}) {
-  const { t } = useI18n()
-  const index = Math.max(0, OVERLAP_SIZES.indexOf(value))
-  return (
-    <div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{`overlap-${value}`}</span>
-        <span className="text-ui font-semibold tabular-nums text-fg">{`${pxOf(value)}px`}</span>
-      </div>
-      <RangeInput
-        ariaLabel={t('Overlap')}
-        min={0}
-        max={OVERLAP_SIZES.length - 1}
-        step={1}
-        value={index}
-        onChange={(i) => onChange(OVERLAP_SIZES[i])}
-        className={ROW_GAP_CONTROL}
-      />
-      <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
-        {OVERLAP_SIZES.map((size) => (
-          <span key={size} className={size === value ? 'text-fg' : undefined}>{size}</span>
-        ))}
-      </div>
-    </div>
   )
 }
 
@@ -1689,8 +1647,6 @@ export default function ThemeQuickSettingsRail({
   onContrastOpenChange,
   previewPlatform = 'desktop',
   onPreviewPlatformChange,
-  overlapSize = 'md',
-  onOverlapSizeChange,
   embed = false,
   lockAdvanced = false,
   exploringRandom = false,
@@ -1739,10 +1695,6 @@ export default function ThemeQuickSettingsRail({
   /** Session desktop / mobile cut — Type and Spacing edition resolve against this. */
   previewPlatform?: GridViewport
   onPreviewPlatformChange?: (platform: GridViewport) => void
-  /** Which overlap size the board's avatar card shows — view state, lifted to
-   *  the hub so the bar here and the card there are one value. */
-  overlapSize?: OverlapSize
-  onOverlapSizeChange?: (size: OverlapSize) => void
   /** Render in the page column instead of the inspector. The create studio
    *  uses the inspector for the step list, so the edition sits in the card. */
   embed?: boolean
@@ -2713,15 +2665,6 @@ export default function ThemeQuickSettingsRail({
               onScrubStart={() => beginScrub('Field sizes updated')}
               onScrubEnd={endScrub}
               onChange={(base) => applyScrub('Field sizes updated', (themeKey) => setSizes(themeKey, buildSizesFromBase(base)))}
-            />
-          </SettingItem>
-
-
-          <SettingItem label="Overlap" hint="Walk the avatar card on the board through the six overlap sizes. Edit their values in Variables · Spacing · Overlap.">
-            <OverlapBar
-              value={overlapSize}
-              onChange={(size) => onOverlapSizeChange?.(size)}
-              pxOf={(size) => roleValuePx(mergeLayoutRoles('spacing', spacingRoles)[`overlap-${size}`], spacing) ?? 0}
             />
           </SettingItem>
 

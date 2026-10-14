@@ -527,7 +527,16 @@ function observeNode(
     push(cs.getPropertyValue(`border-${side.toLowerCase()}-color`), 'stroke')
   }
   if (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') push(cs.outlineColor, 'stroke')
+  // Charts, logos and drawn glyphs paint through SVG, which `background` and
+  // `border` never see. Only real shapes count: a `<g>` or `<svg>` reports the
+  // inherited default black fill without drawing anything.
+  if (SVG_SHAPES.has(node.tagName.toLowerCase())) {
+    if (node.tagName.toLowerCase() !== 'line' && cs.fill && cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0) push(cs.fill, 'fill')
+    if (cs.stroke && cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 && parseFloat(cs.strokeOpacity) > 0) push(cs.stroke, 'stroke')
+  }
 }
+
+const SVG_SHAPES = new Set(['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'text'])
 
 /** Every colour the element and its descendants actually paint, in paint
  *  order — fill, then ink, then strokes, walking down the tree. */
@@ -586,7 +595,12 @@ export function rolesForPaints(
     const owned = declared.length
       ? candidates.filter((id) => declared.includes(id))
       : candidates
-    for (const id of owned) {
+    // Two roles can share a hex (`border.accent` and `action.primary.default`
+    // are one tone): the slot decides which one this paint is. A stroke takes
+    // the border role when there is one; a fill or an ink never does.
+    const isBorder = (id: string) => id.startsWith('border.') || /\.border(-|$)/.test(id)
+    const slotted = owned.filter((id) => (paint.where === 'stroke') === isBorder(id))
+    for (const id of slotted.length ? slotted : owned) {
       if (roles.some((role) => role.id === id)) continue
       roles.push({ id, css: paint.css, where: paint.where })
     }
@@ -619,18 +633,34 @@ export function pairSolidRoles(
     .map((id) => roles.find((role) => role.where === 'fill' && role.id === id))
     .find((role): role is InspectedRole => !!role)
   if (!fill) return roles
+  // The solid has to be the element's own surface — the first fill the walk
+  // meets. A StatusBadge's Busy DOT is a critical solid too, but the label
+  // beside it sits on the badge, so renaming its ink to `on-solid` was wrong.
+  const rootFill = paints.find((paint) => paint.where === 'fill')
+  if (!rootFill || normalizeColor(rootFill.css) !== normalizeColor(fill.css)) return roles
 
+  // Only the ink that IS the pair's on-colour is renamed. Everything else the
+  // element paints stays: a progress bar's track, a stepper's idle node and
+  // the secondary caption beside the solid are real roles too, and replacing
+  // the whole list with "fill + first ink" mislabelled a grey caption as
+  // `content.on-action`.
   const inkId = SOLID_INK[fill.id]
-  const inkPaint = paints.find((paint) => paint.where === 'ink')
-  const out: InspectedRole[] = [{ ...fill, where: 'fill' }]
-  if (inkId && arch[inkId] && inkPaint) {
-    out.push({ id: inkId, css: inkPaint.css, where: 'ink' })
-  }
-  const fillKey = normalizeColor(fill.css)
+  const inkKey = inkId && arch[inkId] ? normalizeColor(arch[inkId]) : null
+  const inkPaint = inkKey ? paints.find((paint) => paint.where === 'ink' && normalizeColor(paint.css) === inkKey) : undefined
+  const out: InspectedRole[] = []
+  let inkPlaced = false
   for (const role of roles) {
-    if (role.where !== 'stroke') continue
-    if (normalizeColor(role.css) === fillKey) continue
+    if (inkPaint && role.where === 'ink' && normalizeColor(role.css) === inkKey) {
+      if (!inkPlaced && !out.some((existing) => existing.id === inkId)) out.push({ id: inkId, css: inkPaint.css, where: 'ink' })
+      inkPlaced = true
+      continue
+    }
+    if (out.some((existing) => existing.id === role.id)) continue
     out.push(role)
+  }
+  if (inkPaint && !inkPlaced && !out.some((existing) => existing.id === inkId)) {
+    const at = out.findIndex((role) => role.id === fill.id)
+    out.splice(at + 1, 0, { id: inkId, css: inkPaint.css, where: 'ink' })
   }
   return out
 }
@@ -949,11 +979,21 @@ function withGeometry(inspection: Inspection, geometry: InspectedRole[]): Inspec
  * An empty badge would read as "this component uses no colour", which is never
  * what happened.
  */
-/** When the pointer lands on a child (the toast dot, a label span), measure
- *  THAT node instead of the whole `[data-inspect]` subtree. */
+/** The child the pointer is on, inside a marker — the toast dot, a label
+ *  span. The badge still lists the WHOLE component (pointing at a badge's dot
+ *  must not hide its wash and its label); this node only decides which of
+ *  those rows light up. */
 export function inspectHitTarget(marker: Element, hit: Element | null): Element {
   if (!hit || hit === marker || !marker.contains(hit)) return marker
   return hit
+}
+
+/** Which of `roles` the node under the pointer actually paints. */
+export function paintedRoleIds(roles: InspectedRole[], hit: Element): string[] {
+  const keys = new Set(observePaints(hit).map((paint) => paint.key))
+  return roles
+    .filter((role) => (role.kind ?? 'color') === 'color' && keys.has(normalizeColor(role.css) ?? ''))
+    .map((role) => role.id)
 }
 
 export function inspectElement(
@@ -983,7 +1023,17 @@ export function inspectElement(
     return withGeometry({ roles, measured: true }, geometry)
   }
   if (roles.length) return withGeometry({ roles, measured: true }, geometry)
+  // A gradient fill (the Gradient avatar) is a `gradients` token, not a colour
+  // role. Answering with the component's union there listed brand roles the
+  // pixel never paints; geometry is the honest whole answer.
+  if (paintsGradient(el)) return { roles: geometry, measured: true }
   return withGeometry({ roles: inspectComponent(t, componentKey), measured: false }, geometry)
+}
+
+function paintsGradient(el: Element): boolean {
+  if (typeof getComputedStyle !== 'function') return false
+  const nodes = [el, ...Array.from(el.querySelectorAll('*')).slice(0, MAX_NODES)]
+  return nodes.some((node) => getComputedStyle(node).backgroundImage.includes('gradient('))
 }
 
 /**
