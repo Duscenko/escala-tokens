@@ -26,9 +26,17 @@ import {
   type ThemeAppearance,
 } from '../../lib/themeModes'
 import VariableCollectionRail from './VariableCollectionRail'
-import { useNeedsProForAnotherTheme } from '../../lib/access'
+import { useNeedsProForAnotherTheme, useOneThemePlan } from '../../lib/access'
+import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { useI18n } from '../../lib/i18n'
+import {
+  auditCategoricalView,
+  contrastStatusForFlatKey,
+  contrastStatusForToken,
+  contrastStatusLabel,
+  type ContrastStatusResult,
+} from '../../lib/semanticContrast'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -557,6 +565,23 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
+function ContrastStatusCell({ result }: { result: ContrastStatusResult }) {
+  const color =
+    result.status === 'pass' ? 'text-status-success'
+      : result.status === 'warn' ? 'text-status-warning'
+        : result.status === 'fail' ? 'text-status-danger'
+          : 'text-fg-faint'
+  return (
+    <span
+      className={`font-mono text-micro font-semibold tabular-nums ${color}`}
+      title={result.title}
+      aria-label={result.title}
+    >
+      {contrastStatusLabel(result)}
+    </span>
+  )
+}
+
 function MatrixRow({
   role,
   index,
@@ -566,6 +591,7 @@ function MatrixRow({
   flash,
   gridStyle,
   naming,
+  contrast,
   onToggle,
 }: {
   role: Role
@@ -576,6 +602,7 @@ function MatrixRow({
   flash?: boolean
   gridStyle: React.CSSProperties
   naming: ColorNaming
+  contrast: ContrastStatusResult
   /** `colKey` set = a specific appearance column's cell was clicked, so Token
    *  Details should open on THAT section; omitted (name / tune button) means
    *  "open on whatever's previewed". */
@@ -650,6 +677,10 @@ function MatrixRow({
           )
         })}
 
+        <div className="flex items-center justify-center border-r border-line px-1 py-2.5">
+          <ContrastStatusCell result={contrast} />
+        </div>
+
         {/* Filter / edit toggle — opens Token Details. Glass plate is on
             `STICKY_TRAIL` so the icon stays readable over scrolling modes. */}
         <button
@@ -675,6 +706,10 @@ function MatrixRow({
 const NAME_MIN_TRACK = '10rem'
 /** Trailing tune / add-theme track — keep overlay width in lockstep. */
 const TRAIL_TRACK = '2.75rem'
+/** Contrast ratio — between theme columns and the tune column. Wide enough
+ *  for a tabular `15.1:1` without colliding with the tune stack; the header
+ *  drops `tracking-widest` so CONTRAST sits in the same column. */
+const CONTRAST_TRACK = '3.5rem'
 
 /** Pinned trailing cells. The plate stays readable over a mode column that
  *  slides under it. It does not draw the column rule: that seam is the
@@ -850,6 +885,8 @@ export default function Step3_SemanticTokens({
     primaryDarkScale, errorDarkScale, warningDarkScale, successDarkScale, infoDarkScale,
     grayLightScale, grayDarkScale, customColors,
     pageBackground, darkBackground,
+    projectName,
+    brandThemes,
     themes, themeSemantics, themeOrder, themeKinds, themeSources, colorNaming,
     setThemeModeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
@@ -915,8 +952,29 @@ export default function Step3_SemanticTokens({
   // The theme's spectrum leads the matrix: dark-spectrum themes use Dark →
   // Light, while light-spectrum themes use Light → Dark. Preview selection is
   // independent and never mutates this stable per-theme ordering.
+  const oneThemePlan = useOneThemePlan()
   const themeCols = appearanceOrder(preferredAppearance)
-  const archThemeCols = themeCols.map((appearance) => themeModeKey(activeTheme, appearance))
+  const visibleAppearances = useMemo(() => {
+    const cols = appearanceOrder(preferredAppearance)
+    if (!oneThemePlan) return cols
+    const planned = plannedBrandThemes(
+      shippedThemes(brandThemes, activeTheme, preferredAppearance),
+      preferredAppearance,
+      true,
+    )
+    const allowed = new Set(
+      planned.map((id) => brandThemeDef(id)?.base).filter((base): base is ThemeAppearance => Boolean(base)),
+    )
+    const next = cols.filter((appearance) => allowed.has(appearance))
+    return next.length ? next : [activeAppearance]
+  }, [oneThemePlan, brandThemes, activeTheme, preferredAppearance, activeAppearance])
+  const visibleArchThemeCols = visibleAppearances.map((appearance) => themeModeKey(activeTheme, appearance))
+  useEffect(() => {
+    if (!oneThemePlan) return
+    if (!visibleAppearances.includes(activeAppearance)) {
+      onPreviewAppearanceChange?.(visibleAppearances[0])
+    }
+  }, [oneThemePlan, visibleAppearances, activeAppearance, onPreviewAppearanceChange])
   // Columns grow evenly with the table by default. A drag only turns the
   // adjusted column into a fixed track; otherwise Light and Dark use the
   // available width homogeneously, including when the preview rail closes.
@@ -936,7 +994,7 @@ export default function Step3_SemanticTokens({
   const themeTrack = (theme: string) => colWidths[theme] == null
     ? `minmax(${MIN_COL_W}px, 1fr)`
     : `${widthOf(theme)}px`
-  const themeTracks = `${themeCols.map(themeTrack).join(' ')} ${TRAIL_TRACK}`
+  const themeTracks = `${visibleAppearances.map(themeTrack).join(' ')} ${CONTRAST_TRACK} ${TRAIL_TRACK}`
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: nameWidth == null
       ? `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${themeTracks}`
@@ -1076,10 +1134,10 @@ export default function Step3_SemanticTokens({
             semanticArchitecture,
             {
               themes: Object.fromEntries(
-                themeCols.map((appearance) => [themeModeKey(activeTheme, appearance), activeThemeSemantics[appearance]]),
+                visibleAppearances.map((appearance) => [themeModeKey(activeTheme, appearance), activeThemeSemantics[appearance]]),
               ),
               themeKinds: Object.fromEntries(
-                themeCols.map((appearance) => [themeModeKey(activeTheme, appearance), appearance]),
+                visibleAppearances.map((appearance) => [themeModeKey(activeTheme, appearance), appearance]),
               ),
               themePalettes: resolvedPalettes,
               scales,
@@ -1089,16 +1147,19 @@ export default function Step3_SemanticTokens({
             },
             errorColor,
             architectureOverrides[semanticArchitecture] ?? {},
-            // Every theme in the workspace — Categorical resolves one column
-            // per entry; Vibrancy/Tonal ignore this (always light/dark, see
-            // ArchitectureView.modeKeys). Passing it uniformly means "+ Theme"
-            // just works the moment Categorical's math supports it, with no
-            // per-architecture branch needed here.
-            archThemeCols,
+            // Free ships one appearance — only that column is projected, so
+            // contrast, copy-context and the table cannot leak the other mode.
+            visibleArchThemeCols,
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, activeThemeSemantics, resolvedPalettes, architectureOverrides, themeCols, archThemeCols, pageBackground, darkBackground],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, activeThemeSemantics, resolvedPalettes, architectureOverrides, visibleAppearances, visibleArchThemeCols, pageBackground, darkBackground],
   )
+
+  const contrastFindings = useMemo(
+    () => (archView ? auditCategoricalView(archView, projectName) : []),
+    [archView, projectName],
+  )
+
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')
 
@@ -1286,7 +1347,7 @@ export default function Step3_SemanticTokens({
   // otherwise collapse to 0 on narrow panes (overflow-auto scrolls). Value
   // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
   // Categorical (one per theme, so "+ Theme" actually grows the table).
-  const archModeKeys = archView?.modeKeys ?? archThemeCols
+  const archModeKeys = archView?.modeKeys ?? visibleArchThemeCols
   /**
    * The heading for one value column. A PER_THEME architecture's columns ARE
    * the project's themes, so they take the user's own theme names; a fixed-mode
@@ -1307,14 +1368,14 @@ export default function Step3_SemanticTokens({
    *  scroll container nor its child ever fires one. */
   const scrollWatch = [
     semanticArchitecture,
-    isFlat ? themeCols.join('|') : archModeKeys.join('|'),
+    isFlat ? visibleAppearances.join('|') : archModeKeys.join('|'),
     nameWidth ?? 'auto',
-    themeCols.map(widthOf).join(','),
+    visibleAppearances.map(widthOf).join(','),
     isFlat ? visibleRoles.length : archTokens.length,
   ].join('/')
   const archGridStyle: React.CSSProperties = {
-    // Last track = the edit toggle, mirroring the flat matrix's trailing column.
-    gridTemplateColumns: `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${archModeKeys.map(() => `minmax(${MIN_COL_W}px, 1fr)`).join(' ')} ${TRAIL_TRACK}`,
+    // Last tracks = contrast status, then the edit toggle.
+    gridTemplateColumns: `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${archModeKeys.map(() => `minmax(${MIN_COL_W}px, 1fr)`).join(' ')} ${CONTRAST_TRACK} ${TRAIL_TRACK}`,
   }
 
   if (!ready) {
@@ -1457,6 +1518,12 @@ export default function Step3_SemanticTokens({
                     </span>
                   )
                 })}
+                <span
+                  className="flex items-center justify-center border-r border-line px-1 tracking-normal"
+                  title="Contrast of this token against its declared pair"
+                >
+                  Contrast
+                </span>
                 {/* Trailing header cell = "add another mode". It sits at the
                     END of the theme columns because that's where the new
                     column lands — the affordance points at its own result.
@@ -1550,6 +1617,9 @@ export default function Step3_SemanticTokens({
                           />
                         </button>
                       ))}
+                      <div className="flex items-center justify-center border-r border-line px-1 py-2.5">
+                        <ContrastStatusCell result={contrastStatusForToken(t.id, contrastFindings)} />
+                      </div>
                       {/* Filter / edit toggle — glass plate on `STICKY_TRAIL`. */}
                       <button
                         onClick={() => editable && (setDetailsMode(null), setArchEditing(isOpen ? null : t.id))}
@@ -1592,7 +1662,7 @@ export default function Step3_SemanticTokens({
                   className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize opacity-0 group-hover:opacity-100 hover:bg-accent-ui/40 transition-opacity"
                 />
               </span>
-              {themeCols.map((t) => {
+              {visibleAppearances.map((t) => {
                 const isPreviewed = activeAppearance === kindOf(t)
                 const displayName = themeDisplayName(t)
                 const canDelete = !managedThemesExternally
@@ -1675,6 +1745,12 @@ export default function Step3_SemanticTokens({
                   </span>
                 )
               })}
+              <span
+                className="flex items-center justify-center border-r border-line px-1 tracking-normal"
+                title="Contrast of this token against its declared pair"
+              >
+                Contrast
+              </span>
               {/* Trailing header cell = "add another mode" — see the arch
                   table's matching cell above. Flat always resolves an extra
                   theme as a real column, so it's always live here.
@@ -1705,7 +1781,8 @@ export default function Step3_SemanticTokens({
                   key={role.key}
                   role={role}
                   index={idx}
-                  cols={themeCols.map((appearance) => {
+                  contrast={contrastStatusForFlatKey(role.key, visibleAppearances, activeThemeSemantics)}
+                  cols={visibleAppearances.map((appearance) => {
                     const kind = kindOf(appearance)
                     return {
                       key: appearance,
@@ -1746,7 +1823,7 @@ export default function Step3_SemanticTokens({
         {isFlat && expandedRole && (() => {
           const role = ALL_ROLES.find((r) => r.key === expandedRole)
           if (!role) return null
-          const cols: ThemeCol[] = themeCols.map((appearance) => {
+          const cols: ThemeCol[] = visibleAppearances.map((appearance) => {
             const kind = kindOf(appearance)
             return {
               key: appearance,

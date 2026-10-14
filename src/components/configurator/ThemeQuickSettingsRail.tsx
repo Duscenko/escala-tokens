@@ -73,7 +73,9 @@ import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/them
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
-import { PlatformSwitch } from './PlatformRail'
+import { PlatformSwitch, usePlanViewportLock } from './PlatformRail'
+import { LockGlyph } from '../ui/icons'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
@@ -451,7 +453,13 @@ function PlatformCutSwitch({ value, onChange }: {
   value: GridViewport
   onChange: (platform: GridViewport) => void
 }) {
-  return <PlatformSwitch value={value} onChange={onChange} layout="compact" />
+  const { lockedIds, onLocked, dialog } = usePlanViewportLock(value, onChange)
+  return (
+    <>
+      <PlatformSwitch value={value} onChange={onChange} layout="compact" lockedIds={lockedIds} onLocked={onLocked} />
+      {dialog}
+    </>
+  )
 }
 
 function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
@@ -561,11 +569,14 @@ function SpacingModeGrid({ value, onChange }: {
   )
 }
 
-function ColorAppearanceSwitch({ value, onChange }: {
+function ColorAppearanceSwitch({ value, onChange, lockedTo }: {
   value: ThemeAppearance
   onChange: (appearance: ThemeAppearance) => void
+  /** Free: the one theme this brand ships. The other segment is a lock. */
+  lockedTo?: ThemeAppearance
 }) {
   const { t } = useI18n()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   return (
     // Named, so it is not read as a second "which themes ship" control: this
     // one only picks which of the shipped themes the board is painted in.
@@ -577,22 +588,29 @@ function ColorAppearanceSwitch({ value, onChange }: {
       aria-label={t('Preview appearance')}
       title={t('Choose which theme of this brand the artefacts display.')}
     >
-      {(['light', 'dark'] as const).map((mode) => (
+      {(['light', 'dark'] as const).map((mode) => {
+        const locked = Boolean(lockedTo && mode !== lockedTo)
+        return (
         <button
           key={mode}
           type="button"
           aria-pressed={value === mode}
-          onClick={() => onChange(mode)}
+          aria-label={locked ? `${t(mode === 'light' ? 'Light' : 'Dark')} — ${t('Upgrade to Pro')}` : undefined}
+          title={locked ? t('Upgrade to Pro') : undefined}
+          onClick={() => (locked ? setUpgradeOpen(true) : onChange(mode))}
           // Same pill as Desktop / Tablet / Mobile (`PlatformSwitch`): one
           // control language for every segmented switch in an edition header.
-          className={`flex h-7 items-center justify-center rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-            value === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+          className={`flex h-7 items-center justify-center gap-1 rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            locked ? 'text-fg-faint' : value === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
           }`}
         >
+          {locked && <LockGlyph size={12} />}
           {t(mode === 'light' ? 'Light' : 'Dark')}
         </button>
-      ))}
+        )
+      })}
     </div>
+    <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }
@@ -2267,7 +2285,11 @@ export default function ThemeQuickSettingsRail({
           // Light/Dark switch. Only a style that is merely tried on (it ships
           // nothing yet, so it has no row) keeps a plain view switch.
           trailing={tryOn ? (
-            <ColorAppearanceSwitch value={rampAppearance} onChange={(next) => onColorAppearanceChange?.(next)} />
+            <ColorAppearanceSwitch
+              value={rampAppearance}
+              onChange={(next) => onColorAppearanceChange?.(next)}
+              lockedTo={free ? (shipsOne ?? rampAppearance) : undefined}
+            />
           ) : undefined}
         >
           <div className="divide-y divide-line">

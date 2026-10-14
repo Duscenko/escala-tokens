@@ -32,6 +32,16 @@ export function FigmaGlyph({ size = 16 }: { size?: number }) {
   )
 }
 
+/** Plan lock — File & modes, Free viewport / appearance gates. */
+export function LockGlyph({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden className="flex-shrink-0">
+      <rect x="3.25" y="7" width="9.5" height="6.25" rx="1.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.25 7V5.25a2.75 2.75 0 0 1 5.5 0V7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /** Sliders / "tune" — per-row scale editors, picker toggles, algorithm
  *  surfaces. The Color hub's scale-guide trigger uses SparkleCircleIcon. */
 export function SlidersIcon({ size = 15, className = '' }: { size?: number; className?: string }) {

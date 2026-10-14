@@ -1,6 +1,9 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { GridFrameAlias, GridViewport } from '../../lib/layoutTokens'
 import { useI18n } from '../../lib/i18n'
+import { useOneThemePlan } from '../../lib/access'
+import { LockGlyph } from '../ui/icons'
+import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
 
 export type PreviewPlatformContextValue = {
@@ -56,14 +59,37 @@ function TabletGlyph() {
 
 /** Workspace platform — desktop / tablet / mobile. Session-only, same job as Light/Dark
  *  for appearance: Type, Grid and the live preview resolve against this cut. */
+const FREE_LOCKED_VIEWPORTS: readonly GridViewport[] = ['tablet', 'mobile']
+
+/** Free ships Desktop only — same cut File & modes already locks. */
+export function usePlanViewportLock(
+  value: GridViewport,
+  onChange: (platform: GridViewport) => void,
+) {
+  const limited = useOneThemePlan()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  useEffect(() => {
+    if (limited && value !== 'desktop') onChange('desktop')
+  }, [limited, value, onChange])
+  return {
+    lockedIds: limited ? FREE_LOCKED_VIEWPORTS : [],
+    onLocked: () => setUpgradeOpen(true),
+    dialog: <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />,
+  }
+}
+
 export function PlatformSwitch({
   value,
   onChange,
   layout = 'compact',
+  lockedIds = [],
+  onLocked,
 }: {
   value: GridViewport
   onChange: (platform: GridViewport) => void
   layout?: 'compact' | 'fill'
+  lockedIds?: readonly GridViewport[]
+  onLocked?: (id: GridViewport) => void
 }) {
   const { t } = useI18n()
   const options: { id: GridViewport; label: string; Icon: typeof DesktopGlyph }[] = [
@@ -81,24 +107,22 @@ export function PlatformSwitch({
     >
       {options.map(({ id, label, Icon }) => {
         const on = value === id
+        const locked = lockedIds.includes(id)
         return (
           <button
             key={id}
             type="button"
             aria-pressed={on}
-            aria-label={label}
-            title={label}
-            onClick={() => onChange(id)}
+            aria-label={locked ? `${label} — ${t('Upgrade to Pro')}` : label}
+            title={locked ? t('Upgrade to Pro') : label}
+            onClick={() => (locked ? onLocked?.(id) : onChange(id))}
             className={`flex h-7 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
               fill ? 'min-w-0 flex-1' : 'w-7'
             } ${
-              on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+              locked ? 'text-fg-faint' : on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
             }`}
           >
-            <Icon />
-            {/* Icon only, the name rides in `title` / `aria-label`. At the
-                rail's width "Desktop" truncated to "Deskt…" beside two
-                full words, which read as broken rather than compact. */}
+            {locked ? <LockGlyph size={12} /> : <Icon />}
           </button>
         )
       })}
@@ -119,6 +143,7 @@ export function PlatformRail({
   if (!ctx) return null
 
   const { previewPlatform, setPreviewPlatform } = ctx
+  const { lockedIds, onLocked, dialog } = usePlanViewportLock(previewPlatform, setPreviewPlatform)
 
   return (
     <section
@@ -135,8 +160,11 @@ export function PlatformRail({
           value={previewPlatform}
           onChange={setPreviewPlatform}
           layout={collapsed ? 'compact' : 'fill'}
+          lockedIds={lockedIds}
+          onLocked={onLocked}
         />
       </div>
+      {dialog}
     </section>
   )
 }

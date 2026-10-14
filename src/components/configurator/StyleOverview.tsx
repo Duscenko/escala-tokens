@@ -67,8 +67,10 @@ export function StyleOverview({
           <p className="mt-0.5 text-body leading-relaxed text-fg-muted">{t(preset.description)}</p>
         </div>
       </div>
-      <div aria-hidden className="flex h-7 overflow-hidden rounded-lg">
-        {swatches.map((hex, i) => <span key={i} className={i === 0 ? 'flex-[2]' : 'flex-1'} style={{ background: hex }} />)}
+      <div aria-hidden className="grid h-7 w-full grid-cols-5 overflow-hidden rounded-lg">
+        {swatches.map((hex, i) => (
+          <span key={i} className="min-h-0 min-w-0" style={{ background: hex }} />
+        ))}
       </div>
       {facts.length > 0 && (
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
