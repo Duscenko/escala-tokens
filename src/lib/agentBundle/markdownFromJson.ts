@@ -115,18 +115,22 @@ function roleTable(group: string, cssPrefix: string, roles: Record<string, strin
   ]
 }
 
-/** Token · Desktop · Tablet · Mobile for a responsive map (values are steps). */
+/** Token · desktop step · tablet/mobile steps for a responsive map. */
 function responsiveTable(map: Record<string, Record<string, string>> | undefined, label: string): string[] {
   const entries = Object.entries(map ?? {})
   if (!entries.length) return []
   return [
     `### ${label}`,
     '',
-    'Each token reads a static step per viewport. Roles on one of these step down with it.',
+    'Each token reads a static step per viewport. Roles on one of these step down with it. Edit one viewport at a time in Variables (Platform switch).',
     '',
     table(
-      ['Token', 'Desktop', 'Tablet', 'Mobile'],
-      entries.map(([k, v]) => [`\`${k}\``, `\`${v.desktop ?? '—'}\``, `\`${v.tablet ?? '—'}\``, `\`${v.mobile ?? '—'}\``]),
+      ['Token', 'Desktop', 'Tablet · Mobile'],
+      entries.map(([k, v]) => [
+        `\`${k}\``,
+        `\`${v.desktop ?? '—'}\``,
+        `\`${v.tablet ?? '—'}\` · \`${v.mobile ?? '—'}\``,
+      ]),
     ),
     '',
   ]

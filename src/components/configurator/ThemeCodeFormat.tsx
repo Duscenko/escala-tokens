@@ -4,13 +4,7 @@ import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS } from '../../lib/exporters'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
-import {
-  FIGMA_MAKE_URL,
-  agentSetupPrompt,
-  claudeChatUrl,
-  cursorPromptUrl,
-  figmaAgentLead,
-} from '../../lib/agentInstall'
+import { agentSetupPrompt } from '../../lib/agentInstall'
 import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
@@ -74,10 +68,6 @@ async function writeClipboard(text: string) {
   } catch {
     return false
   }
-}
-
-function openHandoff(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 /** Copies the file on screen. The destinations that used to hide in this
@@ -204,18 +194,9 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
 /**
  * Where the theme goes next. "Use this theme" lands here, so the page opens
  * on the question it exists to answer — which agent — with one click each:
- * Claude and Cursor get the MCP setup prompt, Figma Make gets the skill (it
- * cannot hold a connection), and Copy context is the paste-anywhere fallback.
+ * Claude and Cursor copy the MCP setup prompt to paste into your LLM.
  */
-function AgentHandoff({
-  themeName,
-  skillMd,
-  projectName,
-}: {
-  themeName: string
-  skillMd: string
-  projectName: string
-}) {
+function AgentHandoff({ themeName }: { themeName: string }) {
   const { t } = useI18n()
   const { gated } = useAccess()
   const free = useFreeTier()
@@ -228,24 +209,13 @@ function AgentHandoff({
     return true
   }
 
-  const openWithPrompt = async (client: 'claude' | 'cursor') => {
+  const copySetupPrompt = async (client: 'claude' | 'cursor') => {
     if (refuseContext()) return
     if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), client)
     const copiedOk = await writeClipboard(prompt)
-    openHandoff(client === 'claude' ? claudeChatUrl(prompt) : cursorPromptUrl(prompt))
     showToast(copiedOk
-      ? t('Copied the setup prompt. Finish connecting MCP in the chat that opened.')
-      : t('Couldn’t copy — try again'))
-  }
-
-  const openFigmaAgent = async () => {
-    if (refuseContext()) return
-    if (gated) { goToLogin('export'); return }
-    const copiedOk = await writeClipboard(`${figmaAgentLead(projectName)}${skillMd}`)
-    openHandoff(FIGMA_MAKE_URL)
-    showToast(copiedOk
-      ? t('Copied the Figma skill. Paste it in Make — it cannot hold a live MCP connection.')
+      ? t('Copied the setup prompt. Paste it into {client}.', { client: client === 'claude' ? 'Claude' : 'Cursor' })
       : t('Couldn’t copy — try again'))
   }
 
@@ -255,9 +225,8 @@ function AgentHandoff({
   // the cue that they are actions — and hover gives them the chip wash.
   const btn = `group inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-[color,background-color] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg ${COPY_FOCUS}`
   const items: { key: string; icon: ReactNode; title: string; hint: string; run: () => void }[] = [
-    { key: 'claude', icon: <DestLogo name="claudecode" />, title: t('Claude'), hint: t('Open in Claude — connects live over MCP'), run: () => void openWithPrompt('claude') },
-    { key: 'cursor', icon: <DestLogo name="cursor" />, title: t('Cursor'), hint: t('Open in Cursor — connects live over MCP'), run: () => void openWithPrompt('cursor') },
-    { key: 'figma', icon: <DestLogo name="figma" />, title: t('Figma Make'), hint: t('Opens Figma Make and copies the skill'), run: () => void openFigmaAgent() },
+    { key: 'claude', icon: <DestLogo name="claudecode" />, title: t('Claude'), hint: t('Copy the MCP setup prompt for Claude'), run: () => void copySetupPrompt('claude') },
+    { key: 'cursor', icon: <DestLogo name="cursor" />, title: t('Cursor'), hint: t('Copy the MCP setup prompt for Cursor'), run: () => void copySetupPrompt('cursor') },
   ]
 
   // A strip, not a card: three destinations don't need a heading and a
@@ -535,11 +504,7 @@ export default function ThemeCodeFormat({
           </header>
         ) : null}
         {effectiveScope ? (
-          <AgentHandoff
-            themeName={scopedLabel}
-            skillMd={artifacts.skillMd}
-            projectName={source?.projectName || store.projectName}
-          />
+          <AgentHandoff themeName={scopedLabel} />
         ) : null}
         <div className="flex min-h-0 flex-1 p-3 pt-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">

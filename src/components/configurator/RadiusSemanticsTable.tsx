@@ -166,9 +166,6 @@ export default function RadiusSemanticsTable({
             <div key={step} className={tableRowClass(i, TOKEN_GRID)}>
               <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                 <code className="font-mono text-body text-fg-muted truncate">radius-component-{step}</code>
-                <span className="text-caption text-fg-faint truncate">
-                  {`${RADIUS_RESPONSIVE[step].desktop} · ${RADIUS_RESPONSIVE[step].tablet} · ${RADIUS_RESPONSIVE[step].mobile}`}
-                </span>
               </div>
               <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-r border-line min-w-0">
                 {users.length === 0 ? (

@@ -20,7 +20,7 @@ import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
   COLLAPSED_RAIL_WELL,
 } from './colorControls'
-import { SlidersIcon, PaletteIcon } from '../ui/icons'
+import { PaletteIcon } from '../ui/icons'
 import ThemePanel from './ThemePanel'
 import {
   appearanceFromModeKey, appearanceOrder, semanticModesFor, themeModeKey,
@@ -31,14 +31,6 @@ import { useNeedsProForAnotherTheme, useOneThemePlan } from '../../lib/access'
 import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { useI18n } from '../../lib/i18n'
-import {
-  auditCategoricalView,
-  contrastGradeLabel,
-  contrastStatusForFlatKey,
-  contrastStatusForToken,
-  contrastStatusLabel,
-  type ContrastStatusResult,
-} from '../../lib/semanticContrast'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -482,17 +474,6 @@ function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: nu
   )
 }
 
-/** Per-mode scale editor trigger — the shared official sliders icon with the
- *  matrix's active/hover coloring. */
-function TuneIcon({ active }: { active: boolean }) {
-  return (
-    <SlidersIcon
-      size={15}
-      className={`relative z-[1] transition-colors ${active ? 'text-accent-ui' : 'text-fg-muted group-hover:text-fg'}`}
-    />
-  )
-}
-
 // A thin wrapper over the shared ScaleRow (the same compact 12-column grid
 // Picker Color's "click to apply" ramps use) rather than a hand-rolled
 // flex-wrap grid — the old version wrapped tone 12 onto its own line at the
@@ -567,162 +548,6 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-function ContrastInfoIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4M12 8h.01" />
-    </svg>
-  )
-}
-
-function ContrastHelpPopover({
-  open,
-  onClose,
-  anchorRef,
-  titleId,
-  title,
-  body,
-}: {
-  open: boolean
-  onClose: () => void
-  anchorRef: React.RefObject<HTMLElement | null>
-  titleId: string
-  title: string
-  body: string
-}) {
-  const { t } = useI18n()
-  const popRef = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-
-  useLayoutEffect(() => {
-    if (!open || !anchorRef.current) return
-    const r = anchorRef.current.getBoundingClientRect()
-    const width = 288
-    const left = Math.max(8, Math.min(r.left + r.width / 2 - width / 2, window.innerWidth - width - 8))
-    setPos({ top: r.bottom + 6, left })
-  }, [open, anchorRef])
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      const node = e.target as Node
-      if (anchorRef.current?.contains(node) || popRef.current?.contains(node)) return
-      onClose()
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open, onClose, anchorRef])
-
-  if (!open) return null
-  const popover = (
-    <div
-      ref={popRef}
-      role="dialog"
-      aria-labelledby={titleId}
-      className="fixed z-[70] w-[18rem] rounded-xl border border-line bg-elevated p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.35)]"
-      style={{ top: pos.top, left: pos.left }}
-    >
-      <p id={titleId} className="text-caption font-semibold text-fg mb-1.5">
-        {title}
-      </p>
-      <p className="text-caption text-fg-muted leading-relaxed whitespace-pre-line">
-        {body}
-      </p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="mt-2.5 text-caption font-medium text-accent-ui hover:underline"
-      >
-        {t('Close')}
-      </button>
-    </div>
-  )
-  return typeof document !== 'undefined' ? createPortal(popover, document.body) : popover
-}
-
-function ContrastStatusCell({ result }: { result: ContrastStatusResult }) {
-  const { t } = useI18n()
-  const [helpOpen, setHelpOpen] = useState(false)
-  const helpRef = useRef<HTMLButtonElement>(null)
-  const color =
-    result.status === 'pass' ? 'text-status-success'
-      : result.status === 'warn' ? 'text-status-warning'
-        : result.status === 'fail' ? 'text-status-danger'
-          : 'text-fg-faint'
-  const grade = contrastGradeLabel(result)
-  const hint = result.status === 'none' ? t('No contrast pair for this role') : result.title
-
-  if (result.status === 'none') {
-    const titleId = 'contrast-missing-help-title'
-    return (
-      <span className="flex items-center justify-center gap-0.5">
-        <span className="font-mono text-micro font-semibold tabular-nums text-fg-faint" aria-hidden>
-          —
-        </span>
-        <button
-          ref={helpRef}
-          type="button"
-          onClick={() => setHelpOpen((v) => !v)}
-          aria-expanded={helpOpen}
-          aria-controls={helpOpen ? titleId : undefined}
-          aria-label={t('Why no contrast ratio')}
-          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-fg-faint hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          <ContrastInfoIcon />
-        </button>
-        <ContrastHelpPopover
-          open={helpOpen}
-          onClose={() => setHelpOpen(false)}
-          anchorRef={helpRef}
-          titleId={titleId}
-          title={t('Why no contrast ratio')}
-          body={t('Contrast missing help')}
-        />
-      </span>
-    )
-  }
-
-  return (
-    <span
-      className="flex flex-col items-center justify-center gap-0.5 min-w-0 text-center"
-      title={hint}
-      aria-label={grade ? `${hint} (${grade})` : hint}
-    >
-      <span className={`font-mono text-micro font-semibold tabular-nums leading-none ${color}`}>
-        {contrastStatusLabel(result)}
-      </span>
-      {grade ? (
-        <span
-          className={`text-nano font-semibold uppercase tracking-wide leading-none ${
-            result.grade === 'fail' ? 'text-status-danger' : color
-          }`}
-        >
-          {grade}
-        </span>
-      ) : null}
-    </span>
-  )
-}
-
-function ContrastColumnHeader() {
-  const { t } = useI18n()
-  return (
-    <span className="flex items-center justify-center border-r border-line px-1.5 tracking-normal min-w-0">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint whitespace-nowrap">
-        {t('Contrast')}
-      </span>
-    </span>
-  )
-}
-
 function MatrixRow({
   role,
   index,
@@ -743,7 +568,6 @@ function MatrixRow({
   flash?: boolean
   gridStyle: React.CSSProperties
   naming: ColorNaming
-  contrast: ContrastStatusResult
   /** `colKey` set = a specific appearance column's cell was clicked, so Token
    *  Details should open on THAT section; omitted (name / tune button) means
    *  "open on whatever's previewed". */
@@ -817,23 +641,6 @@ function MatrixRow({
             </button>
           )
         })}
-
-        <div className="flex items-center justify-center border-r border-line px-1 py-2.5">
-          <ContrastStatusCell result={contrast} />
-        </div>
-
-        {/* Filter / edit toggle — opens Token Details. Glass plate is on
-            `STICKY_TRAIL` so the icon stays readable over scrolling modes. */}
-        <button
-          onClick={() => onToggle()}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
-          className={`group flex items-center justify-center h-full py-2.5 text-fg-muted hover:text-fg transition-colors ${STICKY_TRAIL} ${
-            flash ? 'bg-accent-ui/20' : expanded ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''
-          }`}
-        >
-          <TuneIcon active={expanded} />
-        </button>
       </div>
     </div>
   )
@@ -845,11 +652,8 @@ function MatrixRow({
  *  "Token architecture" / category-nav cells use, so the table's left edge
  *  lands on the one column line every row above it already shares. */
 const NAME_MIN_TRACK = '10rem'
-/** Trailing tune / add-theme track — keep overlay width in lockstep. */
-const TRAIL_TRACK = '2.75rem'
-/** Contrast ratio — between theme columns and the tune column. Wide enough
- *  for a tabular `15.1:1` and the header row (label + info control). */
-const CONTRAST_TRACK = '6rem'
+/** Trailing “add brand” column in the header row. */
+const ADD_THEME_TRACK = '2.75rem'
 
 /** Pinned trailing cells. The plate stays readable over a mode column that
  *  slides under it. It does not draw the column rule: that seam is the
@@ -1134,7 +938,7 @@ export default function Step3_SemanticTokens({
   const themeTrack = (theme: string) => colWidths[theme] == null
     ? `minmax(${MIN_COL_W}px, 1fr)`
     : `${widthOf(theme)}px`
-  const themeTracks = `${visibleAppearances.map(themeTrack).join(' ')} ${CONTRAST_TRACK} ${TRAIL_TRACK}`
+  const themeTracks = `${visibleAppearances.map(themeTrack).join(' ')} ${ADD_THEME_TRACK}`
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: nameWidth == null
       ? `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${themeTracks}`
@@ -1293,11 +1097,6 @@ export default function Step3_SemanticTokens({
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, activeThemeSemantics, resolvedPalettes, architectureOverrides, visibleAppearances, visibleArchThemeCols, pageBackground, darkBackground],
-  )
-
-  const contrastFindings = useMemo(
-    () => (archView ? auditCategoricalView(archView, projectName) : []),
-    [archView, projectName],
   )
 
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
@@ -1514,8 +1313,7 @@ export default function Step3_SemanticTokens({
     isFlat ? visibleRoles.length : archTokens.length,
   ].join('/')
   const archGridStyle: React.CSSProperties = {
-    // Last tracks = contrast status, then the edit toggle.
-    gridTemplateColumns: `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${archModeKeys.map(() => `minmax(${MIN_COL_W}px, 1fr)`).join(' ')} ${CONTRAST_TRACK} ${TRAIL_TRACK}`,
+    gridTemplateColumns: `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${archModeKeys.map(() => `minmax(${MIN_COL_W}px, 1fr)`).join(' ')} ${ADD_THEME_TRACK}`,
   }
 
   if (!ready) {
@@ -1658,7 +1456,6 @@ export default function Step3_SemanticTokens({
                     </span>
                   )
                 })}
-                <ContrastColumnHeader />
                 {/* Trailing header cell = "add another mode". It sits at the
                     END of the theme columns because that's where the new
                     column lands — the affordance points at its own result.
@@ -1683,9 +1480,7 @@ export default function Step3_SemanticTokens({
                     >
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
                     </button>
-                  ) : (
-                    <TuneIcon active={false} />
-                  )}
+                  ) : null}
                 </span>
               </div>
               {archTokens.length === 0 ? (
@@ -1752,21 +1547,6 @@ export default function Step3_SemanticTokens({
                           />
                         </button>
                       ))}
-                      <div className="flex items-center justify-center border-r border-line px-1 py-2.5">
-                        <ContrastStatusCell result={contrastStatusForToken(t.id, contrastFindings)} />
-                      </div>
-                      {/* Filter / edit toggle — glass plate on `STICKY_TRAIL`. */}
-                      <button
-                        onClick={() => editable && (setDetailsMode(null), setArchEditing(isOpen ? null : t.id))}
-                        aria-expanded={isOpen}
-                        aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
-                        disabled={!editable}
-                        className={`group flex items-center justify-center h-full py-2.5 text-fg-muted hover:text-fg disabled:opacity-30 transition-colors ${STICKY_TRAIL} ${
-                          flash ? 'bg-accent-ui/20' : isOpen ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''
-                        }`}
-                      >
-                        <TuneIcon active={isOpen} />
-                      </button>
                     </div>
                   </div>
                   )
@@ -1880,7 +1660,6 @@ export default function Step3_SemanticTokens({
                   </span>
                 )
               })}
-              <ContrastColumnHeader />
               {/* Trailing header cell = "add another mode" — see the arch
                   table's matching cell above. Flat always resolves an extra
                   theme as a real column, so it's always live here.
@@ -1911,7 +1690,6 @@ export default function Step3_SemanticTokens({
                   key={role.key}
                   role={role}
                   index={idx}
-                  contrast={contrastStatusForFlatKey(role.key, visibleAppearances, activeThemeSemantics)}
                   cols={visibleAppearances.map((appearance) => {
                     const kind = kindOf(appearance)
                     return {

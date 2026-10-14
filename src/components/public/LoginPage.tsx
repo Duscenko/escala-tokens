@@ -399,16 +399,6 @@ export function LoginPage() {
                       {t('Password updated. Sign in with the new one.')}
                     </p>
                   )}
-                  {!done && fromEditor && (view === 'signin' || view === 'signup') && (
-                    <p role="note" className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3 text-ui leading-relaxed text-fg-muted">
-                      {fromEditor.intent === 'export' ? `${t('You were about to export your system.')} `
-                        : fromEditor.intent === 'save-library' ? `${t('You were about to save your brand.')} `
-                        : ''}
-                      {fromEditor.place.length
-                        ? t('You will go back to {place}.', { place: fromEditor.place.map((w) => t(w)).join(' · ') })
-                        : t('You will go back to the editor.')}
-                    </p>
-                  )}
                 </div>
 
                 {closing ? (

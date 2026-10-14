@@ -55,6 +55,8 @@ import { createPortal } from 'react-dom'
 import {
   displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
 } from '../../../lib/tokenInspector'
+import { wcagRatio } from '../../../lib/color/apca'
+import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
@@ -155,6 +157,19 @@ const CHECKER: React.CSSProperties = {
     'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
   backgroundSize: '6px 6px',
   backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
+}
+
+function inkOnFillContrast(roles: InspectedRole[]): { ratio: number; pass: boolean } | null {
+  const fill = roles.find((r) => r.where === 'fill' && (!r.kind || r.kind === 'color'))
+  const ink = roles.find((r) => r.where === 'ink')
+  if (!fill || !ink) return null
+  try {
+    const ratio = wcagRatio(ink.css, fill.css)
+    if (!Number.isFinite(ratio)) return null
+    return { ratio, pass: ratio >= 4.5 }
+  } catch {
+    return null
+  }
 }
 
 /** The Themes-hub view glyph left unreferenced when the Variables view was
@@ -293,6 +308,7 @@ export function InspectorOverlay({
   /** Last Escape step — leaves inspector mode (same as "Exit inspector"). */
   onExitMode?: () => void
 }) {
+  const { t } = useI18n()
   const [hover, setHover] = useState<Target | null>(null)
   const [pin, setPin] = useState<Target | null>(null)
   const [focus, setFocus] = useState<FocusTarget | null>(null)
@@ -599,6 +615,7 @@ export function InspectorOverlay({
   const presentGroups = ROLE_GROUPS.filter((group) => roles.some((role) => roleKind(role) === group.kind))
   const activeKind = presentGroups.some((group) => group.kind === shownKind) ? shownKind : (presentGroups[0]?.kind ?? 'color')
   const visibleRoles = roles.filter((role) => roleKind(role) === activeKind)
+  const fillInkContrast = inkOnFillContrast(roles)
   // The table button opens the colour Variables table. A length id has
   // nowhere to go there.
   const tableRole = (focus?.ids ?? []).find((id) => colorRoles.some((role) => role.id === id)) ?? colorRoles[0]?.id
@@ -682,6 +699,17 @@ export function InspectorOverlay({
                     </button>
                   )
                 })}
+              </div>
+            )}
+            {fillInkContrast && (
+              <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-line/60 px-3 py-1.5 text-mini">
+                <span className="font-medium text-fg">{t('Accessibility')}</span>
+                <span
+                  className={`font-mono tabular-nums ${fillInkContrast.pass ? 'text-status-success' : 'text-status-danger'}`}
+                  title={t('Contrast between label ink and fill')}
+                >
+                  {fillInkContrast.ratio.toFixed(1)}:1 {fillInkContrast.pass ? 'AA' : t('Fails AA')}
+                </span>
               </div>
             )}
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto p-1">

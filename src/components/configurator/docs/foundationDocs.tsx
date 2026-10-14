@@ -1092,26 +1092,29 @@ line-height: var(--text-label-line-height);
               <thead>
                 <tr className="text-left text-mini font-semibold uppercase tracking-widest text-fg-faint">
                   <th className="py-2 pr-4 font-semibold">Token</th>
-                  {(['Desktop', 'Tablet', 'Mobile'] as const).map((h) => <th key={h} className="py-2 pr-4 font-semibold">{h}</th>)}
+                  <th className="py-2 pr-4 font-semibold">Desktop step</th>
+                  <th className="py-2 pr-4 font-semibold">Steps down</th>
                 </tr>
               </thead>
               <tbody className="font-mono text-fg-muted tabular-nums">
-                {RADIUS_RESPONSIVE_STEPS.map((step) => (
-                  <tr key={step} className="border-t border-line">
-                    <td className="py-2 pr-4 text-fg">{step}</td>
-                    {(['desktop', 'tablet', 'mobile'] as const).map((vp) => {
-                      const to = RADIUS_RESPONSIVE[step][vp]
-                      return (
-                        <td key={vp} className="py-2 pr-4">
-                          <span className="inline-flex items-center gap-2">
-                            <span className="w-4 h-4 border-2 border-accent-ui/60 bg-accent-ui/[0.08]" style={{ borderRadius: c.radius[to] ?? '0px' }} />
-                            {to} · {c.radius[to] ?? '—'}
-                          </span>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                {RADIUS_RESPONSIVE_STEPS.map((step) => {
+                  const map = RADIUS_RESPONSIVE[step]
+                  const desktopTo = map.desktop
+                  return (
+                    <tr key={step} className="border-t border-line">
+                      <td className="py-2 pr-4 text-fg">{step}</td>
+                      <td className="py-2 pr-4">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-accent-ui/60 bg-accent-ui/[0.08]" style={{ borderRadius: c.radius[desktopTo] ?? '0px' }} />
+                          {desktopTo} · {c.radius[desktopTo] ?? '—'}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-fg-muted">
+                        Tablet → {map.tablet} · Mobile → {map.mobile}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
