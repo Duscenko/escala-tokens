@@ -468,6 +468,7 @@ export function LoginPage() {
                               ref={passwordRef}
                               type={showPassword ? 'text' : 'password'}
                               autoComplete={view === 'signin' ? 'current-password' : 'new-password'}
+                              placeholder={t('Enter password')}
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               aria-invalid={message ? true : undefined}
@@ -502,6 +503,7 @@ export function LoginPage() {
                             // read the same way while someone compares them.
                             type={showPassword ? 'text' : 'password'}
                             autoComplete="new-password"
+                            placeholder={t('Re-enter password')}
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
                             aria-invalid={problem === 'password_mismatch' || (message ? true : undefined)}

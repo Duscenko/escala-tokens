@@ -110,6 +110,15 @@ export function startThemeSetup(key: string) {
   commit({ ...useThemeSetup.getState().drafts, [key]: 1 }, key)
 }
 
+/** Put a theme on a setup step. The create studio's step tabs can jump, so
+ *  this is not only "one forward". A no-op when it is already there. */
+export function placeThemeSetup(key: string, index: number) {
+  const at = Math.max(0, Math.min(SETUP_STEPS.length - 1, Math.floor(index)))
+  const { drafts } = useThemeSetup.getState()
+  if (drafts[key] === at) return
+  commit({ ...drafts, [key]: at }, key)
+}
+
 /** Current step done — move to the next, or finish after the last. Returns
  *  true when the setup is complete. */
 export function advanceThemeSetup(key: string): boolean {

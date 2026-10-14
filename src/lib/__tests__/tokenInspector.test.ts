@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { displayHex, geometryRoles, inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
+import { accessibilityReport, displayHex, geometryRoles, inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
 import type { PreviewTokens } from '../../components/preview/ButtonPreview'
 import { familiesForRampLock, parseRef, pickRampCell } from '../../components/configurator/Step3_SemanticTokens'
 
@@ -102,6 +102,23 @@ describe('resolveVariantRoles', () => {
       'status.success.content',
     ])
     expect(roles?.[2]?.css).toBe('#15803d')
+  })
+
+  it('a Soft Success badge gets label and dot contrast on composited tint', () => {
+    const page = '#181818'
+    const roles = [
+      { id: 'status.success.surface', css: '#62fe771a', where: 'fill' as const },
+      { id: 'status.success.content', css: '#4dc277', where: 'ink' as const },
+      { id: 'status.success.surface-solid', css: '#82df9d', where: 'fill' as const },
+      { id: 'radius.action', css: '8px', kind: 'radius' as const },
+      { id: 'text.caption', css: '11px', kind: 'text' as const },
+    ]
+    const { contrasts } = accessibilityReport(roles, page)
+    expect(contrasts.map((c) => c.label)).toEqual(['Label on tint', 'Dot on tint'])
+    expect(contrasts[0]!.fgId).toBe('status.success.content')
+    expect(contrasts[0]!.ratio).toBeGreaterThan(1)
+    expect(contrasts[1]!.fgId).toBe('status.success.surface-solid')
+    expect(contrasts[1]!.target).toBe(3)
   })
 
   it('a toast dot alone reports only status content', () => {

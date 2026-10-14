@@ -53,9 +53,8 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
+  accessibilityReport, displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
 } from '../../../lib/tokenInspector'
-import { wcagRatio } from '../../../lib/color/apca'
 import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
@@ -157,19 +156,6 @@ const CHECKER: React.CSSProperties = {
     'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
   backgroundSize: '6px 6px',
   backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
-}
-
-function inkOnFillContrast(roles: InspectedRole[]): { ratio: number; pass: boolean } | null {
-  const fill = roles.find((r) => r.where === 'fill' && (!r.kind || r.kind === 'color'))
-  const ink = roles.find((r) => r.where === 'ink')
-  if (!fill || !ink) return null
-  try {
-    const ratio = wcagRatio(ink.css, fill.css)
-    if (!Number.isFinite(ratio)) return null
-    return { ratio, pass: ratio >= 4.5 }
-  } catch {
-    return null
-  }
 }
 
 /** The Themes-hub view glyph left unreferenced when the Variables view was
@@ -612,6 +598,9 @@ export function InspectorOverlay({
   if (!active || !target) return null
 
   const { rect, roles, label, kind, measured } = target
+  const previewTokens = tokensFor(target.el)
+  const pageCss = previewTokens.archTokens?.['surface.page'] ?? previewTokens.pageBackground ?? previewTokens.surface ?? '#ffffff'
+  const a11y = accessibilityReport(roles, pageCss)
   const lit = pin?.kind === 'group' && focus ? new Set(focus.ids) : null
   // The part under the pointer, inside one component: lit, but the other rows
   // keep full strength — they are still on screen, just not under the cursor.
@@ -638,7 +627,6 @@ export function InspectorOverlay({
   const presentGroups = ROLE_GROUPS.filter((group) => roles.some((role) => roleKind(role) === group.kind))
   const activeKind = presentGroups.some((group) => group.kind === shownKind) ? shownKind : (presentGroups[0]?.kind ?? 'color')
   const visibleRoles = roles.filter((role) => roleKind(role) === activeKind)
-  const fillInkContrast = inkOnFillContrast(roles)
   // The table button opens the colour Variables table. A length id has
   // nowhere to go there.
   const tableRole = (focus?.ids ?? []).find((id) => colorRoles.some((role) => role.id === id)) ?? colorRoles[0]?.id
@@ -724,15 +712,34 @@ export function InspectorOverlay({
                 })}
               </div>
             )}
-            {fillInkContrast && (
-              <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-line/60 px-3 py-1.5 text-mini">
+            {(a11y.contrasts.length > 0 || a11y.touch) && (
+              <div className="flex flex-shrink-0 flex-col gap-1 border-b border-line/60 px-3 py-1.5 text-mini">
                 <span className="font-medium text-fg">{t('Accessibility')}</span>
-                <span
-                  className={`font-mono tabular-nums ${fillInkContrast.pass ? 'text-status-success' : 'text-status-danger'}`}
-                  title={t('Contrast between label ink and fill')}
-                >
-                  {fillInkContrast.ratio.toFixed(1)}:1 {fillInkContrast.pass ? 'AA' : t('Fails AA')}
-                </span>
+                <ul className="m-0 flex flex-col gap-0.5 p-0">
+                  {a11y.contrasts.map((check) => (
+                    <li key={check.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-fg-muted" title={check.label}>
+                        {t(check.label)}
+                      </span>
+                      <span
+                        className={`flex-shrink-0 font-mono tabular-nums ${check.pass ? 'text-status-success' : 'text-status-danger'}`}
+                        title={`${check.fgId} on ${check.bgId}`}
+                      >
+                        {check.ratio.toFixed(1)}:1 {check.pass ? (check.target >= 4.5 ? 'AA' : '3:1') : check.target >= 4.5 ? t('Fails AA') : t('Fails 3:1')}
+                      </span>
+                    </li>
+                  ))}
+                  {a11y.touch && (
+                    <li className="flex items-center justify-between gap-2">
+                      <span className="text-fg-muted">{t('Touch target')}</span>
+                      <span
+                        className={`font-mono tabular-nums ${a11y.touch.pass ? 'text-status-success' : 'text-status-danger'}`}
+                      >
+                        {a11y.touch.px}px {a11y.touch.pass ? '≥' : '<'} {a11y.touch.target}px
+                      </span>
+                    </li>
+                  )}
+                </ul>
               </div>
             )}
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto p-1">

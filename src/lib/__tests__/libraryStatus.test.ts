@@ -23,6 +23,14 @@ describe('savedBrandKeysFrom', () => {
     }, { brand: true })).toEqual([])
   })
 
+  it('counts a brand once it has left the studio draft list', () => {
+    expect(savedBrandKeysFrom({
+      ...empty,
+      themeOrder: ['light', 'dark', 'brand'],
+      themes: { light: {}, dark: {}, brand: {} },
+    }, {})).toEqual(['brand'])
+  })
+
   it('counts a brand that already lives in the saved library', () => {
     expect(savedBrandKeysFrom({
       ...empty,

@@ -349,7 +349,7 @@ function ScaledModule({
   const resolvedFrame = frameWidth === MODULE_DISPLAY ? frame.display : frameWidth
   const scale = resolvedFrame / resolvedSource
   const frameRadius = (parseFloat(radiusRoleOf(t, 'container', '16px')) || 0) * scale
-  const displayHeight = naturalHeight != null ? naturalHeight * scale : 0
+  const displayHeight = naturalHeight != null ? Math.ceil(naturalHeight * scale) : 0
   const stretches = fill && chrome
   const outerRef = useRef<HTMLDivElement>(null)
   const [stretchHeight, setStretchHeight] = useState<number | null>(null)
@@ -363,13 +363,43 @@ function ScaledModule({
   useLayoutEffect(() => {
     const el = innerRef.current
     if (!el) return
+    const SETTLE = 0.5
+    const contentHeight = (node: HTMLElement) =>
+      Math.max(node.offsetHeight, node.scrollHeight, node.getBoundingClientRect().height)
+
+    const measureNatural = (surface: HTMLElement | null) => {
+      if (surface) {
+        const kept = surface.style.minHeight
+        surface.style.minHeight = '0px'
+        const natural = contentHeight(surface)
+        surface.style.minHeight = kept
+        if (natural > 0) {
+          setNaturalHeight((prev) => (prev !== null && Math.abs(prev - natural) < SETTLE ? prev : natural))
+        }
+        return
+      }
+      const natural = contentHeight(el)
+      if (natural > 0) {
+        setNaturalHeight((prev) => (prev !== null && Math.abs(prev - natural) < SETTLE ? prev : natural))
+      }
+    }
+
     if (!stretches) {
-      const ro = new ResizeObserver((entries) => {
-        const h = entries[0]?.contentRect.height
-        if (h) setNaturalHeight(h)
-      })
+      const measure = () => measureNatural(null)
+      measure()
+      const raf = requestAnimationFrame(measure)
+      const ro = new ResizeObserver(measure)
       ro.observe(el)
-      return () => ro.disconnect()
+      for (const child of Array.from(el.children)) {
+        ro.observe(child)
+        if (child instanceof HTMLElement) {
+          for (const grand of Array.from(child.children)) ro.observe(grand)
+        }
+      }
+      return () => {
+        cancelAnimationFrame(raf)
+        ro.disconnect()
+      }
     }
     // A stretched surface is taller than its content, so its rendered height is
     // NOT its natural height. The natural height is measured by taking the
@@ -381,20 +411,13 @@ function ScaledModule({
     // that was itself derived from it. That fed back on itself: one tile flipped
     // between two heights every frame, for as long as the board was on screen.
     const surface = el.firstElementChild as HTMLElement | null
-    const SETTLE = 0.5
     const measure = () => {
       const outer = outerRef.current
       if (outer) {
         const h = outer.getBoundingClientRect().height
         setStretchHeight((prev) => (prev !== null && Math.abs(prev - h) < SETTLE ? prev : h))
       }
-      if (!surface) return
-      const kept = surface.style.minHeight
-      surface.style.minHeight = '0px'
-      const natural = surface.offsetHeight
-      surface.style.minHeight = kept
-      // Only a real change updates state: sub-pixel rounding must not re-render.
-      setNaturalHeight((prev) => (prev !== null && Math.abs(prev - natural) < SETTLE ? prev : natural))
+      measureNatural(surface)
     }
     const ro = new ResizeObserver(measure)
     ro.observe(el)
@@ -402,7 +425,7 @@ function ScaledModule({
     if (surface) for (const child of Array.from(surface.children)) ro.observe(child)
     measure()
     return () => ro.disconnect()
-  }, [stretches])
+  }, [stretches, resolvedSource, resolvedFrame, scale])
 
   const surfaceStyle: CSSProperties | undefined = stretches
     ? { ...style, justifyContent: 'center', minHeight: stretchHeight ? stretchHeight / scale : undefined }

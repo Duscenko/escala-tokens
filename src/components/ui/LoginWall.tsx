@@ -151,3 +151,74 @@ export function RegisterToContinueDialog({
     document.body,
   )
 }
+
+/** After Finish, for a visitor with no account. The brand is already on
+ *  screen; closing keeps it in this browser. Creating an account is what
+ *  saves the design system on the platform. */
+export function BrandCreatedDialog({
+  open,
+  name,
+  onClose,
+  onContinue,
+}: {
+  open: boolean
+  name: string
+  onClose: () => void
+  onContinue: (mode: 'signup' | 'signin') => void
+}) {
+  const { t } = useI18n()
+  const primaryRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!open) return
+    primaryRef.current?.focus()
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+  if (!open) return null
+  const title = t('{name} is created', { name })
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="brand-created-title"
+        className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-line bg-app p-5 text-center shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-status-success/15 text-status-success" aria-hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+          </svg>
+        </span>
+        <p id="brand-created-title" className="m-0 text-ui font-semibold text-fg">{title}</p>
+        <p className="m-0 text-caption leading-relaxed text-fg-muted">
+          {t('Create a free account to save this design system on Escala. It stays in this browser until you do.')}
+        </p>
+        <button
+          ref={primaryRef}
+          type="button"
+          onClick={() => onContinue('signup')}
+          className="h-8 w-full rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          {t('Create a free account')}
+        </button>
+        <button
+          type="button"
+          onClick={() => onContinue('signin')}
+          className="text-caption font-medium text-fg-muted underline-offset-2 transition-colors hover:text-fg hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded"
+        >
+          {t('I already have an account')}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-8 w-full rounded-lg text-caption font-medium text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          {t('Not now')}
+        </button>
+      </div>
+    </div>,
+    document.body,
+  )
+}

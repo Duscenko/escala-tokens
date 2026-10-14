@@ -28,6 +28,8 @@ import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
   BASE_UNIT_RANGE,
+  FIELD_BASE_MIN,
+  SIZE_CONTROL_MIN_PX,
   SELECTOR_DEFAULT_BASE,
   SIZE_DEFAULT_BASE,
   SIZE_STEPS,
@@ -1077,7 +1079,10 @@ function BaseUnitCard({
   /** Primitive this platform cut actually aliases (`md` Control / `lg` Touch). */
   usedStep?: string
 }) {
+  const { t } = useI18n()
   const px = steps.map((step) => parseFloat(values[step] ?? '0') || 0)
+  const smPx = px[steps.indexOf('sm')] ?? 0
+  const mdPx = px[steps.indexOf('md')] ?? 0
   const peak = Math.max(...px, 1)
   return (
     <div>
@@ -1129,6 +1134,17 @@ function BaseUnitCard({
         ariaLabel={ariaLabel}
         className={ROW_GAP_CONTROL}
       />
+      {kind === 'field' && (
+        <p className={`mt-1.5 text-micro leading-snug ${mdPx < SIZE_CONTROL_MIN_PX ? 'text-status-warning' : 'text-fg-faint'}`}>
+          {mdPx < SIZE_CONTROL_MIN_PX
+            ? t('Control height is {px}px — raise the base unit to {minBase} or above for {minPx}px.', {
+              px: mdPx,
+              minBase: FIELD_BASE_MIN.toFixed(1),
+              minPx: SIZE_CONTROL_MIN_PX,
+            })
+            : t('SM {sm}px · Control {md}px (base × 8 and × 10).', { sm: smPx, md: mdPx })}
+        </p>
+      )}
     </div>
   )
 }
@@ -2654,7 +2670,13 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
+          <SettingItem
+            label="Fields"
+            hint={t('Base unit × 8 = SM, × 10 = Control (MD). Keep MD at least {minPx}px (base {minBase} or higher).', {
+              minPx: SIZE_CONTROL_MIN_PX,
+              minBase: FIELD_BASE_MIN.toFixed(1),
+            })}
+          >
             <BaseUnitCard
               ariaLabel="Fields base size in pixels"
               kind="field"

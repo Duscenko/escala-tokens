@@ -14,7 +14,9 @@
 // see `INSPECTOR_BLIND_SPOT` below.
 
 import { COMPONENT_ARCH_ROLES, COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
-import { RADIUS_ROLES, SIZE_ROLES } from './layoutTokens'
+import { compositeOver } from './colorUtils'
+import { wcagRatio } from './color/apca'
+import { RADIUS_ROLES, SIZE_CONTROL_MIN_PX, SIZE_ROLES } from './layoutTokens'
 import { CATEGORICAL_FIELD_ROLE, radiusRoleOf, sizeRoleOf } from './previewTokens'
 import { TYPE_ROLES, typeStyleCss } from './typeRoles'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
@@ -1068,6 +1070,136 @@ export interface GroupInspection {
  * here with nothing to update, and a label listing components a module no
  * longer holds is impossible to write.
  */
+/** One WCAG contrast pair the inspector can verify from resolved roles. */
+export interface ContrastCheck {
+  id: string
+  label: string
+  fgId: string
+  bgId: string
+  ratio: number
+  /** WCAG minimum for this pair — 4.5 for text, 3 for UI/non-text. */
+  target: number
+  pass: boolean
+}
+
+export interface TouchTargetCheck {
+  px: number
+  target: number
+  pass: boolean
+}
+
+export interface AccessibilityReport {
+  contrasts: ContrastCheck[]
+  touch?: TouchTargetCheck
+}
+
+function compositeOnPage(css: string, pageCss: string): string {
+  const a = paintAlpha(css)
+  if (a >= 0.995) return css
+  if (a <= 0) return pageCss
+  try {
+    return compositeOver(css, pageCss)
+  } catch {
+    return pageCss
+  }
+}
+
+function colorRole(roles: InspectedRole[], id: string): InspectedRole | undefined {
+  return roles.find((r) => r.id === id && (r.kind ?? 'color') === 'color')
+}
+
+function pushContrast(
+  out: ContrastCheck[],
+  seen: Set<string>,
+  fg: InspectedRole,
+  bgCss: string,
+  bgId: string,
+  target: number,
+  label: string,
+): void {
+  const key = `${fg.id}|${bgId}|${target}`
+  if (seen.has(key)) return
+  seen.add(key)
+  try {
+    const ratio = wcagRatio(fg.css, bgCss)
+    if (!Number.isFinite(ratio)) return
+    out.push({ id: key, label, fgId: fg.id, bgId, ratio, target, pass: ratio >= target })
+  } catch {
+    /* unparsable colour */
+  }
+}
+
+/**
+ * Contrast pairs implied by the roles on screen — translucent fills are
+ * composited over `pageCss` before measuring, matching how the badge is read.
+ */
+export function accessibilityReport(roles: InspectedRole[], pageCss: string): AccessibilityReport {
+  const color = roles.filter((r) => (r.kind ?? 'color') === 'color')
+  const contrasts: ContrastCheck[] = []
+  const seen = new Set<string>()
+  const page = pageCss || '#ffffff'
+
+  for (const sev of ['critical', 'warning', 'success', 'info'] as const) {
+    const surface = colorRole(color, `status.${sev}.surface`)
+    const content = colorRole(color, `status.${sev}.content`)
+    const solid = colorRole(color, `status.${sev}.surface-solid`)
+    const onSolid = colorRole(color, `status.${sev}.on-solid`)
+    const tintBg = surface ? compositeOnPage(surface.css, page) : null
+
+    if (content && tintBg && surface) {
+      pushContrast(contrasts, seen, content, tintBg, surface.id, 4.5, 'Label on tint')
+    }
+    if (solid && tintBg && surface) {
+      pushContrast(contrasts, seen, solid, tintBg, surface.id, 3, 'Dot on tint')
+    }
+    if (onSolid && solid) {
+      pushContrast(contrasts, seen, onSolid, solid.css, solid.id, 4.5, 'Label on solid')
+    }
+  }
+
+  const primary = colorRole(color, 'action.primary.default')
+  const onAction = colorRole(color, 'content.on-action')
+  if (primary && onAction) {
+    pushContrast(contrasts, seen, onAction, primary.css, primary.id, 4.5, 'Label on fill')
+  }
+
+  const inverse = colorRole(color, 'surface.inverse')
+  const inverseInk = colorRole(color, 'content.inverse')
+  if (inverse && inverseInk) {
+    pushContrast(contrasts, seen, inverseInk, inverse.css, inverse.id, 4.5, 'Label on fill')
+  }
+
+  // Status dot on an inverse chip (toast) — vivid fill, not ink text.
+  if (inverse) {
+    for (const sev of ['critical', 'warning', 'success', 'info'] as const) {
+      const dot = colorRole(color, `status.${sev}.content`)
+      if (!dot || dot.where === 'ink') continue
+      if (colorRole(color, `status.${sev}.surface`)) continue
+      pushContrast(contrasts, seen, dot, inverse.css, inverse.id, 3, 'Dot on fill')
+    }
+  }
+
+  if (!contrasts.length) {
+    const fill = color.find((r) => r.where === 'fill')
+    const ink = color.find((r) => r.where === 'ink')
+    if (fill && ink) {
+      const bg = compositeOnPage(fill.css, page)
+      pushContrast(contrasts, seen, ink, bg, fill.id, 4.5, 'Label on fill')
+    }
+  }
+
+  const control = roles.find((r) => r.kind === 'size' && (r.id === 'size.control' || r.id === 'size.hit'))
+  let touch: TouchTargetCheck | undefined
+  if (control) {
+    const px = parseFloat(control.css)
+    if (Number.isFinite(px)) {
+      touch = { px, target: SIZE_CONTROL_MIN_PX, pass: px >= SIZE_CONTROL_MIN_PX }
+    }
+  }
+
+  return { contrasts, touch }
+}
+
 export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
   const members: string[] = []
   const roles: InspectedRole[] = []

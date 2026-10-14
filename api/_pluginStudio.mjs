@@ -1970,7 +1970,7 @@ var init_layoutTokens = __esm({
       { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
     ];
     SPACING_MODES = [
-      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: 3.5, insetStep: "3", border: 1 },
+      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: 3.6, insetStep: "3", border: 1 },
       { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
       { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "5", border: 2 },
       { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "6", border: 1 }

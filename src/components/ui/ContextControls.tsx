@@ -120,8 +120,8 @@ function Segmented<K extends string>({
 
 /** The three filters. `scopes` lists the scopes this surface can offer
  *  (omit it and the scope row is not drawn — a component page has only one).
- *  `lockedAppearance` is the Free cut: one appearance, the others disabled
- *  with the reason in their tooltip rather than hidden. */
+ *  `lockedAppearance`, when set, disables every other theme with
+ *  `disabledHint` rather than hiding them. */
 export function ContextFilters({
   opts, onChange, scopes, lockedAppearance, layout = 'stack', showAppearance = true,
 }: {

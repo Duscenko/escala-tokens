@@ -442,10 +442,9 @@ export default function ThemeCodeFormat({
   // Agent context is CUT to what the person asked for — scope, theme, detail —
   // and the file on screen is exactly the paste. `all · both · full` is the
   // file this tab always showed (every references/ file, in package order).
-  // Free keeps one appearance, the same cut its CSS gets.
-  const freeAppearance = previewAppearance ?? store.themeKinds[effectiveScope ?? ''] ?? 'light'
-  const [ctx, setCtx] = useContextOptions('all', free ? freeAppearance : 'both')
-  const ctxAppearance = free ? freeAppearance : ctx.appearance
+  const defaultAppearance = previewAppearance ?? store.themeKinds[effectiveScope ?? ''] ?? 'light'
+  const [ctx, setCtx] = useContextOptions('all', defaultAppearance)
+  const ctxAppearance = ctx.appearance
   const agentMd = useMemo(() => {
     if (!effectiveScope) return ''
     const json = contextTokenJson(store, effectiveScope, ctxAppearance)
@@ -519,7 +518,7 @@ export default function ThemeCodeFormat({
                       opts={{ ...ctx, appearance: ctxAppearance }}
                       onChange={(patch) => { setCtx(patch); setExpanded(false) }}
                       scopes={CONTEXT_SCOPES}
-                      lockedAppearance={free ? freeAppearance : null}
+                      lockedAppearance={null}
                       // Theme is picked on Copy context's chevron, not here.
                       showAppearance={false}
                     />
@@ -545,7 +544,7 @@ export default function ThemeCodeFormat({
                   agentContext={format === 'agent'}
                   appearanceMenu={format === 'agent' && effectiveScope ? {
                     value: ctx.appearance,
-                    locked: free ? freeAppearance : null,
+                    locked: null,
                     onPick: (appearance) => { setCtx({ appearance }); setExpanded(false) },
                     buildFor: (appearance) => buildSystemContext(
                       contextTokenJson(store, effectiveScope, appearance),

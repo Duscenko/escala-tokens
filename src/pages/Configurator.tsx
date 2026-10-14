@@ -102,7 +102,7 @@ import { AccountCloudConflict } from '../components/configurator/AccountCloudSta
 import { isPublishId } from '../lib/publishId'
 import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../lib/publishSignals'
 import { takeLoginIntent } from '../lib/loginReturn'
-import { LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
+import { BrandCreatedDialog, LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
 import { showToast } from '../components/ui/Toast'
 import { VariablesContextButton } from '../components/configurator/VariablesContextButton'
 
@@ -1201,6 +1201,7 @@ export default function Configurator() {
     return guestStarterPreview()
   })
   const [registerOpen, setRegisterOpen] = useState(false)
+  const [createdBrandKey, setCreatedBrandKey] = useState<string | null>(null)
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
     // Read the LIVE store, never this render's `themeKinds`. A theme that
@@ -1334,17 +1335,25 @@ export default function Configurator() {
       if (guestStudio && freshSavedCount > 0) {
         setGuestStudio(false)
         setHomeCreating(false)
-        setThemeWorkspaceTab(
-          incomingPlace?.workspace === 'library' || incomingPlace?.workspace === 'documentation'
-            ? 'preview'
-            : (incomingPlace?.workspace ?? 'preview'),
-        )
+        // Finish already opened the brand. Only a studio that is still the
+        // page on screen needs a destination; overwriting preview sent the
+        // guest somewhere else the moment the brand counted as kept.
+        if (themeWorkspaceTab === 'library') {
+          setThemeWorkspaceTab(
+            incomingPlace?.workspace === 'library' || incomingPlace?.workspace === 'documentation'
+              ? 'preview'
+              : (incomingPlace?.workspace ?? 'preview'),
+          )
+        }
       }
       return
     }
     if (guestStudio) return
+    // A brand is already on the board (mid-setup, or one Finish just kept).
+    // Reopening the studio here is the jump back to Colour.
+    if (myThemeKeys(themeOrder, themes).length > 0) return
     leaveHomeForGuest()
-  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, savedBrandKeys.length, freshSavedCount, leaveHomeForGuest, incomingPlace])
+  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, themeWorkspaceTab, savedBrandKeys.length, freshSavedCount, leaveHomeForGuest, incomingPlace])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -2719,6 +2728,7 @@ export default function Configurator() {
                     previewTheme={previewTheme}
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
+                    onGuestBrandCreated={setCreatedBrandKey}
                     onStartTheme={beginThemeSetup}
                     onPreviewStyle={(preset) => {
                       // Same try-on the theme sheet makes: the board paints the
@@ -3051,6 +3061,16 @@ export default function Configurator() {
         onClose={() => { setUpgradeOpen(false); proAsk.close() }}
       />
       <RegisterToContinueDialog open={registerOpen} onClose={() => setRegisterOpen(false)} onContinue={continueToAccount} />
+      <BrandCreatedDialog
+        open={createdBrandKey != null}
+        name={createdBrandKey ? themeDisplayName(createdBrandKey, store.themeLabels) : ''}
+        onClose={() => setCreatedBrandKey(null)}
+        onContinue={(mode) => {
+          const key = createdBrandKey
+          setCreatedBrandKey(null)
+          if (key) goToLogin('save-library', mode, `themes/${key}`)
+        }}
+      />
 
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>

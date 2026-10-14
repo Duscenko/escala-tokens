@@ -16,7 +16,7 @@ import { accountsEnabled } from '../../lib/supabase'
 import { loginHref } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
 import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
-import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, placeThemeSetup, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
 import { flushLibraryAutosave, useSavedBrandKeys, useUnsavedBrands } from '../../lib/libraryStatus'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
@@ -1229,6 +1229,7 @@ export default function ThemeLibraryPage({
   figmaThemes,
   onSelectTheme,
   onOpenPreview,
+  onGuestBrandCreated,
   onGetCode,
   onSyncFigma,
   onShareGithub,
@@ -1266,6 +1267,8 @@ export default function ThemeLibraryPage({
   /** Make this the theme every other page reads, without leaving Home. */
   onSelectTheme: (key: string) => void
   onOpenPreview: (key: string) => void
+  /** Finish (or Skip setup) kept a brand for a visitor with no account. */
+  onGuestBrandCreated?: (key: string) => void
   onGetCode: (key: string) => void
   /** Preview the theme and open its Figma sync page. */
   onSyncFigma: (key: string) => void
@@ -1351,6 +1354,13 @@ export default function ThemeLibraryPage({
     setCreateDraft(null)
     pendingStep.current = null
   }, [creating])
+  // The step lives with the draft, so a refresh resumes Icons instead of
+  // Colour. Finish clears it (see keepCreatedBrand) before this can write again.
+  useEffect(() => {
+    if (!creating || !createdKey) return
+    const index = (SETUP_STEPS as readonly string[]).indexOf(createStep)
+    if (index >= 0) placeThemeSetup(createdKey, index)
+  }, [creating, createdKey, createStep])
   useEffect(() => {
     onCreatingChange?.(creating)
     return () => onCreatingChange?.(false)
@@ -1819,20 +1829,21 @@ export default function ThemeLibraryPage({
     const prev = CREATE_STEPS[createIndex - 1]
     if (prev) setCreateStep(prev.key)
   }
-  // Signed in, leaving the studio forward (Finish, Skip setup, the advanced
-  // editor) keeps the brand: left as a draft, the empty-workspace guard
-  // reopened the studio and Home's cleanup deleted it. A guest still signs up
-  // first (the Save bar asks).
+  // Leaving the studio forward (Finish, Skip setup, the advanced editor) keeps
+  // the brand. While it stayed a draft, the empty-board guard reopened the
+  // studio on Colour — Finish jumped back to the first step. The library write
+  // still waits for an account; a guest saves from the brand's own bar.
   const keepCreatedBrand = (key: string) => {
-    if (tier === 'anon') return
     finishThemeSetup(key)
     forgetUnsavedBrand(key)
+    if (tier === 'anon') return
     useDesignStore.getState().saveCurrentSystem()
   }
   const finishCreate = (key: string) => {
     keepCreatedBrand(key)
     setCreating(false)
     onOpenPreview(key)
+    if (gated) onGuestBrandCreated?.(key)
   }
   /** Leave the studio and drop the theme if Colour already minted one. */
   const cancelCreate = () => {

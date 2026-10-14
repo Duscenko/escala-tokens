@@ -465,12 +465,28 @@ export const FIELD_MULTIPLIERS: Record<SizeStep, number> = {
 }
 export const SIZE_DEFAULT_BASE = 4
 
-/** Shared 3–5px range for both base units, per the sizing spec. */
-export const BASE_UNIT_RANGE = { min: 3, max: 5, step: 0.5 } as const
+/** Default button/input height (`size-control` → `md`). Below this, the guided
+ *  studio and field scrubber clamp the base unit — WCAG 2.2 allows 24px targets,
+ * 36px is the floor for comfortable controls in the bento preview. */
+export const SIZE_CONTROL_MIN_PX = 36
+export const FIELD_BASE_MIN = SIZE_CONTROL_MIN_PX / FIELD_MULTIPLIERS.md
+
+/** Field base unit scrubber range (px). Min is derived from {@link SIZE_CONTROL_MIN_PX}. */
+export const BASE_UNIT_RANGE = { min: FIELD_BASE_MIN, max: 5, step: 0.5 } as const
+
+export function clampFieldBase(base: number): number {
+  return Math.min(BASE_UNIT_RANGE.max, Math.max(FIELD_BASE_MIN, base))
+}
+
+/** Px height for a size step at a field base (after {@link clampFieldBase}). */
+export function sizeStepPx(base: number, step: SizeStep): number {
+  return Math.round(clampFieldBase(base) * FIELD_MULTIPLIERS[step])
+}
 
 export function buildSizesFromBase(base: number): Record<string, string> {
+  const b = clampFieldBase(base)
   const out: Record<string, string> = {}
-  for (const step of SIZE_STEPS) out[step] = `${Math.round(base * FIELD_MULTIPLIERS[step])}px`
+  for (const step of SIZE_STEPS) out[step] = `${Math.round(b * FIELD_MULTIPLIERS[step])}px`
   return out
 }
 
@@ -528,8 +544,27 @@ function inferBase(
   return base
 }
 
+/** Infers from `md` — the control height step — so fractional bases (e.g. 3.6
+ *  for a 36px floor) still round-trip after per-step rounding. */
 export const inferSizeBase = (sizes?: Record<string, string>) =>
-  inferBase(sizes, FIELD_MULTIPLIERS, SIZE_STEPS)
+  inferBaseFromStep(sizes, FIELD_MULTIPLIERS, SIZE_STEPS, 'md')
+
+function inferBaseFromStep(
+  map: Record<string, string> | undefined,
+  multipliers: Record<string, number>,
+  steps: readonly string[],
+  anchorStep: string,
+): number | null {
+  if (!map) return null
+  const anchor = parseFloat(map[anchorStep] ?? '')
+  if (!Number.isFinite(anchor)) return null
+  const base = anchor / multipliers[anchorStep]
+  if (!(base > 0)) return null
+  for (const step of steps) {
+    if (map[step] !== `${Math.round(base * multipliers[step])}px`) return null
+  }
+  return base
+}
 export const inferSelectorBase = (map?: Record<string, string>) =>
   inferBase(map, SELECTOR_MULTIPLIERS, SELECTOR_STEPS)
 
@@ -1423,7 +1458,7 @@ export interface SpacingMode {
 }
 
 export const SPACING_MODES: readonly SpacingMode[] = [
-  { id: 'compact', label: 'Compact', description: 'Dense: smaller controls, tight cards.', fieldBase: 3.5, insetStep: '3', border: 1 },
+  { id: 'compact', label: 'Compact', description: 'Dense: smaller controls, tight cards.', fieldBase: FIELD_BASE_MIN, insetStep: '3', border: 1 },
   { id: 'quiet', label: 'Quiet', description: 'The standard: calm, nothing shouts.', fieldBase: 4, insetStep: '5', border: 1 },
   { id: 'bold', label: 'Bold', description: 'Larger controls, heavier strokes.', fieldBase: 4.5, insetStep: '5', border: 2 },
   { id: 'airy', label: 'Airy', description: 'Roomy: big targets, generous cards.', fieldBase: 5, insetStep: '6', border: 1 },

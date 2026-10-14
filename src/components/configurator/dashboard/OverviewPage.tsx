@@ -4,12 +4,11 @@
 // brand's own colour. Cells carry a short summary, not a specimen. A number
 // appears only where a contrast pair fails, and only on the brand on screen.
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
-import { useOneThemePlan } from '../../../lib/access'
 import { wcagRatio } from '../../../lib/color/apca'
-import { BRAND_THEME_DEFS, brandThemesSummary, plannedBrandThemes, shippedThemes } from '../../../lib/brandThemes'
+import { BRAND_THEME_DEFS, brandThemesSummary, shippedThemes } from '../../../lib/brandThemes'
 import { fontStack } from '../../../lib/fonts'
 import { foundationFacts, type FoundationFacts } from '../../../lib/systemDashboard'
 import { useTheme } from '../../../lib/theme'
@@ -17,7 +16,6 @@ import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
 import { AppearanceGlyph } from '../colorControls'
 import { ThemeAvatar } from '../ThemeLibraryRail'
 import { CHROME_CONTROL_SHELL } from '../themeWorkspaceLayout'
-import { UpgradeToProDialog } from '../UpgradeToProNotice'
 import { SOURCE_LABEL, Tag, TEXT_LINK } from './parts'
 import type { SourceState } from '../../../lib/systemDashboard'
 import type { Dashboard } from './dashboardData'
@@ -73,43 +71,22 @@ function CheckGlyph() {
   )
 }
 
-/** The themes a brand ships, as labelled chips. On Free a brand ships one
- *  theme: the other keeps its place with a lock and the PRO mark, and opens
- *  the upgrade notice. */
-function ThemesCell({ ids, free, selected, brandName, onOpen }: {
+/** The themes a brand ships, as labelled chips. The editor always has every
+ *  theme; this row reflects the brand's ship list, not export plan trimming. */
+function ThemesCell({ ids, selected, brandName, onOpen }: {
   ids: readonly string[]
-  free: boolean
   selected: boolean
   brandName: string
   onOpen?: (appearance: 'light' | 'dark') => void
 }) {
   const { t } = useI18n()
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const summary = t(brandThemesSummary(ids))
   return (
     <div role="group" aria-label={summary} className={`flex h-full min-w-0 items-center gap-1.5 px-3 ${selected ? CHROME_CONTROL_SHELL : ''}`}>
       <span className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-elevated p-0.5">
         {BRAND_THEME_DEFS.map((def) => {
           const on = ids.includes(def.id)
-          const locked = free && !on
           const name = t(def.label)
-          if (locked) {
-            return (
-              <button
-                key={def.id}
-                type="button"
-                onClick={() => setUpgradeOpen(true)}
-                title={t('Upgrade to Pro')}
-                aria-label={`${name} — ${t('Upgrade to Pro')}`}
-                className={`inline-flex h-[27px] items-center gap-1.5 rounded-md px-1.5 text-caption text-fg-faint hover:bg-fg/[0.05] hover:text-fg-muted ${FOCUS}`}
-              >
-                <AppearanceGlyph kind={def.base} size={12} />
-                {name}
-                <LockGlyph />
-                <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-px text-nano font-semibold tracking-[0.1em] text-accent-ink">PRO</span>
-              </button>
-            )
-          }
           const chip = `inline-flex h-[27px] items-center gap-1.5 rounded-md px-1.5 text-caption ${
             on ? 'bg-fg/[0.08] text-fg-muted' : 'text-fg-faint opacity-50'
           }`
@@ -136,7 +113,6 @@ function ThemesCell({ ids, free, selected, brandName, onOpen }: {
           )
         })}
       </span>
-      {upgradeOpen && <UpgradeToProDialog open onClose={() => setUpgradeOpen(false)} />}
     </div>
   )
 }
@@ -173,15 +149,6 @@ function SyncChip({ name, state, detail, onClick }: {
   )
 }
 
-function LockGlyph() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
-      <rect x="5" y="11" width="14" height="9" rx="2" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </svg>
-  )
-}
-
 export default function OverviewPage({
   dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onOpenColorTheme, timeAgo, onSyncFigma, onOpenGithub,
 }: {
@@ -204,7 +171,6 @@ export default function OverviewPage({
   onOpenGithub: () => void
 }) {
   const { t } = useI18n()
-  const free = useOneThemePlan()
   const chrome = useTheme()
   const { store, roles, contrast } = dash
   const brand = roles.brand
@@ -215,8 +181,10 @@ export default function OverviewPage({
   const columns = useMemo(() => savedBrands.map((key) => {
     const facts = foundationFacts(store, key)
     const ramp = themeBrandRamp(key, store.themeSources, store.themeKinds, store)
-    const themeIds = plannedBrandThemes(
-      shippedThemes(store.brandThemes, key), store.themeKinds[key] === 'dark' ? 'dark' : 'light', free,
+    const themeIds = shippedThemes(
+      store.brandThemes,
+      key,
+      store.themeKinds[key] === 'dark' ? 'dark' : 'light',
     )
     return {
       key,
@@ -227,7 +195,7 @@ export default function OverviewPage({
       name: themeDisplayName(key, store.themeLabels),
       mark: brandMark(ramp, store.primaryColor, CHROME_PAGE[chrome]),
     }
-  }), [savedBrands, store, free, chrome])
+  }), [savedBrands, store, chrome])
 
   const open = (key: string, go: () => void) => {
     onSelectBrand(key)
@@ -343,7 +311,6 @@ export default function OverviewPage({
                   <td key={column.key} className={`border-b border-l ${RULE} ${column.key === brand ? 'bg-surface' : 'bg-app'} whitespace-nowrap p-0 ${ROW_H}`}>
                     <ThemesCell
                       ids={column.themeIds}
-                      free={free}
                       selected={column.key === brand}
                       brandName={column.name}
                       onOpen={onOpenColorTheme ? (appearance) => onOpenColorTheme(column.key, appearance) : undefined}

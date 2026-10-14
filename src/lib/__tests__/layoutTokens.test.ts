@@ -38,6 +38,9 @@ import {
   matchRadiusPreset,
   RADIUS_PRESETS,
   BASE_UNIT_RANGE,
+  SIZE_CONTROL_MIN_PX,
+  clampFieldBase,
+  sizeStepPx,
   SELECTOR_STANDARD,
   SELECTOR_STEPS,
   SIZE_DEFAULT_BASE,
@@ -74,6 +77,15 @@ describe('base-unit scaling', () => {
     expect(buildSizesFromBase(SIZE_DEFAULT_BASE)).toEqual(SIZE_STANDARD)
   })
 
+  it('field base clamps so control (md) is at least the studio minimum', () => {
+    expect(buildSizesFromBase(3).md).toBe(`${SIZE_CONTROL_MIN_PX}px`)
+    expect(buildSizesFromBase(2).md).toBe(`${SIZE_CONTROL_MIN_PX}px`)
+    expect(sizeStepPx(3.6, 'md')).toBe(SIZE_CONTROL_MIN_PX)
+    expect(sizeStepPx(4, 'sm')).toBe(32)
+    expect(sizeStepPx(4.5, 'sm')).toBe(36)
+    expect(clampFieldBase(3)).toBeCloseTo(BASE_UNIT_RANGE.min, 10)
+  })
+
   it('the default selector base reproduces the values the specimens hardcoded', () => {
     expect(SELECTOR_DEFAULT_BASE).toBe(3)
     expect(SELECTOR_STANDARD).toEqual({
@@ -86,9 +98,14 @@ describe('base-unit scaling', () => {
     expect(SELECTOR_TO_SIZE_BASE).toBe(0.75)
   })
 
-  it('every base in range round-trips through inference', () => {
+  it('every field base in range round-trips through inference', () => {
     for (const base of EVERY_BASE) {
       expect(inferSizeBase(buildSizesFromBase(base)), `size @ ${base}`).toBeCloseTo(base, 10)
+    }
+  })
+
+  it('every selector base on the 0.5px grid round-trips through inference', () => {
+    for (let base = 3; base <= BASE_UNIT_RANGE.max + 1e-9; base += BASE_UNIT_RANGE.step) {
       expect(inferSelectorBase(buildSelectorsFromBase(base)), `selector @ ${base}`).toBeCloseTo(base, 10)
     }
   })

@@ -1,5 +1,4 @@
 import { useDesignStore } from '../../store/useDesignStore'
-import { useFreeTier } from '../../lib/access'
 import {
   CONTEXT_FOUNDATIONS,
   buildSystemContext,
@@ -25,7 +24,6 @@ export function VariablesContextButton({
   appearance: ThemeAppearance
   foundation: string
 }) {
-  const free = useFreeTier()
   const scope: ContextScope = isContextFoundation(foundation) ? foundation : 'all'
   return (
     <AIContextButton
@@ -35,7 +33,6 @@ export function VariablesContextButton({
       filters={{
         scope,
         scopes: SCOPES,
-        lockedAppearance: free ? appearance : null,
         fallbackAppearance: appearance,
         build: (opts) => {
           const store = useDesignStore.getState()

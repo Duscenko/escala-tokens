@@ -207,7 +207,9 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
                 on={page === key}
                 icon={PAGE_GLYPH[key]}
                 label={t(DASH_PAGE_LABEL[key])}
-                trailing={key === 'status' ? (
+                trailing={key === 'docs' ? (
+                  <BrandChevron open={page === 'docs'} />
+                ) : key === 'status' ? (
                   <span className="flex-shrink-0 text-mini font-light leading-none text-fg-faint">Beta</span>
                 ) : undefined}
                 onClick={() => onPage(key)}
