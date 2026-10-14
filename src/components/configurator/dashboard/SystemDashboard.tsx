@@ -296,7 +296,7 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle, onAddHighContrast,
+  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
   onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
@@ -323,10 +323,8 @@ export default function SystemDashboard({
   onSelectBrand: (key: string) => void
   /** Overview column header: open that brand in the editor. */
   onEditBrand: (key: string) => void
-  onCreateBrand: () => void
-  canCreateBrand: boolean
-  createBrandTitle?: string
-  onAddHighContrast?: () => void
+  /** Brands' theme chips: open Variables · Color for that brand and appearance. */
+  onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** Gate before the role editor opens in the inspector. Return `false` to keep it closed. */
   onEditRole?: (roleId: string) => boolean | void
   onOpenComponent?: (key: string) => void
@@ -382,17 +380,17 @@ export default function SystemDashboard({
           onOpenStatus={() => openStatus()}
           onSelectBrand={onSelectBrand}
           onEditBrand={onEditBrand}
-          onCreateBrand={onCreateBrand}
-          canCreateBrand={canCreateBrand}
-          createBrandTitle={createBrandTitle}
-          onAddHighContrast={onAddHighContrast}
+          onOpenColorTheme={onOpenColorTheme}
+          timeAgo={timeAgo}
+          onSyncFigma={onSyncFigma}
+          onOpenGithub={onOpenGithub}
         />
       )}
       {noBrands && (shown === 'docs' || shown === 'status') && (
         <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center" role="status">
           <p className="text-body font-medium text-fg">{t('No brand in this design system yet')}</p>
-          <p className="max-w-[22rem] text-caption leading-relaxed text-fg-muted">{t('Add a brand from Overview. Its tokens, components and status show here.')}</p>
-          <button type="button" onClick={() => onPage('overview')} className={`${BTN} self-center`}>{t('Back to Overview')}</button>
+          <p className="max-w-[22rem] text-caption leading-relaxed text-fg-muted">{t('Add a brand from Brands. Its tokens, components and status show here.')}</p>
+          <button type="button" onClick={() => onPage('overview')} className={`${BTN} self-center`}>{t('Back to Brands')}</button>
         </div>
       )}
       {!noBrands && shown === 'docs' && (

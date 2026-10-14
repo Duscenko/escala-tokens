@@ -61,7 +61,7 @@ export function useDashboard(brand: string) {
 export type Dashboard = ReturnType<typeof useDashboard>
 
 export const DASH_PAGE_LABEL: Record<DashPage, string> = {
-  overview: 'Overview',
+  overview: 'Brands',
   status: 'Status board',
   docs: 'Docs',
   components: 'Components',

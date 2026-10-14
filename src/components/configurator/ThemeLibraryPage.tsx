@@ -554,6 +554,26 @@ function NewDesignSystemButton({ onClick }: { onClick: () => void }) {
   )
 }
 
+/** Adds a brand to the system on screen. Sits beside the options menu, on the
+ *  Brands page, because that is where the brands are listed. */
+function AddBrandButton({ onClick, disabled, title }: { onClick: () => void; disabled: boolean; title?: string }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title ?? t('Add brand')}
+      className={`inline-flex h-8 items-center gap-2 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        disabled ? 'cursor-not-allowed opacity-40' : 'hover:opacity-90'
+      }`}
+    >
+      <PlusGlyph />
+      {t('Add brand')}
+    </button>
+  )
+}
+
 /** Pins to the top of the Home card — same band as Theme preview's canvas
  *  header. Transparent fill; the file list scrolls under it. */
 function HomeStickyBar({ trail, onGoHome, action }: { trail: string | null; onGoHome?: () => void; action?: ReactNode }) {
@@ -1228,6 +1248,7 @@ export default function ThemeLibraryPage({
   onStylesRequestHandled,
   onEditFoundation,
   onOpenBrand,
+  onOpenColorTheme,
   onCreatingChange,
   studioOnly = false,
   onOpenComponent,
@@ -1279,6 +1300,8 @@ export default function ThemeLibraryPage({
   onEditFoundation?: (foundationKey: string) => void
   /** Overview's Color card opens the brand preview. */
   onOpenBrand?: () => void
+  /** A theme chip on Brands opens Variables · Color for that brand in that appearance. */
+  onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** Create studio uses the right inspector; Home's left file menu must yield. */
   onCreatingChange?: (creating: boolean) => void
   /** A visitor with no account and no theme: only the create studio is shown,
@@ -1658,12 +1681,9 @@ export default function ThemeLibraryPage({
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenBrand={onOpenBrand}
+        onOpenColorTheme={onOpenColorTheme}
         onSelectBrand={onSelectTheme}
         onEditBrand={onOpenPreview}
-        onCreateBrand={onCreateTheme}
-        canCreateBrand={canAddMyTheme(mine.length)}
-        createBrandTitle={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
-        onAddHighContrast={() => setUpgradeOpen(true)}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         overviewHeader={() => (
@@ -1938,12 +1958,21 @@ export default function ThemeLibraryPage({
             action={viewing.kind === 'recents' || viewing.kind === 'libraries' ? (
               <NewDesignSystemButton onClick={onNewSystem} />
             ) : onDashboard ? (
-              <LibraryOptions
-                hasOwnThemes={savedMine.length > 0}
-                onReset={onOpenReset}
-                onDeleteMyThemes={() => setConfirmDeleteAll(true)}
-                onDeleteSystem={() => setConfirmDeleteSystem(true)}
-              />
+              <div className="flex items-center gap-2">
+                {dashPage === 'overview' && (
+                  <AddBrandButton
+                    onClick={onCreateTheme}
+                    disabled={!canAddMyTheme(mine.length)}
+                    title={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
+                  />
+                )}
+                <LibraryOptions
+                  hasOwnThemes={savedMine.length > 0}
+                  onReset={onOpenReset}
+                  onDeleteMyThemes={() => setConfirmDeleteAll(true)}
+                  onDeleteSystem={() => setConfirmDeleteSystem(true)}
+                />
+              </div>
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-hidden">

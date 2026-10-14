@@ -111,7 +111,7 @@ export function StatusPill({ status }: { status: ElementStatus }) {
   return <Tag tone={STATUS_TONE[status]}>{t(STATUS_LABEL[status])}</Tag>
 }
 
-const SOURCE_LABEL: Record<SourceState, string> = {
+export const SOURCE_LABEL: Record<SourceState, string> = {
   never: 'Not connected',
   stale: 'Changes not sent',
   synced: 'Up to date',
