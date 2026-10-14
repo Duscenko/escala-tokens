@@ -1663,6 +1663,7 @@ export default function ThemeLibraryPage({
         onCreateBrand={onCreateTheme}
         canCreateBrand={canAddMyTheme(mine.length)}
         createBrandTitle={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
+        onAddHighContrast={() => setUpgradeOpen(true)}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         overviewHeader={() => (

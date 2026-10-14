@@ -46,7 +46,8 @@ import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { FooterLinks } from '../components/configurator/FooterLinks'
-import { markOnboarded } from '../lib/onboarding'
+import { guestEntered, markGuestEntered, markOnboarded } from '../lib/onboarding'
+import { replaceBrandsOnNextMint } from '../lib/themeMint'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
@@ -690,10 +691,23 @@ export default function Configurator() {
     // them is a reason to skip the studio: with no brand there is nothing for
     // those sections to show. Only About / Components / Docs deep links stay.
     if (incomingPlace && incomingPlace.tab !== 'foundations') return false
+    // First entry of this tab session always opens the studio, even when the
+    // browser still holds a brand from an earlier visit (the steps are the
+    // front door, not the board). A refresh inside the session falls through
+    // to the rule below, so a guest mid-edit is not sent back to the studio.
+    if (!guestEntered()) return true
     // A mint from studio step 1 is still a draft. Counting it as a system
     // opened Theme preview after refresh and looked like work nobody saved.
     return savedBrandKeysFrom(useDesignStore.getState()).length === 0
   })
+  // Brands this browser held when the guest studio opened. They do not count as
+  // "the guest saved something" (that ends the studio) and the first brand the
+  // studio mints replaces them.
+  const guestBaselineRef = useRef<Set<string> | null>(null)
+  if (guestBaselineRef.current === null) {
+    guestBaselineRef.current = new Set(guestFirstRun ? savedBrandKeysFrom(useDesignStore.getState()) : [])
+    replaceBrandsOnNextMint([...guestBaselineRef.current])
+  }
   /** The studio is open for someone with no session. Home's file list stays
    *  an account surface; only its create studio is shown. */
   const [guestStudio, setGuestStudio] = useState(guestFirstRun)
@@ -791,6 +805,10 @@ export default function Configurator() {
   const unsavedBrands = useUnsavedBrands()
   const brandIsDraft = (key: string) => unsavedBrands.has(key) || randomDraftKey === key
   const savedBrandKeys = useSavedBrandKeys()
+  const freshSavedCount = savedBrandKeys.filter((k) => !guestBaselineRef.current?.has(k)).length
+  useEffect(() => { markGuestEntered() }, [])
+  // Leaving the studio without creating keeps the earlier brand for good.
+  useEffect(() => { if (!guestStudio) replaceBrandsOnNextMint([]) }, [guestStudio])
   // No brand, no design system: its System page has nothing to show, so a link
   // or a reload that lands there goes to Home, where the first brand is made.
   useEffect(() => {
@@ -1300,7 +1318,7 @@ export default function Configurator() {
     if (tab !== 'foundations' || exportMode) return
     if (!useDesignStore.persist.hasHydrated()) return
     if (savedBrandKeys.length > 0) {
-      if (guestStudio) {
+      if (guestStudio && freshSavedCount > 0) {
         setGuestStudio(false)
         setHomeCreating(false)
         setThemeWorkspaceTab(
@@ -1313,7 +1331,7 @@ export default function Configurator() {
     }
     if (guestStudio) return
     leaveHomeForGuest()
-  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, savedBrandKeys.length, leaveHomeForGuest, incomingPlace])
+  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, savedBrandKeys.length, freshSavedCount, leaveHomeForGuest, incomingPlace])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -2265,11 +2283,11 @@ export default function Configurator() {
   useEffect(() => {
     if (!guestStudio) return
     if (themeWorkspaceTab !== 'library') { setGuestStudio(false); return }
-    if (savedBrandKeys.length === 0) return
+    if (freshSavedCount === 0) return
     setGuestStudio(false)
     setHomeCreating(false)
     setThemeWorkspaceTab('preview')
-  }, [guestStudio, themeWorkspaceTab, savedBrandKeys.length])
+  }, [guestStudio, themeWorkspaceTab, freshSavedCount])
   const homePage = homeFileBrowser
   // ── The theme's accent, scoped to the Generator's rail + canvas card ──
   // The PLATFORM (TopNav, inspector, Home) keeps Escala's violet on `:root`.

@@ -296,7 +296,7 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle,
+  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle, onAddHighContrast,
   onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
@@ -326,6 +326,7 @@ export default function SystemDashboard({
   onCreateBrand: () => void
   canCreateBrand: boolean
   createBrandTitle?: string
+  onAddHighContrast?: () => void
   /** Gate before the role editor opens in the inspector. Return `false` to keep it closed. */
   onEditRole?: (roleId: string) => boolean | void
   onOpenComponent?: (key: string) => void
@@ -384,6 +385,7 @@ export default function SystemDashboard({
           onCreateBrand={onCreateBrand}
           canCreateBrand={canCreateBrand}
           createBrandTitle={createBrandTitle}
+          onAddHighContrast={onAddHighContrast}
         />
       )}
       {noBrands && (shown === 'docs' || shown === 'status') && (

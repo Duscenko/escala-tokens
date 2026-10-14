@@ -25,3 +25,25 @@ export function markOnboarded(): void {
     /* ignore */
   }
 }
+
+// First entry of a guest into this tab session. The create studio is the front
+// door for anyone without an account, so it opens on the first load of a tab
+// even when the browser still holds a brand from an earlier visit. Read-only
+// here (initialisers run twice in dev); `markGuestEntered` records it.
+const ENTERED_KEY = 'sd-guest-entered'
+
+export function guestEntered(): boolean {
+  try {
+    return window.sessionStorage.getItem(ENTERED_KEY) === '1'
+  } catch {
+    return true
+  }
+}
+
+export function markGuestEntered(): void {
+  try {
+    window.sessionStorage.setItem(ENTERED_KEY, '1')
+  } catch {
+    /* ignore */
+  }
+}

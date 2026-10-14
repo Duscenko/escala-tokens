@@ -107,6 +107,15 @@ function scalesForSlot(
   }
 }
 
+// A returning guest is shown the create studio even though this browser still
+// holds a brand from an earlier visit. Free holds one brand, so that stale
+// brand is swapped out by the first brand the studio mints (and kept if they
+// leave the studio without creating). Set by `Configurator`, cleared on use.
+let replaceOnMint: string[] = []
+export function replaceBrandsOnNextMint(keys: string[]): void {
+  replaceOnMint = keys
+}
+
 export function mintTheme(
   chosen: Record<FamilySlot, string>,
   kind: 'light' | 'dark',
@@ -118,6 +127,17 @@ export function mintTheme(
   rampShift?: number,
 ): { key: string; renamedFrom?: string } | { error: string } {
   let s = useDesignStore.getState()
+  if (!editKey && replaceOnMint.length > 0) {
+    const stale = replaceOnMint
+    replaceOnMint = []
+    for (const key of stale) {
+      if (!s.themes[key]) continue
+      finishThemeSetup(key)
+      forgetUnsavedBrand(key)
+      s.removeTheme(key)
+    }
+    s = useDesignStore.getState()
+  }
   if (!editKey) {
     // Free counts SAVED brands only. A draft left by an interrupted studio or a
     // Random roll is hidden from every view, so counting it refused a first

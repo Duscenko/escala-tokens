@@ -71,39 +71,52 @@ function CheckGlyph() {
   )
 }
 
-/** Read-only light/dark switch — same shell as brand theme pickers in Color. */
-function ThemeMarks({ ids }: { ids: readonly string[] }) {
+/** The themes a brand ships, as labelled chips, then the dashed slot for the
+ *  next one. High contrast is the first theme beyond Light + Dark, and it is
+ *  Pro: Free opens the upgrade dialog, Pro has no creator behind it yet so the
+ *  slot says so instead of pretending to work. */
+function ThemesCell({ ids, onAddHighContrast }: { ids: readonly string[]; onAddHighContrast?: () => void }) {
   const { t } = useI18n()
   const summary = t(brandThemesSummary(ids))
+  const label = t('High contrast')
+  const addTitle = onAddHighContrast ? t('High contrast is a Pro theme') : t('High contrast themes are coming soon')
   return (
-    <span
-      role="group"
-      aria-label={summary}
-      title={summary}
-      className={`pointer-events-none flex h-7 flex-shrink-0 select-none items-center gap-0.5 rounded-lg border border-line p-0.5 ${CHROME_CONTROL_SHELL}`}
-    >
-      {BRAND_THEME_DEFS.map((def) => {
-        const on = ids.includes(def.id)
-        return (
-          <span
-            key={def.id}
-            aria-hidden
-            title={t(def.label)}
-            className={`flex h-6 min-w-[1.75rem] items-center justify-center gap-0.5 rounded-md px-1 ${
-              on ? 'bg-fg/8 text-fg' : 'text-fg-faint opacity-50'
-            }`}
-          >
-            <AppearanceGlyph kind={def.base} size={12} />
-            {on ? <CheckGlyph /> : null}
-          </span>
-        )
-      })}
-    </span>
+    <div role="group" aria-label={summary} className={`flex h-full min-w-0 items-center gap-1.5 px-3 ${CHROME_CONTROL_SHELL}`}>
+      <span className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-elevated p-0.5">
+        {BRAND_THEME_DEFS.map((def) => {
+          const on = ids.includes(def.id)
+          return (
+            <span
+              key={def.id}
+              className={`inline-flex h-[27px] items-center gap-1.5 rounded-md px-1.5 text-caption ${
+                on ? 'bg-fg/[0.08] text-fg-muted' : 'text-fg-faint opacity-50'
+              }`}
+            >
+              <AppearanceGlyph kind={def.base} size={12} />
+              {t(def.label)}
+            </span>
+          )
+        })}
+        <button
+          type="button"
+          onClick={onAddHighContrast}
+          disabled={!onAddHighContrast}
+          title={addTitle}
+          aria-label={`${label} — ${addTitle}`}
+          className={`inline-flex h-[27px] items-center gap-1 rounded-md border border-dashed border-fg-faint px-1.5 text-caption text-fg-faint ${FOCUS} ${
+            onAddHighContrast ? 'hover:bg-fg/[0.05] hover:text-fg-muted' : 'cursor-not-allowed'
+          }`}
+        >
+          {label}
+          <PlusGlyph />
+        </button>
+      </span>
+    </div>
   )
 }
 
 export default function OverviewPage({
-  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle,
+  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onCreateBrand, canCreateBrand, createBrandTitle, onAddHighContrast,
 }: {
   dash: Dashboard
   header: ReactNode
@@ -120,6 +133,8 @@ export default function OverviewPage({
   canCreateBrand: boolean
   /** Shown on the add control when the plan cap blocks another brand. */
   createBrandTitle?: string
+  /** Opens the Pro upgrade for the High contrast theme. Omitted on Pro. */
+  onAddHighContrast?: () => void
 }) {
   const { t } = useI18n()
   const free = useOneThemePlan()
@@ -165,7 +180,6 @@ export default function OverviewPage({
       {header}
 
       <section aria-labelledby="overview-system" className="flex w-full min-w-0 flex-col gap-3">
-        <h3 id="overview-system" className="text-ui font-semibold text-fg">{t('Design system')}</h3>
         <div className="min-w-0 w-full overflow-x-auto">
           <table
             className="w-full min-w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-line"
@@ -178,7 +192,37 @@ export default function OverviewPage({
             </colgroup>
             <thead>
               <tr>
-                <th scope="col" className={`sticky left-0 z-[1] border-b ${RULE} bg-app px-3 text-left text-caption font-medium text-fg-muted ${ROW_H}`}>
+                <th
+                  id="overview-system"
+                  scope="colgroup"
+                  colSpan={columns.length + 1}
+                  className={`sticky left-0 border-b ${RULE} bg-side-panel px-3 text-left text-strong font-medium text-fg ${ROW_H}`}
+                >
+                  {t('Brands')}
+                </th>
+                <th scope="col" className={`sticky right-0 z-[2] border-b border-l ${RULE} bg-side-panel p-0 ${ROW_H}`}>
+                  <div className="flex h-full items-center justify-end px-3">
+                    <button
+                      type="button"
+                      onClick={onCreateBrand}
+                      disabled={!canCreateBrand}
+                      title={canCreateBrand ? t('Add brand') : createBrandTitle}
+                      className={`inline-flex h-8 min-w-0 max-w-full items-center gap-2 rounded-lg px-2.5 text-left text-caption font-medium transition-colors ${FOCUS} ${
+                        canCreateBrand
+                          ? 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+                          : 'cursor-not-allowed opacity-40'
+                      }`}
+                    >
+                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-solid text-accent-ink shadow-sm" aria-hidden>
+                        <PlusGlyph />
+                      </span>
+                      <span className="truncate">{t('Add brand')}</span>
+                    </button>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th scope="col" className={`sticky left-0 z-[1] border-b ${RULE} bg-side-panel px-3 text-left text-ui font-medium text-fg ${ROW_H}`}>
                   {t('Foundation')}
                 </th>
                 {columns.map((column) => {
@@ -218,29 +262,21 @@ export default function OverviewPage({
                     </th>
                   )
                 })}
-                <th scope="col" className={`border-b border-l ${RULE} bg-app p-0 ${ROW_H}`}>
-                  <div className="flex h-full items-center justify-end px-3">
-                    <button
-                      type="button"
-                      onClick={onCreateBrand}
-                      disabled={!canCreateBrand}
-                      title={canCreateBrand ? t('Add brand') : createBrandTitle}
-                      className={`inline-flex h-8 min-w-0 max-w-full items-center gap-2 rounded-lg px-2.5 text-left text-caption font-medium transition-colors ${FOCUS} ${
-                        canCreateBrand
-                          ? 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
-                          : 'cursor-not-allowed opacity-40'
-                      }`}
-                    >
-                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-solid text-accent-ink shadow-sm" aria-hidden>
-                        <PlusGlyph />
-                      </span>
-                      <span className="truncate">{t('Add brand')}</span>
-                    </button>
-                  </div>
-                </th>
+                <th scope="col" className={`border-b border-l ${RULE} bg-side-panel p-0 ${ROW_H}`} />
               </tr>
             </thead>
             <tbody>
+              <tr>
+                <th scope="row" className={`sticky left-0 z-[1] border-b ${RULE} bg-app px-3 text-left text-caption font-medium text-fg-muted ${ROW_H}`}>
+                  {t('Themes')}
+                </th>
+                {columns.map((column) => (
+                  <td key={column.key} className={`border-b border-l ${RULE} bg-surface p-0 ${ROW_H}`}>
+                    <ThemesCell ids={column.themeIds} onAddHighContrast={free ? onAddHighContrast : undefined} />
+                  </td>
+                ))}
+                <td className={`border-b border-l ${RULE} bg-app ${ROW_H}`} />
+              </tr>
               {ROWS.map((row, index) => {
                 const last = index === ROWS.length - 1
                 return (
@@ -326,7 +362,6 @@ function SummaryCell({
           </span>
           <span className="sr-only">{t(brandThemesSummary(themeIds))}</span>
           <span className="min-w-0 flex-1 truncate text-caption text-fg-muted">{accentHex}</span>
-          <ThemeMarks ids={themeIds} />
           {failing > 0 && <Tag tone="warning">{t('{n} pairs under AA', { n: failing })}</Tag>}
         </>
       )}
