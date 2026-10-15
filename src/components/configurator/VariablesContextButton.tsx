@@ -29,7 +29,6 @@ export function VariablesContextButton({
     <AIContextButton
       scope="variable"
       label="Copy context"
-      agentLimit
       filters={{
         scope,
         scopes: SCOPES,

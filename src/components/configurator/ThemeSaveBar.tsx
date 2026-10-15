@@ -217,9 +217,6 @@ export default function ThemeSaveBar({
         <span className="truncate">{label}</span>
       </button>
       </div>
-      {kept && !inactive && (
-        <p className="text-center text-mini text-fg-faint">{t('Changes save automatically')}</p>
-      )}
     </div>
   )
 }

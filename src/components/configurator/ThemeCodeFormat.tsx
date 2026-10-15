@@ -9,7 +9,6 @@ import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
-import { FREE_EDIT_LIMIT_DETAIL, freeAgentContextBlocked, useProAsk } from '../../lib/freeEditBudget'
 import { shippedBundle } from '../../lib/freeExport'
 import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, buildSystemContext, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
 import { contextTokenJson } from '../../lib/contextSource'
@@ -88,17 +87,10 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
   const { t } = useI18n()
   // Copying the file IS taking it: anonymous → sign up first, like Export.
   const { gated } = useAccess()
-  const free = useFreeTier()
-  const editCount = useDesignStore((s) => s.freeEditCount)
-  const askPro = useProAsk((s) => s.ask)
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const copyText = async (text: string) => {
-    if (agentContext && freeAgentContextBlocked(editCount, free)) {
-      askPro(FREE_EDIT_LIMIT_DETAIL)
-      return
-    }
     if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(text))) {
       showToast(t('Couldn’t copy — try again'))
@@ -199,18 +191,8 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
 function AgentHandoff({ themeName }: { themeName: string }) {
   const { t } = useI18n()
   const { gated } = useAccess()
-  const free = useFreeTier()
-  const editCount = useDesignStore((s) => s.freeEditCount)
-  const askPro = useProAsk((s) => s.ask)
-  const contextBlocked = freeAgentContextBlocked(editCount, free)
-  const refuseContext = () => {
-    if (!contextBlocked) return false
-    askPro(FREE_EDIT_LIMIT_DETAIL)
-    return true
-  }
 
   const copySetupPrompt = async (client: 'claude' | 'cursor') => {
-    if (refuseContext()) return
     if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), client)
     const copiedOk = await writeClipboard(prompt)

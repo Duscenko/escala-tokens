@@ -10,9 +10,7 @@ import type { ContextAppearance, ContextScope } from '../../lib/contextRequest'
 import { SparkleCircleIcon } from './icons'
 import { showToast } from './Toast'
 import { useI18n } from '../../lib/i18n'
-import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
-import { FREE_EDIT_LIMIT_DETAIL, freeAgentContextBlocked, useProAsk } from '../../lib/freeEditBudget'
-import { useDesignStore } from '../../store/useDesignStore'
+import { goToLogin, useAccess } from '../../lib/access'
 import { useInInspector } from '../configurator/WorkspaceInspector'
 import {
   AnchoredPopover,
@@ -48,8 +46,6 @@ export interface AIContextButtonProps {
   /** Overrides the visible button text (still an i18n key). Toast copy is unchanged. */
   label?: string
   filters?: AIContextFilters
-  /** Counts against the Free agent-context limit, like Code's Agent context. */
-  agentLimit?: boolean
 }
 
 const BTN = 'flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
@@ -62,7 +58,7 @@ const BTN = 'flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-med
  * button: the label copies with the remembered options, the chevron opens
  * Scope · Theme · Detail and shows what the paste will cost.
  */
-export function AIContextButton({ scope, markdown, label, filters, agentLimit = false }: AIContextButtonProps) {
+export function AIContextButton({ scope, markdown, label, filters }: AIContextButtonProps) {
   const copy = AI_CONTEXT_COPY[scope]
   const { t } = useI18n()
   const [done, setDone] = useState(false)
@@ -75,9 +71,6 @@ export function AIContextButton({ scope, markdown, label, filters, agentLimit = 
   const { gated } = useAccess()
   const inGenerator = useInInspector()
   const walled = gated && inGenerator
-  const free = useFreeTier()
-  const editCount = useDesignStore((s) => s.freeEditCount)
-  const askPro = useProAsk((s) => s.ask)
 
   const [opts, setOpts] = useContextOptions(
     filters?.scope ?? 'all',
@@ -89,10 +82,6 @@ export function AIContextButton({ scope, markdown, label, filters, agentLimit = 
 
   async function onCopy() {
     if (walled) { goToLogin('export'); return }
-    if (agentLimit && freeAgentContextBlocked(editCount, free)) {
-      askPro(FREE_EDIT_LIMIT_DETAIL)
-      return
-    }
     try {
       const text = filters ? filters.build(effective) : resolveMarkdown(markdown ?? '')
       await navigator.clipboard.writeText(text)

@@ -810,9 +810,8 @@ interface DesignStore {
   // null until the first download so a first-time user sees no false "update".
   pluginBuildSeen: string | null
   setPluginBuildSeen: (build: string) => void
-  /** Settled edits on this design system. Free may make `FREE_EDIT_LIMIT`;
-   *  the next one, and the agent context of it, ask for Pro. Not part of a
-   *  snapshot — a saved system must not carry someone else's budget. */
+  /** Legacy Free edit counter. Kept so persisted blobs migrate cleanly;
+   *  no longer gates editing or agent context. Not part of a snapshot. */
   freeEditCount: number
   /** When each theme last changed (theme key → ISO). Same field as the snapshot. */
   themeUpdatedAt: Record<string, string>
