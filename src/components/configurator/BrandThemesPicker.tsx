@@ -1,21 +1,19 @@
-import { useState } from 'react'
 import { useOneThemePlan } from '../../lib/access'
 import {
   BRAND_THEME_CHOICES, brandThemeChoiceFor, brandThemeLabel, plannedBrandThemes, type BrandThemeId,
 } from '../../lib/brandThemes'
 import { useI18n } from '../../lib/i18n'
-import { UpgradeToProDialog } from './UpgradeToProNotice'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
-/** The brand's theme row: Light · Dark, the same two segments on every plan.
+/** The brand's theme row: Light · Dark.
  *
- *  Free — a brand ships ONE theme, so the row picks which. A third segment,
- *  Both, carries the PRO mark and opens the upgrade notice.
+ *  Free — a brand ships ONE theme, so the row picks which. Light or Dark only;
+ *  there is no Both segment (that used to be a Pro upsell and was removed).
  *
  *  Pro — a brand ships every theme, so there is nothing to choose about what
  *  leaves. The row is just which theme you are looking at, and that is the
- *  one the brand opens on. No Both segment and no second line.
+ *  one the brand opens on.
  *
  *  The segments come from `BRAND_THEME_CHOICES` (derived from the theme
  *  registry), never a list typed here, so a third theme shows up on its own. */
@@ -33,13 +31,10 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true 
 }) {
   const { t } = useI18n()
   const limited = useOneThemePlan()
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const current = brandThemeChoiceFor(plannedBrandThemes(value, lead, limited))
   const both = current.ids.length > 1
   const everyTheme = BRAND_THEME_CHOICES.find((c) => c.ids.length > 1)?.ids ?? []
-  const choices = [...BRAND_THEME_CHOICES].sort((x, y) => x.ids.length - y.ids.length)
-  const singles = choices.filter((c) => c.ids.length === 1)
-  const multi = choices.filter((c) => c.ids.length > 1)
+  const singles = BRAND_THEME_CHOICES.filter((c) => c.ids.length === 1)
   const leadId = lead && singles.some((c) => c.ids[0] === lead) ? lead : singles[0]?.ids[0]
   const caption = limited ? t('Themes this brand ships') : t('Theme')
 
@@ -75,28 +70,7 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true 
             </button>
           )
         })}
-        {limited && multi.map((choice) => {
-          const on = choice.id === current.id
-          return (
-            <button
-              key={choice.id}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              aria-label={`${t('Both')} — ${t('Upgrade to Pro')}`}
-              title={t('Upgrade to Pro')}
-              onClick={() => setUpgradeOpen(true)}
-              className={`flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-caption font-medium transition-colors duration-150 ease-out ${FOCUS} ${
-                on ? 'bg-fg/8 text-fg' : 'text-fg-faint hover:text-fg-muted'
-              }`}
-            >
-              <span className="truncate">{t('Both')}</span>
-              <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-px text-nano font-semibold tracking-[0.1em] text-accent-ink">PRO</span>
-            </button>
-          )
-        })}
       </div>
-      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }
