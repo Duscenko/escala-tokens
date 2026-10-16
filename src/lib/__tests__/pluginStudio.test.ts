@@ -60,6 +60,20 @@ describe('plugin studio build', () => {
     expect(nine(tinted.tokens)).toContain('#e0457b')
     expect(nine(plain.tokens)).not.toContain('#e0457b')
   })
+  it('grows the dark ramp from its own accent hex when one is sent', () => {
+    const solid = (accentDark?: string) => {
+      const out = buildStudioTokens({ accent: '#a87cf9', accentDark, name: 'Dual' }, 'pro')
+      if ('error' in out) throw new Error(out.error)
+      const prim = (out.tokens as { colors: { primitive: Record<string, string> } }).colors.primitive
+      const family = Object.keys(prim).find((k) => /-dark-9$/.test(k) && prim[k.replace('-dark-9', '-9')]?.toLowerCase() === '#a87cf9')
+      if (!family) throw new Error('no accent family in primitives')
+      const base = family.replace('-dark-9', '')
+      return { light: prim[`${base}-9`].toLowerCase(), dark: prim[`${base}-dark-9`].toLowerCase() }
+    }
+    expect(solid('#b085ff')).toEqual({ light: '#a87cf9', dark: '#b085ff' })
+    // No dark reference: both appearances keep growing from the one accent.
+    expect(solid()).toEqual({ light: '#a87cf9', dark: '#a87cf9' })
+  })
   it('rejects a bad accent', () => {
     expect('error' in buildStudioTokens({ accent: 'blue' }, 'free')).toBe(true)
   })

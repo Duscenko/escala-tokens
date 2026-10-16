@@ -1480,9 +1480,13 @@ function buildSpacingFromBase(base) {
 function insetSurfacePadding(px) {
   return { top: px, right: px, bottom: px, left: px };
 }
+function clampFieldBase(base) {
+  return Math.min(BASE_UNIT_RANGE.max, Math.max(FIELD_BASE_MIN, base));
+}
 function buildSizesFromBase(base) {
+  const b = clampFieldBase(base);
   const out = {};
-  for (const step of SIZE_STEPS) out[step] = `${Math.round(base * FIELD_MULTIPLIERS[step])}px`;
+  for (const step of SIZE_STEPS) out[step] = `${Math.round(b * FIELD_MULTIPLIERS[step])}px`;
   return out;
 }
 function buildSelectorsFromBase(base) {
@@ -1490,11 +1494,11 @@ function buildSelectorsFromBase(base) {
   for (const step of SELECTOR_STEPS) out[step] = `${Math.round(base * SELECTOR_MULTIPLIERS[step])}px`;
   return out;
 }
-function inferBase(map, multipliers, steps) {
+function inferBaseFromStep(map, multipliers, steps, anchorStep) {
   if (!map) return null;
-  const anchor = parseFloat(map[steps[0]] ?? "");
+  const anchor = parseFloat(map[anchorStep] ?? "");
   if (!Number.isFinite(anchor)) return null;
-  const base = anchor / multipliers[steps[0]];
+  const base = anchor / multipliers[anchorStep];
   if (!(base > 0)) return null;
   for (const step of steps) {
     if (map[step] !== `${Math.round(base * multipliers[step])}px`) return null;
@@ -1741,7 +1745,7 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -1808,6 +1812,9 @@ var init_layoutTokens = __esm({
       "2xl": 16
     };
     SIZE_DEFAULT_BASE = 4;
+    SIZE_CONTROL_MIN_PX = 36;
+    FIELD_BASE_MIN = SIZE_CONTROL_MIN_PX / FIELD_MULTIPLIERS.md;
+    BASE_UNIT_RANGE = { min: FIELD_BASE_MIN, max: 5, step: 0.5 };
     SELECTOR_STEPS = ["xs", "sm", "md", "lg", "xl"];
     SELECTOR_MULTIPLIERS = {
       xs: 4,
@@ -1819,7 +1826,7 @@ var init_layoutTokens = __esm({
     SELECTOR_DEFAULT_BASE = 3;
     SELECTOR_TO_SIZE_BASE = SELECTOR_DEFAULT_BASE / SIZE_DEFAULT_BASE;
     SELECTOR_STANDARD = buildSelectorsFromBase(SELECTOR_DEFAULT_BASE);
-    inferSizeBase = (sizes) => inferBase(sizes, FIELD_MULTIPLIERS, SIZE_STEPS);
+    inferSizeBase = (sizes) => inferBaseFromStep(sizes, FIELD_MULTIPLIERS, SIZE_STEPS, "md");
     STROKE_STEPS = ["none", "sm", "md", "lg"];
     STROKE_STANDARD = {
       none: "0px",
@@ -1970,7 +1977,7 @@ var init_layoutTokens = __esm({
       { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
     ];
     SPACING_MODES = [
-      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: 3.6, insetStep: "3", border: 1 },
+      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: FIELD_BASE_MIN, insetStep: "3", border: 1 },
       { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
       { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "5", border: 2 },
       { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "6", border: 1 }
@@ -3668,14 +3675,18 @@ function customScalePair(hex, s, pages, isGray) {
     darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
 }
-function applyScopedAccentColor(hex, linked, themeKey) {
+function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
   const s = useDesignStore.getState();
   const refs = s.themeSources[themeKey];
   if (!refs || refs.brand === GLOBAL_FAMILY.brand) return false;
   const pages = resolveThemePages(s, themeKey, linked ? hex : null);
+  const pair = customScalePair(hex, s, pages, false);
+  const darkRef = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : void 0;
   s.updateCustomColor(refs.brand, {
     base: hex,
-    ...customScalePair(hex, s, pages, false)
+    ...pair,
+    darkBase: darkRef ?? hex,
+    ...darkRef ? { darkScale: generateFamilyDarkScale(darkRef, s.colorAlgorithm, s.contrastShift, pages.dark) } : {}
   });
   if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
     s.updateCustomColor(refs.gray, {
@@ -3701,9 +3712,10 @@ function applyScopedAccentColor(hex, linked, themeKey) {
   }
   return true;
 }
-function applyAccentColor(hex, linked = true, themeKey = "light") {
+function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
   const {
     setPrimaryColor,
+    setPrimaryDarkColor,
     setPrimaryScale,
     setPrimaryDarkScale,
     themes,
@@ -3725,7 +3737,7 @@ function applyAccentColor(hex, linked = true, themeKey = "light") {
     neutralTint
   } = useDesignStore.getState();
   try {
-    if (applyScopedAccentColor(hex, linked, themeKey)) return;
+    if (applyScopedAccentColor(hex, linked, themeKey, darkHex)) return;
     const neutral = linked ? neutralFromBrand(hex, neutralTint) : null;
     const nextBg = neutral ? backgroundFromBase(neutral, "light", neutralTint) : pageBackground;
     const nextDarkBg = neutral ? backgroundFromBase(neutral, "dark", neutralTint) : darkBackground;
@@ -3733,12 +3745,14 @@ function applyAccentColor(hex, linked = true, themeKey = "light") {
     const gen = (base) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg);
     const scale = gen(hex);
     const genDark = (base) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg);
-    const scaleDark = genDark(hex);
+    const darkOverride = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : "";
+    const scaleDark = genDark(darkOverride || hex);
     const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, "light", neutralTint) : null;
     const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null;
     if (nextBg !== pageBackground) setPageBackground(nextBg);
     if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg);
     setPrimaryColor(hex);
+    setPrimaryDarkColor(darkOverride);
     setPrimaryScale(scale);
     setPrimaryDarkScale(scaleDark);
     if (pageMoved) {
@@ -3773,7 +3787,7 @@ function applyAccentColor(hex, linked = true, themeKey = "light") {
     for (const t of themeOrder) {
       if ((themeSources[t]?.brand ?? "accent") !== "accent") continue;
       const kind = themeKinds[t] ?? "light";
-      const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind);
+      const updates = brandTokenUpdates(kind === "dark" && darkOverride ? scaleDark : scale, themes[t] ?? {}, kind);
       const ramp = kind === "dark" ? gDark : gScale;
       if (ramp) Object.assign(updates, grayTokenUpdates(ramp, themes[t] ?? {}, kind));
       if (Object.keys(updates).length) mergeThemeTokens(t, updates);
@@ -3791,6 +3805,40 @@ function applyAccentColor(hex, linked = true, themeKey = "light") {
   } catch {
   }
 }
+function applyAccentDarkColor(hex, themeKey = "light") {
+  const s = useDesignStore.getState();
+  try {
+    const refs = s.themeSources[themeKey];
+    if (refs && refs.brand !== GLOBAL_FAMILY.brand) {
+      const pages = resolveThemePages(s, themeKey);
+      const fam = s.customColors.find((c) => c.key === refs.brand);
+      const base = hex || fam?.base;
+      if (!base) return;
+      s.updateCustomColor(refs.brand, {
+        darkBase: base,
+        darkScale: generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, pages.dark)
+      });
+      return;
+    }
+    const next = hex && hex.toLowerCase() !== s.primaryColor.toLowerCase() ? hex : "";
+    const scaleDark = generateFamilyDarkScale(next || s.primaryColor, s.colorAlgorithm, s.contrastShift, s.darkBackground);
+    s.setPrimaryDarkColor(next);
+    s.setPrimaryDarkScale(scaleDark);
+    const st = useDesignStore.getState();
+    for (const t of st.themeOrder) {
+      if ((st.themeSources[t]?.brand ?? "accent") !== "accent") continue;
+      if ((st.themeKinds[t] ?? "light") !== "dark") continue;
+      const updates = brandTokenUpdates(scaleDark, st.themes[t] ?? {}, "dark");
+      if (Object.keys(updates).length) st.mergeThemeTokens(t, updates);
+    }
+    for (const g of st.gradients) {
+      if (!g.linked) continue;
+      const stops = linkedStopsFor(g.id, st.primaryScale, g.stops, scaleDark);
+      if (stops) st.updateGradient(g.id, { stops });
+    }
+  } catch {
+  }
+}
 function ensureColorScales() {
   const s = useDesignStore.getState();
   const gen = (base) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground);
@@ -3803,7 +3851,7 @@ function ensureColorScales() {
     if (!Object.keys(s.successScale).length) s.setSuccessScale(gen(s.successColor));
     if (!Object.keys(s.infoScale).length) s.setInfoScale(gen(s.infoColor));
     if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, "light", s.neutralTint));
-    if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(s.primaryColor));
+    if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(accentDarkBase(s)));
     if (empty(s.errorDarkScale)) s.setErrorDarkScale(genDark(s.errorColor));
     if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor));
     if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor));
@@ -3822,7 +3870,7 @@ function ensureColorScales() {
   } catch {
   }
 }
-var BRAND_ROLES, GRAY_ROLES;
+var accentDarkBase, BRAND_ROLES, GRAY_ROLES;
 var init_colorActions = __esm({
   "src/lib/colorActions.ts"() {
     init_useDesignStore();
@@ -3831,6 +3879,7 @@ var init_colorActions = __esm({
     init_gradients();
     init_themeSources();
     init_themeSources();
+    accentDarkBase = (s) => s.primaryDarkColor || s.primaryColor;
     BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === "brand");
     GRAY_ROLES = ALL_ROLES.filter((r) => r.scale === "gray");
   }
@@ -5918,6 +5967,7 @@ function makeDesignDefaults() {
     pageBackground: "#ffffff",
     darkBackground: "#0c0e12",
     primaryColor: DEFAULT_ACCENT2,
+    primaryDarkColor: "",
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: "#6c737f",
@@ -6416,6 +6466,7 @@ var init_useDesignStore = __esm({
           setDarkBackground: (hex) => set({ darkBackground: hex }),
           // Brand
           setPrimaryColor: (hex) => set({ primaryColor: hex }),
+          setPrimaryDarkColor: (hex) => set({ primaryDarkColor: hex }),
           setPrimaryScale: (scale) => set({ primaryScale: scale }),
           setPrimaryDarkScale: (scale) => set({ primaryDarkScale: scale }),
           // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
@@ -9479,7 +9530,8 @@ function buildStudioTokens(choices, tier) {
   const tint = TINTS.includes(choices?.neutralTint) ? choices.neutralTint : void 0;
   const shift = typeof choices?.contrastShift === "number" && Number.isFinite(choices.contrastShift) ? Math.max(-1, Math.min(1, choices.contrastShift)) : void 0;
   const pickedStates = choices?.states && typeof choices.states === "object" ? Object.fromEntries(Object.entries(choices.states).filter(([k, v]) => ["error", "warning", "success", "info"].includes(k) && typeof v === "string" && HEX.test(v))) : {};
-  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0;
+  const pickedNeutral = typeof choices?.neutral === "string" && HEX.test(choices.neutral) ? choices.neutral.toLowerCase() : void 0;
+  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0 || !!pickedNeutral;
   if (tint) store.setNeutralTint(tint);
   if (shift != null) store.setContrastShift(shift);
   ensureColorScales();
@@ -9495,7 +9547,7 @@ function buildStudioTokens(choices, tier) {
     const accent2 = typeof choices.accent === "string" && HEX.test(choices.accent) ? choices.accent : preset?.accent;
     const baseStates = preset ? presetStates(preset) : void 0;
     const states = Object.keys(pickedStates).length ? { ...baseStates ?? slotsFromAccentStates(accent2, useTint), ...pickedStates } : baseStates;
-    const slots = slotsFromAccent(accent2, useTint, states);
+    const slots = { ...slotsFromAccent(accent2, useTint, states), ...pickedNeutral ? { gray: pickedNeutral } : {} };
     const pages = { light: backgroundFromBase(slots.gray, "light", useTint), dark: backgroundFromBase(slots.gray, "dark", useTint) };
     minted = mintTheme(slots, choices.kind ? kind : preset?.preferredAppearance ?? kind, name || preset?.label || "", null, useTint, pages);
     if (!("error" in minted) && preset) useDesignStore.getState().patchThemeFoundations(minted.key, preset.foundations);
@@ -9504,6 +9556,9 @@ function buildStudioTokens(choices, tier) {
   const key2 = minted.key;
   if (preset && typeof choices.accent === "string" && HEX.test(choices.accent) && choices.accent.toLowerCase() !== preset.accent.toLowerCase()) {
     applyAccentColor(choices.accent.toLowerCase(), useDesignStore.getState().linkNeutralToAccent, key2);
+  }
+  if (typeof choices.accentDark === "string" && HEX.test(choices.accentDark)) {
+    applyAccentDarkColor(choices.accentDark.toLowerCase(), key2);
   }
   const patch = (partial) => useDesignStore.getState().patchThemeFoundations(key2, partial);
   const resolved = () => resolveThemeFoundations(useDesignStore.getState(), key2);
@@ -9634,7 +9689,8 @@ function studioLook(choices) {
   const shift = typeof c.contrastShift === "number" && Number.isFinite(c.contrastShift) ? Math.max(-1, Math.min(1, c.contrastShift)) : 0;
   const derived = harmonyFor(accent2, tint);
   const styled = !accentMoved && preset ? presetHarmony(preset) : null;
-  const gray = styled?.neutral || derived?.neutral || "#8b8d98";
+  const pickedNeutral = typeof c.neutral === "string" && HEX.test(c.neutral) ? c.neutral.toLowerCase() : void 0;
+  const gray = pickedNeutral || styled?.neutral || derived?.neutral || "#8b8d98";
   const seeded = !accentMoved && preset ? presetStates(preset) : derived?.states;
   const stateSeed = (slot, fallback) => {
     const picked = c.states?.[slot];
@@ -9650,7 +9706,7 @@ function studioLook(choices) {
   const pageLight = backgroundFromBase(gray, "light", tint);
   const pageDark = backgroundFromBase(gray, "dark", tint);
   const page = kind === "dark" ? pageDark : pageLight;
-  const brand = kind === "dark" ? generateFamilyDarkScale(accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
+  const brand = kind === "dark" ? generateFamilyDarkScale(typeof c.accentDark === "string" && HEX.test(c.accentDark) ? c.accentDark.toLowerCase() : accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
   const neutral = kind === "dark" ? generateDarkColorScale(gray, "radix", shift, pageDark, tint) : generateColorScale(gray, "radix", shift, pageLight, "light", tint);
   const family = (hex) => kind === "dark" ? generateFamilyDarkScale(hex, "radix", shift, pageDark) : generateColorScale(hex, "radix", shift, pageLight);
   const brandSolid = solidOf(brand);
