@@ -147,10 +147,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
     }
     res.setHeader('Content-Type', 'application/json')
-    // Short edge cache: many plugins polling one system collapse into one
-    // function run per window. 10s is the plugin's fastest interval, so a
-    // fresh publish is never staler than one poll.
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=30')
+    // Edge cache: every plugin polling one system collapses into one function
+    // run per window. Hobby bills invocations (1M/month), so the window is 60s,
+    // not 10s: a fresh publish reaches a polling plugin within a minute, and
+    // stale-while-revalidate serves the old copy while one run refreshes it.
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300')
     return res.status(200).json(stripLicence(data))
   }
 
