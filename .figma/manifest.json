@@ -1,0 +1,75 @@
+{
+  "_schema": "1.0",
+  "_doc": "Anchor for Escala's Figma skills. The plugin in the sibling repo builds variables and component sets. Skills read this file for the target file key and for the naming law. Never hard-code a file key in a skill.",
+  "lastUpdated": "2026-10-14",
+
+  "bridges": {
+    "read": {
+      "kind": "figma-mcp",
+      "direction": "read",
+      "tools": ["get_metadata", "get_variable_defs", "get_design_context", "get_screenshot"]
+    },
+    "write": {
+      "kind": "figma-mcp",
+      "direction": "write",
+      "tool": "use_figma",
+      "requires": [
+        "Load the figma-use skill before any use_figma call",
+        "create_session with sources.target.key"
+      ],
+      "usedBy": [
+        ".claude/skills/ds-figma-component",
+        ".claude/skills/ds-figma-document",
+        ".claude/skills/ds-figma-explain"
+      ],
+      "_note": "Component geometry is not written here. The plugin builds the sets. use_figma documents pages and explanatory boards around those sets, and checks that paints are bound."
+    }
+  },
+
+  "sources": {
+    "target": {
+      "key": "b0NDbQYO8cSJAM4AjqEizR",
+      "name": "Untitled",
+      "url": "https://www.figma.com/design/b0NDbQYO8cSJAM4AjqEizR/Untitled",
+      "purpose": "The Figma file for this task. Fill key, name and url only after the user confirms the file. Each Escala system syncs into the file the user has open. There is no shared master file.",
+      "published": false
+    }
+  },
+
+  "identity": {
+    "variableNaming": {
+      "figmaNamePattern": "{Group}/{path}",
+      "cssPattern": "var(--color-{path-with-hyphens}) for color; var(--{family}-{role}) for length roles",
+      "jsonPattern": "{group.path.with.dots}",
+      "separator": "/",
+      "examples": [
+        "action.primary.default → Action/primary/default → var(--color-action-primary-default)",
+        "radius.container → Radius/role/container",
+        "spacing.gap-tight → Spacing/role/gap-tight",
+        "type.body-md → Type/body-md"
+      ],
+      "collections": {
+        "Color Semantics": "Color roles. Modes are brand themes.",
+        "Color Primitives": "Ramps. Do not bind components here.",
+        "Dimension Semantics": "Spacing, Radius, Stroke, Size, Selector, Grid. Modes are Desktop, Tablet, Mobile.",
+        "Dimension Primitives": "The px ladder. Do not bind components here.",
+        "Typography": "Type roles. Modes are viewports. Text styles are Type/<role>."
+      }
+    },
+    "themes": {
+      "colorModes": "One mode per brand theme inside Color Semantics. A default system has Light and Dark.",
+      "dimensionModes": "Desktop, Tablet, Mobile inside Dimension Semantics and Typography. A length does not change between light and dark."
+    },
+    "codePathConvention": {
+      "catalogue": "src/lib/componentCatalogue.ts",
+      "specimens": "src/components/configurator/docs/specimens.tsx",
+      "sets": "../escala-figma-plugin/src/code.ts",
+      "pattern": "src/lib/componentCatalogue.ts#<Key>"
+    }
+  },
+
+  "maps": {
+    "tokens": "maps/tokens.json",
+    "components": "maps/components.json"
+  }
+}
