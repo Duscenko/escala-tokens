@@ -20,7 +20,7 @@ import {
 // password reset. Logs name the action and the outcome, never the address
 // or the token.
 
-export const config = { api: { bodyParser: false } }
+// bodyParser:false is declared once, on api/webhooks.ts
 
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/
 
