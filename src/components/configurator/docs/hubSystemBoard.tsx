@@ -239,6 +239,7 @@ function FontSheet({ system }: { system: SystemDoc }) {
               fontFamily: fontStack(style.family),
               fontSize: style.size,
               lineHeight: style.lineHeight ?? 1.2,
+              letterSpacing: style.letterSpacing,
               fontWeight: style.weight,
             }}
           >

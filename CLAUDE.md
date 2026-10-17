@@ -2937,7 +2937,13 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > default scale. Display sizes and the `heading-xl…2xs` names are unchanged on purpose.
 > Headings floor at `text-md` (never smaller than body), so xs and 2xs meet on mobile.
 > `stepHeadingsPerCut` migrates a cut only while it still holds the pre-v89 default.
-> Plan + next phases (tracking, per-cut leading, paragraph/UI/mono roles):
+> **Tracking (letter-spacing) is DERIVED from the size step** (`letterSpacingFor`,
+> `typographyStandard.ts`): reading sizes 0, display -1.5…-2 % of the px. Never
+> stored, so it follows the Text size dial. Ships in tokens.json `letterSpacings`,
+> CSS `--letter-spacing-*` + a `tracking` role facet, W3C, and the plugin's
+> `role/*/letter-spacing`. Per-platform leading is NOT built (needs a relaxed
+> line-height set; lands with paragraph roles).
+> Plan + next phases (per-cut leading, paragraph/UI/mono roles):
 > `design-plans/typography-three-platforms.md`.
 
 > **Previews read ROLES, never a static step by name.** Audited after the radius

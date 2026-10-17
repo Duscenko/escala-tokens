@@ -65,7 +65,27 @@ by detection; plugin `DEFAULT_TYPE_ROLES` gained `heading-2xs`.
 - **Decision needed:** this changes every default system's heading sizes (h1 48→56,
   display 60→96). It is a visible restyle, not a no-op.
 
-### Phase 2 — tracking + per-cut leading
+### Phase 2 — tracking DONE 2026-10-17; per-cut leading moved to Phase 3
+- **Tracking is derived, not stored**: `LETTER_SPACING_RATIO` (em per size step:
+  text-xs…lg 0, text-xl -1 %, display-xs -1.5 %, display-sm and up -2 %) ×
+  the actual px, rounded to 0.1px (`letterSpacingFor`). It follows the Text size
+  dial and hand-edited sizes, so no store field and no migration. A role takes the
+  tracking of the step it resolves to on each cut, so headings relax on smaller
+  screens (Heading XL -1 · -0.7 · -0.6px).
+- Ships as `typography.letterSpacings` (root + `foundationsByTheme`),
+  `--letter-spacing-<step>`, `--text-<role>-letter-spacing[-tablet|-mobile]`,
+  W3C `typography.letterSpacing.*` + per-role `letterSpacing`, the section
+  Markdown table. Plugin writes `role/<key>/letter-spacing` per viewport mode and
+  binds it on `Type/<role>` text styles.
+- Docs → Font → Text roles shows size / leading / tracking per platform, one line
+  "every breakpoint" when a role doesn't step.
+- **Per-cut leading was NOT built here.** Escala's leading is one primitive per
+  size step, and the reference's +2px on mobile has no primitive to alias: it
+  would need a literal (breaks the alias contract) or a "relaxed" line-height
+  set. Paragraph roles (Phase 3) need exactly that relaxed set, so both land
+  together as one decision.
+
+#### Original Phase 2 proposal
 - `TypeAlias` gains optional `tracking` and `leading` (px or %), defaulting to the
   values derived from the size step, so an untouched role resolves exactly as now.
 - Emit `typography.letterSpacings` (plugin already consumes it), `--letter-spacing-*`,

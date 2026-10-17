@@ -1,4 +1,5 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
+import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
@@ -432,6 +433,7 @@ export function generateTokenJSON(
     return [theme, {
       typography: {
         ...resolved.typography,
+        letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles),
       },
       spacing: resolved.spacing,
@@ -669,6 +671,9 @@ export function generateTokenJSON(
       headingFontFamily: typography.headingFontFamily ?? typography.fontFamily,
       sizes: typography.sizes,
       lineHeights: typography.lineHeights,
+      // Derived from each size (letterSpacingFor). The plugin binds
+      // `letter-spacing/<step>` and sets it on every text style.
+      letterSpacings: letterSpacingsFor(typography.sizes),
       weights: typography.weights,
       roles: mergeTypeRoles(typography.roles),
     },

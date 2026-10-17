@@ -31,7 +31,7 @@ import {
 } from '../../../lib/semanticArchitectures'
 import { themeContextFromStore } from '../../../lib/tokenGenerator'
 import { TYPE_SCALE_KEYS, FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
-import { TYPE_ROLES, TYPE_ROLE_GROUPS, mergeTypeRoles, resolveTypeStyle, typeRolesInGroup } from '../../../lib/typeRoles'
+import { TYPE_ROLES, TYPE_ROLE_GROUPS, TYPE_VIEWPORTS, mergeTypeRoles, resolveTypeStyle, typeRolesInGroup } from '../../../lib/typeRoles'
 import {
   LAYOUT_ROLE_GROUPS,
   LAYOUT_ROLES,
@@ -1004,7 +1004,7 @@ line-height: var(--text-label-line-height);
       {
         id: 'roles',
         title: 'Text roles',
-        description: 'Semantic styles alias the primitive scale. Desktop, Tablet and Mobile are three mappings of the same role — Color’s light/dark, for type. Only the Display role uses the heading font family by default; headings step in size on a narrow viewport but stay on the body stack unless you re-point them. Body and control text keep one size everywhere.',
+        description: 'Semantic styles alias the primitive scale. Desktop, Tablet and Mobile are three mappings of the same role — Color’s light/dark, for type. Only the Display role uses the heading font family by default; every heading steps down one size on Tablet and again on Mobile, and stays on the body stack unless you re-point it. Letter spacing follows the size: large type tightens, reading sizes keep the font’s own spacing. Body and control text keep one size everywhere.',
         render: (c) => {
           const roles = mergeTypeRoles(c.typography.roles)
           return (
@@ -1014,6 +1014,13 @@ line-height: var(--text-label-line-height);
                   <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
                   {typeRolesInGroup(g.id).map((role) => {
                     const style = resolveTypeStyle(roles[role.key].desktop, c.typography)
+                    // One readout per platform cut; a role that never steps
+                    // reads as one line, the way the token behaves.
+                    const cuts = TYPE_VIEWPORTS.map((vp) => {
+                      const s = resolveTypeStyle(roles[role.key][vp], c.typography)
+                      return { vp, text: `${s.size} / ${s.lineHeight} / ${s.letterSpacing}` }
+                    })
+                    const fixed = cuts.every((cut) => cut.text === cuts[0].text)
                     return (
                       <div key={role.key} className="flex items-baseline gap-4 min-w-0">
                         <span className="w-36 flex-shrink-0 text-mini font-mono text-fg-faint">
@@ -1025,10 +1032,20 @@ line-height: var(--text-label-line-height);
                             fontFamily: fontStack(style.family),
                             fontSize: style.size,
                             lineHeight: style.lineHeight,
+                            letterSpacing: style.letterSpacing,
                             fontWeight: style.weight,
                           }}
                         >
                           {role.description}
+                        </span>
+                        <span className="flex-shrink-0 flex flex-col items-end gap-0.5 font-mono text-mini text-fg-muted tabular-nums">
+                          {fixed ? (
+                            <span title="Same on Desktop, Tablet and Mobile">{cuts[0].text} <span className="text-fg-faint">· every breakpoint</span></span>
+                          ) : cuts.map((cut) => (
+                            <span key={cut.vp}>
+                              <span className="text-fg-faint capitalize">{cut.vp}</span> {cut.text}
+                            </span>
+                          ))}
                         </span>
                       </div>
                     )

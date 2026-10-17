@@ -31,6 +31,7 @@
 import {
   FONT_WEIGHT_BASES,
   TYPE_SCALE_KEYS,
+  letterSpacingFor,
   type TypeScaleKey,
 } from './typographyStandard'
 
@@ -443,6 +444,8 @@ export interface ResolvedTypeStyle {
   family: string
   size: string
   lineHeight: string
+  /** Derived from the size step (see `letterSpacingFor`). */
+  letterSpacing: string
   weight: number
   alias: TypeAlias
 }
@@ -459,6 +462,7 @@ export function resolveTypeStyle(
     family,
     size: primitives.sizes[alias.size] ?? '',
     lineHeight: primitives.lineHeights?.[alias.size] ?? primitives.sizes[alias.size] ?? '',
+    letterSpacing: letterSpacingFor(alias.size, primitives.sizes[alias.size]),
     weight: primitives.weights[alias.weight] ?? 400,
     alias,
   }
@@ -471,22 +475,23 @@ export function typeStyleCss(
   storedRoles: object | null | undefined,
   role: string,
   opts: { viewport?: string; leading?: boolean } = {},
-): { family: string; size: string; weight: number; lineHeight?: string } {
+): { family: string; size: string; weight: number; letterSpacing: string; lineHeight?: string } {
   const viewport = asTypeViewport(opts.viewport)
   const roles = mergeTypeRoles(storedRoles)
   const spec = TYPE_ROLE_BY_KEY[role]
   const alias = roles[role]?.[viewport] ?? spec?.[viewport]
-  if (!alias) return { family: primitives.fontFamily, size: '', weight: 400 }
+  if (!alias) return { family: primitives.fontFamily, size: '', weight: 400, letterSpacing: '0px' }
   const s = resolveTypeStyle(alias, primitives)
   return {
     family: s.family,
     size: s.size,
     weight: s.weight,
+    letterSpacing: s.letterSpacing,
     ...(opts.leading === false ? {} : { lineHeight: s.lineHeight }),
   }
 }
 
-export type TypeFacet = 'family' | 'size' | 'weight' | 'leading'
+export type TypeFacet = 'family' | 'size' | 'weight' | 'leading' | 'tracking'
 
 /** CSS custom property stem — `text-label` → `--text-label-font-size`,
  *  `-tablet` / `-mobile` suffixed for the other two cuts. */
@@ -495,6 +500,7 @@ export function typeRoleVar(key: string, facet: TypeFacet, viewport: TypeViewpor
     facet === 'family' ? 'font-family'
     : facet === 'size' ? 'font-size'
     : facet === 'weight' ? 'font-weight'
+    : facet === 'tracking' ? 'letter-spacing'
     : 'line-height'
   const base = `--text-${key}-${suffix}`
   return viewport === 'desktop' ? base : `${base}-${viewport}`
@@ -504,10 +510,11 @@ export function primitiveVar(alias: TypeAlias, facet: TypeFacet): string {
   if (facet === 'family') return `var(--font-family-${alias.family === 'display' ? 'heading' : 'body'})`
   if (facet === 'size') return `var(--font-size-${alias.size})`
   if (facet === 'weight') return `var(--font-weight-${alias.weight})`
+  if (facet === 'tracking') return `var(--letter-spacing-${alias.size})`
   return `var(--line-height-${alias.size})`
 }
 
-const FACETS: TypeFacet[] = ['family', 'size', 'weight', 'leading']
+const FACETS: TypeFacet[] = ['family', 'size', 'weight', 'leading', 'tracking']
 
 /** Desktop + `-tablet` + `-mobile` alias declarations. Safe inside `:root`.
  *  Pass `['desktop']` when the file is the Free cut (Desktop only). Omitted,

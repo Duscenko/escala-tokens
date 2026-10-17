@@ -317,12 +317,13 @@ export default function TypeSemantics({
                     <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
                       <span
                         className="text-fg whitespace-nowrap"
-                        title={`${role.label} · ${style.size} / ${style.lineHeight} · ${style.weight}`}
+                        title={`${role.label} · ${style.size} / ${style.lineHeight} · ${style.weight} · tracking ${style.letterSpacing}`}
                         style={{
                           fontFamily: fontStack(style.family),
                           fontSize: style.size || '16px',
                           fontWeight: style.weight,
                           lineHeight: style.lineHeight || 'normal',
+                          letterSpacing: style.letterSpacing,
                         }}
                       >
                         Ag

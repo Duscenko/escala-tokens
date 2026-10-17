@@ -352,3 +352,33 @@ describe('heading family defaults (v81)', () => {
     expect(map.display.desktop.family).toBe('display')
   })
 })
+
+describe('letter spacing (tracking)', () => {
+  it('is derived from the size: reading sizes 0, display tighter, never positive', async () => {
+    const { letterSpacingFor, letterSpacingsFor, FONT_SIZE_STANDARD } = await import('../typographyStandard')
+    const ls = letterSpacingsFor(FONT_SIZE_STANDARD)
+    expect(ls['text-md']).toBe('0px')
+    expect(ls['text-sm']).toBe('0px')
+    expect(ls['display-lg']).toBe('-1px')
+    expect(ls['display-xl']).toBe('-1.2px')
+    // tightens monotonically with size
+    const vals = TYPE_SCALE_KEYS.map((k) => parseFloat(ls[k]))
+    for (let i = 1; i < vals.length; i++) expect(vals[i]).toBeLessThanOrEqual(vals[i - 1])
+    // follows a resized scale, so size and tracking cannot disagree
+    expect(letterSpacingFor('display-xl', '72px')).toBe('-1.4px')
+  })
+
+  it('a heading relaxes its tracking on smaller cuts', () => {
+    const sizes = { 'display-lg': '48px', 'display-md': '36px', 'display-sm': '30px' }
+    const p = { ...primitives, sizes: { ...primitives.sizes, ...sizes } }
+    const at = (vp: string) => typeStyleCss(p, undefined, 'heading-xl', { viewport: vp }).letterSpacing
+    expect([at('desktop'), at('tablet'), at('mobile')]).toEqual(['-1px', '-0.7px', '-0.6px'])
+  })
+
+  it('ships a tracking var per role and cut', () => {
+    const lines = typeRoleCssVars(undefined)
+    expect(lines).toContain('--text-heading-xl-letter-spacing: var(--letter-spacing-display-lg);')
+    expect(lines).toContain('--text-heading-xl-letter-spacing-mobile: var(--letter-spacing-display-sm);')
+    expect(typeRoleVar('label', 'tracking', 'tablet')).toBe('--text-label-letter-spacing-tablet')
+  })
+})

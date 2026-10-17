@@ -2,6 +2,7 @@
 // Markdown so designers can copy a single slice into an AI prompt or codebase.
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
+import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
 import chroma from 'chroma-js'
 import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
@@ -312,6 +313,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     ]
     Object.entries(t.sizes).forEach(([k, v]) => lines.push(`--font-size-${k}: ${v};`))
     Object.entries(t.lineHeights ?? {}).forEach(([k, v]) => lines.push(`--line-height-${k}: ${v};`))
+    Object.entries(letterSpacingsFor(t.sizes)).forEach(([k, v]) => lines.push(`--letter-spacing-${k}: ${v};`))
     Object.entries(t.weights).forEach(([k, v]) => lines.push(`--font-weight-${k}: ${v};`))
     typeRoleCssVars(t.roles, opts.desktopOnly ? ['desktop'] : undefined).forEach((l) => lines.push(`${l}`))
     return lines
@@ -450,6 +452,7 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
       fontFamily: { heading: [t.headingFontFamily ?? t.fontFamily], body: [t.fontFamily] },
       fontSize: t.sizes,
       lineHeight: t.lineHeights ?? {},
+      letterSpacing: letterSpacingsFor(t.sizes),
       fontWeight: t.weights,
       // Semantic text styles — consume as `fontSize: var(--text-label-font-size)`.
     }
@@ -673,7 +676,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       `- **Display family:** ${t.headingFontFamily ?? t.fontFamily} — only the Display role uses it.`,
       `- **Body family:** ${t.fontFamily} — headings, body and controls, unless a role is re-pointed.\n`,
       '### Sizes\n',
-      table(['Token', 'Size', 'Line height'], Object.keys(t.sizes).map((k) => [`\`${k}\``, `\`${t.sizes[k]}\``, `\`${t.lineHeights?.[k] ?? '—'}\``])),
+      table(['Token', 'Size', 'Line height', 'Letter spacing'], Object.keys(t.sizes).map((k) => [`\`${k}\``, `\`${t.sizes[k]}\``, `\`${t.lineHeights?.[k] ?? '—'}\``, `\`${letterSpacingFor(k, t.sizes[k])}\``])),
       '\n### Weights\n',
       table(['Token', 'Weight'], Object.entries(t.weights).map(([k, v]) => [`\`${k}\``, `\`${v}\``])),
       '\n### Text roles (semantics)\n',

@@ -16,6 +16,7 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
+import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
 import { shippedThemes, shipsEveryTheme } from './brandThemes'
@@ -409,6 +410,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
           fontSize: token(`{typography.size.${alias.size}}`, 'dimension'),
           fontWeight: token(`{typography.weight.${alias.weight}}`, 'fontWeight'),
           lineHeight: token(`{typography.lineHeight.${alias.size}}`, 'dimension'),
+          letterSpacing: token(`{typography.letterSpacing.${alias.size}}`, 'dimension'),
         })
         const roleModes: Record<string, W3CNode> = { desktop: pack(modes.desktop) }
         if (!desktopOnlyPayload(full)) {
@@ -424,6 +426,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         },
         size: dim(t.sizes),
         lineHeight: dim(t.lineHeights ?? {}),
+        letterSpacing: dim(t.letterSpacings ?? letterSpacingsFor(t.sizes)),
         weight: Object.fromEntries(Object.entries(t.weights).map(([k, v]) => [k, token(v, 'fontWeight')])) as W3CNode,
         role: roleNode,
       }

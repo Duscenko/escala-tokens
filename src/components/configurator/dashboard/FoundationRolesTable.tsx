@@ -35,7 +35,7 @@ export default function FoundationRolesTable({ dash, foundation, onEdit }: {
           key: spec.key,
           description: spec.description,
           pointsTo: `${alias.size} · ${alias.weight}`,
-          value: `${style.size} / ${style.lineHeight} · ${style.weight} · ${style.family}`,
+          value: `${style.size} / ${style.lineHeight} · ${style.letterSpacing} · ${style.weight} · ${style.family}`,
         }
       })
     }

@@ -73,6 +73,7 @@ export function TypeRolesPreview({
                     fontSize: style.size || '16px',
                     fontWeight: style.weight,
                     lineHeight: style.lineHeight || 'normal',
+                    letterSpacing: style.letterSpacing,
                   }}
                 >
                   {role.label}

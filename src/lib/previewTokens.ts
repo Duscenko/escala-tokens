@@ -636,6 +636,7 @@ export function typeStyleOf(
     fontWeight: s.weight,
   }
   if (s.lineHeight !== undefined) css.lineHeight = s.lineHeight
+  if (s.letterSpacing !== '0px') css.letterSpacing = s.letterSpacing
   return css
 }
 /** CSS padding shorthand from the surface-padding token (top/right/bottom/left). */

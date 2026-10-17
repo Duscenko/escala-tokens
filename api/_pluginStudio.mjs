@@ -1113,6 +1113,17 @@ var init_componentCatalogue = __esm({
 });
 
 // src/lib/typographyStandard.ts
+function letterSpacingFor(key2, size) {
+  const ratio = LETTER_SPACING_RATIO[key2] ?? 0;
+  const px = parseFloat(size ?? "") || 0;
+  const v = Math.round(px * ratio * 10) / 10;
+  return `${v === 0 ? 0 : v}px`;
+}
+function letterSpacingsFor(sizes) {
+  const out = {};
+  for (const [key2, size] of Object.entries(sizes ?? {})) out[key2] = letterSpacingFor(key2, size);
+  return out;
+}
 function buildTypeScale(factor) {
   const sizes = {};
   const lineHeights = {};
@@ -1124,7 +1135,7 @@ function buildTypeScale(factor) {
   }
   return { sizes, lineHeights };
 }
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_CATEGORIES;
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_CATEGORIES;
 var init_typographyStandard = __esm({
   "src/lib/typographyStandard.ts"() {
     TYPE_SCALE_KEYS = [
@@ -1165,6 +1176,19 @@ var init_typographyStandard = __esm({
       "display-lg": "60px",
       "display-xl": "72px",
       "display-2xl": "90px"
+    };
+    LETTER_SPACING_RATIO = {
+      "text-xs": 0,
+      "text-sm": 0,
+      "text-md": 0,
+      "text-lg": 0,
+      "text-xl": -0.01,
+      "display-xs": -0.015,
+      "display-sm": -0.02,
+      "display-md": -0.02,
+      "display-lg": -0.02,
+      "display-xl": -0.02,
+      "display-2xl": -0.02
     };
     TYPE_SCALE_MODES = [
       { key: "compact", label: "Compact", factor: 0.875 },
@@ -5165,6 +5189,7 @@ function generateTokenJSON(source, opts) {
     return [theme, {
       typography: {
         ...resolved.typography,
+        letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles)
       },
       spacing: resolved.spacing,
@@ -5352,6 +5377,9 @@ function generateTokenJSON(source, opts) {
       headingFontFamily: typography2.headingFontFamily ?? typography2.fontFamily,
       sizes: typography2.sizes,
       lineHeights: typography2.lineHeights,
+      // Derived from each size (letterSpacingFor). The plugin binds
+      // `letter-spacing/<step>` and sets it on every text style.
+      letterSpacings: letterSpacingsFor(typography2.sizes),
       weights: typography2.weights,
       roles: mergeTypeRoles(typography2.roles)
     },
@@ -5479,6 +5507,7 @@ var TOKEN_SCHEMA_VERSION, activeThemeHint;
 var init_tokenGenerator = __esm({
   "src/lib/tokenGenerator.ts"() {
     init_useDesignStore();
+    init_typographyStandard();
     init_iconSizing();
     init_iconLibraries();
     init_colorUtils();

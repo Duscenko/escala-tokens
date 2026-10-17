@@ -21,6 +21,40 @@ export const LINE_HEIGHT_STANDARD: Record<string, string> = {
   'display-lg': '60px', 'display-xl': '72px', 'display-2xl': '90px',
 }
 
+// ── Letter spacing (tracking) ──────────────────────────────────────────────
+// Tighter as the size grows: large type set at its default tracking looks
+// loose, because a font's spacing is drawn for text sizes. Reading sizes keep
+// the font's own spacing (0). Stored as an EM RATIO per size step and DERIVED
+// against the actual px, never stored: the Text size dial (buildTypeScale) and
+// a hand-edited size both move the tracking with them, so a size and its
+// tracking cannot disagree. Because a role's tracking follows the size step it
+// resolves to on each platform, a heading relaxes on smaller cuts on its own
+// (Heading XL: -1px desktop, -0.7px tablet, -0.6px mobile).
+// Ratios sit in the common product range (Untitled UI / Inter: about -2 % on
+// display sizes); the reference specimen this was checked against runs
+// tighter (~-3.5 %), which is that typeface's choice, not a rule.
+export const LETTER_SPACING_RATIO: Record<TypeScaleKey, number> = {
+  'text-xs': 0, 'text-sm': 0, 'text-md': 0, 'text-lg': 0,
+  'text-xl': -0.01,
+  'display-xs': -0.015, 'display-sm': -0.02, 'display-md': -0.02,
+  'display-lg': -0.02, 'display-xl': -0.02, 'display-2xl': -0.02,
+}
+
+/** Tracking in px for one size, rounded to 0.1px. `0px`, never `-0px`. */
+export function letterSpacingFor(key: string, size: string | undefined): string {
+  const ratio = LETTER_SPACING_RATIO[key as TypeScaleKey] ?? 0
+  const px = parseFloat(size ?? '') || 0
+  const v = Math.round(px * ratio * 10) / 10
+  return `${v === 0 ? 0 : v}px`
+}
+
+/** Every size step's tracking, keyed like `sizes`. */
+export function letterSpacingsFor(sizes: Record<string, string> | undefined): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [key, size] of Object.entries(sizes ?? {})) out[key] = letterSpacingFor(key, size)
+  return out
+}
+
 // ── Type-scale modes (rail quick setting) ──────────────────────────────────
 // Five curated density steps. `default` is FONT_SIZE_STANDARD verbatim (factor
 // 1 × an integer scale is a no-op), so an existing system infers as 'default'

@@ -1,6 +1,7 @@
 // Pure exporters — generate variables.css and README.md from store state.
 // Shared by ExportView (preview/download) and GitHubConnectView (repo push).
 
+import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
@@ -144,6 +145,7 @@ export function buildCSS(
   lines.push(`  --font-family-body: ${fontStack(typography.fontFamily)};`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
+  Object.entries(letterSpacingsFor(typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
   lines.push(desktopOnly
     ? '\n  /* Text roles — alias the primitive scale. Desktop. */'
@@ -281,6 +283,7 @@ export function buildCSS(
       lines.push(`  --font-family-body: ${fontStack(foundations.typography.fontFamily)};`)
       Object.entries(foundations.typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
       Object.entries(foundations.typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
+      Object.entries(letterSpacingsFor(foundations.typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`))
       Object.entries(foundations.typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
       typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`))
       Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
@@ -463,6 +466,7 @@ ${Object.entries(semanticTokens).filter(([,v])=>v).map(([k])=>`| \`--color-${k.r
 | \`--font-family-body\` | \`${fontStack(typography.fontFamily)}\` |
 ${Object.entries(typography.sizes).map(([k,v])=>`| \`--font-size-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.lineHeights ?? {}).map(([k,v])=>`| \`--line-height-${k}\` | \`${v}\` |`).join('\n')}
+${Object.entries(letterSpacingsFor(typography.sizes)).map(([k,v])=>`| \`--letter-spacing-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`${v}\` |`).join('\n')}
 
 ### Text roles
