@@ -1155,43 +1155,48 @@ function BaseUnitCard({
 // The readout speaks ROLES, not scale steps: what a designer reads on screen is
 // a caption, a label, body copy, a heading and a display title — each one an
 // alias of some `text-*` / `display-*` step that can differ per platform and be
-// re-pointed in Variables · Type. Reading the steps directly (it used to show
-// `text-xs…text-xl`) hid every heading the slider also moves, and its "16"
-// stayed 16 after `body-md` was re-pointed or the platform switched.
+// re-pointed in Variables · Font semantics. Each row resolves through the SAME
+// `resolveTypeStyle` the semantics table, Docs and the export use, at the
+// platform picked above the panel, so the three can never disagree.
 const TYPE_READOUT_ROLES = [
-  { key: 'caption', label: 'Caption' },
-  { key: 'label', label: 'Label' },
-  { key: 'body-md', label: 'Body' },
-  { key: 'heading-md', label: 'Heading' },
   { key: 'display', label: 'Display' },
+  { key: 'heading-xl', label: 'Heading' },
+  { key: 'body-md', label: 'Body' },
+  { key: 'label', label: 'Label' },
+  { key: 'caption', label: 'Caption' },
 ] as const
 
-/** Px of a type role at a platform, through the theme's own role map. */
-function typeRolePx(typography: TypePrimitives & { roles?: object }, key: string, platform: string): number {
+/** A type role at a platform, through the theme's own role map. */
+function typeRoleStyle(typography: TypePrimitives & { roles?: object }, key: string, platform: string) {
   const cut = asTypeViewport(platform)
   const alias = mergeTypeRoles(typography.roles)[key]?.[cut] ?? TYPE_ROLE_BY_KEY[key]?.[cut]
-  return alias ? parseFloat(resolveTypeStyle(alias, typography).size) || 0 : 0
+  return alias ? resolveTypeStyle(alias, typography) : null
 }
 
-// The "Aa" row is a picture of the RELATIONSHIP between roles, not their size —
-// a 60px display can't sit in a 36px row. Log-mapped onto 9–21px so the ratio
-// between neighbours survives (12 → 14 → 16 still read as steps, 30 → 60 as a
+// The sample is a picture of the RELATIONSHIP between roles, not their size —
+// a 60px display can't sit in a 287px rail. Log-mapped onto 11–26px so the ratio
+// between neighbours survives (12 → 14 → 16 still read as steps, 36 → 60 as a
 // jump) where a linear clamp flattened every heading to the same cap.
 function readoutGlyphPx(px: number): number {
-  if (!px) return 9
+  if (!px) return 11
   const t = (Math.log(px) - Math.log(12)) / (Math.log(72) - Math.log(12))
-  return Math.round((9 + 12 * Math.min(1, Math.max(0, t))) * 10) / 10
+  return Math.round((11 + 15 * Math.min(1, Math.max(0, t))) * 10) / 10
 }
+
+const PLATFORM_LABEL: Record<string, string> = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' }
 
 /**
  * Type scale as ONE control — the same "move the whole ramp together" idea as
  * Sizes' base unit, so editing a label size is a scrub, not a trip to Advanced
  * type. Five curated density modes (`TYPE_SCALE_MODES`); dragging regenerates
  * every `text-*`/`display-*` size AND its line-height at the mode's factor, so
- * the vertical rhythm follows. Hand-editing a single size in Advanced makes the
- * readout say "Custom" (no mode matches) — the slider still snaps you back onto
- * a curated scale. The readout resolves through the ROLES at the previewed
- * platform, so it shows what the slider actually does to the text on screen.
+ * the vertical rhythm follows, and letter spacing with it (it is derived from
+ * the size). Hand-editing a single size in Advanced makes the mode read
+ * "Custom" — the slider still snaps you back onto a curated scale.
+ *
+ * Below the slider, one row per role: a sample in the role's own family and
+ * weight, and size / line height / letter spacing at the previewed platform —
+ * the reference specimen's row, compressed to the rail.
  */
 function TypeScaleCard({
   typography, platform, onScrub, onScrubStart, onScrubEnd,
@@ -1205,38 +1210,12 @@ function TypeScaleCard({
   const { t } = useI18n()
   const mode = inferTypeScaleMode(typography.sizes)
   const index = mode ? TYPE_SCALE_MODES.findIndex((m) => m.key === mode) : 2
-  const px = TYPE_READOUT_ROLES.map((role) => typeRolePx(typography, role.key, platform))
-  const bodyPx = px[TYPE_READOUT_ROLES.findIndex((role) => role.key === 'body-md')]
+  const rows = TYPE_READOUT_ROLES.map((role) => ({ ...role, style: typeRoleStyle(typography, role.key, platform) }))
   return (
     <div>
-      <div className="flex items-end justify-between gap-2">
-        <div role="img" aria-label={t('Type scale preview')} className={`flex ${ROW_PREVIEW_H} items-end gap-1.5`}>
-          {px.map((value, i) => (
-            <span
-              key={TYPE_READOUT_ROLES[i].key}
-              className="font-semibold leading-none text-fg/70"
-              style={{ fontSize: readoutGlyphPx(value) }}
-            >
-              Aa
-            </span>
-          ))}
-        </div>
-        <div className="flex-shrink-0 text-right leading-none">
-          <span className="block text-heading font-semibold tabular-nums text-fg" title={t('Body size')}>
-            {Math.round(bodyPx)}
-          </span>
-          <span className="mt-1 block text-micro uppercase tracking-wide text-fg-faint">
-            {t(mode ? TYPE_SCALE_MODES[index].label : 'Custom')}
-          </span>
-        </div>
-      </div>
-      <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_ROLES.length}, minmax(0, 1fr))` }}>
-        {TYPE_READOUT_ROLES.map((role) => (
-          <span key={role.key} className="truncate text-micro font-medium uppercase text-fg-faint">{t(role.label)}</span>
-        ))}
-        {TYPE_READOUT_ROLES.map((role, i) => (
-          <span key={role.key} className="text-mini tabular-nums text-fg-muted">{Math.round(px[i])}</span>
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-mini font-medium text-fg-muted">{t(mode ? TYPE_SCALE_MODES[index].label : 'Custom')}</span>
+        <span className="text-mini text-fg-faint">{t(PLATFORM_LABEL[asTypeViewport(platform)])}</span>
       </div>
       <RangeInput
         min={0}
@@ -1249,6 +1228,34 @@ function TypeScaleCard({
         ariaLabel="Type scale"
         className={ROW_GAP_CONTROL}
       />
+      <ul aria-label={t('Text roles')} className="mt-3 flex flex-col divide-y divide-line/70 rounded-lg border border-line">
+        {rows.map(({ key, label, style }) => (
+          <li key={key} className="flex items-center gap-2 px-2.5 py-2 min-w-0" title={style ? `text-${key} · ${style.family} ${style.weight}` : undefined}>
+            <span
+              aria-hidden
+              className="w-9 flex-shrink-0 leading-none text-fg"
+              style={style ? {
+                fontFamily: fontStack(style.family),
+                fontWeight: style.weight,
+                fontSize: readoutGlyphPx(parseFloat(style.size) || 0),
+                letterSpacing: style.letterSpacing,
+              } : undefined}
+            >
+              Aa
+            </span>
+            <span className="min-w-0 flex-1 truncate text-mini text-fg-muted">{t(label)}</span>
+            <span className="flex-shrink-0 font-mono text-micro tabular-nums text-fg-faint">
+              {style ? (
+                <>
+                  <span className="text-fg-muted">{parseFloat(style.size) || 0}</span>
+                  {' / '}{parseFloat(style.lineHeight) || 0}
+                  {' / '}{parseFloat(style.letterSpacing) || 0}
+                </>
+              ) : '—'}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -2598,7 +2605,7 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={typography.fontFamily} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2609,9 +2616,13 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Heading font">
+          {/* Only the Display role reads this family (`font-family-heading`);
+              H1–H6 follow the body stack — the same rule Variables and Docs
+              state. It was labelled "Heading font", which promised a change
+              to every heading that never happened. */}
+          <SettingItem label="Display font" hint="Display titles only. Headings, body and controls use the body font.">
             <Menu
-              ariaLabel="Heading font family"
+              ariaLabel="Display font family"
               value={headingFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
               options={familyOptions(headingFamily)}
@@ -2619,7 +2630,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Values are the type roles at the platform shown above, as in Variables · Type.">
+          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Rows show size / line height / letter spacing in px at the platform shown above, as in Variables · Font semantics.">
             <TypeScaleCard
               typography={typography}
               platform={previewPlatform}
