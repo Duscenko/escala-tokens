@@ -25,7 +25,7 @@ import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/Th
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
-import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep } from '../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep, useThemeSetup } from '../lib/themeSetup'
 import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
@@ -659,7 +659,11 @@ export default function Configurator() {
   // no account lands on the theme previewer. A deep link wins. About stays
   // a tab they can open; it is no longer the first screen.
   const [signedInEntry] = useState(() => hasStoredSession())
-  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? 'foundations')
+  // About is the front door: any visit to `/` with no deep link opens it, for
+  // a guest and for a signed-in account alike. Its "Start building" button is
+  // the single way into the workspace (studio for a guest with no brand, Home
+  // for an account), so nobody lands mid-flow on a screen they did not choose.
+  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? 'about')
   // Set when a component article was opened from the System tab (its component
   // list, or a Docs page such as the color variable map). The Components
   // header then offers the way back. A direct Components visit from the top
@@ -682,6 +686,8 @@ export default function Configurator() {
   // re-mint after a delete and no Free slot spent on a look nobody chose.
   const [guestFirstRun] = useState(() => {
     if (!accountsEnabled || hasStoredSession()) return false
+    // No deep link: About is on screen, the studio opens from its CTA.
+    if (!incomingPlace) return false
     // A signed-out `library` link is the guest's first screen, not an empty Home.
     // The workspace URL is rewritten as you move (`?section=variables`,
     // `code`…), so a refresh always carries one. Inside the Generator none of
@@ -800,7 +806,12 @@ export default function Configurator() {
   /** A brand made here and not saved yet — a Random draft or one from the
    *  create studio. Skipping setup does not make it part of the system. */
   const unsavedBrands = useUnsavedBrands()
-  const brandIsDraft = (key: string) => unsavedBrands.has(key) || randomDraftKey === key
+  // Reads the LIVE setup store, not this render's `unsavedBrands`: the studio's
+  // Get code clears the draft and opens Code in the same tick, and the render
+  // snapshot still said "draft", so the click answered "Save this brand…" and
+  // went nowhere.
+  const brandIsDraft = (key: string) =>
+    (unsavedBrands.has(key) && Boolean(useThemeSetup.getState().unsaved[key])) || randomDraftKey === key
   const savedBrandKeys = useSavedBrandKeys()
   const freshSavedCount = savedBrandKeys.filter((k) => !guestBaselineRef.current?.has(k)).length
   useEffect(() => { markGuestEntered() }, [])
@@ -2039,6 +2050,10 @@ export default function Configurator() {
         onStart={() => {
           if (accountsEnabled && !hasStoredSession() && savedBrandKeys.length === 0) {
             openGuestStudio()
+            return
+          }
+          if (sessionAllowsHome && accountsEnabled) {
+            openLibraryPage()
             return
           }
           commitVisit()
