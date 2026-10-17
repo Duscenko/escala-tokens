@@ -202,7 +202,7 @@ export function useAboutSections(): {
     key: 'plugin',
     question: t('How does the Figma plugin work?'),
     label: t('How the Figma plugin works'),
-    hint: t('Import and live sync'),
+    hint: t('Paste the agent context'),
     body: (
       <div className="flex flex-col gap-3">
         <P>
@@ -213,11 +213,12 @@ export function useAboutSections(): {
         </P>
         <ol className="flex flex-col gap-1.5 text-body leading-relaxed text-fg-muted list-decimal pl-4">
           <li>{t('Install Escala Tokens from Figma Community.')}</li>
+          <li>{t('In Escala, open Figma and press Copy context.')}</li>
           <li>{t('In the Figma desktop app, run')} <span className="text-fg">Plugins → Escala Tokens</span>.</li>
-          <li>{t('Choose what to import: variables, styles, components, documentation.')}</li>
+          <li>{t('Paste it into Home → Agent Context and press Import: variables, styles and components land in your file.')}</li>
         </ol>
         <P>
-          {t("It can also pull live: the plugin's Live Sync tab polls this project's endpoint, so publishing from here updates Figma without re-importing a file. Each design system publishes to its own scoped URL, so systems never overwrite each other.")}
+          {t("The same context works in any AI agent: paste it into Cursor, Claude Code or Copilot and it builds with your real tokens. You choose which brands, themes and viewports it carries.")}
         </P>
         <a
           href={FIGMA_PLUGIN_COMMUNITY}
@@ -571,7 +572,7 @@ const SHOTS = {
   components: { file: 'components', size: [1360, 850], alt: 'The Button page in Components: a live playground with colour, style, size and state controls' },
   docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page, built from the system\'s own accent ramps' },
   code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the theme\'s variables.css with CSS, Markdown and Agent context views' },
-  figma: { file: 'figma', size: [1360, 850], alt: 'The Figma sync page: themes and viewports to ship, the file name and the ID to paste in the plugin' },
+  figma: { file: 'figma', size: [1360, 850], alt: 'The Figma page: the agent context to copy, and the brands, themes and viewports it carries' },
 } satisfies Record<string, AboutShotSpec>
 
 /** One number in the stats row, real counts, imported/derived, never typed
@@ -1052,13 +1053,13 @@ export function AboutHome({
 
         <FeatureSection
           flip
-          eyebrow={t('05 · Sync with Figma')}
-          title={t('Your system in Figma, one mode per theme and viewport.')}
-          body={t('Sign in from the Escala plugin. Your design systems show up there — press Sync and variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
+          eyebrow={t('05 · Agent context for Figma')}
+          title={t('Copy your system. Paste it into Figma or any AI agent.')}
+          body={t('Press Copy context, open the Escala plugin in Figma, paste it into Home → Agent Context and press Import. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
           points={[
-            t('Sign in once. Sync starts the file, Pause stops it'),
-            t('Pick which themes and viewports ship'),
-            t('Live sync republishes as you edit, with Pro'),
+            t('One message carries the whole system'),
+            t('Pick which brands, themes and viewports it includes'),
+            t('Paste it into Cursor, Claude Code or Copilot too'),
           ]}
           media={SHOTS.figma}
           action={(
@@ -1077,7 +1078,7 @@ export function AboutHome({
             <div className="relative flex flex-col items-center gap-4 bg-elevated/20 px-6 py-16 text-center">
               <Eyebrow>{t('Get started')}</Eyebrow>
               <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-fg">
-                {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
+                {t('Your own token system. Free to build. Pro for the UI Kit and more than 10 modes.')}
               </h2>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                 <RainbowButton

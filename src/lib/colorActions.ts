@@ -90,17 +90,22 @@ function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<s
   return keys
 }
 
+/** Both ramps of a custom family. `darkHex` is the family's own dark anchor
+ *  (`darkBase`) when the dark theme was set apart from the light one — a
+ *  re-anchor that rebuilt dark from `hex` would silently erase it. The
+ *  neutral has one base by design (its dark twin is derived from it). */
 function customScalePair(
   hex: string,
   s: { colorAlgorithm: ColorAlgorithm; contrastShift: number; neutralTint: NeutralTint },
   pages: { light: string; dark: string },
   isGray: boolean,
+  darkHex?: string,
 ) {
   return {
     scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light', isGray ? s.neutralTint : undefined),
     darkScale: isGray
       ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
-      : generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+      : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark),
   }
 }
 
@@ -141,7 +146,7 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
     if (!key || key === GLOBAL_FAMILY[slot] || skip.has(key)) continue
     const fam = s.customColors.find((c) => c.key === key)
     if (!fam) continue
-    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray'))
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray', fam.darkBase))
   }
   // Extra brand palettes sit on the same paper. Rebuild their ramps, never
   // their bases — they are independent hues, not a reading of the new accent.
@@ -151,7 +156,7 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
     if (!key) continue
     const fam = latest.customColors.find((c) => c.key === key)
     if (!fam) continue
-    s.updateCustomColor(key, customScalePair(fam.base, s, pages, false))
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, false, fam.darkBase))
   }
   return true
 }
@@ -361,7 +366,7 @@ export function ensureColorScales() {
     if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
     s.customColors.forEach((c) => {
       const pages = resolveFamilyPages(s, c.key)
-      const next = customScalePair(c.base, s, pages, pages.isGray)
+      const next = customScalePair(c.base, s, pages, pages.isGray, c.darkBase)
       if (empty(c.darkScale)) {
         s.updateCustomColor(c.key, { darkScale: next.darkScale })
         return
@@ -433,7 +438,7 @@ export function useRegenerateScalesOnScaleSettings() {
       s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
       s.customColors.forEach((c) => {
         const pages = resolveFamilyPages(s, c.key)
-        s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray))
+        s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray, c.darkBase))
       })
     } catch {
       /* invalid hex — leave the ramps as they are */
@@ -546,7 +551,7 @@ export function useApplyGrayColor() {
           if (!key || key === GLOBAL_FAMILY[slot]) continue
           const fam = s.customColors.find((c) => c.key === key)
           if (!fam) continue
-          s.updateCustomColor(key, customScalePair(fam.base, s, pages, false))
+          s.updateCustomColor(key, customScalePair(fam.base, s, pages, false, fam.darkBase))
         }
         return
       }

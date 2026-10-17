@@ -79,10 +79,11 @@ import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
-import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
-import ThemeSaveBar, { ThemeSetupBar } from './ThemeSaveBar'
+import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
+import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
+import { COLOR_ROLE_LABEL, COLOR_ROLE_ORDER, roleColorAtHue, type ColorRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
@@ -695,7 +696,6 @@ export function previewWidgetKey(key: string): QuickPanelFoundation {
   return isQuickPanelFoundation(key) ? key : 'color'
 }
 
-const STATE_ROLES: StateRole[] = ['error', 'warning', 'success', 'info']
 
 function extraSeedHex(brandHex: string, rank: BrandExtraRank): string {
   try {
@@ -1739,6 +1739,10 @@ export default function ThemeQuickSettingsRail({
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [fineOpen, setFineOpen] = useState(false)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
+  // Which colour role the Color edition's slider is pointed at.
+  const [colorRole, setColorRole] = useState<ColorRoleId>('accent')
+  // The row's colour while its hue is being dragged, before the commit.
+  const [rolePreview, setRolePreview] = useState<{ id: ColorRoleId; hex: string } | null>(null)
   const rampAppearance = colorAppearance ?? previewAppearance
   // The brand's DEFAULT theme (`themeKinds`) and, when it ships a single one
   // under this plan, which. The Light/Dark switch and "Themes this brand
@@ -1759,8 +1763,6 @@ export default function ThemeQuickSettingsRail({
   // toast: a failure the user has to act on shouldn't time out.
   const [adoptError, setAdoptError] = useState<string | null>(null)
   const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
-  const accentSwatchRef = useRef<HTMLDivElement>(null)
-  const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const lastRandomScaffold = useRef<string | undefined>(undefined)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
@@ -1964,7 +1966,9 @@ export default function ThemeQuickSettingsRail({
   // through it the page, the neutral and every status ramp — from a control
   // that claims to edit one theme. That is also why the Accent swatch and the
   // Neutral-tint row could end up describing two different colours.
-  const writeAccent = (themeKey: string, value: string) => {
+  /** `darkValue` sets the dark theme's anchor on its own; omitted, dark
+   *  follows `value` as it always has. */
+  const writeAccent = (themeKey: string, value: string, darkValue?: string) => {
     const s = useDesignStore.getState()
     // Re-read the family from the store: after an auto-adopt this is the
     // NEWLY minted theme's brand family, not the host's.
@@ -1975,7 +1979,7 @@ export default function ThemeQuickSettingsRail({
       // A private theme may safely retint its own linked Neutral in place.
       // Passing `false` here was the direct cause of Accent moving while the
       // neutral/page remained the old purple.
-      applyAccent(value, s.linkNeutralToAccent, themeKey)
+      applyAccent(value, s.linkNeutralToAccent, themeKey, darkValue)
       return
     }
 
@@ -1998,8 +2002,9 @@ export default function ThemeQuickSettingsRail({
       key: familyKey,
       label: `${labelRoot} Accent`,
       base: value,
+      darkBase: darkValue ?? value,
       scale: generateColorScale(value, s.colorAlgorithm, s.contrastShift, themePages.light),
-      darkScale: generateFamilyDarkScale(value, s.colorAlgorithm, s.contrastShift, themePages.dark),
+      darkScale: generateFamilyDarkScale(darkValue ?? value, s.colorAlgorithm, s.contrastShift, themePages.dark),
     })
 
     let gray = s.themeSources[themeKey]?.gray ?? DEFAULT_THEME_SOURCES.gray
@@ -2099,8 +2104,6 @@ export default function ThemeQuickSettingsRail({
   const resetAxis = (axis: 'saturation' | 'lightness') => {
     commitAccent(colorAtHue({ ...accentReading.position, [axis]: FINE_TUNE_IDEAL[axis] }, accentReading.hue))
   }
-  // The chip is the base shown by the track, not a second derivation of it.
-  const neutralChip = liveNeutral
   const themeRefs = themeSources[previewTheme]
   const colorReadStore = tryOn ? stylePreviewStore(store, tryOn, previewTheme) : store
   const brandScale = scaleForFamily(
@@ -2138,6 +2141,91 @@ export default function ThemeQuickSettingsRail({
   const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
     current: chipRefs.current[id] ?? null,
   })
+
+  // ── Color edition: one list of roles, each shown in the theme on screen ──
+  const roleBrandFamily = colorReadStore.themeSources[previewTheme]?.brand ?? GLOBAL_FAMILY.brand
+  const roleGrayFamily = colorReadStore.themeSources[previewTheme]?.gray ?? GLOBAL_FAMILY.gray
+  const accentAnchor = (appearance: ThemeAppearance) =>
+    scaleForFamily(roleBrandFamily, appearance, colorReadStore)?.[9] ?? accent
+  const neutralAnchor = (appearance: ThemeAppearance) => appearance === 'light'
+    ? liveNeutral
+    : scaleForFamily(roleGrayFamily, 'dark', colorReadStore)?.[9] ?? liveNeutral
+  const roleHex = (id: ColorRoleId, appearance: ThemeAppearance): string =>
+    id === 'accent' ? accentAnchor(appearance)
+      : id === 'neutral' ? neutralAnchor(appearance)
+        : stateHex(id, appearance)
+  const themePage = resolveThemePages(store, previewTheme)
+  const colorRows: ColorRoleRow[] = COLOR_ROLE_ORDER.map((id) => ({
+    id,
+    hex: rolePreview?.id === id ? rolePreview.hex : roleHex(id, rampAppearance),
+    linked: id === 'neutral' ? linkNeutralToAccent : undefined,
+    readOnly: id === 'neutral' && rampAppearance === 'dark',
+  }))
+  /** Both themes at `hue`, each SOLVED against its own page: light keeps the
+   *  passing tone nearest your colour, dark the dimmest one that still passes
+   *  (`solveRoleColor`). Both start from the LIGHT colour, so the dark anchor
+   *  is always a function of the brand, never of an earlier dark solve. */
+  const roleAtHue = (id: ColorRoleId, hue: number) => ({
+    light: roleColorAtHue(roleHex(id, 'light'), hue, 'light', themePage.light),
+    dark: roleColorAtHue(roleHex(id, 'light'), hue, 'dark', themePage.dark),
+  })
+  const previewRoleHue = (id: ColorRoleId, hex: string, hue: number) => {
+    setRolePreview({ id, hex })
+    if (id === 'accent') {
+      const light = roleAtHue('accent', hue).light
+      setAccentPreview(light)
+      onAccentPreview?.(rampAppearance === 'dark' ? hex : light)
+    }
+  }
+  const commitRoleHue = (id: ColorRoleId, hue: number) => {
+    setRolePreview(null)
+    if (id === 'neutral') return
+    const { light, dark } = roleAtHue(id, hue)
+    if (id === 'accent') {
+      commit('Accent updated', (themeKey) => writeAccent(themeKey, light, dark))
+      setAccentPreview(null)
+      onAccentPreview?.(null)
+      return
+    }
+    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
+      writeState(themeKey, id, light, 'light')
+      writeState(themeKey, id, dark, 'dark')
+    })
+  }
+  /** A typed or picked hex sets that role in the theme on screen only. */
+  const setRoleHex = (id: ColorRoleId, hex: string) => {
+    if (id === 'accent') {
+      const light = accentAnchor('light')
+      const dark = accentAnchor('dark')
+      commit('Accent updated', (themeKey) => rampAppearance === 'dark'
+        ? writeAccent(themeKey, light, hex)
+        : writeAccent(themeKey, hex, dark.toLowerCase() !== light.toLowerCase() ? dark : undefined))
+      return
+    }
+    if (id === 'neutral') {
+      commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
+      return
+    }
+    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => writeState(themeKey, id, hex, rampAppearance))
+  }
+  const toggleNeutralLink = () => {
+    if (linkNeutralToAccent) {
+      commit('Neutral unlinked', () => useDesignStore.getState().setLinkNeutralToAccent(false))
+      return
+    }
+    commit('Neutral linked', (themeKey) => {
+      useDesignStore.getState().setLinkNeutralToAccent(true)
+      applyNeutral(neutralFromBrand(accentAnchor('light'), activeTint), themeKey, true)
+    })
+  }
+  /** A new accent hue, well away from the current one; the rest follows. */
+  const shuffleColors = () => {
+    const from = readHuePosition(accentAnchor('light')).hue
+    const hue = Math.round(from + 60 + Math.random() * 240) % 360
+    const { light, dark } = roleAtHue('accent', hue)
+    setColorRole('accent')
+    commit('Colours shuffled', (themeKey) => writeAccent(themeKey, light, dark))
+  }
 
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
@@ -2273,132 +2361,139 @@ export default function ThemeQuickSettingsRail({
           ) : undefined}
         >
           <div className="divide-y divide-line">
-            {/* What this brand ships — the answer given when it was created,
-                changed here afterwards. Both themes stay editable either way;
-                this only decides what leaves for Figma and the downloads. A
-                style that is only tried on is not a brand yet, so it has no
-                answer to show. */}
-            {!tryOn && (
-              <div className="px-3 py-2.5">
-                <BrandThemesPicker
-                  value={shippedThemes(store.brandThemes, previewTheme)}
-                  lead={leadTheme}
-                  onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
-                  onChange={(ids) => {
-                    store.setBrandThemes(previewTheme, ids)
-                    // A brand that ships one theme leads with it, and the
-                    // editor shows it.
-                    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
-                    if (only) leadWith(only)
-                  }}
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3 px-3 py-3">
-              <div>
-              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Brand accent')}</p>
-              <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <SpectrumSlider
-                  value={accent}
-                  ariaLabel="Accent hue"
-                  onPreview={(hex) => {
-                    setAccentPreview(hex)
-                    onAccentPreview?.(hex)
-                  }}
-                  onCommit={commitAccent}
-                />
-              </div>
-              {/* The chip is the part people aim at first — "a colour chip that
-                  looks clickable must be clickable". It opens the SAME
-                  `ColorPickerPanel` the theme editor's slot rows use, which is
-                  also the only way to reach an exact brand hex: the slider moves
-                  HUE only, holding saturation and lightness from whatever was
-                  there before, so it can never land on a specific colour. */}
-              <div ref={accentSwatchRef} className="flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => toggleChip('accent')}
-                  aria-haspopup="dialog"
-                  aria-expanded={openChip === 'accent'}
-                  aria-label={`${t('Accent')} — ${liveAccent} — open picker`}
-                  className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                  style={{ background: liveAccent }}
-                />
-              </div>
-              <ColorPickerPopover
-                open={openChip === 'accent'}
-                onClose={() => setOpenChip(null)}
-                anchor={accentSwatchRef}
-                label="Accent"
-                value={accent}
-                onChange={commitAccent}
-                dynamicAccentPalette
-                accentHueFrom={liveAccent}
+            <div className="px-3 py-3">
+              <ColorRolesPanel
                 appearance={rampAppearance}
-                contained={drawerContained}
-                containedRootRef={containedDrawerRootRef}
-                containedDockLeft={COLOR_RAIL_WIDTH}
+                header={(
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <BrandThemesPicker
+                        label={false}
+                        value={shippedThemes(store.brandThemes, previewTheme)}
+                        lead={leadTheme}
+                        onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
+                        onChange={(ids) => {
+                          store.setBrandThemes(previewTheme, ids)
+                          // A brand that ships one theme leads with it, and the
+                          // editor shows it.
+                          const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
+                          if (only) leadWith(only)
+                        }}
+                      />
+                    </div>
+                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="h-9 w-9 rounded-xl" />
+                  </div>
+                )}
+                rows={colorRows}
+                selected={colorRole}
+                onSelect={setColorRole}
+                onHex={setRoleHex}
+                onHuePreview={previewRoleHue}
+                onHueCommit={commitRoleHue}
+                solveAt={(id, hue) => roleAtHue(id, hue)[rampAppearance]}
+                neutralTint={activeTint}
+                onNeutralTint={(tint) => commit('Neutral tint updated', (themeKey) => {
+                  setNeutralTint(tint)
+                  applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
+                })}
+                onToggleNeutralLink={toggleNeutralLink}
+                swatchRef={(id) => (node) => { chipRefs.current[id] = node }}
+                onSwatch={(id) => toggleChip(id)}
+                page={themePage[rampAppearance]}
+                pickers={COLOR_ROLE_ORDER.map((id) => {
+                  const row = colorRows.find((r) => r.id === id)!
+                  return (
+                    <ColorPickerPopover
+                      key={id}
+                      open={openChip === id}
+                      onClose={() => setOpenChip(null)}
+                      anchor={chipAnchor(id)}
+                      label={COLOR_ROLE_LABEL[id]}
+                      value={row.hex}
+                      onChange={(next) => setRoleHex(id, next)}
+                      {...(id === 'accent'
+                        ? { dynamicAccentPalette: true, accentHueFrom: row.hex }
+                        : id === 'neutral'
+                          ? { dynamicNeutralPalette: true, neutralRampFrom: liveAccent }
+                          : { palette: STATE_PRESETS[id] })}
+                      appearance={rampAppearance}
+                      contained={drawerContained}
+                      containedRootRef={containedDrawerRootRef}
+                      containedDockLeft={COLOR_RAIL_WIDTH}
+                    />
+                  )
+                })}
+                after={(
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {(['secondary', 'tertiary'] as const).map((rank) => {
+                  const hex = extraHex(rank)
+                  if (!hex) return null
+                  return (
+                    <div key={rank} className="min-w-0">
+                      <div
+                        ref={(node) => { chipRefs.current[rank] = node }}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleChip(rank)}
+                          aria-haspopup="dialog"
+                          aria-expanded={openChip === rank}
+                          aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
+                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                          style={{ background: hex }}
+                        />
+                        <span className="max-w-[4rem] truncate text-micro text-fg-faint">{t(BRAND_EXTRA_LABEL[rank])}</span>
+                      </div>
+                      <ColorPickerPopover
+                        open={openChip === rank}
+                        onClose={() => setOpenChip(null)}
+                        anchor={chipAnchor(rank)}
+                        label={BRAND_EXTRA_LABEL[rank]}
+                        value={hex}
+                        onChange={(next) => commit(`${BRAND_EXTRA_LABEL[rank]} updated`, (themeKey) => writeExtra(themeKey, rank, next))}
+                        dynamicAccentPalette
+                        accentHueFrom={hex}
+                        appearance={rampAppearance}
+                        contained={drawerContained}
+                        containedRootRef={containedDrawerRootRef}
+                        containedDockLeft={COLOR_RAIL_WIDTH}
+                      />
+                    </div>
+                  )
+                })}
+                {nextExtra && (
+                  <button
+                    type="button"
+                    onClick={() => commit(`${BRAND_EXTRA_LABEL[nextExtra]} added`, (themeKey) => {
+                      const s = useDesignStore.getState()
+                      const brandFamily = s.themeSources[themeKey]?.brand ?? 'accent'
+                      const brandHex = brandFamily === 'accent'
+                        ? s.primaryColor
+                        : s.customColors.find((color) => color.key === brandFamily)?.base ?? s.primaryColor
+                      addBrandExtra(themeKey, extraSeedHex(brandHex, nextExtra))
+                    })}
+                    title={t('Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics.')}
+                    className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-faint transition-colors hover:text-fg"
+                  >
+                    <span aria-hidden className="text-ui leading-none">+</span>
+                    {t('Add {rank}', { rank: t(BRAND_EXTRA_LABEL[nextExtra]).toLowerCase() })}
+                  </button>
+                )}
+                {lastExtra && (
+                  <button
+                    type="button"
+                    onClick={() => commit(`${BRAND_EXTRA_LABEL[lastExtra]} removed`, (themeKey) => {
+                      removeBrandExtra(themeKey, lastExtra)
+                    })}
+                    className="text-caption font-medium text-fg-faint transition-colors hover:text-status-danger"
+                  >
+                    {t('Remove')}
+                  </button>
+                )}
+              </div>
+                )}
               />
-              </div>
-              </div>
-
-              <div>
-              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Neutral')}</p>
-              <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <TintSlider
-                  hueHex={liveNeutral}
-                  value={activeTint}
-                  // THEME-SCOPED, both sides. This wrote
-                  // `neutralFromBrand(primaryColor, …)` / `grayBaseColor` — the
-                  // GLOBALS — while the track two lines up reads the theme's own
-                  // `neutral` and the Accent row above shows its own `accent`.
-                  // On any minted theme those are different colours (measured on
-                  // `lime`: accent #20c5c4 teal, but the tint re-derived from
-                  // #9522e9 violet), so the track and the result were computed
-                  // from two different hues — the reported mismatch.
-                  onChange={(tint) => commit('Neutral tint updated', (themeKey) => {
-                    setNeutralTint(tint)
-                    applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
-                  })}
-                />
-              </div>
-              {/* Same rule as the Accent chip: the swatch people aim at first
-                  has to be clickable, and the tint dial alone can't reach a
-                  specific neutral (it only decides how much accent hue a
-                  DERIVED neutral keeps). The picker is the way to set the
-                  neutral itself — and doing so UNLINKS it from the accent
-                  (`fromLink` omitted), which is the documented
-                  detach-on-manual-edit rule. */}
-              <div ref={neutralSwatchRef} className="flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => toggleChip('neutral')}
-                  aria-haspopup="dialog"
-                  aria-expanded={openChip === 'neutral'}
-                  aria-label={`${t('Neutral tint')} — ${neutralChip} — open picker`}
-                  className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                  style={{ background: neutralChip }}
-                />
-              </div>
-              <ColorPickerPopover
-                open={openChip === 'neutral'}
-                onClose={() => setOpenChip(null)}
-                anchor={neutralSwatchRef}
-                label="Neutral"
-                value={liveNeutral}
-                onChange={(hex) => commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))}
-                dynamicNeutralPalette
-                neutralRampFrom={liveAccent}
-                appearance={rampAppearance}
-                contained={drawerContained}
-                containedRootRef={containedDrawerRootRef}
-                containedDockLeft={COLOR_RAIL_WIDTH}
-              />
-            </div>
-              </div>
             </div>
 
             {/* Fine-tune stays closed so Colour reads as accent, neutral and
@@ -2474,115 +2569,6 @@ export default function ThemeQuickSettingsRail({
                   {contrastOpen ? t('Hide') : t('Show')}
                 </span>
               </button>
-            </div>
-
-            <div className="px-3 py-2.5">
-              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('States')}</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {STATE_ROLES.map((role) => {
-                  const hex = stateHex(role, rampAppearance)
-                  return (
-                    <div key={role} className="min-w-0">
-                      <div
-                        ref={(node) => { chipRefs.current[role] = node }}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleChip(role)}
-                          aria-haspopup="dialog"
-                          aria-expanded={openChip === role}
-                          aria-label={`${t(SLOT_DISPLAY_LABEL[role])} — ${hex} — open picker`}
-                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                          style={{ background: hex }}
-                        />
-                        <span className="max-w-full truncate text-micro text-fg-faint">{t(SLOT_DISPLAY_LABEL[role])}</span>
-                      </div>
-                      <ColorPickerPopover
-                        open={openChip === role}
-                        onClose={() => setOpenChip(null)}
-                        anchor={chipAnchor(role)}
-                        label={SLOT_DISPLAY_LABEL[role]}
-                        value={hex}
-                        onChange={(next) => commit(`${SLOT_DISPLAY_LABEL[role]} updated`, (themeKey) => writeState(themeKey, role, next, rampAppearance))}
-                        palette={STATE_PRESETS[role]}
-                        appearance={rampAppearance}
-                        contained={drawerContained}
-                        containedRootRef={containedDrawerRootRef}
-                        containedDockLeft={COLOR_RAIL_WIDTH}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                {(['secondary', 'tertiary'] as const).map((rank) => {
-                  const hex = extraHex(rank)
-                  if (!hex) return null
-                  return (
-                    <div key={rank} className="min-w-0">
-                      <div
-                        ref={(node) => { chipRefs.current[rank] = node }}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleChip(rank)}
-                          aria-haspopup="dialog"
-                          aria-expanded={openChip === rank}
-                          aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
-                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                          style={{ background: hex }}
-                        />
-                        <span className="max-w-[4rem] truncate text-micro text-fg-faint">{t(BRAND_EXTRA_LABEL[rank])}</span>
-                      </div>
-                      <ColorPickerPopover
-                        open={openChip === rank}
-                        onClose={() => setOpenChip(null)}
-                        anchor={chipAnchor(rank)}
-                        label={BRAND_EXTRA_LABEL[rank]}
-                        value={hex}
-                        onChange={(next) => commit(`${BRAND_EXTRA_LABEL[rank]} updated`, (themeKey) => writeExtra(themeKey, rank, next))}
-                        dynamicAccentPalette
-                        accentHueFrom={hex}
-                        appearance={rampAppearance}
-                        contained={drawerContained}
-                        containedRootRef={containedDrawerRootRef}
-                        containedDockLeft={COLOR_RAIL_WIDTH}
-                      />
-                    </div>
-                  )
-                })}
-                {nextExtra && (
-                  <button
-                    type="button"
-                    onClick={() => commit(`${BRAND_EXTRA_LABEL[nextExtra]} added`, (themeKey) => {
-                      const s = useDesignStore.getState()
-                      const brandFamily = s.themeSources[themeKey]?.brand ?? 'accent'
-                      const brandHex = brandFamily === 'accent'
-                        ? s.primaryColor
-                        : s.customColors.find((color) => color.key === brandFamily)?.base ?? s.primaryColor
-                      addBrandExtra(themeKey, extraSeedHex(brandHex, nextExtra))
-                    })}
-                    title={t('Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics.')}
-                    className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-faint transition-colors hover:text-fg"
-                  >
-                    <span aria-hidden className="text-ui leading-none">+</span>
-                    {t('Add {rank}', { rank: t(BRAND_EXTRA_LABEL[nextExtra]).toLowerCase() })}
-                  </button>
-                )}
-                {lastExtra && (
-                  <button
-                    type="button"
-                    onClick={() => commit(`${BRAND_EXTRA_LABEL[lastExtra]} removed`, (themeKey) => {
-                      removeBrandExtra(themeKey, lastExtra)
-                    })}
-                    className="text-caption font-medium text-fg-faint transition-colors hover:text-status-danger"
-                  >
-                    {t('Remove')}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </EditionCard>}

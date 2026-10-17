@@ -3680,10 +3680,10 @@ function privateFamilyKeys(themeSources) {
   }
   return keys;
 }
-function customScalePair(hex, s, pages, isGray) {
+function customScalePair(hex, s, pages, isGray, darkHex) {
   return {
     scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light", isGray ? s.neutralTint : void 0),
-    darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark)
+    darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
 }
 function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
@@ -3711,7 +3711,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
     if (!key2 || key2 === GLOBAL_FAMILY[slot] || skip.has(key2)) continue;
     const fam = s.customColors.find((c) => c.key === key2);
     if (!fam) continue;
-    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, slot === "gray"));
+    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, slot === "gray", fam.darkBase));
   }
   const latest = useDesignStore.getState();
   for (const rank of BRAND_EXTRA_RANKS) {
@@ -3719,7 +3719,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
     if (!key2) continue;
     const fam = latest.customColors.find((c) => c.key === key2);
     if (!fam) continue;
-    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, false));
+    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, false, fam.darkBase));
   }
   return true;
 }
@@ -3869,7 +3869,7 @@ function ensureColorScales() {
     if (empty(s.infoDarkScale)) s.setInfoDarkScale(genDark(s.infoColor));
     s.customColors.forEach((c) => {
       const pages = resolveFamilyPages(s, c.key);
-      const next = customScalePair(c.base, s, pages, pages.isGray);
+      const next = customScalePair(c.base, s, pages, pages.isGray, c.darkBase);
       if (empty(c.darkScale)) {
         s.updateCustomColor(c.key, { darkScale: next.darkScale });
         return;
