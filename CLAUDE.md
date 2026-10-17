@@ -2931,6 +2931,15 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   platform) and Spacing responsive (18 tokens, Component · Section · Layout, "Used by"
 >   chips back to the role). One viewport at a time via the Platform switch.
 
+> **UPDATE (store v89): every HEADING steps one rung per platform cut.** Tablet used to
+> copy Desktop for Heading LG…XS. Now display 60·48·36 · xl 48·36·30 · lg 36·30·24 ·
+> md 30·24·20 · sm 24·20·18 · xs 20·18·16 · **heading-2xs (h6, new)** 18·16·16 on the
+> default scale. Display sizes and the `heading-xl…2xs` names are unchanged on purpose.
+> Headings floor at `text-md` (never smaller than body), so xs and 2xs meet on mobile.
+> `stepHeadingsPerCut` migrates a cut only while it still holds the pre-v89 default.
+> Plan + next phases (tracking, per-cut leading, paragraph/UI/mono roles):
+> `design-plans/typography-three-platforms.md`.
+
 > **Previews read ROLES, never a static step by name.** Audited after the radius
 > rename (v77): `radiusOf(t, 'md')` in a preview was always a token-model violation,
 > and after v77 it became a visible one — `md` moved 12 → 6, so every card and input

@@ -11,6 +11,7 @@ import {
   primitiveVar,
   resolveTypeStyle,
   roleIsDefault,
+  stepHeadingsPerCut,
   stepLargeTypeOnMobile,
   typeRoleCssVars,
   typeRoleVar,
@@ -26,9 +27,9 @@ const primitives = {
 }
 
 describe('type roles', () => {
-  it('catalogues fourteen roles across four groups, each with desktop and mobile aliases', () => {
+  it('catalogues fifteen roles across four groups, each with desktop and mobile aliases', () => {
     expect(TYPE_ROLE_GROUPS).toHaveLength(4)
-    expect(TYPE_ROLES).toHaveLength(14)
+    expect(TYPE_ROLES).toHaveLength(15)
     const sizes = new Set<string>(TYPE_SCALE_KEYS)
     for (const role of TYPE_ROLES) {
       expect(sizes.has(role.desktop.size)).toBe(true)
@@ -54,6 +55,47 @@ describe('type roles', () => {
         expect(aliasesEqual(role.desktop, role.mobile)).toBe(true)
       }
     }
+  })
+
+  it('every heading steps one rung per cut, and no two headings share a desktop or tablet size', () => {
+    const order = TYPE_SCALE_KEYS as readonly string[]
+    const headings = TYPE_ROLES.filter((r) => r.group === 'display' || r.group === 'heading')
+    for (const role of headings) {
+      const d = order.indexOf(role.desktop.size)
+      const t = order.indexOf(role.tablet.size)
+      const m = order.indexOf(role.mobile.size)
+      expect(t).toBeLessThan(d)
+      expect(m).toBeLessThanOrEqual(t)
+      // never below body size
+      expect(m).toBeGreaterThanOrEqual(order.indexOf('text-md'))
+    }
+    for (const cut of ['desktop', 'tablet'] as const) {
+      const sizes = headings.map((r) => r[cut].size)
+      expect(new Set(sizes).size).toBe(sizes.length)
+    }
+    // Escala's calmer top end stays put
+    const display = TYPE_ROLES.find((r) => r.key === 'display')!
+    expect([display.desktop.size, display.tablet.size, display.mobile.size]).toEqual(['display-xl', 'display-lg', 'display-md'])
+  })
+
+  it('v89 moves default heading cuts and keeps a hand-picked one', () => {
+    const moved = stepHeadingsPerCut({
+      'heading-lg': {
+        desktop: { family: 'body', size: 'display-md', weight: 'semibold' },
+        tablet: { family: 'body', size: 'display-md', weight: 'semibold' },
+        mobile: { family: 'body', size: 'text-xl', weight: 'semibold' },
+      },
+      'heading-md': {
+        desktop: { family: 'body', size: 'display-md', weight: 'bold' },
+        tablet: { family: 'body', size: 'display-sm', weight: 'semibold' },
+        mobile: { family: 'body', size: 'display-xs', weight: 'semibold' },
+      },
+    })
+    expect(moved['heading-lg'].tablet.size).toBe('display-sm')
+    expect(moved['heading-lg'].mobile.size).toBe('text-xl')
+    expect(moved['heading-md'].tablet.size).toBe('display-sm')
+    expect(moved['heading-md'].mobile.size).toBe('display-xs')
+    expect(moved['heading-2xs'].desktop.size).toBe('text-lg')
   })
 
   it('lists the primitive size steps each platform cut actually aliases', () => {
@@ -223,10 +265,11 @@ describe('three platform cuts (v75)', () => {
     }
   })
 
-  it('smaller headings hold their desktop size on tablet and step one rung on mobile', () => {
+  it('smaller headings (v89) step one rung on tablet and one more on mobile, floored at body size', () => {
     for (const role of TYPE_ROLES.filter((r) => r.group === 'heading' && r.key !== 'heading-xl')) {
-      expect(aliasesEqual(role.tablet, role.desktop)).toBe(true)
-      expect(rank(role.desktop.size) - rank(role.mobile.size)).toBe(1)
+      expect(rank(role.desktop.size) - rank(role.tablet.size)).toBe(1)
+      const drop = rank(role.desktop.size) - rank(role.mobile.size)
+      expect(role.mobile.size === 'text-md' ? drop >= 1 : drop === 2).toBe(true)
     }
   })
 

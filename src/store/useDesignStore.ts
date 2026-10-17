@@ -3,7 +3,7 @@ import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
-import { mergeTypeRoles, migrateHeadingFamilyToBody, promoteReadingTypeIdentity, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
+import { mergeTypeRoles, migrateHeadingFamilyToBody, promoteReadingTypeIdentity, stepHeadingsPerCut, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 88,
+      version: 89,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3428,6 +3428,29 @@ export const useDesignStore = create<DesignStore>()(
           persisted.savedSystems = next.savedSystems
           if (Array.isArray(persisted.pinned)) {
             persisted.pinned = withoutLibraryPins(persisted.pinned, next.droppedIds)
+          }
+        }
+        if (version < 89) {
+          // v88→v89: every heading steps one rung per platform cut (Tablet was
+          // a copy of Desktop for Heading LG…XS) and Heading 2XS joins. A cut
+          // moves only while it still holds the pre-v89 default; a hand-picked
+          // size stays. Root map, theme overlays and saved systems alike.
+          const stepHeadings = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (state.typography && typeof state.typography === 'object') {
+              state.typography.roles = stepHeadingsPerCut(state.typography.roles)
+            }
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const ty = foundations[key]?.typography
+                if (ty && typeof ty === 'object') ty.roles = stepHeadingsPerCut(ty.roles)
+              }
+            }
+          }
+          stepHeadings(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) stepHeadings(sys?.snapshot)
           }
         }
         return persisted

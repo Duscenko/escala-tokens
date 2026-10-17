@@ -1254,6 +1254,21 @@ function stepLargeTypeOnMobile(stored) {
   }
   return map;
 }
+function stepHeadingsPerCut(stored) {
+  const map = mergeTypeRoles(stored);
+  for (const role of TYPE_ROLES) {
+    const legacy = LEGACY_HEADING_CUTS[role.key];
+    if (!legacy) continue;
+    const hit = map[role.key];
+    if (!aliasesEqual(hit.desktop, role.desktop)) continue;
+    map[role.key] = {
+      ...hit,
+      tablet: aliasesEqual(hit.tablet, legacy.tablet) ? { ...role.tablet } : hit.tablet,
+      mobile: aliasesEqual(hit.mobile, legacy.mobile) ? { ...role.mobile } : hit.mobile
+    };
+  }
+  return map;
+}
 function promoteReadingTypeIdentity(stored) {
   const map = mergeTypeRoles(stored);
   for (const role of TYPE_ROLES) {
@@ -1267,7 +1282,7 @@ function promoteReadingTypeIdentity(stored) {
   }
   return map;
 }
-var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_READING_MOBILE;
+var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_READING_MOBILE;
 var init_typeRoles = __esm({
   "src/lib/typeRoles.ts"() {
     init_typographyStandard();
@@ -1297,8 +1312,8 @@ var init_typeRoles = __esm({
         description: "Primary section heading.",
         group: "heading",
         desktop: a("body", "display-md", "semibold"),
-        tablet: a("body", "display-md", "semibold"),
-        mobile: a("body", "display-sm", "semibold")
+        tablet: a("body", "display-sm", "semibold"),
+        mobile: a("body", "display-xs", "semibold")
       },
       {
         key: "heading-md",
@@ -1306,8 +1321,8 @@ var init_typeRoles = __esm({
         description: "Card and panel titles.",
         group: "heading",
         desktop: a("body", "display-sm", "semibold"),
-        tablet: a("body", "display-sm", "semibold"),
-        mobile: a("body", "display-xs", "semibold")
+        tablet: a("body", "display-xs", "semibold"),
+        mobile: a("body", "text-xl", "semibold")
       },
       {
         key: "heading-sm",
@@ -1315,8 +1330,8 @@ var init_typeRoles = __esm({
         description: "Nested headings and list titles.",
         group: "heading",
         desktop: a("body", "display-xs", "semibold"),
-        tablet: a("body", "display-xs", "semibold"),
-        mobile: a("body", "text-xl", "semibold")
+        tablet: a("body", "text-xl", "semibold"),
+        mobile: a("body", "text-lg", "semibold")
       },
       {
         key: "heading-xs",
@@ -1324,8 +1339,21 @@ var init_typeRoles = __esm({
         description: "Overline-scale titles still read as headings.",
         group: "heading",
         desktop: a("body", "text-xl", "semibold"),
-        tablet: a("body", "text-xl", "semibold"),
-        mobile: a("body", "text-lg", "semibold")
+        tablet: a("body", "text-lg", "semibold"),
+        mobile: a("body", "text-md", "semibold")
+      },
+      {
+        key: "heading-2xs",
+        label: "Heading 2XS",
+        description: "Smallest heading (h6). Sits one rung above body.",
+        group: "heading",
+        // Floors at text-md, the body size: a heading never reads smaller than
+        // the copy under it. On mobile that makes it equal to Heading XS — the
+        // ladder has six rungs from 36 down to 16 and there are seven headings.
+        // Weight (semibold over regular body) still separates it from the text.
+        desktop: a("body", "text-lg", "semibold"),
+        tablet: a("body", "text-md", "semibold"),
+        mobile: a("body", "text-md", "semibold")
       },
       {
         key: "body-lg",
@@ -1422,6 +1450,12 @@ var init_typeRoles = __esm({
     LEGACY_LARGE_MOBILE = {
       display: a("display", "display-lg", "bold"),
       "heading-xl": a("display", "display-md", "semibold")
+    };
+    LEGACY_HEADING_CUTS = {
+      "heading-lg": { tablet: a("body", "display-md", "semibold"), mobile: a("body", "display-sm", "semibold") },
+      "heading-md": { tablet: a("body", "display-sm", "semibold"), mobile: a("body", "display-xs", "semibold") },
+      "heading-sm": { tablet: a("body", "display-xs", "semibold"), mobile: a("body", "text-xl", "semibold") },
+      "heading-xs": { tablet: a("body", "text-xl", "semibold"), mobile: a("body", "text-lg", "semibold") }
     };
     LEGACY_READING_MOBILE = {
       "body-lg": a("body", "text-md", "regular"),
@@ -7051,7 +7085,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 88,
+          version: 89,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -8099,6 +8133,25 @@ var init_useDesignStore = __esm({
               persisted.savedSystems = next.savedSystems;
               if (Array.isArray(persisted.pinned)) {
                 persisted.pinned = withoutLibraryPins(persisted.pinned, next.droppedIds);
+              }
+            }
+            if (version < 89) {
+              const stepHeadings = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                if (state2.typography && typeof state2.typography === "object") {
+                  state2.typography.roles = stepHeadingsPerCut(state2.typography.roles);
+                }
+                const foundations = state2.themeFoundations;
+                if (foundations && typeof foundations === "object") {
+                  for (const key2 of Object.keys(foundations)) {
+                    const ty = foundations[key2]?.typography;
+                    if (ty && typeof ty === "object") ty.roles = stepHeadingsPerCut(ty.roles);
+                  }
+                }
+              };
+              stepHeadings(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) stepHeadings(sys?.snapshot);
               }
             }
             return persisted;

@@ -15,6 +15,13 @@
 //   Heading XL) by one rung. Smaller headings already fit, so they hold their
 //   desktop size. Tablet was a copy of desktop before (no third column), so
 //   picking it in the Platform switch changed nothing anywhere.
+// - UPDATE (v89): EVERY heading steps one rung per cut — Tablet is one
+//   rung under Desktop, Mobile one under Tablet — and Heading 2XS (h6) was
+//   added. Tablet used to hold Desktop for Heading LG…XS, so three of the
+//   five heading columns were copies. Display sizes are unchanged (Escala's
+//   calmer top end: 60 · 48 · 36). On the default scale:
+//     display 60·48·36 · xl 48·36·30 · lg 36·30·24 · md 30·24·20
+//     sm 24·20·18 · xs 20·18·16 · 2xs 18·16·16 (floored at body size)
 // - Mobile steps Display and Heading XL by TWO rungs and the rest of the
 //   headings by one. One rung was too little at the top: Display resolved to
 //   ~51px on a 375px phone, where Untitled UI / Material land around 36–48px.
@@ -96,8 +103,8 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Primary section heading.',
     group: 'heading',
     desktop: a('body', 'display-md', 'semibold'),
-    tablet: a('body', 'display-md', 'semibold'),
-    mobile: a('body', 'display-sm', 'semibold'),
+    tablet: a('body', 'display-sm', 'semibold'),
+    mobile: a('body', 'display-xs', 'semibold'),
   },
   {
     key: 'heading-md',
@@ -105,8 +112,8 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Card and panel titles.',
     group: 'heading',
     desktop: a('body', 'display-sm', 'semibold'),
-    tablet: a('body', 'display-sm', 'semibold'),
-    mobile: a('body', 'display-xs', 'semibold'),
+    tablet: a('body', 'display-xs', 'semibold'),
+    mobile: a('body', 'text-xl', 'semibold'),
   },
   {
     key: 'heading-sm',
@@ -114,8 +121,8 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Nested headings and list titles.',
     group: 'heading',
     desktop: a('body', 'display-xs', 'semibold'),
-    tablet: a('body', 'display-xs', 'semibold'),
-    mobile: a('body', 'text-xl', 'semibold'),
+    tablet: a('body', 'text-xl', 'semibold'),
+    mobile: a('body', 'text-lg', 'semibold'),
   },
   {
     key: 'heading-xs',
@@ -123,8 +130,21 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Overline-scale titles still read as headings.',
     group: 'heading',
     desktop: a('body', 'text-xl', 'semibold'),
-    tablet: a('body', 'text-xl', 'semibold'),
-    mobile: a('body', 'text-lg', 'semibold'),
+    tablet: a('body', 'text-lg', 'semibold'),
+    mobile: a('body', 'text-md', 'semibold'),
+  },
+  {
+    key: 'heading-2xs',
+    label: 'Heading 2XS',
+    description: 'Smallest heading (h6). Sits one rung above body.',
+    group: 'heading',
+    // Floors at text-md, the body size: a heading never reads smaller than
+    // the copy under it. On mobile that makes it equal to Heading XS — the
+    // ladder has six rungs from 36 down to 16 and there are seven headings.
+    // Weight (semibold over regular body) still separates it from the text.
+    desktop: a('body', 'text-lg', 'semibold'),
+    tablet: a('body', 'text-md', 'semibold'),
+    mobile: a('body', 'text-md', 'semibold'),
   },
   {
     key: 'body-lg',
@@ -346,6 +366,38 @@ export function stepLargeTypeOnMobile(
     const hit = map[role.key]
     if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
       map[role.key] = { ...hit, mobile: { ...role.mobile } }
+    }
+  }
+  return map
+}
+
+/** Pre-v89 tablet + mobile aliases for the headings whose Tablet column was
+ *  a copy of Desktop. */
+const LEGACY_HEADING_CUTS: Record<string, { tablet: TypeAlias; mobile: TypeAlias }> = {
+  'heading-lg': { tablet: a('body', 'display-md', 'semibold'), mobile: a('body', 'display-sm', 'semibold') },
+  'heading-md': { tablet: a('body', 'display-sm', 'semibold'), mobile: a('body', 'display-xs', 'semibold') },
+  'heading-sm': { tablet: a('body', 'display-xs', 'semibold'), mobile: a('body', 'text-xl', 'semibold') },
+  'heading-xs': { tablet: a('body', 'text-xl', 'semibold'), mobile: a('body', 'text-lg', 'semibold') },
+}
+
+/** v89: every heading steps one rung per cut. A cut moves only while desktop
+ *  is still the catalogue default AND that cut still holds the pre-v89
+ *  default — tablet and mobile are judged separately, so a hand-picked mobile
+ *  survives even when tablet moves (detect, don't assume). Heading 2XS is
+ *  seeded by mergeTypeRoles like any new catalogue role. */
+export function stepHeadingsPerCut(
+  stored?: object | null,
+): Record<string, TypeRoleModes> {
+  const map = mergeTypeRoles(stored)
+  for (const role of TYPE_ROLES) {
+    const legacy = LEGACY_HEADING_CUTS[role.key]
+    if (!legacy) continue
+    const hit = map[role.key]
+    if (!aliasesEqual(hit.desktop, role.desktop)) continue
+    map[role.key] = {
+      ...hit,
+      tablet: aliasesEqual(hit.tablet, legacy.tablet) ? { ...role.tablet } : hit.tablet,
+      mobile: aliasesEqual(hit.mobile, legacy.mobile) ? { ...role.mobile } : hit.mobile,
     }
   }
   return map
