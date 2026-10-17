@@ -66,6 +66,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `/docs/*`, `/components`, `/pricing`) stay fully open. Plan, decisions and what is left:
 > `design-plans/login-funnel.md`.
 
+> **UPDATE (2026-10-17): quick settings is an ACCORDION, and Home's create studio has NO STEPS.**
+> Reported as friction: a new brand walked six numbered steps (Color → Font → Radius →
+> Spacing → Shadow → Icons, "Step n of 6", Continue) before anything could be exported.
+> - `ThemeQuickSettingsRail` lists all six foundations at once (`EditionCard` is a row:
+>   glyph · name · current value · chevron); one row is open and it IS `activePanel`, so the
+>   icon rail, the board and the accordion cannot disagree. Row names are the system's own
+>   (Color · Font · Radius · Spacing · Shadow · Icons) — no "Padding / Margin / Background".
+> - **ONE platform switch (Desktop · Tablet · Mobile) heads the whole panel** (inspector band,
+>   or inline when embedded), and the board follows it on EVERY row — `PLATFORM_QUICK_PANELS`
+>   is gone. Radius and spacing step down per viewport too.
+> - The create studio (`ThemeLibraryPage`): before the colours, one action (**Create brand**);
+>   after, the accordion with every row open in any order and `CreateStudioFooter`: guest =
+>   Done + **Get code**, signed in = Get code + **Save brand**. `CreateStepNav` was deleted and
+>   the studio no longer calls `placeThemeSetup`, so no guided "Step n of 6" leaks into the
+>   Generator. Signed-in footers show `AccountCloudStatus` ("Saved to your account").
+> - **Free = one design system with THREE brands, each Light + Dark, Desktop + Mobile**
+>   (`FREE_MY_THEME_LIMIT` / `FREE_MAX_THEMES` = 3). Supersedes "two brands" below. The cloud
+>   keeps all three (it trims by SYSTEM count only).
+
 > **UPDATE (2026-10-17): NO LOGIN WALL. Supersedes the note just above.** Visitors were leaving
 > the site rather than sign up for something they had not tried yet. Without an account
 > Variables, Code, Docs, the System dashboard, Copy context and Export are ALL open; an

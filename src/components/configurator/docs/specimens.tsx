@@ -13,7 +13,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { effectiveIconWeight, ICON_ROLES, iconSizesFor, type IconRole } from '../../../lib/iconSizing'
-import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -236,11 +236,19 @@ function statusBorder(t: PreviewTokens, status: string, c: string): string {
   return (sev && t.archTokens?.[`status.${sev}.border`]) || `${c}33`
 }
 
-const focusRing = (t: PreviewTokens, accent: string): string => {
+/** The focus HALO. Reads the platform's own token — `border.ring.default` — or,
+ *  for a critical/success control, `status.<sev>.border` (there is no
+ *  per-severity ring role). Those are the SAME tokens the Figma plugin binds the
+ *  halo to, so both renderers resolve one value. A flat system has neither, so
+ *  it keeps the old accent at 40%. */
+const focusRing = (t: PreviewTokens, accent: string, severity?: 'critical' | 'success'): string => {
   const ring = strokeRoleOf(t, 'focus', '2px')
+  const halo = (severity && t.archTokens?.[`status.${severity}.border`])
+    || t.archTokens?.['border.ring.default']
+    || withAlpha(accent, alphaOf(t, '40', 0.4))
   // The gap ring is the surface the focused control sits ON — a raised neutral,
   // not the page (which a theme can send anywhere).
-  return `0 0 0 ${ring} ${raisedBg(t)}, 0 0 0 calc(${ring} + ${ring}) ${withAlpha(accent, alphaOf(t, '40', 0.4))}`
+  return `0 0 0 ${ring} ${raisedBg(t)}, 0 0 0 calc(${ring} + ${ring}) ${halo}`
 }
 
 const strokeControl = (t: PreviewTokens) => strokeRoleOf(t, 'control', '1px')
@@ -711,7 +719,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
         border: `${strokeControl(t)} solid ${border}`,
         ...typeOf(t, 'button'),
         cursor: disabled ? 'not-allowed' : 'pointer',
-        boxShadow: state === 'Focused' ? focusRing(t, color) : undefined,
+        boxShadow: state === 'Focused' ? focusRing(t, color, intent === 'Error' ? 'critical' : intent === 'Success' ? 'success' : undefined) : undefined,
         // Eases the state change instead of snapping. Matters in two places at
         // once: the collage, where `Live` drives State from a real hover, and
         // the docs playground, where flipping the State dropdown now shows the
@@ -745,7 +753,7 @@ const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: 
   'Default':      { label: 'Name', placeholder: 'Jane Doe' },
   'E-Mail':       { label: 'Email', placeholder: 'you@company.com', lead: '@' },
   'Password':     { label: 'Password', placeholder: '••••••••' },
-  'Search':       { label: 'Search', placeholder: 'Search…', lead: '⌕' },
+  'Search':       { label: 'Search', placeholder: 'Search anything…', lead: '⌕' },
   'Phone Number': { label: 'Phone', placeholder: '(555) 000-0000', prefix: 'US' },
   'Website':      { label: 'Website', placeholder: 'yoursite.com', prefix: 'https://' },
 }
@@ -851,6 +859,34 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
         />
         {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconForControl(h, t)} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
+        {/* Search carries its shortcut hint and a submit button INSIDE the field,
+            exactly as the Figma plugin builds the type (kbd chip + search-button).
+            The button's corner is concentric with the field — field radius minus
+            the gap around the button, a pill when the field is one — so it never
+            sits squarer than the curve that holds it. */}
+        {v.Type === 'Search' && (() => {
+          const btnH = h - 12
+          const inset = (h - btnH) / 2
+          const muted = disabled || error || state === 'Loading'
+          return (
+            <>
+              {!error && (
+                <span style={{ ...typeOf(t, 'caption'), color: t.placeholderText, border: `${strokeControl(t)} solid ${disabled ? t.disabledBg : (t.borderDefault ?? '#e9eaeb')}`, borderRadius: radiusRoleOf(t, 'control', '4px'), padding: `${spaceOf(t, 2)} ${spaceOf(t, 5)}`, whiteSpace: 'nowrap' }}>⌘ 1</span>
+              )}
+              <span
+                style={{
+                  ...typeOf(t, 'button'),
+                  display: 'inline-flex', alignItems: 'center', height: btnH, padding: `0 ${spaceOf(t, 10)}`, whiteSpace: 'nowrap',
+                  borderRadius: concentricRadiusPx(t, parseFloat(radiusRoleOf(t, 'action')) || 0, h, btnH, inset),
+                  background: muted ? t.disabledBg : overlaySurfaceOf(t),
+                  color: muted ? t.disabledText : (t.fgMuted ?? t.neutralText),
+                }}
+              >
+                Search
+              </span>
+            </>
+          )
+        })()}
       </div>
       {!hideHint && (
         <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
@@ -1171,12 +1207,34 @@ function DividerSpecimen({ t, v, w }: SpecimenProps) {
 
 // ── Single-variant specimens ──────────────────────────────────────────────────
 
+/** A box's real shorter side, measured — so `fitRadiusPx` can cap a tall box's
+ *  role radius (an alert that wraps, a card with a long body) instead of
+ *  guessing from a min-height. Returns the ref to attach and the radius to use. */
+function useFitRadius(t: PreviewTokens, role: string, fallback?: string) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [side, setSide] = useState(0)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setSide(Math.min(el.offsetWidth, el.offsetHeight))
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const base = fallback ?? radiusRoleOf(t, role)
+  return { ref, radius: side ? `${fitRadiusPx(t, role, side)}px` : base }
+}
+
 function CardSpecimen({ t, w, children, elev }: SpecimenProps) {
+  const fit = useFitRadius(t, 'container')
   return (
     <div
+      ref={fit.ref}
       style={{
         ...baseFont(t), width: w ?? 280, padding: paddingOf(t),
-        borderRadius: radiusRoleOf(t, 'container'),
+        borderRadius: fit.radius,
         ...cardSurfaceStyle(t),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: elev === false ? undefined : shadowOf(t, elev || 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
@@ -1525,7 +1583,7 @@ function TextareaSpecimen({ t, v }: SpecimenProps) {
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Description</span>
       <div
         style={{
-          minHeight: 88, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'),
+          minHeight: 88, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: `${fitRadiusPx(t, 'action', 88)}px`,
           border: `${strokeControl(t)} solid ${border}`, background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
           ...typeStyleOf(t, 'placeholder', { leading: true }), color: disabled ? t.disabledText : t.placeholderText,
           boxShadow: state === 'Focused' ? `0 0 0 ${strokeFocus(t)} ${focus}26` : undefined,
@@ -2278,13 +2336,14 @@ function StatusIcon({ c, status }: { c: string; status: string }) {
 function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
+  const fit = useFitRadius(t, 'container', nested ? nestedRadiusOf(t, 'container') : undefined)
   return (
     // `container`, not `action` — an alert is a BOX. `RADIUS_GROUPS`' Boxes
     // axis is hinted "card, modal, alert" and `RADIUS_ROLES.container` is
     // described "Cards, accordion, inline alerts". When `nested`, the inner
     // corner is parent − `inset-surface` so a short banner cannot reuse the
     // card's radius and read as a pill (see `nestedRadiusOf`).
-    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), width: 380, padding: `${spaceOf(t, 10)} ${spaceOf(t, 14)}`, borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    <div role="status" ref={fit.ref} style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), width: 380, padding: `${spaceOf(t, 10)} ${spaceOf(t, 14)}`, borderRadius: nested ? nestedRadiusOf(t, 'container') : fit.radius, background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <span style={{ ...typeOf(t, 'body-sm'), flex: 1 }}>
         {status === 'Error' ? 'Sync failed — tokens were not published.' : status === 'Warning' ? 'Your trial ends in 3 days.' : status === 'Success' ? 'All tokens are synced to Figma.' : 'Scheduled maintenance on Sunday 02:00 UTC.'}
@@ -2300,9 +2359,10 @@ function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
 function InlineAlertSpecimen({ t, v, w, children, nested }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
+  const fit = useFitRadius(t, 'container', nested ? nestedRadiusOf(t, 'container') : undefined)
   return (
     // `container` — see `AlertBannerSpecimen`; an alert is a Box, not a Field.
-    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: spaceOf(t, 10), width: w ?? 320, padding: spaceOf(t, 14), borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    <div role="status" ref={fit.ref} style={{ ...baseFont(t), display: 'flex', gap: spaceOf(t, 10), width: w ?? 320, padding: spaceOf(t, 14), borderRadius: nested ? nestedRadiusOf(t, 'container') : fit.radius, background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: spaceOf(t, 3), flex: 1, minWidth: 0 }}>
         {children ?? (
@@ -2750,6 +2810,24 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
   const [hover, setHover] = useState<number | null>(null)
   const reduce = useReducedMotion() ?? false
   const trackRef = useRef<HTMLDivElement>(null)
+  // The selected segment is CONCENTRIC with the track (track radius − the
+  // track's padding), a pill when the track is one — not a separate `control`
+  // radius that leaves a squarer chip inside a round track.
+  const [trackH, setTrackH] = useState(0)
+  useLayoutEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const measure = () => setTrackH(el.offsetHeight)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const trackPad = parseFloat(spaceOf(t, 3)) || 3
+  const innerRadius = trackH
+    ? `${concentricRadiusPx(t, parseFloat(radiusRoleOf(t, 'action')) || 0, trackH, trackH - trackPad * 2, trackPad)}px`
+    : radiusRoleOf(t, 'control')
   return (
     // The TRACK is a container sitting on another container (this control
     // lives inside a card, never straight on the page), which is exactly what
@@ -2762,7 +2840,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
         selection={active}
         reduce={reduce}
         style={{
-          borderRadius: radiusRoleOf(t, 'control'),
+          borderRadius: innerRadius,
           background: t.inputSurface ?? inputSurfaceOf(t),
           boxShadow: shadowOf(t, 'xs', '0 1px 2px rgba(10,13,18,0.1)'),
         }}
@@ -2784,7 +2862,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
               position: 'relative',
               padding: `${fieldPx(t, small ? 4 : 6)}px ${fieldPx(t, small ? 10 : 14)}px`,
               border: 'none', background: 'transparent',
-              borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'button'), cursor: 'pointer',
+              borderRadius: innerRadius, ...typeOf(t, 'button'), cursor: 'pointer',
               color: on ? t.neutralText : hot ? t.neutralText : t.fgMuted,
               fontWeight: on ? weightOf(t, 'semibold', 600) : 400,
               transition: STATE_TRANSITION,

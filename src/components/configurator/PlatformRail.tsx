@@ -59,20 +59,15 @@ function TabletGlyph() {
 
 /** Workspace platform — desktop / tablet / mobile. Session-only, same job as Light/Dark
  *  for appearance: Type, Grid and the live preview resolve against this cut. */
-const FREE_LOCKED_VIEWPORTS: readonly GridViewport[] = ['tablet']
-
-/** Free ships Desktop and Mobile; Tablet is Pro. */
+/** Every viewport is open on every plan: Free ships Desktop, Tablet and Mobile
+ *  too. The lock props stay on `PlatformSwitch` for a plan that ever limits one. */
 export function usePlanViewportLock(
-  value: GridViewport,
-  onChange: (platform: GridViewport) => void,
+  _value: GridViewport,
+  _onChange: (platform: GridViewport) => void,
 ) {
-  const limited = useNonProPlan()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
-  useEffect(() => {
-    if (limited && value === 'tablet') onChange('desktop')
-  }, [limited, value, onChange])
   return {
-    lockedIds: limited ? FREE_LOCKED_VIEWPORTS : [],
+    lockedIds: [] as readonly GridViewport[],
     onLocked: () => setUpgradeOpen(true),
     dialog: <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />,
   }

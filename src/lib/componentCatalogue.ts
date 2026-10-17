@@ -2,11 +2,13 @@
 // Pure data — no JSX — so both the store (default-all selection) and the
 // catalogue UI can import it without circular dependencies.
 //
-// SOURCE OF TRUTH: the Figma plugin (../escala-figma-plugin/src/code.ts).
-// Each `key` here equals a CATALOG `gate` in the plugin; `axes` mirrors the
-// plugin's SPECS variant matrix and `figmaSets` lists every component set the
-// key unlocks in the generated Figma library. When the plugin's CATALOG/SPECS
-// change, update this file to match — never the other way around.
+// Each `key` here equals a CATALOG `gate` in the Figma plugin
+// (../escala-figma-plugin/src/code.ts); `axes` is the variant matrix the plugin's
+// "Full catalogue" import must build for it (every value, every combination) and
+// `figmaSets` lists every component set the key unlocks in the generated Figma
+// library. The plugin may carry EXTRA axes/values (e.g. Chip State, Badge Icon),
+// never fewer: if an axis or value is added or changed here, change the plugin's
+// SPECS to match in the same change, and re-check a Full catalogue import.
 //
 // Entries with an EMPTY `figmaSets` are catalogue-first: they document + preview
 // in the configurator and export in `atoms`, but their plugin gate doesn't exist

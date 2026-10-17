@@ -2421,7 +2421,7 @@ export default function Configurator() {
         hamburgerNav={tab === 'foundations'}
         navInMenu={componentsWithoutSystem}
         onOpenLibrary={requestHome}
-        onOpenFigmaSync={access.tier !== 'anon' ? openFigmaSyncPage : undefined}
+        onOpenFigmaSync={openFigmaSyncPage}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.

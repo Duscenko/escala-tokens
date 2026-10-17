@@ -12,7 +12,7 @@
 // `startNewSystem()` and the final `generateTokenJSON`.
 
 import { useDesignStore } from '../store/useDesignStore'
-import { ensureColorScales, applyAccentColor } from './colorActions'
+import { ensureColorScales, applyAccentColor, applyAccentDarkColor } from './colorActions'
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
 import { generateTokenJSON } from './tokenGenerator'
@@ -43,6 +43,10 @@ export interface StudioChoices {
   kind?: 'light' | 'dark'
   /** #rrggbb */
   accent?: string
+  /** #rrggbb — the Dark reference for the accent. Absent, the dark ramp grows
+   *  from `accent`; present, it grows from this hex, so Light and Dark each
+   *  follow the hex the designer set for that appearance. */
+  accentDark?: string
   bodyFont?: string
   headingFont?: string
   /** Index into `TYPE_SCALE_MODES`. */
@@ -55,6 +59,9 @@ export interface StudioChoices {
    *  and States rows. Any of them makes the build mint from the accent (a
    *  style's foundations still apply on top). */
   neutralTint?: string
+  /** #rrggbb — a neutral that does NOT follow the accent (the plugin's
+   *  unlocked Neutral). Absent = the linked neutral the accent gives. */
+  neutral?: string
   /** -1 (softer) … 1 (stronger), the rail's contrast shift. */
   contrastShift?: number
   states?: Partial<Record<'error' | 'warning' | 'success' | 'info', string>>
@@ -150,7 +157,8 @@ export function buildStudioTokens(
   const pickedStates = choices?.states && typeof choices.states === 'object'
     ? Object.fromEntries(Object.entries(choices.states).filter(([k, v]) => ['error', 'warning', 'success', 'info'].includes(k) && typeof v === 'string' && HEX.test(v))) as Record<string, string>
     : {}
-  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0
+  const pickedNeutral = typeof choices?.neutral === 'string' && HEX.test(choices.neutral) ? choices.neutral.toLowerCase() : undefined
+  const colourCustom = !!tint || shift != null || Object.keys(pickedStates).length > 0 || !!pickedNeutral
   if (tint) store.setNeutralTint(tint)
   if (shift != null) store.setContrastShift(shift)
   // The global ramps ship empty and the web fills them on mount
@@ -176,7 +184,7 @@ export function buildStudioTokens(
     const states = Object.keys(pickedStates).length
       ? { ...(baseStates ?? slotsFromAccentStates(accent, useTint)), ...pickedStates } as { error: string; warning: string; success: string; info: string }
       : baseStates
-    const slots = slotsFromAccent(accent, useTint, states)
+    const slots = { ...slotsFromAccent(accent, useTint, states), ...(pickedNeutral ? { gray: pickedNeutral } : {}) }
     const pages = { light: backgroundFromBase(slots.gray, 'light', useTint), dark: backgroundFromBase(slots.gray, 'dark', useTint) }
     minted = mintTheme(slots, choices.kind ? kind : (preset?.preferredAppearance ?? kind), name || preset?.label || '', null, useTint, pages)
     if (!('error' in minted) && preset) useDesignStore.getState().patchThemeFoundations(minted.key, preset.foundations)
@@ -190,6 +198,11 @@ export function buildStudioTokens(
   if (preset && typeof choices.accent === 'string' && HEX.test(choices.accent)
     && choices.accent.toLowerCase() !== preset.accent.toLowerCase()) {
     applyAccentColor(choices.accent.toLowerCase(), useDesignStore.getState().linkNeutralToAccent, key)
+  }
+  // The Dark reference: the dark ramp grows from its own hex while the light
+  // ramp stays on the accent. Same retint the web's accent row runs on Dark.
+  if (typeof choices.accentDark === 'string' && HEX.test(choices.accentDark)) {
+    applyAccentDarkColor(choices.accentDark.toLowerCase(), key)
   }
   const patch = (partial: Parameters<typeof s0.patchThemeFoundations>[1]) =>
     useDesignStore.getState().patchThemeFoundations(key, partial)
@@ -397,7 +410,9 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
 
   const derived = harmonyFor(accent, tint)
   const styled = !accentMoved && preset ? presetHarmony(preset) : null
-  const gray = styled?.neutral || derived?.neutral || '#8b8d98'
+  // An unlocked neutral (the plugin's own pick) outranks the one the accent gives.
+  const pickedNeutral = typeof c.neutral === 'string' && HEX.test(c.neutral) ? c.neutral.toLowerCase() : undefined
+  const gray = pickedNeutral || styled?.neutral || derived?.neutral || '#8b8d98'
   const seeded = !accentMoved && preset ? presetStates(preset) : derived?.states
   const stateSeed = (slot: 'error' | 'warning' | 'success' | 'info', fallback: string) => {
     const picked = c.states?.[slot]
@@ -415,7 +430,7 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
   const pageDark = backgroundFromBase(gray, 'dark', tint)
   const page = kind === 'dark' ? pageDark : pageLight
   const brand = kind === 'dark'
-    ? generateFamilyDarkScale(accent, 'radix', shift, pageDark)
+    ? generateFamilyDarkScale(typeof c.accentDark === 'string' && HEX.test(c.accentDark) ? c.accentDark.toLowerCase() : accent, 'radix', shift, pageDark)
     : generateColorScale(accent, 'radix', shift, pageLight)
   const neutral = kind === 'dark'
     ? generateDarkColorScale(gray, 'radix', shift, pageDark, tint)

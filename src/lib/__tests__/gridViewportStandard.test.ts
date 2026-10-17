@@ -72,12 +72,12 @@ describe('Grid per viewport and the six named styles', () => {
     expect(desktop.gridStyles.map((s) => s.key)).toEqual(['2xl-desktop', 'xl-desktop', 'xl-desktop-sidebar', 'lg-web'])
   })
 
-  it('the free tier ships Desktop and Mobile, no Tablet', () => {
+  it('the free tier ships Desktop, Tablet and Mobile', () => {
     const doc = generateTokenJSON(undefined, freeFigmaScope(undefined, ['light', 'dark'], {}, {})) as unknown as {
       viewports: string[]; gridStyles: { key: string }[]
     }
-    expect(doc.viewports).toEqual(['desktop', 'mobile'])
-    expect(doc.gridStyles.map((s) => s.key)).toEqual(['xl-desktop', 'sm-mobile'])
+    expect(doc.viewports).toEqual(['desktop', 'tablet', 'mobile'])
+    expect(doc.gridStyles.map((s) => s.key)).toEqual(['xl-desktop', 'md-tablet', 'sm-mobile'])
   })
 })
 

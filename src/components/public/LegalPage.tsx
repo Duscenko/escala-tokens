@@ -506,7 +506,7 @@ function licenceDoc(l: Locale): Doc {
       { id: 'niveaux', h: '2. Licence tiers', body: <>
         <P>Depending on the purchase, you receive a non-exclusive, non-transferable licence.</P>
         <Ul items={[
-          'Free. One design system and one brand, in Light or Dark. Without Pro, a manual import in the plugin remains possible, with that brand and Desktop mode.',
+          'Free. One design system with up to three brands, each in Light and Dark. Without Pro, a manual import in the plugin remains possible, with those brands on Desktop, Tablet and Mobile.',
           'Pro. A one-time payment through Polar, the merchant of record (payment, invoice, VAT). The complete UI Kit Library in Figma, up to 10 brands and every platform mode. The price is the one on the Pricing page at the time of purchase.',
         ]} />
       </> },

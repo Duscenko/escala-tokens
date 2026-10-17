@@ -11,7 +11,7 @@
 export const PROMO_ENDS_AT = '2026-10-07T23:59:59+02:00'
 
 /** Themes (each with its Light + Dark) a Figma sync may carry. */
-export const FREE_MAX_THEMES = 2
+export const FREE_MAX_THEMES = 3
 export const PRO_MAX_THEMES = 10
 
 /** Public pricing page (`src/components/public/PricingPage.tsx`). */

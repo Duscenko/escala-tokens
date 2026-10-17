@@ -22,6 +22,11 @@ import {
 } from './themeSources'
 import type { ThemeAppearance } from './themeModes'
 
+/** The hex the accent's DARK ramp grows from: the designer's dark reference when
+ *  one is set, else the accent itself (the pre-override behaviour). */
+export const accentDarkBase = (s: { primaryColor: string; primaryDarkColor?: string }) =>
+  s.primaryDarkColor || s.primaryColor
+
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
 // Recomputes the brand-mapped semantic tokens already present in `targetTokens`
@@ -107,15 +112,19 @@ function customScalePair(
  * Exported so tests can drive the same transaction the hook runs, without a
  * React render.
  */
-export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: string): boolean {
+export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: string, darkHex?: string): boolean {
   const s = useDesignStore.getState()
   const refs = s.themeSources[themeKey]
   if (!refs || refs.brand === GLOBAL_FAMILY.brand) return false
 
   const pages = resolveThemePages(s, themeKey, linked ? hex : null)
+  const pair = customScalePair(hex, s, pages, false)
+  const darkRef = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : undefined
   s.updateCustomColor(refs.brand, {
     base: hex,
-    ...customScalePair(hex, s, pages, false),
+    ...pair,
+    darkBase: darkRef ?? hex,
+    ...(darkRef ? { darkScale: generateFamilyDarkScale(darkRef, s.colorAlgorithm, s.contrastShift, pages.dark) } : {}),
   })
   if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
     s.updateCustomColor(refs.gray, {
@@ -156,9 +165,9 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
 /** The accent retint itself, outside React — `useApplyAccentColor` returns it
  *  and the plugin studio's server build (`pluginStudio.ts`) calls it directly.
  *  Reads the store fresh on every call, so there is no render to close over. */
-export function applyAccentColor(hex: string, linked = true, themeKey = 'light') {
+export function applyAccentColor(hex: string, linked = true, themeKey = 'light', darkHex?: string) {
   const {
-    setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds,
+    setPrimaryColor, setPrimaryDarkColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds,
     mergeThemeTokens,
     setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
     setPageBackground, setDarkBackground,
@@ -166,7 +175,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
     colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint,
   } = useDesignStore.getState()
   try {
-    if (applyScopedAccentColor(hex, linked, themeKey)) return
+    if (applyScopedAccentColor(hex, linked, themeKey, darkHex)) return
 
     // The page follows the BASE, not the accent — so it only moves when the
     // base does, i.e. while the link is on. Unlinked, the user's base (and the
@@ -186,7 +195,10 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
     const scale = gen(hex)
     // Every coloured family keeps a dark twin in step with its light ramp.
     const genDark = (base: string) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg)
-    const scaleDark = genDark(hex)
+    // A dark reference (the plugin's Dark switch) grows its own ramp. Without
+    // one, the accent is the single reference and any earlier override clears.
+    const darkOverride = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : ''
+    const scaleDark = genDark(darkOverride || hex)
     // The NEUTRAL's own ramps pass the tint; the coloured families above
     // deliberately don't. `chromaLink` means "continue from the page's
     // chroma", which is only meaningful for the family the page is DERIVED
@@ -200,6 +212,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
     if (nextBg !== pageBackground) setPageBackground(nextBg)
     if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
     setPrimaryColor(hex)
+    setPrimaryDarkColor(darkOverride)
     setPrimaryScale(scale)
     setPrimaryDarkScale(scaleDark)
     if (pageMoved) {
@@ -241,7 +254,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
       // Only themes reading the GLOBAL accent follow this change.
       if ((themeSources[t]?.brand ?? 'accent') !== 'accent') continue
       const kind = themeKinds[t] ?? 'light'
-      const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind)
+      const updates = brandTokenUpdates(kind === 'dark' && darkOverride ? scaleDark : scale, themes[t] ?? {}, kind)
       // Each theme kind re-tints its gray tokens from its own neutral ramp,
       // so dark surfaces track the accent just like the light ones do.
       const ramp = kind === 'dark' ? gDark : gScale
@@ -266,6 +279,46 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light')
       // rather than going stale the moment the preview flips to dark.
       const stops = linkedStopsFor(g.id, scale, g.stops, scaleDark)
       if (stops) updateGradient(g.id, { stops })
+    }
+  } catch {
+    /* invalid hex — ignore */
+  }
+}
+
+/** Retints ONLY the accent's dark ramp from a dark reference hex — the Dark
+ *  switch of the accent row. The light ramp, the accent and the page are left
+ *  alone, as `applyStateColorForAppearance` does for the status families. An
+ *  empty hex drops the override (dark grows from the accent again). */
+export function applyAccentDarkColor(hex: string, themeKey = 'light') {
+  const s = useDesignStore.getState()
+  try {
+    const refs = s.themeSources[themeKey]
+    if (refs && refs.brand !== GLOBAL_FAMILY.brand) {
+      const pages = resolveThemePages(s, themeKey)
+      const fam = s.customColors.find((c) => c.key === refs.brand)
+      const base = hex || fam?.base
+      if (!base) return
+      s.updateCustomColor(refs.brand, {
+        darkBase: base,
+        darkScale: generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, pages.dark),
+      })
+      return
+    }
+    const next = hex && hex.toLowerCase() !== s.primaryColor.toLowerCase() ? hex : ''
+    const scaleDark = generateFamilyDarkScale(next || s.primaryColor, s.colorAlgorithm, s.contrastShift, s.darkBackground)
+    s.setPrimaryDarkColor(next)
+    s.setPrimaryDarkScale(scaleDark)
+    const st = useDesignStore.getState()
+    for (const t of st.themeOrder) {
+      if ((st.themeSources[t]?.brand ?? 'accent') !== 'accent') continue
+      if ((st.themeKinds[t] ?? 'light') !== 'dark') continue
+      const updates = brandTokenUpdates(scaleDark, st.themes[t] ?? {}, 'dark')
+      if (Object.keys(updates).length) st.mergeThemeTokens(t, updates)
+    }
+    for (const g of st.gradients) {
+      if (!g.linked) continue
+      const stops = linkedStopsFor(g.id, st.primaryScale, g.stops, scaleDark)
+      if (stops) st.updateGradient(g.id, { stops })
     }
   } catch {
     /* invalid hex — ignore */
@@ -301,7 +354,7 @@ export function ensureColorScales() {
     // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
     if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
     // Dark twins — backfills systems created before the two-scale model.
-    if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(s.primaryColor))
+    if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(accentDarkBase(s)))
     if (empty(s.errorDarkScale))   s.setErrorDarkScale(genDark(s.errorColor))
     if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor))
     if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor))
@@ -364,7 +417,7 @@ export function useRegenerateScalesOnScaleSettings() {
     const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
     try {
       s.setPrimaryScale(gen(s.primaryColor))
-      s.setPrimaryDarkScale(genDark(s.primaryColor))
+      s.setPrimaryDarkScale(genDark(accentDarkBase(s)))
       s.setErrorScale(gen(s.errorColor))
       s.setErrorDarkScale(genDark(s.errorColor))
       s.setWarningScale(gen(s.warningColor))
@@ -528,7 +581,7 @@ export function useApplyGrayColor() {
       s.setSuccessScale(successScale)
       s.setInfoScale(infoScale)
       // The page moved, so every dark twin is re-anchored to the new dark page.
-      s.setPrimaryDarkScale(genDark(s.primaryColor))
+      s.setPrimaryDarkScale(genDark(accentDarkBase(s)))
       s.setErrorDarkScale(genDark(s.errorColor))
       s.setWarningDarkScale(genDark(s.warningColor))
       s.setSuccessDarkScale(genDark(s.successColor))

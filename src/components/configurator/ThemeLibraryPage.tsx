@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -16,20 +16,21 @@ import { accountsEnabled } from '../../lib/supabase'
 import { loginHref } from '../../lib/loginReturn'
 import { ThemeCover } from './ThemeCover'
 import { resetThemeSemantics, resolveStylePreviewTokens } from '../../lib/stylePreviewOverlay'
-import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, placeThemeSetup, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../../lib/themeSetup'
 import { flushLibraryAutosave, useSavedBrandKeys, useUnsavedBrands } from '../../lib/libraryStatus'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { INSPECTOR_TABS_H, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
+import type { GridViewport } from '../../lib/layoutTokens'
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
-import { CreateStudioBar } from './ThemeSaveBar'
+import { CreateStudioFooter } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu,
 } from './ThemeLibraryRail'
@@ -712,83 +713,6 @@ const CREATE_STEPS = [
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
 
-function CreateStepNav({ step, onPick, committed }: { step: CreateStep; onPick: (next: CreateStep) => void; committed: boolean }) {
-  const { t } = useI18n()
-  const reduce = useReducedMotion() ?? false
-  const enabled = CREATE_STEPS.filter((item) => committed || item.key === 'color')
-
-  const move = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const index = enabled.findIndex((item) => item.key === step)
-    let next = index
-    if (event.key === 'ArrowRight') next = (index + 1) % enabled.length
-    else if (event.key === 'ArrowLeft') next = (index + enabled.length - 1) % enabled.length
-    else if (event.key === 'Home') next = 0
-    else if (event.key === 'End') next = enabled.length - 1
-    else return
-    event.preventDefault()
-    const item = enabled[next]
-    if (!item || item.key === step) return
-    onPick(item.key)
-    const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)')
-    requestAnimationFrame(() => tabs[next]?.focus())
-  }
-
-  return (
-    <div className="flex min-w-0 flex-shrink-0 border-b border-line px-2 py-1.5">
-      <div
-        role="tablist"
-        aria-label={t('Foundations')}
-        className="flex w-full min-w-0 gap-0.5 rounded-lg bg-chip-rest p-0.5"
-        onKeyDown={move}
-      >
-        {CREATE_STEPS.map((item, index) => {
-          const locked = !committed && item.key !== 'color'
-          const on = item.key === step
-          const shift = reduce
-            ? { duration: 0 }
-            : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
-          return (
-            <motion.button
-              key={item.key}
-              type="button"
-              role="tab"
-              layout
-              aria-selected={on}
-              aria-label={t(item.label)}
-              disabled={locked}
-              tabIndex={locked ? -1 : on ? 0 : -1}
-              title={locked ? t('Set the colour first') : t(item.label)}
-              onClick={() => { if (!locked && !on) onPick(item.key) }}
-              transition={{ layout: shift }}
-              className={`relative flex h-7 items-center justify-center rounded-md text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                on ? 'z-[1] min-w-0 flex-1 px-2 font-semibold text-fg' : 'w-7 shrink-0 tabular-nums'
-              } ${locked ? 'cursor-not-allowed font-medium text-fg/40' : on ? '' : SEGMENT_INACTIVE}`}
-            >
-              {on && (
-                <motion.span
-                  layoutId="create-step-pill"
-                  aria-hidden
-                  className={`absolute inset-0 rounded-md ${SEGMENT_SELECTED_FILL}`}
-                  transition={shift}
-                />
-              )}
-              <motion.span
-                key={on ? item.key : 'n'}
-                initial={on && !reduce ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className={`relative whitespace-nowrap ${on ? '' : 'tabular-nums'}`}
-              >
-                {on ? t(item.label) : index + 1}
-              </motion.span>
-            </motion.button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 /** A theme key that is never persisted. The colour step paints the board from it. */
 const CREATE_DRAFT_KEY = '__create-draft'
 
@@ -840,8 +764,7 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
  *  screen, and the inspector is the tool you use on it. The number is the step
  *  the footer counts, so the two never disagree. The hint is behind "?" —
  *  one sentence nobody needs twice. */
-function CreateBoardHeader({ step, title, stepLabel }: {
-  step: number
+function CreateBoardHeader({ title, stepLabel }: {
   title: string
   stepLabel: string
 }) {
@@ -851,7 +774,6 @@ function CreateBoardHeader({ step, title, stepLabel }: {
       style={{ minHeight: INSPECTOR_TABS_H }}
     >
       <h2 className="flex min-w-0 items-baseline gap-2 text-ui font-semibold text-fg">
-        <span className="tabular-nums text-fg-faint">{step}.</span>
         <span className="truncate">{title}</span>
         <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
       </h2>
@@ -860,17 +782,19 @@ function CreateBoardHeader({ step, title, stepLabel }: {
 }
 
 function CreateBoard({
-  store, themeKey, appearance, header,
+  store, themeKey, appearance, header, platform = 'desktop',
 }: {
   store: ReturnType<typeof useDesignStore.getState>
+  /** The studio's platform switch: the board resolves against this viewport. */
+  platform?: GridViewport
   themeKey: string
   appearance: 'light' | 'dark'
   header?: ReactNode
 }) {
   const tokensByAppearance = useMemo(() => ({
-    light: resolvePreviewTokens(store, themeKey, 'light', 'desktop'),
-    dark: resolvePreviewTokens(store, themeKey, 'dark', 'desktop'),
-  }), [store, themeKey])
+    light: resolvePreviewTokens(store, themeKey, 'light', platform),
+    dark: resolvePreviewTokens(store, themeKey, 'dark', platform),
+  }), [store, themeKey, platform])
   const stage = tokensByAppearance[appearance]
   const tiles = useMemo(
     () => Array.from({ length: COLLAGE_TILE_COUNT }, () => appearance),
@@ -882,7 +806,7 @@ function CreateBoard({
       {header}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <SystemCollage
-          layout="board"
+          layout={platform === 'desktop' ? 'board' : 'phones'}
           frameTokens={stage}
           tokensByAppearance={tokensByAppearance}
           tileAppearances={tiles}
@@ -1340,6 +1264,7 @@ export default function ThemeLibraryPage({
   const [createDraft, setCreateDraft] = useState<CreateDraft | null>(null)
   const onDraftChange = useCallback((draft: CreateDraft) => setCreateDraft(draft), [])
   const [createStep, setCreateStep] = useState<CreateStep>('color')
+  const [studioPlatform, setStudioPlatform] = useState<GridViewport>('desktop')
   const [createdKey, setCreatedKey] = useState<string | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
   const pendingStep = useRef<CreateStep | null>(null)
@@ -1353,13 +1278,6 @@ export default function ThemeLibraryPage({
     setCreateDraft(null)
     pendingStep.current = null
   }, [creating])
-  // The step lives with the draft, so a refresh resumes Icons instead of
-  // Colour. Finish clears it (see keepCreatedBrand) before this can write again.
-  useEffect(() => {
-    if (!creating || !createdKey) return
-    const index = (SETUP_STEPS as readonly string[]).indexOf(createStep)
-    if (index >= 0) placeThemeSetup(createdKey, index)
-  }, [creating, createdKey, createStep])
   useEffect(() => {
     onCreatingChange?.(creating)
     return () => onCreatingChange?.(false)
@@ -1806,28 +1724,6 @@ export default function ThemeLibraryPage({
     pendingStep.current = null
     setCreateStep(jump && jump !== 'color' ? jump : 'typography')
   }
-  const pickCreateStep = (next: CreateStep) => {
-    if (next === createStep) return
-    // Colour is the only write on this step. The menu stays a menu until
-    // Continue or Skip setup has minted the brand.
-    if (!createdKey) return
-    if (createStep === 'color') {
-      pendingStep.current = next
-      submitHandle.current?.()
-      return
-    }
-    setCreateStep(next)
-  }
-  const advanceCreateStep = () => {
-    const index = CREATE_STEPS.findIndex((item) => item.key === createStep)
-    const next = CREATE_STEPS[index + 1]
-    if (next) setCreateStep(next.key)
-    else if (createdKey) finishCreate(createdKey)
-  }
-  const goBackCreateStep = () => {
-    const prev = CREATE_STEPS[createIndex - 1]
-    if (prev) setCreateStep(prev.key)
-  }
   // Leaving the studio forward (Finish, Skip setup, the advanced editor) keeps
   // the brand. While it stayed a draft, the empty-board guard reopened the
   // studio on Colour — Finish jumped back to the first step. The library write
@@ -1853,21 +1749,15 @@ export default function ThemeLibraryPage({
     }
     setCreating(false)
   }
-  const skipCreate = () => {
-    if (createStep === 'color' || !createdKey) {
-      skipHandle.current?.()
-      return
-    }
-    finishCreate(createdKey)
-  }
   const createIndex = CREATE_STEPS.findIndex((item) => item.key === createStep)
   // The first system this browser makes: the studio says so, and what is on
-  // the board is a draft until Continue.
+  // the board is a draft until Create brand.
   const firstSystem = mine.every((key) => key === createdKey)
-  // One predictable CTA: Continue on steps 1–5, Finish on the last. It never
-  // changes name to echo the step's content ("Use Inter" was one such case).
-  const lastCreateStep = createIndex === CREATE_STEPS.length - 1
-  const continueLabel = lastCreateStep ? t('Finish') : t('Continue')
+  const getCreatedCode = (key: string) => {
+    keepCreatedBrand(key)
+    setCreating(false)
+    onGetCode(key)
+  }
   const openAdvanced = (foundation: string) => {
     if (!createdKey) return
     keepCreatedBrand(createdKey)
@@ -1892,9 +1782,8 @@ export default function ThemeLibraryPage({
                   <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} /></div>
                 )}
               </div>
-              <CreateStepNav step={createStep} onPick={pickCreateStep} committed={!!createdKey} />
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {createStep === 'color' || !createdKey ? (
+                {!createdKey ? (
                   <ThemeForm
                     key={createdKey ?? 'new'}
                     firstStep
@@ -1913,42 +1802,41 @@ export default function ThemeLibraryPage({
                     onDraftChange={onDraftChange}
                   />
                 ) : (
+                  // Every foundation at once, as an accordion: open any row in
+                  // any order. There are no steps left to walk.
                   <ThemeQuickSettingsRail
                     embed
-                    key={`${createdKey}-${createStep}`}
+                    key={createdKey}
                     previewTheme={createdKey}
                     previewAppearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
                     activePanel={createStep}
-                    lockAdvanced
+                    onSelectPanel={setCreateStep}
                     onOpenAdvanced={openAdvanced}
+                    previewPlatform={studioPlatform}
+                    onPreviewPlatformChange={setStudioPlatform}
                   />
                 )}
               </div>
-              <CreateStudioBar
+              <CreateStudioFooter
                 error={createError}
-                stepIndex={Math.max(0, createIndex)}
-                total={CREATE_STEPS.length}
-                continueLabel={continueLabel}
-                last={lastCreateStep}
+                committed={Boolean(createdKey)}
+                guest={guest}
                 onCancel={studioOnly ? undefined : cancelCreate}
-                onBack={createIndex > 0 ? goBackCreateStep : undefined}
-                onSkip={skipCreate}
-                onContinue={() => {
-                  if (createStep === 'color' || !createdKey) submitHandle.current?.()
-                  else advanceCreateStep()
-                }}
+                onCreate={() => submitHandle.current?.()}
+                onSave={() => { if (createdKey) finishCreate(createdKey) }}
+                onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
               />
             </div>
           </InspectorPortal>
           <CreateBoard
             store={createdKey ? store : (createDraft ? scratchPreviewStore(store, createDraft) : store)}
+            platform={createdKey ? studioPlatform : 'desktop'}
             themeKey={createdKey ?? CREATE_DRAFT_KEY}
             appearance={createdKey
               ? (store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light')
               : (createDraft?.kind ?? 'dark')}
             header={(
               <CreateBoardHeader
-                step={Math.max(0, createIndex) + 1}
                 title={firstSystem ? t('Customize your design system') : t('New brand')}
                 stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
               />

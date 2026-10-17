@@ -1,7 +1,7 @@
 // What a download for the Figma plugin carries when the person has no Escala
-// Pro: up to TWO library themes (brands), each with Light AND Dark, on the
-// Desktop and Mobile viewports (grid styles XL Desktop and SM Mobile) — the
-// free tier on /pricing. Tablet and more brands are Pro.
+// Pro: up to THREE library themes (brands), each with Light AND Dark, on the
+// Desktop, Tablet and Mobile viewports (grid styles XL Desktop, MD Tablet and
+// SM Mobile) — the free tier on /pricing. More brands are Pro.
 //
 // A SOFT limit, and meant to be understood as one: the exporter is MIT, so a
 // fork can lift it, and the compiled plugin can still be read. The hard limits
@@ -32,8 +32,8 @@ export function freeFigmaScope(
   _appearance?: ThemeAppearance,
   brandThemes?: BrandThemes,
 ): FigmaScope {
-  const viewports: FigmaScope['viewports'] = ['desktop', 'mobile']
-  const gridStyles: FigmaScope['gridStyles'] = ['xl-desktop', 'sm-mobile']
+  const viewports: FigmaScope['viewports'] = ['desktop', 'tablet', 'mobile']
+  const gridStyles: FigmaScope['gridStyles'] = ['xl-desktop', 'md-tablet', 'sm-mobile']
   const keys = figmaSyncThemeKeys(themeOrder, themes)
   const lead = preferred && keys.includes(preferred) ? [preferred] : []
   const chosen = [...lead, ...keys.filter((k) => !lead.includes(k))].slice(0, FREE_MAX_THEMES)

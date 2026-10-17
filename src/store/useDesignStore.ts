@@ -381,6 +381,11 @@ export interface DesignSnapshot {
   // from `pageBackground` so a light page and a dark page can each be chosen.
   darkBackground: string
   primaryColor: string
+  // Optional DARK reference hex. '' / absent = the dark ramp grows from
+  // `primaryColor` as before; set, `primaryDarkScale` is generated from this
+  // hex instead, so Light and Dark each get a ramp from the hex the designer
+  // chose for that appearance.
+  primaryDarkColor?: string
   primaryScale: ColorScale
   // Dark-appearance twin of every COLOURED family — the Radix two-scale model.
   // A dark theme resolves brand/status tones from these, not from the light
@@ -559,6 +564,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: DEFAULT_ACCENT,
+    primaryDarkColor: '',
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: '#6c737f',
@@ -871,9 +877,11 @@ interface DesignStore {
 
   // Step 2 — Brand / accent color (user-defined, generates 12-tone scale)
   primaryColor: string
+  primaryDarkColor?: string
   primaryScale: ColorScale
   primaryDarkScale: ColorScale
   setPrimaryColor: (hex: string) => void
+  setPrimaryDarkColor: (hex: string) => void
   setPrimaryScale: (scale: ColorScale) => void
   setPrimaryDarkScale: (scale: ColorScale) => void
 
@@ -1220,6 +1228,7 @@ export const useDesignStore = create<DesignStore>()(
 
       // Brand
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
+      setPrimaryDarkColor: (hex) => set({ primaryDarkColor: hex }),
       setPrimaryScale: (scale) => set({ primaryScale: scale }),
       setPrimaryDarkScale: (scale) => set({ primaryDarkScale: scale }),
 

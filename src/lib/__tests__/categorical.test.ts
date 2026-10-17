@@ -411,6 +411,31 @@ describe('action.primary hover/pressed — solved relative to the resolved solid
   })
 })
 
+// Regression: dark pressed walked up to a near-white tone (1.59:1 under the
+// near-white label) because relaxed floors on the preferred side beat the
+// strict floor on the other side.
+describe('action.primary states keep the label legible on every seed', () => {
+  it('default, hover and pressed all clear 3:1 against content.on-action', () => {
+    for (const [name, hex] of SEEDS) {
+      const sys = buildSystem(`${name}/radix`, hex, 'radix')
+      const v = buildArchitectureView('categorical', {
+        themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
+        scales: sys.scales, accent: sys.accent,
+        pageBackground: sys.lightBg, darkBackground: sys.darkBg,
+      } as never, sys.errorSeed)!
+      const tok = (c: string, k: string) =>
+        v.categories.find((x) => x.key === c)?.tokens.find((t) => t.key === k)?.modes
+      for (const appearance of ['light', 'dark'] as const) {
+        const on = tok('content', 'on-action')?.[appearance].css as string
+        for (const state of ['default', 'hover', 'pressed']) {
+          const fill = tok('action', `primary.${state}`)?.[appearance].css as string
+          expect(wcagRatio(on, fill), `${name}/${appearance}/${state}`).toBeGreaterThanOrEqual(3)
+        }
+      }
+    }
+  })
+})
+
 describe('status.info — no longer orphaned', () => {
   it('references the info family, matching the shape of the other three severities', () => {
     const infoSurface = view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === 'info.surface')

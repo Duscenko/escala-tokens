@@ -479,6 +479,56 @@ export function nestedRadiusOf(
   return `${Math.min(cap, limit || cap)}px`
 }
 
+/** A corner may take this share of a box's shorter side before the box stops
+ *  reading as a rounded rectangle and starts reading as a pill — the iOS
+ *  app-icon superellipse is 22.37% of the side. */
+export const SUPERELLIPSE_RATIO = 0.2237
+/** Boxes shorter than this are single-line controls: their role radius is the
+ *  design (a 40px field at 32 IS a pill), so proportion never touches them. */
+const FIT_TALL_SIDE = 64
+
+function radiusStepsPx(t: PreviewTokens): number[] {
+  return [...new Set(Object.values(t.radius ?? {}).map((v) => parseFloat(v) || 0).filter((n) => n > 0))].sort((a, b) => a - b)
+}
+
+/**
+ * The radius a role should take on a box of the given SHORTER side (px).
+ *
+ * A role radius is one number but the box it lands on is not: `action` = 32 is
+ * a clean pill on a 40px field and a lumpy near-pill on a 96px textarea or a
+ * 118px alert. A tall box is therefore capped to the superellipse share of its
+ * side, snapped DOWN to the roundest radius-scale step that fits so the result
+ * is still a token step, never an invented px. Pills and short controls keep
+ * the role value untouched. The Figma plugin applies the same rule
+ * (`fitRadii` in code.ts) — change one, change both.
+ */
+export function fitRadiusPx(t: PreviewTokens, role: string, side: number): number {
+  const rp = parseFloat(radiusRoleOf(t, role)) || 0
+  if (!side || rp <= 0) return rp
+  if (rp >= side / 2 - 0.5) return rp
+  if (side < FIT_TALL_SIDE || rp / side <= SUPERELLIPSE_RATIO + 0.01) return rp
+  const cap = side * SUPERELLIPSE_RATIO
+  const steps = radiusStepsPx(t)
+  if (!steps.length) return Math.min(rp, cap)
+  const fit = steps.filter((n) => n <= cap + 0.5)
+  return Math.min(rp, fit.length ? fit[fit.length - 1] : steps[0])
+}
+
+/**
+ * Corner of a shape set INSIDE a rounded box, concentric with it:
+ * `outer − inset`. When that reaches half the inner shape's own height the
+ * inner shape is a pill (a search button inside a pill field, the selected
+ * segment inside a pill track). Otherwise it snaps to the nearest radius step.
+ */
+export function concentricRadiusPx(t: PreviewTokens, outerRadius: number, outerSide: number, innerSide: number, inset: number): number {
+  const target = Math.min(outerRadius, outerSide / 2) - inset
+  if (target <= 0) return 0
+  if (target >= innerSide / 2 - 0.5) return innerSide / 2
+  const steps = radiusStepsPx(t)
+  if (!steps.length) return target
+  return steps.reduce((best, n) => (Math.abs(n - target) < Math.abs(best - target) ? n : best))
+}
+
 export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('spacing', t.spacingRoles, t.spacing ?? {}, role, fallback)
 }

@@ -406,10 +406,15 @@ function solidStepRef(
   const ui = INTENT_THRESHOLDS['ui-component']
   const found =
     pick((t) => floor(t, ACTION_LABEL_TARGET.wcag ?? 4.5, ACTION_LABEL_TARGET.apcaLc ?? 60), [dir])
-    ?? pick((t) => floor(t, ui.wcag ?? 3, ui.apcaLc ?? 45), [dir])
-    ?? pick((t) => Boolean(ramp[t]), [dir])
+    // The OTHER side at the strict floor comes before any relaxed floor on this
+    // side. Dark violet: hover 10, so pressed walks up to 11/12 — near-white
+    // lavender, 1.59:1 under the near-white label. Tone 8 clears 4.5:1; a
+    // pressed fill darker than default while hover is lighter is a normal
+    // press (hover lifts, press sinks) and keeps the label legible.
     ?? pick((t) => floor(t, ACTION_LABEL_TARGET.wcag ?? 4.5, ACTION_LABEL_TARGET.apcaLc ?? 60), [-dir])
+    ?? pick((t) => floor(t, ui.wcag ?? 3, ui.apcaLc ?? 45), [dir])
     ?? pick((t) => floor(t, ui.wcag ?? 3, ui.apcaLc ?? 45), [-dir])
+    ?? pick((t) => Boolean(ramp[t]), [dir])
     ?? pick((t) => Boolean(ramp[t]), [-dir])
   if (found != null) {
     used.add(found)

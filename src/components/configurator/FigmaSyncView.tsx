@@ -128,7 +128,7 @@ export default function FigmaSyncView({
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [licenceOpen, setLicenceOpen] = useState(false)
   // Free (the /pricing tier, `freeFigmaScope`): up to FREE_MAX_THEMES brands,
-  // Light and Dark, Desktop and Mobile. A selection saved while Pro was on is
+  // Light and Dark, every viewport. A selection saved while Pro was on is
   // narrowed to that the moment the account is Free.
   useEffect(() => {
     if (!free) return
@@ -139,9 +139,7 @@ export default function FigmaSyncView({
     }
     const nextModes = syncModes.filter((mode) => keep.has(mode.theme))
     if (nextModes.length !== syncModes.length) onSyncModesChange(nextModes, true)
-    const nextViewports = viewports.filter((viewport) => viewport !== 'tablet')
-    if (nextViewports.length !== viewports.length) onViewportsChange(nextViewports.length ? nextViewports : ['desktop'])
-  }, [free, syncModes, viewports, onSyncModesChange, onViewportsChange])
+  }, [free, syncModes, onSyncModesChange])
   const selectedBrands = useMemo(() => new Set(syncModes.map((mode) => mode.theme)), [syncModes])
   const entitlement = useEntitlement()
   // "3 brands · 4 themes: Acme Light + Dark · Kids Light · Partner Dark" —
@@ -337,7 +335,7 @@ export default function FigmaSyncView({
               <div role="group" aria-label={t('Viewports to include')} className="flex flex-wrap gap-1.5">
                 {FIGMA_VIEWPORTS.map((viewport: FigmaViewport) => {
                   const on = viewports.includes(viewport)
-                  const locked = free && viewport === 'tablet'
+                  const locked = false
                   const last = !locked && on && viewports.length === 1
                   return (
                     <button

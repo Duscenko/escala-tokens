@@ -8,8 +8,8 @@
 //                           (`UnsavedNotice`). Decided 2026-10-17: the login wall
 //                           in front of Variables / Code / Docs / Export drove
 //                           visitors away, so it is gone.
-//   free  signed in       → sees everything, exports 2 brands (Light + Dark) on
-//                           Desktop and Mobile, saves two themes.
+//   free  signed in       → sees everything, exports 3 brands (Light + Dark) on
+//                           Desktop and Mobile, saves three brands.
 //   pro   promo or licence → everything else.
 //
 // The hard limits stay on the server (hosted sync, MCP). No component reads
@@ -78,8 +78,8 @@ export function useOneThemePlan(): boolean {
   return false
 }
 
-/** Not Pro and accounts on — gates Tablet in the platform switch. Free has
- *  Desktop and Mobile. */
+/** Not Pro and accounts on. No viewport is gated any more: Free has Desktop,
+ *  Tablet and Mobile. */
 export function useNonProPlan(): boolean {
   const { tier, loading } = useAccess()
   return accountsEnabled && !loading && tier !== 'pro'
@@ -108,7 +108,7 @@ export function useNeedsProForAnotherTheme(): boolean {
   })
 }
 
-/** Rule A: Free holds `FREE_SYSTEM_LIMIT` design system with up to two brands.
+/** Rule A: Free holds `FREE_SYSTEM_LIMIT` design system with up to three brands.
  *  Once it holds that many, starting another asks for Pro — the door stays
  *  visible and opens the upgrade notice. A system counts when it has a brand,
  *  the same count the cloud trims by (`cloudSystemCount`). Same session and

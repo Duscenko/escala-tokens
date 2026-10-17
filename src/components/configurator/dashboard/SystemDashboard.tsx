@@ -212,7 +212,9 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
                 ) : key === 'status' ? (
                   <span className="flex-shrink-0 text-mini font-light leading-none text-fg-faint">Beta</span>
                 ) : undefined}
-                onClick={() => onPage(key)}
+                // Docs is an accordion: open → foundation list; click again →
+                // collapse back to Overview. Other rows are one-shot navigations.
+                onClick={() => onPage(key === 'docs' && page === 'docs' ? 'overview' : key)}
               />
               {/* Docs lists its pages while it is open: one per foundation. */}
               {key === 'docs' && page === 'docs' && (

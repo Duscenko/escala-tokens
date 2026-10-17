@@ -215,7 +215,7 @@ export function PricingPage() {
       title: 'Figma',
       rows: [
         { label: t('Brands in one Figma file'), free: t('{n} (Light and Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
-        { label: t('Platform modes'), free: 'Desktop, Mobile', pro: 'Desktop, Tablet, Mobile' },
+        { label: t('Platform modes'), free: 'Desktop, Tablet, Mobile', pro: 'Desktop, Tablet, Mobile' },
         { label: t('Manual import of tokens.json'), free: true, pro: true },
         { label: t('Complete UI Kit Library in Figma'), free: null, pro: true },
         { label: t('Customize every component from Escala Tokens through the Figma plugin (agent context)'), free: null, pro: true },
@@ -275,7 +275,7 @@ export function PricingPage() {
                     t('All 12 System Styles, unlimited brands while editing'),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
                     t('Open-source Figma plugin, manual import'),
-                    t('{n} brands with Light and Dark, Desktop and Mobile in Figma', { n: String(FREE_MAX_THEMES) }),
+                    t('{n} brands with Light and Dark, Desktop, Tablet and Mobile in Figma', { n: String(FREE_MAX_THEMES) }),
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>
@@ -311,7 +311,6 @@ export function PricingPage() {
                   <Features items={[
                     t('Everything in Free'),
                     t('Up to {max} brands in Figma, each with Light + Dark', { max }),
-                    t('Desktop, Tablet and Mobile platform modes'),
                     t('Complete UI Kit Library in Figma, customized from Escala Tokens with the agent context and the Figma plugin'),
                     ...(MCP_VISIBLE ? [t('Live MCP for Cursor, Claude Code and VS Code')] : []),
                     t('Generated documentation for your system'),
@@ -363,7 +362,7 @@ export function PricingPage() {
               <Faq q={t('Is Escala open source?')}>{MCP_VISIBLE
                 ? t('Partly. The configurator, the CLI and the MCP server are MIT, so you can fork and self-host them. The Figma plugin is proprietary: free to install, source not published. Pro pays for the service we host and the plugin, not for the configurator code. If you host the configurator yourself, you set your own limits.')
                 : t('Partly. The configurator and the CLI are MIT, so you can fork and self-host them. The Figma plugin is proprietary: free to install, source not published. Pro pays for the service we host and the plugin, not for the configurator code. If you host the configurator yourself, you set your own limits.')}</Faq>
-              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro you can still import tokens.json in the plugin by hand, with up to two brands, Light and Dark, on Desktop and Mobile.')}</Faq>
+              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro you can still import tokens.json in the plugin by hand, with up to three brands, Light and Dark, on Desktop, Tablet and Mobile.')}</Faq>
               <Faq q={t('Why does Figma show fewer modes than I chose?')}>{t('Figma limits modes per collection by its own plan: Starter allows 1, Professional 4. Escala sends what you choose; Figma decides how many columns a file can hold.')}</Faq>
               <Faq q={t('Do I need an account?')}>{t('No. After you pay, Polar shows a licence key. Open the menu and choose Account, then Activate licence. It stays in this browser.')}</Faq>
               <Faq q={t('Can I get a refund?')}>{t('Yes. 14 days from purchase, on request through the contact form. Polar is the merchant of record: payment, invoicing and VAT follow Polar’s terms.')}</Faq>

@@ -1104,10 +1104,7 @@ line-height: var(--text-label-line-height);
                     <tr key={step} className="border-t border-line">
                       <td className="py-2 pr-4 text-fg">{step}</td>
                       <td className="py-2 pr-4">
-                        <span className="inline-flex items-center gap-2">
-                          <span className="w-4 h-4 border-2 border-accent-ui/60 bg-accent-ui/[0.08]" style={{ borderRadius: c.radius[desktopTo] ?? '0px' }} />
-                          {desktopTo} · {c.radius[desktopTo] ?? '—'}
-                        </span>
+                        {desktopTo} · {c.radius[desktopTo] ?? '—'}
                       </td>
                       <td className="py-2 pr-4 text-fg-muted">
                         Tablet → {map.tablet} · Mobile → {map.mobile}

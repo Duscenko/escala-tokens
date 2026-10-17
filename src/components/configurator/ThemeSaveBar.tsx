@@ -10,6 +10,7 @@ import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
+import { AccountCloudStatus } from './AccountCloudStatus'
 
 /** Two crossing arrows — the shuffle mark every "surprise me" control uses. */
 function ShuffleGlyph() {
@@ -158,6 +159,9 @@ export default function ThemeSaveBar({
         </div>
       )}
       {guestPrimary && <UnsavedNotice />}
+      {/* Signed in: where the work lives, in words — "Saved to your account"
+          while the cloud engine has it, or why it is only in this browser. */}
+      {!access.guest && <AccountCloudStatus />}
       {/* Variables greys the row out; a guest there already has the notice's
           two actions, so a dead grey "Save with an account" would only repeat it. */}
       {!(guestPrimary && inactive) && (
@@ -338,6 +342,69 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
             </svg>
           )}
         </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Home's create studio footer. No step count, no Continue: every foundation is
+ * a row of the accordion above, edited in any order. Before the colours are
+ * set there is one action (Create brand, which mints it). After, the two ways
+ * out: keep the brand, or take the code. A guest's primary is Get code, the
+ * same rule as `ThemeSaveBar`; signed in, it is Save brand.
+ */
+export function CreateStudioFooter({
+  error, committed, guest, onCancel, onCreate, onSave, onGetCode,
+}: {
+  error?: string | null
+  /** The brand exists (its colours were set). */
+  committed: boolean
+  guest: boolean
+  onCancel?: () => void
+  onCreate: () => void
+  onSave: () => void
+  onGetCode: () => void
+}) {
+  const { t } = useI18n()
+  const primary = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const secondary = 'h-8 flex-shrink-0 rounded-lg border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const codeGlyph = (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+      <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
+      <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
+    </svg>
+  )
+  return (
+    <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-3 py-3">
+      {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
+      {committed && guest && <UnsavedNotice />}
+      {committed && !guest && <AccountCloudStatus />}
+      <div className="flex items-center gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Cancel')}
+          </button>
+        )}
+        {!committed ? (
+          <button type="button" onClick={onCreate} className={primary}>
+            <span className="truncate">{t('Create brand')}</span>
+          </button>
+        ) : guest ? (
+          <>
+            <button type="button" onClick={onSave} className={secondary}>{t('Done')}</button>
+            <button type="button" onClick={onGetCode} className={primary}>{codeGlyph}<span className="truncate">{t('Get code')}</span></button>
+          </>
+        ) : (
+          <>
+            <button type="button" onClick={onGetCode} className={`${secondary} flex items-center gap-1.5`}>{codeGlyph}{t('Get code')}</button>
+            <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save brand')}</span></button>
+          </>
+        )}
       </div>
     </div>
   )

@@ -8,7 +8,7 @@ import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
@@ -507,7 +507,9 @@ export default function ThemePreviewHub({
     const f = activeFoundation ?? 'color'
     return isQuickPanelFoundation(f) ? f : 'color'
   }, [activeFoundation])
-  const boardPlatform: GridViewport = PLATFORM_QUICK_PANELS.has(contextDocKey) ? previewPlatform : 'desktop'
+  // The platform switch heads the whole quick-settings panel now, so the board
+  // follows it on every row (radius and spacing step down per viewport too).
+  const boardPlatform: GridViewport = previewPlatform
   // Docs is the system, not the foundation the icon rail last lit. Closing
   // the tab clears the pick so the next open is the theme reference again.
   useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
