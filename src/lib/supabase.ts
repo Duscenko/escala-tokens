@@ -28,8 +28,8 @@ export const supabase: SupabaseClient | null = accountsEnabled
  *  Supabase (Authentication → Sign In / Providers) AND listed here through
  *  `VITE_AUTH_PROVIDERS="github"`, so a button never appears that cannot work.
  *  They ask for identity only — never repository access (GitHubConnectView owns that). */
-export type AuthProvider = 'github'
+export type AuthProvider = 'github' | 'google'
 export const authProviders: AuthProvider[] = (typeof env.VITE_AUTH_PROVIDERS === 'string' ? env.VITE_AUTH_PROVIDERS : '')
   .split(',')
   .map((p) => p.trim())
-  .filter((p): p is AuthProvider => p === 'github')
+  .filter((p): p is AuthProvider => p === 'github' || p === 'google')
