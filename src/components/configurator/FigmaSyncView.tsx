@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
-import { type FigmaPublishState } from '../../lib/figmaSync'
 import { buildFigmaContext } from '../../lib/figmaContext'
 import { showToast } from '../ui/Toast'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -36,31 +35,23 @@ interface FigmaSyncViewProps {
   embedded?: boolean
   /** Cross-link to the sibling destination — see FigmaDownloadView's own note. */
   onOpenDownload?: () => void
-  /** Shared manual-publish feedback from Configurator, so this screen and the
-   *  persistent header always report the same request. */
-  publishState?: FigmaPublishState
-  /** Specific reason for the current 'error' state (a lost claim vs. a network
-   *  hiccup) — same string the Sync pill's tooltip shows. Null outside 'error'. */
-  publishError?: string | null
-  onRequestSync?: () => void
-  /** Theme the canvas is previewing — selecting a sync row also previews it. */
+  /** Theme the canvas is previewing — selecting a brand row also previews it. */
   previewTheme: string
   /** The appearance on screen. Free keeps this one; the other stays visible and locked. */
   previewAppearance?: ThemeAppearance
   onSelectTheme: (key: string) => void
-  /** Figma file name and `/api/tokens?project=` slug (`slugify` of this).
+  /** Figma file name written into the copied context's `project`.
    *  Defaults to the first theme. Does not rename the editor project. */
   fileName: string
   onFileNameChange: (name: string) => void
   /** Selected Figma columns — theme × Light/Dark, capped at `FIGMA_SYNC_MODE_CAP`. */
   syncModes: FigmaSyncMode[]
-  /** `planCut` marks the Free narrowing: it changes what Sync publishes, not what the brand ships. */
+  /** `planCut` marks the Free narrowing: it changes what the context ships, not what the brand ships. */
   onSyncModesChange: (modes: FigmaSyncMode[], planCut?: boolean) => void
   /** Viewports that become Dimension Semantics' Figma modes (≥ 1). */
   viewports: FigmaViewport[]
   onViewportsChange: (viewports: FigmaViewport[]) => void
-  /** Kept so existing callers still compile. The plugin signs in; this screen
-   *  no longer shows a page URL. */
+  /** Kept so existing callers still compile. This screen no longer shows a page URL. */
   section?: string
 }
 
@@ -216,9 +207,9 @@ export default function FigmaSyncView({
         />
       ) : null}
 
-      {/* Modes first, then File name + ID to plugin as one link. Scaffold
-          light/dark are not My themes — an empty library shows an empty
-          list, never a default-blue "Dark" row. */}
+      {/* Modes first, then File name + the agent context the plugin imports.
+          Scaffold light/dark are not My brands — an empty library shows an
+          empty list, never a default-blue "Dark" row. */}
       <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface/50">
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
             <p className="text-sm font-semibold text-fg">{t('File & modes')}</p>
@@ -254,7 +245,7 @@ export default function FigmaSyncView({
               {cannotSync ? (
                 <p className="text-body font-medium text-fg-muted">{t('Nothing in My brands yet.')}</p>
               ) : (
-              <div role="group" aria-label={t('Modes to sync')} className="flex flex-col gap-1">
+              <div role="group" aria-label={t('Modes to include')} className="flex flex-col gap-1">
                 {syncThemes.map((key) => {
                   const lightOn = hasFigmaSyncMode(syncModes, key, 'light')
                   const darkOn = hasFigmaSyncMode(syncModes, key, 'dark')
@@ -343,7 +334,7 @@ export default function FigmaSyncView({
               <p className="text-caption text-fg-faint leading-relaxed">
                 {t('Spacing, radius, size, stroke and grid get one Figma mode per viewport. Keep all three, or fewer if your plan limits modes per collection — at least one ships.')}
               </p>
-              <div role="group" aria-label={t('Viewports to sync')} className="flex flex-wrap gap-1.5">
+              <div role="group" aria-label={t('Viewports to include')} className="flex flex-wrap gap-1.5">
                 {FIGMA_VIEWPORTS.map((viewport: FigmaViewport) => {
                   const on = viewports.includes(viewport)
                   const locked = free && viewport === 'tablet'

@@ -12,6 +12,7 @@
 // File & modes' brands × themes, and its viewports — so what lands in Figma
 // is what the page says it is.
 
+import { withAgentEnvelope } from './aiContext'
 import { generateTokenJSON } from './tokenGenerator'
 import { brandThemesFromSyncModes, FIGMA_VIEWPORT_LABEL, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from './figmaSyncModes'
 import { brandThemesSummary } from './brandThemes'
@@ -60,11 +61,11 @@ export function buildFigmaContext(input: FigmaContextInput): FigmaContext {
   return { text, bytes: new TextEncoder().encode(text).length, brands: brands.length, themes: input.modes.length }
 }
 
-/** Pure: the message around a payload. Split out so tests need no store. */
+/** Pure: the message around a payload. Split out so tests need no store.
+ *  Same `agent-context/v1` envelope as Copy context elsewhere, plus the Escala
+ *  JSON fence the plugin imports. */
 export function figmaContextMarkdown(parts: { project: string; brandLines: string[]; viewports: string[]; json: string }): string {
-  return [
-    `# ${parts.project} — Escala design system`,
-    '',
+  const body = [
     'Paste this whole message into the Escala plugin in Figma: Home → Agent Context → Import.',
     'An AI agent can read it too — the JSON block below is the complete token system (primitives, semantic roles, typography, dimensions, components).',
     '',
@@ -74,13 +75,17 @@ export function figmaContextMarkdown(parts: { project: string; brandLines: strin
     '```' + FIGMA_CONTEXT_FENCE,
     parts.json,
     '```',
-    '',
   ].join('\n')
+  return withAgentEnvelope('global', parts.project, body)
 }
 
-/** The JSON a pasted context carries: the fenced block, else the paste itself.
+/** The JSON a pasted context carries: prefer the `json escala-tokens` fence,
+ *  else any ```json fence, else the paste itself (a bare tokens.json).
  *  Same rule as the plugin's reader, kept here so it is tested. */
 export function extractEscalaPayload(text: string): string {
+  const prefer = /```json\s+escala-tokens\s*\n([\s\S]*?)\n```/.exec(text)
+  if (prefer) return prefer[1].trim()
   const fence = /```json[^\n]*\n([\s\S]*?)\n```/.exec(text)
-  return (fence ? fence[1] : text).trim()
+  if (fence) return fence[1].trim()
+  return text.trim()
 }

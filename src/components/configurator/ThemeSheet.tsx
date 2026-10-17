@@ -426,7 +426,7 @@ export function ThemeAppearanceControl({
                   <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted">
                     <FigmaGlyph className="h-3.5 w-auto" />
                   </span>
-                  {t('Sync with Figma')}
+                  {t('Bring to Figma')}
                 </button>
                 <button type="button" role="menuitem" onClick={() => go(onGetCode)} className={MENU_ITEM}>
                   <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted"><CodeGlyph /></span>

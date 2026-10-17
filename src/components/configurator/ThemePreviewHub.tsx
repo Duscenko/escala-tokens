@@ -380,7 +380,7 @@ export default function ThemePreviewHub({
   onDocsOpenChange,
   surface, onSurfaceChange,
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
-  onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
+  onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
   exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom, onBackHome, onBackToStyles,
@@ -419,9 +419,8 @@ export default function ThemePreviewHub({
   /** Open a semantic token's row in the full Color · Semantics table. */
   onOpenInVariables: (tokenId: string) => void
   figmaPublishState: FigmaPublishState
-  /** This window's workspace section id — Sync card's This page link. */
+  /** This window's workspace section id — Protocol card's window label. */
   workspaceSection?: string
-  onRequestFigmaSync: () => void
   onOpenFigmaDownload: () => void
   figmaFileName: string
   onFigmaFileNameChange: (name: string) => void
@@ -772,7 +771,7 @@ export default function ThemePreviewHub({
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
               {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} theme={previewTheme} appearance={previewAppearance} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} previewAppearance={previewAppearance} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} previewTheme={previewTheme} previewAppearance={previewAppearance} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
             </div>
           </>
         )}

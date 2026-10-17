@@ -390,7 +390,7 @@ export function ThemeOptionsMenu({
             onClick={onSyncFigma}
             className={THEME_MENU_ITEM}
           >
-            {t('Sync with Figma')}
+            {t('Bring to Figma')}
           </button>
           {onShareGithub && (
             <button

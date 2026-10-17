@@ -18,7 +18,7 @@ export const GUIDE_PAGE_COPY: Record<string, { title: string; lead: string }> = 
   },
   [GUIDE_FIGMA_KEY]: {
     title: 'Use in Figma',
-    lead: 'Install the Escala plugin once. Keep Sync on. The plugin reads the same JSON the configurator publishes — you do not maintain a second set of variables by hand.',
+    lead: 'Install the Escala plugin once. Copy the agent context from the Figma page and paste it into the plugin — you do not maintain a second set of variables by hand.',
   },
   [GUIDE_MCP_KEY]: {
     title: 'MCP',

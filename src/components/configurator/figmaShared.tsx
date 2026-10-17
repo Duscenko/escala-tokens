@@ -164,11 +164,11 @@ export function PluginInstallPromo({
   const rootClass = layout === 'stacked'
     ? 'mt-3 flex w-full flex-col gap-2.5'
     : 'flex flex-shrink-0 items-center gap-2.5'
-  // Stroke, not a filled slab. Sync now is the payoff on this screen; a
-  // solid `bg-fg` Download sat at the same weight and stole the eye from
-  // it. Border + label use `--fg` so they invert with the chrome page
-  // (near-white in dark, near-black in light) instead of a hardcoded white
-  // that would vanish on a light rail.
+  // Stroke, not a filled slab — Copy context is the payoff on the Figma
+  // page; a solid `bg-fg` Community button sat at the same weight and stole
+  // the eye from it. Border + label use `--fg` so they invert with the
+  // chrome page (near-white in dark, near-black in light) instead of a
+  // hardcoded white that would vanish on a light rail.
   const buttonClass = layout === 'stacked'
     ? 'inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-fg bg-transparent px-3 text-caption font-semibold text-fg transition-[background-color,transform] hover:bg-fg/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
     : 'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-fg bg-transparent px-3 text-caption font-semibold text-fg transition-[background-color,transform] hover:bg-fg/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'

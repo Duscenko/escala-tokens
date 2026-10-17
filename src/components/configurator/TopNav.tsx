@@ -730,7 +730,7 @@ export default function TopNav({
               </>
             )
             return onOpenFigmaSync ? (
-              <button type="button" onClick={onOpenFigmaSync} title={t('Sync with Figma')} aria-label={t('Plugin')} className={cls}>
+              <button type="button" onClick={onOpenFigmaSync} title={t('Bring to Figma')} aria-label={t('Plugin')} className={cls}>
                 {inner}
               </button>
             ) : (

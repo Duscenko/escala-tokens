@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { getStoredToken, type GitHubPushState } from '../../lib/github'
 import { type FigmaPublishState } from '../../lib/figmaSync'
+import { HOSTED_LIVE_SYNC } from '../../lib/hostedSync'
 import { FIGMA_SYNC_MODE_CAP } from '../../lib/figmaSyncModes'
 import { GitHubGlyph } from '../ui/icons'
 import { FigmaLogo, PluginInstallPromo, relativeTime } from './figmaShared'
@@ -160,12 +161,37 @@ export default function IntegrationStatusRail({
                 <StatusRow label="Repository" value={githubRepo ?? 'Not selected'} mono={Boolean(githubRepo)} />
                 <StatusRow label="Account" value={githubCredentialSaved ? 'Credentials saved' : 'Not connected'} />
               </>
-            ) : (
+            ) : HOSTED_LIVE_SYNC ? (
               <>
                 <StatusRow label="Sync status" value={statusValue} dot={figmaSyncDot} />
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
                 <StatusRow label="Plugin" value="Sign in to sync" />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />
+                <StatusRow
+                  label="GitHub"
+                  value={
+                    githubPushState === 'error' || githubPushState === 'pushing'
+                      ? githubStatusValue
+                      : githubRepo
+                        ? 'Connected'
+                        : onOpenGithub
+                          ? 'Connect'
+                          : githubStatusValue
+                  }
+                  onClick={onOpenGithub}
+                  dot={
+                    <StatusDot
+                      active={githubConnected}
+                      busy={githubPushState === 'pushing'}
+                      error={githubPushState === 'error'}
+                    />
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <StatusRow label="Bridge" value="Copy context" />
+                <StatusRow label="Plugin" value="Agent Context → Import" />
                 <StatusRow
                   label="GitHub"
                   value={

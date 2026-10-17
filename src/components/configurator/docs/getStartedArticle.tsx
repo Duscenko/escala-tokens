@@ -15,13 +15,13 @@ import {
   skillFolderName,
   skillInstallPath,
 } from '../../../lib/agentInstall'
-import { publishOrigin, syncProjectId, syncUrl } from '../../../lib/figmaSync'
+import { publishOrigin, syncProjectId } from '../../../lib/figmaSync'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
 import { AIContextButton } from '../../ui/AIContextButton'
 import AgentInstallPanel from '../AgentInstallPanel'
 import { MCP_VISIBLE } from '../../../lib/featureFlags'
 import {
-  CodeBlock, DocHeader, DocSection, DocTitle, Pager, type TocEntry,
+  DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
 import {
   GET_STARTED_KEY, GUIDE_MCP_KEY, GUIDE_FIGMA_KEY, GUIDE_PAGE_COPY,
@@ -35,7 +35,7 @@ export function getStartedToc(key: string, t: Translate = (source) => source): T
     return [
       { id: 'description', label: t('Overview') },
       { id: 'plugin', label: t('Install the plugin') },
-      { id: 'sync', label: t('Keep Sync on') },
+      { id: 'context', label: t('Copy the context') },
       { id: 'file', label: t('Optional file') },
     ]
   }
@@ -60,14 +60,14 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     return [
       '# Use in Figma',
       '',
-      'Install the Escala plugin once. Keep Sync on so Figma reads the same JSON the configurator publishes.',
+      'Install the Escala plugin once. Copy the agent context from the Figma page and paste it into the plugin — Home → Agent Context → Import.',
       '',
       `1. Install Escala Tokens from Figma Community: ${FIGMA_PLUGIN_COMMUNITY}`,
       '2. In the Figma desktop app, run Plugins → Escala Tokens.',
-      '3. In the plugin, open Sync. Paste the live endpoint. Auto-sync on.',
-      '4. Optional file: Export → Escala JSON (the exact payload the plugin imports).',
+      '3. On escalatokens.com open Figma, check brands and viewports, then Copy context.',
+      '4. In the plugin, Home → Agent Context → paste → Import.',
+      '5. Optional file: Export → Escala JSON (the same payload, as a download).',
       '',
-      `Sync URL: \`${syncUrl()}\``,
     ].join('\n')
   }
   if (key === GUIDE_MCP_KEY) {
@@ -179,7 +179,7 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
         <div className="flex flex-col gap-2">
           <DestinationRow
             title={t('Use in Figma')}
-            hint={t('Install the Escala plugin and keep Sync on. Variables land in the file you already design in.')}
+            hint={t('Install the Escala plugin, copy the agent context, and paste it in. Variables land in the file you already design in.')}
             onClick={() => onOpen(GUIDE_FIGMA_KEY)}
           />
           {MCP_VISIBLE && (
@@ -197,13 +197,12 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
 
 function FigmaGuide({ exits }: { exits: DocsExits }) {
   const { t } = useI18n()
-  const url = syncUrl()
   return (
     <>
       <DocSection
         id="plugin"
         title={t('Install the plugin')}
-        description={t('One-time. Figma desktop, not the browser. After that you never import a JSON by hand unless you want a snapshot.')}
+        description={t('One-time. Figma desktop, not the browser. After that you paste the agent context — or a JSON snapshot if you want one on disk.')}
       >
         <ol className="list-decimal pl-4 text-ui text-fg-muted leading-relaxed flex flex-col gap-1 mb-3">
           <li>{t('Install Escala Tokens from Figma Community.')}</li>
@@ -220,12 +219,16 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
       </DocSection>
 
       <DocSection
-        id="sync"
-        title={t('Keep Sync on')}
-        description={t("The plugin polls this system's published JSON — the same file Export can download. Rename the project and the URL changes; that is expected.")}
+        id="context"
+        title={t('Copy the context')}
+        description={t('The Figma page builds one message — your brands, themes and viewports, plus the Escala JSON. Paste it into the plugin: Home → Agent Context → Import.')}
       >
-        <CodeBlock file={t('Live sync URL')} code={url} />
-        <ExitButton onClick={exits.onOpenFigmaSync}>{t('Open Sync')}</ExitButton>
+        <ol className="list-decimal pl-4 text-ui text-fg-muted leading-relaxed flex flex-col gap-1 mb-3">
+          <li>{t('Open Figma in the workspace. Check the brands and viewports to ship.')}</li>
+          <li>{t('Press Copy context.')}</li>
+          <li>{t('In the plugin, Home → Agent Context → paste → Import.')}</li>
+        </ol>
+        <ExitButton onClick={exits.onOpenFigmaSync}>{t('Open Figma')}</ExitButton>
       </DocSection>
 
       <DocSection

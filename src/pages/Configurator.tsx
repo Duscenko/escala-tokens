@@ -1863,21 +1863,6 @@ export default function Configurator() {
   useEffect(() => {
     setActiveThemeHint(previewTheme)
   }, [previewTheme])
-  const publishFigmaNow = useCallback(() => {
-    commitVisit()
-    // Publishing hands Figma the whole system: a guest signs up first.
-    if (access.guest) { goToLogin(); return }
-    if (!isLiveEnvironment() || figmaPublishState === 'publishing' || !figmaSyncModes.length) return
-    handleFigmaPublishState('publishing')
-    void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => {
-      if (result.superseded) return
-      handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
-    })
-  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection, access.guest])
-  const syncFigmaNow = useCallback(() => {
-    setExportMode('figma-sync')
-    publishFigmaNow()
-  }, [publishFigmaNow])
   // Keep what is published in step with two deliberate acts that auto-sync
   // cannot see (it is off, or it reads the result as "nothing changed"):
   //  - a brand was deleted: the published blob must stop carrying it, so a
@@ -1987,9 +1972,6 @@ export default function Configurator() {
         <FigmaSyncView
           onClose={() => setExportMode(null)}
           onOpenDownload={() => setExportMode('figma-download')}
-          publishState={figmaPublishState}
-          publishError={figmaPublishError}
-          onRequestSync={syncFigmaNow}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
           onSelectTheme={changePreviewTheme}
@@ -2667,7 +2649,6 @@ export default function Configurator() {
                     }}
                     figmaPublishState={figmaPublishState}
                     workspaceSection={workspaceSection}
-                    onRequestFigmaSync={publishFigmaNow}
                     onOpenFigmaDownload={() => openExport('figma-download')}
                     figmaFileName={figmaFileName}
                     onFigmaFileNameChange={(name) => {
