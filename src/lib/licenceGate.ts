@@ -1,6 +1,6 @@
 // Who may read a published system once the launch promo is over.
 //
-// Hosted sync is an Escala Pro feature, and it costs money on every request, so
+// Syncing a published system to the plugin is an Escala Pro feature, and it costs money on every request, so
 // the rule has to bind the READ side too: a plugin polling a blob every 10
 // seconds is the expensive half. Publishing needs a valid licence key
 // (`api/tokens.ts`); what it leaves behind is a small stamp inside the stored
@@ -72,4 +72,4 @@ export function stripLicence<T>(data: T): T {
 /** The one message every refusal carries, so the plugin log and the app say the
  *  same thing. */
 export const LICENCE_REQUIRED_MESSAGE =
-  'Hosted sync is part of Escala Pro. Get a licence at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
+  'Syncing with the Figma plugin is part of Escala Pro. Get a licence at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'

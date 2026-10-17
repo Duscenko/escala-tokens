@@ -230,7 +230,7 @@ describe('account files endpoint', () => {
     expect([...blobs.keys()].every((k) => !k.includes('user-ana'))).toBe(true)
   })
 
-  it('Free keeps two design systems; the rest are named so the browser keeps them locally', async () => {
+  it('Free keeps one design system; the rest are named so the browser keeps them locally', async () => {
     const many = files(snap('Acme', ['acme']), [
       saved('local:acme', 'Acme', ['acme'], '2026-10-13T00:00:00Z'),
       saved('local:two', 'Two', ['two'], '2026-10-12T00:00:00Z'),
@@ -238,8 +238,8 @@ describe('account files endpoint', () => {
     ])
     const res = await call({ method: 'PUT', jwt: 'jwt-bo', body: { ifEtag: null, storeVersion: 88, files: many } })
     const record = res.body.record as { files: CloudFiles; trimmedIds: string[] }
-    expect(record.files.savedSystems.map((s) => s.id)).toEqual(['local:acme', 'local:two'])
-    expect(record.trimmedIds).toEqual(['local:three'])
+    expect(record.files.savedSystems.map((s) => s.id)).toEqual(['local:acme'])
+    expect(record.trimmedIds).toEqual(['local:two', 'local:three'])
   })
 
   it('signed out, cross-site, or a malformed payload is refused', async () => {

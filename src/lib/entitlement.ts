@@ -11,7 +11,7 @@
 export const PROMO_ENDS_AT = '2026-10-07T23:59:59+02:00'
 
 /** Themes (each with its Light + Dark) a Figma sync may carry. */
-export const FREE_MAX_THEMES = 1
+export const FREE_MAX_THEMES = 2
 export const PRO_MAX_THEMES = 10
 
 /** Public pricing page (`src/components/public/PricingPage.tsx`). */
@@ -27,7 +27,7 @@ export const PRICING_PATH = '/pricing'
  *  reference the lowest price actually charged in the previous 30 days. In
  *  Polar this is the product's base price — already $45; edit it to $69 on
  *  Nov 16. The web follows this module; Polar does not. */
-export const PRO_PRICE_USD = 69
+export const PRO_PRICE_USD = 45
 export const PRO_LAUNCH_PRICE_USD = 45
 /** Last second of the launch price, Europe/Paris (CET). */
 export const PRO_LAUNCH_ENDS_AT = '2026-11-15T23:59:59+01:00'
@@ -60,7 +60,7 @@ export function entitlementAt(now: Date): Entitlement {
     maxThemes: promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
     launchPrice,
     launchEndsAt: PRO_LAUNCH_ENDS_AT,
-    priceUsd: launchPrice ? PRO_LAUNCH_PRICE_USD : PRO_PRICE_USD,
+    priceUsd: PRO_PRICE_USD, // one flat price; the launch tier was dropped
     now: now.toISOString(),
   }
 }

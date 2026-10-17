@@ -138,7 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Cache-Control', 'no-store')
       return res.status(410).json({ error: DELETED_SYSTEM_MESSAGE, deleted: true })
     }
-    // Hosted sync is Pro once the launch promo is over (design-plans/
+    // Plugin sync is Pro once the launch promo is over (design-plans/
     // pricing-and-packaging.md). The answer rides inside the blob we just read
     // — see lib/licenceGate.ts — so this costs no extra fetch. Never cached:
     // a refusal must not outlive the licence that would lift it.

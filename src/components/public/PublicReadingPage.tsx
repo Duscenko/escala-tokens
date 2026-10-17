@@ -3,7 +3,6 @@
 // configurator" is `/?section=<id>` — the same section ids the plugin already
 // sends — and the configurator attaches `project` after that load.
 
-import PromoBanner from '../configurator/PromoBanner'
 import { useEffect, useState } from 'react'
 import { PRICING_PATH } from '../../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../configurator/TopNav'
@@ -116,7 +115,6 @@ export function PublicHeader({ current = null, openEditor = '/' }: { current?: T
   const theme = useTheme()
   return (
     <>
-    {current === 'pricing' && <PromoBanner dismissible={false} />}
     <TopNav
       nav={current}
       onNav={(key) => go(NAV_PATH[key] ?? openEditor)}

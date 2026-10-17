@@ -125,7 +125,7 @@ function SyncStuckHelp() {
       {open ? (
         <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
           <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this design system.')}</li>
-          <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself — Live Sync will not rewrite a pasted import.')}</li>
+          <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself.')}</li>
           <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
         </ol>
       ) : null}
@@ -160,70 +160,6 @@ function EditIcon() {
         mask: "url('/icons/settings/edit.svg') center / contain no-repeat",
       }}
     />
-  )
-}
-
-/** Launch promo strip at the head of File & modes — the screen where several
- *  themes and viewports are chosen, i.e. where the Pro limits will later bite.
- *  States the rule that follows the promo up front, so November 1 is not the
- *  first time anyone hears of it. Static: no shimmer, no ticking seconds — the
- *  countdown's unit is a day. The PRO pill is the one accent FILL on this
- *  chrome surface, so it takes `--accent-solid` + its solved `--accent-ink`. */
-function PromoBanner({ daysLeft }: { daysLeft: number }) {
-  const { t } = useI18n()
-  return (
-    <div className="flex flex-shrink-0 items-center gap-3 border-b border-line bg-accent-ui/[0.08] px-5 py-3">
-      <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-0.5 text-nano font-semibold tracking-[0.1em] text-accent-ink">
-        PRO
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-fg">{t('Every brand, theme and viewport is free until October 31')}</p>
-        <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-          {t('After that: 1 brand in one theme and Desktop are free. Up to {max} brands and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}{' '}
-          <a href={PRICING_PATH} className={`text-accent-ui underline-offset-2 hover:underline ${SYNC_FOCUS}`}>{t('See pricing')}</a>
-        </p>
-      </div>
-      <p className="flex-shrink-0 text-right">
-        <span className="block font-mono text-heading font-medium leading-none tabular-nums text-accent-ui">{daysLeft}</span>
-        <span className="mt-1 block text-mini text-fg-faint">{daysLeft === 1 ? t('day left') : t('days left')}</span>
-      </p>
-    </div>
-  )
-}
-
-/** After the free promo, hosted sync is an Escala Pro feature. Says so at the
- *  head of File & modes — the screen that offers it — instead of letting the
- *  first clue be a failed publish. Two exits, both to something that works:
- *  the pricing page, or pasting a key already bought. */
-function ProRequiredBanner({ onOpenLicence }: { onOpenLicence: () => void }) {
-  const { t } = useI18n()
-  return (
-    <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-line bg-accent-ui/[0.08] px-5 py-3">
-      <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-0.5 text-nano font-semibold tracking-[0.1em] text-accent-ink">
-        PRO
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-fg">{t('Hosted sync is part of Escala Pro')}</p>
-        <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-          {t('You can still import tokens.json in the plugin by hand: 1 brand in one theme and Desktop are free.')}
-        </p>
-      </div>
-      <div className="flex flex-shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onOpenLicence}
-          className={`h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg ${SYNC_FOCUS}`}
-        >
-          {t('I have a key')}
-        </button>
-        <a
-          href={PRICING_PATH}
-          className={`inline-flex h-8 items-center rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 ${SYNC_FOCUS}`}
-        >
-          {t('See pricing')}
-        </a>
-      </div>
-    </div>
   )
 }
 
@@ -371,9 +307,6 @@ export default function FigmaSyncView({
           light/dark are not My themes — an empty library shows an empty
           list, never a default-blue "Dark" row. */}
       <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface/50">
-          {entitlement.promo
-            ? <PromoBanner daysLeft={entitlement.daysLeft} />
-            : !entitlement.pro ? <ProRequiredBanner onOpenLicence={() => setLicenceOpen(true)} /> : null}
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
             <p className="text-sm font-semibold text-fg">{t('File & modes')}</p>
             {entitlement.licence.status === 'valid' && (
@@ -626,32 +559,6 @@ export default function FigmaSyncView({
           </div>
         )}
         <SyncStuckHelp />
-        {isDeployed && HOSTED_LIVE_SYNC && (
-          <div className="flex items-start justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2.5">
-            <div className="min-w-0">
-              <p className="text-caption font-semibold text-fg">Keep Figma in sync</p>
-              <p className="mt-0.5 text-caption leading-relaxed text-fg-faint">
-                Re-publish automatically after every edit.
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={autoSyncFigma}
-              aria-label="Toggle auto-sync to Figma"
-              onClick={() => setAutoSyncFigma(!autoSyncFigma)}
-              className={`relative mt-0.5 h-5 w-9 flex-shrink-0 rounded-full transition-colors ${
-                autoSyncFigma ? 'bg-status-success-solid' : 'bg-line-strong'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                  autoSyncFigma ? 'translate-x-4' : ''
-                }`}
-              />
-            </button>
-          </div>
-        )}
       </div>
       {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
       <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />

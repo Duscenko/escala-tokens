@@ -10,9 +10,9 @@ import { myThemeKeys } from './themeLibrary.js'
 
 export const ACCOUNT_FILES_PATH = '/api/account-files'
 
-/** Design systems an account keeps in the cloud (2026-10-14: Free holds 2).
+/** Design systems an account keeps in the cloud (Free holds 1).
  *  Must equal `FREE_SYSTEM_LIMIT` in `freeThemeLimit.ts`. */
-export const FREE_CLOUD_SYSTEMS = 2
+export const FREE_CLOUD_SYSTEMS = 1
 export const PRO_CLOUD_SYSTEMS = 10
 
 /** Under Vercel's 4.5 MB request body limit, with room for the envelope. */

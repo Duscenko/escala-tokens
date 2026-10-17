@@ -5,7 +5,7 @@ import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { activateLicence, clearLicence } from '../../lib/licence'
 import { checkoutUrl } from '../../lib/polar'
-import { PRICING_PATH, PRO_PRICE_USD } from '../../lib/entitlement'
+import { PRICING_PATH } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 
 // "Paste your licence key" — the only place a key enters the app.
@@ -135,7 +135,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
             </h2>
             <p id={`${titleId}-copy`} className="mt-1.5 text-caption leading-5 text-fg-muted">
               {active
-                ? t('Hosted sync, live MCP and updates.')
+                ? t('Complete Figma UI Kit, live MCP and updates.')
                 : entitlement.promo
                   ? t('One payment. Includes 12 months of hosted sync, live MCP and updates.')
                   : t('The purchase email opens Polar and shows the key. Paste it here to turn this browser into Pro.')}
@@ -249,11 +249,6 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
               <span className="tabular-nums text-fg-muted">${entitlement.priceUsd}</span>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
             </a>
-            {entitlement.launchPrice && (
-              <p className="text-caption text-fg-muted">
-                {t('After November 15, ${price}.', { price: String(PRO_PRICE_USD) })}
-              </p>
-            )}
             <p className="text-caption text-fg-faint">
               {t('Secure checkout by Polar. The email opens the page where the key is shown.')}{' '}
               <a href={PRICING_PATH} className="text-accent-ui underline-offset-2 hover:underline">{t('See pricing')}</a>

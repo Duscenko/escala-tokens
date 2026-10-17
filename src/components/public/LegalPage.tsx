@@ -401,7 +401,7 @@ function termsDoc(l: Locale): Doc {
       ...(acc ? [{ id: 'compte', h: '5. Account', body: <P>An account is optional: the configurator and export work without one. You are responsible for keeping your credentials confidential. A free account saves nothing online; online saving and sync require a Pro licence. A licence key is tied to one account. You can export your data and delete your account at any time from the Account page; deletion is permanent.</P> }] : []),
       { id: 'pro', h: `${acc ? '6' : '5'}. Escala Pro`, body: <>
         <P>Escala Pro is sold as a one-time payment through Polar, which acts as merchant of record: payment, invoicing and VAT are governed by Polar’s terms. It includes hosted sync, the live MCP server, multiple themes and platform modes, plus updates and support for 12 months from purchase. After those 12 months the key stays valid for whatever does not depend on the hosted service; hosted sync and the live MCP require a licence in date.</P>
-        <Ul items={['Price and launch period: shown on the Pricing page at the time of purchase. Until November 15, 2026, Escala Pro is 45 USD; after that, 69 USD. Hosted sync requires a Pro licence.', 'Refund: 14 days from purchase, on request through the contact form.', 'One key = one buyer. Reselling or sharing a key is forbidden and may lead to its revocation.']} />
+        <Ul items={['Price: shown on the Pricing page at the time of purchase. Escala Pro is a one-time payment of 45 USD. The complete UI Kit Library in Figma requires a Pro licence.', 'Refund: 14 days from purchase, on request through the contact form.', 'One key = one buyer. Reselling or sharing a key is forbidden and may lead to its revocation.']} />
       </> },
       { id: 'usage', h: `${acc ? '7' : '6'}. Acceptable use`, body: <P>Do not use the service to harm it (overload, bypassing limits, reaching other people’s data), to publish unlawful content, or to resell API access. We may limit or suspend abusive use.</P> },
       { id: 'garantie', h: `${acc ? '8' : '7'}. Availability and liability`, body: <P>The service is provided “as is”, with no guarantee of continuous availability; the free tier on a best-effort basis. Keep your systems elsewhere too (export, GitHub): a published sync is not a backup. To the extent the law allows, our liability is limited to direct damages and capped at the price paid for the Pro licence; this does not affect rights the law gives consumers that cannot be waived.</P> },
@@ -511,7 +511,7 @@ function licenceDoc(l: Locale): Doc {
         <P>Depending on the purchase, you receive a non-exclusive, non-transferable licence.</P>
         <Ul items={[
           'Free. One design system and one brand, in Light or Dark. Without Pro, a manual import in the plugin remains possible, with that brand and Desktop mode.',
-          'Pro. A one-time payment through Polar, the merchant of record (payment, invoice, VAT). Hosted sync, the live MCP server, up to 10 brands and every platform mode. The price is the one on the Pricing page at the time of purchase.',
+          'Pro. A one-time payment through Polar, the merchant of record (payment, invoice, VAT). The complete UI Kit Library in Figma, the live MCP server, up to 10 brands and every platform mode. The price is the one on the Pricing page at the time of purchase.',
         ]} />
       </> },
       { id: 'permis', h: '3. Permitted use', body: <Rules kind="yes" items={[
@@ -527,7 +527,7 @@ function licenceDoc(l: Locale): Doc {
         'Decompile the plugin, modify it or make derivative works from it.',
         'Overload the service, bypass its limits or publish unlawful content.',
       ]} /> },
-      { id: 'maj', h: '5. Updates', body: <P>Pro includes updates and support for 12 months from purchase. After that, the key stays valid for whatever does not depend on the hosted service. Hosted sync and the live MCP require a licence in date. Price and detail are on the {pricing}.</P> },
+      { id: 'maj', h: '5. Updates', body: <P>Pro includes updates and support for 12 months from purchase. After that, the key stays valid for whatever does not depend on the hosted service. The live MCP requires a licence in date. Price and detail are on the {pricing}.</P> },
       { id: 'fin', h: '6. Ending', body: <P>You can stop using Escala at any time. If you breach this agreement, we may suspend access to the hosted service and revoke the key. A refund is requested within 14 days of purchase, through the contact form. The service is provided as is, within the limits set out in the {terms}.</P> },
     ],
   }

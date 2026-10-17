@@ -104,11 +104,10 @@ describe('Free ships one theme per brand', () => {
       .toEqual([{ theme: 'acme', appearance: 'light' }])
   })
 
-  it('a brand that never chose keeps the on-screen rule', () => {
+  it('a brand that never chose ships Light and Dark', () => {
     expect(soleShippedAppearance({}, 'acme')).toBeUndefined()
-    expect(freeFigmaScope('acme', ['acme'], themes, { acme: 'light' }, 'dark', {}).modes)
-      .toEqual([{ theme: 'acme', appearance: 'dark' }])
-    expect(freeFigmaScope('acme', ['acme'], themes, { acme: 'light' }, 'dark').modes)
-      .toEqual([{ theme: 'acme', appearance: 'dark' }])
+    const both = [{ theme: 'acme', appearance: 'light' }, { theme: 'acme', appearance: 'dark' }]
+    expect(freeFigmaScope('acme', ['acme'], themes, { acme: 'light' }, 'dark', {}).modes).toEqual(both)
+    expect(freeFigmaScope('acme', ['acme'], themes, { acme: 'light' }, 'dark').modes).toEqual(both)
   })
 })

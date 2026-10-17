@@ -278,7 +278,7 @@ export function describePublishFailure(
       // `regeneratePublishId()`, surfaced in Figma sync as "New ID".
       return `This library was first published from another browser, and only that one can update it. Sign in there and publish again, or create the theme again on this browser.`
     case 'licence':
-      return 'Hosted sync needs Escala Pro. Paste your licence key, or import tokens.json in the plugin by hand.'
+      return 'Syncing with the Figma plugin needs Escala Pro. Paste your licence key, or import tokens.json in the plugin by hand.'
     case 'network':
       return 'Could not reach the server — check your connection and try again.'
     case 'server':

@@ -7,8 +7,8 @@ import {
 } from '../freeThemeLimit'
 
 describe('free theme create gate', () => {
-  it('blocks a signed-in Free account that already has a theme', () => {
-    expect(freeAnotherThemeBlocked({ accountsOn: true, signedIn: true, pro: false, count: 1 })).toBe(true)
+  it('blocks a signed-in Free account that already has two brands', () => {
+    expect(freeAnotherThemeBlocked({ accountsOn: true, signedIn: true, pro: false, count: 2 })).toBe(true)
     expect(freeAnotherThemeBlocked({ accountsOn: true, signedIn: true, pro: false, count: 4 })).toBe(true)
   })
 
@@ -25,7 +25,7 @@ describe('free theme create gate', () => {
     expect(licenceStillOpen('checking', false)).toBe(false)
     expect(licenceStillOpen('invalid', true)).toBe(false)
     expect(licenceStillOpen('none', false)).toBe(false)
-    expect(FREE_MY_THEME_LIMIT).toBe(1)
+    expect(FREE_MY_THEME_LIMIT).toBe(2)
   })
 
   it('does not block when this process has no stored session', () => {

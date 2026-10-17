@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { GridFrameAlias, GridViewport } from '../../lib/layoutTokens'
 import { useI18n } from '../../lib/i18n'
-import { useOneThemePlan } from '../../lib/access'
+import { useNonProPlan } from '../../lib/access'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
@@ -59,17 +59,17 @@ function TabletGlyph() {
 
 /** Workspace platform — desktop / tablet / mobile. Session-only, same job as Light/Dark
  *  for appearance: Type, Grid and the live preview resolve against this cut. */
-const FREE_LOCKED_VIEWPORTS: readonly GridViewport[] = ['tablet', 'mobile']
+const FREE_LOCKED_VIEWPORTS: readonly GridViewport[] = ['tablet']
 
-/** Free ships Desktop only — same cut File & modes already locks. */
+/** Free ships Desktop and Mobile; Tablet is Pro. */
 export function usePlanViewportLock(
   value: GridViewport,
   onChange: (platform: GridViewport) => void,
 ) {
-  const limited = useOneThemePlan()
+  const limited = useNonProPlan()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   useEffect(() => {
-    if (limited && value !== 'desktop') onChange('desktop')
+    if (limited && value === 'tablet') onChange('desktop')
   }, [limited, value, onChange])
   return {
     lockedIds: limited ? FREE_LOCKED_VIEWPORTS : [],

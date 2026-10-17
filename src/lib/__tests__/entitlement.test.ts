@@ -25,9 +25,9 @@ describe('launch promo entitlement', () => {
 })
 
 describe('launch price', () => {
-  it('is $45 through Nov 15 in Paris, $69 from the next second', () => {
+  it('is a flat $45, before and after Nov 15', () => {
     expect(entitlementAt(new Date('2026-10-08T16:00:00Z'))).toMatchObject({ launchPrice: true, priceUsd: 45, promo: false, pro: false })
     expect(entitlementAt(new Date('2026-11-15T22:59:59Z'))).toMatchObject({ launchPrice: true, priceUsd: 45 })
-    expect(entitlementAt(new Date('2026-11-15T23:00:00Z'))).toMatchObject({ launchPrice: false, priceUsd: 69 })
+    expect(entitlementAt(new Date('2026-11-15T23:00:00Z'))).toMatchObject({ launchPrice: false, priceUsd: 45 })
   })
 })
