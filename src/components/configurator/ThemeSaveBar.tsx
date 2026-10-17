@@ -246,26 +246,52 @@ export function UnsavedNotice() {
   const githubLastPushAt = useDesignStore((s) => s.githubLastPushAt)
   const onGithub = Boolean(githubRepo && githubLastPushAt)
   const link = 'rounded text-caption font-semibold text-fg underline-offset-2 transition-colors hover:text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
   return (
-    <div role="status" className="flex flex-col gap-1.5 rounded-lg border border-status-warning/30 bg-status-warning/[0.07] px-2.5 py-2">
-      <p className="m-0 flex items-start gap-1.5 text-caption leading-snug text-fg-muted">
-        <span aria-hidden className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
-        <span>
-          {onGithub
-            ? t('On GitHub ({repo}), not saved on Escala. It stays in this browser.', { repo: githubRepo ?? '' })
-            : t('Not saved. This design system lives only in this browser.')}
-        </span>
-      </p>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3">
-        <button type="button" onClick={() => goToLogin('save-library')} className={link}>
-          {t('Save with an account')}
-        </button>
-        {!onGithub && (
-          <button type="button" onClick={() => requestOpenGithub()} className={link}>
-            {t('Push to GitHub')}
-          </button>
-        )}
-      </div>
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className="flex items-center gap-1.5 rounded text-caption text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <span aria-hidden className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
+        <span>{t('Not saved')}</span>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+          <circle cx="8" cy="8" r="6.25" />
+          <path d="M8 7.25v3.5" />
+          <circle cx="8" cy="5" r="0.5" fill="currentColor" />
+        </svg>
+      </button>
+      {open && (
+        <div role="dialog" aria-label={t('Not saved')} className="absolute bottom-full left-0 z-20 mb-2 flex w-full min-w-[220px] flex-col gap-2 rounded-lg border border-line-strong bg-elevated px-3 py-2.5 shadow-lg">
+          <p className="m-0 text-caption leading-snug text-fg-muted">
+            {onGithub
+              ? t('On GitHub ({repo}), not saved on Escala. It stays in this browser.', { repo: githubRepo ?? '' })
+              : t('Not saved. This design system lives only in this browser.')}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <button type="button" onClick={() => { setOpen(false); goToLogin('save-library') }} className={link}>
+              {t('Save with an account')}
+            </button>
+            {!onGithub && (
+              <button type="button" onClick={() => { setOpen(false); requestOpenGithub() }} className={link}>
+                {t('Push to GitHub')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

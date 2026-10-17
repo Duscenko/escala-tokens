@@ -301,11 +301,13 @@ export function ThemeIdentityBar({
                 onClick={() => onKind(k)}
                 aria-pressed={on}
                 className={`h-full px-2.5 text-caption font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60 ${
-                  on ? '' : 'bg-surface text-fg-muted hover:text-fg'
+                  on ? 'bg-accent-solid text-accent-ink' : 'bg-surface text-fg-muted hover:text-fg'
                 }`}
-                style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
               >
-                {k}
+                <span className="inline-flex items-center gap-1.5">
+                  <span aria-hidden className="h-2.5 w-2.5 rounded-full border border-fg/30" style={{ backgroundColor: bg }} />
+                  {k}
+                </span>
               </button>
             )
           })}

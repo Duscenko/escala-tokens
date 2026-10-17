@@ -10,9 +10,14 @@
  *  Oct 25. Written as an offset, never a local-time string. */
 export const PROMO_ENDS_AT = '2026-10-07T23:59:59+02:00'
 
-/** Themes (each with its Light + Dark) a Figma sync may carry. */
-export const FREE_MAX_THEMES = 3
-export const PRO_MAX_THEMES = 10
+/** Figma modes (theme columns: brand × Light/Dark) one file may carry. Free
+ *  ships every brand, theme and viewport up to 10 modes; Pro goes past 10, up
+ *  to what the Figma plan of the file holds (Enterprise tops out at 40). */
+export const FREE_MAX_MODES = 10
+export const PRO_MAX_MODES = 40
+/** Kept for callers that still speak in brands: a brand ships up to two modes. */
+export const FREE_MAX_THEMES = FREE_MAX_MODES / 2
+export const PRO_MAX_THEMES = PRO_MAX_MODES / 2
 
 /** Public pricing page (`src/components/public/PricingPage.tsx`). */
 export const PRICING_PATH = '/pricing'

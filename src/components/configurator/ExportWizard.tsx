@@ -16,7 +16,7 @@ import { myThemeKeys } from '../../lib/themeLibrary'
 import AgentInstallPanel from './AgentInstallPanel'
 import { freeFigmaScope } from '../../lib/freeFigmaScope'
 import { useFreeTier } from '../../lib/access'
-import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
+import { PRICING_PATH, FREE_MAX_MODES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
 import { SEGMENT_INACTIVE } from './themeWorkspaceLayout'
@@ -784,8 +784,8 @@ export default function ExportWizard({
                     )}
                     {figmaScope && (
                       <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
-                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (${figmaScope.modes?.[0]?.appearance === 'dark' ? 'Dark' : 'Light'} only)` : 'one brand'} and Desktop.</span>{' '}
-                        Up to {PRO_MAX_THEMES} brands and every viewport come with Escala Pro.{' '}
+                        <span className="font-semibold text-fg">Free ships every brand and viewport, up to {FREE_MAX_MODES} modes.</span>{' '}
+                        More than {FREE_MAX_MODES} modes and the complete UI Kit come with Escala Pro.{' '}
                         <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
                       </p>
                     )}

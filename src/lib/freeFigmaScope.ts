@@ -1,7 +1,7 @@
 // What a download for the Figma plugin carries when the person has no Escala
-// Pro: up to THREE library themes (brands), each with Light AND Dark, on the
-// Desktop, Tablet and Mobile viewports (grid styles XL Desktop, MD Tablet and
-// SM Mobile) — the free tier on /pricing. More brands are Pro.
+// Pro: every brand and theme, on the Desktop, Tablet and Mobile viewports
+// (grid styles XL Desktop, MD Tablet and SM Mobile), up to FREE_MAX_MODES (10)
+// theme columns — the free tier on /pricing. More than 10 modes is Pro.
 //
 // A SOFT limit, and meant to be understood as one: the exporter is MIT, so a
 // fork can lift it, and the compiled plugin can still be read. The hard limits
@@ -13,7 +13,7 @@
 import type { ThemeAppearance } from './themeModes'
 import { figmaSyncThemeKeys } from './themeLibrary'
 import { soleShippedAppearance, type BrandThemes } from './brandThemes'
-import { FREE_MAX_THEMES } from './entitlement'
+import { FREE_MAX_MODES } from './entitlement'
 import type { GenerateTokenOptions } from './tokenGenerator'
 
 export type FigmaScope = Pick<GenerateTokenOptions, 'themes' | 'modes' | 'viewports' | 'gridStyles'>
@@ -36,14 +36,14 @@ export function freeFigmaScope(
   const gridStyles: FigmaScope['gridStyles'] = ['xl-desktop', 'md-tablet', 'sm-mobile']
   const keys = figmaSyncThemeKeys(themeOrder, themes)
   const lead = preferred && keys.includes(preferred) ? [preferred] : []
-  const chosen = [...lead, ...keys.filter((k) => !lead.includes(k))].slice(0, FREE_MAX_THEMES)
+  const chosen = [...lead, ...keys.filter((k) => !lead.includes(k))]
   if (!chosen.length) return { viewports, gridStyles }
   const modes = chosen.flatMap((theme) => {
     const one = soleShippedAppearance(brandThemes, theme)
     const both: ThemeAppearance[] = one ? [one] : ['light', 'dark']
     return both.map((appearance) => ({ theme, appearance }))
-  })
-  return { themes: chosen, modes, viewports, gridStyles }
+  }).slice(0, FREE_MAX_MODES)
+  return { themes: [...new Set(modes.map((m) => m.theme))], modes, viewports, gridStyles }
 }
 
 /** The store `buildCSS` / `buildMarkdown` actually read: one theme, and the

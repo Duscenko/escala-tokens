@@ -5,7 +5,8 @@ import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
-import { FIGMA_SYNC_MODE_CAP, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
+import { PRO_MAX_MODES } from '../lib/entitlement'
+import { figmaModeCapFor, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { canonicalizePublishId } from '../lib/publishId'
@@ -91,7 +92,7 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-import { goToLogin, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
+import { goToLogin, useFreeTier, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
 import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotice'
 import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
@@ -1092,9 +1093,9 @@ export default function Configurator() {
   // republished exactly what the user had unticked.
   const savedSyncSelection = useDesignStore((s) => s.figmaSyncSelection)
   const setFigmaSyncSelection = useDesignStore((s) => s.setFigmaSyncSelection)
-  const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() => {
+  const [figmaSyncModesRaw, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() => {
     const saved = savedSyncSelection.modes?.filter((m) => syncThemes.includes(m.theme))
-    return saved?.length ? saved : defaultFigmaSyncModes(syncThemes, themeKinds, store.brandThemes)
+    return saved?.length ? saved : defaultFigmaSyncModes(syncThemes, themeKinds, store.brandThemes, PRO_MAX_MODES)
   })
   // Whether the user has picked columns themselves. Same signal as
   // `figmaFileNameDirty` above, for the same reason: everything below may
@@ -1126,8 +1127,15 @@ export default function Configurator() {
   )
   const syncThemeKey = syncThemes.join('|')
   const seenSyncThemes = useRef(syncThemes)
-  const figmaSyncModesRef = useRef(figmaSyncModes)
-  figmaSyncModesRef.current = figmaSyncModes
+  const figmaSyncModesRef = useRef(figmaSyncModesRaw)
+  figmaSyncModesRef.current = figmaSyncModesRaw
+  // What the plan lets one file carry: Free the first 10 modes, Pro all of
+  // them. The saved pick is untouched, so going Pro finds it whole.
+  const freeSync = useFreeTier()
+  const figmaSyncModes = useMemo(
+    () => figmaSyncModesRaw.slice(0, figmaModeCapFor(freeSync)),
+    [figmaSyncModesRaw, freeSync],
+  )
   useEffect(() => {
     if (!figmaFileNameDirty) {
       setFigmaFileName(
@@ -1142,27 +1150,27 @@ export default function Configurator() {
     seenSyncThemes.current = syncThemes
     const current = figmaSyncModesRef.current
     const valid = current.filter((mode) => syncThemes.includes(mode.theme))
-    const room = FIGMA_SYNC_MODE_CAP - valid.length
+    const room = PRO_MAX_MODES - valid.length
     const added = newcomers.length && room > 0
-      ? defaultFigmaSyncModes(newcomers, themeKinds, brandThemes).slice(0, room)
+      ? defaultFigmaSyncModes(newcomers, themeKinds, brandThemes, PRO_MAX_MODES).slice(0, room)
       : []
     // A brand whose shipped themes changed elsewhere (its form, its card)
     // gets its columns rewritten; a brand absent from the selection stays out.
     const inStep = syncThemes.reduce(
-      (list, theme) => applyBrandThemesToSyncModes(list, theme, themeKinds, brandThemes),
+      (list, theme) => applyBrandThemesToSyncModes(list, theme, themeKinds, brandThemes, PRO_MAX_MODES),
       valid,
     )
     const withNew = added.length ? inStep.concat(added) : inStep
     const next =
       // Every theme the selection named is gone (deleted, renamed, or a
       // different system loaded), so there is no choice left to respect.
-      !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes)
+      !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes, PRO_MAX_MODES)
       // A choice is never re-derived. Themes that already existed stay as the
       // user left them — including ones they unchecked. A theme created after
       // that choice is appended once and saved, so the next publish carries it.
       : figmaSyncModesDirty ? withNew
       // Untouched: keep tracking the default, which grows with the library.
-      : defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes)
+      : defaultFigmaSyncModes(syncThemes, themeKinds, brandThemes, PRO_MAX_MODES)
     if (sameFigmaSyncModes(next, current)) return
     setFigmaSyncModes(next)
     if (figmaSyncModesDirty) setFigmaSyncSelection({ modes: next })
@@ -1627,7 +1635,7 @@ export default function Configurator() {
       return
     }
     changePreviewTheme(key)
-    chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds, store.brandThemes))
+    chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds, store.brandThemes, PRO_MAX_MODES))
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }

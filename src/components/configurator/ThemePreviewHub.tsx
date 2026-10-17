@@ -635,14 +635,12 @@ export default function ThemePreviewHub({
           onDiscardRandom={onDiscardRandom}
         />
       )}
-      {(surface === 'github' || surface === 'figma') && (
+      {surface === 'github' && (
         <IntegrationStatusRail
           provider={surface}
           githubPushState={githubPushState}
           figmaPublishState={figmaPublishState}
-          onOpenPluginDownload={surface === 'figma' ? onOpenFigmaDownload : undefined}
-          onOpenGithub={surface === 'figma' ? () => onSurfaceChange('github') : undefined}
-          workspaceSection={workspaceSection}
+                    workspaceSection={workspaceSection}
           fileName={figmaFileName}
           modeCount={figmaSyncModes.length}
         />
@@ -773,7 +771,7 @@ export default function ThemePreviewHub({
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
               {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} theme={previewTheme} appearance={previewAppearance} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} previewTheme={previewTheme} previewAppearance={previewAppearance} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} onOpenGithub={() => onSurfaceChange('github')} previewTheme={previewTheme} previewAppearance={previewAppearance} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
             </div>
           </>
         )}

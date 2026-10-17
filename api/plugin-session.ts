@@ -21,7 +21,7 @@ import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
-import { entitlementAt, FREE_MAX_THEMES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
+import { entitlementAt, FREE_MAX_MODES, FREE_MAX_THEMES, PRO_MAX_MODES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 // The Figma plugin cannot share the browser session. Sign-in is a short-lived
@@ -67,8 +67,8 @@ type PluginTier = 'pro' | 'free' | 'unknown'
  *  is still live. Free is only an explicit `plan: 'free'`. A missing session,
  *  one that was never classified, or a Pro whose date has passed is unknown
  *  until the next refresh says which it is. */
-function tierPayload(tier: PluginTier): { tier: PluginTier; maxThemes: number } {
-  return { tier, maxThemes: tier === 'free' ? FREE_MAX_THEMES : PRO_MAX_THEMES }
+function tierPayload(tier: PluginTier): { tier: PluginTier; maxThemes: number; maxModes: number } {
+  return { tier, maxThemes: tier === 'free' ? FREE_MAX_THEMES : PRO_MAX_THEMES, maxModes: tier === 'free' ? FREE_MAX_MODES : PRO_MAX_MODES }
 }
 
 function tierOf(session: Pick<SessionRecord, 'proUntil' | 'plan'> | null | undefined, now = new Date()): { tier: PluginTier; maxThemes: number } {

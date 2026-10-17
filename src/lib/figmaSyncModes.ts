@@ -1,5 +1,6 @@
 import { appearanceOrder, themeModeKey, type ThemeAppearance } from './themeModes'
 import { shippedThemes, type BrandThemes } from './brandThemes'
+import { FREE_MAX_MODES, PRO_MAX_MODES } from './entitlement'
 
 /**
  * How many Color Semantics columns Sync will offer — five themes, each as a
@@ -24,7 +25,11 @@ import { shippedThemes, type BrandThemes } from './brandThemes'
  * the order columns are created in, so whatever the user checked first is what
  * survives the cut.
  */
-export const FIGMA_SYNC_MODE_CAP = 10
+export const FIGMA_SYNC_MODE_CAP = FREE_MAX_MODES
+
+/** The cap that applies to this plan. `FIGMA_SYNC_MODE_CAP` (10) is the default every
+ *  helper below uses; Pro callers pass `PRO_MAX_MODES` to go past it. */
+export const figmaModeCapFor = (free: boolean): number => (free ? FREE_MAX_MODES : PRO_MAX_MODES)
 
 /** One Figma Color Semantics column: a library theme × Light or Dark. */
 export type FigmaSyncMode = {
@@ -49,8 +54,8 @@ export function uniqueThemesFromModes(modes: readonly FigmaSyncMode[] | undefine
   return [...new Set(modes.map((mode) => mode.theme))]
 }
 
-export function clampFigmaSyncModes(modes: readonly FigmaSyncMode[]): FigmaSyncMode[] {
-  return modes.slice(0, FIGMA_SYNC_MODE_CAP)
+export function clampFigmaSyncModes(modes: readonly FigmaSyncMode[], cap: number = FIGMA_SYNC_MODE_CAP): FigmaSyncMode[] {
+  return modes.slice(0, cap)
 }
 
 /**
@@ -67,6 +72,7 @@ export function defaultFigmaSyncModes(
   themeKinds: Record<string, string | undefined>,
   /** What each brand ships. Omitted = every brand ships Light and Dark. */
   brandThemes?: BrandThemes,
+  cap: number = FIGMA_SYNC_MODE_CAP,
 ): FigmaSyncMode[] {
   const next: FigmaSyncMode[] = []
   for (const theme of themes) {
@@ -74,7 +80,7 @@ export function defaultFigmaSyncModes(
     const shipped = shippedThemes(brandThemes, theme)
     for (const appearance of appearanceOrder(preferred)) {
       if (!shipped.includes(appearance)) continue
-      if (next.length >= FIGMA_SYNC_MODE_CAP) return next
+      if (next.length >= cap) return next
       next.push({ theme, appearance })
     }
   }
@@ -89,12 +95,13 @@ export function applyBrandThemesToSyncModes(
   theme: string,
   themeKinds: Record<string, string | undefined>,
   brandThemes: BrandThemes | undefined,
+  cap: number = FIGMA_SYNC_MODE_CAP,
 ): FigmaSyncMode[] {
   const at = modes.findIndex((mode) => mode.theme === theme)
   if (at < 0) return [...modes]
-  const own = defaultFigmaSyncModes([theme], themeKinds, brandThemes)
+  const own = defaultFigmaSyncModes([theme], themeKinds, brandThemes, cap)
   const rest = modes.filter((mode) => mode.theme !== theme)
-  return clampFigmaSyncModes([...rest.slice(0, at), ...own, ...rest.slice(at)])
+  return clampFigmaSyncModes([...rest.slice(0, at), ...own, ...rest.slice(at)], cap)
 }
 
 /** What a selection says each of its brands ships — the write-back when File
@@ -132,12 +139,13 @@ export function toggleFigmaSyncAppearance(
   modes: readonly FigmaSyncMode[],
   theme: string,
   appearance: ThemeAppearance,
+  cap: number = FIGMA_SYNC_MODE_CAP,
 ): FigmaSyncMode[] {
   if (hasFigmaSyncMode(modes, theme, appearance)) {
     const next = modes.filter((mode) => !(mode.theme === theme && mode.appearance === appearance))
     return next.length ? next : [...modes]
   }
-  if (modes.length >= FIGMA_SYNC_MODE_CAP) return [...modes]
+  if (modes.length >= cap) return [...modes]
   return [...modes, { theme, appearance }]
 }
 
@@ -147,6 +155,7 @@ export function toggleFigmaSyncTheme(
   modes: readonly FigmaSyncMode[],
   theme: string,
   themeKinds: Record<string, string | undefined>,
+  cap: number = FIGMA_SYNC_MODE_CAP,
 ): FigmaSyncMode[] {
   const preferred: ThemeAppearance = themeKinds[theme] === 'dark' ? 'dark' : 'light'
   const order = appearanceOrder(preferred)
@@ -158,7 +167,7 @@ export function toggleFigmaSyncTheme(
   const next = [...modes]
   for (const appearance of order) {
     if (hasFigmaSyncMode(next, theme, appearance)) continue
-    if (next.length >= FIGMA_SYNC_MODE_CAP) break
+    if (next.length >= cap) break
     next.push({ theme, appearance })
   }
   return next

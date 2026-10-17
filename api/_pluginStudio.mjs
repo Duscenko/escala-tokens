@@ -70,6 +70,35 @@ var init_brandThemes = __esm({
   }
 });
 
+// src/lib/entitlement.ts
+function entitlementAt(now) {
+  const promo = now.getTime() <= Date.parse(PROMO_ENDS_AT);
+  const launchPrice = now.getTime() <= Date.parse(PRO_LAUNCH_ENDS_AT);
+  return {
+    promo,
+    promoEndsAt: PROMO_ENDS_AT,
+    pro: promo,
+    maxThemes: promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
+    launchPrice,
+    launchEndsAt: PRO_LAUNCH_ENDS_AT,
+    priceUsd: PRO_PRICE_USD,
+    // one flat price; the launch tier was dropped
+    now: now.toISOString()
+  };
+}
+var PROMO_ENDS_AT, FREE_MAX_MODES, PRO_MAX_MODES, FREE_MAX_THEMES, PRO_MAX_THEMES, PRO_PRICE_USD, PRO_LAUNCH_ENDS_AT;
+var init_entitlement = __esm({
+  "src/lib/entitlement.ts"() {
+    PROMO_ENDS_AT = "2026-10-07T23:59:59+02:00";
+    FREE_MAX_MODES = 10;
+    PRO_MAX_MODES = 40;
+    FREE_MAX_THEMES = FREE_MAX_MODES / 2;
+    PRO_MAX_THEMES = PRO_MAX_MODES / 2;
+    PRO_PRICE_USD = 45;
+    PRO_LAUNCH_ENDS_AT = "2026-11-15T23:59:59+01:00";
+  }
+});
+
 // src/lib/figmaSyncModes.ts
 function figmaSyncModeId(mode) {
   return themeModeKey(mode.theme, mode.appearance);
@@ -78,17 +107,17 @@ function uniqueThemesFromModes(modes) {
   if (!modes?.length) return [];
   return [...new Set(modes.map((mode) => mode.theme))];
 }
-function clampFigmaSyncModes(modes) {
-  return modes.slice(0, FIGMA_SYNC_MODE_CAP);
+function clampFigmaSyncModes(modes, cap = FIGMA_SYNC_MODE_CAP) {
+  return modes.slice(0, cap);
 }
-function defaultFigmaSyncModes(themes, themeKinds, brandThemes) {
+function defaultFigmaSyncModes(themes, themeKinds, brandThemes, cap = FIGMA_SYNC_MODE_CAP) {
   const next = [];
   for (const theme of themes) {
     const preferred = themeKinds[theme] === "dark" ? "dark" : "light";
     const shipped = shippedThemes(brandThemes, theme);
     for (const appearance of appearanceOrder(preferred)) {
       if (!shipped.includes(appearance)) continue;
-      if (next.length >= FIGMA_SYNC_MODE_CAP) return next;
+      if (next.length >= cap) return next;
       next.push({ theme, appearance });
     }
   }
@@ -109,7 +138,8 @@ var init_figmaSyncModes = __esm({
   "src/lib/figmaSyncModes.ts"() {
     init_themeModes();
     init_brandThemes();
-    FIGMA_SYNC_MODE_CAP = 10;
+    init_entitlement();
+    FIGMA_SYNC_MODE_CAP = FREE_MAX_MODES;
     FIGMA_VIEWPORTS = ["desktop", "tablet", "mobile"];
   }
 });
@@ -2969,33 +2999,6 @@ var init_auth = __esm({
   "src/lib/auth.ts"() {
     init_supabase();
     init_legal();
-  }
-});
-
-// src/lib/entitlement.ts
-function entitlementAt(now) {
-  const promo = now.getTime() <= Date.parse(PROMO_ENDS_AT);
-  const launchPrice = now.getTime() <= Date.parse(PRO_LAUNCH_ENDS_AT);
-  return {
-    promo,
-    promoEndsAt: PROMO_ENDS_AT,
-    pro: promo,
-    maxThemes: promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
-    launchPrice,
-    launchEndsAt: PRO_LAUNCH_ENDS_AT,
-    priceUsd: PRO_PRICE_USD,
-    // one flat price; the launch tier was dropped
-    now: now.toISOString()
-  };
-}
-var PROMO_ENDS_AT, FREE_MAX_THEMES, PRO_MAX_THEMES, PRO_PRICE_USD, PRO_LAUNCH_ENDS_AT;
-var init_entitlement = __esm({
-  "src/lib/entitlement.ts"() {
-    PROMO_ENDS_AT = "2026-10-07T23:59:59+02:00";
-    FREE_MAX_THEMES = 3;
-    PRO_MAX_THEMES = 10;
-    PRO_PRICE_USD = 45;
-    PRO_LAUNCH_ENDS_AT = "2026-11-15T23:59:59+01:00";
   }
 });
 
