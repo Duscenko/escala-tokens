@@ -60,6 +60,15 @@
       ]
     },
     {
+      "source": "/(about|ide-logos|icons|escala-ds-logo|video|docs)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/api/(.*)",
       "headers": [
         {
