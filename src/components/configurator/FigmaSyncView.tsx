@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
+import { HOSTED_LIVE_SYNC } from '../../lib/hostedSync'
 import { isLiveEnvironment, syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { figmaSyncThemeKeys } from '../../lib/themeLibrary'
@@ -625,7 +626,7 @@ export default function FigmaSyncView({
           </div>
         )}
         <SyncStuckHelp />
-        {isDeployed && (
+        {isDeployed && HOSTED_LIVE_SYNC && (
           <div className="flex items-start justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2.5">
             <div className="min-w-0">
               <p className="text-caption font-semibold text-fg">Keep Figma in sync</p>
