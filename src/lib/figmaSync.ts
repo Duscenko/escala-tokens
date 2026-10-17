@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { HOSTED_LIVE_SYNC } from './hostedSync'
 import { useDesignStore } from '../store/useDesignStore'
 import { generateTokenJSON, setActiveThemeHint, type GenerateTokenOptions } from './tokenGenerator'
 import { DEFAULT_PUBLISH_ORIGIN, mcpOrigin } from './agentInstall'
@@ -305,6 +306,7 @@ export function describePublishFailure(
  * expired claim (or any other error) behind a live-editing session had no
  * visible symptom at all.
  */
+
 export function useAutoFigmaSync(
   onStateChange?: (state: FigmaPublishState, reason?: PublishFailureReason) => void,
   activeThemeOrOpts?: string | PublishTokensInput,
@@ -326,6 +328,10 @@ export function useAutoFigmaSync(
 
   useEffect(() => {
     if (activeTheme) setActiveThemeHint(activeTheme)
+    if (!HOSTED_LIVE_SYNC) {
+      if (useDesignStore.getState().autoSyncFigma) useDesignStore.getState().setAutoSyncFigma(false)
+      return
+    }
     if (!auto || !isLiveEnvironment()) return
 
     let timer: ReturnType<typeof setTimeout> | undefined
