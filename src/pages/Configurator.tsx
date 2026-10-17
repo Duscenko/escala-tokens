@@ -285,10 +285,11 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
     { key: 'primitives', label: 'Font primitives' },
     { key: 'semantics', label: 'Font semantics', icon: 'variables' },
   ],
-  // One collection: the roles. The step-down curve (radiusResponsive /
-  // spacingResponsive) is how a role's Tablet and Mobile values are derived;
-  // it is not a second list of variables.
+  // Radius lists the ten responsive tokens (radius-component-*) and the roles
+  // that alias them. Tokens first: they are the whole ladder a role picks from.
+  // Spacing keeps one collection — its curve derives a role's Tablet / Mobile.
   radius: [
+    { key: 'responsive', label: 'Radius tokens', icon: 'variables' },
     { key: 'semantics', label: 'Radius semantics', icon: 'variables' },
   ],
   spacing: [

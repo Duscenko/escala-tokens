@@ -27,7 +27,7 @@ const VIEWPORTS: Viewport[] = ['mobile', 'tablet', 'desktop']
 const VIEWPORT_LABEL: Record<Viewport, string> = { mobile: 'Mobile', tablet: 'Tablet', desktop: 'Desktop' }
 
 /** What each token is for — the hint beside its row. */
-const RADIUS_TOKEN_USE: Record<RadiusResponsiveStep, string> = {
+export const RADIUS_TOKEN_USE: Record<RadiusResponsiveStep, string> = {
   none: 'flush edges, tables',
   sm: 'checkboxes, small chips',
   md: 'inputs, buttons',
@@ -50,7 +50,7 @@ function pxOf(radius: Record<string, string>, step: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function valuesOf(radius: Record<string, string>, step: RadiusResponsiveStep): Record<Viewport, number> {
+export function valuesOf(radius: Record<string, string>, step: RadiusResponsiveStep): Record<Viewport, number> {
   const row = RADIUS_RESPONSIVE[step]
   return { mobile: pxOf(radius, row.mobile), tablet: pxOf(radius, row.tablet), desktop: pxOf(radius, row.desktop) }
 }
@@ -164,28 +164,29 @@ export function RadiusResponsiveHero({
   )
 }
 
-/** One corner, magnified 2×. The box is twice the window and clipped, so only
- *  its top-left corner shows — a solid stroke over a faint fill reads even at
- *  2px, where a dashed, faded edge disappeared. Capped so `full` (9999px)
- *  draws a circle rather than overflowing the window. */
-function CornerWindow({ px }: { px: number }) {
+/** One corner, magnified 2× and faded out so only the curve reads. Capped so
+ *  `full` (9999px) draws a circle rather than overflowing the window. */
+export function CornerWindow({ px }: { px: number }) {
   const SIZE = 104
-  const ZOOM = 2
-  if (px * ZOOM >= SIZE) {
-    return (
-      <span
-        className="block rounded-full border-[1.5px] border-fg/70 bg-fg/[0.06]"
-        style={{ width: SIZE, height: SIZE }}
-      />
-    )
+  if (px * 2 >= SIZE) {
+    return <span className="block rounded-full border-dashed border-fg/50 bg-elevated" style={{ width: SIZE, height: SIZE, borderWidth: 1 }} />
   }
+  const fade = 'linear-gradient(to right, #000 55%, transparent), linear-gradient(to bottom, #000 55%, transparent)'
   return (
-    <span className="relative block overflow-hidden rounded-sm bg-app" style={{ width: SIZE, height: SIZE }}>
-      <span
-        className="absolute border-[1.5px] border-fg/70 bg-fg/[0.06]"
-        style={{ left: 16, top: 16, width: SIZE * 2, height: SIZE * 2, borderTopLeftRadius: px * ZOOM }}
-      />
-    </span>
+    <span
+      className="block border-dashed border-fg/60 bg-elevated"
+      style={{
+        borderLeftWidth: 1,
+        borderTopWidth: 1,
+        width: SIZE,
+        height: SIZE,
+        borderTopLeftRadius: px * 2,
+        WebkitMaskImage: fade,
+        WebkitMaskComposite: 'source-in',
+        maskImage: fade,
+        maskComposite: 'intersect',
+      }}
+    />
   )
 }
 
@@ -208,7 +209,7 @@ export function RadiusTokenReference({ radius }: { radius: Record<string, string
                 component-{step}
                 <CopyButton text={name} label="" title={`Copy ${name}`} />
               </span>
-              <div className="grid grid-cols-3 gap-6" title={fixed ? 'Same at every breakpoint' : 'Mobile · Tablet · Desktop'}>
+              <div className="grid grid-cols-[repeat(3,104px)] gap-6" title={fixed ? 'Same at every breakpoint' : 'Mobile · Tablet · Desktop'}>
                 {shown.map((px, i) => (
                   <div key={i} className="flex flex-col items-center gap-2">
                     <CornerWindow px={px} />
