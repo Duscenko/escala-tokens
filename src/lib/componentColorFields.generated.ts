@@ -64,7 +64,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Tabs": ['brandSolid', 'brandText', 'neutralText', 'borderDefault', 'fgMuted'],
   "Textarea": ['neutralText', 'errorColor', 'disabledBg', 'disabledText', 'border', 'fgMuted', 'placeholderText', 'inputSurface', 'borderHover', 'borderCritical'],
   "TextLink": ['disabledText', 'linkText', 'linkHover'],
-  "Toast": ['surface', 'brandSolid', 'brandText', 'neutralText', 'errorColor', 'successColor', 'warningColor', 'infoColor'],
+  "Toast": ['surface', 'neutralText'],
   "Toggle": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'disabledBg', 'disabledText', 'inputSurface'],
   "Tooltip": ['surface', 'neutralText'],
 }
@@ -111,6 +111,6 @@ export const COMPONENT_ARCH_ROLES: Record<string, string[]> = {
   "TabMenu": ['surface.selected'],
   "Textarea": ['border.control-hover', 'border.focus', 'status.critical.border-strong', 'status.critical.content', 'surface.input'],
   "TextLink": ['content.link.default', 'content.link.hover'],
-  "Toast": ['content.inverse', 'content.primary', 'surface.inverse'],
+  "Toast": ['content.inverse', 'surface.inverse'],
   "Toggle": ['action.primary.hover', 'surface.input'],
 }

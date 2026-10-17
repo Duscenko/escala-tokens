@@ -46,8 +46,6 @@ import {
   rolePrimitiveName,
   resolveGridFrame,
   resolveGridStyles,
-  RADIUS_RESPONSIVE,
-  RADIUS_RESPONSIVE_STEPS,
   SPACING_RESPONSIVE,
   SPACING_RESPONSIVE_KEYS,
   resolveLayoutRole,
@@ -55,6 +53,7 @@ import {
   type LayoutFamily,
 } from '../../../lib/layoutTokens'
 import { SHADOW_STEPS } from '../Step7_Shadow'
+import { RadiusResponsiveHero, RadiusTokenReference } from './RadiusResponsiveDoc'
 import { fontStack } from '../../../lib/fonts'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { GLOBAL_FAMILY, scaleForFamily, type FamilySlot } from '../../../lib/themeSources'
@@ -1102,37 +1101,14 @@ line-height: var(--text-label-line-height);
       {
         id: 'responsive',
         title: 'Responsive radius',
-        description: 'The curve a role follows. Each step references a static step: one smaller on Tablet, one smaller on Mobile — two from 3xl up. Figma publishes the role, with a primitive alias per viewport, not a variable per step.',
-        render: (c) => (
-          <div className="overflow-x-auto">
-            <table className="w-full text-body">
-              <thead>
-                <tr className="text-left text-mini font-semibold uppercase tracking-widest text-fg-faint">
-                  <th className="py-2 pr-4 font-semibold">Token</th>
-                  <th className="py-2 pr-4 font-semibold">Desktop step</th>
-                  <th className="py-2 pr-4 font-semibold">Steps down</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono text-fg-muted tabular-nums">
-                {RADIUS_RESPONSIVE_STEPS.map((step) => {
-                  const map = RADIUS_RESPONSIVE[step]
-                  const desktopTo = map.desktop
-                  return (
-                    <tr key={step} className="border-t border-line">
-                      <td className="py-2 pr-4 text-fg">{step}</td>
-                      <td className="py-2 pr-4">
-                        {desktopTo} · {c.radius[desktopTo] ?? '—'}
-                      </td>
-                      <td className="py-2 pr-4 text-fg-muted">
-                        Tablet → {map.tablet} · Mobile → {map.mobile}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ),
+        description: 'Ten tokens: eight scale with the viewport, two (none, full) are fixed on purpose. One token resolves to one value on Mobile, another on Tablet and another on Desktop, so a role sets the intent once and the corners adapt on their own. Figma publishes the role, with a primitive alias per viewport.',
+        render: (c) => <RadiusResponsiveHero radius={c.radius} breakpointRoles={c.breakpointRoles} grid={c.grid} />,
+      },
+      {
+        id: 'reference',
+        title: 'Token reference',
+        description: 'Every token, its corner magnified at each breakpoint so the small steps stay legible. Three windows mean the radius changes across breakpoints; one window means it is the same everywhere. Clicking the icon copies the token name.',
+        render: (c) => <RadiusTokenReference radius={c.radius} />,
       },
       {
         id: 'roles',
