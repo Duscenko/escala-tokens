@@ -7,22 +7,24 @@
 //   second collection.
 //
 // Both show ONE viewport — the rail's Platform switch, like Grid and Type.
-// Every viewport edits with the same Dimension-primitive picker. Desktop sets
-// the role; Tablet / Mobile open on the value they FOLLOW (Desktop one — or two
-// — rungs down) and picking another value stores an override for that viewport
-// only. Picking the followed value again (or Reset) clears it. Docs → Radius
-// compares all three.
+// Every viewport edits with the same picker: the responsive TOKENS
+// (radius-component-none … 5xl, full), each labelled with the px it reads on
+// the viewport shown — the same ladder Theme preview's Radius panel offers.
+// Desktop sets the role to a token, so it keeps stepping down; Tablet / Mobile
+// open on the token they FOLLOW, and picking another stores that token's step
+// for that viewport only. Picking the followed token again (or Reset) clears
+// it. A role pinned to a raw px (older systems) shows as Pinned until a token
+// is picked. Docs → Radius compares all three.
 
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import DimensionSelect from '../ui/DimensionSelect'
+import VariableSelect from '../ui/VariableSelect'
 import { usePreviewPlatform } from './PlatformRail'
-import { parseDimension } from '../../lib/dimensions'
 import {
   RADIUS_RESPONSIVE,
   RADIUS_RESPONSIVE_STEPS,
   RADIUS_STEPS,
   layoutRoleIsDefault,
-  radiusRoleValueForPx,
   radiusTokensByRoleGroup,
   resolveLayoutRole,
   roleDimensionPx,
@@ -30,6 +32,7 @@ import {
   radiusRoleAt,
   setRadiusRoleViewport,
   type GridViewport,
+  type RadiusResponsiveStep,
   type RadiusRoleViewports,
   type LayoutRole,
 } from '../../lib/layoutTokens'
@@ -114,7 +117,6 @@ export default function RadiusSemanticsTable({
   viewports,
   onViewports,
   onRevealRole,
-  dimensionScale,
   accent,
   flashKey,
   query,
@@ -197,7 +199,7 @@ export default function RadiusSemanticsTable({
     <div className="min-w-[36rem]">
       <div className={tableHeaderClass(ROLE_GRID)}>
         <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
-        <span className={`${TABLE_HEAD_CELL} px-3`}>Primitive</span>
+        <span className={`${TABLE_HEAD_CELL} px-3`}>Token</span>
         <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{VP_LABEL[platform]}</span>
         <span aria-hidden />
       </div>
@@ -227,18 +229,21 @@ export default function RadiusSemanticsTable({
               <span className="text-caption text-fg-faint truncate" title={role.description}>{note}</span>
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
-              <DimensionSelect
-                ariaLabel={`${role.key} primitive (${VP_LABEL[platform]})`}
-                value={pxOf(at)}
-                scale={dimensionScale}
-                onChange={(px) => {
-                  const n = parseDimension(px)
-                  if (n === null) return
-                  // A px the ramp carries is stored as its STEP, so a Desktop
-                  // role keeps stepping down; anything else is pinned.
-                  const value = radiusRoleValueForPx(n, radius)
-                  if (vp) onViewports(setRadiusRoleViewport(viewports, roles, role.key, vp, value))
-                  else onRoles({ ...roles, [role.key]: value })
+              <RadiusTokenSelect
+                ariaLabel={`${role.key} token (${VP_LABEL[platform]})`}
+                platform={platform}
+                desktopStep={step}
+                at={at}
+                pxOf={pxOf}
+                onPick={(token) => {
+                  if (vp) {
+                    // The followed token clears the override; any other stores
+                    // that token's step on this viewport.
+                    const value = token === step ? null : RADIUS_RESPONSIVE[token][vp]
+                    onViewports(setRadiusRoleViewport(viewports, roles, role.key, vp, value))
+                  } else {
+                    onRoles({ ...roles, [role.key]: token })
+                  }
                 }}
               />
             </div>
@@ -259,5 +264,47 @@ export default function RadiusSemanticsTable({
         )
       })}
     </div>
+  )
+}
+
+const PINNED = '__pinned'
+
+/** The responsive token a role reads on `platform`: on Desktop the role's own
+ *  token; elsewhere the token it follows, unless an override lands on a step
+ *  no token reads there (or the role is pinned) — then `null`, shown Pinned. */
+function tokenAt(platform: GridViewport, desktopStep: string, at: string): RadiusResponsiveStep | null {
+  const steps = RADIUS_RESPONSIVE_STEPS as readonly string[]
+  if (steps.includes(desktopStep) && RADIUS_RESPONSIVE[desktopStep as RadiusResponsiveStep][platform] === at) {
+    return desktopStep as RadiusResponsiveStep
+  }
+  return RADIUS_RESPONSIVE_STEPS.find((token) => RADIUS_RESPONSIVE[token][platform] === at) ?? null
+}
+
+function RadiusTokenSelect({
+  ariaLabel, platform, desktopStep, at, pxOf, onPick,
+}: {
+  ariaLabel: string
+  platform: GridViewport
+  desktopStep: string
+  at: string
+  pxOf: (step: string) => string
+  onPick: (token: RadiusResponsiveStep) => void
+}) {
+  const current = tokenAt(platform, desktopStep, at)
+  return (
+    <VariableSelect
+      ariaLabel={ariaLabel}
+      value={current ?? PINNED}
+      onChange={(value) => { if (value !== PINNED) onPick(value as RadiusResponsiveStep) }}
+    >
+      {current === null && (
+        <option value={PINNED} disabled>Pinned · {pxOf(at)}</option>
+      )}
+      {RADIUS_RESPONSIVE_STEPS.map((token) => (
+        <option key={token} value={token}>
+          component-{token} · {pxOf(RADIUS_RESPONSIVE[token][platform])}
+        </option>
+      ))}
+    </VariableSelect>
   )
 }

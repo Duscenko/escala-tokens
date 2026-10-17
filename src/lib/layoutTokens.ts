@@ -1068,11 +1068,32 @@ export function radiusGroupStep(
   return (RADIUS_GROUP_STEPS as readonly string[]).includes(first) ? (first as RadiusGroupStep) : null
 }
 
+/**
+ * The ladder the quick edition offers per axis: every responsive radius token
+ * except `full` (that is the pill role, never a box / field / selector). Wider
+ * than `RADIUS_GROUP_STEPS` — the presets and the plugin studio stay on those
+ * five — so an axis can sit on any token that steps down per viewport.
+ */
+export const RADIUS_AXIS_STEPS = ['none', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'] as const
+export type RadiusAxisStep = (typeof RADIUS_AXIS_STEPS)[number]
+
+/** The responsive token an axis sits on, or `null` (roles disagree, or a
+ *  pinned px / a step with no responsive token) — shown as Custom. */
+export function radiusAxisStep(
+  group: RadiusGroup,
+  roles: Record<string, string> | undefined,
+): RadiusAxisStep | null {
+  const merged = mergeLayoutRoles('radius', roles)
+  const first = merged[group.roles[0]]
+  if (!group.roles.every((role) => merged[role] === first)) return null
+  return (RADIUS_AXIS_STEPS as readonly string[]).includes(first) ? (first as RadiusAxisStep) : null
+}
+
 /** Set every role on one axis to `step`, leaving the other axes alone. */
 export function applyRadiusGroup(
   group: RadiusGroup,
   roles: Record<string, string> | undefined,
-  step: RadiusGroupStep,
+  step: RadiusGroupStep | RadiusAxisStep,
 ): Record<string, string> {
   const next = mergeLayoutRoles('radius', roles)
   for (const role of group.roles) next[role] = step

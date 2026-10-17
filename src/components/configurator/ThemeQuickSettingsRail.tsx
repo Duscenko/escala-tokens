@@ -46,13 +46,16 @@ import {
   matchSpacingMode,
   type SpacingMode,
   RADIUS_GROUPS,
-  RADIUS_GROUP_STEPS,
+  RADIUS_AXIS_STEPS,
   RADIUS_ROLE_PRESETS,
   radiusPresetPx,
   matchRadiusRolePreset,
   radiusPresetPatch,
-  radiusGroupStep,
+  radiusAxisStep,
+  radiusAtViewport,
+  radiusRoleAt,
   applyRadiusGroup,
+  type RadiusRoleViewports,
   type GridViewport,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
@@ -1286,6 +1289,9 @@ function TypeScaleCard({
  */
 const CORNER_MAX = 26 // the plugin caps the drawn arc so `full` stays a corner
 
+/** One responsive token on an axis: its corner at the platform shown, and the
+ *  token's name under it. Nine fit one row, so the picked one is the accent
+ *  stroke alone — the px lives in the axis header. */
 function RadiusCorner({
   px, step, value, groupLabel, selected, onClick,
 }: {
@@ -1301,41 +1307,37 @@ function RadiusCorner({
       type="button"
       aria-pressed={selected}
       aria-label={`${groupLabel} radius ${step} (${value})`}
-      title={`${step} — ${value}`}
+      title={`radius-component-${step} — ${value}`}
       onClick={onClick}
-      className="relative h-11 w-12 flex-shrink-0 transition-transform duration-150 ease-[var(--ease-out-quint)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className="group flex min-w-0 flex-col items-center gap-1 rounded-md pt-1 transition-transform duration-150 ease-[var(--ease-out-quint)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
-      <span
-        aria-hidden
-        className="absolute inset-0 border-l border-t"
-        style={{
-          borderTopLeftRadius: Math.min(px, CORNER_MAX),
-          borderColor: selected ? 'var(--accent-solid)' : 'var(--line-strong)',
-          borderLeftWidth: selected ? 2 : 1,
-          borderTopWidth: selected ? 2 : 1,
-        }}
-      />
-      {selected && (
+      <span className="relative block h-7 w-full max-w-[26px]">
         <span
           aria-hidden
-          className="absolute left-1/2 top-1/2 flex h-[22px] min-w-[22px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[11px] font-medium tabular-nums"
+          className="absolute inset-0 border-l border-t transition-colors"
           style={{
-            background: 'color-mix(in srgb, var(--accent-solid) 22%, transparent)',
-            color: 'var(--accent-ui)',
+            borderTopLeftRadius: Math.min(px, CORNER_MAX),
+            borderColor: selected ? 'var(--accent-solid)' : 'var(--line-strong)',
+            borderLeftWidth: selected ? 2 : 1,
+            borderTopWidth: selected ? 2 : 1,
+            background: selected ? 'color-mix(in srgb, var(--accent-solid) 10%, transparent)' : undefined,
           }}
-        >
-          {Math.round(px)}
-        </span>
-      )}
+        />
+      </span>
+      <span className={`text-nano font-mono tabular-nums ${selected ? 'text-accent-ui' : 'text-fg-faint group-hover:text-fg-muted'}`}>{step}</span>
     </button>
   )
 }
 
 function RadiusCard({
-  radius, radiusRoles, onRoles, onPreset,
+  radius, radiusRoles, radiusRoleViewports, platform, onRoles, onPreset,
 }: {
   radius: Record<string, string>
   radiusRoles: Record<string, string> | undefined
+  /** Per-viewport overrides — what a Tablet / Mobile value reads first. */
+  radiusRoleViewports: RadiusRoleViewports | undefined
+  /** The platform heading the panel: every corner and px follows it. */
+  platform: GridViewport
   onRoles: (next: Record<string, string>) => void
   /** Apply a preset — the three axis picks on the standard ramp. */
   onPreset: (label: string) => void
@@ -1402,17 +1404,25 @@ function RadiusCard({
         {fineOpen && (
           <div className="mt-3 flex flex-col gap-3.5 border-t border-line pt-3">
         {RADIUS_GROUPS.map((group) => {
-          const current = radiusGroupStep(group, radiusRoles)
-          const px = current ? Math.round(parseFloat(radius[current] ?? '0') || 0) : null
+          const current = radiusAxisStep(group, radiusRoles)
+          // What the axis resolves to on the platform shown — a per-viewport
+          // override wins, otherwise the token's own step for that viewport.
+          const atStep = radiusRoleAt(radiusRoles, radiusRoleViewports, group.roles[0], platform)
+          const px = Math.round(parseFloat(radius[atStep] ?? '') || 0)
+          const overridden = platform !== 'desktop' && group.roles.some((role) => radiusRoleViewports?.[platform]?.[role] != null)
           return (
             <div key={group.key} className="min-w-0">
-              <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2 text-caption font-medium text-fg-muted">
-                <span className="flex-shrink-0">{group.label}{px !== null ? ` · ${px}px` : ''}</span>
-                <small className="min-w-0 truncate text-mini font-normal text-fg-faint">{group.hint}</small>
+              <div className="mb-1 flex min-w-0 items-center justify-between gap-2 text-caption font-medium text-fg-muted">
+                <span className="flex-shrink-0">
+                  {group.label} · {current ?? t('Custom')} · <span className="tabular-nums">{px}px</span>
+                </span>
+                <small className="min-w-0 truncate text-mini font-normal text-fg-faint">
+                  {overridden ? `Set by hand on ${platform}` : group.hint}
+                </small>
               </div>
-              <div className="flex items-center justify-between" role="group" aria-label={`${group.label} radius`}>
-                {RADIUS_GROUP_STEPS.map((step) => {
-                  const value = radius[step] ?? '0px'
+              <div className="grid grid-cols-9 gap-0.5" role="group" aria-label={`${group.label} radius`}>
+                {RADIUS_AXIS_STEPS.map((step) => {
+                  const value = radius[radiusAtViewport(step, platform)] ?? '0px'
                   return (
                     <RadiusCorner
                       key={step}
@@ -1432,7 +1442,7 @@ function RadiusCard({
           </div>
         )}
       </div>
-      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it.</p>
+      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it. Each corner is a responsive token, shown at the platform above: it rounds less on Tablet and Mobile.</p>
     </div>
   )
 }
@@ -2660,6 +2670,8 @@ export default function ThemeQuickSettingsRail({
             <RadiusCard
               radius={radius}
               radiusRoles={foundations.radiusRoles}
+              radiusRoleViewports={foundations.radiusRoleViewports}
+              platform={previewPlatform}
               onRoles={(next) => applyScrub('Radius updated', (themeKey) => setRadiusRoles(themeKey, next))}
               onPreset={(label) => commit('Radius preset updated', (themeKey) => setRadiusPreset(themeKey, label))}
             />
