@@ -128,3 +128,49 @@ export function solveRoleColor(position: HuePosition, hue: number, appearance: T
 export function roleColorAtHue(hex: string, hue: number, appearance: ThemeAppearance, page: string): string {
   return solveRoleColor(readHuePosition(hex).position, hue, appearance, page)
 }
+
+/** The dark anchor that belongs to a light colour: the SAME hue, solved for
+ *  the dark page. Every light edit (slider, hex, picker) writes this beside
+ *  it, so the two ramps in Variables are always one colour read two ways —
+ *  never the new light hue next to the previous dark one. */
+export function darkTwinOf(lightHex: string, darkPage: string): string {
+  return roleColorAtHue(lightHex, readHuePosition(lightHex).hue, 'dark', darkPage)
+}
+
+/** `hue` moved into `band` (clockwise), pinned to the nearer end if outside. */
+export function clampToBand(hue: number, [start, end]: [number, number]): number {
+  const span = ((((end - start) % 360) + 360) % 360) || 360
+  if (span === 360) return hue
+  const offset = (((hue - start) % 360) + 360) % 360
+  if (offset <= span) return hue
+  return offset - span < (360 - span) / 2 ? (start + span) % 360 : start
+}
+
+export type StateRoleId = 'success' | 'error' | 'warning' | 'info'
+
+/**
+ * A status colour that FOLLOWS the accent, in both themes.
+ *
+ * - HUE stays the status's own (kept inside its band), because the hue is the
+ *   meaning: a red that drifts toward the brand stops reading as an error.
+ * - SATURATION is the accent's, as a fraction of what each hue can reach — so
+ *   a muted brand gets muted statuses and a vivid one vivid statuses, instead
+ *   of a fixed fully-saturated red and blue beside whatever the brand is.
+ * - LIGHTNESS is solved per theme by `solveRoleColor`, exactly like the
+ *   accent: nearest passing tone in light, dimmest passing tone in dark.
+ */
+export function harmonizedState(
+  role: StateRoleId,
+  stateLightHex: string,
+  accentLightHex: string,
+  pages: { light: string; dark: string },
+): { light: string; dark: string } {
+  const own = readHuePosition(stateLightHex)
+  const accent = readHuePosition(accentLightHex)
+  const hue = clampToBand(own.hue, COLOR_ROLE_BAND[role])
+  const position = { saturation: accent.position.saturation, lightness: own.position.lightness }
+  return {
+    light: solveRoleColor(position, hue, 'light', pages.light),
+    dark: solveRoleColor(position, hue, 'dark', pages.dark),
+  }
+}

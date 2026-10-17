@@ -11,6 +11,10 @@ export const LOCALES: { key: Locale; label: string; shortLabel: string }[] = [
 const STORAGE_KEY = 'escala-language'
 
 const es: Record<string, string> = {
+  'Unlock states from the accent': 'Desvincular los estados del acento',
+  'Lock states to the accent': 'Vincular los estados al acento',
+  'Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.': 'Success, Critical, Warning e Info siguen el croma del acento, resueltos por contraste. Haga clic para fijarlos a mano.',
+  'Set by hand. Click to make all four states follow the accent’s chroma.': 'Fijados a mano. Haga clic para que los cuatro estados sigan el croma del acento.',
   'Derived from the neutral base. Edit it in Light.': 'Se deriva de la base del neutro. Edítelo en Light.',
   'Critical': 'Crítico',
   'Shuffle colours': 'Mezclar colores',
@@ -1467,6 +1471,10 @@ const es: Record<string, string> = {
 }
 
 const fr: Record<string, string> = {
+  'Unlock states from the accent': 'Détacher les états de l’accent',
+  'Lock states to the accent': 'Lier les états à l’accent',
+  'Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.': 'Success, Critical, Warning et Info suivent la chroma de l’accent, résolus pour le contraste. Cliquez pour les régler à la main.',
+  'Set by hand. Click to make all four states follow the accent’s chroma.': 'Réglés à la main. Cliquez pour que les quatre états suivent la chroma de l’accent.',
   'Derived from the neutral base. Edit it in Light.': 'Dérivé de la base du neutre. Modifiez-le en Light.',
   'Critical': 'Critique',
   'Shuffle colours': 'Mélanger les couleurs',

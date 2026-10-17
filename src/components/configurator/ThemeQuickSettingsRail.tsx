@@ -83,7 +83,7 @@ import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
-import { COLOR_ROLE_LABEL, COLOR_ROLE_ORDER, roleColorAtHue, type ColorRoleId } from '../../lib/colorRoles'
+import { COLOR_ROLE_LABEL, COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
@@ -2030,13 +2030,14 @@ export default function ThemeQuickSettingsRail({
     })
   }
 
-  const writeState = (themeKey: string, role: StateRole, hex: string, appearance: ThemeAppearance) => {
+  /** `fromLink` = the accent re-deriving a linked state, which must not unlink it. */
+  const writeState = (themeKey: string, role: StateRole, hex: string, appearance: ThemeAppearance, fromLink = false) => {
     const s = useDesignStore.getState()
     const family = s.themeSources[themeKey]?.[role] ?? GLOBAL_FAMILY[role]
     const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.[role] ?? GLOBAL_FAMILY[role]) === family)
     const isGlobal = family === GLOBAL_FAMILY[role]
     if (!isGlobal && affected.length <= 1) {
-      applyState(role, hex, false, themeKey, appearance)
+      applyState(role, hex, fromLink, themeKey, appearance)
       return
     }
     const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
@@ -2158,7 +2159,7 @@ export default function ThemeQuickSettingsRail({
   const colorRows: ColorRoleRow[] = COLOR_ROLE_ORDER.map((id) => ({
     id,
     hex: rolePreview?.id === id ? rolePreview.hex : roleHex(id, rampAppearance),
-    linked: id === 'neutral' ? linkNeutralToAccent : undefined,
+    linked: id === 'neutral' ? linkNeutralToAccent : id === 'accent' ? undefined : store.linkStatesToAccent,
     readOnly: id === 'neutral' && rampAppearance === 'dark',
   }))
   /** Both themes at `hue`, each SOLVED against its own page: light keeps the
@@ -2182,7 +2183,7 @@ export default function ThemeQuickSettingsRail({
     if (id === 'neutral') return
     const { light, dark } = roleAtHue(id, hue)
     if (id === 'accent') {
-      commit('Accent updated', (themeKey) => writeAccent(themeKey, light, dark))
+      commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
       setAccentPreview(null)
       onAccentPreview?.(null)
       return
@@ -2193,20 +2194,53 @@ export default function ThemeQuickSettingsRail({
     })
   }
   /** A typed or picked hex sets that role in the theme on screen only. */
-  const setRoleHex = (id: ColorRoleId, hex: string) => {
-    if (id === 'accent') {
-      const light = accentAnchor('light')
-      const dark = accentAnchor('dark')
-      commit('Accent updated', (themeKey) => rampAppearance === 'dark'
-        ? writeAccent(themeKey, light, hex)
-        : writeAccent(themeKey, hex, dark.toLowerCase() !== light.toLowerCase() ? dark : undefined))
+  const STATE_IDS: StateRoleId[] = ['success', 'error', 'warning', 'info']
+  /** While states follow the accent, every accent write re-solves all four
+   *  (`harmonizedState`) inside the same commit, so one Undo reverts both. */
+  /** Re-solve all four states from the accent (`harmonizedState`). Pages are
+   *  read AFTER any accent write, since a linked neutral moves the page. */
+  const harmonizeStates = (themeKey: string, accentLight: string) => {
+    const pages = resolveThemePages(useDesignStore.getState(), themeKey)
+    for (const role of STATE_IDS) {
+      const next = harmonizedState(role, stateHex(role, 'light'), accentLight, pages)
+      writeState(themeKey, role, next.light, 'light', true)
+      writeState(themeKey, role, next.dark, 'dark', true)
+    }
+  }
+  const writeAccentAndStates = (themeKey: string, light: string, dark: string) => {
+    writeAccent(themeKey, light, dark)
+    if (useDesignStore.getState().linkStatesToAccent) harmonizeStates(themeKey, light)
+  }
+  const toggleStatesLink = () => {
+    if (store.linkStatesToAccent) {
+      commit('States unlinked', () => useDesignStore.getState().setLinkStatesToAccent(false))
       return
     }
+    commit('States linked', (themeKey) => {
+      useDesignStore.getState().setLinkStatesToAccent(true)
+      harmonizeStates(themeKey, accentAnchor('light'))
+    })
+  }
+  /** A typed or picked hex. In Dark it sets the dark anchor only — that is
+   *  an explicit choice for that theme. In Light it sets the light anchor AND
+   *  re-solves the dark one at the same hue (`darkTwinOf`): keeping the old
+   *  dark anchor left Variables with a green light ramp beside a gold dark
+   *  one. */
+  const setRoleHex = (id: ColorRoleId, hex: string) => {
     if (id === 'neutral') {
       commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
       return
     }
-    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => writeState(themeKey, id, hex, rampAppearance))
+    const dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)
+    if (id === 'accent') {
+      const light = rampAppearance === 'dark' ? accentAnchor('light') : hex
+      commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
+      return
+    }
+    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
+      if (rampAppearance === 'light') writeState(themeKey, id, hex, 'light')
+      writeState(themeKey, id, dark, 'dark')
+    })
   }
   const toggleNeutralLink = () => {
     if (linkNeutralToAccent) {
@@ -2224,7 +2258,7 @@ export default function ThemeQuickSettingsRail({
     const hue = Math.round(from + 60 + Math.random() * 240) % 360
     const { light, dark } = roleAtHue('accent', hue)
     setColorRole('accent')
-    commit('Colours shuffled', (themeKey) => writeAccent(themeKey, light, dark))
+    commit('Colours shuffled', (themeKey) => writeAccentAndStates(themeKey, light, dark))
   }
 
   const applyRandomTheme = () => {
@@ -2396,7 +2430,7 @@ export default function ThemeQuickSettingsRail({
                   setNeutralTint(tint)
                   applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
                 })}
-                onToggleNeutralLink={toggleNeutralLink}
+                onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
                 swatchRef={(id) => (node) => { chipRefs.current[id] = node }}
                 onSwatch={(id) => toggleChip(id)}
                 page={themePage[rampAppearance]}

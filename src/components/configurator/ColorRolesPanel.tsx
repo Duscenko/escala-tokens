@@ -37,7 +37,7 @@ export interface ColorRoleRow {
 export function ColorRolesPanel({
   appearance, header, rows, selected, onSelect,
   onHex, onHuePreview, onHueCommit, solveAt,
-  neutralTint, onNeutralTint, onToggleNeutralLink,
+  neutralTint, onNeutralTint, onToggleLink,
   swatchRef, onSwatch, pickers, page, after,
 }: {
   appearance: ThemeAppearance
@@ -56,7 +56,9 @@ export function ColorRolesPanel({
   solveAt: (id: ColorRoleId, hue: number) => string
   neutralTint: NeutralTint
   onNeutralTint: (tint: NeutralTint) => void
-  onToggleNeutralLink: () => void
+  /** Neutral: follow the accent's hue. A status: follow the accent's
+   *  chroma, solved for contrast. All four statuses share one switch. */
+  onToggleLink: (id: ColorRoleId) => void
   /** Each swatch opens the full picker. */
   swatchRef: (id: ColorRoleId) => (node: HTMLDivElement | null) => void
   onSwatch: (id: ColorRoleId) => void
@@ -99,7 +101,7 @@ export function ColorRolesPanel({
               onHex={(hex) => onHex(row.id, hex)}
               swatchRef={swatchRef(row.id)}
               onSwatch={() => { onSelect(row.id); onSwatch(row.id) }}
-              onToggleLink={row.id === 'neutral' ? onToggleNeutralLink : undefined}
+              onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
             />
           ))}
         </div>
@@ -175,31 +177,39 @@ function RoleRow({ row, on, onSelect, onHex, swatchRef, onSwatch, onToggleLink }
           className="min-w-0 flex-1 bg-transparent font-mono text-ui text-fg outline-none"
         />
       </div>
-      <button
-        type="button"
-        role="radio"
-        aria-checked={on}
-        onClick={onSelect}
-        className={`${pill} justify-between gap-1 pl-2.5 pr-1 text-left text-ui text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-      >
-        <span className="truncate">{label}</span>
+      {/* The lock is a SIBLING of the label button, never inside it: an
+          interactive element nested in a <button> is invalid, and a real
+          mouse click on it went to the outer button (selecting the row) while
+          the lock itself never fired. */}
+      <div className={`${pill} gap-1 pr-1`}>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={on}
+          onClick={onSelect}
+          className="flex h-full min-w-0 flex-1 items-center rounded-[10px] pl-2.5 text-left text-ui text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <span className="truncate">{label}</span>
+        </button>
         {onToggleLink && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(event) => { event.stopPropagation(); onToggleLink() }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleLink() }
-            }}
-            aria-label={row.linked ? t('Unlock Neutral from the accent') : t('Lock Neutral to the accent')}
+          <button
+            type="button"
+            onClick={onToggleLink}
+            aria-label={row.id === 'neutral'
+              ? (row.linked ? t('Unlock Neutral from the accent') : t('Lock Neutral to the accent'))
+              : (row.linked ? t('Unlock states from the accent') : t('Lock states to the accent'))}
             aria-pressed={row.linked}
-            title={row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.')}
+            title={row.id === 'neutral'
+              ? (row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.'))
+              : (row.linked
+                ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
+                : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
             className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint opacity-60'}`}
           >
             <LockGlyph size={13} />
-          </span>
+          </button>
         )}
-      </button>
+      </div>
     </div>
   )
 }

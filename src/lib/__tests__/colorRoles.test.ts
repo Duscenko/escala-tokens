@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COLOR_ROLE_BAND, DARK_SATURATION_CAP, checkRoleColor, roleColorAtHue, solveRoleColor } from '../colorRoles'
+import { COLOR_ROLE_BAND, DARK_SATURATION_CAP, checkRoleColor, clampToBand, darkTwinOf, harmonizedState, roleColorAtHue, solveRoleColor, type StateRoleId } from '../colorRoles'
 import { colorAtHue, readHuePosition } from '../colorUtils'
 import { wcagLuminance } from '../color/apca'
 
@@ -88,5 +88,46 @@ describe('Color edition roles — a dark anchor survives other edits', () => {
     const after = useDesignStore.getState()
     expect(stateColorAnchor(after, 'warning', 'dark', 't').toLowerCase()).toBe('#daab4a')
     expect(stateColorAnchor(after, 'warning', 'light', 't').toLowerCase()).toBe('#966e00')
+  })
+})
+
+describe('Color edition roles — light and dark are one colour', () => {
+  it('gives a light colour a dark twin of the SAME hue, solved for the dark page', () => {
+    for (const light of ['#669f2a', '#9522e9', '#ff8a00', '#0e8eff', '#f33f34', '#06aed4']) {
+      const dark = darkTwinOf(light, PAGES.dark)
+      const d = Math.abs(readHuePosition(light).hue - readHuePosition(dark).hue)
+      expect(Math.min(d, 360 - d)).toBeLessThan(3)
+      expect(checkRoleColor(dark, PAGES.dark).passes).toBe(true)
+    }
+  })
+})
+
+describe('Color edition roles — states follow the accent', () => {
+  const STATES: [StateRoleId, string][] = [['success', '#34c759'], ['error', '#ff3b30'], ['warning', '#ff8a00'], ['info', '#01b5fc']]
+  const ACCENTS = ['#669f2a', '#9522e9', '#2970ff', '#8a7f6a', '#ff5fa2']
+
+  it('keeps each state on its own hue, clears both themes, and takes the accent’s saturation', () => {
+    const misses: string[] = []
+    for (const accent of ACCENTS) {
+      const accentSat = readHuePosition(accent).position.saturation
+      for (const [role, seed] of STATES) {
+        const { light, dark } = harmonizedState(role, seed, accent, PAGES)
+        for (const [name, hex, page] of [['light', light, PAGES.light], ['dark', dark, PAGES.dark]] as const) {
+          if (!checkRoleColor(hex, page).passes) misses.push(`${role} ${name} for ${accent}: ${hex}`)
+          const hue = readHuePosition(hex).hue
+          if (Math.abs(clampToBand(hue, COLOR_ROLE_BAND[role]) - hue) > 3) misses.push(`${role} ${name} hue ${hue} left its band`)
+        }
+        expect(Math.abs(readHuePosition(light).position.saturation - accentSat)).toBeLessThan(0.08)
+      }
+    }
+    expect(misses).toEqual([])
+  })
+
+  it('tones a vivid red and blue down beside a muted accent', () => {
+    const muted = '#8a7f6a'
+    for (const [role, seed] of [['error', '#ff3b30'], ['info', '#01b5fc']] as const) {
+      const { light } = harmonizedState(role, seed, muted, PAGES)
+      expect(readHuePosition(light).position.saturation).toBeLessThan(readHuePosition(seed).position.saturation)
+    }
   })
 })
