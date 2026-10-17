@@ -1802,7 +1802,7 @@ export function gridFrameMediaCss(
   const scales: GridFrameScales = { spacing, breakpoints: bps }
   const indent = (lines: string[]) => lines.map((l) => `    ${l}`).join('\n')
   const radiusFor = (vp: GridViewport) => [
-    ...(radiusOpts ? radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports) : []),
+    ...(radiusOpts ? [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports)] : []),
     ...(spacingOpts ? spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing) : []),
   ]
   return [
@@ -1839,7 +1839,8 @@ export function spacingMediaCss(
   return out.join('\n')
 }
 
-/** Only the radius roles' tablet / mobile step-down, for a Radius-only export. */
+/** The responsive tokens' and the roles' tablet / mobile step-down, for a
+ *  Radius-only export. */
 export function radiusMediaCss(
   roles: Record<string, string> | undefined,
   grid: Record<string, string> | undefined,
@@ -1850,7 +1851,7 @@ export function radiusMediaCss(
   const bps = extractBreakpoints(grid)
   const out: string[] = []
   for (const [vp, max] of [['tablet', breakpointTabletMax(roles, bps)], ['mobile', breakpointMobileMax(roles, bps)]] as const) {
-    const decls = radiusRolesViewportCss(vp, radiusRoles, radius, viewports)
+    const decls = [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusRoles, radius, viewports)]
     if (!decls.length) continue
     if (out.length) out.push('')
     out.push(`@media (max-width: ${max}) {`, '  :root {', ...decls.map((d) => `    ${d}`), '  }', '}')

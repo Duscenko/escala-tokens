@@ -31,6 +31,7 @@ import {
   gridFrameRootCss,
   gridFrameMediaCss,
   radiusMediaCss,
+  radiusComponentCss,
   spacingMediaCss,
   breakpointMobileMax,
   breakpointTabletMax,
@@ -362,6 +363,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   if (section === 'spacing') {
     Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${dimensionVar(v)};`))
   }
+  if (section === 'radius') lines.push(...radiusComponentCss('desktop'))
   return lines
 }
 

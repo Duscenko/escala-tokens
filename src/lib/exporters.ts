@@ -11,7 +11,7 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -160,6 +160,8 @@ export function buildCSS(
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+  lines.push('\n  /* Radius — responsive tokens (Tablet / Mobile step down in the media blocks) */')
+  radiusComponentCss('desktop').forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
@@ -290,6 +292,7 @@ export function buildCSS(
       paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles)
         .forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
       Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+      radiusComponentCss('desktop').forEach((l) => lines.push(`  ${l}`))
       Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
       Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
       Object.entries(foundations.stroke).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${dimensionVar(v)};`))
@@ -324,7 +327,7 @@ export function buildCSS(
     const bps = extractBreakpoints(grid)
     for (const [vp, max] of [['tablet', breakpointTabletMax(breakpointRoles, bps)], ['mobile', breakpointMobileMax(breakpointRoles, bps)]] as const) {
       const blocks = themedRadius
-        .map((t) => ({ selector: t.selector, decls: [...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] }))
+        .map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] }))
         .filter((b) => b.decls.length)
       if (!blocks.length) continue
       lines.push(`\n@media (max-width: ${max}) {`)

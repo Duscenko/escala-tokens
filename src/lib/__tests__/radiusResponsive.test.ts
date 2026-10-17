@@ -178,3 +178,18 @@ describe('radius presets are role bundles on the standard ramp', () => {
     expect(matchRadiusRolePreset({ ...defaultLayoutRoles('radius'), action: 'none' })).toBeNull()
   })
 })
+
+describe('responsive radius tokens ship in CSS', () => {
+  it('declares --radius-component-* on :root and steps them down per viewport', async () => {
+    const { buildCSS } = await import('../exporters')
+    const { useDesignStore } = await import('../../store/useDesignStore')
+    const css = buildCSS(useDesignStore.getState())
+    expect(css).toContain('--radius-component-4xl: var(--radius-4xl);')
+    expect(css).toContain('--radius-component-full: var(--radius-full);')
+    // Tablet one rung down, Mobile two from 3xl up.
+    expect(css).toContain('--radius-component-4xl: var(--radius-3xl);')
+    expect(css).toContain('--radius-component-4xl: var(--radius-2xl);')
+    // Fixed tokens never get a viewport override.
+    expect(css.match(/--radius-component-none:/g)?.length).toBe(1)
+  })
+})
