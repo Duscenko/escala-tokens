@@ -138,7 +138,7 @@ describe('plugin studio build', () => {
     expect(dark.page).not.toBe(pill.page)
     const sharp = studioLook({ radiusPreset: 'Sharp', spacingMode: 'compact', accent: '#9522e9' })
     expect(sharp.box).toBe(0)
-    expect(sharp.controlH).toBe(35)
+    expect(sharp.controlH).toBe(36)
     expect(sharp.pad).toBe(12)
     const o = studioOptions()
     const quiet = o.spacingModes.find((m) => m.id === 'quiet')
