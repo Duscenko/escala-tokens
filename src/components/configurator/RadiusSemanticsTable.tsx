@@ -19,8 +19,6 @@
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import DimensionSelect from '../ui/DimensionSelect'
 import VariableSelect from '../ui/VariableSelect'
-import { CopyButton } from './docs/blocks'
-import { CornerWindow, RADIUS_TOKEN_USE, valuesOf } from './docs/RadiusResponsiveDoc'
 import { usePreviewPlatform } from './PlatformRail'
 import {
   RADIUS_RESPONSIVE,
@@ -40,6 +38,7 @@ import {
 } from '../../lib/layoutTokens'
 
 const ROLE_GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(11rem,1fr)_minmax(8rem,1fr)_2.5rem]'
+const TOKEN_GRID = 'grid grid-cols-[minmax(10rem,1.1fr)_minmax(9rem,1fr)_minmax(8rem,1fr)_2.5rem]'
 const VP_LABEL: Record<GridViewport, string> = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' }
 
 export type RadiusCollection = 'semantics' | 'responsive'
@@ -146,68 +145,52 @@ export default function RadiusSemanticsTable({
   const pxOf = (step: string) => resolveLayoutRole('radius', { probe: step }, radius, 'probe', '')
 
   if (collection === 'responsive') {
-    // Every responsive token, the way Docs → Radius shows it: its corner at
-    // Mobile · Tablet · Desktop (one window when it is the same everywhere),
-    // what it is for, and the roles that alias it.
     const q = query.trim().toLowerCase()
     const byGroup = radiusTokensByRoleGroup(roles)
     const inGroup = group === 'all' ? RADIUS_RESPONSIVE_STEPS : (byGroup[group] ?? [])
     const tokens = inGroup.filter((step) => !q || `radius-component-${step}`.includes(q))
     return (
-      <div className="min-w-[40rem] px-5 pb-6">
-        <div className="flex items-center justify-between gap-3 border-b border-line py-3">
-          <span className="font-mono text-body text-fg">component</span>
-          <span className="font-mono text-caption text-fg-faint">mobile · tablet · desktop, corners shown at 2×</span>
+      <div className="min-w-[34rem]">
+        <div className={tableHeaderClass(TOKEN_GRID)}>
+          <span className={`${TABLE_HEAD_CELL} pl-4`}>Token</span>
+          <span className={`${TABLE_HEAD_CELL} px-3`}>Used by</span>
+          <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{VP_LABEL[platform]}</span>
+          <span aria-hidden />
         </div>
         {tokens.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-fg-faint">
             {q ? `No tokens match “${query}”.` : 'No responsive token in this group.'}
           </div>
-        ) : (
-          <div className="divide-y divide-line">
-            {tokens.map((step) => {
-              const values = valuesOf(radius, step)
-              const fixed = values.mobile === values.desktop && values.tablet === values.desktop
-              const shown = fixed ? [values.desktop] : [values.mobile, values.tablet, values.desktop]
-              const name = `radius-component-${step}`
-              const users = rolesUsingRadiusToken(roles, step)
-              return (
-                <div key={step} className="grid grid-cols-[minmax(10rem,1fr)_auto_minmax(8rem,1fr)] items-center gap-6 py-5">
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="flex items-center gap-2 font-mono text-body text-fg">
-                      component-{step}
-                      <CopyButton text={name} label="" title={`Copy ${name}`} />
-                    </span>
-                    {users.length > 0 && (
-                      <span className="flex flex-wrap gap-1">
-                        {users.map((key) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => onRevealRole(key)}
-                            title={`Open radius-${key} in Radius semantics`}
-                            className="rounded-md bg-elevated px-1.5 py-0.5 font-mono text-caption text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                          >
-                            {key}
-                          </button>
-                        ))}
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-[repeat(3,104px)] gap-6" title={fixed ? 'Same at every breakpoint' : 'Mobile · Tablet · Desktop'}>
-                    {shown.map((px, i) => (
-                      <div key={i} className="flex flex-col items-center gap-2">
-                        <CornerWindow px={px} />
-                        <span className="font-mono text-caption text-fg-muted tabular-nums">{px}px</span>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-right font-mono text-caption text-fg-faint">{RADIUS_TOKEN_USE[step]}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
+        ) : tokens.map((step, i) => {
+          const at = RADIUS_RESPONSIVE[step][platform]
+          const users = rolesUsingRadiusToken(roles, step)
+          return (
+            <div key={step} className={tableRowClass(i, TOKEN_GRID)}>
+              <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                <code className="font-mono text-body text-fg-muted truncate">radius-component-{step}</code>
+              </div>
+              <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-r border-line min-w-0">
+                {users.length === 0 ? (
+                  <span className="text-caption text-fg-faint" title="No role aliases this token. A component that needs this exact size can bind it directly.">
+                    Available
+                  </span>
+                ) : users.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => onRevealRole(key)}
+                    title={`Open radius-${key} in Radius semantics`}
+                    className="px-1.5 py-0.5 rounded-md bg-elevated text-caption font-mono text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+              <Cell step={at} px={pxOf(at)} accent={accent} from={onDesktop ? undefined : step} />
+              <span aria-hidden />
+            </div>
+          )
+        })}
       </div>
     )
   }
