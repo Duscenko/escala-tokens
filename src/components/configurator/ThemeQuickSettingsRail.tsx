@@ -77,13 +77,13 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
-import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
+import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
-import { COLOR_ROLE_LABEL, COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
+import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
@@ -2431,32 +2431,7 @@ export default function ThemeQuickSettingsRail({
                   applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
                 })}
                 onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
-                swatchRef={(id) => (node) => { chipRefs.current[id] = node }}
-                onSwatch={(id) => toggleChip(id)}
                 page={themePage[rampAppearance]}
-                pickers={COLOR_ROLE_ORDER.map((id) => {
-                  const row = colorRows.find((r) => r.id === id)!
-                  return (
-                    <ColorPickerPopover
-                      key={id}
-                      open={openChip === id}
-                      onClose={() => setOpenChip(null)}
-                      anchor={chipAnchor(id)}
-                      label={COLOR_ROLE_LABEL[id]}
-                      value={row.hex}
-                      onChange={(next) => setRoleHex(id, next)}
-                      {...(id === 'accent'
-                        ? { dynamicAccentPalette: true, accentHueFrom: row.hex }
-                        : id === 'neutral'
-                          ? { dynamicNeutralPalette: true, neutralRampFrom: liveAccent }
-                          : { palette: STATE_PRESETS[id] })}
-                      appearance={rampAppearance}
-                      contained={drawerContained}
-                      containedRootRef={containedDrawerRootRef}
-                      containedDockLeft={COLOR_RAIL_WIDTH}
-                    />
-                  )
-                })}
                 after={(
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 {(['secondary', 'tertiary'] as const).map((rank) => {

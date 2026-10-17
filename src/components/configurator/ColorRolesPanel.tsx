@@ -38,7 +38,7 @@ export function ColorRolesPanel({
   appearance, header, rows, selected, onSelect,
   onHex, onHuePreview, onHueCommit, solveAt,
   neutralTint, onNeutralTint, onToggleLink,
-  swatchRef, onSwatch, pickers, page, after,
+  page, after,
 }: {
   appearance: ThemeAppearance
   /** Light / Dark and Random, drawn above the slider. */
@@ -59,10 +59,6 @@ export function ColorRolesPanel({
   /** Neutral: follow the accent's hue. A status: follow the accent's
    *  chroma, solved for contrast. All four statuses share one switch. */
   onToggleLink: (id: ColorRoleId) => void
-  /** Each swatch opens the full picker. */
-  swatchRef: (id: ColorRoleId) => (node: HTMLDivElement | null) => void
-  onSwatch: (id: ColorRoleId) => void
-  pickers: ReactNode
   /** The page this theme paints on — the accessibility readout measures against it. */
   page: string
   /** Rows that are not roles (extra brand palettes). */
@@ -99,13 +95,10 @@ export function ColorRolesPanel({
               on={row.id === current.id}
               onSelect={() => onSelect(row.id)}
               onHex={(hex) => onHex(row.id, hex)}
-              swatchRef={swatchRef(row.id)}
-              onSwatch={() => { onSelect(row.id); onSwatch(row.id) }}
               onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
             />
           ))}
         </div>
-        {pickers}
         {after}
       </div>
 
@@ -121,13 +114,11 @@ export function ColorRolesPanel({
   )
 }
 
-function RoleRow({ row, on, onSelect, onHex, swatchRef, onSwatch, onToggleLink }: {
+function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
   row: ColorRoleRow
   on: boolean
   onSelect: () => void
   onHex: (hex: string) => void
-  swatchRef: (node: HTMLDivElement | null) => void
-  onSwatch: () => void
   onToggleLink?: () => void
 }) {
   const { t } = useI18n()
@@ -151,15 +142,11 @@ function RoleRow({ row, on, onSelect, onHex, swatchRef, onSwatch, onToggleLink }
   return (
     <div className="grid grid-cols-2 gap-1.5">
       <div className={`${pill} gap-2 pl-1.5 pr-1.5`} onClick={() => { onSelect(); input.current?.focus() }}>
-        <div ref={swatchRef} className="flex-shrink-0">
-          <button
-            type="button"
-            onClick={(event) => { event.stopPropagation(); onSwatch() }}
-            aria-label={`${label} — ${row.hex} — open picker`}
-            className="block h-5 w-5 rounded-[6px] border border-fg/10 transition-transform duration-75 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-            style={{ background: row.hex }}
-          />
-        </div>
+        <span
+          aria-hidden
+          className="block h-5 w-5 flex-shrink-0 rounded-[6px] border border-fg/10"
+          style={{ background: row.hex }}
+        />
         <input
           ref={input}
           value={draft ?? row.hex.toUpperCase()}
