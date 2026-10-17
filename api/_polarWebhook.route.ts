@@ -13,7 +13,7 @@ import { licenceKeyFromWebhook, verifyPolarWebhook, webhookShouldRevoke } from '
 // unset this answers 503 and does nothing, so Polar retries after the secret
 // is added. The raw key is never logged.
 
-export const config = { api: { bodyParser: false } }
+// bodyParser:false is declared once, on api/webhooks.ts
 
 async function rawBody(req: VercelRequest): Promise<string> {
   if (typeof req.body === 'string') return req.body
