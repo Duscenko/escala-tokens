@@ -5,3 +5,8 @@
  *  the explicit "Sync now" publish still works. Flip to true to bring it back.
  *  Its own module so the store can read it without importing figmaSync (cycle). */
 export const HOSTED_LIVE_SYNC = false
+
+/** The hosted MCP server (`api/mcp.ts`) is OFF for the same reason: it is a
+ *  per-request function with no revenue behind it yet. The endpoint answers 410
+ *  without touching the Blob. Flip to true to bring it back. */
+export const HOSTED_MCP = false

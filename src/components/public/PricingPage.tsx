@@ -26,7 +26,7 @@ import { useAuth } from '../../lib/auth'
 import { checkoutUrl } from '../../lib/polar'
 
 const PRICING_TITLE = 'Pricing — Escala Tokens'
-const PRICING_DESCRIPTION = 'Escala is free to build and export. Pro adds what runs on our servers: hosted sync to Figma, the live MCP, and up to 10 themes with every platform mode.'
+const PRICING_DESCRIPTION = 'Escala is free to build and export. Pro adds the complete UI Kit Library in Figma and up to 10 themes with every platform mode.'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-full px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
@@ -222,7 +222,6 @@ export function PricingPage() {
       title: t('AI'),
       rows: [
         { label: t('Offline agent skill and design.md'), free: true, pro: true },
-        { label: t('Live MCP against your published system'), free: null, pro: t('12 months') },
       ],
     },
     {
@@ -244,7 +243,7 @@ export function PricingPage() {
               {t('Your own token system. Free to build. Pro for the complete Figma UI Kit.')}
             </h1>
             <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro adds the complete UI Kit Library in Figma, the live MCP, and every brand, theme and platform mode.')}
+              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro adds the complete UI Kit Library in Figma and every brand, theme and platform mode.')}
             </p>
           </section>
 
@@ -308,9 +307,8 @@ export function PricingPage() {
                     t('Up to {max} brands in Figma, each with Light + Dark', { max }),
                     t('Desktop, Tablet and Mobile platform modes'),
                     t('Complete UI Kit Library in Figma, customized from Escala Tokens with the agent context and the Figma plugin'),
-                    t('Live MCP for Cursor, Claude Code and VS Code'),
                     t('Generated documentation for your system'),
-                    t('12 months of MCP and plugin updates included'),
+                    t('12 months of plugin updates included'),
                   ]} />
                 </div>
                 <div className="relative mt-auto flex flex-col gap-2">
@@ -341,7 +339,7 @@ export function PricingPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {[
                 { h: t('Yours for good'), p: t('The configurator, every export, the plugin, manual import, and everything already synced into your Figma files.') },
-                { h: t('Included for 12 months'), p: t('The live MCP and new versions of the plugin.') },
+                { h: t('Included for 12 months'), p: t('New versions of the plugin.') },
                 { h: t('After that'), p: t('Renew at a lower price, or keep working on Free. Nothing you made breaks.') },
               ].map((item) => (
                 <div key={item.h} className="rounded-xl border border-line bg-surface p-5">

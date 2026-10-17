@@ -143,7 +143,7 @@ function ShowcasePanel() {
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline gap-3">
             <span className="text-strong font-medium text-fg">{t('Hosted Figma sync')}</span>
-            <span className="text-ui text-fg-faint">{t('Live MCP for your AI agents')}</span>
+            <span className="text-ui text-fg-faint">{t('Complete UI Kit Library in Figma')}</span>
           </div>
           <div className="h-[3px] w-full rounded-full bg-fg/10">
             <div className="h-full w-2/3 rounded-full bg-fg/70" />
