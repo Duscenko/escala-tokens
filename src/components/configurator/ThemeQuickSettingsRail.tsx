@@ -70,7 +70,7 @@ import { randomTheme, randomBoardAppearance, randomLabelAfterTweak } from '../..
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
+import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, typeRolesInGroup, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { PlatformSwitch, usePlanViewportLock } from './PlatformRail'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
@@ -1158,14 +1158,9 @@ function BaseUnitCard({
 // re-pointed in Variables · Font semantics. Each row resolves through the SAME
 // `resolveTypeStyle` the semantics table, Docs and the export use, at the
 // platform picked above the panel, so the three can never disagree.
-const TYPE_READOUT_ROLES = [
-  { key: 'display', label: 'Display' },
-  { key: 'heading-xl', label: 'Heading' },
-  { key: 'body-md', label: 'Body' },
-  { key: 'label', label: 'Label' },
-  { key: 'caption', label: 'Caption' },
-] as const
-
+// Grouped exactly like Variables · Font semantics (Display · Heading · Body ·
+// Control, `TYPE_ROLE_GROUPS`), every catalogue role in catalogue order, so the
+// quick edit and the table list the same 15 roles under the same four names.
 /** A type role at a platform, through the theme's own role map. */
 function typeRoleStyle(typography: TypePrimitives & { roles?: object }, key: string, platform: string) {
   const cut = asTypeViewport(platform)
@@ -1194,9 +1189,9 @@ const PLATFORM_LABEL: Record<string, string> = { desktop: 'Desktop', tablet: 'Ta
  * the size). Hand-editing a single size in Advanced makes the mode read
  * "Custom" — the slider still snaps you back onto a curated scale.
  *
- * Below the slider, one row per role: a sample in the role's own family and
- * weight, and size / line height / letter spacing at the previewed platform —
- * the reference specimen's row, compressed to the rail.
+ * Below the slider, the four role groups of Font semantics, one row per role:
+ * a sample in the role's own family and weight, and size / line height /
+ * letter spacing at the previewed platform.
  */
 function TypeScaleCard({
   typography, platform, onScrub, onScrubStart, onScrubEnd,
@@ -1210,7 +1205,10 @@ function TypeScaleCard({
   const { t } = useI18n()
   const mode = inferTypeScaleMode(typography.sizes)
   const index = mode ? TYPE_SCALE_MODES.findIndex((m) => m.key === mode) : 2
-  const rows = TYPE_READOUT_ROLES.map((role) => ({ ...role, style: typeRoleStyle(typography, role.key, platform) }))
+  const groups = TYPE_ROLE_GROUPS.map((group) => ({
+    ...group,
+    rows: typeRolesInGroup(group.id).map((role) => ({ key: role.key, label: role.label, style: typeRoleStyle(typography, role.key, platform) })),
+  }))
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
@@ -1228,34 +1226,44 @@ function TypeScaleCard({
         ariaLabel="Type scale"
         className={ROW_GAP_CONTROL}
       />
-      <ul aria-label={t('Text roles')} className="mt-3 flex flex-col divide-y divide-line/70 rounded-lg border border-line">
-        {rows.map(({ key, label, style }) => (
-          <li key={key} className="flex items-center gap-2 px-2.5 py-2 min-w-0" title={style ? `text-${key} · ${style.family} ${style.weight}` : undefined}>
-            <span
-              aria-hidden
-              className="w-9 flex-shrink-0 leading-none text-fg"
-              style={style ? {
-                fontFamily: fontStack(style.family),
-                fontWeight: style.weight,
-                fontSize: readoutGlyphPx(parseFloat(style.size) || 0),
-                letterSpacing: style.letterSpacing,
-              } : undefined}
-            >
-              Aa
-            </span>
-            <span className="min-w-0 flex-1 truncate text-mini text-fg-muted">{t(label)}</span>
-            <span className="flex-shrink-0 font-mono text-micro tabular-nums text-fg-faint">
-              {style ? (
-                <>
-                  <span className="text-fg-muted">{parseFloat(style.size) || 0}</span>
-                  {' / '}{parseFloat(style.lineHeight) || 0}
-                  {' / '}{parseFloat(style.letterSpacing) || 0}
-                </>
-              ) : '—'}
-            </span>
-          </li>
+      <div className="mt-3 flex flex-col gap-2">
+        {groups.map((group) => (
+          <section key={group.id} aria-label={t(group.label)} className="rounded-lg border border-line">
+            <div className="flex items-center justify-between px-2.5 pt-2 pb-1">
+              <span className="text-micro font-semibold uppercase tracking-wide text-fg-faint">{t(group.label)}</span>
+              <span className="font-mono text-micro tabular-nums text-fg-faint">{group.rows.length}</span>
+            </div>
+            <ul className="flex flex-col">
+              {group.rows.map(({ key, label, style }) => (
+                <li key={key} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0" title={style ? `text-${key} · ${style.family} ${style.weight}` : undefined}>
+                  <span
+                    aria-hidden
+                    className="w-9 flex-shrink-0 leading-none text-fg"
+                    style={style ? {
+                      fontFamily: fontStack(style.family),
+                      fontWeight: style.weight,
+                      fontSize: readoutGlyphPx(parseFloat(style.size) || 0),
+                      letterSpacing: style.letterSpacing,
+                    } : undefined}
+                  >
+                    Aa
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-mini text-fg-muted">{t(label)}</span>
+                  <span className="flex-shrink-0 font-mono text-micro tabular-nums text-fg-faint">
+                    {style ? (
+                      <>
+                        <span className="text-fg-muted">{parseFloat(style.size) || 0}</span>
+                        {' / '}{parseFloat(style.lineHeight) || 0}
+                        {' / '}{parseFloat(style.letterSpacing) || 0}
+                      </>
+                    ) : '—'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }
