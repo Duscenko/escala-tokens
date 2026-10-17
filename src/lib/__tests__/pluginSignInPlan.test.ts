@@ -30,6 +30,9 @@ const USERS: Record<string, { id: string; email: string }> = {
   'jwt-bo': { id: 'user-bo', email: 'bo@example.com' },
 }
 const GOOD_KEY = 'ESCALA-GOOD-KEY'
+/** A key from a benefit that limits activations: Polar answers 403 to a bare
+ *  validate. The first buyers' keys may look like this. */
+const LIMITED_KEY = 'ESCALA-LIMITED-KEY'
 
 function json(status: number, body: unknown) {
   return { status, ok: status >= 200 && status < 300, json: async () => body } as unknown as Response
@@ -49,6 +52,7 @@ function fakeFetch(input: unknown, init?: { headers?: Record<string, string>; bo
   if (url.endsWith('/license-keys/validate')) {
     const key = (JSON.parse(init?.body ?? '{}') as { key?: string }).key
     // Polar names the customer a key was sold to. Ana bought this one.
+    if (key === LIMITED_KEY) return Promise.resolve(json(403, { status: 'granted', expires_at: null, limit_activations: 3 }))
     return Promise.resolve(key === GOOD_KEY
       ? json(200, { status: 'granted', expires_at: null, limit_activations: null, customer: { email: 'Ana@Example.com' } })
       : json(404, { detail: 'not found' }))
@@ -310,5 +314,34 @@ describe('publishing from a browser that holds no key', () => {
     const stored = [...store.entries()].find(([k]) => k.startsWith('tokens/'))
     expect(stored && JSON.parse(stored[1]).escalaLicence).toMatchObject({ until: null })
     expect([...store.keys()].some((k) => k.startsWith('licence-slugs/'))).toBe(true)
+  })
+})
+
+describe('plugin with a licence key and no login', () => {
+  it('op=licence says Pro for the bought key and Free for anything else', async () => {
+    const good = await call(pluginSession, { op: 'licence', body: { key: GOOD_KEY } })
+    expect(good.status).toBe(200)
+    expect(good.body.tier).toBe('pro')
+    const bad = await call(pluginSession, { op: 'licence', body: { key: 'NOPE' } })
+    expect(bad.body.tier).toBe('free')
+    expect((await call(pluginSession, { op: 'licence', body: {} })).status).toBe(400)
+  })
+
+  it('an existing buyer’s key works in the plugin without spending an activation slot', async () => {
+    const out = await call(pluginSession, { op: 'licence', body: { key: LIMITED_KEY } })
+    expect(out.body.tier).toBe('pro')
+    const calls = (fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    expect(calls.some((c) => String(c[0]).endsWith('/license-keys/activate'))).toBe(false)
+  })
+
+  it('a build with the key header is Pro; a dead key is 401 so the plugin drops it', async () => {
+    const choices = { accent: '#7f56d9' }
+    const pro = await call(pluginSession, { op: 'studio-build', body: choices, headers: { 'x-escala-licence': GOOD_KEY } })
+    expect(pro.status).not.toBe(401)
+    expect(pro.status).not.toBe(503)
+    const dead = await call(pluginSession, { op: 'studio-build', body: choices, headers: { 'x-escala-licence': 'NOPE' } })
+    expect(dead.status).toBe(401)
+    const free = await call(pluginSession, { op: 'studio-build', body: choices })
+    expect(free.status).not.toBe(401)
   })
 })
