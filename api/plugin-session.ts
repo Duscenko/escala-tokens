@@ -32,7 +32,7 @@ import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugify
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Escala-Licence',
 }
 
 const PAIR_TTL_MS = 10 * 60 * 1000
@@ -122,6 +122,25 @@ async function withFreshPlan(token: string, session: SessionRecord): Promise<Ses
     return session
   }
 }
+/** The plugin has no login: Pro is a licence key sent as `X-Escala-Licence`.
+ *  The key is checked against Polar (no activation slot spent) and never
+ *  stored or logged. `unavailable` means Polar could not answer, which must
+ *  not be read as Free. */
+const LICENCE_HEADER = 'x-escala-licence'
+const MAX_LICENCE_KEY = 200
+
+function licenceKeyFrom(req: VercelRequest): string {
+  const raw = req.headers[LICENCE_HEADER]
+  return ((Array.isArray(raw) ? raw[0] : raw) ?? '').trim()
+}
+
+async function tierForLicenceKey(key: string): Promise<{ tier: 'pro' | 'free' | 'unavailable'; expiresAt: string | null; reason?: string }> {
+  const result = await checkLicenceKey(key, null, { activate: false })
+  if (result.reason === 'unavailable') return { tier: 'unavailable', expiresAt: null }
+  if (result.valid) return { tier: 'pro', expiresAt: result.expiresAt }
+  return { tier: 'free', expiresAt: null, reason: result.reason ?? 'unknown' }
+}
+
 type LibraryRecord = { libraries: PluginLibrary[] }
 
 function sha256(value: string): string {
@@ -589,6 +608,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ id, name: payload.name })
   }
 
+  // ── Plugin: is this licence key Pro? Replaces sign-in. The plugin keeps the
+  //    key in clientStorage and sends it on every build. ──
+  if (op === 'licence' && req.method === 'POST') {
+    if (rateLimited(`${ip}:plugin-licence`, 20)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+    const posted = jsonBody(req).key
+    const key = typeof posted === 'string' ? posted.trim() : ''
+    if (!key || key.length > MAX_LICENCE_KEY) return res.status(400).json({ error: 'Paste the licence key from your Escala receipt.' })
+    const decided = await tierForLicenceKey(key)
+    console.info(JSON.stringify({ evt: 'plugin_licence', keyHash: licenceKeyHash(key), tier: decided.tier, reason: decided.reason ?? null }))
+    if (decided.tier === 'unavailable') return res.status(503).json({ error: 'Could not confirm the key. Try again in a moment.' })
+    if (decided.tier === 'free') return res.status(200).json({ tier: 'free', reason: decided.reason })
+    return res.status(200).json({ tier: 'pro', expiresAt: decided.expiresAt })
+  }
+
   // ── Plugin, signed in: the native theme setup. Options are the web's own
   //    lists; build applies the choices with the web's own code. ──
   // ── Plugin: what an accent gives on its own (neutral + four states), for the
@@ -647,7 +683,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests.' })
     }
     let tier: 'pro' | 'free' = 'free'
-    if (session) {
+    const licenceKey = licenceKeyFrom(req)
+    if (licenceKey) {
+      if (licenceKey.length > MAX_LICENCE_KEY) return res.status(401).json({ error: 'Add your licence key again.' })
+      const decided = await tierForLicenceKey(licenceKey)
+      if (decided.tier === 'unavailable') {
+        return res.status(503).json({ error: 'Could not confirm your plan. Try again in a moment.' })
+      }
+      // A key that no longer validates (refund, expiry) drops to Free, and the
+      // plugin hears it as 401 so it can clear the stale key.
+      if (decided.tier === 'free') return res.status(401).json({ error: 'This licence key is no longer active.' })
+      tier = 'pro'
+    } else if (session) {
       const decided = tierOf(await withFreshPlan(token, session)).tier
       // Polar could not say. Building Free here would ship a Pro user the
       // one-theme scope. The plugin shows this error as-is.
