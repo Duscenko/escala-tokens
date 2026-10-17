@@ -1,3 +1,4 @@
+import { MCP_VISIBLE } from '../featureFlags'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -49,7 +50,8 @@ describe('public reading pages', () => {
 
   it('maps catalogue and docs keys onto crawlable paths without replacing the query protocol', () => {
     expect(matchPublicPath('/components/Button')).toEqual({ kind: 'component', key: 'Button' })
-    expect(matchPublicPath('/docs/mcp')).toEqual({ kind: 'doc', docKey: GUIDE_MCP_KEY })
+    // The MCP page is hidden (lib/featureFlags): its path resolves to nothing.
+    expect(matchPublicPath('/docs/mcp')).toEqual(MCP_VISIBLE ? { kind: 'doc', docKey: GUIDE_MCP_KEY } : null)
     expect(matchPublicPath('/docs/figma')).toEqual({ kind: 'doc', docKey: GUIDE_FIGMA_KEY })
     expect(publicDocPath(GET_STARTED_KEY)).toBe('/docs')
     expect(publicDocPath(CHANGELOG_KEY)).toBe('/docs/changelog')
@@ -78,7 +80,7 @@ describe('public reading pages', () => {
     expect(xml).not.toContain('section=')
     expect(xml).not.toContain('/api/')
     expect(xml).not.toContain('vercel.app')
-    expect(sitemapPaths()).toContain('/docs/mcp')
+    expect(sitemapPaths().includes('/docs/mcp')).toBe(MCP_VISIBLE)
     expect(sitemapPaths()).toContain('/docs/figma')
     expect(sitemapPaths()).toContain('/')
   })

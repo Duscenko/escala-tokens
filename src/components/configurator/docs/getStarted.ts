@@ -5,6 +5,7 @@
 // user opens.
 
 import { FOUNDATION_DOCS, OVERVIEW_KEY } from './foundationDocs'
+import { MCP_VISIBLE } from '../../../lib/featureFlags'
 
 export const GET_STARTED_KEY = '__get-started'
 export const GUIDE_FIGMA_KEY = '__guide-figma'
@@ -33,8 +34,12 @@ export const GUIDE_PAGE_COPY: Record<string, { title: string; lead: string }> = 
 export const GUIDE_PAGES: { key: string; label: string }[] = [
   { key: GET_STARTED_KEY, label: 'Get started' },
   { key: GUIDE_FIGMA_KEY, label: 'Use in Figma' },
-  { key: GUIDE_MCP_KEY, label: 'MCP' },
+  // Hidden while the live MCP is paused (`lib/featureFlags`).
+  ...(MCP_VISIBLE ? [{ key: GUIDE_MCP_KEY, label: 'MCP' }] : []),
 ]
+
+/** Where "learn how to connect an agent" and the Docs default land. */
+export const GUIDE_AI_LANDING = MCP_VISIBLE ? GUIDE_MCP_KEY : GET_STARTED_KEY
 
 /** Get started → two destinations → the token sheet. */
 export const DOCS_INTRO_PAGES: { key: string; label: string }[] = [

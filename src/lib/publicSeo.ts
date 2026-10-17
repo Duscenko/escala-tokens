@@ -14,6 +14,7 @@ import { CHANGELOG_KEY, CHANGELOG_LEAD } from '../components/configurator/docs/c
 import { FAQ_KEY, FAQ_LEAD } from '../components/configurator/docs/faqArticle'
 import { SYSTEM_REFERENCE_LEAD, SYSTEM_REFERENCE_TITLE } from '../components/configurator/docs/foundationArticle'
 import { FOUNDATION_DOCS, OVERVIEW_KEY } from '../components/configurator/docs/foundationDocs'
+import { MCP_VISIBLE } from './featureFlags'
 import { GET_STARTED_KEY, GUIDE_FIGMA_KEY, GUIDE_MCP_KEY, GUIDE_PAGE_COPY } from '../components/configurator/docs/getStarted'
 
 export const HOME_TITLE = 'Escala Tokens — Token generator'
@@ -49,7 +50,7 @@ function docPathByKey(): Record<string, string> {
   const paths: Record<string, string> = {
     [GET_STARTED_KEY]: '/docs',
     [GUIDE_FIGMA_KEY]: '/docs/figma',
-    [GUIDE_MCP_KEY]: '/docs/mcp',
+    ...(MCP_VISIBLE ? { [GUIDE_MCP_KEY]: '/docs/mcp' } : {}),
     [CHANGELOG_KEY]: '/docs/changelog',
     [FAQ_KEY]: '/docs/faq',
     [OVERVIEW_KEY]: '/docs/system',
@@ -214,7 +215,7 @@ export function composeTitle(source: Pick<HeadSource, 'title' | 'titleIsFull'>):
 export function sitemapPaths(): string[] {
   const paths = ['/', '/about', '/contact', '/legal', '/privacy', '/terms', '/licence', '/components']
   for (const component of COMPONENTS) paths.push(`/components/${component.key}`)
-  paths.push('/docs', '/docs/figma', '/docs/mcp', '/docs/changelog', '/docs/faq', '/docs/system')
+  paths.push('/docs', '/docs/figma', ...(MCP_VISIBLE ? ['/docs/mcp'] : []), '/docs/changelog', '/docs/faq', '/docs/system')
   for (const doc of FOUNDATION_DOCS) paths.push(`/docs/${doc.key}`)
   return paths
 }

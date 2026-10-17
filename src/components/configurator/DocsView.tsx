@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
 import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
-import { GUIDE_MCP_KEY, isGuideKey, type DocsExits } from './docs/getStarted'
+import { GUIDE_AI_LANDING, isGuideKey, type DocsExits } from './docs/getStarted'
 import { useSystemDoc, OVERVIEW_KEY, FOUNDATION_DOCS, foundationDoc, presentFoundationDoc, type SystemDocScope } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
 import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
@@ -58,7 +58,7 @@ export default function DocsView({
   const articleRef = useRef<HTMLDivElement>(null)
 
   const pageKey = !allowReference && !isGuideKey(activeFoundationKey) && activeFoundationKey !== CHANGELOG_KEY && activeFoundationKey !== FAQ_KEY
-    ? GUIDE_MCP_KEY
+    ? GUIDE_AI_LANDING
     : activeFoundationKey
   const guide = isGuideKey(pageKey)
   const isChangelog = pageKey === CHANGELOG_KEY

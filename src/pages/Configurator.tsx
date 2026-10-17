@@ -72,7 +72,7 @@ import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
-import { GUIDE_MCP_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
+import { GUIDE_AI_LANDING, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
 import { OPEN_FAQ_EVENT } from '../lib/aiContext'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -466,13 +466,11 @@ function ExportPill({
   onSyncFigma,
   onConnectGithub,
   onExportCode,
-  onConnectMcp,
 }: {
   onExport: () => void
   onSyncFigma: () => void
   onConnectGithub: () => void
   onExportCode: () => void
-  onConnectMcp: () => void
 }) {
   const { t } = useI18n()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -568,12 +566,6 @@ function ExportPill({
           <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
             <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
             {t('Connect GitHub')}
-          </button>
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectMcp)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">
-              <ExportMenuGlyph src="/icons/settings/mcp.svg" />
-            </span>
-            {t('Connect with MCP')}
           </button>
         </div>,
         document.body,
@@ -1394,7 +1386,7 @@ export default function Configurator() {
   // Docs exposes only focused operating pages from the top-menu. The token
   // reference stays in the preview's contextual documentation surface, so the
   // global destination never duplicates it.
-  const [docFoundationKey, setDocFoundationKey] = useState<string>(() => incomingPlace?.doc ?? GUIDE_MCP_KEY)
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(() => incomingPlace?.doc ?? GUIDE_AI_LANDING)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
 
@@ -1653,7 +1645,7 @@ export default function Configurator() {
   // and the About tab (its FAQ link and footer) — so the two can't disagree.
   const openDocsPage = (page: DocsMenuPage) => {
     openDocs(page === 'mcp'
-      ? GUIDE_MCP_KEY
+      ? GUIDE_AI_LANDING
       : page === 'figma'
         ? GUIDE_FIGMA_KEY
         : page === 'changelog'
@@ -1778,10 +1770,6 @@ export default function Configurator() {
   const returnToBrand = () => {
     setComponentFromSystem(false)
     openThemePreviewPage()
-  }
-  const openMcpPage = () => {
-    leaveExportWizard()
-    openDocs(GUIDE_MCP_KEY)
   }
   useEffect(() => {
     const onOpenFaq = () => {
@@ -1987,7 +1975,7 @@ export default function Configurator() {
     )
     centerKey = 'export-github'
   } else if (exportMode === 'figma-sync') {
-        header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Name the file, pick modes, then publish to the plugin.' }
+        header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Name the file, pick modes, then copy the context into the plugin.' }
     body = (
       <div className="h-full overflow-y-auto">
         <FigmaSyncView
@@ -2062,7 +2050,7 @@ export default function Configurator() {
           setTab('foundations')
           changeThemeWorkspaceTab('preview')
         }}
-        onLearnAI={() => openDocs(GUIDE_MCP_KEY)}
+        onLearnAI={() => openDocs(GUIDE_AI_LANDING)}
         onOpenDocsPage={openDocsPage}
         onOpenComponents={() => changeTab('components')}
         foundationCount={FOUNDATIONS.length}
@@ -2202,7 +2190,7 @@ export default function Configurator() {
     header = {
       Icon: RulesIcon,
       title: 'Docs',
-      subtitle: 'MCP, Figma, release notes and answers for working with Escala.',
+      subtitle: 'Figma, release notes and answers for working with Escala.',
     }
     body = (
       <DocsView
@@ -2457,7 +2445,6 @@ export default function Configurator() {
             onSyncFigma={openFigmaSyncPage}
             onConnectGithub={openGithubPage}
             onExportCode={openGetCodePage}
-            onConnectMcp={openMcpPage}
           />
         ) : undefined}
         brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) + (navRailVisible ? FOUNDATION_ICON_RAIL_WIDTH : 0) : null}

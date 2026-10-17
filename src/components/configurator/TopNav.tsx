@@ -5,6 +5,7 @@ import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
 import { FOUNDATION_ICON_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
+import { MCP_VISIBLE } from '../../lib/featureFlags'
 
 type ChromeMenuAlign = 'left' | 'right' | 'center'
 
@@ -309,7 +310,7 @@ function HelpIcon() {
 }
 
 const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] = [
-  { key: 'mcp', label: 'MCP', icon: <MaskGlyph src="/icons/settings/mcp.svg" className="h-4 w-4" /> },
+  ...(MCP_VISIBLE ? [{ key: 'mcp' as const, label: 'MCP', icon: <MaskGlyph src="/icons/settings/mcp.svg" className="h-4 w-4" /> }] : []),
   { key: 'figma', label: 'Use in Figma', icon: <FigmaGlyph className="h-3.5 w-3.5" /> },
   { key: 'changelog', label: 'Changelog', icon: <ClockIcon /> },
   { key: 'faq', label: 'FAQ', icon: <HelpIcon /> },

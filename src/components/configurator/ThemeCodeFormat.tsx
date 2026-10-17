@@ -20,6 +20,7 @@ import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORK
 import { ChromeAnchoredDropdown } from './TopNav'
 import ThemeCodeScopeRail, { FormatGlyph, resolveCodeTheme, type CodeFormatKey, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
+import { MCP_VISIBLE } from '../../lib/featureFlags'
 
 export type { CodeThemeScope }
 export { resolveCodeTheme }
@@ -484,7 +485,7 @@ export default function ThemeCodeFormat({
             </nav>
           </header>
         ) : null}
-        {effectiveScope ? (
+        {MCP_VISIBLE && effectiveScope ? (
           <AgentHandoff themeName={scopedLabel} />
         ) : null}
         <div className="flex min-h-0 flex-1 p-3 pt-0">

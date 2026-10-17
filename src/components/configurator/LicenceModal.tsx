@@ -7,6 +7,7 @@ import { activateLicence, clearLicence } from '../../lib/licence'
 import { checkoutUrl } from '../../lib/polar'
 import { PRICING_PATH } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
+import { MCP_VISIBLE } from '../../lib/featureFlags'
 
 // "Paste your licence key" — the only place a key enters the app.
 //
@@ -135,9 +136,9 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
             </h2>
             <p id={`${titleId}-copy`} className="mt-1.5 text-caption leading-5 text-fg-muted">
               {active
-                ? t('Complete Figma UI Kit, live MCP and updates.')
+                ? (MCP_VISIBLE ? t('Complete Figma UI Kit, live MCP and updates.') : t('Complete Figma UI Kit and updates.'))
                 : entitlement.promo
-                  ? t('One payment. Includes 12 months of hosted sync, live MCP and updates.')
+                  ? (MCP_VISIBLE ? t('One payment. Includes 12 months of hosted sync, live MCP and updates.') : t('One payment. Includes 12 months of hosted sync and updates.'))
                   : t('The purchase email opens Polar and shows the key. Paste it here to turn this browser into Pro.')}
             </p>
             {until && (

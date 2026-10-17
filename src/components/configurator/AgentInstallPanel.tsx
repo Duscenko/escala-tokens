@@ -36,17 +36,21 @@ import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { CopyButton } from './docs/blocks'
 import { useFreeTier } from '../../lib/access'
 import { UpgradeToProNotice } from './UpgradeToProNotice'
+import { MCP_VISIBLE } from '../../lib/featureFlags'
 
 export type InstallClient = 'cursor' | 'claude' | 'vscode' | 'make'
 type Mode = 'mcp' | 'prompt'
 
-const TABS: { id: InstallClient; label: string; logo: string }[] = [
+const ALL_TABS: { id: InstallClient; label: string; logo: string }[] = [
   { id: 'cursor', label: 'Cursor', logo: 'cursor' },
   { id: 'claude', label: 'Claude Code', logo: 'claudecode' },
   { id: 'vscode', label: 'VS Code', logo: 'vs' },
   // Figma Make is a Figma product; it carries the Figma mark.
   { id: 'make', label: 'Figma Make', logo: 'figma' },
 ]
+// With the live MCP hidden only the offline package remains, and VS Code has
+// no skills folder to install one into (see `stepsFor`), so its tab goes too.
+const TABS = MCP_VISIBLE ? ALL_TABS : ALL_TABS.filter((t) => t.id !== 'vscode')
 
 /** One numbered row. `code` is the command; `pane` is for a step whose payload
  *  isn't a single line (a JSON config), so it renders in the same slot without
@@ -70,7 +74,7 @@ export default function AgentInstallPanel({
    *  carries the full procedure. */
   variant?: 'export' | 'docs' | 'about'
 }) {
-  const [tab, setTab] = useState<InstallClient>(initialClient)
+  const [tab, setTab] = useState<InstallClient>(!MCP_VISIBLE && initialClient === 'vscode' ? 'cursor' : initialClient)
   const [mode, setMode] = useState<Mode>('mcp')
   const projectName = useDesignStore((s) => s.projectName) || 'Escala'
   const origin = publishOrigin()
@@ -81,8 +85,11 @@ export default function AgentInstallPanel({
 
   // Make has no live mode; force the panel back to its one real view rather
   // than rendering an empty MCP pane if it was left on that tab.
-  const effectiveMode: Mode = tab === 'make' ? 'mcp' : mode
+  const effectiveMode: Mode = tab === 'make' || !MCP_VISIBLE ? 'mcp' : mode
   const allSteps = stepsFor(tab, origin, slug, projectName)
+    // Offline only while the live MCP is hidden: keep Make's two steps and the
+    // offline-package row, drop every "add the server" row.
+    .filter((step) => MCP_VISIBLE || tab === 'make' || step.title === 'Install the offline package')
   // About shows just the first row ("Add the server" — or Make's "Export the
   // zip"); the alternative-config and offline-package rows live in Docs.
   const steps = teaser ? allSteps.slice(0, 1) : allSteps
@@ -91,11 +98,20 @@ export default function AgentInstallPanel({
     <div className="rounded-xl border border-line bg-surface/50 overflow-hidden">
       {inWizard && (
         <div className="px-4 pt-3.5 pb-1 flex flex-col gap-1">
-          <span className="text-ui font-medium text-fg">Connect your agent</span>
+          <span className="text-ui font-medium text-fg">{MCP_VISIBLE ? 'Connect your agent' : 'Give your agent the system'}</span>
           <p className="text-body text-fg-muted leading-relaxed">
-            Publish this system (Sync), then connect it below so the agent resolves real values instead of
-            guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo: the
-            app you are building, not Escala.
+            {MCP_VISIBLE ? (
+              <>
+                Publish this system (Sync), then connect it below so the agent resolves real values instead of
+                guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo: the
+                app you are building, not Escala.
+              </>
+            ) : (
+              <>
+                Install the package below so the agent reads real values instead of guessing. Run it in the{' '}
+                <strong className="font-medium text-fg">product</strong> repo: the app you are building, not Escala.
+              </>
+            )}
           </p>
         </div>
       )}
@@ -121,7 +137,7 @@ export default function AgentInstallPanel({
             </button>
           ))}
         </div>
-        {tab !== 'make' && (
+        {MCP_VISIBLE && tab !== 'make' && (
           <div
             className="flex flex-shrink-0 rounded-lg border border-line overflow-hidden"
             role="group"
@@ -145,7 +161,7 @@ export default function AgentInstallPanel({
         )}
       </div>
 
-      {free && tab !== 'make' ? (
+      {MCP_VISIBLE && free && tab !== 'make' ? (
         <div className="px-4 py-5">
           <UpgradeToProNotice />
         </div>
@@ -159,7 +175,7 @@ export default function AgentInstallPanel({
         />
       ) : (
         <>
-          {!inWizard && !teaser && tab !== 'make' && (
+          {MCP_VISIBLE && !inWizard && !teaser && tab !== 'make' && (
             <p className="px-4 pt-3 text-body text-fg-faint leading-relaxed">
               Publish this system first (Figma → Sync). The server resolves against the published
               system, so there has to be one. Run these in the{' '}
@@ -265,9 +281,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Install the offline package',
         body: (
           <>
-            Your token names, usage prose and the component catalogue with no network. It's what Live
-            can&apos;t answer, since an agent with only a connection doesn&apos;t know what to ask
-            for. Lands in <Mono>{skillInstallPath('claude', projectName)}</Mono>.
+            Your token names, usage prose and the component catalogue with no network. Lands in <Mono>{skillInstallPath('claude', projectName)}</Mono>.
           </>
         ),
         code: cliSkillCommand(slug, 'claude', origin),
@@ -296,9 +310,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
       title: 'Install the offline package',
       body: (
         <>
-          Your token names, usage prose and the component catalogue with no network. It's what Live
-          can&apos;t answer, since an agent with only a connection doesn&apos;t know what to ask
-          for. Lands in <Mono>{`.cursor/skills/${folder}/`}</Mono>.
+          Your token names, usage prose and the component catalogue with no network. Lands in <Mono>{`.cursor/skills/${folder}/`}</Mono>.
         </>
       ),
       code: cliSkillCommand(slug, 'cursor', origin),

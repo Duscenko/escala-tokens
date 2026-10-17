@@ -19,6 +19,7 @@ import { publishOrigin, syncProjectId, syncUrl } from '../../../lib/figmaSync'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
 import { AIContextButton } from '../../ui/AIContextButton'
 import AgentInstallPanel from '../AgentInstallPanel'
+import { MCP_VISIBLE } from '../../../lib/featureFlags'
 import {
   CodeBlock, DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
@@ -115,7 +116,7 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     'Take it somewhere:',
     '',
     '- **Figma** — plugin + Sync.',
-    '- **Code** — `variables.css` from Save, W3C JSON from Export, a GitHub remote, and the MCP connection an AI agent resolves real values through. All of it lands in the product repo.',
+    '- **Code** — `variables.css` from Save, W3C JSON from Export, a GitHub remote' + (MCP_VISIBLE ? ', and the MCP connection an AI agent resolves real values through' : ', and the offline agent skill') + '. All of it lands in the product repo.',
     '',
     'Do not choose between Markdown, Skill, and Agent bundle. Export asks where the system is going.',
   ].join('\n')
@@ -181,11 +182,13 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
             hint={t('Install the Escala plugin and keep Sync on. Variables land in the file you already design in.')}
             onClick={() => onOpen(GUIDE_FIGMA_KEY)}
           />
-          <DestinationRow
-            title={t('MCP')}
-            hint={t('Connect an AI agent to the live token server so it resolves your system instead of guessing values.')}
-            onClick={() => onOpen(GUIDE_MCP_KEY)}
-          />
+          {MCP_VISIBLE && (
+            <DestinationRow
+              title={t('MCP')}
+              hint={t('Connect an AI agent to the live token server so it resolves your system instead of guessing values.')}
+              onClick={() => onOpen(GUIDE_MCP_KEY)}
+            />
+          )}
         </div>
       </DocSection>
     </>
@@ -291,7 +294,7 @@ export function GetStartedArticle({
 
       {pageKey === GUIDE_FIGMA_KEY ? (
         <FigmaGuide exits={exits} />
-      ) : pageKey === GUIDE_MCP_KEY ? (
+      ) : pageKey === GUIDE_MCP_KEY && MCP_VISIBLE ? (
         <McpGuide />
       ) : (
         <GetStartedLanding onOpen={onOpen} />

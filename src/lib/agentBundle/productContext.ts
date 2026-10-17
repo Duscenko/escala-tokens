@@ -87,7 +87,5 @@ function buildLlmsTxt(json: TokenJSON, project: string): string {
     `- [token-lint](checkers/token-lint.mjs): flags hex/px that already have a token`,
     ``,
     icons?.repo ? `## Icons\n\n- ${icons.label}: ${icons.repo} (\`${icons.npm}\`)\n` : '',
-    `Do not point agents at a different product's MCP. Wire this system's own token endpoint when you have one.`,
-    ``,
   ].join('\n')
 }

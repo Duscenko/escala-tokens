@@ -55,7 +55,7 @@ WCAG is the compliance floor. APCA Lc is what people perceive. A pair that clear
 1. Check the **semantic pair**, not a random hex. Resolve names in \`references/semantic-contract.md\`.
 2. APCA is directional: foreground first (text/icon), then background.
 3. Intent floors: body-text WCAG 4.5 / Lc 75; large-text 3.0 / Lc 60; ui-component 3.0 / Lc 45.
-4. Do not reimplement contrast math. Use this system's MCP \`check_contrast\` when connected, or compare against the hex tables in \`references/tokens.md\`.
+4. Do not reimplement contrast math. Compare against the hex tables in \`references/tokens.md\`.
 
 ## Pairings to audit first
 

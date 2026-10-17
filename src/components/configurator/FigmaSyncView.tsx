@@ -2,8 +2,9 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
-import { HOSTED_LIVE_SYNC } from '../../lib/hostedSync'
-import { isLiveEnvironment, syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
+import { type FigmaPublishState } from '../../lib/figmaSync'
+import { buildFigmaContext } from '../../lib/figmaContext'
+import { showToast } from '../ui/Toast'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { figmaSyncThemeKeys } from '../../lib/themeLibrary'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
@@ -23,7 +24,7 @@ import { brandThemesSummary, soleShippedAppearance } from '../../lib/brandThemes
 import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
-import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
+import { FREE_MAX_THEMES } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 import { useFreeTier } from '../../lib/access'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -37,11 +38,11 @@ interface FigmaSyncViewProps {
   onOpenDownload?: () => void
   /** Shared manual-publish feedback from Configurator, so this screen and the
    *  persistent header always report the same request. */
-  publishState: FigmaPublishState
+  publishState?: FigmaPublishState
   /** Specific reason for the current 'error' state (a lost claim vs. a network
    *  hiccup) — same string the Sync pill's tooltip shows. Null outside 'error'. */
   publishError?: string | null
-  onRequestSync: () => void
+  onRequestSync?: () => void
   /** Theme the canvas is previewing — selecting a sync row also previews it. */
   previewTheme: string
   /** The appearance on screen. Free keeps this one; the other stays visible and locked. */
@@ -63,28 +64,6 @@ interface FigmaSyncViewProps {
   section?: string
 }
 
-/** Theme radios, the sync URL field, and Sync now — one height, one radius. */
-/** Whether the ID currently resolves to a published payload. Deliberately a
- *  dot + one word, next to the label rather than in the field: it annotates the
- *  ID, and the field itself is what gets copied. `unknown` renders nothing —
- *  a probe that could not run must not claim either answer. */
-function PublishStateBadge({ state }: { state: 'unknown' | 'live' | 'missing' }) {
-  const { t } = useI18n()
-  if (state === 'unknown') return null
-  const live = state === 'live'
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-mini font-semibold uppercase tracking-[0.12em] ${live ? 'text-status-success' : 'text-status-warning'}`}
-      title={live
-        ? t('The plugin can fetch this ID right now.')
-        : t('Nothing published under this ID yet — the plugin would answer 404.')}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-status-success-solid' : 'bg-status-warning-solid'}`} />
-      {live ? t('Live') : t('Not published')}
-    </span>
-  )
-}
-
 const SYNC_CONTROL = 'h-10 rounded-lg'
 /** Chrome-page ink, not `--accent-ui`. Accent here tracks the previewed
  *  theme, so a gold Core row would paint the URL and the selected radio
@@ -100,36 +79,6 @@ function Chevron({ open }: { open: boolean }) {
     >
       <path d="M9 6l6 6-6 6" />
     </svg>
-  )
-}
-
-/** Progressive disclosure for the cases Sync now cannot finish in Figma.
- *  Closed by default — the success banner already names Update now. */
-function SyncStuckHelp() {
-  const { t } = useI18n()
-  const [open, setOpen] = useState(false)
-  const panelId = useId()
-
-  return (
-    <div>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((next) => !next)}
-        className={`inline-flex items-center gap-1.5 rounded-md text-caption text-fg-muted transition-colors hover:text-fg ${SYNC_FOCUS}`}
-      >
-        <Chevron open={open} />
-        {t('No sync yet? Help')}
-      </button>
-      {open ? (
-        <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
-          <li>{t('Open the Escala plugin in Figma and sign in, then press Sync on this design system.')}</li>
-          <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself.')}</li>
-          <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
-        </ol>
-      ) : null}
-    </div>
   )
 }
 
@@ -163,19 +112,19 @@ function EditIcon() {
   )
 }
 
-// ─── Sync status and explicit publish ───────────────────────────────────────
-// Opening this surface is intentionally read-only. Its parent owns the manual
-// publish request and status so the top-nav Sync control and this screen always
-// show the same in-flight feedback. Downloading the plugin never invokes
-// /api/tokens.
+// ─── File & modes, then the context the plugin imports ──────────────────────
+// Hosted sync is off, so nothing is published from here. The page builds ONE
+// message (`lib/figmaContext`): Markdown plus the Escala JSON scoped to the
+// brands, themes and viewports checked below. The person copies it and pastes
+// it into the plugin's Home → Agent Context. Nothing touches /api/tokens.
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload,
-  publishState, publishError, onRequestSync, previewTheme, previewAppearance = 'light', onSelectTheme,
+  previewTheme, onSelectTheme,
   fileName, onFileNameChange, syncModes, onSyncModesChange, viewports, onViewportsChange,
 }: FigmaSyncViewProps) {
   const store = useDesignStore()
   const {
-    autoSyncFigma, setAutoSyncFigma, pluginBuildSeen,
+    pluginBuildSeen,
     themeOrder, themes, themeLabels, themeKinds, themeSources,
   } = store
   const syncThemes = useMemo(
@@ -183,57 +132,26 @@ export default function FigmaSyncView({
     [themeOrder, themes],
   )
   const cannotSync = syncThemes.length === 0
-  const [isDeployed] = useState(isLiveEnvironment)
-  // Mint the stable id the moment this screen opens — this IS the screen where
-  // someone sets up the connection, so it is the honest place for it, and the
-  // alternative (minting inside `makeDesignDefaults`) would burn an identity on
-  // every reset and every module load. Idempotent, so a re-render is free.
-  //
-  // NOT gated on `isDeployed`: minting touches no network, and a dev build that
-  // showed a stale name-slug in a field labelled "ID to plugin" would be
-  // teaching the wrong thing. The PROBE below IS gated, for the opposite
-  // reason — `vite dev` answers any unknown path with index.html and HTTP 200,
-  // so an unguarded probe there would report a system as Live that isn't.
-  const ensurePublishId = store.ensurePublishId
-  useEffect(() => { ensurePublishId() }, [ensurePublishId])
-  const pluginSlug = syncProjectId(fileName)
-
   const { t, locale } = useI18n()
   const free = useFreeTier()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [licenceOpen, setLicenceOpen] = useState(false)
-  // The one theme a Free brand ships: the one it was set to, and only when it
-  // was never narrowed, the one on screen.
-  const brandThemes = store.brandThemes
-  const freeThemeOf = useCallback(
-    (brand: string) => soleShippedAppearance(brandThemes, brand) ?? previewAppearance,
-    [brandThemes, previewAppearance],
-  )
-  // A selection saved while Pro was on (or during the beta) must not keep
-  // shipping the other appearance or a phone viewport once the account is Free.
+  // Free (the /pricing tier, `freeFigmaScope`): up to FREE_MAX_THEMES brands,
+  // Light and Dark, Desktop and Mobile. A selection saved while Pro was on is
+  // narrowed to that the moment the account is Free.
   useEffect(() => {
     if (!free) return
-    const nextModes: FigmaSyncMode[] = []
-    const seen = new Set<string>()
+    const keep = new Set<string>()
     for (const mode of syncModes) {
-      const keep = freeThemeOf(mode.theme)
-      if (mode.appearance === keep) {
-        const id = `${mode.theme}::${mode.appearance}`
-        if (seen.has(id)) continue
-        seen.add(id)
-        nextModes.push(mode)
-        continue
-      }
-      const id = `${mode.theme}::${keep}`
-      if (seen.has(id) || syncModes.some((other) => other.theme === mode.theme && other.appearance === keep)) continue
-      seen.add(id)
-      nextModes.push({ theme: mode.theme, appearance: keep })
+      if (keep.size >= FREE_MAX_THEMES && !keep.has(mode.theme)) continue
+      keep.add(mode.theme)
     }
-    const modesSame = nextModes.length === syncModes.length
-      && nextModes.every((mode, index) => mode.theme === syncModes[index]?.theme && mode.appearance === syncModes[index]?.appearance)
-    if (!modesSame) onSyncModesChange(nextModes, true)
-    if (viewports.length !== 1 || viewports[0] !== 'desktop') onViewportsChange(['desktop'])
-  }, [free, freeThemeOf, syncModes, viewports, onSyncModesChange, onViewportsChange])
+    const nextModes = syncModes.filter((mode) => keep.has(mode.theme))
+    if (nextModes.length !== syncModes.length) onSyncModesChange(nextModes, true)
+    const nextViewports = viewports.filter((viewport) => viewport !== 'tablet')
+    if (nextViewports.length !== viewports.length) onViewportsChange(nextViewports.length ? nextViewports : ['desktop'])
+  }, [free, syncModes, viewports, onSyncModesChange, onViewportsChange])
+  const selectedBrands = useMemo(() => new Set(syncModes.map((mode) => mode.theme)), [syncModes])
   const entitlement = useEntitlement()
   // "3 brands · 4 themes: Acme Light + Dark · Kids Light · Partner Dark" —
   // what this publish carries, read off the selection itself so the sentence
@@ -252,37 +170,32 @@ export default function FigmaSyncView({
   }, [syncModes, syncThemes, themeLabels, t])
   const fileHintId = useId()
   const fileNameRef = useRef<HTMLInputElement>(null)
-  // ── Does this ID actually serve anything? ─────────────────────────────────
-  // The screen used to hand out a copyable key with no idea whether a blob
-  // existed behind it, and a key that has never been published answers 404 —
-  // which is exactly what the plugin reported, as a bare "HTTP 404" that read
-  // like an outage. One GET settles it, and it is the same request the plugin
-  // will make, so it cannot disagree.
-  //
-  // Keyed by the id it answered FOR, and read back as derived state: a result
-  // for a previous id (after "New ID", or a slower response overtaking a
-  // faster one) can then never be shown against the current one.
-  const [probe, setProbe] = useState<{ key: string; ok: boolean } | null>(null)
-  useEffect(() => {
-    if (!isDeployed || !pluginSlug) return
-    let cancelled = false
-    fetch(`/api/tokens?project=${encodeURIComponent(pluginSlug)}`, { cache: 'no-store' })
-      .then((res) => { if (!cancelled) setProbe({ key: pluginSlug, ok: res.ok }) })
-      // A network failure is not "unpublished" — leave it unknown rather than
-      // telling someone to re-publish something that is already there.
-      .catch(() => { if (!cancelled) setProbe(null) })
-    return () => { cancelled = true }
-  }, [pluginSlug, isDeployed, publishState])
-  const publishedState: 'unknown' | 'live' | 'missing' =
-    probe && probe.key === pluginSlug ? (probe.ok ? 'live' : 'missing') : 'unknown'
-  const [handoff, setHandoff] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const context = useMemo(
+    () => (cannotSync || syncModes.length === 0
+      ? null
+      : buildFigmaContext({
+        project: fileName || (syncThemes[0] ? themeDisplayName(syncThemes[0], themeLabels) : store.projectName),
+        modes: syncModes,
+        viewports,
+        theme: previewTheme,
+        brandName: (key) => themeDisplayName(key, themeLabels),
+      })),
+    // `store` changes on every edit, and the context has to follow the tokens.
+    [cannotSync, syncModes, viewports, previewTheme, fileName, syncThemes, themeLabels, store],
+  )
+  useEffect(() => { setCopied(false) }, [context])
 
-  function requestSync() {
-    // Without Pro the server answers 402 — say so BEFORE the request, with a way
-    // forward, instead of a red "couldn't publish" the user cannot act on.
-    if (!entitlement.pro) { setLicenceOpen(true); return }
-    setHandoff(true)
-    onRequestSync()
+  async function copyContext() {
+    if (!context) return
+    try {
+      await navigator.clipboard.writeText(context.text)
+      setCopied(true)
+      showToast(t('Copied. In Figma, open the Escala plugin → Agent Context and paste it.'))
+    } catch {
+      showToast(t('Couldn’t copy — try again'))
+    }
   }
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
@@ -364,6 +277,7 @@ export default function FigmaSyncView({
                         aria-pressed={selected}
                         aria-current={key === previewTheme ? 'true' : undefined}
                         onClick={() => {
+                          if (free && !selected && selectedBrands.size >= FREE_MAX_THEMES) { setUpgradeOpen(true); return }
                           onSyncModesChange(toggleFigmaSyncTheme(syncModes, key, themeKinds))
                           onSelectTheme(key)
                         }}
@@ -382,7 +296,7 @@ export default function FigmaSyncView({
                       <div className="flex flex-shrink-0 items-center gap-1">
                         {(['light', 'dark'] as const).map((appearance) => {
                           const on = appearance === 'light' ? lightOn : darkOn
-                          const locked = free && appearance !== freeThemeOf(key)
+                          const locked = false
                           const blocked = !locked && !on && atCap
                           return (
                             <button
@@ -432,7 +346,7 @@ export default function FigmaSyncView({
               <div role="group" aria-label={t('Viewports to sync')} className="flex flex-wrap gap-1.5">
                 {FIGMA_VIEWPORTS.map((viewport: FigmaViewport) => {
                   const on = viewports.includes(viewport)
-                  const locked = free && viewport !== 'desktop'
+                  const locked = free && viewport === 'tablet'
                   const last = !locked && on && viewports.length === 1
                   return (
                     <button
@@ -462,108 +376,101 @@ export default function FigmaSyncView({
         </div>
 
       <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface/50 p-5">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="figma-file-name" className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
-              {t('File name')}
-            </label>
-            <div className={`group flex min-w-0 items-center gap-2 border border-line bg-app pl-3 pr-2 ${SYNC_CONTROL} focus-within:ring-2 focus-within:ring-fg/40`}>
-              <input
-                ref={fileNameRef}
-                id="figma-file-name"
-                type="text"
-                value={fileName}
-                onChange={(event) => onFileNameChange(event.target.value)}
-                placeholder={syncThemes[0] ? themeDisplayName(syncThemes[0], themeLabels) : store.projectName}
-                aria-describedby={fileHintId}
-                className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none"
-              />
-              <span
-                aria-hidden
-                title={t('Rename file')}
-                onMouseDown={(event) => {
-                  event.preventDefault()
-                  fileNameRef.current?.focus()
-                }}
-                className="grid h-6 w-6 flex-shrink-0 cursor-text place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-fg/8 group-hover:text-fg group-focus-within:bg-fg/8 group-focus-within:text-fg"
-              >
-                <EditIcon />
-              </span>
-            </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="figma-file-name" className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
+            {t('File name')}
+          </label>
+          <div className={`group flex min-w-0 items-center gap-2 border border-line bg-app pl-3 pr-2 ${SYNC_CONTROL} focus-within:ring-2 focus-within:ring-fg/40`}>
+            <input
+              ref={fileNameRef}
+              id="figma-file-name"
+              type="text"
+              value={fileName}
+              onChange={(event) => onFileNameChange(event.target.value)}
+              placeholder={syncThemes[0] ? themeDisplayName(syncThemes[0], themeLabels) : store.projectName}
+              aria-describedby={fileHintId}
+              className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none"
+            />
+            <span
+              aria-hidden
+              title={t('Rename file')}
+              onMouseDown={(event) => {
+                event.preventDefault()
+                fileNameRef.current?.focus()
+              }}
+              className="grid h-6 w-6 flex-shrink-0 cursor-text place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-fg/8 group-hover:text-fg group-focus-within:bg-fg/8 group-focus-within:text-fg"
+            >
+              <EditIcon />
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <PublishStateBadge state={publishedState} />
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-line pt-4">
+          <div className="flex items-center gap-3">
+            <p className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('Agent context')}</p>
+            {context ? (
+              <p className="ml-auto text-caption text-fg-faint">
+                {formatBytes(context.bytes)}
+              </p>
+            ) : null}
+          </div>
+          <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
+            {t('Your system as one message: the brands, themes and viewports checked above. Paste it into the Escala plugin, or into any AI agent.')}
+          </p>
+          <ol className="flex flex-col gap-1.5 text-caption leading-relaxed text-fg-muted">
+            {[
+              t('Copy the context.'),
+              t('In Figma, open the Escala plugin. On Home, choose Agent Context.'),
+              t('Paste it and press Import.'),
+            ].map((step, index) => (
+              <li key={step} className="flex items-start gap-2">
+                <span className="w-4 flex-shrink-0 font-mono tabular-nums text-fg-faint">{String(index + 1).padStart(2, '0')}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={requestSync}
-              disabled={publishState === 'publishing' || cannotSync}
-              className={`inline-flex h-9 items-center justify-center gap-2 bg-fg px-4 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-60 ${cannotSync ? 'disabled:cursor-not-allowed' : 'disabled:cursor-wait'} ${SYNC_CONTROL} ${SYNC_FOCUS}`}
+              onClick={() => void copyContext()}
+              disabled={!context}
+              className={`inline-flex h-9 items-center justify-center gap-2 bg-fg px-4 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${SYNC_CONTROL} ${SYNC_FOCUS}`}
             >
-              {publishState === 'publishing' ? (
-                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M8 2a6 6 0 1 1-5.2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              ) : null}
-              {publishState === 'publishing'
-                ? t('Publishing…')
-                : publishState === 'error'
-                  ? t('Try again')
-                  : t('Sync now')}
+              {copied ? t('Copied') : t('Copy context')}
+            </button>
+            <button
+              type="button"
+              aria-expanded={previewOpen}
+              disabled={!context}
+              onClick={() => setPreviewOpen((open) => !open)}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg disabled:opacity-60 ${SYNC_FOCUS}`}
+            >
+              <Chevron open={previewOpen} />
+              {t('Preview')}
             </button>
           </div>
-          {cannotSync && (
+          {cannotSync || syncModes.length === 0 ? (
             <p className="text-caption leading-relaxed text-status-warning">
-              {t('Add a System style to My brands first — there is nothing to publish yet.')}
+              {cannotSync
+                ? t('Add a System style to My brands first — there is nothing to copy yet.')
+                : t('Check at least one brand and theme above.')}
             </p>
-          )}
-          <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
-            {publishedState === 'missing'
-              ? t('Nothing published yet. Press Sync now, then sign in from the Escala plugin in Figma.')
-              : t('In Figma, open the Escala plugin and sign in. This design system shows up there — press Sync to start.')}
-          </p>
+          ) : null}
+          {previewOpen && context ? (
+            <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-line bg-app p-3 font-mono text-caption leading-relaxed text-fg-muted">
+              {context.text.length > 4000 ? `${context.text.slice(0, 4000)}\n…` : context.text}
+            </pre>
+          ) : null}
         </div>
-        {publishState === 'publishing' && (
-          <div className="flex items-center gap-1.5 text-caption">
-            <span className="h-1.5 w-1.5 rounded-full bg-status-warning-solid animate-pulse" />
-            <span className="text-fg-faint">Publishing your tokens…</span>
-          </div>
-        )}
-        {publishState === 'error' && (
-          <div className="flex items-center gap-1.5 text-caption">
-            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-danger-solid" />
-            <span className="text-fg-faint">{publishError || "Couldn't publish your tokens. Retry sync, or use the plugin's Import tab to paste them manually."}</span>
-          </div>
-        )}
-        {/* The payoff, and deliberately NOT a toast. The next step happens in
-            another application — the user has to leave this window, open Figma,
-            find the plugin and paste. An instruction you act on somewhere else
-            must not expire after two seconds, so this card stays until the
-            state that produced it changes. It is also why the old copy ("This
-            only published the URL") is gone: that described the mechanism,
-            which is precisely the half the user cannot see and does not need. */}
-        {handoff && publishState !== 'publishing' && publishState !== 'error' && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex items-start gap-2.5 rounded-lg bg-fg/6 px-3 py-2.5"
-          >
-            <span className="mt-0.5 text-status-success" aria-hidden>✓</span>
-            <div className="min-w-0">
-              <p className="text-caption font-semibold text-fg">
-                {t('Published. Sign in from the plugin to sync this design system.')}
-              </p>
-              <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-                {t('In Figma: open the Escala plugin, press Sign in, then Sync on this design system.')}
-              </p>
-            </div>
-          </div>
-        )}
-        <SyncStuckHelp />
       </div>
       {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
       <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </motion.div>
   )
+}
+
+function formatBytes(bytes: number): string {
+  return bytes < 1024 ? `${bytes} B` : `${Math.round(bytes / 1024)} KB`
 }
 
 function LockGlyph() {
