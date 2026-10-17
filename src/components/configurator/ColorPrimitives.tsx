@@ -26,7 +26,7 @@ import {
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
 } from '../../lib/colorUtils'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
+  useApplyAccentColor, applyAccentDarkColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
   resolveThemePages, resolveFamilyPages, addBrandExtra, removeBrandExtra,
 } from '../../lib/colorActions'
 import {
@@ -34,7 +34,7 @@ import {
   curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL, THEME_BAND_H,
 } from './colorControls'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
-import { goToLogin, useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
+import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
@@ -317,7 +317,6 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
 }) {
   const [open, setOpen] = useState(false)
   // Copying or downloading a ramp is an export: a guest signs up first.
-  const { gated: exportGated } = useAccess()
   const [copied, setCopied] = useState<WizardFormat | null>(null)
   const [downloaded, setDownloaded] = useState<WizardFormat | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -509,7 +508,7 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
     <div ref={ref} className="relative flex-shrink-0">
       <button
         type="button"
-        onClick={() => { if (exportGated) { goToLogin('export'); return } setOpen((o) => !o) }}
+        onClick={() => setOpen((o) => !o)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Export the ${label} family — ${appearance}`}
@@ -763,7 +762,7 @@ export default function ColorPrimitives({
 }) {
   const store = useDesignStore()
   const {
-    primaryColor, primaryScale, setPrimaryScale,
+    primaryColor, primaryDarkColor, primaryScale, setPrimaryScale,
     primaryDarkScale, setPrimaryDarkScale,
     grayBaseColor, grayLightScale, grayDarkScale, setGrayLightScale, setGrayDarkScale,
     errorColor, errorScale, errorDarkScale, setErrorScale, setErrorDarkScale,
@@ -1442,6 +1441,10 @@ export default function ColorPrimitives({
   const changeFamilyBase = (f: Family, hex: string) => {
     // Derived (Accent-Alpha) — nothing to set independently.
     if (f.isAlpha) return
+    // The accent's Dark switch grows its own ramp from the dark hex, leaving
+    // the light ramp as it is.
+    const isBrandFamily = f.key === 'accent' || (!!f.customKey && themeSources[previewTheme]?.brand === f.customKey)
+    if (isBrandFamily && editAppearance === 'dark') return applyAccentDarkColor(hex, previewTheme)
     if (f.customKey) {
       const refs = themeSources[previewTheme]
       if (refs?.gray === f.customKey) return changeNeutral(hex)
@@ -1478,6 +1481,13 @@ export default function ColorPrimitives({
   const editingFamilyPickerValue = editingFamily && editingNeutralCoordinated && linkNeutralToAccent
     ? neutralFromBrand(pickerThemeAccent, neutralTint)
     : editingFamily?.base ?? ''
+  const editingBrandDark = !!editingFamily && editAppearance === 'dark'
+    && (editingFamily.key === 'accent' || (!!editingFamily.customKey && themeSources[previewTheme]?.brand === editingFamily.customKey))
+  const editingPickerValue = editingBrandDark
+    ? (editingFamily.customKey
+        ? customColors.find((c) => c.key === editingFamily.customKey)?.darkBase
+        : primaryDarkColor) || editingFamilyPickerValue
+    : editingFamilyPickerValue
   const editingPickerAppearance = editingNeutralCoordinated ? activeAppearance : editAppearance
   // With the Generator's inspector mounted, the family editor opens IN it —
   // covering the Collections / Groups panel it was opened from, like Token
@@ -1558,7 +1568,7 @@ export default function ColorPrimitives({
             </header>
             <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always ${editDocked ? 'px-3 pt-3 pb-4' : 'px-4 pt-5 pb-4'}`}>
               <ColorPickerPanel
-                value={editingFamilyPickerValue}
+                value={editingPickerValue}
                 onChange={(hex) => changeFamilyBase(editingFamily, hex)}
                 suggestions
                 palette={editingUsesNeutralPicker || editingUsesAccentPicker

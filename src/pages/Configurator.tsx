@@ -102,7 +102,8 @@ import { AccountCloudConflict } from '../components/configurator/AccountCloudSta
 import { isPublishId } from '../lib/publishId'
 import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../lib/publishSignals'
 import { takeLoginIntent } from '../lib/loginReturn'
-import { BrandCreatedDialog, LoginWall, RegisterToContinueDialog } from '../components/ui/LoginWall'
+import { RegisterToContinueDialog } from '../components/ui/LoginWall'
+import { OPEN_GITHUB_EVENT } from '../lib/guestSave'
 import { showToast } from '../components/ui/Toast'
 import { VariablesContextButton } from '../components/configurator/VariablesContextButton'
 
@@ -593,8 +594,8 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   const { t } = useI18n()
-  // Anonymous wall (design-plans/login-funnel.md): Variables / Code / Docs show
-  // a part, Export and Save ask for a free account first.
+  // Without an account everything is open (Variables, Code, Docs, Export);
+  // only SAVING on Escala asks for one (design-plans/login-funnel.md).
   const access = useAccess()
   const { user: authUser, event: authEvent } = useAuth()
   // Home is the signed-in file browser. `hasStoredSession()` during the FIRST
@@ -1193,7 +1194,14 @@ export default function Configurator() {
     return guestStarterPreview()
   })
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [createdBrandKey, setCreatedBrandKey] = useState<string | null>(null)
+  // A guest's first brand: a toast, not a modal. The save bar's notice keeps
+  // saying it is not saved; nothing stands between the brand and its use.
+  const announceGuestBrand = (key: string) => {
+    showToast(t('{name} is created', { name: themeDisplayName(key, useDesignStore.getState().themeLabels) }), {
+      label: t('Save with an account'),
+      onClick: () => goToLogin('save-library', 'signup', `themes/${key}`),
+    })
+  }
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
     // Read the LIVE store, never this render's `themeKinds`. A theme that
@@ -1240,15 +1248,11 @@ export default function Configurator() {
   // per open makes "opened again" mean "started again".
   const [exportRun, setExportRun] = useState(0)
   const openSectionExport = () => {
-    // Downloading is what an account buys: anonymous → sign up, then the
-    // wizard opens on return (the `export` intent below).
-    if (access.gated) { goToLogin('export'); return }
     setThemeExportScope(null)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
   const openThemeExport = (themeKey: string) => {
-    if (access.gated) { goToLogin('export'); return }
     setThemeExportScope(themeKey)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
@@ -1553,7 +1557,7 @@ export default function Configurator() {
   const themeTablesBlocked = (): string | null => {
     if (brandIsDraft(previewTheme)) return randomDraftHint
     if (stylePreview) return t('Add this style to open Variables and Docs')
-    if (setupStep != null || access.gated) {
+    if (setupStep != null) {
       return t('Finish customizing your brand to see full Variables and Docs.')
     }
     return null
@@ -1596,9 +1600,6 @@ export default function Configurator() {
     if (themeWorkspaceTab === 'preview') {
       const reason = themeTablesBlocked()
       if (reason) { showToast(reason, undefined, true); return }
-    } else if (access.gated) {
-      setRegisterOpen(true)
-      return
     }
     changePreviewTheme(key)
     setThemeWorkspaceTab('code')
@@ -1669,6 +1670,14 @@ export default function Configurator() {
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('github')
   }
+  // The guest notice's "Push to GitHub" (`requestOpenGithub`) lands here.
+  const openGithubRef = useRef(openGithubPage)
+  openGithubRef.current = openGithubPage
+  useEffect(() => {
+    const open = () => openGithubRef.current()
+    window.addEventListener(OPEN_GITHUB_EVENT, open)
+    return () => window.removeEventListener(OPEN_GITHUB_EVENT, open)
+  }, [])
   /** The System tab: the dashboard of the design system on screen. */
   const openSystemPage = () => {
     leaveExportWizard()
@@ -1683,9 +1692,6 @@ export default function Configurator() {
     if (themeWorkspaceTab === 'preview') {
       const reason = themeTablesBlocked()
       if (reason) { showToast(reason, undefined, true); return }
-    } else if (access.gated) {
-      setRegisterOpen(true)
-      return
     }
     leaveExportWizard()
     commitVisit()
@@ -1860,14 +1866,14 @@ export default function Configurator() {
   const publishFigmaNow = useCallback(() => {
     commitVisit()
     // Publishing hands Figma the whole system: a guest signs up first.
-    if (access.gated) { goToLogin(); return }
+    if (access.guest) { goToLogin(); return }
     if (!isLiveEnvironment() || figmaPublishState === 'publishing' || !figmaSyncModes.length) return
     handleFigmaPublishState('publishing')
     void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => {
       if (result.superseded) return
       handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
     })
-  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection, access.gated])
+  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection, access.guest])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
     publishFigmaNow()
@@ -1882,7 +1888,7 @@ export default function Configurator() {
   // Quiet on a licence refusal — nobody asked to publish, so no toast and no
   // switching auto-sync off.
   const republishQuietly = useCallback(() => {
-    if (access.gated || !isLiveEnvironment() || !figmaSyncModes.length) return
+    if (access.guest || !isLiveEnvironment() || !figmaSyncModes.length) return
     const live = useDesignStore.getState()
     if (!isPublishId(live.publishId)) return
     clearPublishErased(live.publishId)
@@ -1892,7 +1898,7 @@ export default function Configurator() {
       if (!result.ok && result.reason === 'licence') { handleFigmaPublishState('idle'); return }
       handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
     })
-  }, [access.gated, figmaSyncModes, figmaPublishBase, workspaceSection, handleFigmaPublishState])
+  }, [access.guest, figmaSyncModes, figmaPublishBase, workspaceSection, handleFigmaPublishState])
   const republishRef = useRef(republishQuietly)
   republishRef.current = republishQuietly
   useEffect(() => {
@@ -2715,7 +2721,7 @@ export default function Configurator() {
                     previewTheme={previewTheme}
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
-                    onGuestBrandCreated={setCreatedBrandKey}
+                    onGuestBrandCreated={announceGuestBrand}
                     onStartTheme={beginThemeSetup}
                     onPreviewStyle={(preset) => {
                       // Same try-on the theme sheet makes: the board paints the
@@ -2790,11 +2796,6 @@ export default function Configurator() {
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
-                <LoginWall
-                  active={access.gated}
-                  title={t('See every token')}
-                  detail={t('Create a free account to see the full table, export it and save your brand.')}
-                >
                 <PreviewPlatformProvider
                   value={{
                     previewPlatform,
@@ -2831,7 +2832,6 @@ export default function Configurator() {
                   </motion.div>
                 </FoundationWorkbench>
                 </PreviewPlatformProvider>
-                </LoginWall>
                 </div>
                 </div>
               ) : (
@@ -3048,16 +3048,6 @@ export default function Configurator() {
         onClose={() => { setUpgradeOpen(false); proAsk.close() }}
       />
       <RegisterToContinueDialog open={registerOpen} onClose={() => setRegisterOpen(false)} onContinue={continueToAccount} />
-      <BrandCreatedDialog
-        open={createdBrandKey != null}
-        name={createdBrandKey ? themeDisplayName(createdBrandKey, store.themeLabels) : ''}
-        onClose={() => setCreatedBrandKey(null)}
-        onContinue={(mode) => {
-          const key = createdBrandKey
-          setCreatedBrandKey(null)
-          if (key) goToLogin('save-library', mode, `themes/${key}`)
-        }}
-      />
 
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>

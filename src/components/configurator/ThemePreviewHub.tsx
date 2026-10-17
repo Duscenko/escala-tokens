@@ -26,7 +26,6 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
-import { LoginWall } from '../ui/LoginWall'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
@@ -448,7 +447,7 @@ export default function ThemePreviewHub({
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
-  const { gated: docsGated } = useAccess()
+  const { guest } = useAccess()
   // A Random theme is a draft until it is saved: the inspector would describe
   // a design system that does not exist yet.
   const headerActionsLockedHint = t('Save this brand to open code, Figma sync, Variables and Docs.')
@@ -710,7 +709,7 @@ export default function ThemePreviewHub({
                   {docsOpen && hubDocActions}
                   {/* A guest already has Undo beside Random in the inspector
                       footer. Reset for that flow lives in the theme settings. */}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !docsGated && (
+                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !guest && (
                     <EditHistoryControls previewTheme={previewTheme} />
                   )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
@@ -735,12 +734,6 @@ export default function ThemePreviewHub({
                   <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
                 ) : null}
                 {!contrastOpen && docsOpen ? (
-                  <LoginWall
-                    active={docsGated}
-                    visible={420}
-                    title={t('Read the full docs')}
-                    detail={t('Create a free account to read every section of this brand’s reference.')}
-                  >
                   <DocumentationView
                     active={activeDocKey}
                     onChange={handleDocNavigate}
@@ -751,7 +744,6 @@ export default function ThemePreviewHub({
                     stylePreview={paintedPreview}
                     exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }}
                   />
-                  </LoginWall>
                 ) : null}
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView

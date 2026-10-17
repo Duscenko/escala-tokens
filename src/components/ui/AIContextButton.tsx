@@ -10,8 +10,6 @@ import type { ContextAppearance, ContextScope } from '../../lib/contextRequest'
 import { SparkleCircleIcon } from './icons'
 import { showToast } from './Toast'
 import { useI18n } from '../../lib/i18n'
-import { goToLogin, useAccess } from '../../lib/access'
-import { useInInspector } from '../configurator/WorkspaceInspector'
 import {
   AnchoredPopover,
   ContextFilters,
@@ -65,13 +63,6 @@ export function AIContextButton({ scope, markdown, label, filters }: AIContextBu
   const [open, setOpen] = useState(false)
   const anchorRef = useRef<HTMLDivElement>(null)
   const shownLabel = label ? t(label) : t(copy.label)
-  // Inside the Generator (an inspector is mounted) copying a page is taking
-  // it, so anonymous → sign up. The public /docs and /components pages have no
-  // inspector and stay fully open (design-plans/login-funnel.md).
-  const { gated } = useAccess()
-  const inGenerator = useInInspector()
-  const walled = gated && inGenerator
-
   const [opts, setOpts] = useContextOptions(
     filters?.scope ?? 'all',
     filters?.lockedAppearance ?? filters?.fallbackAppearance ?? 'both',
@@ -81,7 +72,6 @@ export function AIContextButton({ scope, markdown, label, filters }: AIContextBu
     : opts
 
   async function onCopy() {
-    if (walled) { goToLogin('export'); return }
     try {
       const text = filters ? filters.build(effective) : resolveMarkdown(markdown ?? '')
       await navigator.clipboard.writeText(text)

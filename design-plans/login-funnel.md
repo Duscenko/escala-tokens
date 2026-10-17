@@ -1,5 +1,14 @@
 # Embudo: anónimo → cuenta Free → Pro
 
+> **ACTUALIZACIÓN 2026-10-17 — se quita el muro de login.** Los usuarios abandonaban la web
+> antes que crear una cuenta (y pagar Pro) por algo que aún no habían probado y que hay gratis
+> en otros sitios. Sin cuenta ahora se ve y se usa TODO: Variables, Code, Docs, el dashboard
+> del sistema, copiar contexto y exportar (con el mismo alcance que una cuenta Free). Lo único
+> que pide cuenta es **guardar en Escala**: un aviso no bloqueante ("Not saved. This design
+> system lives only in this browser.") ofrece **Save with an account** o **Push to GitHub**.
+> Siguen pidiendo cuenta: Home, publicar a Figma y una segunda marca. La tabla de abajo es
+> historia: las filas "Vista parcial" y "Export → Login" ya no aplican.
+
 Plan, no implementación. Escrito el 2026-10-07 contra `3b8c463` + cambios sin commit de la sesión.
 
 ## La decisión (del dueño, 2026-10-07)

@@ -66,6 +66,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `/docs/*`, `/components`, `/pricing`) stay fully open. Plan, decisions and what is left:
 > `design-plans/login-funnel.md`.
 
+> **UPDATE (2026-10-17): NO LOGIN WALL. Supersedes the note just above.** Visitors were leaving
+> the site rather than sign up for something they had not tried yet. Without an account
+> Variables, Code, Docs, the System dashboard, Copy context and Export are ALL open; an
+> anonymous export gets exactly what a Free account gets (`useFreeTier` is now "not Pro",
+> account or not). The only thing an account buys a guest is KEEPING the work on Escala:
+> `UnsavedNotice` (`ThemeSaveBar.tsx`) says "Not saved. This design system lives only in
+> this browser." with **Save with an account** and **Push to GitHub** (`requestOpenGithub`,
+> `lib/guestSave.ts`). It sits in the save bar (Theme, Variables) and at the foot of Code's
+> rail; a guest's primary action is Get code, not Save. `useAccess().gated` was renamed
+> `guest` and gates ONLY saving and account places (Home, Figma publish, a second brand).
+> `LoginWall` and `BrandCreatedDialog` were deleted (a guest's first brand gets a toast).
+> Don't put a wall back in front of reading, copying or exporting.
+
 > **UPDATE (2026-10-10): the PLUGIN's plan comes from the ACCOUNT, not from the browser it
 > happens to open.** Reported as a Pro account signing in from the Figma plugin and showing
 > Free. Measured in production logs before anything changed, and it was three faults at once:

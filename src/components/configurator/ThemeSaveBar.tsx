@@ -9,6 +9,7 @@ import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, r
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
+import { requestOpenGithub } from '../../lib/guestSave'
 
 /** Two crossing arrows — the shuffle mark every "surprise me" control uses. */
 function ShuffleGlyph() {
@@ -111,20 +112,24 @@ export default function ThemeSaveBar({
     return () => window.clearTimeout(id)
   }, [justSaved])
 
-  const guestPrimary = access.gated && !exploringRandom
+  // A guest gets everything without an account; what it does NOT get is the
+  // work kept on Escala. The primary action is the value (Get code), and the
+  // notice above offers the two ways to keep it — never a wall.
+  const guestPrimary = access.guest && !exploringRandom
+  const guestGetCode = guestPrimary && Boolean(onGetCode) && !inactive
   // Two states, not five. A DRAFT (never saved, or a brand the saved system
   // does not hold yet) says Save brand: joining the system is a real decision.
   // Once kept, every edit is filed on its own (`useAutosaveLibrary`), so the
   // primary action is the way out — Get code, the header's own door.
   const draft = status === 'none' || unsavedBrands.has(themeKey ?? '') || exploringRandom
-  const kept = !draft && !access.gated
-  const use = kept && Boolean(onGetCode) && !inactive && !justSaved
+  const kept = !draft && !access.guest
+  const use = (kept && Boolean(onGetCode) && !inactive && !justSaved) || guestGetCode
   const label = use
     ? t('Get code')
     : justSaved || kept
     ? t('Saved')
     : guestPrimary
-      ? t('Add brand')
+      ? t('Save with an account')
       : t('Save brand')
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   // Random rewrites the theme in place. Once it is in the library — saved, or
@@ -152,6 +157,10 @@ export default function ThemeSaveBar({
           </button>
         </div>
       )}
+      {guestPrimary && <UnsavedNotice />}
+      {/* Variables greys the row out; a guest there already has the notice's
+          two actions, so a dead grey "Save with an account" would only repeat it. */}
+      {!(guestPrimary && inactive) && (
       <div className="flex items-center gap-2">
       <button
         type="button"
@@ -173,10 +182,11 @@ export default function ThemeSaveBar({
         ref={saveRef}
         type="button"
         onClick={() => {
-          // A guest signs up first; the shell finishes the save on return.
-          if (access.gated) { goToLogin('save-library'); return }
-          // Already kept, and kept current on its own: straight to Code.
+          // Already kept (or a guest, for whom code needs no account):
+          // straight to Code.
           if (use) { onGetCode?.(); return }
+          // A guest signs up first; the shell finishes the save on return.
+          if (access.guest) { goToLogin('save-library'); return }
           if (kept) return
           const s = useDesignStore.getState()
           s.saveCurrentSystem()
@@ -216,6 +226,41 @@ export default function ThemeSaveBar({
         )}
         <span className="truncate">{label}</span>
       </button>
+      </div>
+      )}
+    </div>
+  )
+}
+
+/** For a visitor with no account: the design system is NOT saved, and here
+ *  are the two ways to keep it. Information, not a gate — everything else on
+ *  the page works without an account. A system already pushed to GitHub says
+ *  where it is, and only offers the account. */
+export function UnsavedNotice() {
+  const { t } = useI18n()
+  const githubRepo = useDesignStore((s) => s.githubRepo)
+  const githubLastPushAt = useDesignStore((s) => s.githubLastPushAt)
+  const onGithub = Boolean(githubRepo && githubLastPushAt)
+  const link = 'rounded text-caption font-semibold text-fg underline-offset-2 transition-colors hover:text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  return (
+    <div role="status" className="flex flex-col gap-1.5 rounded-lg border border-status-warning/30 bg-status-warning/[0.07] px-2.5 py-2">
+      <p className="m-0 flex items-start gap-1.5 text-caption leading-snug text-fg-muted">
+        <span aria-hidden className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
+        <span>
+          {onGithub
+            ? t('On GitHub ({repo}), not saved on Escala. It stays in this browser.', { repo: githubRepo ?? '' })
+            : t('Not saved. This design system lives only in this browser.')}
+        </span>
+      </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3">
+        <button type="button" onClick={() => goToLogin('save-library')} className={link}>
+          {t('Save with an account')}
+        </button>
+        {!onGithub && (
+          <button type="button" onClick={() => requestOpenGithub()} className={link}>
+            {t('Push to GitHub')}
+          </button>
+        )}
       </div>
     </div>
   )

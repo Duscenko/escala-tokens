@@ -37,7 +37,6 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { brandThemesSummary, plannedBrandThemes, shippedThemes, type BrandThemes } from '../../lib/brandThemes'
 import SystemDashboard from './dashboard/SystemDashboard'
 import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
-import { LoginWall } from '../ui/LoginWall'
 import type { DocsExits } from './docs/getStarted'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
@@ -1330,7 +1329,7 @@ export default function ThemeLibraryPage({
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
-  const { gated, tier } = useAccess()
+  const { guest, tier } = useAccess()
   const needsPro = useNeedsProForAnotherTheme()
   const brandsLine = useBrandsLine()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
@@ -1498,7 +1497,7 @@ export default function ThemeLibraryPage({
     onSelectTheme(id)
   }
   const useStyle = (preset: ThemeStylePreset) => {
-    if (gated) { goToLogin(); return }
+    if (guest) { goToLogin(); return }
     const owned = Object.values(store.themeOrigin ?? {}).includes(preset.id)
     if (needsPro && !owned) { setUpgradeOpen(true); return }
     const result = openStyleForEditing(preset, 'light')
@@ -1843,7 +1842,7 @@ export default function ThemeLibraryPage({
     keepCreatedBrand(key)
     setCreating(false)
     onOpenPreview(key)
-    if (gated) onGuestBrandCreated?.(key)
+    if (guest) onGuestBrandCreated?.(key)
   }
   /** Leave the studio and drop the theme if Colour already minted one. */
   const cancelCreate = () => {
@@ -1991,13 +1990,6 @@ export default function ThemeLibraryPage({
             ) : undefined}
           />
           <div className="min-h-0 flex-1 overflow-hidden">
-            {/* Without an account the System tab shows Overview; the other pages ask for one. */}
-            <LoginWall
-              active={systemOnly && gated && dashPage !== 'overview'}
-              visible={420}
-              title={t('See the whole design system')}
-              detail={t('Create a free account to read the docs and follow the status of every token and component.')}
-            >
               {onDashboard && dashPage === 'docs' ? (
                 // A Docs article scrolls itself and sets its own column.
                 <div className="h-full min-h-0">{body}</div>
@@ -2014,7 +2006,6 @@ export default function ThemeLibraryPage({
                   </div>
                 </div>
               )}
-            </LoginWall>
           </div>
         </div>
       </div>

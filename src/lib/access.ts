@@ -1,15 +1,19 @@
 // Who can see / do what — the ONE place the Generator decides it.
 // See design-plans/login-funnel.md.
 //
-//   anon  no session      → tries the product: edits the theme on screen, sees a
-//                           PART of Variables / Code / Docs, cannot export or save.
+//   anon  no session      → uses the whole product: Variables, Code, Docs, copy
+//                           context and export are open. What it cannot do is
+//                           SAVE on Escala: the work lives in this browser until
+//                           it is saved with an account or pushed to GitHub
+//                           (`UnsavedNotice`). Decided 2026-10-17: the login wall
+//                           in front of Variables / Code / Docs / Export drove
+//                           visitors away, so it is gone.
 //   free  signed in       → sees everything, exports 2 brands (Light + Dark) on
 //                           Desktop and Mobile, saves two themes.
 //   pro   promo or licence → everything else.
 //
-// The login wall is a SOFT limit and is meant to be one: the values are computed
-// in the browser. The hard limits stay on the server (hosted sync, MCP). No
-// component reads `useAuth` / `useEntitlement` to make this call on its own.
+// The hard limits stay on the server (hosted sync, MCP). No component reads
+// `useAuth` / `useEntitlement` to make this call on its own.
 
 import { hasStoredSession, useAuth } from './auth'
 import { accountsEnabled } from './supabase'
@@ -29,8 +33,10 @@ export interface Access {
   /** True while the session is still being read — callers show the full view
    *  meanwhile rather than flashing a wall at someone who is signed in. */
   loading: boolean
-  /** Shorthand: the anonymous wall applies. */
-  gated: boolean
+  /** No account (and the session is read): the work on screen is NOT saved on
+   *  Escala. Gates saving and the account-only places (Home, publishing) —
+   *  never reading, copying or exporting. */
+  guest: boolean
 }
 
 export function useAccess(): Access {
@@ -40,7 +46,7 @@ export function useAccess(): Access {
   // into, so nothing is walled: an open-source checkout must stay usable.
   const signedIn = !accountsEnabled || Boolean(user)
   const tier: AccessTier = !signedIn ? 'anon' : pro ? 'pro' : 'free'
-  return { tier, loading: accountsEnabled && loading, gated: tier === 'anon' && !(accountsEnabled && loading) }
+  return { tier, loading: accountsEnabled && loading, guest: tier === 'anon' && !(accountsEnabled && loading) }
 }
 
 /** Leave for `/login` (sign-up first), coming back to THIS Generator section
@@ -52,13 +58,15 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
   window.location.assign(loginHref({ next: 'workspace', mode }))
 }
 
-/** Signed in, not Pro, accounts actually on. Export, MCP and File & modes use
- *  this — `!entitlement.pro` alone would wall a fork that has no account to
- *  upgrade. While the session is loading this is false, so the full view
- *  shows instead of a flash of the wall. */
+/** Not Pro, accounts actually on — the Free plan, with or without an account.
+ *  A visitor with no account exports exactly what a Free account exports, so
+ *  opening Export to guests does not make them MORE than Free. Export, MCP
+ *  and File & modes use this — `!entitlement.pro` alone would wall a fork
+ *  that has no account to upgrade. While the session is loading this is
+ *  false, so the full view shows instead of a flash of the limit. */
 export function useFreeTier(): boolean {
   const { tier, loading } = useAccess()
-  return accountsEnabled && !loading && tier === 'free'
+  return accountsEnabled && !loading && tier !== 'pro'
 }
 
 /** A brand ships ONE theme: every account that is not Pro, and a visitor with

@@ -802,7 +802,7 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   /** Guided setup keeps you on the board: the advanced edition waits until
    *  the theme is finished. */
   advancedDisabled?: boolean
-  /** Guests stay on quick edition — Variables is gated, so hide the door. */
+  /** Hides the door to the advanced edition (Variables). */
   showAdvancedEdition?: boolean
   children: React.ReactNode
 }) {
@@ -1777,8 +1777,9 @@ export default function ThemeQuickSettingsRail({
   const access = useAccess()
   // Guest canvas header no longer carries Undo / Redo / Reset. Undo sits in
   // the save bar; Reset belongs with this theme's settings (back to Core).
-  const themeReset = useThemeReset(previewTheme, access.gated && !tryOn && setupStep == null)
-  const showAdvancedEdition = !access.gated
+  const themeReset = useThemeReset(previewTheme, access.guest && !tryOn && setupStep == null)
+  // Variables is open without an account, so the door is too.
+  const showAdvancedEdition = true
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
@@ -1906,7 +1907,7 @@ export default function ThemeQuickSettingsRail({
   const editTryOn = () => {
     if (!tryOn) return
     const ownedCount = myThemeKeys(store.themeOrder, store.themes).length
-    if (access.gated && ownedCount > 0) { onNeedAccount?.(); return }
+    if (access.guest && ownedCount > 0) { onNeedAccount?.(); return }
     const result = openStyleForEditing(tryOn.preset, tryOn.appearance)
     if ('error' in result) { setAdoptError(t(result.error, { count: ownThemeCount })); return }
     setAdoptError(null)
@@ -2772,7 +2773,7 @@ export default function ThemeQuickSettingsRail({
       {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : (
         <ThemeSaveBar
           exploringRandom={exploringRandom}
-          onRandom={exploringRandom || access.gated ? applyRandomTheme : undefined}
+          onRandom={exploringRandom || access.guest ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
           onGetCode={onUseTheme}
           themeKey={previewTheme}

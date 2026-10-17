@@ -8,13 +8,12 @@ import { agentSetupPrompt } from '../../lib/agentInstall'
 import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
-import { goToLogin, useAccess, useFreeTier } from '../../lib/access'
+import { useFreeTier } from '../../lib/access'
 import { shippedBundle } from '../../lib/freeExport'
 import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, buildSystemContext, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
 import { contextTokenJson } from '../../lib/contextSource'
 import { ContextFilters, useContextOptions } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { LoginWall } from '../ui/LoginWall'
 import { showToast } from '../ui/Toast'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
 import { ChromeAnchoredDropdown } from './TopNav'
@@ -86,13 +85,10 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
   // On Agent context the file IS the context, so the button says so.
   const idle = agentContext ? 'Copy context' : 'Copy file'
   const { t } = useI18n()
-  // Copying the file IS taking it: anonymous → sign up first, like Export.
-  const { gated } = useAccess()
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const copyText = async (text: string) => {
-    if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(text))) {
       showToast(t('Couldn’t copy — try again'))
       return
@@ -191,10 +187,8 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
  */
 function AgentHandoff({ themeName }: { themeName: string }) {
   const { t } = useI18n()
-  const { gated } = useAccess()
 
   const copySetupPrompt = async (client: 'claude' | 'cursor') => {
-    if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), client)
     const copiedOk = await writeClipboard(prompt)
     showToast(copiedOk
@@ -388,7 +382,6 @@ export default function ThemeCodeFormat({
   const store = useDesignStore()
   const [format, setFormat] = useState<Format>('agent')
   const [expanded, setExpanded] = useState(false)
-  const { gated } = useAccess()
   const free = useFreeTier()
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
@@ -594,20 +587,12 @@ export default function ThemeCodeFormat({
           it read as a dark BAR across the bottom instead of a dissolve. One
           opaque token on both sides is the only way the two can't disagree. */}
             <div className="relative min-h-0 flex-1">
-              <LoginWall
-                active={gated}
-                visible={300}
-                title={t('See the full file')}
-                detail={t('Create a free account to read, copy and export every line.')}
-                intent="export"
-              >
               <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
                 {effectiveScope
                   ? visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)
                   : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a brand to get its code.')}</p>}
               </div>
-              </LoginWall>
-              {!gated && !expanded && lines.length > PREVIEW_LINE_LIMIT ? (
+              {!expanded && lines.length > PREVIEW_LINE_LIMIT ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-app via-app/90 to-transparent pb-4 pt-8">
                   <button type="button" onClick={() => setExpanded(true)} className="pointer-events-auto h-8 rounded-lg border border-line-strong bg-elevated px-3 text-caption font-semibold text-fg shadow-sm transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">
                     Show full file <span className="ml-1 font-normal text-fg-faint">{lines.length} lines</span>

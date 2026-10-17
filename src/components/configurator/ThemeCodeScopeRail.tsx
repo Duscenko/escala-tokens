@@ -6,6 +6,8 @@ import { COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { myThemeKeys } from './ThemeLibraryRail'
 import { InspectorPortal } from './WorkspaceInspector'
+import { UnsavedNotice } from './ThemeSaveBar'
+import { useAccess } from '../../lib/access'
 
 export type CodeFormatKey = 'agent' | 'css'
 
@@ -61,6 +63,7 @@ export default function ThemeCodeScopeRail({
   onBack?: () => void
 }) {
   const { t } = useI18n()
+  const { guest } = useAccess()
   const store = useDesignStore()
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const selected = resolveCodeTheme(listed, scope, previewTheme)
@@ -128,6 +131,13 @@ export default function ThemeCodeScopeRail({
         </div>
 
       </div>
+      {/* Code is where a guest takes the system away: say it is not saved,
+          pinned at the foot like the save bar on the editing tabs. */}
+      {guest && name ? (
+        <div className="mt-auto flex-shrink-0 px-3 pb-3">
+          <UnsavedNotice />
+        </div>
+      ) : null}
     </aside>
     </InspectorPortal>
   )
