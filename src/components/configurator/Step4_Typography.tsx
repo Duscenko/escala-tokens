@@ -15,6 +15,7 @@ import {
   FONT_WEIGHT_ROWS,
   FONT_FAMILY_ROWS,
   TYPO_CATEGORIES,
+  letterSpacingFor,
   type TypoCategory,
 } from '../../lib/typographyStandard'
 import { typePrimitivesForViewport, type TypeWeightKey } from '../../lib/typeRoles'
@@ -437,21 +438,71 @@ export default function Step4_Typography({
     )
   }
 
+  // Read-only: tracking is DERIVED from the size (letterSpacingFor), so the
+  // row follows a size edit or the Text size dial instead of holding its own
+  // value. Laid out on the editable field's geometry, like an italic weight.
+  const letterSpacingTable = (lead = false) => {
+    const rows = TYPE_SCALE_KEYS.filter((k) => match(k))
+    if (!rows.length) return null
+    return (
+      <div>
+        {activeCategory === 'all' && !lead && <GroupLabel label="Letter spacing" count={TYPE_SCALE_KEYS.length} />}
+        <TableHeader valueLabel="Letter spacing" stacked={activeCategory === 'all' && !lead} />
+        {rows.map((key, i) => {
+          const size = sizes[key] ?? FONT_SIZE_STANDARD[key]
+          const val = letterSpacingFor(key, size)
+          const display = key.startsWith('display')
+          return (
+            <div key={key} className={rowClass(i, hit(used ? used.sizes.has(key) : false))}>
+              <div className={nameCell}>
+                <code className="font-mono text-body text-fg-muted truncate">{key}</code>
+              </div>
+              <div className={valueCell}>
+                <div className="flex items-center gap-1 w-full min-w-0" title={`Follows ${key} (${size}). Larger type tightens; reading sizes keep the font's own spacing.`}>
+                  <span className="w-3.5 flex-shrink-0" aria-hidden />
+                  <span className="px-1.5 py-1 text-body font-mono text-fg-muted tabular-nums">{val}</span>
+                </div>
+              </div>
+              <div className={previewCell}>
+                <span
+                  className="text-fg whitespace-nowrap"
+                  title={`${size} · ${val}`}
+                  style={{
+                    fontFamily: fontStack(display ? displayFont : bodyFont),
+                    fontSize: size,
+                    lineHeight: 1.1,
+                    letterSpacing: val,
+                    fontWeight: display ? 600 : 400,
+                  }}
+                >
+                  Design
+                </span>
+              </div>
+              <span aria-hidden />
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   const showFamily = activeCategory === 'all' || activeCategory === 'family'
   const showWeight = activeCategory === 'all' || activeCategory === 'weight'
   const showSize = activeCategory === 'all' || activeCategory === 'size'
   const showLineHeight = activeCategory === 'all' || activeCategory === 'lineHeight'
+  const showLetterSpacing = activeCategory === 'all' || activeCategory === 'letterSpacing'
 
   const anyVisible =
     (showFamily && FONT_FAMILY_ROWS.some((r) => match(r.key))) ||
     (showWeight && FONT_WEIGHT_ROWS.some((r) => match(r.name))) ||
-    ((showSize || showLineHeight) && TYPE_SCALE_KEYS.some((k) => match(k)))
+    ((showSize || showLineHeight || showLetterSpacing) && TYPE_SCALE_KEYS.some((k) => match(k)))
 
-  const leadKey: 'family' | 'weight' | 'size' | 'lineHeight' | null =
+  const leadKey: 'family' | 'weight' | 'size' | 'lineHeight' | 'letterSpacing' | null =
     showFamily && FONT_FAMILY_ROWS.some((r) => match(r.key)) ? 'family'
     : showWeight && FONT_WEIGHT_ROWS.some((r) => match(r.name)) ? 'weight'
     : showSize && TYPE_SCALE_KEYS.some((k) => match(k)) ? 'size'
     : showLineHeight && TYPE_SCALE_KEYS.some((k) => match(k)) ? 'lineHeight'
+    : showLetterSpacing && TYPE_SCALE_KEYS.some((k) => match(k)) ? 'letterSpacing'
     : null
 
   return (
@@ -503,6 +554,7 @@ export default function Step4_Typography({
                   {showWeight && weightTable(leadKey === 'weight')}
                   {showSize && sizeTable(leadKey === 'size')}
                   {showLineHeight && lineHeightTable(leadKey === 'lineHeight')}
+                  {showLetterSpacing && letterSpacingTable(leadKey === 'letterSpacing')}
                 </>
               )}
             </div>

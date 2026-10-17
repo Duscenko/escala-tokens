@@ -170,11 +170,16 @@ export const FONT_FAMILY_ROWS: FamilyRow[] = [
 ]
 
 // ── Side-nav categories (counts mirror the Figma "Groups" panel) ────────────
-export type TypoCategory = 'all' | 'family' | 'weight' | 'size' | 'lineHeight'
+export type TypoCategory = 'all' | 'family' | 'weight' | 'size' | 'lineHeight' | 'letterSpacing'
+const TYPO_GROUP_COUNT =
+  FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3
 export const TYPO_CATEGORIES: { key: TypoCategory; label: string; count: number }[] = [
-  { key: 'all',        label: 'All',         count: 32 },
-  { key: 'family',     label: 'Font family', count: FONT_FAMILY_ROWS.length },
-  { key: 'weight',     label: 'Font weight', count: FONT_WEIGHT_ROWS.length },
-  { key: 'size',       label: 'Font size',   count: TYPE_SCALE_KEYS.length },
-  { key: 'lineHeight', label: 'Line height', count: TYPE_SCALE_KEYS.length },
+  { key: 'all',           label: 'All',            count: TYPO_GROUP_COUNT },
+  { key: 'family',        label: 'Font family',    count: FONT_FAMILY_ROWS.length },
+  { key: 'weight',        label: 'Font weight',    count: FONT_WEIGHT_ROWS.length },
+  { key: 'size',          label: 'Font size',      count: TYPE_SCALE_KEYS.length },
+  { key: 'lineHeight',    label: 'Line height',    count: TYPE_SCALE_KEYS.length },
+  // Derived from each size (letterSpacingFor) — listed so the collection
+  // shows every primitive that ships, read-only in the table.
+  { key: 'letterSpacing', label: 'Letter spacing', count: TYPE_SCALE_KEYS.length },
 ]
