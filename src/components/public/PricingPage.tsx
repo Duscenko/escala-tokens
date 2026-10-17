@@ -18,9 +18,8 @@ import { useEffect, type ReactNode } from 'react'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
-import { CONTACT_PATH } from '../../lib/legal'
 import {
-  FREE_MAX_THEMES, PRICING_PATH, PRO_LAUNCH_PRICE_USD, PRO_MAX_THEMES, PRO_PRICE_USD,
+  FREE_MAX_THEMES, PRICING_PATH, PRO_MAX_THEMES,
 } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 import { useAuth } from '../../lib/auth'
@@ -30,12 +29,6 @@ const PRICING_TITLE = 'Pricing — Escala Tokens'
 const PRICING_DESCRIPTION = 'Escala is free to build and export. Pro adds what runs on our servers: hosted sync to Figma, the live MCP, and up to 10 themes with every platform mode.'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
-const CTA = `inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-ui font-semibold transition-opacity hover:opacity-90 ${FOCUS}`
-
-function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{children}</p>
-}
-
 const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-full px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
 
 function Arrow() {
@@ -64,18 +57,6 @@ function Features({ items }: { items: string[] }) {
         </li>
       ))}
     </ul>
-  )
-}
-
-function Badge({ children, solid }: { children: ReactNode; solid?: boolean }) {
-  return (
-    <span
-      className={`inline-flex flex-shrink-0 items-center rounded-full px-2 py-0.5 text-nano font-semibold uppercase tracking-[0.1em] ${
-        solid ? 'bg-accent-solid text-accent-ink' : 'border border-line-strong text-fg-muted'
-      }`}
-    >
-      {children}
-    </span>
   )
 }
 
@@ -230,10 +211,11 @@ export function PricingPage() {
     {
       title: 'Figma',
       rows: [
-        { label: t('Brands in one Figma file'), free: t('{n} (Light or Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
-        { label: t('Platform modes'), free: 'Desktop', pro: 'Desktop, Tablet, Mobile' },
+        { label: t('Brands in one Figma file'), free: t('{n} (Light and Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
+        { label: t('Platform modes'), free: 'Desktop, Mobile', pro: 'Desktop, Tablet, Mobile' },
         { label: t('Manual import of tokens.json'), free: true, pro: true },
-        { label: t('Hosted sync (Live Sync and auto-publish)'), free: null, pro: t('12 months') },
+        { label: t('Complete UI Kit Library in Figma'), free: null, pro: true },
+        { label: t('Customize every component from Escala Tokens through the Figma plugin (agent context)'), free: null, pro: true },
       ],
     },
     {
@@ -259,16 +241,15 @@ export function PricingPage() {
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-4 py-14 md:px-8">
           <section className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
             <h1 className="text-[clamp(30px,4.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em]">
-              {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
+              {t('Your own token system. Free to build. Pro for the complete Figma UI Kit.')}
             </h1>
             <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro pays for what we run for you: hosted sync to Figma, the live MCP, and every brand, theme and platform mode.')}
+              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro adds the complete UI Kit Library in Figma, the live MCP, and every brand, theme and platform mode.')}
             </p>
           </section>
 
           <section aria-labelledby="pricing-escala" className="flex flex-col gap-6">
             <div className="flex flex-col gap-1.5">
-              <Eyebrow>{t('Product 1')}</Eyebrow>
               <h2 id="pricing-escala" className="text-heading font-semibold">{t('Escala, the generator')}</h2>
             </div>
 
@@ -289,7 +270,7 @@ export function PricingPage() {
                     t('All 12 System Styles, unlimited brands while editing'),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
                     t('Open-source Figma plugin, manual import'),
-                    t('{n} brand in Light or Dark, and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
+                    t('{n} brands with Light and Dark, Desktop and Mobile in Figma', { n: String(FREE_MAX_THEMES) }),
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>
@@ -311,7 +292,7 @@ export function PricingPage() {
                 <div className="relative flex flex-col gap-4">
                   <span className="self-start rounded-full bg-fg/10 px-3 py-1 text-body font-medium text-fg">{t('One-time')}</span>
                   <h3 className="text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-0.02em]">
-                    {t('Your system stays in step with Figma and your agents.')}
+                    {t('The complete UI Kit in Figma, adapted to your system in one pass.')}
                   </h3>
                 </div>
                 <div className="relative flex flex-col gap-3">
@@ -319,30 +300,23 @@ export function PricingPage() {
                     <span className="text-[clamp(64px,8vw,104px)] font-medium leading-[0.9] tracking-[-0.04em]">${entitlement.priceUsd}</span>
                     <span className="text-ui text-fg-muted">{t('once')}</span>
                   </p>
-                  <p className="text-ui text-fg-muted">
-                    {entitlement.launchPrice
-                      ? t('launch price until November 15, then ${price}', { price: String(PRO_PRICE_USD) })
-                      : t('one payment, no subscription')}
-                  </p>
-                  <p className="text-caption text-fg-muted">
-                    {t('14-day refund, on request through the contact form. Polar is the merchant of record.')}
-                  </p>
+                  <p className="text-ui text-fg-muted">{t('one payment, no subscription')}</p>
                 </div>
                 <div className="relative border-t border-line pt-7">
                   <Features items={[
                     t('Everything in Free'),
                     t('Up to {max} brands in Figma, each with Light + Dark', { max }),
                     t('Desktop, Tablet and Mobile platform modes'),
-                    t('Hosted sync: Figma updates when you edit'),
+                    t('Complete UI Kit Library in Figma, customized from Escala Tokens with the agent context and the Figma plugin'),
                     t('Live MCP for Cursor, Claude Code and VS Code'),
                     t('Generated documentation for your system'),
-                    t('12 months of sync, MCP and updates included'),
+                    t('12 months of MCP and plugin updates included'),
                   ]} />
                 </div>
                 <div className="relative mt-auto flex flex-col gap-2">
                   {entitlement.promo ? (
                     <>
-                      <a href="/" className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>{t('Use Pro free until October 31')}<Arrow /></a>
+                      <a href="/" className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>{t('Get it free')}<Arrow /></a>
                       <p className="text-caption text-fg-muted">{t('No licence needed during the launch offer.')}</p>
                     </>
                   ) : (
@@ -357,33 +331,6 @@ export function PricingPage() {
             <CompareTable groups={groups} proPrice={entitlement.priceUsd} />
           </section>
 
-          <section aria-labelledby="pricing-library" className="flex flex-col gap-6">
-            <div className="flex flex-col gap-1.5">
-              <Eyebrow>{t('Product 2')}</Eyebrow>
-              <h2 id="pricing-library" className="text-heading font-semibold">Escala Library</h2>
-              <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-                {t('A professional component library wired to the variables Escala generates. Change the brand, the theme or the platform, and every component follows without being touched. Works with Escala Free or Pro.')}
-              </p>
-            </div>
-            <div className="grid gap-5 md:grid-cols-3">
-              {[
-                { title: 'Library · Figma', body: t('The professional Figma file, linked to your Escala variables.'), note: t('Price announced soon') },
-                { title: 'Library · Code', body: t('The same components in React, reading your Escala variables as CSS custom properties.'), note: null },
-                { title: 'Complete', body: t('Escala Pro, Library · Figma and Library · Code in one purchase.'), note: null },
-              ].map((card) => (
-                <div key={card.title} className="flex flex-col gap-4 rounded-2xl border border-dashed border-line-strong p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-title font-semibold">{card.title}</h3>
-                    <Badge>{t('Coming soon')}</Badge>
-                  </div>
-                  <p className="text-body leading-relaxed text-fg-muted">{card.body}</p>
-                  {card.note && <p className="text-body font-semibold text-fg">{card.note}</p>}
-                  <a href={CONTACT_PATH} className={`${CTA} mt-auto border border-line-strong text-fg`}>{t('Tell me when it ships')}</a>
-                </div>
-              ))}
-            </div>
-          </section>
-
           <section aria-labelledby="pricing-once" className="flex flex-col gap-6">
             <div className="flex flex-col gap-1.5">
               <h2 id="pricing-once" className="text-heading font-semibold">{t('Pay once. Here is what that buys.')}</h2>
@@ -394,7 +341,7 @@ export function PricingPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {[
                 { h: t('Yours for good'), p: t('The configurator, every export, the plugin, manual import, and everything already synced into your Figma files.') },
-                { h: t('Included for 12 months'), p: t('Hosted sync, the live MCP and new versions of the plugin.') },
+                { h: t('Included for 12 months'), p: t('The live MCP and new versions of the plugin.') },
                 { h: t('After that'), p: t('Renew at a lower price, or keep working on Free. Nothing you made breaks.') },
               ].map((item) => (
                 <div key={item.h} className="rounded-xl border border-line bg-surface p-5">
@@ -409,7 +356,7 @@ export function PricingPage() {
             <h2 id="pricing-faq" className="text-heading font-semibold">{t('Questions')}</h2>
             <div className="border-t border-line">
               <Faq q={t('Is Escala open source?')}>{t('Partly. The configurator, the CLI and the MCP server are MIT, so you can fork and self-host them. The Figma plugin is proprietary: free to install, source not published. Pro pays for the service we host and the plugin, not for the configurator code. If you host the configurator yourself, you set your own limits.')}</Faq>
-              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro, hosted sync stops; you can still import tokens.json in the plugin by hand, with one brand in one theme and Desktop mode.')}</Faq>
+              <Faq q={t('What happens to a file I already synced?')}>{t('Files you synced during the launch keep everything they have in Figma. Without Pro you can still import tokens.json in the plugin by hand, with up to two brands, Light and Dark, on Desktop and Mobile.')}</Faq>
               <Faq q={t('Why does Figma show fewer modes than I chose?')}>{t('Figma limits modes per collection by its own plan: Starter allows 1, Professional 4. Escala sends what you choose; Figma decides how many columns a file can hold.')}</Faq>
               <Faq q={t('Do I need an account?')}>{t('No. After you pay, Polar shows a licence key. Open the menu and choose Account, then Activate licence. It stays in this browser.')}</Faq>
               <Faq q={t('Can I get a refund?')}>{t('Yes. 14 days from purchase, on request through the contact form. Polar is the merchant of record: payment, invoicing and VAT follow Polar’s terms.')}</Faq>

@@ -1826,7 +1826,7 @@ export default function Configurator() {
     setFigmaPublishError(next === 'error' ? describePublishFailure(reason, figmaFileName) : null)
     if (next === 'error' && reason === 'licence') {
       useDesignStore.getState().setAutoSyncFigma(false)
-      showToast(t('Hosted sync needs Escala Pro.'))
+      showToast(t('Syncing with the Figma plugin needs Escala Pro.'))
     }
     if (next === 'done') {
       figmaPublishResetTimer.current = setTimeout(() => setFigmaPublishState('idle'), 1800)

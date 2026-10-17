@@ -3,8 +3,8 @@
 //
 //   anon  no session      → tries the product: edits the theme on screen, sees a
 //                           PART of Variables / Code / Docs, cannot export or save.
-//   free  signed in       → sees everything, exports one mode (Light OR Dark) on
-//                           Desktop, saves one theme.
+//   free  signed in       → sees everything, exports 2 brands (Light + Dark) on
+//                           Desktop and Mobile, saves two themes.
 //   pro   promo or licence → everything else.
 //
 // The login wall is a SOFT limit and is meant to be one: the values are computed
@@ -66,6 +66,13 @@ export function useFreeTier(): boolean {
  *  an anonymous visitor free to pick Light + Dark. Accounts off, or the session
  *  still loading, is never limited. */
 export function useOneThemePlan(): boolean {
+  // Free ships Light AND Dark: no plan limits a brand to one theme any more.
+  return false
+}
+
+/** Not Pro and accounts on — gates Tablet in the platform switch. Free has
+ *  Desktop and Mobile. */
+export function useNonProPlan(): boolean {
   const { tier, loading } = useAccess()
   return accountsEnabled && !loading && tier !== 'pro'
 }
@@ -93,7 +100,7 @@ export function useNeedsProForAnotherTheme(): boolean {
   })
 }
 
-/** Rule A: Free holds `FREE_SYSTEM_LIMIT` design systems, one brand each.
+/** Rule A: Free holds `FREE_SYSTEM_LIMIT` design system with up to two brands.
  *  Once it holds that many, starting another asks for Pro — the door stays
  *  visible and opens the upgrade notice. A system counts when it has a brand,
  *  the same count the cloud trims by (`cloudSystemCount`). Same session and
