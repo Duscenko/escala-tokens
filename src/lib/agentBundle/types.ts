@@ -69,6 +69,8 @@ export interface TokenJSON {
     headingFontFamily?: string
     sizes: Record<string, string>
     lineHeights?: Record<string, string>
+    /** Derived tracking per size step (`letterSpacingFor`). */
+    letterSpacings?: Record<string, string>
     weights: Record<string, number>
     roles?: Record<string, { desktop: TypeRoleAlias; tablet?: TypeRoleAlias; mobile: TypeRoleAlias }>
   }
@@ -128,6 +130,8 @@ export interface TokenJSON {
   /** Category → step → `{dimension.N}` (root / fallback). */
   dimensionRefs?: Record<string, Record<string, string>>
   gradients?: Record<string, string>
+  /** Dark-appearance twin of `gradients`. Same slugs. */
+  gradientsDark?: Record<string, string>
   gradientAssignments?: Record<string, string | null>
   icons?: {
     library?: string
@@ -145,6 +149,9 @@ export interface AgentBundleOptions {
   projectFallback?: string
   /** Overrides `json.icons.aiSource.key`. The store wrapper passes `iconAiSource`. */
   iconKey?: string
+  /** The payload was narrowed to ONE appearance (`contextSource.onlyAppearance`):
+   *  value columns are labelled with it instead of Light + Dark. Omitted = both. */
+  appearance?: 'light' | 'dark'
 }
 
 export interface AgentBundleFile {

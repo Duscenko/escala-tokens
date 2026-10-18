@@ -9,6 +9,7 @@
 import { type ReactNode, useMemo, useState } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { useThemeHubHeaderActions } from '../themeHubHeaderActions'
+import { VariablesContextButton } from '../VariablesContextButton'
 import {
   DocHeader, DocTitle, DocSection, CodeBlock, CountBadge,
   Pager, type TocEntry,
@@ -79,7 +80,7 @@ export function overviewToc(t: Translate = (s) => s): TocEntry[] {
 }
 
 export function FoundationArticle({
-  doc, system, onOpen, onEdit, hubMode, lead,
+  doc, system, onOpen, onEdit, hubMode, lead, contextBrand, contextAppearance = 'light',
 }: {
   doc: FoundationDoc
   system: SystemDoc
@@ -90,6 +91,11 @@ export function FoundationArticle({
   hubMode?: boolean
   /** Drawn right under the title, before the article's own sections. */
   lead?: ReactNode
+  /** The brand this page documents (the System tab's selection). When set,
+   *  "Copy context" pastes THAT brand — Scope · Theme · Detail, starting on
+   *  this foundation and the appearance on screen — never the whole store. */
+  contextBrand?: string
+  contextAppearance?: 'light' | 'dark'
 }) {
   const { t } = useI18n()
   const page = presentFoundationDoc(doc, hubMode)
@@ -130,9 +136,14 @@ export function FoundationArticle({
         eyebrow={t('Foundation')}
         lead={t(page.lead)}
         meta={
-          <CountBadge>
-            {count === 1 ? t('{count} token', { count }) : t('{count} tokens', { count })}
-          </CountBadge>
+          <span className="flex items-center gap-2">
+            <CountBadge>
+              {count === 1 ? t('{count} token', { count }) : t('{count} tokens', { count })}
+            </CountBadge>
+            {contextBrand ? (
+              <VariablesContextButton brand={contextBrand} appearance={contextAppearance} foundation={page.key} />
+            ) : null}
+          </span>
         }
       />
 

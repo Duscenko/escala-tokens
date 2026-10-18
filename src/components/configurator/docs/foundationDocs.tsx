@@ -818,7 +818,7 @@ color:      var(--color-content-on-action);
     ships: {
       json: 'colors.primitive · colors.primitiveAlpha · colors.architecture (categorical) · colors.themes',
       css: '--color-<group>-<role>  ·  --color-<family>-<tone>  ·  --color-<family>-a-<tone>  ·  --color-black-a-<tone> / -white-a-',
-      figma: 'Variable collection "Color", one mode per theme',
+      figma: 'Color Primitives (one mode, hidden from pickers) · Color Semantics (one mode per theme × Light / Dark)',
     },
     tokenCount: (c) => {
       const semantic = c.categoricalCategories
@@ -1225,7 +1225,7 @@ padding: var(--spacing-inset-surface);
     ships: {
       json: 'shadows',
       css: '--shadow-*',
-      figma: 'Effect styles, one per step',
+      figma: 'Effect styles Shadow/xs … Shadow/2xl, plus Shadow/<step> (Dark) where the dark value differs',
     },
     tokenCount: () => SHADOW_STEPS.length,
     sections: [
@@ -1394,7 +1394,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     ships: {
       json: 'sizes · sizeRoles',
       css: '--size-*  (steps + aliases)',
-      figma: 'Number variables, bound to each component set\'s height',
+      figma: 'Size/* and Size/role/* in Dimension Semantics, bound to each component set\'s height',
     },
     tokenCount: (c) => Object.keys(c.sizes).length + LAYOUT_ROLES.size.length,
     sections: [
@@ -1447,7 +1447,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     ships: {
       json: 'stroke · strokeRoles',
       css: '--stroke-*  (steps + aliases)',
-      figma: 'Number variables for border-width and focus-ring spread',
+      figma: 'Stroke/* and Stroke/role/* in Dimension Semantics — border width and focus-ring spread',
     },
     tokenCount: () => STROKE_STEPS.length + LAYOUT_ROLES.stroke.length,
     sections: [

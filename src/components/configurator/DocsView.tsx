@@ -115,6 +115,10 @@ export default function DocsView({
               onEdit={onEditFoundation}
               hubMode={hubMode}
               lead={lead}
+              // A try-on style is an overlay, not a brand in the store: there
+              // is nothing to cut a paste from, so no Copy context for it.
+              contextBrand={docScope?.stylePreview ? undefined : docScope?.themeKey}
+              contextAppearance={appearance}
             />
           ) : allowReference ? (
             <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} hubMode={hubMode} appearance={appearance} />

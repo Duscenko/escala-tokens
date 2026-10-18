@@ -10,7 +10,7 @@ import { useI18n } from '../../../lib/i18n'
 import { withAgentEnvelope } from '../../../lib/aiContext'
 import {
   cliMcpInitCommand,
-  cliSkillCommand,
+  offlineSkillCommand,
   mcpCursorConfig,
   skillFolderName,
   skillInstallPath,
@@ -19,7 +19,7 @@ import { publishOrigin, syncProjectId } from '../../../lib/figmaSync'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
 import { AIContextButton } from '../../ui/AIContextButton'
 import AgentInstallPanel from '../AgentInstallPanel'
-import { MCP_VISIBLE } from '../../../lib/featureFlags'
+import { CLI_PUBLISHED, MCP_VISIBLE } from '../../../lib/featureFlags'
 import {
   DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
@@ -82,17 +82,16 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       mcpCursorConfig(origin),
       '```',
       '',
-      `Or: \`${cliMcpInitCommand('cursor', origin)}\``,
-      '',
+      ...(CLI_PUBLISHED ? [`Or: \`${cliMcpInitCommand('cursor', origin)}\``, ''] : []),
       `Tools that read the published system (\`get_tokens\`, \`resolve_token\`, \`list_icons\`) require \`project\`. This system's slug is \`${slug}\` — the same slug Figma Sync uses.`,
       '',
       'Also install the offline package, so the agent knows your token NAMES with no network — which the connection alone cannot answer, since an agent with only a connection does not know what to ask for:',
       '',
       '```',
-      cliSkillCommand(slug, 'cursor', origin),
+      offlineSkillCommand('cursor', slug, project, origin),
       '```',
       '',
-      `Claude Code: \`${cliSkillCommand(slug, 'claude', origin)}\``,
+      `Claude Code: \`${offlineSkillCommand('claude', slug, project, origin)}\``,
       '',
       'Or unzip by hand:',
       '',

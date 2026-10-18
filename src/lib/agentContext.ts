@@ -8,7 +8,7 @@ import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
-import { COMPONENT_RECIPES, cssVarOf, recipeRows, resolveRecipe } from './componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, resolveRecipe, type ComponentRecipe, type RecipePart } from './componentRecipes'
 import {
   LAYOUT_ROLES,
   RADIUS_STEPS,
@@ -47,8 +47,29 @@ const RADIUS_ORDER = [...RADIUS_STEPS]
 const SIZE_ORDER = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
 const PADDING_ORDER = ['top', 'right', 'bottom', 'left']
 
+/** Keys that live in a sibling's file (shadcn groups them that way). */
+const FILE_OF: Record<string, string> = { Dropzone: 'file-upload', StatusBadge: 'badge' }
+
+/** The escala-ui / shadcn file a catalogue key lives in: kebab case
+ *  (`InputOTP` → `input-otp`, `ButtonGroup` → `button-group`) — the same name
+ *  the registry serves (`registryItemFor`, asserted in agentContextAudit.test;
+ *  the generated sources are too large to import into the app for this). */
+export function componentFileName(key: string): string {
+  if (FILE_OF[key]) return FILE_OF[key]
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+}
+
+/** `import { X } from "@/components/ui/<file>"` for a catalogue key. */
+export function componentImportLine(key: string): string {
+  return `import { ${key.replace(/\s+/g, '')} } from "@/components/ui/${componentFileName(key)}"`
+}
+
 function fileNameFor(def: ComponentDef): string {
-  return `${def.key.toLowerCase().replace(/\s+/g, '-')}.tsx`
+  return `${componentFileName(def.key)}.tsx`
 }
 
 function variantCount(def: ComponentDef): number {
@@ -127,33 +148,98 @@ function val(map: Record<string, string> | undefined, key: string, fallback = '�
   return map?.[key] || fallback
 }
 
+/** When a recipe row applies, from the axis combinations it was found in:
+ *  `always`, `State: Hover`, `Variant: default, secondary · State: Hover`, or
+ *  — when the combinations are not a clean product — each one spelled out. */
+function whenText(part: RecipePart, keys: string[]): string {
+  const all = Object.keys(part.values)
+  if (!part.axes.length || keys.length === all.length) return 'always'
+  const valuesAt = (list: string[], i: number) => [...new Set(list.map((k) => k.split('|')[i]))]
+  const picked = part.axes.map((_, i) => valuesAt(keys, i))
+  const product = picked.reduce((n, v) => n * v.length, 1)
+  if (product === keys.length) {
+    return part.axes
+      .map((axis, i) => (picked[i].length === valuesAt(all, i).length ? null : `${axis}: ${picked[i].join(', ')}`))
+      .filter(Boolean)
+      .join(' · ')
+  }
+  return keys.map((k) => part.axes.map((axis, i) => `${axis}: ${k.split('|')[i]}`).join(', ')).join('; ')
+}
+
+/** Rows of a recipe, one per (slot, property, token) of each part, with the
+ *  axis combinations it applies to. Deduplicating ACROSS variants without
+ *  saying which one a row belongs to read as "a Button's height is 40, 24, 32
+ *  and 48 at once". */
+function recipeRowsWithWhen(recipe: ComponentRecipe): { slot: string; prop: string; ref: string; when: string }[] {
+  const out: { slot: string; prop: string; ref: string; when: string }[] = []
+  for (const part of recipe.parts) {
+    const seen = new Map<string, { slot: string; prop: string; ref: string; keys: string[] }>()
+    for (const [key, slots] of Object.entries(part.values)) {
+      for (const [slot, props] of Object.entries(slots)) {
+        for (const [prop, ref] of Object.entries(props)) {
+          if (!ref || ref === 'none') continue
+          const id = `${slot}|${prop}|${ref}`
+          const row = seen.get(id) ?? { slot, prop, ref, keys: [] }
+          row.keys.push(key)
+          seen.set(id, row)
+        }
+      }
+    }
+    for (const row of seen.values()) out.push({ slot: row.slot, prop: row.prop, ref: row.ref, when: whenText(part, row.keys) })
+  }
+  return out
+}
+
+const LIVE_FAMILY: Record<string, LayoutFamily> = {
+  size: 'size', radius: 'radius', spacing: 'spacing', stroke: 'stroke', selector: 'selector',
+}
+
+/** The live value of a non-colour reference (`size.control` → `40px`). A sum
+ *  (`selector.control+spacing.1`) lists each term; a type role has no single
+ *  value and stays `—`. */
+function liveDimension(ref: string, t: AgentFoundationTokens): string {
+  const one = (term: string): string => {
+    const [ns, name] = [term.slice(0, term.indexOf('.')), term.slice(term.indexOf('.') + 1)]
+    if (ns === 'shadow') return t.shadows?.[name] ?? '—'
+    const family = LIVE_FAMILY[ns]
+    if (!family) return '—'
+    const isRole = LAYOUT_ROLES[family].some((r) => r.key === name)
+    return isRole ? roleVal(t, family, name) : (primitivesOf(t, family)[name] ?? '—')
+  }
+  const terms = ref.split('+').map(one)
+  return terms.every((v) => v === '—') ? '—' : terms.join(' + ')
+}
+
 /** Color, live and resolved. A component on the shadcn skeleton lists its tokens
  *  BY PART from its recipe (the same table the web stylesheet and the Figma
- *  component read), each with its live value; anything without a recipe falls
- *  back to the full palette via `buildSectionExport('color', 'css')` — the same
- *  renderer Export and the foundation pages' "Use it" pane use, truncated the
- *  same way (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables
- *  below it. */
+ *  component read), each with the variants it applies to and its live value;
+ *  anything without a recipe falls back to the full palette via
+ *  `buildSectionExport('color', 'css')` — the same renderer Export and the
+ *  foundation pages' "Use it" pane use, truncated the same way
+ *  (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables below it. */
 function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
   const recipe = COMPONENT_RECIPES[def.key]
   if (recipe) {
     const lines = [
       '### Tokens by part (the component recipe)',
       '',
-      `${def.label} is built on the shadcn skeleton; each part is painted by exactly these tokens, in every variant. The web stylesheet and the Figma component read the same table (\`componentRecipes\` in tokens.json). Bind by name; never hardcode a hex or a px.`,
+      `${def.label} is built on the shadcn skeleton. Each row is one part, one property and the token it binds; **When** says which variant or state it applies to (\`always\` = every render, a later row overrides an earlier one for the same part and property). The web stylesheet and the Figma component read the same table (\`componentRecipes\` in tokens.json). Bind by name; never hardcode a hex or a px.`,
       '',
-      '| Part | Property | Token | CSS | Figma | Live |',
-      '|---|---|---|---|---|---|',
+      '| Part | Property | When | Token | CSS | Figma | Live |',
+      '|---|---|---|---|---|---|---|',
     ]
-    for (const row of recipeRows(recipe)) {
+    for (const row of recipeRowsWithWhen(recipe)) {
       const isColor = row.ref.startsWith('color.')
       const id = row.ref.slice(row.ref.indexOf('.') + 1)
       const css = row.ref.startsWith('type.')
         ? `\`${cssVarOf(row.ref, 'font-size')}\` …`
-        : `\`${cssVarOf(row.ref)}\``
+        : row.ref.includes('+')
+          ? row.ref.split('+').map((r) => `\`${cssVarOf(r)}\``).join(' + ')
+          : `\`${cssVarOf(row.ref)}\``
       const figma = isColor ? `\`${figmaVar(id)}\`` : '—'
-      const live = isColor ? `\`${t.archTokens?.[id] ?? '—'}\`` : '—'
-      lines.push(`| ${row.slot} | ${row.prop} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
+      const liveValue = isColor ? (t.archTokens?.[id] ?? '—') : liveDimension(row.ref, t)
+      const live = liveValue === '—' ? '—' : `\`${liveValue}\``
+      lines.push(`| ${mdCell(row.slot)} | ${row.prop} | ${mdCell(row.when)} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
     }
     lines.push('')
     return lines
@@ -335,7 +421,7 @@ function figmaSection(def: ComponentDef): string[] {
 
 function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
   const axis = def.axes.find((a) => a.name === 'Size')
-  if (!axis || def.key === 'InputOTP') return []
+  if (!axis) return []
   const lines = [
     '## Characteristics',
     '',
@@ -361,118 +447,10 @@ function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
   return lines
 }
 
-function inputOtpRecipe(t: AgentFoundationTokens): string {
-  const rAction = roleVal(t, 'radius', 'action', val(t.radius, 'md', '16px'))
-  const hSm = val(t.sizes, 'sm', '32px')
-  const hMd = val(t.sizes, 'md', '40px')
-  const hLg = val(t.sizes, 'lg', '48px')
-  const fSm = val(t.typography?.sizes, 'text-md', '16px')
-  const fMd = val(t.typography?.sizes, 'text-lg', '18px')
-  const fLg = val(t.typography?.sizes, 'text-xl', '20px')
-  const gapTight = roleVal(t, 'spacing', 'gap-tight', '4px')
-  const gapControl = roleVal(t, 'spacing', 'gap-control', '8px')
-  const strokeControl = roleVal(t, 'stroke', 'control', '1px')
-  const wSemi = t.typography?.weights?.semibold ?? 600
-  const family = t.typography?.fontFamily ?? 'Inter'
-
-  return [
-    '### Reconstruct the set',
-    '',
-    'Component set name: `Input OTP`. Horizontal auto-layout of **6 cells** (`length` default). Cells are presentational; the control is one field.',
-    '',
-    'Size SM/MD/LG map onto `Size/sm` · `Size/md` · `Size/lg`. Cells are square — width tracks the same Size step as height.',
-    '',
-    '| Size variant | Width / height | Type token | Gap |',
-    '|---|---|---|---|',
-    `| \`SM\` | \`var(--size-sm)\` = \`${hSm}\` | \`var(--font-size-text-md)\` = \`${fSm}\` | \`var(--spacing-gap-tight)\` (\`${gapTight}\`) |`,
-    `| \`MD\` | \`var(--size-md)\` = \`${hMd}\` | \`var(--font-size-text-lg)\` = \`${fMd}\` | \`var(--spacing-gap-control)\` (\`${gapControl}\`) |`,
-    `| \`LG\` | \`var(--size-lg)\` = \`${hLg}\` | \`var(--font-size-text-xl)\` = \`${fLg}\` | \`var(--spacing-gap-control)\` (\`${gapControl}\`) |`,
-    '',
-    '### Box model (MD default)',
-    '',
-    '| CSS property | Token | Live |',
-    '|---|---|---|',
-    '| `display` | — | `flex` (row) |',
-    `| \`gap\` | \`var(--spacing-gap-control)\` | \`${gapControl}\` |`,
-    `| \`width\` / \`height\` | \`var(--size-md)\` | \`${hMd}\` |`,
-    `| \`border-radius\` | \`var(--radius-action)\` | \`${rAction}\` |`,
-    `| \`border-width\` | \`var(--stroke-control)\` | \`${strokeControl}\` |`,
-    '| `border-style` | — | `solid` |',
-    `| \`background\` | \`${cssColor('surface.input')}\` (\`${figmaVar('surface.input')}\`) | semantic |`,
-    `| \`color\` (digit) | \`${cssColor('content.primary')}\` (\`${figmaVar('content.primary')}\`) | semantic |`,
-    `| \`font-family\` | \`var(--font-family-body)\` | \`${family}\` |`,
-    `| \`font-weight\` | \`var(--font-weight-semibold)\` | \`${wSemi}\` |`,
-    `| \`font-size\` | \`var(--font-size-text-lg)\` | \`${fMd}\` |`,
-    '| `align-items` / `justify-content` | — | `center` |',
-    '',
-    'This component does **not** use `--padding-*` (that token is surface inset). Cell content is centered; no inner padding token.',
-    '',
-    '### Color by State',
-    '',
-    'Stroke weight is `var(--stroke-control)`. Focus ring spread is `var(--stroke-focus)`. Bind paint by **State**, not by painting accent/error hex:',
-    '',
-    '| State | `border-color` | Extra | Digits |',
-    '|---|---|---|---|',
-    `| \`Default\` | first cell \`${cssColor('border.focus')}\` (\`${figmaVar('border.focus')}\`); others \`${cssColor('border.strong')}\` | \`box-shadow: 0 0 0 var(--stroke-focus) color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent)\` on the first cell | empty |`,
-    `| \`Filled\` | \`${cssColor('border.strong')}\` (\`${figmaVar('border.strong')}\`) | none | six digits, e.g. \`824913\` |`,
-    `| \`Error\` | \`${cssColor('status.critical.border-strong')}\` (\`${figmaVar('status.critical.border-strong')}\`) | none | six digits |`,
-    '',
-    'The live preview currently paints the focused cell with `action.primary.default`. In Figma, **prefer `border.focus`** for that stroke and ring. Do not use `border.accent` (decorative) or `status.error` fill (status surface, not an input stroke).',
-    '',
-    '### CSS (MD · Default) — copy as the implementation contract',
-    '',
-    '```css',
-    '.input-otp {',
-    '  display: flex;',
-    `  gap: var(--spacing-gap-control); /* ${gapControl} */`,
-    '}',
-    '.input-otp__cell {',
-    '  box-sizing: border-box;',
-    `  width: var(--size-md); /* ${hMd} */`,
-    `  height: var(--size-md); /* ${hMd} */`,
-    `  border-radius: var(--radius-action); /* ${rAction} */`,
-    `  border: var(--stroke-control) solid ${cssColor('border.strong')};`,
-    `  background: ${cssColor('surface.input')};`,
-    '  display: inline-flex;',
-    '  align-items: center;',
-    '  justify-content: center;',
-    '  font-family: var(--font-family-body);',
-    '  font-weight: var(--font-weight-semibold);',
-    `  font-size: var(--font-size-text-lg); /* ${fMd} */`,
-    `  color: ${cssColor('content.primary')};`,
-    '}',
-    '.input-otp__cell[data-focused] {',
-    `  border-color: ${cssColor('border.focus')};`,
-    `  box-shadow: 0 0 0 var(--stroke-focus) color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent);`,
-    '}',
-    '.input-otp__cell[data-error] {',
-    `  border-color: ${cssColor('status.critical.border-strong')};`,
-    '}',
-    '```',
-    '',
-    '### Agent rules (Figma)',
-    '',
-    '- Load `figma-use` before mutating the file. Bind semantics; never primitives or raw hex.',
-    '- Corner radius on every cell: `Radius/action` (`--radius-action` → `--radius-' + rolesOf(t, 'radius').action + '`).',
-    '- Stroke: `Stroke/control`. Focus ring spread: `Stroke/focus`. Paint: `Border/focus`.',
-    '- Variant property `Size` values are `SM` · `MD` · `LG` (uppercase) and map to `Size/sm` · `Size/md` · `Size/lg`. `State` values are `Default` · `Filled` · `Error`.',
-    '- One component set, not six loose components. Auto-layout gap tracks `--spacing-gap-*` above.',
-    '- Autocomplete / a11y: `autocomplete="one-time-code"`. Cells are not six separate inputs.',
-    '',
-  ].join('\n')
-}
-
-function reconstructionFor(def: ComponentDef, t?: AgentFoundationTokens): string | null {
-  if (def.key === 'InputOTP' && t) return inputOtpRecipe(t)
-  if (def.key === 'InputOTP') return inputOtpRecipe({ radius: {}, spacing: {} })
-  return null
-}
-
 /** Portable agent brief for one component article. `snippet` is the default-variant usage from `snippetFor`. */
 export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?: AgentFoundationTokens): string {
-  const importLine = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"`
+  const importLine = componentImportLine(def.key)
   const related = relatedLabels(def)
-  const extra = reconstructionFor(def, tokens)
 
   const lines = [
     '---',
@@ -502,8 +480,7 @@ export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?
   if (tokens) lines.push(...tokenTables(def, tokens))
 
   lines.push(...figmaSection(def))
-  if (extra) lines.push(extra)
-  else if (tokens) lines.push(...sizeAxisMap(def, tokens))
+  if (tokens) lines.push(...sizeAxisMap(def, tokens))
 
   if (def.props.length) {
     lines.push('## API', '', '| Prop | Type | Description |', '|---|---|---|')

@@ -44,7 +44,7 @@ function buttonPaint(variant: string, state: string): SlotMap {
     case 'secondary':
       return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'outline':
-      return { root: { fill: c(pressed ? 'action.ghost.pressed' : hover ? 'action.ghost.hover' : 'surface.page'), stroke: c('border.strong'), text: c('content.primary'), ring: ring('border.ring.default') } }
+      return { root: { fill: c(pressed ? 'action.ghost.pressed' : hover ? 'action.ghost.hover' : 'surface.page'), stroke: c('border.control'), text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'ghost':
       return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'destructive':
@@ -94,10 +94,10 @@ export const BUTTON_GROUP: ComponentRecipe = {
   parts: [
     part({}, () => ({
       text: {
-        fill: c('surface.layer-2'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.layer-2'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         text: c('content.primary'), radius: 'radius.action', paddingX: 'spacing.2_5', gap: 'spacing.2', font: 'type.label',
       },
-      separator: { fill: c('border.strong') },
+      separator: { fill: c('border.control') },
     })),
     part({ Orientation: ['horizontal', 'vertical'] as const }, (o) => ({
       separator: o === 'horizontal' ? { width: 'stroke.control' } : { height: 'stroke.control' },
@@ -119,7 +119,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.layer-1'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         text: c('content.primary'), radius: 'radius.action', font: 'type.button',
       },
       'root:hover': { fill: c('action.ghost.hover') },
@@ -169,7 +169,7 @@ export const TOGGLE_GROUP: ComponentRecipe = {
     part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
       item: variant === 'outline'
         ? {
-            fill: NONE, stroke: c('border.strong'), strokeWidth: 'stroke.control', text: c('content.secondary'),
+            fill: NONE, stroke: c('border.control'), strokeWidth: 'stroke.control', text: c('content.secondary'),
             font: 'type.button', radius: 'radius.action', gap: 'spacing.1',
           }
         : { fill: NONE, text: c('content.secondary'), font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
@@ -194,7 +194,7 @@ export const TOGGLE: ComponentRecipe = {
   parts: [
     part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
       root: variant === 'outline'
-        ? { stroke: c('border.strong'), strokeWidth: 'stroke.control', font: 'type.button', radius: 'radius.action', gap: 'spacing.1' }
+        ? { stroke: c('border.control'), strokeWidth: 'stroke.control', font: 'type.button', radius: 'radius.action', gap: 'spacing.1' }
         : { font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
     })),
     part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({

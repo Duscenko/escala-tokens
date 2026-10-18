@@ -158,6 +158,20 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > them "kept for reference" are history. A new component is a file in `escala-ui/`, a
 > recipe and a plugin gate — never a second renderer.
 
+> **UPDATE (2026-10-18): `border.control` is a ROLE again — the field outline — and every agent
+> paste is ONE brand, ONE appearance.** Supersedes "border.control was folded into border.strong".
+> - `border.control` / `border.control-hover` are solved to WCAG 1.4.11 3:1 with APCA Lc 15
+>   (`control-boundary` intent), not Lc 45: held to Lc 45 the dark field outline was white-a.8 =
+>   7.25:1. Now black-a.7 (3.94:1) / white-a.6 (3.81:1). `border.strong` is emphasis (Lc 45).
+>   Every field-like recipe binds `border.control`; System Style field overrides moved there;
+>   store v99 moves stored `border.strong` overrides (`moveBorderStrongToControl`). 73 roles.
+> - Agent pastes go through `contextSource.brandContext` (Variables, Code tab, Docs foundation
+>   pages): a Light paste carries no dark ramp, a Dark one dark shadows/gradients only. Docs
+>   foundation pages carry the same Copy context (Scope · Theme · Detail) for the brand on screen.
+> - Figma names in the Skill / references match the plugin (`Type/<role>`, `Shadow/<step>`,
+>   `Gradient/<slug>`, `font-family-body`), no project prefix. `@escala/cli` is not on npm:
+>   `CLI_PUBLISHED = false` shows the unzip instead. Locked by `agentContextAudit.test.ts`.
+
 > **UPDATE (2026-10-10): the PLUGIN's plan comes from the ACCOUNT, not from the browser it
 > happens to open.** Reported as a Pro account signing in from the Figma plugin and showing
 > Free. Measured in production logs before anything changed, and it was three faults at once:

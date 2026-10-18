@@ -123,6 +123,9 @@ function joinChunks(chunks: MdChunk[]): string {
 export interface SystemContextRequest {
   scope: ContextScope
   detail: ContextDetail
+  /** Which appearance the JSON was narrowed to (`contextTokenJson`). Labels
+   *  the foundations' value columns; omit or `both` for both. */
+  appearance?: ContextAppearance
 }
 
 /** The paste for a brand (or one of its foundations), from a TokenJSON that
@@ -133,7 +136,8 @@ export interface SystemContextRequest {
  *  `{ scope: 'all', detail: 'full' }` is byte-identical to what the Code tab's
  *  Agent context always showed: every `references/` file, in package order. */
 export function buildSystemContext(json: TokenJSON, req: SystemContextRequest, projectFallback?: string): string {
-  const { files } = buildAgentSkillFiles(json, { projectFallback })
+  const appearance = req.appearance === 'both' ? undefined : req.appearance
+  const { files } = buildAgentSkillFiles(json, { projectFallback, appearance })
   const refs = files.filter((f) => f.path.startsWith('references/'))
   const tokens = refs.find((f) => f.path === 'references/tokens.md')?.text ?? ''
   const foundations = refs.find((f) => f.path === 'references/foundations.md')?.text ?? ''
@@ -171,10 +175,30 @@ export function buildSystemContext(json: TokenJSON, req: SystemContextRequest, p
 /** Sections a component brief keeps at `detail: 'tokens'`. */
 const COMPONENT_TOKEN_SECTIONS = [/^# Agent context/, /^## What it is/, /^## Design tokens/]
 
+/** `### ` subsections of a component's Design tokens that change with the
+ *  appearance: colour (the recipe table or the palette excerpt) and shadows.
+ *  Every length, the type scale and the dimension primitives are the same in
+ *  Light and Dark. */
+const APPEARANCE_SUBSECTIONS = [/^### Tokens by part/, /^### Color /, /^### Shadow/]
+
+/** Keeps the lead paragraph of a `## ` chunk and only the `### ` subsections
+ *  that match. */
+function keepSubsections(chunk: MdChunk, patterns: RegExp[]): MdChunk {
+  const out: string[] = []
+  let keep = true
+  let fenced = false
+  for (const line of chunk.text.split('\n')) {
+    if (line.startsWith('```')) fenced = !fenced
+    if (!fenced && line.startsWith('### ')) keep = patterns.some((p) => p.test(line))
+    if (keep) out.push(line)
+  }
+  return { ...chunk, text: out.join('\n') }
+}
+
 /** Narrows a component brief (`agentContextMarkdown`). `dark` is the same
  *  brief built against the dark appearance, needed only for `both`: its
- *  Design tokens section is appended under a `— Dark` heading, so the values
- *  that differ (colour, shadows) are both on the page and nothing else repeats. */
+ *  Design tokens section is appended under a `— Dark` heading, cut to the
+ *  values that differ (colour, shadows), so nothing else repeats. */
 export function cutComponentContext(
   primary: string,
   req: { detail: ContextDetail; appearance: ContextAppearance },
@@ -197,7 +221,8 @@ export function cutComponentContext(
         text: c.text.replace(c.heading, `${c.heading} — ${suffix}`),
       })
       if (idx >= 0) {
-        kept = [...kept.slice(0, idx), relabel(kept[idx], 'Light'), relabel(darkTokens, 'Dark'), ...kept.slice(idx + 1)]
+        const darkOnly = keepSubsections(relabel(darkTokens, 'Dark'), APPEARANCE_SUBSECTIONS)
+        kept = [...kept.slice(0, idx), relabel(kept[idx], 'Light'), darkOnly, ...kept.slice(idx + 1)]
       }
     }
   } else if (req.appearance !== 'both') {

@@ -392,7 +392,7 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const ghostDanger = s('action-ghost-danger', ['status.critical.surface', 'action.ghost.danger.hover'], t.neutralFill)
   const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
-  const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
+  const stroke = s('border-primary', ['border.control', 'border.strong', 'border.default'], t.border || '#d0d5dd')
   const r = radiusRoleOf(t, 'action', '8px')
 
   const Btn = ({ bg, fg, bd, children }: { bg: string; fg: string; bd?: string; children: ReactNode }) => (
@@ -721,7 +721,7 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   // candidate list so a payload predating the phase-1 split still resolves to
   // the roles that used to carry this job — the value is identical either way,
   // only the name moved.
-  const control = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
+  const control = s('border-primary', ['border.control', 'border.strong', 'border.default'], t.border || '#d0d5dd')
   const controlHover = s('border-primary', ['border.control-hover', 'border.strong', 'border.emphasized'], t.border || '#d0d5dd')
   // The DECORATIVE ladder, three ascending rungs. `default` and `strong` mean
   // decoration now; before the split there was only `subtle` here.

@@ -90,7 +90,7 @@ export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   // strokes by JOB; it was `border.default`, and before that
   // `border.strong`. The value is unchanged across all three renames —
   // only the name moved, so nothing here restyles.
-  border: 'border.strong',
+  border: 'border.control',
   // `PreviewTokens.borderDefault` is the DECORATIVE outline (card edges,
   // panel boundaries). It STAYS on `border.subtle` even though phase 1
   // added a middle rung that is arguably the better match (tone 4, ΔL

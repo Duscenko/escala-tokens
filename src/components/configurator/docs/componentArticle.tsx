@@ -21,7 +21,7 @@ import {
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
 import { useI18n } from '../../../lib/i18n'
-import { agentContextMarkdown } from '../../../lib/agentContext'
+import { agentContextMarkdown, componentImportLine } from '../../../lib/agentContext'
 import { cutComponentContext } from '../../../lib/contextRequest'
 import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
@@ -556,7 +556,7 @@ export function ComponentArticle({
     : undefined
 
   const heroCode = snippetFor(def, values, icons)
-  const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
+  const usageCode = `${componentImportLine(def.key)}\n\n${heroCode}`
   // The brief is this page: identity, live tokens, API, and the snippet on
   // screen. ONE string feeds both the header's "Copy context to Agents" and
   // the Use it block's third tab, so the two can't disagree. Built here rather

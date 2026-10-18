@@ -15,7 +15,7 @@ export function fieldBox(state: string): SlotProps {
   if (state === 'Error') return { fill: c('surface.input'), stroke: c('status.critical.border-strong'), ring: NONE }
   if (state === 'Focused' || state === 'Open') return { fill: c('surface.input'), stroke: c('border.focus'), ring: c('border.ring.default') }
   if (state === 'Hover') return { fill: c('surface.input'), stroke: c('border.control-hover'), ring: NONE }
-  return { fill: c('surface.input'), stroke: c('border.strong'), ring: NONE }
+  return { fill: c('surface.input'), stroke: c('border.control'), ring: NONE }
 }
 
 const FIELD_FIXED: SlotProps = {
@@ -89,7 +89,7 @@ export const INPUT_GROUP: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         radius: 'radius.action', height: 'size.control',
       },
       'root:focus-within': FIELD_FOCUS,
@@ -98,7 +98,7 @@ export const INPUT_GROUP: ComponentRecipe = {
       button: { text: c('content.accent'), font: 'type.button', paddingX: 'spacing.4' },
       'button:hover': { fill: c('action.ghost.hover') },
       'button:active': { fill: c('action.ghost.pressed') },
-      separator: { fill: c('border.strong'), width: 'stroke.control' },
+      separator: { fill: c('border.control'), width: 'stroke.control' },
     })),
   ],
 }
@@ -112,7 +112,7 @@ export const INPUT_STEPPER: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         radius: 'radius.action', height: 'size.control',
       },
       'root:focus-within': FIELD_FOCUS,
@@ -121,7 +121,7 @@ export const INPUT_STEPPER: ComponentRecipe = {
       'button:active': { fill: c('action.ghost.pressed') },
       'button:disabled': { text: c('content.disabled') },
       value: { text: c('content.primary'), font: 'type.body-md', width: 'size.2xl' },
-      separator: { fill: c('border.strong'), width: 'stroke.control' },
+      separator: { fill: c('border.control'), width: 'stroke.control' },
     })),
   ],
 }
@@ -135,7 +135,7 @@ export const INPUT_TAG: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         radius: 'radius.action', minHeight: 'size.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5',
         gap: 'spacing.1_5',
       },
@@ -220,7 +220,7 @@ export const INPUT_OTP: ComponentRecipe = {
     part({}, () => ({
       group: { gap: 'spacing.gap-control' },
       slot: {
-        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         radius: 'radius.action', text: c('content.primary'), font: 'type.button',
         height: 'size.control', width: 'size.control',
       },
@@ -247,7 +247,7 @@ function checkPaint(checked: string, state: string): SlotMap {
   else if (on) {
     const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
     root = { fill, stroke: fill, ring }
-  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.strong'), ring }
+  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), ring }
   return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
 }
 
@@ -275,7 +275,7 @@ export const RADIO_GROUP: ComponentRecipe = {
     part({}, () => ({
       root: { gap: 'spacing.3' },
       item: {
-        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
         radius: 'radius.pill', height: 'selector.control', width: 'selector.control',
       },
       'item:hover': { stroke: c('border.control-hover') },
@@ -444,7 +444,7 @@ export const DROPZONE: ComponentRecipe = {
       return {
         root: {
           fill: state === 'Dragging' ? c('surface.accent') : error ? c('status.critical.surface') : NONE,
-          stroke: c(error ? 'status.critical.border-strong' : state === 'Dragging' ? 'border.accent' : 'border.strong'),
+          stroke: c(error ? 'status.critical.border-strong' : state === 'Dragging' ? 'border.accent' : 'border.control'),
         },
         icon: { fill: c(error ? 'status.critical.surface' : 'surface.selected'), text: c(error ? 'status.critical.content' : 'content.accent') },
         link: { text: c('content.accent') },

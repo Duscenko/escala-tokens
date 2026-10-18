@@ -208,6 +208,8 @@ export function ContextSizeNote({ markdown, className = '', showLines = true }: 
   )
 }
 
+const POPOVER_W = 340
+
 /** A popover anchored under `anchor`, right-aligned to it, portaled to <body>
  *  so a clipping card or scroll column can't cut it. Closes on outside click
  *  and Escape. */
@@ -227,7 +229,10 @@ export function AnchoredPopover({
     if (!open || !anchor) return
     const place = () => {
       const r = anchor.getBoundingClientRect()
-      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) })
+      // Right-aligned to the anchor, but never past the viewport's LEFT edge:
+      // an anchor near the left (a Docs page title) pushed the panel off-screen.
+      const maxRight = window.innerWidth - POPOVER_W - 8
+      setPos({ top: r.bottom + 6, right: Math.max(8, Math.min(window.innerWidth - r.right, maxRight)) })
     }
     place()
     window.addEventListener('resize', place)
@@ -260,8 +265,8 @@ export function AnchoredPopover({
       ref={ref}
       role="dialog"
       aria-label={label}
-      style={{ position: 'fixed', top: pos.top, right: pos.right }}
-      className="z-[70] w-[340px] rounded-xl border border-line-strong bg-elevated p-3 shadow-lg"
+      style={{ position: 'fixed', top: pos.top, right: pos.right, width: POPOVER_W }}
+      className="z-[70] rounded-xl border border-line-strong bg-elevated p-3 shadow-lg"
     >
       {children}
     </div>,

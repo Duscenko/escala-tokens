@@ -84,7 +84,7 @@ export const CHIP: ComponentRecipe = {
           'root:hover': { fill: c('surface.selected-pressed') },
         }
       : {
-          root: { fill: NONE, stroke: c('border.strong'), text: c('content.primary') },
+          root: { fill: NONE, stroke: c('border.control'), text: c('content.primary') },
           'root:hover': { fill: c('surface.accent'), stroke: c('border.control-hover') },
         }),
   ],

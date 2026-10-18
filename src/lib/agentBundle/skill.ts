@@ -31,11 +31,11 @@ function catalogLines(iconKey?: string): string[] {
     '|---|---|---|',
     '| `Color Primitives` | 1 | Raw ramps: `Accent/*`, `Neutral/*`, `States/{Error,Success,Warning,Info}/*` and dark twins. Designers do not pick these. |',
     '| `Color Semantics` | one per theme (`Light`, `Dark`, …) | Categorical roles in five groups: **Content · Action · Surface · Status · Border**. |',
-    '| `Typography` | Desktop · Mobile | Primitives (`family`, `size/*`, `weight/*`, `line-height/*`) plus semantic text styles `text-{role}` (label, placeholder, heading, …) that alias those primitives. |',
+    '| `Typography` | Desktop · Tablet · Mobile (viewports, not themes) | Primitives (`font-family-body`, `font-family-display`, `size/*`, `line-height/*`, `letter-spacing/*`, `weight/*`) plus role variables `role/{role}/size|weight|family` (label, button, heading-md, …) that alias them. Text styles are `Type/{role}`. |',
     '| `Dimension Primitives` | 1 | Every length, named by its value: `0`, `4`, `16`, `9999`, `-4`, `3_5` (= 3.5px). Designers do not pick these. |',
     '| `Dimension Semantics` | Desktop · Tablet · Mobile (viewports, not themes) | Groups `Spacing/` (steps + `padding/*` + `role/*`), `Radius/`, `Stroke/`, `Size/`, `Selector/`, `Grid/` (`columns` · `gutter` · `margin` · `container` change per viewport mode). Every step and every `role/*` aliases a Dimension primitive. |',
     '',
-    'Paint styles (gradients) and effect styles (shadows) are **styles**, not variables — Figma has no gradient/shadow variable type.',
+    'Paint styles (gradients, `Gradient/{slug}`) and effect styles (shadows, `Shadow/{xs…2xl}`) are **styles**, not variables — Figma has no gradient/shadow variable type. Each has a `(Dark)` twin when the dark value differs.',
     '',
     '### Icons',
     '',
@@ -69,7 +69,7 @@ function catalogLines(iconKey?: string): string[] {
   lines.push('- `Action/primary/default` → `Content/on-action`')
   lines.push('- `Action/secondary/*` → `Content/primary`')
   lines.push('- `Status/*/surface` → `Status/*/content`')
-  lines.push('- `Status/critical/surface-solid` → `Status/critical/on-solid`')
+  lines.push('- `Status/*/surface-solid` (and its `-hover` / `-pressed`) → `Status/*/on-solid` of the same severity')
   lines.push('- `Surface/inverse` → `Content/inverse`')
   lines.push('- Inputs: `Surface/input` + `Border/strong`. Focus: `Border/focus`, never `Border/accent`.')
   lines.push('')
@@ -111,11 +111,11 @@ function buildSkillMarkdown(name: string, project: string, description: string, 
     '',
     '1. Load `figma-use`. If the task is a library (collections, components, docs pages), also load `figma-generate-library`. Pass both names in `skillNames` on every `use_figma` call.',
     '2. Read **Token catalog** in this file before creating anything. That list is complete. `references/tokens.md` and `references/foundations.md` have resolved values — load them if present; if they are not in context, still use the catalog names. Do not invent token names, hex values, extra groups, or extra modes. Do not fall back to exploring the Figma file for names unless the user asked you to audit an existing import.',
-    '3. Use the **exact collection names** in the catalog (`Color Primitives`, `Color Semantics`, `Typography`, `Spacing`, `Radius`, `Size`, `Grid`). Semantics groups are Content, Action, Surface, Status, Border — all five, always.',
+    '3. Use the **exact collection names** in the catalog (`Color Primitives`, `Color Semantics`, `Typography`, `Dimension Primitives`, `Dimension Semantics`). Spacing, radius, stroke, size, selector and grid are GROUPS inside `Dimension Semantics`, not collections. Color semantics groups are Content, Action, Surface, Status, Border — all five, always.',
     '4. **Primitives:** `scopes = []` (hidden from pickers). Designers pick semantics only. Alias semantic COLOR variables to the primitive that carries the same opaque hex — do not duplicate raw color.',
     '5. **Semantics:** targeted scopes, never `ALL_SCOPES`. Content / on-solid / status ink → `TEXT_FILL`. Action / surface / status fills → `FRAME_FILL`, `SHAPE_FILL`. Border → `STROKE_COLOR`. Full map: [references/semantic-contract.md](references/semantic-contract.md).',
     '6. Set **WEB code syntax** on every variable to the CSS form with a `var()` wrapper — without `var()`, Dev Mode shows hex. Dots in a role id become hyphens in CSS: `content.link.default` → `var(--color-content-link-default)`. The Figma name uses `/` (`Content/link/default`).',
-    '7. Foundations: lengths live in `Dimension Semantics` as `<Group>/<step>` (`Spacing/4`, `Radius/lg`) and roles as `<Group>/role/<role>` — bind the role. Each step aliases a `Dimension Primitives` variable named by its value. Text **primitives** are `{project}/Type/{size}`. Text **roles** are `{project}/Type/{role}` with Desktop and Mobile (alias the size/weight/family primitives — do not duplicate px). Shadows are effect styles `{project}/Shadow/{xs…2xl}`. Gradients are paint styles `{project}/Gradient/{slug}`. See [references/foundations.md](references/foundations.md).',
+    '7. Foundations: lengths live in `Dimension Semantics` as `<Group>/<step>` (`Spacing/4`, `Radius/lg`) and roles as `<Group>/role/<role>` — bind the role. Each step aliases a `Dimension Primitives` variable named by its value. Type primitives are variables (`size/{step}`, `weight/{name}`, …); type **roles** are `role/{role}/size|weight|family` with one value per Typography mode (Desktop · Tablet · Mobile — alias the primitives, do not duplicate px) and the text style `Type/{role}`. Shadows are effect styles `Shadow/{xs…2xl}`. Gradients are paint styles `Gradient/{slug}`. No style name carries the project name. See [references/foundations.md](references/foundations.md).',
     `8. **Icons:** ${icons.instruction}`,
     '9. Bind components to **semantic** variables only. Never hardcode hex or px when a token exists. Work in small `use_figma` calls; `return` every created/mutated node id; convert hex to `{r,g,b,a}` in 0–1.',
     '',
@@ -124,11 +124,11 @@ function buildSkillMarkdown(name: string, project: string, description: string, 
     '',
     '**Request:** “Apply this design system as Figma variables.”',
     '',
-    '**Expected:** `Color Primitives` (one mode) and `Color Semantics` (modes Light/Dark, **all five groups** Content · Action · Surface · Status · Border). Plus Typography, `Dimension Primitives` (one mode, named by value) and `Dimension Semantics` (viewport modes Desktop · Tablet · Mobile; groups Spacing · Radius · Stroke · Size · Selector · Grid), shadow effect styles, gradient paint styles. Each semantic COLOR aliases a primitive, has targeted scopes, and WEB code syntax `var(--color-…)`. No second “tokens” collection. No `ALL_SCOPES`.',
+    '**Expected:** `Color Primitives` (one mode) and `Color Semantics` (modes Light/Dark, **all five groups** Content · Action · Surface · Status · Border). Plus Typography (viewport modes Desktop · Tablet · Mobile), `Dimension Primitives` (one mode, named by value) and `Dimension Semantics` (viewport modes Desktop · Tablet · Mobile; groups Spacing · Radius · Stroke · Size · Selector · Grid), shadow effect styles, gradient paint styles. Each semantic COLOR aliases a primitive, has targeted scopes, and WEB code syntax `var(--color-…)`. No second “tokens” collection. No `ALL_SCOPES`.',
     '',
     '**Request:** “Build a primary button in Figma that matches this system.”',
     '',
-    '**Expected:** Fill bound to `Action/primary/default`, label fill bound to `Content/on-action`, radius from the Radius collection, hover/pressed variants bound to `Action/primary/hover` and `Action/primary/pressed`. `figma-use` loaded first.',
+    '**Expected:** Fill bound to `Action/primary/default`, label fill bound to `Content/on-action`, radius bound to `Radius/role/action` in `Dimension Semantics`, hover/pressed variants bound to `Action/primary/hover` and `Action/primary/pressed`. `figma-use` loaded first.',
     '',
     '## Common edge cases',
     '',
@@ -189,7 +189,7 @@ export function buildAgentSkillFiles(json: TokenJSON, opts: AgentBundleOptions =
     files: [
       { path: 'SKILL.md', text: skillMd },
       { path: 'references/tokens.md', text: buildTokensMd(json) },
-      { path: 'references/foundations.md', text: buildFoundationsMd(json) },
+      { path: 'references/foundations.md', text: buildFoundationsMd(json, { appearance: opts.appearance }) },
       { path: 'references/semantic-contract.md', text: buildSemanticContractMd() },
     ],
   }

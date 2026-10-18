@@ -188,6 +188,7 @@ export type IntentClass =
   | 'large-text'
   | 'action-label'
   | 'ui-component'
+  | 'control-boundary'
   | 'decorative'
   | 'surface'
 
@@ -198,6 +199,14 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   'large-text':   { wcag: 3.0, apcaLc: 60 },
   'action-label': { wcag: 4.5, apcaLc: 60 },
   'ui-component': { wcag: 3.0, apcaLc: 45 },
+  // The resting outline of a field / select / checkbox — the stroke that
+  // identifies the control. WCAG 1.4.11's 3:1 is the requirement; Lc 45 is
+  // APCA's LARGE-TEXT row and, held on a 1px hairline, it pushed the dark
+  // outline to white-a.8 = 7.25:1 — more than twice the requirement, the
+  // "fields look too strong" report. Lc 15 is APCA's floor for a non-text
+  // element to stay discernible. Lands on black-a.7 (3.94:1) / white-a.6
+  // (3.81:1): the values the soft System Styles had already chosen by hand.
+  'control-boundary': { wcag: 3.0, apcaLc: 15 },
   decorative:     { wcag: null, apcaLc: null },
   surface:        { wcag: null, apcaLc: null },
 }

@@ -30,25 +30,15 @@ const TOKENS: AgentFoundationTokens = {
 }
 
 describe('agentContextMarkdown', () => {
-  it('Input OTP carries live tokens and the Figma/CSS recipe', () => {
-    const md = agentContextMarkdown(otp, '<InputOTP length={6} onComplete={verify} />', TOKENS)
+  it('Input OTP is described by its recipe, not a second hand-written spec', () => {
+    const md = agentContextMarkdown(otp, '<InputOTP maxLength={6} />', TOKENS)
     expect(md).toContain('figma_sets: Input OTP')
-    expect(md).toContain('Component set name: `Input OTP`')
-    expect(md).toContain('`--radius-md`')
-    expect(md).toContain('`--radius-lg`')
-    expect(md).toContain('`16px`')
-    expect(md).toContain('`--padding-top`')
-    expect(md).toContain('`var(--size-md)`')
-    expect(md).toContain('border-radius: var(--radius-action)')
-    expect(md).toContain('var(--stroke-control)')
-    expect(md).toContain('var(--stroke-focus)')
-    expect(md).toContain('Border/focus')
-    expect(md).toContain('Status/critical/border-strong')
-    expect(md).toContain('Surface/input')
-    expect(md).toContain('border.focus')
-    expect(md).toContain('map onto `Size/sm`')
-    expect(md).toContain('var(--color-status-critical-border-strong)')
-    expect(md).not.toContain('1.5px')
+    expect(md).toContain('### Tokens by part (the component recipe)')
+    // The recipe's Error state, said as a state — not a Size axis the catalogue does not have.
+    expect(md).toMatch(/\| slot \| stroke \| State: Error \| `color\.status\.critical\.border-strong` \|/)
+    expect(md).not.toContain('Reconstruct the set')
+    expect(md).not.toContain('`Size`')
+    expect(md).toContain('from "@/components/ui/input-otp"')
   })
 
   it('other components get live token tables, not the OTP spec', () => {
@@ -69,7 +59,10 @@ describe('agentContextMarkdown', () => {
     const button = COMPONENTS.find((c) => c.key === 'Button')!
     const md = agentContextMarkdown(button, '<Button />', { ...TOKENS, archTokens: { 'action.primary.default': '#7f56d9' } })
     expect(md).toContain('### Tokens by part (the component recipe)')
-    expect(md).toContain('| root | fill | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
+    expect(md).toContain('| root | fill | Variant: default · State: Default, Focused, Loading | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
+    // A size row says which size it is, with its live value.
+    expect(md).toContain('| root | height | Size: xs, icon-xs | `size.hit` | `--size-hit` | — | `24px` |')
+    expect(md).toContain('| root | radius | always | `radius.action` |')
     expect(md).toContain('`color.content.on-action`')
     expect(md).toContain('`--size-control`')
     expect(md).not.toContain('### Color (scoped to this component)')

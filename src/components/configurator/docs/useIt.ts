@@ -19,11 +19,8 @@
 //    agent would contradict — the same rule the export wizard already
 //    follows ("everything derives from ONE generateTokenJSON() call").
 
-import { buildSectionExport, cssExcerpt, type SectionKey } from '../../../lib/sectionExport'
 import { withAgentEnvelope } from '../../../lib/aiContext'
-import { useDesignStore } from '../../../store/useDesignStore'
 import type { ComponentDef } from '../../../lib/componentCatalogue'
-import type { FoundationDoc } from './foundationDocs'
 
 export type UseItDestId = 'figma' | 'code' | 'ai'
 
@@ -58,90 +55,11 @@ const CONTEXT_NOTE =
   'The brief for this page: the same facts it states, with the live values. Paste it into a chat.'
 
 // ── Foundations ──────────────────────────────────────────────────────────────
-
-/** A foundation key IS a `SectionKey` — the two lists are identical
- *  (color · typography · radius · spacing · shadow · grid · sizes · stroke ·
- *  icons). Narrowed here rather than cast at each call site so a future
- *  foundation that has no export section fails loudly instead of emitting an
- *  empty pane. */
-function sectionKeyFor(doc: FoundationDoc): SectionKey | null {
-  const keys: SectionKey[] = [
-    'color', 'typography', 'radius', 'spacing', 'shadow', 'grid', 'sizes', 'stroke', 'icons',
-  ]
-  const named = doc.codeSection ?? doc.key
-  return keys.find((k) => k === named) ?? null
-}
-
-/** Live token markdown for this page. The hub Spacing article is the Sizes
- *  foundation plus the spacing roles, so both exports belong in that brief. */
-function sectionValues(doc: FoundationDoc): string {
-  const section = sectionKeyFor(doc)
-  if (!section) return ''
-  // Every theme the page tables, not light alone — omitted `modes` drops dark.
-  const modes = useDesignStore.getState().themeOrder
-  const opts = modes?.length ? { modes } : {}
-  const parts = [buildSectionExport(section, 'md', 'hex', opts)]
-  if (doc.key === 'sizes' && section === 'spacing') parts.push(buildSectionExport('sizes', 'md', 'hex', opts))
-  return parts.filter(Boolean).join('\n\n')
-}
-
-/** What this foundation page actually tells: lead, why, usage, then the
- *  live values from the same exporter the Code tab uses. */
-export function foundationAgentContext(doc: FoundationDoc): string {
-  const values = sectionValues(doc)
-  const body = [
-    doc.lead,
-    '',
-    `## Why ${doc.label.toLowerCase()} tokens`,
-    '',
-    doc.why,
-    '',
-    '## Usage',
-    '',
-    doc.usage,
-    '',
-    '```css',
-    doc.usageCode.trim(),
-    '```',
-    '',
-    values,
-  ].join('\n')
-  return withAgentEnvelope('variable', doc.label, body)
-}
-
-export function useItForFoundation(doc: FoundationDoc): UseIt {
-  const section = sectionKeyFor(doc)
-
-  // Real, resolved, live: `buildSectionExport` reads the store itself, so
-  // retinting the accent moves this pane in the same frame it moves the table.
-  const css = section
-    ? cssExcerpt(buildSectionExport(section, 'css'))
-    : doc.usageCode
-
-  return {
-    destinations: [
-      {
-        id: 'figma',
-        label: 'Figma',
-        code: doc.ships.figma,
-        note: 'Created by the Escala plugin on import, then kept current by Live Sync.',
-      },
-      {
-        id: 'code',
-        label: 'Code',
-        code: css,
-        note: 'variables.css: {css}   ·   tokens.json: {json}',
-        noteVars: { css: doc.ships.css, json: doc.ships.json },
-      },
-      {
-        id: 'ai',
-        label: 'Copy context to Agents',
-        code: foundationAgentContext(doc),
-        note: CONTEXT_NOTE,
-      },
-    ],
-  }
-}
+// No foundation builder here any more. `foundationAgentContext` read the
+// GLOBAL store (every brand's families, both appearances) and had no caller;
+// a foundation page's Copy context is `VariablesContextButton` on the brand
+// the page documents (`contextSource.brandContext`), with Scope · Theme ·
+// Detail — one paste builder for Variables, Code and Docs.
 
 // ── Components ───────────────────────────────────────────────────────────────
 

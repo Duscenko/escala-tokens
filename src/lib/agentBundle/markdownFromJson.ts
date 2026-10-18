@@ -150,10 +150,21 @@ function responsiveDesktop(json: TokenJSON): Record<string, string> {
   return out
 }
 
-/** Same text the Skill zip ships as `references/foundations.md`. */
-export function buildFoundationsMd(json: TokenJSON): string {
-  const prefix = json.project || 'SD'
+/** Same text the Skill zip ships as `references/foundations.md`.
+ *
+ *  Figma names are the ones the Escala plugin WRITES (`code.ts`): text styles
+ *  exist for the type ROLES only (`Type/<role>`, plus `(Tablet)` / `(Mobile)`
+ *  twins), shadows are `Shadow/<step>` with a `(Dark)` twin, gradients
+ *  `Gradient/<slug>` with a `(Dark)` twin when the stops differ. None of them
+ *  carries the project name. The two family variables are
+ *  `font-family-body` / `font-family-display`.
+ *
+ *  `appearance` is set when the payload was narrowed to one appearance
+ *  (`contextSource.onlyAppearance`): shadows and gradients then show that
+ *  appearance's values under its own label. */
+export function buildFoundationsMd(json: TokenJSON, opts: { appearance?: 'light' | 'dark' } = {}): string {
   const t = json.typography
+  const appearance = opts.appearance
   const parts: string[] = [
     `# ${json.project} — foundations`,
     '',
@@ -161,19 +172,21 @@ export function buildFoundationsMd(json: TokenJSON): string {
     '',
     '## Typography (`Typography` collection)',
     '',
-    `- \`family\` = \`${t.fontFamily}\` · CSS \`var(--font-family-body)\``,
-    `- \`heading-family\` = \`${t.headingFontFamily ?? t.fontFamily}\` · CSS \`var(--font-family-heading)\``,
+    'Modes are viewports: Desktop · Tablet · Mobile.',
     '',
-    '### Sizes → also text styles `{project}/Type/{key}`',
+    `- \`font-family-body\` = \`${t.fontFamily}\` · CSS \`var(--font-family-body)\``,
+    `- \`font-family-display\` = \`${t.headingFontFamily ?? t.fontFamily}\` · CSS \`var(--font-family-heading)\``,
+    '',
+    '### Sizes (primitives — bind a text role, not these)',
     '',
     table(
-      ['Figma variable', 'Text style', 'CSS', 'Size', 'Line height'],
+      ['Figma variable', 'CSS', 'Size', 'Line height', 'Letter spacing'],
       Object.entries(t.sizes).map(([k, v]) => [
-        `\`size/${k}\``,
-        `\`${prefix}/Type/${k}\``,
-        `\`var(--font-size-${k})\` · \`var(--line-height-${k})\``,
+        `\`size/${k}\` · \`line-height/${k}\` · \`letter-spacing/${k}\``,
+        `\`var(--font-size-${k})\` · \`var(--line-height-${k})\` · \`var(--letter-spacing-${k})\``,
         `\`${v}\``,
         `\`${t.lineHeights?.[k] ?? 'AUTO'}\``,
+        `\`${t.letterSpacings?.[k] ?? '0px'}\``,
       ]),
     ),
     '',
@@ -181,15 +194,15 @@ export function buildFoundationsMd(json: TokenJSON): string {
     '',
     table(['Figma variable', 'CSS', 'Value'], Object.entries(t.weights).map(([k, v]) => [`\`weight/${k}\``, `\`var(--font-weight-${k})\``, `\`${v}\``])),
     '',
-    '### Text roles → `{project}/Type/{role}` (Desktop / Tablet / Mobile)',
+    '### Text roles → text styles `Type/{role}` (Desktop / Tablet / Mobile)',
     '',
-    'Each role aliases primitive size, weight and family. Do not store a second px. In CSS a role is four properties: `--text-<role>-font-family`, `-font-size`, `-font-weight`, `-line-height` (the **CSS** column is the prefix).',
+    'Each role aliases primitive size, weight and family. Do not store a second px. In Figma the role is the variables `role/<role>/size|weight|family` (one value per viewport mode) and the text style `Type/<role>`; `Type/<role> (Tablet)` and `(Mobile)` pin the smaller size. In CSS a role is five properties: `--text-<role>-font-family`, `-font-size`, `-font-weight`, `-line-height`, `-letter-spacing` (the **CSS** column is the prefix), each with a `-tablet` and `-mobile` twin.',
     '',
     table(
-      ['Role', 'CSS', 'Desktop', 'Tablet', 'Mobile'],
+      ['Text style', 'CSS', 'Desktop', 'Tablet', 'Mobile'],
       Object.entries(t.roles ?? {}).map(([k, m]) => {
         const cell = (a: { size: string; weight: string; family: string }) => `\`${a.size}\` · ${a.weight} · ${a.family}`
-        return [`\`${prefix}/Type/${k}\``, `\`--text-${k}-*\``, cell(m.desktop), cell(m.tablet ?? m.desktop), cell(m.mobile)]
+        return [`\`Type/${k}\``, `\`--text-${k}-*\``, cell(m.desktop), cell(m.tablet ?? m.desktop), cell(m.mobile)]
       }),
     ),
     '',
@@ -282,15 +295,21 @@ export function buildFoundationsMd(json: TokenJSON): string {
     )
   }
 
-  const dark = json.shadowsDark ?? {}
+  // Shadows and gradients: one column per appearance the payload carries. A
+  // narrowed payload already holds its own appearance's values in `shadows` /
+  // `gradients` (see `onlyAppearance`), so they are labelled with it.
+  const single = appearance === 'dark' ? 'Dark' : 'Light'
+  const dark = appearance ? {} : json.shadowsDark ?? {}
   const hasDark = Object.keys(dark).length > 0
+  const shadowStyle = (k: string) => (appearance === 'dark' ? `\`Shadow/${k} (Dark)\`` : `\`Shadow/${k}\``)
   parts.push(
     '## Shadows (effect styles — not variables)',
     '',
+    ...(hasDark ? ['The dark value is the effect style `Shadow/<step> (Dark)`; in CSS `--shadow-<step>` switches inside `.dark`.', ''] : []),
     table(
-      ['Figma style', 'CSS', 'Light', ...(hasDark ? ['Dark'] : [])],
+      ['Figma style', 'CSS', single, ...(hasDark ? ['Dark'] : [])],
       Object.entries(json.shadows ?? {}).map(([k, v]) => [
-        `\`${prefix}/Shadow/${k}\``,
+        shadowStyle(k),
         `\`var(--shadow-${k})\``,
         `\`${v}\``,
         ...(hasDark ? [`\`${dark[k] ?? v}\``] : []),
@@ -302,14 +321,23 @@ export function buildFoundationsMd(json: TokenJSON): string {
   const gradients = json.gradients ?? {}
   if (Object.keys(gradients).length) {
     const assigned = json.gradientAssignments ?? {}
+    const gDark = appearance ? {} : json.gradientsDark ?? {}
+    const gHasDark = Object.entries(gDark).some(([slug, css]) => css !== gradients[slug])
     parts.push(
       '## Gradients (paint styles — not variables)',
       '',
+      ...(gHasDark ? ['A gradient whose dark stops differ also ships `Gradient/<slug> (Dark)`; in CSS `--gradient-<slug>` switches inside `.dark`.', ''] : []),
       table(
-        ['Figma style', 'CSS', 'Value', 'Assigned to'],
+        ['Figma style', 'CSS', single, ...(gHasDark ? ['Dark'] : []), 'Assigned to'],
         Object.entries(gradients).map(([slug, css]) => {
           const tags = (['cover', 'avatar'] as const).filter((s) => assigned[s] === slug).join(', ')
-          return [`\`${prefix}/Gradient/${slug}\``, `\`var(--gradient-${slug})\``, `\`${css}\``, tags || '—']
+          return [
+            `\`Gradient/${slug}\``,
+            `\`var(--gradient-${slug})\``,
+            `\`${css}\``,
+            ...(gHasDark ? [`\`${gDark[slug] ?? css}\``] : []),
+            tags || '—',
+          ]
         }),
       ),
       '',

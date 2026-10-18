@@ -25,7 +25,8 @@ import { useDesignStore } from '../../store/useDesignStore'
 import {
   agentSetupPrompt,
   cliMcpInitCommand,
-  cliSkillCommand,
+  offlineSkillCommand,
+  agentBundleZipName,
   mcpClaudeAddCommand,
   mcpCursorConfig,
   mcpVscodeConfig,
@@ -36,7 +37,7 @@ import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { CopyButton } from './docs/blocks'
 import { useFreeTier } from '../../lib/access'
 import { UpgradeToProNotice } from './UpgradeToProNotice'
-import { MCP_VISIBLE } from '../../lib/featureFlags'
+import { CLI_PUBLISHED, MCP_VISIBLE } from '../../lib/featureFlags'
 
 export type InstallClient = 'cursor' | 'claude' | 'vscode' | 'make'
 type Mode = 'mcp' | 'prompt'
@@ -61,6 +62,8 @@ type Step = {
   code?: string
   /** Filename shown above a multi-line payload — omit for a shell command. */
   file?: string
+  /** The step runs `npx @escala/cli`, which only exists once `CLI_PUBLISHED`. */
+  cli?: boolean
 }
 
 export default function AgentInstallPanel({
@@ -90,6 +93,7 @@ export default function AgentInstallPanel({
     // Offline only while the live MCP is hidden: keep Make's two steps and the
     // offline-package row, drop every "add the server" row.
     .filter((step) => MCP_VISIBLE || tab === 'make' || step.title === 'Install the offline package')
+    .filter((step) => CLI_PUBLISHED || !step.cli)
   // About shows just the first row ("Add the server" — or Make's "Export the
   // zip"); the alternative-config and offline-package rows live in Docs.
   const steps = teaser ? allSteps.slice(0, 1) : allSteps
@@ -193,6 +197,13 @@ export default function AgentInstallPanel({
   )
 }
 
+/** Where the package comes from, said once in the step. The CLI downloads
+ *  it; until the CLI is on npm it is the zip Export → AI assistant saves. */
+function offlineSource(projectName: string): ReactNode {
+  if (CLI_PUBLISHED) return null
+  return <>Unzip <Mono>{agentBundleZipName(projectName)}</Mono> from Export → AI assistant. </>
+}
+
 /** The steps for one client. Ordered connect → alternative → package, so the
  *  first row is always the one thing you must do. */
 function stepsFor(tab: InstallClient, origin: string, slug: string, projectName: string): Step[] {
@@ -238,6 +249,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Or let the CLI write it',
         body: <>Same file, written by the installer. Paste the JSON above if you would rather not run npx.</>,
         code: cliMcpInitCommand('vscode', origin),
+        cli: true,
       },
       // Deliberately no offline-package step: `SkillAgent` is cursor|claude,
       // and Copilot has no skills folder to install one into.
@@ -281,10 +293,10 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Install the offline package',
         body: (
           <>
-            Your token names, usage prose and the component catalogue with no network. Lands in <Mono>{skillInstallPath('claude', projectName)}</Mono>.
+            Your token names, usage prose and the component catalogue with no network. {offlineSource(projectName)}Lands in <Mono>{skillInstallPath('claude', projectName)}</Mono>.
           </>
         ),
-        code: cliSkillCommand(slug, 'claude', origin),
+        code: offlineSkillCommand('claude', slug, projectName, origin),
       },
     ]
   }
@@ -305,15 +317,16 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
       title: 'Or let the CLI write it',
       body: <>Same file, written by the installer. Paste the JSON above if you would rather not run npx.</>,
       code: cliMcpInitCommand('cursor', origin),
+      cli: true,
     },
     {
       title: 'Install the offline package',
       body: (
         <>
-          Your token names, usage prose and the component catalogue with no network. Lands in <Mono>{`.cursor/skills/${folder}/`}</Mono>.
+          Your token names, usage prose and the component catalogue with no network. {offlineSource(projectName)}Lands in <Mono>{`.cursor/skills/${folder}/`}</Mono>.
         </>
       ),
-      code: cliSkillCommand(slug, 'cursor', origin),
+      code: offlineSkillCommand('cursor', slug, projectName, origin),
     },
   ]
 }

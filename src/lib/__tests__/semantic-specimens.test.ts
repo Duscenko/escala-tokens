@@ -17,7 +17,7 @@ const SPECIMEN_ARCH_IDS = [
   'status.critical.surface', 'status.critical.content', 'status.critical.surface-solid', 'status.critical.on-solid',
   'status.critical.border', 'status.critical.border-strong',
   'status.warning.surface', 'status.warning.content', 'status.success.surface', 'status.success.content',
-  'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
+  'border.control', 'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
   'border.focus', 'border.accent',
   'icon.primary', 'icon.secondary', 'icon.disabled', 'icon.accent',
 ]
@@ -84,7 +84,8 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   // takes the CONTROL BOUNDARY. That role is `border.strong` (formerly `border.control`) since phase 1
   // split the neutral strokes by JOB; it was `border.default`, and before that
   // `border.strong`. The resolved value never moved across either rename.
-  expect(tokens.border).toBe(arch['border.strong'])
+  // The field outline is `border.control` again (2026-10-18, its own 3:1 solve).
+  expect(tokens.border).toBe(arch['border.control'])
   // The decorative outline stays on the ladder's lightest rung — see the note
   // in previewTokens.ts for why it did NOT move up to `border.default`.
   expect(tokens.borderDefault).toBe(arch['border.subtle'])

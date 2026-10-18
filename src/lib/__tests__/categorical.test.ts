@@ -60,7 +60,9 @@ describe('the categorical catalogue is complete', () => {
     //  +9 (2026-10-18): hover/pressed of every `status.*.surface-solid` and
     //  `surface.selected-pressed`, so component recipes need no opacity (E15 in
     //  design-plans/shadcn-component-skeleton.md) → 72.
-    expect(roleIds).toHaveLength(72)
+    //  +1 (2026-10-18): `border.control` is its own role again — the field
+    //  outline at WCAG 1.4.11's 3:1, apart from the emphasis `border.strong` → 73.
+    expect(roleIds).toHaveLength(73)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -227,13 +229,18 @@ describe('the categorical catalogue is complete', () => {
   // still SOLVED (`{ui-a:…}` composites each translucent step over the page
   // before measuring WCAG 1.4.11 + APCA Lc 45), it just walks the alpha ladder
   // now: light clears at step 7, dark at 8. `control-hover` is one step past.
-  it('border.strong/control-hover are solved on the alpha ladder', () => {
+  it('border.control/control-hover/strong are solved on the alpha ladder', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    // The field outline: WCAG 1.4.11 3:1 + APCA's non-text floor. Dark was
+    // white-a.8 (7.25:1) while it was held to Lc 45; now the first step at 3:1.
+    expect(label('control')?.light.label).toBe('black-a.7')
+    expect(label('control')?.dark.label).toBe('white-a.6')
+    expect(label('control-hover')?.light.label).toBe('black-a.8')
+    expect(label('control-hover')?.dark.label).toBe('white-a.7')
+    // Emphasis keeps the stricter ui-component solve.
     expect(label('strong')?.light.label).toBe('black-a.7')
     expect(label('strong')?.dark.label).toBe('white-a.8')
-    expect(label('control-hover')?.light.label).toBe('black-a.8')
-    expect(label('control-hover')?.dark.label).toBe('white-a.9')
   })
 
   // The decorative ladder is `black-a`/`white-a` steps 2, 3, 4. Step 1
@@ -615,7 +622,9 @@ describe('the Skill export format', () => {
     expect(foundationsMd).toContain('## Spacing')
     expect(foundationsMd).toContain('## Radius')
     expect(foundationsMd).toContain('## Shadows')
-    expect(foundationsMd).toContain('/Shadow/')
+    // The plugin's own style names (`code.ts`): no project prefix.
+    expect(foundationsMd).toContain('`Shadow/xs`')
+    expect(foundationsMd).not.toMatch(/`[^`/]+\/(Shadow|Type|Gradient)\//)
     expect(foundationsMd).toContain('## Icons')
     expect(foundationsMd).toContain(DEFAULT_ICON_REPO)
     expect(md).toContain('### Icons')

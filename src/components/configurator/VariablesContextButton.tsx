@@ -1,11 +1,10 @@
 import { useDesignStore } from '../../store/useDesignStore'
 import {
   CONTEXT_FOUNDATIONS,
-  buildSystemContext,
   isContextFoundation,
   type ContextScope,
 } from '../../lib/contextRequest'
-import { contextTokenJson } from '../../lib/contextSource'
+import { brandContext } from '../../lib/contextSource'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { AIContextButton } from '../ui/AIContextButton'
 
@@ -35,8 +34,7 @@ export function VariablesContextButton({
         fallbackAppearance: appearance,
         build: (opts) => {
           const store = useDesignStore.getState()
-          const json = contextTokenJson(store, brand, opts.appearance)
-          return buildSystemContext(json, { scope: opts.scope, detail: opts.detail }, store.projectName)
+          return brandContext(store, brand, opts, store.projectName)
         },
       }}
     />

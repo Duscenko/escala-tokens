@@ -4,6 +4,8 @@ import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, 
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
+import { RecipeScope } from '../../configurator/docs/skeleton/scope'
+import { Card as UiCard } from '../../escala-ui/card'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -12,7 +14,7 @@ import {
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
-  typeStyleOf, spaceOf, insetOf } from '../../../lib/previewTokens'
+  typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
@@ -63,6 +65,8 @@ const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
 const Spinner = inspectable('Spinner')
+const Separator = inspectable('Separator')
+const Chart = inspectable('Chart')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
@@ -282,24 +286,28 @@ function px(value: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/**
+ * Every tile IS the catalogue's Card (`escala-ui/card`): fill, stroke, radius
+ * and inset come from the Card recipe, so the board cannot paint a surface the
+ * Card component doesn't. Only layout is set here — the tile's own gap and
+ * direction — plus a translucent panel, which the recipe has no word for.
+ */
 function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: ReactNode; style?: CSSProperties }) {
   return (
-    <div
-      style={{
-        ...cardSurfaceStyle(t),
-        border: `${strokeRoleOf(t, 'control', '1px')} solid ${t.borderDefault || t.border || '#eaecf0'}`,
-        borderRadius: radiusRoleOf(t, 'container', '16px'),
-        // Elevation lives on `ScaledModule`'s OUTER frame — an inner
-        // box-shadow is clipped by the photograph and shrunk by scale().
-        padding: insetOf(t, 'inset-surface', '20px'),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: gap(t, 'gap-control', '8px'),
-        ...style,
-      }}
-    >
-      {children}
-    </div>
+    <RecipeScope t={t}>
+      <UiCard
+        style={{
+          ...(t.panelBackground === 'translucent' ? cardSurfaceStyle(t) : null),
+          // Elevation lives on `ScaledModule`'s OUTER frame — an inner
+          // box-shadow is clipped by the photograph and shrunk by scale().
+          boxShadow: 'none',
+          gap: gap(t, 'gap-control', '8px'),
+          ...style,
+        }}
+      >
+        {children}
+      </UiCard>
+    </RecipeScope>
   )
 }
 
@@ -410,7 +418,8 @@ function ScaledModule({
     // a full-height specimen) made the "natural" height depend on the stretch
     // that was itself derived from it. That fed back on itself: one tile flipped
     // between two heights every frame, for as long as the board was on screen.
-    const surface = el.firstElementChild as HTMLElement | null
+    // The Card itself — `RecipeScope` around it is `display: contents` and has no height.
+    const surface = (el.querySelector(':scope > * > [data-slot="card"]') ?? el.firstElementChild) as HTMLElement | null
     const measure = () => {
       const outer = outerRef.current
       if (outer) {
@@ -469,19 +478,6 @@ function ScaledModule({
         {body}
       </div>
     </div>
-  )
-}
-
-function GradientAvatar({ t, size }: { t: PreviewTokens; size: string }) {
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size, height: size, flexShrink: 0,
-        borderRadius: 999,
-        background: t.avatarGradient || t.coverGradient || t.brandSolid,
-      }}
-    />
   )
 }
 
@@ -551,7 +547,6 @@ export function SystemCollage({
   const muted = (index: number) => tile(index).fgMuted || '#717680'
   const handle = `@${projectName.replace(/\s+/g, '_').toLowerCase()}`
   const gutter = gap(tile(2), 'gap-control', '8px')
-  const wellLg = sizeRoleOf(tile(2), 'control', '40px')
   const wellSm = sizeRoleOf(tile(2), 'compact', '32px')
   const frame = collageFrame(tokensByAppearance.light, {
     social: translate('Continue with Google'),
@@ -628,13 +623,12 @@ export function SystemCollage({
               </InspectableLive>
             ))}
           </div>
+          <Separator t={tile(3)} v={{}} w="100%" />
           <div
             className="grid w-full min-w-0"
             style={{
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: gap(tile(3), 'gap-control', '8px'),
-              paddingTop: gap(tile(3), 'gap-group', '16px'),
-              borderTop: `${strokeRoleOf(tile(3), 'divider', '1px')} solid ${tile(3).borderDefault || tile(3).border}`,
             }}
           >
             <InspectableLive
@@ -673,14 +667,8 @@ export function SystemCollage({
             <Badge t={tile(4)} v={{ Variant: 'destructive' }}>{translate('Critical')}</Badge>
             <Badge t={tile(4)} v={{ Variant: 'outline' }}>{translate('Info')}</Badge>
           </div>
-          <div
-            className="flex flex-wrap items-center"
-            style={{
-              gap: gap(tile(4), 'gap-control', '8px'),
-              paddingTop: gap(tile(4), 'gap-group', '16px'),
-              borderTop: `${strokeRoleOf(tile(4), 'divider', '1px')} solid ${tile(4).borderDefault || tile(4).border}`,
-            }}
-          >
+          <Separator t={tile(4)} v={{}} w="100%" />
+          <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
             <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
             <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
             <InspectableLive c="Chip" t={tile(4)} v={{ Selected: 'True' }} toggle="Selected" />
@@ -700,7 +688,7 @@ export function SystemCollage({
             className="flex flex-col items-center text-center"
             style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: spaceOf(tile(5), 2) }}
           >
-            <GradientAvatar t={tile(5)} size={wellLg} />
+            <Avatar t={tile(5)} v={{ Size: 'lg', Fill: 'Gradient' }} />
             <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
               {translate('Create an account')}
             </p>
@@ -729,9 +717,9 @@ export function SystemCollage({
             {translate('Get Started')}
           </InspectableLive>
           <div className="flex items-center" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
-            <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
+            <span className="flex min-w-0 flex-1"><Separator t={tile(5)} v={{}} w="100%" /></span>
             <span style={{ ...typeStyleOf(tile(5), 'caption'), color: muted(5) }}>{translate('or')}</span>
-            <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
+            <span className="flex min-w-0 flex-1"><Separator t={tile(5)} v={{}} w="100%" /></span>
           </div>
           <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
             <SocialLogin t={tile(5)} v={{ Provider: 'google' }} w="100%" />
@@ -747,18 +735,7 @@ export function SystemCollage({
     profile: (
         <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
           <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
-            {/* Not catalogue components, so no `TokenInspector` leaf: the
-                module's own group reads these paints and names their roles.
-                A borrowed label (Badge, TextLink…) made the badge list that
-                component's union instead of what is on screen. */}
-            <span
-              aria-hidden
-              style={{
-                width: wellSm, height: wellSm, flexShrink: 0,
-                borderRadius: radiusRoleOf(tile(8), 'control', '8px'),
-                background: tile(8).coverGradient || tile(8).brandSolid,
-              }}
-            />
+            <Avatar t={tile(8)} v={{ Fill: 'Gradient' }} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
                 <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
@@ -869,13 +846,8 @@ export function SystemCollage({
           style={{ gap: gap(tile(22), 'gap-group', '16px') }}
         >
           <Stepper t={tile(22)} v={{}} w="100%" />
-          <div
-            className="flex w-full justify-center"
-            style={{
-              paddingTop: gap(tile(22), 'gap-group', '16px'),
-              borderTop: `${strokeRoleOf(tile(22), 'divider', '1px')} solid ${tile(22).borderDefault || tile(22).border}`,
-            }}
-          >
+          <Separator t={tile(22)} v={{}} w="100%" />
+          <div className="flex w-full justify-center">
             <Pagination t={tile(22)} v={{}} />
           </div>
         </ScaledModule>
@@ -939,22 +911,8 @@ export function SystemCollage({
   )
   const indie = community({ title: translate('Indie Hackers'), count: '148', by: 'John', icon: 'users', index: 9 })
   // CHART — how a data widget reads in this system: a metric, a trend badge and
-  // an area chart, all on tokens. The line is the brand solid, the area a wash
-  // of it, gridlines the decorative border, axis labels the muted ink, the
-  // trend a real Success badge. Fixed sample data; the subject is the paint.
+  // the catalogue's Chart (shadcn `chart` over Recharts), all on tokens.
   const chart = tile(10)
-  const CHART_POINTS = [32, 38, 35, 46, 44, 52, 50, 61, 58, 66, 71, 69, 78]
-  const CHART_W = 240
-  const CHART_H = 72
-  const maxV = Math.max(...CHART_POINTS)
-  const minV = Math.min(...CHART_POINTS) - 8
-  const xy = CHART_POINTS.map((v, i) => [
-    (i / (CHART_POINTS.length - 1)) * CHART_W,
-    CHART_H - ((v - minV) / (maxV - minV)) * (CHART_H - 6) - 3,
-  ] as const)
-  const line = xy.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-  const area = `${line} L${CHART_W},${CHART_H} L0,${CHART_H} Z`
-  const gridColor = chart.borderDefault || chart.border
   const chartCard = (
     <ScaledModule key="chart" t={chart} appearance={appearanceAt(10)}>
       <div className="flex items-start justify-between" style={{ gap: gap(chart, 'gap-control', '8px') }}>
@@ -966,16 +924,7 @@ export function SystemCollage({
         </div>
         <Badge t={chart} v={{ Variant: 'secondary' }}>+6%</Badge>
       </div>
-      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} width="100%" height={CHART_H} preserveAspectRatio="none" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
-        {[0.25, 0.55, 0.85].map((f) => (
-          <line key={f} x1={0} x2={CHART_W} y1={CHART_H * f} y2={CHART_H * f} stroke={gridColor} strokeWidth={1} vectorEffect="non-scaling-stroke" />
-        ))}
-        <path d={area} fill={chart.brandSolid} fillOpacity={0.18} />
-        <path d={line} fill="none" stroke={chart.brandSolid} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      </svg>
-      <div className="flex justify-between" style={{ ...typeStyleOf(chart, 'helper'), color: muted(10) }}>
-        {['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'].map((m) => <span key={m}>{translate(m)}</span>)}
-      </div>
+      <Chart t={chart} v={{ Type: 'area' }} w="100%" />
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (

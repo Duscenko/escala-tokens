@@ -43,7 +43,7 @@ const CHART_DATA = [
   { month: 'Oct', desktop: 264, mobile: 140 },
 ]
 
-export function SkeletonChartSpecimen({ t, v }: SpecimenProps) {
+export function SkeletonChartSpecimen({ t, v, w }: SpecimenProps) {
   const [a, b] = chartPalette(t.brandSolid)
   const config: ChartConfig = { desktop: { label: 'Desktop', color: a }, mobile: { label: 'Mobile', color: b } }
   const type = v.Type ?? 'bar'
@@ -54,7 +54,7 @@ export function SkeletonChartSpecimen({ t, v }: SpecimenProps) {
   const legend = <SkChartLegend content={<SkChartLegendContent />} />
   return (
     <RecipeScope t={t}>
-      <SkChartContainer config={config} style={{ width: 380 }}>
+      <SkChartContainer config={config} style={{ width: w ?? 380 }}>
         {type === 'line' ? (
           <LineChart {...common}>{grid}{axis}{tip}{legend}
             <Line dataKey="desktop" type="monotone" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />

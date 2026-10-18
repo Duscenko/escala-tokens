@@ -541,14 +541,34 @@ function categoricalRoleLabel(comment: string): string {
   return comment.match(/^\[ROLE: ([^\]]+)\]/)?.[1] ?? ''
 }
 
+/** Families whose ref resolves to the DARK TWIN in a dark mode
+ *  (`scaleLookup`): `{accent.11}` in a dark column is the primitive
+ *  `accent-dark-11`, `{accent-a.3}` is `accent-a-dark-3`. Labelling them with
+ *  the light name pointed an agent at `--color-accent-11`, a different colour.
+ *  `neutral` is explicit (`neutral` / `neutral-dark`) and `black-a` / `white-a`
+ *  are constants, so those keep their label. */
+const KIND_AWARE_SOLIDS = new Set(['accent', 'error', 'warning', 'success', 'info'])
+const KIND_AWARE_ALPHAS = new Set(['accent-a', 'error-a', 'warning-a', 'success-a', 'info-a', 'neutral-a'])
+
+/** The label a dark-mode cell should carry — the primitive name this file's
+ *  own primitive tables use for the dark twin. */
+export function darkPrimitiveLabel(label: string): string {
+  const m = /^([a-z-]+)\.(\d+)$/.exec(label)
+  if (!m) return label
+  if (KIND_AWARE_SOLIDS.has(m[1])) return `${m[1]}-dark.${m[2]}`
+  if (KIND_AWARE_ALPHAS.has(m[1])) return `${m[1]}-dark.${m[2]}`
+  return label
+}
+
 function modeValue(
   modes: Record<string, ArchTokenValue>,
   mode: string,
   cf: ColorFormat,
+  dark = false,
 ): [string, string] {
   const v = modes[mode]
   if (!v) return ['—', '—']
-  return [`\`${v.label}\``, `\`${formatColor(v.css, cf)}\``]
+  return [`\`${dark ? darkPrimitiveLabel(v.label) : v.label}\``, `\`${formatColor(v.css, cf)}\``]
 }
 
 /** Categorical semantic tables — same projection the Color preview and Semantics
@@ -592,7 +612,7 @@ function categoricalSemanticsMd(store: Store, cf: ColorFormat, modes: string[]):
         cat.tokens.map((tk) => {
           const id = `${cat.key}.${tk.key}`
           const [lRef, lHex] = modeValue(tk.modes, 'light', cf)
-          const [dRef, dHex] = modeValue(tk.modes, 'dark', cf)
+          const [dRef, dHex] = modeValue(tk.modes, 'dark', cf, true)
           return [
             `\`${id}\``,
             categoricalRoleLabel(CATEGORICAL_ROLE_COMMENTS[id] ?? ''),
@@ -612,7 +632,7 @@ function categoricalSemanticsMd(store: Store, cf: ColorFormat, modes: string[]):
         ['Token', 'Role', 'Primitive', 'Hex'],
         cat.tokens.map((tk) => {
           const id = `${cat.key}.${tk.key}`
-          const [ref, hex] = modeValue(tk.modes, mode, cf)
+          const [ref, hex] = modeValue(tk.modes, mode, cf, store.themeKinds?.[mode] === 'dark')
           return [
             `\`${id}\``,
             categoricalRoleLabel(CATEGORICAL_ROLE_COMMENTS[id] ?? ''),

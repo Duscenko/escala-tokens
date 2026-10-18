@@ -8,6 +8,13 @@
 // (`lib/agentInstall`) are untouched.
 export const MCP_VISIBLE = false
 
+// CLI: `@escala/cli` is NOT on npm yet (`npm view @escala/cli` → 404; see
+// design-plans/pricing-and-packaging.md, item 11). While this is false no
+// surface may print an `npx @escala/cli …` command — every one of them would
+// fail. The offline package is installed by unzipping the Export instead
+// (`offlineSkillCommand`). Flip this the day the package is published.
+export const CLI_PUBLISHED = false
+
 // System Styles (Core, Neo-Brutalism, Cupertino/Glass, Material, Retro,
 // Nature): curated looks a brand could start from. Hidden: new visitors were
 // landing on a try-on of one, adding it and continuing, instead of making

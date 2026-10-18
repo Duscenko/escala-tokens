@@ -397,7 +397,7 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                       const onRole = row.role != null && row.role === role?.id
                       const onComp = focusComponent === row.component
                       return (
-                        <tr key={`${row.component}-${row.property}`} className={`${ROW} ${onRole ? 'bg-accent-ui/[0.08]' : onComp ? 'bg-fg/[0.04]' : ''}`}>
+                        <tr key={`${row.component}-${row.property}-${row.role}`} className={`${ROW} ${onRole ? 'bg-accent-ui/[0.08]' : onComp ? 'bg-fg/[0.04]' : ''}`}>
                           <td className={TD}>
                             {onOpenComponent ? (
                               <button

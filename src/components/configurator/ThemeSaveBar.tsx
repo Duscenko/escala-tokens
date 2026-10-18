@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
 import { undoEdit, useEditHistory } from '../../lib/editHistory'
@@ -25,33 +26,72 @@ function ShuffleGlyph() {
   )
 }
 
+/** Pip positions per face, on the 16-unit glyph grid. */
+const L = 5.5, C = 8, R = 10.5
+const DIE_FACES: [number, number][][] = [
+  [[C, C]],
+  [[L, L], [R, R]],
+  [[L, L], [C, C], [R, R]],
+  [[L, L], [R, L], [L, R], [R, R]],
+  [[L, L], [R, L], [C, C], [L, R], [R, R]],
+  [[L, L], [R, L], [L, C], [R, C], [L, R], [R, R]],
+]
+
 /** A die — "a whole new theme", distinct from Shuffle (colours only). */
-function DiceGlyph() {
+function DiceGlyph({ face }: { face: number }) {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
       <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
-      <circle cx="5.75" cy="5.75" r=".9" fill="currentColor" stroke="none" />
-      <circle cx="10.25" cy="5.75" r=".9" fill="currentColor" stroke="none" />
-      <circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none" />
-      <circle cx="5.75" cy="10.25" r=".9" fill="currentColor" stroke="none" />
-      <circle cx="10.25" cy="10.25" r=".9" fill="currentColor" stroke="none" />
+      {DIE_FACES[face - 1].map(([cx, cy]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r=".9" fill="currentColor" stroke="none" />
+      ))}
     </svg>
   )
 }
 
 /** The save bar's Random: a whole new theme. Plain like Undo beside it and
  *  drawn as a die, so it never reads as the colour Shuffle (gradient border,
- *  crossing arrows) in the Color section above. */
+ *  crossing arrows) in the Color section above. Hover tips the die; a click
+ *  ROLLS it — a hop and a turn, landing on a new face mid-air — so the action
+ *  reads as chance before the board repaints. */
 export function RandomWholeThemeButton({ onClick, label }: { onClick: () => void; label: string }) {
+  const reduce = useReducedMotion()
+  const [face, setFace] = useState(5)
+  const [rolls, setRolls] = useState(0)
+  const swap = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(swap.current), [])
+
+  const roll = () => {
+    onClick()
+    const next = (current: number) => {
+      const n = 1 + Math.floor(Math.random() * 5)
+      return n >= current ? n + 1 : n
+    }
+    window.clearTimeout(swap.current)
+    if (reduce) { setFace(next); return }
+    setRolls((r) => r + 1)
+    // Change faces at the top of the hop, while the die is mid-turn.
+    swap.current = window.setTimeout(() => setFace(next), 170)
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={roll}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
-      <DiceGlyph />
+      <span className="flex transition-transform duration-200 ease-[var(--ease-out-quint)] motion-safe:group-hover:-translate-y-px motion-safe:group-hover:-rotate-12">
+        <motion.span
+          className="flex"
+          initial={false}
+          animate={reduce ? undefined : { rotate: rolls * 360, y: rolls ? [0, -5, 0] : 0, scale: rolls ? [1, 0.88, 1] : 1 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], y: { duration: 0.42, times: [0, 0.4, 1] }, scale: { duration: 0.42, times: [0, 0.4, 1] } }}
+        >
+          <DiceGlyph face={face} />
+        </motion.span>
+      </span>
     </button>
   )
 }

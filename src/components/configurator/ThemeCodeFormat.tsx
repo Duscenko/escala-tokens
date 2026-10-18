@@ -12,8 +12,8 @@ import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { useFreeTier } from '../../lib/access'
 import { shippedBundle } from '../../lib/freeExport'
-import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, buildSystemContext, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
-import { contextTokenJson } from '../../lib/contextSource'
+import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
+import { brandContext } from '../../lib/contextSource'
 import { ContextFilters, useContextOptions } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { showToast } from '../ui/Toast'
@@ -431,8 +431,7 @@ export default function ThemeCodeFormat({
   const ctxAppearance = ctx.appearance
   const agentMd = useMemo(() => {
     if (!effectiveScope) return ''
-    const json = contextTokenJson(store, effectiveScope, ctxAppearance)
-    return buildSystemContext(json, { scope: ctx.scope, detail: ctx.detail }, store.projectName)
+    return brandContext(store, effectiveScope, { scope: ctx.scope, detail: ctx.detail, appearance: ctxAppearance }, store.projectName)
   }, [store, effectiveScope, ctxAppearance, ctx.scope, ctx.detail])
   const content = format === 'css' ? artifacts.css : format === 'shadcn' ? artifacts.shadcn : agentMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
@@ -530,10 +529,8 @@ export default function ThemeCodeFormat({
                     value: ctx.appearance,
                     locked: null,
                     onPick: (appearance) => { setCtx({ appearance }); setExpanded(false) },
-                    buildFor: (appearance) => buildSystemContext(
-                      contextTokenJson(store, effectiveScope, appearance),
-                      { scope: ctx.scope, detail: ctx.detail },
-                      store.projectName,
+                    buildFor: (appearance) => brandContext(
+                      store, effectiveScope, { scope: ctx.scope, detail: ctx.detail, appearance }, store.projectName,
                     ),
                   } : undefined}
                 />

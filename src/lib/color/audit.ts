@@ -197,10 +197,11 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // {white-a.8} = 7.29/Lc50 dark for the default system. The ladder is not
     // accent-tinted, so this holds across every seed rather than drifting.
     { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component' },
-    // Hover/emphasis, one step past the boundary — audited as `ui-component`
-    // too, since anything heavier than a passing boundary passes by
-    // construction.
-    { fg: 'border.control-hover', bg: 'surface.page', intent: 'ui-component' },
+    // The FIELD outline: WCAG 1.4.11 3:1 + APCA's non-text floor
+    // (`control-boundary`) — black-a.7 = 3.94:1 light, white-a.6 = 3.81:1 dark.
+    { fg: 'border.control',       bg: 'surface.page', intent: 'control-boundary' },
+    // Its hover, one step past whatever it resolved to.
+    { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-boundary' },
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
     // signalling selected/focused/active must use border.focus, which is

@@ -3,6 +3,16 @@ import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 
+/** Store v99: an override stored on `border.strong` was a choice about the
+ *  FIELD outline (that role was the control boundary until `border.control`
+ *  came back), so it moves there. An existing `border.control` override wins. */
+export function moveBorderStrongToControl(state: any): void {
+  const cat = state?.architectureOverrides?.categorical
+  if (!cat || typeof cat !== 'object' || !cat['border.strong']) return
+  if (!cat['border.control']) cat['border.control'] = cat['border.strong']
+  delete cat['border.strong']
+}
+
 /** Catalogue keys added by store v97 / v98 (shadcn phase 5). A migration adds
  *  them only to a selection that already held every earlier component. */
 const COMPONENTS_V97 = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
@@ -1968,7 +1978,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 98,
+      version: 99,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3611,6 +3621,18 @@ export const useDesignStore = create<DesignStore>()(
           grow(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) grow(sys?.snapshot)
+          }
+        }
+        if (version < 99) {
+          // v98→v99: `border.control` is a role again — the FIELD outline,
+          // solved to WCAG 1.4.11 3:1 — and `border.strong` went back to
+          // emphasis. Every override stored on `border.strong` until now was a
+          // choice about the field outline (it WAS that role, and every System
+          // Style used it that way), so it moves to `border.control`. A system
+          // that already has a `border.control` override keeps it.
+          moveBorderStrongToControl(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) moveBorderStrongToControl(sys?.snapshot)
           }
         }
         return persisted
