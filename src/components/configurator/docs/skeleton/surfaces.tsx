@@ -12,6 +12,8 @@ import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescri
 import { InfoTooltip as SkInfoTooltip, Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf } from '../../../../lib/previewTokens'
+import { type AlertStatus, Alert as SkAlert, AlertBanner as SkAlertBanner, AlertDescription as SkAlertDescription, AlertTitle as SkAlertTitle } from '../../../escala-ui/alert'
+import { Toast as SkToast } from '../../../escala-ui/toast'
 import { RecipeScope } from './scope'
 
 export function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
@@ -134,6 +136,70 @@ export function SkeletonScrollAreaSpecimen({ t }: SpecimenProps) {
       <SkScrollArea style={{ width: 240, height: 150 }}>
         {rows.map((r) => <SkScrollAreaRow key={r}>{r}</SkScrollAreaRow>)}
       </SkScrollArea>
+    </RecipeScope>
+  )
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────
+
+const STATUS_CONCEPT = { Success: 'success', Warning: 'warning', Error: 'error', Info: 'info' } as const
+
+function statusGlyph(status: string) {
+  return <PreviewIcon concept={STATUS_CONCEPT[status as keyof typeof STATUS_CONCEPT] ?? 'info'} size={iconOf(15)} />
+}
+
+export function SkeletonInlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
+  const status: AlertStatus = (v.Status ?? 'Info') as AlertStatus
+  return (
+    <RecipeScope t={t}>
+      <SkAlert status={status} icon={statusGlyph(status)} style={{ width: w ?? 320 }}>
+        {children ?? (
+          <>
+            <SkAlertTitle>{status === 'Error' ? 'Export failed' : status === 'Warning' ? 'Contrast warning' : status === 'Success' ? 'System saved' : 'Heads up'}</SkAlertTitle>
+            <SkAlertDescription>{status === 'Warning' ? 'Accent 400 on white is below AA for body text.' : 'Semantic tokens re-derive when the accent changes.'}</SkAlertDescription>
+          </>
+        )}
+      </SkAlert>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonAlertBannerSpecimen({ t, v }: SpecimenProps) {
+  const status: AlertStatus = (v.Status ?? 'Info') as AlertStatus
+  const message = status === 'Error' ? 'Sync failed — tokens were not published.'
+    : status === 'Warning' ? 'Your trial ends in 3 days.'
+    : status === 'Success' ? 'All tokens are synced to Figma.'
+    : 'Scheduled maintenance on Sunday 02:00 UTC.'
+  return (
+    <RecipeScope t={t}>
+      <SkAlertBanner
+        status={status}
+        icon={statusGlyph(status)}
+        message={message}
+        action={status === 'Warning' ? 'Upgrade' : 'View'}
+        onClose={() => undefined}
+        closeIcon={<PreviewIcon concept="close" size={iconOf(12)} />}
+        style={{ width: 380 }}
+      />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
+  const status = (v.Status ?? 'Success') as AlertStatus
+  const message = status === 'Error' ? 'Something went wrong.'
+    : status === 'Warning' ? 'Storage almost full.'
+    : status === 'Info' ? 'A new version is available.'
+    : 'Changes saved.'
+  return (
+    <RecipeScope t={t}>
+      <SkToast
+        status={status}
+        message={children ?? message}
+        action="Undo"
+        onClose={() => undefined}
+        style={{ width: w ?? 280, maxWidth: '100%', boxShadow: elev === false ? 'none' : undefined }}
+      />
     </RecipeScope>
   )
 }

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { COMPONENTS, type ComponentDef } from '../componentCatalogue'
 import { agentContextMarkdown, type AgentFoundationTokens } from '../agentContext'
 import { COMPONENT_RECIPES } from '../componentRecipes'
-import { COMPONENT_COLOR_FIELDS } from '../componentColorFields.generated'
 
 const otp = COMPONENTS.find((c) => c.key === 'InputOTP')!
 
@@ -74,13 +73,6 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('`color.content.on-action`')
     expect(md).toContain('`--size-control`')
     expect(md).not.toContain('### Color (scoped to this component)')
-  })
-
-  it('scopes the Color section to the specimen\'s own fields when it has no recipe yet', () => {
-    const legacy = COMPONENTS.find((c) => !COMPONENT_RECIPES[c.key] && COMPONENT_COLOR_FIELDS[c.key]?.length)
-    if (!legacy) return // every component is on the skeleton: nothing left to scope
-    const md = agentContextMarkdown(legacy, '<X />', TOKENS)
-    expect(md).toContain('### Color (scoped to this component)')
   })
 
   it('falls back to the full palette when a component has no scoped color map', () => {

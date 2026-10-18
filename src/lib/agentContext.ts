@@ -8,7 +8,6 @@ import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
-import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import { COMPONENT_RECIPES, cssVarOf, recipeRows } from './componentRecipes'
 import {
   LAYOUT_ROLES,
@@ -128,24 +127,13 @@ function val(map: Record<string, string> | undefined, key: string, fallback = '�
   return map?.[key] || fallback
 }
 
-/** Color, live and resolved. This was the one foundation missing from a
- *  component's copied context: every other table here (radius, spacing,
- *  size, stroke, type, shadow) resolved to a real value, but color only
- *  ever appeared as a CSS-var / Figma-var NAME — useless to an agent
- *  (Stitch, a fresh Figma session) with no live access to this system to
- *  resolve that name against.
- *
- *  Scoped when possible: `COMPONENT_COLOR_FIELDS` (generated from
- *  `docs/specimens.tsx`'s own AST — see `scripts/gen-component-color-fields.ts`)
- *  names exactly which PreviewTokens fields THIS component's specimen reads,
- *  so the table lists only those — a handful of rows, not the whole system —
- *  each resolved straight from `t` (the same `PreviewTokens` the specimen
- *  itself renders from, so this can never disagree with what's on screen).
- *  A component absent from that map (no specimen yet, or a purely
- *  structural one with nothing to scope) falls back to the full palette via
- *  `buildSectionExport('color', 'css')` — the same renderer Export and the
- *  foundation pages' "Use it" pane use, truncated the same way
- *  (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables below it. */
+/** Color, live and resolved. A component on the shadcn skeleton lists its tokens
+ *  BY PART from its recipe (the same table the web stylesheet and the Figma
+ *  component read), each with its live value; anything without a recipe falls
+ *  back to the full palette via `buildSectionExport('color', 'css')` — the same
+ *  renderer Export and the foundation pages' "Use it" pane use, truncated the
+ *  same way (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables
+ *  below it. */
 function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
   const recipe = COMPONENT_RECIPES[def.key]
   if (recipe) {
@@ -167,24 +155,6 @@ function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
       const live = isColor ? `\`${t.archTokens?.[id] ?? '—'}\`` : '—'
       lines.push(`| ${row.slot} | ${row.prop} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
     }
-    lines.push('')
-    return lines
-  }
-  const scoped = COMPONENT_COLOR_FIELDS[def.key]
-  if (scoped?.length) {
-    const lines = [
-      '### Color (scoped to this component)',
-      '',
-      `Resolved from **this** system — only the roles ${def.label}'s own live preview actually binds (derived from its specimen, not hand-listed). Bind by semantic name; never hardcode a hex when a token exists. Full palette: Export → Code.`,
-      '',
-      '| Field | Role | CSS | Live |',
-      '|---|---|---|---|',
-    ]
-    scoped.forEach((field) => {
-      const info = COLOR_FIELD_INFO[field]
-      const value = t[field] ?? '—'
-      lines.push(`| \`${field}\` | ${mdCell(info.label)} | ${info.cssVar ? `\`${info.cssVar}\`` : '—'} | \`${value}\` |`)
-    })
     lines.push('')
     return lines
   }

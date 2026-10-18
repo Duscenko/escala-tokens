@@ -37,6 +37,10 @@ import {
   CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP,
 } from './recipes/forms'
 import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces'
+import {
+  TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR,
+} from './recipes/navigation'
+import { INLINE_ALERT, ALERT_BANNER, TOAST } from './recipes/feedback'
 import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators'
 export {
   RECIPE_PROPS,
@@ -88,6 +92,20 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Tooltip: TOOLTIP,
   InfoTooltip: INFO_TOOLTIP,
   ScrollArea: SCROLL_AREA,
+  InlineAlert: INLINE_ALERT,
+  AlertBanner: ALERT_BANNER,
+  Toast: TOAST,
+  Tabs: TABS,
+  TabMenu: TAB_MENU,
+  SegmentedControl: SEGMENTED_CONTROL,
+  Breadcrumb: BREADCRUMB,
+  Pagination: PAGINATION,
+  Stepper: STEPPER,
+  DropdownMenu: DROPDOWN_MENU,
+  ContextMenu: CONTEXT_MENU,
+  Command: COMMAND,
+  Navbar: NAVBAR,
+  Sidebar: SIDEBAR,
   Card: CARD,
   Modal: MODAL,
 }

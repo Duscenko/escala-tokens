@@ -6,11 +6,8 @@
 // forgetting the other — the same risk every hand-mirrored table in this
 // codebase carries and accepts).
 //
-// Two consumers read this list:
-// - `scripts/gen-component-color-fields.ts` — which of these fields a given
-//   component's specimen (in `docs/specimens.tsx`) actually reads, statically.
-// - `lib/agentContext.ts` — the label/CSS-var shown for each field in a
-//   component's scoped "Color" section.
+// Consumer: `lib/previewTokens.ts` paints these fields. (Components no longer
+// read them: each is described by a recipe naming roles — `lib/componentRecipes`.)
 //
 // `errorColor`/`warningColor`/`infoColor`/`successColor` have `role: null`:
 // they resolve from a STATE FAMILY's tone 9 (`pal?.error?.[9] || …`), not a

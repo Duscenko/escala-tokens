@@ -43,11 +43,9 @@ const ROLE_BY_KEY: Record<string, (typeof ALL_ROLES)[number]> =
  * run of `put()` calls. FORWARD, `resolvePreviewTokens` uses it to paint the
  * fields (only when the projection defines the slot, so a projection that
  * omits one keeps its flat-resolved value instead of blanking the atom out).
- * BACKWARD, `tokenInspector.ts` inverts it to answer "which roles does this
- * component drink from" — `COMPONENT_COLOR_FIELDS` is generated from the
- * specimens' own call graph and names FIELDS, and this is the only thing that
- * turns those into role ids. Two tables would let the inspector name a role
- * the preview doesn't actually paint.
+ * BACKWARD, `tokenInspector.ts` inverts it to turn a measured paint back into
+ * its role id. Two tables would let the inspector name a role the preview
+ * doesn't actually paint.
  */
 export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   surface: 'surface.page',

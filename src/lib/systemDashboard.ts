@@ -18,7 +18,6 @@ import { buildThemeArchitecture } from './themeArchitecture'
 import { appearanceFromModeKey, type ThemeAppearance } from './themeModes'
 import { auditResolvedRoles, CURATED_PAIRINGS, type ResolvedFinding } from './color/audit'
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
-import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import { COMPONENT_RECIPES, recipeRows } from './componentRecipes'
 import { COLOR_FIELD_INFO } from './previewColorFields'
 import { CATEGORICAL_FIELD_ROLE } from './previewTokens'
@@ -152,14 +151,6 @@ export function tokenMapping(keys: readonly string[]): TokenMappingRow[] {
         })
       }
       continue
-    }
-    for (const field of COMPONENT_COLOR_FIELDS[key] ?? []) {
-      rows.push({
-        component: key,
-        componentLabel: def.label,
-        property: COLOR_FIELD_INFO[field]?.label ?? field,
-        role: CATEGORICAL_FIELD_ROLE[field] ?? null,
-      })
     }
   }
   return rows

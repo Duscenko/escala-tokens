@@ -908,10 +908,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Status", values: ["Success", "Error", "Warning", "Info"] }],
         figmaSets: ["Toast"],
         props: [
-          { name: "status", type: '"success" | "error" | "warning" | "info"', description: "Semantic status role" },
-          { name: "message", type: "string", description: "Short message" },
-          { name: "action", type: "{ label: string; onClick: () => void }", description: "Inline CTA" },
-          { name: "duration", type: "number", description: "Auto-dismiss delay in ms (default 4000)" }
+          { name: "status", type: '"Success" | "Error" | "Warning" | "Info"', description: 'Message tone (role="alert" for Error).' },
+          { name: "message", type: "ReactNode", description: "Short message." },
+          { name: "action / onAction", type: "ReactNode / () => void", description: 'Optional action ("Undo").' },
+          { name: "onClose", type: "() => void", description: "Shows the close control." }
         ],
         accessibility: 'role="status" for default, role="alert" for errors. Live region announced.'
       },
@@ -924,10 +924,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Status", values: ["Info", "Success", "Warning", "Error"] }],
         figmaSets: ["Alert Banner"],
         props: [
-          { name: "status", type: '"info" | "success" | "warning" | "error"', description: "Semantic status role" },
-          { name: "message", type: "string", description: "Banner text" },
-          { name: "action", type: "{ label: string; onClick: () => void }", description: "Inline CTA" },
-          { name: "dismissible", type: "boolean", description: "Renders the close button" }
+          { name: "status", type: '"Info" | "Success" | "Warning" | "Error"', description: "Semantic status role." },
+          { name: "message", type: "ReactNode", description: "Banner text." },
+          { name: "action / onAction", type: "ReactNode / () => void", description: 'Call to action ("View", "Upgrade").' },
+          { name: "onClose", type: "() => void", description: "Shows the close control." }
         ],
         accessibility: 'role="status" (or "alert" for errors). Dismiss button labelled "Dismiss".'
       },
@@ -940,9 +940,9 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Status", values: ["Info", "Success", "Warning", "Error"] }],
         figmaSets: ["Inline Alert"],
         props: [
-          { name: "status", type: '"info" | "success" | "warning" | "error"', description: "Semantic status role" },
-          { name: "title", type: "string", description: "Bold first line" },
-          { name: "children", type: "ReactNode", description: "Supporting body copy" }
+          { name: "status", type: '"Info" | "Success" | "Warning" | "Error"', description: "Semantic status role \u2014 picks the surface, edge and glyph colour." },
+          { name: "icon", type: "ReactNode", description: "The status glyph." },
+          { name: "AlertTitle / AlertDescription", type: "component", description: "Bold first line and supporting copy." }
         ],
         accessibility: 'role="status"; errors use role="alert". Icon is decorative (aria-hidden).'
       },
@@ -956,8 +956,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Tabs"],
         props: [
-          { name: "items", type: "TabItem[]", description: "Array of { label, value, content } objects" },
-          { name: "defaultValue", type: "string", description: "Initially active tab" }
+          { name: "Tabs value / defaultValue", type: "string", description: "The open tab." },
+          { name: "TabsList / TabsTrigger", type: "component", description: "The underline strip and its tabs (arrow keys move between them)." },
+          { name: "TabsContent value", type: "string", description: "The panel for a tab." }
         ],
         accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.'
       },
@@ -970,8 +971,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Tab Menu"],
         props: [
-          { name: "items", type: "{ label: string; value: string }[]", description: "Menu entries" },
-          { name: "value", type: "string", description: "Active entry" }
+          { name: "items", type: "string[]", description: "Tab labels, in order." },
+          { name: "value / defaultValue", type: "string", description: "The selected tab." },
+          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection." },
+          { name: "fill", type: "boolean", description: "Items share the width equally." }
         ],
         accessibility: 'Same ARIA tabs pattern as Tabs \u2014 role="tablist" with arrow-key navigation.'
       },
@@ -984,9 +987,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["MD", "SM"] }],
         figmaSets: ["Segmented Control"],
         props: [
-          { name: "options", type: "{ label: string; value: string }[]", description: "Segments in order" },
-          { name: "value", type: "string", description: "Active segment" },
-          { name: "size", type: '"sm" | "md"', description: "Segment height \u2014 sm for toolbars" }
+          { name: "options", type: "string[]", description: "Segment labels." },
+          { name: "value / defaultValue", type: "string", description: "The selected segment." },
+          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection." },
+          { name: "size", type: '"md" | "sm"', description: "Segment padding." }
         ],
         accessibility: 'role="radiogroup" semantics; segments toggle with arrow keys.'
       },
@@ -999,8 +1003,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Breadcrumb"],
         props: [
-          { name: "items", type: "{ label: string; href?: string }[]", description: "Path segments" },
-          { name: "separator", type: "ReactNode", description: "Custom separator element" }
+          { name: "Breadcrumb / BreadcrumbList", type: "component", description: "Landmark and list." },
+          { name: "BreadcrumbLink asChild", type: "boolean", description: "Use your router link." },
+          { name: "BreadcrumbPage", type: "component", description: "The current page (aria-current)." },
+          { name: "BreadcrumbSeparator", type: "ReactNode", description: 'Divider between items (default "/").' }
         ],
         accessibility: 'nav aria-label="Breadcrumb". Current page has aria-current="page".'
       },
@@ -1013,9 +1019,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Pagination"],
         props: [
-          { name: "page", type: "number", description: "Current page (1-based)" },
-          { name: "pageCount", type: "number", description: "Total pages" },
-          { name: "onPageChange", type: "(page: number) => void", description: "Navigation callback" }
+          { name: "pages", type: '(number | "\u2026")[]', description: "Page numbers to show." },
+          { name: "page", type: "number", description: "The current page." },
+          { name: "onPageChange", type: "(page: number) => void", description: "Fires on selection." },
+          { name: "prevIcon / nextIcon", type: "ReactNode", description: "Arrow glyphs." }
         ],
         accessibility: 'nav aria-label="Pagination". Current page uses aria-current="page".'
       },
@@ -1028,8 +1035,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Step Indicator"],
         props: [
-          { name: "steps", type: "{ label: string }[]", description: "Steps in order" },
-          { name: "current", type: "number", description: "Active step index (0-based)" }
+          { name: "steps", type: "string[]", description: "Step labels." },
+          { name: "current", type: "number", description: "1-based current step; earlier steps are done." },
+          { name: "doneIcon", type: "ReactNode", description: "Glyph for a finished step." },
+          { name: "width", type: "number | string", description: "Stretch the stepper to this width." }
         ],
         accessibility: 'Ordered list semantics. Current step marked with aria-current="step".'
       },
@@ -1042,9 +1051,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Dropdown Menu"],
         props: [
-          { name: "trigger", type: "ReactNode", description: "Opening element" },
-          { name: "items", type: "MenuItem[]", description: "Actions, separators, groups" },
-          { name: "align", type: '"start" | "end"', description: "Edge the menu aligns to" }
+          { name: "DropdownMenu", type: "component", description: "Radix root: open, onOpenChange." },
+          { name: "DropdownMenuTrigger asChild", type: "boolean", description: "Use your own button as the anchor." },
+          { name: "DropdownMenuItem variant", type: '"danger"', description: "Destructive row." },
+          { name: "DropdownMenuContent / Separator / Shortcut", type: "component", description: "The panel (portals into the theme scope), a rule and a key hint." }
         ],
         accessibility: 'ARIA menu pattern: role="menu"/"menuitem", arrow keys + typeahead, Esc closes.'
       },
@@ -1057,8 +1067,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Context Menu"],
         props: [
-          { name: "items", type: "MenuItem[]", description: "Actions with optional shortcut hints" },
-          { name: "children", type: "ReactNode", description: "Right-clickable target area" }
+          { name: "ContextMenu", type: "component", description: "Radix root." },
+          { name: "ContextMenuTrigger", type: "component", description: "The area that opens it on right-click." },
+          { name: "ContextMenuContent / Item / Separator / Shortcut", type: "component", description: "The panel and its rows." }
         ],
         accessibility: "Same ARIA menu pattern; also opened via the keyboard Menu key / Shift+F10."
       },
@@ -1071,9 +1082,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Command"],
         props: [
-          { name: "items", type: "CommandItem[]", description: "Searchable actions with groups + icons" },
-          { name: "open", type: "boolean", description: "Controls visibility" },
-          { name: "onSelect", type: "(item: CommandItem) => void", description: "Run the chosen action" }
+          { name: "Command", type: "component", description: "Container; holds the search text." },
+          { name: "CommandInput icon / shortcut", type: "ReactNode", description: "Search field with a glyph and a key hint." },
+          { name: "CommandGroup heading", type: "ReactNode", description: "Caption over a set of items." },
+          { name: "CommandItem onSelect", type: "() => void", description: "A result row; hidden when it does not match the search." }
         ],
         accessibility: "Combobox+listbox pattern inside a dialog. Results announced via aria-live."
       },
@@ -1086,9 +1098,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Navbar"],
         props: [
-          { name: "items", type: "{ label: string; href: string }[]", description: "Primary destinations" },
-          { name: "logo", type: "ReactNode", description: "Brand slot" },
-          { name: "actions", type: "ReactNode", description: "Right-side cluster (search, avatar\u2026)" }
+          { name: "links", type: "{ label; href?; current? }[]", description: "Primary links; the current one is marked." },
+          { name: "logo", type: "ReactNode", description: "Brand mark." },
+          { name: "trailing", type: "ReactNode", description: "Right-hand slot (an avatar)." }
         ],
         accessibility: '<header> + <nav aria-label="Main">. Current page uses aria-current="page".'
       },
@@ -1101,9 +1113,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Sidebar"],
         props: [
-          { name: "items", type: "NavItem[]", description: "Groups + entries with icons" },
-          { name: "value", type: "string", description: "Active entry" },
-          { name: "collapsible", type: "boolean", description: "Allows rail / expanded modes" }
+          { name: "items", type: "{ label; icon? }[]", description: "Navigation rows." },
+          { name: "value / defaultValue", type: "string", description: "The current row." },
+          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection (arrow keys move between rows)." }
         ],
         accessibility: '<nav aria-label="Sidebar">; active item uses aria-current. Fully arrow-key navigable.'
       }
@@ -5363,22 +5375,22 @@ function checkPaint(checked, state2) {
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  let box;
-  if (disabled) box = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
+  let box2;
+  if (disabled) box2 = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
   else if (on) {
     const fill = c(hover ? "action.primary.hover" : "action.primary.default");
-    box = { fill, stroke: fill, text: c("content.on-action"), ring };
-  } else box = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
-  return { box, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
+    box2 = { fill, stroke: fill, text: c("content.on-action"), ring };
+  } else box2 = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
+  return { box: box2, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
 }
 function radioPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const box = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
+  const box2 = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
   return {
-    box,
+    box: box2,
     indicator: { fill: on ? c(disabled ? "content.disabled" : "action.primary.default") : NONE },
     label: { text: c(disabled ? "content.disabled" : "content.primary") }
   };
@@ -6021,6 +6033,322 @@ var init_surfaces = __esm({
   }
 });
 
+// src/lib/recipes/navigation.ts
+function menu(key2) {
+  const slots = {
+    root: {
+      fill: c("surface.layer-2"),
+      stroke: c("border.subtle"),
+      strokeWidth: "stroke.control",
+      radius: "radius.overlay",
+      shadow: "shadow.lg",
+      paddingX: "spacing.1",
+      paddingY: "spacing.1"
+    },
+    item: {
+      text: c("content.primary"),
+      font: "type.body-sm",
+      radius: "radius.control",
+      paddingX: "spacing.2_5",
+      paddingY: "spacing.1_5",
+      gap: "spacing.2_5"
+    },
+    "item[data-highlighted]": { fill: c("action.ghost.hover") },
+    "item:hover": { fill: c("action.ghost.hover") },
+    'item[data-variant="danger"]': { text: c("status.critical.content") },
+    "item[data-disabled]": { text: c("content.disabled") },
+    separator: { fill: c("border.subtle"), height: "stroke.divider" },
+    shortcut: { text: c("content.subtle"), font: "type.caption" }
+  };
+  return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
+}
+var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR;
+var init_navigation = __esm({
+  "src/lib/recipes/navigation.ts"() {
+    init_helpers();
+    TABS = {
+      key: "Tabs",
+      slots: ["root", "trigger"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { stroke: c("border.subtle"), strokeBottomWidth: "stroke.control", gap: "spacing.gap-tight" },
+          trigger: {
+            text: c("content.secondary"),
+            font: "type.button",
+            paddingX: "spacing.3",
+            paddingY: "spacing.2",
+            stroke: NONE,
+            strokeBottomWidth: "stroke.md"
+          },
+          "trigger:hover": { text: c("content.primary") },
+          'trigger[data-state="active"]': { text: c("content.accent"), stroke: c("action.primary.default") },
+          'trigger[data-state="active"]:hover': { text: c("content.accent") }
+        }))
+      ]
+    };
+    TAB_MENU = {
+      key: "TabMenu",
+      slots: ["root", "item", "pill"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          pill: { fill: c("surface.selected"), radius: "radius.pill" },
+          item: {
+            text: c("content.secondary"),
+            font: "type.button",
+            radius: "radius.pill",
+            paddingX: "spacing.4",
+            paddingY: "spacing.1_5"
+          },
+          "item:hover": { text: c("content.primary") },
+          'item[aria-selected="true"]': { text: c("content.accent") },
+          'item[aria-selected="true"]:hover': { text: c("content.accent") }
+        }))
+      ]
+    };
+    SEGMENT_SIZE = {
+      MD: { padX: "spacing.4", padY: "spacing.1_5" },
+      SM: { padX: "spacing.2_5", padY: "spacing.1" }
+    };
+    SEGMENTED_CONTROL = {
+      key: "SegmentedControl",
+      slots: ["root", "item", "pill"],
+      defaults: { Size: "MD" },
+      parts: [
+        // The track is a container on a container: `surface.layer-2`, as the
+        // elevation contract says (layer-1 is the card it sits on).
+        part({}, () => ({
+          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
+          pill: { fill: c("surface.input"), radius: "radius.action", shadow: "shadow.xs" },
+          item: { text: c("content.secondary"), font: "type.button", radius: "radius.action" },
+          "item:hover": { text: c("content.primary") },
+          'item[aria-checked="true"]': { text: c("content.primary") }
+        })),
+        part({ Size: ["MD", "SM"] }, (size) => ({
+          item: { paddingX: SEGMENT_SIZE[size].padX, paddingY: SEGMENT_SIZE[size].padY }
+        }))
+      ]
+    };
+    BREADCRUMB = {
+      key: "Breadcrumb",
+      slots: ["root", "link", "separator", "page"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control", font: "type.body-md" },
+          link: { text: c("content.secondary") },
+          "link:hover": { text: c("content.primary") },
+          separator: { text: c("content.subtle") },
+          page: { text: c("content.primary"), font: "type.label" }
+        }))
+      ]
+    };
+    PAGINATION = {
+      key: "Pagination",
+      slots: ["root", "cell", "pill"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.pill",
+            paddingX: "spacing.1",
+            paddingY: "spacing.1",
+            gap: "spacing.0_5"
+          },
+          pill: { fill: c("action.primary.default"), radius: "radius.action" },
+          cell: {
+            text: c("content.secondary"),
+            font: "type.body-sm",
+            radius: "radius.action",
+            height: "size.compact",
+            minHeight: "size.compact",
+            paddingX: "spacing.1_5"
+          },
+          "cell:hover": { text: c("content.primary") },
+          'cell[aria-current="page"]': { text: c("content.on-action") },
+          'cell[aria-current="page"]:hover': { text: c("content.on-action") },
+          "cell:disabled": { text: c("content.subtle") }
+        }))
+      ]
+    };
+    STEPPER = {
+      key: "Stepper",
+      slots: ["root", "step", "node", "label", "connector"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          step: { gap: "spacing.1_5" },
+          node: { width: "size.xs", height: "size.xs", radius: "radius.pill", font: "type.button", fill: NONE, text: c("content.secondary") },
+          'node[data-state="done"]': { fill: c("action.primary.default"), text: c("content.on-action") },
+          'node[data-state="current"]': { fill: c("action.primary.default"), text: c("content.on-action") },
+          label: { text: c("content.secondary"), font: "type.helper" },
+          'label[data-state="done"]': { text: c("content.primary") },
+          'label[data-state="current"]': { text: c("content.primary"), font: "type.label" },
+          connector: { fill: c("action.secondary.default"), height: "spacing.0_5", radius: "radius.pill" },
+          'connector[data-state="done"]': { fill: c("action.primary.default") }
+        }))
+      ]
+    };
+    DROPDOWN_MENU = menu("DropdownMenu");
+    CONTEXT_MENU = menu("ContextMenu");
+    COMMAND = {
+      key: "Command",
+      slots: ["root", "search", "icon", "input", "kbd", "list", "heading", "item"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            shadow: "shadow.2xl"
+          },
+          search: { stroke: c("border.subtle"), strokeBottomWidth: "stroke.control", paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.gap-control" },
+          icon: { text: c("content.secondary") },
+          input: { text: c("content.primary"), font: "type.placeholder" },
+          kbd: { text: c("content.subtle"), font: "type.caption", stroke: c("border.subtle"), strokeWidth: "stroke.control", radius: "radius.control", paddingX: "spacing.1_5" },
+          list: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
+          heading: { text: c("content.subtle"), font: "type.caption", paddingX: "spacing.2_5", paddingY: "spacing.1" },
+          item: { text: c("content.primary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.1_5" },
+          "item[data-highlighted]": { fill: c("action.ghost.hover") },
+          "item:hover": { fill: c("action.ghost.hover") }
+        }))
+      ]
+    };
+    NAVBAR = {
+      key: "Navbar",
+      slots: ["root", "logo", "nav", "link", "avatar"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            paddingX: "spacing.4",
+            paddingY: "spacing.2_5",
+            gap: "spacing.5"
+          },
+          logo: { fill: c("action.primary.default"), radius: "radius.control", width: "spacing.6", height: "spacing.6" },
+          nav: { gap: "spacing.3" },
+          link: { text: c("content.secondary"), font: "type.body-sm" },
+          "link:hover": { text: c("content.primary") },
+          'link[aria-current="page"]': { text: c("content.primary"), font: "type.button" },
+          avatar: { fill: c("surface.selected"), text: c("content.accent"), font: "type.caption", radius: "radius.pill", width: "size.xs", height: "size.xs" }
+        }))
+      ]
+    };
+    SIDEBAR = {
+      key: "Sidebar",
+      slots: ["root", "item", "pill", "icon"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            paddingX: "spacing.2",
+            paddingY: "spacing.2",
+            gap: "spacing.0_5"
+          },
+          pill: { fill: c("surface.selected"), radius: "radius.control" },
+          item: { text: c("content.secondary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.2", gap: "spacing.2_5" },
+          "item:hover": { text: c("content.primary") },
+          'item[aria-current="page"]': { text: c("content.accent") },
+          'item[aria-current="page"]:hover': { text: c("content.accent") }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/feedback.ts
+function box(status) {
+  const s = SEV[status];
+  return {
+    fill: c(`status.${s}.surface`),
+    stroke: c(`status.${s}.border`),
+    strokeWidth: "stroke.control",
+    radius: "radius.container",
+    text: c("content.primary")
+  };
+}
+var SEV, STATUSES, INLINE_ALERT, ALERT_BANNER, TOAST;
+var init_feedback = __esm({
+  "src/lib/recipes/feedback.ts"() {
+    init_helpers();
+    SEV = { Info: "info", Success: "success", Warning: "warning", Error: "critical" };
+    STATUSES = ["Info", "Success", "Warning", "Error"];
+    INLINE_ALERT = {
+      key: "InlineAlert",
+      slots: ["root", "icon", "body", "title", "description"],
+      defaults: { Status: "Info" },
+      parts: [
+        part({}, () => ({
+          root: { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.2_5" },
+          body: { gap: "spacing.1" },
+          title: { font: "type.button" },
+          description: { text: c("content.secondary"), font: "type.body-sm" }
+        })),
+        part({ Status: STATUSES }, (status) => ({
+          root: box(status),
+          icon: { text: c(`status.${SEV[status]}.content`) }
+        }))
+      ]
+    };
+    ALERT_BANNER = {
+      key: "AlertBanner",
+      slots: ["root", "icon", "message", "action", "close"],
+      defaults: { Status: "Info" },
+      parts: [
+        part({}, () => ({
+          root: { paddingX: "spacing.4", paddingY: "spacing.2_5", gap: "spacing.2_5" },
+          message: { font: "type.body-sm" },
+          action: { font: "type.button" },
+          close: { text: c("content.secondary") }
+        })),
+        part({ Status: STATUSES }, (status) => ({
+          root: box(status),
+          icon: { text: c(`status.${SEV[status]}.content`) },
+          action: { text: c(`status.${SEV[status]}.content`) }
+        }))
+      ]
+    };
+    TOAST = {
+      key: "Toast",
+      slots: ["root", "message", "action", "close"],
+      defaults: { Status: "Success" },
+      parts: [
+        // The inverse snackbar: `surface.inverse` with `content.inverse` ink, so it
+        // reads in both appearances. Status picks the message, not the colours.
+        part({}, () => ({
+          root: {
+            fill: c("surface.inverse"),
+            text: c("content.inverse"),
+            radius: "radius.container",
+            shadow: "shadow.xl",
+            paddingX: "spacing.gap-group",
+            paddingY: "spacing.gap-control",
+            gap: "spacing.2"
+          },
+          message: { font: "type.body-sm" },
+          action: { font: "type.button" },
+          close: { font: "type.button" }
+        }))
+      ]
+    };
+  }
+});
+
 // src/lib/recipes/indicators.ts
 function badgePaint(style, color) {
   const k = BADGE_TONES[color];
@@ -6229,6 +6557,8 @@ var init_componentRecipes = __esm({
     init_actions();
     init_forms();
     init_surfaces();
+    init_navigation();
+    init_feedback();
     init_indicators();
     init_helpers();
     init_helpers();
@@ -6276,6 +6606,20 @@ var init_componentRecipes = __esm({
       Tooltip: TOOLTIP,
       InfoTooltip: INFO_TOOLTIP,
       ScrollArea: SCROLL_AREA,
+      InlineAlert: INLINE_ALERT,
+      AlertBanner: ALERT_BANNER,
+      Toast: TOAST,
+      Tabs: TABS,
+      TabMenu: TAB_MENU,
+      SegmentedControl: SEGMENTED_CONTROL,
+      Breadcrumb: BREADCRUMB,
+      Pagination: PAGINATION,
+      Stepper: STEPPER,
+      DropdownMenu: DROPDOWN_MENU,
+      ContextMenu: CONTEXT_MENU,
+      Command: COMMAND,
+      Navbar: NAVBAR,
+      Sidebar: SIDEBAR,
       Card: CARD,
       Modal: MODAL
     };
@@ -11130,26 +11474,26 @@ function studioLook(choices) {
     states[slot] = solid.fill;
     stateInk[slot] = solid.ink;
   }
-  let box = 16, field = 8, control = 4;
+  let box2 = 16, field = 8, control = 4;
   if (c2.radiusAxes && (c2.radiusAxes.boxes || c2.radiusAxes.fields || c2.radiusAxes.selectors)) {
     const pxOf = (step, fallback) => {
       const n = parseFloat(step ? RADIUS_STANDARD[step] ?? "" : "");
       return Number.isFinite(n) ? n : fallback;
     };
-    box = pxOf(c2.radiusAxes.boxes, box);
+    box2 = pxOf(c2.radiusAxes.boxes, box2);
     field = pxOf(c2.radiusAxes.fields, field);
     control = pxOf(c2.radiusAxes.selectors, control);
   } else if (c2.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c2.radiusPreset);
     if (hit) {
       const px = radiusPresetPx(hit);
-      box = px[0];
+      box2 = px[0];
       field = px[1];
       control = px[2];
     }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD);
-    box = summary.radius.boxes;
+    box2 = summary.radius.boxes;
     field = summary.radius.fields;
     control = summary.radius.selectors;
   }
@@ -11174,7 +11518,7 @@ function studioLook(choices) {
     neutralRamp: rampList(neutral),
     states,
     stateInk,
-    box,
+    box: box2,
     field,
     control,
     controlH: paint.controlH,

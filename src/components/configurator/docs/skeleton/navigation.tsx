@@ -1,0 +1,139 @@
+import { useState } from 'react'
+import type { SpecimenProps } from '../specimens'
+import { PreviewIcon } from '../specimens'
+import { iconOf } from '../../../../lib/previewTokens'
+import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger } from '../../../escala-ui/tabs'
+import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
+import { SegmentedControl as SkSegmentedControl } from '../../../escala-ui/segmented-control'
+import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
+import { Pagination as SkPagination } from '../../../escala-ui/pagination'
+import { Stepper as SkStepper } from '../../../escala-ui/stepper'
+import { MenuPanel as SkMenuPanel, MenuPanelItem as SkMenuPanelItem, MenuPanelSeparator as SkMenuPanelSeparator } from '../../../escala-ui/menu'
+import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
+import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
+import { Sidebar as SkSidebar } from '../../../escala-ui/sidebar'
+import { Button as SkButton } from '../../../escala-ui/button'
+import { RecipeScope, lower } from './scope'
+
+export function SkeletonTabsSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkTabs defaultValue="overview">
+        <SkTabsList>
+          {['Overview', 'Tokens', 'Usage'].map((tab) => <SkTabsTrigger key={tab} value={tab.toLowerCase()}>{tab}</SkTabsTrigger>)}
+        </SkTabsList>
+      </SkTabs>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTabMenuSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkTabMenu items={['All', 'Drafts', 'Published']} fill={w === '100%'} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonSegmentedControlSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSegmentedControl options={['List', 'Board', 'Timeline']} size={lower(v.Size, 'MD') as 'md'} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonBreadcrumbSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkBreadcrumb>
+        <SkBreadcrumbList>
+          <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Home</SkBreadcrumbLink></SkBreadcrumbItem>
+          <SkBreadcrumbSeparator />
+          <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Library</SkBreadcrumbLink></SkBreadcrumbItem>
+          <SkBreadcrumbSeparator />
+          <SkBreadcrumbItem><SkBreadcrumbPage>Design tokens</SkBreadcrumbPage></SkBreadcrumbItem>
+        </SkBreadcrumbList>
+      </SkBreadcrumb>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonPaginationSpecimen({ t }: SpecimenProps) {
+  const [page, setPage] = useState(2)
+  return <RecipeScope t={t}><SkPagination pages={[1, 2, 3, '…', 8]} page={page} onPageChange={setPage} /></RecipeScope>
+}
+
+export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkStepper steps={['Account', 'Tokens', 'Publish']} current={2} width={w} doneIcon={<PreviewIcon concept="check" size={iconOf(12)} />} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonDropdownMenuSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div className="flex flex-col items-start" style={{ gap: 'var(--spacing-1_5)' }}>
+        <SkButton variant="outline" size="sm">
+          Options
+          <PreviewIcon concept="chevron" size={iconOf(11)} />
+        </SkButton>
+        <SkMenuPanel recipe="DropdownMenu" style={{ width: 210 }}>
+          <SkMenuPanelItem highlighted>Duplicate</SkMenuPanelItem>
+          <SkMenuPanelItem>Rename</SkMenuPanelItem>
+          <SkMenuPanelItem>Export tokens</SkMenuPanelItem>
+          <SkMenuPanelSeparator />
+          <SkMenuPanelItem danger>Delete</SkMenuPanelItem>
+        </SkMenuPanel>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonContextMenuSpecimen({ t, w, elev }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkMenuPanel recipe="ContextMenu" style={{ width: w ?? 210, boxShadow: elev === false ? 'none' : undefined }}>
+        <SkMenuPanelItem highlighted shortcut="⌘C">Copy</SkMenuPanelItem>
+        <SkMenuPanelItem shortcut="⌘V">Paste</SkMenuPanelItem>
+        <SkMenuPanelItem shortcut="⌘A">Select all</SkMenuPanelItem>
+        <SkMenuPanelSeparator />
+        <SkMenuPanelItem>Inspect tokens</SkMenuPanelItem>
+      </SkMenuPanel>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonCommandSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkCommand style={{ width: 320 }}>
+        <SkCommandInput icon={<PreviewIcon concept="search" size={iconOf(14)} />} shortcut="⌘K" placeholder="Type a command…" />
+        <SkCommandList>
+          <SkCommandGroup heading="Actions">
+            <SkCommandItem highlighted>Open Color foundation</SkCommandItem>
+            <SkCommandItem>Publish tokens to Figma</SkCommandItem>
+            <SkCommandItem>Export variables.css</SkCommandItem>
+          </SkCommandGroup>
+        </SkCommandList>
+      </SkCommand>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonNavbarSpecimen({ t }: SpecimenProps) {
+  const links = ['Home', 'Tokens', 'Components', 'Docs'].map((label, i) => ({ label, current: i === 0 }))
+  return <RecipeScope t={t}><SkNavbar links={links} trailing="MD" style={{ width: 420 }} /></RecipeScope>
+}
+
+export function SkeletonSidebarSpecimen({ t, w }: SpecimenProps) {
+  const items = [
+    { label: 'Overview', icon: <PreviewIcon concept="home" size={iconOf(15)} /> },
+    { label: 'Tokens', icon: <PreviewIcon concept="palette" size={iconOf(15)} /> },
+    { label: 'Components', icon: <PreviewIcon concept="box" size={iconOf(15)} /> },
+    { label: 'Settings', icon: <PreviewIcon concept="settings" size={iconOf(15)} /> },
+  ]
+  return <RecipeScope t={t}><SkSidebar items={items} defaultValue="Tokens" style={{ width: w ?? 200 }} /></RecipeScope>
+}

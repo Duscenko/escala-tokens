@@ -14,6 +14,36 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
+  Tabs: () =>
+    `import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"\n\n<Tabs defaultValue="overview">\n  <TabsList>\n    <TabsTrigger value="overview">Overview</TabsTrigger>\n    <TabsTrigger value="tokens">Tokens</TabsTrigger>\n  </TabsList>\n  <TabsContent value="overview">…</TabsContent>\n</Tabs>`,
+  TabMenu: () =>
+    `import { TabMenu } from "@/components/ui/tab-menu"\n\n<TabMenu items={["All", "Drafts", "Published"]} onValueChange={setView} />`,
+  SegmentedControl: (v) =>
+    `import { SegmentedControl } from "@/components/ui/segmented-control"\n\n<SegmentedControl options={["List", "Board", "Timeline"]}${sizeProp(v)} onValueChange={setView} />`,
+  Breadcrumb: () =>
+    `import {\n  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator,\n} from "@/components/ui/breadcrumb"\n\n<Breadcrumb>\n  <BreadcrumbList>\n    <BreadcrumbItem><BreadcrumbLink href="/">Home</BreadcrumbLink></BreadcrumbItem>\n    <BreadcrumbSeparator />\n    <BreadcrumbItem><BreadcrumbPage>Design tokens</BreadcrumbPage></BreadcrumbItem>\n  </BreadcrumbList>\n</Breadcrumb>`,
+  Pagination: () =>
+    `import { Pagination } from "@/components/ui/pagination"\n\n<Pagination pages={[1, 2, 3, "…", 8]} page={page} onPageChange={setPage} />`,
+  Stepper: () =>
+    `import { Stepper } from "@/components/ui/stepper"\n\n<Stepper steps={["Account", "Tokens", "Publish"]} current={2} />`,
+  DropdownMenu: () =>
+    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="outline">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent>\n    <DropdownMenuItem>Duplicate</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="danger">Delete</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
+  ContextMenu: () =>
+    `import {\n  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuShortcut,\n} from "@/components/ui/context-menu"\n\n<ContextMenu>\n  <ContextMenuTrigger>Right-click here</ContextMenuTrigger>\n  <ContextMenuContent>\n    <ContextMenuItem>Copy <ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>\n  </ContextMenuContent>\n</ContextMenu>`,
+  Command: () =>
+    `import {\n  Command, CommandInput, CommandList, CommandGroup, CommandItem,\n} from "@/components/ui/command"\n\n<Command>\n  <CommandInput placeholder="Type a command…" />\n  <CommandList>\n    <CommandGroup heading="Actions">\n      <CommandItem onSelect={openColor}>Open Color foundation</CommandItem>\n    </CommandGroup>\n  </CommandList>\n</Command>`,
+  Navbar: () =>
+    `import { Navbar } from "@/components/ui/navbar"\n\n<Navbar\n  links={[{ label: "Home", current: true }, { label: "Tokens" }, { label: "Docs" }]}\n  trailing="MD"\n/>`,
+  Sidebar: () =>
+    `import { Sidebar } from "@/components/ui/sidebar"\n\n<Sidebar\n  items={[{ label: "Overview", icon: <Home /> }, { label: "Tokens", icon: <Palette /> }]}\n  defaultValue="Tokens"\n  onValueChange={navigate}\n/>`,
+
+  InlineAlert: (v) =>
+    `import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"\n\n<Alert${v.Status && v.Status !== 'Info' ? ` status="${v.Status}"` : ''} icon={<Info />}>\n  <AlertTitle>Heads up</AlertTitle>\n  <AlertDescription>Semantic tokens re-derive when the accent changes.</AlertDescription>\n</Alert>`,
+  AlertBanner: (v) =>
+    `import { AlertBanner } from "@/components/ui/alert"\n\n<AlertBanner${v.Status && v.Status !== 'Info' ? ` status="${v.Status}"` : ''}\n  icon={<Info />}\n  message="Scheduled maintenance on Sunday 02:00 UTC."\n  action="View"\n  onClose={dismiss}\n/>`,
+  Toast: (v) =>
+    `import { Toast } from "@/components/ui/toast"\n\n<Toast${v.Status && v.Status !== 'Success' ? ` status="${v.Status}"` : ''}\n  message="Changes saved."\n  action="Undo"\n  onAction={undo}\n  onClose={dismiss}\n/>`,
+
   Divider: (v) =>
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'Vertical' ? ' orientation="vertical"' : ''} />`,
   Accordion: () =>
