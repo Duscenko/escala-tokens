@@ -11,7 +11,7 @@ import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionContent as SkAccordionContent, AccordionItem as SkAccordionItem, AccordionTrigger as SkAccordionTrigger } from '../../../escala-ui/accordion'
 import { AspectRatio as SkAspectRatio, type RatioName } from '../../../escala-ui/aspect-ratio'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescription as SkPopoverDescription, PopoverTitle as SkPopoverTitle } from '../../../escala-ui/popover'
-import { InfoTooltip as SkInfoTooltip, Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
+import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
@@ -115,18 +115,6 @@ export function SkeletonTooltipSpecimen({ t }: SpecimenProps) {
         <SkTooltip>
           <SkTooltipContent inline>Copy to clipboard</SkTooltipContent>
         </SkTooltip>
-      </SkTooltipProvider>
-    </RecipeScope>
-  )
-}
-
-export function SkeletonInfoTooltipSpecimen({ t }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkTooltipProvider>
-        <SkInfoTooltip inline content="Applies to new projects only." icon={<PreviewIcon concept="info" size={iconOf(14)} />}>
-          Default visibility
-        </SkInfoTooltip>
       </SkTooltipProvider>
     </RecipeScope>
   )

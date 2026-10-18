@@ -125,7 +125,7 @@ export const POPOVER: ComponentRecipe = {
   ],
 }
 
-// ── Tooltip · InfoTooltip ──────────────────────────────────────────────────
+// ── Tooltip ──────────────────────────────────────────────────────────
 
 const TIP: SlotProps = {
   fill: c('surface.inverse'), text: c('content.inverse'), radius: 'radius.action',
@@ -137,23 +137,6 @@ export const TOOLTIP: ComponentRecipe = {
   slots: ['root', 'arrow'],
   defaults: {},
   parts: [part({}, () => ({ root: TIP, arrow: { paint: c('surface.inverse') } }))],
-}
-
-export const INFO_TOOLTIP: ComponentRecipe = {
-  key: 'InfoTooltip',
-  slots: ['root', 'tip', 'arrow', 'label', 'icon'],
-  // The bubble portals out of the label, so it is not a descendant of the root.
-  detachedSlots: ['tip', 'arrow'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.gap-tight' },
-      tip: TIP,
-      arrow: { paint: c('surface.inverse') },
-      label: { text: c('content.primary'), font: 'type.label', gap: 'spacing.1_5' },
-      icon: { text: c('content.secondary') },
-    })),
-  ],
 }
 
 // ── ScrollArea ─────────────────────────────────────────────────────────────

@@ -108,14 +108,14 @@ export const BUTTON_GROUP: ComponentRecipe = {
 // ── SocialLoginButton ──────────────────────────────────────────────────────
 
 const SOCIAL_GEOMETRY: Record<string, SlotProps> = {
-  MD: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.2_5' },
-  LG: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.2_5' },
+  default: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.2_5' },
+  lg: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.2_5' },
 }
 
 export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
   key: 'SocialLoginButton',
   slots: ['root', 'label', 'icon'],
-  defaults: { Provider: 'Google', Size: 'MD' },
+  defaults: { Provider: 'google', Size: 'default' },
   parts: [
     part({}, () => ({
       root: {
@@ -126,7 +126,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
       'root:active': { fill: c('action.ghost.pressed') },
       'root:focus-visible': { ring: c('border.ring.default') },
     })),
-    part({ Size: ['MD', 'LG'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
+    part({ Size: ['default', 'lg'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
   ],
 }
 
@@ -137,9 +137,9 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
 export const APP_STORE_BADGE: ComponentRecipe = {
   key: 'AppStoreBadge',
   slots: ['root', 'eyebrow', 'name'],
-  defaults: { Store: 'App Store' },
+  defaults: { Store: 'app-store' },
   parts: [
-    part({ Store: ['App Store', 'Google Play'] as const }, () => ({
+    part({ Store: ['app-store', 'google-play'] as const }, () => ({
       root: { radius: 'radius.action', paddingX: 'spacing.4', paddingY: 'spacing.2', gap: 'spacing.2_5' },
       eyebrow: { font: 'type.caption' },
       name: { font: 'type.button' },

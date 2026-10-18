@@ -41,17 +41,17 @@ export const BADGE: ComponentRecipe = {
 // ── StatusBadge ────────────────────────────────────────────────────────────
 
 const PRESENCE_DOT: Record<string, string> = {
-  Online: 'status.success.surface-solid',
-  Away: 'status.warning.surface-solid',
-  Busy: 'status.critical.surface-solid',
+  online: 'status.success.surface-solid',
+  away: 'status.warning.surface-solid',
+  busy: 'status.critical.surface-solid',
   // The absence of a signal reads as muted ink.
-  Offline: 'content.subtle',
+  offline: 'content.subtle',
 }
 
 export const STATUS_BADGE: ComponentRecipe = {
   key: 'StatusBadge',
   slots: ['root', 'dot'],
-  defaults: { Status: 'Online' },
+  defaults: { Status: 'online' },
   parts: [
     part({}, () => ({
       root: {
@@ -60,24 +60,24 @@ export const STATUS_BADGE: ComponentRecipe = {
       },
       dot: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
     })),
-    part({ Status: ['Online', 'Away', 'Busy', 'Offline'] as const }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } })),
+    part({ Status: ['online', 'away', 'busy', 'offline'] as const }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } })),
   ],
 }
 
 // ── Chip ───────────────────────────────────────────────────────────────────
 
 const CHIP_GEOMETRY: Record<string, SlotProps> = {
-  MD: { paddingX: 'spacing.3', paddingY: 'spacing.1', gap: 'spacing.1_5' },
-  SM: { paddingX: 'spacing.2_5', paddingY: 'spacing.0_5', gap: 'spacing.1' },
+  default: { paddingX: 'spacing.3', paddingY: 'spacing.1', gap: 'spacing.1_5' },
+  sm: { paddingX: 'spacing.2_5', paddingY: 'spacing.0_5', gap: 'spacing.1' },
 }
 
 export const CHIP: ComponentRecipe = {
   key: 'Chip',
   slots: ['root', 'remove'],
-  defaults: { Selected: 'False', Dismissible: 'False', Size: 'MD' },
+  defaults: { Selected: 'False', Dismissible: 'False', Size: 'default' },
   parts: [
     part({}, () => ({ root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' } })),
-    part({ Size: ['MD', 'SM'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),
+    part({ Size: ['default', 'sm'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),
     part({ Selected: ['False', 'True'] as const }, (selected) => selected === 'True'
       ? {
           root: { fill: c('surface.selected'), stroke: c('border.accent'), text: c('content.accent') },
@@ -122,14 +122,14 @@ export const SPINNER: ComponentRecipe = {
 
 // ── Icon ───────────────────────────────────────────────────────────────────
 
-const ICON_ROLE: Record<string, string> = { SM: 'icon.small', MD: 'icon.medium', LG: 'icon.large' }
+const ICON_ROLE: Record<string, string> = { sm: 'icon.small', default: 'icon.medium', lg: 'icon.large' }
 
 export const ICON: ComponentRecipe = {
   key: 'Icon',
   slots: ['root'],
-  defaults: { Size: 'MD' },
+  defaults: { Size: 'default' },
   parts: [
-    part({ Size: ['SM', 'MD', 'LG'] as const }, (size) => ({
+    part({ Size: ['sm', 'default', 'lg'] as const }, (size) => ({
       root: { width: ICON_ROLE[size], height: ICON_ROLE[size], text: c('content.primary') },
     })),
   ],
@@ -155,23 +155,23 @@ export const RATING: ComponentRecipe = {
 // ── FileFormat ─────────────────────────────────────────────────────────────
 
 const FORMAT_TONE: Record<string, { fill: string; on: string }> = {
-  PDF: { fill: 'status.critical.surface-solid', on: 'status.critical.on-solid' },
-  PNG: { fill: 'status.info.surface-solid', on: 'status.info.on-solid' },
-  SVG: { fill: 'action.primary.default', on: 'content.on-action' },
-  ZIP: { fill: 'status.warning.surface-solid', on: 'status.warning.on-solid' },
+  pdf: { fill: 'status.critical.surface-solid', on: 'status.critical.on-solid' },
+  png: { fill: 'status.info.surface-solid', on: 'status.info.on-solid' },
+  svg: { fill: 'action.primary.default', on: 'content.on-action' },
+  zip: { fill: 'status.warning.surface-solid', on: 'status.warning.on-solid' },
 }
 
 export const FILE_FORMAT: ComponentRecipe = {
   key: 'FileFormat',
   slots: ['root', 'page', 'plate'],
-  defaults: { Format: 'PDF' },
+  defaults: { Format: 'pdf' },
   parts: [
     part({}, () => ({
       root: { width: 'size.control', height: 'size.lg' },
       page: { text: c('border.strong'), paint: c('surface.layer-1') },
       plate: { radius: 'radius.control', font: 'type.caption', paddingX: 'spacing.1_5', paddingY: 'spacing.0_5' },
     })),
-    part({ Format: ['PDF', 'PNG', 'SVG', 'ZIP'] as const }, (format) => ({
+    part({ Format: ['pdf', 'png', 'svg', 'zip'] as const }, (format) => ({
       plate: { fill: c(FORMAT_TONE[format].fill), text: c(FORMAT_TONE[format].on) },
     })),
   ],

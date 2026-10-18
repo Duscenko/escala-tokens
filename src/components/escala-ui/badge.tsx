@@ -28,9 +28,11 @@ function Badge({
   )
 }
 
-export type Presence = 'Online' | 'Away' | 'Busy' | 'Offline'
+export type Presence = 'online' | 'away' | 'busy' | 'offline'
 
-function StatusBadge({ status = 'Online', className, children, ...props }: React.ComponentProps<'span'> & { status?: Presence }) {
+const PRESENCE_LABEL: Record<Presence, string> = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' }
+
+function StatusBadge({ status = 'online', className, children, ...props }: React.ComponentProps<'span'> & { status?: Presence }) {
   return (
     <span
       data-slot="status-badge"
@@ -40,7 +42,7 @@ function StatusBadge({ status = 'Online', className, children, ...props }: React
       {...props}
     >
       <span data-part="StatusBadge.dot" aria-hidden className="inline-block shrink-0" />
-      {children ?? status}
+      {children ?? PRESENCE_LABEL[status] ?? status}
     </span>
   )
 }

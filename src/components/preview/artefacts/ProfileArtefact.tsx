@@ -40,7 +40,7 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
             <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Maya Duscenko</span>
             <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>maya@escala.ds</span>
           </div>
-          <StatusBadge t={t} v={{ Status: 'Online' }} />
+          <StatusBadge t={t} v={{ Status: 'online' }} />
         </div>
 
         {/* A grouped settings CARD, which is what a settings section actually

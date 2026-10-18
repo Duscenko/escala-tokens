@@ -379,15 +379,15 @@ export const LABEL: ComponentRecipe = {
 }
 
 const STRENGTH_FILL: Record<string, string> = {
-  Weak: 'status.critical.surface-solid',
-  Fair: 'status.warning.surface-solid',
-  Strong: 'status.success.surface-solid',
+  weak: 'status.critical.surface-solid',
+  fair: 'status.warning.surface-solid',
+  strong: 'status.success.surface-solid',
 }
 
 export const PASSWORD_STRENGTH: ComponentRecipe = {
   key: 'PasswordStrength',
   slots: ['root', 'meter', 'segment', 'segmentOn', 'caption'],
-  defaults: { Strength: 'Fair' },
+  defaults: { Strength: 'fair' },
   parts: [
     part({}, () => ({
       root: { gap: 'spacing.gap-control' },
@@ -396,7 +396,7 @@ export const PASSWORD_STRENGTH: ComponentRecipe = {
       segmentOn: { height: 'spacing.1', radius: 'radius.pill' },
       caption: { text: c('content.secondary'), font: 'type.helper' },
     })),
-    part({ Strength: ['Weak', 'Fair', 'Strong'] as const }, (strength) => ({
+    part({ Strength: ['weak', 'fair', 'strong'] as const }, (strength) => ({
       segmentOn: { fill: c(STRENGTH_FILL[strength]) },
     })),
   ],

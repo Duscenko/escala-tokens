@@ -1,7 +1,7 @@
-// Skeleton: shadcn/ui `bases/radix/ui/tooltip.tsx` (MIT, see LICENSE-shadcn.md),
-// plus Escala's InfoTooltip (a label with an info glyph). The bubble portals into
-// the theme scope; `inline` draws it in place (docs, previews).
-// Appearance: recipes (Tooltip, InfoTooltip).
+// Skeleton: shadcn/ui `bases/radix/ui/tooltip.tsx` (MIT, see LICENSE-shadcn.md).
+// An "info" tooltip is this Tooltip on a ghost icon Button, as in shadcn. The
+// bubble portals into the theme scope; `inline` draws it in place (docs, previews).
+// Appearance: recipe (Tooltip).
 import * as React from 'react'
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
@@ -16,21 +16,17 @@ const arrowStyle: React.CSSProperties = { fill: 'var(--escala-paint)' }
 export interface TooltipContentProps extends React.ComponentProps<typeof TooltipPrimitive.Content> {
   /** Draw in place with its arrow, no portal and no positioning. */
   inline?: boolean
-  /** `Tooltip` (default) or `InfoTooltip`'s bubble. */
-  recipe?: 'Tooltip' | 'InfoTooltip'
 }
 
-function TooltipContent({ inline, recipe = 'Tooltip', sideOffset = 6, className, children, ...props }: TooltipContentProps) {
+function TooltipContent({ inline, sideOffset = 6, className, children, ...props }: TooltipContentProps) {
   const container = usePortalContainer()
-  const part = recipe === 'InfoTooltip' ? 'InfoTooltip.tip' : undefined
-  const arrow = recipe === 'InfoTooltip' ? 'InfoTooltip.arrow' : 'Tooltip.arrow'
+  const arrow = 'Tooltip.arrow'
   if (inline) {
     return (
       <div
         role="tooltip"
         data-slot="tooltip-content"
-        data-escala={recipe === 'Tooltip' ? 'Tooltip' : undefined}
-        data-part={part}
+        data-escala="Tooltip"
         className={cn('relative inline-block', className)}
       >
         {children}
@@ -44,8 +40,7 @@ function TooltipContent({ inline, recipe = 'Tooltip', sideOffset = 6, className,
     <TooltipPrimitive.Portal container={container}>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
-        data-escala={recipe === 'Tooltip' ? 'Tooltip' : undefined}
-        data-part={part}
+        data-escala="Tooltip"
         sideOffset={sideOffset}
         className={cn('z-50 w-fit', className)}
         {...props}
@@ -57,42 +52,4 @@ function TooltipContent({ inline, recipe = 'Tooltip', sideOffset = 6, className,
   )
 }
 
-export interface InfoTooltipProps extends Omit<React.ComponentProps<'span'>, 'content'> {
-  content: React.ReactNode
-  /** The info glyph. */
-  icon?: React.ReactNode
-  /** Show the tip in place above the label (docs, previews). */
-  inline?: boolean
-}
-
-/** A label with an info glyph that explains it on hover or focus. */
-function InfoTooltip({ content, icon = 'ⓘ', inline, className, children, ...props }: InfoTooltipProps) {
-  const label = (
-    <span data-part="InfoTooltip.label" className="inline-flex items-center">
-      {children}
-      <TooltipPrimitive.Trigger asChild>
-        <button type="button" aria-label="More information" data-part="InfoTooltip.icon" className="inline-flex cursor-help border-0 bg-transparent p-0 outline-none">{icon}</button>
-      </TooltipPrimitive.Trigger>
-    </span>
-  )
-  return (
-    <span data-slot="info-tooltip" data-escala="InfoTooltip" className={cn('inline-flex flex-col items-center', className)} {...props}>
-      {inline ? (
-        <>
-          <TooltipContent inline recipe="InfoTooltip">{content}</TooltipContent>
-          <span data-part="InfoTooltip.label" className="inline-flex items-center">
-            {children}
-            <span data-part="InfoTooltip.icon" className="inline-flex">{icon}</span>
-          </span>
-        </>
-      ) : (
-        <TooltipPrimitive.Root>
-          {label}
-          <TooltipContent recipe="InfoTooltip">{content}</TooltipContent>
-        </TooltipPrimitive.Root>
-      )}
-    </span>
-  )
-}
-
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, InfoTooltip }
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger }

@@ -18,7 +18,7 @@ import {
   SidebarMenu as SkSidebarMenu, SidebarMenuButton as SkSidebarMenuButton, SidebarMenuItem as SkSidebarMenuItem, type SidebarVariant,
 } from '../../../escala-ui/sidebar'
 import { Button as SkButton } from '../../../escala-ui/button'
-import { RecipeScope, lower } from './scope'
+import { RecipeScope } from './scope'
 
 export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
   return (
@@ -43,7 +43,7 @@ export function SkeletonTabMenuSpecimen({ t, w }: SpecimenProps) {
 export function SkeletonSegmentedControlSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkSegmentedControl options={['List', 'Board', 'Timeline']} size={lower(v.Size, 'MD') as 'md'} />
+      <SkSegmentedControl options={['List', 'Board', 'Timeline']} size={v.Size === 'sm' ? 'sm' : 'default'} />
     </RecipeScope>
   )
 }

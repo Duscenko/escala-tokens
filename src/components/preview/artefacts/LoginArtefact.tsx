@@ -49,7 +49,7 @@ function OrRule({ t }: { t: PreviewTokens }) {
  * the two labels ("Sign in", "Sign up") a generic Button demo has no
  * way to guess.
  *
- * The CTA is `Size: 'LG'`, which resolves the same `lg` primitive the system's
+ * The CTA is `size="lg"`, which resolves the same `lg` primitive the system's
  * `touch` size role points at — the role whose description is literally "Mobile
  * CTA. 48px covers HIG 44."
  */
@@ -102,8 +102,8 @@ function LoginScreen({ t, compact }: ArtefactProps) {
             <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">{translate('Sign in')}</Button>
             <OrRule t={t} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
-              <SocialLoginButton t={t} v={{ Provider: 'Google' }} w="100%" />
-              <SocialLoginButton t={t} v={{ Provider: 'Apple' }} w="100%" />
+              <SocialLoginButton t={t} v={{ Provider: 'google' }} w="100%" />
+              <SocialLoginButton t={t} v={{ Provider: 'apple' }} w="100%" />
             </div>
           </div>
         </Card>

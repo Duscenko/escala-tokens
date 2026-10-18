@@ -305,7 +305,7 @@ export function SkeletonLabelSpecimen({ t }: SpecimenProps) {
 export function SkeletonPasswordStrengthSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkPasswordStrength strength={(v.Strength ?? 'Fair') as Strength} width={260}>
+      <SkPasswordStrength strength={(v.Strength ?? 'fair') as Strength} width={260}>
         <SkInput type="password" defaultValue="hunter2hunter2" aria-label="Password" />
       </SkPasswordStrength>
     </RecipeScope>

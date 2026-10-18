@@ -121,10 +121,10 @@ function ColorCollage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <StatusBadgeSpec t={tokens} v={{ Status: 'Online' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'Away' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'Busy' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'Offline' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'online' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'away' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'busy' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'offline' }} />
       </div>
 
       <SliderSpec t={tokens} v={{}} />
@@ -151,7 +151,7 @@ function ColorCollage({
       <Live c="Dropzone" t={tokens} hoverState="Dragging" />
       <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />
-      <PasswordStrengthSpec t={tokens} v={{ Strength: 'Weak' }} />
+      <PasswordStrengthSpec t={tokens} v={{ Strength: 'weak' }} />
 
       <div className="flex items-center justify-between gap-3">
         <TabMenuSpec t={tokens} v={{}} />

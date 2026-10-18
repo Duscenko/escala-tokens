@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 94,
+      version: 95,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3550,6 +3550,19 @@ export const useDesignStore = create<DesignStore>()(
           surfaces(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) surfaces(sys?.snapshot)
+          }
+        }
+        if (version < 95) {
+          // v94→v95: InfoTooltip folded into Tooltip (an info ⓘ is a Tooltip on a
+          // ghost icon Button, as in shadcn).
+          const fold = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const next = state.selectedComponents.map((k: string) => (k === 'InfoTooltip' ? 'Tooltip' : k))
+            state.selectedComponents = [...new Set(next)]
+          }
+          fold(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) fold(sys?.snapshot)
           }
         }
         return persisted

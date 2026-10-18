@@ -681,8 +681,8 @@ export function SystemCollage({
               borderTop: `${strokeRoleOf(tile(4), 'divider', '1px')} solid ${tile(4).borderDefault || tile(4).border}`,
             }}
           >
-            <StatusBadge t={tile(4)} v={{ Status: 'Online' }} />
-            <StatusBadge t={tile(4)} v={{ Status: 'Busy' }} />
+            <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
+            <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
             <InspectableLive c="Chip" t={tile(4)} v={{ Selected: 'True' }} toggle="Selected" />
           </div>
         </ScaledModule>
@@ -734,14 +734,14 @@ export function SystemCollage({
             <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
           </div>
           <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
-            <SocialLogin t={tile(5)} v={{ Provider: 'Google' }} w="100%" />
-            <SocialLogin t={tile(5)} v={{ Provider: 'Apple' }} w="100%" />
+            <SocialLogin t={tile(5)} v={{ Provider: 'google' }} w="100%" />
+            <SocialLogin t={tile(5)} v={{ Provider: 'apple' }} w="100%" />
           </div>
         </ScaledModule>
     ),
     segmented: (
         <ScaledModule key="segmented" t={tile(6)} appearance={appearanceAt(6)}>
-          <Segmented t={tile(6)} v={{ Size: 'SM' }} />
+          <Segmented t={tile(6)} v={{ Size: 'sm' }} />
         </ScaledModule>
     ),
     profile: (

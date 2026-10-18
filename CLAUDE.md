@@ -138,8 +138,10 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > **Dialog** (was Modal; the × is a ghost icon-sm Button, not a recipe slot), Tabs
 > `TabsList variant` default·line, **Sidebar** is shadcn's parts (`variant`
 > sidebar·floating·inset, `SidebarMenuButton isActive`; no `items` prop), menu items
-> `variant="destructive"`. Store v94, plugin 0.10.0. Escala-only components (phase 5)
-> still carry Escala axes. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+> `variant="destructive"`. Store v94, plugin 0.10.0. Phase 5 done: Escala-only
+> components use shadcn's vocabulary (lowercase values — `default·sm·lg`, `google`,
+> `online`, `pdf`…; on-screen text stays readable) and InfoTooltip folded into Tooltip
+> (store v95, plugin 0.11.0, 58 keys). `State` and True/False axes stay Figma properties. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
 
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a

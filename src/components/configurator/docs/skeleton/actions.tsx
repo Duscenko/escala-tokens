@@ -5,8 +5,8 @@ import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { Button as SkButton, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
-import { SocialLoginButton as SkSocialLoginButton, type SocialProvider } from '../../../escala-ui/social-login-button'
-import { AppStoreBadge as SkAppStoreBadge } from '../../../escala-ui/app-store-badge'
+import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
+import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
 
 /** shadcn size → the control step its icon is sized from (xs · sm · md · lg). */
@@ -79,14 +79,14 @@ export function SkeletonDismissSpecimen({ t, size = 'icon-sm' }: { t: SpecimenPr
 
 export function SkeletonSocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
   const { t: translate } = useI18n()
-  const provider = (v.Provider ?? 'Google') as SocialProvider
-  const large = (v.Size ?? 'MD') === 'LG'
+  const provider = (v.Provider ?? 'google') as SocialProvider
+  const large = v.Size === 'lg'
   return (
     <RecipeScope t={t}>
       <SkSocialLoginButton
         provider={provider}
-        size={large ? 'lg' : 'md'}
-        label={translate('Continue with {provider}', { provider })}
+        size={large ? 'lg' : 'default'}
+        label={translate('Continue with {provider}', { provider: PROVIDER_NAME[provider] ?? provider })}
         style={{ width: w ?? (large ? 320 : 280), maxWidth: w != null ? '100%' : undefined, minWidth: w != null ? 0 : undefined }}
       />
     </RecipeScope>
@@ -108,7 +108,7 @@ export function SkeletonInlineLinkSpecimen({ t, children }: { t: SpecimenProps['
 export function SkeletonAppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkAppStoreBadge store={(v.Store ?? 'App Store') as 'App Store'} href="#store" onClick={(e) => e.preventDefault()} />
+      <SkAppStoreBadge store={(v.Store ?? 'app-store') as Store} href="#store" onClick={(e) => e.preventDefault()} />
     </RecipeScope>
   )
 }

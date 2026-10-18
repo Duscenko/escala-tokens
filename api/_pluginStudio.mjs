@@ -196,13 +196,13 @@ var init_componentCatalogue = __esm({
         description: "Outlined sign-in button carrying a provider mark \u2014 Google, Apple, GitHub or Figma.",
         usage: "Stack vertically above the email form. Keep provider order consistent across screens.",
         axes: [
-          { name: "Provider", values: ["Google", "Apple", "GitHub", "Figma"] },
-          { name: "Size", values: ["MD", "LG"] }
+          { name: "Provider", values: ["google", "apple", "github", "figma"] },
+          { name: "Size", values: ["default", "lg"] }
         ],
         figmaSets: ["Button Social"],
         props: [
-          { name: "provider", type: '"Google" | "Apple" | "GitHub" | "Figma"', description: "Identity provider \u2014 picks the mark." },
-          { name: "size", type: '"md" | "lg"', description: "Control height \u2014 lg for mobile sign-in screens." },
+          { name: "provider", type: '"google" | "apple" | "github" | "figma"', description: "Identity provider \u2014 picks the mark." },
+          { name: "size", type: '"default" | "lg"', description: "Control height \u2014 lg for mobile sign-in screens." },
           { name: "label", type: "ReactNode", description: 'Defaults to "Continue with <provider>". Never icon-only.' },
           { name: "onClick", type: "() => void", description: "Starts the OAuth flow." }
         ],
@@ -214,10 +214,10 @@ var init_componentCatalogue = __esm({
         category: "Button & Actions",
         description: "Marketing download badge for the App Store and Google Play, in the standard dark style.",
         usage: "Use only on marketing surfaces, at the platform-mandated minimum size.",
-        axes: [{ name: "Store", values: ["App Store", "Google Play"] }],
+        axes: [{ name: "Store", values: ["app-store", "google-play"] }],
         figmaSets: ["Store Badge"],
         props: [
-          { name: "store", type: '"App Store" | "Google Play"', description: "Target store \u2014 picks the artwork." },
+          { name: "store", type: '"app-store" | "google-play"', description: "Target store \u2014 picks the artwork." },
           { name: "href", type: "string", description: "Store listing URL." }
         ],
         accessibility: 'Anchor with descriptive aria-label ("Download on the App Store").'
@@ -485,11 +485,11 @@ var init_componentCatalogue = __esm({
         category: "Form Controls",
         description: "Segmented meter + caption that scores a password as the user types.",
         usage: "Update live while typing. Pair the meter with concrete guidance, not just a score.",
-        axes: [{ name: "Strength", values: ["Weak", "Fair", "Strong"] }],
+        axes: [{ name: "Strength", values: ["weak", "fair", "strong"] }],
         figmaSets: ["Password Strength"],
         props: [
           { name: "value", type: "string", description: "Password to score (typed live)." },
-          { name: "strength", type: '"Weak" | "Fair" | "Strong"', description: "Show a level without typing (docs, previews)." },
+          { name: "strength", type: '"weak" | "fair" | "strong"', description: "Show a level without typing (docs, previews)." },
           { name: "children", type: "ReactNode", description: "The password field, so the meter sits under any Input." }
         ],
         accessibility: "Score announced politely via aria-live; color is never the only signal."
@@ -516,10 +516,10 @@ var init_componentCatalogue = __esm({
         category: "Indicators",
         description: "Presence indicator \u2014 a colored dot plus label for online / away / busy / offline.",
         usage: "Pair with an Avatar or a row of people. Keep the dot\u2013meaning mapping consistent.",
-        axes: [{ name: "Status", values: ["Online", "Away", "Busy", "Offline"] }],
+        axes: [{ name: "Status", values: ["online", "away", "busy", "offline"] }],
         figmaSets: ["Status Badge"],
         props: [
-          { name: "status", type: '"Online" | "Away" | "Busy" | "Offline"', description: "Presence state \u2014 picks the dot colour." },
+          { name: "status", type: '"online" | "away" | "busy" | "offline"', description: "Presence state \u2014 picks the dot colour." },
           { name: "children", type: "ReactNode", description: "Label text; defaults to the status name." }
         ],
         accessibility: "Status conveyed in text (visible or sr-only) \u2014 never by the dot color alone."
@@ -533,14 +533,14 @@ var init_componentCatalogue = __esm({
         axes: [
           { name: "Selected", values: ["False", "True"] },
           { name: "Dismissible", values: ["False", "True"] },
-          { name: "Size", values: ["MD", "SM"] }
+          { name: "Size", values: ["default", "sm"] }
         ],
         figmaSets: ["Chip"],
         props: [
           { name: "selected", type: "boolean", description: "Selected state (aria-pressed)." },
           { name: "onPressedChange", type: "(selected: boolean) => void", description: "Fires when the chip is toggled." },
           { name: "onRemove", type: "() => void", description: "Shows the remove control and calls this when it is pressed." },
-          { name: "size", type: '"md" | "sm"', description: "Height and padding." },
+          { name: "size", type: '"default" | "sm"', description: "Height and padding." },
           { name: "removeIcon", type: "ReactNode", description: "The remove glyph from the system icon set." }
         ],
         accessibility: "Selectable chips use aria-pressed; the dismiss button is separately labelled."
@@ -580,10 +580,10 @@ var init_componentCatalogue = __esm({
         category: "Indicators",
         description: "A glyph from the system icon set, at one of three sizes that follow the control height (16 \xB7 20 \xB7 24 at a 40px control).",
         usage: "Small inside a compact control, medium on a default button, large on a large control or as a feature glyph. The same px on Desktop, Tablet and Mobile. Pair an icon-only control with an accessible label; a decorative icon next to text is aria-hidden.",
-        axes: [{ name: "Size", values: ["SM", "MD", "LG"] }],
+        axes: [{ name: "Size", values: ["sm", "default", "lg"] }],
         figmaSets: ["Icon"],
         props: [
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Icon/role/small \xB7 medium \xB7 large)." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Icon/role/small \xB7 medium \xB7 large)." },
           { name: "children", type: "ReactNode", description: "The glyph, from the system icon set (Phosphor by default)." },
           { name: "label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative." }
         ],
@@ -611,10 +611,10 @@ var init_componentCatalogue = __esm({
         category: "Indicators",
         description: "Document glyph with a format plate (PDF, PNG, SVG, ZIP\u2026) for file lists.",
         usage: "Use inside upload rows and attachment lists so formats scan at a glance.",
-        axes: [{ name: "Format", values: ["PDF", "PNG", "SVG", "ZIP"] }],
+        axes: [{ name: "Format", values: ["pdf", "png", "svg", "zip"] }],
         figmaSets: ["File Format"],
         props: [
-          { name: "format", type: '"PDF" | "PNG" | "SVG" | "ZIP"', description: "Extension shown on the plate; the plate colour follows it." }
+          { name: "format", type: '"pdf" | "png" | "svg" | "zip"', description: "Extension shown on the plate; the plate colour follows it." }
         ],
         accessibility: "Decorative next to a visible filename (aria-hidden); labelled when standalone."
       },
@@ -731,7 +731,7 @@ var init_componentCatalogue = __esm({
         label: "Tooltip",
         category: "Content & Surfaces",
         description: "Contextual label on hover or focus. Fill \u2192 tooltip/bg \u2192 surface/inverse.",
-        usage: "Only use for icon-only buttons or truncated text. Never put interactive content inside.",
+        usage: "Only use for icon-only buttons or truncated text (an info \u24D8 next to a label is a ghost icon Button as the trigger). Never put interactive content inside.",
         axes: [],
         figmaSets: ["Tooltip"],
         props: [
@@ -740,21 +740,6 @@ var init_componentCatalogue = __esm({
           { name: "TooltipContent side / sideOffset", type: '"top" | "right" | "bottom" | "left" / number', description: "Placement of the bubble." }
         ],
         accessibility: 'role="tooltip" linked via aria-describedby. Appears on focus and hover.'
-      },
-      {
-        key: "InfoTooltip",
-        label: "Info Tooltip",
-        category: "Content & Surfaces",
-        description: "The \u24D8 affordance + tooltip pairing for inline explanations next to labels.",
-        usage: "Use next to a label that needs one sentence of context. Longer help belongs in hint text.",
-        axes: [],
-        figmaSets: ["Info Tooltip"],
-        props: [
-          { name: "content", type: "ReactNode", description: "The explanation (one sentence)." },
-          { name: "icon", type: "ReactNode", description: "The info glyph." },
-          { name: "children", type: "ReactNode", description: "The label it explains." }
-        ],
-        accessibility: 'The trigger is a focusable button labelled "More information"; tooltip on focus too.'
       },
       {
         key: "ScrollArea",
@@ -842,13 +827,13 @@ var init_componentCatalogue = __esm({
         category: "Navigation",
         description: "Joined single-choice control \u2014 one segment active at a time, iOS-style.",
         usage: "Use for 2\u20134 exclusive views of the same data (e.g. List / Board). Not for navigation.",
-        axes: [{ name: "Size", values: ["MD", "SM"] }],
+        axes: [{ name: "Size", values: ["default", "sm"] }],
         figmaSets: ["Segmented Control"],
         props: [
           { name: "options", type: "string[]", description: "Segment labels." },
           { name: "value / defaultValue", type: "string", description: "The selected segment." },
           { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection." },
-          { name: "size", type: '"md" | "sm"', description: "Segment padding." }
+          { name: "size", type: '"default" | "sm"', description: "Segment padding." }
         ],
         accessibility: 'role="radiogroup" semantics; segments toggle with arrow keys.'
       },
@@ -5065,13 +5050,13 @@ var init_actions = __esm({
       ]
     };
     SOCIAL_GEOMETRY = {
-      MD: { height: "size.control", paddingX: "spacing.4", gap: "spacing.2_5" },
-      LG: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.2_5" }
+      default: { height: "size.control", paddingX: "spacing.4", gap: "spacing.2_5" },
+      lg: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.2_5" }
     };
     SOCIAL_LOGIN_BUTTON = {
       key: "SocialLoginButton",
       slots: ["root", "label", "icon"],
-      defaults: { Provider: "Google", Size: "MD" },
+      defaults: { Provider: "google", Size: "default" },
       parts: [
         part({}, () => ({
           root: {
@@ -5086,15 +5071,15 @@ var init_actions = __esm({
           "root:active": { fill: c("action.ghost.pressed") },
           "root:focus-visible": { ring: c("border.ring.default") }
         })),
-        part({ Size: ["MD", "LG"] }, (size) => ({ root: SOCIAL_GEOMETRY[size] }))
+        part({ Size: ["default", "lg"] }, (size) => ({ root: SOCIAL_GEOMETRY[size] }))
       ]
     };
     APP_STORE_BADGE = {
       key: "AppStoreBadge",
       slots: ["root", "eyebrow", "name"],
-      defaults: { Store: "App Store" },
+      defaults: { Store: "app-store" },
       parts: [
-        part({ Store: ["App Store", "Google Play"] }, () => ({
+        part({ Store: ["app-store", "google-play"] }, () => ({
           root: { radius: "radius.action", paddingX: "spacing.4", paddingY: "spacing.2", gap: "spacing.2_5" },
           eyebrow: { font: "type.caption" },
           name: { font: "type.button" }
@@ -5453,14 +5438,14 @@ var init_forms = __esm({
       ]
     };
     STRENGTH_FILL = {
-      Weak: "status.critical.surface-solid",
-      Fair: "status.warning.surface-solid",
-      Strong: "status.success.surface-solid"
+      weak: "status.critical.surface-solid",
+      fair: "status.warning.surface-solid",
+      strong: "status.success.surface-solid"
     };
     PASSWORD_STRENGTH = {
       key: "PasswordStrength",
       slots: ["root", "meter", "segment", "segmentOn", "caption"],
-      defaults: { Strength: "Fair" },
+      defaults: { Strength: "fair" },
       parts: [
         part({}, () => ({
           root: { gap: "spacing.gap-control" },
@@ -5469,7 +5454,7 @@ var init_forms = __esm({
           segmentOn: { height: "spacing.1", radius: "radius.pill" },
           caption: { text: c("content.secondary"), font: "type.helper" }
         })),
-        part({ Strength: ["Weak", "Fair", "Strong"] }, (strength) => ({
+        part({ Strength: ["weak", "fair", "strong"] }, (strength) => ({
           segmentOn: { fill: c(STRENGTH_FILL[strength]) }
         }))
       ]
@@ -5534,7 +5519,7 @@ var init_forms = __esm({
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA;
+var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -5678,22 +5663,6 @@ var init_surfaces = __esm({
       defaults: {},
       parts: [part({}, () => ({ root: TIP, arrow: { paint: c("surface.inverse") } }))]
     };
-    INFO_TOOLTIP = {
-      key: "InfoTooltip",
-      slots: ["root", "tip", "arrow", "label", "icon"],
-      // The bubble portals out of the label, so it is not a descendant of the root.
-      detachedSlots: ["tip", "arrow"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.gap-tight" },
-          tip: TIP,
-          arrow: { paint: c("surface.inverse") },
-          label: { text: c("content.primary"), font: "type.label", gap: "spacing.1_5" },
-          icon: { text: c("content.secondary") }
-        }))
-      ]
-    };
     SCROLL_AREA = {
       key: "ScrollArea",
       slots: ["root", "row", "scrollbar", "thumb"],
@@ -5793,13 +5762,13 @@ var init_navigation = __esm({
       ]
     };
     SEGMENT_SIZE = {
-      MD: { padX: "spacing.4", padY: "spacing.1_5" },
-      SM: { padX: "spacing.2_5", padY: "spacing.1" }
+      default: { padX: "spacing.4", padY: "spacing.1_5" },
+      sm: { padX: "spacing.2_5", padY: "spacing.1" }
     };
     SEGMENTED_CONTROL = {
       key: "SegmentedControl",
       slots: ["root", "item", "pill"],
-      defaults: { Size: "MD" },
+      defaults: { Size: "default" },
       parts: [
         // The track is a container on a container: `surface.layer-2`, as the
         // elevation contract says (layer-1 is the card it sits on).
@@ -5810,7 +5779,7 @@ var init_navigation = __esm({
           "item:hover": { text: c("content.primary") },
           'item[aria-checked="true"]': { text: c("content.primary") }
         })),
-        part({ Size: ["MD", "SM"] }, (size) => ({
+        part({ Size: ["default", "sm"] }, (size) => ({
           item: { paddingX: SEGMENT_SIZE[size].padX, paddingY: SEGMENT_SIZE[size].padY }
         }))
       ]
@@ -6077,16 +6046,16 @@ var init_indicators = __esm({
       ]
     };
     PRESENCE_DOT = {
-      Online: "status.success.surface-solid",
-      Away: "status.warning.surface-solid",
-      Busy: "status.critical.surface-solid",
+      online: "status.success.surface-solid",
+      away: "status.warning.surface-solid",
+      busy: "status.critical.surface-solid",
       // The absence of a signal reads as muted ink.
-      Offline: "content.subtle"
+      offline: "content.subtle"
     };
     STATUS_BADGE = {
       key: "StatusBadge",
       slots: ["root", "dot"],
-      defaults: { Status: "Online" },
+      defaults: { Status: "online" },
       parts: [
         part({}, () => ({
           root: {
@@ -6102,20 +6071,20 @@ var init_indicators = __esm({
           },
           dot: { width: "spacing.2", height: "spacing.2", radius: "radius.pill" }
         })),
-        part({ Status: ["Online", "Away", "Busy", "Offline"] }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } }))
+        part({ Status: ["online", "away", "busy", "offline"] }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } }))
       ]
     };
     CHIP_GEOMETRY = {
-      MD: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.1_5" },
-      SM: { paddingX: "spacing.2_5", paddingY: "spacing.0_5", gap: "spacing.1" }
+      default: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.1_5" },
+      sm: { paddingX: "spacing.2_5", paddingY: "spacing.0_5", gap: "spacing.1" }
     };
     CHIP = {
       key: "Chip",
       slots: ["root", "remove"],
-      defaults: { Selected: "False", Dismissible: "False", Size: "MD" },
+      defaults: { Selected: "False", Dismissible: "False", Size: "default" },
       parts: [
         part({}, () => ({ root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.label" } })),
-        part({ Size: ["MD", "SM"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),
+        part({ Size: ["default", "sm"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),
         part({ Selected: ["False", "True"] }, (selected) => selected === "True" ? {
           root: { fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") },
           "root:hover": { fill: c("surface.selected-pressed") }
@@ -6147,13 +6116,13 @@ var init_indicators = __esm({
         part({}, () => ({ root: { text: c("content.secondary") } }))
       ]
     };
-    ICON_ROLE = { SM: "icon.small", MD: "icon.medium", LG: "icon.large" };
+    ICON_ROLE = { sm: "icon.small", default: "icon.medium", lg: "icon.large" };
     ICON = {
       key: "Icon",
       slots: ["root"],
-      defaults: { Size: "MD" },
+      defaults: { Size: "default" },
       parts: [
-        part({ Size: ["SM", "MD", "LG"] }, (size) => ({
+        part({ Size: ["sm", "default", "lg"] }, (size) => ({
           root: { width: ICON_ROLE[size], height: ICON_ROLE[size], text: c("content.primary") }
         }))
       ]
@@ -6173,22 +6142,22 @@ var init_indicators = __esm({
       ]
     };
     FORMAT_TONE = {
-      PDF: { fill: "status.critical.surface-solid", on: "status.critical.on-solid" },
-      PNG: { fill: "status.info.surface-solid", on: "status.info.on-solid" },
-      SVG: { fill: "action.primary.default", on: "content.on-action" },
-      ZIP: { fill: "status.warning.surface-solid", on: "status.warning.on-solid" }
+      pdf: { fill: "status.critical.surface-solid", on: "status.critical.on-solid" },
+      png: { fill: "status.info.surface-solid", on: "status.info.on-solid" },
+      svg: { fill: "action.primary.default", on: "content.on-action" },
+      zip: { fill: "status.warning.surface-solid", on: "status.warning.on-solid" }
     };
     FILE_FORMAT = {
       key: "FileFormat",
       slots: ["root", "page", "plate"],
-      defaults: { Format: "PDF" },
+      defaults: { Format: "pdf" },
       parts: [
         part({}, () => ({
           root: { width: "size.control", height: "size.lg" },
           page: { text: c("border.strong"), paint: c("surface.layer-1") },
           plate: { radius: "radius.control", font: "type.caption", paddingX: "spacing.1_5", paddingY: "spacing.0_5" }
         })),
-        part({ Format: ["PDF", "PNG", "SVG", "ZIP"] }, (format) => ({
+        part({ Format: ["pdf", "png", "svg", "zip"] }, (format) => ({
           plate: { fill: c(FORMAT_TONE[format].fill), text: c(FORMAT_TONE[format].on) }
         }))
       ]
@@ -6268,7 +6237,6 @@ var init_componentRecipes = __esm({
       AspectRatio: ASPECT_RATIO,
       Popover: POPOVER,
       Tooltip: TOOLTIP,
-      InfoTooltip: INFO_TOOLTIP,
       ScrollArea: SCROLL_AREA,
       Alert: ALERT,
       Sonner: SONNER,
@@ -8401,7 +8369,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 94,
+          version: 95,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -9549,6 +9517,17 @@ var init_useDesignStore = __esm({
               surfaces(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) surfaces(sys?.snapshot);
+              }
+            }
+            if (version < 95) {
+              const fold = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const next = state2.selectedComponents.map((k) => k === "InfoTooltip" ? "Tooltip" : k);
+                state2.selectedComponents = [...new Set(next)];
+              };
+              fold(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) fold(sys?.snapshot);
               }
             }
             return persisted;

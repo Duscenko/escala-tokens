@@ -11,7 +11,7 @@ import { Icon as SkIcon } from '../../../escala-ui/icon'
 import { Rating as SkRating } from '../../../escala-ui/rating'
 import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
 import { Avatar as SkAvatar, AvatarFallback as SkAvatarFallback, type AvatarSize } from '../../../escala-ui/avatar'
-import { RecipeScope, lower } from './scope'
+import { RecipeScope } from './scope'
 
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
   return (
@@ -24,11 +24,11 @@ export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
 }
 
 export function SkeletonStatusBadgeSpecimen({ t, v }: SpecimenProps) {
-  return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'Online') as Presence} /></RecipeScope>
+  return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'online') as Presence} /></RecipeScope>
 }
 
 export function SkeletonChipSpecimen({ t, v }: SpecimenProps) {
-  const small = (v.Size ?? 'MD') === 'SM'
+  const small = v.Size === 'sm'
   const [selected, setSelected] = useState((v.Selected ?? 'False') === 'True')
   return (
     <RecipeScope t={t}>
@@ -36,7 +36,7 @@ export function SkeletonChipSpecimen({ t, v }: SpecimenProps) {
         key={`${v.Selected}-${v.Dismissible}-${v.Size}`}
         selected={selected}
         onPressedChange={setSelected}
-        size={small ? 'sm' : 'md'}
+        size={small ? 'sm' : 'default'}
         dismissible={(v.Dismissible ?? 'False') === 'True'}
         removeIcon={<PreviewIcon concept="close" size={small ? 9 : 10} />}
       >
@@ -55,11 +55,11 @@ export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {
 }
 
 export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
-  const step = lower(v.Size, 'MD')
-  const role: IconRole = step === 'sm' ? 'small' : step === 'lg' || step === 'xl' ? 'large' : 'medium'
+  const step = v.Size ?? 'default'
+  const role: IconRole = step === 'sm' ? 'small' : step === 'lg' ? 'large' : 'medium'
   return (
     <RecipeScope t={t}>
-      <SkIcon size={role === 'small' ? 'sm' : role === 'large' ? 'lg' : 'md'}>
+      <SkIcon size={role === 'small' ? 'sm' : role === 'large' ? 'lg' : 'default'}>
         <PreviewIcon concept="home" size={iconRoleOf(t, role)} />
       </SkIcon>
     </RecipeScope>
@@ -81,7 +81,7 @@ export function SkeletonRatingSpecimen({ t, v }: SpecimenProps) {
 }
 
 export function SkeletonFileFormatSpecimen({ t, v }: SpecimenProps) {
-  return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'PDF') as Format} /></RecipeScope>
+  return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'pdf') as Format} /></RecipeScope>
 }
 
 /** `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with

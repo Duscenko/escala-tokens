@@ -68,7 +68,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
   it('Button geometry: same refs, and the spacing resolves to the web value', async () => {
     const plugin = await import(/* @vite-ignore */ pluginFile)
     const table = serializeRecipes()
-    for (const size of ['SM', 'MD', 'LG', 'XL']) {
+    for (const size of ['default', 'xs', 'sm', 'lg']) {
       const web = resolveRecipe(COMPONENT_RECIPES.Button, { Size: size }).root
       expect(plugin.buttonGeometry(table, size)).toEqual({
         height: web.height ?? null, paddingX: web.paddingX ?? null, gap: web.gap ?? null,

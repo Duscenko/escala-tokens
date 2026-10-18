@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 
-export type Strength = 'Weak' | 'Fair' | 'Strong'
+export type Strength = 'weak' | 'fair' | 'strong'
 
 /** 0–4 from length and character mix; the meter and caption follow it. */
 export function scorePassword(pw: string): { level: number; strength: Strength; caption: string } {
@@ -12,15 +12,15 @@ export function scorePassword(pw: string): { level: number; strength: Strength; 
   if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) n++
   if (/\d/.test(pw)) n++
   if (/[^A-Za-z0-9]/.test(pw) && pw.length >= 10) n++
-  if (n <= 1) return { level: Math.max(1, n), strength: 'Weak', caption: 'Weak — add more characters.' }
-  if (n <= 3) return { level: n, strength: 'Fair', caption: 'Fair — mix in numbers and symbols.' }
-  return { level: 4, strength: 'Strong', caption: 'Strong password.' }
+  if (n <= 1) return { level: Math.max(1, n), strength: 'weak', caption: 'Weak — add more characters.' }
+  if (n <= 3) return { level: n, strength: 'fair', caption: 'Fair — mix in numbers and symbols.' }
+  return { level: 4, strength: 'strong', caption: 'Strong password.' }
 }
 
 const FORCED: Record<Strength, { level: number; caption: string }> = {
-  Weak: { level: 1, caption: 'Weak — add more characters.' },
-  Fair: { level: 2, caption: 'Fair — mix in numbers and symbols.' },
-  Strong: { level: 4, caption: 'Strong password.' },
+  weak: { level: 1, caption: 'Weak — add more characters.' },
+  fair: { level: 2, caption: 'Fair — mix in numbers and symbols.' },
+  strong: { level: 4, caption: 'Strong password.' },
 }
 
 export interface PasswordStrengthProps extends Omit<React.ComponentProps<'div'>, 'onChange'> {

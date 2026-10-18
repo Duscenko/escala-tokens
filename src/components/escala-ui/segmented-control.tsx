@@ -9,10 +9,10 @@ export interface SegmentedControlProps extends Omit<React.ComponentProps<'div'>,
   value?: string
   defaultValue?: string
   onValueChange?: (value: string) => void
-  size?: 'md' | 'sm'
+  size?: 'default' | 'sm'
 }
 
-function SegmentedControl({ options, value, defaultValue, onValueChange, size = 'md', className, ...props }: SegmentedControlProps) {
+function SegmentedControl({ options, value, defaultValue, onValueChange, size = 'default', className, ...props }: SegmentedControlProps) {
   const [inner, setInner] = React.useState(defaultValue ?? options[0])
   const active = value ?? inner
   const ref = React.useRef<HTMLDivElement>(null)
@@ -22,7 +22,7 @@ function SegmentedControl({ options, value, defaultValue, onValueChange, size = 
       role="radiogroup"
       data-slot="segmented-control"
       data-escala="SegmentedControl"
-      data-size={size === 'sm' ? 'SM' : 'MD'}
+      data-size={size}
       className={cn('relative inline-flex', className)}
       {...props}
     >

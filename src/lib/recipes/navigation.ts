@@ -55,14 +55,14 @@ export const TAB_MENU: ComponentRecipe = {
 // ── SegmentedControl ───────────────────────────────────────────────────────
 
 const SEGMENT_SIZE: Record<string, { padX: string; padY: string }> = {
-  MD: { padX: 'spacing.4', padY: 'spacing.1_5' },
-  SM: { padX: 'spacing.2_5', padY: 'spacing.1' },
+  default: { padX: 'spacing.4', padY: 'spacing.1_5' },
+  sm: { padX: 'spacing.2_5', padY: 'spacing.1' },
 }
 
 export const SEGMENTED_CONTROL: ComponentRecipe = {
   key: 'SegmentedControl',
   slots: ['root', 'item', 'pill'],
-  defaults: { Size: 'MD' },
+  defaults: { Size: 'default' },
   parts: [
     // The track is a container on a container: `surface.layer-2`, as the
     // elevation contract says (layer-1 is the card it sits on).
@@ -73,7 +73,7 @@ export const SEGMENTED_CONTROL: ComponentRecipe = {
       'item:hover': { text: c('content.primary') },
       'item[aria-checked="true"]': { text: c('content.primary') },
     })),
-    part({ Size: ['MD', 'SM'] as const }, (size) => ({
+    part({ Size: ['default', 'sm'] as const }, (size) => ({
       item: { paddingX: SEGMENT_SIZE[size].padX, paddingY: SEGMENT_SIZE[size].padY },
     })),
   ],

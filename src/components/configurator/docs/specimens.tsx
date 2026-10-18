@@ -40,7 +40,7 @@ import {
 } from './skeleton/forms'
 import {
   SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen,
-  SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen, SkeletonInfoTooltipSpecimen,
+  SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
 } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
@@ -383,7 +383,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Dialog: SkeletonDialogSpecimen,
   Popover: SkeletonPopoverSpecimen,
   Tooltip: SkeletonTooltipSpecimen,
-  InfoTooltip: SkeletonInfoTooltipSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
   // Feedback
   Sonner: SkeletonSonnerSpecimen,

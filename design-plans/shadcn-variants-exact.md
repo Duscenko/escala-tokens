@@ -105,7 +105,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 | 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ✅ 2026-10-18 · plugin 0.8.0 |
 | 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ✅ 2026-10-18 · plugin 0.9.0 |
 | 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ✅ 2026-10-18 · plugin 0.10.0 |
-| 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | Ningún eje con valores en mayúscula ni Danger/Error |
+| 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | ✅ 2026-10-18 · plugin 0.11.0 |
 | 6 · Cierre | Migración del store, artefactos, `statusAction`, CLAUDE.md, plugin 0.7.0 | `npm test` + `npm run build` en verde, plugin construye todos los sets |
 
 Cada fase es un commit en los dos repos a la vez: el test de paridad no deja
@@ -189,3 +189,22 @@ que la web y el plugin queden desalineados entre fases.
 - Store v94 renombra Divider→Separator y Modal→Dialog en `selectedComponents`.
   Las URLs `/components/Divider` y `/components/Modal` dejan de existir (sitemap
   regenerado). Plugin 0.10.0.
+
+## Fase 5 — hecha (2026-10-18)
+
+- Valores de eje en minúscula, como las props de shadcn (catálogo = receta =
+  `data-*` = variante en Figma): SocialLoginButton `Provider`
+  google·apple·github·figma + `Size` default·lg · AppStoreBadge `Store`
+  app-store·google-play · PasswordStrength `Strength` weak·fair·strong ·
+  StatusBadge `Status` online·away·busy·offline · Chip y SegmentedControl `Size`
+  default·sm · Icon `Size` sm·default·lg · FileFormat `Format` pdf·png·svg·zip.
+  El texto en pantalla sigue en su forma legible ("Continue with Google",
+  "Online", "PDF"): solo el valor cambia.
+- **InfoTooltip plegado en Tooltip** (decisión 2): una ⓘ es un Tooltip sobre un
+  Button ghost de icono. Clave, receta, espécimen, snippet, builder y set de Figma
+  borrados; store v95 la cambia por Tooltip. Catálogo y plugin: 58 claves.
+- Los ejes `State` y los booleanos (`Checked`, `Selected`, `Dismissible`,
+  `Interactive` True/False) se quedan como están: son propiedades de Figma, no
+  props de shadcn (igual que en las fases 1–3). Ningún eje del catálogo lleva ya
+  tamaños en mayúscula ni Danger/Error.
+- Plugin 0.11.0.

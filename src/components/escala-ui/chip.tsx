@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils'
 
 export interface ChipProps extends Omit<React.ComponentProps<'span'>, 'onChange'> {
   selected?: boolean
-  size?: 'md' | 'sm'
+  size?: 'default' | 'sm'
   /** Toggles the chip. */
   onPressedChange?: (selected: boolean) => void
   /** Shows the remove control and calls this when it is pressed. */
@@ -17,7 +17,7 @@ export interface ChipProps extends Omit<React.ComponentProps<'span'>, 'onChange'
 }
 
 function Chip({
-  selected = false, size = 'md', onPressedChange, onRemove, removeIcon = '×', dismissible, className, children, ...props
+  selected = false, size = 'default', onPressedChange, onRemove, removeIcon = '×', dismissible, className, children, ...props
 }: ChipProps) {
   const showRemove = dismissible ?? onRemove != null
   return (
@@ -26,7 +26,7 @@ function Chip({
       data-escala="Chip"
       data-selected={selected ? 'True' : 'False'}
       data-dismissible={showRemove ? 'True' : 'False'}
-      data-size={size === 'sm' ? 'SM' : 'MD'}
+      data-size={size}
       className={cn('inline-flex cursor-pointer items-center whitespace-nowrap transition-[background-color,border-color,color] duration-150', className)}
       {...props}
     >

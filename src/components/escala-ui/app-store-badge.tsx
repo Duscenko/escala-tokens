@@ -5,14 +5,14 @@ import * as React from 'react'
 import { cn } from '../../lib/utils'
 import { STORE_BADGE_EDGE, STORE_BADGE_FILL, STORE_BADGE_INK, StoreGlyph } from './brand-artwork'
 
-export type Store = 'App Store' | 'Google Play'
+export type Store = 'app-store' | 'google-play'
 
 export interface AppStoreBadgeProps extends Omit<React.ComponentProps<'a'>, 'children'> {
   store: Store
 }
 
 function AppStoreBadge({ store, className, style, ...props }: AppStoreBadgeProps) {
-  const play = store === 'Google Play'
+  const play = store === 'google-play'
   return (
     <a
       data-slot="app-store-badge"
