@@ -478,9 +478,10 @@ pasa de 18 a 16 px porque ahora sale de un paso de espaciado.
   `recipes/*`, `recipeStyles`, `fontStack.ts` (extraído de `fonts.ts`), `chartPalette.ts`.
 
 **Abierto.**
-- **Fase 4 · Exportación — lo que falta:** E11.3 (`snippetFor`, `agentContextMarkdown` y
-  `get_component` del MCP siguen hablando la API vieja; deberían nombrar el componente del
-  registry y su comando `npx shadcn add`). Probar el registry contra un sistema publicado
+- **MCP archivado (decidido 2026-10-18): E11.3 NO se hace por ahora.** El MCP hospedado está
+  pausado (410) y no se toca; `get_component` sigue con la API vieja hasta reactivarlo.
+  (`snippetFor` / `agentContextMarkdown` sí podrían migrar aparte, sin tocar el MCP.)
+- **Fase 4 · Exportación — lo que falta:** probar el registry contra un sistema publicado
   real en producción tras el deploy (en local se probó con `?project=dev`).
 - **Fase 5 · Nuevos:** los ~22 de "solo shadcn" (Calendar, Sheet, Table…). Cada uno
   necesita gate + spec en el plugin antes que entrada en el catálogo. Decisión 4 pendiente.
