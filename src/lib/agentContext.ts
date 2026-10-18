@@ -9,6 +9,7 @@ import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
 import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
+import { COMPONENT_RECIPES, cssVarOf, recipeRows } from './componentRecipes'
 import {
   LAYOUT_ROLES,
   RADIUS_STEPS,
@@ -21,6 +22,8 @@ import {
 } from './layoutTokens'
 
 export interface AgentFoundationTokens extends Partial<Record<PreviewColorField, string>> {
+  /** Resolved Categorical roles of the previewed mode (`PreviewTokens.archTokens`). */
+  archTokens?: Record<string, string>
   radius: Record<string, string>
   spacing: Record<string, string>
   sizes?: Record<string, string>
@@ -144,6 +147,29 @@ function val(map: Record<string, string> | undefined, key: string, fallback = '�
  *  foundation pages' "Use it" pane use, truncated the same way
  *  (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables below it. */
 function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
+  const recipe = COMPONENT_RECIPES[def.key]
+  if (recipe) {
+    const lines = [
+      '### Tokens by part (the component recipe)',
+      '',
+      `${def.label} is built on the shadcn skeleton; each part is painted by exactly these tokens, in every variant. The web stylesheet and the Figma component read the same table (\`componentRecipes\` in tokens.json). Bind by name; never hardcode a hex or a px.`,
+      '',
+      '| Part | Property | Token | CSS | Figma | Live |',
+      '|---|---|---|---|---|---|',
+    ]
+    for (const row of recipeRows(recipe)) {
+      const isColor = row.ref.startsWith('color.')
+      const id = row.ref.slice(row.ref.indexOf('.') + 1)
+      const css = row.ref.startsWith('type.')
+        ? `\`${cssVarOf(row.ref, 'font-size')}\` …`
+        : `\`${cssVarOf(row.ref)}\``
+      const figma = isColor ? `\`${figmaVar(id)}\`` : '—'
+      const live = isColor ? `\`${t.archTokens?.[id] ?? '—'}\`` : '—'
+      lines.push(`| ${row.slot} | ${row.prop} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
+    }
+    lines.push('')
+    return lines
+  }
   const scoped = COMPONENT_COLOR_FIELDS[def.key]
   if (scoped?.length) {
     const lines = [

@@ -19,6 +19,7 @@ import { appearanceFromModeKey, type ThemeAppearance } from './themeModes'
 import { auditResolvedRoles, CURATED_PAIRINGS, type ResolvedFinding } from './color/audit'
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
+import { COMPONENT_RECIPES, recipeRows } from './componentRecipes'
 import { COLOR_FIELD_INFO } from './previewColorFields'
 import { CATEGORICAL_FIELD_ROLE } from './previewTokens'
 import { rolesForComponent } from './tokenInspector'
@@ -140,6 +141,18 @@ export function tokenMapping(keys: readonly string[]): TokenMappingRow[] {
   for (const key of keys) {
     const def = COMPONENTS.find((c) => c.key === key)
     if (!def) continue
+    const recipe = COMPONENT_RECIPES[key]
+    if (recipe) {
+      for (const row of recipeRows(recipe).filter((r) => r.ref.startsWith('color.'))) {
+        rows.push({
+          component: key,
+          componentLabel: def.label,
+          property: `${row.slot} ${row.prop}`,
+          role: row.ref.slice(6),
+        })
+      }
+      continue
+    }
     for (const field of COMPONENT_COLOR_FIELDS[key] ?? []) {
       rows.push({
         component: key,

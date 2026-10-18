@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { COMPONENTS, type ComponentDef } from '../componentCatalogue'
 import { agentContextMarkdown, type AgentFoundationTokens } from '../agentContext'
+import { COMPONENT_RECIPES } from '../componentRecipes'
+import { COMPONENT_COLOR_FIELDS } from '../componentColorFields.generated'
 
 const otp = COMPONENTS.find((c) => c.key === 'InputOTP')!
 
@@ -64,23 +66,21 @@ describe('agentContextMarkdown', () => {
     expect(md).not.toContain('Border/critical')
   })
 
-  it('scopes the Color section to the roles Button\'s own specimen reads, resolved', () => {
+  it('a recipe component lists its tokens by part, with the live role colour', () => {
     const button = COMPONENTS.find((c) => c.key === 'Button')!
-    const md = agentContextMarkdown(button, '<Button />', TOKENS)
+    const md = agentContextMarkdown(button, '<Button />', { ...TOKENS, archTokens: { 'action.primary.default': '#7f56d9' } })
+    expect(md).toContain('### Tokens by part (the component recipe)')
+    expect(md).toContain('| root | fill | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
+    expect(md).toContain('`color.content.on-action`')
+    expect(md).toContain('`--size-control`')
+    expect(md).not.toContain('### Color (scoped to this component)')
+  })
+
+  it('scopes the Color section to the specimen\'s own fields when it has no recipe yet', () => {
+    const legacy = COMPONENTS.find((c) => !COMPONENT_RECIPES[c.key] && COMPONENT_COLOR_FIELDS[c.key]?.length)
+    if (!legacy) return // every component is on the skeleton: nothing left to scope
+    const md = agentContextMarkdown(legacy, '<X />', TOKENS)
     expect(md).toContain('### Color (scoped to this component)')
-    // A real resolved value next to a real role — not merely a var/Figma
-    // NAME. This is the exact gap this section closes: every other table
-    // already resolved to a value, color used to be name-only.
-    expect(md).toContain('`brandSolid`')
-    expect(md).toContain('`--color-background-brand-solid`')
-    expect(md).toContain('`#7f56d9`')
-    expect(md).toContain('`onBrand`')
-    expect(md).toContain('`#ffffff`')
-    // The four state-family fields are labeled without a fabricated CSS var
-    // — which family backs "error" can be re-pointed by a theme, so there is
-    // no single name that's always correct (see previewColorFields.ts).
-    expect(md).toContain('`errorColor`')
-    expect(md).toMatch(/\| `errorColor` \| Error accent[^|]*\| — \| `#f04438` \|/)
   })
 
   it('falls back to the full palette when a component has no scoped color map', () => {

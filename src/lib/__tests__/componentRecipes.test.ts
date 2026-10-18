@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeTokenRefs, resolveRecipe, serializeRecipes,
 } from '../componentRecipes'
-import { RECIPE_CSS, recipeCss, recipeCssVars } from '../recipeStyles'
+import { RECIPE_CSS, recipeCss, recipeCssVars, slotName } from '../recipeStyles'
 import { COMPONENTS } from '../componentCatalogue'
 import { buildArchitectureView } from '../semanticArchitectures'
 import { buildSystem } from '../color/audit'
@@ -52,6 +52,17 @@ describe('component recipes', () => {
       }
       for (const [axis, value] of Object.entries(recipe.defaults)) {
         expect(axes.get(axis), `${recipe.key} default ${axis}`).toContain(value)
+      }
+    }
+  })
+
+  it('only paint slots the recipe declares (a key may carry a :state / [attr] suffix)', () => {
+    for (const recipe of Object.values(COMPONENT_RECIPES)) {
+      const declared = new Set([...recipe.slots, ...Object.keys(recipe.pseudoSlots ?? {})])
+      for (const p of recipe.parts) {
+        for (const slots of Object.values(p.values)) {
+          for (const key of Object.keys(slots)) expect(declared, `${recipe.key}.${key}`).toContain(slotName(key))
+        }
       }
     }
   })

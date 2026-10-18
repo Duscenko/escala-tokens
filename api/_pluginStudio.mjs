@@ -165,23 +165,22 @@ var init_componentCatalogue = __esm({
         // also just catches this file up to what `ButtonSpecimen` already does:
         // it reads `icons.leading`/`icons.trailing` directly, never `v.Icon`.
         axes: [
-          { name: "Color", values: ["Brand", "Danger", "Success"] },
+          { name: "Color", values: ["Brand", "Neutral", "Danger", "Success"] },
           { name: "Style", values: ["Solid", "Outline", "Soft", "Ghost"] },
           { name: "Size", values: ["MD", "SM", "LG", "XL"] },
           { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"] }
         ],
         figmaSets: ["Button"],
         props: [
-          { name: "color", type: '"brand" | "danger" | "success"', description: "Semantic intent of the action" },
-          { name: "style", type: '"solid" | "outline" | "soft" | "ghost"', description: "Visual emphasis of the button" },
-          { name: "size", type: '"sm" | "md" | "lg" | "xl"', description: "Control height \u2014 follows the Sizes foundation (sm\xB7md\xB7lg\xB7xl); lg/xl for touch/mobile CTAs" },
-          { name: "label", type: "string", description: "Verb-led text content" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction and applies muted styles" },
-          { name: "loading", type: "boolean", description: "Replaces label with spinner, blocks clicks" },
-          { name: "leadingIcon", type: "ReactNode", description: "Icon before the label \u2014 independent of trailingIcon, both may show at once" },
-          { name: "trailingIcon", type: "ReactNode", description: "Icon after the label \u2014 independent of leadingIcon, both may show at once" }
+          { name: "variant", type: '"solid" | "outline" | "soft" | "ghost" | "default" | "secondary" | "destructive" | "link"', description: "Visual emphasis (Escala styles). The shadcn names map onto it: default = solid, secondary = solid neutral, destructive = solid danger, link = ghost." },
+          { name: "intent", type: '"brand" | "neutral" | "danger" | "success"', description: "Semantic colour. Defaults to neutral for outline / ghost (as in shadcn) and brand for solid / soft." },
+          { name: "size", type: '"sm" | "md" | "lg" | "xl" | "icon" | "icon-sm" | "icon-lg"', description: "Control height \u2014 follows the Sizes foundation (compact \xB7 control \xB7 touch). icon* are square." },
+          { name: "loading", type: "boolean", description: "Replaces the leading icon with a spinner and sets aria-busy." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." },
+          { name: "asChild", type: "boolean", description: "Render the child element (a link, a router link) with the Button styles \u2014 Radix Slot." },
+          { name: "children", type: "ReactNode", description: "Label, with optional icons before / after it as plain children." }
         ],
-        accessibility: "Uses native <button>. Requires accessible label. Disabled state uses aria-disabled."
+        accessibility: "Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. Icon-only buttons need an aria-label."
       },
       {
         key: "ButtonGroup",
@@ -192,10 +191,11 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["MD", "SM", "LG"] }],
         figmaSets: ["Button Group"],
         props: [
-          { name: "items", type: "{ label: string; onClick: () => void }[]", description: "Buttons in visual order" },
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Shared height scale \u2014 follows the Sizes foundation" }
+          { name: "size", type: '"sm" | "md" | "lg"', description: "Shared height scale \u2014 follows the Sizes foundation." },
+          { name: "ButtonGroupItem selected", type: "boolean", description: "Marks the current choice (aria-pressed) and paints the selected fill." },
+          { name: "ButtonGroupSeparator", type: "component", description: "Optional divider between segments." }
         ],
-        accessibility: 'Wrapped in role="group" with aria-label. Each item is a native <button>.'
+        accessibility: 'role="group" on the container (add aria-label). Each item is a native <button> with aria-pressed.'
       },
       {
         key: "CloseButton",
@@ -209,10 +209,11 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Button Close"],
         props: [
-          { name: "size", type: '"sm" | "md"', description: "Hit-area scale \u2014 24 / 32px" },
-          { name: "onClick", type: "() => void", description: "Dismiss handler" }
+          { name: "size", type: '"sm" | "md"', description: "Hit-area scale \u2014 24 / 32px." },
+          { name: "children", type: "ReactNode", description: "The glyph (an X from your icon library)." },
+          { name: "onClick", type: "() => void", description: "Dismiss handler." }
         ],
-        accessibility: 'aria-label="Close" required \u2014 the glyph alone is not accessible.'
+        accessibility: 'aria-label="Close" is built in \u2014 the glyph alone is not accessible.'
       },
       {
         key: "FABButton",
@@ -223,11 +224,11 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["MD", "LG"] }],
         figmaSets: ["Button FAB"],
         props: [
-          { name: "icon", type: "ReactNode", description: "Glyph at the center (required)" },
-          { name: "size", type: '"md" | "lg"', description: "Diameter \u2014 48 / 56px" },
-          { name: "label", type: "string", description: "Accessible name for the action" }
+          { name: "size", type: '"md" | "lg"', description: "Diameter \u2014 48 / 56px." },
+          { name: "children", type: "ReactNode", description: "Glyph at the centre (required)." },
+          { name: "aria-label", type: "string", description: "Accessible name for the action (required \u2014 icon-only)." }
         ],
-        accessibility: "aria-label required (icon-only). Elevation communicated via shadow tokens only."
+        accessibility: "aria-label required (icon-only). Elevation is the shadow token, never colour alone."
       },
       {
         key: "SocialLoginButton",
@@ -241,9 +242,10 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Button Social"],
         props: [
-          { name: "provider", type: '"google" | "apple" | "github" | "figma"', description: "Identity provider" },
-          { name: "size", type: '"md" | "lg"', description: "Control height \u2014 lg for mobile sign-in screens" },
-          { name: "onClick", type: "() => void", description: "Starts the OAuth flow" }
+          { name: "provider", type: '"Google" | "Apple" | "GitHub" | "Figma"', description: "Identity provider \u2014 picks the mark." },
+          { name: "size", type: '"md" | "lg"', description: "Control height \u2014 lg for mobile sign-in screens." },
+          { name: "label", type: "ReactNode", description: 'Defaults to "Continue with <provider>". Never icon-only.' },
+          { name: "onClick", type: "() => void", description: "Starts the OAuth flow." }
         ],
         accessibility: 'Native <button> with the full "Continue with \u2026" label \u2014 never icon-only.'
       },
@@ -256,8 +258,9 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "State", values: ["Default", "Hover", "Disabled"] }],
         figmaSets: ["Text Link"],
         props: [
-          { name: "href", type: "string", description: "Destination URL" },
-          { name: "external", type: "boolean", description: 'Adds the \u2197 affordance and target="_blank"' }
+          { name: "href", type: "string", description: "Destination URL." },
+          { name: "forceState", type: '"Default" | "Hover" | "Disabled"', description: "Pin a state without a pointer (docs, tests)." },
+          { name: "aria-disabled", type: "boolean", description: "Disabled links keep their element but drop the hover affordance." }
         ],
         accessibility: "Real <a> element. Underline on hover/focus so color is not the only signal."
       },
@@ -270,8 +273,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Store", values: ["App Store", "Google Play"] }],
         figmaSets: ["Store Badge"],
         props: [
-          { name: "store", type: '"app-store" | "google-play"', description: "Target store" },
-          { name: "href", type: "string", description: "Store listing URL" }
+          { name: "store", type: '"App Store" | "Google Play"', description: "Target store \u2014 picks the artwork." },
+          { name: "href", type: "string", description: "Store listing URL." }
         ],
         accessibility: 'Anchor with descriptive aria-label ("Download on the App Store").'
       },
@@ -5074,7 +5077,7 @@ var init_tokenDescriptions = __esm({
   }
 });
 
-// src/lib/componentRecipes.ts
+// src/lib/recipes/helpers.ts
 function combos(axes) {
   return Object.values(axes).reduce(
     (acc, values) => acc.flatMap((prefix) => values.map((v) => [...prefix, v])),
@@ -5086,6 +5089,15 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
+var c, NONE;
+var init_helpers = __esm({
+  "src/lib/recipes/helpers.ts"() {
+    c = (role) => `color.${role}`;
+    NONE = "none";
+  }
+});
+
+// src/lib/recipes/actions.ts
 function buttonPaint(color, style, state2) {
   const k = BUTTON_INTENTS[color];
   if (state2 === "Disabled") {
@@ -5101,50 +5113,22 @@ function buttonPaint(color, style, state2) {
   const pressed = state2 === "Pressed";
   const ring = state2 === "Focused" ? c(k.ring) : NONE;
   if (style === "Solid") {
-    return {
-      root: { fill: c(pressed ? k.solidPressed : hover ? k.solidHover : k.solid), stroke: NONE, ring, text: c(k.on) }
-    };
+    return { root: { fill: c(pressed ? k.solidPressed : hover ? k.solidHover : k.solid), stroke: NONE, ring, text: c(k.on) } };
   }
   if (style === "Soft") {
-    return {
-      root: { fill: c(hover || pressed ? k.softPressed : k.soft), stroke: NONE, ring, text: c(k.ink) }
-    };
+    return { root: { fill: c(hover || pressed ? k.softPressed : k.soft), stroke: NONE, ring, text: c(k.ink) } };
   }
   if (style === "Outline") {
-    return {
-      root: { fill: pressed ? c(k.softPressed) : hover ? c(k.soft) : NONE, stroke: c(k.line), ring, text: c(k.ink) }
-    };
+    return { root: { fill: pressed ? c(k.washPressed) : hover ? c(k.wash) : NONE, stroke: c(k.line), ring, text: c(k.ink) } };
   }
   return {
     root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, ring, text: c(k.ink) }
   };
 }
-function inputPaint(state2) {
-  const disabled = state2 === "Disabled";
-  const error = state2 === "Error";
-  const stroke = disabled ? "action.disabled.default" : error ? "status.critical.border-strong" : state2 === "Focused" ? "border.focus" : state2 === "Hover" ? "border.control-hover" : "border.strong";
-  return {
-    label: { text: c(disabled ? "content.disabled" : "content.primary") },
-    field: {
-      fill: c(disabled ? "action.disabled.default" : "surface.input"),
-      stroke: c(stroke),
-      ring: state2 === "Focused" ? c("border.ring.default") : NONE
-    },
-    value: { text: c(disabled ? "content.disabled" : "content.primary") },
-    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
-    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
-    hint: { text: c(error ? "status.critical.content" : "content.secondary") },
-    spinner: { text: c(state2 === "Loading" ? "action.primary.default" : "content.secondary") }
-  };
-}
-function serializeRecipes() {
-  return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
-}
-var c, NONE, BUTTON_INTENTS, BUTTON_COLORS, BUTTON_STYLES, BUTTON_STATES, BUTTON_SIZES, BUTTON_GEOMETRY, BUTTON, INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT, CARD, MODAL, COMPONENT_RECIPES;
-var init_componentRecipes = __esm({
-  "src/lib/componentRecipes.ts"() {
-    c = (role) => `color.${role}`;
-    NONE = "none";
+var BUTTON_INTENTS, BUTTON_COLORS, BUTTON_STYLES, BUTTON_STATES, BUTTON_SIZES, BUTTON_GEOMETRY, BUTTON, GROUP_GEOMETRY, BUTTON_GROUP, CLOSE_BUTTON, FAB_BUTTON, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, TEXT_LINK, APP_STORE_BADGE;
+var init_actions = __esm({
+  "src/lib/recipes/actions.ts"() {
+    init_helpers();
     BUTTON_INTENTS = {
       Brand: {
         solid: "action.primary.default",
@@ -5153,8 +5137,25 @@ var init_componentRecipes = __esm({
         on: "content.on-action",
         soft: "surface.selected",
         softPressed: "surface.selected-pressed",
+        wash: "surface.selected",
+        washPressed: "surface.selected-pressed",
         line: "border.accent",
         ink: "content.accent",
+        ring: "border.ring.default"
+      },
+      // shadcn's secondary / outline / ghost are NEUTRAL: ink is the page's text,
+      // the edge is the control boundary, fills are the neutral action ramp.
+      Neutral: {
+        solid: "action.secondary.default",
+        solidHover: "action.secondary.hover",
+        solidPressed: "action.secondary.pressed",
+        on: "content.primary",
+        soft: "action.secondary.default",
+        softPressed: "action.secondary.pressed",
+        wash: "action.ghost.hover",
+        washPressed: "action.ghost.pressed",
+        line: "border.strong",
+        ink: "content.primary",
         ring: "border.ring.default"
       },
       Danger: {
@@ -5164,6 +5165,8 @@ var init_componentRecipes = __esm({
         on: "status.critical.on-solid",
         soft: "status.critical.surface",
         softPressed: "status.critical.surface-pressed",
+        wash: "status.critical.surface",
+        washPressed: "status.critical.surface-pressed",
         line: "status.critical.border-strong",
         ink: "status.critical.content",
         ring: "status.critical.border"
@@ -5175,12 +5178,14 @@ var init_componentRecipes = __esm({
         on: "status.success.on-solid",
         soft: "status.success.surface",
         softPressed: "status.success.surface-pressed",
+        wash: "status.success.surface",
+        washPressed: "status.success.surface-pressed",
         line: "status.success.border-strong",
         ink: "status.success.content",
         ring: "status.success.border"
       }
     };
-    BUTTON_COLORS = ["Brand", "Danger", "Success"];
+    BUTTON_COLORS = ["Brand", "Neutral", "Danger", "Success"];
     BUTTON_STYLES = ["Solid", "Outline", "Soft", "Ghost"];
     BUTTON_STATES = ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"];
     BUTTON_SIZES = ["MD", "SM", "LG", "XL"];
@@ -5202,6 +5207,147 @@ var init_componentRecipes = __esm({
         part({ Color: BUTTON_COLORS, Style: BUTTON_STYLES, State: BUTTON_STATES }, buttonPaint)
       ]
     };
+    GROUP_GEOMETRY = {
+      MD: { height: "size.control", paddingX: "spacing.4" },
+      SM: { height: "size.compact", paddingX: "spacing.3" },
+      LG: { height: "size.touch", paddingX: "spacing.5" }
+    };
+    BUTTON_GROUP = {
+      key: "ButtonGroup",
+      slots: ["root", "item", "itemSelected", "separator"],
+      defaults: { Size: "MD" },
+      parts: [
+        part({}, () => ({
+          root: { stroke: c("border.strong"), strokeWidth: "stroke.control", radius: "radius.action" },
+          item: { text: c("content.primary"), font: "type.label" },
+          "item:hover": { fill: c("action.ghost.hover") },
+          "item:active": { fill: c("action.ghost.pressed") },
+          itemSelected: { fill: c("action.secondary.default"), text: c("content.primary"), font: "type.label" },
+          separator: { fill: c("border.strong") }
+        })),
+        part({ Size: ["MD", "SM", "LG"] }, (size) => ({
+          item: GROUP_GEOMETRY[size],
+          itemSelected: GROUP_GEOMETRY[size],
+          separator: { width: "stroke.control" }
+        }))
+      ]
+    };
+    CLOSE_BUTTON = {
+      key: "CloseButton",
+      slots: ["root", "icon"],
+      defaults: { Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.action" } })),
+        // 24 / 32 — `hit` is the 24px role; MD steps up one rung.
+        part({ Size: ["MD", "SM"] }, (size) => ({
+          root: { height: size === "SM" ? "size.hit" : "size.sm" }
+        })),
+        part({ State: ["Default", "Hover", "Focused"] }, (state2) => ({
+          root: {
+            fill: state2 === "Hover" ? c("action.ghost.hover") : NONE,
+            text: c("content.secondary"),
+            ring: state2 === "Focused" ? c("border.ring.default") : NONE
+          }
+        }))
+      ]
+    };
+    FAB_BUTTON = {
+      key: "FABButton",
+      slots: ["root", "icon"],
+      defaults: { Size: "MD" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("action.primary.default"),
+            text: c("content.on-action"),
+            radius: "radius.pill",
+            shadow: "shadow.lg"
+          },
+          "root:hover": { fill: c("action.primary.hover") },
+          "root:active": { fill: c("action.primary.pressed") },
+          "root:focus-visible": { ring: c("border.ring.default") }
+        })),
+        // 48 / 56 — `fab` is the 56px role; MD is one rung down.
+        part({ Size: ["MD", "LG"] }, (size) => ({
+          root: { height: size === "LG" ? "size.fab" : "size.lg" }
+        }))
+      ]
+    };
+    SOCIAL_GEOMETRY = {
+      MD: { height: "size.control", paddingX: "spacing.4", gap: "spacing.2_5" },
+      LG: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.2_5" }
+    };
+    SOCIAL_LOGIN_BUTTON = {
+      key: "SocialLoginButton",
+      slots: ["root", "label", "icon"],
+      defaults: { Provider: "Google", Size: "MD" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            text: c("content.primary"),
+            radius: "radius.action",
+            font: "type.button"
+          },
+          "root:hover": { fill: c("action.ghost.hover") },
+          "root:active": { fill: c("action.ghost.pressed") },
+          "root:focus-visible": { ring: c("border.ring.default") }
+        })),
+        part({ Size: ["MD", "LG"] }, (size) => ({ root: SOCIAL_GEOMETRY[size] }))
+      ]
+    };
+    TEXT_LINK = {
+      key: "TextLink",
+      slots: ["root"],
+      defaults: { State: "Default" },
+      parts: [
+        part({ State: ["Default", "Hover", "Disabled"] }, (state2) => ({
+          root: {
+            text: c(state2 === "Disabled" ? "content.disabled" : state2 === "Hover" ? "content.link.hover" : "content.link.default")
+          }
+        }))
+      ]
+    };
+    APP_STORE_BADGE = {
+      key: "AppStoreBadge",
+      slots: ["root", "eyebrow", "name"],
+      defaults: { Store: "App Store" },
+      parts: [
+        part({ Store: ["App Store", "Google Play"] }, () => ({
+          root: { radius: "radius.action", paddingX: "spacing.4", paddingY: "spacing.2", gap: "spacing.2_5" },
+          eyebrow: { font: "type.caption" },
+          name: { font: "type.button" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/forms.ts
+function inputPaint(state2) {
+  const disabled = state2 === "Disabled";
+  const error = state2 === "Error";
+  const stroke = disabled ? "action.disabled.default" : error ? "status.critical.border-strong" : state2 === "Focused" ? "border.focus" : state2 === "Hover" ? "border.control-hover" : "border.strong";
+  return {
+    label: { text: c(disabled ? "content.disabled" : "content.primary") },
+    field: {
+      fill: c(disabled ? "action.disabled.default" : "surface.input"),
+      stroke: c(stroke),
+      ring: state2 === "Focused" ? c("border.ring.default") : NONE
+    },
+    value: { text: c(disabled ? "content.disabled" : "content.primary") },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
+    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
+    hint: { text: c(error ? "status.critical.content" : "content.secondary") },
+    spinner: { text: c(state2 === "Loading" ? "action.primary.default" : "content.secondary") }
+  };
+}
+var INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT;
+var init_forms = __esm({
+  "src/lib/recipes/forms.ts"() {
+    init_helpers();
     INPUT_SIZES = ["MD", "SM", "XS"];
     INPUT_STATES = ["Default", "Hover", "Focused", "Filled", "Error", "Loading", "Disabled"];
     INPUT_GEOMETRY = {
@@ -5225,6 +5371,14 @@ var init_componentRecipes = __esm({
         part({ State: INPUT_STATES }, inputPaint)
       ]
     };
+  }
+});
+
+// src/lib/recipes/surfaces.ts
+var CARD, MODAL;
+var init_surfaces = __esm({
+  "src/lib/recipes/surfaces.ts"() {
+    init_helpers();
     CARD = {
       key: "Card",
       slots: ["root", "header", "title", "description", "content", "footer", "link"],
@@ -5276,8 +5430,29 @@ var init_componentRecipes = __esm({
         }))
       ]
     };
+  }
+});
+
+// src/lib/componentRecipes.ts
+function serializeRecipes() {
+  return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
+}
+var COMPONENT_RECIPES;
+var init_componentRecipes = __esm({
+  "src/lib/componentRecipes.ts"() {
+    init_actions();
+    init_forms();
+    init_surfaces();
+    init_helpers();
+    init_helpers();
     COMPONENT_RECIPES = {
       Button: BUTTON,
+      ButtonGroup: BUTTON_GROUP,
+      CloseButton: CLOSE_BUTTON,
+      FABButton: FAB_BUTTON,
+      SocialLoginButton: SOCIAL_LOGIN_BUTTON,
+      TextLink: TEXT_LINK,
+      AppStoreBadge: APP_STORE_BADGE,
       Input: INPUT,
       Card: CARD,
       Modal: MODAL

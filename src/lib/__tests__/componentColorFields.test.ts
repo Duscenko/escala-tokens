@@ -40,14 +40,17 @@ describe('the generated component color-field map is current', () => {
     }
   })
 
-  it('Button — a specimen with an explicit Color/Style/State axis — resolves brand and disabled fields', () => {
-    expect(COMPONENT_COLOR_FIELDS.Button).toContain('brandSolid')
-    expect(COMPONENT_COLOR_FIELDS.Button).toContain('onBrand')
-    expect(COMPONENT_COLOR_FIELDS.Button).toContain('disabledText')
+  // Components on the shadcn skeleton are described by their RECIPE
+  // (lib/componentRecipes), not by the AST walk this file covers.
+  it('Button — Color/Style/State axes — resolves brand, label ink and disabled roles from its recipe', () => {
+    const roles = rolesForComponent('Button')
+    expect(roles).toContain('action.primary.default')
+    expect(roles).toContain('content.on-action')
+    expect(roles).toContain('content.disabled')
   })
 
   it('Input binds the form-field surface, not the page', () => {
-    expect(COMPONENT_COLOR_FIELDS.Input).toContain('inputSurface')
+    expect(rolesForComponent('Input')).toContain('surface.input')
   })
 
   it('TabMenu binds the selected-tab surface', () => {
@@ -55,12 +58,15 @@ describe('the generated component color-field map is current', () => {
   })
 
   it('TextLink binds the link roles, not accent copy', () => {
-    expect(COMPONENT_COLOR_FIELDS.TextLink).toContain('linkText')
+    const roles = rolesForComponent('TextLink')
+    expect(roles).toContain('content.link.default')
+    expect(roles).toContain('content.link.hover')
   })
 
   it('Input hover/error strokes bind control roles, not text or the solid fill', () => {
-    expect(COMPONENT_COLOR_FIELDS.Input).toContain('borderHover')
-    expect(COMPONENT_COLOR_FIELDS.Input).toContain('borderCritical')
+    const roles = rolesForComponent('Input')
+    expect(roles).toContain('border.control-hover')
+    expect(roles).toContain('status.critical.border-strong')
   })
 
   it('Chip selected bind the selection surface', () => {

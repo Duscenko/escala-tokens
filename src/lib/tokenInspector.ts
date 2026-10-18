@@ -15,6 +15,7 @@
 
 import { COMPONENT_ARCH_ROLES, COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import { compositeOver } from './colorUtils'
+import { COMPONENT_RECIPES, recipeColorRoles, recipeRolesFor } from './componentRecipes'
 import { wcagRatio } from './color/apca'
 import { RADIUS_ROLES, SIZE_CONTROL_MIN_PX, SIZE_ROLES } from './layoutTokens'
 import { CATEGORICAL_FIELD_ROLE, radiusRoleOf, sizeRoleOf } from './previewTokens'
@@ -122,6 +123,10 @@ export const INSPECTOR_BLIND_SPOT =
  * them.
  */
 export function rolesForComponent(componentKey: string): string[] {
+  // A component on the shadcn skeleton has a RECIPE: the exact table of roles
+  // that paint it. No AST walk, no allow-list to keep in step.
+  const recipe = COMPONENT_RECIPES[componentKey]
+  if (recipe) return recipeColorRoles(recipe)
   const fields = COMPONENT_COLOR_FIELDS[componentKey]
   const direct = COMPONENT_ARCH_ROLES[componentKey]
   if (!fields && !direct) return []
@@ -1004,6 +1009,8 @@ export function inspectElement(
   const geometry = measureGeometry(t, el)
   const arch = t.archTokens
   if (!arch) return { roles: geometry, measured: geometry.length > 0 }
+  const fromRecipe = recipeInspection(arch, el)
+  if (fromRecipe) return withGeometry(fromRecipe, geometry)
   const declared = rolesForComponent(componentKey)
   const paints = observePaints(el)
   const variant = parseInspectVariant(el)
@@ -1030,6 +1037,30 @@ export function inspectElement(
   // pixel never paints; geometry is the honest whole answer.
   if (paintsGradient(el)) return { roles: geometry, measured: true }
   return withGeometry({ roles: inspectComponent(t, componentKey), measured: false }, geometry)
+}
+
+/**
+ * A shadcn-skeleton component names itself (`data-escala`) and its axes
+ * (`data-color`, `data-style`, `data-size`, `data-force-state`), so the recipe
+ * answers exactly which roles paint THIS render — nothing measured, nothing
+ * missed, and a state pinned in the playground is the state reported.
+ */
+function recipeInspection(arch: Record<string, string>, el: Element): Inspection | null {
+  const root = el.matches?.('[data-escala]') ? el : el.querySelector('[data-escala]')
+  if (!root) return null
+  const recipe = COMPONENT_RECIPES[root.getAttribute('data-escala') ?? '']
+  if (!recipe) return null
+  const axes: Record<string, string> = {}
+  for (const part of recipe.parts) {
+    for (const axis of part.axes) {
+      const v = axis === 'State' ? root.getAttribute('data-force-state') : root.getAttribute(`data-${axis.toLowerCase()}`)
+      if (v) axes[axis] = v
+    }
+  }
+  const roles = recipeRolesFor(recipe, axes)
+    .map((id) => ({ id, css: arch[id] }))
+    .filter((r): r is InspectedRole => !!r.css)
+  return roles.length ? { roles, measured: true } : null
 }
 
 function paintsGradient(el: Element): boolean {

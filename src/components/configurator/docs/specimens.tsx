@@ -8,7 +8,7 @@
 // retunes Docs, Components, and Preview together — inline styles by design
 // (see CLAUDE.md conventions).
 
-import { createContext, createElement, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -19,15 +19,15 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import { useI18n } from '../../../lib/i18n'
+import {
+  SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonCloseButtonSpecimen, SkeletonFABButtonSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonAppStoreBadgeSpecimen,
+} from './skeleton/actions'
+import { SKELETON_SNIPPETS } from './skeleton/snippets'
+import { SkeletonInputSpecimen } from './skeleton/forms'
+import { SkeletonCardSpecimen, SkeletonModalSpecimen } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
-import { SHADCN_SKELETON } from '../../../lib/featureFlags'
-import { recipeVarStyle } from '../../../lib/recipeVars'
-import { RECIPE_CSS } from '../../../lib/recipeStyles'
-import { Button as SkButton } from '../../escala-ui/button'
-import { InputField as SkInputField } from '../../escala-ui/input'
-import { Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter, CardLink as SkCardLink } from '../../escala-ui/card'
-import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../escala-ui/dialog'
 
 export type AxisValues = Record<string, string>
 
@@ -448,7 +448,7 @@ export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconCo
 /** Brand keeps the catalogue star. A severity button that still shows a star
  *  is advertising decoration as status — Danger is the error circle, Success
  *  the plain check (`check-circle` collapses to a star-shaped blob at SM). */
-function buttonLeadingConcept(color?: string): IconConcept {
+export function buttonLeadingConcept(color?: string): IconConcept {
   if (color === 'Danger') return 'error'
   if (color === 'Success') return 'check'
   return ICON_SLOTS.Button.leading
@@ -503,7 +503,7 @@ export function PhosphorWeightProvider({ weight, children }: { weight: PhosphorW
   )
 }
 
-function PreviewIcon({ concept, size = 16, color = 'currentColor' }: { prefix?: string; concept: IconConcept; size?: number; color?: string }) {
+export function PreviewIcon({ concept, size = 16, color = 'currentColor' }: { prefix?: string; concept: IconConcept; size?: number; color?: string }) {
   const weightBodies = useContext(PhosphorWeightContext)
   const weightName = useContext(PhosphorWeightNameContext)
   const slug = PHOSPHOR_CORE[concept] ?? ''
@@ -646,97 +646,11 @@ export interface SpecimenProps {
 
 // Button size scale — heights resolve from the Sizes foundation (sm–xl), so
 // editing Foundations · Sizes retunes every button size live.
-const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number; padX: number; gap: number }> = {
+export const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number; padX: number; gap: number }> = {
   SM: { sizeKey: 'sm', h: 32, f: 13, padX: 14, gap: 6 },
   MD: { sizeKey: 'md', h: 40, f: 14, padX: 18, gap: 8 },
   LG: { sizeKey: 'lg', h: 48, f: 15, padX: 22, gap: 8 },
   XL: { sizeKey: 'xl', h: 56, f: 16, padX: 26, gap: 10 },
-}
-
-function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
-  const intent = v.Color === 'Danger' ? 'Error' : (v.Color ?? 'Brand')
-  const color = statusColor(t, intent)
-  // The label/stroke of every style that paints no solid fill. See `statusInk`.
-  const ink = statusInk(t, intent)
-  const style = v.Style ?? 'Solid'
-  const state = v.State ?? 'Default'
-  const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
-  // One of the three icon sizes, picked from the button's own size step
-  // (sm → 24, md → 32, lg/xl → 40) so the glyph stays inside the control.
-  const iconPx = iconForControlStep(sz.sizeKey, t)
-  const disabled = state === 'Disabled'
-  const loading = state === 'Loading'
-  const slots = ICON_SLOTS.Button
-
-  let bg = 'transparent'
-  let fg = ink
-  let border = 'transparent'
-  // The soft/pressed washes stay keyed to the FILL — a brand tint should be the
-  // brand's fill at low alpha, not its darker text tone — while the label on
-  // top of them reads from the ink. That split is what the paired
-  // `soft(t, t.brandSolid)` + `color: t.brandText` call sites elsewhere in this
-  // file have always done; the Button was the one that collapsed them.
-  if (style === 'Solid') { bg = color; fg = statusOn(t, intent) }
-  else if (style === 'Outline') { border = ink + '99' }
-  else if (style === 'Soft') { bg = soft(t, color) }
-
-  if (state === 'Hover') {
-    if (style === 'Solid') bg = darken(color, 0.4)
-    else if (style === 'Ghost') bg = t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.hover', soft(t, color))
-    else bg = style === 'Soft' ? color + '2b' : soft(t, color)
-  } else if (state === 'Pressed') {
-    if (style === 'Solid') bg = darken(color, 0.8)
-    else if (style === 'Ghost') bg = t.ghostNeutralPressed ?? archTokenOf(t, 'action.ghost.pressed', pressed(t, color))
-    else bg = pressed(t, color)
-  }
-  if (disabled) { bg = style === 'Ghost' ? 'transparent' : t.disabledBg; fg = t.disabledText; border = style === 'Outline' ? t.disabledBg : 'transparent' }
-
-  return (
-    <button
-      type="button"
-      aria-disabled={disabled}
-      style={{
-        ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, sz.gap),
-        // A width only arrives from an artefact (see `SpecimenProps.w`). Centring
-        // rides with it: the playground's button hugs its label, so left-aligned
-        // content is right there and wrong the moment the button spans a column.
-        width: w, justifyContent: w == null ? undefined : 'center',
-        // A fluid button stays one line. Wrapping inside a fixed height paints
-        // the second line outside the control; the collage frame is sized so
-        // the label fits, and a near-miss clips inside the button.
-        whiteSpace: 'nowrap',
-        minWidth: w != null ? 0 : undefined,
-        maxWidth: w != null ? '100%' : undefined,
-        overflow: w != null ? 'hidden' : undefined,
-        textOverflow: w != null ? 'ellipsis' : undefined,
-        height: sizeOf(t, sz.sizeKey, sz.h), padding: `0 ${sz.padX}px`,
-        borderRadius: radiusRoleOf(t, 'action'),
-        background: bg, color: fg,
-        border: `${strokeControl(t)} solid ${border}`,
-        ...typeOf(t, 'button'),
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        boxShadow: state === 'Focused' ? focusRing(t, color, intent === 'Error' ? 'critical' : intent === 'Success' ? 'success' : undefined) : undefined,
-        // Eases the state change instead of snapping. Matters in two places at
-        // once: the collage, where `Live` drives State from a real hover, and
-        // the docs playground, where flipping the State dropdown now shows the
-        // delta between two variants rather than a hard cut.
-        transition: STATE_TRANSITION,
-      }}
-    >
-      {loading && <SpecimenSpinner size={iconPx - 2} color={fg} track={fg + '33'} />}
-      {!loading && icons?.leading && (
-        <PreviewIcon
-          prefix={icons.prefix}
-          concept={icons.leadingConcept ?? buttonLeadingConcept(v.Color)}
-          size={iconPx}
-          color={fg}
-        />
-      )}
-      {children ?? 'Button'}
-      {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} color={fg} />}
-    </button>
-  )
 }
 
 // ── Input (Size × State × Type) ───────────────────────────────────────────────
@@ -746,7 +660,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
  *  (34 and 28 sit between ramp steps), so they scale with it — the Fields
  *  dial then resizes inputs with the selects and buttons beside them. */
 const INPUT_HEIGHT_RATIO: Record<string, number> = { MD: 1, SM: 34 / 40, XS: 28 / 40 }
-const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: string; lead?: ReactNode }> = {
+export const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: string; lead?: ReactNode }> = {
   'Default':      { label: 'Name', placeholder: 'Jane Doe' },
   'E-Mail':       { label: 'Email', placeholder: 'you@company.com', lead: '@' },
   'Password':     { label: 'Password', placeholder: '••••••••' },
@@ -755,7 +669,7 @@ const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: 
   'Website':      { label: 'Website', placeholder: 'yoursite.com', prefix: 'https://' },
 }
 
-const INPUT_HTML_TYPE: Record<string, string> = {
+export const INPUT_HTML_TYPE: Record<string, string> = {
   Default: 'text',
   'Icon Leading': 'text',
   'Icon Trailing': 'text',
@@ -766,132 +680,11 @@ const INPUT_HTML_TYPE: Record<string, string> = {
   Website: 'url',
 }
 
-function inputSeed(type: string | undefined, state: string | undefined): string {
+export function inputSeed(type: string | undefined, state: string | undefined): string {
   if (state !== 'Filled') return ''
   if (type === 'E-Mail') return 'maya@escala.ds'
   if (type === 'Password') return '••••••••'
   return 'Maya Duscenko'
-}
-
-function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
-  const { t: translate } = useI18n()
-  const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
-  const control = parseFloat(sizeRoleOf(t, 'control', '40px')) || 40
-  const h = Math.round(control * (INPUT_HEIGHT_RATIO[v.Size ?? 'MD'] ?? 1))
-  const inspecting = useInspectorActive()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
-  const [hover, setHover] = useState(false)
-  const [focus, setFocus] = useState(false)
-
-  // Playground State still wins for the variants you inspect (Error /
-  // Disabled / Loading, or a static Hover/Focused). Live hover and typing
-  // only take over when that dropdown isn't pinning a special state — same
-  // "don't override the variant on screen" rule `Live` follows.
-  const pinned = v.State === 'Disabled' || v.State === 'Error' || v.State === 'Loading'
-  const state = pinned ? (v.State ?? 'Default')
-    : focus ? 'Focused'
-    : !inspecting && hover ? 'Hover'
-    : v.State === 'Focused' || v.State === 'Hover' ? v.State
-    : value ? 'Filled'
-    : 'Default'
-  const disabled = state === 'Disabled'
-  const error = state === 'Error'
-  const slots = ICON_SLOTS.Input
-  const iconColor = disabled ? t.disabledText : (t.fgMuted ?? '#717680')
-  const accent = error ? (t.borderCritical ?? borderCriticalOf(t)) : focusBorderOf(t)
-  const border = fieldStroke(t, state, error)
-
-  const size = v.Size ?? 'MD'
-  const fieldType = typeOf(t, size === 'SM' ? 'body-sm' : 'placeholder')
-
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-tight', '4px'), width: w ?? 260 }}>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>
-        {translate(meta.label)}
-      </span>
-      <div
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onClick={() => { if (!disabled) inputRef.current?.focus() }}
-        style={{
-          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: h, padding: `0 ${spaceOf(t, 12)}`,
-          borderRadius: radiusRoleOf(t, 'action'),
-          border: `${strokeControl(t)} solid ${border}`,
-          background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
-          boxShadow: state === 'Focused' ? `0 0 0 ${strokeFocus(t)} ${accent}26` : undefined,
-          cursor: disabled ? 'not-allowed' : 'text',
-          transition: STATE_TRANSITION,
-        }}
-      >
-        {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconForControl(h, t)} color={iconColor} />}
-        {meta.prefix && <span style={{ ...typeOf(t, 'placeholder'), color: t.fgMuted, borderRight: `${strokeControl(t)} solid ${t.border}`, paddingRight: spaceOf(t, 8) }}>{meta.prefix}</span>}
-        {/* Lead (@, ⌕) is supporting ink — `content.secondary` — not the
-            placeholder tier. The plugin paints this slot as `textTertiary`
-            (the same job). Sharing `placeholderText` with the value made
-            the @ and the typed text one token. */}
-        {!icons?.leading && meta.lead && (
-          <span style={{ ...fieldType, color: disabled ? t.disabledText : (t.fgMuted ?? t.placeholderText) }}>{meta.lead}</span>
-        )}
-        <input
-          ref={inputRef}
-          type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
-          value={value}
-          placeholder={meta.placeholder}
-          disabled={disabled}
-          autoComplete="off"
-          spellCheck={false}
-          aria-invalid={error || undefined}
-          onChange={(e) => setValue(e.target.value)}
-          onFocus={() => setFocus(true)}
-          onBlur={() => setFocus(false)}
-          style={{
-            ...fieldType,
-            flex: 1, minWidth: 0, width: '100%',
-            border: 'none', outline: 'none', background: 'transparent', padding: 0,
-            color: disabled ? t.disabledText : value ? t.neutralText : t.placeholderText,
-            caretColor: t.brandSolid,
-            cursor: disabled ? 'not-allowed' : 'text',
-          }}
-        />
-        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconForControl(h, t)} color={iconColor} />}
-        {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
-        {/* Search carries its shortcut hint and a submit button INSIDE the field,
-            exactly as the Figma plugin builds the type (kbd chip + search-button).
-            The button's corner is concentric with the field — field radius minus
-            the gap around the button, a pill when the field is one — so it never
-            sits squarer than the curve that holds it. */}
-        {v.Type === 'Search' && (() => {
-          const btnH = h - 12
-          const inset = (h - btnH) / 2
-          const muted = disabled || error || state === 'Loading'
-          return (
-            <>
-              {!error && (
-                <span style={{ ...typeOf(t, 'caption'), color: t.placeholderText, border: `${strokeControl(t)} solid ${disabled ? t.disabledBg : (t.borderDefault ?? '#e9eaeb')}`, borderRadius: radiusRoleOf(t, 'control', '4px'), padding: `${spaceOf(t, 2)} ${spaceOf(t, 5)}`, whiteSpace: 'nowrap' }}>⌘ 1</span>
-              )}
-              <span
-                style={{
-                  ...typeOf(t, 'button'),
-                  display: 'inline-flex', alignItems: 'center', height: btnH, padding: `0 ${spaceOf(t, 10)}`, whiteSpace: 'nowrap',
-                  borderRadius: concentricRadiusPx(t, parseFloat(radiusRoleOf(t, 'action')) || 0, h, btnH, inset),
-                  background: muted ? t.disabledBg : overlaySurfaceOf(t),
-                  color: muted ? t.disabledText : (t.fgMuted ?? t.neutralText),
-                }}
-              >
-                Search
-              </span>
-            </>
-          )
-        })()}
-      </div>
-      {!hideHint && (
-        <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
-          {translate(error ? 'This field is required.' : 'This is a hint text.')}
-        </span>
-      )}
-    </div>
-  )
 }
 
 // ── Select (State) ────────────────────────────────────────────────────────────
@@ -1212,57 +1005,6 @@ function useFitRadius(t: PreviewTokens, role: string, fallback?: string) {
   return { ref, radius: side ? `${fitRadiusPx(t, role, side)}px` : base }
 }
 
-function CardSpecimen({ t, w, children, elev }: SpecimenProps) {
-  const fit = useFitRadius(t, 'container')
-  return (
-    <div
-      ref={fit.ref}
-      style={{
-        ...baseFont(t), width: w ?? 280, padding: paddingOf(t),
-        borderRadius: fit.radius,
-        ...cardSurfaceStyle(t),
-        border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
-        boxShadow: elev === false ? undefined : shadowOf(t, elev || 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
-        display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-control', '8px'),
-      }}
-    >
-      {children ?? (
-        <>
-          <span style={{ ...typeOf(t, 'heading-sm') }}>Card title</span>
-          <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
-            Supporting copy that explains the grouped content inside this surface.
-          </span>
-          <span style={{ ...typeOf(t, 'button'), color: t.brandText, cursor: 'pointer' }}>Learn more →</span>
-        </>
-      )}
-    </div>
-  )
-}
-
-function ModalSpecimen({ t }: { t: PreviewTokens }) {
-  return (
-    <div
-      style={{
-        ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'overlay'),
-        ...overlaySurfaceStyle(t), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
-        boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.25)'), overflow: 'hidden',
-      }}
-    >
-      <div style={{ padding: `${spaceOf(t, 16)} ${spaceOf(t, 20)} ${spaceOf(t, 4)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ ...typeOf(t, 'heading-sm') }}>Delete project?</span>
-        <span style={{ color: t.fgMuted, cursor: 'pointer' }}>✕</span>
-      </div>
-      <p style={{ padding: `${spaceOf(t, 4)} ${spaceOf(t, 20)} ${spaceOf(t, 16)}`, margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
-        This action can't be undone. All tokens in this project will be removed.
-      </p>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 12)} ${spaceOf(t, 20)}`, borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
-        <span style={{ ...typeOf(t, 'button'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Cancel</span>
-        <span style={{ ...typeOf(t, 'button'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), background: t.errorColor, color: t.onBrand, cursor: 'pointer' }}>Delete</span>
-      </div>
-    </div>
-  )
-}
-
 function TooltipSpecimen({ t }: { t: PreviewTokens }) {
   // See ToastSpecimen's note — same inverse-chip pairing, same dark-mode fix
   // (was `background-overlay`, a modal scrim that goes near-black in BOTH
@@ -1367,183 +1109,6 @@ function ProgressSpecimen({ t, w }: SpecimenProps) {
 }
 
 // ── Button & Actions — attached / icon-only / floating / provider buttons ─────
-
-const BUTTON_GROUP_SIZE_SPECS: Record<string, { sizeKey: string; h: number; padX: number; f: number }> = {
-  SM: { sizeKey: 'sm', h: 32, padX: 12, f: 12.5 },
-  MD: { sizeKey: 'md', h: 40, padX: 16, f: 13 },
-  LG: { sizeKey: 'lg', h: 48, padX: 20, f: 14 },
-}
-
-function ButtonGroupSpecimen({ t, v }: SpecimenProps) {
-  const items = ['Day', 'Week', 'Month']
-  const sz = BUTTON_GROUP_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_GROUP_SIZE_SPECS.MD
-  return (
-    <div role="group" style={{ ...baseFont(t), display: 'inline-flex', border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, borderRadius: radiusRoleOf(t, 'action'), overflow: 'hidden' }}>
-      {items.map((label, i) => (
-        <span
-          key={label}
-          style={{
-            display: 'inline-flex', alignItems: 'center', height: sizeOf(t, sz.sizeKey, sz.h) - 2,
-            padding: `0 ${sz.padX}px`, ...typeOf(t, 'label'), cursor: 'pointer',
-            background: i === 1 ? t.neutralFill : 'transparent',
-            color: t.neutralText,
-            borderLeft: i === 0 ? 'none' : `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`,
-          }}
-        >
-          {label}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-function CloseButtonSpecimen({ t, v }: SpecimenProps) {
-  const d = Math.round(parseFloat(sizeRoleOf(t, 'hit', '24px')) || 24)
-  const state = v.State ?? 'Default'
-  return (
-    <button
-      type="button"
-      aria-label="Close"
-      style={{
-        width: d, height: d, borderRadius: radiusRoleOf(t, 'action'), border: 'none', cursor: 'pointer',
-        // Rest has no ghost token (the catalogue only ships hover/pressed), so
-        // the faint wash stays a local tint — a bare X on a card reads lost.
-        // Hover / pressed are the roles named for close buttons.
-        background: state === 'Hover' ? (t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.hover', tintOf(t, t.neutralText, '20', 0.16)))
-          : state === 'Pressed' ? (t.ghostNeutralPressed ?? archTokenOf(t, 'action.ghost.pressed', tintOf(t, t.neutralText, '20', 0.22)))
-          : soft(t, t.neutralText),
-        color: t.fgMuted, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
-      }}
-    >
-      <PreviewIcon concept="close" size={Math.round(d * 0.44)} color={t.fgMuted} />
-    </button>
-  )
-}
-
-function FABButtonSpecimen({ t, v }: SpecimenProps) {
-  const d = Math.round(parseFloat(sizeRoleOf(t, 'fab', '56px')) || 56)
-  return (
-    <button
-      type="button"
-      aria-label="New item"
-      style={{
-        width: d, height: d, borderRadius: radiusRoleOf(t, 'pill', '9999px'), border: 'none', cursor: 'pointer',
-        background: t.brandSolid, color: t.onBrand,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: shadowOf(t, 'lg', '0 8px 20px rgba(10,13,18,0.22)'),
-      }}
-    >
-      <PreviewIcon concept="plus" size={Math.round(d * 0.42)} color={t.onBrand} />
-    </button>
-  )
-}
-
-const PROVIDER_MARKS: Record<string, { glyph: string; color: string }> = {
-  // THIRD-PARTY BRAND MARKS — deliberately literal, never tokens. A vendor's
-  // logo does not retint with the user's accent; Google blue is Google blue in
-  // every system. Same rule as `public/ide-logos/*` in AgentInstallPanel. Any
-  // sweep for hardcoded colour should skip this table and the App Store button.
-  Google: { glyph: 'G', color: '#4285f4' },
-  Apple: { glyph: '', color: '#111111' },
-  GitHub: { glyph: '', color: '#111111' },
-  Figma: { glyph: '', color: '#111111' },
-}
-
-function ProviderMark({ provider, color }: { provider: string; color: string }) {
-  if (provider === 'GitHub') return <GitHubGlyph size={iconOf(17)} />
-  if (provider === 'Figma') return <FigmaGlyph size={iconOf(17)} />
-  if (provider === 'Apple') {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M17.05 12.54c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.15-.47 7.82 1.31 10.38.87 1.25 1.9 2.66 3.26 2.61 1.31-.05 1.8-.85 3.38-.85 1.58 0 2.02.85 3.4.82 1.41-.02 2.3-1.27 3.16-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.73-1.05-2.76-4.17ZM14.44 4.9c.72-.87 1.2-2.08 1.07-3.29-1.03.04-2.29.69-3.03 1.56-.67.77-1.25 2-1.09 3.19 1.15.09 2.33-.59 3.05-1.46Z" />
-      </svg>
-    )
-  }
-  return <span style={{ color, lineHeight: 1, fontWeight: 600 }}>{PROVIDER_MARKS[provider]?.glyph ?? 'G'}</span>
-}
-
-function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
-  const { t: translate } = useI18n()
-  const provider = v.Provider ?? 'Google'
-  const mark = PROVIDER_MARKS[provider] ?? PROVIDER_MARKS.Google
-  const large = (v.Size ?? 'MD') === 'LG'
-  return (
-    <button
-      type="button"
-      style={{
-        ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: spaceOf(t, 10),
-        width: w ?? (large ? 320 : 280),
-        maxWidth: w != null ? '100%' : undefined,
-        minWidth: w != null ? 0 : undefined,
-        boxSizing: 'border-box',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
-        borderRadius: radiusRoleOf(t, 'action'),
-        background: raisedBg(t), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
-        color: t.neutralText,
-        ...typeOf(t, 'button'),
-      }}
-    >
-      <span style={{ flexShrink: 0, display: 'inline-flex' }}><ProviderMark provider={provider} color={mark.color} /></span>
-      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{translate('Continue with {provider}', { provider })}</span>
-    </button>
-  )
-}
-
-function TextLinkSpecimen({ t, v, children }: SpecimenProps) {
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const anchor = (
-    <a
-      href="#docs"
-      aria-disabled={disabled}
-      onClick={(e) => e.preventDefault()}
-      style={{
-        color: disabled ? t.disabledText : state === 'Hover' ? (t.linkHover ?? archTokenOf(t, 'content.link.hover', linkTextOf(t))) : (t.linkText ?? linkTextOf(t)),
-        fontWeight: weightOf(t, 'medium', 500),
-        textDecoration: state === 'Hover' ? 'underline' : 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-      }}
-    >
-      {children ?? 'design tokens guide ↗'}
-    </a>
-  )
-  // With `children`, the caller supplies the WHOLE sentence around the link
-  // (e.g. "Didn't get a code? <TextLink>Resend</TextLink>") — wrapping it in
-  // "Read the …" too would double the prose. Without it, this is the demo
-  // sentence, unchanged.
-  return children ? anchor : <span style={{ ...typeOf(t, 'body-md') }}>Read the{' '}{anchor}</span>
-}
-
-function AppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
-  const play = (v.Store ?? 'App Store') === 'Google Play'
-  return (
-    <a
-      href="#store"
-      onClick={(e) => e.preventDefault()}
-      aria-label={play ? 'Get it on Google Play' : 'Download on the App Store'}
-      style={{
-        ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 8)} ${spaceOf(t, 16)}`,
-        borderRadius: radiusRoleOf(t, 'action'), background: '#111111', color: '#ffffff',
-        textDecoration: 'none', border: '1px solid #2a2a2a',
-      }}
-    >
-      {play ? (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M4 3.5v17c0 .3.34.5.6.33l13.9-8.16a.4.4 0 0 0 0-.7L4.6 3.17a.4.4 0 0 0-.6.33Z" /></svg>
-      ) : (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M17.05 12.54c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.15-.47 7.82 1.31 10.38.87 1.25 1.9 2.66 3.26 2.61 1.31-.05 1.8-.85 3.38-.85 1.58 0 2.02.85 3.4.82 1.41-.02 2.3-1.27 3.16-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.73-1.05-2.76-4.17ZM14.44 4.9c.72-.87 1.2-2.08 1.07-3.29-1.03.04-2.29.69-3.03 1.56-.67.77-1.25 2-1.09 3.19 1.15.09 2.33-.59 3.05-1.46Z" /></svg>
-      )}
-      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-        <span style={{ ...typeOf(t, 'caption'), opacity: 0.8 }}>{play ? 'GET IT ON' : 'Download on the'}</span>
-        <span style={{ ...typeOf(t, 'button') }}>{play ? 'Google Play' : 'App Store'}</span>
-      </span>
-    </a>
-  )
-}
 
 // ── Form Controls — grouped inputs, choices and upload targets ────────────────
 
@@ -2864,164 +2429,17 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
 
-// ── shadcn skeleton (flag `?skeleton=shadcn`) ─────────────────────────────────
-// Phase 0 of design-plans/shadcn-component-skeleton.md. The same SPECIMENS
-// signature, so no caller changes: when the flag is on, Button · Input · Card ·
-// Modal render the components in `escala-ui/` and every paint comes from
-// `lib/componentRecipes.ts` (the table the Figma plugin reads too), through
-// the generated sheet. This block replaces the four legacy specimens once the
-// spike is approved.
-
-// Injected at module load, before the first render: mounted from an effect, the
-// first specimens painted unstyled and then transitioned into their colours.
-if (SHADCN_SKELETON && typeof document !== 'undefined' && !document.getElementById('escala-component-recipes')) {
-  const el = document.createElement('style')
-  el.id = 'escala-component-recipes'
-  el.textContent = RECIPE_CSS
-  document.head.appendChild(el)
-}
-
-/** The previewed theme's variables, on a box that does not take part in layout. */
-function RecipeScope({ t, children }: { t: PreviewTokens; children: ReactNode }) {
-  return <div style={{ display: 'contents', ...recipeVarStyle(t) }}>{children}</div>
-}
-
-const lower = (s: string | undefined, fallback: string) => (s ?? fallback).toLowerCase()
-
-function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
-  const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
-  const iconPx = iconForControlStep(sz.sizeKey, t)
-  const state = (v.State ?? 'Default') as 'Default'
-  const loading = v.State === 'Loading'
-  const intent = v.Color === 'Danger' ? 'danger' : v.Color === 'Success' ? 'success' : 'brand'
-  const slots = ICON_SLOTS.Button
-  return (
-    <RecipeScope t={t}>
-      <SkButton
-        variant={lower(v.Style, 'Solid') as 'solid'}
-        intent={intent}
-        size={lower(v.Size, 'MD') as 'md'}
-        forceState={state}
-        style={{ width: w, minWidth: w != null ? 0 : undefined, maxWidth: w != null ? '100%' : undefined }}
-      >
-        {loading && (
-          <span
-            className="inline-block animate-spin rounded-full"
-            style={{ width: iconPx - 2, height: iconPx - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
-            aria-hidden
-          />
-        )}
-        {!loading && icons?.leading && (
-          <PreviewIcon prefix={icons.prefix} concept={icons.leadingConcept ?? buttonLeadingConcept(v.Color)} size={iconPx} />
-        )}
-        <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
-        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />}
-      </SkButton>
-    </RecipeScope>
-  )
-}
-
-function SkeletonInputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
-  const { t: translate } = useI18n()
-  const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
-  const size = (v.Size ?? 'MD') as 'MD'
-  const control = parseFloat(sizeRoleOf(t, size === 'MD' ? 'control' : 'compact', '40px')) || 40
-  const iconPx = iconForControl(control, t)
-  const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
-  const error = v.State === 'Error'
-  const slots = ICON_SLOTS.Input
-  const lead = icons?.leading
-    ? <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconPx} />
-    : meta.lead != null ? <span>{meta.lead}</span> : undefined
-  return (
-    <RecipeScope t={t}>
-      <SkInputField
-        label={translate(meta.label)}
-        hint={hideHint ? undefined : translate(error ? 'This field is required.' : 'This is a hint text.')}
-        size={size}
-        forceState={v.State === 'Filled' ? undefined : (v.State as 'Default')}
-        type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
-        placeholder={meta.placeholder}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        autoComplete="off"
-        spellCheck={false}
-        leading={lead}
-        trailing={icons?.trailing ? <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} /> : undefined}
-        loading={v.State === 'Loading'
-          ? <span className="inline-block animate-spin rounded-full" style={{ width: 13, height: 13, border: '2px solid currentColor', borderTopColor: 'transparent' }} aria-hidden />
-          : undefined}
-        width={w ?? 260}
-      />
-    </RecipeScope>
-  )
-}
-
-function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
-  const shadow = elev === false ? 'none' : elev ? shadowOf(t, elev, 'none') : undefined
-  return (
-    <RecipeScope t={t}>
-      <SkCard style={{ width: w ?? 280, boxShadow: shadow }}>
-        {children ?? (
-          <>
-            <SkCardHeader>
-              <SkCardTitle>Card title</SkCardTitle>
-              <SkCardDescription>Supporting copy that explains the grouped content inside this surface.</SkCardDescription>
-            </SkCardHeader>
-            <SkCardFooter>
-              <SkCardLink>Learn more →</SkCardLink>
-            </SkCardFooter>
-          </>
-        )}
-      </SkCard>
-    </RecipeScope>
-  )
-}
-
-function SkeletonModalSpecimen({ t }: { t: PreviewTokens }) {
-  return (
-    <RecipeScope t={t}>
-      <SkDialog open modal={false}>
-        <SkDialogContent inline style={{ width: 320 }} closeIcon={<PreviewIcon concept="close" size={16} />}>
-          <SkDialogHeader>
-            <SkDialogTitle>Delete project?</SkDialogTitle>
-            <SkDialogDescription>This action can't be undone. All tokens in this project will be removed.</SkDialogDescription>
-          </SkDialogHeader>
-          <SkDialogFooter>
-            <SkButton variant="outline" intent="brand" size="sm">Cancel</SkButton>
-            <SkButton variant="solid" intent="danger" size="sm">Delete</SkButton>
-          </SkDialogFooter>
-        </SkDialogContent>
-      </SkDialog>
-    </RecipeScope>
-  )
-}
-
-/** With the flag on, the skeleton; off, or with no projected architecture
- *  (`recipeVarStyle` needs Categorical), the legacy specimen. */
-function withSkeleton<P extends { t: PreviewTokens }>(
-  legacy: (p: P) => ReactNode,
-  skeleton: (p: P) => ReactNode,
-): (p: P) => ReactNode {
-  if (!SHADCN_SKELETON) return legacy
-  // Elements, not calls: the two branches use different hooks, so each must
-  // be its own component or a theme without a projection would reorder them.
-  const Legacy = legacy as (p: P) => ReactElement
-  const Skeleton = skeleton as (p: P) => ReactElement
-  return (p: P) => (p.t.archTokens ? createElement(Skeleton, p) : createElement(Legacy, p))
-}
-
 export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
-  Button: withSkeleton(ButtonSpecimen, SkeletonButtonSpecimen),
-  ButtonGroup: ButtonGroupSpecimen,
-  CloseButton: CloseButtonSpecimen,
-  FABButton: FABButtonSpecimen,
-  SocialLoginButton: SocialLoginButtonSpecimen,
-  TextLink: TextLinkSpecimen,
-  AppStoreBadge: AppStoreBadgeSpecimen,
+  Button: SkeletonButtonSpecimen,
+  ButtonGroup: SkeletonButtonGroupSpecimen,
+  CloseButton: SkeletonCloseButtonSpecimen,
+  FABButton: SkeletonFABButtonSpecimen,
+  SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
+  TextLink: SkeletonTextLinkSpecimen,
+  AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
-  Input: withSkeleton(InputSpecimen, SkeletonInputSpecimen),
+  Input: SkeletonInputSpecimen,
   InputGroup: InputGroupSpecimen,
   Textarea: TextareaSpecimen,
   InputOTP: InputOTPSpecimen,
@@ -3052,11 +2470,11 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   FileFormat: FileFormatSpecimen,
   // Content & Surfaces
   Avatar: AvatarSpecimen,
-  Card: withSkeleton(CardSpecimen, SkeletonCardSpecimen),
+  Card: SkeletonCardSpecimen,
   Divider: DividerSpecimen,
   Accordion: AccordionSpecimen,
   AspectRatio: AspectRatioSpecimen,
-  Modal: withSkeleton(ModalSpecimen, SkeletonModalSpecimen),
+  Modal: SkeletonModalSpecimen,
   Popover: PopoverSpecimen,
   Tooltip: TooltipSpecimen,
   InfoTooltip: InfoTooltipSpecimen,
@@ -3219,6 +2637,8 @@ export function Live({
 /** Usage snippet reflecting the current axis values — interaction-only states
  *  (Hover/Pressed/Focused) map to real props only when they are (disabled/loading). */
 export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): string {
+  const skeleton = SKELETON_SNIPPETS[def.key]
+  if (skeleton) return skeleton(v, icons)
   const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
   // leadingIcon/trailingIcon props reflecting the icon toggles + chosen library.
   const iconProps = (key: string) => {
@@ -3232,21 +2652,6 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
   // ` size="…"` only when the non-default size is selected — keeps snippets lean.
   const sizeProp = v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : ''
   switch (def.key) {
-    case 'Button': {
-      const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
-      const leading = icons?.leading
-        ? ` leadingIcon={<${ICON_COMPONENT[icons.leadingConcept ?? buttonLeadingConcept(v.Color)]} />}`
-        : ''
-      const trailing = icons?.trailing
-        ? ` trailingIcon={<${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />}`
-        : ''
-      return `<Button color="${low(v.Color) || 'brand'}" style="${low(v.Style) || 'solid'}"${sizeProp}${flags}${leading}${trailing}>\n  Button\n</Button>`
-    }
-    case 'Input': {
-      const type = ({ 'default': 'text', 'e-mail': 'email', 'password': 'password', 'search': 'search', 'phone-number': 'tel', 'website': 'url' } as Record<string, string>)[low(v.Type)] ?? 'text'
-      const err = v.State === 'Error' ? `\n  error="This field is required."` : ''
-      return `<Input\n  type="${type}"\n  size="${low(v.Size) || 'md'}"\n  label="${INPUT_META[v.Type ?? 'Default']?.label ?? 'Label'}"${err}${v.State === 'Disabled' ? '\n  disabled' : ''}${iconProps('Input').replace(/ (\w+Icon)=/g, '\n  $1=')}\n/>`
-    }
     case 'Select':
       return `<Select\n  placeholder="Select an option"\n  options={options}${sizeProp ? `\n ${sizeProp}` : ''}${v.State === 'Error' ? '\n  error="Pick one option."' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`
     case 'Checkbox':
@@ -3269,10 +2674,6 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
       return `<Spinner size="${low(v.Size) || 'md'}" label="Loading…" />`
     case 'Divider':
       return `<Divider orientation="${low(v.Orientation) || 'horizontal'}" />`
-    case 'Card':
-      return `<Card padding="md" shadow="sm">\n  <CardTitle>Card title</CardTitle>\n  <CardBody>…</CardBody>\n</Card>`
-    case 'Modal':
-      return `<Modal open title="Delete project?" onClose={close}>\n  …\n</Modal>`
     case 'Tooltip':
       return `<Tooltip content="Copy to clipboard" side="top">\n  <IconButton icon={copy} />\n</Tooltip>`
     case 'Tabs':
@@ -3282,19 +2683,6 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
     case 'Progress':
       return `<Progress value={60} label="Uploading…" showValue />`
     // Button & Actions
-    case 'ButtonGroup':
-      return `<ButtonGroup${sizeProp} items={[\n  { label: 'Day' },\n  { label: 'Week' },\n  { label: 'Month' },\n]} />`
-    case 'CloseButton':
-      return `<CloseButton size="${low(v.Size) || 'md'}" onClick={dismiss} />`
-    case 'FABButton':
-      return `<FABButton size="${low(v.Size) || 'md'}" icon={<Plus />} label="New item" />`
-    case 'SocialLoginButton':
-      return `<SocialLoginButton provider="${low(v.Provider) || 'google'}"${sizeProp} onClick={signIn} />`
-    case 'TextLink':
-      return `<TextLink href="/docs/tokens" external${v.State === 'Disabled' ? ' disabled' : ''}>\n  design tokens guide\n</TextLink>`
-    case 'AppStoreBadge':
-      return `<AppStoreBadge store="${low(v.Store) || 'app-store'}" href={storeUrl} />`
-    // Form Controls
     case 'InputGroup':
       return `<InputGroup prefix="https://" suffix={<Button>Copy</Button>}>\n  <Input value="escala.design" />\n</InputGroup>`
     case 'Textarea':

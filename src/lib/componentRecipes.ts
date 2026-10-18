@@ -30,257 +30,23 @@
  *   none                         → nothing painted
  */
 
-export type TokenRef = string
-
-/** Properties a slot can bind. Colour props hold `color.*`, the rest dimensions. */
-export const RECIPE_PROPS = [
-  'fill', 'stroke', 'text', 'ring',
-  'height', 'radius', 'paddingX', 'paddingY', 'gap', 'strokeWidth', 'font', 'shadow',
-] as const
-export type RecipeProp = (typeof RECIPE_PROPS)[number]
-export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
-export type SlotMap = Record<string, SlotProps>
-
-export interface RecipePart {
-  /** Axes this part depends on, in catalogue order. `[]` = applies always. */
-  axes: string[]
-  /** Combination key (`axis values joined by '|'`, `''` for no axes) → slots. */
-  values: Record<string, SlotMap>
-}
-
-export interface ComponentRecipe {
-  key: string
-  /** Named parts of the component — the shadcn anatomy (`data-slot`) and, in
-   *  Figma, the layer names. The FIRST slot is the root (`data-escala`). */
-  slots: string[]
-  /** The value used when a render omits an axis. */
-  defaults: Record<string, string>
-  parts: RecipePart[]
-  /** A slot that is a pseudo-element of another (`placeholder` → the value's
-   *  `::placeholder`). In Figma it is the placeholder text layer. */
-  pseudoSlots?: Record<string, { of: string; pseudo: string }>
-  /** Slots rendered OUTSIDE the root (a dialog's overlay is a portal sibling),
-   *  matched by their own `data-part`, not as descendants. */
-  detachedSlots?: string[]
-}
-
-export type AxisValues = Record<string, string | undefined>
-
-// ── Helpers that build the tables (run once, at module load) ───────────────
-
-const c = (role: string): TokenRef => `color.${role}`
-const NONE = 'none'
-
-function combos(axes: Record<string, readonly string[]>): string[][] {
-  return Object.values(axes).reduce<string[][]>(
-    (acc, values) => acc.flatMap((prefix) => values.map((v) => [...prefix, v])),
-    [[]],
-  )
-}
-
-function part(axes: Record<string, readonly string[]>, build: (...values: string[]) => SlotMap): RecipePart {
-  const values: Record<string, SlotMap> = {}
-  for (const combo of combos(axes)) values[combo.join('|')] = build(...combo)
-  return { axes: Object.keys(axes), values }
-}
-
-// ── Button ─────────────────────────────────────────────────────────────────
-
-/** Every token one intent of the Button needs. Brand reads the action family,
- *  Danger / Success their severity — one shape, so no style can be missing a
- *  state for one intent and not another. */
-interface IntentPalette {
-  solid: string; solidHover: string; solidPressed: string; on: string
-  soft: string; softPressed: string
-  line: string; ink: string; ring: string
-}
-const BUTTON_INTENTS: Record<string, IntentPalette> = {
-  Brand: {
-    solid: 'action.primary.default', solidHover: 'action.primary.hover', solidPressed: 'action.primary.pressed',
-    on: 'content.on-action',
-    soft: 'surface.selected', softPressed: 'surface.selected-pressed',
-    line: 'border.accent', ink: 'content.accent', ring: 'border.ring.default',
-  },
-  Danger: {
-    solid: 'status.critical.surface-solid', solidHover: 'status.critical.surface-solid-hover',
-    solidPressed: 'status.critical.surface-solid-pressed', on: 'status.critical.on-solid',
-    soft: 'status.critical.surface', softPressed: 'status.critical.surface-pressed',
-    line: 'status.critical.border-strong', ink: 'status.critical.content', ring: 'status.critical.border',
-  },
-  Success: {
-    solid: 'status.success.surface-solid', solidHover: 'status.success.surface-solid-hover',
-    solidPressed: 'status.success.surface-solid-pressed', on: 'status.success.on-solid',
-    soft: 'status.success.surface', softPressed: 'status.success.surface-pressed',
-    line: 'status.success.border-strong', ink: 'status.success.content', ring: 'status.success.border',
-  },
-}
-
-const BUTTON_COLORS = ['Brand', 'Danger', 'Success'] as const
-const BUTTON_STYLES = ['Solid', 'Outline', 'Soft', 'Ghost'] as const
-const BUTTON_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] as const
-const BUTTON_SIZES = ['MD', 'SM', 'LG', 'XL'] as const
-
-function buttonPaint(color: string, style: string, state: string): SlotMap {
-  const k = BUTTON_INTENTS[color]
-  if (state === 'Disabled') {
-    return {
-      root: {
-        fill: style === 'Solid' || style === 'Soft' ? c('action.disabled.default') : NONE,
-        stroke: style === 'Outline' ? c('action.disabled.default') : NONE,
-        text: c('content.disabled'),
-      },
-    }
-  }
-  const hover = state === 'Hover'
-  const pressed = state === 'Pressed'
-  const ring = state === 'Focused' ? c(k.ring) : NONE
-  if (style === 'Solid') {
-    return {
-      root: { fill: c(pressed ? k.solidPressed : hover ? k.solidHover : k.solid), stroke: NONE, ring, text: c(k.on) },
-    }
-  }
-  if (style === 'Soft') {
-    // Two tones only: a soft fill has no third step that is not the border.
-    return {
-      root: { fill: c(hover || pressed ? k.softPressed : k.soft), stroke: NONE, ring, text: c(k.ink) },
-    }
-  }
-  if (style === 'Outline') {
-    return {
-      root: { fill: pressed ? c(k.softPressed) : hover ? c(k.soft) : NONE, stroke: c(k.line), ring, text: c(k.ink) },
-    }
-  }
-  // Ghost — the neutral wash both renderers already used.
-  return {
-    root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, ring, text: c(k.ink) },
-  }
-}
-
-/** Heights bind the SIZE ROLES the plugin already bound (compact · control ·
- *  touch); XL has no role at 56 (the only one is `fab`, another component's),
- *  so it reads the static `size.xl` step. Padding sits on spacing steps. */
-const BUTTON_GEOMETRY: Record<string, SlotProps> = {
-  SM: { height: 'size.compact', paddingX: 'spacing.3', gap: 'spacing.1_5' },
-  MD: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.gap-control' },
-  LG: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.gap-control' },
-  XL: { height: 'size.xl', paddingX: 'spacing.6', gap: 'spacing.2_5' },
-}
-
-// `text` sits on the ROOT: label and icons share it (`currentColor`), which is
-// also what the plugin does — one ink fills the label and the icon slots.
-const BUTTON: ComponentRecipe = {
-  key: 'Button',
-  slots: ['root', 'label', 'icon'],
-  defaults: { Color: 'Brand', Style: 'Solid', Size: 'MD', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      root: { radius: 'radius.action', strokeWidth: 'stroke.control', font: 'type.button' },
-    })),
-    part({ Size: BUTTON_SIZES }, (size) => ({ root: BUTTON_GEOMETRY[size] })),
-    part({ Color: BUTTON_COLORS, Style: BUTTON_STYLES, State: BUTTON_STATES }, buttonPaint),
-  ],
-}
-
-// ── Input ──────────────────────────────────────────────────────────────────
-
-const INPUT_SIZES = ['MD', 'SM', 'XS'] as const
-const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Filled', 'Error', 'Loading', 'Disabled'] as const
-
-function inputPaint(state: string): SlotMap {
-  const disabled = state === 'Disabled'
-  const error = state === 'Error'
-  const stroke = disabled ? 'action.disabled.default'
-    : error ? 'status.critical.border-strong'
-    : state === 'Focused' ? 'border.focus'
-    : state === 'Hover' ? 'border.control-hover'
-    : 'border.strong'
-  return {
-    label: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-    field: {
-      fill: c(disabled ? 'action.disabled.default' : 'surface.input'),
-      stroke: c(stroke),
-      ring: state === 'Focused' ? c('border.ring.default') : NONE,
-    },
-    value: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
-    icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
-    hint: { text: c(error ? 'status.critical.content' : 'content.secondary') },
-    spinner: { text: c(state === 'Loading' ? 'action.primary.default' : 'content.secondary') },
-  }
-}
-
-const INPUT_GEOMETRY: Record<string, SlotProps> = {
-  MD: { height: 'size.control', font: 'type.placeholder' },
-  SM: { height: 'size.compact', font: 'type.body-sm' },
-  XS: { height: 'size.xs', font: 'type.body-sm' },
-}
-
-const INPUT: ComponentRecipe = {
-  key: 'Input',
-  slots: ['root', 'label', 'field', 'value', 'placeholder', 'icon', 'hint', 'spinner'],
-  pseudoSlots: { placeholder: { of: 'value', pseudo: '::placeholder' } },
-  defaults: { Size: 'MD', State: 'Default', Type: 'Default' },
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.gap-tight' },
-      label: { font: 'type.label' },
-      field: { radius: 'radius.action', strokeWidth: 'stroke.control', paddingX: 'spacing.inset-control', gap: 'spacing.gap-control' },
-      hint: { font: 'type.helper' },
-    })),
-    part({ Size: INPUT_SIZES }, (size) => ({ field: INPUT_GEOMETRY[size] })),
-    part({ State: INPUT_STATES }, inputPaint),
-  ],
-}
-
-// ── Card ───────────────────────────────────────────────────────────────────
-
-const CARD: ComponentRecipe = {
-  key: 'Card',
-  slots: ['root', 'header', 'title', 'description', 'content', 'footer', 'link'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.container', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface',
-        gap: 'spacing.gap-control', shadow: 'shadow.sm',
-      },
-      header: { gap: 'spacing.gap-tight' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      content: { text: c('content.primary'), font: 'type.body-md' },
-      footer: { gap: 'spacing.gap-control' },
-      link: { text: c('content.accent'), font: 'type.button' },
-    })),
-  ],
-}
-
-// ── Dialog (catalogue key `Modal`) ─────────────────────────────────────────
-
-const MODAL: ComponentRecipe = {
-  key: 'Modal',
-  slots: ['content', 'overlay', 'header', 'title', 'description', 'footer', 'close'],
-  detachedSlots: ['overlay'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      overlay: { fill: c('surface.overlay') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.overlay', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface',
-        gap: 'spacing.gap-group', shadow: 'shadow.2xl',
-      },
-      header: { gap: 'spacing.gap-tight' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      footer: { gap: 'spacing.gap-control' },
-      close: { text: c('content.secondary'), radius: 'radius.control', height: 'size.xs' },
-    })),
-  ],
-}
+import { BUTTON, BUTTON_GROUP, CLOSE_BUTTON, FAB_BUTTON, SOCIAL_LOGIN_BUTTON, TEXT_LINK, APP_STORE_BADGE } from './recipes/actions'
+import { INPUT } from './recipes/forms'
+import { CARD, MODAL } from './recipes/surfaces'
+export {
+  RECIPE_PROPS,
+  type TokenRef, type RecipeProp, type SlotProps, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
+} from './recipes/helpers'
+import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
+  ButtonGroup: BUTTON_GROUP,
+  CloseButton: CLOSE_BUTTON,
+  FABButton: FAB_BUTTON,
+  SocialLoginButton: SOCIAL_LOGIN_BUTTON,
+  TextLink: TEXT_LINK,
+  AppStoreBadge: APP_STORE_BADGE,
   Input: INPUT,
   Card: CARD,
   Modal: MODAL,
@@ -316,6 +82,38 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
 /** The categorical role ids a recipe paints with. */
 export function recipeColorRoles(recipe: ComponentRecipe): string[] {
   return recipeTokenRefs(recipe).filter((r) => r.startsWith('color.')).map((r) => r.slice(6))
+}
+
+/** One (slot, property, token) triple, deduplicated across every variant. */
+export interface RecipeRow { slot: string; prop: RecipeProp; ref: TokenRef }
+export function recipeRows(recipe: ComponentRecipe): RecipeRow[] {
+  const seen = new Set<string>()
+  const rows: RecipeRow[] = []
+  for (const p of recipe.parts) {
+    for (const slots of Object.values(p.values)) {
+      for (const [slot, props] of Object.entries(slots)) {
+        for (const [prop, ref] of Object.entries(props)) {
+          if (!ref || ref === NONE) continue
+          const k = `${slot}|${prop}|${ref}`
+          if (seen.has(k)) continue
+          seen.add(k)
+          rows.push({ slot, prop: prop as RecipeProp, ref })
+        }
+      }
+    }
+  }
+  return rows
+}
+
+/** The colour roles ONE render paints (its axes resolved), in slot order. */
+export function recipeRolesFor(recipe: ComponentRecipe, v: AxisValues = {}): string[] {
+  const ids: string[] = []
+  for (const props of Object.values(resolveRecipe(recipe, v))) {
+    for (const ref of Object.values(props)) {
+      if (ref && ref.startsWith('color.') && !ids.includes(ref.slice(6))) ids.push(ref.slice(6))
+    }
+  }
+  return ids
 }
 
 // ── Names ──────────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ import type { CSSProperties } from 'react'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { COMPONENT_RECIPES, recipeTokenRefs, splitRef, cssVarOf } from './componentRecipes'
 import {
-  radiusRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
+  radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
 } from './previewTokens'
 
 const REFS: string[] = [
@@ -31,6 +31,7 @@ export function previewDimension(t: PreviewTokens, ref: string): Record<string, 
   switch (ns) {
     case 'size': return one(sizeRoleOf(t, name, '') || t.sizes?.[name])
     case 'radius': return one(radiusRoleOf(t, name))
+    case 'selector': return one(selectorRoleOf(t, name, '') || t.selector?.[name])
     case 'spacing': return one(t.spacing?.[name] || spacingRoleOf(t, name, ''))
     case 'stroke': return one(strokeRoleOf(t, name, '1px'))
     case 'shadow': return one(shadowOf(t, name, 'none'))
@@ -67,5 +68,11 @@ export function recipeVarStyle(t: PreviewTokens): CSSProperties | undefined {
     Object.assign(vars, previewDimension(t, ref))
   }
   vars['--stroke-focus'] = strokeRoleOf(t, 'focus', '2px')
+  // The page's base ink and families, so text a specimen adds around a
+  // component (a sentence, a label) reads like the system, not the chrome.
+  const body = typeStyleOf(t, 'body-md', { leading: false })
+  if (body.fontFamily) vars['--font-family-body'] = String(body.fontFamily)
+  const heading = typeStyleOf(t, 'heading-sm', { leading: false })
+  if (heading.fontFamily) vars['--font-family-heading'] = String(heading.fontFamily)
   return vars as CSSProperties
 }

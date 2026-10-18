@@ -52,6 +52,7 @@ function declarations(props: SlotProps): string[] {
       case 'text': out.push(`color: ${color(ref)}`); break
       case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
       case 'height': out.push(`height: ${v(ref)}`); break
+      case 'width': out.push(`width: ${v(ref)}`); break
       case 'radius': out.push(`border-radius: ${v(ref)}`); break
       case 'paddingX': out.push(`padding-inline: ${v(ref)}`); break
       case 'paddingY': out.push(`padding-block: ${v(ref)}`); break
@@ -80,6 +81,14 @@ function slotSelector(recipe: ComponentRecipe, root: string, slot: string): stri
   return `${root} [data-part="${recipe.key}.${slot}"]`
 }
 
+/** A slot key may carry a selector suffix — `item:hover`, `thumb[data-state="checked"]`
+ *  — so a PART can have its own states (a menu row's hover) beside the root's. */
+function splitSlotKey(key: string): [string, string] {
+  const i = key.search(/[:[]/)
+  return i < 0 ? [key, ''] : [key.slice(0, i), key.slice(i)]
+}
+export const slotName = (key: string): string => splitSlotKey(key)[0]
+
 export function recipeCss(recipe: ComponentRecipe): string {
   const rules: string[] = []
   for (const part of recipe.parts) {
@@ -92,10 +101,11 @@ export function recipeCss(recipe: ComponentRecipe): string {
         else base += `[${attr(axis)}="${values[i]}"]`
       })
       const roots = stateSuffixes(recipe.key, state).map((s) => base + s)
-      for (const [slot, props] of Object.entries(slots)) {
+      for (const [slotKey, props] of Object.entries(slots)) {
         const decl = declarations(props)
         if (!decl.length) continue
-        const sel = roots.map((r) => slotSelector(recipe, r, slot)).join(',\n')
+        const [slot, suffix] = splitSlotKey(slotKey)
+        const sel = roots.map((r) => slotSelector(recipe, r, slot) + suffix).join(',\n')
         rules.push(`${sel} {\n  ${decl.join(';\n  ')};\n}`)
       }
     }
