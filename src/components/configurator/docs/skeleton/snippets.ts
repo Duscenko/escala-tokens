@@ -82,40 +82,34 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { TextareaField } from "@/components/ui/textarea"\n\n<TextareaField\n  label="Description"\n  hint="${v.State === 'Error' ? 'Description is required.' : 'Max 200 characters.'}"\n  maxLength={200}${v.State === 'Error' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`,
   InputGroup: () =>
     `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
-  InputOTP: (v) =>
-    `import { InputOTP } from "@/components/ui/input-otp"\n\n<InputOTP length={6}${sizeProp(v)}${v.State === 'Error' ? ' invalid' : ''} onComplete={verify} />`,
+  InputOTP: () =>
+    `import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"\n\n<InputOTP maxLength={6} value={code} onChange={setCode}>\n  <InputOTPGroup>\n    <InputOTPSlot index={0} />\n    <InputOTPSlot index={1} />\n    <InputOTPSlot index={2} />\n    <InputOTPSlot index={3} />\n    <InputOTPSlot index={4} />\n    <InputOTPSlot index={5} />\n  </InputOTPGroup>\n</InputOTP>`,
   InputStepper: () =>
     `import { InputStepper } from "@/components/ui/input-stepper"\n\n<InputStepper defaultValue={12} min={0} max={99} />`,
   InputTag: () =>
     `import { InputTag } from "@/components/ui/input-tag"\n\n<InputTag defaultValue={["tokens", "figma"]} onValueChange={setTags} />`,
   Select: (v) =>
-    `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
+    `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${v.Size === 'sm' ? ' size="sm"' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
   Combobox: () =>
     `import { Combobox } from "@/components/ui/combobox"\n\n<Combobox\n  options={[{ label: "Inter", value: "inter" }, { label: "Poppins", value: "poppins" }]}\n  placeholder="Search fonts…"\n  onValueChange={setFont}\n/>`,
-  Checkbox: (v) =>
-    `import { Checkbox } from "@/components/ui/checkbox"\n\n<Checkbox${v.Checked === 'False' ? '' : ' defaultChecked'}${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} label="Remember me" />`,
-  CheckboxGroup: () =>
-    `import { Checkbox, CheckboxGroup } from "@/components/ui/checkbox"\n\n<CheckboxGroup legend="Notify me about">\n  <Checkbox label="Comments on my files" defaultChecked />\n  <Checkbox label="New team members" />\n</CheckboxGroup>`,
-  Radio: (v) =>
-    `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\n\n<RadioGroup${v.Checked === 'False' ? '' : ' defaultValue="monthly"'}>\n  <RadioGroupItem value="monthly" label="Monthly billing"${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} />\n</RadioGroup>`,
+  Checkbox: () =>
+    `import { Checkbox } from "@/components/ui/checkbox"\nimport { Field, FieldLabel } from "@/components/ui/field"\n\n<Field orientation="horizontal">\n  <Checkbox id="remember" defaultChecked />\n  <FieldLabel htmlFor="remember">Remember me</FieldLabel>\n</Field>`,
   RadioGroup: () =>
-    `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\n\n<RadioGroup legend="Billing period" defaultValue="monthly">\n  <RadioGroupItem value="monthly" label="Monthly billing" />\n  <RadioGroupItem value="yearly" label="Yearly billing" />\n</RadioGroup>`,
-  Toggle: (v) =>
-    `import { Switch } from "@/components/ui/switch"\n\n<Switch${v.On === 'False' ? '' : ' defaultChecked'}${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} label="Notifications" />`,
-  SwitchGroup: () =>
-    `import { Switch, SwitchGroup, SwitchGroupRow } from "@/components/ui/switch"\n\n<SwitchGroup legend="Notifications">\n  <SwitchGroupRow label="Email notifications">\n    <Switch defaultChecked aria-label="Email notifications" />\n  </SwitchGroupRow>\n</SwitchGroup>`,
+    `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\nimport { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"\n\n<FieldSet>\n  <FieldLegend variant="label">Billing period</FieldLegend>\n  <RadioGroup defaultValue="monthly">\n    <Field orientation="horizontal">\n      <RadioGroupItem value="monthly" id="monthly" />\n      <FieldLabel htmlFor="monthly">Monthly billing</FieldLabel>\n    </Field>\n    <Field orientation="horizontal">\n      <RadioGroupItem value="yearly" id="yearly" />\n      <FieldLabel htmlFor="yearly">Yearly billing</FieldLabel>\n    </Field>\n  </RadioGroup>\n</FieldSet>`,
+  Switch: (v) =>
+    `import { Switch } from "@/components/ui/switch"\nimport { Field, FieldLabel } from "@/components/ui/field"\n\n<Field orientation="horizontal">\n  <Switch id="notifications"${v.Size === 'sm' ? ' size="sm"' : ''} defaultChecked />\n  <FieldLabel htmlFor="notifications">Notifications</FieldLabel>\n</Field>`,
   Slider: () =>
     `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
   FileUpload: () =>
     `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
   Dropzone: (v) =>
     `import { Dropzone } from "@/components/ui/file-upload"\n\n<Dropzone\n  title="Click to upload or drag and drop"\n  hint="${v.State === 'Error' ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}"\n  onFiles={upload}${v.State && v.State !== 'Default' ? `\n  forceState="${v.State}"` : ''}\n/>`,
-  Field: () =>
-    `import { Field } from "@/components/ui/label"\n\n<Field label="Workspace name" required description="Shown to your teammates.">\n  <InputField defaultValue="Acme Inc." />\n</Field>`,
-  Label: (v) =>
-    `import { Label } from "@/components/ui/label"\n\n<Label${v.Required === 'True' ? ' required' : ''} htmlFor="email">Email address</Label>`,
+  Field: (v) =>
+    `import { Input } from "@/components/ui/input"\nimport { Field, FieldDescription, FieldLabel } from "@/components/ui/field"\n\n<Field${v.Orientation && v.Orientation !== 'vertical' ? ` orientation="${v.Orientation}"` : ''}>\n  <FieldLabel htmlFor="workspace">Workspace name</FieldLabel>\n  <Input id="workspace" defaultValue="Acme Inc." />\n  <FieldDescription>Shown to your teammates.</FieldDescription>\n</Field>`,
+  Label: () =>
+    `import { Label } from "@/components/ui/label"\n\n<Label htmlFor="email">Email address</Label>`,
   PasswordStrength: (v) =>
-    `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <InputField type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
+    `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <Input type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
 
   ButtonGroup: (v) =>
     `import { Button } from "@/components/ui/button"\nimport { ButtonGroup } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} aria-label="Range">\n  <Button variant="outline">Day</Button>\n  <Button variant="outline">Week</Button>\n  <Button variant="outline">Month</Button>\n</ButtonGroup>`,
@@ -135,19 +129,9 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const trail = icons?.trailing ? `\n  <${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />` : ''
     return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags}>\n${lead}  Button${trail}\n</Button>`
   },
-  Input: (v, icons) => {
-    const type = ({ 'default': 'text', 'e-mail': 'email', 'password': 'password', 'search': 'search', 'phone-number': 'tel', 'website': 'url' } as Record<string, string>)[low(v.Type)] ?? 'text'
-    const label = INPUT_META[v.Type ?? 'Default']?.label ?? 'Name'
-    const extras = [
-      sizeProp(v).trim(),
-      v.State === 'Error' ? 'invalid' : '',
-      v.State === 'Disabled' ? 'disabled' : '',
-      icons?.leading ? `leading={<${ICON_COMPONENT[ICON_SLOTS.Input.leading]} />}` : '',
-      icons?.trailing ? `trailing={<${ICON_COMPONENT[ICON_SLOTS.Input.trailing]} />}` : '',
-    ].filter(Boolean)
-    const hint = v.State === 'Error' ? 'This field is required.' : 'This is a hint text.'
-    return `import { InputField } from "@/components/ui/input"\n\n<InputField\n  type="${type}"\n  label="${label}"\n  hint="${hint}"${extras.map((e) => `\n  ${e}`).join('')}\n/>`
-  },
+  Input: (v) =>
+    `import { Input } from "@/components/ui/input"\n\n<Input type="email" placeholder="you@company.com"${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''} />`,
+
   Card: () =>
     `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter, CardLink,\n} from "@/components/ui/card"\n\n<Card>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <CardLink href="#">Learn more →</CardLink>\n  </CardFooter>\n</Card>`,
   Modal: () =>

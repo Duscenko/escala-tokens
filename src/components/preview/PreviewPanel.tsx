@@ -22,7 +22,7 @@ import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 // with the display name "Switch").
 const ButtonSpec = SPECIMENS.Button
 const BadgeSpec = SPECIMENS.Badge
-const SwitchSpec = SPECIMENS.Toggle
+const SwitchSpec = SPECIMENS.Switch
 const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
@@ -135,7 +135,7 @@ function ColorCollage({
           the brand fill arrive and leave the way it will in the product. */}
       <div className="flex flex-wrap items-center gap-4">
         <Live c="Checkbox" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
-        <Live c="Toggle" t={tokens} v={{ On: 'True' }} toggle="On" />
+        <Live c="Switch" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -466,8 +466,8 @@ export default function PreviewPanel({
 
             <Group title="Switch">
               <Tile tokens={tokens}>
-                <SwitchSpec t={tokens} v={{ On: 'True' }} />
-                <SwitchSpec t={tokens} v={{ On: 'False' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'True' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'False' }} />
               </Tile>
             </Group>
 

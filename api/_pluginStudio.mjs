@@ -227,24 +227,17 @@ var init_componentCatalogue = __esm({
         key: "Input",
         label: "Input",
         category: "Form Controls",
-        description: "The core text entry component. It covers every common input context out of the box \u2014 plain text, e-mail, password, search, phone number and website \u2014 across three sizes and the full input lifecycle.",
-        usage: "Always pair with a visible label. Use hint text for format guidance, error text for validation.",
-        axes: [
-          { name: "Size", values: ["MD", "SM", "XS"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Filled", "Error", "Loading", "Disabled"] },
-          { name: "Type", values: ["Default", "Icon Leading", "Icon Trailing", "E-Mail", "Password", "Search", "Phone Number", "Website"] }
-        ],
+        description: "shadcn/ui Input: the bare text control \u2014 the box is the <input>. No sizes or types: a label and a hint come from Field, icons and add-ons from Input Group.",
+        usage: "Wrap it in a Field with a FieldLabel. For a prefix, an icon or a button inside the box, use Input Group. Set the type (email, password, search) on the element.",
+        // No variant axis, as in shadcn. State is a Figma axis only (pseudo-classes in code).
+        axes: [{ name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }],
         figmaSets: ["Input"],
         props: [
-          { name: "label", type: "ReactNode", description: "Visible label above the field." },
-          { name: "hint", type: "ReactNode", description: "Helper text under the field; also carries the error message." },
-          { name: "size", type: '"MD" | "SM" | "XS"', description: "Field height \u2014 follows the Sizes foundation (control \xB7 compact \xB7 xs)." },
-          { name: "invalid", type: "boolean", description: "Error state: critical edge and aria-invalid." },
-          { name: "leading / trailing", type: "ReactNode", description: "Icons or text inside the field, before and after the control." },
-          { name: "loading", type: "ReactNode", description: "A spinner shown at the end of the field." },
-          { name: "forceState", type: '"Default" | "Hover" | "Focused" | "Error" | "Disabled"', description: "Pin a state without a pointer (docs, tests)." }
+          { name: "type", type: "string", description: "The HTML input type (text, email, password, search\u2026)." },
+          { name: "aria-invalid", type: "boolean", description: "Paints the error state." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." }
         ],
-        accessibility: 'Label linked via htmlFor/id. Error uses aria-describedby + role="alert".'
+        accessibility: "Native <input>. Pair it with a FieldLabel (htmlFor) or an aria-label; describe errors with FieldError and aria-invalid."
       },
       {
         key: "InputGroup",
@@ -284,21 +277,16 @@ var init_componentCatalogue = __esm({
         key: "InputOTP",
         label: "Input OTP",
         category: "Form Controls",
-        description: "One-time-passcode entry as separate character cells with auto-advance.",
-        usage: "Use 4\u20136 cells. Autofocus the first cell and submit automatically when complete.",
-        axes: [
-          { name: "Size", values: ["MD", "SM", "LG"] },
-          { name: "State", values: ["Default", "Filled", "Error"] }
-        ],
+        description: "shadcn/ui Input OTP (the input-otp package): one hidden control, a group of slots, the active slot ringed.",
+        usage: "Use for one-time codes. Paste fills every slot; set maxLength to the code length.",
+        axes: [{ name: "State", values: ["Default", "Filled", "Error"] }],
         figmaSets: ["Input OTP"],
         props: [
-          { name: "length", type: "number", description: "Number of cells (default 6)." },
-          { name: "size", type: '"md" | "sm" | "lg"', description: "Cell size \u2014 follows the Sizes foundation." },
-          { name: "value / defaultValue", type: "string", description: "The code typed so far." },
-          { name: "onComplete", type: "(code: string) => void", description: "Fires when every cell is filled." },
-          { name: "invalid", type: "boolean", description: "Error state on every cell." }
+          { name: "maxLength", type: "number", description: "Code length (the number of slots)." },
+          { name: "value / onChange", type: "string / (value) => void", description: "Controlled value." },
+          { name: "InputOTPGroup \xB7 InputOTPSlot index \xB7 InputOTPSeparator", type: "component", description: "The slots, laid out as you need them." }
         ],
-        accessibility: 'Single-input semantics via autocomplete="one-time-code"; cells are presentational.'
+        accessibility: 'One real input with autocomplete="one-time-code"; the slots are presentational. Give it an aria-label.'
       },
       {
         key: "InputStepper",
@@ -337,7 +325,7 @@ var init_componentCatalogue = __esm({
         description: "Dropdown trigger that shares the input tokens, with full state coverage for forms and filters.",
         usage: "Use when options exceed 4 items. For fewer options, prefer Radio or ButtonGroup.",
         axes: [
-          { name: "Size", values: ["MD", "SM", "LG"] },
+          { name: "Size", values: ["default", "sm"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }
         ],
         figmaSets: ["Select"],
@@ -369,106 +357,52 @@ var init_componentCatalogue = __esm({
         key: "Checkbox",
         label: "Checkbox",
         category: "Form Controls",
-        description: "Binary selection control with checked and unchecked matrices across every interaction state.",
-        usage: "Use for lists of independent options. For mutually exclusive options, use Radio.",
+        description: "shadcn/ui Checkbox: the box alone. Label it with a horizontal Field and a FieldLabel.",
+        usage: "Use for independent on/off choices and multi-select lists. For an instant setting, use Switch.",
         axes: [
           { name: "Checked", values: ["True", "False"] },
-          { name: "Size", values: ["MD", "SM"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
         ],
         figmaSets: ["Checkbox"],
         props: [
-          { name: "label", type: "ReactNode", description: "Text beside the box; clicking it toggles." },
-          { name: "checked / defaultChecked", type: 'boolean | "indeterminate"', description: "Controlled / uncontrolled state." },
-          { name: "onCheckedChange", type: "(checked) => void", description: "Fires on toggle." },
-          { name: "size", type: '"md" | "sm"', description: "Box size \u2014 follows the Selector ramp." },
+          { name: "checked / defaultChecked", type: 'boolean | "indeterminate"', description: "Value (Radix)." },
+          { name: "onCheckedChange", type: "(checked) => void", description: "Change handler." },
           { name: "disabled", type: "boolean", description: "Prevents interaction." }
         ],
-        accessibility: "Native checkbox input with aria-checked for indeterminate state."
-      },
-      {
-        key: "CheckboxGroup",
-        label: "Checkbox Group",
-        category: "Form Controls",
-        description: "A labelled stack of related checkboxes sharing one group semantic.",
-        usage: "Use for 2\u20137 independent options under one question. Order by likelihood or alphabet.",
-        axes: [],
-        figmaSets: ["Checkbox Group"],
-        props: [
-          { name: "legend", type: "ReactNode", description: "The question the group answers." },
-          { name: "children", type: "Checkbox[]", description: "The options." }
-        ],
-        accessibility: "fieldset + legend semantics. Each row is a native checkbox."
-      },
-      {
-        key: "Radio",
-        label: "Radio",
-        category: "Form Controls",
-        description: "Single-choice control with checked and unchecked matrices across every interaction state.",
-        usage: "Never render a radio alone \u2014 it always belongs to a group of 2+ exclusive options.",
-        axes: [
-          { name: "Checked", values: ["True", "False"] },
-          { name: "Size", values: ["MD", "SM"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
-        ],
-        figmaSets: ["Radio"],
-        props: [
-          { name: "RadioGroupItem value", type: "string", description: "This option's value." },
-          { name: "label", type: "ReactNode", description: "Text beside the control." },
-          { name: "size", type: '"md" | "sm"', description: "Control size \u2014 follows the Selector ramp." },
-          { name: "disabled", type: "boolean", description: "Prevents interaction." }
-        ],
-        accessibility: "Native radio input. Group navigated with arrow keys per the ARIA pattern."
+        accessibility: 'Radix checkbox (role="checkbox", Space toggles). Associate a FieldLabel with htmlFor.'
       },
       {
         key: "RadioGroup",
         label: "Radio Group",
         category: "Form Controls",
-        description: "A labelled stack of exclusive radio options \u2014 one value at a time.",
-        usage: "Use for 2\u20135 visible exclusive options. Beyond that, use Select.",
+        description: "shadcn/ui Radio Group: RadioGroup with RadioGroupItems, each labelled by a horizontal Field. A checked item is filled with the primary colour.",
+        usage: "Use for one choice among 2\u20135 visible options. For more, use Select.",
         axes: [],
         figmaSets: ["Radio Group"],
         props: [
-          { name: "legend", type: "ReactNode", description: "The question the group answers." },
-          { name: "value / defaultValue", type: "string", description: "Selected option." },
-          { name: "onValueChange", type: "(value: string) => void", description: "Fires when the choice changes." }
+          { name: "value / defaultValue / onValueChange", type: "string", description: "The selected item (Radix)." },
+          { name: "RadioGroupItem value", type: "string", description: "One option." }
         ],
-        accessibility: 'role="radiogroup" + fieldset/legend. Arrow keys move selection.'
+        accessibility: "Radix radio group: arrow keys move the selection, one tab stop. Wrap it in a FieldSet with a FieldLegend."
       },
       {
-        key: "Toggle",
+        key: "Switch",
         label: "Switch",
         category: "Form Controls",
-        description: "On/off switch with token-driven track and knob, covering hover, focus and disabled states.",
-        usage: "Prefer over Checkbox when the change applies without a save action.",
+        description: "shadcn/ui Switch: an instant on/off setting in two sizes. Label it with a horizontal Field.",
+        usage: "Use for a setting that applies at once. For a choice submitted with a form, use Checkbox.",
         axes: [
-          { name: "On", values: ["True", "False"] },
-          { name: "Size", values: ["MD", "SM"] },
+          { name: "Checked", values: ["True", "False"] },
+          { name: "Size", values: ["default", "sm"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
         ],
-        figmaSets: ["Toggle"],
+        figmaSets: ["Switch"],
         props: [
-          { name: "label", type: "ReactNode", description: "Text beside the switch; clicking it toggles." },
-          { name: "checked / defaultChecked", type: "boolean", description: "Controlled / uncontrolled state." },
-          { name: "onCheckedChange", type: "(checked: boolean) => void", description: "Fires on toggle." },
-          { name: "size", type: '"md" | "sm"', description: "Switch size \u2014 follows the Selector ramp." },
+          { name: "size", type: '"default" | "sm"', description: "shadcn's sizes." },
+          { name: "checked / defaultChecked / onCheckedChange", type: "boolean", description: "Value (Radix)." },
           { name: "disabled", type: "boolean", description: "Prevents interaction." }
         ],
-        accessibility: 'Uses role="switch" with aria-checked. Label associated via aria-labelledby.'
-      },
-      {
-        key: "SwitchGroup",
-        label: "Switch Group",
-        category: "Form Controls",
-        description: "A settings-style stack of labelled switches, each applying immediately.",
-        usage: "Use for related preferences (notifications, permissions). Lead each row with the benefit.",
-        axes: [],
-        figmaSets: ["Switch Group"],
-        props: [
-          { name: "legend", type: "ReactNode", description: "Group heading." },
-          { name: "SwitchGroupRow label", type: "ReactNode", description: "Row text; its Switch sits on the right." }
-        ],
-        accessibility: 'Each row uses role="switch" with its own label; group has a heading.'
+        accessibility: 'Radix switch (role="switch", Space toggles). Associate a FieldLabel with htmlFor.'
       },
       {
         key: "Slider",
@@ -521,32 +455,29 @@ var init_componentCatalogue = __esm({
         key: "Field",
         label: "Field",
         category: "Form Controls",
-        description: "The form-row composition \u2014 label, control slot, hint and error wired together.",
-        usage: "Wrap every form control in a Field so spacing, labels and errors stay consistent.",
-        axes: [],
+        description: "shadcn/ui Field: a control with its label, description and error, laid out vertically, horizontally or responsively; with FieldSet, FieldLegend and FieldGroup for whole forms.",
+        usage: "Wrap every form control in a Field. Use horizontal for checkboxes and switches, FieldSet + FieldLegend for a group of them.",
+        axes: [{ name: "Orientation", values: ["vertical", "horizontal", "responsive"] }],
         figmaSets: ["Field"],
         props: [
-          { name: "label", type: "ReactNode", description: "Visible label." },
-          { name: "required", type: "boolean", description: "Adds the required asterisk." },
-          { name: "description", type: "ReactNode", description: "Helper text; replaced by `error` when set." },
-          { name: "error", type: "ReactNode", description: 'Error message (role="alert").' },
-          { name: "children", type: "ReactNode", description: "The control; it receives the label's id." }
+          { name: "orientation", type: '"vertical" | "horizontal" | "responsive"', description: "shadcn's layouts." },
+          { name: "FieldLabel \xB7 FieldDescription \xB7 FieldError", type: "component", description: "The parts around the control." },
+          { name: "FieldSet \xB7 FieldLegend \xB7 FieldGroup \xB7 FieldContent \xB7 FieldSeparator", type: "component", description: "Grouping and layout." }
         ],
-        accessibility: "Generates the htmlFor/id + aria-describedby wiring for whatever control it wraps."
+        accessibility: 'Field is role="group"; FieldLabel is a <label> (htmlFor); FieldError is role="alert".'
       },
       {
         key: "Label",
         label: "Label",
         category: "Form Controls",
-        description: "Standalone form label with optional required marker and secondary hint.",
-        usage: "Always visible \u2014 placeholder text is not a label. Keep to 1\u20133 words.",
-        axes: [{ name: "Required", values: ["False", "True"] }],
+        description: "shadcn/ui Label: accessible text for a control (Radix Label).",
+        usage: "Inside a form, prefer FieldLabel. Mark required fields in the text, not with colour alone.",
+        axes: [],
         figmaSets: ["Label"],
         props: [
-          { name: "required", type: "boolean", description: "Adds the required asterisk." },
-          { name: "htmlFor", type: "string", description: "Id of the labelled control." }
+          { name: "htmlFor", type: "string", description: "The id of the control it names." }
         ],
-        accessibility: "Native <label> element; the required marker also sets aria-required on the control."
+        accessibility: "A real <label>: clicking it focuses or toggles its control."
       },
       {
         key: "PasswordStrength",
@@ -1050,7 +981,7 @@ var init_componentCatalogue = __esm({
       "Input",
       "Select",
       "Checkbox",
-      "Toggle",
+      "Switch",
       "Badge",
       "Card",
       "Avatar",
@@ -1671,16 +1602,16 @@ function applyDesktopFrameToGrid(grid, frame, spacing) {
     container: desktop.container
   };
 }
-function applyRadiusGroup(group2, roles, step) {
+function applyRadiusGroup(group, roles, step) {
   const next = mergeLayoutRoles("radius", roles);
-  for (const role of group2.roles) next[role] = step;
+  for (const role of group.roles) next[role] = step;
   return next;
 }
 function radiusRolesFromGroups(picks) {
   let roles = defaultLayoutRoles("radius");
-  for (const group2 of RADIUS_GROUPS) {
-    const step = picks[group2.key];
-    if (step) roles = applyRadiusGroup(group2, roles, step);
+  for (const group of RADIUS_GROUPS) {
+    const step = picks[group.key];
+    if (step) roles = applyRadiusGroup(group, roles, step);
   }
   return roles;
 }
@@ -1688,7 +1619,7 @@ function radiusRolesForPreset(label, roles) {
   const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label);
   if (!preset) return null;
   let next = mergeLayoutRoles("radius", roles);
-  for (const group2 of RADIUS_GROUPS) next = applyRadiusGroup(group2, next, preset.picks[group2.key]);
+  for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key]);
   return next;
 }
 function radiusPresetPatch(label, roles) {
@@ -4339,13 +4270,13 @@ function resolveCuratedForExport(tokens, input, themeOrder) {
   const lookByTheme = Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? "light", input.pageBackground, input.darkBackground)]));
   const REF = /^\{([a-z-]+)\.(\d+)\}$/;
   const out = {};
-  for (const [group2, byKey] of Object.entries(tokens)) {
-    out[group2] = {};
+  for (const [group, byKey] of Object.entries(tokens)) {
+    out[group] = {};
     for (const [key2, byTheme] of Object.entries(byKey)) {
-      out[group2][key2] = {};
+      out[group][key2] = {};
       for (const [theme, ref] of Object.entries(byTheme)) {
         const m = REF.exec(ref);
-        out[group2][key2][theme] = m ? lookByTheme[theme]?.(m[1], Number(m[2])) ?? ref : ref;
+        out[group][key2][theme] = m ? lookByTheme[theme]?.(m[1], Number(m[2])) ?? ref : ref;
       }
     }
   }
@@ -4944,8 +4875,8 @@ var init_semanticArchitectures = __esm({
 
 // src/lib/agentBundle/names.ts
 function figmaSemanticName(id) {
-  const [group2, ...rest] = id.split(".");
-  const label = GROUP_LABEL[group2] ?? (group2 ? group2.charAt(0).toUpperCase() + group2.slice(1) : id);
+  const [group, ...rest] = id.split(".");
+  const label = GROUP_LABEL[group] ?? (group ? group.charAt(0).toUpperCase() + group.slice(1) : id);
   return rest.length ? `${label}/${rest.join("/")}` : label;
 }
 var GROUP_LABEL;
@@ -5177,71 +5108,31 @@ function fieldBox(state2) {
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
   return { fill: c("surface.input"), stroke: c("border.strong"), ring: NONE };
 }
-function inputPaint(state2) {
-  const disabled = state2 === "Disabled";
-  const error = state2 === "Error";
-  return {
-    label: { text: c(disabled ? "content.disabled" : "content.primary") },
-    field: fieldBox(state2),
-    value: { text: c(disabled ? "content.disabled" : "content.primary") },
-    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
-    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
-    hint: { text: c(error ? "status.critical.content" : "content.secondary") },
-    spinner: { text: c(state2 === "Loading" ? "action.primary.default" : "content.secondary") }
-  };
-}
 function checkPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  let box;
-  if (disabled) box = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
+  let root;
+  if (disabled) root = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring };
   else if (on) {
     const fill = c(hover ? "action.primary.hover" : "action.primary.default");
-    box = { fill, stroke: fill, text: c("content.on-action"), ring };
-  } else box = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
-  return { box, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
+    root = { fill, stroke: fill, ring };
+  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), ring };
+  return { root, indicator: { text: c(disabled ? "content.disabled" : "content.on-action") } };
 }
-function radioPaint(checked, state2) {
+function switchPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const box = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
+  const track2 = disabled ? "action.disabled.default" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "action.secondary.hover" : "action.secondary.default";
   return {
-    box,
-    indicator: { fill: on ? c(disabled ? "content.disabled" : "action.primary.default") : NONE },
-    label: { text: c(disabled ? "content.disabled" : "content.primary") }
+    root: { fill: c(track2), ring },
+    thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-function togglePaint(on, state2) {
-  const isOn = on === "True";
-  const disabled = state2 === "Disabled";
-  const hover = state2 === "Hover";
-  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const trackFill = disabled ? "action.disabled.default" : isOn ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "action.secondary.hover" : "action.secondary.default";
-  return {
-    track: { fill: c(trackFill), ring },
-    thumb: { fill: c(isOn && !disabled ? "content.on-action" : "surface.input") },
-    label: { text: c(disabled ? "content.disabled" : "content.primary") }
-  };
-}
-function group(key2, rowGap = "spacing.2_5", withRows = false) {
-  return {
-    key: key2,
-    slots: withRows ? ["root", "legend", "row"] : ["root", "legend"],
-    defaults: {},
-    parts: [
-      part({}, () => ({
-        root: { gap: rowGap },
-        legend: { text: c("content.secondary"), font: "type.label" },
-        ...withRows ? { row: { gap: "spacing.3" } } : {}
-      }))
-    ]
-  };
-}
-var FIELD_FIXED, FIELD_FOCUS, INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, OTP_GEOMETRY, INPUT_OTP, SELECTOR_SIZE, CHECKBOX, RADIO, TOGGLE_GEOMETRY, TOGGLE, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -5252,27 +5143,23 @@ var init_forms = __esm({
       gap: "spacing.gap-control"
     };
     FIELD_FOCUS = { stroke: c("border.focus"), ring: c("border.ring.default") };
-    INPUT_SIZES = ["MD", "SM", "XS"];
-    INPUT_STATES = ["Default", "Hover", "Focused", "Filled", "Error", "Loading", "Disabled"];
-    INPUT_GEOMETRY = {
-      MD: { height: "size.control", font: "type.placeholder" },
-      SM: { height: "size.compact", font: "type.body-sm" },
-      XS: { height: "size.xs", font: "type.body-sm" }
-    };
+    INPUT_STATES = ["Default", "Hover", "Focused", "Error", "Disabled"];
     INPUT = {
       key: "Input",
-      slots: ["root", "label", "field", "value", "placeholder", "icon", "hint", "spinner"],
-      pseudoSlots: { placeholder: { of: "value", pseudo: "::placeholder" } },
-      defaults: { Size: "MD", State: "Default", Type: "Default" },
+      slots: ["root", "placeholder"],
+      pseudoSlots: { placeholder: { of: "root", pseudo: "::placeholder" } },
+      defaults: { State: "Default" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.gap-tight" },
-          label: { font: "type.label" },
-          field: FIELD_FIXED,
-          hint: { font: "type.helper" }
+          root: { ...FIELD_FIXED, height: "size.control", font: "type.placeholder" }
         })),
-        part({ Size: INPUT_SIZES }, (size) => ({ field: INPUT_GEOMETRY[size] })),
-        part({ State: INPUT_STATES }, inputPaint)
+        part({ State: INPUT_STATES }, (state2) => {
+          const disabled = state2 === "Disabled";
+          return {
+            root: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
+            placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") }
+          };
+        })
       ]
     };
     TEXTAREA = {
@@ -5381,7 +5268,7 @@ var init_forms = __esm({
         }))
       ]
     };
-    SELECT_GEOMETRY = { MD: "size.control", SM: "size.compact", LG: "size.touch" };
+    SELECT_GEOMETRY = { default: "size.control", sm: "size.compact" };
     MENU_ITEM = {
       item: { text: c("content.primary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
       "item[data-highlighted]": { fill: c("action.ghost.hover") },
@@ -5402,7 +5289,7 @@ var init_forms = __esm({
       slots: ["root", "icon", "content", "item"],
       // Radix portals the list: it is a sibling of the trigger, not inside it.
       detachedSlots: ["content", "item"],
-      defaults: { Size: "MD", State: "Default" },
+      defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
           root: { ...FIELD_FIXED, font: "type.placeholder", text: c("content.primary") },
@@ -5411,7 +5298,7 @@ var init_forms = __esm({
           content: MENU_CONTENT,
           ...MENU_ITEM
         })),
-        part({ Size: ["MD", "SM", "LG"] }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
+        part({ Size: ["default", "sm"] }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
         part({ State: ["Default", "Hover", "Focused", "Error", "Disabled"] }, (state2) => ({
           root: { ...fieldBox(state2), ...state2 === "Disabled" ? { text: c("content.disabled") } : {} },
           icon: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
@@ -5435,96 +5322,84 @@ var init_forms = __esm({
         part({ State: ["Default", "Open"] }, (state2) => ({ root: fieldBox(state2) }))
       ]
     };
-    OTP_GEOMETRY = {
-      MD: { size: "size.control", gap: "spacing.gap-control" },
-      SM: { size: "size.compact", gap: "spacing.gap-tight" },
-      LG: { size: "size.touch", gap: "spacing.gap-control" }
-    };
     INPUT_OTP = {
       key: "InputOTP",
-      slots: ["root", "cell"],
-      defaults: { Size: "MD", State: "Default" },
+      slots: ["root", "group", "slot"],
+      defaults: { State: "Default" },
       parts: [
         part({}, () => ({
-          cell: {
+          group: { gap: "spacing.gap-control" },
+          slot: {
             fill: c("surface.input"),
             stroke: c("border.strong"),
             strokeWidth: "stroke.control",
             radius: "radius.action",
             text: c("content.primary"),
-            font: "type.button"
+            font: "type.button",
+            height: "size.control",
+            width: "size.control"
           },
-          'cell[data-active="true"]': FIELD_FOCUS
-        })),
-        part({ Size: ["MD", "SM", "LG"] }, (size) => ({
-          root: { gap: OTP_GEOMETRY[size].gap },
-          cell: { height: OTP_GEOMETRY[size].size, width: OTP_GEOMETRY[size].size }
+          'slot[data-active="true"]': FIELD_FOCUS
         })),
         part({ State: ["Default", "Filled", "Error"] }, (state2) => ({
-          cell: state2 === "Error" ? { stroke: c("status.critical.border-strong") } : {},
-          'cell[data-active="true"]': state2 === "Error" ? { stroke: c("status.critical.border-strong"), ring: NONE } : FIELD_FOCUS
+          slot: state2 === "Error" ? { stroke: c("status.critical.border-strong") } : {},
+          'slot[data-active="true"]': state2 === "Error" ? { stroke: c("status.critical.border-strong"), ring: NONE } : FIELD_FOCUS
         }))
       ]
     };
-    SELECTOR_SIZE = {
-      MD: { box: "selector.control", gap: "spacing.2_5" },
-      SM: { box: "selector.compact", gap: "spacing.2" }
-    };
     CHECKBOX = {
       key: "Checkbox",
-      slots: ["root", "box", "indicator", "label"],
-      defaults: { Checked: "True", Size: "MD", State: "Default" },
+      slots: ["root", "indicator"],
+      defaults: { Checked: "True", State: "Default" },
       parts: [
         part({}, () => ({
-          box: { radius: "radius.control", strokeWidth: "stroke.control" },
-          label: { font: "type.label" }
-        })),
-        part({ Size: ["MD", "SM"] }, (size) => ({
-          root: { gap: SELECTOR_SIZE[size].gap },
-          box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box }
+          root: { radius: "radius.control", strokeWidth: "stroke.control", height: "selector.control", width: "selector.control" }
         })),
         part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, checkPaint)
       ]
     };
-    RADIO = {
-      key: "Radio",
-      slots: ["root", "box", "indicator", "label"],
-      defaults: { Checked: "True", Size: "MD", State: "Default" },
+    RADIO_GROUP = {
+      key: "RadioGroup",
+      slots: ["root", "item", "indicator"],
+      defaults: {},
       parts: [
         part({}, () => ({
-          box: { radius: "radius.pill", strokeWidth: "stroke.control" },
-          indicator: { radius: "radius.pill" },
-          label: { font: "type.label" }
-        })),
-        part({ Size: ["MD", "SM"] }, (size) => ({
-          root: { gap: SELECTOR_SIZE[size].gap },
-          box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box },
-          indicator: { height: size === "SM" ? "spacing.2" : "spacing.2_5", width: size === "SM" ? "spacing.2" : "spacing.2_5" }
-        })),
-        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, radioPaint)
+          root: { gap: "spacing.3" },
+          item: {
+            fill: c("surface.input"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            radius: "radius.pill",
+            height: "selector.control",
+            width: "selector.control"
+          },
+          "item:hover": { stroke: c("border.control-hover") },
+          "item:focus-visible": { ring: c("border.ring.default") },
+          'item[data-state="checked"]': { fill: c("action.primary.default"), stroke: c("action.primary.default") },
+          "item:disabled": { fill: c("action.disabled.default"), stroke: c("action.disabled.default") },
+          indicator: { fill: c("content.on-action"), radius: "radius.pill", height: "spacing.2", width: "spacing.2" }
+        }))
       ]
     };
-    TOGGLE_GEOMETRY = {
+    SWITCH_GEOMETRY = {
       // Track = knob + 2px inset each side; the knob travels width − knob − inset.
-      MD: { knob: "selector.control", trackH: "selector.control+spacing.1", trackW: "selector.control+spacing.5", travel: "spacing.4", gap: "spacing.2_5" },
-      SM: { knob: "selector.compact", trackH: "selector.compact+spacing.1", trackW: "selector.compact+spacing.4", travel: "spacing.3", gap: "spacing.2" }
+      default: { knob: "selector.control", trackH: "selector.control+spacing.1", trackW: "selector.control+spacing.5", travel: "spacing.4" },
+      sm: { knob: "selector.compact", trackH: "selector.compact+spacing.1", trackW: "selector.compact+spacing.4", travel: "spacing.3" }
     };
-    TOGGLE = {
-      key: "Toggle",
-      slots: ["root", "track", "thumb", "label"],
-      defaults: { On: "True", Size: "MD", State: "Default" },
+    SWITCH = {
+      key: "Switch",
+      slots: ["root", "thumb"],
+      defaults: { Checked: "True", Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          track: { radius: "radius.pill" },
-          thumb: { radius: "radius.pill", shadow: "shadow.xs" },
-          label: { font: "type.label" }
+          root: { radius: "radius.pill" },
+          thumb: { radius: "radius.pill", shadow: "shadow.xs" }
         })),
-        part({ Size: ["MD", "SM"] }, (size) => ({
-          root: { gap: TOGGLE_GEOMETRY[size].gap },
-          track: { height: TOGGLE_GEOMETRY[size].trackH, width: TOGGLE_GEOMETRY[size].trackW, travel: TOGGLE_GEOMETRY[size].travel },
-          thumb: { height: TOGGLE_GEOMETRY[size].knob, width: TOGGLE_GEOMETRY[size].knob }
+        part({ Size: ["default", "sm"] }, (size) => ({
+          root: { height: SWITCH_GEOMETRY[size].trackH, width: SWITCH_GEOMETRY[size].trackW, travel: SWITCH_GEOMETRY[size].travel },
+          thumb: { height: SWITCH_GEOMETRY[size].knob, width: SWITCH_GEOMETRY[size].knob }
         })),
-        part({ On: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, togglePaint)
+        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, switchPaint)
       ]
     };
     SLIDER = {
@@ -5553,27 +5428,24 @@ var init_forms = __esm({
     };
     FIELD = {
       key: "Field",
-      slots: ["root", "label", "asterisk", "description", "error"],
-      defaults: {},
+      slots: ["root", "label", "description", "error", "legend"],
+      defaults: { Orientation: "vertical" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.gap-control" },
+          root: { gap: "spacing.3" },
           label: { text: c("content.primary"), font: "type.label" },
-          asterisk: { text: c("status.critical.content") },
           description: { text: c("content.secondary"), font: "type.helper" },
-          error: { text: c("status.critical.content"), font: "type.helper" }
+          error: { text: c("status.critical.content"), font: "type.helper" },
+          legend: { text: c("content.primary"), font: "type.label" }
         }))
       ]
     };
     LABEL = {
       key: "Label",
-      slots: ["root", "asterisk"],
-      defaults: { Required: "False" },
+      slots: ["root"],
+      defaults: {},
       parts: [
-        part({ Required: ["False", "True"] }, () => ({
-          root: { text: c("content.primary"), font: "type.label" },
-          asterisk: { text: c("status.critical.content") }
-        }))
+        part({}, () => ({ root: { text: c("content.primary"), font: "type.label" } }))
       ]
     };
     STRENGTH_FILL = {
@@ -5654,16 +5526,6 @@ var init_forms = __esm({
         })
       ]
     };
-    CHECKBOX_GROUP = group("CheckboxGroup");
-    RADIO_GROUP = group("RadioGroup");
-    SWITCH_GROUP = (() => {
-      const base = group("SwitchGroup", "spacing.3", true);
-      return {
-        ...base,
-        slots: [...base.slots, "rowLabel"],
-        parts: [...base.parts, part({}, () => ({ rowLabel: { text: c("content.primary"), font: "type.label" } }))]
-      };
-    })();
   }
 });
 
@@ -6376,11 +6238,8 @@ var init_componentRecipes = __esm({
       Combobox: COMBOBOX,
       InputOTP: INPUT_OTP,
       Checkbox: CHECKBOX,
-      CheckboxGroup: CHECKBOX_GROUP,
-      Radio: RADIO,
       RadioGroup: RADIO_GROUP,
-      Toggle: TOGGLE,
-      SwitchGroup: SWITCH_GROUP,
+      Switch: SWITCH,
       Slider: SLIDER,
       FileUpload: FILE_UPLOAD,
       Dropzone: DROPZONE,
@@ -8534,7 +8393,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 92,
+          version: 93,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -9662,6 +9521,17 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
+            if (version < 93) {
+              const forms = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const next = state2.selectedComponents.filter((k) => k !== "CheckboxGroup" && k !== "SwitchGroup").map((k) => k === "Toggle" ? "Switch" : k === "Radio" ? "RadioGroup" : k);
+                state2.selectedComponents = [...new Set(next)];
+              };
+              forms(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) forms(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -9962,8 +9832,8 @@ var INDUSTRY_PACKS = [
 ];
 function collectIndustryAccents() {
   const byHex = /* @__PURE__ */ new Map();
-  for (const group2 of INDUSTRY_GROUP_ORDER) {
-    for (const pack of INDUSTRY_PACKS.filter((p) => p.group === group2)) {
+  for (const group of INDUSTRY_GROUP_ORDER) {
+    for (const pack of INDUSTRY_PACKS.filter((p) => p.group === group)) {
       for (const accent2 of pack.accents) {
         const key2 = accent2.hex.toLowerCase();
         if (!byHex.has(key2)) byHex.set(key2, accent2);
@@ -11157,10 +11027,10 @@ function buildStudioTokens(choices, tier) {
   }
   if (choices.radiusAxes) {
     let roles = resolved().radiusRoles;
-    for (const group2 of RADIUS_GROUPS) {
-      const step = choices.radiusAxes[group2.key];
+    for (const group of RADIUS_GROUPS) {
+      const step = choices.radiusAxes[group.key];
       if (step && RADIUS_GROUP_STEPS.includes(step)) {
-        roles = applyRadiusGroup(group2, roles, step);
+        roles = applyRadiusGroup(group, roles, step);
       }
     }
     patch({ radiusRoles: roles });

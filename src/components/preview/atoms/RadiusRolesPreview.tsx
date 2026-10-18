@@ -13,7 +13,7 @@ const InputSpec = SPECIMENS.Input
 const CheckboxSpec = SPECIMENS.Checkbox
 const CardSpec = SPECIMENS.Card
 const BadgeSpec = SPECIMENS.Badge
-const SwitchSpec = SPECIMENS.Toggle
+const SwitchSpec = SPECIMENS.Switch
 const AvatarSpec = SPECIMENS.Avatar
 const PopoverSpec = SPECIMENS.Popover
 
@@ -48,7 +48,7 @@ function Examples({ role, tokens: t }: { role: string; tokens: PreviewTokens }) 
       <>
         <BadgeSpec t={t} v={{ Variant: 'default' }} />
         <BadgeSpec t={t} v={{ Variant: 'secondary' }} />
-        <SwitchSpec t={t} v={{ On: 'True' }} />
+        <SwitchSpec t={t} v={{ Checked: 'True' }} />
         <AvatarSpec t={t} v={{}} />
       </>
     )

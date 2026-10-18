@@ -97,7 +97,11 @@ function slotSelector(recipe: ComponentRecipe, root: string, slot: string): stri
   if (own) return `${root} ${own}`
   if (recipe.detachedSlots?.includes(slot)) return `[data-part="${recipe.key}.${slot}"]`
   const pseudo = recipe.pseudoSlots?.[slot]
-  if (pseudo) return `${root} [data-part="${recipe.key}.${pseudo.of}"]${pseudo.pseudo}`
+  if (pseudo) {
+    // A pseudo-element of the root itself (shadcn's Input: the box IS the <input>).
+    if (pseudo.of === recipe.slots[0]) return `${root}${pseudo.pseudo}`
+    return `${root} [data-part="${recipe.key}.${pseudo.of}"]${pseudo.pseudo}`
+  }
   return `${root} [data-part="${recipe.key}.${slot}"]`
 }
 

@@ -1,62 +1,51 @@
-// Skeleton: shadcn/ui `bases/radix/ui/checkbox.tsx` (MIT, see LICENSE-shadcn.md),
-// wrapped in its label the way shadcn's docs compose it. Appearance: recipe.
+// Skeleton: shadcn/ui `bases/radix/ui/checkbox.tsx` (MIT, see LICENSE-shadcn.md):
+// the bare control (Root + Indicator), no label — label it with `Label` or a
+// horizontal `Field`, as in shadcn. Appearance: recipe (Checkbox), which reads
+// `data-checked` (True | False) and the State axis.
 import * as React from 'react'
 import { Checkbox as CheckboxPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 
-export interface CheckboxProps extends Omit<React.ComponentProps<typeof CheckboxPrimitive.Root>, 'children'> {
-  label?: React.ReactNode
-  size?: 'md' | 'sm'
-  /** Pin a state without a pointer (docs playground). */
+export interface CheckboxProps extends React.ComponentProps<typeof CheckboxPrimitive.Root> {
+  /** Escala: pin a state without a pointer (docs playground, Figma parity). */
   forceState?: 'Default' | 'Hover' | 'Focused' | 'Disabled'
-  /** The check glyph (bold weight reads best at this size). */
+  /** Escala: the check glyph (shadcn's is lucide's CheckIcon). */
   icon?: React.ReactNode
 }
 
 function Checkbox({
-  label, size = 'md', forceState, icon, className, checked, defaultChecked, disabled, onCheckedChange, ...props
+  className, forceState, icon, checked, defaultChecked, disabled, onCheckedChange, ...props
 }: CheckboxProps) {
   const [inner, setInner] = React.useState<boolean | 'indeterminate'>(defaultChecked ?? false)
   const on = checked ?? inner
   const isDisabled = disabled || forceState === 'Disabled'
   return (
-    <label
+    <CheckboxPrimitive.Root
       data-slot="checkbox"
       data-escala="Checkbox"
       data-checked={on ? 'True' : 'False'}
-      data-size={size === 'sm' ? 'SM' : 'MD'}
       data-force-state={forceState && forceState !== 'Default' ? forceState : undefined}
       aria-disabled={isDisabled || undefined}
-      className={cn('inline-flex cursor-pointer items-center aria-disabled:cursor-not-allowed', className)}
+      checked={checked}
+      defaultChecked={defaultChecked}
+      disabled={isDisabled}
+      onCheckedChange={(v) => { setInner(v); onCheckedChange?.(v) }}
+      className={cn(
+        'peer relative inline-flex shrink-0 items-center justify-center p-0 outline-none',
+        'transition-[background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed',
+        className,
+      )}
+      {...props}
     >
-      <CheckboxPrimitive.Root
-        data-part="Checkbox.box"
-        checked={checked}
-        defaultChecked={defaultChecked}
-        disabled={isDisabled}
-        onCheckedChange={(v) => { setInner(v); onCheckedChange?.(v) }}
-        className="inline-flex shrink-0 items-center justify-center p-0 outline-none transition-[background-color,border-color,box-shadow] duration-150"
-        {...props}
-      >
-        <CheckboxPrimitive.Indicator data-part="Checkbox.indicator" className="inline-flex items-center justify-center">
-          {icon ?? '✓'}
-        </CheckboxPrimitive.Indicator>
-      </CheckboxPrimitive.Root>
-      {label != null && <span data-part="Checkbox.label">{label}</span>}
-    </label>
+      <CheckboxPrimitive.Indicator data-slot="checkbox-indicator" data-part="Checkbox.indicator" className="grid place-content-center text-current transition-none">
+        {icon ?? (
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        )}
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
   )
 }
 
-/** A labelled set of checkboxes. */
-function CheckboxGroup({
-  legend, className, children, ...props
-}: React.ComponentProps<'fieldset'> & { legend?: React.ReactNode }) {
-  return (
-    <fieldset data-slot="checkbox-group" data-escala="CheckboxGroup" className={cn('m-0 flex flex-col border-0 p-0', className)} {...props}>
-      {legend != null && <legend data-part="CheckboxGroup.legend" className="p-0">{legend}</legend>}
-      {children}
-    </fieldset>
-  )
-}
-
-export { Checkbox, CheckboxGroup }
+export { Checkbox }

@@ -1,4 +1,5 @@
 import { SPECIMENS } from '../../configurator/docs/specimens'
+import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
 import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
@@ -8,7 +9,6 @@ const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Avatar = SPECIMENS.Avatar
 const StatusBadge = SPECIMENS.StatusBadge
-const SwitchGroup = SPECIMENS.SwitchGroup
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
 
@@ -51,7 +51,17 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
             block off: a card and a rule are two answers to the same grouping
             question, and the card is the one that carries elevation. */}
         <Card t={t} v={{}} w="100%" elev="md">
-          <SwitchGroup t={t} v={{}} w="100%" />
+          <SkeletonSettingsList
+            t={t}
+            control="switch"
+            legend="Notifications"
+            w="100%"
+            rows={[
+              { label: 'Email notifications', on: true },
+              { label: 'Push notifications', on: true },
+              { label: 'Marketing emails', on: false },
+            ]}
+          />
         </Card>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>

@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 92,
+      version: 93,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3521,6 +3521,22 @@ export const useDesignStore = create<DesignStore>()(
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 93) {
+          // v92→v93: the forms took shadcn's names. Toggle is Switch; a single
+          // Radio is a RadioGroup item; CheckboxGroup and SwitchGroup are Field
+          // compositions, not components.
+          const forms = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const next = state.selectedComponents
+              .filter((k: unknown) => k !== 'CheckboxGroup' && k !== 'SwitchGroup')
+              .map((k: string) => (k === 'Toggle' ? 'Switch' : k === 'Radio' ? 'RadioGroup' : k))
+            state.selectedComponents = [...new Set(next)]
+          }
+          forms(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) forms(sys?.snapshot)
           }
         }
         return persisted

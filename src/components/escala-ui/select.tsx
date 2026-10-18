@@ -10,20 +10,24 @@ const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
+export const SELECT_SIZES = ['default', 'sm'] as const
+export type SelectSize = (typeof SELECT_SIZES)[number]
+
 export interface SelectTriggerProps extends React.ComponentProps<typeof SelectPrimitive.Trigger> {
-  size?: 'md' | 'sm' | 'lg'
+  /** shadcn's trigger sizes. */
+  size?: SelectSize
   forceState?: 'Default' | 'Hover' | 'Focused' | 'Error' | 'Disabled'
   /** The chevron. */
   icon?: React.ReactNode
 }
 
-function SelectTrigger({ size = 'md', forceState, icon, className, children, disabled, ...props }: SelectTriggerProps) {
+function SelectTrigger({ size = 'default', forceState, icon, className, children, disabled, ...props }: SelectTriggerProps) {
   const isDisabled = disabled || forceState === 'Disabled'
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-escala="Select"
-      data-size={size.toUpperCase()}
+      data-size={size}
       data-force-state={forceState && forceState !== 'Default' ? forceState : undefined}
       aria-disabled={isDisabled || undefined}
       aria-invalid={forceState === 'Error' ? true : props['aria-invalid']}

@@ -103,7 +103,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 | 0 · Decisiones | Cerrar 1–6 | ✅ aceptadas las 6 recomendaciones |
 | 1 · Acciones | Button (+ plegar CloseButton, FAB, TextLink), ButtonGroup | ✅ 2026-10-18 · plugin 0.7.0 |
 | 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ✅ 2026-10-18 · plugin 0.8.0 |
-| 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ídem |
+| 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ✅ 2026-10-18 · plugin 0.9.0 |
 | 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ídem |
 | 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | Ningún eje con valores en mayúscula ni Danger/Error |
 | 6 · Cierre | Migración del store, artefactos, `statusAction`, CLAUDE.md, plugin 0.7.0 | `npm test` + `npm run build` en verde, plugin construye todos los sets |
@@ -149,3 +149,21 @@ que la web y el plugin queden desalineados entre fases.
 - **Spinner**: el glifo Loader2 que gira, `size-4` por clase, sin variantes.
 - `tokenInspector.resolveVariantRoles` lee la receta en vez de una copia a mano
   de la lógica de pintura. Store v92 renombra/quita las claves. Plugin 0.8.0.
+
+## Fase 3 — hecha (2026-10-18)
+
+- **Input**: el `<input>` desnudo de shadcn (la caja ES el input). Sin Size ni Type;
+  State solo en Figma. Etiqueta y ayuda vienen de Field; iconos de InputGroup.
+  `InputField` (compuesto de Escala) borrado. El espécimen, si recibe `v.Type`
+  (clave opt-in, no eje), compone Field · FieldLabel · Input · FieldDescription.
+- **Checkbox** y **Switch** (era Toggle): solo el control, sin `label`; Switch con
+  `size` default·sm. Eje `Checked` (Switch dejó `On`).
+- **RadioGroup**: RadioGroup + RadioGroupItem; el ítem marcado se rellena con el
+  primario y lleva el punto (como shadcn v4). `Radio` (un solo radio) desaparece.
+- **Field**: `orientation` vertical·horizontal·responsive y todas sus partes, en su
+  propio `field.tsx` (como shadcn); **Label** sin `required`.
+- **Select**: `size` default·sm. **InputOTP**: el paquete `input-otp@1.4.2`
+  (InputOTPGroup · InputOTPSlot), sin tamaños.
+- **CheckboxGroup / SwitchGroup borrados**: son FieldSet + FieldLegend + FieldGroup
+  de Fields horizontales (`SkeletonSettingsList` para las pantallas).
+- Store v93. Plugin 0.9.0.

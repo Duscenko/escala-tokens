@@ -13,7 +13,12 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `avatar.tsx` | `bases/radix/ui/avatar.tsx` | `size` verbatim |
 | `spinner.tsx` | `bases/radix/ui/spinner.tsx` | Loader2 path inline (no icon placeholder) |
 | `button-group.tsx` | `bases/radix/ui/button-group.tsx` | `orientation` verbatim; join classes take `!` to win over the unlayered recipe sheet |
-| `input.tsx` | `bases/radix/ui/input.tsx` | `cn-input` → `data-part="Input.value"`; `InputField` composes label · field · hint (Escala's Input anatomy, shadcn's Field pattern) |
+| `input.tsx` | `bases/radix/ui/input.tsx` | the box is the `<input>` (`data-escala="Input"`); adds `forceState` |
+| `field.tsx` | `bases/radix/ui/field.tsx` | all parts; FieldSet carries `data-escala="Field"` so its legend paints |
+| `label.tsx` | `bases/radix/ui/label.tsx` | verbatim shape |
+| `checkbox.tsx` · `switch.tsx` | `bases/radix/ui/checkbox.tsx` · `switch.tsx` | bare controls; `data-checked` True/False for the recipe; `forceState` |
+| `radio-group.tsx` | `bases/radix/ui/radio-group.tsx` | verbatim shape |
+| `input-otp.tsx` | `bases/radix/ui/input-otp.tsx` | `input-otp` package; wrapper `data-escala="InputOTP"` carries `aria-invalid` |
 | `card.tsx` | `bases/radix/ui/card.tsx` | `cn-card-*` → `data-part="Card.*"`; `CardLink` added |
 | `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Modal.*"`; `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |
 

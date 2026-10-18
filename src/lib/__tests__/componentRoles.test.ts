@@ -72,8 +72,8 @@ describe('every catalogue component is described by a recipe', () => {
     }
   })
 
-  it('Toggle can name the solved hover tone of its track', () => {
-    expect(rolesForComponent('Toggle')).toContain('action.primary.hover')
+  it('Switch can name the solved hover tone of its track', () => {
+    expect(rolesForComponent('Switch')).toContain('action.primary.hover')
   })
 
   it('Sonner names the popover pair shadcn maps it to', () => {

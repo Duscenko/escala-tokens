@@ -5,7 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -26,44 +26,27 @@ const FIELD_FIXED: SlotProps = {
 const FIELD_FOCUS: SlotProps = { stroke: c('border.focus'), ring: c('border.ring.default') }
 
 // ── Input ──────────────────────────────────────────────────────────────────
+// shadcn's Input: the box IS the <input>. No sizes, no types — a label and a
+// hint are Field's, icons and add-ons are InputGroup's. State is Figma's axis.
 
-const INPUT_SIZES = ['MD', 'SM', 'XS'] as const
-const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Filled', 'Error', 'Loading', 'Disabled'] as const
-
-function inputPaint(state: string): SlotMap {
-  const disabled = state === 'Disabled'
-  const error = state === 'Error'
-  return {
-    label: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-    field: fieldBox(state),
-    value: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
-    icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
-    hint: { text: c(error ? 'status.critical.content' : 'content.secondary') },
-    spinner: { text: c(state === 'Loading' ? 'action.primary.default' : 'content.secondary') },
-  }
-}
-
-const INPUT_GEOMETRY: Record<string, SlotProps> = {
-  MD: { height: 'size.control', font: 'type.placeholder' },
-  SM: { height: 'size.compact', font: 'type.body-sm' },
-  XS: { height: 'size.xs', font: 'type.body-sm' },
-}
+const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const
 
 export const INPUT: ComponentRecipe = {
   key: 'Input',
-  slots: ['root', 'label', 'field', 'value', 'placeholder', 'icon', 'hint', 'spinner'],
-  pseudoSlots: { placeholder: { of: 'value', pseudo: '::placeholder' } },
-  defaults: { Size: 'MD', State: 'Default', Type: 'Default' },
+  slots: ['root', 'placeholder'],
+  pseudoSlots: { placeholder: { of: 'root', pseudo: '::placeholder' } },
+  defaults: { State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-tight' },
-      label: { font: 'type.label' },
-      field: FIELD_FIXED,
-      hint: { font: 'type.helper' },
+      root: { ...FIELD_FIXED, height: 'size.control', font: 'type.placeholder' },
     })),
-    part({ Size: INPUT_SIZES }, (size) => ({ field: INPUT_GEOMETRY[size] })),
-    part({ State: INPUT_STATES }, inputPaint),
+    part({ State: INPUT_STATES }, (state) => {
+      const disabled = state === 'Disabled'
+      return {
+        root: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
+        placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+      }
+    }),
   ],
 }
 
@@ -170,7 +153,8 @@ export const INPUT_TAG: ComponentRecipe = {
 
 // ── Select ─────────────────────────────────────────────────────────────────
 
-const SELECT_GEOMETRY: Record<string, string> = { MD: 'size.control', SM: 'size.compact', LG: 'size.touch' }
+// shadcn's trigger sizes: default (control 40) · sm (compact 32).
+const SELECT_GEOMETRY: Record<string, string> = { default: 'size.control', sm: 'size.compact' }
 const MENU_ITEM: SlotMap = {
   item: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
   'item[data-highlighted]': { fill: c('action.ghost.hover') },
@@ -187,7 +171,7 @@ export const SELECT: ComponentRecipe = {
   slots: ['root', 'icon', 'content', 'item'],
   // Radix portals the list: it is a sibling of the trigger, not inside it.
   detachedSlots: ['content', 'item'],
-  defaults: { Size: 'MD', State: 'Default' },
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
       root: { ...FIELD_FIXED, font: 'type.placeholder', text: c('content.primary') },
@@ -196,7 +180,7 @@ export const SELECT: ComponentRecipe = {
       content: MENU_CONTENT,
       ...MENU_ITEM,
     })),
-    part({ Size: ['MD', 'SM', 'LG'] as const }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
+    part({ Size: ['default', 'sm'] as const }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
     part({ State: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const }, (state) => ({
       root: { ...fieldBox(state), ...(state === 'Disabled' ? { text: c('content.disabled') } : {}) },
       icon: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
@@ -225,149 +209,122 @@ export const COMBOBOX: ComponentRecipe = {
 }
 
 // ── InputOTP ───────────────────────────────────────────────────────────────
-
-const OTP_GEOMETRY: Record<string, { size: string; gap: string }> = {
-  MD: { size: 'size.control', gap: 'spacing.gap-control' },
-  SM: { size: 'size.compact', gap: 'spacing.gap-tight' },
-  LG: { size: 'size.touch', gap: 'spacing.gap-control' },
-}
+// shadcn's InputOTP (`input-otp`): a group of slots, the active one ringed.
+// No sizes. State is Figma's axis; Error is `aria-invalid` on the wrapper.
 
 export const INPUT_OTP: ComponentRecipe = {
   key: 'InputOTP',
-  slots: ['root', 'cell'],
-  defaults: { Size: 'MD', State: 'Default' },
+  slots: ['root', 'group', 'slot'],
+  defaults: { State: 'Default' },
   parts: [
     part({}, () => ({
-      cell: {
+      group: { gap: 'spacing.gap-control' },
+      slot: {
         fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
         radius: 'radius.action', text: c('content.primary'), font: 'type.button',
+        height: 'size.control', width: 'size.control',
       },
-      'cell[data-active="true"]': FIELD_FOCUS,
-    })),
-    part({ Size: ['MD', 'SM', 'LG'] as const }, (size) => ({
-      root: { gap: OTP_GEOMETRY[size].gap },
-      cell: { height: OTP_GEOMETRY[size].size, width: OTP_GEOMETRY[size].size },
+      'slot[data-active="true"]': FIELD_FOCUS,
     })),
     part({ State: ['Default', 'Filled', 'Error'] as const }, (state) => ({
-      cell: state === 'Error' ? { stroke: c('status.critical.border-strong') } : {},
-      'cell[data-active="true"]': state === 'Error' ? { stroke: c('status.critical.border-strong'), ring: NONE } : FIELD_FOCUS,
+      slot: state === 'Error' ? { stroke: c('status.critical.border-strong') } : {},
+      'slot[data-active="true"]': state === 'Error' ? { stroke: c('status.critical.border-strong'), ring: NONE } : FIELD_FOCUS,
     })),
   ],
 }
 
 // ── Checkbox ───────────────────────────────────────────────────────────────
-
-const SELECTOR_SIZE: Record<string, { box: string; gap: string }> = {
-  MD: { box: 'selector.control', gap: 'spacing.2_5' },
-  SM: { box: 'selector.compact', gap: 'spacing.2' },
-}
+// shadcn's Checkbox: the box alone (label it with Label / a horizontal Field).
+// Checked is shadcn's `data-checked`: bg-primary + primary-foreground check.
 
 function checkPaint(checked: string, state: string): SlotMap {
   const on = checked === 'True'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
   const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  let box: SlotProps
-  if (disabled) box = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), text: c('content.disabled'), ring }
+  let root: SlotProps
+  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), ring }
   else if (on) {
     const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
-    box = { fill, stroke: fill, text: c('content.on-action'), ring }
-  } else box = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.strong'), text: NONE, ring }
-  return { box, label: { text: c(disabled ? 'content.disabled' : 'content.primary') } }
+    root = { fill, stroke: fill, ring }
+  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.strong'), ring }
+  return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
 }
 
 export const CHECKBOX: ComponentRecipe = {
   key: 'Checkbox',
-  slots: ['root', 'box', 'indicator', 'label'],
-  defaults: { Checked: 'True', Size: 'MD', State: 'Default' },
+  slots: ['root', 'indicator'],
+  defaults: { Checked: 'True', State: 'Default' },
   parts: [
     part({}, () => ({
-      box: { radius: 'radius.control', strokeWidth: 'stroke.control' },
-      label: { font: 'type.label' },
-    })),
-    part({ Size: ['MD', 'SM'] as const }, (size) => ({
-      root: { gap: SELECTOR_SIZE[size].gap },
-      box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box },
+      root: { radius: 'radius.control', strokeWidth: 'stroke.control', height: 'selector.control', width: 'selector.control' },
     })),
     part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, checkPaint),
   ],
 }
 
-// ── Radio ──────────────────────────────────────────────────────────────────
+// ── RadioGroup ─────────────────────────────────────────────────────────────
+// shadcn's RadioGroup: a grid of items; a checked item is bg-primary with a
+// primary-foreground dot (Radix's `data-state="checked"`).
 
-function radioPaint(checked: string, state: string): SlotMap {
+export const RADIO_GROUP: ComponentRecipe = {
+  key: 'RadioGroup',
+  slots: ['root', 'item', 'indicator'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.3' },
+      item: {
+        fill: c('surface.input'), stroke: c('border.strong'), strokeWidth: 'stroke.control',
+        radius: 'radius.pill', height: 'selector.control', width: 'selector.control',
+      },
+      'item:hover': { stroke: c('border.control-hover') },
+      'item:focus-visible': { ring: c('border.ring.default') },
+      'item[data-state="checked"]': { fill: c('action.primary.default'), stroke: c('action.primary.default') },
+      'item:disabled': { fill: c('action.disabled.default'), stroke: c('action.disabled.default') },
+      indicator: { fill: c('content.on-action'), radius: 'radius.pill', height: 'spacing.2', width: 'spacing.2' },
+    })),
+  ],
+}
+
+// ── Switch ─────────────────────────────────────────────────────────────────
+// shadcn's Switch, `size` default | sm: primary track when checked, the input
+// colour when not.
+
+const SWITCH_GEOMETRY: Record<string, { knob: string; trackH: string; trackW: string; travel: string }> = {
+  // Track = knob + 2px inset each side; the knob travels width − knob − inset.
+  default: { knob: 'selector.control', trackH: 'selector.control+spacing.1', trackW: 'selector.control+spacing.5', travel: 'spacing.4' },
+  sm: { knob: 'selector.compact', trackH: 'selector.compact+spacing.1', trackW: 'selector.compact+spacing.4', travel: 'spacing.3' },
+}
+
+function switchPaint(checked: string, state: string): SlotMap {
   const on = checked === 'True'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
   const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  const box: SlotProps = disabled
-    ? { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), ring }
-    : { fill: c('surface.input'), stroke: c(on ? 'action.primary.default' : hover ? 'border.control-hover' : 'border.strong'), ring }
-  return {
-    box,
-    indicator: { fill: on ? c(disabled ? 'content.disabled' : 'action.primary.default') : NONE },
-    label: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-  }
-}
-
-export const RADIO: ComponentRecipe = {
-  key: 'Radio',
-  slots: ['root', 'box', 'indicator', 'label'],
-  defaults: { Checked: 'True', Size: 'MD', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      box: { radius: 'radius.pill', strokeWidth: 'stroke.control' },
-      indicator: { radius: 'radius.pill' },
-      label: { font: 'type.label' },
-    })),
-    part({ Size: ['MD', 'SM'] as const }, (size) => ({
-      root: { gap: SELECTOR_SIZE[size].gap },
-      box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box },
-      indicator: { height: size === 'SM' ? 'spacing.2' : 'spacing.2_5', width: size === 'SM' ? 'spacing.2' : 'spacing.2_5' },
-    })),
-    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, radioPaint),
-  ],
-}
-
-// ── Toggle (the Switch) ────────────────────────────────────────────────────
-
-const TOGGLE_GEOMETRY: Record<string, { knob: string; trackH: string; trackW: string; travel: string; gap: string }> = {
-  // Track = knob + 2px inset each side; the knob travels width − knob − inset.
-  MD: { knob: 'selector.control', trackH: 'selector.control+spacing.1', trackW: 'selector.control+spacing.5', travel: 'spacing.4', gap: 'spacing.2_5' },
-  SM: { knob: 'selector.compact', trackH: 'selector.compact+spacing.1', trackW: 'selector.compact+spacing.4', travel: 'spacing.3', gap: 'spacing.2' },
-}
-
-function togglePaint(on: string, state: string): SlotMap {
-  const isOn = on === 'True'
-  const disabled = state === 'Disabled'
-  const hover = state === 'Hover'
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  const trackFill = disabled ? 'action.disabled.default'
-    : isOn ? (hover ? 'action.primary.hover' : 'action.primary.default')
+  const track = disabled ? 'action.disabled.default'
+    : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
     : (hover ? 'action.secondary.hover' : 'action.secondary.default')
   return {
-    track: { fill: c(trackFill), ring },
-    thumb: { fill: c(isOn && !disabled ? 'content.on-action' : 'surface.input') },
-    label: { text: c(disabled ? 'content.disabled' : 'content.primary') },
+    root: { fill: c(track), ring },
+    thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
   }
 }
 
-export const TOGGLE: ComponentRecipe = {
-  key: 'Toggle',
-  slots: ['root', 'track', 'thumb', 'label'],
-  defaults: { On: 'True', Size: 'MD', State: 'Default' },
+export const SWITCH: ComponentRecipe = {
+  key: 'Switch',
+  slots: ['root', 'thumb'],
+  defaults: { Checked: 'True', Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      track: { radius: 'radius.pill' },
+      root: { radius: 'radius.pill' },
       thumb: { radius: 'radius.pill', shadow: 'shadow.xs' },
-      label: { font: 'type.label' },
     })),
-    part({ Size: ['MD', 'SM'] as const }, (size) => ({
-      root: { gap: TOGGLE_GEOMETRY[size].gap },
-      track: { height: TOGGLE_GEOMETRY[size].trackH, width: TOGGLE_GEOMETRY[size].trackW, travel: TOGGLE_GEOMETRY[size].travel },
-      thumb: { height: TOGGLE_GEOMETRY[size].knob, width: TOGGLE_GEOMETRY[size].knob },
+    part({ Size: ['default', 'sm'] as const }, (size) => ({
+      root: { height: SWITCH_GEOMETRY[size].trackH, width: SWITCH_GEOMETRY[size].trackW, travel: SWITCH_GEOMETRY[size].travel },
+      thumb: { height: SWITCH_GEOMETRY[size].knob, width: SWITCH_GEOMETRY[size].knob },
     })),
-    part({ On: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, togglePaint),
+    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, switchPaint),
   ],
 }
 
@@ -394,31 +351,30 @@ export const SLIDER: ComponentRecipe = {
 }
 
 // ── Field · Label · PasswordStrength ───────────────────────────────────────
+// shadcn's Field: `orientation` vertical | horizontal | responsive, gap-3, a
+// muted description, a destructive error. Label: medium text-sm, no variants.
 
 export const FIELD: ComponentRecipe = {
   key: 'Field',
-  slots: ['root', 'label', 'asterisk', 'description', 'error'],
-  defaults: {},
+  slots: ['root', 'label', 'description', 'error', 'legend'],
+  defaults: { Orientation: 'vertical' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-control' },
+      root: { gap: 'spacing.3' },
       label: { text: c('content.primary'), font: 'type.label' },
-      asterisk: { text: c('status.critical.content') },
       description: { text: c('content.secondary'), font: 'type.helper' },
       error: { text: c('status.critical.content'), font: 'type.helper' },
+      legend: { text: c('content.primary'), font: 'type.label' },
     })),
   ],
 }
 
 export const LABEL: ComponentRecipe = {
   key: 'Label',
-  slots: ['root', 'asterisk'],
-  defaults: { Required: 'False' },
+  slots: ['root'],
+  defaults: {},
   parts: [
-    part({ Required: ['False', 'True'] as const }, () => ({
-      root: { text: c('content.primary'), font: 'type.label' },
-      asterisk: { text: c('status.critical.content') },
-    })),
+    part({}, () => ({ root: { text: c('content.primary'), font: 'type.label' } })),
   ],
 }
 
@@ -497,30 +453,3 @@ export const DROPZONE: ComponentRecipe = {
     }),
   ],
 }
-
-// ── Groups ─────────────────────────────────────────────────────────────────
-
-function group(key: string, rowGap = 'spacing.2_5', withRows = false): ComponentRecipe {
-  return {
-    key,
-    slots: withRows ? ['root', 'legend', 'row'] : ['root', 'legend'],
-    defaults: {},
-    parts: [
-      part({}, () => ({
-        root: { gap: rowGap },
-        legend: { text: c('content.secondary'), font: 'type.label' },
-        ...(withRows ? { row: { gap: 'spacing.3' } } : {}),
-      })),
-    ],
-  }
-}
-export const CHECKBOX_GROUP = group('CheckboxGroup')
-export const RADIO_GROUP = group('RadioGroup')
-export const SWITCH_GROUP: ComponentRecipe = (() => {
-  const base = group('SwitchGroup', 'spacing.3', true)
-  return {
-    ...base,
-    slots: [...base.slots, 'rowLabel'],
-    parts: [...base.parts, part({}, () => ({ rowLabel: { text: c('content.primary'), font: 'type.label' } }))],
-  }
-})()

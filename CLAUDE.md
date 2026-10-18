@@ -128,8 +128,12 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > stays a Figma-only axis. Phase 2 done: Badge (`variant`, no size/dot), **Alert** (was
 > InlineAlert, default·destructive), **Sonner** (was Toast — the real `sonner` Toaster; the
 > recipe paints Sonner's own DOM through `ComponentRecipe.dom`), Avatar (default·sm·lg),
-> Spinner (no variants); AlertBanner deleted. Forms, surfaces, navigation still carry Escala
-> axes until their phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+> Spinner (no variants); AlertBanner deleted. Phase 3 done: **Input** is shadcn's bare
+> `<input>` (no Size/Type — label/hint are **Field**, icons are InputGroup; `InputField` is
+> gone), Checkbox / **Switch** (was Toggle) / RadioGroup are bare controls labelled through
+> Field, Select `size` default·sm, InputOTP is the `input-otp` package, Field has
+> `orientation` and lives in `field.tsx`; Radio, CheckboxGroup and SwitchGroup are gone.
+> Surfaces and navigation still carry Escala axes until their phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
 
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a

@@ -3,6 +3,7 @@ import { cloneElement, createContext, useContext, useLayoutEffect, useRef, useSt
 import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
+import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -58,7 +59,6 @@ const StatusBadge = inspectable('StatusBadge')
 const Chip = inspectable('Chip')
 const Sidebar = inspectable('Sidebar')
 const InputTag = inspectable('InputTag')
-const CheckboxGroup = inspectable('CheckboxGroup')
 const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
@@ -602,7 +602,7 @@ export function SystemCollage({
     verify: (
         <ScaledModule key="verify" t={tile(2)} appearance={appearanceAt(2)}>
           <span style={{ ...typeStyleOf(tile(2), 'heading-sm'), color: tile(2).neutralText }}>{translate('Verify account')}</span>
-          <InputOTP t={tile(2)} v={{ State: 'Filled', Size: 'SM' }} />
+          <InputOTP t={tile(2)} v={{ State: 'Filled' }} />
           <span style={{ ...typeStyleOf(tile(2), 'body-sm'), color: muted(2) }}>
             {translate('Didn’t get a code?')}{' '}
             <InlineLink t={tile(2)}>{translate('Resend')}</InlineLink>
@@ -716,8 +716,8 @@ export function SystemCollage({
             </p>
           </div>
           <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-group', '12px') }}>
-            <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled', Size: 'SM' }} w="100%" hideHint />
-            <Input t={tile(5)} v={{ Type: 'Password', State: 'Filled', Size: 'SM' }} w="100%" hideHint />
+            <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled' }} w="100%" hideHint />
+            <Input t={tile(5)} v={{ Type: 'Password', State: 'Filled' }} w="100%" hideHint />
           </div>
           <InspectableLive
             c="Button"
@@ -790,7 +790,7 @@ export function SystemCollage({
     ),
     toggle: (
         <ScaledModule key="toggle" t={tile(13)} appearance={appearanceAt(13)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <InspectableLive c="Toggle" t={tile(13)} v={{ On: 'True', Size: 'SM' }} toggle="On" />
+          <InspectableLive c="Switch" t={tile(13)} v={{ Checked: 'True', Size: 'sm' }} toggle="Checked" />
         </ScaledModule>
     ),
     unsaved: (
@@ -843,7 +843,18 @@ export function SystemCollage({
     ),
     checkbox: (
         <ScaledModule key="checkbox" t={tile(20)} appearance={appearanceAt(20)}>
-          <CheckboxGroup t={tile(20)} v={{}} />
+          <TokenInspector component="Checkbox" variant={{ Checked: 'True' }}>
+            <SkeletonSettingsList
+              t={tile(20)}
+              control="checkbox"
+              legend={'Notify me about'}
+              rows={[
+                { label: 'Comments on my files', on: true },
+                { label: 'New team members', on: true },
+                { label: 'Weekly digest', on: false },
+              ]}
+            />
+          </TokenInspector>
         </ScaledModule>
     ),
     fileUpload: (
