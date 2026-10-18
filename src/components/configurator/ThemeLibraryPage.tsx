@@ -7,6 +7,7 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import { openStyleForEditing } from '../../lib/adoptPreset'
+import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
 import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
@@ -857,7 +858,9 @@ function HomeNav({
         </label>
         <div className="flex flex-col gap-0.5">
           <NavRow on={isOn('recents')} icon={<ClockGlyph />} label={t('Recents')} onClick={() => onSection({ kind: 'recents' })} />
-          <NavRow on={isOn('styles')} icon={<SparkGlyph />} label={t('System styles')} onClick={() => onSection({ kind: 'styles' })} />
+          {SYSTEM_STYLES_VISIBLE && (
+            <NavRow on={isOn('styles')} icon={<SparkGlyph />} label={t('System styles')} onClick={() => onSection({ kind: 'styles' })} />
+          )}
         </div>
         <NavGroup
           label={t('Design systems')}

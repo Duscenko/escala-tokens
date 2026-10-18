@@ -40,6 +40,7 @@ import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../lib/adoptPreset'
+import { SYSTEM_STYLES_VISIBLE } from '../lib/featureFlags'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
@@ -1206,6 +1207,7 @@ export default function Configurator() {
   // theme of their own starts on a try-on of Cupertino / Glass — the board
   // is real, the store is untouched until they add the design system.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(() => {
+    if (!SYSTEM_STYLES_VISIBLE) return null
     if (guestFirstRun || hasStoredSession()) return null
     // A signed-out `library` link is the guest board, not an empty Home.
     const place = incomingPlace?.workspace === 'library' ? null : incomingPlace
@@ -1753,6 +1755,7 @@ export default function Configurator() {
     setThemeWorkspaceTab('library')
   }
   const openSystemStyles = () => {
+    if (!SYSTEM_STYLES_VISIBLE) return
     // A System style is a way to START another theme, so it is Pro on Free.
     if (needsAnotherThemePro) { setUpgradeOpen(true); return }
     openLibraryPage()
@@ -3021,7 +3024,7 @@ export default function Configurator() {
         importsSystem={savedBrandKeys.length > 0}
         onBlank={beginBlankBrand}
         onFromCode={openImport}
-        onSystemStyles={openSystemStyles}
+        onSystemStyles={SYSTEM_STYLES_VISIBLE ? openSystemStyles : undefined}
       />
 
       {/* Import-your-design-system window */}

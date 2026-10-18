@@ -5,6 +5,7 @@ import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSourc
 import { resolveThemePalette, themeDisplayName, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import { mintTheme, slotsFromAccent, type MintPages } from '../../lib/themeMint'
 import { THEME_STYLE_PRESETS, presetStates, type ThemeStyleSemantics } from '../../lib/themePresets'
+import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import type { ThemeFoundationOverride } from '../../lib/themeFoundations'
 import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
@@ -813,7 +814,7 @@ export function ThemeForm({
                   )
                 })}
               </div>
-              {firstStep && !isEdit && (
+              {firstStep && !isEdit && SYSTEM_STYLES_VISIBLE && (
                 <div>
                   <StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} />
                   {startPreset && (

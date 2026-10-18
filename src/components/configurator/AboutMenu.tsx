@@ -19,7 +19,7 @@ import { RainbowButton } from '../ui/rainbow-button'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
 import AgentInstallPanel from './AgentInstallPanel'
-import { MCP_VISIBLE } from '../../lib/featureFlags'
+import { MCP_VISIBLE, SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { FooterLinks } from './FooterLinks'
 import { PublicHeader } from '../public/PublicReadingPage'
 
@@ -934,7 +934,10 @@ export function AboutHome({
           {MCP_VISIBLE && <Stat value={TOOL_SPECS.length} label={t('MCP tools your agent can call')} delay={0.24} />}
         </motion.div>
 
-        {/* ── Start from a style — split: media left, copy right ── */}
+        {/* ── Start from a style — split: media left, copy right. Hidden with
+            the styles themselves (SYSTEM_STYLES_VISIBLE): the page must not
+            promise a door the product no longer opens. ── */}
+        {SYSTEM_STYLES_VISIBLE && (
         <div className="grid items-center gap-10 border-b border-line px-6 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <AboutShot shot={SHOTS.styles} className="rounded-2xl" />
           <div className="flex flex-col gap-3">
@@ -947,6 +950,7 @@ export function AboutHome({
             </p>
           </div>
         </div>
+        )}
 
         {/* ── 01 · Foundations — what you set ── */}
         <section className="flex flex-col gap-10 border-b border-line px-6 py-16">

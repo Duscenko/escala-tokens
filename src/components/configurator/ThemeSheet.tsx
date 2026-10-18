@@ -143,7 +143,8 @@ export function StartDesignChoices({
 }: {
   onBlank: () => void
   onFromCode: () => void
-  onSystemStyles: () => void
+  /** Omitted while System styles are hidden (`SYSTEM_STYLES_VISIBLE`). */
+  onSystemStyles?: () => void
   /** A brand already exists: this row imports a whole system, not one brand. */
   importsSystem?: boolean
 }) {
@@ -163,10 +164,12 @@ export function StartDesignChoices({
           )}
         </span>
       </button>
-      <button type="button" onClick={onSystemStyles} className={`${START_ITEM} h-11`}>
-        <StartMark><SparkGlyph /></StartMark>
-        {t('System styles')}
-      </button>
+      {onSystemStyles && (
+        <button type="button" onClick={onSystemStyles} className={`${START_ITEM} h-11`}>
+          <StartMark><SparkGlyph /></StartMark>
+          {t('System styles')}
+        </button>
+      )}
     </div>
   )
 }
@@ -186,7 +189,8 @@ export function StartDesignModal({
   title?: string
   onBlank: () => void
   onFromCode: () => void
-  onSystemStyles: () => void
+  /** Omitted while System styles are hidden (`SYSTEM_STYLES_VISIBLE`). */
+  onSystemStyles?: () => void
   /** A brand already exists: From code imports a whole system. */
   importsSystem?: boolean
 }) {
@@ -243,7 +247,7 @@ export function StartDesignModal({
         <StartDesignChoices
           onBlank={pick(onBlank)}
           onFromCode={pick(onFromCode)}
-          onSystemStyles={pick(onSystemStyles)}
+          onSystemStyles={onSystemStyles ? pick(onSystemStyles) : undefined}
           importsSystem={importsSystem}
         />
         <button
