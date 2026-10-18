@@ -35,7 +35,7 @@ import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
   CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE,
 } from './recipes/forms.js'
-import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces.js'
+import { CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces.js'
 import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR,
 } from './recipes/navigation.js'
@@ -78,7 +78,7 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Rating: RATING,
   FileFormat: FILE_FORMAT,
   Avatar: AVATAR,
-  Divider: DIVIDER,
+  Separator: SEPARATOR,
   Accordion: ACCORDION,
   AspectRatio: ASPECT_RATIO,
   Popover: POPOVER,
@@ -99,7 +99,7 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Navbar: NAVBAR,
   Sidebar: SIDEBAR,
   Card: CARD,
-  Modal: MODAL,
+  Dialog: DIALOG,
 }
 
 // ── Reading a recipe ───────────────────────────────────────────────────────

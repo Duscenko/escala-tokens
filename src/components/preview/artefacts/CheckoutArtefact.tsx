@@ -8,7 +8,7 @@ import type { ArtefactProps } from './types'
 const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Input = SPECIMENS.Input
-const Divider = SPECIMENS.Divider
+const Divider = SPECIMENS.Separator
 const Alert = SPECIMENS.Alert
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)

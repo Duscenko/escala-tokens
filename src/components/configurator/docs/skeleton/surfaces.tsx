@@ -5,7 +5,7 @@ import { PreviewIcon } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
 import { shadowOf } from '../../../../lib/previewTokens'
 import { Button as SkButton } from '../../../escala-ui/button'
-import { Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter, CardLink as SkCardLink } from '../../../escala-ui/card'
+import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter } from '../../../escala-ui/card'
 import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../../escala-ui/dialog'
 import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionContent as SkAccordionContent, AccordionItem as SkAccordionItem, AccordionTrigger as SkAccordionTrigger } from '../../../escala-ui/accordion'
@@ -19,11 +19,11 @@ import { Toaster as SkToaster, toast, type SonnerType } from '../../../escala-ui
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
 
-export function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
+export function SkeletonCardSpecimen({ t, v, w, children, elev }: SpecimenProps) {
   const shadow = elev === false ? 'none' : elev ? shadowOf(t, elev, 'none') : undefined
   return (
     <RecipeScope t={t}>
-      <SkCard style={{ width: w ?? 280, boxShadow: shadow }}>
+      <SkCard size={(v.Size ?? 'default') as CardSize} style={{ width: w ?? 280, boxShadow: shadow }}>
         {children ?? (
           <>
             <SkCardHeader>
@@ -31,7 +31,7 @@ export function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
               <SkCardDescription>Supporting copy that explains the grouped content inside this surface.</SkCardDescription>
             </SkCardHeader>
             <SkCardFooter>
-              <SkCardLink>Learn more →</SkCardLink>
+              <SkButton variant="link" size="sm" style={{ paddingInline: 0 }}>Learn more →</SkButton>
             </SkCardFooter>
           </>
         )}
@@ -40,7 +40,7 @@ export function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
   )
 }
 
-export function SkeletonModalSpecimen({ t }: { t: PreviewTokens }) {
+export function SkeletonDialogSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <RecipeScope t={t}>
       <SkDialog open modal={false}>
@@ -59,8 +59,8 @@ export function SkeletonModalSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
-export function SkeletonDividerSpecimen({ t, v, w }: SpecimenProps) {
-  const horizontal = (v.Orientation ?? 'Horizontal') === 'Horizontal'
+export function SkeletonSeparatorSpecimen({ t, v, w }: SpecimenProps) {
+  const horizontal = (v.Orientation ?? 'horizontal') === 'horizontal'
   return (
     <RecipeScope t={t}>
       <SkSeparator orientation={horizontal ? 'horizontal' : 'vertical'} style={horizontal ? { width: w ?? 220 } : undefined} />

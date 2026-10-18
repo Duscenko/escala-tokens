@@ -3,25 +3,32 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap } from './helpers'
+import { c, NONE, part, type ComponentRecipe, type SlotMap } from './helpers.js'
 
 // ── Tabs (underline) ───────────────────────────────────────────────────────
 
+// shadcn's TabsList variants: `default` is a muted track whose active trigger
+// is raised on the page colour; `line` is an underline under the active one.
 export const TABS: ComponentRecipe = {
   key: 'Tabs',
   slots: ['root', 'trigger'],
-  defaults: {},
+  defaults: { Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.control', gap: 'spacing.gap-tight' },
-      trigger: {
-        text: c('content.secondary'), font: 'type.button', paddingX: 'spacing.3', paddingY: 'spacing.2',
-        stroke: NONE, strokeBottomWidth: 'stroke.md',
-      },
+      trigger: { text: c('content.secondary'), font: 'type.button', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.1_5' },
       'trigger:hover': { text: c('content.primary') },
-      'trigger[data-state="active"]': { text: c('content.accent'), stroke: c('action.primary.default') },
-      'trigger[data-state="active"]:hover': { text: c('content.accent') },
     })),
+    part({ Variant: ['default', 'line'] as const }, (variant) => variant === 'line'
+      ? {
+          root: { fill: NONE, gap: 'spacing.1' },
+          trigger: { stroke: NONE, strokeBottomWidth: 'stroke.md' },
+          'trigger[data-state="active"]': { text: c('content.primary'), stroke: c('content.primary') },
+        }
+      : {
+          root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5', gap: 'spacing.0_5' },
+          trigger: { radius: 'radius.control' },
+          'trigger[data-state="active"]': { fill: c('surface.page'), text: c('content.primary'), shadow: 'shadow.xs' },
+        }),
   ],
 }
 
@@ -148,7 +155,7 @@ function menu(key: string): ComponentRecipe {
     },
     'item[data-highlighted]': { fill: c('action.ghost.hover') },
     'item:hover': { fill: c('action.ghost.hover') },
-    'item[data-variant="danger"]': { text: c('status.critical.content') },
+    'item[data-variant="destructive"]': { text: c('status.critical.content') },
     'item[data-disabled]': { text: c('content.disabled') },
     separator: { fill: c('border.subtle'), height: 'stroke.divider' },
     shortcut: { text: c('content.subtle'), font: 'type.caption' },
@@ -206,21 +213,35 @@ export const NAVBAR: ComponentRecipe = {
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 
+// shadcn's Sidebar: `sidebar` sits flush with a hairline, `floating` is a
+// rounded raised panel, `inset` drops the edge (the page content is inset
+// beside it). A menu button is the ghost hover; the active one keeps it.
 export const SIDEBAR: ComponentRecipe = {
   key: 'Sidebar',
-  slots: ['root', 'item', 'pill', 'icon'],
-  defaults: {},
+  slots: ['root', 'group', 'label', 'menu', 'button'],
+  defaults: { Variant: 'sidebar' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container',
-        paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.0_5',
+      root: { fill: c('surface.layer-1'), text: c('content.primary'), paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.2' },
+      group: { gap: 'spacing.1' },
+      label: { text: c('content.secondary'), font: 'type.caption', height: 'size.compact', paddingX: 'spacing.2' },
+      menu: { gap: 'spacing.1' },
+      button: {
+        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control',
+        height: 'size.compact', paddingX: 'spacing.2', gap: 'spacing.2',
       },
-      pill: { fill: c('surface.selected'), radius: 'radius.control' },
-      item: { text: c('content.secondary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.2', gap: 'spacing.2_5' },
-      'item:hover': { text: c('content.primary') },
-      'item[aria-current="page"]': { text: c('content.accent') },
-      'item[aria-current="page"]:hover': { text: c('content.accent') },
+      'button:hover': { fill: c('action.ghost.hover') },
+      'button[data-active="true"]': { fill: c('action.ghost.hover'), font: 'type.label' },
+      'button[data-variant="outline"]': { fill: c('surface.page'), stroke: c('border.default'), strokeWidth: 'stroke.control' },
+      'button[data-size="sm"]': { height: 'size.hit', font: 'type.caption' },
+      'button[data-size="lg"]': { height: 'size.touch' },
+    })),
+    part({ Variant: ['sidebar', 'floating', 'inset'] as const }, (variant) => ({
+      root: variant === 'floating'
+        ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container', shadow: 'shadow.sm' }
+        : variant === 'sidebar'
+          ? { stroke: c('border.default'), strokeWidth: 'stroke.control' }
+          : { stroke: NONE },
     })),
   ],
 }

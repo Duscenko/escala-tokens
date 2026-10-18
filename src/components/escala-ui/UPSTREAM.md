@@ -19,8 +19,12 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `checkbox.tsx` · `switch.tsx` | `bases/radix/ui/checkbox.tsx` · `switch.tsx` | bare controls; `data-checked` True/False for the recipe; `forceState` |
 | `radio-group.tsx` | `bases/radix/ui/radio-group.tsx` | verbatim shape |
 | `input-otp.tsx` | `bases/radix/ui/input-otp.tsx` | `input-otp` package; wrapper `data-escala="InputOTP"` carries `aria-invalid` |
-| `card.tsx` | `bases/radix/ui/card.tsx` | `cn-card-*` → `data-part="Card.*"`; `CardLink` added |
-| `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Modal.*"`; `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |
+| `card.tsx` | `bases/radix/ui/card.tsx` | `cn-card-*` → `data-part="Card.*"`; `size` default · sm as `data-size` |
+| `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Dialog.*"`; close = `DialogClose asChild` + ghost icon-sm Button (as shadcn); `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |
+| `separator.tsx` | `bases/radix/ui/separator.tsx` | Radix Separator, verbatim shape; `data-escala="Separator"` |
+| `tabs.tsx` | `bases/radix/ui/tabs.tsx` | TabsList `variant` default · line as `data-variant` |
+| `sidebar.tsx` | `bases/radix/ui/sidebar.tsx` | the parts and their props (`variant`/`side`, MenuButton `isActive`/`variant`/`size`); no SidebarProvider/collapsible/mobile sheet yet |
+| `dropdown-menu.tsx` · `context-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` · `context-menu.tsx` | item `variant` default · destructive |
 
 Rules (design-plans/shadcn-component-skeleton.md):
 - Appearance lives in the generated sheet (`lib/recipeStyles.ts`) from

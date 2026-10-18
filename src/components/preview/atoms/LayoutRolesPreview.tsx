@@ -21,7 +21,7 @@ const CardSpec = SPECIMENS.Card
 const ButtonGroupSpec = SPECIMENS.ButtonGroup
 const FieldSpec = SPECIMENS.Field
 const ChipSpec = SPECIMENS.Chip
-const DividerSpec = SPECIMENS.Divider
+const DividerSpec = SPECIMENS.Separator
 
 function num(v: string, fallback: number) {
   const n = parseFloat(v)

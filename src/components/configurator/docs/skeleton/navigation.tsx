@@ -1,8 +1,9 @@
+import type * as React from 'react'
 import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
-import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger } from '../../../escala-ui/tabs'
+import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
 import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
 import { SegmentedControl as SkSegmentedControl } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
@@ -12,15 +13,18 @@ import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuCo
 import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
 import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
-import { Sidebar as SkSidebar } from '../../../escala-ui/sidebar'
+import {
+  Sidebar as SkSidebar, SidebarContent as SkSidebarContent, SidebarGroup as SkSidebarGroup, SidebarGroupLabel as SkSidebarGroupLabel,
+  SidebarMenu as SkSidebarMenu, SidebarMenuButton as SkSidebarMenuButton, SidebarMenuItem as SkSidebarMenuItem, type SidebarVariant,
+} from '../../../escala-ui/sidebar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope, lower } from './scope'
 
-export function SkeletonTabsSpecimen({ t }: SpecimenProps) {
+export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkTabs defaultValue="overview">
-        <SkTabsList>
+        <SkTabsList variant={(v.Variant ?? 'default') as TabsListVariant}>
           {['Overview', 'Tokens', 'Usage'].map((tab) => <SkTabsTrigger key={tab} value={tab.toLowerCase()}>{tab}</SkTabsTrigger>)}
         </SkTabsList>
       </SkTabs>
@@ -87,7 +91,7 @@ export function SkeletonDropdownMenuSpecimen({ t }: SpecimenProps) {
             <SkDropdownMenuItem>Rename</SkDropdownMenuItem>
             <SkDropdownMenuItem>Export tokens</SkDropdownMenuItem>
             <SkDropdownMenuSeparator />
-            <SkDropdownMenuItem variant="danger">Delete</SkDropdownMenuItem>
+            <SkDropdownMenuItem variant="destructive">Delete</SkDropdownMenuItem>
           </SkDropdownMenuContent>
         </SkDropdownMenu>
       </div>
@@ -133,12 +137,37 @@ export function SkeletonNavbarSpecimen({ t }: SpecimenProps) {
   return <RecipeScope t={t}><SkNavbar links={links} trailing="MD" style={{ width: 420 }} /></RecipeScope>
 }
 
-export function SkeletonSidebarSpecimen({ t, w }: SpecimenProps) {
+export function SkeletonSidebarSpecimen({ t, v, w }: SpecimenProps) {
   const items = [
     { label: 'Overview', icon: <PreviewIcon concept="home" size={iconOf(15)} /> },
     { label: 'Tokens', icon: <PreviewIcon concept="palette" size={iconOf(15)} /> },
     { label: 'Components', icon: <PreviewIcon concept="box" size={iconOf(15)} /> },
     { label: 'Settings', icon: <PreviewIcon concept="settings" size={iconOf(15)} /> },
   ]
-  return <RecipeScope t={t}><SkSidebar items={items} defaultValue="Tokens" style={{ width: w ?? 200 }} /></RecipeScope>
+  return <SidebarDemo t={t} items={items} variant={(v.Variant ?? 'sidebar') as SidebarVariant} w={w} />
+}
+
+function SidebarDemo({ t, items, variant, w }: { t: SpecimenProps['t']; items: { label: string; icon: React.ReactNode }[]; variant: SidebarVariant; w?: number | string }) {
+  const [active, setActive] = useState('Tokens')
+  return (
+    <RecipeScope t={t}>
+      <SkSidebar variant={variant} style={{ width: w ?? 220 }}>
+        <SkSidebarContent>
+          <SkSidebarGroup>
+            <SkSidebarGroupLabel>Workspace</SkSidebarGroupLabel>
+            <SkSidebarMenu>
+              {items.map((item) => (
+                <SkSidebarMenuItem key={item.label}>
+                  <SkSidebarMenuButton isActive={item.label === active} onClick={() => setActive(item.label)}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </SkSidebarMenuButton>
+                </SkSidebarMenuItem>
+              ))}
+            </SkSidebarMenu>
+          </SkSidebarGroup>
+        </SkSidebarContent>
+      </SkSidebar>
+    </RecipeScope>
+  )
 }

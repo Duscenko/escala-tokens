@@ -133,7 +133,13 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > gone), Checkbox / **Switch** (was Toggle) / RadioGroup are bare controls labelled through
 > Field, Select `size` default·sm, InputOTP is the `input-otp` package, Field has
 > `orientation` and lives in `field.tsx`; Radio, CheckboxGroup and SwitchGroup are gone.
-> Surfaces and navigation still carry Escala axes until their phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+> Phase 4 done: **Card** `size` default·sm (no CardLink — a footer link is
+> `Button variant="link"`), **Separator** (was Divider, lowercase `orientation`),
+> **Dialog** (was Modal; the × is a ghost icon-sm Button, not a recipe slot), Tabs
+> `TabsList variant` default·line, **Sidebar** is shadcn's parts (`variant`
+> sidebar·floating·inset, `SidebarMenuButton isActive`; no `items` prop), menu items
+> `variant="destructive"`. Store v94, plugin 0.10.0. Escala-only components (phase 5)
+> still carry Escala axes. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
 
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a

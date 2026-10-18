@@ -39,7 +39,7 @@ import {
   SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen,
 } from './skeleton/forms'
 import {
-  SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonDividerSpecimen, SkeletonAccordionSpecimen,
+  SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen,
   SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen, SkeletonInfoTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
 } from './skeleton/surfaces'
@@ -254,7 +254,7 @@ export function IconStyleOverview({ weight = 'regular', ariaLabel = 'Phosphor ic
  * `w` overrides a specimen's own width.
  *
  * Every renderer here carries a hardcoded px width tuned for the Components
- * playground canvas (Input 260, SocialLoginButton 280, Divider 220…), which is
+ * playground canvas (Input 260, SocialLoginButton 280, Separator 220…), which is
  * correct there and wrong inside an artefact: a login screen in a ~328px mobile
  * frame needs its fields to fill the column, or it reads as a broken form
  * rather than a screen.
@@ -377,10 +377,10 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
   Card: SkeletonCardSpecimen,
-  Divider: SkeletonDividerSpecimen,
+  Separator: SkeletonSeparatorSpecimen,
   Accordion: SkeletonAccordionSpecimen,
   AspectRatio: SkeletonAspectRatioSpecimen,
-  Modal: SkeletonModalSpecimen,
+  Dialog: SkeletonDialogSpecimen,
   Popover: SkeletonPopoverSpecimen,
   Tooltip: SkeletonTooltipSpecimen,
   InfoTooltip: SkeletonInfoTooltipSpecimen,

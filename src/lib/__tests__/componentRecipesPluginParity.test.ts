@@ -96,10 +96,10 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     }
   })
 
-  it('Card and Modal: surface, edge, title and description match the web', async () => {
+  it('Card and Dialog: surface, edge, title and description match the web', async () => {
     const plugin = await import(/* @vite-ignore */ pluginFile)
     const table = serializeRecipes()
-    for (const key of ['Card', 'Modal'] as const) {
+    for (const key of ['Card', 'Dialog'] as const) {
       const recipe = COMPONENT_RECIPES[key]
       const web = resolveRecipe(recipe, {})
       const root = web[recipe.slots[0]]

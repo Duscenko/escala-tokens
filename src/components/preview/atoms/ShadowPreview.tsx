@@ -29,7 +29,7 @@ const STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
 
 const CardSpec = SPECIMENS.Card
 const MenuSpec = SPECIMENS.DropdownMenu
-const ModalSpec = SPECIMENS.Modal
+const ModalSpec = SPECIMENS.Dialog
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (

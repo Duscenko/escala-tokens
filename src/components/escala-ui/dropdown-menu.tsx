@@ -48,7 +48,7 @@ function DropdownMenuContent({ inline, sideOffset = 6, className, children, ...p
 }
 
 /** `highlighted` forces the highlighted look (inline only; live menus get it from focus). */
-function DropdownMenuItem({ variant, highlighted, className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & { variant?: 'danger'; highlighted?: boolean }) {
+function DropdownMenuItem({ variant, highlighted, className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & { variant?: 'default' | 'destructive'; highlighted?: boolean }) {
   const inline = React.useContext(Inline)
   const attrs = {
     'data-slot': 'dropdown-menu-item',

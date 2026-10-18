@@ -1,10 +1,15 @@
-// Skeleton: shadcn/ui `bases/radix/ui/card.tsx` (MIT, see LICENSE-shadcn.md).
+// Skeleton: shadcn/ui `bases/radix/ui/card.tsx` (MIT, see LICENSE-shadcn.md):
+// Card (`size` default | sm) · CardHeader · CardTitle · CardDescription ·
+// CardAction · CardContent · CardFooter.
 // Appearance: lib/componentRecipes.ts → lib/recipeStyles.ts. No colour here.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card" data-escala="Card" className={cn('flex flex-col', className)} {...props} />
+export const CARD_SIZES = ['default', 'sm'] as const
+export type CardSize = (typeof CARD_SIZES)[number]
+
+function Card({ className, size = 'default', ...props }: React.ComponentProps<'div'> & { size?: CardSize }) {
+  return <div data-slot="card" data-escala="Card" data-size={size} className={cn('group/card flex flex-col overflow-hidden', className)} {...props} />
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
@@ -33,6 +38,7 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-action"
+      data-part="Card.action"
       className={cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className)}
       {...props}
     />
@@ -47,9 +53,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-footer" data-part="Card.footer" className={cn('flex items-center', className)} {...props} />
 }
 
-/** Escala addition: the card's text link ("Learn more →"). */
-function CardLink({ className, ...props }: React.ComponentProps<'a'>) {
-  return <a data-part="Card.link" className={cn('cursor-pointer no-underline', className)} {...props} />
-}
-
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent, CardLink }
+export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent }

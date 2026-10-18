@@ -48,7 +48,7 @@ function ContextMenuContent({ inline, className, children, ...props }: ContextMe
 }
 
 /** `highlighted` forces the highlighted look (inline only; live menus get it from focus). */
-function ContextMenuItem({ variant, highlighted, className, ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Item> & { variant?: 'danger'; highlighted?: boolean }) {
+function ContextMenuItem({ variant, highlighted, className, ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Item> & { variant?: 'default' | 'destructive'; highlighted?: boolean }) {
   const inline = React.useContext(Inline)
   const attrs = {
     'data-slot': 'context-menu-item',

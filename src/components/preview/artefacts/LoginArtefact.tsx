@@ -11,7 +11,7 @@ const Input = SPECIMENS.Input
 const Button = SPECIMENS.Button
 const Checkbox = SPECIMENS.Checkbox
 const SocialLoginButton = SPECIMENS.SocialLoginButton
-const Divider = SPECIMENS.Divider
+const Divider = SPECIMENS.Separator
 
 /** Every gap is a spacing ROLE, never a number — `gap-group` is what the system
  *  itself calls "stacked fields", so this screen re-spaces when that role moves. */

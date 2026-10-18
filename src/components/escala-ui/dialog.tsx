@@ -1,9 +1,10 @@
 // Skeleton: shadcn/ui `bases/radix/ui/dialog.tsx` (MIT, see LICENSE-shadcn.md).
-// Appearance: lib/componentRecipes.ts → lib/recipeStyles.ts (catalogue key
-// `Modal`). No colour here.
+// The close control is shadcn's: a ghost icon-sm Button. Appearance:
+// lib/componentRecipes.ts → lib/recipeStyles.ts (Dialog, Button). No colour here.
 import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { Button } from './button'
 
 function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -25,7 +26,7 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      data-part="Modal.overlay"
+      data-part="Dialog.overlay"
       className={cn('fixed inset-0 isolate z-50', className)}
       {...props}
     />
@@ -50,7 +51,7 @@ function DialogContent({
   const content = (
     <DialogPrimitive.Content
       data-slot="dialog-content"
-      data-escala="Modal"
+      data-escala="Dialog"
       className={cn(
         'relative flex flex-col outline-none',
         !inline && 'fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
@@ -62,14 +63,11 @@ function DialogContent({
     >
       {children}
       {showCloseButton && (
-        <DialogPrimitive.Close
-          data-slot="dialog-close"
-          data-part="Modal.close"
-          className="absolute inline-flex aspect-square cursor-pointer items-center justify-center border-0 bg-transparent p-0"
-          style={{ top: 'var(--spacing-inset-surface)', right: 'var(--spacing-inset-surface)' }}
-        >
-          {closeIcon ?? '×'}
-          <span className="sr-only">Close</span>
+        <DialogPrimitive.Close data-slot="dialog-close" asChild>
+          <Button variant="ghost" size="icon-sm" className="absolute top-2 right-2">
+            {closeIcon ?? '×'}
+            <span className="sr-only">Close</span>
+          </Button>
         </DialogPrimitive.Close>
       )}
     </DialogPrimitive.Content>
@@ -84,14 +82,14 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="dialog-header" data-part="Modal.header" className={cn('flex flex-col', className)} {...props} />
+  return <div data-slot="dialog-header" data-part="Dialog.header" className={cn('flex flex-col', className)} {...props} />
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      data-part="Modal.footer"
+      data-part="Dialog.footer"
       className={cn('flex flex-col-reverse sm:flex-row sm:justify-end', className)}
       {...props}
     />
@@ -99,11 +97,11 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title data-slot="dialog-title" data-part="Modal.title" className={cn('m-0', className)} {...props} />
+  return <DialogPrimitive.Title data-slot="dialog-title" data-part="Dialog.title" className={cn('m-0', className)} {...props} />
 }
 
 function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
-  return <DialogPrimitive.Description data-slot="dialog-description" data-part="Modal.description" className={cn('m-0', className)} {...props} />
+  return <DialogPrimitive.Description data-slot="dialog-description" data-part="Dialog.description" className={cn('m-0', className)} {...props} />
 }
 
 export {

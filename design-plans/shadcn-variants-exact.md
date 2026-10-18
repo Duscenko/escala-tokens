@@ -104,7 +104,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 | 1 · Acciones | Button (+ plegar CloseButton, FAB, TextLink), ButtonGroup | ✅ 2026-10-18 · plugin 0.7.0 |
 | 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ✅ 2026-10-18 · plugin 0.8.0 |
 | 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ✅ 2026-10-18 · plugin 0.9.0 |
-| 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ídem |
+| 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ✅ 2026-10-18 · plugin 0.10.0 |
 | 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | Ningún eje con valores en mayúscula ni Danger/Error |
 | 6 · Cierre | Migración del store, artefactos, `statusAction`, CLAUDE.md, plugin 0.7.0 | `npm test` + `npm run build` en verde, plugin construye todos los sets |
 
@@ -167,3 +167,25 @@ que la web y el plugin queden desalineados entre fases.
 - **CheckboxGroup / SwitchGroup borrados**: son FieldSet + FieldLegend + FieldGroup
   de Fields horizontales (`SkeletonSettingsList` para las pantallas).
 - Store v93. Plugin 0.9.0.
+
+## Fase 4 — hecha (2026-10-18)
+
+- **Card**: `size` default·sm (`data-size`; sm aprieta padding y gap un paso y el
+  título pasa a `type.label`). `CardAction` es parte; **`CardLink` borrado**: el
+  enlace del pie es `Button variant="link" size="sm"`.
+- **Separator** (era Divider): el `Separator` de Radix, `orientation`
+  horizontal·vertical en minúscula (el eje del catálogo y del plugin también).
+- **Dialog** (era Modal): `data-part="Dialog.*"`; la × es un `DialogClose asChild`
+  con `Button variant="ghost" size="icon-sm"` en `top-2 right-2` — ya no es un slot
+  de la receta. En Figma el pie lleva Cancel `outline` y Delete `destructive`.
+- **Tabs**: `TabsList variant` default (pista apagada, el activo elevado sobre la
+  página) · line (subrayado).
+- **Sidebar**: las partes de shadcn (Sidebar `variant` sidebar·floating·inset +
+  `side`, Header/Content/Footer/Group/GroupLabel/Menu/MenuItem/MenuButton con
+  `isActive`/`variant`/`size`). Sin prop `items`. En Figma: capas
+  root/group/label/menu/button/button-active, sin `pill`.
+- **Menús**: el ítem destructivo es `variant="destructive"` (era `danger`); capa
+  Figma `item-destructive`.
+- Store v94 renombra Divider→Separator y Modal→Dialog en `selectedComponents`.
+  Las URLs `/components/Divider` y `/components/Modal` dejan de existir (sitemap
+  regenerado). Plugin 0.10.0.

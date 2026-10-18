@@ -1,25 +1,20 @@
-// shadcn/ui `separator.tsx` (MIT, see LICENSE-shadcn.md) — Escala's Divider.
-// Radix's Separator writes a lowercase `data-orientation` that would shadow the
-// recipe's axis attribute, so this is the same element without the primitive.
-// Appearance: recipe (Divider).
+// Skeleton: shadcn/ui `bases/radix/ui/separator.tsx` (MIT, see LICENSE-shadcn.md):
+// the Radix Separator, `orientation` horizontal | vertical (Radix writes the
+// same lowercase `data-orientation` the recipe reads). Appearance: recipe (Separator).
 import * as React from 'react'
+import { Separator as SeparatorPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 
-export interface SeparatorProps extends React.ComponentProps<'div'> {
-  orientation?: 'horizontal' | 'vertical'
-  /** A purely visual rule (default). Set false to expose role="separator". */
-  decorative?: boolean
-}
-
-function Separator({ orientation = 'horizontal', decorative = true, className, ...props }: SeparatorProps) {
+function Separator({
+  className, orientation = 'horizontal', decorative = true, ...props
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
   return (
-    <div
+    <SeparatorPrimitive.Root
       data-slot="separator"
-      data-escala="Divider"
-      data-orientation={orientation === 'vertical' ? 'Vertical' : 'Horizontal'}
-      role={decorative ? 'none' : 'separator'}
-      aria-orientation={decorative ? undefined : orientation}
-      className={cn('shrink-0', orientation === 'horizontal' ? 'w-full' : 'inline-block', className)}
+      data-escala="Separator"
+      decorative={decorative}
+      orientation={orientation}
+      className={cn('shrink-0 data-[orientation=horizontal]:w-full data-[orientation=vertical]:self-stretch', className)}
       {...props}
     />
   )

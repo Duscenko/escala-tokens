@@ -58,8 +58,8 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Chip')).toContain('surface.selected')
   })
 
-  it('Divider — a single hairline with no live axis — resolves only its border', () => {
-    expect(rolesForComponent('Divider')).toEqual(['border.subtle'])
+  it('Separator — a single hairline with no live axis — resolves only its border', () => {
+    expect(rolesForComponent('Separator')).toEqual(['border.subtle'])
   })
 
   it('SegmentedControl can name the floating surface its track paints', () => {

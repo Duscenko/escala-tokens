@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 93,
+      version: 94,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3537,6 +3537,19 @@ export const useDesignStore = create<DesignStore>()(
           forms(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) forms(sys?.snapshot)
+          }
+        }
+        if (version < 94) {
+          // v93→v94: surfaces took shadcn's names. Divider is Separator, Modal
+          // is Dialog.
+          const RENAMED: Record<string, string> = { Divider: 'Separator', Modal: 'Dialog' }
+          const surfaces = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            state.selectedComponents = [...new Set(state.selectedComponents.map((k: string) => RENAMED[k] ?? k))]
+          }
+          surfaces(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) surfaces(sys?.snapshot)
           }
         }
         return persisted

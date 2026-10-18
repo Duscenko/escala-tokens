@@ -1,33 +1,40 @@
-import { c, part, type ComponentRecipe, type SlotProps } from './helpers'
+import { c, part, type ComponentRecipe, type SlotProps } from './helpers.js'
 
 // ── Card ───────────────────────────────────────────────────────────────────
 
+// shadcn's Card, `size` default | sm: the card's spacing (`--card-spacing`)
+// is the `inset-surface` role at default — the dial a designer moves — and
+// one step tighter at sm. No CardLink: a footer link is a link Button.
 export const CARD: ComponentRecipe = {
   key: 'Card',
-  slots: ['root', 'header', 'title', 'description', 'content', 'footer', 'link'],
-  defaults: {},
+  slots: ['root', 'header', 'title', 'description', 'action', 'content', 'footer'],
+  defaults: { Size: 'default' },
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.container', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface',
-        gap: 'spacing.gap-control', shadow: 'shadow.sm',
+        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', text: c('content.primary'),
+        radius: 'radius.container', shadow: 'shadow.xs',
       },
-      header: { gap: 'spacing.gap-tight' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
+      header: { gap: 'spacing.1' },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
-      content: { text: c('content.primary'), font: 'type.body-md' },
+      content: { text: c('content.primary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.gap-control' },
-      link: { text: c('content.accent'), font: 'type.button' },
+    })),
+    part({ Size: ['default', 'sm'] as const }, (size) => ({
+      root: size === 'sm'
+        ? { paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.4' }
+        : { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.inset-surface' },
+      title: { text: c('content.primary'), font: size === 'sm' ? 'type.label' : 'type.heading-sm' },
     })),
   ],
 }
 
-// ── Dialog (catalogue key `Modal`) ─────────────────────────────────────────
+// ── Dialog ─────────────────────────────────────────────────────────────────
+// shadcn's Dialog: the close control is a ghost icon-sm Button (its recipe).
 
-export const MODAL: ComponentRecipe = {
-  key: 'Modal',
-  slots: ['content', 'overlay', 'header', 'title', 'description', 'footer', 'close'],
+export const DIALOG: ComponentRecipe = {
+  key: 'Dialog',
+  slots: ['content', 'overlay', 'header', 'title', 'description', 'footer'],
   detachedSlots: ['overlay'],
   defaults: {},
   parts: [
@@ -42,21 +49,19 @@ export const MODAL: ComponentRecipe = {
       title: { text: c('content.primary'), font: 'type.heading-sm' },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.gap-control' },
-      close: { text: c('content.secondary'), radius: 'radius.control', height: 'size.xs' },
     })),
   ],
 }
 
+// ── Separator ──────────────────────────────────────────────────────────────
 
-// ── Divider ────────────────────────────────────────────────────────────────
-
-export const DIVIDER: ComponentRecipe = {
-  key: 'Divider',
+export const SEPARATOR: ComponentRecipe = {
+  key: 'Separator',
   slots: ['root'],
-  defaults: { Orientation: 'Horizontal' },
+  defaults: { Orientation: 'horizontal' },
   parts: [
-    part({ Orientation: ['Horizontal', 'Vertical'] as const }, (o) => ({
-      root: o === 'Horizontal'
+    part({ Orientation: ['horizontal', 'vertical'] as const }, (o) => ({
+      root: o === 'horizontal'
         ? { fill: c('border.subtle'), height: 'stroke.divider' }
         : { fill: c('border.subtle'), width: 'stroke.divider', height: 'size.2xl' },
     })),

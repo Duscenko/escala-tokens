@@ -14,8 +14,8 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
-  Tabs: () =>
-    `import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"\n\n<Tabs defaultValue="overview">\n  <TabsList>\n    <TabsTrigger value="overview">Overview</TabsTrigger>\n    <TabsTrigger value="tokens">Tokens</TabsTrigger>\n  </TabsList>\n  <TabsContent value="overview">…</TabsContent>\n</Tabs>`,
+  Tabs: (v) =>
+    `import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"\n\n<Tabs defaultValue="overview">\n  <TabsList${v.Variant === 'line' ? ' variant="line"' : ''}>\n    <TabsTrigger value="overview">Overview</TabsTrigger>\n    <TabsTrigger value="tokens">Tokens</TabsTrigger>\n  </TabsList>\n  <TabsContent value="overview">…</TabsContent>\n</Tabs>`,
   TabMenu: () =>
     `import { TabMenu } from "@/components/ui/tab-menu"\n\n<TabMenu items={["All", "Drafts", "Published"]} onValueChange={setView} />`,
   SegmentedControl: (v) =>
@@ -27,15 +27,15 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Stepper: () =>
     `import { Stepper } from "@/components/ui/stepper"\n\n<Stepper steps={["Account", "Tokens", "Publish"]} current={2} />`,
   DropdownMenu: () =>
-    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="outline">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent>\n    <DropdownMenuItem>Duplicate</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="danger">Delete</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
+    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="outline">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent>\n    <DropdownMenuItem>Duplicate</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
   ContextMenu: () =>
     `import {\n  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuShortcut,\n} from "@/components/ui/context-menu"\n\n<ContextMenu>\n  <ContextMenuTrigger>Right-click here</ContextMenuTrigger>\n  <ContextMenuContent>\n    <ContextMenuItem>Copy <ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>\n  </ContextMenuContent>\n</ContextMenu>`,
   Command: () =>
     `import {\n  Command, CommandInput, CommandList, CommandGroup, CommandItem,\n} from "@/components/ui/command"\n\n<Command>\n  <CommandInput placeholder="Type a command…" />\n  <CommandList>\n    <CommandGroup heading="Actions">\n      <CommandItem onSelect={openColor}>Open Color foundation</CommandItem>\n    </CommandGroup>\n  </CommandList>\n</Command>`,
   Navbar: () =>
     `import { Navbar } from "@/components/ui/navbar"\n\n<Navbar\n  links={[{ label: "Home", current: true }, { label: "Tokens" }, { label: "Docs" }]}\n  trailing="MD"\n/>`,
-  Sidebar: () =>
-    `import { Sidebar } from "@/components/ui/sidebar"\n\n<Sidebar\n  items={[{ label: "Overview", icon: <Home /> }, { label: "Tokens", icon: <Palette /> }]}\n  defaultValue="Tokens"\n  onValueChange={navigate}\n/>`,
+  Sidebar: (v) =>
+    `import {\n  Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel,\n  SidebarMenu, SidebarMenuItem, SidebarMenuButton,\n} from "@/components/ui/sidebar"\n\n<Sidebar${v.Variant && v.Variant !== 'sidebar' ? ` variant="${v.Variant}"` : ''}>\n  <SidebarContent>\n    <SidebarGroup>\n      <SidebarGroupLabel>Workspace</SidebarGroupLabel>\n      <SidebarMenu>\n        <SidebarMenuItem>\n          <SidebarMenuButton isActive><Palette /><span>Tokens</span></SidebarMenuButton>\n        </SidebarMenuItem>\n      </SidebarMenu>\n    </SidebarGroup>\n  </SidebarContent>\n</Sidebar>`,
 
   Alert: (v) =>
     `import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"\n\n<Alert${v.Variant === 'destructive' ? ' variant="destructive"' : ''}>\n  <${v.Variant === 'destructive' ? 'CircleAlert' : 'Info'} />\n  <AlertTitle>${v.Variant === 'destructive' ? 'Export failed' : 'Heads up'}</AlertTitle>\n  <AlertDescription>${v.Variant === 'destructive' ? 'Check the token names and try again.' : 'Semantic tokens re-derive when the accent changes.'}</AlertDescription>\n</Alert>`,
@@ -44,8 +44,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     return `import { Toaster } from "@/components/ui/sonner"\nimport { toast } from "sonner"\n\n// once, at the root of the app\n<Toaster />\n\n// anywhere\ntoast${type}("Changes saved", { description: "Your tokens are up to date." })`
   },
 
-  Divider: (v) =>
-    `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'Vertical' ? ' orientation="vertical"' : ''} />`,
+  Separator: (v) =>
+    `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} />`,
   Accordion: () =>
     `import {\n  Accordion, AccordionItem, AccordionTrigger, AccordionContent,\n} from "@/components/ui/accordion"\n\n<Accordion type="single" collapsible defaultValue="a">\n  <AccordionItem value="a">\n    <AccordionTrigger>What are design tokens?</AccordionTrigger>\n    <AccordionContent>Named values for color, type and spacing.</AccordionContent>\n  </AccordionItem>\n</Accordion>`,
   AspectRatio: (v) =>
@@ -132,8 +132,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Input: (v) =>
     `import { Input } from "@/components/ui/input"\n\n<Input type="email" placeholder="you@company.com"${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''} />`,
 
-  Card: () =>
-    `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter, CardLink,\n} from "@/components/ui/card"\n\n<Card>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <CardLink href="#">Learn more →</CardLink>\n  </CardFooter>\n</Card>`,
-  Modal: () =>
+  Card: (v) =>
+    `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter,\n} from "@/components/ui/card"\n\n<Card${v.Size === 'sm' ? ' size="sm"' : ''}>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <Button variant="link" size="sm">Learn more →</Button>\n  </CardFooter>\n</Card>`,
+  Dialog: () =>
     `import {\n  Dialog, DialogContent, DialogHeader, DialogTitle,\n  DialogDescription, DialogFooter,\n} from "@/components/ui/dialog"\n\n<Dialog open={open} onOpenChange={setOpen}>\n  <DialogContent>\n    <DialogHeader>\n      <DialogTitle>Delete project?</DialogTitle>\n      <DialogDescription>This action can't be undone.</DialogDescription>\n    </DialogHeader>\n    <DialogFooter>\n      <Button variant="outline">Cancel</Button>\n      <Button variant="destructive">Delete</Button>\n    </DialogFooter>\n  </DialogContent>\n</Dialog>`,
 }

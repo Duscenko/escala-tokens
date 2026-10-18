@@ -9,5 +9,5 @@
 // shown in the UI. The app compares the user's last-downloaded `PLUGIN_BUILD`
 // (`pluginBuildSeen` in the store) against this to surface an "Update available"
 // hint on the Sync hub's "Download plugin" row.
-export const PLUGIN_VERSION = '0.9.0'
-export const PLUGIN_BUILD = 'd82cf15b2d79'
+export const PLUGIN_VERSION = '0.10.0'
+export const PLUGIN_BUILD = '1f257a9cab86'

@@ -640,23 +640,24 @@ var init_componentCatalogue = __esm({
         category: "Content & Surfaces",
         description: "Contained surface for grouping related content and actions. Fill \u2192 card/bg \u2192 surface/1.",
         usage: "Use consistent padding within a layout. Avoid nesting cards more than 1 level.",
-        axes: [],
+        axes: [{ name: "Size", values: ["default", "sm"] }],
         figmaSets: ["Card"],
         props: [
-          { name: "padding", type: '"sm" | "md" | "lg"', description: "Internal spacing" },
-          { name: "shadow", type: '"none" | "sm" | "md" | "lg"', description: "Elevation level" },
-          { name: "onClick", type: "() => void", description: "Makes the card interactive" }
+          { name: "size", type: '"default" | "sm"', description: "shadcn's sizes: sm tightens the padding and the gap between parts." },
+          { name: "CardHeader / CardTitle / CardDescription", type: "component", description: "Heading block." },
+          { name: "CardAction", type: "component", description: "An action pinned to the header's top-right corner." },
+          { name: "CardContent / CardFooter", type: "component", description: 'Body and the actions row (a link is <Button variant="link">).' }
         ],
         accessibility: 'Clickable cards use role="button" or wrapping <a>. Focus ring visible.'
       },
       {
-        key: "Divider",
+        key: "Separator",
         label: "Separator",
         category: "Content & Surfaces",
         description: "Rule between sections or list items. Fill \u2192 divider/color token.",
         usage: "Use sparingly \u2014 whitespace is usually sufficient. Add label only for section breaks.",
-        axes: [{ name: "Orientation", values: ["Horizontal", "Vertical"] }],
-        figmaSets: ["Divider"],
+        axes: [{ name: "Orientation", values: ["horizontal", "vertical"] }],
+        figmaSets: ["Separator"],
         props: [
           { name: "orientation", type: '"horizontal" | "vertical"', description: "Direction." },
           { name: "decorative", type: "boolean", description: 'A purely visual rule (default). Set false to expose role="separator".' }
@@ -694,17 +695,18 @@ var init_componentCatalogue = __esm({
         accessibility: "Purely presentational \u2014 semantics come from the wrapped content."
       },
       {
-        key: "Modal",
-        label: "Modal",
+        key: "Dialog",
+        label: "Dialog",
         category: "Content & Surfaces",
-        description: "Dialog with footer actions for critical flows that require full attention.",
+        description: "Modal window with footer actions for critical flows that require full attention.",
         usage: "Reserve for destructive confirmations or multi-step flows. Don't use for notifications.",
         axes: [],
-        figmaSets: ["Modal"],
+        figmaSets: ["Dialog"],
         props: [
-          { name: "open", type: "boolean", description: "Controls visibility" },
-          { name: "onClose", type: "() => void", description: "Called on backdrop click or Esc" },
-          { name: "title", type: "string", description: "Dialog heading" }
+          { name: "open / onOpenChange", type: "boolean / (open) => void", description: "Controlled visibility (Esc and the overlay close it)." },
+          { name: "DialogTrigger / DialogClose", type: "component", description: "Open and close buttons (asChild)." },
+          { name: "DialogHeader / DialogTitle / DialogDescription / DialogFooter", type: "component", description: "The parts; the close \xD7 is a ghost icon-sm Button." },
+          { name: "showCloseButton", type: "boolean", description: "Hide the corner \xD7 (default true)." }
         ],
         accessibility: 'role="dialog", aria-modal="true". Focus trapped inside. Returns focus on close.'
       },
@@ -806,13 +808,14 @@ var init_componentCatalogue = __esm({
         key: "Tabs",
         label: "Tabs",
         category: "Navigation",
-        description: "Tab bar for switchable panels. Indicator \u2192 tabs/indicator \u2192 action/primary.",
+        description: "Tab bar for switchable panels: a muted track (default) or an underline (line).",
         usage: "Use when content is parallel, not sequential. Limit to 2\u20137 tabs visible at once.",
-        axes: [],
+        axes: [{ name: "Variant", values: ["default", "line"] }],
         figmaSets: ["Tabs"],
         props: [
           { name: "Tabs value / defaultValue", type: "string", description: "The open tab." },
-          { name: "TabsList / TabsTrigger", type: "component", description: "The underline strip and its tabs (arrow keys move between them)." },
+          { name: "TabsList variant", type: '"default" | "line"', description: "A muted track with a raised active tab, or an underline strip." },
+          { name: "TabsTrigger", type: "component", description: "One tab (arrow keys move between them)." },
           { name: "TabsContent value", type: "string", description: "The panel for a tab." }
         ],
         accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.'
@@ -965,12 +968,13 @@ var init_componentCatalogue = __esm({
         category: "Navigation",
         description: "Vertical navigation panel with grouped items and an active state.",
         usage: "Use for app-level sections when destinations exceed what a navbar holds.",
-        axes: [],
+        axes: [{ name: "Variant", values: ["sidebar", "floating", "inset"] }],
         figmaSets: ["Sidebar"],
         props: [
-          { name: "items", type: "{ label; icon? }[]", description: "Navigation rows." },
-          { name: "value / defaultValue", type: "string", description: "The current row." },
-          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection (arrow keys move between rows)." }
+          { name: "variant / side", type: '"sidebar" | "floating" | "inset" / "left" | "right"', description: "shadcn's variants: flush panel, floating card, or inset." },
+          { name: "SidebarHeader / SidebarContent / SidebarFooter", type: "component", description: "The panel's regions." },
+          { name: "SidebarGroup / SidebarGroupLabel / SidebarMenu", type: "component", description: "A labelled group of rows." },
+          { name: "SidebarMenuButton isActive / variant / size", type: 'boolean / "default" | "outline" / "default" | "sm" | "lg"', description: "One row; isActive marks the current page." }
         ],
         accessibility: '<nav aria-label="Sidebar">; active item uses aria-current. Fully arrow-key navigable.'
       }
@@ -985,9 +989,9 @@ var init_componentCatalogue = __esm({
       "Badge",
       "Card",
       "Avatar",
-      "Modal",
+      "Dialog",
       "Tooltip",
-      "Divider",
+      "Separator",
       "Sonner",
       "Tabs"
     ];
@@ -5530,38 +5534,38 @@ var init_forms = __esm({
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA;
+var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
     CARD = {
       key: "Card",
-      slots: ["root", "header", "title", "description", "content", "footer", "link"],
-      defaults: {},
+      slots: ["root", "header", "title", "description", "action", "content", "footer"],
+      defaults: { Size: "default" },
       parts: [
         part({}, () => ({
           root: {
             fill: c("surface.layer-1"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
+            text: c("content.primary"),
             radius: "radius.container",
-            paddingX: "spacing.inset-surface",
-            paddingY: "spacing.inset-surface",
-            gap: "spacing.gap-control",
-            shadow: "shadow.sm"
+            shadow: "shadow.xs"
           },
-          header: { gap: "spacing.gap-tight" },
-          title: { text: c("content.primary"), font: "type.heading-sm" },
+          header: { gap: "spacing.1" },
           description: { text: c("content.secondary"), font: "type.body-sm" },
-          content: { text: c("content.primary"), font: "type.body-md" },
-          footer: { gap: "spacing.gap-control" },
-          link: { text: c("content.accent"), font: "type.button" }
+          content: { text: c("content.primary"), font: "type.body-sm" },
+          footer: { gap: "spacing.gap-control" }
+        })),
+        part({ Size: ["default", "sm"] }, (size) => ({
+          root: size === "sm" ? { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" } : { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.inset-surface" },
+          title: { text: c("content.primary"), font: size === "sm" ? "type.label" : "type.heading-sm" }
         }))
       ]
     };
-    MODAL = {
-      key: "Modal",
-      slots: ["content", "overlay", "header", "title", "description", "footer", "close"],
+    DIALOG = {
+      key: "Dialog",
+      slots: ["content", "overlay", "header", "title", "description", "footer"],
       detachedSlots: ["overlay"],
       defaults: {},
       parts: [
@@ -5580,18 +5584,17 @@ var init_surfaces = __esm({
           header: { gap: "spacing.gap-tight" },
           title: { text: c("content.primary"), font: "type.heading-sm" },
           description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.gap-control" },
-          close: { text: c("content.secondary"), radius: "radius.control", height: "size.xs" }
+          footer: { gap: "spacing.gap-control" }
         }))
       ]
     };
-    DIVIDER = {
-      key: "Divider",
+    SEPARATOR = {
+      key: "Separator",
       slots: ["root"],
-      defaults: { Orientation: "Horizontal" },
+      defaults: { Orientation: "horizontal" },
       parts: [
-        part({ Orientation: ["Horizontal", "Vertical"] }, (o) => ({
-          root: o === "Horizontal" ? { fill: c("border.subtle"), height: "stroke.divider" } : { fill: c("border.subtle"), width: "stroke.divider", height: "size.2xl" }
+        part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
+          root: o === "horizontal" ? { fill: c("border.subtle"), height: "stroke.divider" } : { fill: c("border.subtle"), width: "stroke.divider", height: "size.2xl" }
         }))
       ]
     };
@@ -5737,7 +5740,7 @@ function menu(key2) {
     },
     "item[data-highlighted]": { fill: c("action.ghost.hover") },
     "item:hover": { fill: c("action.ghost.hover") },
-    'item[data-variant="danger"]': { text: c("status.critical.content") },
+    'item[data-variant="destructive"]': { text: c("status.critical.content") },
     "item[data-disabled]": { text: c("content.disabled") },
     separator: { fill: c("border.subtle"), height: "stroke.divider" },
     shortcut: { text: c("content.subtle"), font: "type.caption" }
@@ -5751,22 +5754,21 @@ var init_navigation = __esm({
     TABS = {
       key: "Tabs",
       slots: ["root", "trigger"],
-      defaults: {},
+      defaults: { Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { stroke: c("border.subtle"), strokeBottomWidth: "stroke.control", gap: "spacing.gap-tight" },
-          trigger: {
-            text: c("content.secondary"),
-            font: "type.button",
-            paddingX: "spacing.3",
-            paddingY: "spacing.2",
-            stroke: NONE,
-            strokeBottomWidth: "stroke.md"
-          },
-          "trigger:hover": { text: c("content.primary") },
-          'trigger[data-state="active"]': { text: c("content.accent"), stroke: c("action.primary.default") },
-          'trigger[data-state="active"]:hover': { text: c("content.accent") }
-        }))
+          trigger: { text: c("content.secondary"), font: "type.button", paddingX: "spacing.2", paddingY: "spacing.1", gap: "spacing.1_5" },
+          "trigger:hover": { text: c("content.primary") }
+        })),
+        part({ Variant: ["default", "line"] }, (variant) => variant === "line" ? {
+          root: { fill: NONE, gap: "spacing.1" },
+          trigger: { stroke: NONE, strokeBottomWidth: "stroke.md" },
+          'trigger[data-state="active"]': { text: c("content.primary"), stroke: c("content.primary") }
+        } : {
+          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.0_5", paddingY: "spacing.0_5", gap: "spacing.0_5" },
+          trigger: { radius: "radius.control" },
+          'trigger[data-state="active"]': { fill: c("surface.page"), text: c("content.primary"), shadow: "shadow.xs" }
+        })
       ]
     };
     TAB_MENU = {
@@ -5929,24 +5931,30 @@ var init_navigation = __esm({
     };
     SIDEBAR = {
       key: "Sidebar",
-      slots: ["root", "item", "pill", "icon"],
-      defaults: {},
+      slots: ["root", "group", "label", "menu", "button"],
+      defaults: { Variant: "sidebar" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
+          root: { fill: c("surface.layer-1"), text: c("content.primary"), paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.2" },
+          group: { gap: "spacing.1" },
+          label: { text: c("content.secondary"), font: "type.caption", height: "size.compact", paddingX: "spacing.2" },
+          menu: { gap: "spacing.1" },
+          button: {
+            text: c("content.primary"),
+            font: "type.body-sm",
+            radius: "radius.control",
+            height: "size.compact",
             paddingX: "spacing.2",
-            paddingY: "spacing.2",
-            gap: "spacing.0_5"
+            gap: "spacing.2"
           },
-          pill: { fill: c("surface.selected"), radius: "radius.control" },
-          item: { text: c("content.secondary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.2", gap: "spacing.2_5" },
-          "item:hover": { text: c("content.primary") },
-          'item[aria-current="page"]': { text: c("content.accent") },
-          'item[aria-current="page"]:hover': { text: c("content.accent") }
+          "button:hover": { fill: c("action.ghost.hover") },
+          'button[data-active="true"]': { fill: c("action.ghost.hover"), font: "type.label" },
+          'button[data-variant="outline"]': { fill: c("surface.page"), stroke: c("border.default"), strokeWidth: "stroke.control" },
+          'button[data-size="sm"]': { height: "size.hit", font: "type.caption" },
+          'button[data-size="lg"]': { height: "size.touch" }
+        })),
+        part({ Variant: ["sidebar", "floating", "inset"] }, (variant) => ({
+          root: variant === "floating" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", shadow: "shadow.sm" } : variant === "sidebar" ? { stroke: c("border.default"), strokeWidth: "stroke.control" } : { stroke: NONE }
         }))
       ]
     };
@@ -6255,7 +6263,7 @@ var init_componentRecipes = __esm({
       Rating: RATING,
       FileFormat: FILE_FORMAT,
       Avatar: AVATAR,
-      Divider: DIVIDER,
+      Separator: SEPARATOR,
       Accordion: ACCORDION,
       AspectRatio: ASPECT_RATIO,
       Popover: POPOVER,
@@ -6276,7 +6284,7 @@ var init_componentRecipes = __esm({
       Navbar: NAVBAR,
       Sidebar: SIDEBAR,
       Card: CARD,
-      Modal: MODAL
+      Dialog: DIALOG
     };
   }
 });
@@ -8393,7 +8401,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 93,
+          version: 94,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -9530,6 +9538,17 @@ var init_useDesignStore = __esm({
               forms(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) forms(sys?.snapshot);
+              }
+            }
+            if (version < 94) {
+              const RENAMED = { Divider: "Separator", Modal: "Dialog" };
+              const surfaces = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                state2.selectedComponents = [...new Set(state2.selectedComponents.map((k) => RENAMED[k] ?? k))];
+              };
+              surfaces(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) surfaces(sys?.snapshot);
               }
             }
             return persisted;
