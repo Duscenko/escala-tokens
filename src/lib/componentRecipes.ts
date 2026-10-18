@@ -37,6 +37,7 @@ import {
   CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP,
 } from './recipes/forms'
 import { CARD, MODAL } from './recipes/surfaces'
+import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators'
 export {
   RECIPE_PROPS,
   type TokenRef, type RecipeProp, type SlotProps, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
@@ -71,6 +72,15 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Field: FIELD,
   Label: LABEL,
   PasswordStrength: PASSWORD_STRENGTH,
+  Badge: BADGE,
+  StatusBadge: STATUS_BADGE,
+  Chip: CHIP,
+  Progress: PROGRESS,
+  Spinner: SPINNER,
+  Icon: ICON,
+  Rating: RATING,
+  FileFormat: FILE_FORMAT,
+  Avatar: AVATAR,
   Card: CARD,
   Modal: MODAL,
 }

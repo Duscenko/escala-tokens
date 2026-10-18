@@ -58,6 +58,10 @@ function declarations(props: SlotProps): string[] {
       case 'fill': out.push(`background: ${color(ref)}`); break
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
+      // A second colour a part's artwork reads (a file icon's page fill).
+      case 'paint': out.push(`--escala-paint: ${color(ref)}`); break
+      // The spinning arc of a ring: only the top edge takes it.
+      case 'strokeTop': out.push(`border-top-color: ${color(ref)}`); break
       case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break

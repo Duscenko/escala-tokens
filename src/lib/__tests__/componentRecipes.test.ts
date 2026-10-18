@@ -68,7 +68,7 @@ describe('component recipes', () => {
   })
 
   it('hold token references only — no number, no hex, no opacity', () => {
-    const REF = /^(color\.[a-z0-9.-]+|(size|selector|radius|spacing|stroke|type|shadow)\.[a-z0-9_-]+)$/
+    const REF = /^(color\.[a-z0-9.-]+|(size|selector|icon|radius|spacing|stroke|type|shadow)\.[a-z0-9_-]+)$/
     for (const recipe of Object.values(COMPONENT_RECIPES)) {
       for (const ref of recipeTokenRefs(recipe)) expect(ref, recipe.key).toMatch(REF)
     }

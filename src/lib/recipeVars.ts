@@ -11,7 +11,7 @@ import type { CSSProperties } from 'react'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { COMPONENT_RECIPES, recipeTokenRefs, splitRef, cssVarOf } from './componentRecipes'
 import {
-  radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
+  iconRoleOf, radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
 } from './previewTokens'
 
 const REFS: string[] = [
@@ -31,6 +31,7 @@ export function previewDimension(t: PreviewTokens, ref: string): Record<string, 
   switch (ns) {
     case 'size': return one(sizeRoleOf(t, name, '') || t.sizes?.[name])
     case 'radius': return one(radiusRoleOf(t, name))
+    case 'icon': return one(`${iconRoleOf(t, name as 'small' | 'medium' | 'large')}px`)
     case 'selector': return one(selectorRoleOf(t, name, '') || t.selector?.[name])
     case 'spacing': return one(t.spacing?.[name] || spacingRoleOf(t, name, ''))
     case 'stroke': return one(strokeRoleOf(t, name, '1px'))

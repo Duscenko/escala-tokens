@@ -70,7 +70,7 @@ describe('the generated component color-field map is current', () => {
   })
 
   it('Chip selected bind the selection surface', () => {
-    expect(COMPONENT_COLOR_FIELDS.Chip).toContain('selectedSurface')
+    expect(rolesForComponent('Chip')).toContain('surface.selected')
   })
 
   it('Divider — a single hairline with no live axis — resolves only its border', () => {

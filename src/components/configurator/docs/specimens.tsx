@@ -12,8 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { effectiveIconWeight, ICON_ROLES, iconSizesFor, type IconRole } from '../../../lib/iconSizing'
-import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, tintOf, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeRoleOf, inputSurfaceOf, selectedSurfaceOf, borderHoverOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconOf } from '../../../lib/previewTokens'
+import { effectiveIconWeight, ICON_ROLES, iconSizesFor } from '../../../lib/iconSizing'
+import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, tintOf, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeRoleOf, inputSurfaceOf, selectedSurfaceOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconOf } from '../../../lib/previewTokens'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
@@ -21,6 +21,10 @@ import {
   SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonCloseButtonSpecimen, SkeletonFABButtonSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonAppStoreBadgeSpecimen,
 } from './skeleton/actions'
+import {
+  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
+  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen,
+} from './skeleton/indicators'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonInputStepperSpecimen,
@@ -66,7 +70,6 @@ function floatingBg(t: PreviewTokens): string {
 /** Soft tint of a hex — reads the Opacity foundation's 10 / 5 / 20 steps, so
  *  soft fills track the user's transparency scale. */
 const soft = (t: PreviewTokens, hex: string) => tintOf(t, hex, '10', 0.1)
-const softer = (t: PreviewTokens, hex: string) => tintOf(t, hex, '5', 0.05)
 /** One step deeper than `soft` — a pressed wash, not a hover one. Used to be
  *  `color + '33'` in ButtonSpecimen: a raw hex-alpha-suffix hack that (a) only
  *  works when `color` is already a clean 6-digit hex, and (b) went through
@@ -83,7 +86,7 @@ const softer = (t: PreviewTokens, hex: string) => tintOf(t, hex, '5', 0.05)
 /** A soft 3-stop gradient at the accent's hue rotated `deg` degrees, holding one
  *  lightness/chroma envelope so a rotated stack reads as a family (the attached
  *  reference: periwinkle → mint → lavender → amber → coral, same "weight"). */
-function avatarHueGradient(t: PreviewTokens, deg: number): string {
+export function avatarHueGradient(t: PreviewTokens, deg: number): string {
   let h = 250
   try { h = (chroma(t.brandSolid).get('hsl.h') || 0) + deg } catch { /* keep default */ }
   const at = (l: number, sat: number) => chroma.hsl(((h % 360) + 360) % 360, sat, l).hex()
@@ -92,7 +95,7 @@ function avatarHueGradient(t: PreviewTokens, deg: number): string {
 
 /** The default gradient fill: the system's ASSIGNED avatar gradient when it has
  *  one, otherwise the accent at hue 0 through the same envelope. */
-function avatarFillOf(t: PreviewTokens): string {
+export function avatarFillOf(t: PreviewTokens): string {
   return t.avatarGradient || t.coverGradient || avatarHueGradient(t, 0)
 }
 
@@ -109,50 +112,6 @@ function statusColor(t: PreviewTokens, name: string): string {
     case 'Info': return t.infoColor ?? '#2e90fa'
     default: return t.neutralText // Neutral
   }
-}
-
-/** The INK role paired with each `statusColor` FILL. */
-const STATUS_INK_SLOT: Record<string, string> = {
-  Brand: 'content.accent',
-  Success: 'status.success.content',
-  Warning: 'status.warning.content',
-  Error: 'status.critical.content',
-  Danger: 'status.critical.content',
-  Info: 'status.info.content',
-}
-
-/**
- * The same intent as INK rather than as a FILL.
- *
- * `statusColor` returns a fill, and a fill is not readable as text — that is
- * the whole reason the role catalogue ships `content.accent` beside
- * `action.primary`, and `status.<sev>.content` beside
- * `status.<sev>.surface-solid`. Anything that paints no fill (an Outline /
- * Ghost / Soft button, helper text, a required asterisk) puts its glyphs
- * straight on the page and must read the ink role.
- *
- * Both halves of this were one token until they measurably could not be:
- *  · BRAND. The old solid solver walked a light ramp until white was legible ON
- *    the fill, dragging it to tone 11 — where it happens to double as text. Once
- *    `brandSolidPair` stopped over-darkening it (Neo light #8e6300 brown →
- *    #eebd62 gold), every ghost button inherited fill-weight ink: **1.9:1**.
- *  · STATUS. `PreviewTokens.errorColor` was being fed `status.critical.content`
- *    — the ink — so a Solid Danger button used its ink as its FILL. Repointing
- *    it at `status.critical.surface-solid` fixed the button and moved the
- *    breakage here instead: measured, the fill as dark-mode ink runs
- *    **2.85–3.52:1** where the ink role runs 10.72–11.93.
- *
- * So the pair is split at the point of use, reading the roles that already
- * ship. This is NOT the deleted `errorInk`/`warningInk`/`successInk` — those
- * SUBSTITUTED a repaired colour when a token failed on its own tint, which made
- * one specimen disagree with every other preview about a token's value (see
- * CLAUDE.md's `StatusSpecimen` note). Nothing is repaired here; each call site
- * is simply pointed at the role for the job it is doing, and a flat system
- * (no `archTokens`) falls back to today's value unchanged.
- */
-function statusInk(t: PreviewTokens, name: string): string {
-  const slot = STATUS_INK_SLOT[name]
-  return (slot && t.archTokens?.[slot]) || (name === 'Brand' ? (t.brandText || t.brandSolid) : statusColor(t, name))
 }
 
 // Per-severity ink, for the call sites that only ever mean ONE severity.
@@ -173,36 +132,6 @@ function statusInk(t: PreviewTokens, name: string): string {
 // real axis and listing all of them IS correct.
 function errorInkOf(t: PreviewTokens): string {
   return t.archTokens?.['status.critical.content'] || t.errorColor
-}
-
-/** The label ink solved for each `statusColor` fill. */
-const STATUS_ON_SLOT: Record<string, string> = {
-  Brand: 'content.on-action',
-  Success: 'status.success.on-solid',
-  Warning: 'status.warning.on-solid',
-  Error: 'status.critical.on-solid',
-  Danger: 'status.critical.on-solid',
-  Info: 'status.info.on-solid',
-}
-
-/**
- * The ink for a SOLID fill of this intent.
- *
- * `t.onBrand` is `content.on-action` — the ink solved against the BRAND fill,
- * and only that one. Using it on a Danger button asks a label chosen for a gold
- * or cyan fill to sit on a red one; measured on the collage's Solid Danger
- * button before this existed: Neo **1.90:1**, Glass **2.16:1** (Core and Retro
- * passed by luck, their brand ink happening to be near-white).
- *
- * `status.<sev>.on-solid` is solved per severity against that severity's own
- * fill — it is `{on:<fam>.solid}`, the same marker `content.on-action` uses for
- * the accent — so each intent carries the ink its fill was verified with.
- * Falls back to `t.onBrand` where no architecture is resolved, which is exactly
- * today's behaviour for a flat system.
- */
-function statusOn(t: PreviewTokens, name: string): string {
-  const slot = STATUS_ON_SLOT[name]
-  return (slot && t.archTokens?.[slot]) || t.onBrand
 }
 
 /** The stroke of a status surface — `status.<severity>.border`, an alpha token.
@@ -349,20 +278,6 @@ function baseFont(t: PreviewTokens): CSSProperties {
 /** Text role, no line-height — the default for controls (buttons, labels, tabs). */
 function typeOf(t: PreviewTokens, role: string): CSSProperties {
   return typeStyleOf(t, role, { leading: false })
-}
-
-function SpecimenSpinner({ size, color, track }: { size: number; color: string; track: string }) {
-  return (
-    <span
-      className="inline-block animate-spin rounded-full"
-      style={{
-        width: size, height: size,
-        border: `${Math.max(2, Math.round(size / 8))}px solid ${track}`,
-        borderTopColor: color,
-      }}
-      aria-hidden
-    />
-  )
 }
 
 // ── Icons — Phosphor, bundled locally ───────────────────────────────────────
@@ -631,66 +546,6 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
   return 'Maya Duscenko'
 }
 
-// ── Select (State) ────────────────────────────────────────────────────────────
-
-
-// ── Checkbox (Checked × State) ────────────────────────────────────────────────
-
-// ── Toggle (On × State) ───────────────────────────────────────────────────────
-
-// ── Badge (Style × Color) ─────────────────────────────────────────────────────
-
-const BADGE_SIZE_SPECS: Record<string, { padY: number; padX: number; f: number; dot: number; gap: number }> = {
-  SM: { padY: 2, padX: 8, f: 11, dot: 5, gap: 5 },
-  MD: { padY: 3, padX: 10, f: 12, dot: 6, gap: 6 },
-  LG: { padY: 4, padX: 12, f: 13, dot: 7, gap: 7 },
-}
-
-function BadgeSpecimen({ t, v, children }: SpecimenProps) {
-  const c = statusColor(t, v.Color ?? 'Brand')
-  const style = v.Style ?? 'Soft'
-  const isNeutral = (v.Color ?? 'Brand') === 'Neutral'
-  const sz = BADGE_SIZE_SPECS[v.Size ?? 'MD'] ?? BADGE_SIZE_SPECS.MD
-  // `Dot: 'False'` is the COUNT form — no leading dot, symmetric padding,
-  // tabular figures. Opt-in and inert: every existing call omits it and keeps
-  // the status dot. A "+5 more" overflow tag is a count, not a status.
-  const showDot = v.Dot !== 'False'
-  let bg = 'transparent'; let fg = c; let line = 'transparent'
-  if (style === 'Solid') { bg = c; fg = statusOn(t, v.Color ?? 'Brand') }
-  else if (style === 'Soft') {
-    bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c)
-    fg = isNeutral ? (t.fgMuted ?? c) : statusInk(t, v.Color ?? 'Brand')
-  }
-  else { line = c + '99' }
-  // The Soft NEUTRAL fill is `surface.layer-1` — the same token a Card resolves
-  // to, so a neutral badge sitting on a card is invisible. The status dot
-  // normally carries it, but the dotless COUNT form has nothing else, so it
-  // takes a ~10% wash of the page ink instead: always a step off whatever
-  // surface it lands on, in both themes.
-  if (!showDot && isNeutral && style === 'Soft') { bg = soft(t, t.neutralText); fg = t.neutralText }
-  return (
-    <span
-      style={{
-        ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: showDot ? spaceOf(t, sz.gap) : 0,
-        padding: `${fieldPx(t, sz.padY)}px ${fieldPx(t, showDot ? sz.padX : sz.dot + 6)}px`,
-        borderRadius: radiusRoleOf(t, 'pill'), background: bg, color: fg, border: `${strokeControl(t)} solid ${line}`,
-        ...typeOf(t, 'caption'),
-        ...(showDot ? {} : { fontVariantNumeric: 'tabular-nums', fontWeight: weightOf(t, 'medium', 500) }),
-      }}
-    >
-      {showDot && <span style={{ width: fieldPx(t, sz.dot), height: fieldPx(t, sz.dot), borderRadius: 999, background: style === 'Solid' ? statusOn(t, v.Color ?? 'Brand') : c }} />}
-      {children ?? (v.Color ?? 'Brand')}
-    </span>
-  )
-}
-
-// ── Avatar (Size) ─────────────────────────────────────────────────────────────
-
-const AVATAR_SIZES: Record<string, { d: number; f: number }> = {
-  XS: { d: 24, f: 10 }, SM: { d: 32, f: 12 }, MD: { d: 40, f: 14 }, LG: { d: 48, f: 16 }, XL: { d: 56, f: 18 },
-}
-
 /**
  * Two kinds of avatar, chosen by `v.Variant` — both opt-in and inert (every
  * pre-existing call site omits `Variant` and gets the initials look, byte for
@@ -703,28 +558,6 @@ const AVATAR_SIZES: Record<string, { d: number; f: number }> = {
  *    the accent so a stack can show a range (see `AVATAR_STACK_HUES`); omit
  *    `Hue` and it uses the system's assigned avatar gradient.
  */
-function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const s = AVATAR_SIZES[v.Size ?? 'MD'] ?? AVATAR_SIZES.MD
-  const gradient = v.Variant === 'Gradient'
-  const hue = Number(v.Hue)
-  const background = gradient
-    ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t))
-    : (t.selectedSurface ?? soft(t, t.brandSolid))
-  return (
-    <span
-      style={{
-        ...baseFont(t),
-        width: s.d, height: s.d, borderRadius: radiusRoleOf(t, 'pill'),
-        background, color: t.brandText,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        ...typeOf(t, 'caption'),
-      }}
-    >
-      {gradient ? null : 'MD'}
-    </span>
-  )
-}
-
 // ── Toast (Status) ────────────────────────────────────────────────────────────
 
 function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
@@ -778,24 +611,6 @@ function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
       <span style={{ ...typeOf(t, 'button'), opacity: 0.6, cursor: 'pointer', flexShrink: 0 }}>✕</span>
     </div>
   )
-}
-
-// ── Icon (Size) ───────────────────────────────────────────────────────────────
-// Home glyph at small / medium / large — the same `Icon/role/*` tokens the
-// Figma Icon set binds its width and height to. Same px in every viewport.
-
-function IconSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const step = (v.Size ?? 'MD').toLowerCase()
-  const role: IconRole = step === 'sm' ? 'small' : step === 'lg' || step === 'xl' ? 'large' : 'medium'
-  return <PreviewIcon concept="home" size={iconRoleOf(t, role)} color={t.neutralText} />
-}
-
-// ── Spinner (Size) ────────────────────────────────────────────────────────────
-
-const SPINNER_SIZES: Record<string, number> = { SM: 16, MD: 24, LG: 32 }
-
-function SpinnerSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  return <SpecimenSpinner size={fieldPx(t, SPINNER_SIZES[v.Size ?? 'MD'] ?? 24)} color={t.brandSolid} track={t.neutralFill} />
 }
 
 // ── Divider (Orientation) ─────────────────────────────────────────────────────
@@ -875,168 +690,6 @@ function BreadcrumbSpecimen({ t }: { t: PreviewTokens }) {
       <span style={{ color: t.placeholderText }}>/</span>
       <span style={{ fontWeight: weightOf(t, 'medium', 500) }}>Design tokens</span>
     </nav>
-  )
-}
-
-function ProgressSpecimen({ t, w }: SpecimenProps) {
-  const width = w ?? 240
-  const stackGap = spacingRoleOf(t, 'gap-control', '8px')
-  return (
-    <div
-      style={{
-        ...baseFont(t),
-        width,
-        maxWidth: '100%',
-        minWidth: 0,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: stackGap,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: stackGap,
-          minWidth: 0,
-          ...typeOf(t, 'caption'),
-        }}
-      >
-        <span style={{ color: t.fgMuted, minWidth: 0 }}>Uploading…</span>
-        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500), flexShrink: 0 }}>60%</span>
-      </div>
-      <div
-        role="progressbar"
-        aria-valuenow={60}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        style={{
-          height: fieldPx(t, 6),
-          borderRadius: radiusRoleOf(t, 'full', '9999px'),
-          background: t.neutralFill,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: '60%',
-            height: '100%',
-            borderRadius: radiusRoleOf(t, 'full', '9999px'),
-            background: t.brandSolid,
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ── Button & Actions — attached / icon-only / floating / provider buttons ─────
-
-// ── Form Controls — grouped inputs, choices and upload targets ────────────────
-
-
-
-
-// Really draggable. Its value is LOCAL and drives nothing outside the specimen
-// — same contract as the Checkbox labelled "Remember me", which remembers
-// nothing: the label is sample copy, the component is the subject. Dragging is
-// what proves the track/fill/thumb tokens hold at every value rather than only
-// at the one hardcoded percentage, and the readout is the slider's own number,
-// so it can't lie.
-
-
-// ── Indicators — presence, chips, rating, file plates ─────────────────────────
-
-// A function declaration, not a lookup map of arrows: `gen-component-color-fields`
-// only follows declarations, and a map hid the dot's colours from the inspector.
-function presenceColor(t: PreviewTokens, status: string): string {
-  // The other three presences resolve from the status ramps, so retinting
-  // Success/Warning/Error moves them. Offline was a frozen grey, which meant a
-  // tinted-neutral system showed three on-brand dots and one from a palette it
-  // does not contain. It is the absence of a signal, so it reads as muted ink.
-  if (status === 'Away') return t.warningColor ?? '#f79009'
-  if (status === 'Busy') return t.errorColor
-  if (status === 'Offline') return t.fgMuted ?? '#717680'
-  return t.successColor ?? '#17b26a'
-}
-
-function StatusBadgeSpecimen({ t, v }: SpecimenProps) {
-  const status = v.Status ?? 'Online'
-  const c = presenceColor(t, status)
-  return (
-    <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 7), padding: `${spaceOf(t, 4)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'pill', '9999px'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), ...typeOf(t, 'caption') }}>
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: c }} aria-hidden />
-      {status}
-    </span>
-  )
-}
-
-function ChipSpecimen({ t, v }: SpecimenProps) {
-  const selected = (v.Selected ?? 'False') === 'True'
-  const dismissible = (v.Dismissible ?? 'False') === 'True'
-  const small = (v.Size ?? 'MD') === 'SM'
-  const inspecting = useInspectorActive()
-  const [hover, setHover] = useState(false)
-  const hot = !inspecting && hover
-  return (
-    <span
-      aria-pressed={selected}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: small ? 5 : 6, padding: `${fieldPx(t, small ? 3 : 5)}px ${fieldPx(t, small ? 10 : 12)}px`, borderRadius: radiusRoleOf(t, 'pill'),
-        background: selected ? (t.selectedSurface ?? selectedSurfaceOf(t)) : hot ? softer(t, t.brandSolid) : 'transparent',
-        border: `${strokeControl(t)} solid ${selected ? (t.accentBorder ?? t.brandSolid + '66') : hot ? (t.borderHover ?? borderHoverOf(t)) : (t.border ?? '#d0d5dd')}`,
-        color: selected ? t.brandText : t.neutralText,
-        ...typeOf(t, 'label'), cursor: 'pointer',
-        transition: STATE_TRANSITION,
-      }}
-    >
-      Design tokens
-      {dismissible && (
-        <PreviewIcon concept="close" size={small ? 9 : 10} color={selected ? t.brandText : t.neutralText} />
-      )}
-    </span>
-  )
-}
-
-function RatingSpecimen({ t, v }: SpecimenProps) {
-  const interactive = (v.Interactive ?? 'False') === 'True'
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px') }} aria-label="4 of 5 stars">
-      <span style={{ display: 'flex', gap: spaceOf(t, 3), cursor: interactive ? 'pointer' : 'default' }}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <PreviewIcon
-            key={i}
-            concept="star"
-            size={iconOf(18)}
-            color={i < 4 ? (t.warningColor ?? '#f79009') : (t.fgMuted || t.neutralFill)}
-          />
-        ))}
-      </span>
-      <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>4.0 · 128 reviews</span>
-    </div>
-  )
-}
-
-const FORMAT_COLORS: Record<string, string> = { PDF: '#d92d20', PNG: '#2e90fa', SVG: '#7a5af8', ZIP: '#f79009' }
-
-function FileFormatSpecimen({ t, v }: SpecimenProps) {
-  const format = v.Format ?? 'PDF'
-  const c = FORMAT_COLORS[format] ?? '#d92d20'
-  return (
-    <span style={{ position: 'relative', display: 'inline-block', width: 40, height: 48 }} aria-label={`${format} file`}>
-      <svg width="40" height="48" viewBox="0 0 40 48" fill="none" aria-hidden>
-        <path d="M4 4a3 3 0 0 1 3-3h18l11 11v32a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V4Z" fill={raisedBg(t)} stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
-        <path d="M25 1v8a3 3 0 0 0 3 3h8" stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
-      </svg>
-      <span style={{ position: 'absolute', left: -4, bottom: 8, padding: `${spaceOf(t, 2)} ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'control', '4px'), background: c, color: '#ffffff', ...typeOf(t, 'caption'), letterSpacing: 0.5 }}>
-        {format}
-      </span>
-    </span>
   )
 }
 
@@ -1686,7 +1339,6 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
 
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
-
 export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
@@ -1718,16 +1370,16 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Label: SkeletonLabelSpecimen,
   PasswordStrength: SkeletonPasswordStrengthSpecimen,
   // Indicators
-  Badge: BadgeSpecimen,
-  StatusBadge: StatusBadgeSpecimen,
-  Chip: ChipSpecimen,
-  Progress: ProgressSpecimen,
-  Spinner: SpinnerSpecimen,
-  Icon: IconSpecimen,
-  Rating: RatingSpecimen,
-  FileFormat: FileFormatSpecimen,
+  Badge: SkeletonBadgeSpecimen,
+  StatusBadge: SkeletonStatusBadgeSpecimen,
+  Chip: SkeletonChipSpecimen,
+  Progress: SkeletonProgressSpecimen,
+  Spinner: SkeletonSpinnerSpecimen,
+  Icon: SkeletonIconSpecimen,
+  Rating: SkeletonRatingSpecimen,
+  FileFormat: SkeletonFileFormatSpecimen,
   // Content & Surfaces
-  Avatar: AvatarSpecimen,
+  Avatar: SkeletonAvatarSpecimen,
   Card: SkeletonCardSpecimen,
   Divider: DividerSpecimen,
   Accordion: AccordionSpecimen,
@@ -1901,20 +1553,8 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
   // ` size="…"` only when the non-default size is selected — keeps snippets lean.
   const sizeProp = v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : ''
   switch (def.key) {
-    case 'Badge':
-      return `<Badge color="${low(v.Color) || 'brand'}" style="${low(v.Style) || 'soft'}"${sizeProp}>\n  ${v.Color ?? 'Brand'}\n</Badge>`
-    case 'Avatar':
-      return `<Avatar name="Maya Duscenko" size="${low(v.Size) || 'md'}" />`
     case 'Toast':
       return `<Toast\n  status="${low(v.Status) || 'success'}"\n  message="Changes saved."\n  action={{ label: 'Undo', onClick: undo }}\n/>`
-    case 'Icon':
-      // Phosphor's `size` is an SVG attribute and can't read a CSS var — size by style.
-    case 'Icon': {
-      const role = (v.Size ?? 'MD') === 'SM' ? 'small' : (v.Size ?? 'MD') === 'LG' ? 'large' : 'medium'
-      return `<House aria-hidden style={{ width: 'var(--icon-${role})', height: 'var(--icon-${role})' }} />`
-    }
-    case 'Spinner':
-      return `<Spinner size="${low(v.Size) || 'md'}" label="Loading…" />`
     case 'Divider':
       return `<Divider orientation="${low(v.Orientation) || 'horizontal'}" />`
     case 'Tooltip':
@@ -1923,51 +1563,6 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
       return `<Tabs defaultValue="overview" items={[\n  { label: 'Overview', value: 'overview' },\n  { label: 'Tokens', value: 'tokens' },\n]} />`
     case 'Breadcrumb':
       return `<Breadcrumb items={[\n  { label: 'Home', href: '/' },\n  { label: 'Library', href: '/library' },\n  { label: 'Design tokens' },\n]} />`
-    case 'Progress':
-      return `<Progress value={60} label="Uploading…" showValue />`
-    // Button & Actions
-    case 'InputGroup':
-      return `<InputGroup prefix="https://" suffix={<Button>Copy</Button>}>\n  <Input value="escala.design" />\n</InputGroup>`
-    case 'Textarea':
-      return `<Textarea\n  label="Description"\n  rows={4}\n  maxLength={200}${v.State === 'Error' ? '\n  error="Description is required."' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`
-    case 'InputOTP':
-      return `<InputOTP length={6}${sizeProp} onComplete={verify} />`
-    case 'InputStepper':
-      return `<InputStepper value={12} min={0} max={99} step={1} />`
-    case 'InputTag':
-      return `<InputTag value={['tokens', 'figma']} onAdd={add} onRemove={remove} />`
-    case 'Combobox':
-      return `<Combobox\n  options={fonts}\n  placeholder="Search fonts…"\n  onSearch={filter}\n/>`
-    case 'CheckboxGroup':
-      return `<CheckboxGroup\n  label="Notify me about"\n  options={options}\n  value={['comments', 'members']}\n/>`
-    case 'Radio':
-      return `<Radio${v.Checked === 'True' ? ' checked' : ''}${sizeProp}${v.State === 'Disabled' ? ' disabled' : ''} label="Monthly billing" />`
-    case 'RadioGroup':
-      return `<RadioGroup\n  label="Billing period"\n  options={options}\n  value="monthly"\n/>`
-    case 'SwitchGroup':
-      return `<SwitchGroup label="Notifications" items={[\n  { label: 'Email notifications', checked: true },\n  { label: 'Push notifications', checked: true },\n]} />`
-    case 'Slider':
-      return `<Slider value={60} min={0} max={100} step={5} />`
-    case 'FileUpload':
-      return `<FileUpload accept=".pdf,.png,.svg" multiple onFiles={upload} />`
-    case 'Dropzone':
-      return `<Dropzone\n  accept=".svg,.png,.pdf"\n  maxSize={10 * 1024 * 1024}\n  onDrop={upload}\n/>`
-    case 'Field':
-      return `<Field label="Workspace name" hint="Shown to your teammates." required>\n  <Input placeholder="Acme Inc." />\n</Field>`
-    case 'Label':
-      return `<Label htmlFor="email"${v.Required === 'True' ? ' required' : ''}>Email address</Label>`
-    case 'PasswordStrength':
-      return `<PasswordStrength value={password} rules={defaultRules} />`
-    // Indicators
-    case 'StatusBadge':
-      return `<StatusBadge status="${low(v.Status) || 'online'}" showLabel />`
-    case 'Chip':
-      return `<Chip label="Design tokens"${sizeProp}${v.Selected === 'True' ? ' selected' : ''}${v.Dismissible === 'True' ? ' onDismiss={remove}' : ''} />`
-    case 'Rating':
-      return `<Rating value={4}${v.Interactive === 'True' ? ' onChange={setScore}' : ''} count={128} />`
-    case 'FileFormat':
-      return `<FileFormat format="${v.Format ?? 'PDF'}" size="md" />`
-    // Content & Surfaces
     case 'Accordion':
       return `<Accordion type="single" defaultValue="tokens" items={[\n  { title: 'What are design tokens?', content: … },\n  { title: 'How does Figma sync work?', content: … },\n]} />`
     case 'AspectRatio':

@@ -14,6 +14,28 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
+  Badge: (v) => {
+    const style = low(v.Style) || 'soft'
+    const color = low(v.Color) || 'brand'
+    return `import { Badge } from "@/components/ui/badge"\n\n<Badge${style !== 'soft' ? ` variant="${style}"` : ''}${color !== 'brand' ? ` color="${color}"` : ''}${sizeProp(v)}>\n  ${v.Color ?? 'Brand'}\n</Badge>`
+  },
+  StatusBadge: (v) =>
+    `import { StatusBadge } from "@/components/ui/badge"\n\n<StatusBadge status="${v.Status ?? 'Online'}" />`,
+  Chip: (v) =>
+    `import { Chip } from "@/components/ui/chip"\n\n<Chip${v.Selected === 'True' ? ' selected' : ''}${sizeProp(v)}${v.Dismissible === 'True' ? ' onRemove={remove}' : ''} onPressedChange={setSelected}>\n  Design tokens\n</Chip>`,
+  Progress: () =>
+    `import { Progress } from "@/components/ui/progress"\n\n<Progress label="Uploading…" value={60} />`,
+  Spinner: (v) =>
+    `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner${sizeProp(v)} label="Loading…" />`,
+  Icon: (v) =>
+    `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
+  Rating: (v) =>
+    `import { Rating } from "@/components/ui/rating"\n\n<Rating value={4}${v.Interactive === 'True' ? ' onValueChange={setScore}' : ''} star={<Star />} label="4.0 · 128 reviews" />`,
+  FileFormat: (v) =>
+    `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'PDF'}" />`,
+  Avatar: (v) =>
+    `import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"\n\n<Avatar${sizeProp(v)}>\n  <AvatarImage src={user.image} alt="Maya Duscenko" />\n  <AvatarFallback>MD</AvatarFallback>\n</Avatar>`,
+
   Textarea: (v) =>
     `import { TextareaField } from "@/components/ui/textarea"\n\n<TextareaField\n  label="Description"\n  hint="${v.State === 'Error' ? 'Description is required.' : 'Max 200 characters.'}"\n  maxLength={200}${v.State === 'Error' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`,
   InputGroup: () =>
