@@ -20,6 +20,7 @@ import { QUICK_SETTINGS_ID } from './ThemeQuickSettingsRail'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import DimensionSelect from '../ui/DimensionSelect'
+import LayoutTokenDetails, { layoutTokenKind } from './LayoutTokenDetails'
 import VariableSelect from '../ui/VariableSelect'
 import { parseDimension } from '../../lib/dimensions'
 import { useDimensions } from '../../lib/useDimensions'
@@ -321,6 +322,21 @@ export default function SemanticTokenDrawer({
   } = useArchitectureTokens(previewTheme, previewAppearance, overlay)
 
   const modeLabel = (mode: string) => (kindOf(mode) === 'dark' ? 'Dark' : 'Light')
+
+  const layoutKind = layoutTokenKind(tokenId)
+  if (layoutKind && tokenId) {
+    return (
+      <LayoutTokenDetails
+        kind={layoutKind}
+        tokenId={tokenId}
+        previewTheme={previewTheme}
+        previewPlatform={previewPlatform}
+        stylePreview={stylePreview}
+        onClose={onClose}
+        onOpenInVariables={onOpenInVariables}
+      />
+    )
+  }
 
   const geometry = geometryKind(tokenId)
   if (geometry && tokenId) {

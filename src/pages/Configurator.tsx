@@ -1002,7 +1002,18 @@ export default function Configurator() {
       setTypeReveal((prev) => ({ key: tokenId.slice('text.'.length), seq: (prev?.seq ?? 0) + 1 }))
       return
     }
-    const layout = tokenId.startsWith('radius.') ? 'radius' : tokenId.startsWith('size.') ? 'sizes' : null
+    if (tokenId.startsWith('shadow.')) {
+      setExportMode(null)
+      setTab('foundations')
+      setThemeWorkspaceTab('primitives')
+      setActiveFoundation('shadow')
+      return
+    }
+    const layout = tokenId.startsWith('radius.') ? 'radius'
+      : tokenId.startsWith('size.') ? 'sizes'
+      : tokenId.startsWith('spacing.') ? 'spacing'
+      : tokenId.startsWith('stroke.') ? 'stroke'
+      : null
     if (layout) {
       setExportMode(null)
       setTab('foundations')

@@ -158,6 +158,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > them "kept for reference" are history. A new component is a file in `escala-ui/`, a
 > recipe and a plugin gate — never a second renderer.
 
+> **UPDATE (2026-10-18): the INSPECTOR traces every token a component reads — colour, length and
+> type — property by property, from its RECIPE (`lib/tokenTrace.ts`).** Pointing at a recipe
+> component (`[data-escala]`) shows `TokenTraceList` (`preview/artefacts/TokenTracePanel.tsx`):
+> sections per anatomy slot (Root · Label · Icon · Thumb …), each row = property (Background,
+> Text color, Border, Radius, Padding X/Y, Gap, Height, Border width, Shadow, Typography with
+> family · size · line height · weight · tracking) → copyable CSS variable → resolved value → ref.
+> Filters All · Color · Layout · Type; "States" reveals hover / focus / checked overrides. A row
+> opens Token Details: colour, `radius.*`, `text.*`, size ROLES (geometry drawer) and
+> `spacing.*` / `stroke.*` / `shadow.*` (`LayoutTokenDetails.tsx`). A spacing or stroke ROLE
+> re-points like its Variables table; a spacing PRIMITIVE step (`spacing.2`, what most recipes
+> pin) edits the BASE UNIT, which rescales every step — the drawer says so; a stroke step and a
+> shadow step edit their value directly (shadow also offers the ramp preset). The marker's own component wins
+> over a wrapping recipe (a Switch inside its Field traces the Switch). Groups and the page keep
+> the measured role list. `tokenTrace.test.ts` asserts every reference of all recipes resolves.
+
 > **UPDATE (2026-10-18): `border.control` is a ROLE again — the field outline — and every agent
 > paste is ONE brand, ONE appearance.** Supersedes "border.control was folded into border.strong".
 > - `border.control` / `border.control-hover` are solved to WCAG 1.4.11 3:1 with APCA Lc 15

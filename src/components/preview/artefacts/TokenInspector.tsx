@@ -59,6 +59,8 @@ import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
+import { slotUnder, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
+import { TokenTraceList } from './TokenTracePanel'
 
 const InspectorActiveContext = createContext(false)
 
@@ -180,6 +182,11 @@ interface Target {
   hitIds?: string[]
   /** Which appearance subtree this target was measured in — mixed collage. */
   appearance: ThemeAppearance
+  /** Component only: every token its recipe reads, property by property.
+   *  Absent for a non-recipe target, which keeps the role list. */
+  trace?: ElementTrace | null
+  /** Component only: the anatomy slot under the pointer (`label`, `icon`). */
+  hitSlot?: string | null
 }
 
 /** The control being attributed inside a pinned group. */
@@ -358,7 +365,9 @@ export function InspectorOverlay({
     const { roles, measured } = inspectElement(t, label, el)
     const inspectEl = inspectHitTarget(el, hit ?? null)
     const hitIds = inspectEl === el ? undefined : paintedRoleIds(roles, inspectEl)
-    return { kind: 'component', el, label, rect, roles, measured, hitIds, appearance: appearanceFor(el) }
+    const trace = traceElement(t, el)
+    const hitSlot = trace ? slotUnder(el, hit ?? null, trace.component) : null
+    return { kind: 'component', el, label, rect, roles, measured, hitIds, appearance: appearanceFor(el), trace, hitSlot }
   }, [tokensFor, appearanceFor])
 
   const buildGroup = useCallback((el: Element): Target | null => {
@@ -408,7 +417,9 @@ export function InspectorOverlay({
         : buildPage(current.el)
     if (!next) return
     const stamp = (roles: { id: string; css: string }[]) => roles.map((role) => `${role.id}:${role.css}`).join('|')
-    if (stamp(current.roles) === stamp(next.roles)) return
+    const traceStamp = (target: Target) => (target.trace?.slots ?? [])
+      .flatMap((slot) => slot.rows.map((row) => `${row.key}:${row.value}`)).join('|')
+    if (stamp(current.roles) === stamp(next.roles) && traceStamp(current) === traceStamp(next)) return
     setPin((prev) => (prev && prev.el === current.el ? { ...next, rect: prev.rect } : prev))
   }, [tokensByAppearance, buildComponent, buildGroup, buildPage])
 
@@ -455,6 +466,7 @@ export function InspectorOverlay({
           && prev.roles.length === target.roles.length
           && prev.roles.every((role, i) => role.id === target.roles[i]?.id)
           && (prev.hitIds ?? []).join('|') === (target.hitIds ?? []).join('|')
+          && prev.hitSlot === target.hitSlot
           ? prev
           : target,
       )
@@ -607,7 +619,8 @@ export function InspectorOverlay({
   const touched = !lit && kind === 'component' && target.hitIds?.length ? new Set(target.hitIds) : null
   // Wide enough that the longest role (`status.critical.surface-solid`) and
   // its hex both fit on one row. The rail it opens stays 240.
-  const BADGE_W = 360
+  const trace = kind === 'component' ? target.trace ?? null : null
+  const BADGE_W = trace ? 384 : 360
   // Placement is solved against the room that ACTUALLY exists, not a guessed
   // height — the badge is one row per role and a whole module reports dozens of
   // them, so a fixed estimate (this shipped at 180px first) puts the tail of a
@@ -631,6 +644,37 @@ export function InspectorOverlay({
   // nowhere to go there.
   const tableRole = (focus?.ids ?? []).find((id) => colorRoles.some((role) => role.id === id)) ?? colorRoles[0]?.id
 
+  const a11yBlock = (a11y.contrasts.length > 0 || a11y.touch) && (
+              <div className="flex flex-shrink-0 flex-col gap-1 border-b border-line/60 px-3 py-1.5 text-mini">
+                <span className="font-medium text-fg">{t('Accessibility')}</span>
+                <ul className="m-0 flex flex-col gap-0.5 p-0">
+                  {a11y.contrasts.map((check) => (
+                    <li key={check.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-fg-muted" title={check.label}>
+                        {t(check.label)}
+                      </span>
+                      <span
+                        className={`flex-shrink-0 font-mono tabular-nums ${check.pass ? 'text-status-success' : 'text-status-danger'}`}
+                        title={`${check.fgId} on ${check.bgId}`}
+                      >
+                        {check.ratio.toFixed(1)}:1 {check.pass ? (check.target >= 4.5 ? 'AA' : '3:1') : check.target >= 4.5 ? t('Fails AA') : t('Fails 3:1')}
+                      </span>
+                    </li>
+                  ))}
+                  {a11y.touch && (
+                    <li className="flex items-center justify-between gap-2">
+                      <span className="text-fg-muted">{t('Touch target')}</span>
+                      <span
+                        className={`font-mono tabular-nums ${a11y.touch.pass ? 'text-status-success' : 'text-status-danger'}`}
+                      >
+                        {a11y.touch.px}px {a11y.touch.pass ? '≥' : '<'} {a11y.touch.target}px
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )
+
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[70]">
       {/* A group is the coarser target, so it gets the quieter ring — with a
@@ -647,13 +691,40 @@ export function InspectorOverlay({
         {/* Pinned: the component's NAME is what tells you the badge changed
             when you move between two specimens, so it must not be the thing
             that scrolls away. */}
-        <div className="flex flex-shrink-0 items-center gap-1.5 border-b border-line px-3 py-2">
-          <InspectGlyph size={16} className="text-fg-faint" />
+        <div className="flex flex-shrink-0 items-start gap-2 border-b border-line px-3 py-2.5">
+          <InspectGlyph size={16} className="mt-0.5 flex-shrink-0 text-accent-ui" />
+          <div className="min-w-0 flex-1">
+            <div className="text-nano font-semibold uppercase tracking-widest text-fg-faint">
+              {kind === 'group' ? t('Group') : kind === 'page' ? t('Page') : t('Inspecting')}
+            </div>
+            <div
+              className="truncate font-mono text-ui text-accent-ui"
+              title={focus ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit` : undefined}
+            >
+              {kind === 'component' || focus
+                ? <>&lt;{focus ? focus.label : (trace?.component ?? label)} /&gt;</>
+                : label}
+              {trace && target.hitSlot && target.hitSlot !== trace.slots[0]?.slot && trace.slots.some((slot) => slot.slot === target.hitSlot) && (
+                <span className="text-fg-faint"> › {target.hitSlot}</span>
+              )}
+            </div>
+            {trace && Object.keys(trace.axes).length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {Object.entries(trace.axes)
+                  .filter(([axis, value]) => !(axis === 'State' && value === 'Default'))
+                  .map(([axis, value]) => (
+                    <span key={axis} className="rounded border border-line/70 px-1.5 py-px font-mono text-nano text-fg-muted">
+                      <span className="text-fg-faint">{axis.toLowerCase()}=</span>{value}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
           <span
-            className="min-w-0 flex-1 truncate text-caption font-normal tracking-[0.18px] text-fg"
-            title={focus ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit` : undefined}
+            className="mt-0.5 flex-shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-micro tabular-nums text-fg-muted"
+            title={trace ? `${traceTokenCount(trace)} tokens` : `${roles.length} roles`}
           >
-            {focus ? focus.label : label}
+            {trace ? traceTokenCount(trace) : roles.length}
           </span>
           {onOpenTable && tableRole && (
             <button
@@ -666,7 +737,6 @@ export function InspectorOverlay({
               <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: VARIABLES_MASK, mask: VARIABLES_MASK }} />
             </button>
           )}
-          <span className="flex-shrink-0 text-micro tabular-nums text-fg-faint">{roles.length}</span>
           {pin && (
             <button
               type="button"
@@ -681,7 +751,20 @@ export function InspectorOverlay({
             </button>
           )}
         </div>
-        {roles.length === 0 ? (
+        {trace ? (
+          <>
+            {a11yBlock}
+            <TokenTraceList
+              trace={trace}
+              hitSlot={target.hitSlot}
+              onPick={(row) => {
+                if (!row.pickId) return
+                if (!pinRef.current) { setPin(target); setHover(null) }
+                onPick(row.pickId, row.value, target.appearance)
+              }}
+            />
+          </>
+        ) : roles.length === 0 ? (
           <p className="m-0 px-3 py-2.5 text-mini text-fg-faint">
             No mapped roles. {INSPECTOR_BLIND_SPOT}
           </p>
@@ -712,36 +795,7 @@ export function InspectorOverlay({
                 })}
               </div>
             )}
-            {(a11y.contrasts.length > 0 || a11y.touch) && (
-              <div className="flex flex-shrink-0 flex-col gap-1 border-b border-line/60 px-3 py-1.5 text-mini">
-                <span className="font-medium text-fg">{t('Accessibility')}</span>
-                <ul className="m-0 flex flex-col gap-0.5 p-0">
-                  {a11y.contrasts.map((check) => (
-                    <li key={check.id} className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-fg-muted" title={check.label}>
-                        {t(check.label)}
-                      </span>
-                      <span
-                        className={`flex-shrink-0 font-mono tabular-nums ${check.pass ? 'text-status-success' : 'text-status-danger'}`}
-                        title={`${check.fgId} on ${check.bgId}`}
-                      >
-                        {check.ratio.toFixed(1)}:1 {check.pass ? (check.target >= 4.5 ? 'AA' : '3:1') : check.target >= 4.5 ? t('Fails AA') : t('Fails 3:1')}
-                      </span>
-                    </li>
-                  ))}
-                  {a11y.touch && (
-                    <li className="flex items-center justify-between gap-2">
-                      <span className="text-fg-muted">{t('Touch target')}</span>
-                      <span
-                        className={`font-mono tabular-nums ${a11y.touch.pass ? 'text-status-success' : 'text-status-danger'}`}
-                      >
-                        {a11y.touch.px}px {a11y.touch.pass ? '≥' : '<'} {a11y.touch.target}px
-                      </span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            )}
+            {a11yBlock}
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto p-1">
                   {visibleRoles.map((role) => {
                     const isLit = lit?.has(role.id) ?? touched?.has(role.id) ?? false
@@ -802,7 +856,7 @@ export function InspectorOverlay({
         )}
         {/* Only the union can under-report; a measured list is what the element
             actually paints. */}
-        {!measured && roles.length > 0 && (
+        {!trace && !measured && roles.length > 0 && (
           <p className="m-0 flex-shrink-0 border-t border-line/60 px-3 py-1.5 text-nano text-fg-faint">
             Every role this component can use. {INSPECTOR_BLIND_SPOT}
           </p>
