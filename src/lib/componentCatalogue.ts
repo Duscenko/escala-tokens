@@ -82,6 +82,26 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'role="group" on the container — add an aria-label. Each item is a real Button.',
   },
   {
+    key: 'ToggleGroup',
+    label: 'Toggle Group',
+    category: 'Button & Actions',
+    description: 'shadcn/ui Toggle Group: a set of two-state buttons — one or several pressed at a time.',
+    usage: 'Use for formatting toggles (bold · italic · underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.',
+    axes: [
+      { name: 'Variant', values: ['default', 'outline'] },
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+    ],
+    figmaSets: ['Toggle Group'],
+    props: [
+      { name: 'type', type: '"single" | "multiple"', description: 'One pressed item, or any number.' },
+      { name: 'variant', type: '"default" | "outline"', description: 'shadcn\'s toggle variants: no edge, or the control boundary.' },
+      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Item height — the Button heights.' },
+      { name: 'value / defaultValue / onValueChange', type: 'string | string[]', description: 'The pressed item(s).' },
+      { name: 'ToggleGroupItem value', type: 'component', description: 'One toggle; Radix writes data-state="on" when pressed.' },
+    ],
+    accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).',
+  },
+  {
     key: 'SocialLoginButton',
     label: 'Social Login Button',
     category: 'Button & Actions',
@@ -228,6 +248,24 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'SelectContent / SelectItem', type: 'component', description: 'The list; it portals into the theme scope.' },
     ],
     accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".',
+  },
+  {
+    key: 'NativeSelect',
+    label: 'Native Select',
+    category: 'Form Controls',
+    description: 'shadcn/ui Native Select: the browser\'s own <select>, drawn as the field box with a chevron.',
+    usage: 'Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.',
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Disabled'] },
+    ],
+    figmaSets: ['Native Select'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'The Select heights.' },
+      { name: 'NativeSelectOption / NativeSelectOptGroup', type: 'component', description: 'The options, as <option> / <optgroup>.' },
+      { name: '…select attributes', type: 'React.ComponentProps<"select">', description: 'value, onChange, disabled, name — a real <select>.' },
+    ],
+    accessibility: 'A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field).',
   },
   {
     key: 'Combobox',
@@ -482,6 +520,20 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.',
   },
   {
+    key: 'Kbd',
+    label: 'Kbd',
+    category: 'Indicators',
+    description: 'shadcn/ui Kbd: a keyboard key cap, and KbdGroup for a shortcut of several keys.',
+    usage: 'Use to show a shortcut beside a command or in a tooltip (⌘ K). Not for buttons — a Kbd is not clickable.',
+    axes: [],
+    figmaSets: ['Kbd'],
+    props: [
+      { name: 'children', type: 'ReactNode', description: 'The key (⌘, Shift, K).' },
+      { name: 'KbdGroup', type: 'component', description: 'Spaces several Kbd as one shortcut.' },
+    ],
+    accessibility: 'Rendered as <kbd>, which assistive tech announces as keyboard input. Spell modifier names in an aria-label when the glyph alone is ambiguous.',
+  },
+  {
     key: 'Rating',
     label: 'Rating',
     category: 'Indicators',
@@ -573,6 +625,22 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Headers are buttons with aria-expanded + aria-controls on their panel.',
   },
   {
+    key: 'Collapsible',
+    label: 'Collapsible',
+    category: 'Content & Surfaces',
+    description: 'shadcn/ui Collapsible: one trigger that shows or hides a panel of content.',
+    usage: 'Use for a single expandable region (more repositories, advanced options). For several stacked sections use Accordion.',
+    axes: [{ name: 'Open', values: ['False', 'True'] }],
+    figmaSets: ['Collapsible'],
+    props: [
+      { name: 'open / defaultOpen / onOpenChange', type: 'boolean', description: 'Controlled or uncontrolled visibility.' },
+      { name: 'CollapsibleTrigger', type: 'component', description: 'The row that toggles it; the chevron turns when open.' },
+      { name: 'CollapsibleContent', type: 'component', description: 'The panel shown when open.' },
+      { name: 'CollapsibleItem', type: 'component', description: 'A bordered row inside the panel.' },
+    ],
+    accessibility: 'Radix Collapsible: the trigger is a button with aria-expanded and aria-controls; Space / Enter toggles.',
+  },
+  {
     key: 'AspectRatio',
     label: 'Aspect Ratio',
     category: 'Content & Surfaces',
@@ -647,6 +715,22 @@ export const COMPONENTS: ComponentDef[] = [
     ],
     accessibility: 'Container is keyboard-scrollable (tabIndex 0 + arrow keys) with an aria-label.',
   },
+  {
+    key: 'Table',
+    label: 'Table',
+    category: 'Content & Surfaces',
+    description: 'shadcn/ui Table: header, rows, cells, footer and caption — a hairline under each row.',
+    usage: 'Use for tabular data people compare across columns. For a list of items with one action each prefer a list; for sorting and filtering build a data table on top.',
+    axes: [],
+    figmaSets: ['Table'],
+    props: [
+      { name: 'TableHeader / TableBody / TableFooter', type: 'component', description: '<thead>, <tbody>, <tfoot>.' },
+      { name: 'TableRow', type: 'component', description: 'A row; data-state="selected" highlights it.' },
+      { name: 'TableHead / TableCell', type: 'component', description: 'Header and body cells.' },
+      { name: 'TableCaption', type: 'component', description: 'A caption under the table.' },
+    ],
+    accessibility: 'A real <table>: header cells are <th> so each cell is announced with its column. Give the table a caption or aria-label.',
+  },
   // ── Feedback ────────────────────────────────────────────────────────────────
   {
     key: 'Sonner',
@@ -679,6 +763,34 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'children (icon)', type: 'ReactNode', description: 'An <svg> (or AlertIcon) as the first child takes the icon column.' },
     ],
     accessibility: 'role="alert". The icon is decorative; the title carries the meaning.',
+  },
+  {
+    key: 'Skeleton',
+    label: 'Skeleton',
+    category: 'Feedback',
+    description: 'shadcn/ui Skeleton: a placeholder block that pulses while content loads.',
+    usage: 'Use in the shape of the content that is coming (a line, an avatar, a card) so the layout does not jump. For an action in progress use Spinner.',
+    axes: [],
+    figmaSets: ['Skeleton'],
+    props: [
+      { name: 'className / style', type: 'string | CSSProperties', description: 'The size and shape of the content it stands in for.' },
+    ],
+    accessibility: 'Decorative: mark the loading region with aria-busy="true" and hide the skeletons with aria-hidden.',
+  },
+  {
+    key: 'Empty',
+    label: 'Empty',
+    category: 'Feedback',
+    description: 'shadcn/ui Empty: the empty state — media, title, description and the actions under them.',
+    usage: 'Use when a list, search or page has nothing to show yet; say why and offer the next step. Not for errors — use Alert.',
+    axes: [{ name: 'Media', values: ['default', 'icon'] }],
+    figmaSets: ['Empty'],
+    props: [
+      { name: 'EmptyHeader / EmptyTitle / EmptyDescription', type: 'component', description: 'The message.' },
+      { name: 'EmptyMedia variant', type: '"default" | "icon"', description: 'An illustration or avatar as is, or a glyph on a muted tile.' },
+      { name: 'EmptyContent', type: 'component', description: 'The actions (a Button, a link).' },
+    ],
+    accessibility: 'Keep the title a real heading when it labels a region; the actions are ordinary buttons and links.',
   },
   // ── Navigation ──────────────────────────────────────────────────────────────
   {

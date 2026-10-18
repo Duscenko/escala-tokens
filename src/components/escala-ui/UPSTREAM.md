@@ -25,6 +25,13 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `tabs.tsx` | `bases/radix/ui/tabs.tsx` | TabsList `variant` default · line as `data-variant` |
 | `sidebar.tsx` | `bases/radix/ui/sidebar.tsx` | the parts and their props (`variant`/`side`, MenuButton `isActive`/`variant`/`size`); no SidebarProvider/collapsible/mobile sheet yet |
 | `dropdown-menu.tsx` · `context-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` · `context-menu.tsx` | item `variant` default · destructive |
+| `toggle-group.tsx` | `bases/radix/ui/toggle-group.tsx` (+ `toggle.tsx`'s variants) | `variant` default · outline, `size` default · sm · lg on the group as `data-variant` / `data-size`; no `spacing` prop yet |
+| `native-select.tsx` | `bases/radix/ui/native-select.tsx` | the wrapper is the recipe root (State axis); chevron is a prop; adds `forceState` |
+| `kbd.tsx` | `bases/radix/ui/kbd.tsx` | verbatim shape; KbdGroup spaces only |
+| `skeleton.tsx` | `bases/radix/ui/skeleton.tsx` | verbatim shape |
+| `empty.tsx` | `bases/radix/ui/empty.tsx` | all parts; EmptyMedia `variant` as `data-variant` on the media part; the dash is inline |
+| `collapsible.tsx` | `bases/radix/ui/collapsible.tsx` | Radix Collapsible; adds the chevron to the trigger and `CollapsibleItem` (the demo's row) |
+| `table.tsx` | `bases/radix/ui/table.tsx` | all parts; `border-collapse` so row hairlines draw |
 
 Rules (design-plans/shadcn-component-skeleton.md):
 - Appearance lives in the generated sheet (`lib/recipeStyles.ts`) from

@@ -10,6 +10,7 @@
   <url><loc>https://www.escalatokens.com/components</loc></url>
   <url><loc>https://www.escalatokens.com/components/Button</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroup</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ToggleGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/SocialLoginButton</loc></url>
   <url><loc>https://www.escalatokens.com/components/AppStoreBadge</loc></url>
   <url><loc>https://www.escalatokens.com/components/Input</loc></url>
@@ -19,6 +20,7 @@
   <url><loc>https://www.escalatokens.com/components/InputStepper</loc></url>
   <url><loc>https://www.escalatokens.com/components/InputTag</loc></url>
   <url><loc>https://www.escalatokens.com/components/Select</loc></url>
+  <url><loc>https://www.escalatokens.com/components/NativeSelect</loc></url>
   <url><loc>https://www.escalatokens.com/components/Combobox</loc></url>
   <url><loc>https://www.escalatokens.com/components/Checkbox</loc></url>
   <url><loc>https://www.escalatokens.com/components/RadioGroup</loc></url>
@@ -35,19 +37,24 @@
   <url><loc>https://www.escalatokens.com/components/Progress</loc></url>
   <url><loc>https://www.escalatokens.com/components/Spinner</loc></url>
   <url><loc>https://www.escalatokens.com/components/Icon</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Kbd</loc></url>
   <url><loc>https://www.escalatokens.com/components/Rating</loc></url>
   <url><loc>https://www.escalatokens.com/components/FileFormat</loc></url>
   <url><loc>https://www.escalatokens.com/components/Avatar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Card</loc></url>
   <url><loc>https://www.escalatokens.com/components/Separator</loc></url>
   <url><loc>https://www.escalatokens.com/components/Accordion</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Collapsible</loc></url>
   <url><loc>https://www.escalatokens.com/components/AspectRatio</loc></url>
   <url><loc>https://www.escalatokens.com/components/Dialog</loc></url>
   <url><loc>https://www.escalatokens.com/components/Popover</loc></url>
   <url><loc>https://www.escalatokens.com/components/Tooltip</loc></url>
   <url><loc>https://www.escalatokens.com/components/ScrollArea</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Table</loc></url>
   <url><loc>https://www.escalatokens.com/components/Sonner</loc></url>
   <url><loc>https://www.escalatokens.com/components/Alert</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Skeleton</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Empty</loc></url>
   <url><loc>https://www.escalatokens.com/components/Tabs</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/SegmentedControl</loc></url>

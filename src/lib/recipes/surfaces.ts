@@ -158,3 +158,48 @@ export const SCROLL_AREA: ComponentRecipe = {
     })),
   ],
 }
+
+// ── Collapsible ────────────────────────────────────────────────────────────
+// shadcn ships Collapsible unstyled; this paints its demo: a trigger row (label
+// and a ghost icon button) over bordered rows. Open is a Figma property.
+
+export const COLLAPSIBLE: ComponentRecipe = {
+  key: 'Collapsible',
+  slots: ['root', 'trigger', 'icon', 'content', 'item'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.2' },
+      trigger: { text: c('content.primary'), font: 'type.label', gap: 'spacing.4', paddingX: 'spacing.1', paddingY: 'spacing.1' },
+      icon: { text: c('content.secondary'), radius: 'radius.action', width: 'size.compact', height: 'size.compact' },
+      'trigger:hover': { text: c('content.primary') },
+      content: { gap: 'spacing.2' },
+      item: {
+        stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        paddingX: 'spacing.4', paddingY: 'spacing.2', text: c('content.primary'), font: 'type.body-sm',
+      },
+    })),
+  ],
+}
+
+// ── Table ──────────────────────────────────────────────────────────────────
+// shadcn's Table: a hairline under each row, a muted hover and selected row,
+// medium-weight heads at the control height, a muted footer.
+
+export const TABLE: ComponentRecipe = {
+  key: 'Table',
+  slots: ['root', 'row', 'head', 'cell', 'footer', 'caption'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: { text: c('content.primary'), font: 'type.body-sm' },
+      row: { stroke: c('border.default'), strokeBottomWidth: 'stroke.divider' },
+      'row:hover': { fill: c('action.ghost.hover') },
+      'row[data-state="selected"]': { fill: c('surface.selected') },
+      head: { text: c('content.primary'), font: 'type.label', height: 'size.control', paddingX: 'spacing.2' },
+      cell: { paddingX: 'spacing.2', paddingY: 'spacing.2' },
+      footer: { fill: c('surface.layer-2'), font: 'type.label' },
+      caption: { text: c('content.secondary'), font: 'type.body-sm' },
+    })),
+  ],
+}

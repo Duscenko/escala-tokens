@@ -19,11 +19,12 @@ import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibrari
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen,
-  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen,
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
   SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen,
+  SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonBreadcrumbSpecimen,
@@ -37,11 +38,13 @@ import {
   SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
   SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen,
+  SkeletonNativeSelectSpecimen,
 } from './skeleton/forms'
 import {
   SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen,
   SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
+  SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
 } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
@@ -345,6 +348,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
+  ToggleGroup: SkeletonToggleGroupSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
   AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
@@ -355,6 +359,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InputStepper: SkeletonInputStepperSpecimen,
   InputTag: SkeletonInputTagSpecimen,
   Select: SkeletonSelectSpecimen,
+  NativeSelect: SkeletonNativeSelectSpecimen,
   Combobox: SkeletonComboboxSpecimen,
   Checkbox: SkeletonCheckboxSpecimen,
   RadioGroup: SkeletonRadioGroupSpecimen,
@@ -374,10 +379,13 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Icon: SkeletonIconSpecimen,
   Rating: SkeletonRatingSpecimen,
   FileFormat: SkeletonFileFormatSpecimen,
+  Kbd: SkeletonKbdSpecimen,
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
   Card: SkeletonCardSpecimen,
   Separator: SkeletonSeparatorSpecimen,
+  Collapsible: SkeletonCollapsibleSpecimen,
+  Table: SkeletonTableSpecimen,
   Accordion: SkeletonAccordionSpecimen,
   AspectRatio: SkeletonAspectRatioSpecimen,
   Dialog: SkeletonDialogSpecimen,
@@ -387,6 +395,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Feedback
   Sonner: SkeletonSonnerSpecimen,
   Alert: SkeletonAlertSpecimen,
+  Skeleton: SkeletonSkeletonSpecimen,
+  Empty: SkeletonEmptySpecimen,
   // Navigation
   Tabs: SkeletonTabsSpecimen,
   TabMenu: SkeletonTabMenuSpecimen,

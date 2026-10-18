@@ -483,8 +483,15 @@ pasa de 18 a 16 px porque ahora sale de un paso de espaciado.
   (`snippetFor` / `agentContextMarkdown` sí podrían migrar aparte, sin tocar el MCP.)
 - **Fase 4 · Exportación — lo que falta:** probar el registry contra un sistema publicado
   real en producción tras el deploy (en local se probó con `?project=dev`).
-- **Fase 5 · Nuevos:** los ~22 de "solo shadcn" (Calendar, Sheet, Table…). Cada uno
-  necesita gate + spec en el plugin antes que entrada en el catálogo. Decisión 4 pendiente.
+- **Fase 5 · Nuevos — lote 1 hecho (2026-10-18, store v97, plugin 0.12.0):** ToggleGroup,
+  NativeSelect, Kbd, Skeleton, Empty, Collapsible, Table. Cada uno: archivo en `escala-ui/`,
+  receta, catálogo, specimen + snippet, gate + spec + builder en el plugin (capas con los
+  nombres de los slots: `item-on`, `media-icon`, `row-selected`), ítem del registry. Decisiones:
+  el `variant` de EmptyMedia es un estado del slot (`media[data-variant="icon"]`), con `Media`
+  como propiedad de Figma; `Open` de Collapsible es propiedad de Figma; Toggle suelto no se
+  añadió (solo ToggleGroup). La v97 añade las 7 claves solo a una selección que ya tenía TODO.
+  **Quedan ~15:** AlertDialog, Calendar, Carousel, Chart, Drawer, Sheet, HoverCard, Menubar,
+  NavigationMenu, Resizable, Item, Form, Attachment, Message/Bubble (+ Toggle suelto).
 - `font` y `shadow` de la receta siguen en el builder (estilos de texto y de efecto son
   objetos propios de Figma); `paint` / `strokeTop` (partes de un vector) también.
 - Comprobar en Figma un sync completo con 0.6.0: el Log debe salir sin "recipe slot … has no

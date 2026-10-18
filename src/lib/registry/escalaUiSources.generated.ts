@@ -162,6 +162,19 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     "vars": []
   },
   {
+    "name": "collapsible",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/collapsible.tsx` (MIT, see LICENSE-shadcn.md):\n// the Radix Collapsible. shadcn ships it unstyled; Escala's recipe paints the\n// trigger row and the items its demo shows. Appearance: recipe (Collapsible).\nimport * as React from 'react'\nimport { Collapsible as CollapsiblePrimitive } from 'radix-ui'\nimport { cn } from '@/lib/utils'\n\nfunction Collapsible({ className, ...props }: React.ComponentProps<typeof CollapsiblePrimitive.Root>) {\n  return <CollapsiblePrimitive.Root data-slot=\"collapsible\" data-escala=\"Collapsible\" className={cn('flex flex-col', className)} {...props} />\n}\n\nfunction CollapsibleTrigger({\n  className, children, icon = '⌄', ...props\n}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger> & { icon?: React.ReactNode }) {\n  return (\n    <CollapsiblePrimitive.CollapsibleTrigger\n      data-slot=\"collapsible-trigger\"\n      data-part=\"Collapsible.trigger\"\n      className={cn(\n        'flex w-full cursor-pointer items-center justify-between border-0 bg-transparent text-left outline-none',\n        '[&[data-state=open]_[data-part=\"Collapsible.icon\"]]:rotate-180',\n        className,\n      )}\n      {...props}\n    >\n      {children}\n      <span data-part=\"Collapsible.icon\" className=\"inline-flex shrink-0 items-center justify-center transition-transform duration-200\">{icon}</span>\n    </CollapsiblePrimitive.CollapsibleTrigger>\n  )\n}\n\nfunction CollapsibleContent({ className, ...props }: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) {\n  return <CollapsiblePrimitive.CollapsibleContent data-slot=\"collapsible-content\" data-part=\"Collapsible.content\" className={cn('flex flex-col', className)} {...props} />\n}\n\n/** A row inside the content (shadcn's demo draws them by hand). */\nfunction CollapsibleItem({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-part=\"Collapsible.item\" className={className} {...props} />\n}\n\nexport { Collapsible, CollapsibleTrigger, CollapsibleContent, CollapsibleItem }\n",
+    "dependencies": [
+      "radix-ui"
+    ],
+    "internal": [],
+    "recipes": [
+      "Collapsible"
+    ],
+    "vars": []
+  },
+  {
     "name": "combobox",
     "ext": "tsx",
     "source": "// Escala component on the shadcn Command / Popover idea (shadcn's Combobox is\n// Popover + Command): a text field that filters a listbox. No cmdk dependency.\n// Appearance: its recipe (Combobox).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nexport interface ComboboxOption { label: string; value: string }\n\nexport interface ComboboxProps extends Omit<React.ComponentProps<'div'>, 'onChange' | 'defaultValue'> {\n  options: ComboboxOption[]\n  value?: string\n  defaultValue?: string\n  onValueChange?: (value: string) => void\n  placeholder?: string\n  /** Keep the list open (docs, previews). */\n  forceOpen?: boolean\n  /** The chevron. */\n  icon?: React.ReactNode\n  width?: number | string\n}\n\nfunction Combobox({\n  options, value, defaultValue, onValueChange, placeholder = 'Search…', forceOpen, icon = '⌄', width, className, ...props\n}: ComboboxProps) {\n  const [inner, setInner] = React.useState(defaultValue)\n  const selected = value ?? inner\n  const [query, setQuery] = React.useState('')\n  const [focus, setFocus] = React.useState(false)\n  const [active, setActive] = React.useState(0)\n  const listId = React.useId()\n  const open = forceOpen || focus\n  const matches = options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))\n  const chosen = options.find((o) => o.value === selected)\n  const pick = (o: ComboboxOption) => {\n    setInner(o.value); onValueChange?.(o.value); setQuery('')\n  }\n  return (\n    <div\n      data-slot=\"combobox\"\n      data-escala=\"Combobox\"\n      data-force-state={forceOpen ? 'Open' : undefined}\n      className={cn('relative flex flex-col', className)}\n      style={{ width }}\n      {...props}\n    >\n      <div data-part=\"Combobox.field\" className=\"contents\">\n        <div role=\"presentation\" className=\"flex items-center\" data-part=\"Combobox.row\">\n          <input\n            data-part=\"Combobox.input\"\n            role=\"combobox\"\n            aria-expanded={open}\n            aria-controls={listId}\n            aria-autocomplete=\"list\"\n            value={focus || forceOpen ? query : chosen?.label ?? ''}\n            placeholder={chosen?.label ?? placeholder}\n            className=\"min-w-0 flex-1 border-0 bg-transparent p-0 outline-none\"\n            onChange={(e) => { setQuery(e.target.value); setActive(0) }}\n            onFocus={() => setFocus(true)}\n            onBlur={() => setFocus(false)}\n            onKeyDown={(e) => {\n              if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(matches.length - 1, i + 1)) }\n              else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(0, i - 1)) }\n              else if (e.key === 'Enter' && matches[active]) { e.preventDefault(); pick(matches[active]) }\n              else if (e.key === 'Escape') (e.target as HTMLInputElement).blur()\n            }}\n          />\n          <span data-part=\"Combobox.icon\" className=\"inline-flex shrink-0\">{icon}</span>\n        </div>\n      </div>\n      {open && (\n        <div\n          id={listId}\n          role=\"listbox\"\n          data-part=\"Combobox.content\"\n          className=\"absolute top-full left-0 z-50 mt-1 w-full\"\n        >\n          {matches.length === 0 && <div data-part=\"Combobox.item\" aria-disabled>No results</div>}\n          {matches.map((o, i) => (\n            <div\n              key={o.value}\n              role=\"option\"\n              aria-selected={o.value === selected}\n              data-part=\"Combobox.item\"\n              data-highlighted={i === active ? '' : undefined}\n              data-state={o.value === selected ? 'checked' : 'unchecked'}\n              className=\"flex cursor-pointer items-center\"\n              onMouseDown={(e) => { e.preventDefault(); pick(o) }}\n              onMouseEnter={() => setActive(i)}\n            >\n              {o.label}\n            </div>\n          ))}\n        </div>\n      )}\n    </div>\n  )\n}\n\nexport { Combobox }\n",
@@ -225,6 +238,17 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     ],
     "recipes": [
       "DropdownMenu"
+    ],
+    "vars": []
+  },
+  {
+    "name": "empty",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/empty.tsx` (MIT, see LICENSE-shadcn.md):\n// the empty state — media, title, description and the actions under them.\n// EmptyMedia `variant` default | icon as `data-variant`, as shadcn.\n// Appearance: recipe (Empty).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nfunction Empty({ className, style, ...props }: React.ComponentProps<'div'>) {\n  return (\n    <div\n      data-slot=\"empty\"\n      data-escala=\"Empty\"\n      // Dashed is the empty state's edge; the recipe sets its colour and width.\n      style={{ borderStyle: 'dashed', ...style }}\n      className={cn('flex w-full min-w-0 flex-1 flex-col items-center justify-center text-center text-balance', className)}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-slot=\"empty-header\" data-part=\"Empty.header\" className={cn('flex max-w-sm flex-col items-center', className)} {...props} />\n}\n\nexport type EmptyMediaVariant = 'default' | 'icon'\n\nfunction EmptyMedia({ className, variant = 'default', ...props }: React.ComponentProps<'div'> & { variant?: EmptyMediaVariant }) {\n  return (\n    <div\n      data-slot=\"empty-icon\"\n      data-part=\"Empty.media\"\n      data-variant={variant}\n      className={cn('flex shrink-0 items-center justify-center', className)}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-slot=\"empty-title\" data-part=\"Empty.title\" className={className} {...props} />\n}\n\nfunction EmptyDescription({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-slot=\"empty-description\" data-part=\"Empty.description\" className={cn('[&>a]:underline [&>a]:underline-offset-4', className)} {...props} />\n}\n\nfunction EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-slot=\"empty-content\" data-part=\"Empty.content\" className={cn('flex w-full max-w-sm min-w-0 flex-col items-center text-balance', className)} {...props} />\n}\n\nexport { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia }\n",
+    "dependencies": [],
+    "internal": [],
+    "recipes": [
+      "Empty"
     ],
     "vars": []
   },
@@ -337,6 +361,17 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     "vars": []
   },
   {
+    "name": "kbd",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/kbd.tsx` (MIT, see LICENSE-shadcn.md):\n// a key cap, and a group that spaces several. Appearance: recipe (Kbd).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nfunction Kbd({ className, ...props }: React.ComponentProps<'kbd'>) {\n  return (\n    <kbd\n      data-slot=\"kbd\"\n      data-escala=\"Kbd\"\n      className={cn('pointer-events-none inline-flex w-fit select-none items-center justify-center', className)}\n      {...props}\n    />\n  )\n}\n\n/** Several keys, one shortcut (`⌘` `K`). Spacing only: each key paints itself. */\nfunction KbdGroup({ className, ...props }: React.ComponentProps<'kbd'>) {\n  return <kbd data-slot=\"kbd-group\" className={cn('inline-flex items-center gap-1', className)} {...props} />\n}\n\nexport { Kbd, KbdGroup }\n",
+    "dependencies": [],
+    "internal": [],
+    "recipes": [
+      "Kbd"
+    ],
+    "vars": []
+  },
+  {
     "name": "label",
     "ext": "tsx",
     "source": "// Skeleton: shadcn/ui `bases/radix/ui/label.tsx` (MIT, see LICENSE-shadcn.md).\n// Appearance: recipe (Label).\nimport * as React from 'react'\nimport { Label as LabelPrimitive } from 'radix-ui'\nimport { cn } from '@/lib/utils'\n\nfunction Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {\n  return (\n    <LabelPrimitive.Root\n      data-slot=\"label\"\n      data-escala=\"Label\"\n      className={cn('flex items-center gap-2 select-none peer-disabled:cursor-not-allowed', className)}\n      {...props}\n    />\n  )\n}\n\nexport { Label }\n",
@@ -348,6 +383,19 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
       "Label"
     ],
     "vars": []
+  },
+  {
+    "name": "native-select",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/native-select.tsx` (MIT, see LICENSE-shadcn.md):\n// a styled <select> with a chevron, `size` default | sm (`data-size`). The\n// wrapper carries the recipe root so the State axis (hover, focus, disabled)\n// reads off it. Appearance: recipe (NativeSelect).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nexport type NativeSelectSize = 'default' | 'sm'\n\ntype NativeSelectProps = Omit<React.ComponentProps<'select'>, 'size'> & {\n  size?: NativeSelectSize\n  /** The chevron. */\n  icon?: React.ReactNode\n  forceState?: 'Default' | 'Hover' | 'Focused' | 'Disabled'\n}\n\nfunction NativeSelect({ className, size = 'default', icon, forceState, disabled, style, ...props }: NativeSelectProps) {\n  const isDisabled = disabled || forceState === 'Disabled'\n  return (\n    <div\n      data-slot=\"native-select-wrapper\"\n      data-escala=\"NativeSelect\"\n      data-size={size}\n      data-force-state={forceState && forceState !== 'Default' ? forceState : undefined}\n      aria-disabled={isDisabled || undefined}\n      className={cn('relative w-fit', className)}\n    >\n      <select\n        data-slot=\"native-select\"\n        data-part=\"NativeSelect.select\"\n        data-size={size}\n        disabled={disabled}\n        // Room for the chevron on the trailing side.\n        style={{ paddingInlineEnd: 'calc(var(--spacing-inset-control) + 1.25rem)', ...style }}\n        className=\"w-full min-w-0 cursor-pointer appearance-none outline-none transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed\"\n        {...props}\n      />\n      <span\n        aria-hidden\n        data-slot=\"native-select-icon\"\n        data-part=\"NativeSelect.icon\"\n        className=\"pointer-events-none absolute top-1/2 inline-flex -translate-y-1/2 select-none\"\n        style={{ insetInlineEnd: 'var(--spacing-inset-control)' }}\n      >\n        {icon ?? '⌄'}\n      </span>\n    </div>\n  )\n}\n\nfunction NativeSelectOption(props: React.ComponentProps<'option'>) {\n  return <option data-slot=\"native-select-option\" {...props} />\n}\n\nfunction NativeSelectOptGroup(props: React.ComponentProps<'optgroup'>) {\n  return <optgroup data-slot=\"native-select-optgroup\" {...props} />\n}\n\nexport { NativeSelect, NativeSelectOptGroup, NativeSelectOption }\n",
+    "dependencies": [],
+    "internal": [],
+    "recipes": [
+      "NativeSelect"
+    ],
+    "vars": [
+      "--spacing-inset-control"
+    ]
   },
   {
     "name": "navbar",
@@ -517,6 +565,17 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     "vars": []
   },
   {
+    "name": "skeleton",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/skeleton.tsx` (MIT, see LICENSE-shadcn.md):\n// a block that pulses while its content loads. Appearance: recipe (Skeleton).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<'div'>) {\n  return <div data-slot=\"skeleton\" data-escala=\"Skeleton\" className={cn('animate-pulse', className)} {...props} />\n}\n\nexport { Skeleton }\n",
+    "dependencies": [],
+    "internal": [],
+    "recipes": [
+      "Skeleton"
+    ],
+    "vars": []
+  },
+  {
     "name": "slider",
     "ext": "tsx",
     "source": "// Skeleton: shadcn/ui `bases/radix/ui/slider.tsx` (MIT, see LICENSE-shadcn.md),\n// with the header row (label + live value) the Escala slider ships.\nimport * as React from 'react'\nimport { Slider as SliderPrimitive } from 'radix-ui'\nimport { cn } from '@/lib/utils'\n\nexport interface SliderProps extends Omit<React.ComponentProps<typeof SliderPrimitive.Root>, 'value' | 'defaultValue' | 'onValueChange'> {\n  label?: React.ReactNode\n  value?: number\n  defaultValue?: number\n  onValueChange?: (value: number) => void\n  /** How the live value reads beside the label (`\"60%\"`). */\n  format?: (value: number) => string\n}\n\nfunction Slider({\n  label, value, defaultValue = 0, onValueChange, format = (n) => `${n}%`, className, min = 0, max = 100, ...props\n}: SliderProps) {\n  const [inner, setInner] = React.useState(defaultValue)\n  const current = value ?? inner\n  return (\n    <div data-slot=\"slider\" data-escala=\"Slider\" className={cn('flex min-w-0 flex-col', className)}>\n      {(label != null) && (\n        <div className=\"flex justify-between\">\n          <span data-part=\"Slider.label\">{label}</span>\n          <span data-part=\"Slider.value\" className=\"tabular-nums\">{format(current)}</span>\n        </div>\n      )}\n      <SliderPrimitive.Root\n        value={[current]}\n        min={min}\n        max={max}\n        onValueChange={([v]) => { setInner(v); onValueChange?.(v) }}\n        className=\"relative flex w-full touch-none items-center py-[var(--spacing-2)] select-none\"\n        aria-label={typeof label === 'string' ? label : undefined}\n        {...props}\n      >\n        <SliderPrimitive.Track data-part=\"Slider.track\" className=\"relative w-full grow overflow-hidden\">\n          <SliderPrimitive.Range data-part=\"Slider.range\" className=\"absolute h-full\" />\n        </SliderPrimitive.Track>\n        <SliderPrimitive.Thumb\n          data-part=\"Slider.thumb\"\n          className=\"block outline-none transition-[transform,box-shadow] duration-150 hover:scale-105 active:scale-110\"\n        />\n      </SliderPrimitive.Root>\n    </div>\n  )\n}\n\nexport { Slider }\n",
@@ -621,6 +680,17 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     "vars": []
   },
   {
+    "name": "table",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/table.tsx` (MIT, see LICENSE-shadcn.md):\n// Table · Header · Body · Footer · Row · Head · Cell · Caption. Rows take\n// `data-state=\"selected\"`, as shadcn. Appearance: recipe (Table).\nimport * as React from 'react'\nimport { cn } from '@/lib/utils'\n\nfunction Table({ className, ...props }: React.ComponentProps<'table'>) {\n  return (\n    <div data-slot=\"table-container\" data-escala=\"Table\" className=\"relative w-full overflow-x-auto\">\n      <table data-slot=\"table\" className={cn('w-full caption-bottom border-collapse text-left', className)} {...props} />\n    </div>\n  )\n}\n\nfunction TableHeader(props: React.ComponentProps<'thead'>) {\n  return <thead data-slot=\"table-header\" {...props} />\n}\n\nfunction TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {\n  return <tbody data-slot=\"table-body\" className={cn('[&_tr:last-child]:border-b-0', className)} {...props} />\n}\n\nfunction TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {\n  return <tfoot data-slot=\"table-footer\" data-part=\"Table.footer\" className={cn('[&>tr]:last:border-b-0', className)} {...props} />\n}\n\nfunction TableRow({ className, ...props }: React.ComponentProps<'tr'>) {\n  return <tr data-slot=\"table-row\" data-part=\"Table.row\" className={cn('transition-colors', className)} {...props} />\n}\n\nfunction TableHead({ className, ...props }: React.ComponentProps<'th'>) {\n  return <th data-slot=\"table-head\" data-part=\"Table.head\" className={cn('text-left align-middle whitespace-nowrap', className)} {...props} />\n}\n\nfunction TableCell({ className, ...props }: React.ComponentProps<'td'>) {\n  return <td data-slot=\"table-cell\" data-part=\"Table.cell\" className={cn('align-middle whitespace-nowrap', className)} {...props} />\n}\n\nfunction TableCaption({ className, ...props }: React.ComponentProps<'caption'>) {\n  return <caption data-slot=\"table-caption\" data-part=\"Table.caption\" className={cn('mt-4', className)} {...props} />\n}\n\nexport { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }\n",
+    "dependencies": [],
+    "internal": [],
+    "recipes": [
+      "Table"
+    ],
+    "vars": []
+  },
+  {
     "name": "tabs",
     "ext": "tsx",
     "source": "// Skeleton: shadcn/ui `bases/radix/ui/tabs.tsx` (MIT, see LICENSE-shadcn.md):\n// TabsList `variant` default (a muted track, the active trigger raised) | line\n// (an underline). The list carries the recipe (Tabs).\nimport * as React from 'react'\nimport { Tabs as TabsPrimitive } from 'radix-ui'\nimport { cn } from '@/lib/utils'\n\nfunction Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {\n  return <TabsPrimitive.Root data-slot=\"tabs\" className={cn('flex flex-col', className)} {...props} />\n}\n\nexport const TABS_LIST_VARIANTS = ['default', 'line'] as const\nexport type TabsListVariant = (typeof TABS_LIST_VARIANTS)[number]\n\nfunction TabsList({ className, variant = 'default', ...props }: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: TabsListVariant }) {\n  return (\n    <TabsPrimitive.List\n      data-slot=\"tabs-list\"\n      data-escala=\"Tabs\"\n      data-variant={variant}\n      className={cn('group/tabs-list inline-flex w-fit items-center', className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {\n  return (\n    <TabsPrimitive.Trigger\n      data-slot=\"tabs-trigger\"\n      data-part=\"Tabs.trigger\"\n      className={cn(\n        'inline-flex flex-1 cursor-pointer items-center justify-center whitespace-nowrap bg-transparent outline-none',\n        'transition-[color,background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {\n  return <TabsPrimitive.Content data-slot=\"tabs-content\" className={cn('outline-none', className)} {...props} />\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent }\n",
@@ -641,6 +711,19 @@ export const ESCALA_UI_SOURCES: RegistrySource[] = [
     "internal": [],
     "recipes": [
       "Textarea"
+    ],
+    "vars": []
+  },
+  {
+    "name": "toggle-group",
+    "ext": "tsx",
+    "source": "// Skeleton: shadcn/ui `bases/radix/ui/toggle-group.tsx` (MIT, see LICENSE-shadcn.md):\n// the Radix ToggleGroup with shadcn's toggle `variant` default | outline and\n// `size` default | sm | lg (`data-variant`, `data-size` on the group; items\n// inherit them). Radix writes `data-state=\"on\"` on a pressed item.\n// Appearance: recipe (ToggleGroup).\nimport * as React from 'react'\nimport { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui'\nimport { cn } from '@/lib/utils'\n\nexport const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const\nexport const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const\nexport type ToggleGroupVariant = (typeof TOGGLE_GROUP_VARIANTS)[number]\nexport type ToggleGroupSize = (typeof TOGGLE_GROUP_SIZES)[number]\n\ntype ToggleGroupProps = React.ComponentProps<typeof ToggleGroupPrimitive.Root> & {\n  variant?: ToggleGroupVariant\n  size?: ToggleGroupSize\n}\n\nfunction ToggleGroup({ className, variant = 'default', size = 'default', orientation = 'horizontal', ...props }: ToggleGroupProps) {\n  return (\n    <ToggleGroupPrimitive.Root\n      data-slot=\"toggle-group\"\n      data-escala=\"ToggleGroup\"\n      data-variant={variant}\n      data-size={size}\n      data-orientation={orientation}\n      orientation={orientation}\n      className={cn('flex w-fit items-center data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch', className)}\n      {...props}\n    />\n  )\n}\n\nfunction ToggleGroupItem({ className, ...props }: React.ComponentProps<typeof ToggleGroupPrimitive.Item>) {\n  return (\n    <ToggleGroupPrimitive.Item\n      data-slot=\"toggle-group-item\"\n      data-part=\"ToggleGroup.item\"\n      className={cn(\n        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none transition-colors duration-150',\n        'focus-visible:z-10 disabled:pointer-events-none disabled:opacity-50',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { ToggleGroup, ToggleGroupItem }\n",
+    "dependencies": [
+      "radix-ui"
+    ],
+    "internal": [],
+    "recipes": [
+      "ToggleGroup"
     ],
     "vars": []
   },

@@ -30,17 +30,17 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE } from './recipes/actions.js'
+import { BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
-  CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE,
+  CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT,
 } from './recipes/forms.js'
-import { CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, SCROLL_AREA } from './recipes/surfaces.js'
+import { CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE } from './recipes/surfaces.js'
 import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR,
 } from './recipes/navigation.js'
-import { ALERT, SONNER } from './recipes/feedback.js'
-import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators.js'
+import { ALERT, SONNER, SKELETON, EMPTY } from './recipes/feedback.js'
+import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR, KBD } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
   type TokenRef, type RecipeProp, type SlotProps, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
@@ -79,6 +79,13 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   FileFormat: FILE_FORMAT,
   Avatar: AVATAR,
   Separator: SEPARATOR,
+  Collapsible: COLLAPSIBLE,
+  Table: TABLE,
+  ToggleGroup: TOGGLE_GROUP,
+  NativeSelect: NATIVE_SELECT,
+  Kbd: KBD,
+  Skeleton: SKELETON,
+  Empty: EMPTY,
   Accordion: ACCORDION,
   AspectRatio: ASPECT_RATIO,
   Popover: POPOVER,

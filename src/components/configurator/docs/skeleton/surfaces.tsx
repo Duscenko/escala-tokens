@@ -13,11 +13,15 @@ import { AspectRatio as SkAspectRatio, type RatioName } from '../../../escala-ui
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescription as SkPopoverDescription, PopoverTitle as SkPopoverTitle } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
-import { iconOf } from '../../../../lib/previewTokens'
+import { iconOf, spaceOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
 import { Toaster as SkToaster, toast, type SonnerType } from '../../../escala-ui/sonner'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
+import { Collapsible as SkCollapsible, CollapsibleContent as SkCollapsibleContent, CollapsibleItem as SkCollapsibleItem, CollapsibleTrigger as SkCollapsibleTrigger } from '../../../escala-ui/collapsible'
+import { Table as SkTable, TableBody as SkTableBody, TableCaption as SkTableCaption, TableCell as SkTableCell, TableFooter as SkTableFooter, TableHead as SkTableHead, TableHeader as SkTableHeader, TableRow as SkTableRow } from '../../../escala-ui/table'
+import { Skeleton as SkSkeleton } from '../../../escala-ui/skeleton'
+import { Empty as SkEmpty, EmptyContent as SkEmptyContent, EmptyDescription as SkEmptyDescription, EmptyHeader as SkEmptyHeader, EmptyMedia as SkEmptyMedia, EmptyTitle as SkEmptyTitle } from '../../../escala-ui/empty'
 
 export function SkeletonCardSpecimen({ t, v, w, children, elev }: SpecimenProps) {
   const shadow = elev === false ? 'none' : elev ? shadowOf(t, elev, 'none') : undefined
@@ -188,6 +192,105 @@ export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
           style={{ position: 'relative', inset: 'auto', transform: 'none', width: '100%', height: 'var(--front-toast-height)', '--width': '100%' } as React.CSSProperties}
         />
       </div>
+    </RecipeScope>
+  )
+}
+
+// ── Content & Surfaces (batch 1) ──────────────────────────────────────────
+
+/** shadcn's demo: a starred-repositories list. `Open` drives it; the trigger
+ *  still toggles it locally. */
+export function SkeletonCollapsibleSpecimen({ t, v, w }: SpecimenProps) {
+  const open = (v.Open ?? 'False') === 'True'
+  return (
+    <RecipeScope t={t}>
+      <SkCollapsible key={String(open)} defaultOpen={open} style={{ width: w ?? 300 }}>
+        <SkCollapsibleTrigger icon={<PreviewIcon concept="chevron" size={iconOf(13)} />}>3 starred repositories</SkCollapsibleTrigger>
+        <SkCollapsibleItem>escala/tokens</SkCollapsibleItem>
+        <SkCollapsibleContent>
+          <SkCollapsibleItem>escala/figma-plugin</SkCollapsibleItem>
+          <SkCollapsibleItem>escala/registry</SkCollapsibleItem>
+        </SkCollapsibleContent>
+      </SkCollapsible>
+    </RecipeScope>
+  )
+}
+
+const TABLE_ROWS = [
+  ['INV001', 'Paid', 'Card', '$250.00'],
+  ['INV002', 'Pending', 'Transfer', '$150.00'],
+  ['INV003', 'Unpaid', 'Card', '$350.00'],
+]
+
+export function SkeletonTableSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 420, maxWidth: '100%' }}>
+        <SkTable>
+          <SkTableCaption>Recent invoices.</SkTableCaption>
+          <SkTableHeader>
+            <SkTableRow>
+              <SkTableHead>Invoice</SkTableHead>
+              <SkTableHead>Status</SkTableHead>
+              <SkTableHead>Method</SkTableHead>
+              <SkTableHead style={{ textAlign: 'right' }}>Amount</SkTableHead>
+            </SkTableRow>
+          </SkTableHeader>
+          <SkTableBody>
+            {TABLE_ROWS.map(([id, status, method, amount], i) => (
+              <SkTableRow key={id} data-state={i === 1 ? 'selected' : undefined}>
+                <SkTableCell>{id}</SkTableCell>
+                <SkTableCell>{status}</SkTableCell>
+                <SkTableCell>{method}</SkTableCell>
+                <SkTableCell style={{ textAlign: 'right' }}>{amount}</SkTableCell>
+              </SkTableRow>
+            ))}
+          </SkTableBody>
+          <SkTableFooter>
+            <SkTableRow>
+              <SkTableCell colSpan={3}>Total</SkTableCell>
+              <SkTableCell style={{ textAlign: 'right' }}>$750.00</SkTableCell>
+            </SkTableRow>
+          </SkTableFooter>
+        </SkTable>
+      </div>
+    </RecipeScope>
+  )
+}
+
+// ── Feedback (batch 1) ────────────────────────────────────────────────────
+
+/** shadcn's demo: an avatar and two lines of text, still loading. */
+export function SkeletonSkeletonSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div aria-busy="true" style={{ display: 'flex', alignItems: 'center', gap: spaceOf(t, 12) }}>
+        <SkSkeleton aria-hidden style={{ width: 40, height: 40, borderRadius: 999 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spaceOf(t, 8) }}>
+          <SkSkeleton aria-hidden style={{ width: 200, height: 14 }} />
+          <SkSkeleton aria-hidden style={{ width: 140, height: 14 }} />
+        </div>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonEmptySpecimen({ t, v, w }: SpecimenProps) {
+  const icon = (v.Media ?? 'default') === 'icon'
+  return (
+    <RecipeScope t={t}>
+      <SkEmpty style={{ width: w ?? 340 }}>
+        <SkEmptyHeader>
+          <SkEmptyMedia variant={icon ? 'icon' : 'default'}>
+            <PreviewIcon concept="box" size={iconOf(icon ? 16 : 32)} />
+          </SkEmptyMedia>
+          <SkEmptyTitle>No projects yet</SkEmptyTitle>
+          <SkEmptyDescription>Create your first project to start building your design system.</SkEmptyDescription>
+        </SkEmptyHeader>
+        <SkEmptyContent>
+          <SkButton size="sm">Create project</SkButton>
+        </SkEmptyContent>
+      </SkEmpty>
     </RecipeScope>
   )
 }

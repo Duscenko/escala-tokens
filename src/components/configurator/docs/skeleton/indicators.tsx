@@ -12,6 +12,7 @@ import { Rating as SkRating } from '../../../escala-ui/rating'
 import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
 import { Avatar as SkAvatar, AvatarFallback as SkAvatarFallback, type AvatarSize } from '../../../escala-ui/avatar'
 import { RecipeScope } from './scope'
+import { Kbd as SkKbd, KbdGroup as SkKbdGroup } from '../../../escala-ui/kbd'
 
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
   return (
@@ -95,6 +96,17 @@ export function SkeletonAvatarSpecimen({ t, v }: SpecimenProps) {
       <SkAvatar size={(v.Size ?? 'default') as AvatarSize}>
         <SkAvatarFallback style={background ? { background } : undefined}>{gradient ? null : 'MD'}</SkAvatarFallback>
       </SkAvatar>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonKbdSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkKbdGroup>
+        <SkKbd>⌘</SkKbd>
+        <SkKbd>K</SkKbd>
+      </SkKbdGroup>
     </RecipeScope>
   )
 }

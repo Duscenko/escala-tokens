@@ -204,3 +204,21 @@ export const AVATAR: ComponentRecipe = {
     })),
   ],
 }
+
+// ── Kbd ────────────────────────────────────────────────────────────────────
+// shadcn's Kbd: a key cap on the muted surface in the muted ink, caption type.
+// KbdGroup only spaces several keys, so it has no slot.
+
+export const KBD: ComponentRecipe = {
+  key: 'Kbd',
+  slots: ['root'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-2'), text: c('content.secondary'), font: 'type.caption',
+        radius: 'radius.control', paddingX: 'spacing.1_5', paddingY: 'spacing.0_5', gap: 'spacing.1',
+      },
+    })),
+  ],
+}

@@ -24,6 +24,7 @@ import { PasswordStrength as SkPasswordStrength, type Strength } from '../../../
 import { Dropzone as SkDropzone, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
+import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOption, type NativeSelectSize } from '../../../escala-ui/native-select'
 
 /**
  * shadcn's Input. On its own page the bare control; given `v.Type` (an opt-in
@@ -337,6 +338,27 @@ export function SkeletonDropzoneSpecimen({ t, v }: SpecimenProps) {
         title={<><span data-part="Dropzone.link">Click to upload</span> or drag and drop</>}
         hint={error ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}
       />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonNativeSelectSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as 'Default'
+  return (
+    <RecipeScope t={t}>
+      <SkNativeSelect
+        size={(v.Size ?? 'default') as NativeSelectSize}
+        forceState={state}
+        disabled={state === ('Disabled' as string)}
+        icon={<PreviewIcon concept="chevron" size={iconOf(12)} />}
+        defaultValue="design"
+        aria-label="Team"
+        style={{ width: w ?? 240 }}
+      >
+        <SkNativeSelectOption value="design">Design</SkNativeSelectOption>
+        <SkNativeSelectOption value="engineering">Engineering</SkNativeSelectOption>
+        <SkNativeSelectOption value="product">Product</SkNativeSelectOption>
+      </SkNativeSelect>
     </RecipeScope>
   )
 }

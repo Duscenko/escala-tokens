@@ -1960,7 +1960,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 96,
+      version: 97,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3568,6 +3568,24 @@ export const useDesignStore = create<DesignStore>()(
           drop(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) drop(sys?.snapshot)
+          }
+        }
+        if (version < 97) {
+          // v96→v97: seven shadcn components joined the catalogue (ToggleGroup,
+          // NativeSelect, Kbd, Collapsible, Table, Skeleton, Empty). A system
+          // that had EVERY earlier component selected gets them too, as a fresh
+          // "everything" would; a curated selection is left alone.
+          const ADDED = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
+          const before = COMPONENT_KEYS.filter((k) => !ADDED.includes(k))
+          const grow = (state: any) => {
+            const sel = state?.selectedComponents
+            if (!Array.isArray(sel)) return
+            const have = new Set(sel)
+            if (before.every((k) => have.has(k))) state.selectedComponents = [...sel, ...ADDED.filter((k) => !have.has(k))]
+          }
+          grow(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) grow(sys?.snapshot)
           }
         }
         return persisted

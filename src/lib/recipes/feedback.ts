@@ -70,3 +70,40 @@ export const SONNER: ComponentRecipe = {
     })),
   ],
 }
+
+// ── Skeleton ───────────────────────────────────────────────────────────────
+// shadcn's Skeleton: `bg-muted rounded-md` that pulses. The size is the
+// caller's (a line of text, an avatar, a card).
+
+export const SKELETON: ComponentRecipe = {
+  key: 'Skeleton',
+  slots: ['root'],
+  defaults: {},
+  parts: [part({}, () => ({ root: { fill: c('surface.layer-2'), radius: 'radius.action' } }))],
+}
+
+// ── Empty ──────────────────────────────────────────────────────────────────
+// shadcn's Empty: a dashed box (the dash is the component's), media, title,
+// description and the actions under them. EmptyMedia `variant="icon"` puts the
+// glyph on a muted tile — a slot state (`media-icon` in Figma), since the
+// variant lives on the media, not on the root.
+
+export const EMPTY: ComponentRecipe = {
+  key: 'Empty',
+  slots: ['root', 'header', 'media', 'title', 'description', 'content'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: {
+        stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container',
+        paddingX: 'spacing.6', paddingY: 'spacing.6', gap: 'spacing.4', text: c('content.primary'),
+      },
+      header: { gap: 'spacing.2' },
+      media: { text: c('content.primary') },
+      'media[data-variant="icon"]': { fill: c('surface.layer-2'), radius: 'radius.action', width: 'size.compact', height: 'size.compact' },
+      title: { text: c('content.primary'), font: 'type.label' },
+      description: { text: c('content.secondary'), font: 'type.body-sm' },
+      content: { gap: 'spacing.2_5' },
+    })),
+  ],
+}

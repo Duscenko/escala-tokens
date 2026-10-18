@@ -453,3 +453,29 @@ export const DROPZONE: ComponentRecipe = {
     }),
   ],
 }
+
+// ── NativeSelect ───────────────────────────────────────────────────────────
+// shadcn's NativeSelect: a real <select> drawn as the field box, `size` default
+// | sm (the Select heights). The wrapper is the root, so the State axis reads
+// off it like every other field.
+
+const NATIVE_SELECT_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
+
+export const NATIVE_SELECT: ComponentRecipe = {
+  key: 'NativeSelect',
+  slots: ['root', 'select', 'icon'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      select: { ...FIELD_FIXED, font: 'type.placeholder' },
+    })),
+    part({ Size: ['default', 'sm'] as const }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
+    part({ State: NATIVE_SELECT_STATES }, (state) => {
+      const disabled = state === 'Disabled'
+      return {
+        select: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
+        icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
+      }
+    }),
+  ],
+}

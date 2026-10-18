@@ -146,3 +146,38 @@ export const APP_STORE_BADGE: ComponentRecipe = {
     })),
   ],
 }
+
+// ── ToggleGroup ────────────────────────────────────────────────────────────
+// shadcn's ToggleGroup over its Toggle: `variant` default (no edge) | outline
+// (the control boundary) × `size` default | sm | lg, the Button heights. A
+// pressed item (`data-state="on"`) takes the muted surface, as shadcn's
+// `data-[state=on]:bg-muted`. The hover and on rules ride in the variant part,
+// after the item's base, so they win on equal specificity.
+
+export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
+export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const
+const TOGGLE_HEIGHT: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
+
+export const TOGGLE_GROUP: ComponentRecipe = {
+  key: 'ToggleGroup',
+  slots: ['root', 'item'],
+  defaults: { Variant: 'default', Size: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.1' },
+    })),
+    part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
+      item: variant === 'outline'
+        ? {
+            fill: NONE, stroke: c('border.strong'), strokeWidth: 'stroke.control', text: c('content.secondary'),
+            font: 'type.button', radius: 'radius.action', gap: 'spacing.1',
+          }
+        : { fill: NONE, text: c('content.secondary'), font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
+      'item:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
+      'item[data-state="on"]': { fill: c('surface.layer-2'), text: c('content.primary') },
+    })),
+    part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
+      item: { height: TOGGLE_HEIGHT[size], paddingX: 'spacing.2_5' },
+    })),
+  ],
+}
