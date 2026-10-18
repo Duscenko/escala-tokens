@@ -20,6 +20,10 @@
       "destination": "/api/webhooks?op=auth-email"
     },
     {
+      "source": "/r/:name.json",
+      "destination": "/api/registry?name=:name"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

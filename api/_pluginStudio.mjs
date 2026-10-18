@@ -4042,6 +4042,25 @@ var init_dimensions = __esm({
   }
 });
 
+// src/lib/chartPalette.ts
+function chartPalette(accentHex, offsets = CHART_HUE_OFFSETS) {
+  let hue = 0;
+  try {
+    hue = hexToOklch(accentHex).h;
+  } catch {
+  }
+  return offsets.map((d) => oklchToHex(CHART_L, CHART_C, (hue + d) % 360));
+}
+var CHART_HUE_OFFSETS, CHART_L, CHART_C;
+var init_chartPalette = __esm({
+  "src/lib/chartPalette.ts"() {
+    init_gamut();
+    CHART_HUE_OFFSETS = [0, 70, 160, 230, 300];
+    CHART_L = 0.62;
+    CHART_C = 0.15;
+  }
+});
+
 // src/lib/semanticArchitectures.ts
 function rampOf(look, fam) {
   const out = {};
@@ -4198,14 +4217,6 @@ function projectCurated(roles, input, themeOrder) {
 function projectCategorical(input, themeOrder = ["light", "dark"]) {
   return projectCurated(CATEGORICAL_ROLES, input, themeOrder);
 }
-function chartPalette(accentHex, offsets = CHART_HUE_OFFSETS) {
-  let hue = 0;
-  try {
-    hue = hexToOklch(accentHex).h;
-  } catch {
-  }
-  return offsets.map((d) => oklchToHex(CHART_L, CHART_C, (hue + d) % 360));
-}
 function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackground) {
   const darkTwin = (fam) => kind === "dark" ? scales.dark?.[fam] : void 0;
   const neutralSolid = kind === "dark" ? palette?.gray ?? (scales.grayDark ?? scales.gray) : palette?.gray ?? scales.gray;
@@ -4297,12 +4308,13 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME, CHART_HUE_OFFSETS, CHART_L, CHART_C;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
     init_apca();
-    init_gamut();
+    init_chartPalette();
+    init_chartPalette();
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
     APCA_UI = INTENT_THRESHOLDS["ui-component"].apcaLc ?? 45;
@@ -4855,9 +4867,6 @@ var init_semanticArchitectures = __esm({
       "status.success-fg": "status.success.content",
       "border.active": "border.focus"
     };
-    CHART_HUE_OFFSETS = [0, 70, 160, 230, 300];
-    CHART_L = 0.62;
-    CHART_C = 0.15;
   }
 });
 
@@ -10007,6 +10016,8 @@ init_themeSources();
 // src/lib/fonts.ts
 init_useDesignStore();
 import { useEffect as useEffect5 } from "react";
+
+// src/lib/fontStack.ts
 var FONT_PRESETS = [
   // Sans-serif
   { label: "Inter", value: "Inter", category: "Sans-serif" },
@@ -10077,6 +10088,8 @@ var FONT_PRESETS = [
   { label: "DM Mono", value: "DM Mono", category: "Mono" },
   { label: "Inconsolata", value: "Inconsolata", category: "Mono" }
 ];
+
+// src/lib/fonts.ts
 function loadGoogleFont(family) {
   if (!family || typeof document === "undefined") return;
   const id = `gfont-${family.replace(/\s+/g, "-")}`;

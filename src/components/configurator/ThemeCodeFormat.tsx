@@ -2,6 +2,8 @@ import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState
 import { useDesignStore } from '../../store/useDesignStore'
 import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS } from '../../lib/exporters'
+import { buildShadcnGlobalsCss } from '../../lib/shadcnGlobals'
+import type { TokenJSON } from '../../lib/agentBundle/types'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import { agentSetupPrompt } from '../../lib/agentInstall'
@@ -31,6 +33,10 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
   // handed to an agent, and the files below are what that agent reads.
   { key: 'agent', label: 'Agent context', file: 'references/*.md' },
   { key: 'css', label: 'CSS', file: 'variables.css' },
+  // shadcn/ui's own variables, each answered by a Categorical role (E4). An
+  // output format, not an architecture: a stock shadcn project pastes it over
+  // its globals.css. Components come from the registry (`/r/<name>.json`).
+  { key: 'shadcn', label: 'shadcn', file: 'globals.css' },
   // README.md used to be a third format here. It said what Agent context says
   // in a different shape, and two markdown tabs read as "which one do I
   // paste?". It still ships where files ship: Export and GitHub.
@@ -267,7 +273,7 @@ function CodeLine({ value, number, format }: { value: string; number: number; fo
   return (
     <div className={`grid grid-cols-[48px_minmax(0,1fr)] ${wrap ? 'text-caption leading-relaxed' : 'min-w-max text-body leading-[22px]'} ${heading ? 'pt-2.5' : ''}`}>
       <span aria-hidden className="select-none border-r border-line pr-3 text-right font-mono text-fg-faint/70">{number}</span>
-      <code className={`px-4 font-mono text-fg-muted ${wrap ? `block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'css' ? highlightedCss(value) : highlightedMarkdown(value)}</code>
+      <code className={`px-4 font-mono text-fg-muted ${wrap ? `block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'agent' ? highlightedMarkdown(value) : highlightedCss(value)}</code>
     </div>
   )
 }
@@ -392,7 +398,7 @@ export default function ThemeCodeFormat({
     effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
   ), [store, effectiveScope])
   const artifacts = useMemo(() => {
-    if (!source) return { css: '', skillMd: '', facts: null }
+    if (!source) return { css: '', shadcn: '', skillMd: '', facts: null }
     const asStore = source as ReturnType<typeof useDesignStore.getState>
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
@@ -409,10 +415,12 @@ export default function ThemeCodeFormat({
         }, true)
       : null
     const css = cut?.css ?? buildCSS(asStore)
+    const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
     return {
       css,
+      shadcn: buildShadcnGlobalsCss(shipped as unknown as TokenJSON, { project: source.projectName }),
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
-      facts: exportFacts(cut ? JSON.parse(cut.tokens) as typeof json : json, css),
+      facts: exportFacts(shipped, css),
     }
   }, [source, free, previewAppearance, effectiveScope])
   // Agent context is CUT to what the person asked for — scope, theme, detail —
@@ -426,7 +434,7 @@ export default function ThemeCodeFormat({
     const json = contextTokenJson(store, effectiveScope, ctxAppearance)
     return buildSystemContext(json, { scope: ctx.scope, detail: ctx.detail }, store.projectName)
   }, [store, effectiveScope, ctxAppearance, ctx.scope, ctx.detail])
-  const content = format === 'css' ? artifacts.css : agentMd
+  const content = format === 'css' ? artifacts.css : format === 'shadcn' ? artifacts.shadcn : agentMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope

@@ -9,12 +9,13 @@ import { InspectorPortal } from './WorkspaceInspector'
 import { UnsavedNotice } from './ThemeSaveBar'
 import { useAccess } from '../../lib/access'
 
-export type CodeFormatKey = 'agent' | 'css'
+export type CodeFormatKey = 'agent' | 'css' | 'shadcn'
 
 /** Existing product marks, masked so they follow the row's ink. */
 const FORMAT_ICON: Record<CodeFormatKey, string> = {
   agent: '/icons/settings/mcp.svg',
   css: '/icons/theme-hub-icons/Icon/code.svg',
+  shadcn: '/icons/theme-hub-icons/Icon/code.svg',
 }
 
 export function FormatGlyph({ format }: { format: CodeFormatKey }) {

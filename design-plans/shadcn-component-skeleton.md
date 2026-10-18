@@ -1,6 +1,6 @@
 # shadcn como esqueleto de los componentes de Escala
 
-Estado: **fases 0–2 hechas, 3 hecha en la web; 4 y 5 abiertas** (2026-10-18, ver "Estado actual" al final). Fuente: `~/Downloads/ui-main`
+Estado: **fases 0–2 hechas, 3 hecha en la web; 4 hecha salvo E11.3; 5 abierta** (2026-10-18, ver "Estado actual" al final). Fuente: `~/Downloads/ui-main`
 (repo `shadcn-ui/ui`, licencia MIT, registry v4).
 
 ## La decisión
@@ -253,9 +253,10 @@ puede instalar. Con el esqueleto de shadcn:
    exporta `variables.css`**, que son los mismos roles que el plugin enlaza como
    variables de Figma. Ver E15.
 
+3. **Exportación (E11) → sí, ahora.** El registry y el `globals.css` se
+   construyeron el 2026-10-18 (ver "Fase 4" en Estado actual).
+
 **Pendientes:**
-3. **Exportación (E11):** ¿el registry instalable con `npx shadcn add` es
-   objetivo de esta iniciativa o va después?
 4. **Nuevos componentes (E10):** ¿cuáles del grupo "solo shadcn" entran primero?
 
 ---
@@ -436,9 +437,51 @@ pasa de 18 a 16 px porque ahora sale de un paso de espaciado.
 - Lo que NO prueba: que Figma acepte cada `setBoundVariable` (eso solo se ve en Figma) ni
   la geometría que el builder decide fuera de la receta (alineación, anchos de ejemplo).
 
+**Fase 4 · Exportación — hecho (2026-10-18, E11.1 y E11.2).**
+- **Registry**: `GET /r/<item>.json?project=<id>[&brand=<tema>]` (rewrite en `vercel.json` →
+  `api/registry.ts`; en `vite dev` lo sirve `devRegistry` en `vite.config.ts`, y
+  `?project=dev` usa el sistema por defecto). `/r/registry.json` es el índice; `/r/theme.json`
+  instala solo las variables de shadcn. Mismas puertas que `GET /api/tokens` (404 · 410 · 402
+  de licencia · rate limit): lee el mismo Blob.
+- **Un ítem por ARCHIVO de `components/escala-ui/`** (53), no por clave del catálogo:
+  `dialog` lleva el Modal, `button` lleva Button + CloseButton + FABButton. Las 59 claves
+  tienen ítem (`registryItemFor`, test).
+- **El código instalado es el MISMO componente**: `npm run gen:registry-sources` copia
+  `escala-ui/` a `lib/registry/escalaUiSources.generated.ts` con un codemod
+  (`escalaUiTransform.ts`): `../../lib/utils` → `@/lib/utils`, `./x` →
+  `@/components/ui/x` + `registryDependencies` a `/r/x.json` del mismo sistema, los glifos de
+  `ui/icons` se incrustan, `iconOf(N)` se resuelve. Otro import relativo LANZA. Un test falla
+  si el generado no coincide con los componentes.
+- **La apariencia es la receta**: `recipeCss` → campo `css` del ítem (`@layer components`).
+  Un selector repetido en la receta (base + estado Default) recibe `:where(*)` en vez de
+  fusionarse, para no moverlo en la cascada.
+- **Los valores van en `css` (`:root` / `.dark`), NO en `cssVars`**: medido con el CLI real,
+  `cssVars` los copia a `@theme inline` (`--color-color-action-…`, `--shadow-lg:
+  var(--shadow-lg)`), que renombra la escala de sombras/radios de Tailwind. Los nombres son
+  los de `variables.css` (`cssVarOf`); `.dark` solo lleva lo que cambia (colores, sombras).
+  Resueltos desde `tokens.json` por `lib/registry/systemValues.ts` (`resolveToken` para
+  longitudes, `colors.architecture` para roles, `typography.roles` para tipos). Solo la
+  lectura Desktop: el escalón tablet/móvil sigue en `variables.css`.
+- **`globals.css` de shadcn** (`lib/shadcnGlobals.ts`, `SHADCN_ROLE_MAP`): Export → Code →
+  pestaña **shadcn**. Tabla E4 con dos cambios medidos: `--input` → `border.strong` (ya no
+  existe `border.control`; `strong` ES la frontera de control) y `--accent` →
+  `action.ghost.hover` (el `ghost.neutral` del plan no existe en el payload). Añadidos
+  `popover/accent/destructive-foreground`, `sidebar-*` y `--radius` = `radius.action`;
+  `chart-1…5` = `chartPalette` (movido a `lib/chartPalette.ts`) sobre el tono del primario.
+- **Probado con el CLI real** (`npx shadcn@latest add`, Vite + Tailwind v4 en limpio): Button,
+  Input, Card y Dialog se instalan y pintan con el sistema (primario `#2c67dc`, alto 40px =
+  `size.control`, radio 8px = `radius.action`, claro y oscuro); los 53 ítems juntos instalan
+  y pasan `tsc --strict`. Nota: el `utils` actual de shadcn instala el paquete npm `cn`.
+- Tests: `shadcnRegistry.test.ts` (forma del ítem, cada variable que lee la receta tiene
+  valor para cada ítem, mapa E4 claro/oscuro, selección de marca, generado sincronizado).
+- Módulos que importa la API llevan imports `.js` (Node ESM en Vercel): `componentRecipes`,
+  `recipes/*`, `recipeStyles`, `fontStack.ts` (extraído de `fonts.ts`), `chartPalette.ts`.
+
 **Abierto.**
-- **Fase 4 · Exportación:** registry `npx shadcn add` (`/r/<componente>.json`) y
-  `globals.css` compatible con shadcn. Decisión 3 sigue pendiente.
+- **Fase 4 · Exportación — lo que falta:** E11.3 (`snippetFor`, `agentContextMarkdown` y
+  `get_component` del MCP siguen hablando la API vieja; deberían nombrar el componente del
+  registry y su comando `npx shadcn add`). Probar el registry contra un sistema publicado
+  real en producción tras el deploy (en local se probó con `?project=dev`).
 - **Fase 5 · Nuevos:** los ~22 de "solo shadcn" (Calendar, Sheet, Table…). Cada uno
   necesita gate + spec en el plugin antes que entrada en el catálogo. Decisión 4 pendiente.
 - `font` y `shadow` de la receta siguen en el builder (estilos de texto y de efecto son

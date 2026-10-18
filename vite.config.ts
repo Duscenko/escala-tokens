@@ -160,11 +160,38 @@ function devLicence(): Plugin {
   }
 }
 
+// Local only. `/r/<name>.json` — the shadcn registry `api/registry.ts` serves in
+// production (vercel.json rewrite), built by the same `shadcnRegistry` module.
+function devRegistry(): Plugin {
+  return {
+    name: 'escala-dev-registry',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/r/') || !req.url.split('?')[0].endsWith('.json')) return next()
+        try {
+          const mod = await server.ssrLoadModule('/src/lib/registry/devRegistry.ts')
+          const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`)
+          const { status, body } = await mod.devRegistryResponse(url)
+          res.statusCode = status
+          res.setHeader('Content-Type', 'application/json')
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.end(JSON.stringify(body))
+        } catch (err) {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: String(err) }))
+        }
+      })
+    },
+  }
+}
+
 export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    ...(command === 'serve' ? [devLicence()] : []),
+    ...(command === 'serve' ? [devLicence(), devRegistry()] : []),
   ],
   // The preview harness hands each session a free port through PORT (autoPort);
   // plain `vite` ignores it, so a second chat's server would collide on 5173.
