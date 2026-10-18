@@ -31,7 +31,11 @@
  */
 
 import { BUTTON, BUTTON_GROUP, CLOSE_BUTTON, FAB_BUTTON, SOCIAL_LOGIN_BUTTON, TEXT_LINK, APP_STORE_BADGE } from './recipes/actions'
-import { INPUT } from './recipes/forms'
+import {
+  INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
+  CHECKBOX, RADIO, TOGGLE, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE,
+  CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP,
+} from './recipes/forms'
 import { CARD, MODAL } from './recipes/surfaces'
 export {
   RECIPE_PROPS,
@@ -48,6 +52,25 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   TextLink: TEXT_LINK,
   AppStoreBadge: APP_STORE_BADGE,
   Input: INPUT,
+  Textarea: TEXTAREA,
+  InputGroup: INPUT_GROUP,
+  InputStepper: INPUT_STEPPER,
+  InputTag: INPUT_TAG,
+  Select: SELECT,
+  Combobox: COMBOBOX,
+  InputOTP: INPUT_OTP,
+  Checkbox: CHECKBOX,
+  CheckboxGroup: CHECKBOX_GROUP,
+  Radio: RADIO,
+  RadioGroup: RADIO_GROUP,
+  Toggle: TOGGLE,
+  SwitchGroup: SWITCH_GROUP,
+  Slider: SLIDER,
+  FileUpload: FILE_UPLOAD,
+  Dropzone: DROPZONE,
+  Field: FIELD,
+  Label: LABEL,
+  PasswordStrength: PASSWORD_STRENGTH,
   Card: CARD,
   Modal: MODAL,
 }
@@ -66,13 +89,17 @@ export function resolveRecipe(recipe: ComponentRecipe, v: AxisValues = {}): Slot
   return out
 }
 
-/** Every token reference the recipe can use, deduplicated. */
+/** Every token reference the recipe can use, deduplicated. A sum
+ *  (`selector.control+spacing.1`) contributes each of its terms. */
 export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
   const refs = new Set<string>()
   for (const p of recipe.parts) {
     for (const slots of Object.values(p.values)) {
       for (const props of Object.values(slots)) {
-        for (const ref of Object.values(props)) if (ref && ref !== NONE) refs.add(ref)
+        for (const ref of Object.values(props)) {
+          if (!ref || ref === NONE) continue
+          for (const term of ref.split('+')) refs.add(term)
+        }
       }
     }
   }

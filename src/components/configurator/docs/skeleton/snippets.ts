@@ -14,6 +14,45 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
+  Textarea: (v) =>
+    `import { TextareaField } from "@/components/ui/textarea"\n\n<TextareaField\n  label="Description"\n  hint="${v.State === 'Error' ? 'Description is required.' : 'Max 200 characters.'}"\n  maxLength={200}${v.State === 'Error' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`,
+  InputGroup: () =>
+    `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
+  InputOTP: (v) =>
+    `import { InputOTP } from "@/components/ui/input-otp"\n\n<InputOTP length={6}${sizeProp(v)}${v.State === 'Error' ? ' invalid' : ''} onComplete={verify} />`,
+  InputStepper: () =>
+    `import { InputStepper } from "@/components/ui/input-stepper"\n\n<InputStepper defaultValue={12} min={0} max={99} />`,
+  InputTag: () =>
+    `import { InputTag } from "@/components/ui/input-tag"\n\n<InputTag defaultValue={["tokens", "figma"]} onValueChange={setTags} />`,
+  Select: (v) =>
+    `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
+  Combobox: () =>
+    `import { Combobox } from "@/components/ui/combobox"\n\n<Combobox\n  options={[{ label: "Inter", value: "inter" }, { label: "Poppins", value: "poppins" }]}\n  placeholder="Search fonts…"\n  onValueChange={setFont}\n/>`,
+  Checkbox: (v) =>
+    `import { Checkbox } from "@/components/ui/checkbox"\n\n<Checkbox${v.Checked === 'False' ? '' : ' defaultChecked'}${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} label="Remember me" />`,
+  CheckboxGroup: () =>
+    `import { Checkbox, CheckboxGroup } from "@/components/ui/checkbox"\n\n<CheckboxGroup legend="Notify me about">\n  <Checkbox label="Comments on my files" defaultChecked />\n  <Checkbox label="New team members" />\n</CheckboxGroup>`,
+  Radio: (v) =>
+    `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\n\n<RadioGroup${v.Checked === 'False' ? '' : ' defaultValue="monthly"'}>\n  <RadioGroupItem value="monthly" label="Monthly billing"${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} />\n</RadioGroup>`,
+  RadioGroup: () =>
+    `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\n\n<RadioGroup legend="Billing period" defaultValue="monthly">\n  <RadioGroupItem value="monthly" label="Monthly billing" />\n  <RadioGroupItem value="yearly" label="Yearly billing" />\n</RadioGroup>`,
+  Toggle: (v) =>
+    `import { Switch } from "@/components/ui/switch"\n\n<Switch${v.On === 'False' ? '' : ' defaultChecked'}${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} label="Notifications" />`,
+  SwitchGroup: () =>
+    `import { Switch, SwitchGroup, SwitchGroupRow } from "@/components/ui/switch"\n\n<SwitchGroup legend="Notifications">\n  <SwitchGroupRow label="Email notifications">\n    <Switch defaultChecked aria-label="Email notifications" />\n  </SwitchGroupRow>\n</SwitchGroup>`,
+  Slider: () =>
+    `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
+  FileUpload: () =>
+    `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
+  Dropzone: (v) =>
+    `import { Dropzone } from "@/components/ui/file-upload"\n\n<Dropzone\n  title="Click to upload or drag and drop"\n  hint="${v.State === 'Error' ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}"\n  onFiles={upload}${v.State && v.State !== 'Default' ? `\n  forceState="${v.State}"` : ''}\n/>`,
+  Field: () =>
+    `import { Field } from "@/components/ui/label"\n\n<Field label="Workspace name" required description="Shown to your teammates.">\n  <InputField defaultValue="Acme Inc." />\n</Field>`,
+  Label: (v) =>
+    `import { Label } from "@/components/ui/label"\n\n<Label${v.Required === 'True' ? ' required' : ''} htmlFor="email">Email address</Label>`,
+  PasswordStrength: (v) =>
+    `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <InputField type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
+
   ButtonGroup: (v) =>
     `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${sizeProp(v)}>\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem selected>Week</ButtonGroupItem>\n  <ButtonGroupItem>Month</ButtonGroupItem>\n</ButtonGroup>`,
   CloseButton: (v) =>

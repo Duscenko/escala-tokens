@@ -292,13 +292,13 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Input"],
         props: [
-          { name: "label", type: "string", description: "Visible label above the field" },
-          { name: "type", type: '"text" | "email" | "password" | "search" | "tel" | "url"', description: "Input context \u2014 drives the inner layout" },
-          { name: "size", type: '"xs" | "sm" | "md"', description: "Field height scale" },
-          { name: "placeholder", type: "string", description: "Ghost text when empty" },
-          { name: "hint", type: "string", description: "Helper text below the field" },
-          { name: "error", type: "string", description: "Validation error message" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction" }
+          { name: "label", type: "ReactNode", description: "Visible label above the field." },
+          { name: "hint", type: "ReactNode", description: "Helper text under the field; also carries the error message." },
+          { name: "size", type: '"MD" | "SM" | "XS"', description: "Field height \u2014 follows the Sizes foundation (control \xB7 compact \xB7 xs)." },
+          { name: "invalid", type: "boolean", description: "Error state: critical edge and aria-invalid." },
+          { name: "leading / trailing", type: "ReactNode", description: "Icons or text inside the field, before and after the control." },
+          { name: "loading", type: "ReactNode", description: "A spinner shown at the end of the field." },
+          { name: "forceState", type: '"Default" | "Hover" | "Focused" | "Error" | "Disabled"', description: "Pin a state without a pointer (docs, tests)." }
         ],
         accessibility: 'Label linked via htmlFor/id. Error uses aria-describedby + role="alert".'
       },
@@ -311,8 +311,11 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Input Group"],
         props: [
-          { name: "prefix", type: "ReactNode", description: "Leading add-on (text, select)" },
-          { name: "suffix", type: "ReactNode", description: "Trailing add-on (button, unit)" }
+          { name: "InputGroup", type: "component", description: "The bordered row: add-ons, control and action share one edge and one focus halo." },
+          { name: "InputGroupAddon", type: "component", description: "Static text or icon before / after the control (https://, @, .com)." },
+          { name: "InputGroupInput", type: "component", description: "The text control." },
+          { name: "InputGroupButton", type: "component", description: 'An action inside the field ("Copy").' },
+          { name: "InputGroupSeparator", type: "component", description: "Hairline between parts." }
         ],
         accessibility: "Add-ons are described to the field via aria-describedby."
       },
@@ -325,10 +328,11 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "State", values: ["Default", "Focused", "Error", "Disabled"] }],
         figmaSets: ["Input Text Area"],
         props: [
-          { name: "label", type: "string", description: "Visible label above the field" },
-          { name: "rows", type: "number", description: "Initial visible rows" },
-          { name: "maxLength", type: "number", description: "Enables the character counter" },
-          { name: "error", type: "string", description: "Validation error message" }
+          { name: "label", type: "ReactNode", description: "Visible label above the field." },
+          { name: "hint", type: "ReactNode", description: "Helper text under the field." },
+          { name: "maxLength", type: "number", description: "Shows the live n/max counter." },
+          { name: "invalid", type: "boolean", description: "Error state: critical edge and aria-invalid." },
+          { name: "rows", type: "number", description: "Initial visible lines; the field resizes vertically." }
         ],
         accessibility: "Label linked via htmlFor/id. Counter announced politely via aria-live."
       },
@@ -344,9 +348,11 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Input OTP"],
         props: [
-          { name: "length", type: "number", description: "Number of cells (default 6)" },
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Cell height \u2014 follows the Sizes foundation" },
-          { name: "onComplete", type: "(code: string) => void", description: "Fires when every cell is filled" }
+          { name: "length", type: "number", description: "Number of cells (default 6)." },
+          { name: "size", type: '"md" | "sm" | "lg"', description: "Cell size \u2014 follows the Sizes foundation." },
+          { name: "value / defaultValue", type: "string", description: "The code typed so far." },
+          { name: "onComplete", type: "(code: string) => void", description: "Fires when every cell is filled." },
+          { name: "invalid", type: "boolean", description: "Error state on every cell." }
         ],
         accessibility: 'Single-input semantics via autocomplete="one-time-code"; cells are presentational.'
       },
@@ -359,10 +365,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Input Stepper"],
         props: [
-          { name: "value", type: "number", description: "Current value" },
-          { name: "min", type: "number", description: "Lower clamp" },
-          { name: "max", type: "number", description: "Upper clamp" },
-          { name: "step", type: "number", description: "Increment size (default 1)" }
+          { name: "value / defaultValue", type: "number", description: "Current value." },
+          { name: "min / max / step", type: "number", description: "Bounds and increment; the buttons disable at the bounds." },
+          { name: "onValueChange", type: "(value: number) => void", description: "Fires on every step." }
         ],
         accessibility: "Native number input with aria-valuemin/max. Buttons labelled Increase/Decrease."
       },
@@ -375,9 +380,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Input Tag"],
         props: [
-          { name: "value", type: "string[]", description: "Committed tags" },
-          { name: "onAdd", type: "(tag: string) => void", description: "Fires on Enter / comma" },
-          { name: "onRemove", type: "(tag: string) => void", description: "Fires on tag dismiss / Backspace" }
+          { name: "value / defaultValue", type: "string[]", description: "Committed tags." },
+          { name: "onValueChange", type: "(value: string[]) => void", description: "Fires when a tag is added or removed." },
+          { name: "placeholder", type: "string", description: "Shown while there are no tags." }
         ],
         accessibility: 'Tags removable via keyboard (Backspace). Each dismiss button labelled "Remove {tag}".'
       },
@@ -393,12 +398,10 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Select"],
         props: [
-          { name: "options", type: "Option[]", description: "Array of { label, value } objects" },
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Field height \u2014 matches Input sizes" },
-          { name: "value", type: "string", description: "Selected value" },
-          { name: "placeholder", type: "string", description: "Label when nothing selected" },
-          { name: "error", type: "string", description: "Validation error message" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction" }
+          { name: "Select", type: "component", description: "Radix Select root: value, defaultValue, onValueChange, disabled." },
+          { name: "SelectTrigger size", type: '"md" | "sm" | "lg"', description: "Field height \u2014 follows the Sizes foundation." },
+          { name: "SelectValue placeholder", type: "string", description: "Shown until an option is chosen." },
+          { name: "SelectContent / SelectItem", type: "component", description: "The list; it portals into the theme scope." }
         ],
         accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".'
       },
@@ -411,9 +414,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "State", values: ["Default", "Open"] }],
         figmaSets: ["Combobox"],
         props: [
-          { name: "options", type: "Option[]", description: "Filterable list of { label, value }" },
-          { name: "value", type: "string", description: "Selected value" },
-          { name: "onSearch", type: "(query: string) => void", description: "Filter callback" }
+          { name: "options", type: "{ label: string; value: string }[]", description: "Filterable list." },
+          { name: "value / defaultValue", type: "string", description: "Selected option value." },
+          { name: "onValueChange", type: "(value: string) => void", description: "Fires when an option is chosen." },
+          { name: "placeholder", type: "string", description: "Shown in the empty field." }
         ],
         accessibility: 'ARIA combobox pattern: role="combobox", aria-expanded, aria-activedescendant.'
       },
@@ -430,11 +434,11 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Checkbox"],
         props: [
-          { name: "checked", type: "boolean", description: "Current state" },
-          { name: "size", type: '"sm" | "md"', description: "Control scale \u2014 sm for dense lists/tables" },
-          { name: "label", type: "string", description: "Visible text label" },
-          { name: "description", type: "string", description: "Sub-label for context" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction" }
+          { name: "label", type: "ReactNode", description: "Text beside the box; clicking it toggles." },
+          { name: "checked / defaultChecked", type: 'boolean | "indeterminate"', description: "Controlled / uncontrolled state." },
+          { name: "onCheckedChange", type: "(checked) => void", description: "Fires on toggle." },
+          { name: "size", type: '"md" | "sm"', description: "Box size \u2014 follows the Selector ramp." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction." }
         ],
         accessibility: "Native checkbox input with aria-checked for indeterminate state."
       },
@@ -447,9 +451,8 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Checkbox Group"],
         props: [
-          { name: "label", type: "string", description: "Group question / heading" },
-          { name: "options", type: "{ label: string; value: string }[]", description: "Checkbox rows" },
-          { name: "value", type: "string[]", description: "Checked values" }
+          { name: "legend", type: "ReactNode", description: "The question the group answers." },
+          { name: "children", type: "Checkbox[]", description: "The options." }
         ],
         accessibility: "fieldset + legend semantics. Each row is a native checkbox."
       },
@@ -466,10 +469,10 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Radio"],
         props: [
-          { name: "checked", type: "boolean", description: "Current state" },
-          { name: "size", type: '"sm" | "md"', description: "Control scale \u2014 sm for dense option lists" },
-          { name: "label", type: "string", description: "Visible text label" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction" }
+          { name: "RadioGroupItem value", type: "string", description: "This option's value." },
+          { name: "label", type: "ReactNode", description: "Text beside the control." },
+          { name: "size", type: '"md" | "sm"', description: "Control size \u2014 follows the Selector ramp." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction." }
         ],
         accessibility: "Native radio input. Group navigated with arrow keys per the ARIA pattern."
       },
@@ -482,9 +485,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Radio Group"],
         props: [
-          { name: "label", type: "string", description: "Group question / heading" },
-          { name: "options", type: "{ label: string; value: string }[]", description: "Radio rows" },
-          { name: "value", type: "string", description: "Selected value" }
+          { name: "legend", type: "ReactNode", description: "The question the group answers." },
+          { name: "value / defaultValue", type: "string", description: "Selected option." },
+          { name: "onValueChange", type: "(value: string) => void", description: "Fires when the choice changes." }
         ],
         accessibility: 'role="radiogroup" + fieldset/legend. Arrow keys move selection.'
       },
@@ -501,10 +504,11 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Toggle"],
         props: [
-          { name: "checked", type: "boolean", description: "Active state" },
-          { name: "size", type: '"sm" | "md"', description: "Track scale \u2014 sm for table rows and dense settings" },
-          { name: "label", type: "string", description: "Visible label" },
-          { name: "disabled", type: "boolean", description: "Prevents interaction" }
+          { name: "label", type: "ReactNode", description: "Text beside the switch; clicking it toggles." },
+          { name: "checked / defaultChecked", type: "boolean", description: "Controlled / uncontrolled state." },
+          { name: "onCheckedChange", type: "(checked: boolean) => void", description: "Fires on toggle." },
+          { name: "size", type: '"md" | "sm"', description: "Switch size \u2014 follows the Selector ramp." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction." }
         ],
         accessibility: 'Uses role="switch" with aria-checked. Label associated via aria-labelledby.'
       },
@@ -517,8 +521,8 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Switch Group"],
         props: [
-          { name: "label", type: "string", description: "Group heading" },
-          { name: "items", type: "{ label: string; checked: boolean }[]", description: "Switch rows" }
+          { name: "legend", type: "ReactNode", description: "Group heading." },
+          { name: "SwitchGroupRow label", type: "ReactNode", description: "Row text; its Switch sits on the right." }
         ],
         accessibility: 'Each row uses role="switch" with its own label; group has a heading.'
       },
@@ -531,10 +535,11 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Slider"],
         props: [
-          { name: "value", type: "number", description: "Current value" },
-          { name: "min", type: "number", description: "Range start" },
-          { name: "max", type: "number", description: "Range end" },
-          { name: "step", type: "number", description: "Snap increment" }
+          { name: "label", type: "ReactNode", description: "Name shown with the live value." },
+          { name: "value / defaultValue", type: "number", description: "Current value." },
+          { name: "min / max / step", type: "number", description: "Range and increment." },
+          { name: "onValueChange", type: "(value: number) => void", description: "Fires while dragging." },
+          { name: "format", type: "(value: number) => string", description: 'How the live value reads (default "60%").' }
         ],
         accessibility: 'role="slider" with aria-valuenow/min/max. Arrow keys adjust by step.'
       },
@@ -547,9 +552,8 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["File Upload"],
         props: [
-          { name: "accept", type: "string", description: "Accepted MIME types / extensions" },
-          { name: "multiple", type: "boolean", description: "Allows several files" },
-          { name: "onFiles", type: "(files: File[]) => void", description: "Selection callback" }
+          { name: "FileUpload", type: "component", description: "Container for the trigger and its files." },
+          { name: "FileUploadFile name / kind / progress", type: "string / string / number", description: "A file row: name, extension badge, 0\u2013100 progress." }
         ],
         accessibility: "Native file input behind the styled trigger. Progress announced via aria-live."
       },
@@ -562,9 +566,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "State", values: ["Default", "Dragging", "Error"] }],
         figmaSets: ["Dropzone"],
         props: [
-          { name: "accept", type: "string", description: "Accepted MIME types / extensions" },
-          { name: "onDrop", type: "(files: File[]) => void", description: "Drop / browse callback" },
-          { name: "maxSize", type: "number", description: "Per-file size limit in bytes" }
+          { name: "title / hint", type: "ReactNode", description: "Instruction and constraint copy." },
+          { name: "icon", type: "ReactNode", description: "Glyph in the circle." },
+          { name: "onFiles", type: "(files: File[]) => void", description: "Fires with the dropped files." },
+          { name: "forceState", type: '"Default" | "Dragging" | "Error"', description: "Pin a state without a pointer." }
         ],
         accessibility: "Focusable with keyboard; Enter opens the browse dialog. States announced."
       },
@@ -577,10 +582,11 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Field"],
         props: [
-          { name: "label", type: "string", description: "Visible label" },
-          { name: "hint", type: "string", description: "Helper text below the control" },
-          { name: "error", type: "string", description: "Validation message (replaces hint)" },
-          { name: "required", type: "boolean", description: "Adds the required marker" }
+          { name: "label", type: "ReactNode", description: "Visible label." },
+          { name: "required", type: "boolean", description: "Adds the required asterisk." },
+          { name: "description", type: "ReactNode", description: "Helper text; replaced by `error` when set." },
+          { name: "error", type: "ReactNode", description: 'Error message (role="alert").' },
+          { name: "children", type: "ReactNode", description: "The control; it receives the label's id." }
         ],
         accessibility: "Generates the htmlFor/id + aria-describedby wiring for whatever control it wraps."
       },
@@ -593,8 +599,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Required", values: ["False", "True"] }],
         figmaSets: ["Label"],
         props: [
-          { name: "htmlFor", type: "string", description: "Id of the labelled control" },
-          { name: "required", type: "boolean", description: "Shows the * marker" }
+          { name: "required", type: "boolean", description: "Adds the required asterisk." },
+          { name: "htmlFor", type: "string", description: "Id of the labelled control." }
         ],
         accessibility: "Native <label> element; the required marker also sets aria-required on the control."
       },
@@ -607,8 +613,9 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Strength", values: ["Weak", "Fair", "Strong"] }],
         figmaSets: ["Password Strength"],
         props: [
-          { name: "value", type: "string", description: "Password to score" },
-          { name: "rules", type: "Rule[]", description: "Scoring rules (length, classes\u2026)" }
+          { name: "value", type: "string", description: "Password to score (typed live)." },
+          { name: "strength", type: '"Weak" | "Fair" | "Strong"', description: "Show a level without typing (docs, previews)." },
+          { name: "children", type: "ReactNode", description: "The password field, so the meter sits under any Input." }
         ],
         accessibility: "Score announced politely via aria-live; color is never the only signal."
       },
@@ -1723,16 +1730,16 @@ function applyDesktopFrameToGrid(grid, frame, spacing) {
     container: desktop.container
   };
 }
-function applyRadiusGroup(group, roles, step) {
+function applyRadiusGroup(group2, roles, step) {
   const next = mergeLayoutRoles("radius", roles);
-  for (const role of group.roles) next[role] = step;
+  for (const role of group2.roles) next[role] = step;
   return next;
 }
 function radiusRolesFromGroups(picks) {
   let roles = defaultLayoutRoles("radius");
-  for (const group of RADIUS_GROUPS) {
-    const step = picks[group.key];
-    if (step) roles = applyRadiusGroup(group, roles, step);
+  for (const group2 of RADIUS_GROUPS) {
+    const step = picks[group2.key];
+    if (step) roles = applyRadiusGroup(group2, roles, step);
   }
   return roles;
 }
@@ -1740,7 +1747,7 @@ function radiusRolesForPreset(label, roles) {
   const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label);
   if (!preset) return null;
   let next = mergeLayoutRoles("radius", roles);
-  for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key]);
+  for (const group2 of RADIUS_GROUPS) next = applyRadiusGroup(group2, next, preset.picks[group2.key]);
   return next;
 }
 function radiusPresetPatch(label, roles) {
@@ -4391,13 +4398,13 @@ function resolveCuratedForExport(tokens, input, themeOrder) {
   const lookByTheme = Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? "light", input.pageBackground, input.darkBackground)]));
   const REF = /^\{([a-z-]+)\.(\d+)\}$/;
   const out = {};
-  for (const [group, byKey] of Object.entries(tokens)) {
-    out[group] = {};
+  for (const [group2, byKey] of Object.entries(tokens)) {
+    out[group2] = {};
     for (const [key2, byTheme] of Object.entries(byKey)) {
-      out[group][key2] = {};
+      out[group2][key2] = {};
       for (const [theme, ref] of Object.entries(byTheme)) {
         const m = REF.exec(ref);
-        out[group][key2][theme] = m ? lookByTheme[theme]?.(m[1], Number(m[2])) ?? ref : ref;
+        out[group2][key2][theme] = m ? lookByTheme[theme]?.(m[1], Number(m[2])) ?? ref : ref;
       }
     }
   }
@@ -4996,8 +5003,8 @@ var init_semanticArchitectures = __esm({
 
 // src/lib/agentBundle/names.ts
 function figmaSemanticName(id) {
-  const [group, ...rest] = id.split(".");
-  const label = GROUP_LABEL[group] ?? (group ? group.charAt(0).toUpperCase() + group.slice(1) : id);
+  const [group2, ...rest] = id.split(".");
+  const label = GROUP_LABEL[group2] ?? (group2 ? group2.charAt(0).toUpperCase() + group2.slice(1) : id);
   return rest.length ? `${label}/${rest.join("/")}` : label;
 }
 var GROUP_LABEL;
@@ -5326,17 +5333,19 @@ var init_actions = __esm({
 });
 
 // src/lib/recipes/forms.ts
+function fieldBox(state2) {
+  if (state2 === "Disabled") return { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring: NONE };
+  if (state2 === "Error") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: NONE };
+  if (state2 === "Focused" || state2 === "Open") return { fill: c("surface.input"), stroke: c("border.focus"), ring: c("border.ring.default") };
+  if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
+  return { fill: c("surface.input"), stroke: c("border.strong"), ring: NONE };
+}
 function inputPaint(state2) {
   const disabled = state2 === "Disabled";
   const error = state2 === "Error";
-  const stroke = disabled ? "action.disabled.default" : error ? "status.critical.border-strong" : state2 === "Focused" ? "border.focus" : state2 === "Hover" ? "border.control-hover" : "border.strong";
   return {
     label: { text: c(disabled ? "content.disabled" : "content.primary") },
-    field: {
-      fill: c(disabled ? "action.disabled.default" : "surface.input"),
-      stroke: c(stroke),
-      ring: state2 === "Focused" ? c("border.ring.default") : NONE
-    },
+    field: fieldBox(state2),
     value: { text: c(disabled ? "content.disabled" : "content.primary") },
     placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
     icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
@@ -5344,10 +5353,68 @@ function inputPaint(state2) {
     spinner: { text: c(state2 === "Loading" ? "action.primary.default" : "content.secondary") }
   };
 }
-var INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT;
+function checkPaint(checked, state2) {
+  const on = checked === "True";
+  const disabled = state2 === "Disabled";
+  const hover = state2 === "Hover";
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
+  let box;
+  if (disabled) box = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
+  else if (on) {
+    const fill = c(hover ? "action.primary.hover" : "action.primary.default");
+    box = { fill, stroke: fill, text: c("content.on-action"), ring };
+  } else box = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
+  return { box, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
+}
+function radioPaint(checked, state2) {
+  const on = checked === "True";
+  const disabled = state2 === "Disabled";
+  const hover = state2 === "Hover";
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
+  const box = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
+  return {
+    box,
+    indicator: { fill: on ? c(disabled ? "content.disabled" : "action.primary.default") : NONE },
+    label: { text: c(disabled ? "content.disabled" : "content.primary") }
+  };
+}
+function togglePaint(on, state2) {
+  const isOn = on === "True";
+  const disabled = state2 === "Disabled";
+  const hover = state2 === "Hover";
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
+  const trackFill = disabled ? "action.disabled.default" : isOn ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "action.secondary.hover" : "action.secondary.default";
+  return {
+    track: { fill: c(trackFill), ring },
+    thumb: { fill: c(isOn && !disabled ? "content.on-action" : "surface.input") },
+    label: { text: c(disabled ? "content.disabled" : "content.primary") }
+  };
+}
+function group(key2, rowGap = "spacing.2_5", withRows = false) {
+  return {
+    key: key2,
+    slots: withRows ? ["root", "legend", "row"] : ["root", "legend"],
+    defaults: {},
+    parts: [
+      part({}, () => ({
+        root: { gap: rowGap },
+        legend: { text: c("content.secondary"), font: "type.label" },
+        ...withRows ? { row: { gap: "spacing.3" } } : {}
+      }))
+    ]
+  };
+}
+var FIELD_FIXED, FIELD_FOCUS, INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, OTP_GEOMETRY, INPUT_OTP, SELECTOR_SIZE, CHECKBOX, RADIO, TOGGLE_GEOMETRY, TOGGLE, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
+    FIELD_FIXED = {
+      radius: "radius.action",
+      strokeWidth: "stroke.control",
+      paddingX: "spacing.inset-control",
+      gap: "spacing.gap-control"
+    };
+    FIELD_FOCUS = { stroke: c("border.focus"), ring: c("border.ring.default") };
     INPUT_SIZES = ["MD", "SM", "XS"];
     INPUT_STATES = ["Default", "Hover", "Focused", "Filled", "Error", "Loading", "Disabled"];
     INPUT_GEOMETRY = {
@@ -5364,13 +5431,402 @@ var init_forms = __esm({
         part({}, () => ({
           root: { gap: "spacing.gap-tight" },
           label: { font: "type.label" },
-          field: { radius: "radius.action", strokeWidth: "stroke.control", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
+          field: FIELD_FIXED,
           hint: { font: "type.helper" }
         })),
         part({ Size: INPUT_SIZES }, (size) => ({ field: INPUT_GEOMETRY[size] })),
         part({ State: INPUT_STATES }, inputPaint)
       ]
     };
+    TEXTAREA = {
+      key: "Textarea",
+      slots: ["root", "label", "field", "placeholder", "hint", "count"],
+      pseudoSlots: { placeholder: { of: "field", pseudo: "::placeholder" } },
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          label: { font: "type.label" },
+          field: {
+            ...FIELD_FIXED,
+            minHeight: "size.2xl+spacing.6",
+            paddingY: "spacing.2_5",
+            font: "type.placeholder"
+          },
+          hint: { font: "type.helper" },
+          count: { font: "type.helper", text: c("content.secondary") }
+        })),
+        part({ State: ["Default", "Focused", "Error", "Disabled"] }, (state2) => {
+          const disabled = state2 === "Disabled";
+          return {
+            label: { text: c(disabled ? "content.disabled" : "content.primary") },
+            field: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
+            placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
+            hint: { text: c(state2 === "Error" ? "status.critical.content" : "content.secondary") }
+          };
+        })
+      ]
+    };
+    INPUT_GROUP = {
+      key: "InputGroup",
+      slots: ["root", "addon", "input", "button", "separator"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.input"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            height: "size.control"
+          },
+          "root:focus-within": FIELD_FOCUS,
+          addon: { fill: c("surface.layer-1"), text: c("content.secondary"), font: "type.placeholder", paddingX: "spacing.inset-control" },
+          input: { text: c("content.primary"), font: "type.placeholder", paddingX: "spacing.inset-control" },
+          button: { text: c("content.accent"), font: "type.button", paddingX: "spacing.4" },
+          "button:hover": { fill: c("action.ghost.hover") },
+          "button:active": { fill: c("action.ghost.pressed") },
+          separator: { fill: c("border.strong"), width: "stroke.control" }
+        }))
+      ]
+    };
+    INPUT_STEPPER = {
+      key: "InputStepper",
+      slots: ["root", "button", "value", "separator"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.input"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            height: "size.control"
+          },
+          "root:focus-within": FIELD_FOCUS,
+          button: { text: c("content.secondary"), font: "type.heading-xs", width: "size.control" },
+          "button:hover": { fill: c("action.ghost.hover") },
+          "button:active": { fill: c("action.ghost.pressed") },
+          "button:disabled": { text: c("content.disabled") },
+          value: { text: c("content.primary"), font: "type.body-md", width: "size.2xl" },
+          separator: { fill: c("border.strong"), width: "stroke.control" }
+        }))
+      ]
+    };
+    INPUT_TAG = {
+      key: "InputTag",
+      slots: ["root", "tag", "tagRemove", "input"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.input"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            minHeight: "size.control",
+            paddingX: "spacing.2_5",
+            paddingY: "spacing.1_5",
+            gap: "spacing.1_5"
+          },
+          "root:focus-within": FIELD_FOCUS,
+          tag: {
+            fill: c("surface.selected"),
+            text: c("content.accent"),
+            radius: "radius.pill",
+            font: "type.label",
+            paddingX: "spacing.2",
+            gap: "spacing.1"
+          },
+          tagRemove: { text: c("content.accent") },
+          "tagRemove:hover": { text: c("content.link.hover") },
+          input: { text: c("content.primary"), font: "type.placeholder" }
+        }))
+      ]
+    };
+    SELECT_GEOMETRY = { MD: "size.control", SM: "size.compact", LG: "size.touch" };
+    MENU_ITEM = {
+      item: { text: c("content.primary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
+      "item[data-highlighted]": { fill: c("action.ghost.hover") },
+      'item[data-state="checked"]': { fill: c("surface.selected"), text: c("content.accent") },
+      "item[data-disabled]": { text: c("content.disabled") }
+    };
+    MENU_CONTENT = {
+      fill: c("surface.layer-2"),
+      stroke: c("border.subtle"),
+      strokeWidth: "stroke.control",
+      radius: "radius.overlay",
+      shadow: "shadow.lg",
+      paddingX: "spacing.1",
+      paddingY: "spacing.1"
+    };
+    SELECT = {
+      key: "Select",
+      slots: ["root", "icon", "content", "item"],
+      // Radix portals the list: it is a sibling of the trigger, not inside it.
+      detachedSlots: ["content", "item"],
+      defaults: { Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { ...FIELD_FIXED, font: "type.placeholder", text: c("content.primary") },
+          "root[data-placeholder]": { text: c("content.subtle") },
+          icon: { text: c("content.secondary") },
+          content: MENU_CONTENT,
+          ...MENU_ITEM
+        })),
+        part({ Size: ["MD", "SM", "LG"] }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
+        part({ State: ["Default", "Hover", "Focused", "Error", "Disabled"] }, (state2) => ({
+          root: { ...fieldBox(state2), ...state2 === "Disabled" ? { text: c("content.disabled") } : {} },
+          icon: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
+        }))
+      ]
+    };
+    COMBOBOX = {
+      key: "Combobox",
+      slots: ["root", "input", "icon", "content", "item"],
+      pseudoSlots: {},
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { ...FIELD_FIXED, height: "size.control", paddingX: "spacing.inset-control" },
+          "root:focus-within": FIELD_FOCUS,
+          input: { text: c("content.primary"), font: "type.placeholder" },
+          icon: { text: c("content.secondary") },
+          content: { ...MENU_CONTENT },
+          ...MENU_ITEM
+        })),
+        part({ State: ["Default", "Open"] }, (state2) => ({ root: fieldBox(state2) }))
+      ]
+    };
+    OTP_GEOMETRY = {
+      MD: { size: "size.control", gap: "spacing.gap-control" },
+      SM: { size: "size.compact", gap: "spacing.gap-tight" },
+      LG: { size: "size.touch", gap: "spacing.gap-control" }
+    };
+    INPUT_OTP = {
+      key: "InputOTP",
+      slots: ["root", "cell"],
+      defaults: { Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          cell: {
+            fill: c("surface.input"),
+            stroke: c("border.strong"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            text: c("content.primary"),
+            font: "type.button"
+          },
+          'cell[data-active="true"]': FIELD_FOCUS
+        })),
+        part({ Size: ["MD", "SM", "LG"] }, (size) => ({
+          root: { gap: OTP_GEOMETRY[size].gap },
+          cell: { height: OTP_GEOMETRY[size].size, width: OTP_GEOMETRY[size].size }
+        })),
+        part({ State: ["Default", "Filled", "Error"] }, (state2) => ({
+          cell: state2 === "Error" ? { stroke: c("status.critical.border-strong") } : {},
+          'cell[data-active="true"]': state2 === "Error" ? { stroke: c("status.critical.border-strong"), ring: NONE } : FIELD_FOCUS
+        }))
+      ]
+    };
+    SELECTOR_SIZE = {
+      MD: { box: "selector.control", gap: "spacing.2_5" },
+      SM: { box: "selector.compact", gap: "spacing.2" }
+    };
+    CHECKBOX = {
+      key: "Checkbox",
+      slots: ["root", "box", "indicator", "label"],
+      defaults: { Checked: "True", Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          box: { radius: "radius.control", strokeWidth: "stroke.control" },
+          label: { font: "type.label" }
+        })),
+        part({ Size: ["MD", "SM"] }, (size) => ({
+          root: { gap: SELECTOR_SIZE[size].gap },
+          box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box }
+        })),
+        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, checkPaint)
+      ]
+    };
+    RADIO = {
+      key: "Radio",
+      slots: ["root", "box", "indicator", "label"],
+      defaults: { Checked: "True", Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          box: { radius: "radius.pill", strokeWidth: "stroke.control" },
+          indicator: { radius: "radius.pill" },
+          label: { font: "type.label" }
+        })),
+        part({ Size: ["MD", "SM"] }, (size) => ({
+          root: { gap: SELECTOR_SIZE[size].gap },
+          box: { height: SELECTOR_SIZE[size].box, width: SELECTOR_SIZE[size].box },
+          indicator: { height: size === "SM" ? "spacing.2" : "spacing.2_5", width: size === "SM" ? "spacing.2" : "spacing.2_5" }
+        })),
+        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, radioPaint)
+      ]
+    };
+    TOGGLE_GEOMETRY = {
+      // Track = knob + 2px inset each side; the knob travels width − knob − inset.
+      MD: { knob: "selector.control", trackH: "selector.control+spacing.1", trackW: "selector.control+spacing.5", travel: "spacing.4", gap: "spacing.2_5" },
+      SM: { knob: "selector.compact", trackH: "selector.compact+spacing.1", trackW: "selector.compact+spacing.4", travel: "spacing.3", gap: "spacing.2" }
+    };
+    TOGGLE = {
+      key: "Toggle",
+      slots: ["root", "track", "thumb", "label"],
+      defaults: { On: "True", Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          track: { radius: "radius.pill" },
+          thumb: { radius: "radius.pill", shadow: "shadow.xs" },
+          label: { font: "type.label" }
+        })),
+        part({ Size: ["MD", "SM"] }, (size) => ({
+          root: { gap: TOGGLE_GEOMETRY[size].gap },
+          track: { height: TOGGLE_GEOMETRY[size].trackH, width: TOGGLE_GEOMETRY[size].trackW, travel: TOGGLE_GEOMETRY[size].travel },
+          thumb: { height: TOGGLE_GEOMETRY[size].knob, width: TOGGLE_GEOMETRY[size].knob }
+        })),
+        part({ On: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, togglePaint)
+      ]
+    };
+    SLIDER = {
+      key: "Slider",
+      slots: ["root", "label", "value", "track", "range", "thumb"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          label: { text: c("content.secondary"), font: "type.caption" },
+          value: { text: c("content.primary"), font: "type.caption" },
+          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          range: { fill: c("action.primary.default"), radius: "radius.pill" },
+          thumb: {
+            fill: c("surface.page"),
+            stroke: c("action.primary.default"),
+            strokeWidth: "stroke.md",
+            height: "selector.control",
+            width: "selector.control",
+            radius: "radius.pill",
+            shadow: "shadow.sm"
+          },
+          "thumb:focus-visible": { ring: c("border.ring.default") }
+        }))
+      ]
+    };
+    FIELD = {
+      key: "Field",
+      slots: ["root", "label", "asterisk", "description", "error"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          label: { text: c("content.primary"), font: "type.label" },
+          asterisk: { text: c("status.critical.content") },
+          description: { text: c("content.secondary"), font: "type.helper" },
+          error: { text: c("status.critical.content"), font: "type.helper" }
+        }))
+      ]
+    };
+    LABEL = {
+      key: "Label",
+      slots: ["root", "asterisk"],
+      defaults: { Required: "False" },
+      parts: [
+        part({ Required: ["False", "True"] }, () => ({
+          root: { text: c("content.primary"), font: "type.label" },
+          asterisk: { text: c("status.critical.content") }
+        }))
+      ]
+    };
+    STRENGTH_FILL = {
+      Weak: "status.critical.surface-solid",
+      Fair: "status.warning.surface-solid",
+      Strong: "status.success.surface-solid"
+    };
+    PASSWORD_STRENGTH = {
+      key: "PasswordStrength",
+      slots: ["root", "meter", "segment", "segmentOn", "caption"],
+      defaults: { Strength: "Fair" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          meter: { gap: "spacing.gap-tight" },
+          segment: { fill: c("action.secondary.default"), height: "spacing.1", radius: "radius.pill" },
+          segmentOn: { height: "spacing.1", radius: "radius.pill" },
+          caption: { text: c("content.secondary"), font: "type.helper" }
+        })),
+        part({ Strength: ["Weak", "Fair", "Strong"] }, (strength) => ({
+          segmentOn: { fill: c(STRENGTH_FILL[strength]) }
+        }))
+      ]
+    };
+    FILE_UPLOAD = {
+      key: "FileUpload",
+      slots: ["root", "file", "badge", "name", "meta", "track", "progress"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.2_5" },
+          file: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            paddingX: "spacing.inset-control",
+            paddingY: "spacing.2_5",
+            gap: "spacing.2_5"
+          },
+          badge: { fill: c("surface.selected"), text: c("content.accent"), font: "type.caption", radius: "radius.control", paddingX: "spacing.1_5" },
+          name: { text: c("content.primary"), font: "type.caption" },
+          meta: { text: c("content.secondary"), font: "type.caption" },
+          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          progress: { fill: c("action.primary.default"), radius: "radius.pill" }
+        }))
+      ]
+    };
+    DROPZONE = {
+      key: "Dropzone",
+      slots: ["root", "icon", "title", "link", "hint"],
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: {
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            paddingX: "spacing.5",
+            paddingY: "spacing.8",
+            gap: "spacing.gap-control"
+          },
+          icon: { height: "size.control", width: "size.control", radius: "radius.pill" },
+          title: { text: c("content.primary"), font: "type.body-sm" },
+          link: { font: "type.label" },
+          hint: { font: "type.helper" }
+        })),
+        part({ State: ["Default", "Dragging", "Error"] }, (state2) => {
+          const error = state2 === "Error";
+          return {
+            root: {
+              fill: state2 === "Dragging" ? c("surface.accent") : error ? c("status.critical.surface") : NONE,
+              stroke: c(error ? "status.critical.border-strong" : state2 === "Dragging" ? "border.accent" : "border.strong")
+            },
+            icon: { fill: c(error ? "status.critical.surface" : "surface.selected"), text: c(error ? "status.critical.content" : "content.accent") },
+            link: { text: c("content.accent") },
+            hint: { text: c(error ? "status.critical.content" : "content.secondary") }
+          };
+        })
+      ]
+    };
+    CHECKBOX_GROUP = group("CheckboxGroup");
+    RADIO_GROUP = group("RadioGroup");
+    SWITCH_GROUP = (() => {
+      const base = group("SwitchGroup", "spacing.3", true);
+      return {
+        ...base,
+        slots: [...base.slots, "rowLabel"],
+        parts: [...base.parts, part({}, () => ({ rowLabel: { text: c("content.primary"), font: "type.label" } }))]
+      };
+    })();
   }
 });
 
@@ -5454,6 +5910,25 @@ var init_componentRecipes = __esm({
       TextLink: TEXT_LINK,
       AppStoreBadge: APP_STORE_BADGE,
       Input: INPUT,
+      Textarea: TEXTAREA,
+      InputGroup: INPUT_GROUP,
+      InputStepper: INPUT_STEPPER,
+      InputTag: INPUT_TAG,
+      Select: SELECT,
+      Combobox: COMBOBOX,
+      InputOTP: INPUT_OTP,
+      Checkbox: CHECKBOX,
+      CheckboxGroup: CHECKBOX_GROUP,
+      Radio: RADIO,
+      RadioGroup: RADIO_GROUP,
+      Toggle: TOGGLE,
+      SwitchGroup: SWITCH_GROUP,
+      Slider: SLIDER,
+      FileUpload: FILE_UPLOAD,
+      Dropzone: DROPZONE,
+      Field: FIELD,
+      Label: LABEL,
+      PasswordStrength: PASSWORD_STRENGTH,
       Card: CARD,
       Modal: MODAL
     };
@@ -8976,8 +9451,8 @@ var INDUSTRY_PACKS = [
 ];
 function collectIndustryAccents() {
   const byHex = /* @__PURE__ */ new Map();
-  for (const group of INDUSTRY_GROUP_ORDER) {
-    for (const pack of INDUSTRY_PACKS.filter((p) => p.group === group)) {
+  for (const group2 of INDUSTRY_GROUP_ORDER) {
+    for (const pack of INDUSTRY_PACKS.filter((p) => p.group === group2)) {
       for (const accent2 of pack.accents) {
         const key2 = accent2.hex.toLowerCase();
         if (!byHex.has(key2)) byHex.set(key2, accent2);
@@ -10171,10 +10646,10 @@ function buildStudioTokens(choices, tier) {
   }
   if (choices.radiusAxes) {
     let roles = resolved().radiusRoles;
-    for (const group of RADIUS_GROUPS) {
-      const step = choices.radiusAxes[group.key];
+    for (const group2 of RADIUS_GROUPS) {
+      const step = choices.radiusAxes[group2.key];
       if (step && RADIUS_GROUP_STEPS.includes(step)) {
-        roles = applyRadiusGroup(group, roles, step);
+        roles = applyRadiusGroup(group2, roles, step);
       }
     }
     patch({ radiusRoles: roles });

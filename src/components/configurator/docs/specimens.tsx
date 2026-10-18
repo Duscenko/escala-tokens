@@ -13,21 +13,24 @@ import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { effectiveIconWeight, ICON_ROLES, iconSizesFor, type IconRole } from '../../../lib/iconSizing'
-import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, controlInsetX, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
-import { withAlpha } from '../../../lib/colorUtils'
+import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, tintOf, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeRoleOf, inputSurfaceOf, selectedSurfaceOf, borderHoverOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconOf } from '../../../lib/previewTokens'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
-import { useI18n } from '../../../lib/i18n'
 import {
   SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonCloseButtonSpecimen, SkeletonFABButtonSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonAppStoreBadgeSpecimen,
 } from './skeleton/actions'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
-import { SkeletonInputSpecimen } from './skeleton/forms'
+import {
+  SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonInputStepperSpecimen,
+  SkeletonInputTagSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen,
+  SkeletonCheckboxSpecimen, SkeletonCheckboxGroupSpecimen, SkeletonRadioSpecimen, SkeletonRadioGroupSpecimen,
+  SkeletonToggleSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
+  SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen,
+} from './skeleton/forms'
 import { SkeletonCardSpecimen, SkeletonModalSpecimen } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
-import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
 
 export type AxisValues = Record<string, string>
 
@@ -71,18 +74,11 @@ const softer = (t: PreviewTokens, hex: string) => tintOf(t, hex, '5', 0.05)
  *  from a typo at the call site. `withAlpha` handles any chroma-parseable
  *  color, and routing through `tintOf` keeps every soft-fill in this file on
  *  ONE mechanism instead of two. */
-const pressed = (t: PreviewTokens, hex: string) => tintOf(t, hex, '20', 0.2)
 
 /** Control stroke for a form field — rest / hover / focus / invalid each
  *  read the role the catalogue names for that job. Hover used to paint
  *  `content.secondary` and Error used to paint `status.critical.surface-solid`,
  *  so Inspect tokens named a text role or a button fill for a border. */
-function fieldStroke(t: PreviewTokens, state: string, error: boolean): string {
-  if (error) return t.borderCritical ?? borderCriticalOf(t)
-  if (state === 'Focused') return focusBorderOf(t)
-  if (state === 'Hover') return t.borderHover ?? borderHoverOf(t)
-  return t.border ?? '#d0d5dd'
-}
 
 /** A soft 3-stop gradient at the accent's hue rotated `deg` degrees, holding one
  *  lightness/chroma envelope so a rotated stack reads as a family (the attached
@@ -178,12 +174,6 @@ function statusInk(t: PreviewTokens, name: string): string {
 function errorInkOf(t: PreviewTokens): string {
   return t.archTokens?.['status.critical.content'] || t.errorColor
 }
-function warningInkOf(t: PreviewTokens): string {
-  return t.archTokens?.['status.warning.content'] || t.warningColor || '#f79009'
-}
-function successInkOf(t: PreviewTokens): string {
-  return t.archTokens?.['status.success.content'] || t.successColor || '#17b26a'
-}
 
 /** The label ink solved for each `statusColor` fill. */
 const STATUS_ON_SLOT: Record<string, string> = {
@@ -233,29 +223,7 @@ function statusBorder(t: PreviewTokens, status: string, c: string): string {
   return (sev && t.archTokens?.[`status.${sev}.border`]) || `${c}33`
 }
 
-/** The focus HALO. Reads the platform's own token — `border.ring.default` — or,
- *  for a critical/success control, `status.<sev>.border` (there is no
- *  per-severity ring role). Those are the SAME tokens the Figma plugin binds the
- *  halo to, so both renderers resolve one value. A flat system has neither, so
- *  it keeps the old accent at 40%. */
-const focusRing = (t: PreviewTokens, accent: string, severity?: 'critical' | 'success'): string => {
-  const ring = strokeRoleOf(t, 'focus', '2px')
-  const halo = (severity && t.archTokens?.[`status.${severity}.border`])
-    || t.archTokens?.['border.ring.default']
-    || withAlpha(accent, alphaOf(t, '40', 0.4))
-  // The gap ring is the surface the focused control sits ON — a raised neutral,
-  // not the page (which a theme can send anywhere).
-  return `0 0 0 ${ring} ${raisedBg(t)}, 0 0 0 calc(${ring} + ${ring}) ${halo}`
-}
-
 const strokeControl = (t: PreviewTokens) => strokeRoleOf(t, 'control', '1px')
-const strokeFocus = (t: PreviewTokens) => strokeRoleOf(t, 'focus', '2px')
-
-/** The drawn edge of a checkbox / radio / switch knob, from the Selector ramp.
- *  Fallbacks are the values these specimens hardcoded before the ramp existed,
- *  so a token-less caller renders exactly as it used to. */
-const selectorGlyph = (t: PreviewTokens, small: boolean) =>
-  selectorOf(t, small ? 'sm' : 'md', small ? 15 : 18)
 
 /** Control anatomy that has no step of its own (a badge's padding, a progress
  *  track, a stepper node) scaled by the `control` size role against its 40px
@@ -265,29 +233,6 @@ const selectorGlyph = (t: PreviewTokens, small: boolean) =>
 function fieldPx(t: PreviewTokens, px: number): number {
   const control = parseFloat(sizeRoleOf(t, 'control', '40px')) || 40
   return Math.round(px * control / 40)
-}
-
-/**
- * WCAG 2.2 target size (2.5.8): the POINTER target must be at least 24×24,
- * which an 18px checkbox is not. The fix is a transparent hit area around the
- * glyph, never a bigger glyph — growing the box would change the design to
- * satisfy a rule about the touch target. Reuses the `size` role `hit`, which
- * already means exactly this ("Close button and icon-only hit area").
- */
-function HitArea({ t, box, children }: { t: PreviewTokens; box: number; children: ReactNode }) {
-  const min = sizeRoleOf(t, 'hit', '24px')
-  return (
-    <span style={{ minWidth: min, minHeight: min, display: 'inline-grid', placeItems: 'center', flexShrink: 0 }}>
-      {children}
-    </span>
-  )
-}
-
-/** Pull the label back by however much the hit area overhangs the glyph, so the
- *  target grows without the optical gap changing. */
-const hitGap = (t: PreviewTokens, box: number, gap: number) => {
-  const min = parseFloat(sizeRoleOf(t, 'hit', '24px')) || 24
-  return Math.max(2, gap - Math.max(0, (min - box) / 2))
 }
 
 /** Eases every property a State variant can change. 140ms sits in the
@@ -659,7 +604,6 @@ export const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: 
  *  height every other form control uses); SM/XS have no step of their own
  *  (34 and 28 sit between ramp steps), so they scale with it — the Fields
  *  dial then resizes inputs with the selects and buttons beside them. */
-const INPUT_HEIGHT_RATIO: Record<string, number> = { MD: 1, SM: 34 / 40, XS: 28 / 40 }
 export const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: string; lead?: ReactNode }> = {
   'Default':      { label: 'Name', placeholder: 'Jane Doe' },
   'E-Mail':       { label: 'Email', placeholder: 'you@company.com', lead: '@' },
@@ -689,130 +633,10 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // ── Select (State) ────────────────────────────────────────────────────────────
 
-const SELECT_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number }> = {
-  SM: { sizeKey: 'sm', h: 32, f: 12.5 },
-  MD: { sizeKey: 'md', h: 40, f: 13 },
-  LG: { sizeKey: 'lg', h: 48, f: 14 },
-}
-
-function SelectSpecimen({ t, v, w }: SpecimenProps) {
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const error = state === 'Error'
-  const sz = SELECT_SIZE_SPECS[v.Size ?? 'MD'] ?? SELECT_SIZE_SPECS.MD
-  const accent = error ? (t.borderCritical ?? borderCriticalOf(t)) : focusBorderOf(t)
-  const border = fieldStroke(t, state, error)
-  return (
-    <div
-      style={{
-        ...baseFont(t),
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        width: w ?? 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: controlInsetX(t),
-        borderRadius: radiusRoleOf(t, 'action'),
-        border: `${strokeControl(t)} solid ${border}`,
-        background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
-        boxShadow: state === 'Focused' ? `0 0 0 ${strokeFocus(t)} ${accent}26` : undefined,
-        ...typeOf(t, 'placeholder'), color: disabled ? t.disabledText : t.placeholderText,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: STATE_TRANSITION,
-      }}
-    >
-      Select an option
-      <PreviewIcon concept="chevron" size={iconOf(12)} color={disabled ? t.disabledText : t.fgMuted} />
-    </div>
-  )
-}
 
 // ── Checkbox (Checked × State) ────────────────────────────────────────────────
 
-function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const { t: translate } = useI18n()
-  const checked = (v.Checked ?? 'True') === 'True'
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const small = (v.Size ?? 'MD') === 'SM'
-  const box = selectorGlyph(t, small)
-  const fill = disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t)
-  const line = disabled ? t.disabledBg : checked || state === 'Hover' ? t.brandSolid : (t.border ?? '#d0d5dd')
-  return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, box, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <HitArea t={t} box={box}>
-        <span
-          style={{
-            width: box, height: box, borderRadius: radiusRoleOf(t, 'control'),
-            background: fill, border: `${strokeControl(t)} solid ${line}`,
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
-            transition: STATE_TRANSITION,
-          }}
-        >
-          {checked && (
-            <PhosphorWeightProvider weight="bold">
-              <PreviewIcon concept="check" size={Math.round(box * 0.72)} color={disabled ? t.disabledText : t.brandSolid} />
-            </PhosphorWeightProvider>
-          )}
-        </span>
-      </HitArea>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>{translate('Remember me')}</span>
-    </label>
-  )
-}
-
 // ── Toggle (On × State) ───────────────────────────────────────────────────────
-
-function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const on = (v.On ?? 'True') === 'True'
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const small = (v.Size ?? 'MD') === 'SM'
-  // The KNOB is the selector glyph — the same square a checkbox is drawn in.
-  // Track height is knob + the 2px inset either side; width keeps the shipped
-  // MD proportion (knob 18 → track 40). At the default ramp MD is unchanged;
-  // SM normalizes from a knob of 14 (which matched no scale) to the ramp's 15.
-  const knob = selectorGlyph(t, small)
-  const trackH = knob + 4
-  const trackW = knob + (small ? 18 : 22)
-  // ON + hover is a real, SOLVED role (`{step:accent+1}`, re-verified for
-  // label contrast) — not a `darken()` of the solid. An ad-hoc hex matches
-  // nothing in `archTokens`, so the inspector could not name the track at
-  // all while hovering it, and the tone itself ignored the ramp the rest of
-  // the system hovers on. OFF has no equivalent solved role, so it keeps the
-  // derived tint.
-  const trackOnHover = archTokenOf(t, 'action.primary.hover', darken(t.brandSolid, 0.4))
-  const track = disabled ? t.disabledBg : on ? (state === 'Hover' ? trackOnHover : t.brandSolid) : (state === 'Hover' ? darken(t.neutralFill, 0.3) : t.neutralFill)
-  return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, trackH, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <HitArea t={t} box={trackH}>
-        <span
-          role="switch"
-          aria-checked={on}
-          style={{
-            width: trackW, height: trackH, borderRadius: radiusRoleOf(t, 'pill'), background: track, position: 'relative',
-            transition: STATE_TRANSITION,
-            boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
-            display: 'inline-block',
-          }}
-        >
-          <span
-            style={{
-              position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob,
-              // ON: the knob sits on `brandSolid`, so it takes the ink solved
-              // against that fill (`content.on-action`). It was literal white,
-              // which is right for a dark accent and invisible for a pale one:
-              // `solidInkPair` flips a pale brand's ink to near-black precisely
-              // because white fails on it, and the knob was ignoring that.
-              // OFF the track is `neutralFill`, where the page's own surface is
-              // the conventional knob and stays correct in both appearances.
-              borderRadius: 999, background: on ? t.onBrand : t.inputSurface ?? inputSurfaceOf(t),
-              boxShadow: '0 1px 2px rgba(10,13,18,0.2)', transition: 'left 0.15s',
-            }}
-          />
-        </span>
-      </HitArea>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Notifications</span>
-    </label>
-  )
-}
 
 // ── Badge (Style × Color) ─────────────────────────────────────────────────────
 
@@ -1112,339 +936,8 @@ function ProgressSpecimen({ t, w }: SpecimenProps) {
 
 // ── Form Controls — grouped inputs, choices and upload targets ────────────────
 
-function InputGroupSpecimen({ t }: { t: PreviewTokens }) {
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', width: 300, height: sizeRoleOf(t, 'control', '40px'), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
-      <span style={{ display: 'flex', alignItems: 'center', padding: controlInsetX(t), ...typeOf(t, 'placeholder'), color: t.fgMuted, background: t.neutralFill, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: controlInsetX(t), ...typeOf(t, 'placeholder'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.neutralText }}>escala.design</span>
-      <span style={{ display: 'flex', alignItems: 'center', padding: `0 ${spaceOf(t, 14)}`, ...typeOf(t, 'button'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.brandText, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
-    </div>
-  )
-}
 
-function TextareaSpecimen({ t, v }: SpecimenProps) {
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const error = state === 'Error'
-  const focus = error ? (t.borderCritical ?? borderCriticalOf(t)) : focusBorderOf(t)
-  const border = fieldStroke(t, state, error)
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 6), width: 280 }}>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Description</span>
-      <div
-        style={{
-          minHeight: 88, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: `${fitRadiusPx(t, 'action', 88)}px`,
-          border: `${strokeControl(t)} solid ${border}`, background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
-          ...typeStyleOf(t, 'placeholder', { leading: true }), color: disabled ? t.disabledText : t.placeholderText,
-          boxShadow: state === 'Focused' ? `0 0 0 ${strokeFocus(t)} ${focus}26` : undefined,
-        }}
-      >
-        Tell us about your design system…
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
-        <span>{error ? 'Description is required.' : 'Max 200 characters.'}</span>
-        <span>0/200</span>
-      </div>
-    </div>
-  )
-}
 
-function InputOTPSpecimen({ t, v }: SpecimenProps) {
-  const pinned = v.State ?? 'Default'
-  const error = pinned === 'Error'
-  const sizeKey = (v.Size ?? 'MD').toLowerCase()
-  const dim = sizeOf(t, sizeKey, sizeKey === 'sm' ? 32 : sizeKey === 'lg' ? 48 : 40)
-  const gap = parseFloat(
-    v.Size === 'SM' ? spacingRoleOf(t, 'gap-tight', '4px') : spacingRoleOf(t, 'gap-control', '8px'),
-  ) || 8
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [code, setCode] = useState(() => (pinned === 'Filled' || error) ? '824913' : '')
-  const [focus, setFocus] = useState(false)
-  const caret = Math.min(code.length, 5)
-
-  return (
-    <div
-      style={{ position: 'relative', display: 'flex', gap, cursor: 'text' }}
-      onClick={() => inputRef.current?.focus()}
-    >
-      <input
-        ref={inputRef}
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        maxLength={6}
-        value={code}
-        aria-label="Verification code"
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-        onFocus={() => setFocus(true)}
-        onBlur={() => setFocus(false)}
-        style={{ position: 'absolute', inset: 0, opacity: 0, border: 'none', padding: 0, cursor: 'text' }}
-      />
-      {Array.from({ length: 6 }).map((_, i) => {
-        const lit = focus && i === caret
-        return (
-          <span
-            key={i}
-            aria-hidden
-            style={{
-              ...baseFont(t),
-              width: dim, height: dim, borderRadius: radiusRoleOf(t, 'action'),
-              border: `${strokeControl(t)} solid ${error ? (t.borderCritical ?? borderCriticalOf(t)) : lit ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
-              background: t.inputSurface ?? inputSurfaceOf(t), display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              ...typeOf(t, 'button'), color: t.neutralText,
-              boxShadow: lit ? `0 0 0 ${strokeFocus(t)} ${t.brandSolid}26` : undefined,
-              transition: STATE_TRANSITION,
-            }}
-          >
-            {code[i] ?? ''}
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
-function InputStepperSpecimen({ t }: { t: PreviewTokens }) {
-  const btn: CSSProperties = {
-    width: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    ...typeOf(t, 'heading-xs'), color: t.fgMuted, cursor: 'pointer', background: t.inputSurface ?? inputSurfaceOf(t),
-  }
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', height: sizeRoleOf(t, 'control', '40px'), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
-      <span role="button" aria-label="Decrease" style={{ ...btn, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>−</span>
-      <span style={{ width: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', ...typeOf(t, 'body-md'), background: t.inputSurface ?? inputSurfaceOf(t) }}>12</span>
-      <span role="button" aria-label="Increase" style={{ ...btn, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>+</span>
-    </div>
-  )
-}
-
-function InputTagSpecimen({ t, w }: SpecimenProps) {
-  const [tags, setTags] = useState(['tokens', 'figma'])
-  const [draft, setDraft] = useState('')
-  const [focus, setFocus] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const add = () => {
-    const next = draft.trim().toLowerCase()
-    if (!next || tags.includes(next)) { setDraft(''); return }
-    setTags((list) => [...list, next])
-    setDraft('')
-  }
-  const fieldLine = focus ? focusBorderOf(t) : (t.borderDefault ?? '#e9eaeb')
-
-  return (
-    <div
-      onClick={() => inputRef.current?.focus()}
-      style={{
-        ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spaceOf(t, 6),
-        width: w ?? 300, minHeight: 40, padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`,
-        borderRadius: radiusRoleOf(t, 'action'),
-        // Same decorative stroke as PaginationSpecimen (`border.subtle`), not `border.strong`.
-        border: `${strokeControl(t)} solid ${fieldLine}`,
-        background: t.inputSurface ?? inputSurfaceOf(t),
-        boxShadow: focus ? `0 0 0 ${strokeFocus(t)} ${focusBorderOf(t)}26` : undefined,
-        cursor: 'text', transition: STATE_TRANSITION,
-      }}
-    >
-      {tags.map((tag) => (
-        <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 5), padding: `${spaceOf(t, 3)} ${spaceOf(t, 8)}`, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: soft(t, t.brandSolid), color: t.brandText, ...typeOf(t, 'label') }}>
-          {tag}
-          <button
-            type="button"
-            aria-label={`Remove ${tag}`}
-            onClick={(e) => { e.stopPropagation(); setTags((list) => list.filter((x) => x !== tag)) }}
-            style={{ display: 'inline-flex', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', color: t.brandText }}
-          >
-            <PreviewIcon concept="close" size={iconOf(9)} color={t.brandText} />
-          </button>
-        </span>
-      ))}
-      <input
-        ref={inputRef}
-        value={draft}
-        placeholder={tags.length ? '' : 'Add a tag…'}
-        aria-label="Add a tag"
-        onChange={(e) => setDraft(e.target.value)}
-        onFocus={() => setFocus(true)}
-        onBlur={() => { setFocus(false); add() }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() }
-          else if (e.key === 'Backspace' && !draft) setTags((list) => list.slice(0, -1))
-        }}
-        style={{
-          ...typeOf(t, 'placeholder'),
-          flex: 1, minWidth: 64, border: 'none', outline: 'none', background: 'transparent', padding: 0,
-          color: t.neutralText, caretColor: t.brandSolid,
-        }}
-      />
-    </div>
-  )
-}
-
-function ComboboxSpecimen({ t, v }: SpecimenProps) {
-  const open = (v.State ?? 'Default') === 'Open'
-  const options = ['Inter', 'Poppins', 'Sora']
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', width: 240 }}>
-      <div
-        role="combobox"
-        aria-expanded={open}
-        style={{
-          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: sizeRoleOf(t, 'control', '40px'), padding: `0 ${spaceOf(t, 12)}`,
-          borderRadius: radiusRoleOf(t, 'action'),
-          border: `${strokeControl(t)} solid ${open ? t.brandSolid : (t.border ?? '#d0d5dd')}`, background: t.inputSurface ?? inputSurfaceOf(t),
-          boxShadow: open ? `0 0 0 ${strokeFocus(t)} ${t.brandSolid}26` : undefined,
-        }}
-      >
-        <span style={{ ...typeOf(t, 'placeholder'), flex: 1, color: open ? t.neutralText : t.placeholderText }}>{open ? 'Po' : 'Search fonts…'}</span>
-        <PreviewIcon concept="chevron" size={iconOf(12)} color={t.fgMuted} />
-      </div>
-      {open && (
-        <div style={{ marginTop: spaceOf(t, 4), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: spaceOf(t, 4) }}>
-          {options.map((o, i) => (
-            <span key={o} style={{ display: 'block', padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? (t.selectedSurface ?? soft(t, t.brandSolid)) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
-              {o}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CheckRow({ t, checked, onToggle, children }: { t: PreviewTokens; checked?: boolean; onToggle?: () => void; children: ReactNode }) {
-  return (
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10), cursor: 'pointer' }}>
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={!!checked}
-        onClick={onToggle}
-        style={{
-          width: selectorGlyph(t, false), height: selectorGlyph(t, false), padding: 0, border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
-          borderRadius: radiusRoleOf(t, 'control'),
-          background: t.inputSurface ?? inputSurfaceOf(t),
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', transition: STATE_TRANSITION,
-        }}
-      >
-        {checked && (
-          <PhosphorWeightProvider weight="bold">
-            <PreviewIcon concept="check" size={iconOf(13)} color={t.brandSolid} />
-          </PhosphorWeightProvider>
-        )}
-      </button>
-      <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{children}</span>
-    </label>
-  )
-}
-
-function CheckboxGroupSpecimen({ t }: { t: PreviewTokens }) {
-  const rows = ['Comments on my files', 'New team members', 'Weekly digest']
-  const [on, setOn] = useState(() => new Set([0, 1]))
-  return (
-    <fieldset style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10) }}>
-      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: spaceOf(t, 8), padding: 0 }}>Notify me about</legend>
-      {rows.map((label, i) => (
-        <CheckRow
-          key={label}
-          t={t}
-          checked={on.has(i)}
-          onToggle={() => setOn((prev) => {
-            const next = new Set(prev)
-            if (next.has(i)) next.delete(i)
-            else next.add(i)
-            return next
-          })}
-        >
-          {label}
-        </CheckRow>
-      ))}
-    </fieldset>
-  )
-}
-
-function RadioDot({ t, checked, disabled, focused, d = 18 }: { t: PreviewTokens; checked: boolean; disabled?: boolean; focused?: boolean; d?: number }) {
-  return (
-    <span
-      style={{
-        width: d, height: d, borderRadius: 999, flexShrink: 0,
-        border: `${strokeControl(t)} solid ${disabled ? t.disabledBg : checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
-        background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: focused ? focusRing(t, t.brandSolid) : undefined,
-      }}
-    >
-      {checked && <span style={{ width: Math.round(d / 2), height: Math.round(d / 2), borderRadius: 999, background: disabled ? t.disabledText : t.brandSolid }} />}
-    </span>
-  )
-}
-
-function RadioSpecimen({ t, v }: SpecimenProps) {
-  const checked = (v.Checked ?? 'True') === 'True'
-  const state = v.State ?? 'Default'
-  const disabled = state === 'Disabled'
-  const small = (v.Size ?? 'MD') === 'SM'
-  const d = selectorGlyph(t, small)
-  return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, d, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <HitArea t={t} box={d}>
-        <RadioDot t={t} checked={checked} disabled={disabled} focused={state === 'Focused'} d={d} />
-      </HitArea>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Monthly billing</span>
-    </label>
-  )
-}
-
-function RadioGroupSpecimen({ t }: { t: PreviewTokens }) {
-  const options = [
-    { label: 'Monthly billing', checked: true },
-    { label: 'Yearly billing — save 20%', checked: false },
-    { label: 'Lifetime', checked: false },
-  ]
-  return (
-    <fieldset role="radiogroup" style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10) }}>
-      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: spaceOf(t, 8), padding: 0 }}>Billing period</legend>
-      {options.map((o) => (
-        <label key={o.label} style={{ display: 'inline-flex', alignItems: 'center', gap: hitGap(t, selectorGlyph(t, false), 10), cursor: 'pointer' }}>
-          <HitArea t={t} box={selectorGlyph(t, false)}>
-            <RadioDot t={t} checked={o.checked} d={selectorGlyph(t, false)} />
-          </HitArea>
-          <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{o.label}</span>
-        </label>
-      ))}
-    </fieldset>
-  )
-}
-
-function MiniSwitch({ t, on }: { t: PreviewTokens; on: boolean }) {
-  // Scales with the Selector ramp's MD glyph (18 → a 16px knob in a 36×20 track).
-  const knob = Math.round(selectorGlyph(t, false) * 16 / 18)
-  const trackW = knob + 20
-  return (
-    <span role="switch" aria-checked={on} style={{ width: trackW, height: knob + 4, borderRadius: radiusRoleOf(t, 'pill'), background: on ? t.brandSolid : t.neutralFill, position: 'relative', display: 'inline-block', flexShrink: 0 }}>
-      {/* Same rule as SwitchSpecimen's knob — see the comment there. */}
-      <span style={{ position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob, borderRadius: 999, background: on ? t.onBrand : t.inputSurface ?? inputSurfaceOf(t), boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
-    </span>
-  )
-}
-
-function SwitchGroupSpecimen({ t, w }: SpecimenProps) {
-  const rows = [
-    { label: 'Email notifications', on: true },
-    { label: 'Push notifications', on: true },
-    { label: 'Marketing emails', on: false },
-  ]
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 12), width: w ?? 260 }}>
-      <span style={{ ...typeOf(t, 'label'), color: t.fgMuted }}>Notifications</span>
-      {rows.map((r) => (
-        <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 12) }}>
-          <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{r.label}</span>
-          <MiniSwitch t={t} on={r.on} />
-        </div>
-      ))}
-    </div>
-  )
-}
 
 // Really draggable. Its value is LOCAL and drives nothing outside the specimen
 // — same contract as the Checkbox labelled "Remember me", which remembers
@@ -1452,242 +945,7 @@ function SwitchGroupSpecimen({ t, w }: SpecimenProps) {
 // what proves the track/fill/thumb tokens hold at every value rather than only
 // at the one hardcoded percentage, and the readout is the slider's own number,
 // so it can't lie.
-const SLIDER_DEFAULT = 60
 
-function SliderSpecimen({ t, w }: SpecimenProps) {
-  // Starts at 0 and animates up to SLIDER_DEFAULT on mount — "step entry"
-  // motion (see CLAUDE.md's design principles), not decoration: it's what
-  // tells you this IS a live control the instant the panel opens, before
-  // anyone has touched it. `entered` gates a SEPARATE, slower transition for
-  // that one reveal; every interaction after it (drag, keyboard, click-to-
-  // jump) keeps the fast 0.12s the rest of the specimen already used, so the
-  // reveal doesn't leave the control feeling sluggish to actually use.
-  const [value, setValue] = useState(0)
-  const [entered, setEntered] = useState(false)
-  const [drag, setDrag] = useState(false)
-  const [hover, setHover] = useState(false)
-  const [focus, setFocus] = useState(false)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const reduce = useReducedMotion() ?? false
-
-  useEffect(() => {
-    if (reduce) { setValue(SLIDER_DEFAULT); setEntered(true); return }
-    // Double rAF: committing the 0% frame and the SLIDER_DEFAULT frame in the
-    // same tick (a plain `useEffect` can run before the browser has painted
-    // the initial 0%) gives the CSS transition nothing to interpolate FROM —
-    // it just snaps. Two frames guarantee the 0% frame is actually on screen
-    // before the target value is set. Both ids are cancelled on unmount so a
-    // fast tab-switch away mid-reveal can't call setState on an unmounted
-    // specimen.
-    let raf2 = 0
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setValue(SLIDER_DEFAULT))
-    })
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
-  }, [reduce])
-
-  const setFromX = (clientX: number) => {
-    const el = trackRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    setValue(Math.round(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100))))
-  }
-
-  // Pointer capture on the TRACK, with move/up on the window: a drag that
-  // leaves the 6px-tall track (which is most of them) has to keep tracking, or
-  // the thumb drops the moment your finger strays vertically.
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault()
-    setDrag(true)
-    setFromX(e.clientX)
-    const move = (ev: PointerEvent) => setFromX(ev.clientX)
-    const up = () => {
-      setDrag(false)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-  }
-
-  const active = drag || hover || focus
-  const stackGap = spacingRoleOf(t, 'gap-control', '8px')
-  return (
-    <div style={{ ...baseFont(t), width: w ?? 260, maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: stackGap }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: stackGap, minWidth: 0, ...typeOf(t, 'caption') }}>
-        <span style={{ color: t.fgMuted, minWidth: 0 }}>Border radius</span>
-        {/* Tabular so the number doesn't jitter the row width as it changes. */}
-        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500), fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{value}%</span>
-      </div>
-      <div
-        ref={trackRef}
-        role="slider"
-        aria-label="Border radius"
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        tabIndex={0}
-        onPointerDown={onPointerDown}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onFocus={() => setFocus(true)}
-        onBlur={() => setFocus(false)}
-        onKeyDown={(e) => {
-          const step = e.shiftKey ? 10 : 1
-          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setValue((n) => Math.min(100, n + step)) }
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); setValue((n) => Math.max(0, n - step)) }
-          else if (e.key === 'Home') { e.preventDefault(); setValue(0) }
-          else if (e.key === 'End') { e.preventDefault(); setValue(100) }
-        }}
-        style={{
-          position: 'relative', height: 6, borderRadius: radiusRoleOf(t, 'pill', '9999px'), backgroundColor: t.neutralFill,
-          // Padding-free hit area: 6px is under every touch-target guideline, so
-          // the row above and below the track is claimed with a transparent
-          // border-box rather than by making the visible track fatter.
-          boxSizing: 'content-box', borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
-          backgroundClip: 'content-box',
-          cursor: drag ? 'grabbing' : 'grab', outline: 'none', touchAction: 'none',
-        }}
-      >
-        <span
-          onTransitionEnd={(e) => { if (e.propertyName === 'width' && !entered) setEntered(true) }}
-          style={{
-            position: 'absolute', left: 0, width: `${value}%`, height: '100%', borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: t.brandSolid,
-            // No transition while dragging — a fill that eases behind the cursor
-            // reads as lag, not polish. Keyboard steps and click-to-jump ease at
-            // the fast 0.12s; the ONE reveal on mount gets 0.5s instead, slow
-            // enough to actually read as a fill sweeping in rather than a snap
-            // — `entered` flips true (via onTransitionEnd, above) the moment
-            // that sweep completes, so it can never fire again on a later drag.
-            // `reduce` always wins: prefers-reduced-motion means the mount
-            // jumps straight to SLIDER_DEFAULT with no animation at all, not a
-            // shorter one.
-            transition: drag || reduce ? 'none' : !entered ? 'width 0.5s ease-out' : 'width 0.12s ease-out',
-          }}
-        />
-        <span style={{
-          position: 'absolute', left: `${value}%`, top: '50%',
-          // Scale lives in the same transform as the centering translate, so the
-          // thumb grows from its middle instead of drifting right as it grows.
-          transform: `translate(-50%, -50%) scale(${drag ? 1.15 : active ? 1.08 : 1})`,
-          width: 18, height: 18, borderRadius: 999, background: '#ffffff',
-          border: `2px solid ${t.brandSolid}`,
-          boxShadow: focus ? focusRing(t, t.brandSolid) : '0 1px 3px rgba(10,13,18,0.25)',
-          // Travels WITH the fill during the reveal (same 0.5s), so the thumb
-          // doesn't teleport to 60% while the bar is still sweeping toward it.
-          // Scale/shadow keep their own fast transition even here — those are
-          // hover/focus/press cues, unrelated to the mount reveal.
-          transition: drag
-            ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out'
-            : reduce
-            ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out'
-            : !entered
-            ? 'left 0.5s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out'
-            : 'left 0.12s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out',
-        }} />
-      </div>
-    </div>
-  )
-}
-
-function FileUploadSpecimen({ t, w }: SpecimenProps) {
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10), width: w ?? 300 }}>
-      <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 8)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), ...typeOf(t, 'button'), cursor: 'pointer' }}>
-        <PreviewIcon concept="upload" size={iconOf(14)} color="currentColor" />
-        Upload file
-      </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
-        <span style={{ ...typeOf(t, 'caption'), color: t.brandText, background: soft(t, t.brandSolid), padding: `${spaceOf(t, 3)} ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'control') }}>PDF</span>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 5) }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
-            <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500) }}>brand-guide.pdf</span>
-            <span style={{ color: t.fgMuted }}>80%</span>
-          </div>
-          <div style={{ height: 5, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: t.neutralFill }}>
-            <div style={{ width: '80%', height: '100%', borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: t.brandSolid }} />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DropzoneSpecimen({ t, v }: SpecimenProps) {
-  const state = v.State ?? 'Default'
-  const active = state === 'Dragging'
-  const error = state === 'Error'
-  const line = error ? t.errorColor : active ? t.brandSolid : (t.border ?? '#d0d5dd')
-  return (
-    <div
-      style={{
-        ...baseFont(t),
-        width: 300, padding: `${spaceOf(t, 28)} ${spaceOf(t, 20)}`, borderRadius: radiusRoleOf(t, 'container'),
-        border: `1.5px dashed ${line}`,
-        background: active ? softer(t, t.brandSolid) : error ? softer(t, t.errorColor) : 'transparent',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), textAlign: 'center',
-        transition: STATE_TRANSITION,
-      }}
-    >
-      <span style={{ width: 40, height: 40, borderRadius: 999, background: error ? soft(t, t.errorColor) : soft(t, t.brandSolid), color: error ? errorInkOf(t) : t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-        <PreviewIcon concept="upload" size={iconOf(17)} color="currentColor" />
-      </span>
-      <span style={{ ...typeOf(t, 'body-sm') }}>
-        <span style={{ fontWeight: weightOf(t, 'semibold', 600), color: t.brandText }}>Click to upload</span> or drag and drop
-      </span>
-      <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
-        {error ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}
-      </span>
-    </div>
-  )
-}
-
-function FieldSpecimen({ t }: { t: PreviewTokens }) {
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-control', '8px'), width: 260 }}>
-      <span style={{ ...typeOf(t, 'label') }}>
-        Workspace name <span style={{ color: errorInkOf(t) }}>*</span>
-      </span>
-      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: controlInsetX(t), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), color: t.neutralText }}>
-        Acme Inc.
-      </div>
-      <span style={{ ...typeOf(t, 'helper'), color: t.fgMuted }}>Shown to your teammates.</span>
-    </div>
-  )
-}
-
-function LabelSpecimen({ t, v }: SpecimenProps) {
-  const required = (v.Required ?? 'False') === 'True'
-  return (
-    <span style={{ ...baseFont(t), ...typeOf(t, 'label') }}>
-      Email address {required && <span style={{ color: errorInkOf(t) }}>*</span>}
-    </span>
-  )
-}
-
-const STRENGTH_META: Record<string, { level: number; caption: string }> = {
-  Weak: { level: 1, caption: 'Weak — add more characters.' },
-  Fair: { level: 2, caption: 'Fair — mix in numbers and symbols.' },
-  Strong: { level: 4, caption: 'Strong password.' },
-}
-
-function PasswordStrengthSpecimen({ t, v }: SpecimenProps) {
-  const meta = STRENGTH_META[v.Strength ?? 'Fair'] ?? STRENGTH_META.Fair
-  const color = meta.level <= 1 ? errorInkOf(t) : meta.level <= 2 ? warningInkOf(t) : successInkOf(t)
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-control', '8px'), width: 260 }}>
-      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: controlInsetX(t), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), letterSpacing: 2, color: t.neutralText }}>
-        ••••••••
-      </div>
-      <div style={{ display: 'flex', gap: spacingRoleOf(t, 'gap-tight', '4px') }} aria-hidden>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <span key={i} style={{ flex: 1, height: 4, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: i < meta.level ? color : t.neutralFill }} />
-        ))}
-      </div>
-      <span style={{ ...typeOf(t, 'helper'), color: t.fgMuted }} aria-live="polite">{meta.caption}</span>
-    </div>
-  )
-}
 
 // ── Indicators — presence, chips, rating, file plates ─────────────────────────
 
@@ -2440,25 +1698,25 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
   Input: SkeletonInputSpecimen,
-  InputGroup: InputGroupSpecimen,
-  Textarea: TextareaSpecimen,
-  InputOTP: InputOTPSpecimen,
-  InputStepper: InputStepperSpecimen,
-  InputTag: InputTagSpecimen,
-  Select: SelectSpecimen,
-  Combobox: ComboboxSpecimen,
-  Checkbox: CheckboxSpecimen,
-  CheckboxGroup: CheckboxGroupSpecimen,
-  Radio: RadioSpecimen,
-  RadioGroup: RadioGroupSpecimen,
-  Toggle: ToggleSpecimen,
-  SwitchGroup: SwitchGroupSpecimen,
-  Slider: SliderSpecimen,
-  FileUpload: FileUploadSpecimen,
-  Dropzone: DropzoneSpecimen,
-  Field: FieldSpecimen,
-  Label: LabelSpecimen,
-  PasswordStrength: PasswordStrengthSpecimen,
+  InputGroup: SkeletonInputGroupSpecimen,
+  Textarea: SkeletonTextareaSpecimen,
+  InputOTP: SkeletonInputOTPSpecimen,
+  InputStepper: SkeletonInputStepperSpecimen,
+  InputTag: SkeletonInputTagSpecimen,
+  Select: SkeletonSelectSpecimen,
+  Combobox: SkeletonComboboxSpecimen,
+  Checkbox: SkeletonCheckboxSpecimen,
+  CheckboxGroup: SkeletonCheckboxGroupSpecimen,
+  Radio: SkeletonRadioSpecimen,
+  RadioGroup: SkeletonRadioGroupSpecimen,
+  Toggle: SkeletonToggleSpecimen,
+  SwitchGroup: SkeletonSwitchGroupSpecimen,
+  Slider: SkeletonSliderSpecimen,
+  FileUpload: SkeletonFileUploadSpecimen,
+  Dropzone: SkeletonDropzoneSpecimen,
+  Field: SkeletonFieldSpecimen,
+  Label: SkeletonLabelSpecimen,
+  PasswordStrength: SkeletonPasswordStrengthSpecimen,
   // Indicators
   Badge: BadgeSpecimen,
   StatusBadge: StatusBadgeSpecimen,
@@ -2640,24 +1898,9 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
   const skeleton = SKELETON_SNIPPETS[def.key]
   if (skeleton) return skeleton(v, icons)
   const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
-  // leadingIcon/trailingIcon props reflecting the icon toggles + chosen library.
-  const iconProps = (key: string) => {
-    const slots = ICON_SLOTS[key]
-    if (!slots || !icons) return ''
-    let out = ''
-    if (icons.leading) out += ` leadingIcon={<${ICON_COMPONENT[slots.leading]} />}`
-    if (icons.trailing) out += ` trailingIcon={<${ICON_COMPONENT[slots.trailing]} />}`
-    return out
-  }
   // ` size="…"` only when the non-default size is selected — keeps snippets lean.
   const sizeProp = v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : ''
   switch (def.key) {
-    case 'Select':
-      return `<Select\n  placeholder="Select an option"\n  options={options}${sizeProp ? `\n ${sizeProp}` : ''}${v.State === 'Error' ? '\n  error="Pick one option."' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`
-    case 'Checkbox':
-      return `<Checkbox${v.Checked === 'True' ? ' checked' : ''}${sizeProp}${v.State === 'Disabled' ? ' disabled' : ''} label="Remember me" />`
-    case 'Toggle':
-      return `<Toggle${v.On === 'True' ? ' checked' : ''}${sizeProp}${v.State === 'Disabled' ? ' disabled' : ''} label="Notifications" />`
     case 'Badge':
       return `<Badge color="${low(v.Color) || 'brand'}" style="${low(v.Style) || 'soft'}"${sizeProp}>\n  ${v.Color ?? 'Brand'}\n</Badge>`
     case 'Avatar':

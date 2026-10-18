@@ -33,11 +33,19 @@ function stateSuffixes(key: string, state: string): string[] {
     case 'Default': return ['']
     case 'Hover': return [`:hover${free}`, forced]
     case 'Pressed': return [`:active${free}`, forced]
-    case 'Focused': return key === 'Input' ? [`:focus-within${free}`, forced] : [`:focus-visible${free}`, forced]
+    // The root itself (a button) or a wrapper around the focusable control.
+    case 'Focused': return [`:focus-visible${free}`, `:has(:focus-visible)${free}`, forced]
     case 'Disabled': return ['[aria-disabled="true"]', forced]
     case 'Error': return ['[aria-invalid="true"]', forced]
     default: return [forced]
   }
+}
+
+/** `a+b` sums two dimensions: `calc(var(--a) + var(--b))`. */
+function dim(ref: string): string {
+  const parts = ref.split('+')
+  const vars = parts.map((r) => `var(${cssVarOf(r)})`)
+  return parts.length === 1 ? vars[0] : `calc(${vars.join(' + ')})`
 }
 
 function declarations(props: SlotProps): string[] {
@@ -51,12 +59,15 @@ function declarations(props: SlotProps): string[] {
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
       case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
-      case 'height': out.push(`height: ${v(ref)}`); break
-      case 'width': out.push(`width: ${v(ref)}`); break
+      case 'height': out.push(`height: ${dim(ref)}`); break
+      case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
+      case 'width': out.push(`width: ${dim(ref)}`); break
+      // A custom property the part reads (a switch thumb's travel); not a CSS property.
+      case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
       case 'radius': out.push(`border-radius: ${v(ref)}`); break
-      case 'paddingX': out.push(`padding-inline: ${v(ref)}`); break
-      case 'paddingY': out.push(`padding-block: ${v(ref)}`); break
-      case 'gap': out.push(`gap: ${v(ref)}`); break
+      case 'paddingX': out.push(`padding-inline: ${dim(ref)}`); break
+      case 'paddingY': out.push(`padding-block: ${dim(ref)}`); break
+      case 'gap': out.push(`gap: ${dim(ref)}`); break
       case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       case 'font':

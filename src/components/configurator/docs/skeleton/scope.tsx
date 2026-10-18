@@ -7,7 +7,8 @@
  * the same `PreviewTokens` the rest of the preview reads, so a card can paint a
  * different theme from the page it sits on.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { PortalScopeContext } from '../../../escala-ui/portal-scope'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
 import { recipeVarStyle } from '../../../../lib/recipeVars'
 import { RECIPE_CSS } from '../../../../lib/recipeStyles'
@@ -23,8 +24,11 @@ if (typeof document !== 'undefined' && !document.getElementById('escala-componen
 
 /** `display: contents` — a box-less wrapper, so it cannot disturb the layout. */
 export function RecipeScope({ t, children }: { t: PreviewTokens; children: ReactNode }) {
+  const [el, setEl] = useState<HTMLElement | null>(null)
   return (
+    <PortalScopeContext.Provider value={el}>
     <div
+      ref={setEl}
       style={{
         display: 'contents',
         // Inherited through `display: contents`: copy added around a component
@@ -36,6 +40,7 @@ export function RecipeScope({ t, children }: { t: PreviewTokens; children: React
     >
       {children}
     </div>
+    </PortalScopeContext.Provider>
   )
 }
 
