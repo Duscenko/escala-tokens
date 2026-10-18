@@ -119,6 +119,20 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > - **Not done:** the `npx shadcn add` registry + shadcn-compatible `globals.css` (phase 4) and
 >   the ~22 shadcn-only components (phase 5).
 
+> **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
+> 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a
+> `components/escala-ui/` component, and the registry ships those same files. Removed:
+> `escala-ui/menu.tsx` (a second, non-shadcn menu the docs used — Dropdown/Context Menu
+> now draw the shadcn files with `inline`, like Popover/Tooltip), the hand-rolled
+> `SignUpCardPreview` / `InputPreview` (PreviewPanel's Form group composes `SPECIMENS`),
+> and every orphaned file: `WorkbenchLayout`, `HomeView`, `HomeActions`, `PickerColor`,
+> `NewTokenWizard`, `Step6_Opacity`, `QuickFoundationsPanel`, `ThemeSwitcher`,
+> `ThemeToggle`, `DocsRail`, `Logo`, `TopBanner`, `PluginCommunityBanner`, `HeaderPill`,
+> `DashboardPreview`, `FontFamilyPreview`, `bento-grid`, dashboard `ComponentsPage` /
+> `ReleasesPage`, `figmaEdits`, `pluginCommunityBannerDismiss`. Notes below that call any of
+> them "kept for reference" are history. A new component is a file in `escala-ui/`, a
+> recipe and a plugin gate — never a second renderer.
+
 > **UPDATE (2026-10-10): the PLUGIN's plan comes from the ACCOUNT, not from the browser it
 > happens to open.** Reported as a Pro account signing in from the Figma plugin and showing
 > Free. Measured in production logs before anything changed, and it was three faults at once:

@@ -8,7 +8,8 @@ import { SegmentedControl as SkSegmentedControl } from '../../../escala-ui/segme
 import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
 import { Stepper as SkStepper } from '../../../escala-ui/stepper'
-import { MenuPanel as SkMenuPanel, MenuPanelItem as SkMenuPanelItem, MenuPanelSeparator as SkMenuPanelSeparator } from '../../../escala-ui/menu'
+import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuSeparator as SkDropdownMenuSeparator } from '../../../escala-ui/dropdown-menu'
+import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
 import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
 import { Sidebar as SkSidebar } from '../../../escala-ui/sidebar'
@@ -80,13 +81,15 @@ export function SkeletonDropdownMenuSpecimen({ t }: SpecimenProps) {
           Options
           <PreviewIcon concept="chevron" size={iconOf(11)} />
         </SkButton>
-        <SkMenuPanel recipe="DropdownMenu" style={{ width: 210 }}>
-          <SkMenuPanelItem highlighted>Duplicate</SkMenuPanelItem>
-          <SkMenuPanelItem>Rename</SkMenuPanelItem>
-          <SkMenuPanelItem>Export tokens</SkMenuPanelItem>
-          <SkMenuPanelSeparator />
-          <SkMenuPanelItem danger>Delete</SkMenuPanelItem>
-        </SkMenuPanel>
+        <SkDropdownMenu>
+          <SkDropdownMenuContent inline style={{ width: 210 }}>
+            <SkDropdownMenuItem highlighted>Duplicate</SkDropdownMenuItem>
+            <SkDropdownMenuItem>Rename</SkDropdownMenuItem>
+            <SkDropdownMenuItem>Export tokens</SkDropdownMenuItem>
+            <SkDropdownMenuSeparator />
+            <SkDropdownMenuItem variant="danger">Delete</SkDropdownMenuItem>
+          </SkDropdownMenuContent>
+        </SkDropdownMenu>
       </div>
     </RecipeScope>
   )
@@ -95,13 +98,15 @@ export function SkeletonDropdownMenuSpecimen({ t }: SpecimenProps) {
 export function SkeletonContextMenuSpecimen({ t, w, elev }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkMenuPanel recipe="ContextMenu" style={{ width: w ?? 210, boxShadow: elev === false ? 'none' : undefined }}>
-        <SkMenuPanelItem highlighted shortcut="⌘C">Copy</SkMenuPanelItem>
-        <SkMenuPanelItem shortcut="⌘V">Paste</SkMenuPanelItem>
-        <SkMenuPanelItem shortcut="⌘A">Select all</SkMenuPanelItem>
-        <SkMenuPanelSeparator />
-        <SkMenuPanelItem>Inspect tokens</SkMenuPanelItem>
-      </SkMenuPanel>
+      <SkContextMenu>
+        <SkContextMenuContent inline style={{ width: w ?? 210, boxShadow: elev === false ? 'none' : undefined }}>
+          <SkContextMenuItem highlighted>Copy<SkContextMenuShortcut>⌘C</SkContextMenuShortcut></SkContextMenuItem>
+          <SkContextMenuItem>Paste<SkContextMenuShortcut>⌘V</SkContextMenuShortcut></SkContextMenuItem>
+          <SkContextMenuItem>Select all<SkContextMenuShortcut>⌘A</SkContextMenuShortcut></SkContextMenuItem>
+          <SkContextMenuSeparator />
+          <SkContextMenuItem>Inspect tokens</SkContextMenuItem>
+        </SkContextMenuContent>
+      </SkContextMenu>
     </RecipeScope>
   )
 }

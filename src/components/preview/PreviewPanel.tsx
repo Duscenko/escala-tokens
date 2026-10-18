@@ -6,7 +6,6 @@ import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live, PhosphorWeightProvider } from '../configurator/docs/specimens'
 import { ARTEFACTS, type Artefact } from './artefacts'
 import { CompactCarousel } from './artefacts/CompactCarousel'
-import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
 import { ChromeTabBackground } from '../ui/ChromeTabShape'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
@@ -24,6 +23,7 @@ import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 const ButtonSpec = SPECIMENS.Button
 const BadgeSpec = SPECIMENS.Badge
 const SwitchSpec = SPECIMENS.Toggle
+const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
 const ToastSpec = SPECIMENS.Toast
@@ -480,7 +480,13 @@ export default function PreviewPanel({
             </Group>
 
             <Group title="Form">
-              <SignUpCardPreview tokens={tokens} />
+              <Tile tokens={tokens}>
+                <div className="flex w-full flex-col gap-3">
+                  <InputSpec t={tokens} v={{ Type: 'E-Mail', State: 'Default' }} w="100%" hideHint />
+                  <InputSpec t={tokens} v={{ Type: 'Password', State: 'Default' }} w="100%" />
+                  <ButtonSpec t={tokens} v={{ Style: 'Solid' }} w="100%">Get started</ButtonSpec>
+                </div>
+              </Tile>
             </Group>
           </>
         )}
