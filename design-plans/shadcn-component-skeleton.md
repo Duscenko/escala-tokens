@@ -1,6 +1,6 @@
 # shadcn como esqueleto de los componentes de Escala
 
-Estado: **plan, nada implementado** (2026-10-18). Fuente: `~/Downloads/ui-main`
+Estado: **fases 0–2 hechas, 3 hecha en la web; 4 y 5 abiertas** (2026-10-18, ver "Estado actual" al final). Fuente: `~/Downloads/ui-main`
 (repo `shadcn-ui/ui`, licencia MIT, registry v4).
 
 ## La decisión
@@ -380,3 +380,70 @@ pasa de 18 a 16 px porque ahora sale de un paso de espaciado.
   seis System Styles uno a uno.
 - Los vars de un overlay porteado (`Modal.overlay`) solo existen si `variables.css`
   está en `:root`; en la vista previa el diálogo va siempre `inline`.
+
+---
+
+## Estado actual (2026-10-18, cierre de la migración)
+
+**Web — hecho.**
+- Los 59 componentes del catálogo se pintan con un componente de `components/escala-ui/`
+  (esqueleto de shadcn, Radix donde shadcn lo usa) y su receta en `lib/recipes/*.ts`.
+  `specimens.tsx` es solo el registro y los helpers compartidos (3 222 → ~590 líneas).
+- El flag `?skeleton` y los specimens viejos ya no existen: una sola render por componente.
+- El generador AST de "color fields" se borró: inspector, mapa de tokens y contexto de
+  agentes leen la receta (`componentRoles.test.ts`).
+
+**Plugin — hecho (0.6.0).**
+- **Un solo paso aplica la receta a todos los componentes** (`applyRecipe` en `code.ts`,
+  llamado después de cada `build` y antes de `fitRadii`). Lee `recipeBindings`
+  (`escala-figma-plugin/src/recipes.ts`): pintura (`fill`, `stroke`, `text`, `ring`) y
+  geometría (`paddingX/Y`, `gap`, `radius`, `strokeWidth`, `strokeTop/BottomWidth`,
+  `height`, `minHeight`, `width`). Una longitud se resuelve con `dimensionRefPx` y se
+  enlaza a la variable del rol (o al primitivo de Dimensión de ese px). Lo que no se
+  resuelve conserva el px del builder; nada se adivina.
+- **La anatomía es el nombre de capa.** Cada builder nombra sus capas como los slots de
+  la receta (`track`, `indicator`, `title`, `item`…). Reglas de nombre:
+  - `icon-leading` es el slot `icon` (raíz antes del guion);
+  - un estado de datos del web es un sufijo: `item[data-highlighted]` → `item-highlighted`,
+    `cell[data-active="true"]` → `cell-active`, `node[data-state="done"]` → `node-done`,
+    `link[aria-current="page"]` → `link-page`. La capa recibe primero el slot base y luego
+    el cualificado;
+  - los pseudo-estados (`:hover`) no tienen capa: en Figma un estado es su propia variante.
+  - Un pozo de icono (`makeIconSlot`) lleva `pluginData glyph=1`: se tinta con la tinta del
+    slot que lo contiene, se llame como se llame (`close`).
+- **Diferencias documentadas, no huecos:** `RECIPE_FIGMA_ANATOMY` en `recipes.ts` dice qué
+  partes no dibuja Figma y por qué (el Textarea de Figma es solo la caja; el `pill` que
+  se desliza en TabMenu / SegmentedControl / Pagination / Sidebar es el relleno del ítem
+  seleccionado; ButtonGroup e InputStepper separan con bordes; Card sin cuerpo; Avatar sin
+  foto; flecha de Popover / Tooltip) y cuándo la raíz del web es una capa interior
+  (Combobox → `trigger`).
+- Builders reconstruidos para coincidir con el web: FileUpload (botón + fila de archivo con
+  progreso; antes era una zona de soltar), Progress (cabecera label · value + track),
+  Card (header · footer con enlace), Modal (header, footer, close en la esquina),
+  InlineAlert (título + descripción), AlertBanner (una línea, sin estilo Solid: el web no
+  lo tiene), Toast (chip inverso con acción y cierre), Spinner (el anillo es el
+  componente), Badge (punto de estado con propiedad on/off), Dropzone (pozo de icono +
+  enlace), InputGroup (separadores y botón ghost), Tabs (subrayado = borde inferior del
+  trigger), Command (el borde bajo la búsqueda es de la fila).
+- Una capa de slot ausente en TODAS las variantes se reporta una vez en el Log
+  ("recipe slot … has no layer").
+
+**Tests de paridad (`componentRecipesPluginParity.test.ts`).**
+- `recipeBindings` == receta del web, slot a slot, para cada combinación de ejes del catálogo.
+- Cada longitud que aplica el plugin se resuelve contra el `tokens.json` real.
+- Cada builder nombra una capa para cada slot de su receta (`anatomyGaps`, análisis del
+  fuente de `code.ts`), y cada diferencia de `RECIPE_FIGMA_ANATOMY` nombra slots reales.
+- Lo que NO prueba: que Figma acepte cada `setBoundVariable` (eso solo se ve en Figma) ni
+  la geometría que el builder decide fuera de la receta (alineación, anchos de ejemplo).
+
+**Abierto.**
+- **Fase 4 · Exportación:** registry `npx shadcn add` (`/r/<componente>.json`) y
+  `globals.css` compatible con shadcn. Decisión 3 sigue pendiente.
+- **Fase 5 · Nuevos:** los ~22 de "solo shadcn" (Calendar, Sheet, Table…). Cada uno
+  necesita gate + spec en el plugin antes que entrada en el catálogo. Decisión 4 pendiente.
+- `font` y `shadow` de la receta siguen en el builder (estilos de texto y de efecto son
+  objetos propios de Figma); `paint` / `strokeTop` (partes de un vector) también.
+- Comprobar en Figma un sync completo con 0.6.0: el Log debe salir sin "recipe slot … has no
+  layer". Las instancias ya colocadas pierden overrides de las capas renombradas (pasa en
+  cada reconstrucción de todos modos: el plugin recrea los hijos).
+

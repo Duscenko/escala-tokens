@@ -98,6 +98,27 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `LoginWall` and `BrandCreatedDialog` were deleted (a guest's first brand gets a toast).
 > Don't put a wall back in front of reading, copying or exporting.
 
+> **UPDATE (2026-10-18): COMPONENTS are the shadcn skeleton + ONE recipe each, read by
+> the web AND the plugin.** Plan and state: `design-plans/shadcn-component-skeleton.md`.
+> - **Web:** all 59 catalogue entries render through `components/escala-ui/` (shadcn's
+>   anatomy, Radix where shadcn uses it, `data-slot` / `data-part`), styled by the stylesheet
+>   `lib/recipeStyles.ts` generates from `lib/componentRecipes.ts` (+ `lib/recipes/*.ts`).
+>   `docs/specimens.tsx` is only the registry. A recipe holds token REFERENCES only (no
+>   opacity, no px): a missing state gets a role. Inspector, token map and agent context read
+>   the recipe — there is no AST-derived colour-field map any more.
+> - **Plugin (≥ 0.6.0):** after every builder, `applyRecipe` (`code.ts`) applies
+>   `recipeBindings` (`escala-figma-plugin/src/recipes.ts`) to the layers NAMED after the
+>   recipe's slots: fills, strokes, ink, focus ring, padding, gap, radius, stroke widths,
+>   sizes. **A new builder names its layers after the slots** (`named(node, 'track')`;
+>   `icon-leading` is the `icon` slot; a data state is a suffix — `item-highlighted`,
+>   `cell-active`, `node-done`). Anything the Figma component deliberately draws differently
+>   goes in `RECIPE_FIGMA_ANATOMY` with its reason, never silently.
+> - `componentRecipesPluginParity.test.ts` holds the two repos together: bindings == recipe
+>   for every axis combination, every length resolves against `tokens.json`, every builder
+>   names every slot. Changing a recipe changes `tokens.json`, so Figma sync picks it up.
+> - **Not done:** the `npx shadcn add` registry + shadcn-compatible `globals.css` (phase 4) and
+>   the ~22 shadcn-only components (phase 5).
+
 > **UPDATE (2026-10-10): the PLUGIN's plan comes from the ACCOUNT, not from the browser it
 > happens to open.** Reported as a Pro account signing in from the Figma plugin and showing
 > Free. Measured in production logs before anything changed, and it was three faults at once:

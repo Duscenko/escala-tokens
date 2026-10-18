@@ -1,10 +1,12 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { COMPONENT_RECIPES, recipeColorRoles, resolveRecipe, serializeRecipes } from '../componentRecipes'
 import { COMPONENTS } from '../componentCatalogue'
 import { figmaSemanticName } from '../agentBundle/names'
+import { generateTokenJSON } from '../tokenGenerator'
+import { useDesignStore } from '../../store/useDesignStore'
 
 /**
  * Cross-repo parity (E15): the plugin's PURE recipe module
@@ -15,6 +17,7 @@ import { figmaSemanticName } from '../agentBundle/names'
  * repo alone).
  */
 const pluginFile = join(dirname(fileURLToPath(import.meta.url)), '../../../../escala-figma-plugin/src/recipes.ts')
+const pluginCode = join(dirname(pluginFile), 'code.ts')
 
 function combos(axes: { name: string; values: string[] }[]): Record<string, string>[] {
   return axes.reduce<Record<string, string>[]>(
@@ -106,4 +109,96 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       })
     }
   })
+
+  // ── What the plugin BINDS, not only what it plans ─────────────────────────
+  // code.ts applies `recipeBindings` to the layers named after each slot, after
+  // every builder. These pin that list to the web recipe, that every length in
+  // it resolves against a real tokens.json, and that every builder names a
+  // layer for each of its slots — the three ways the two could drift.
+
+  it('EVERY recipe: the bindings the plugin applies are the web recipe, slot for slot', async () => {
+    const plugin = await import(/* @vite-ignore */ pluginFile)
+    const table = serializeRecipes()
+    const applied = new Set<string>([...plugin.PAINT_PROPS, ...plugin.GEOMETRY_PROPS])
+    for (const recipe of Object.values(COMPONENT_RECIPES)) {
+      const def = COMPONENTS.find((c) => c.key === recipe.key)!
+      for (const v of combos(def.axes)) {
+        const expected: { slot: string; prop: string; ref: string }[] = []
+        const web = resolveRecipe(recipe, v)
+        const slots = Object.keys(web).sort((a, b) => Number(a.includes('[')) - Number(b.includes('[')))
+        for (const slot of slots) {
+          if (slot.includes(':')) continue
+          for (const [prop, ref] of Object.entries(web[slot])) {
+            if (ref && applied.has(prop)) expected.push({ slot, prop, ref })
+          }
+        }
+        expect(plugin.recipeBindings(table, recipe.key, v), `${recipe.key} ${JSON.stringify(v)}`).toEqual(expected)
+      }
+    }
+  })
+
+  it('EVERY recipe: each length the plugin applies resolves against the shipped tokens.json', async () => {
+    const plugin = await import(/* @vite-ignore */ pluginFile)
+    const tokens = generateTokenJSON(useDesignStore.getState()) as Record<string, unknown> & {
+      icons?: { sizes?: { px?: Record<string, { desktop?: number }> } }
+    }
+    const pick = (k: string) => tokens[k] as Record<string, string> | undefined
+    const src = {
+      spacing: pick('spacing'), spacingRoles: pick('spacingRoles'),
+      radius: pick('radius'), radiusRoles: pick('radiusRoles'),
+      sizes: pick('sizes'), sizeRoles: pick('sizeRoles'),
+      selector: pick('selector'), selectorRoles: pick('selectorRoles'),
+      stroke: pick('stroke'), strokeRoles: pick('strokeRoles'),
+      icon: { small: 16, medium: 20, large: 24 },
+    }
+    const geometry = new Set<string>(plugin.GEOMETRY_PROPS)
+    const missing: string[] = []
+    for (const recipe of Object.values(COMPONENT_RECIPES)) {
+      for (const part of recipe.parts) {
+        for (const slots of Object.values(part.values)) {
+          for (const props of Object.values(slots)) {
+            for (const [prop, ref] of Object.entries(props)) {
+              if (!ref || !geometry.has(prop)) continue
+              if (plugin.dimensionRefPx(ref, src) === null) missing.push(`${recipe.key} ${prop} ${ref}`)
+            }
+          }
+        }
+      }
+    }
+    expect([...new Set(missing)]).toEqual([])
+  })
+
+  it('EVERY builder names a layer after each slot of its recipe (the Figma anatomy)', async () => {
+    const plugin = await import(/* @vite-ignore */ pluginFile)
+    const code = readFileSync(pluginCode, 'utf8')
+    const table = serializeRecipes()
+    expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(Object.keys(COMPONENT_RECIPES).sort())
+    const gaps: Record<string, string[]> = {}
+    for (const key of Object.keys(COMPONENT_RECIPES)) {
+      const g = plugin.anatomyGaps(code, table, key)
+      if (g.length) gaps[key] = g
+    }
+    expect(gaps).toEqual({})
+    // Every documented difference names real slots of that recipe.
+    for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
+      for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {
+        expect(COMPONENT_RECIPES[key].slots, `${key}.${slot}`).toContain(slot)
+      }
+    }
+  })
+
+  it('a layer carries its slot by name: stems and data-state qualifiers', async () => {
+    const plugin = await import(/* @vite-ignore */ pluginFile)
+    const m = plugin.slotMatchesLayer
+    expect(m('icon', 'icon-leading')).toBe(true)
+    expect(m('item', 'itemSelected')).toBe(false)
+    expect(m('cell', 'cell-active')).toBe(true)
+    expect(m('cell[data-active="true"]', 'cell-active')).toBe(true)
+    expect(m('cell[data-active="true"]', 'cell')).toBe(false)
+    expect(m('node[data-state="done"]', 'node-done')).toBe(true)
+    expect(m('item[data-highlighted]', 'item-highlighted')).toBe(true)
+    expect(m('link[aria-current="page"]', 'link-page')).toBe(true)
+    expect(m('root:hover', 'root')).toBe(false)
+  })
 })
+
