@@ -65,9 +65,6 @@ export interface PreviewTokens {
   // Radix-style panel treatment for raised surfaces (surface-1: cards, panels).
   // 'page' reuses the primitives page background as the panel fill.
   panelBackground?: 'solid' | 'translucent' | 'page'
-  // How a destructive / confirming action is painted — a STYLE decision, not a
-  // token: `solid` fills with the severity, `soft` washes it. See `StatusAction`.
-  statusAction?: 'soft' | 'solid'
   // Phosphor icon weight the previewed system renders glyphs at (thin…duotone).
   // The icon SET is always the recommended Phosphor library; only weight varies.
   iconWeight?: PhosphorWeight

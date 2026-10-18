@@ -141,7 +141,8 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `variant="destructive"`. Store v94, plugin 0.10.0. Phase 5 done: Escala-only
 > components use shadcn's vocabulary (lowercase values — `default·sm·lg`, `google`,
 > `online`, `pdf`…; on-screen text stays readable) and InfoTooltip folded into Tooltip
-> (store v95, plugin 0.11.0, 58 keys). `State` and True/False axes stay Figma properties. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+> (store v95, plugin 0.11.0, 58 keys). `State` and True/False axes stay Figma properties. Phase 6 done: `statusAction`
+> removed (store v96), artefacts and stale tests moved to the new axes — the plan is complete. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
 
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a
@@ -4516,6 +4517,11 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   byte-identical to before: the refactor changed which ROLE each site reads, not which
 >   tokens any component touches.
 
+> **SUPERSEDED (2026-10-18, store v96): `statusAction` is DELETED.** shadcn has one
+> destructive Button variant (soft, `status.critical.surface`) and no success button, so
+> there is no solid/soft style axis left; the field, its setter and the 12 System Style
+> entries are gone. The note below is history.
+>
 > **UPDATE: destructive and confirming are ONE control painted ONE way, and which way
 > is a style axis (`statusAction`).** Reported as the green success button getting a very
 > different treatment from the destructive one. It did, and it was the collage's own

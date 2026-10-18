@@ -106,7 +106,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 | 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ✅ 2026-10-18 · plugin 0.9.0 |
 | 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ✅ 2026-10-18 · plugin 0.10.0 |
 | 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | ✅ 2026-10-18 · plugin 0.11.0 |
-| 6 · Cierre | Migración del store, artefactos, `statusAction`, CLAUDE.md, plugin 0.7.0 | `npm test` + `npm run build` en verde, plugin construye todos los sets |
+| 6 · Cierre | Migración del store, artefactos, `statusAction`, CLAUDE.md | ✅ 2026-10-18 · plugin 0.11.0 (sin cambios) |
 
 Cada fase es un commit en los dos repos a la vez: el test de paridad no deja
 que la web y el plugin queden desalineados entre fases.
@@ -208,3 +208,19 @@ que la web y el plugin queden desalineados entre fases.
   props de shadcn (igual que en las fases 1–3). Ningún eje del catálogo lleva ya
   tamaños en mayúscula ni Danger/Error.
 - Plugin 0.11.0.
+
+## Fase 6 — hecha (2026-10-18)
+
+- **`statusAction` borrado** (decisión 6): el campo del store y su setter, el eje
+  de `ThemeFoundationOverride`, `PreviewTokens.statusAction` y las 12 entradas de
+  los System Styles. Store v96 lo quita del sistema, de `savedSystems` y de cada
+  `themeFoundations`; el relleno viejo de v25 queda neutralizado en su sitio.
+  Nadie lo leía ya desde la fase 1 (el Button destructivo es una variante).
+- **Artefactos revisados**: el último `Style: 'Solid'` (PreviewPanel) y los
+  comentarios de Profile / Checkout hablan ya el vocabulario de shadcn. Dos tests
+  que seguían iterando ejes viejos (y pasaban sin comprobar nada) ahora recorren
+  `variant` / `size` reales.
+- El plugin no tenía `statusAction`: se queda en 0.11.0.
+- **El plan está completo.** Pendiente fuera de este plan: el registry
+  `npx shadcn add` + `globals.css` (fase 4 del plan del esqueleto) y los ~22
+  componentes que solo existen en shadcn.

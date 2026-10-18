@@ -15,18 +15,11 @@ const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, rol
 /**
  * Profile / settings.
  *
- * `SwitchGroup`'s own demo ("Email notifications" / "Push notifications" /
- * "Marketing emails") is a genuine settings section as-is — `w="100%"` is the
- * only override it needs. The destructive action at the bottom is `Button`'s
- * real `Color: 'Danger'` axis (resolves to the ERROR ramp — see `statusColor`),
- * not a hand-picked red.
- *
- * `Style: 'Solid'`, so the fill IS `status.critical.surface-solid` verbatim —
- * whatever the user assigns that role in Token Details (an alpha primitive or
- * a solid tone) shows here directly. It was `Style: 'Outline'` once, which
- * reads only `status.critical.content`, so editing `surface-solid` moved
- * nothing ("the destructive button won't change, it looks like it has an
- * alpha").
+ * The notification rows are a settings list of Switches labelled through
+ * Field. The destructive action at the bottom is `Button variant="destructive"`
+ * (shadcn's soft destructive: `status.critical.surface` with the severity's
+ * own text), not a hand-picked red — editing those roles in Token Details
+ * moves it directly.
  */
 function ProfileScreen({ t, compact }: ArtefactProps) {
   const muted = t.fgMuted || '#717680'

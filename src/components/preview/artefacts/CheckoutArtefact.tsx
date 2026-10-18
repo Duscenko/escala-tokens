@@ -37,10 +37,9 @@ function LineItem({ t, label, amount, bold }: { t: PreviewTokens; label: string;
  * Reuses `Input`'s real `Default`/`E-Mail` types for contact fields — no
  * invented "Card number" type: the catalogue's `Input` axis is a closed set
  * that mirrors the plugin's real Figma variants, and adding a fake one here
- * would claim a control the system doesn't actually ship. `Alert`'s
- * `Status: 'Success'` is the second status colour an artefact exercises
- * (after OTP's `Error`) — SAME component, opposite status, so the two
- * artefacts together prove the ramp works both directions.
+ * would claim a control the system doesn't actually ship. The confirmation
+ * uses `Alert` (default) beside OTP's `variant="destructive"` — SAME
+ * component, opposite outcome.
  */
 function CheckoutScreen({ t, compact }: ArtefactProps) {
   const muted = t.fgMuted || '#717680'

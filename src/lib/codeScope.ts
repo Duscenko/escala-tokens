@@ -96,7 +96,6 @@ function bakeFoundations(snapshot: DesignSnapshot, themeKey: string): DesignSnap
     breakpointRoles: resolved.breakpointRoles,
     gridFrame: resolved.gridFrame,
     panelBackground: resolved.panelBackground,
-    statusAction: resolved.statusAction,
     iconWeight: resolved.iconWeight,
     themeFoundations: {},
   }

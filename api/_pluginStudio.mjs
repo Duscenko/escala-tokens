@@ -3901,7 +3901,6 @@ function resolveThemeFoundations(source, themeKey) {
     gridFrame: override.gridFrame ?? source.gridFrame,
     radiusRoleViewports: override.radiusRoleViewports ?? source.radiusRoleViewports,
     panelBackground: override.panelBackground ?? source.panelBackground,
-    statusAction: override.statusAction ?? source.statusAction,
     iconWeight: override.iconWeight ?? source.iconWeight
   };
 }
@@ -7362,7 +7361,6 @@ function makeDesignDefaults() {
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     radiusRoleViewports: {},
     panelBackground: "solid",
-    statusAction: "solid",
     iconWeight: "regular",
     semanticArchitecture: "categorical",
     architectureOverrides: {},
@@ -8139,7 +8137,6 @@ var init_useDesignStore = __esm({
             };
           }),
           setPanelBackground: (v) => set({ panelBackground: v }),
-          setStatusAction: (v) => set({ statusAction: v }),
           setIconWeight: (v) => set({ iconWeight: v }),
           setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
           // `ref === null` clears the edit, so the token falls back to the
@@ -8369,7 +8366,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 95,
+          version: 96,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -8477,7 +8474,6 @@ var init_useDesignStore = __esm({
                 }
               }
               if (!persisted.panelBackground) persisted.panelBackground = "solid";
-              if (!persisted.statusAction) persisted.statusAction = "solid";
               if (!persisted.iconWeight) persisted.iconWeight = "regular";
               if (!persisted.pageBackground) persisted.pageBackground = "#ffffff";
               if (version < 27 && Array.isArray(persisted.selectedComponents)) {
@@ -9530,6 +9526,20 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) fold(sys?.snapshot);
               }
             }
+            if (version < 96) {
+              const drop = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                delete state2.statusAction;
+                const tf = state2.themeFoundations;
+                if (tf && typeof tf === "object") {
+                  for (const o of Object.values(tf)) if (o && typeof o === "object") delete o.statusAction;
+                }
+              };
+              drop(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) drop(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -10446,7 +10456,6 @@ var THEME_STYLE_PRESETS = [
       // Soft (the previous Core pick); still a six-step ladder, just quieter.
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: "solid",
-      statusAction: "solid",
       iconWeight: "regular"
     },
     semantics: coreSemantics
@@ -10482,7 +10491,6 @@ var THEME_STYLE_PRESETS = [
       // adopted Cupertino / Glass theme after the latest iteration.
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: "translucent",
-      statusAction: "soft",
       iconWeight: "light"
     },
     semantics: glassSemantics,
@@ -10523,7 +10531,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: "solid",
-      statusAction: "solid",
       iconWeight: "fill"
     },
     // M3's filled text field: the fill carries the control so the edge can be a
@@ -10564,7 +10571,6 @@ var THEME_STYLE_PRESETS = [
       spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
       padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
       panelBackground: "page",
-      statusAction: "soft",
       iconWeight: "duotone"
     },
     semantics: natureSemantics
@@ -10594,7 +10600,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: retroShadows,
       panelBackground: "page",
-      statusAction: "soft",
       iconWeight: "bold"
     },
     semantics: retroSemantics
@@ -10622,7 +10627,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD, sm: "2px" },
       shadows: hardShadows,
       panelBackground: "solid",
-      statusAction: "solid",
       iconWeight: "bold"
     },
     // THE deliberate exception to the soften-the-border rule: brutalism's
@@ -10661,7 +10665,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: "solid",
-      statusAction: "soft",
       iconWeight: "light"
     },
     semantics: softBorders
@@ -10686,7 +10689,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: "page",
-      statusAction: "solid",
       iconWeight: "regular"
     },
     semantics: {
@@ -10717,7 +10719,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: "solid",
-      statusAction: "solid",
       iconWeight: "regular"
     },
     semantics: filledBorders
@@ -10743,7 +10744,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[2].values },
       panelBackground: "solid",
-      statusAction: "soft",
       iconWeight: "regular"
     },
     semantics: softBorders
@@ -10768,7 +10768,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: "solid",
-      statusAction: "solid",
       iconWeight: "thin"
     },
     semantics: {
@@ -10798,7 +10797,6 @@ var THEME_STYLE_PRESETS = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: "page",
-      statusAction: "solid",
       iconWeight: "light"
     },
     semantics: {

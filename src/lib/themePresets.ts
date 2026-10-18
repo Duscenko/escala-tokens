@@ -55,24 +55,6 @@ import {
 export type ThemeStyleSemantics = Record<string, { light?: string; dark?: string }>
 
 /**
- * How a style paints a DESTRUCTIVE or CONFIRMING action.
- *
- *  · `solid` — filled with the severity, label in the solved `on-solid` ink
- *    (near-white on every seed here). Reads as a commitment; what Material and
- *    most product systems ship.
- *  · `soft`  — a translucent wash of the severity with the severity's OWN text
- *    (`status.<sev>.content`). Quieter, and what Apple and print-led systems do.
- *
- * It exists because destructive and confirming are the SAME control at two
- * severities and must be painted the SAME way — the collage used to show Solid
- * Danger beside Soft Success, which reads as two unrelated components and makes
- * the severities impossible to compare. Unifying them raised the real question:
- * unified as WHICH? Both answers are right for different systems, so it is a
- * style axis rather than a global default.
- */
-export type StatusAction = 'soft' | 'solid'
-
-/**
  * The Phosphor WEIGHT a style renders its glyphs at.
  *
  * The icon SET never changes — always the bundled Phosphor library, which is
@@ -488,7 +470,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // Soft (the previous Core pick); still a six-step ladder, just quieter.
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
-      statusAction: 'solid',
       iconWeight: 'regular',
     },
     semantics: coreSemantics,
@@ -524,7 +505,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // adopted Cupertino / Glass theme after the latest iteration.
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'translucent',
-      statusAction: 'soft',
       iconWeight: 'light',
     },
     semantics: glassSemantics,
@@ -565,7 +545,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
-      statusAction: 'solid',
       iconWeight: 'fill',
     },
     // M3's filled text field: the fill carries the control so the edge can be a
@@ -606,7 +585,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
       padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
       panelBackground: 'page',
-      statusAction: 'soft',
       iconWeight: 'duotone',
     },
     semantics: natureSemantics,
@@ -636,7 +614,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: retroShadows,
       panelBackground: 'page',
-      statusAction: 'soft',
       iconWeight: 'bold',
     },
     semantics: retroSemantics,
@@ -664,7 +641,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD, sm: '2px' },
       shadows: hardShadows,
       panelBackground: 'solid',
-      statusAction: 'solid',
       iconWeight: 'bold',
     },
     // THE deliberate exception to the soften-the-border rule: brutalism's
@@ -703,7 +679,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
-      statusAction: 'soft',
       iconWeight: 'light',
     },
     semantics: softBorders,
@@ -728,7 +703,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: 'page',
-      statusAction: 'solid',
       iconWeight: 'regular',
     },
     semantics: {
@@ -759,7 +733,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
-      statusAction: 'solid',
       iconWeight: 'regular',
     },
     semantics: filledBorders,
@@ -785,7 +758,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[2].values },
       panelBackground: 'solid',
-      statusAction: 'soft',
       iconWeight: 'regular',
     },
     semantics: softBorders,
@@ -810,7 +782,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
-      statusAction: 'solid',
       iconWeight: 'thin',
     },
     semantics: {
@@ -840,7 +811,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: 'page',
-      statusAction: 'solid',
       iconWeight: 'light',
     },
     semantics: {

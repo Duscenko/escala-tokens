@@ -475,13 +475,6 @@ export interface DesignSnapshot {
   // primitives page background (`pageBackground`).
   panelBackground: 'solid' | 'translucent' | 'page'
   /**
-   * How a destructive or confirming action is painted. `solid` fills it with
-   * the severity and puts the solved ink on top; `soft` gives it a translucent
-   * wash of the severity with the severity's own text. Both are legitimate and
-   * the choice is a STYLE decision — see `StatusAction` in themePresets.
-   */
-  statusAction: 'soft' | 'solid'
-  /**
    * Phosphor icon WEIGHT the previewed system renders glyphs at — `thin`,
    * `light`, `regular`, `bold`, `fill`, `duotone`. A style axis, not a token:
    * the icon set is always the recommended Phosphor library, only the stroke
@@ -625,7 +618,6 @@ export function makeDesignDefaults(): DesignSnapshot {
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     radiusRoleViewports: {},
     panelBackground: 'solid',
-    statusAction: 'solid',
     iconWeight: 'regular',
     semanticArchitecture: 'categorical',
     architectureOverrides: {},
@@ -1023,8 +1015,6 @@ interface DesignStore {
   // Panel background — Radix-style treatment for raised surfaces (surface-1:
   // cards, panels, sections): solid, translucent, or the page background.
   panelBackground: 'solid' | 'translucent' | 'page'
-  statusAction: 'soft' | 'solid'
-  setStatusAction: (v: 'soft' | 'solid') => void
   iconWeight: PhosphorWeight
   setIconWeight: (v: PhosphorWeight) => void
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
@@ -1676,7 +1666,6 @@ export const useDesignStore = create<DesignStore>()(
       }),
 
       setPanelBackground: (v) => set({ panelBackground: v }),
-      setStatusAction: (v) => set({ statusAction: v }),
       setIconWeight: (v) => set({ iconWeight: v }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
       // `ref === null` clears the edit, so the token falls back to the
@@ -1971,7 +1960,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 95,
+      version: 96,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2136,7 +2125,7 @@ export const useDesignStore = create<DesignStore>()(
           // surfaces. Default 'solid' preserves the current look for every
           // existing session until they opt into translucent.
           if (!persisted.panelBackground) persisted.panelBackground = 'solid'
-          if (!persisted.statusAction) persisted.statusAction = 'solid'
+          // (statusAction was backfilled here; the field is gone since v96.)
           // v67→v68: Phosphor icon weight per system. Absent → `regular`, the
           // weight every specimen rendered before this field existed.
           if (!persisted.iconWeight) persisted.iconWeight = 'regular'
@@ -3563,6 +3552,22 @@ export const useDesignStore = create<DesignStore>()(
           fold(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) fold(sys?.snapshot)
+          }
+        }
+        if (version < 96) {
+          // v95→v96: `statusAction` (solid / soft destructive buttons) is gone —
+          // shadcn has one destructive Button variant, so there is no style axis
+          // left to choose. Drop it from the system, its saved copies and every
+          // per-theme foundation override.
+          const drop = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            delete state.statusAction
+            const tf = state.themeFoundations
+            if (tf && typeof tf === 'object') for (const o of Object.values(tf)) if (o && typeof o === 'object') delete (o as any).statusAction
+          }
+          drop(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) drop(sys?.snapshot)
           }
         }
         return persisted

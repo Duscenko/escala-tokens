@@ -161,7 +161,7 @@ describe('system style presets', () => {
   it('every style declares the same foundation axes', () => {
     const required = [
       'typography', 'spacing', 'radius', 'radiusRoles', 'sizes', 'selector',
-      'stroke', 'shadows', 'panelBackground', 'statusAction', 'iconWeight',
+      'stroke', 'shadows', 'panelBackground', 'iconWeight',
     ] as const
     for (const preset of THEME_STYLE_PRESETS) {
       for (const key of required) {

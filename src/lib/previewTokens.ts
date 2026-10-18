@@ -135,7 +135,7 @@ export function resolvePreviewTokens(
 ): PreviewTokens {
   const foundations = resolveThemeFoundations(store, themeKey)
   const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor } = store
-  const { radius, spacing, typography, panelBackground, statusAction, iconWeight } = foundations
+  const { radius, spacing, typography, panelBackground, iconWeight } = foundations
   // Render the requested theme (driven by the Semantic table's eye toggle).
   // A custom "style theme" carries its own palette — use it for the fallbacks.
   const semanticTokens = semanticModesFor(
@@ -262,7 +262,6 @@ export function resolvePreviewTokens(
     padding: foundations.padding,
     typography,
     panelBackground,
-    statusAction,
     iconWeight,
     // The PREVIEWED THEME's page, in both appearances — this was
     // `kind === 'light' ? store.pageBackground : undefined`, i.e. the system's

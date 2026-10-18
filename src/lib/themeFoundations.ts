@@ -37,8 +37,6 @@ export interface ThemeFoundationOverride {
   /** Hand-set radius role values on Tablet / Mobile (see RadiusRoleViewports). */
   radiusRoleViewports?: RadiusRoleViewports
   panelBackground?: 'solid' | 'translucent' | 'page'
-  /** How a style paints a DESTRUCTIVE or CONFIRMING action — see `StatusAction`. */
-  statusAction?: 'soft' | 'solid'
   /** Phosphor icon weight this style renders glyphs at — thin…duotone. */
   iconWeight?: PhosphorWeight
 }
@@ -63,7 +61,6 @@ export interface FoundationSource extends ThemeFoundationOverride {
   gridFrame: GridFrameModes
   radiusRoleViewports?: RadiusRoleViewports
   panelBackground: 'solid' | 'translucent' | 'page'
-  statusAction: 'soft' | 'solid'
   iconWeight: PhosphorWeight
   themeFoundations?: Record<string, ThemeFoundationOverride>
 }
@@ -108,7 +105,6 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     gridFrame: override.gridFrame ?? source.gridFrame,
     radiusRoleViewports: override.radiusRoleViewports ?? source.radiusRoleViewports,
     panelBackground: override.panelBackground ?? source.panelBackground,
-    statusAction: override.statusAction ?? source.statusAction,
     iconWeight: override.iconWeight ?? source.iconWeight,
   }
 }

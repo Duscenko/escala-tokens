@@ -18,8 +18,7 @@ import { ShadowPreview } from './atoms/ShadowPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 
-// Catalogue renderers reused verbatim — keys are plugin gates ('Toggle' ships
-// with the display name "Switch").
+// Catalogue renderers reused verbatim — keys are plugin gates (shadcn's names).
 const ButtonSpec = SPECIMENS.Button
 const BadgeSpec = SPECIMENS.Badge
 const SwitchSpec = SPECIMENS.Switch
@@ -115,7 +114,7 @@ function ColorCollage({
           Components with no State axis (badges, avatar) stay visually still;
           see the wrapper's own notes for why that's deliberate. */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <Live c="Button" t={tokens} v={{ Style: 'Solid' }} icons={icons} />
+        <Live c="Button" t={tokens} v={{}} icons={icons} />
         <Live c="Button" t={tokens} v={{ Variant: 'outline' }} />
         <Live c="Button" t={tokens} v={{ Variant: 'secondary' }} />
       </div>

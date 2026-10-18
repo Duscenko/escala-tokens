@@ -84,11 +84,11 @@ describe('component recipes', () => {
     }
   })
 
-  it('give every Solid button three distinct states (no opacity dim)', () => {
+  it('give every filled button variant distinct hover states (no opacity dim)', () => {
     const fill = (v: Record<string, string>) => resolveRecipe(COMPONENT_RECIPES.Button, v).root.fill!.slice(6)
-    for (const color of ['Brand', 'Danger', 'Success']) {
+    for (const color of ['default', 'secondary', 'destructive']) {
       for (const mode of ['light', 'dark']) {
-        const hex = ['Default', 'Hover', 'Pressed'].map((State) => roleHex[fill({ Color: color, Style: 'Solid', State })][mode])
+        const hex = ['Default', 'Hover', 'Pressed'].map((State) => roleHex[fill({ Variant: color, State })][mode])
         expect(new Set(hex).size, `${color} ${mode}: ${hex.join(' ')}`).toBeGreaterThanOrEqual(2)
         expect(hex[1], `${color} ${mode} hover`).not.toBe(hex[0])
       }
