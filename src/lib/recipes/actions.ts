@@ -181,3 +181,30 @@ export const TOGGLE_GROUP: ComponentRecipe = {
     })),
   ],
 }
+
+// ── Toggle ─────────────────────────────────────────────────────────────────
+// shadcn's Toggle: the ToggleGroup item on its own. Pressed (Radix
+// `data-state="on"`, mirrored as `data-pressed` True/False — a Figma property)
+// takes the muted surface.
+
+export const TOGGLE: ComponentRecipe = {
+  key: 'Toggle',
+  slots: ['root'],
+  defaults: { Variant: 'default', Size: 'default', Pressed: 'False' },
+  parts: [
+    part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
+      root: variant === 'outline'
+        ? { stroke: c('border.strong'), strokeWidth: 'stroke.control', font: 'type.button', radius: 'radius.action', gap: 'spacing.1' }
+        : { font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
+    })),
+    part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
+      root: { height: TOGGLE_HEIGHT[size], paddingX: 'spacing.2_5' },
+    })),
+    part({ Pressed: ['False', 'True'] as const }, (pressed) => ({
+      root: pressed === 'True'
+        ? { fill: c('surface.layer-2'), text: c('content.primary') }
+        : { fill: NONE, text: c('content.secondary') },
+      'root:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
+    })),
+  ],
+}

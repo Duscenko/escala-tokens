@@ -18,6 +18,15 @@ import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as 
 import { Toaster as SkToaster, toast, type SonnerType } from '../../../escala-ui/sonner'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
+import { AlertDialog as SkAlertDialog, AlertDialogAction as SkAlertDialogAction, AlertDialogCancel as SkAlertDialogCancel, AlertDialogContent as SkAlertDialogContent, AlertDialogDescription as SkAlertDialogDescription, AlertDialogFooter as SkAlertDialogFooter, AlertDialogHeader as SkAlertDialogHeader, AlertDialogMedia as SkAlertDialogMedia, AlertDialogTitle as SkAlertDialogTitle, type AlertDialogSize } from '../../../escala-ui/alert-dialog'
+import { Sheet as SkSheet, SheetContent as SkSheetContent, SheetDescription as SkSheetDescription, SheetFooter as SkSheetFooter, SheetHeader as SkSheetHeader, SheetTitle as SkSheetTitle, type SheetSide } from '../../../escala-ui/sheet'
+import { DrawerContent as SkDrawerContent, DrawerDescription as SkDrawerDescription, DrawerFooter as SkDrawerFooter, DrawerHeader as SkDrawerHeader, DrawerTitle as SkDrawerTitle, type DrawerDirection } from '../../../escala-ui/drawer'
+import { HoverCardContent as SkHoverCardContent } from '../../../escala-ui/hover-card'
+import { Item as SkItem, ItemActions as SkItemActions, ItemContent as SkItemContent, ItemDescription as SkItemDescription, ItemMedia as SkItemMedia, ItemTitle as SkItemTitle, type ItemSize, type ItemVariant } from '../../../escala-ui/item'
+import { Attachment as SkAttachment, AttachmentAction as SkAttachmentAction, AttachmentActions as SkAttachmentActions, AttachmentContent as SkAttachmentContent, AttachmentDescription as SkAttachmentDescription, AttachmentMedia as SkAttachmentMedia, AttachmentTitle as SkAttachmentTitle, type AttachmentSize, type AttachmentState } from '../../../escala-ui/attachment'
+import { Message as SkMessage, MessageAvatar as SkMessageAvatar, MessageContent as SkMessageContent, MessageFooter as SkMessageFooter, MessageHeader as SkMessageHeader } from '../../../escala-ui/message'
+import { Bubble as SkBubble, BubbleContent as SkBubbleContent, type BubbleVariant } from '../../../escala-ui/bubble'
+import { ResizableHandle as SkResizableHandle, ResizablePanel as SkResizablePanel, ResizablePanelGroup as SkResizablePanelGroup } from '../../../escala-ui/resizable'
 import { Collapsible as SkCollapsible, CollapsibleContent as SkCollapsibleContent, CollapsibleItem as SkCollapsibleItem, CollapsibleTrigger as SkCollapsibleTrigger } from '../../../escala-ui/collapsible'
 import { Table as SkTable, TableBody as SkTableBody, TableCaption as SkTableCaption, TableCell as SkTableCell, TableFooter as SkTableFooter, TableHead as SkTableHead, TableHeader as SkTableHeader, TableRow as SkTableRow } from '../../../escala-ui/table'
 import { Skeleton as SkSkeleton } from '../../../escala-ui/skeleton'
@@ -291,6 +300,169 @@ export function SkeletonEmptySpecimen({ t, v, w }: SpecimenProps) {
           <SkButton size="sm">Create project</SkButton>
         </SkEmptyContent>
       </SkEmpty>
+    </RecipeScope>
+  )
+}
+
+// ── Overlays (batch 2), drawn in place ────────────────────────────────────
+
+export function SkeletonAlertDialogSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as AlertDialogSize
+  return (
+    <RecipeScope t={t}>
+      <SkAlertDialog open>
+        <SkAlertDialogContent inline size={size} style={{ width: size === 'sm' ? 300 : 400 }}>
+          <SkAlertDialogHeader>
+            {size === 'sm' && <SkAlertDialogMedia><PreviewIcon concept="close" size={iconOf(20)} /></SkAlertDialogMedia>}
+            <SkAlertDialogTitle>Delete this project?</SkAlertDialogTitle>
+            <SkAlertDialogDescription>This removes every token and brand in it. You can't undo this.</SkAlertDialogDescription>
+          </SkAlertDialogHeader>
+          <SkAlertDialogFooter>
+            <SkAlertDialogCancel size="sm">Cancel</SkAlertDialogCancel>
+            <SkAlertDialogAction size="sm" variant="destructive">Delete</SkAlertDialogAction>
+          </SkAlertDialogFooter>
+        </SkAlertDialogContent>
+      </SkAlertDialog>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonSheetSpecimen({ t, v }: SpecimenProps) {
+  const side = (v.Side ?? 'right') as SheetSide
+  const across = side === 'top' || side === 'bottom'
+  return (
+    <RecipeScope t={t}>
+      <SkSheet open modal={false}>
+        <SkSheetContent inline side={side} closeIcon={<PreviewIcon concept="close" size={16} />} style={across ? { width: 420 } : { width: 300, height: 300 }}>
+          <SkSheetHeader>
+            <SkSheetTitle>Edit profile</SkSheetTitle>
+            <SkSheetDescription>Make changes to your profile here.</SkSheetDescription>
+          </SkSheetHeader>
+          <SkSheetFooter>
+            <SkButton size="sm">Save changes</SkButton>
+          </SkSheetFooter>
+        </SkSheetContent>
+      </SkSheet>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonDrawerSpecimen({ t, v }: SpecimenProps) {
+  const direction = (v.Direction ?? 'bottom') as DrawerDirection
+  return (
+    <RecipeScope t={t}>
+      <SkDrawerContent inline direction={direction} style={{ width: 340 }}>
+        <SkDrawerHeader>
+          <SkDrawerTitle>Move goal</SkDrawerTitle>
+          <SkDrawerDescription>Set your daily activity goal.</SkDrawerDescription>
+        </SkDrawerHeader>
+        <SkDrawerFooter>
+          <SkButton size="sm">Submit</SkButton>
+          <SkButton size="sm" variant="outline">Cancel</SkButton>
+        </SkDrawerFooter>
+      </SkDrawerContent>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonHoverCardSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div className="flex flex-col items-start" style={{ gap: 'var(--spacing-1_5)' }}>
+        <SkButton variant="link" size="sm" style={{ paddingInline: 0 }}>@escala</SkButton>
+        <SkHoverCardContent inline style={{ width: 280 }}>
+          <div style={{ fontWeight: 600 }}>Escala</div>
+          <div>Design tokens and components for Figma and code, from one system.</div>
+          <div style={{ color: 'var(--color-content-subtle)' }}>Joined October 2026</div>
+        </SkHoverCardContent>
+      </div>
+    </RecipeScope>
+  )
+}
+
+// ── Lists and chat (batch 2) ──────────────────────────────────────────────
+
+export function SkeletonItemSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkItem variant={(v.Variant ?? 'default') as ItemVariant} size={(v.Size ?? 'default') as ItemSize} style={{ width: w ?? 380 }}>
+        <SkItemMedia variant="icon"><PreviewIcon concept="settings" size={iconOf(16)} /></SkItemMedia>
+        <SkItemContent>
+          <SkItemTitle>Two-factor authentication</SkItemTitle>
+          <SkItemDescription>Verify sign-ins with a code from your phone.</SkItemDescription>
+        </SkItemContent>
+        <SkItemActions><SkButton size="sm" variant="outline">Enable</SkButton></SkItemActions>
+      </SkItem>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonAttachmentSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'done') as AttachmentState
+  const vertical = v.Orientation === 'vertical'
+  const sub: Record<AttachmentState, string> = {
+    idle: 'Drop to attach', uploading: 'Uploading… 42%', processing: 'Processing…', error: 'Upload failed', done: '2.4 MB',
+  }
+  return (
+    <RecipeScope t={t}>
+      <SkAttachment state={state} size={(v.Size ?? 'default') as AttachmentSize} orientation={vertical ? 'vertical' : 'horizontal'} style={{ width: vertical ? 160 : 280 }}>
+        <SkAttachmentMedia><PreviewIcon concept="box" size={iconOf(16)} /></SkAttachmentMedia>
+        <SkAttachmentContent>
+          <SkAttachmentTitle>brand-tokens.json</SkAttachmentTitle>
+          <SkAttachmentDescription>{sub[state]}</SkAttachmentDescription>
+        </SkAttachmentContent>
+        <SkAttachmentActions>
+          <SkAttachmentAction aria-label="Remove"><PreviewIcon concept="close" size={iconOf(12)} /></SkAttachmentAction>
+        </SkAttachmentActions>
+      </SkAttachment>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonMessageSpecimen({ t, v }: SpecimenProps) {
+  const end = v.Align === 'end'
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 380 }}>
+        <SkMessage align={end ? 'end' : 'start'}>
+          <SkMessageAvatar>{end ? 'You' : 'AI'}</SkMessageAvatar>
+          <SkMessageContent>
+            <SkMessageHeader>{end ? 'You' : 'Escala'} · 10:42</SkMessageHeader>
+            <SkBubble variant={end ? 'default' : 'muted'} align={end ? 'end' : 'start'}>
+              <SkBubbleContent>{end ? 'Can you make the radius rounder?' : 'Done — Boxes moved to 24px.'}</SkBubbleContent>
+            </SkBubble>
+            <SkMessageFooter>Delivered</SkMessageFooter>
+          </SkMessageContent>
+        </SkMessage>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonBubbleSpecimen({ t, v }: SpecimenProps) {
+  const end = v.Align === 'end'
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 320, display: 'flex', flexDirection: 'column' }}>
+        <SkBubble variant={(v.Variant ?? 'default') as BubbleVariant} align={end ? 'end' : 'start'}>
+          <SkBubbleContent>Ship the new radius to Figma today?</SkBubbleContent>
+        </SkBubble>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonResizableSpecimen({ t, v }: SpecimenProps) {
+  const vertical = v.Orientation === 'vertical'
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 360, height: 200 }}>
+        <SkResizablePanelGroup orientation={vertical ? 'vertical' : 'horizontal'}>
+          <SkResizablePanel defaultSize={50}><div className="flex h-full items-center justify-center">One</div></SkResizablePanel>
+          <SkResizableHandle withHandle />
+          <SkResizablePanel defaultSize={50}><div className="flex h-full items-center justify-center">Two</div></SkResizablePanel>
+        </SkResizablePanelGroup>
+      </div>
     </RecipeScope>
   )
 }

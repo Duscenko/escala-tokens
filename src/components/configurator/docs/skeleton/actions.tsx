@@ -8,6 +8,7 @@ import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSepa
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
+import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/toggle'
 import { ToggleGroup as SkToggleGroup, ToggleGroupItem as SkToggleGroupItem, type ToggleGroupSize, type ToggleGroupVariant } from '../../../escala-ui/toggle-group'
 
 /** shadcn size → the control step its icon is sized from (xs · sm · md · lg). */
@@ -129,6 +130,23 @@ export function SkeletonToggleGroupSpecimen({ t, v }: SpecimenProps) {
         <SkToggleGroupItem value="italic" aria-label="Italic"><i>I</i></SkToggleGroupItem>
         <SkToggleGroupItem value="underline" aria-label="Underline"><u>U</u></SkToggleGroupItem>
       </SkToggleGroup>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonToggleSpecimen({ t, v }: SpecimenProps) {
+  const pressed = (v.Pressed ?? 'False') === 'True'
+  return (
+    <RecipeScope t={t}>
+      <SkToggle
+        key={String(pressed)}
+        defaultPressed={pressed}
+        variant={(v.Variant ?? 'default') as ToggleVariant}
+        size={(v.Size ?? 'default') as ToggleSize}
+        aria-label="Bold"
+      >
+        <b>B</b>
+      </SkToggle>
     </RecipeScope>
   )
 }

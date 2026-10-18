@@ -245,3 +245,61 @@ export const SIDEBAR: ComponentRecipe = {
     })),
   ],
 }
+
+// ── Menubar ────────────────────────────────────────────────────────────────
+// shadcn's Menubar: a bordered bar of triggers; each menu is the Dropdown
+// panel. The panel portals, so its parts are matched on their own.
+
+export const MENUBAR: ComponentRecipe = {
+  key: 'Menubar',
+  slots: ['root', 'trigger', 'content', 'item', 'separator', 'shortcut'],
+  detachedSlots: ['content', 'item', 'separator', 'shortcut'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        height: 'size.compact', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5', gap: 'spacing.0_5',
+      },
+      trigger: { text: c('content.primary'), font: 'type.label', radius: 'radius.control', paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
+      'trigger:hover': { fill: c('action.ghost.hover') },
+      'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
+      'trigger[data-active="true"]': { fill: c('action.ghost.hover') },
+      content: {
+        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
+        shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
+      },
+      item: {
+        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
+      },
+      'item[data-highlighted]': { fill: c('action.ghost.hover') },
+      'item:hover': { fill: c('action.ghost.hover') },
+      'item[data-variant="destructive"]': { text: c('status.critical.content') },
+      separator: { fill: c('border.subtle'), height: 'stroke.divider' },
+      shortcut: { text: c('content.subtle'), font: 'type.caption' },
+    })),
+  ],
+}
+
+// ── NavigationMenu ─────────────────────────────────────────────────────────
+// shadcn's NavigationMenu: ghost triggers over a raised viewport of links.
+
+export const NAVIGATION_MENU: ComponentRecipe = {
+  key: 'NavigationMenu',
+  slots: ['root', 'trigger', 'viewport', 'content', 'link'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.0' },
+      trigger: { text: c('content.primary'), font: 'type.label', radius: 'radius.action', height: 'size.compact', paddingX: 'spacing.2_5', gap: 'spacing.1' },
+      'trigger:hover': { fill: c('action.ghost.hover') },
+      'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
+      viewport: {
+        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay', shadow: 'shadow.lg',
+      },
+      content: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5', gap: 'spacing.1' },
+      link: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action', paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.1' },
+      'link:hover': { fill: c('action.ghost.hover') },
+    })),
+  ],
+}

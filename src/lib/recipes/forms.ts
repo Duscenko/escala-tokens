@@ -479,3 +479,33 @@ export const NATIVE_SELECT: ComponentRecipe = {
     }),
   ],
 }
+
+// ── Calendar ───────────────────────────────────────────────────────────────
+// shadcn's Calendar (react-day-picker): caption, weekdays and ghost day cells;
+// a single or range end day takes the primary action, the range middle and
+// today the muted surface, outside days the subtle ink. Nav arrows are ghost
+// icon Buttons (their own recipe).
+
+export const CALENDAR: ComponentRecipe = {
+  key: 'Calendar',
+  slots: ['root', 'caption', 'weekday', 'day'],
+  defaults: { Mode: 'single' },
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container',
+        paddingX: 'spacing.3', paddingY: 'spacing.3', text: c('content.primary'),
+      },
+      caption: { text: c('content.primary'), font: 'type.label' },
+      weekday: { text: c('content.secondary'), font: 'type.caption' },
+      day: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action', height: 'size.compact', width: 'size.compact' },
+      'day:hover': { fill: c('action.ghost.hover') },
+      'day[data-today="true"]': { fill: c('surface.layer-2') },
+      'day[data-outside="true"]': { text: c('content.subtle') },
+      'day[data-range-middle="true"]': { fill: c('surface.layer-2'), text: c('content.primary') },
+      'day[data-selected-single="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
+      'day[data-range-start="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
+      'day[data-range-end="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
+    })),
+  ],
+}

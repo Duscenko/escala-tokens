@@ -2,6 +2,14 @@ import { create } from 'zustand'
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
+
+/** Catalogue keys added by store v97 / v98 (shadcn phase 5). A migration adds
+ *  them only to a selection that already held every earlier component. */
+const COMPONENTS_V97 = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
+const COMPONENTS_V98 = [
+  'Toggle', 'Calendar', 'AlertDialog', 'Sheet', 'Drawer', 'HoverCard', 'Item', 'Attachment', 'Message',
+  'Bubble', 'Resizable', 'Carousel', 'Chart', 'Menubar', 'NavigationMenu',
+]
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
 import { mergeTypeRoles, migrateHeadingFamilyToBody, promoteReadingTypeIdentity, stepHeadingsPerCut, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
 import {
@@ -1960,7 +1968,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 97,
+      version: 98,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3575,7 +3583,24 @@ export const useDesignStore = create<DesignStore>()(
           // NativeSelect, Kbd, Collapsible, Table, Skeleton, Empty). A system
           // that had EVERY earlier component selected gets them too, as a fresh
           // "everything" would; a curated selection is left alone.
-          const ADDED = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
+          const ADDED: string[] = [...COMPONENTS_V97]
+          // Keys added by LATER versions are not "earlier" here either.
+          const before = COMPONENT_KEYS.filter((k) => !ADDED.includes(k) && !COMPONENTS_V98.includes(k))
+          const grow = (state: any) => {
+            const sel = state?.selectedComponents
+            if (!Array.isArray(sel)) return
+            const have = new Set(sel)
+            if (before.every((k) => have.has(k))) state.selectedComponents = [...sel, ...ADDED.filter((k) => !have.has(k))]
+          }
+          grow(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) grow(sys?.snapshot)
+          }
+        }
+        if (version < 98) {
+          // v97→v98: fifteen more shadcn components. Same rule as v97: a system
+          // that had every earlier component gets them; a curated one is kept.
+          const ADDED: string[] = [...COMPONENTS_V98]
           const before = COMPONENT_KEYS.filter((k) => !ADDED.includes(k))
           const grow = (state: any) => {
             const sel = state?.selectedComponents

@@ -32,6 +32,13 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `empty.tsx` | `bases/radix/ui/empty.tsx` | all parts; EmptyMedia `variant` as `data-variant` on the media part; the dash is inline |
 | `collapsible.tsx` | `bases/radix/ui/collapsible.tsx` | Radix Collapsible; adds the chevron to the trigger and `CollapsibleItem` (the demo's row) |
 | `table.tsx` | `bases/radix/ui/table.tsx` | all parts; `border-collapse` so row hairlines draw |
+| `toggle.tsx` | `bases/radix/ui/toggle.tsx` | `variant` / `size` verbatim; mirrors pressed as `data-pressed` True/False |
+| `calendar.tsx` | `bases/radix/ui/calendar.tsx` | react-day-picker v10; parts via `components` (Root, CaptionLabel, Weekday, DayButton, nav = ghost icon-sm Buttons); icons are props |
+| `alert-dialog.tsx` · `sheet.tsx` · `hover-card.tsx` | `bases/radix/ui/…` | portal into the theme scope; `inline` draws in place |
+| `drawer.tsx` | `bases/radix/ui/drawer.tsx` | vaul; `direction` prop on the content; `inline` with plain title/description |
+| `menubar.tsx` · `navigation-menu.tsx` | `bases/radix/ui/…` | Menubar `inline` panel + trigger `active`; nav trigger chevron is a prop |
+| `item.tsx` · `attachment.tsx` · `message.tsx` · `bubble.tsx` | `bases/radix/ui/…` | all parts and variants; Attachment state also on media / description |
+| `resizable.tsx` · `carousel.tsx` · `chart.tsx` | `bases/radix/ui/…` | react-resizable-panels v4 · Embla · Recharts v3; chart frame tints with `currentColor` |
 
 Rules (design-plans/shadcn-component-skeleton.md):
 - Appearance lives in the generated sheet (`lib/recipeStyles.ts`) from

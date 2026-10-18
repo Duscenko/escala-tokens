@@ -8,7 +8,7 @@
 // retunes Docs, Components, and Preview together — inline styles by design
 // (see CLAUDE.md conventions).
 
-import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from 'react'
+import { Suspense, createContext, lazy, useContext, useLayoutEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -19,7 +19,7 @@ import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibrari
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen,
-  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
@@ -30,6 +30,7 @@ import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonBreadcrumbSpecimen,
   SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
+  SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
@@ -45,6 +46,8 @@ import {
   SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
+  SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
+  SkeletonAttachmentSpecimen, SkeletonMessageSpecimen, SkeletonBubbleSpecimen, SkeletonResizableSpecimen,
 } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
@@ -344,11 +347,21 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
+// Calendar, Chart and Carousel pull react-day-picker, Recharts and Embla: their
+// module loads only when one of them renders.
+function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
+  const L = lazy(() => import('./skeleton/heavy').then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
+  return function LazySpecimen(p: SpecimenProps) {
+    return <Suspense fallback={null}><L {...p} /></Suspense>
+  }
+}
+
 export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ToggleGroup: SkeletonToggleGroupSpecimen,
+  Toggle: SkeletonToggleSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
   AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
@@ -360,6 +373,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InputTag: SkeletonInputTagSpecimen,
   Select: SkeletonSelectSpecimen,
   NativeSelect: SkeletonNativeSelectSpecimen,
+  Calendar: lazySpecimen('SkeletonCalendarSpecimen'),
   Combobox: SkeletonComboboxSpecimen,
   Checkbox: SkeletonCheckboxSpecimen,
   RadioGroup: SkeletonRadioGroupSpecimen,
@@ -386,6 +400,17 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Separator: SkeletonSeparatorSpecimen,
   Collapsible: SkeletonCollapsibleSpecimen,
   Table: SkeletonTableSpecimen,
+  Item: SkeletonItemSpecimen,
+  Attachment: SkeletonAttachmentSpecimen,
+  Message: SkeletonMessageSpecimen,
+  Bubble: SkeletonBubbleSpecimen,
+  Resizable: SkeletonResizableSpecimen,
+  Carousel: lazySpecimen('SkeletonCarouselSpecimen'),
+  Chart: lazySpecimen('SkeletonChartSpecimen'),
+  AlertDialog: SkeletonAlertDialogSpecimen,
+  Sheet: SkeletonSheetSpecimen,
+  Drawer: SkeletonDrawerSpecimen,
+  HoverCard: SkeletonHoverCardSpecimen,
   Accordion: SkeletonAccordionSpecimen,
   AspectRatio: SkeletonAspectRatioSpecimen,
   Dialog: SkeletonDialogSpecimen,
@@ -407,6 +432,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   DropdownMenu: SkeletonDropdownMenuSpecimen,
   ContextMenu: SkeletonContextMenuSpecimen,
   Command: SkeletonCommandSpecimen,
+  Menubar: SkeletonMenubarSpecimen,
+  NavigationMenu: SkeletonNavigationMenuSpecimen,
   Navbar: SkeletonNavbarSpecimen,
   Sidebar: SkeletonSidebarSpecimen,
 }

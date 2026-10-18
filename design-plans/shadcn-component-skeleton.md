@@ -490,8 +490,24 @@ pasa de 18 a 16 px porque ahora sale de un paso de espaciado.
   el `variant` de EmptyMedia es un estado del slot (`media[data-variant="icon"]`), con `Media`
   como propiedad de Figma; `Open` de Collapsible es propiedad de Figma; Toggle suelto no se
   añadió (solo ToggleGroup). La v97 añade las 7 claves solo a una selección que ya tenía TODO.
-  **Quedan ~15:** AlertDialog, Calendar, Carousel, Chart, Drawer, Sheet, HoverCard, Menubar,
-  NavigationMenu, Resizable, Item, Form, Attachment, Message/Bubble (+ Toggle suelto).
+- **Fase 5 · lote 2 hecho (2026-10-18, store v98, plugin 0.13.0) — la fase está COMPLETA:**
+  Toggle, Calendar, AlertDialog, Sheet, Drawer, HoverCard, Item, Attachment, Message, Bubble,
+  Resizable, Carousel, Chart, Menubar, NavigationMenu. Catálogo: 73 componentes.
+  - **Form no existe en shadcn v4** (`bases/radix` no tiene `form.tsx`): Field lo sustituyó, y
+    Escala ya tiene Field. No se añadió.
+  - **Dependencias nuevas:** vaul (Drawer), react-resizable-panels v4 (Resizable),
+    embla-carousel-react (Carousel), react-day-picker v10 (Calendar, API igual a la v9 que usa
+    shadcn), recharts v3 (Chart). Calendar, Chart y Carousel cargan en diferido
+    (`skeleton/heavy.tsx` + `lazySpecimen`): un chunk de ~495 KB fuera del bundle principal.
+  - **Overlays en docs:** AlertDialog, Sheet, Drawer, HoverCard y Menubar tienen `inline`
+    (se dibujan en su sitio, sin portal), como Dialog y DropdownMenu.
+  - **Decisiones:** Toggle refleja el pulsado como `data-pressed` True/False (propiedad `Pressed`
+    de Figma); Attachment lleva su `state` a media y description (`media-error` en Figma) porque
+    la raíz es el componente; Menubar en Figma dibuja la barra Y el menú abierto, con la raíz web
+    en la capa `bar` (`RECIPE_FIGMA_ANATOMY`); las reacciones de Bubble son solo web; la serie del
+    Chart usa `chartPalette` de la marca y el marco tinta ejes y rejilla con `currentColor`.
+  - Las migraciones v97/v98 comparten `COMPONENTS_V97` / `COMPONENTS_V98` (arriba del store):
+    cada una solo cuenta como "anteriores" las claves de versiones previas.
 - `font` y `shadow` de la receta siguen en el builder (estilos de texto y de efecto son
   objetos propios de Figma); `paint` / `strokeTop` (partes de un vector) también.
 - Comprobar en Figma un sync completo con 0.6.0: el Log debe salir sin "recipe slot … has no

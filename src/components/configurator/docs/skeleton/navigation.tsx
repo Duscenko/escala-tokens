@@ -19,6 +19,8 @@ import {
 } from '../../../escala-ui/sidebar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
+import { Menubar as SkMenubar, MenubarContent as SkMenubarContent, MenubarItem as SkMenubarItem, MenubarMenu as SkMenubarMenu, MenubarSeparator as SkMenubarSeparator, MenubarShortcut as SkMenubarShortcut, MenubarTrigger as SkMenubarTrigger } from '../../../escala-ui/menubar'
+import { NavigationMenu as SkNavigationMenu, NavigationMenuContent as SkNavigationMenuContent, NavigationMenuItem as SkNavigationMenuItem, NavigationMenuLink as SkNavigationMenuLink, NavigationMenuList as SkNavigationMenuList, NavigationMenuTrigger as SkNavigationMenuTrigger } from '../../../escala-ui/navigation-menu'
 
 export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
   return (
@@ -168,6 +170,72 @@ function SidebarDemo({ t, items, variant, w }: { t: SpecimenProps['t']; items: {
           </SkSidebarGroup>
         </SkSidebarContent>
       </SkSidebar>
+    </RecipeScope>
+  )
+}
+
+/** The bar with File open: its panel drawn in place under the trigger. */
+export function SkeletonMenubarSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div className="flex flex-col items-start" style={{ gap: 'var(--spacing-1_5)' }}>
+        <SkMenubar>
+          {['File', 'Edit', 'View'].map((m, i) => (
+            <SkMenubarMenu key={m}><SkMenubarTrigger active={i === 0}>{m}</SkMenubarTrigger></SkMenubarMenu>
+          ))}
+        </SkMenubar>
+        <SkMenubarContent inline style={{ width: 220 }}>
+          <SkMenubarItem highlighted>New tab<SkMenubarShortcut>⌘T</SkMenubarShortcut></SkMenubarItem>
+          <SkMenubarItem>New window<SkMenubarShortcut>⌘N</SkMenubarShortcut></SkMenubarItem>
+          <SkMenubarSeparator />
+          <SkMenubarItem>Share</SkMenubarItem>
+          <SkMenubarItem variant="destructive">Close all</SkMenubarItem>
+        </SkMenubarContent>
+      </div>
+    </RecipeScope>
+  )
+}
+
+/** The first panel starts open so the viewport shows; hover moves it. */
+export function SkeletonNavigationMenuSpecimen({ t }: SpecimenProps) {
+  const links = [
+    ['Introduction', 'What Escala is and how the tokens work.'],
+    ['Installation', 'Add the registry and the variables.'],
+    ['Figma', 'Sync the system into a file.'],
+  ]
+  return (
+    <RecipeScope t={t}>
+      <div style={{ minHeight: 280, width: 420, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <SkNavigationMenu defaultValue="start">
+          <SkNavigationMenuList>
+            <SkNavigationMenuItem value="start">
+              <SkNavigationMenuTrigger icon={<PreviewIcon concept="chevron" size={iconOf(11)} />}>Getting started</SkNavigationMenuTrigger>
+              <SkNavigationMenuContent>
+                <ul className="m-0 grid list-none p-0" style={{ width: 300 }}>
+                  {links.map(([title, body]) => (
+                    <li key={title}>
+                      <SkNavigationMenuLink href="#" onClick={(e) => e.preventDefault()}>
+                        <span style={{ fontWeight: 600 }}>{title}</span>
+                        <span style={{ color: 'var(--color-content-secondary)' }}>{body}</span>
+                      </SkNavigationMenuLink>
+                    </li>
+                  ))}
+                </ul>
+              </SkNavigationMenuContent>
+            </SkNavigationMenuItem>
+            <SkNavigationMenuItem value="components">
+              <SkNavigationMenuTrigger icon={<PreviewIcon concept="chevron" size={iconOf(11)} />}>Components</SkNavigationMenuTrigger>
+              <SkNavigationMenuContent>
+                <ul className="m-0 grid list-none p-0" style={{ width: 240 }}>
+                  {['Button', 'Card', 'Dialog'].map((c) => (
+                    <li key={c}><SkNavigationMenuLink href="#" onClick={(e) => e.preventDefault()}>{c}</SkNavigationMenuLink></li>
+                  ))}
+                </ul>
+              </SkNavigationMenuContent>
+            </SkNavigationMenuItem>
+          </SkNavigationMenuList>
+        </SkNavigationMenu>
+      </div>
     </RecipeScope>
   )
 }
