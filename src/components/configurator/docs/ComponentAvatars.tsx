@@ -86,12 +86,11 @@ function ComponentAvatar({
   const Specimen = SPECIMENS[def.key]
   const brand = tokens.brandSolid
   return (
-    <button
-      type="button"
-      aria-label={def.label}
-      aria-current={active ? 'true' : undefined}
-      onClick={() => onSelect(def)}
-      className={`flex w-[120px] flex-shrink-0 flex-col rounded-xl border p-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+    // A div, not a <button>: the specimen inside renders real controls (a tab
+    // strip, a button), and a <button> cannot contain another. The click
+    // target is the transparent button laid over the whole card, last.
+    <div
+      className={`relative flex w-[120px] flex-shrink-0 flex-col rounded-xl border p-1.5 text-left transition-colors has-[>button:focus-visible]:ring-2 has-[>button:focus-visible]:ring-accent-ui/50 ${
         active
           ? ''
           : 'border-line hover:border-line-strong hover:bg-elevated/40'
@@ -121,10 +120,17 @@ function ComponentAvatar({
           </span>
         )}
       </span>
-      <span className={`mt-1 truncate px-0.5 text-micro ${active ? 'font-semibold text-fg' : 'text-fg-muted'}`}>
+      <span aria-hidden className={`mt-1 truncate px-0.5 text-micro ${active ? 'font-semibold text-fg' : 'text-fg-muted'}`}>
         {def.label}
       </span>
-    </button>
+      <button
+        type="button"
+        aria-label={def.label}
+        aria-current={active ? 'true' : undefined}
+        onClick={() => onSelect(def)}
+        className="absolute inset-0 cursor-pointer rounded-xl focus-visible:outline-none"
+      />
+    </div>
   )
 }
 
