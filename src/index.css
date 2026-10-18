@@ -111,6 +111,8 @@
   --color-rail-section: var(--rail-section);
   --color-chip-rest: var(--chip-rest);
   --color-input-bg: var(--input-bg);
+  --color-chrome-control: var(--chrome-control);
+  --color-chrome-control-pressed: var(--chrome-control-pressed);
   --color-line-alpha: var(--line-alpha);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);

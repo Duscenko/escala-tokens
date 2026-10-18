@@ -46,7 +46,11 @@ export const CHROME_ROLES = {
   '--line': 'border.subtle',
   '--line-strong': 'border.default',
   /** A selected row's edge (the open colour role) — the one stroke meant to be seen. */
-  '--line-emphasis': 'border.strong',
+  '--line-emphasis': 'border.control-hover',
+  /** A secondary control on a row: the selected role's swatch + hex pill, "Show". */
+  '--chrome-control': 'action.secondary.default',
+  /** The selected segment of a segmented control. */
+  '--chrome-control-pressed': 'action.secondary.pressed',
   '--status-danger': 'status.critical.content',
   '--status-success': 'status.success.content',
   '--status-warning': 'status.warning.content',

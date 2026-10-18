@@ -23,7 +23,9 @@
   --fg-muted: #67676a; /* content.secondary */
   --line: #0000001a; /* border.subtle */
   --line-strong: #00000026; /* border.default */
-  --line-emphasis: #00000080; /* border.strong */
+  --line-emphasis: #00000099; /* border.control-hover */
+  --chrome-control: #b8b9bb; /* action.secondary.default */
+  --chrome-control-pressed: #9fa0a2; /* action.secondary.pressed */
   --status-danger: #b53a30; /* status.critical.content */
   --status-success: #05763c; /* status.success.content */
   --status-warning: #965800; /* status.warning.content */
@@ -46,7 +48,9 @@
   --fg-muted: #cccccf; /* content.secondary */
   --line: #ffffff1a; /* border.subtle */
   --line-strong: #ffffff26; /* border.default */
-  --line-emphasis: #ffffff99; /* border.strong */
+  --line-emphasis: #ffffffb3; /* border.control-hover */
+  --chrome-control: #252628; /* action.secondary.default */
+  --chrome-control-pressed: #38383b; /* action.secondary.pressed */
   --status-danger: #ffbcb0; /* status.critical.content */
   --status-success: #83e09e; /* status.success.content */
   --status-warning: #ffc174; /* status.warning.content */

@@ -786,6 +786,90 @@ export function RailCard({ title, trailing, footer, flush, children }: {
   )
 }
 
+/** The inspector band for the Theme panel (Figma 1:6886): the panel's name and
+ *  the door to the list of editions, or — in that list — the way back. */
+function PanelHeader({ editing, title, onEdit, onBack }: {
+  editing: boolean
+  title: string
+  onEdit?: () => void
+  onBack: () => void
+}) {
+  const { t } = useI18n()
+  // The band already insets (60px − 2.5rem) / 2 on each side; this lands the
+  // text on the panel's 20px inset like every row below it.
+  return (
+    <div className="flex w-full min-w-0 items-center gap-2 px-[calc(20px_-_(60px_-_2.5rem)/2)]">
+      {editing && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label={t('Back')}
+          className="-ml-1.5 grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg transition-colors hover:bg-fg/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M13 8H3M7 4 3 8l4 4" />
+          </svg>
+        </button>
+      )}
+      <span className="min-w-0 flex-1 truncate text-title text-fg">{title}</span>
+      {!editing && onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="-mr-2 flex h-9 flex-shrink-0 items-center gap-2 rounded-lg px-2 text-strong font-medium text-fg transition-colors hover:bg-fg/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          {t('Edit')}
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
+            <path d="M4 3v5M4 12v5M10 3v2M10 9v8M16 3v8M16 15v2" />
+            <circle cx="4" cy="10" r="2" />
+            <circle cx="10" cy="7" r="2" />
+            <circle cx="16" cy="13" r="2" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Header → Edit: every edition in one list (glyph · name · chevron). Picking
+ *  one opens its row in the accordion and returns there. */
+const EDIT_LIST: { key: QuickPanelFoundation; title: string }[] = [
+  { key: 'color', title: 'Color' },
+  { key: 'typography', title: 'Font' },
+  { key: 'radius', title: 'Radius' },
+  { key: 'shadow', title: 'Shadow' },
+  { key: 'sizes', title: 'Spacing' },
+  { key: 'icons', title: 'Icons' },
+]
+
+function EditList({ active, locked, onPick }: {
+  active: string
+  locked: boolean
+  onPick: (key: QuickPanelFoundation) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <nav aria-label={t('Editions')} className="flex flex-col px-5">
+      {EDIT_LIST.map((item) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => onPick(item.key)}
+          disabled={locked && item.key !== active}
+          aria-current={item.key === active ? 'true' : undefined}
+          className="group flex h-[52px] w-full items-center gap-3 border-b border-line text-left last:border-b-0 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        >
+          <FoundationGlyph id={item.key} className="h-[18px] w-[18px] flex-shrink-0 text-fg-muted group-hover:text-fg" />
+          <span className="min-w-0 flex-1 truncate text-strong text-fg">{t(item.title)}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint group-hover:text-fg">
+            <path d="m4.5 2.5 3.5 3.5-3.5 3.5" />
+          </svg>
+        </button>
+      ))}
+    </nav>
+  )
+}
+
 /** Set by the rail when its host can switch editions. `locked` is guided
  *  setup: every row stays listed, and only the current step opens.
  *  Null (an embed with no switcher) leaves the row headers static. */
@@ -824,31 +908,26 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
   const ctx = useContext(EditionSwitchContext)
   const locked = !open && Boolean(ctx?.locked)
   const interactive = Boolean(ctx) && !open
-  // The OPEN row reads as a selected tab (Figma 211:706): glyph and name sit in
-  // a filled pill, the chevron outside it, and the row's value is left to the
-  // controls below rather than repeated in the header.
+  // Rows are names, not icons (Figma 1:6895): the glyphs live in the Edit
+  // list (header → Edit). The open row is the section title over its controls.
   if (open) {
     return (
-      <div className="flex h-11 w-full items-center gap-2.5 bg-elevated/40 px-3" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
-        <span className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-elevated px-3">
-          <FoundationGlyph id={foundationKey} className="h-4 w-4 flex-shrink-0 text-fg" />
-          <span className="min-w-0 flex-1 truncate text-left text-ui text-fg">{t(title)}</span>
-        </span>
+      <div className="flex h-12 w-full items-center gap-3 px-5" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+        <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
         <Chevron open />
       </div>
     )
   }
   const inner = (
     <>
-      <FoundationGlyph id={foundationKey} className={`h-4 w-4 flex-shrink-0 ${open ? 'text-accent-ui' : 'text-fg-muted'}`} />
-      <span className={`min-w-0 flex-1 truncate text-left text-ui ${open ? 'font-semibold text-fg' : 'font-medium text-fg-muted'}`}>{t(title)}</span>
+      <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted">{t(title)}</span>
       {summary != null && <span className="flex min-w-0 max-w-[45%] flex-shrink-0 items-center justify-end gap-1.5 truncate font-mono text-mini tabular-nums text-fg-faint">{summary}</span>}
       {locked ? <LockGlyph /> : <Chevron open={open} />}
     </>
   )
-  const shell = 'flex h-11 w-full items-center gap-2.5 px-3'
+  const shell = 'flex h-12 w-full items-center gap-3 px-5'
   if (!interactive) {
-    return <div className={`${shell} ${open ? 'bg-elevated/40' : ''}`} aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>{inner}</div>
+    return <div className={shell} aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>{inner}</div>
   }
   return (
     <button
@@ -858,7 +937,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
       disabled={locked}
       title={locked ? t('Finish customizing your brand to see full Variables and Docs.') : undefined}
       onClick={() => ctx?.select(foundationKey as QuickPanelFoundation)}
-      className={`${shell} transition-colors hover:bg-elevated/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent`}
+      className={`${shell} transition-colors hover:bg-fg/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent`}
     >
       {inner}
     </button>
@@ -894,7 +973,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
       {open && (
       <div id={panelId}>
       {trailing && (
-        <div className="flex justify-end border-b border-line px-3 py-2">
+        <div className="flex justify-end border-b border-line px-5 py-2">
           {trailing}
         </div>
       )}
@@ -902,7 +981,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
       {footer !== undefined
         ? footer
         : showAdvancedEdition ? (
-          <div className="border-t border-line px-3 pb-2.5 pt-2">
+          <div className="border-t border-line px-5 pb-2.5 pt-2">
             <button
               type="button"
               onClick={() => onOpenAdvanced(foundationKey)}
@@ -967,7 +1046,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   if (compact && hint && !advancedLabel) {
     return (
-      <div className="min-w-0 px-3 py-2">
+      <div className="min-w-0 px-5 py-2">
         <div className="flex items-start gap-2">
           {trailing}
           <div className="min-w-0 flex-1">{children}</div>
@@ -978,7 +1057,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   const hasHeader = Boolean(label || trailing)
   return (
-    <div className={`min-w-0 px-3 ${compact ? 'py-2' : 'py-2.5'}`}>
+    <div className={`min-w-0 px-5 ${compact ? 'py-2' : 'py-2.5'}`}>
       {hasHeader && (
         // No `min-h` — the header is one label line tall, full stop. It was
         // `min-h-7` (31.5px) to reserve room for the trailing buttons, i.e.
@@ -1505,7 +1584,7 @@ function RadiusCard({
           </div>
         )}
       </div>
-      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it. Each corner is a responsive token, shown at the platform above: it rounds less on Tablet and Mobile.</p>
+      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it. Each corner is a responsive token, shown at the platform picked in Spacing: it rounds less on Tablet and Mobile.</p>
     </div>
   )
 }
@@ -1820,6 +1899,9 @@ export default function ThemeQuickSettingsRail({
   // With the edition strip in the inspector's band the card opens straight
   // under that band's rule: no extra top gap above the first row.
   const inBand = useInspectorHeader()
+  // Header → Edit swaps the accordion for the list of editions, in place.
+  const [editList, setEditList] = useState(false)
+  const brandLabel = useDesignStore((state) => state.themeLabels[previewTheme]) || defaultThemeLabel(previewTheme)
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
@@ -1877,9 +1959,8 @@ export default function ThemeQuickSettingsRail({
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
   const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
-  // ONE platform switch for the whole panel, above every row: Font, Spacing,
-  // Radius and the board all resolve against it, and a switch inside two of
-  // the six rows let the others be edited on a viewport nobody could see.
+  // ONE platform switch, in Spacing (where viewports matter most). Font,
+  // Radius and the board still resolve against the platform it picks.
   const platformSwitch = onPreviewPlatformChange ? (
     <PlatformCutSwitch value={previewPlatform} onChange={onPreviewPlatformChange} layout="fill" />
   ) : undefined
@@ -2441,21 +2522,34 @@ export default function ThemeQuickSettingsRail({
           row's options. This column is for editing how the theme looks. */}
       {/* Only "Edit theme" adds a style to My themes (sheet or rail). The error
           below is the My-themes-full case. */}
-      {platformSwitch && (inBand
-        ? <InspectorHeaderPortal><div className="flex w-full items-center px-3">{platformSwitch}</div></InspectorHeaderPortal>
-        : <div className="flex-shrink-0 border-b border-line px-3 py-2">{platformSwitch}</div>)}
-      {adoptError && <p role="alert" className="flex-shrink-0 px-3 pt-3 text-mini text-status-danger">{adoptError}</p>}
+      {inBand && !tryOn && (
+        <InspectorHeaderPortal>
+          <PanelHeader
+            editing={editList}
+            title={editList ? t('Edit {name}', { name: brandLabel }) : t('Theme')}
+            onEdit={onSelectPanel ? () => setEditList(true) : undefined}
+            onBack={() => setEditList(false)}
+          />
+        </InspectorHeaderPortal>
+      )}
+      {adoptError && <p role="alert" className="flex-shrink-0 px-5 pt-3 text-mini text-status-danger">{adoptError}</p>}
       {/* Only this region scrolls; the Undo bar below is a pinned footer, so it
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className="flex flex-1 min-h-0 flex-col">
       <ThemeRailScrollRegion padClass={inBand ? 'pb-3' : 'py-3'}>
-      {tryOn ? (
+      {editList && onSelectPanel && !tryOn ? (
+        <EditList
+          active={activePanel}
+          locked={setupStep != null}
+          onPick={(key) => { onSelectPanel(key); setEditList(false) }}
+        />
+      ) : tryOn ? (
         // A previewed style isn't yours yet, so there is nothing to edit — show
         // what it is and the one way to make it yours, instead of controls
         // that would have to adopt it behind your back.
         <section aria-label={t('EscalaUI styles')} className="min-w-0">
-          <div className="flex min-h-8 items-center border-b border-line px-3 pb-2 mb-3">
+          <div className="flex min-h-8 items-center border-b border-line px-5 pb-2 mb-3">
             <span className="min-w-0 truncate text-caption font-normal text-fg">{t('EscalaUI styles')}</span>
           </div>
           <StyleOverview
@@ -2493,7 +2587,7 @@ export default function ThemeQuickSettingsRail({
           ) : undefined}
         >
           <div className="divide-y divide-line">
-            <div className="px-3 py-3">
+            <div className="px-5 pb-3.5 pt-0">
               <ColorRolesPanel
                 appearance={rampAppearance}
                 header={(
@@ -2513,7 +2607,7 @@ export default function ThemeQuickSettingsRail({
                         }}
                       />
                     </div>
-                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="!w-10" />
+                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="!h-9 !w-[45px]" />
                   </div>
                 )}
                 rows={colorRows}
@@ -2606,7 +2700,7 @@ export default function ThemeQuickSettingsRail({
             {/* Fine-tune stays closed so Colour reads as accent, neutral and
                 states. Show opens Saturation, Brightness and Ramp contrast at
                 one height. The Contrast grid only opens the board overlay. */}
-            <div className="flex flex-col px-3 py-3">
+            <div className="flex flex-col px-5 py-3">
               <button
                 type="button"
                 onClick={() => setFineOpen((open) => !open)}
@@ -2721,7 +2815,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Rows show size / line height / letter spacing in px at the platform shown above, as in Variables · Font semantics.">
+          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Rows show size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.">
             <TypeScaleCard
               typography={typography}
               platform={previewPlatform}
@@ -2765,6 +2859,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Spacing" foundationKey="sizes" open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+          {platformSwitch && <div className="px-5 pt-1 pb-3">{platformSwitch}</div>}
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -2840,7 +2935,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Icons" foundationKey="icons" open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <div className="px-3 pt-1 pb-2">
+          <div className="px-5 pt-1 pb-2">
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
           </div>
@@ -2880,7 +2975,7 @@ export default function ThemeQuickSettingsRail({
           </button>
         )}
         {themeReset.show && (
-          <div className="px-3 pt-3">
+          <div className="px-5 pt-3">
             <ThemeResetButton wide mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />
           </div>
         )}

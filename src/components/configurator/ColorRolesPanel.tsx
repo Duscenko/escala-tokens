@@ -26,7 +26,10 @@ const HEX_RE = /^#?([0-9a-f]{6})$/i
 /** The group the roles and the accessibility readout sit in. No fill of its
  *  own: it sits on the inspector's `surface.layer-2`, and its rows carry
  *  `layer-1` (platform foundations). */
-const CARD = 'flex flex-col gap-3 rounded-2xl px-2.5 pb-2.5 pt-[11.75px]'
+const CARD = 'flex flex-col gap-3.5'
+/** The accessibility readout: a `surface.layer-1` card lit from the top edge
+ *  (Figma 1:7003). */
+const READOUT_CARD = 'flex flex-col gap-3.5 rounded-[18px] border-t border-line bg-surface px-[11.25px] pb-[11.25px] pt-[12.25px]'
 
 export interface ColorRoleRow {
   id: ColorRoleId
@@ -74,7 +77,7 @@ export function ColorRolesPanel({
   const neutral = rows.find((row) => row.id === 'neutral')
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       <div className={CARD}>
         {header}
 
@@ -141,19 +144,56 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
     setDraft(null)
   }
 
-  // One row per role (Figma 212:1046): swatch · hex, then the role's name in
-  // its own inset pill with the lock. Rows are `surface.layer-1` on the
-  // `layer-2` panel (platform foundations); the selected row — the one the
-  // slider above edits — carries the `border.strong` edge.
+  // One row per role (Figma 1:6928): the role's name and its lock lead, the
+  // swatch + hex sit in their own pill on the right. Rows are
+  // `surface.layer-1` on the `layer-2` panel; the selected row — the one the
+  // slider above edits — carries the `border.control-hover` edge and its hex
+  // pill fills with `action.secondary.default`.
   return (
     <div
-      className={`flex h-[40.5px] items-center gap-2 rounded-[10px] px-[6.25px] transition-colors duration-150 ${
+      className={`flex items-center gap-2 rounded-[10px] bg-surface p-1 transition-shadow duration-150 ${
         on
-          ? 'bg-surface shadow-[inset_0_0_0_1.5px_var(--line-emphasis)]'
-          : 'bg-surface hover:shadow-[inset_0_0_0_1px_var(--line)]'
+          ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]'
+          : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
       }`}
     >
-      <div className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2" onClick={() => { onSelect(); input.current?.focus() }}>
+      {/* The lock is a SIBLING of the label button, never inside it: an
+          interactive element nested in a <button> is invalid, and a real
+          mouse click on it went to the outer button (selecting the row) while
+          the lock itself never fired. */}
+      <div className="flex min-w-0 flex-1 items-center gap-1 pr-1">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={on}
+          onClick={onSelect}
+          className={`flex h-[22.5px] min-w-0 flex-1 items-center rounded-md pl-2 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
+        >
+          <span className="truncate">{label}</span>
+        </button>
+        {onToggleLink && (
+          <button
+            type="button"
+            onClick={onToggleLink}
+            aria-label={row.id === 'neutral'
+              ? (row.linked ? t('Unlock Neutral from the accent') : t('Lock Neutral to the accent'))
+              : (row.linked ? t('Unlock states from the accent') : t('Lock states to the accent'))}
+            aria-pressed={row.linked}
+            title={row.id === 'neutral'
+              ? (row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.'))
+              : (row.linked
+                ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
+                : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
+            className={`flex h-[22.5px] w-[22.5px] flex-shrink-0 items-center justify-center rounded transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint'}`}
+          >
+            <LockGlyph size={12} />
+          </button>
+        )}
+      </div>
+      <div
+        className={`flex h-[22.5px] w-[98px] flex-shrink-0 cursor-text items-center gap-2 rounded-[6px] pr-1.5 transition-colors ${on ? 'bg-chrome-control' : ''}`}
+        onClick={() => { onSelect(); input.current?.focus() }}
+      >
         <span
           aria-hidden
           className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
@@ -175,39 +215,6 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
           aria-label={`${label} hex`}
           className="min-w-0 flex-1 bg-transparent text-ui tabular-nums text-fg outline-none"
         />
-      </div>
-      {/* The lock is a SIBLING of the label button, never inside it: an
-          interactive element nested in a <button> is invalid, and a real
-          mouse click on it went to the outer button (selecting the row) while
-          the lock itself never fired. */}
-      <div className="flex h-[24.5px] min-w-0 flex-1 items-center gap-1 rounded-[5px] bg-fg/[0.08] pr-1">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={on}
-          onClick={onSelect}
-          className="flex h-full min-w-0 flex-1 items-center rounded-[5px] pl-2 text-left text-ui text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          <span className="truncate">{label}</span>
-        </button>
-        {onToggleLink && (
-          <button
-            type="button"
-            onClick={onToggleLink}
-            aria-label={row.id === 'neutral'
-              ? (row.linked ? t('Unlock Neutral from the accent') : t('Lock Neutral to the accent'))
-              : (row.linked ? t('Unlock states from the accent') : t('Lock states to the accent'))}
-            aria-pressed={row.linked}
-            title={row.id === 'neutral'
-              ? (row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.'))
-              : (row.linked
-                ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
-                : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
-            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint opacity-60'}`}
-          >
-            <LockGlyph size={13} />
-          </button>
-        )}
       </div>
     </div>
   )
@@ -235,7 +242,7 @@ function AccessibilityReadout({ hex, page, appearance }: { hex: string; page: st
   }[grade]
 
   return (
-    <div className={CARD}>
+    <div className={READOUT_CARD}>
       <div className="flex items-center justify-between">
         <span className="text-mini uppercase tracking-[0.1em] text-fg-faint">{t('Accessibility')}</span>
         <span className={`rounded-md px-2 py-0.5 text-caption ${tone.chip}`}>{tone.word}</span>

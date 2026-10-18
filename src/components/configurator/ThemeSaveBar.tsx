@@ -25,6 +25,37 @@ function ShuffleGlyph() {
   )
 }
 
+/** A die — "a whole new theme", distinct from Shuffle (colours only). */
+function DiceGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+      <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
+      <circle cx="5.75" cy="5.75" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="10.25" cy="5.75" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="5.75" cy="10.25" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="10.25" cy="10.25" r=".9" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+/** The save bar's Random: a whole new theme. Plain like Undo beside it and
+ *  drawn as a die, so it never reads as the colour Shuffle (gradient border,
+ *  crossing arrows) in the Color section above. */
+export function RandomWholeThemeButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <DiceGlyph />
+    </button>
+  )
+}
+
 /** Random, in one shape everywhere: the shuffle mark inside the animated
  *  conic border. `icon` is the icon-only square (next to a Style select or in
  *  the save bar); `tweak` keeps its label for the guest previewer card. */
@@ -172,7 +203,7 @@ export default function ThemeSaveBar({
         disabled={inactive || !canUndo}
         aria-label={undoLabel}
         title={`${undoLabel} (⌘Z)`}
-        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M5.5 3.5 2.5 6.5l3 3" />
@@ -180,7 +211,7 @@ export default function ThemeSaveBar({
         </svg>
       </button>
       {showRandom && onRandom ? (
-        <RandomThemeButton onClick={onRandom} label={t('Random')} variant="icon" />
+        <RandomWholeThemeButton onClick={onRandom} label={t('Random theme')} />
       ) : null}
       <button
         ref={saveRef}
