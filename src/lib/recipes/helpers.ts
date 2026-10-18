@@ -33,6 +33,10 @@ export interface ComponentRecipe {
   /** Slots rendered OUTSIDE the root (a dialog's overlay is a portal sibling),
    *  matched by their own `data-part`, not as descendants. */
   detachedSlots?: string[]
+  /** The DOM a third-party library renders (Sonner's toast), when the root
+   *  and parts cannot carry `data-escala` / `data-part`: `root` replaces
+   *  `[data-escala="<key>"]`, `slots` replace `[data-part="<key>.<slot>"]`. */
+  dom?: { root: string; slots?: Record<string, string> }
 }
 
 export type AxisValues = Record<string, string | undefined>

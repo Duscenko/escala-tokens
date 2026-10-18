@@ -102,7 +102,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 |---|---|---|
 | 0 · Decisiones | Cerrar 1–6 | ✅ aceptadas las 6 recomendaciones |
 | 1 · Acciones | Button (+ plegar CloseButton, FAB, TextLink), ButtonGroup | ✅ 2026-10-18 · plugin 0.7.0 |
-| 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ídem |
+| 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ✅ 2026-10-18 · plugin 0.8.0 |
 | 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ídem |
 | 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ídem |
 | 5 · Solo-Escala | Vocabulario de shadcn en los componentes sin equivalente | Ningún eje con valores en mayúscula ni Danger/Error |
@@ -130,3 +130,22 @@ que la web y el plugin queden desalineados entre fases.
   quedan aparcados en "not in this import" para no romper instancias enlazadas.
 - `agentContext`: la tabla de Size lee la altura de la receta (antes suponía
   Size = paso de la escala).
+
+## Fase 2 — hecha (2026-10-18)
+
+- **Badge**: `variant` default·secondary·destructive·outline·ghost·link; sin tamaño
+  ni punto (el punto de presencia es StatusBadge). Los colores Success/Warning/Info
+  de la Badge desaparecen.
+- **Alert** (era InlineAlert): `variant` default·destructive; `bg-card` + hairline,
+  el icono es el primer hijo (`<svg>` o `AlertIcon`), `AlertAction` arriba a la
+  derecha. **AlertBanner borrado.**
+- **Sonner** (era Toast): el `Toaster` real del paquete `sonner@2.0.8`, como shadcn.
+  Tipo default·success·info·warning·error·loading, distinguido por el icono. La
+  receta pinta el DOM de Sonner (`ComponentRecipe.dom`: raíz y partes por sus
+  atributos, con más especificidad que la hoja de Sonner). En la documentación
+  cada espécimen monta su propio Toaster (`id` + `toasterId`) en el flujo.
+- **Avatar**: `size` default·sm·lg (32 · 24 · 40). El relleno opcional con
+  gradiente del collage pasa a `v.Fill` (no es un eje del catálogo).
+- **Spinner**: el glifo Loader2 que gira, `size-4` por clase, sin variantes.
+- `tokenInspector.resolveVariantRoles` lee la receta en vez de una copia a mano
+  de la lógica de pintura. Store v92 renombra/quita las claves. Plugin 0.8.0.

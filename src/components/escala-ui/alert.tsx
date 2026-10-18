@@ -1,74 +1,63 @@
 // Skeleton: shadcn/ui `bases/radix/ui/alert.tsx` (MIT, see LICENSE-shadcn.md):
-// Alert / AlertTitle / AlertDescription — Escala's InlineAlert — plus the
-// AlertBanner (a single-line alert with an action and a close).
-// Appearance: recipes (InlineAlert, AlertBanner).
+// Alert · AlertTitle · AlertDescription · AlertAction, `variant` default |
+// destructive. The icon is the first child, as in shadcn (an <svg>, or any
+// element marked `data-slot="alert-icon"`). Appearance: recipe (Alert).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 
-export type AlertStatus = 'Info' | 'Success' | 'Warning' | 'Error'
+export const ALERT_VARIANTS = ['default', 'destructive'] as const
+export type AlertVariant = (typeof ALERT_VARIANTS)[number]
 
-export interface AlertProps extends React.ComponentProps<'div'> {
-  status?: AlertStatus
-  /** The status glyph. */
-  icon?: React.ReactNode
-}
+const ICON = '[&>svg]:row-span-2 [&>[data-slot=alert-icon]]:row-span-2'
 
-function Alert({ status = 'Info', icon, className, children, ...props }: AlertProps) {
+function Alert({ className, variant = 'default', ...props }: React.ComponentProps<'div'> & { variant?: AlertVariant }) {
   return (
     <div
-      role={status === 'Error' ? 'alert' : 'status'}
       data-slot="alert"
-      data-escala="InlineAlert"
-      data-status={status}
-      className={cn('flex', className)}
+      data-escala="Alert"
+      data-variant={variant}
+      role="alert"
+      className={cn(
+        'group/alert relative grid w-full text-left',
+        'has-[>svg]:grid-cols-[auto_1fr] has-[>[data-slot=alert-icon]]:grid-cols-[auto_1fr]',
+        ICON,
+        'has-data-[slot=alert-action]:pr-18',
+        className,
+      )}
       {...props}
-    >
-      {icon != null && <span data-part="InlineAlert.icon" className="inline-flex shrink-0">{icon}</span>}
-      <div data-part="InlineAlert.body" className="flex min-w-0 flex-1 flex-col">{children}</div>
-    </div>
+    />
   )
+}
+
+/** Escala: wraps a glyph that is not an <svg> so it takes the icon column. */
+function AlertIcon({ className, ...props }: React.ComponentProps<'span'>) {
+  return <span data-slot="alert-icon" data-part="Alert.icon" className={cn('inline-flex translate-y-0.5', className)} {...props} />
 }
 
 function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="alert-title" data-part="InlineAlert.title" className={className} {...props} />
-}
-
-function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="alert-description" data-part="InlineAlert.description" className={className} {...props} />
-}
-
-export interface AlertBannerProps extends Omit<React.ComponentProps<'div'>, 'children'> {
-  status?: AlertStatus
-  icon?: React.ReactNode
-  message: React.ReactNode
-  /** The call to action ("View", "Upgrade"). */
-  action?: React.ReactNode
-  onAction?: () => void
-  onClose?: () => void
-  /** The close glyph. */
-  closeIcon?: React.ReactNode
-}
-
-function AlertBanner({ status = 'Info', icon, message, action, onAction, onClose, closeIcon = '×', className, ...props }: AlertBannerProps) {
   return (
     <div
-      role={status === 'Error' ? 'alert' : 'status'}
-      data-slot="alert-banner"
-      data-escala="AlertBanner"
-      data-status={status}
-      className={cn('flex items-center', className)}
+      data-slot="alert-title"
+      data-part="Alert.title"
+      className={cn('col-start-2 group-not-has-[>svg]/alert:group-not-has-[>[data-slot=alert-icon]]/alert:col-start-1 [&_a]:underline [&_a]:underline-offset-3', className)}
       {...props}
-    >
-      {icon != null && <span data-part="AlertBanner.icon" className="inline-flex shrink-0">{icon}</span>}
-      <span data-part="AlertBanner.message" className="min-w-0 flex-1">{message}</span>
-      {action != null && (
-        <button type="button" data-part="AlertBanner.action" onClick={onAction} className="cursor-pointer border-0 bg-transparent p-0 whitespace-nowrap outline-none">{action}</button>
-      )}
-      {onClose && (
-        <button type="button" aria-label="Dismiss" data-part="AlertBanner.close" onClick={onClose} className="inline-flex cursor-pointer border-0 bg-transparent p-0 outline-none">{closeIcon}</button>
-      )}
-    </div>
+    />
   )
 }
 
-export { Alert, AlertBanner, AlertDescription, AlertTitle }
+function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="alert-description"
+      data-part="Alert.description"
+      className={cn('col-start-2 text-balance group-not-has-[>svg]/alert:group-not-has-[>[data-slot=alert-icon]]/alert:col-start-1 [&_a]:underline [&_a]:underline-offset-3', className)}
+      {...props}
+    />
+  )
+}
+
+function AlertAction({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="alert-action" data-part="Alert.action" className={cn('absolute top-2.5 right-3', className)} {...props} />
+}
+
+export { Alert, AlertAction, AlertDescription, AlertIcon, AlertTitle }

@@ -568,21 +568,16 @@ var init_componentCatalogue = __esm({
         key: "Badge",
         label: "Badge",
         category: "Indicators",
-        description: "Compact label for statuses and metadata \u2014 three visual styles across the semantic status roles.",
-        usage: "Keep text short (1\u20132 words). Don't use for interactive filtering \u2014 use Chip instead.",
-        axes: [
-          { name: "Style", values: ["Solid", "Soft", "Outline"] },
-          { name: "Color", values: ["Neutral", "Brand", "Success", "Warning", "Error", "Info"] },
-          { name: "Size", values: ["MD", "SM", "LG"] }
-        ],
+        description: "shadcn/ui Badge: a small label in six variants \u2014 default, secondary, destructive, outline, ghost and link.",
+        usage: 'Use to label or count (a plan, a status, "+5 more"). For presence (online / away), use Status Badge. Never as a button.',
+        axes: [{ name: "Variant", values: ["default", "secondary", "destructive", "outline", "ghost", "link"] }],
         figmaSets: ["Badge"],
         props: [
-          { name: "variant", type: '"solid" | "soft" | "outline" | "default" | "secondary" | "destructive"', description: "Visual weight. The shadcn names map onto it: default = solid brand, secondary = soft neutral, destructive = solid error." },
-          { name: "color", type: '"neutral" | "brand" | "success" | "warning" | "error" | "info"', description: "Semantic colour." },
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Height and padding \u2014 follows the type and spacing scales." },
-          { name: "dot", type: "boolean", description: 'The leading status dot (default on). Off for a count such as "+5 more".' }
+          { name: "variant", type: '"default" | "secondary" | "destructive" | "outline" | "ghost" | "link"', description: "Visual weight \u2014 shadcn's variants." },
+          { name: "asChild", type: "boolean", description: "Render the child (a link) with the Badge styles \u2014 Radix Slot." },
+          { name: "children", type: "ReactNode", description: "Label, with an optional icon before / after it." }
         ],
-        accessibility: "Purely presentational. Add sr-only context if color conveys meaning."
+        accessibility: "Static text \u2014 not focusable. Colour is never the only signal: the label says what it means."
       },
       {
         key: "StatusBadge",
@@ -638,15 +633,15 @@ var init_componentCatalogue = __esm({
         key: "Spinner",
         label: "Spinner",
         category: "Indicators",
-        description: "Loading indicator in three sizes, tinted by the spinner color token.",
+        description: "shadcn/ui Spinner: a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
         usage: "Prefer skeleton screens for content loading. Use Spinner for action feedback.",
-        axes: [{ name: "Size", values: ["SM", "MD", "LG"] }],
+        axes: [],
         figmaSets: ["Spinner"],
         props: [
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Diameter \u2014 16 / 24 / 32px." },
-          { name: "label", type: "string", description: 'Screen-reader label (default "Loading\u2026").' }
+          { name: "className", type: "string", description: "size-4 by default; size it with a class (size-6, size-8), as in shadcn." },
+          { name: "aria-label", type: "string", description: 'Screen-reader label (default "Loading").' }
         ],
-        accessibility: 'role="status" with sr-only label. Animated via CSS, respects prefers-reduced-motion.'
+        accessibility: 'role="status" with aria-label. Animated via CSS, respects prefers-reduced-motion.'
       },
       {
         key: "Icon",
@@ -699,10 +694,10 @@ var init_componentCatalogue = __esm({
         category: "Content & Surfaces",
         description: "Avatar with initials fallback for identity representation \u2014 XS to XL sizes.",
         usage: "Use consistently at the same size in a given context. Stack for teams.",
-        axes: [{ name: "Size", values: ["XS", "SM", "MD", "LG", "XL"] }],
+        axes: [{ name: "Size", values: ["default", "sm", "lg"] }],
         figmaSets: ["Avatar"],
         props: [
-          { name: "size", type: '"xs" | "sm" | "md" | "lg" | "xl"', description: "Diameter \u2014 24 / 32 / 40 / 48 / 56px (the Sizes foundation)." },
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Diameter \u2014 shadcn's sizes: 32 / 24 / 40px (the Sizes foundation)." },
           { name: "AvatarImage src", type: "string", description: "Image URL; the fallback shows while it loads or if it fails." },
           { name: "AvatarFallback", type: "ReactNode", description: "Initials." }
         ],
@@ -844,51 +839,36 @@ var init_componentCatalogue = __esm({
       },
       // ── Feedback ────────────────────────────────────────────────────────────────
       {
-        key: "Toast",
-        label: "Toast",
+        key: "Sonner",
+        label: "Sonner",
         category: "Feedback",
-        description: "Transient snackbar notification with status dot, message and action \u2014 one variant per semantic status role.",
-        usage: "Auto-dismiss after 4\u20136s. Offer undo for destructive actions. Max 3 visible at once.",
-        axes: [{ name: "Status", values: ["Success", "Error", "Warning", "Info"] }],
-        figmaSets: ["Toast"],
+        description: "shadcn/ui Sonner: the toaster. A toast has a type \u2014 default, success, info, warning, error or loading \u2014 told apart by its icon.",
+        usage: "Mount <Toaster /> once; call toast() / toast.success() \u2026 from anywhere. Use for transient confirmations, not for errors the user must act on (use Alert).",
+        axes: [{ name: "Type", values: ["default", "success", "info", "warning", "error", "loading"] }],
+        figmaSets: ["Sonner"],
         props: [
-          { name: "status", type: '"Success" | "Error" | "Warning" | "Info"', description: 'Message tone (role="alert" for Error).' },
-          { name: "message", type: "ReactNode", description: "Short message." },
-          { name: "action / onAction", type: "ReactNode / () => void", description: 'Optional action ("Undo").' },
-          { name: "onClose", type: "() => void", description: "Shows the close control." }
+          { name: "toast(message, options)", type: "function", description: "Shows a toast; toast.success / .info / .warning / .error / .loading set its type." },
+          { name: "description", type: "ReactNode", description: "Second line under the message." },
+          { name: "action", type: "{ label, onClick }", description: 'One action button ("Undo").' },
+          { name: "Toaster position", type: '"top-left" | \u2026 | "bottom-right"', description: "Where toasts stack (default bottom-right)." }
         ],
-        accessibility: 'role="status" for default, role="alert" for errors. Live region announced.'
+        accessibility: "Sonner renders an aria-live region; toasts pause on hover and are dismissable with Escape."
       },
       {
-        key: "AlertBanner",
-        label: "Alert Banner",
+        key: "Alert",
+        label: "Alert",
         category: "Feedback",
-        description: "Full-width page or section banner for persistent, prominent messages.",
-        usage: "Use for system-level notices (maintenance, billing). One banner per page at most.",
-        axes: [{ name: "Status", values: ["Info", "Success", "Warning", "Error"] }],
-        figmaSets: ["Alert Banner"],
+        description: "shadcn/ui Alert: a callout with an icon, a title and a description, in default and destructive.",
+        usage: "Use for a message about the content around it. For a transient notice, use Sonner.",
+        axes: [{ name: "Variant", values: ["default", "destructive"] }],
+        figmaSets: ["Alert"],
         props: [
-          { name: "status", type: '"Info" | "Success" | "Warning" | "Error"', description: "Semantic status role." },
-          { name: "message", type: "ReactNode", description: "Banner text." },
-          { name: "action / onAction", type: "ReactNode / () => void", description: 'Call to action ("View", "Upgrade").' },
-          { name: "onClose", type: "() => void", description: "Shows the close control." }
+          { name: "variant", type: '"default" | "destructive"', description: "shadcn's variants: the card's ink, or the critical ink." },
+          { name: "AlertTitle / AlertDescription", type: "component", description: "First line and supporting copy." },
+          { name: "AlertAction", type: "component", description: "An action pinned to the top-right corner." },
+          { name: "children (icon)", type: "ReactNode", description: "An <svg> (or AlertIcon) as the first child takes the icon column." }
         ],
-        accessibility: 'role="status" (or "alert" for errors). Dismiss button labelled "Dismiss".'
-      },
-      {
-        key: "InlineAlert",
-        label: "Inline Alert",
-        category: "Feedback",
-        description: "Contextual callout box inside a form or section \u2014 icon, title and body on a soft status fill.",
-        usage: "Place directly above the content it concerns. Keep to a title + one sentence.",
-        axes: [{ name: "Status", values: ["Info", "Success", "Warning", "Error"] }],
-        figmaSets: ["Inline Alert"],
-        props: [
-          { name: "status", type: '"Info" | "Success" | "Warning" | "Error"', description: "Semantic status role \u2014 picks the surface, edge and glyph colour." },
-          { name: "icon", type: "ReactNode", description: "The status glyph." },
-          { name: "AlertTitle / AlertDescription", type: "component", description: "Bold first line and supporting copy." }
-        ],
-        accessibility: 'role="status"; errors use role="alert". Icon is decorative (aria-hidden).'
+        accessibility: 'role="alert". The icon is decorative; the title carries the meaning.'
       },
       // ── Navigation ──────────────────────────────────────────────────────────────
       {
@@ -1077,7 +1057,7 @@ var init_componentCatalogue = __esm({
       "Modal",
       "Tooltip",
       "Divider",
-      "Toast",
+      "Sonner",
       "Tabs"
     ];
   }
@@ -5215,22 +5195,22 @@ function checkPaint(checked, state2) {
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  let box2;
-  if (disabled) box2 = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
+  let box;
+  if (disabled) box = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), text: c("content.disabled"), ring };
   else if (on) {
     const fill = c(hover ? "action.primary.hover" : "action.primary.default");
-    box2 = { fill, stroke: fill, text: c("content.on-action"), ring };
-  } else box2 = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
-  return { box: box2, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
+    box = { fill, stroke: fill, text: c("content.on-action"), ring };
+  } else box = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), text: NONE, ring };
+  return { box, label: { text: c(disabled ? "content.disabled" : "content.primary") } };
 }
 function radioPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const box2 = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
+  const box = disabled ? { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring } : { fill: c("surface.input"), stroke: c(on ? "action.primary.default" : hover ? "border.control-hover" : "border.strong"), ring };
   return {
-    box: box2,
+    box,
     indicator: { fill: on ? c(disabled ? "content.disabled" : "action.primary.default") : NONE },
     label: { text: c(disabled ? "content.disabled" : "content.primary") }
   };
@@ -6112,77 +6092,74 @@ var init_navigation = __esm({
 });
 
 // src/lib/recipes/feedback.ts
-function box(status) {
-  const s = SEV[status];
-  return {
-    fill: c(`status.${s}.surface`),
-    stroke: c(`status.${s}.border`),
-    strokeWidth: "stroke.control",
-    radius: "radius.container",
-    text: c("content.primary")
-  };
-}
-var SEV, STATUSES, INLINE_ALERT, ALERT_BANNER, TOAST;
+var ALERT_VARIANTS, ALERT, SONNER;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
-    SEV = { Info: "info", Success: "success", Warning: "warning", Error: "critical" };
-    STATUSES = ["Info", "Success", "Warning", "Error"];
-    INLINE_ALERT = {
-      key: "InlineAlert",
-      slots: ["root", "icon", "body", "title", "description"],
-      defaults: { Status: "Info" },
+    ALERT_VARIANTS = ["default", "destructive"];
+    ALERT = {
+      key: "Alert",
+      slots: ["root", "icon", "title", "description"],
+      defaults: { Variant: "default" },
       parts: [
-        part({}, () => ({
-          root: { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.2_5" },
-          body: { gap: "spacing.1" },
-          title: { font: "type.button" },
-          description: { text: c("content.secondary"), font: "type.body-sm" }
-        })),
-        part({ Status: STATUSES }, (status) => ({
-          root: box(status),
-          icon: { text: c(`status.${SEV[status]}.content`) }
-        }))
-      ]
-    };
-    ALERT_BANNER = {
-      key: "AlertBanner",
-      slots: ["root", "icon", "message", "action", "close"],
-      defaults: { Status: "Info" },
-      parts: [
-        part({}, () => ({
-          root: { paddingX: "spacing.4", paddingY: "spacing.2_5", gap: "spacing.2_5" },
-          message: { font: "type.body-sm" },
-          action: { font: "type.button" },
-          close: { text: c("content.secondary") }
-        })),
-        part({ Status: STATUSES }, (status) => ({
-          root: box(status),
-          icon: { text: c(`status.${SEV[status]}.content`) },
-          action: { text: c(`status.${SEV[status]}.content`) }
-        }))
-      ]
-    };
-    TOAST = {
-      key: "Toast",
-      slots: ["root", "message", "action", "close"],
-      defaults: { Status: "Success" },
-      parts: [
-        // The inverse snackbar: `surface.inverse` with `content.inverse` ink, so it
-        // reads in both appearances. Status picks the message, not the colours.
         part({}, () => ({
           root: {
-            fill: c("surface.inverse"),
-            text: c("content.inverse"),
+            fill: c("surface.layer-1"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
             radius: "radius.container",
-            shadow: "shadow.xl",
-            paddingX: "spacing.gap-group",
-            paddingY: "spacing.gap-control",
-            gap: "spacing.2"
+            paddingX: "spacing.4",
+            paddingY: "spacing.3",
+            gap: "spacing.0_5",
+            font: "type.body-sm"
           },
-          message: { font: "type.body-sm" },
-          action: { font: "type.button" },
-          close: { font: "type.button" }
+          title: { font: "type.label" },
+          description: { font: "type.body-sm" }
+        })),
+        part({ Variant: ALERT_VARIANTS }, (variant) => variant === "destructive" ? {
+          root: { text: c("status.critical.content") },
+          icon: { text: c("status.critical.content") },
+          description: { text: c("status.critical.content") }
+        } : {
+          root: { text: c("content.primary") },
+          icon: { text: c("content.primary") },
+          description: { text: c("content.secondary") }
+        })
+      ]
+    };
+    SONNER = {
+      key: "Sonner",
+      slots: ["root", "icon", "title", "description", "action"],
+      defaults: {},
+      dom: {
+        // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
+        // after ours: the toaster and `[data-styled]` in the selector outrank it.
+        root: '[data-escala="Sonner"] [data-sonner-toaster] [data-sonner-toast][data-styled]',
+        slots: { icon: "[data-icon]", title: "[data-title]", description: "[data-description]", action: "[data-button]" }
+      },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
+            text: c("content.primary"),
+            radius: "radius.container",
+            shadow: "shadow.lg",
+            paddingX: "spacing.4",
+            paddingY: "spacing.4",
+            gap: "spacing.1_5"
+          },
+          icon: { text: c("content.primary") },
+          title: { font: "type.label" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          action: {
+            fill: c("action.primary.default"),
+            text: c("content.on-action"),
+            radius: "radius.action",
+            paddingX: "spacing.2",
+            font: "type.caption"
+          }
         }))
       ]
     };
@@ -6190,43 +6167,43 @@ var init_feedback = __esm({
 });
 
 // src/lib/recipes/indicators.ts
-function badgePaint(style, color) {
-  const k = BADGE_TONES[color];
-  if (style === "Solid") return { root: { fill: c(k.solid), stroke: NONE, text: c(k.on) }, dot: { fill: c(k.on) } };
-  if (style === "Soft") return { root: { fill: c(k.soft), stroke: NONE, text: c(k.ink) }, dot: { fill: c(k.dot) } };
-  return { root: { fill: NONE, stroke: c(k.line), text: c(k.ink) }, dot: { fill: c(k.dot) } };
+function badgePaint(variant) {
+  switch (variant) {
+    case "default":
+      return { root: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") } };
+    case "secondary":
+      return { root: { fill: c("action.secondary.default"), stroke: NONE, text: c("content.primary") } };
+    case "destructive":
+      return { root: { fill: c("status.critical.surface"), stroke: NONE, text: c("status.critical.content") } };
+    case "outline":
+      return { root: { fill: NONE, stroke: c("border.default"), text: c("content.primary") } };
+    case "ghost":
+      return { root: { fill: NONE, stroke: NONE, text: c("content.primary") } };
+    default:
+      return { root: { fill: NONE, stroke: NONE, text: c("content.link.default") } };
+  }
 }
-var BADGE_TONES, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER_GEOMETRY, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_GEOMETRY, AVATAR;
+var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
-    BADGE_TONES = {
-      Brand: { solid: "action.primary.default", on: "content.on-action", soft: "surface.selected", ink: "content.accent", line: "border.accent", dot: "action.primary.default" },
-      Neutral: { solid: "surface.inverse", on: "content.inverse", soft: "action.secondary.default", ink: "content.secondary", line: "border.strong", dot: "content.secondary" },
-      Success: { solid: "status.success.surface-solid", on: "status.success.on-solid", soft: "status.success.surface", ink: "status.success.content", line: "status.success.border-strong", dot: "status.success.surface-solid" },
-      Warning: { solid: "status.warning.surface-solid", on: "status.warning.on-solid", soft: "status.warning.surface", ink: "status.warning.content", line: "status.warning.border-strong", dot: "status.warning.surface-solid" },
-      Error: { solid: "status.critical.surface-solid", on: "status.critical.on-solid", soft: "status.critical.surface", ink: "status.critical.content", line: "status.critical.border-strong", dot: "status.critical.surface-solid" },
-      Info: { solid: "status.info.surface-solid", on: "status.info.on-solid", soft: "status.info.surface", ink: "status.info.content", line: "status.info.border-strong", dot: "status.info.surface-solid" }
-    };
-    BADGE_GEOMETRY = {
-      SM: { root: { paddingX: "spacing.2", paddingY: "spacing.0_5", gap: "spacing.1_5" }, dot: "spacing.1_5" },
-      MD: { root: { paddingX: "spacing.2_5", paddingY: "spacing.1", gap: "spacing.1_5" }, dot: "spacing.1_5" },
-      LG: { root: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.2" }, dot: "spacing.2" }
-    };
+    BADGE_VARIANTS = ["default", "secondary", "destructive", "outline", "ghost", "link"];
     BADGE = {
       key: "Badge",
-      slots: ["root", "dot"],
-      defaults: { Style: "Soft", Color: "Brand", Size: "MD" },
+      slots: ["root"],
+      defaults: { Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.caption" },
-          dot: { radius: "radius.pill" }
+          root: {
+            radius: "radius.pill",
+            strokeWidth: "stroke.control",
+            font: "type.caption",
+            paddingX: "spacing.2",
+            paddingY: "spacing.0_5",
+            gap: "spacing.1"
+          }
         })),
-        part({ Size: ["MD", "SM", "LG"] }, (size) => ({
-          root: BADGE_GEOMETRY[size].root,
-          dot: { width: BADGE_GEOMETRY[size].dot, height: BADGE_GEOMETRY[size].dot }
-        })),
-        part({ Style: ["Solid", "Soft", "Outline"], Color: ["Neutral", "Brand", "Success", "Warning", "Error", "Info"] }, badgePaint)
+        part({ Variant: BADGE_VARIANTS }, badgePaint)
       ]
     };
     PRESENCE_DOT = {
@@ -6292,26 +6269,12 @@ var init_indicators = __esm({
         }))
       ]
     };
-    SPINNER_GEOMETRY = {
-      SM: { size: "spacing.4", stroke: "spacing.0_5" },
-      MD: { size: "spacing.6", stroke: "spacing.0_5" },
-      LG: { size: "spacing.8", stroke: "spacing.1" }
-    };
     SPINNER = {
       key: "Spinner",
       slots: ["root"],
-      defaults: { Size: "MD" },
+      defaults: {},
       parts: [
-        part({ Size: ["SM", "MD", "LG"] }, (size) => ({
-          root: {
-            width: SPINNER_GEOMETRY[size].size,
-            height: SPINNER_GEOMETRY[size].size,
-            radius: "radius.pill",
-            strokeWidth: SPINNER_GEOMETRY[size].stroke,
-            stroke: c("action.secondary.default"),
-            strokeTop: c("action.primary.default")
-          }
-        }))
+        part({}, () => ({ root: { text: c("content.secondary") } }))
       ]
     };
     ICON_ROLE = { SM: "icon.small", MD: "icon.medium", LG: "icon.large" };
@@ -6360,27 +6323,24 @@ var init_indicators = __esm({
         }))
       ]
     };
+    AVATAR_SIZES = ["default", "sm", "lg"];
     AVATAR_GEOMETRY = {
-      XS: { size: "size.xs", font: "type.caption" },
-      SM: { size: "size.sm", font: "type.caption" },
-      MD: { size: "size.md", font: "type.label" },
-      LG: { size: "size.lg", font: "type.body-md" },
-      XL: { size: "size.xl", font: "type.body-lg" }
+      sm: { size: "size.xs", font: "type.caption" },
+      default: { size: "size.sm", font: "type.label" },
+      lg: { size: "size.md", font: "type.label" }
     };
     AVATAR = {
       key: "Avatar",
       slots: ["root", "image", "fallback"],
-      defaults: { Size: "MD" },
+      defaults: { Size: "default" },
       parts: [
-        part({ Size: ["XS", "SM", "MD", "LG", "XL"] }, (size) => ({
-          root: {
-            width: AVATAR_GEOMETRY[size].size,
-            height: AVATAR_GEOMETRY[size].size,
-            radius: "radius.pill",
-            fill: c("surface.selected"),
-            text: c("content.accent"),
-            font: AVATAR_GEOMETRY[size].font
-          }
+        part({}, () => ({
+          root: { radius: "radius.pill" },
+          fallback: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.pill" }
+        })),
+        part({ Size: AVATAR_SIZES }, (size) => ({
+          root: { width: AVATAR_GEOMETRY[size].size, height: AVATAR_GEOMETRY[size].size },
+          fallback: { font: AVATAR_GEOMETRY[size].font }
         }))
       ]
     };
@@ -6443,9 +6403,8 @@ var init_componentRecipes = __esm({
       Tooltip: TOOLTIP,
       InfoTooltip: INFO_TOOLTIP,
       ScrollArea: SCROLL_AREA,
-      InlineAlert: INLINE_ALERT,
-      AlertBanner: ALERT_BANNER,
-      Toast: TOAST,
+      Alert: ALERT,
+      Sonner: SONNER,
       Tabs: TABS,
       TabMenu: TAB_MENU,
       SegmentedControl: SEGMENTED_CONTROL,
@@ -8575,7 +8534,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 91,
+          version: 92,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -9689,6 +9648,18 @@ var init_useDesignStore = __esm({
               prune(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) prune(sys?.snapshot);
+              }
+            }
+            if (version < 92) {
+              const RENAMED = { InlineAlert: "Alert", Toast: "Sonner" };
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const next = state2.selectedComponents.filter((k) => k !== "AlertBanner").map((k) => RENAMED[k] ?? k);
+                state2.selectedComponents = [...new Set(next)];
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
             return persisted;
@@ -11323,26 +11294,26 @@ function studioLook(choices) {
     states[slot] = solid.fill;
     stateInk[slot] = solid.ink;
   }
-  let box2 = 16, field = 8, control = 4;
+  let box = 16, field = 8, control = 4;
   if (c2.radiusAxes && (c2.radiusAxes.boxes || c2.radiusAxes.fields || c2.radiusAxes.selectors)) {
     const pxOf = (step, fallback) => {
       const n = parseFloat(step ? RADIUS_STANDARD[step] ?? "" : "");
       return Number.isFinite(n) ? n : fallback;
     };
-    box2 = pxOf(c2.radiusAxes.boxes, box2);
+    box = pxOf(c2.radiusAxes.boxes, box);
     field = pxOf(c2.radiusAxes.fields, field);
     control = pxOf(c2.radiusAxes.selectors, control);
   } else if (c2.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c2.radiusPreset);
     if (hit) {
       const px = radiusPresetPx(hit);
-      box2 = px[0];
+      box = px[0];
       field = px[1];
       control = px[2];
     }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD);
-    box2 = summary.radius.boxes;
+    box = summary.radius.boxes;
     field = summary.radius.fields;
     control = summary.radius.selectors;
   }
@@ -11367,7 +11338,7 @@ function studioLook(choices) {
     neutralRamp: rampList(neutral),
     states,
     stateInk,
-    box: box2,
+    box,
     field,
     control,
     controlH: paint.controlH,

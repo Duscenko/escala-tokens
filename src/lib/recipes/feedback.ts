@@ -1,72 +1,72 @@
 /**
- * Feedback recipes: InlineAlert, AlertBanner, Toast. Rules as in `componentRecipes.ts`.
- * A severity reads its OWN roles (`status.<sev>.*`); the catalogue's `Error` is `critical` here.
+ * Feedback recipes: Alert (shadcn's Alert) and Sonner (shadcn's toaster).
+ * Rules as in `componentRecipes.ts`.
  */
-import { c, part, type ComponentRecipe, type SlotProps } from './helpers'
+import { c, part, type ComponentRecipe } from './helpers.js'
 
-const SEV: Record<string, string> = { Info: 'info', Success: 'success', Warning: 'warning', Error: 'critical' }
-const STATUSES = ['Info', 'Success', 'Warning', 'Error'] as const
+// ── Alert ──────────────────────────────────────────────────────────────────
+// shadcn: `bg-card` with a hairline, `default` in the card's ink, `destructive`
+// in the critical ink (title, description and icon), the surface unchanged.
 
-function box(status: string): SlotProps {
-  const s = SEV[status]
-  return {
-    fill: c(`status.${s}.surface`), stroke: c(`status.${s}.border`), strokeWidth: 'stroke.control',
-    radius: 'radius.container', text: c('content.primary'),
-  }
-}
+export const ALERT_VARIANTS = ['default', 'destructive'] as const
 
-export const INLINE_ALERT: ComponentRecipe = {
-  key: 'InlineAlert',
-  slots: ['root', 'icon', 'body', 'title', 'description'],
-  defaults: { Status: 'Info' },
+export const ALERT: ComponentRecipe = {
+  key: 'Alert',
+  slots: ['root', 'icon', 'title', 'description'],
+  defaults: { Variant: 'default' },
   parts: [
-    part({}, () => ({
-      root: { paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.2_5' },
-      body: { gap: 'spacing.1' },
-      title: { font: 'type.button' },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-    })),
-    part({ Status: STATUSES }, (status) => ({
-      root: box(status),
-      icon: { text: c(`status.${SEV[status]}.content`) },
-    })),
-  ],
-}
-
-export const ALERT_BANNER: ComponentRecipe = {
-  key: 'AlertBanner',
-  slots: ['root', 'icon', 'message', 'action', 'close'],
-  defaults: { Status: 'Info' },
-  parts: [
-    part({}, () => ({
-      root: { paddingX: 'spacing.4', paddingY: 'spacing.2_5', gap: 'spacing.2_5' },
-      message: { font: 'type.body-sm' },
-      action: { font: 'type.button' },
-      close: { text: c('content.secondary') },
-    })),
-    part({ Status: STATUSES }, (status) => ({
-      root: box(status),
-      icon: { text: c(`status.${SEV[status]}.content`) },
-      action: { text: c(`status.${SEV[status]}.content`) },
-    })),
-  ],
-}
-
-export const TOAST: ComponentRecipe = {
-  key: 'Toast',
-  slots: ['root', 'message', 'action', 'close'],
-  defaults: { Status: 'Success' },
-  parts: [
-    // The inverse snackbar: `surface.inverse` with `content.inverse` ink, so it
-    // reads in both appearances. Status picks the message, not the colours.
     part({}, () => ({
       root: {
-        fill: c('surface.inverse'), text: c('content.inverse'), radius: 'radius.container', shadow: 'shadow.xl',
-        paddingX: 'spacing.gap-group', paddingY: 'spacing.gap-control', gap: 'spacing.2',
+        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control',
+        radius: 'radius.container', paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.0_5',
+        font: 'type.body-sm',
       },
-      message: { font: 'type.body-sm' },
-      action: { font: 'type.button' },
-      close: { font: 'type.button' },
+      title: { font: 'type.label' },
+      description: { font: 'type.body-sm' },
+    })),
+    part({ Variant: ALERT_VARIANTS }, (variant) => variant === 'destructive'
+      ? {
+          root: { text: c('status.critical.content') },
+          icon: { text: c('status.critical.content') },
+          description: { text: c('status.critical.content') },
+        }
+      : {
+          root: { text: c('content.primary') },
+          icon: { text: c('content.primary') },
+          description: { text: c('content.secondary') },
+        }),
+  ],
+}
+
+// ── Sonner ─────────────────────────────────────────────────────────────────
+// shadcn's Toaster maps Sonner onto the popover: `--normal-bg: var(--popover)`,
+// `--normal-text: var(--popover-foreground)`, `--normal-border: var(--border)`.
+// The toast `type` changes only the icon, as in shadcn — so the recipe has no
+// axis. Sonner renders the DOM, so the parts are its own attributes.
+
+export const SONNER: ComponentRecipe = {
+  key: 'Sonner',
+  slots: ['root', 'icon', 'title', 'description', 'action'],
+  defaults: {},
+  dom: {
+    // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
+    // after ours: the toaster and `[data-styled]` in the selector outrank it.
+    root: '[data-escala="Sonner"] [data-sonner-toaster] [data-sonner-toast][data-styled]',
+    slots: { icon: '[data-icon]', title: '[data-title]', description: '[data-description]', action: '[data-button]' },
+  },
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', text: c('content.primary'),
+        radius: 'radius.container', shadow: 'shadow.lg', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.1_5',
+      },
+      icon: { text: c('content.primary') },
+      title: { font: 'type.label' },
+      description: { text: c('content.secondary'), font: 'type.body-sm' },
+      action: {
+        fill: c('action.primary.default'), text: c('content.on-action'), radius: 'radius.action',
+        paddingX: 'spacing.2', font: 'type.caption',
+      },
     })),
   ],
 }

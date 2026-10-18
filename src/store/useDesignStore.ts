@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 91,
+      version: 92,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3505,6 +3505,22 @@ export const useDesignStore = create<DesignStore>()(
           prune(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) prune(sys?.snapshot)
+          }
+        }
+        if (version < 92) {
+          // v91→v92: shadcn names. InlineAlert is Alert, Toast is Sonner, and
+          // AlertBanner is gone (Alert covers it).
+          const RENAMED: Record<string, string> = { InlineAlert: 'Alert', Toast: 'Sonner' }
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const next = state.selectedComponents
+              .filter((k: unknown) => k !== 'AlertBanner')
+              .map((k: string) => RENAMED[k] ?? k)
+            state.selectedComponents = [...new Set(next)]
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
           }
         }
         return persisted

@@ -62,7 +62,7 @@ function PricingScreen({ t, compact }: ArtefactProps) {
         <Card t={t} v={{}} w="100%" elev="xl">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Pro</span>
-            <Badge t={t} v={{ Color: 'Brand', Style: 'Soft' }}>Most popular</Badge>
+            <Badge t={t} v={{ Variant: 'secondary' }}>Most popular</Badge>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: spaceOf(t, 4) }}>

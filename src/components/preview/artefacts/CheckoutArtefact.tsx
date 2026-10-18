@@ -1,4 +1,5 @@
 import { SPECIMENS } from '../../configurator/docs/specimens'
+import { AlertDescription, AlertTitle } from '../../escala-ui/alert'
 import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
@@ -8,7 +9,7 @@ const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Input = SPECIMENS.Input
 const Divider = SPECIMENS.Divider
-const InlineAlert = SPECIMENS.InlineAlert
+const Alert = SPECIMENS.Alert
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
 
@@ -36,7 +37,7 @@ function LineItem({ t, label, amount, bold }: { t: PreviewTokens; label: string;
  * Reuses `Input`'s real `Default`/`E-Mail` types for contact fields — no
  * invented "Card number" type: the catalogue's `Input` axis is a closed set
  * that mirrors the plugin's real Figma variants, and adding a fake one here
- * would claim a control the system doesn't actually ship. `InlineAlert`'s
+ * would claim a control the system doesn't actually ship. `Alert`'s
  * `Status: 'Success'` is the second status colour an artefact exercises
  * (after OTP's `Error`) — SAME component, opposite status, so the two
  * artefacts together prove the ramp works both directions.
@@ -76,12 +77,10 @@ function CheckoutScreen({ t, compact }: ArtefactProps) {
           </div>
         </Card>
 
-        <InlineAlert t={t} v={{ Status: 'Success' }} w="100%">
-          <span style={{ ...typeStyleOf(t, 'button') }}>Promo applied</span>
-          <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
-            SAVE20 took 20% off your first month.
-          </span>
-        </InlineAlert>
+        <Alert t={t} v={{ Variant: 'default' }} w="100%">
+          <AlertTitle>Promo applied</AlertTitle>
+          <AlertDescription>SAVE20 took 20% off your first month.</AlertDescription>
+        </Alert>
 
         <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">Pay $9.60</Button>
       </div>

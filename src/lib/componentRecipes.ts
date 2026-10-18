@@ -40,7 +40,7 @@ import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_T
 import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR,
 } from './recipes/navigation.js'
-import { INLINE_ALERT, ALERT_BANNER, TOAST } from './recipes/feedback.js'
+import { ALERT, SONNER } from './recipes/feedback.js'
 import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
@@ -89,9 +89,8 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Tooltip: TOOLTIP,
   InfoTooltip: INFO_TOOLTIP,
   ScrollArea: SCROLL_AREA,
-  InlineAlert: INLINE_ALERT,
-  AlertBanner: ALERT_BANNER,
-  Toast: TOAST,
+  Alert: ALERT,
+  Sonner: SONNER,
   Tabs: TABS,
   TabMenu: TAB_MENU,
   SegmentedControl: SEGMENTED_CONTROL,

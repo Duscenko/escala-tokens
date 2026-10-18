@@ -51,7 +51,7 @@ const InlineLink = ({ t, children }: { t: PreviewTokens; children: ReactNode }) 
   </TokenInspector>
 )
 const Segmented = inspectable('SegmentedControl')
-const Toast = inspectable('Toast')
+const Sonner = inspectable('Sonner')
 const TabMenu = inspectable('TabMenu')
 const Progress = inspectable('Progress')
 const StatusBadge = inspectable('StatusBadge')
@@ -668,10 +668,10 @@ export function SystemCollage({
             className="grid w-full min-w-0 grid-cols-2 justify-items-center"
             style={{ gap: gap(tile(4), 'gap-control', '8px') }}
           >
-            <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Error', Size: 'SM' }}>{translate('Critical')}</Badge>
-            <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Warning', Size: 'SM' }}>{translate('Warning')}</Badge>
-            <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Success', Size: 'SM' }}>{translate('Success')}</Badge>
-            <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Info', Size: 'SM' }}>{translate('Info')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'default' }}>{translate('Published')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'secondary' }}>{translate('Draft')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'destructive' }}>{translate('Critical')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'outline' }}>{translate('Info')}</Badge>
           </div>
           <div
             className="flex flex-wrap items-center"
@@ -817,8 +817,8 @@ export function SystemCollage({
           appearance={appearanceAt(15)}
           style={{ gap: gap(tile(15), 'gap-group', '16px') }}
         >
-          <Toast t={tile(15)} v={{ Status: 'Success' }} w="100%" elev={false} />
-          <Toast t={tile(15)} v={{ Status: 'Error' }} w="100%" elev={false} />
+          <Sonner t={tile(15)} v={{ Type: 'success' }} w="100%" />
+          <Sonner t={tile(15)} v={{ Type: 'error' }} w="100%" />
         </ScaledModule>
     ),
     tabsProgress: (
@@ -871,7 +871,7 @@ export function SystemCollage({
     ),
     spinner: (
         <ScaledModule key="spinner" t={tile(23)} appearance={appearanceAt(23)} style={{ alignItems: 'center', justifyContent: 'center', minHeight: 72 }}>
-          <Spinner t={tile(23)} v={{ Size: 'MD' }} />
+          <Spinner t={tile(23)} v={{}} />
         </ScaledModule>
     ),
   }
@@ -902,7 +902,7 @@ export function SystemCollage({
               boxShadow: `0 0 0 2px ${cardBg}`,
             }}
           >
-            <Avatar t={tile(11)} v={{ Size: 'LG', Variant: 'Gradient', Hue: String(hue) }} />
+            <Avatar t={tile(11)} v={{ Size: 'lg', Fill: 'Gradient', Hue: String(hue) }} />
           </span>
         ))}
       </div>
@@ -919,7 +919,7 @@ export function SystemCollage({
                 <p style={{ margin: 0, ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{community.count}</p>
               </div>
               <div className="flex items-center" style={{ gap: gap(tile(community.index), 'gap-tight', '4px') }}>
-                <Avatar t={tile(community.index)} v={{ Size: 'XS' }} />
+                <Avatar t={tile(community.index)} v={{ Size: 'sm' }} />
                 <span style={{ ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{translate('By')} {community.by}</span>
               </div>
             </div>
@@ -953,7 +953,7 @@ export function SystemCollage({
           </span>
           <span style={{ ...typeStyleOf(chart, 'body-sm'), color: muted(10) }}>{translate('Workspace readiness')}</span>
         </div>
-        <Badge t={chart} v={{ Style: 'Soft', Color: 'Success', Size: 'SM' }}>+6%</Badge>
+        <Badge t={chart} v={{ Variant: 'secondary' }}>+6%</Badge>
       </div>
       <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} width="100%" height={CHART_H} preserveAspectRatio="none" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
         {[0.25, 0.55, 0.85].map((f) => (

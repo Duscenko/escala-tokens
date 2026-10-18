@@ -3,7 +3,7 @@ import type { SpecimenProps } from '../specimens'
 import { PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
-import { Badge as SkBadge, StatusBadge as SkStatusBadge, type Presence } from '../../../escala-ui/badge'
+import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
 import { Chip as SkChip } from '../../../escala-ui/chip'
 import { Progress as SkProgress } from '../../../escala-ui/progress'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
@@ -16,13 +16,8 @@ import { RecipeScope, lower } from './scope'
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkBadge
-        variant={lower(v.Style, 'Soft') as 'soft'}
-        color={lower(v.Color, 'Brand') as 'brand'}
-        size={lower(v.Size, 'MD') as 'md'}
-        dot={v.Dot !== 'False'}
-      >
-        {children ?? (v.Color ?? 'Brand')}
+      <SkBadge variant={(v.Variant ?? 'default') as BadgeVariant}>
+        {children ?? 'Badge'}
       </SkBadge>
     </RecipeScope>
   )
@@ -55,8 +50,8 @@ export function SkeletonProgressSpecimen({ t, w }: SpecimenProps) {
   return <RecipeScope t={t}><SkProgress label="Uploading…" value={60} style={{ width: w ?? 240, maxWidth: '100%' }} /></RecipeScope>
 }
 
-export function SkeletonSpinnerSpecimen({ t, v }: SpecimenProps) {
-  return <RecipeScope t={t}><SkSpinner size={lower(v.Size, 'MD') as 'md'} /></RecipeScope>
+export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {
+  return <RecipeScope t={t}><SkSpinner /></RecipeScope>
 }
 
 export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
@@ -89,14 +84,16 @@ export function SkeletonFileFormatSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'PDF') as Format} /></RecipeScope>
 }
 
+/** `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
+ *  the system's gradient instead of initials; `v.Hue` rotates it. */
 export function SkeletonAvatarSpecimen({ t, v }: SpecimenProps) {
-  const gradient = v.Variant === 'Gradient'
+  const gradient = v.Fill === 'Gradient'
   const hue = Number(v.Hue)
   const background = gradient ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t)) : undefined
   return (
     <RecipeScope t={t}>
-      <SkAvatar size={lower(v.Size, 'MD') as AvatarSize} style={background ? { background } : undefined}>
-        <SkAvatarFallback>{gradient ? null : 'MD'}</SkAvatarFallback>
+      <SkAvatar size={(v.Size ?? 'default') as AvatarSize}>
+        <SkAvatarFallback style={background ? { background } : undefined}>{gradient ? null : 'MD'}</SkAvatarFallback>
       </SkAvatar>
     </RecipeScope>
   )

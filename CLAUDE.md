@@ -125,8 +125,11 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > icon-xs·icon-sm·icon-lg (catalogue axes `Variant` / `Size` carry those lowercase values, so
 > the recipe's `data-variant` / `data-size` ARE shadcn's attributes); CloseButton / FABButton /
 > TextLink are gone (ghost icon-sm · icon-lg · link); ButtonGroup is `orientation`. `State`
-> stays a Figma-only axis. Badge, Alert, forms, surfaces still carry Escala axes until their
-> phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+> stays a Figma-only axis. Phase 2 done: Badge (`variant`, no size/dot), **Alert** (was
+> InlineAlert, default·destructive), **Sonner** (was Toast — the real `sonner` Toaster; the
+> recipe paints Sonner's own DOM through `ComponentRecipe.dom`), Avatar (default·sm·lg),
+> Spinner (no variants); AlertBanner deleted. Forms, surfaces, navigation still carry Escala
+> axes until their phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
 
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a

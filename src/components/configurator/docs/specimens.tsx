@@ -41,7 +41,7 @@ import {
 import {
   SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonDividerSpecimen, SkeletonAccordionSpecimen,
   SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen, SkeletonInfoTooltipSpecimen,
-  SkeletonScrollAreaSpecimen, SkeletonInlineAlertSpecimen, SkeletonAlertBannerSpecimen, SkeletonToastSpecimen,
+  SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
 } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
@@ -389,9 +389,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InfoTooltip: SkeletonInfoTooltipSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
   // Feedback
-  Toast: SkeletonToastSpecimen,
-  AlertBanner: SkeletonAlertBannerSpecimen,
-  InlineAlert: SkeletonInlineAlertSpecimen,
+  Sonner: SkeletonSonnerSpecimen,
+  Alert: SkeletonAlertSpecimen,
   // Navigation
   Tabs: SkeletonTabsSpecimen,
   TabMenu: SkeletonTabMenuSpecimen,

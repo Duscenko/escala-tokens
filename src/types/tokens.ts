@@ -32,16 +32,3 @@ export interface DesignTokens {
 
 export type StyleDirection = 'ios26' | 'organic' | 'material'
 
-export type AtomType =
-  | 'Button'
-  | 'Input'
-  | 'Badge'
-  | 'Card'
-  | 'Avatar'
-  | 'Checkbox'
-  | 'Toggle'
-  | 'Select'
-  | 'Tooltip'
-  | 'Modal'
-  | 'Toast'
-  | 'Tabs'

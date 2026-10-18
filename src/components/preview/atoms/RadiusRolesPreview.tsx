@@ -46,10 +46,10 @@ function Examples({ role, tokens: t }: { role: string; tokens: PreviewTokens }) 
   if (role === 'pill') {
     return (
       <>
-        <BadgeSpec t={t} v={{ Style: 'Solid', Color: 'Brand' }} />
-        <BadgeSpec t={t} v={{ Style: 'Soft', Color: 'Neutral' }} />
+        <BadgeSpec t={t} v={{ Variant: 'default' }} />
+        <BadgeSpec t={t} v={{ Variant: 'secondary' }} />
         <SwitchSpec t={t} v={{ On: 'True' }} />
-        <AvatarSpec t={t} v={{ Size: 'MD' }} />
+        <AvatarSpec t={t} v={{}} />
       </>
     )
   }

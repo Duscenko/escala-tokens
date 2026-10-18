@@ -1,4 +1,5 @@
 import { SPECIMENS } from '../../configurator/docs/specimens'
+import { AlertDescription, AlertTitle } from '../../escala-ui/alert'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
@@ -8,7 +9,7 @@ import type { ArtefactProps } from './types'
 const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const InputOTP = SPECIMENS.InputOTP
-const InlineAlert = SPECIMENS.InlineAlert
+const Alert = SPECIMENS.Alert
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
 
@@ -17,7 +18,7 @@ const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, rol
  *
  * The screen `Login` never touches: every colour on it was `content`/`action`
  * (accent, neutral, on-brand). This one exists specifically to exercise the
- * STATUS ramp — `InlineAlert`'s `Status: 'Error'` is the first live use of
+ * STATUS ramp — `Alert`'s `destructive` variant is the first live use of
  * `errorColor` in any artefact. `InputOTP` needs no `w` override: six fixed
  * digit boxes plus five gaps sit well under the frame's content width at every
  * size, so it's centred rather than stretched.
@@ -47,12 +48,10 @@ function OTPScreen({ t, compact }: ArtefactProps) {
               <InputOTP t={t} v={{ State: 'Filled' }} />
             </div>
 
-            <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" nested>
-              <span style={{ ...typeStyleOf(t, 'button') }}>Incorrect code</span>
-              <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
-                2 attempts remaining before it resets.
-              </span>
-            </InlineAlert>
+            <Alert t={t} v={{ Variant: 'destructive' }} w="100%">
+              <AlertTitle>Incorrect code</AlertTitle>
+              <AlertDescription>2 attempts remaining before it resets.</AlertDescription>
+            </Alert>
 
             <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">Verify</Button>
           </div>

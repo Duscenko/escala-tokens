@@ -1,3 +1,5 @@
+import type * as React from 'react'
+import { useEffect, useId } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
@@ -12,8 +14,9 @@ import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescri
 import { InfoTooltip as SkInfoTooltip, Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf } from '../../../../lib/previewTokens'
-import { type AlertStatus, Alert as SkAlert, AlertBanner as SkAlertBanner, AlertDescription as SkAlertDescription, AlertTitle as SkAlertTitle } from '../../../escala-ui/alert'
-import { Toast as SkToast } from '../../../escala-ui/toast'
+import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
+import { Toaster as SkToaster, toast, type SonnerType } from '../../../escala-ui/sonner'
+import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
 
 export function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
@@ -142,21 +145,17 @@ export function SkeletonScrollAreaSpecimen({ t }: SpecimenProps) {
 
 // ── Feedback ──────────────────────────────────────────────────────────────
 
-const STATUS_CONCEPT = { Success: 'success', Warning: 'warning', Error: 'error', Info: 'info' } as const
-
-function statusGlyph(status: string) {
-  return <PreviewIcon concept={STATUS_CONCEPT[status as keyof typeof STATUS_CONCEPT] ?? 'info'} size={iconOf(15)} />
-}
-
-export function SkeletonInlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
-  const status: AlertStatus = (v.Status ?? 'Info') as AlertStatus
+export function SkeletonAlertSpecimen({ t, v, w, children }: SpecimenProps) {
+  const variant = (v.Variant ?? 'default') as AlertVariant
+  const destructive = variant === 'destructive'
   return (
     <RecipeScope t={t}>
-      <SkAlert status={status} icon={statusGlyph(status)} style={{ width: w ?? 320 }}>
+      <SkAlert variant={variant} style={{ width: w ?? 320, maxWidth: '100%' }}>
+        <SkAlertIcon><PreviewIcon concept={destructive ? 'error' : 'info'} size={iconOf(15)} /></SkAlertIcon>
         {children ?? (
           <>
-            <SkAlertTitle>{status === 'Error' ? 'Export failed' : status === 'Warning' ? 'Contrast warning' : status === 'Success' ? 'System saved' : 'Heads up'}</SkAlertTitle>
-            <SkAlertDescription>{status === 'Warning' ? 'Accent 400 on white is below AA for body text.' : 'Semantic tokens re-derive when the accent changes.'}</SkAlertDescription>
+            <SkAlertTitle>{destructive ? 'Export failed' : 'Heads up'}</SkAlertTitle>
+            <SkAlertDescription>{destructive ? 'Check the token names and try again.' : 'Semantic tokens re-derive when the accent changes.'}</SkAlertDescription>
           </>
         )}
       </SkAlert>
@@ -164,42 +163,43 @@ export function SkeletonInlineAlertSpecimen({ t, v, w, children }: SpecimenProps
   )
 }
 
-export function SkeletonAlertBannerSpecimen({ t, v }: SpecimenProps) {
-  const status: AlertStatus = (v.Status ?? 'Info') as AlertStatus
-  const message = status === 'Error' ? 'Sync failed — tokens were not published.'
-    : status === 'Warning' ? 'Your trial ends in 3 days.'
-    : status === 'Success' ? 'All tokens are synced to Figma.'
-    : 'Scheduled maintenance on Sunday 02:00 UTC.'
-  return (
-    <RecipeScope t={t}>
-      <SkAlertBanner
-        status={status}
-        icon={statusGlyph(status)}
-        message={message}
-        action={status === 'Warning' ? 'Upgrade' : 'View'}
-        onClose={() => undefined}
-        closeIcon={<PreviewIcon concept="close" size={iconOf(12)} />}
-        style={{ width: 380 }}
-      />
-    </RecipeScope>
-  )
+const SONNER_COPY: Record<SonnerType, [string, string]> = {
+  default: ['Event created', 'Sunday, 3 November at 9:00'],
+  success: ['Changes saved', 'Your tokens are up to date.'],
+  info: ['A new version is available', 'Reload to get the latest.'],
+  warning: ['Storage almost full', '90% of your plan is in use.'],
+  error: ['Something went wrong', 'The tokens were not published.'],
+  loading: ['Publishing…', 'Sending your tokens to Figma.'],
 }
 
-export function SkeletonToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
-  const status = (v.Status ?? 'Success') as AlertStatus
-  const message = status === 'Error' ? 'Something went wrong.'
-    : status === 'Warning' ? 'Storage almost full.'
-    : status === 'Info' ? 'A new version is available.'
-    : 'Changes saved.'
+/**
+ * The real Sonner toaster, drawn in place: one Toaster per specimen (its own
+ * `id`, so a toast lands only here), its list taken out of the viewport corner
+ * and laid in the flow at the front toast's height. The toast never expires.
+ */
+export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
+  const id = useId()
+  const type = (v.Type ?? 'default') as SonnerType
+  const [title, description] = SONNER_COPY[type] ?? SONNER_COPY.default
+  const message = typeof children === 'string' ? children : title
+  useEffect(() => {
+    const opts = { id: `${id}-toast`, toasterId: id, description, duration: Infinity, action: type === 'default' ? { label: 'Undo', onClick: () => undefined } : undefined }
+    if (type === 'default') toast(message, opts)
+    else toast[type](message, opts)
+    return () => { toast.dismiss(`${id}-toast`) }
+  }, [id, type, message, description])
+  const icon = (concept: 'success' | 'info' | 'warning' | 'error') => <PreviewIcon concept={concept} size={iconOf(16)} />
   return (
     <RecipeScope t={t}>
-      <SkToast
-        status={status}
-        message={children ?? message}
-        action="Undo"
-        onClose={() => undefined}
-        style={{ width: w ?? 280, maxWidth: '100%', boxShadow: elev === false ? 'none' : undefined }}
-      />
+      <div style={{ width: w ?? 356, maxWidth: '100%' }}>
+        <SkToaster
+          id={id}
+          offset={0}
+          mobileOffset={0}
+          icons={{ success: icon('success'), info: icon('info'), warning: icon('warning'), error: icon('error'), loading: <SkSpinner /> }}
+          style={{ position: 'relative', inset: 'auto', transform: 'none', width: '100%', height: 'var(--front-toast-height)', '--width': '100%' } as React.CSSProperties}
+        />
+      </div>
     </RecipeScope>
   )
 }

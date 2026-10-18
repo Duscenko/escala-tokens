@@ -26,7 +26,7 @@ const SwitchSpec = SPECIMENS.Toggle
 const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
-const ToastSpec = SPECIMENS.Toast
+const ToastSpec = SPECIMENS.Sonner
 const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
 const TabMenuSpec = SPECIMENS.TabMenu
@@ -139,21 +139,13 @@ function ColorCollage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
-        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Brand' }} />
-        <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'destructive' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
       </div>
 
-      {/* Semantic states — the four status ramps, side by side, so an edit to
-          any one of them is visible without leaving the Color foundation. */}
-      <div className="flex flex-wrap items-center gap-2.5">
-        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Error' }} />
-        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
-        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Warning' }} />
-        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Info' }} />
-      </div>
-
-      <ToastSpec t={tokens} v={{ Status: 'Success' }} />
+      <ToastSpec t={tokens} v={{ Type: 'success' }} />
       {/* Dropzone names its hover-equivalent 'Dragging' — hovering an uploader
           IS what a drag looks like, and it's a shipped variant, not invented. */}
       <Live c="Dropzone" t={tokens} hoverState="Dragging" />
@@ -163,7 +155,7 @@ function ColorCollage({
 
       <div className="flex items-center justify-between gap-3">
         <TabMenuSpec t={tokens} v={{}} />
-        <AvatarSpec t={tokens} v={{ Size: 'MD' }} />
+        <AvatarSpec t={tokens} v={{}} />
       </div>
       </div>
     </div>
@@ -466,9 +458,9 @@ export default function PreviewPanel({
 
             <Group title="Badge">
               <Tile tokens={tokens}>
-                <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
               </Tile>
             </Group>
 

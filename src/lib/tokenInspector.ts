@@ -12,7 +12,7 @@
 // see `INSPECTOR_BLIND_SPOT` below.
 
 import { compositeOver } from './colorUtils'
-import { COMPONENT_RECIPES, recipeColorRoles, recipeRolesFor } from './componentRecipes'
+import { COMPONENT_RECIPES, recipeColorRoles, recipeRolesFor, resolveRecipe } from './componentRecipes'
 import { wcagRatio } from './color/apca'
 import { RADIUS_ROLES, SIZE_CONTROL_MIN_PX, SIZE_ROLES } from './layoutTokens'
 import { CATEGORICAL_FIELD_ROLE, radiusRoleOf, sizeRoleOf } from './previewTokens'
@@ -244,19 +244,6 @@ function parseInspectVariant(el: Element): Record<string, string> | null {
   }
 }
 
-const STATUS_SEV: Record<string, 'critical' | 'warning' | 'success' | 'info'> = {
-  Error: 'critical',
-  Danger: 'critical',
-  Warning: 'warning',
-  Success: 'success',
-  Info: 'info',
-}
-
-function buttonIntent(color?: string): string {
-  if (color === 'Danger') return 'Error'
-  return color ?? 'Brand'
-}
-
 function roleAt(
   arch: Record<string, string>,
   paints: { css: string; where: PaintSlot }[],
@@ -279,9 +266,10 @@ function roleAt(
 }
 
 /**
- * The roles a catalogue variant MEANS to paint — mirrors `ButtonSpecimen`,
- * `BadgeSpecimen`, and `InlineAlertSpecimen` without re-deriving colours.
- * Measured paint css is kept on the swatch when present.
+ * The roles a catalogue variant MEANS to paint, read from its recipe (the same
+ * table the stylesheet and the Figma plugin paint from): every slot's fill,
+ * ink and stroke for these axis values, root first. Measured paint css is
+ * kept on the swatch when present.
  */
 export function resolveVariantRoles(
   t: PreviewTokens,
@@ -290,144 +278,26 @@ export function resolveVariantRoles(
   paints: { css: string; where: PaintSlot }[],
 ): InspectedRole[] | null {
   const arch = t.archTokens
-  if (!arch) return null
-
-  if (componentKey === 'Button') {
-    const intent = buttonIntent(variant.Color)
-    const style = variant.Style ?? 'Solid'
-    if (style === 'Solid') {
-      if (intent === 'Brand') {
-        const roles = [
-          roleAt(arch, paints, 'action.primary.default', 'fill'),
-          roleAt(arch, paints, 'content.on-action', 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-      const sev = STATUS_SEV[intent]
-      if (sev) {
-        const roles = [
-          roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
-          roleAt(arch, paints, `status.${sev}.on-solid`, 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-    }
-    if (style === 'Soft') {
-      if (intent === 'Brand') {
-        const roles = [
-          roleAt(arch, paints, 'surface.selected', 'fill'),
-          roleAt(arch, paints, 'content.accent', 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-      const sev = STATUS_SEV[intent]
-      if (sev) {
-        const roles = [
-          roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
-          roleAt(arch, paints, `status.${sev}.surface-solid`, 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-    }
-    if (style === 'Outline' || style === 'Ghost') {
-      const inkId = intent === 'Brand'
-        ? 'content.accent'
-        : STATUS_SEV[intent] ? `status.${STATUS_SEV[intent]}.content` : null
-      if (!inkId) return null
-      const ink = roleAt(arch, paints, inkId, 'ink')
-      return ink ? [ink] : null
+  const recipe = COMPONENT_RECIPES[componentKey]
+  if (!arch || !recipe) return null
+  const slots = resolveRecipe(recipe, variant)
+  const order = [recipe.slots[0], ...Object.keys(slots).filter((k) => k !== recipe.slots[0] && !/[:[]/.test(k))]
+  const seen = new Set<string>()
+  const roles: InspectedRole[] = []
+  for (const slot of order) {
+    const props = slots[slot]
+    if (!props) continue
+    for (const [prop, where] of [['fill', 'fill'], ['text', 'ink'], ['stroke', 'stroke']] as const) {
+      const ref = props[prop]
+      if (!ref?.startsWith('color.')) continue
+      const id = ref.slice(6)
+      if (seen.has(`${id}|${where}`)) continue
+      seen.add(`${id}|${where}`)
+      const role = roleAt(arch, paints, id, where)
+      if (role) roles.push(role)
     }
   }
-
-  if (componentKey === 'Badge') {
-    const intent = variant.Color ?? 'Brand'
-    const style = variant.Style ?? 'Soft'
-    const isNeutral = intent === 'Neutral'
-    if (style === 'Solid') {
-      if (intent === 'Brand') {
-        const roles = [
-          roleAt(arch, paints, 'action.primary.default', 'fill'),
-          roleAt(arch, paints, 'content.on-action', 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-      const sev = STATUS_SEV[intent]
-      if (sev) {
-        const roles = [
-          roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
-          roleAt(arch, paints, `status.${sev}.on-solid`, 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-    }
-    if (style === 'Soft') {
-      if (isNeutral) {
-        const dotless = variant.Dot === 'False'
-        const roles = [
-          roleAt(arch, paints, 'surface.layer-1', 'fill'),
-          roleAt(arch, paints, dotless ? 'content.primary' : 'content.secondary', 'ink'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-      const sev = STATUS_SEV[intent]
-      if (sev) {
-        // Soft paints THREE colours: the wash, the label, and the leading
-        // status DOT (`statusColor` → `*.surface-solid`). Dropping the solid
-        // left the inspector naming only the tint / content pair, so pointing
-        // at Critical showed a coral swatch that was never the brown-red dot.
-        const roles = [
-          roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
-          roleAt(arch, paints, `status.${sev}.content`, 'ink'),
-          roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
-        ].filter((r): r is InspectedRole => !!r)
-        return roles.length ? roles : null
-      }
-    }
-    if (style === 'Outline') {
-      const sev = STATUS_SEV[intent]
-      const inkId = intent === 'Brand'
-        ? 'content.accent'
-        : sev ? `status.${sev}.surface-solid` : null
-      if (!inkId) return null
-      const ink = roleAt(arch, paints, inkId, 'ink')
-      return ink ? [ink] : null
-    }
-  }
-
-  if (componentKey === 'InlineAlert') {
-    const status = variant.Status ?? 'Info'
-    const sev = STATUS_SEV[status]
-    if (!sev) return null
-    const roles = [
-      roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
-      roleAt(arch, paints, `status.${sev}.border`, 'stroke'),
-      roleAt(arch, paints, 'content.primary', 'ink'),
-      roleAt(arch, paints, 'content.secondary', 'ink'),
-    ].filter((r): r is InspectedRole => !!r)
-    return roles.length ? roles : null
-  }
-
-  if (componentKey === 'Toast') {
-    const status = variant.Status ?? 'Success'
-    const sev = STATUS_SEV[status]
-    if (!sev) return null
-    const inkRole = `status.${sev}.content`
-    const fillPaints = paints.filter((p) => p.where === 'fill')
-    const inkPaints = paints.filter((p) => p.where === 'ink')
-    // The 8px dot alone — one fill, no text on that node.
-    if (fillPaints.length === 1 && !inkPaints.length) {
-      const dot = roleAt(arch, paints, inkRole, 'fill')
-      return dot ? [dot] : null
-    }
-    const roles = [
-      roleAt(arch, paints, 'surface.inverse', 'fill'),
-      roleAt(arch, paints, 'content.inverse', 'ink'),
-      roleAt(arch, paints, inkRole, 'fill'),
-    ].filter((r): r is InspectedRole => !!r)
-    return roles.length ? roles : null
-  }
-
-  return null
+  return roles.length ? roles : null
 }
 
 /**

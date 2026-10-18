@@ -1,44 +1,30 @@
-// Skeleton: shadcn/ui `bases/radix/ui/badge.tsx` (MIT, see LICENSE-shadcn.md) with
-// Escala's Style × Color × Size axes, and the StatusBadge (a presence dot).
-// Appearance: recipes (Badge, StatusBadge).
+// Skeleton: shadcn/ui `bases/radix/ui/badge.tsx` (MIT, see LICENSE-shadcn.md):
+// the same `variant` values and `data-variant`. Plus Escala's StatusBadge (a
+// presence dot). Appearance: recipes (Badge, StatusBadge).
 import * as React from 'react'
+import { Slot } from 'radix-ui'
 import { cn } from '../../lib/utils'
 
-export type BadgeVariant = 'solid' | 'soft' | 'outline'
-export type BadgeColor = 'neutral' | 'brand' | 'success' | 'warning' | 'error' | 'info'
+export const BADGE_VARIANTS = ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'] as const
+export type BadgeVariant = (typeof BADGE_VARIANTS)[number]
 
-const COLOR: Record<BadgeColor, string> = {
-  neutral: 'Neutral', brand: 'Brand', success: 'Success', warning: 'Warning', error: 'Error', info: 'Info',
-}
-const STYLE: Record<BadgeVariant, string> = { solid: 'Solid', soft: 'Soft', outline: 'Outline' }
-/** shadcn's variant names, mapped onto Escala's style × colour. */
-const SHADCN: Record<string, [BadgeVariant, BadgeColor]> = {
-  default: ['solid', 'brand'], secondary: ['soft', 'neutral'], destructive: ['solid', 'error'],
-}
-
-export interface BadgeProps extends React.ComponentProps<'span'> {
-  variant?: BadgeVariant | 'default' | 'secondary' | 'destructive'
-  color?: BadgeColor
-  size?: 'sm' | 'md' | 'lg'
-  /** The leading status dot. Off for a count ("+5 more"). */
-  dot?: boolean
-}
-
-function Badge({ variant = 'soft', color, size = 'md', dot = true, className, children, ...props }: BadgeProps) {
-  const [style, aliasColor] = variant in SHADCN ? SHADCN[variant] : [variant as BadgeVariant, 'brand' as BadgeColor]
+function Badge({
+  className, variant = 'default', asChild = false, ...props
+}: React.ComponentProps<'span'> & { variant?: BadgeVariant; asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : 'span'
   return (
-    <span
+    <Comp
       data-slot="badge"
       data-escala="Badge"
-      data-style={STYLE[style]}
-      data-color={COLOR[color ?? aliasColor]}
-      data-size={size.toUpperCase()}
-      className={cn('inline-flex w-fit shrink-0 items-center whitespace-nowrap', !dot && 'tabular-nums', className)}
+      data-variant={variant}
+      className={cn(
+        'group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap',
+        'transition-colors [&>svg]:pointer-events-none',
+        variant === 'link' && 'underline-offset-4 hover:underline',
+        className,
+      )}
       {...props}
-    >
-      {dot && <span data-part="Badge.dot" aria-hidden className="inline-block shrink-0" />}
-      {children}
-    </span>
+    />
   )
 }
 

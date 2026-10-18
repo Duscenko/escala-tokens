@@ -2,47 +2,39 @@
  * Indicator recipes: Badge, StatusBadge, Chip, Progress, Spinner, Icon, Rating,
  * FileFormat, Avatar. Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Badge ──────────────────────────────────────────────────────────────────
+// shadcn's variants (`bases/radix/ui/badge.tsx`), painted through Escala roles
+// the way the Button reads them: default = primary, secondary = the neutral
+// fill, destructive = shadcn v4's soft critical, outline = the hairline,
+// ghost / link = no fill. Height h-5 → padding on the spacing scale.
 
-interface Tone { solid: string; on: string; soft: string; ink: string; line: string; dot: string }
-const BADGE_TONES: Record<string, Tone> = {
-  Brand: { solid: 'action.primary.default', on: 'content.on-action', soft: 'surface.selected', ink: 'content.accent', line: 'border.accent', dot: 'action.primary.default' },
-  Neutral: { solid: 'surface.inverse', on: 'content.inverse', soft: 'action.secondary.default', ink: 'content.secondary', line: 'border.strong', dot: 'content.secondary' },
-  Success: { solid: 'status.success.surface-solid', on: 'status.success.on-solid', soft: 'status.success.surface', ink: 'status.success.content', line: 'status.success.border-strong', dot: 'status.success.surface-solid' },
-  Warning: { solid: 'status.warning.surface-solid', on: 'status.warning.on-solid', soft: 'status.warning.surface', ink: 'status.warning.content', line: 'status.warning.border-strong', dot: 'status.warning.surface-solid' },
-  Error: { solid: 'status.critical.surface-solid', on: 'status.critical.on-solid', soft: 'status.critical.surface', ink: 'status.critical.content', line: 'status.critical.border-strong', dot: 'status.critical.surface-solid' },
-  Info: { solid: 'status.info.surface-solid', on: 'status.info.on-solid', soft: 'status.info.surface', ink: 'status.info.content', line: 'status.info.border-strong', dot: 'status.info.surface-solid' },
-}
+export const BADGE_VARIANTS = ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'] as const
 
-function badgePaint(style: string, color: string): SlotMap {
-  const k = BADGE_TONES[color]
-  if (style === 'Solid') return { root: { fill: c(k.solid), stroke: NONE, text: c(k.on) }, dot: { fill: c(k.on) } }
-  if (style === 'Soft') return { root: { fill: c(k.soft), stroke: NONE, text: c(k.ink) }, dot: { fill: c(k.dot) } }
-  return { root: { fill: NONE, stroke: c(k.line), text: c(k.ink) }, dot: { fill: c(k.dot) } }
-}
-
-const BADGE_GEOMETRY: Record<string, { root: SlotProps; dot: string }> = {
-  SM: { root: { paddingX: 'spacing.2', paddingY: 'spacing.0_5', gap: 'spacing.1_5' }, dot: 'spacing.1_5' },
-  MD: { root: { paddingX: 'spacing.2_5', paddingY: 'spacing.1', gap: 'spacing.1_5' }, dot: 'spacing.1_5' },
-  LG: { root: { paddingX: 'spacing.3', paddingY: 'spacing.1', gap: 'spacing.2' }, dot: 'spacing.2' },
+function badgePaint(variant: string): SlotMap {
+  switch (variant) {
+    case 'default': return { root: { fill: c('action.primary.default'), stroke: NONE, text: c('content.on-action') } }
+    case 'secondary': return { root: { fill: c('action.secondary.default'), stroke: NONE, text: c('content.primary') } }
+    case 'destructive': return { root: { fill: c('status.critical.surface'), stroke: NONE, text: c('status.critical.content') } }
+    case 'outline': return { root: { fill: NONE, stroke: c('border.default'), text: c('content.primary') } }
+    case 'ghost': return { root: { fill: NONE, stroke: NONE, text: c('content.primary') } }
+    default: return { root: { fill: NONE, stroke: NONE, text: c('content.link.default') } }
+  }
 }
 
 export const BADGE: ComponentRecipe = {
   key: 'Badge',
-  slots: ['root', 'dot'],
-  defaults: { Style: 'Soft', Color: 'Brand', Size: 'MD' },
+  slots: ['root'],
+  defaults: { Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.caption' },
-      dot: { radius: 'radius.pill' },
+      root: {
+        radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.caption',
+        paddingX: 'spacing.2', paddingY: 'spacing.0_5', gap: 'spacing.1',
+      },
     })),
-    part({ Size: ['MD', 'SM', 'LG'] as const }, (size) => ({
-      root: BADGE_GEOMETRY[size].root,
-      dot: { width: BADGE_GEOMETRY[size].dot, height: BADGE_GEOMETRY[size].dot },
-    })),
-    part({ Style: ['Solid', 'Soft', 'Outline'] as const, Color: ['Neutral', 'Brand', 'Success', 'Warning', 'Error', 'Info'] as const }, badgePaint),
+    part({ Variant: BADGE_VARIANTS }, badgePaint),
   ],
 }
 
@@ -116,24 +108,15 @@ export const PROGRESS: ComponentRecipe = {
 }
 
 // ── Spinner ────────────────────────────────────────────────────────────────
-
-const SPINNER_GEOMETRY: Record<string, { size: string; stroke: string }> = {
-  SM: { size: 'spacing.4', stroke: 'spacing.0_5' },
-  MD: { size: 'spacing.6', stroke: 'spacing.0_5' },
-  LG: { size: 'spacing.8', stroke: 'spacing.1' },
-}
+// shadcn's Spinner is a spinning loader glyph, `size-4` (a class), no variants. It takes
+// the ink of the text around it; on its own, the secondary ink.
 
 export const SPINNER: ComponentRecipe = {
   key: 'Spinner',
   slots: ['root'],
-  defaults: { Size: 'MD' },
+  defaults: {},
   parts: [
-    part({ Size: ['SM', 'MD', 'LG'] as const }, (size) => ({
-      root: {
-        width: SPINNER_GEOMETRY[size].size, height: SPINNER_GEOMETRY[size].size, radius: 'radius.pill',
-        strokeWidth: SPINNER_GEOMETRY[size].stroke, stroke: c('action.secondary.default'), strokeTop: c('action.primary.default'),
-      },
-    })),
+    part({}, () => ({ root: { text: c('content.secondary') } })),
   ],
 }
 
@@ -195,25 +178,29 @@ export const FILE_FORMAT: ComponentRecipe = {
 }
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
+// shadcn's sizes: sm 24 · default 32 · lg 40 (size-6 / 8 / 10) — Escala's
+// Size steps at those lengths. The fallback is shadcn's `bg-muted
+// text-muted-foreground`.
 
+export const AVATAR_SIZES = ['default', 'sm', 'lg'] as const
 const AVATAR_GEOMETRY: Record<string, { size: string; font: string }> = {
-  XS: { size: 'size.xs', font: 'type.caption' },
-  SM: { size: 'size.sm', font: 'type.caption' },
-  MD: { size: 'size.md', font: 'type.label' },
-  LG: { size: 'size.lg', font: 'type.body-md' },
-  XL: { size: 'size.xl', font: 'type.body-lg' },
+  sm: { size: 'size.xs', font: 'type.caption' },
+  default: { size: 'size.sm', font: 'type.label' },
+  lg: { size: 'size.md', font: 'type.label' },
 }
 
 export const AVATAR: ComponentRecipe = {
   key: 'Avatar',
   slots: ['root', 'image', 'fallback'],
-  defaults: { Size: 'MD' },
+  defaults: { Size: 'default' },
   parts: [
-    part({ Size: ['XS', 'SM', 'MD', 'LG', 'XL'] as const }, (size) => ({
-      root: {
-        width: AVATAR_GEOMETRY[size].size, height: AVATAR_GEOMETRY[size].size, radius: 'radius.pill',
-        fill: c('surface.selected'), text: c('content.accent'), font: AVATAR_GEOMETRY[size].font,
-      },
+    part({}, () => ({
+      root: { radius: 'radius.pill' },
+      fallback: { fill: c('surface.layer-2'), text: c('content.secondary'), radius: 'radius.pill' },
+    })),
+    part({ Size: AVATAR_SIZES }, (size) => ({
+      root: { width: AVATAR_GEOMETRY[size].size, height: AVATAR_GEOMETRY[size].size },
+      fallback: { font: AVATAR_GEOMETRY[size].font },
     })),
   ],
 }

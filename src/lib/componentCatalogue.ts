@@ -461,21 +461,16 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Badge',
     label: 'Badge',
     category: 'Indicators',
-    description: 'Compact label for statuses and metadata — three visual styles across the semantic status roles.',
-    usage: "Keep text short (1–2 words). Don't use for interactive filtering — use Chip instead.",
-    axes: [
-      { name: 'Style', values: ['Solid', 'Soft', 'Outline'] },
-      { name: 'Color', values: ['Neutral', 'Brand', 'Success', 'Warning', 'Error', 'Info'] },
-      { name: 'Size', values: ['MD', 'SM', 'LG'] },
-    ],
+    description: 'shadcn/ui Badge: a small label in six variants — default, secondary, destructive, outline, ghost and link.',
+    usage: 'Use to label or count (a plan, a status, "+5 more"). For presence (online / away), use Status Badge. Never as a button.',
+    axes: [{ name: 'Variant', values: ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'] }],
     figmaSets: ['Badge'],
     props: [
-      { name: 'variant', type: '"solid" | "soft" | "outline" | "default" | "secondary" | "destructive"', description: 'Visual weight. The shadcn names map onto it: default = solid brand, secondary = soft neutral, destructive = solid error.' },
-      { name: 'color', type: '"neutral" | "brand" | "success" | "warning" | "error" | "info"', description: 'Semantic colour.' },
-      { name: 'size', type: '"sm" | "md" | "lg"', description: 'Height and padding — follows the type and spacing scales.' },
-      { name: 'dot', type: 'boolean', description: 'The leading status dot (default on). Off for a count such as "+5 more".' },
+      { name: 'variant', type: '"default" | "secondary" | "destructive" | "outline" | "ghost" | "link"', description: 'Visual weight — shadcn\'s variants.' },
+      { name: 'asChild', type: 'boolean', description: 'Render the child (a link) with the Badge styles — Radix Slot.' },
+      { name: 'children', type: 'ReactNode', description: 'Label, with an optional icon before / after it.' },
     ],
-    accessibility: 'Purely presentational. Add sr-only context if color conveys meaning.',
+    accessibility: 'Static text — not focusable. Colour is never the only signal: the label says what it means.',
   },
   {
     key: 'StatusBadge',
@@ -531,15 +526,15 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Spinner',
     label: 'Spinner',
     category: 'Indicators',
-    description: 'Loading indicator in three sizes, tinted by the spinner color token.',
+    description: 'shadcn/ui Spinner: a spinning loader glyph in the ink of the text around it. No variants; size it with a class.',
     usage: 'Prefer skeleton screens for content loading. Use Spinner for action feedback.',
-    axes: [{ name: 'Size', values: ['SM', 'MD', 'LG'] }],
+    axes: [],
     figmaSets: ['Spinner'],
     props: [
-      { name: 'size', type: '"sm" | "md" | "lg"', description: 'Diameter — 16 / 24 / 32px.' },
-      { name: 'label', type: 'string', description: 'Screen-reader label (default "Loading…").' },
+      { name: 'className', type: 'string', description: 'size-4 by default; size it with a class (size-6, size-8), as in shadcn.' },
+      { name: 'aria-label', type: 'string', description: 'Screen-reader label (default "Loading").' },
     ],
-    accessibility: 'role="status" with sr-only label. Animated via CSS, respects prefers-reduced-motion.',
+    accessibility: 'role="status" with aria-label. Animated via CSS, respects prefers-reduced-motion.',
   },
   {
     key: 'Icon',
@@ -592,10 +587,10 @@ export const COMPONENTS: ComponentDef[] = [
     category: 'Content & Surfaces',
     description: 'Avatar with initials fallback for identity representation — XS to XL sizes.',
     usage: 'Use consistently at the same size in a given context. Stack for teams.',
-    axes: [{ name: 'Size', values: ['XS', 'SM', 'MD', 'LG', 'XL'] }],
+    axes: [{ name: 'Size', values: ['default', 'sm', 'lg'] }],
     figmaSets: ['Avatar'],
     props: [
-      { name: 'size', type: '"xs" | "sm" | "md" | "lg" | "xl"', description: 'Diameter — 24 / 32 / 40 / 48 / 56px (the Sizes foundation).' },
+      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Diameter — shadcn\'s sizes: 32 / 24 / 40px (the Sizes foundation).' },
       { name: 'AvatarImage src', type: 'string', description: 'Image URL; the fallback shows while it loads or if it fails.' },
       { name: 'AvatarFallback', type: 'ReactNode', description: 'Initials.' },
     ],
@@ -737,51 +732,36 @@ export const COMPONENTS: ComponentDef[] = [
   },
   // ── Feedback ────────────────────────────────────────────────────────────────
   {
-    key: 'Toast',
-    label: 'Toast',
+    key: 'Sonner',
+    label: 'Sonner',
     category: 'Feedback',
-    description: 'Transient snackbar notification with status dot, message and action — one variant per semantic status role.',
-    usage: 'Auto-dismiss after 4–6s. Offer undo for destructive actions. Max 3 visible at once.',
-    axes: [{ name: 'Status', values: ['Success', 'Error', 'Warning', 'Info'] }],
-    figmaSets: ['Toast'],
+    description: 'shadcn/ui Sonner: the toaster. A toast has a type — default, success, info, warning, error or loading — told apart by its icon.',
+    usage: 'Mount <Toaster /> once; call toast() / toast.success() … from anywhere. Use for transient confirmations, not for errors the user must act on (use Alert).',
+    axes: [{ name: 'Type', values: ['default', 'success', 'info', 'warning', 'error', 'loading'] }],
+    figmaSets: ['Sonner'],
     props: [
-      { name: 'status', type: '"Success" | "Error" | "Warning" | "Info"', description: 'Message tone (role="alert" for Error).' },
-      { name: 'message', type: 'ReactNode', description: 'Short message.' },
-      { name: 'action / onAction', type: 'ReactNode / () => void', description: 'Optional action ("Undo").' },
-      { name: 'onClose', type: '() => void', description: 'Shows the close control.' },
+      { name: 'toast(message, options)', type: 'function', description: 'Shows a toast; toast.success / .info / .warning / .error / .loading set its type.' },
+      { name: 'description', type: 'ReactNode', description: 'Second line under the message.' },
+      { name: 'action', type: '{ label, onClick }', description: 'One action button ("Undo").' },
+      { name: 'Toaster position', type: '"top-left" | … | "bottom-right"', description: 'Where toasts stack (default bottom-right).' },
     ],
-    accessibility: 'role="status" for default, role="alert" for errors. Live region announced.',
+    accessibility: 'Sonner renders an aria-live region; toasts pause on hover and are dismissable with Escape.',
   },
   {
-    key: 'AlertBanner',
-    label: 'Alert Banner',
+    key: 'Alert',
+    label: 'Alert',
     category: 'Feedback',
-    description: 'Full-width page or section banner for persistent, prominent messages.',
-    usage: 'Use for system-level notices (maintenance, billing). One banner per page at most.',
-    axes: [{ name: 'Status', values: ['Info', 'Success', 'Warning', 'Error'] }],
-    figmaSets: ['Alert Banner'],
+    description: 'shadcn/ui Alert: a callout with an icon, a title and a description, in default and destructive.',
+    usage: 'Use for a message about the content around it. For a transient notice, use Sonner.',
+    axes: [{ name: 'Variant', values: ['default', 'destructive'] }],
+    figmaSets: ['Alert'],
     props: [
-      { name: 'status', type: '"Info" | "Success" | "Warning" | "Error"', description: 'Semantic status role.' },
-      { name: 'message', type: 'ReactNode', description: 'Banner text.' },
-      { name: 'action / onAction', type: 'ReactNode / () => void', description: 'Call to action ("View", "Upgrade").' },
-      { name: 'onClose', type: '() => void', description: 'Shows the close control.' },
+      { name: 'variant', type: '"default" | "destructive"', description: 'shadcn\'s variants: the card\'s ink, or the critical ink.' },
+      { name: 'AlertTitle / AlertDescription', type: 'component', description: 'First line and supporting copy.' },
+      { name: 'AlertAction', type: 'component', description: 'An action pinned to the top-right corner.' },
+      { name: 'children (icon)', type: 'ReactNode', description: 'An <svg> (or AlertIcon) as the first child takes the icon column.' },
     ],
-    accessibility: 'role="status" (or "alert" for errors). Dismiss button labelled "Dismiss".',
-  },
-  {
-    key: 'InlineAlert',
-    label: 'Inline Alert',
-    category: 'Feedback',
-    description: 'Contextual callout box inside a form or section — icon, title and body on a soft status fill.',
-    usage: 'Place directly above the content it concerns. Keep to a title + one sentence.',
-    axes: [{ name: 'Status', values: ['Info', 'Success', 'Warning', 'Error'] }],
-    figmaSets: ['Inline Alert'],
-    props: [
-      { name: 'status', type: '"Info" | "Success" | "Warning" | "Error"', description: 'Semantic status role — picks the surface, edge and glyph colour.' },
-      { name: 'icon', type: 'ReactNode', description: 'The status glyph.' },
-      { name: 'AlertTitle / AlertDescription', type: 'component', description: 'Bold first line and supporting copy.' },
-    ],
-    accessibility: 'role="status"; errors use role="alert". Icon is decorative (aria-hidden).',
+    accessibility: 'role="alert". The icon is decorative; the title carries the meaning.',
   },
   // ── Navigation ──────────────────────────────────────────────────────────────
   {
@@ -969,7 +949,7 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 // all 58 component types, using representative source variants that cover each
 // axis value instead of materializing the 1,403-combination cartesian product.
 //
-// Every one of the 58 still ships as a full spec — props, variant axes,
+// Every one still ships as a full spec — props, variant axes,
 // tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
 // bundle. Only the keys below additionally land as real component nodes in a
 // Figma file in the DEFAULT mode. Don't infer this from `figmaSets.length` —
@@ -977,7 +957,7 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 //
 // Keep this list in lockstep with the plugin's `SAMPLE` array in code.ts.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [
-  'Button', 'Input', 'Select', 'Checkbox', 'Toggle', 'Badge', 'StatusBadge', 'Toast', 'Avatar',
+  'Button', 'Input', 'Select', 'Checkbox', 'Toggle', 'Badge', 'StatusBadge', 'Sonner', 'Avatar',
 ]
 
 /** Does the live Figma import render this key as a real component today —
@@ -1006,6 +986,6 @@ export const ESSENTIAL_COMPONENT_KEYS = [
   'Input', 'Select', 'Checkbox', 'Toggle',
   'Badge',
   'Card', 'Avatar', 'Modal', 'Tooltip', 'Divider',
-  'Toast',
+  'Sonner',
   'Tabs',
 ] as const

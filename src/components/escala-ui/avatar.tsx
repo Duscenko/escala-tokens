@@ -1,17 +1,19 @@
 // Skeleton: shadcn/ui `bases/radix/ui/avatar.tsx` (MIT, see LICENSE-shadcn.md):
-// Avatar, AvatarImage, AvatarFallback. Appearance: recipe (Avatar).
+// Avatar, AvatarImage, AvatarFallback, `size` default | sm | lg as in shadcn.
+// Appearance: recipe (Avatar).
 import * as React from 'react'
 import { Avatar as AvatarPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export const AVATAR_SIZES = ['default', 'sm', 'lg'] as const
+export type AvatarSize = (typeof AVATAR_SIZES)[number]
 
-function Avatar({ size = 'md', className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root> & { size?: AvatarSize }) {
+function Avatar({ size = 'default', className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root> & { size?: AvatarSize }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
       data-escala="Avatar"
-      data-size={size.toUpperCase()}
+      data-size={size}
       className={cn('relative inline-flex shrink-0 items-center justify-center overflow-hidden select-none', className)}
       {...props}
     />

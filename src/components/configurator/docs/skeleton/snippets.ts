@@ -37,12 +37,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Sidebar: () =>
     `import { Sidebar } from "@/components/ui/sidebar"\n\n<Sidebar\n  items={[{ label: "Overview", icon: <Home /> }, { label: "Tokens", icon: <Palette /> }]}\n  defaultValue="Tokens"\n  onValueChange={navigate}\n/>`,
 
-  InlineAlert: (v) =>
-    `import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"\n\n<Alert${v.Status && v.Status !== 'Info' ? ` status="${v.Status}"` : ''} icon={<Info />}>\n  <AlertTitle>Heads up</AlertTitle>\n  <AlertDescription>Semantic tokens re-derive when the accent changes.</AlertDescription>\n</Alert>`,
-  AlertBanner: (v) =>
-    `import { AlertBanner } from "@/components/ui/alert"\n\n<AlertBanner${v.Status && v.Status !== 'Info' ? ` status="${v.Status}"` : ''}\n  icon={<Info />}\n  message="Scheduled maintenance on Sunday 02:00 UTC."\n  action="View"\n  onClose={dismiss}\n/>`,
-  Toast: (v) =>
-    `import { Toast } from "@/components/ui/toast"\n\n<Toast${v.Status && v.Status !== 'Success' ? ` status="${v.Status}"` : ''}\n  message="Changes saved."\n  action="Undo"\n  onAction={undo}\n  onClose={dismiss}\n/>`,
+  Alert: (v) =>
+    `import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"\n\n<Alert${v.Variant === 'destructive' ? ' variant="destructive"' : ''}>\n  <${v.Variant === 'destructive' ? 'CircleAlert' : 'Info'} />\n  <AlertTitle>${v.Variant === 'destructive' ? 'Export failed' : 'Heads up'}</AlertTitle>\n  <AlertDescription>${v.Variant === 'destructive' ? 'Check the token names and try again.' : 'Semantic tokens re-derive when the accent changes.'}</AlertDescription>\n</Alert>`,
+  Sonner: (v) => {
+    const type = v.Type && v.Type !== 'default' ? `.${v.Type}` : ''
+    return `import { Toaster } from "@/components/ui/sonner"\nimport { toast } from "sonner"\n\n// once, at the root of the app\n<Toaster />\n\n// anywhere\ntoast${type}("Changes saved", { description: "Your tokens are up to date." })`
+  },
 
   Divider: (v) =>
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'Vertical' ? ' orientation="vertical"' : ''} />`,
@@ -59,19 +59,16 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   ScrollArea: () =>
     `import { ScrollArea, ScrollAreaRow } from "@/components/ui/scroll-area"\n\n<ScrollArea style={{ height: 150 }}>\n  {tokens.map((t) => <ScrollAreaRow key={t}>{t}</ScrollAreaRow>)}\n</ScrollArea>`,
 
-  Badge: (v) => {
-    const style = low(v.Style) || 'soft'
-    const color = low(v.Color) || 'brand'
-    return `import { Badge } from "@/components/ui/badge"\n\n<Badge${style !== 'soft' ? ` variant="${style}"` : ''}${color !== 'brand' ? ` color="${color}"` : ''}${sizeProp(v)}>\n  ${v.Color ?? 'Brand'}\n</Badge>`
-  },
+  Badge: (v) =>
+    `import { Badge } from "@/components/ui/badge"\n\n<Badge${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}>Badge</Badge>`,
   StatusBadge: (v) =>
     `import { StatusBadge } from "@/components/ui/badge"\n\n<StatusBadge status="${v.Status ?? 'Online'}" />`,
   Chip: (v) =>
     `import { Chip } from "@/components/ui/chip"\n\n<Chip${v.Selected === 'True' ? ' selected' : ''}${sizeProp(v)}${v.Dismissible === 'True' ? ' onRemove={remove}' : ''} onPressedChange={setSelected}>\n  Design tokens\n</Chip>`,
   Progress: () =>
     `import { Progress } from "@/components/ui/progress"\n\n<Progress label="Uploading…" value={60} />`,
-  Spinner: (v) =>
-    `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner${sizeProp(v)} label="Loading…" />`,
+  Spinner: () =>
+    `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
   Icon: (v) =>
     `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
   Rating: (v) =>
@@ -79,7 +76,7 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   FileFormat: (v) =>
     `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'PDF'}" />`,
   Avatar: (v) =>
-    `import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"\n\n<Avatar${sizeProp(v)}>\n  <AvatarImage src={user.image} alt="Maya Duscenko" />\n  <AvatarFallback>MD</AvatarFallback>\n</Avatar>`,
+    `import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"\n\n<Avatar${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <AvatarImage src={user.image} alt="Maya Duscenko" />\n  <AvatarFallback>MD</AvatarFallback>\n</Avatar>`,
 
   Textarea: (v) =>
     `import { TextareaField } from "@/components/ui/textarea"\n\n<TextareaField\n  label="Description"\n  hint="${v.State === 'Error' ? 'Description is required.' : 'Max 200 characters.'}"\n  maxLength={200}${v.State === 'Error' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`,

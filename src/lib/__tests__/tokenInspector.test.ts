@@ -22,27 +22,14 @@ describe('resolveVariantRoles', () => {
   }
   const t = { archTokens: arch } as never
 
-  it('a Solid Danger button names the status solid pair', () => {
+  it('a destructive button names the critical tint and its ink (from the recipe)', () => {
     const paints = [
-      { css: '#c0392b', where: 'fill' as const },
-      { css: '#ffffff', where: 'ink' as const },
+      { css: 'rgba(185, 65, 54, 0.1)', where: 'fill' as const },
+      { css: '#9f2b20', where: 'ink' as const },
     ]
-    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Danger' }, paints)?.map((r) => r.id)).toEqual([
-      'status.critical.surface-solid',
-      'status.critical.on-solid',
-    ])
-    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Danger' }, paints)?.[0]?.css).toBe('#c0392b')
-  })
-
-  it('a Solid Success button names the status solid pair', () => {
-    const paints = [
-      { css: '#15803d', where: 'fill' as const },
-      { css: '#ffffff', where: 'ink' as const },
-    ]
-    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Success' }, paints)?.map((r) => r.id)).toEqual([
-      'status.success.surface-solid',
-      'status.success.on-solid',
-    ])
+    const roles = resolveVariantRoles(t, 'Button', { Variant: 'destructive' }, paints)
+    expect(roles?.map((r) => r.id)).toEqual(['status.critical.surface', 'status.critical.content'])
+    expect(roles?.[1]?.css).toBe('#9f2b20')
   })
 
   it('a Solid Brand button names the primary pair', () => {
@@ -50,58 +37,27 @@ describe('resolveVariantRoles', () => {
       { css: '#22c55e', where: 'fill' as const },
       { css: '#e1e7dc', where: 'ink' as const },
     ]
-    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid' }, paints)?.map((r) => r.id)).toEqual([
+    expect(resolveVariantRoles(t, 'Button', { Variant: 'default' }, paints)?.map((r) => r.id)).toEqual([
       'action.primary.default',
       'content.on-action',
     ])
   })
 
-  it('a Solid Error badge names the critical solid pair', () => {
+  it('a secondary badge names the neutral fill and the page ink', () => {
     const paints = [
-      { css: '#b94136', where: 'fill' as const },
-      { css: '#fafafa', where: 'ink' as const },
+      { css: '#1a1a1f', where: 'fill' as const },
+      { css: '#f5f5f5', where: 'ink' as const },
     ]
-    expect(resolveVariantRoles(t, 'Badge', { Style: 'Solid', Color: 'Error' }, paints)?.map((r) => r.id)).toEqual([
-      'status.critical.surface-solid',
-      'status.critical.on-solid',
+    expect(resolveVariantRoles(t, 'Badge', { Variant: 'secondary' }, paints)?.map((r) => r.id)).toEqual([
+      'action.secondary.default',
+      'content.primary',
     ])
   })
 
-  it('a Soft Error badge names the critical tint, content ink, and solid dot', () => {
-    const paints = [
-      { css: 'rgba(185, 65, 54, 0.11)', where: 'fill' as const },
-      { css: '#9f2b20', where: 'ink' as const },
-      { css: '#b94136', where: 'fill' as const },
-    ]
-    const roles = resolveVariantRoles(t, 'Badge', { Style: 'Soft', Color: 'Error' }, paints)
-    expect(roles?.map((r) => r.id)).toEqual([
-      'status.critical.surface',
-      'status.critical.content',
-      'status.critical.surface-solid',
-    ])
-    expect(roles?.find((r) => r.id === 'status.critical.surface-solid')?.css).toBe('#b94136')
-  })
-
-  it('a Success toast names the inverse chip and status ink dot', () => {
-    const archWithInverse = {
-      ...arch,
-      'surface.inverse': '#f2f4f1',
-      'content.inverse': '#0d1012',
-      'status.success.content': '#15803d',
-    }
-    const toastT = { archTokens: archWithInverse } as never
-    const paints = [
-      { css: '#f2f4f1', where: 'fill' as const },
-      { css: '#0d1012', where: 'ink' as const },
-      { css: '#15803d', where: 'fill' as const },
-    ]
-    const roles = resolveVariantRoles(toastT, 'Toast', { Status: 'Success' }, paints)
-    expect(roles?.map((r) => r.id)).toEqual([
-      'surface.inverse',
-      'content.inverse',
-      'status.success.content',
-    ])
-    expect(roles?.[2]?.css).toBe('#15803d')
+  it('a Sonner toast names the popover surface, its ink and its edge', () => {
+    const sonnerT = { archTokens: { ...arch, 'surface.layer-1': '#111214', 'border.default': '#2a2a2e', 'content.secondary': '#a1a1aa' } } as never
+    const roles = resolveVariantRoles(sonnerT, 'Sonner', { Type: 'success' }, [])
+    expect(roles?.slice(0, 3).map((r) => r.id)).toEqual(['surface.layer-1', 'content.primary', 'border.default'])
   })
 
   it('a Soft Success badge gets label and dot contrast on composited tint', () => {
@@ -121,17 +77,10 @@ describe('resolveVariantRoles', () => {
     expect(contrasts[1]!.target).toBe(3)
   })
 
-  it('a toast dot alone reports only status content', () => {
-    const archWithInverse = {
-      ...arch,
-      'status.critical.content': '#b42318',
-    }
-    const toastT = { archTokens: archWithInverse } as never
-    const paints = [{ css: '#b42318', where: 'fill' as const }]
-    expect(resolveVariantRoles(toastT, 'Toast', { Status: 'Error' }, paints)?.map((r) => r.id)).toEqual([
-      'status.critical.content',
-    ])
+  it('a component with no recipe resolves nothing', () => {
+    expect(resolveVariantRoles(t, 'NotAComponent', {}, [])).toBeNull()
   })
+
 })
 
 describe('rolesForPaints field index', () => {

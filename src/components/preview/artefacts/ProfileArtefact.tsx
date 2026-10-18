@@ -35,7 +35,7 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
     <DeviceFrame t={t} compact={compact}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-section', '24px') }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: gap(t, 'gap-group', '16px') }}>
-          <Avatar t={t} v={{ Size: 'XL' }} />
+          <Avatar t={t} v={{ Size: 'lg' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-tight', '4px'), flex: 1, minWidth: 0 }}>
             <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Maya Duscenko</span>
             <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>maya@escala.ds</span>

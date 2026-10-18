@@ -76,7 +76,7 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Toggle')).toContain('action.primary.hover')
   })
 
-  it('Toast can name the inverse pair it is built from', () => {
-    expect(rolesForComponent('Toast')).toEqual(expect.arrayContaining(['surface.inverse', 'content.inverse']))
+  it('Sonner names the popover pair shadcn maps it to', () => {
+    expect(rolesForComponent('Sonner')).toEqual(expect.arrayContaining(['surface.layer-1', 'content.primary', 'border.default']))
   })
 })

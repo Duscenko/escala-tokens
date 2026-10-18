@@ -18,7 +18,7 @@
  */
 import {
   COMPONENT_RECIPES, cssVarOf, type ComponentRecipe, type RecipeProp, type SlotProps,
-} from './componentRecipes'
+} from './componentRecipes.js'
 
 /** Axes the CSS reads from an attribute (everything except the State axis). */
 const STATE_AXIS = 'State'
@@ -93,6 +93,8 @@ function declarations(props: SlotProps): string[] {
 
 function slotSelector(recipe: ComponentRecipe, root: string, slot: string): string {
   if (slot === recipe.slots[0]) return root
+  const own = recipe.dom?.slots?.[slot]
+  if (own) return `${root} ${own}`
   if (recipe.detachedSlots?.includes(slot)) return `[data-part="${recipe.key}.${slot}"]`
   const pseudo = recipe.pseudoSlots?.[slot]
   if (pseudo) return `${root} [data-part="${recipe.key}.${pseudo.of}"]${pseudo.pseudo}`
@@ -112,7 +114,7 @@ export function recipeCss(recipe: ComponentRecipe): string {
   for (const part of recipe.parts) {
     for (const [combo, slots] of Object.entries(part.values)) {
       const values = combo === '' ? [] : combo.split('|')
-      let base = `[data-escala="${recipe.key}"]`
+      let base = recipe.dom?.root ?? `[data-escala="${recipe.key}"]`
       let state = 'Default'
       part.axes.forEach((axis, i) => {
         if (axis === STATE_AXIS) state = values[i]
