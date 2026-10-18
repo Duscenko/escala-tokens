@@ -77,6 +77,7 @@ function GeometryTokenDetails({
   stylePreview,
   onClose,
   onOpenInVariables,
+  backLabel,
 }: {
   kind: GeometryKind
   tokenId: string
@@ -85,6 +86,7 @@ function GeometryTokenDetails({
   stylePreview?: StylePreview | null
   onClose: () => void
   onOpenInVariables?: (tokenId: string) => void
+  backLabel?: string | null
 }) {
   const reduce = useReducedMotion() ?? false
   const roleKey = tokenId.slice(kind.length + 1)
@@ -211,6 +213,7 @@ function GeometryTokenDetails({
         dockToSelector={`#${QUICK_SETTINGS_ID}`}
         coverAnchor
         inInspector
+        backLabel={backLabel}
         onOpenInTable={onOpenInVariables ? () => onOpenInVariables(tokenId) : undefined}
         onReset={onReset}
         resetDisabled={resetDisabled}
@@ -290,6 +293,7 @@ export default function SemanticTokenDrawer({
   stylePreview,
   inspectedCss,
   onTryOnEdit,
+  backLabel,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -308,6 +312,8 @@ export default function SemanticTokenDrawer({
    *  is tried on — `resetThemeSemantics` would drop them, and they would
    *  also leak onto the committed theme the moment the try-on closed. */
   onTryOnEdit?: (tokenId: string, mode: string, ref: string | null) => void
+  /** Inspector selection this token was opened from — the drawer's back link. */
+  backLabel?: string | null
 }) {
   const reduce = useReducedMotion() ?? false
   const live = useDesignStore()
@@ -334,6 +340,7 @@ export default function SemanticTokenDrawer({
         stylePreview={stylePreview}
         onClose={onClose}
         onOpenInVariables={onOpenInVariables}
+        backLabel={backLabel}
       />
     )
   }
@@ -349,6 +356,7 @@ export default function SemanticTokenDrawer({
         stylePreview={stylePreview}
         onClose={onClose}
         onOpenInVariables={onOpenInVariables}
+        backLabel={backLabel}
       />
     )
   }
@@ -370,6 +378,7 @@ export default function SemanticTokenDrawer({
           dockToSelector={`#${QUICK_SETTINGS_ID}`}
           coverAnchor
           inInspector
+          backLabel={backLabel}
           onOpenInTable={onOpenInVariables ? () => onOpenInVariables(token.id) : undefined}
           onReset={() => {
             if (stylePreview && onTryOnEdit) {

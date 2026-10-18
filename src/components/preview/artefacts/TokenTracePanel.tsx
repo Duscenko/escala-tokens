@@ -127,7 +127,7 @@ function VarChip({ name }: { name: string }) {
       onClick={copy}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') copy(e as unknown as React.MouseEvent) }}
       title={copied ? 'Copied' : `Copy ${name}`}
-      className="max-w-[60%] flex-shrink truncate rounded-md bg-accent-ui/10 px-1.5 py-0.5 font-mono text-nano text-accent-ui transition-colors hover:bg-accent-ui/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className="min-w-0 max-w-full truncate rounded-md bg-accent-ui/10 px-1.5 py-0.5 font-mono text-nano text-accent-ui transition-colors hover:bg-accent-ui/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       {copied ? 'Copied' : name}
     </span>
@@ -144,24 +144,27 @@ function Row({
 }) {
   const editable = !!row.pickId && !!onPick
   const value = row.kind === 'color' ? displayHex(row.value) : row.value
+  // Narrow-panel layout (288px): the property and its VALUE share the first
+  // line — that is what a designer reads — and the variable gets the whole
+  // second line so it never truncates to `--color-action-primary-def…`. The
+  // recipe ref repeats the variable in dotted form, so it lives in the tooltip.
   const body: ReactNode = (
     <>
       <span className="flex items-center gap-2">
+        <ValueMark row={row} />
         <span className={`min-w-0 flex-1 truncate text-caption ${lit ? 'text-fg' : 'text-fg-muted'}`}>
           {row.label}
           {row.state && (
             <span className="ml-1.5 rounded bg-surface px-1 py-px text-nano text-fg-faint">{stateLabel(row.state)}</span>
           )}
         </span>
+        <span className="max-w-[55%] flex-shrink-0 truncate font-mono text-mini tabular-nums text-fg" title={row.value}>{value}</span>
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5 pl-7" title={row.ref}>
         <VarChip name={row.cssVar} />
       </span>
-      <span className="flex items-center gap-2">
-        <ValueMark row={row} />
-        <span className="min-w-0 flex-1 truncate font-mono text-mini tabular-nums text-fg" title={row.value}>{value}</span>
-        <span className="max-w-[45%] flex-shrink-0 truncate font-mono text-nano text-fg-faint" title={row.ref}>{row.ref}</span>
-      </span>
       {row.facets && (
-        <span className="mt-0.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-surface/60 px-2 py-1.5">
+        <span className="ml-7 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-surface/60 px-2 py-1.5">
           {row.facets.map((facet) => (
             <span key={facet.label} className="contents">
               <span className="text-nano text-fg-faint">{facet.label}</span>

@@ -61,6 +61,8 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
 import { slotUnder, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
 import { TokenTraceList } from './TokenTracePanel'
+import { motion, useReducedMotion } from 'framer-motion'
+import { InspectorPortal, useInInspector } from '../../configurator/WorkspaceInspector'
 
 const InspectorActiveContext = createContext(false)
 
@@ -294,8 +296,38 @@ function InspectRing({ rect, variant, editing = false }: { rect: DOMRect; varian
   )
 }
 
+/** Hover, docked mode: the canvas only says WHAT a click would select —
+ *  `<Button />` and how many tokens it reads. The list itself waits for the
+ *  click, in the right-hand panel, so pointing across a busy board never
+ *  drags a 400px panel behind the cursor. */
+function HoverTag({ rect, kind, name, count, hint }: {
+  rect: DOMRect
+  kind: Target['kind']
+  name: string
+  count: number
+  hint: string
+}) {
+  const H = 28
+  const above = rect.top - H - 6 > 8
+  const top = above ? rect.top - H - 6 : rect.bottom + 6
+  const left = Math.max(8, Math.min(rect.left - INSPECT_RING_PAD, window.innerWidth - 260))
+  return (
+    <div
+      className="absolute flex items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-rail-section py-1 pl-2 pr-1.5 shadow-lg"
+      style={{ top, left, height: H }}
+    >
+      <InspectGlyph size={13} className="flex-shrink-0 text-accent-ui" />
+      <span className="font-mono text-caption text-fg">
+        {kind === 'component' ? <>&lt;{name} /&gt;</> : name}
+      </span>
+      <span className="rounded bg-surface px-1.5 py-px text-nano tabular-nums text-fg-muted">{count}</span>
+      <span className="text-nano text-fg-faint">{hint}</span>
+    </div>
+  )
+}
+
 export function InspectorOverlay({
-  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing, onExitMode,
+  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing, onExitMode, onSelectionChange,
 }: {
   active: boolean
   /** The scroll container the canvas paints into — hit-testing is scoped to it
@@ -319,8 +351,17 @@ export function InspectorOverlay({
   editing?: boolean
   /** Last Escape step — leaves inspector mode (same as "Exit inspector"). */
   onExitMode?: () => void
+  /** What is pinned (`<Button />`, `Page`), or null — Token Details shows it
+   *  as its "back" link. */
+  onSelectionChange?: (label: string | null) => void
 }) {
   const { t } = useI18n()
+  const docked = useInInspector()
+  const reduceMotion = useReducedMotion() ?? false
+  const dockedRef = useRef(docked)
+  dockedRef.current = docked
+  const editingRef = useRef(!!editing)
+  editingRef.current = !!editing
   const [hover, setHover] = useState<Target | null>(null)
   const [pin, setPin] = useState<Target | null>(null)
   const [focus, setFocus] = useState<FocusTarget | null>(null)
@@ -519,7 +560,12 @@ export function InspectorOverlay({
     // highlight behind the content, so the overlay just goes away — pin
     // included, since a pinned ring left behind would be pointing at whatever
     // scrolled into that spot.
-    const onScroll = () => clearAll()
+    // Docked, the pin lives in the side panel and the ring re-measures every
+    // frame (below), so scrolling the board keeps the selection.
+    const onScroll = () => {
+      if (dockedRef.current && pinRef.current) { setHover(null); return }
+      clearAll()
+    }
 
     root.addEventListener('pointermove', onMove)
     root.addEventListener('pointerdown', swallow, true)
@@ -535,12 +581,19 @@ export function InspectorOverlay({
     }
   }, [active, rootRef, buildComponent, buildGroup, buildFocus, buildPage, clearAll])
 
+  const pinLabel = pin
+    ? pin.kind === 'component' ? `<${pin.trace?.component ?? pin.label} />` : pin.label
+    : null
+  useEffect(() => { onSelectionChange?.(pinLabel) }, [pinLabel, onSelectionChange])
+
   // Release the pin the edit was holding, once the edit is over. Only on the
   // true → false edge: a pin made by clicking an element (no drawer) is the
   // user's own and stays until they clear it.
   const wasEditing = useRef(false)
   useEffect(() => {
-    if (wasEditing.current && !editing) clearAll()
+    // Docked, closing Token Details is "back": the selection's list is right
+    // underneath, so the pin stays.
+    if (wasEditing.current && !editing && !dockedRef.current) clearAll()
     wasEditing.current = !!editing
   }, [editing, clearAll])
 
@@ -582,6 +635,9 @@ export function InspectorOverlay({
     if (!active) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      // Token Details is on top and closes itself on Escape; one press must
+      // not also drop the selection underneath it.
+      if (editingRef.current) return
       if (focusHeld.current) {
         focusHeld.current = false
         setFocus(null)
@@ -675,23 +731,15 @@ export function InspectorOverlay({
               </div>
             )
 
-  return createPortal(
-    <div className="pointer-events-none fixed inset-0 z-[70]">
-      {/* A group is the coarser target, so it gets the quieter ring — with a
-          control lit inside it, two rings of equal weight would compete for
-          the "this is what the badge is about" reading. */}
-      <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} editing={!!editing && !!pin && !focus} />
-      {focus && <InspectRing rect={focus.rect} variant="focus" editing={!!editing && !!pin} />}
-      <div
-        className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-line bg-rail-section shadow-lg"
-        style={{ left, top, width: BADGE_W, maxHeight, transform: flip ? 'translateY(-100%)' : undefined }}
-        onPointerEnter={() => { overBadge.current = true }}
-        onPointerLeave={() => { overBadge.current = false; if (!pin) setHover(null) }}
-      >
+  const axisChips = trace
+    ? Object.entries(trace.axes).filter(([axis, value]) => !(axis === 'State' && value === 'Default'))
+    : []
+  const panelInner = (
+    <>
         {/* Pinned: the component's NAME is what tells you the badge changed
             when you move between two specimens, so it must not be the thing
             that scrolls away. */}
-        <div className="flex flex-shrink-0 items-start gap-2 border-b border-line px-3 py-2.5">
+        <div className={`flex flex-shrink-0 items-start gap-2 px-3 py-2.5 ${axisChips.length ? '' : 'border-b border-line'}`}>
           <InspectGlyph size={16} className="mt-0.5 flex-shrink-0 text-accent-ui" />
           <div className="min-w-0 flex-1">
             <div className="text-nano font-semibold uppercase tracking-widest text-fg-faint">
@@ -708,17 +756,6 @@ export function InspectorOverlay({
                 <span className="text-fg-faint"> › {target.hitSlot}</span>
               )}
             </div>
-            {trace && Object.keys(trace.axes).length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {Object.entries(trace.axes)
-                  .filter(([axis, value]) => !(axis === 'State' && value === 'Default'))
-                  .map(([axis, value]) => (
-                    <span key={axis} className="rounded border border-line/70 px-1.5 py-px font-mono text-nano text-fg-muted">
-                      <span className="text-fg-faint">{axis.toLowerCase()}=</span>{value}
-                    </span>
-                  ))}
-              </div>
-            )}
           </div>
           <span
             className="mt-0.5 flex-shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-micro tabular-nums text-fg-muted"
@@ -751,6 +788,15 @@ export function InspectorOverlay({
             </button>
           )}
         </div>
+        {axisChips.length > 0 && (
+              <div className="flex flex-shrink-0 flex-wrap gap-1 border-b border-line/60 px-3 pb-2 -mt-1">
+                {axisChips.map(([axis, value]) => (
+                    <span key={axis} className="rounded border border-line/70 px-1.5 py-px font-mono text-nano text-fg-muted">
+                      <span className="text-fg-faint">{axis.toLowerCase()}=</span>{value}
+                    </span>
+                  ))}
+              </div>
+            )}
         {trace ? (
           <>
             {a11yBlock}
@@ -861,8 +907,55 @@ export function InspectorOverlay({
             Every role this component can use. {INSPECTOR_BLIND_SPOT}
           </p>
         )}
-      </div>
-    </div>,
-    document.body,
+    </>
+  )
+
+  // In the Generator the PINNED target lives in the right-hand inspector —
+  // one place to read a selection and edit its tokens. Token Details docks
+  // in the same slot one layer above (z-20), so opening a row covers this
+  // list and closing it lands back on it. Hover stays on the canvas as a
+  // compact tag: it only has to say what a click would select.
+  const dockedPin = docked && !!pin
+  const hoverTag = docked && !pin
+
+  return (
+    <>
+      {createPortal(
+        <div className="pointer-events-none fixed inset-0 z-[70]">
+          {/* A group is the coarser target, so it gets the quieter ring — with a
+              control lit inside it, two rings of equal weight would compete for
+              the "this is what the badge is about" reading. */}
+          <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} editing={!!editing && !!pin && !focus} />
+          {focus && <InspectRing rect={focus.rect} variant="focus" editing={!!editing && !!pin} />}
+          {hoverTag && <HoverTag rect={rect} kind={kind} name={kind === 'component' ? (trace?.component ?? label) : label} count={trace ? traceTokenCount(trace) : roles.length} hint={t('Click to inspect')} />}
+          {!docked && (
+            <div
+              className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-line bg-rail-section shadow-lg"
+              style={{ left, top, width: BADGE_W, maxHeight, transform: flip ? 'translateY(-100%)' : undefined }}
+              onPointerEnter={() => { overBadge.current = true }}
+              onPointerLeave={() => { overBadge.current = false; if (!pin) setHover(null) }}
+            >
+              {panelInner}
+            </div>
+          )}
+        </div>,
+        document.body,
+      )}
+      {dockedPin && (
+        <InspectorPortal>
+          <motion.div
+            key={`${pin.kind}:${pin.label}`}
+            initial={{ opacity: 0, x: reduceMotion ? 0 : 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+            className="absolute inset-0 z-10 flex flex-col overflow-hidden bg-side-panel"
+            role="region"
+            aria-label={t('Inspector')}
+          >
+            {panelInner}
+          </motion.div>
+        </InspectorPortal>
+      )}
+    </>
   )
 }

@@ -172,6 +172,13 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > shadow step edit their value directly (shadow also offers the ramp preset). The marker's own component wins
 > over a wrapping recipe (a Switch inside its Field traces the Switch). Groups and the page keep
 > the measured role list. `tokenTrace.test.ts` asserts every reference of all recipes resolves.
+> **In the Generator a CLICK docks the selection into the right-hand inspector** (`InspectorPortal`,
+> `absolute inset-0 z-10` — one layer under Token Details' z-20): hover is only a compact canvas tag
+> (`<Button />` · count · "Click to inspect"); the pinned list lives in the panel, survives board
+> scroll, and is NOT released when Token Details closes — closing (✕, Esc, or the `‹ <Button />`
+> back link, `TokenDetailsModal backLabel`) lands back on it. Esc while Token Details is open closes
+> only the drawer. The floating badge remains the fallback where no inspector slot is mounted.
+> Token Details sections with no appearance (lengths, type) inherit the chrome, never forced `light`.
 
 > **UPDATE (2026-10-18): `border.control` is a ROLE again — the field outline — and every agent
 > paste is ONE brand, ONE appearance.** Supersedes "border.control was folded into border.strong".

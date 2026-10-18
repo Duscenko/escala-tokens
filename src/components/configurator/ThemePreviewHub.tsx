@@ -236,7 +236,7 @@ const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
   previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
-  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
+  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange,
 }: {
   previewTheme: string
   previewPlatform: GridViewport
@@ -258,6 +258,8 @@ function ArtefactsView({
   /** The badge's own exit to the full Semantics table — the same door Token
    *  Details carries, one step earlier in the flow. */
   onOpenRoleInVariables: (roleId: string) => void
+  /** The inspector's pinned element, for Token Details' back link. */
+  onSelectionChange?: (label: string | null) => void
   /** The quick rail's colour fly-out is open. It flies out FROM the canvas's
    *  own left edge, so the width it covers is the width the canvas cedes. */
   drawerOpen: boolean
@@ -338,6 +340,7 @@ function ArtefactsView({
         onOpenTable={onOpenRoleInVariables}
         editing={editingRole}
         onExitMode={() => onInspectingChange(false)}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )
@@ -467,6 +470,7 @@ export default function ThemePreviewHub({
   }, [randomDraft])
   const [contrastOpen, setContrastOpen] = useState(false)
   const [editingToken, setEditingToken] = useState<string | null>(null)
+  const [inspectedSelection, setInspectedSelection] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
   /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */
   const [randomBoardAppearance, setRandomBoardAppearance] = useState<ThemeAppearance | null>(null)
@@ -757,6 +761,7 @@ export default function ThemePreviewHub({
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
                     onPickRole={pickRole}
+                    onSelectionChange={setInspectedSelection}
                     onOpenRoleInVariables={onOpenInVariables}
                   />
                 ) : null}
@@ -788,6 +793,7 @@ export default function ThemePreviewHub({
       onClose={() => { setEditingToken(null); setInspectedCss(null); setInspectedAppearance(null) }}
       onOpenPrimitiveFamily={onOpenPrimitiveFamily}
       onOpenInVariables={onOpenInVariables}
+      backLabel={inspecting ? inspectedSelection : null}
     />
   </section>
 }

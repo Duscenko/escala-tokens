@@ -81,6 +81,7 @@ export default function LayoutTokenDetails({
   stylePreview,
   onClose,
   onOpenInVariables,
+  backLabel,
 }: {
   kind: LayoutTokenKind
   tokenId: string
@@ -89,6 +90,7 @@ export default function LayoutTokenDetails({
   stylePreview?: StylePreview | null
   onClose: () => void
   onOpenInVariables?: (tokenId: string) => void
+  backLabel?: string | null
 }) {
   const reduce = useReducedMotion() ?? false
   const key = tokenId.slice(kind.length + 1)
@@ -288,6 +290,7 @@ export default function LayoutTokenDetails({
         dockToSelector={`#${QUICK_SETTINGS_ID}`}
         coverAnchor
         inInspector
+        backLabel={backLabel}
         onOpenInTable={onOpenInVariables ? () => onOpenInVariables(tokenId) : undefined}
         onReset={onReset}
         resetDisabled={resetDisabled || locked}

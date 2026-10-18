@@ -1519,6 +1519,7 @@ export function TokenDetailsModal({
   dockToSelector,
   coverAnchor = false,
   inInspector = true,
+  backLabel,
 }: {
   name: string
   /** The Figma mock doesn't show this, but the inline editor it replaces did
@@ -1582,6 +1583,9 @@ export function TokenDetailsModal({
    *  of the chrome's. Falls back to the `dockToSelector` drawer where no
    *  inspector is mounted. */
   inInspector?: boolean
+  /** The inspected element this token was opened from (`<Button />`). Shown
+   *  as a back link: closing returns to that element's token list. */
+  backLabel?: string | null
 }) {
   // Docked by DEFAULT wherever an inspector is mounted (Theme preview, the
   // Primitives table, Semantics): one Token Details, one place. `contained`
@@ -1699,7 +1703,23 @@ export function TokenDetailsModal({
           className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-line px-3 pr-10"
           style={{ height: THEME_BAND_H }}
         >
-          <h2 className="text-body font-semibold text-fg truncate">Token Details</h2>
+          {backLabel ? (
+            <div className="flex min-w-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={`Back to ${backLabel}`}
+                title={`Back to ${backLabel}`}
+                className="flex h-7 min-w-0 items-center gap-1 rounded-lg pl-1 pr-2 text-fg-muted transition-colors hover:bg-elevated/60 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+                <span className="truncate font-mono text-caption text-accent-ui">{backLabel}</span>
+              </button>
+              <h2 className="sr-only">Token Details</h2>
+            </div>
+          ) : (
+            <h2 className="text-body font-semibold text-fg truncate">Token Details</h2>
+          )}
           <div className="flex-shrink-0 flex items-center gap-1.5">
             {/* "Open in the variables table" — the way OUT of this drawer to
                 the full row for this token. Only rendered where the drawer
@@ -1809,7 +1829,7 @@ export function TokenDetailsModal({
                 // Docked, a mode is a full-width BAND, not a card inside a padded
                 // column: the nesting (column padding + card border + card
                 // padding) was eating the width the 12-tone grid needs.
-                <div key={s.key} className={`${s.kind ?? 'light'} bg-app overflow-hidden ${docked ? 'border-y border-line -mt-px first-of-type:mt-0' : 'rounded-xl border border-line'}`}>
+                <div key={s.key} className={`${s.kind ?? ''} bg-app overflow-hidden ${docked ? 'border-y border-line -mt-px first-of-type:mt-0' : 'rounded-xl border border-line'}`}>
                   <button
                     type="button"
                     onClick={() => setOpen((prev) => {
