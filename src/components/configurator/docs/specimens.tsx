@@ -33,7 +33,11 @@ import {
   SkeletonToggleSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
   SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen,
 } from './skeleton/forms'
-import { SkeletonCardSpecimen, SkeletonModalSpecimen } from './skeleton/surfaces'
+import {
+  SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonDividerSpecimen, SkeletonAccordionSpecimen,
+  SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen, SkeletonInfoTooltipSpecimen,
+  SkeletonScrollAreaSpecimen,
+} from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
 export type AxisValues = Record<string, string>
@@ -613,15 +617,6 @@ function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
   )
 }
 
-// ── Divider (Orientation) ─────────────────────────────────────────────────────
-
-function DividerSpecimen({ t, v, w }: SpecimenProps) {
-  const horizontal = (v.Orientation ?? 'Horizontal') === 'Horizontal'
-  return horizontal
-    ? <hr style={{ width: w ?? 220, border: 'none', borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }} />
-    : <span style={{ display: 'inline-block', height: 64, width: 1, background: t.borderDefault ?? '#e9eaeb' }} />
-}
-
 // ── Single-variant specimens ──────────────────────────────────────────────────
 
 /** A box's real shorter side, measured — so `fitRadiusPx` can cap a tall box's
@@ -642,21 +637,6 @@ function useFitRadius(t: PreviewTokens, role: string, fallback?: string) {
   }, [])
   const base = fallback ?? radiusRoleOf(t, role)
   return { ref, radius: side ? `${fitRadiusPx(t, role, side)}px` : base }
-}
-
-function TooltipSpecimen({ t }: { t: PreviewTokens }) {
-  // See ToastSpecimen's note — same inverse-chip pairing, same dark-mode fix
-  // (was `background-overlay`, a modal scrim that goes near-black in BOTH
-  // themes and nearly matched the dark page, making this unreadable there).
-  const inverse = t.neutralText
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ ...typeOf(t, 'caption'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
-        Copy to clipboard
-      </span>
-      <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${inverse}` }} />
-    </div>
-  )
 }
 
 function TabsSpecimen({ t }: { t: PreviewTokens }) {
@@ -690,99 +670,6 @@ function BreadcrumbSpecimen({ t }: { t: PreviewTokens }) {
       <span style={{ color: t.placeholderText }}>/</span>
       <span style={{ fontWeight: weightOf(t, 'medium', 500) }}>Design tokens</span>
     </nav>
-  )
-}
-
-// ── Content & Surfaces — disclosure, media, floating panels ───────────────────
-
-function AccordionSpecimen({ t }: { t: PreviewTokens }) {
-  const rows = ['What are design tokens?', 'How does Figma sync work?', 'Can I export CSS?']
-  return (
-    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden' }}>
-      {rows.map((q, i) => (
-        <div key={q} style={{ borderTop: i === 0 ? 'none' : `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
-          <button type="button" aria-expanded={i === 0} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 10), padding: `${spaceOf(t, 13)} ${spaceOf(t, 16)}`, background: 'transparent', border: 'none', cursor: 'pointer', ...typeOf(t, 'heading-xs'), color: t.neutralText, textAlign: 'left' }}>
-            {q}
-            <span style={{ transform: i === 0 ? 'rotate(180deg)' : undefined, flexShrink: 0, display: 'inline-flex' }}>
-              <PreviewIcon concept="chevron" size={iconOf(13)} color={t.fgMuted} />
-            </span>
-          </button>
-          {i === 0 && (
-            <p style={{ margin: 0, padding: `0 ${spaceOf(t, 16)} ${spaceOf(t, 14)}`, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
-              Named values for color, type and spacing that keep every surface consistent.
-            </p>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-const RATIO_SIZES: Record<string, { w: number; h: number }> = {
-  '16:9': { w: 256, h: 144 }, '4:3': { w: 224, h: 168 }, '1:1': { w: 176, h: 176 },
-}
-
-function AspectRatioSpecimen({ t, v }: SpecimenProps) {
-  const ratio = v.Ratio ?? '16:9'
-  const s = RATIO_SIZES[ratio] ?? RATIO_SIZES['16:9']
-  return (
-    <div
-      style={{
-        ...baseFont(t),
-        width: s.w, height: s.h, borderRadius: radiusRoleOf(t, 'action'),
-        background: `linear-gradient(135deg, ${soft(t, t.brandSolid)}, ${t.brandSolid}44)`,
-        border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        ...typeOf(t, 'button'), color: t.brandText,
-      }}
-    >
-      {ratio}
-    </div>
-  )
-}
-
-function PopoverSpecimen({ t }: { t: PreviewTokens }) {
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spaceOf(t, 6) }}>
-      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: spaceOf(t, 16), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 6) }}>
-        <span style={{ ...typeOf(t, 'heading-xs') }}>Share this system</span>
-        <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>Anyone with the link can view tokens and docs.</span>
-        <span style={{ alignSelf: 'flex-start', marginTop: spaceOf(t, 4), ...typeOf(t, 'button'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), background: t.brandSolid, color: t.onBrand, cursor: 'pointer' }}>Copy link</span>
-      </div>
-      <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${floatingBg(t)}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
-      <span style={{ ...typeOf(t, 'label'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>Share</span>
-    </div>
-  )
-}
-
-function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
-  // See ToastSpecimen's note — same fix, same reason.
-  const inverse = t.neutralText
-  return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacingRoleOf(t, 'gap-tight', '4px') }}>
-      <span style={{ ...typeOf(t, 'caption'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
-        Applies to new projects only.
-      </span>
-      <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${inverse}` }} aria-hidden />
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6), ...typeOf(t, 'label') }}>
-        Default visibility
-        <PreviewIcon concept="info" size={iconOf(14)} color={t.fgMuted} />
-      </span>
-    </div>
-  )
-}
-
-function ScrollAreaSpecimen({ t }: { t: PreviewTokens }) {
-  const rows = ['Accent / 500', 'Accent / 600', 'Neutral / 100', 'Neutral / 200', 'Success / 500']
-  return (
-    <div style={{ ...baseFont(t), position: 'relative', width: 240, height: 150, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden', padding: `${spaceOf(t, 6)} ${spaceOf(t, 14)} ${spaceOf(t, 6)} ${spaceOf(t, 6)}` }}>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {rows.map((r) => (
-          <span key={r} style={{ padding: `${spaceOf(t, 8)} ${spaceOf(t, 10)}`, ...typeOf(t, 'body-sm'), color: t.neutralText, borderRadius: radiusRoleOf(t, 'control') }}>{r}</span>
-        ))}
-      </div>
-      <span style={{ position: 'absolute', top: 8, right: 4, width: 5, height: 56, borderRadius: 999, background: t.neutralFill }} aria-hidden />
-    </div>
   )
 }
 
@@ -1381,14 +1268,14 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
   Card: SkeletonCardSpecimen,
-  Divider: DividerSpecimen,
-  Accordion: AccordionSpecimen,
-  AspectRatio: AspectRatioSpecimen,
+  Divider: SkeletonDividerSpecimen,
+  Accordion: SkeletonAccordionSpecimen,
+  AspectRatio: SkeletonAspectRatioSpecimen,
   Modal: SkeletonModalSpecimen,
-  Popover: PopoverSpecimen,
-  Tooltip: TooltipSpecimen,
-  InfoTooltip: InfoTooltipSpecimen,
-  ScrollArea: ScrollAreaSpecimen,
+  Popover: SkeletonPopoverSpecimen,
+  Tooltip: SkeletonTooltipSpecimen,
+  InfoTooltip: SkeletonInfoTooltipSpecimen,
+  ScrollArea: SkeletonScrollAreaSpecimen,
   // Feedback
   Toast: ToastSpecimen,
   AlertBanner: AlertBannerSpecimen,
@@ -1555,25 +1442,10 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
   switch (def.key) {
     case 'Toast':
       return `<Toast\n  status="${low(v.Status) || 'success'}"\n  message="Changes saved."\n  action={{ label: 'Undo', onClick: undo }}\n/>`
-    case 'Divider':
-      return `<Divider orientation="${low(v.Orientation) || 'horizontal'}" />`
-    case 'Tooltip':
-      return `<Tooltip content="Copy to clipboard" side="top">\n  <IconButton icon={copy} />\n</Tooltip>`
     case 'Tabs':
       return `<Tabs defaultValue="overview" items={[\n  { label: 'Overview', value: 'overview' },\n  { label: 'Tokens', value: 'tokens' },\n]} />`
     case 'Breadcrumb':
       return `<Breadcrumb items={[\n  { label: 'Home', href: '/' },\n  { label: 'Library', href: '/library' },\n  { label: 'Design tokens' },\n]} />`
-    case 'Accordion':
-      return `<Accordion type="single" defaultValue="tokens" items={[\n  { title: 'What are design tokens?', content: … },\n  { title: 'How does Figma sync work?', content: … },\n]} />`
-    case 'AspectRatio':
-      return `<AspectRatio ratio={${(v.Ratio ?? '16:9').replace(':', ' / ')}}>\n  <img src={cover} alt="…" />\n</AspectRatio>`
-    case 'Popover':
-      return `<Popover trigger={<Button style="outline">Share</Button>} side="top">\n  …\n</Popover>`
-    case 'InfoTooltip':
-      return `<InfoTooltip content="Applies to new projects only." side="top" />`
-    case 'ScrollArea':
-      return `<ScrollArea maxHeight={240} orientation="vertical">\n  {tokenRows}\n</ScrollArea>`
-    // Feedback
     case 'AlertBanner':
       return `<AlertBanner\n  status="${low(v.Status) || 'info'}"\n  message="Scheduled maintenance on Sunday."\n  action={{ label: 'View', onClick: open }}\n  dismissible\n/>`
     case 'InlineAlert':

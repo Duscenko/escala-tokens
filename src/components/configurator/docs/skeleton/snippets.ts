@@ -14,6 +14,21 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && low(v.Size) !== 'md' ? ` size="${low(v.Size)}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
+  Divider: (v) =>
+    `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'Vertical' ? ' orientation="vertical"' : ''} />`,
+  Accordion: () =>
+    `import {\n  Accordion, AccordionItem, AccordionTrigger, AccordionContent,\n} from "@/components/ui/accordion"\n\n<Accordion type="single" collapsible defaultValue="a">\n  <AccordionItem value="a">\n    <AccordionTrigger>What are design tokens?</AccordionTrigger>\n    <AccordionContent>Named values for color, type and spacing.</AccordionContent>\n  </AccordionItem>\n</Accordion>`,
+  AspectRatio: (v) =>
+    `import { AspectRatio } from "@/components/ui/aspect-ratio"\n\n<AspectRatio ratio="${v.Ratio ?? '16:9'}">\n  <img src={cover} alt="" />\n</AspectRatio>`,
+  Popover: () =>
+    `import {\n  Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription,\n} from "@/components/ui/popover"\n\n<Popover>\n  <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>\n  <PopoverContent>\n    <PopoverTitle>Share this system</PopoverTitle>\n    <PopoverDescription>Anyone with the link can view tokens and docs.</PopoverDescription>\n  </PopoverContent>\n</Popover>`,
+  Tooltip: () =>
+    `import {\n  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,\n} from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><CloseButton aria-label="Copy"><Copy /></CloseButton></TooltipTrigger>\n    <TooltipContent>Copy to clipboard</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
+  InfoTooltip: () =>
+    `import { InfoTooltip, TooltipProvider } from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <InfoTooltip content="Applies to new projects only." icon={<Info />}>\n    Default visibility\n  </InfoTooltip>\n</TooltipProvider>`,
+  ScrollArea: () =>
+    `import { ScrollArea, ScrollAreaRow } from "@/components/ui/scroll-area"\n\n<ScrollArea style={{ height: 150 }}>\n  {tokens.map((t) => <ScrollAreaRow key={t}>{t}</ScrollAreaRow>)}\n</ScrollArea>`,
+
   Badge: (v) => {
     const style = low(v.Style) || 'soft'
     const color = low(v.Color) || 'brand'

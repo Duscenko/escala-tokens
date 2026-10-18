@@ -74,7 +74,7 @@ describe('the generated component color-field map is current', () => {
   })
 
   it('Divider — a single hairline with no live axis — resolves only its border', () => {
-    expect(COMPONENT_COLOR_FIELDS.Divider).toEqual(['borderDefault'])
+    expect(rolesForComponent('Divider')).toEqual(['border.subtle'])
   })
 })
 

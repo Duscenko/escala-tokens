@@ -633,10 +633,10 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Badge"],
         props: [
-          { name: "color", type: '"neutral" | "brand" | "success" | "warning" | "error" | "info"', description: "Semantic status role" },
-          { name: "style", type: '"solid" | "soft" | "outline"', description: "Visual style" },
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Text/padding scale \u2014 sm inside table cells, lg standalone" },
-          { name: "label", type: "string", description: "Badge text" }
+          { name: "variant", type: '"solid" | "soft" | "outline" | "default" | "secondary" | "destructive"', description: "Visual weight. The shadcn names map onto it: default = solid brand, secondary = soft neutral, destructive = solid error." },
+          { name: "color", type: '"neutral" | "brand" | "success" | "warning" | "error" | "info"', description: "Semantic colour." },
+          { name: "size", type: '"sm" | "md" | "lg"', description: "Height and padding \u2014 follows the type and spacing scales." },
+          { name: "dot", type: "boolean", description: 'The leading status dot (default on). Off for a count such as "+5 more".' }
         ],
         accessibility: "Purely presentational. Add sr-only context if color conveys meaning."
       },
@@ -649,8 +649,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Status", values: ["Online", "Away", "Busy", "Offline"] }],
         figmaSets: ["Status Badge"],
         props: [
-          { name: "status", type: '"online" | "away" | "busy" | "offline"', description: "Presence state" },
-          { name: "showLabel", type: "boolean", description: "Renders the text next to the dot" }
+          { name: "status", type: '"Online" | "Away" | "Busy" | "Offline"', description: "Presence state \u2014 picks the dot colour." },
+          { name: "children", type: "ReactNode", description: "Label text; defaults to the status name." }
         ],
         accessibility: "Status conveyed in text (visible or sr-only) \u2014 never by the dot color alone."
       },
@@ -667,10 +667,11 @@ var init_componentCatalogue = __esm({
         ],
         figmaSets: ["Chip"],
         props: [
-          { name: "label", type: "string", description: "Chip text" },
-          { name: "size", type: '"sm" | "md"', description: "Padding/text scale \u2014 sm for dense filter rows" },
-          { name: "selected", type: "boolean", description: "Applied / active state" },
-          { name: "onDismiss", type: "() => void", description: "Renders the \u2715 affordance" }
+          { name: "selected", type: "boolean", description: "Selected state (aria-pressed)." },
+          { name: "onPressedChange", type: "(selected: boolean) => void", description: "Fires when the chip is toggled." },
+          { name: "onRemove", type: "() => void", description: "Shows the remove control and calls this when it is pressed." },
+          { name: "size", type: '"md" | "sm"', description: "Height and padding." },
+          { name: "removeIcon", type: "ReactNode", description: "The remove glyph from the system icon set." }
         ],
         accessibility: "Selectable chips use aria-pressed; the dismiss button is separately labelled."
       },
@@ -683,9 +684,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Progress"],
         props: [
-          { name: "value", type: "number | null", description: "0\u2013100 for determinate, null for indeterminate" },
-          { name: "label", type: "string", description: "Accessible description" },
-          { name: "showValue", type: "boolean", description: "Renders percentage label" }
+          { name: "value", type: "number", description: "0\u2013100." },
+          { name: "label", type: "ReactNode", description: "Name shown beside the percentage." },
+          { name: "showValue", type: "boolean", description: "Show the percentage (default on)." }
         ],
         accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin, aria-valuemax.'
       },
@@ -698,8 +699,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["SM", "MD", "LG"] }],
         figmaSets: ["Spinner"],
         props: [
-          { name: "size", type: '"sm" | "md" | "lg"', description: "Diameter \u2014 16 / 24 / 32px" },
-          { name: "label", type: "string", description: "sr-only accessible label (required)" }
+          { name: "size", type: '"sm" | "md" | "lg"', description: "Diameter \u2014 16 / 24 / 32px." },
+          { name: "label", type: "string", description: 'Screen-reader label (default "Loading\u2026").' }
         ],
         accessibility: 'role="status" with sr-only label. Animated via CSS, respects prefers-reduced-motion.'
       },
@@ -712,9 +713,9 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["SM", "MD", "LG"] }],
         figmaSets: ["Icon"],
         props: [
-          { name: "size", type: '"sm" | "md" | "lg"', description: "small 16px \xB7 medium 20px \xB7 large 24px at a 40px control (Icon/role/small \xB7 medium \xB7 large)" },
-          { name: "weight", type: '"thin" | "light" | "regular" | "bold" | "fill" | "duotone"', description: "Defaults to the theme's icon weight; below 16px thin/light render regular" },
-          { name: "aria-label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative" }
+          { name: "size", type: '"sm" | "md" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Icon/role/small \xB7 medium \xB7 large)." },
+          { name: "children", type: "ReactNode", description: "The glyph, from the system icon set (Phosphor by default)." },
+          { name: "label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative." }
         ],
         accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.'
       },
@@ -727,9 +728,10 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Interactive", values: ["False", "True"] }],
         figmaSets: ["Rating"],
         props: [
-          { name: "value", type: "number", description: "Score 0\u20135, halves allowed" },
-          { name: "onChange", type: "(value: number) => void", description: "Makes the row interactive" },
-          { name: "count", type: "number", description: "Optional review count label" }
+          { name: "value", type: "number", description: "Score 0\u20135." },
+          { name: "onValueChange", type: "(value: number) => void", description: "Makes the row interactive." },
+          { name: "star", type: "ReactNode", description: "The star glyph, rendered five times." },
+          { name: "label", type: "ReactNode", description: 'Count label ("4.0 \xB7 128 reviews").' }
         ],
         accessibility: 'Read-only uses an aria-label ("4 of 5 stars"); interactive follows the radio pattern.'
       },
@@ -742,8 +744,7 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Format", values: ["PDF", "PNG", "SVG", "ZIP"] }],
         figmaSets: ["File Format"],
         props: [
-          { name: "format", type: "string", description: "Extension shown on the plate" },
-          { name: "size", type: '"sm" | "md"', description: "Glyph scale" }
+          { name: "format", type: '"PDF" | "PNG" | "SVG" | "ZIP"', description: "Extension shown on the plate; the plate colour follows it." }
         ],
         accessibility: "Decorative next to a visible filename (aria-hidden); labelled when standalone."
       },
@@ -757,9 +758,9 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["XS", "SM", "MD", "LG", "XL"] }],
         figmaSets: ["Avatar"],
         props: [
-          { name: "src", type: "string", description: "Image URL" },
-          { name: "name", type: "string", description: "Used for initials and alt text" },
-          { name: "size", type: '"xs" | "sm" | "md" | "lg" | "xl"', description: "Diameter \u2014 24 / 32 / 40 / 48 / 56px" }
+          { name: "size", type: '"xs" | "sm" | "md" | "lg" | "xl"', description: "Diameter \u2014 24 / 32 / 40 / 48 / 56px (the Sizes foundation)." },
+          { name: "AvatarImage src", type: "string", description: "Image URL; the fallback shows while it loads or if it fails." },
+          { name: "AvatarFallback", type: "ReactNode", description: "Initials." }
         ],
         accessibility: 'img alt generated from name. Decorative images use alt="".'
       },
@@ -787,8 +788,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Orientation", values: ["Horizontal", "Vertical"] }],
         figmaSets: ["Divider"],
         props: [
-          { name: "orientation", type: '"horizontal" | "vertical"', description: "Direction" },
-          { name: "label", type: "string", description: "Optional center text" }
+          { name: "orientation", type: '"horizontal" | "vertical"', description: "Direction." },
+          { name: "decorative", type: "boolean", description: 'A purely visual rule (default). Set false to expose role="separator".' }
         ],
         accessibility: 'role="separator". Decorative dividers use aria-hidden="true".'
       },
@@ -801,9 +802,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Accordion"],
         props: [
-          { name: "items", type: "{ title: string; content: ReactNode }[]", description: "Disclosure rows" },
-          { name: "type", type: '"single" | "multiple"', description: "How many panels may open" },
-          { name: "defaultValue", type: "string", description: "Initially expanded row" }
+          { name: "type", type: '"single" | "multiple"', description: "One open row, or several." },
+          { name: "collapsible", type: "boolean", description: "Allow the open row to close (single)." },
+          { name: "AccordionTrigger icon", type: "ReactNode", description: "The chevron; it rotates when open." },
+          { name: "AccordionItem value", type: "string", description: "Identifies the row." }
         ],
         accessibility: "Headers are buttons with aria-expanded + aria-controls on their panel."
       },
@@ -816,8 +818,8 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Ratio", values: ["16:9", "4:3", "1:1"] }],
         figmaSets: ["Aspect Ratio"],
         props: [
-          { name: "ratio", type: "number", description: "Width / height (e.g. 16 / 9)" },
-          { name: "children", type: "ReactNode", description: "Content clipped to the ratio" }
+          { name: "ratio", type: '"16:9" | "4:3" | "1:1" | number', description: "Width / height." },
+          { name: "children", type: "ReactNode", description: "Media or placeholder, centred in the box." }
         ],
         accessibility: "Purely presentational \u2014 semantics come from the wrapped content."
       },
@@ -845,9 +847,10 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Popover"],
         props: [
-          { name: "trigger", type: "ReactNode", description: "Anchor element" },
-          { name: "side", type: '"top" | "bottom" | "left" | "right"', description: "Preferred placement" },
-          { name: "onOpenChange", type: "(open: boolean) => void", description: "Visibility callback" }
+          { name: "Popover", type: "component", description: "Radix Popover root: open, defaultOpen, onOpenChange." },
+          { name: "PopoverTrigger asChild", type: "boolean", description: "Use your own button as the anchor." },
+          { name: "PopoverContent align / sideOffset", type: '"start" | "center" | "end" / number', description: "Placement; it portals into the theme scope." },
+          { name: "PopoverTitle / PopoverDescription", type: "component", description: "Heading and body copy." }
         ],
         accessibility: "Trigger gets aria-haspopup + aria-expanded. Esc closes; focus returns to trigger."
       },
@@ -860,8 +863,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Tooltip"],
         props: [
-          { name: "content", type: "string", description: "Tooltip text" },
-          { name: "side", type: '"top" | "bottom" | "left" | "right"', description: "Preferred placement" }
+          { name: "TooltipProvider", type: "component", description: "Wrap once near the root; sets the open delay." },
+          { name: "TooltipTrigger asChild", type: "boolean", description: "Use your own element as the anchor." },
+          { name: "TooltipContent side / sideOffset", type: '"top" | "right" | "bottom" | "left" / number', description: "Placement of the bubble." }
         ],
         accessibility: 'role="tooltip" linked via aria-describedby. Appears on focus and hover.'
       },
@@ -874,8 +878,9 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Info Tooltip"],
         props: [
-          { name: "content", type: "string", description: "Explanation text (one sentence)" },
-          { name: "side", type: '"top" | "bottom"', description: "Preferred placement" }
+          { name: "content", type: "ReactNode", description: "The explanation (one sentence)." },
+          { name: "icon", type: "ReactNode", description: "The info glyph." },
+          { name: "children", type: "ReactNode", description: "The label it explains." }
         ],
         accessibility: 'The trigger is a focusable button labelled "More information"; tooltip on focus too.'
       },
@@ -888,8 +893,8 @@ var init_componentCatalogue = __esm({
         axes: [],
         figmaSets: ["Scroll Area"],
         props: [
-          { name: "maxHeight", type: "number | string", description: "Scroll boundary" },
-          { name: "orientation", type: '"vertical" | "horizontal" | "both"', description: "Scroll axes" }
+          { name: "style / className", type: "CSSProperties | string", description: "Give it a height; content past it scrolls with a themed scrollbar." },
+          { name: "ScrollAreaRow", type: "component", description: "A list row inside the viewport." }
         ],
         accessibility: "Container is keyboard-scrollable (tabIndex 0 + arrow keys) with an aria-label."
       },
@@ -5831,7 +5836,7 @@ var init_forms = __esm({
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, MODAL;
+var CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -5886,6 +5891,331 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    DIVIDER = {
+      key: "Divider",
+      slots: ["root"],
+      defaults: { Orientation: "Horizontal" },
+      parts: [
+        part({ Orientation: ["Horizontal", "Vertical"] }, (o) => ({
+          root: o === "Horizontal" ? { fill: c("border.subtle"), height: "stroke.divider" } : { fill: c("border.subtle"), width: "stroke.divider", height: "size.2xl" }
+        }))
+      ]
+    };
+    ACCORDION = {
+      key: "Accordion",
+      slots: ["root", "item", "trigger", "icon", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container"
+          },
+          "item:not(:first-child)": { stroke: c("border.subtle"), strokeTopWidth: "stroke.divider" },
+          trigger: {
+            text: c("content.primary"),
+            font: "type.heading-xs",
+            paddingX: "spacing.4",
+            paddingY: "spacing.3",
+            gap: "spacing.2_5"
+          },
+          "trigger:hover": { fill: c("action.ghost.hover") },
+          icon: { text: c("content.secondary") },
+          content: { text: c("content.secondary"), font: "type.body-sm", paddingX: "spacing.4", paddingY: "spacing.3" }
+        }))
+      ]
+    };
+    ASPECT_RATIO = {
+      key: "AspectRatio",
+      slots: ["root"],
+      defaults: { Ratio: "16:9" },
+      parts: [
+        part({ Ratio: ["16:9", "4:3", "1:1"] }, () => ({
+          root: {
+            fill: c("surface.selected"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            text: c("content.accent"),
+            radius: "radius.action",
+            font: "type.button"
+          }
+        }))
+      ]
+    };
+    POPOVER = {
+      key: "Popover",
+      slots: ["root", "title", "body", "arrow"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            shadow: "shadow.xl",
+            paddingX: "spacing.4",
+            paddingY: "spacing.4",
+            gap: "spacing.1_5",
+            text: c("content.primary")
+          },
+          title: { text: c("content.primary"), font: "type.heading-xs" },
+          body: { text: c("content.secondary"), font: "type.body-sm" },
+          arrow: { paint: c("surface.layer-2") }
+        }))
+      ]
+    };
+    TIP = {
+      fill: c("surface.inverse"),
+      text: c("content.inverse"),
+      radius: "radius.action",
+      font: "type.caption",
+      paddingX: "spacing.2_5",
+      paddingY: "spacing.1_5"
+    };
+    TOOLTIP = {
+      key: "Tooltip",
+      slots: ["root", "arrow"],
+      defaults: {},
+      parts: [part({}, () => ({ root: TIP, arrow: { paint: c("surface.inverse") } }))]
+    };
+    INFO_TOOLTIP = {
+      key: "InfoTooltip",
+      slots: ["root", "tip", "arrow", "label", "icon"],
+      // The bubble portals out of the label, so it is not a descendant of the root.
+      detachedSlots: ["tip", "arrow"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          tip: TIP,
+          arrow: { paint: c("surface.inverse") },
+          label: { text: c("content.primary"), font: "type.label", gap: "spacing.1_5" },
+          icon: { text: c("content.secondary") }
+        }))
+      ]
+    };
+    SCROLL_AREA = {
+      key: "ScrollArea",
+      slots: ["root", "row", "scrollbar", "thumb"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            paddingX: "spacing.1_5",
+            paddingY: "spacing.1_5"
+          },
+          row: { text: c("content.primary"), font: "type.body-sm", paddingX: "spacing.2_5", paddingY: "spacing.2", radius: "radius.control" },
+          "row:hover": { fill: c("action.ghost.hover") },
+          scrollbar: { width: "spacing.2" },
+          thumb: { fill: c("action.secondary.hover"), radius: "radius.pill" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/indicators.ts
+function badgePaint(style, color) {
+  const k = BADGE_TONES[color];
+  if (style === "Solid") return { root: { fill: c(k.solid), stroke: NONE, text: c(k.on) }, dot: { fill: c(k.on) } };
+  if (style === "Soft") return { root: { fill: c(k.soft), stroke: NONE, text: c(k.ink) }, dot: { fill: c(k.dot) } };
+  return { root: { fill: NONE, stroke: c(k.line), text: c(k.ink) }, dot: { fill: c(k.dot) } };
+}
+var BADGE_TONES, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER_GEOMETRY, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_GEOMETRY, AVATAR;
+var init_indicators = __esm({
+  "src/lib/recipes/indicators.ts"() {
+    init_helpers();
+    BADGE_TONES = {
+      Brand: { solid: "action.primary.default", on: "content.on-action", soft: "surface.selected", ink: "content.accent", line: "border.accent", dot: "action.primary.default" },
+      Neutral: { solid: "surface.inverse", on: "content.inverse", soft: "action.secondary.default", ink: "content.secondary", line: "border.strong", dot: "content.secondary" },
+      Success: { solid: "status.success.surface-solid", on: "status.success.on-solid", soft: "status.success.surface", ink: "status.success.content", line: "status.success.border-strong", dot: "status.success.surface-solid" },
+      Warning: { solid: "status.warning.surface-solid", on: "status.warning.on-solid", soft: "status.warning.surface", ink: "status.warning.content", line: "status.warning.border-strong", dot: "status.warning.surface-solid" },
+      Error: { solid: "status.critical.surface-solid", on: "status.critical.on-solid", soft: "status.critical.surface", ink: "status.critical.content", line: "status.critical.border-strong", dot: "status.critical.surface-solid" },
+      Info: { solid: "status.info.surface-solid", on: "status.info.on-solid", soft: "status.info.surface", ink: "status.info.content", line: "status.info.border-strong", dot: "status.info.surface-solid" }
+    };
+    BADGE_GEOMETRY = {
+      SM: { root: { paddingX: "spacing.2", paddingY: "spacing.0_5", gap: "spacing.1_5" }, dot: "spacing.1_5" },
+      MD: { root: { paddingX: "spacing.2_5", paddingY: "spacing.1", gap: "spacing.1_5" }, dot: "spacing.1_5" },
+      LG: { root: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.2" }, dot: "spacing.2" }
+    };
+    BADGE = {
+      key: "Badge",
+      slots: ["root", "dot"],
+      defaults: { Style: "Soft", Color: "Brand", Size: "MD" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.caption" },
+          dot: { radius: "radius.pill" }
+        })),
+        part({ Size: ["MD", "SM", "LG"] }, (size) => ({
+          root: BADGE_GEOMETRY[size].root,
+          dot: { width: BADGE_GEOMETRY[size].dot, height: BADGE_GEOMETRY[size].dot }
+        })),
+        part({ Style: ["Solid", "Soft", "Outline"], Color: ["Neutral", "Brand", "Success", "Warning", "Error", "Info"] }, badgePaint)
+      ]
+    };
+    PRESENCE_DOT = {
+      Online: "status.success.surface-solid",
+      Away: "status.warning.surface-solid",
+      Busy: "status.critical.surface-solid",
+      // The absence of a signal reads as muted ink.
+      Offline: "content.subtle"
+    };
+    STATUS_BADGE = {
+      key: "StatusBadge",
+      slots: ["root", "dot"],
+      defaults: { Status: "Online" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            text: c("content.primary"),
+            radius: "radius.pill",
+            font: "type.caption",
+            paddingX: "spacing.2_5",
+            paddingY: "spacing.1",
+            gap: "spacing.2"
+          },
+          dot: { width: "spacing.2", height: "spacing.2", radius: "radius.pill" }
+        })),
+        part({ Status: ["Online", "Away", "Busy", "Offline"] }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } }))
+      ]
+    };
+    CHIP_GEOMETRY = {
+      MD: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.1_5" },
+      SM: { paddingX: "spacing.2_5", paddingY: "spacing.0_5", gap: "spacing.1" }
+    };
+    CHIP = {
+      key: "Chip",
+      slots: ["root", "remove"],
+      defaults: { Selected: "False", Dismissible: "False", Size: "MD" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.label" } })),
+        part({ Size: ["MD", "SM"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),
+        part({ Selected: ["False", "True"] }, (selected) => selected === "True" ? {
+          root: { fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") },
+          "root:hover": { fill: c("surface.selected-pressed") }
+        } : {
+          root: { fill: NONE, stroke: c("border.strong"), text: c("content.primary") },
+          "root:hover": { fill: c("surface.accent"), stroke: c("border.control-hover") }
+        })
+      ]
+    };
+    PROGRESS = {
+      key: "Progress",
+      slots: ["root", "header", "label", "value", "track", "indicator"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          label: { text: c("content.secondary"), font: "type.caption" },
+          value: { text: c("content.primary"), font: "type.caption" },
+          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          indicator: { fill: c("action.primary.default"), radius: "radius.pill" }
+        }))
+      ]
+    };
+    SPINNER_GEOMETRY = {
+      SM: { size: "spacing.4", stroke: "spacing.0_5" },
+      MD: { size: "spacing.6", stroke: "spacing.0_5" },
+      LG: { size: "spacing.8", stroke: "spacing.1" }
+    };
+    SPINNER = {
+      key: "Spinner",
+      slots: ["root"],
+      defaults: { Size: "MD" },
+      parts: [
+        part({ Size: ["SM", "MD", "LG"] }, (size) => ({
+          root: {
+            width: SPINNER_GEOMETRY[size].size,
+            height: SPINNER_GEOMETRY[size].size,
+            radius: "radius.pill",
+            strokeWidth: SPINNER_GEOMETRY[size].stroke,
+            stroke: c("action.secondary.default"),
+            strokeTop: c("action.primary.default")
+          }
+        }))
+      ]
+    };
+    ICON_ROLE = { SM: "icon.small", MD: "icon.medium", LG: "icon.large" };
+    ICON = {
+      key: "Icon",
+      slots: ["root"],
+      defaults: { Size: "MD" },
+      parts: [
+        part({ Size: ["SM", "MD", "LG"] }, (size) => ({
+          root: { width: ICON_ROLE[size], height: ICON_ROLE[size], text: c("content.primary") }
+        }))
+      ]
+    };
+    RATING = {
+      key: "Rating",
+      slots: ["root", "stars", "star", "starOn", "label"],
+      defaults: { Interactive: "False" },
+      parts: [
+        part({ Interactive: ["False", "True"] }, () => ({
+          root: { gap: "spacing.gap-control" },
+          stars: { gap: "spacing.0_5" },
+          star: { text: c("content.subtle"), width: "icon.medium", height: "icon.medium" },
+          starOn: { text: c("status.warning.surface-solid"), width: "icon.medium", height: "icon.medium" },
+          label: { text: c("content.secondary"), font: "type.body-sm" }
+        }))
+      ]
+    };
+    FORMAT_TONE = {
+      PDF: { fill: "status.critical.surface-solid", on: "status.critical.on-solid" },
+      PNG: { fill: "status.info.surface-solid", on: "status.info.on-solid" },
+      SVG: { fill: "action.primary.default", on: "content.on-action" },
+      ZIP: { fill: "status.warning.surface-solid", on: "status.warning.on-solid" }
+    };
+    FILE_FORMAT = {
+      key: "FileFormat",
+      slots: ["root", "page", "plate"],
+      defaults: { Format: "PDF" },
+      parts: [
+        part({}, () => ({
+          root: { width: "size.control", height: "size.lg" },
+          page: { text: c("border.strong"), paint: c("surface.layer-1") },
+          plate: { radius: "radius.control", font: "type.caption", paddingX: "spacing.1_5", paddingY: "spacing.0_5" }
+        })),
+        part({ Format: ["PDF", "PNG", "SVG", "ZIP"] }, (format) => ({
+          plate: { fill: c(FORMAT_TONE[format].fill), text: c(FORMAT_TONE[format].on) }
+        }))
+      ]
+    };
+    AVATAR_GEOMETRY = {
+      XS: { size: "size.xs", font: "type.caption" },
+      SM: { size: "size.sm", font: "type.caption" },
+      MD: { size: "size.md", font: "type.label" },
+      LG: { size: "size.lg", font: "type.body-md" },
+      XL: { size: "size.xl", font: "type.body-lg" }
+    };
+    AVATAR = {
+      key: "Avatar",
+      slots: ["root", "image", "fallback"],
+      defaults: { Size: "MD" },
+      parts: [
+        part({ Size: ["XS", "SM", "MD", "LG", "XL"] }, (size) => ({
+          root: {
+            width: AVATAR_GEOMETRY[size].size,
+            height: AVATAR_GEOMETRY[size].size,
+            radius: "radius.pill",
+            fill: c("surface.selected"),
+            text: c("content.accent"),
+            font: AVATAR_GEOMETRY[size].font
+          }
+        }))
+      ]
+    };
   }
 });
 
@@ -5899,6 +6229,7 @@ var init_componentRecipes = __esm({
     init_actions();
     init_forms();
     init_surfaces();
+    init_indicators();
     init_helpers();
     init_helpers();
     COMPONENT_RECIPES = {
@@ -5929,6 +6260,22 @@ var init_componentRecipes = __esm({
       Field: FIELD,
       Label: LABEL,
       PasswordStrength: PASSWORD_STRENGTH,
+      Badge: BADGE,
+      StatusBadge: STATUS_BADGE,
+      Chip: CHIP,
+      Progress: PROGRESS,
+      Spinner: SPINNER,
+      Icon: ICON,
+      Rating: RATING,
+      FileFormat: FILE_FORMAT,
+      Avatar: AVATAR,
+      Divider: DIVIDER,
+      Accordion: ACCORDION,
+      AspectRatio: ASPECT_RATIO,
+      Popover: POPOVER,
+      Tooltip: TOOLTIP,
+      InfoTooltip: INFO_TOOLTIP,
+      ScrollArea: SCROLL_AREA,
       Card: CARD,
       Modal: MODAL
     };

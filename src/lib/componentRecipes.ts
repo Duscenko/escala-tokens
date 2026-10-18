@@ -36,7 +36,7 @@ import {
   CHECKBOX, RADIO, TOGGLE, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE,
   CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP,
 } from './recipes/forms'
-import { CARD, MODAL } from './recipes/surfaces'
+import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces'
 import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators'
 export {
   RECIPE_PROPS,
@@ -81,6 +81,13 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Rating: RATING,
   FileFormat: FILE_FORMAT,
   Avatar: AVATAR,
+  Divider: DIVIDER,
+  Accordion: ACCORDION,
+  AspectRatio: ASPECT_RATIO,
+  Popover: POPOVER,
+  Tooltip: TOOLTIP,
+  InfoTooltip: INFO_TOOLTIP,
+  ScrollArea: SCROLL_AREA,
   Card: CARD,
   Modal: MODAL,
 }

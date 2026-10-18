@@ -8,27 +8,20 @@ import type { PreviewColorField } from './previewColorFields'
  *  any shared helper it calls. A key absent from this map has no scoped
  *  color data yet — its agent context falls back to the full palette. */
 export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
-  "Accordion": ['surface', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted'],
   "AlertBanner": ['brandSolid', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
-  "AspectRatio": ['brandSolid', 'brandText', 'neutralText', 'borderDefault'],
   "Breadcrumb": ['neutralText', 'fgMuted', 'placeholderText'],
   "Command": ['neutralFill', 'neutralText', 'borderDefault', 'fgMuted', 'placeholderText'],
   "ContextMenu": ['neutralText', 'errorColor', 'borderDefault', 'placeholderText', 'ghostNeutralHover'],
-  "Divider": ['borderDefault'],
   "DropdownMenu": ['surface', 'neutralFill', 'neutralText', 'errorColor', 'border', 'borderDefault', 'fgMuted', 'placeholderText', 'ghostNeutralHover'],
-  "InfoTooltip": ['surface', 'neutralText', 'fgMuted'],
   "InlineAlert": ['brandSolid', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
   "Navbar": ['surface', 'brandSolid', 'brandText', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted', 'selectedSurface'],
   "Pagination": ['surface', 'brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted', 'placeholderText'],
-  "Popover": ['surface', 'brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'border', 'borderDefault', 'fgMuted'],
-  "ScrollArea": ['surface', 'neutralFill', 'neutralText', 'borderDefault'],
   "SegmentedControl": ['neutralText', 'fgMuted', 'inputSurface'],
   "Sidebar": ['surface', 'brandText', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted', 'selectedSurface'],
   "Stepper": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'fgMuted'],
   "TabMenu": ['brandText', 'neutralText', 'fgMuted', 'selectedSurface'],
   "Tabs": ['brandSolid', 'brandText', 'neutralText', 'borderDefault', 'fgMuted'],
   "Toast": ['surface', 'neutralText'],
-  "Tooltip": ['surface', 'neutralText'],
 }
 
 /** Component catalogue key → Categorical role ids its specimen resolves BY
@@ -45,7 +38,6 @@ export const COMPONENT_ARCH_ROLES: Record<string, string[]> = {
   "Command": ['surface.layer-1', 'surface.layer-2'],
   "ContextMenu": ['action.ghost.hover', 'status.critical.content', 'surface.layer-1', 'surface.layer-2'],
   "DropdownMenu": ['action.ghost.hover', 'status.critical.content', 'surface.layer-1', 'surface.layer-2'],
-  "Popover": ['surface.layer-1', 'surface.layer-2'],
   "SegmentedControl": ['surface.input', 'surface.layer-1', 'surface.layer-2'],
   "Sidebar": ['surface.selected'],
   "TabMenu": ['surface.selected'],

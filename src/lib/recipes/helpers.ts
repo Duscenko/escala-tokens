@@ -6,7 +6,7 @@ export type TokenRef = string
 /** Properties a slot can bind. Colour props hold `color.*`, the rest dimensions. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring',
-  'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'radius', 'paddingX', 'paddingY', 'gap', 'strokeWidth', 'font', 'shadow',
+  'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'gap', 'strokeWidth', 'font', 'shadow',
 ] as const
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>

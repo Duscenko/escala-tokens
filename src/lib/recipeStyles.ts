@@ -62,6 +62,9 @@ function declarations(props: SlotProps): string[] {
       case 'paint': out.push(`--escala-paint: ${color(ref)}`); break
       // The spinning arc of a ring: only the top edge takes it.
       case 'strokeTop': out.push(`border-top-color: ${color(ref)}`); break
+      // One hairline on one side (an accordion row's divider, a tab strip's underline).
+      case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
+      case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
       case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
