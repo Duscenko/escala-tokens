@@ -253,7 +253,17 @@ function main() {
       for (const prop of decl.initializer.properties) {
         if (!ts.isPropertyAssignment(prop)) continue
         const key = ts.isIdentifier(prop.name) ? prop.name.text : null
-        const value = ts.isIdentifier(prop.initializer) ? prop.initializer.text : null
+        // `withSkeleton(Legacy, Skeleton)` (the shadcn-skeleton flag, phase 0 of
+        // design-plans/shadcn-component-skeleton.md): the legacy specimen is what
+        // renders with the flag off, so its fields are the ones read here. The
+        // skeleton's tokens are its recipe (`lib/componentRecipes.ts`).
+        const init = prop.initializer
+        const value = ts.isIdentifier(init)
+          ? init.text
+          : ts.isCallExpression(init) && ts.isIdentifier(init.expression) && init.expression.text === 'withSkeleton'
+            && init.arguments[0] && ts.isIdentifier(init.arguments[0])
+            ? init.arguments[0].text
+            : null
         if (key && value) registryEntries.push([key, value])
       }
     }

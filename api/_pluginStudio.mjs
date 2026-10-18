@@ -1093,7 +1093,7 @@ var init_componentCatalogue = __esm({
         accessibility: '<nav aria-label="Sidebar">; active item uses aria-current. Fully arrow-key navigable.'
       }
     ];
-    COMPONENT_KEYS = COMPONENTS.map((c) => c.key);
+    COMPONENT_KEYS = COMPONENTS.map((c2) => c2.key);
     ESSENTIAL_COMPONENT_KEYS = [
       "Button",
       "Input",
@@ -2152,7 +2152,7 @@ function parseHex(hex) {
     alphaDigits = h[3] + h[3];
     h = h.slice(0, 3);
   }
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
   if (h.length === 8) {
     alphaDigits = stripped.slice(6, 8);
     h = h.slice(0, 6);
@@ -2270,7 +2270,7 @@ function hexToLinearRgb(hex) {
     alphaDigits = h[3] + h[3];
     h = h.slice(0, 3);
   }
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
   if (h.length === 8) {
     alphaDigits = stripped.slice(6, 8);
     h = h.slice(0, 6);
@@ -2341,8 +2341,8 @@ function gamutMapSrgb(color) {
   }
   return oklabToOklch(clipped);
 }
-function oklchToHex(l, c, h) {
-  return oklchToHexClipped(gamutMapSrgb({ l, c, h: Number.isNaN(h) ? 0 : h }));
+function oklchToHex(l, c2, h) {
+  return oklchToHexClipped(gamutMapSrgb({ l, c: c2, h: Number.isNaN(h) ? 0 : h }));
 }
 var toLinear, toGamma, OKLAB_TO_LMS, LMS_TO_XYZ, XYZ_TO_LMS, XYZ_TO_LIN_SRGB, LIN_SRGB_TO_XYZ, apply, oklchToOklab, oklabToOklch, byte, GAMUT_EPS, JND, SEARCH_EPS;
 var init_gamut = __esm({
@@ -2379,14 +2379,14 @@ var init_gamut = __esm({
       m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
       m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]
     ];
-    oklchToOklab = ({ l, c, h }) => {
+    oklchToOklab = ({ l, c: c2, h }) => {
       const rad = h * Math.PI / 180;
-      return { l, a: c * Math.cos(rad), b: c * Math.sin(rad) };
+      return { l, a: c2 * Math.cos(rad), b: c2 * Math.sin(rad) };
     };
     oklabToOklch = ({ l, a: a2, b }) => {
-      const c = Math.sqrt(a2 * a2 + b * b);
-      const h = c < 1e-7 ? 0 : (Math.atan2(b, a2) * 180 / Math.PI + 360) % 360;
-      return { l, c, h };
+      const c2 = Math.sqrt(a2 * a2 + b * b);
+      const h = c2 < 1e-7 ? 0 : (Math.atan2(b, a2) * 180 / Math.PI + 360) % 360;
+      return { l, c: c2, h };
     };
     byte = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0");
     GAMUT_EPS = 1e-6;
@@ -2513,16 +2513,32 @@ function neutralFromBrand(hex, tint = DEFAULT_NEUTRAL_TINT) {
 }
 function backgroundFromBase(baseHex, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
   try {
-    const [, c, hRaw] = chroma(baseHex).oklch();
+    const [, c2, hRaw] = chroma(baseHex).oklch();
     const h = Number.isNaN(hRaw) ? 0 : hRaw;
     const spec = neutralTintSpec(tint)[appearance === "dark" ? "dark" : "light"];
-    return oklchToHex(spec.l, Math.min(c * spec.mul, spec.cap), h);
+    return oklchToHex(spec.l, Math.min(c2 * spec.mul, spec.cap), h);
   } catch {
     return appearance === "dark" ? "#0c0e12" : "#ffffff";
   }
 }
 function generateFamilyDarkScale(baseHex, algorithm = "default", contrastShift = 0, darkBackground) {
   return generateColorScale(baseHex, algorithm, contrastShift, darkBackground, "dark");
+}
+function lightNeutralSolid(neutralHex, background = "#ffffff") {
+  try {
+    const page = chroma(background).hex();
+    const seed = chroma(neutralHex).hex();
+    const [seedL, c2, rawH] = chroma(seed).oklch();
+    const h = Number.isNaN(rawH) ? 0 : rawH;
+    const tone11 = lightnessForContrast({ wcag: 4.5, apcaLc: 75 }, h, Math.max(0, c2) * 0.72, page, true);
+    if (seedL > chroma(tone11).oklch()[0] + 0.02) return neutralHex;
+    return lightnessForContrast({ wcag: 3, apcaLc: 45 }, h, Math.max(0, c2), page, true);
+  } catch {
+    return neutralHex;
+  }
+}
+function generateLightNeutralScale(neutralHex, algorithm = "default", contrastShift = 0, background, tint = DEFAULT_NEUTRAL_TINT) {
+  return generateColorScale(lightNeutralSolid(neutralHex, background), algorithm, contrastShift, background, "light", tint);
 }
 function generateDarkColorScale(neutralHex, algorithm = "default", contrastShift = 0, darkBackground, tint = DEFAULT_NEUTRAL_TINT) {
   let base = neutralHex;
@@ -2548,19 +2564,19 @@ function alphaColorOver(targetHex, backgroundHex, appearance = "light") {
   if (a2 <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex();
   const exact = (t, b, alpha) => (t - (1 - alpha) * b) / alpha;
   const channels = [[tr, br], [tg, bg], [tb, bb]];
-  while (a2 < 1 && channels.some(([c, b]) => {
-    const v = exact(c, b, a2);
+  while (a2 < 1 && channels.some(([c2, b]) => {
+    const v = exact(c2, b, a2);
     return v < -0.5 || v > 255.5;
   })) {
     a2 = Math.min(1, Math.round((a2 + 0.01) * 100) / 100);
   }
-  const solve = (c, b) => Math.min(255, Math.max(0, Math.round(exact(c, b, a2))));
+  const solve = (c2, b) => Math.min(255, Math.max(0, Math.round(exact(c2, b, a2))));
   return chroma.rgb(solve(tr, br), solve(tg, bg), solve(tb, bb)).alpha(a2).hex();
 }
 function compositeOver(overlayHex, backgroundHex) {
-  const c = chroma(overlayHex);
-  const a2 = c.alpha();
-  const [orr, og, ob] = c.rgb();
+  const c2 = chroma(overlayHex);
+  const a2 = c2.alpha();
+  const [orr, og, ob] = c2.rgb();
   const [br, bg, bb] = chroma(backgroundHex).rgb();
   const mix = (o, b) => Math.round(a2 * o + (1 - a2) * b);
   return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex();
@@ -2585,8 +2601,8 @@ function recommendStateColors(brandHex) {
   }
   const out = {};
   for (const [key2, hex] of Object.entries(STATE_CANONICAL)) {
-    const [l, c, h] = chroma(hex).oklch();
-    const blended = (c + brandC) / 2;
+    const [l, c2, h] = chroma(hex).oklch();
+    const blended = (c2 + brandC) / 2;
     out[key2] = oklchToHex(l, blended, Number.isNaN(h) ? 0 : h);
   }
   return out;
@@ -3610,7 +3626,7 @@ function scaleForFamily(key2, kind, p) {
     case "info":
       return pick(p.infoScale, p.infoDarkScale);
     default: {
-      const fam = p.customColors.find((c) => c.key === key2);
+      const fam = p.customColors.find((c2) => c2.key === key2);
       return fam ? pick(fam.scale, fam.darkScale) : void 0;
     }
   }
@@ -3656,7 +3672,7 @@ function themeDisplayName(key2, labels = {}) {
   if (labels[key2]?.trim()) return labels[key2].trim();
   if (key2 === "light") return "Light";
   if (key2 === "dark") return "Dark";
-  return key2.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return key2.replace(/[-_]+/g, " ").replace(/\b\w/g, (c2) => c2.toUpperCase());
 }
 function resolveThemePages(s, themeKey, linkedAccentHex) {
   if (linkedAccentHex) {
@@ -3668,7 +3684,7 @@ function resolveThemePages(s, themeKey, linkedAccentHex) {
     };
   }
   const grayKey = s.themeSources[themeKey]?.gray ?? GLOBAL_FAMILY.gray;
-  const grayFamily = grayKey !== GLOBAL_FAMILY.gray ? s.customColors.find((c) => c.key === grayKey) : void 0;
+  const grayFamily = grayKey !== GLOBAL_FAMILY.gray ? s.customColors.find((c2) => c2.key === grayKey) : void 0;
   if (grayFamily) {
     return {
       light: grayFamily.scale?.[1] ?? backgroundFromBase(grayFamily.base, "light", s.neutralTint),
@@ -3764,7 +3780,7 @@ function privateFamilyKeys(themeSources) {
 }
 function customScalePair(hex, s, pages, isGray, darkHex) {
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light", isGray ? s.neutralTint : void 0),
+    scale: isGray ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint) : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light"),
     darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
 }
@@ -3791,7 +3807,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
   for (const slot of FAMILY_SLOTS) {
     const key2 = refs[slot];
     if (!key2 || key2 === GLOBAL_FAMILY[slot] || skip.has(key2)) continue;
-    const fam = s.customColors.find((c) => c.key === key2);
+    const fam = s.customColors.find((c2) => c2.key === key2);
     if (!fam) continue;
     s.updateCustomColor(key2, customScalePair(fam.base, s, pages, slot === "gray", fam.darkBase));
   }
@@ -3799,7 +3815,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
   for (const rank of BRAND_EXTRA_RANKS) {
     const key2 = refs[rank];
     if (!key2) continue;
-    const fam = latest.customColors.find((c) => c.key === key2);
+    const fam = latest.customColors.find((c2) => c2.key === key2);
     if (!fam) continue;
     s.updateCustomColor(key2, customScalePair(fam.base, s, pages, false, fam.darkBase));
   }
@@ -3840,7 +3856,7 @@ function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
     const genDark = (base) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg);
     const darkOverride = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : "";
     const scaleDark = genDark(darkOverride || hex);
-    const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, "light", neutralTint) : null;
+    const gScale = neutral ? generateLightNeutralScale(neutral, colorAlgorithm, contrastShift, nextBg, neutralTint) : null;
     const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null;
     if (nextBg !== pageBackground) setPageBackground(nextBg);
     if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg);
@@ -3851,9 +3867,9 @@ function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
     if (pageMoved) {
       const s = useDesignStore.getState();
       const owned = privateFamilyKeys(s.themeSources);
-      s.customColors.forEach((c) => {
-        if (owned.has(c.key)) return;
-        s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) });
+      s.customColors.forEach((c2) => {
+        if (owned.has(c2.key)) return;
+        s.updateCustomColor(c2.key, { scale: gen(c2.base), darkScale: genDark(c2.base) });
       });
     }
     const statesLinked = useDesignStore.getState().linkStatesToAccent;
@@ -3904,7 +3920,7 @@ function applyAccentDarkColor(hex, themeKey = "light") {
     const refs = s.themeSources[themeKey];
     if (refs && refs.brand !== GLOBAL_FAMILY.brand) {
       const pages = resolveThemePages(s, themeKey);
-      const fam = s.customColors.find((c) => c.key === refs.brand);
+      const fam = s.customColors.find((c2) => c2.key === refs.brand);
       const base = hex || fam?.base;
       if (!base) return;
       s.updateCustomColor(refs.brand, {
@@ -3943,22 +3959,22 @@ function ensureColorScales() {
     if (!Object.keys(s.warningScale).length) s.setWarningScale(gen(s.warningColor));
     if (!Object.keys(s.successScale).length) s.setSuccessScale(gen(s.successColor));
     if (!Object.keys(s.infoScale).length) s.setInfoScale(gen(s.infoColor));
-    if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, "light", s.neutralTint));
+    if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint));
     if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(accentDarkBase(s)));
     if (empty(s.errorDarkScale)) s.setErrorDarkScale(genDark(s.errorColor));
     if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor));
     if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor));
     if (empty(s.infoDarkScale)) s.setInfoDarkScale(genDark(s.infoColor));
-    s.customColors.forEach((c) => {
-      const pages = resolveFamilyPages(s, c.key);
-      const next = customScalePair(c.base, s, pages, pages.isGray, c.darkBase);
-      if (empty(c.darkScale)) {
-        s.updateCustomColor(c.key, { darkScale: next.darkScale });
+    s.customColors.forEach((c2) => {
+      const pages = resolveFamilyPages(s, c2.key);
+      const next = customScalePair(c2.base, s, pages, pages.isGray, c2.darkBase);
+      if (empty(c2.darkScale)) {
+        s.updateCustomColor(c2.key, { darkScale: next.darkScale });
         return;
       }
-      const darkLeaked = c.darkScale?.[1]?.toLowerCase() === pages.dark.toLowerCase() && next.darkScale[1].toLowerCase() !== pages.dark.toLowerCase();
-      const lightLeaked = c.scale?.[1]?.toLowerCase() === pages.light.toLowerCase() && next.scale[1].toLowerCase() !== pages.light.toLowerCase();
-      if (darkLeaked || lightLeaked) s.updateCustomColor(c.key, next);
+      const darkLeaked = c2.darkScale?.[1]?.toLowerCase() === pages.dark.toLowerCase() && next.darkScale[1].toLowerCase() !== pages.dark.toLowerCase();
+      const lightLeaked = c2.scale?.[1]?.toLowerCase() === pages.light.toLowerCase() && next.scale[1].toLowerCase() !== pages.light.toLowerCase();
+      if (darkLeaked || lightLeaked) s.updateCustomColor(c2.key, next);
     });
   } catch {
   }
@@ -4550,6 +4566,9 @@ var init_semanticArchitectures = __esm({
       // tint over any other surface. Everything reading text on it composites
       // first — see `audit.ts`'s `backdrop`.
       { group: "surface", key: "selected", light: "{accent-a.3}", dark: "{accent-a.3}" },
+      // Pressed twin of `selected`, the brand counterpart of `status.*.surface-pressed`
+      // ({fam-a.5}, two steps deeper). A soft brand button presses into it.
+      { group: "surface", key: "selected-pressed", light: "{accent-a.5}", dark: "{accent-a.5}" },
       // Inverse surface is dark-on-light and light-on-dark by definition.
       // Dark used `{neutral.4}` to dodge `{neutral-dark.12}`'s near-white flash —
       // that only worked while `neutral` still meant the LIGHT ramp. On a themed
@@ -4712,12 +4731,26 @@ var init_semanticArchitectures = __esm({
       // fill is actually the severity's colour in both. `{on:fam.solid}` follows it.
       { group: "status", key: "critical.surface-solid", light: "{error.solid}", dark: "{error.solid}" },
       { group: "status", key: "critical.on-solid", light: "{on:error.solid}", dark: "{on:error.solid}" },
+      // Hover / pressed of the solid fill, SOLVED like `action.primary.hover` /
+      // `.pressed` ({step:<fam>+n}: n tones past the RESOLVED solid that still carry
+      // the solid's own ink). Before these existed, a Danger / Success button's
+      // hover was its rest fill at 88 % opacity in Figma and a chroma-darken on the
+      // web — two different numbers, neither a token. See
+      // design-plans/shadcn-component-skeleton.md (E15).
+      { group: "status", key: "critical.surface-solid-hover", light: "{step:error+1}", dark: "{step:error+1}" },
+      { group: "status", key: "critical.surface-solid-pressed", light: "{step:error+2}", dark: "{step:error+2}" },
       { group: "status", key: "warning.surface-solid", light: "{warning.solid}", dark: "{warning.solid}" },
       { group: "status", key: "warning.on-solid", light: "{on:warning.solid}", dark: "{on:warning.solid}" },
+      { group: "status", key: "warning.surface-solid-hover", light: "{step:warning+1}", dark: "{step:warning+1}" },
+      { group: "status", key: "warning.surface-solid-pressed", light: "{step:warning+2}", dark: "{step:warning+2}" },
       { group: "status", key: "success.surface-solid", light: "{success.solid}", dark: "{success.solid}" },
       { group: "status", key: "success.on-solid", light: "{on:success.solid}", dark: "{on:success.solid}" },
+      { group: "status", key: "success.surface-solid-hover", light: "{step:success+1}", dark: "{step:success+1}" },
+      { group: "status", key: "success.surface-solid-pressed", light: "{step:success+2}", dark: "{step:success+2}" },
       { group: "status", key: "info.surface-solid", light: "{info.solid}", dark: "{info.solid}" },
       { group: "status", key: "info.on-solid", light: "{on:info.solid}", dark: "{on:info.solid}" },
+      { group: "status", key: "info.surface-solid-hover", light: "{step:info+1}", dark: "{step:info+1}" },
+      { group: "status", key: "info.surface-solid-pressed", light: "{step:info+2}", dark: "{step:info+2}" },
       // Border — strokes, split by JOB rather than by weight: decoration (no
       // floor) vs. the control boundary (WCAG 1.4.11 ≥3:1 AND APCA Lc ≥45, the
       // `ui-component` intent, via `{ui:…}` — see `uiBoundaryRef`). `default` used
@@ -4846,7 +4879,7 @@ var init_semanticArchitectures = __esm({
       // above `status.critical.border-strong`.
     ];
     STATUS_SEVERITY_ORDER = ["critical", "success", "warning", "info"];
-    STATUS_SLOT_ORDER = ["surface", "surface-pressed", "surface-solid", "on-solid", "content", "border", "border-strong"];
+    STATUS_SLOT_ORDER = ["surface", "surface-pressed", "surface-solid", "surface-solid-hover", "surface-solid-pressed", "on-solid", "content", "border", "border-strong"];
     {
       const idx = (r) => {
         const [sev, ...slot] = r.key.split(".");
@@ -4863,6 +4896,7 @@ var init_semanticArchitectures = __esm({
       "surface.layer-2": "[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS \u2014 the color step alone does not convey floating.",
       "surface.input": "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design \u2014 named separately so forms have their own token.",
       "surface.selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
+      "surface.selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected \u2014 the brand twin of status.*.surface-pressed.",
       "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} \u2014 a muted inverse chip, not the dark ramp's near-white step.",
       "surface.overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill.",
@@ -4893,6 +4927,8 @@ var init_semanticArchitectures = __esm({
       "status.critical.surface-solid": "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes \u2014 solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
       "status.critical.content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes \u2014 Radix's chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
       "status.critical.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
+      "status.critical.surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.critical.surface-solid (a critical button). SOLVED ({step:error+1}) \u2014 one tone past the resolved solid that still carries status.critical.on-solid.",
+      "status.critical.surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.critical.surface-solid. SOLVED ({step:error+2}).",
       "status.warning.surface": "[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.",
       "status.warning.content": "[ROLE: Feedback Text] Affects the text and glyph inside a warning alert, banner or toast. Ink on status.warning.surface. {warning.11} in both themes \u2014 the chromatic-text step, not tone 12. Often byte-identical to warning.border-strong and warning.surface-solid: the warning ramp has one tone that is both chromatic text, the 3:1 boundary and the solved solid. Three roles, one step \u2014 keep all three names.",
       "status.success.surface": "[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.",
@@ -4901,10 +4937,16 @@ var init_semanticArchitectures = __esm({
       "status.info.content": "[ROLE: Feedback Text] Affects the text and glyph inside an informational alert, banner or toast. Ink on status.info.surface. {info.11} in both themes \u2014 the chromatic-text step, not tone 12.",
       "status.warning.surface-solid": "[ROLE: Feedback Background Solid] Affects warning badges, pills and buttons. Solid fill. Pair with status.warning.on-solid. {warning.solid} in both themes \u2014 solved per appearance. On this ramp the solid lands on tone 11, the same step as content and border-strong. Do not delete the role because of that collision.",
       "status.warning.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.warning.surface-solid. Solved per theme against that fill, never assumed white \u2014 a warning solid is usually light enough to need dark ink.",
+      "status.warning.surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.warning.surface-solid (a warning button). SOLVED ({step:warning+1}) \u2014 one tone past the resolved solid that still carries status.warning.on-solid.",
+      "status.warning.surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.warning.surface-solid. SOLVED ({step:warning+2}).",
       "status.success.surface-solid": "[ROLE: Feedback Background Solid] Affects success badges, pills and buttons. Solid fill. Pair with status.success.on-solid. {success.solid} in both themes \u2014 solved per appearance.",
       "status.success.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.success.surface-solid. Solved per theme against that fill.",
+      "status.success.surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.success.surface-solid (a success button). SOLVED ({step:success+1}) \u2014 one tone past the resolved solid that still carries status.success.on-solid.",
+      "status.success.surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.success.surface-solid. SOLVED ({step:success+2}).",
       "status.info.surface-solid": "[ROLE: Feedback Background Solid] Affects info badges, pills and buttons. Solid fill. Pair with status.info.on-solid. {info.solid} in both themes \u2014 solved per appearance.",
       "status.info.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.info.surface-solid. Solved per theme against that fill.",
+      "status.info.surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.info.surface-solid (a info button). SOLVED ({step:info+1}) \u2014 one tone past the resolved solid that still carries status.info.on-solid.",
+      "status.info.surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.info.surface-solid. SOLVED ({step:info+2}).",
       "status.critical.border": "[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a critical message \u2014 the edge of a MESSAGE, not a control boundary, so it is not measured for WCAG 1.4.11 (the severity is carried by status.critical.content and the glyph). An alpha primitive, {error-a.6}, because the tint it sits on is alpha too: a solid stroke over a translucent fill composites against a different backdrop than the fill and the two drift apart on any non-page surface. For a stroke that DOES bear a boundary obligation \u2014 an invalid input \u2014 use status.critical.border-strong.",
       "status.warning.border": "[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a warning message. {warning-a.6}. See status.critical.border for why it is alpha and why it carries no contrast floor.",
       "status.success.border": "[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a success message. {success-a.6}. See status.critical.border.",
@@ -4994,8 +5036,8 @@ function buildVariableDescriptions() {
     }
   }
   for (const role of TYPE_ROLES) {
-    for (const part of ["size", "weight", "family"]) {
-      put(COLL.typography, `role/${role.key}/${part}`, part === "size" ? `${role.description} One value per viewport mode: Desktop \xB7 Tablet \xB7 Mobile.` : role.description);
+    for (const part2 of ["size", "weight", "family"]) {
+      put(COLL.typography, `role/${role.key}/${part2}`, part2 === "size" ? `${role.description} One value per viewport mode: Desktop \xB7 Tablet \xB7 Mobile.` : role.description);
     }
   }
   for (const field of GRID_FRAME_FIELDS) {
@@ -5028,6 +5070,217 @@ var init_tokenDescriptions = __esm({
       selector: COLL.selector,
       stroke: COLL.border,
       breakpoint: COLL.grid
+    };
+  }
+});
+
+// src/lib/componentRecipes.ts
+function combos(axes) {
+  return Object.values(axes).reduce(
+    (acc, values) => acc.flatMap((prefix) => values.map((v) => [...prefix, v])),
+    [[]]
+  );
+}
+function part(axes, build) {
+  const values = {};
+  for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
+  return { axes: Object.keys(axes), values };
+}
+function buttonPaint(color, style, state2) {
+  const k = BUTTON_INTENTS[color];
+  if (state2 === "Disabled") {
+    return {
+      root: {
+        fill: style === "Solid" || style === "Soft" ? c("action.disabled.default") : NONE,
+        stroke: style === "Outline" ? c("action.disabled.default") : NONE,
+        text: c("content.disabled")
+      }
+    };
+  }
+  const hover = state2 === "Hover";
+  const pressed = state2 === "Pressed";
+  const ring = state2 === "Focused" ? c(k.ring) : NONE;
+  if (style === "Solid") {
+    return {
+      root: { fill: c(pressed ? k.solidPressed : hover ? k.solidHover : k.solid), stroke: NONE, ring, text: c(k.on) }
+    };
+  }
+  if (style === "Soft") {
+    return {
+      root: { fill: c(hover || pressed ? k.softPressed : k.soft), stroke: NONE, ring, text: c(k.ink) }
+    };
+  }
+  if (style === "Outline") {
+    return {
+      root: { fill: pressed ? c(k.softPressed) : hover ? c(k.soft) : NONE, stroke: c(k.line), ring, text: c(k.ink) }
+    };
+  }
+  return {
+    root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, ring, text: c(k.ink) }
+  };
+}
+function inputPaint(state2) {
+  const disabled = state2 === "Disabled";
+  const error = state2 === "Error";
+  const stroke = disabled ? "action.disabled.default" : error ? "status.critical.border-strong" : state2 === "Focused" ? "border.focus" : state2 === "Hover" ? "border.control-hover" : "border.strong";
+  return {
+    label: { text: c(disabled ? "content.disabled" : "content.primary") },
+    field: {
+      fill: c(disabled ? "action.disabled.default" : "surface.input"),
+      stroke: c(stroke),
+      ring: state2 === "Focused" ? c("border.ring.default") : NONE
+    },
+    value: { text: c(disabled ? "content.disabled" : "content.primary") },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
+    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
+    hint: { text: c(error ? "status.critical.content" : "content.secondary") },
+    spinner: { text: c(state2 === "Loading" ? "action.primary.default" : "content.secondary") }
+  };
+}
+function serializeRecipes() {
+  return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
+}
+var c, NONE, BUTTON_INTENTS, BUTTON_COLORS, BUTTON_STYLES, BUTTON_STATES, BUTTON_SIZES, BUTTON_GEOMETRY, BUTTON, INPUT_SIZES, INPUT_STATES, INPUT_GEOMETRY, INPUT, CARD, MODAL, COMPONENT_RECIPES;
+var init_componentRecipes = __esm({
+  "src/lib/componentRecipes.ts"() {
+    c = (role) => `color.${role}`;
+    NONE = "none";
+    BUTTON_INTENTS = {
+      Brand: {
+        solid: "action.primary.default",
+        solidHover: "action.primary.hover",
+        solidPressed: "action.primary.pressed",
+        on: "content.on-action",
+        soft: "surface.selected",
+        softPressed: "surface.selected-pressed",
+        line: "border.accent",
+        ink: "content.accent",
+        ring: "border.ring.default"
+      },
+      Danger: {
+        solid: "status.critical.surface-solid",
+        solidHover: "status.critical.surface-solid-hover",
+        solidPressed: "status.critical.surface-solid-pressed",
+        on: "status.critical.on-solid",
+        soft: "status.critical.surface",
+        softPressed: "status.critical.surface-pressed",
+        line: "status.critical.border-strong",
+        ink: "status.critical.content",
+        ring: "status.critical.border"
+      },
+      Success: {
+        solid: "status.success.surface-solid",
+        solidHover: "status.success.surface-solid-hover",
+        solidPressed: "status.success.surface-solid-pressed",
+        on: "status.success.on-solid",
+        soft: "status.success.surface",
+        softPressed: "status.success.surface-pressed",
+        line: "status.success.border-strong",
+        ink: "status.success.content",
+        ring: "status.success.border"
+      }
+    };
+    BUTTON_COLORS = ["Brand", "Danger", "Success"];
+    BUTTON_STYLES = ["Solid", "Outline", "Soft", "Ghost"];
+    BUTTON_STATES = ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"];
+    BUTTON_SIZES = ["MD", "SM", "LG", "XL"];
+    BUTTON_GEOMETRY = {
+      SM: { height: "size.compact", paddingX: "spacing.3", gap: "spacing.1_5" },
+      MD: { height: "size.control", paddingX: "spacing.4", gap: "spacing.gap-control" },
+      LG: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.gap-control" },
+      XL: { height: "size.xl", paddingX: "spacing.6", gap: "spacing.2_5" }
+    };
+    BUTTON = {
+      key: "Button",
+      slots: ["root", "label", "icon"],
+      defaults: { Color: "Brand", Style: "Solid", Size: "MD", State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.action", strokeWidth: "stroke.control", font: "type.button" }
+        })),
+        part({ Size: BUTTON_SIZES }, (size) => ({ root: BUTTON_GEOMETRY[size] })),
+        part({ Color: BUTTON_COLORS, Style: BUTTON_STYLES, State: BUTTON_STATES }, buttonPaint)
+      ]
+    };
+    INPUT_SIZES = ["MD", "SM", "XS"];
+    INPUT_STATES = ["Default", "Hover", "Focused", "Filled", "Error", "Loading", "Disabled"];
+    INPUT_GEOMETRY = {
+      MD: { height: "size.control", font: "type.placeholder" },
+      SM: { height: "size.compact", font: "type.body-sm" },
+      XS: { height: "size.xs", font: "type.body-sm" }
+    };
+    INPUT = {
+      key: "Input",
+      slots: ["root", "label", "field", "value", "placeholder", "icon", "hint", "spinner"],
+      pseudoSlots: { placeholder: { of: "value", pseudo: "::placeholder" } },
+      defaults: { Size: "MD", State: "Default", Type: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          label: { font: "type.label" },
+          field: { radius: "radius.action", strokeWidth: "stroke.control", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
+          hint: { font: "type.helper" }
+        })),
+        part({ Size: INPUT_SIZES }, (size) => ({ field: INPUT_GEOMETRY[size] })),
+        part({ State: INPUT_STATES }, inputPaint)
+      ]
+    };
+    CARD = {
+      key: "Card",
+      slots: ["root", "header", "title", "description", "content", "footer", "link"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            paddingX: "spacing.inset-surface",
+            paddingY: "spacing.inset-surface",
+            gap: "spacing.gap-control",
+            shadow: "shadow.sm"
+          },
+          header: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.heading-sm" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          content: { text: c("content.primary"), font: "type.body-md" },
+          footer: { gap: "spacing.gap-control" },
+          link: { text: c("content.accent"), font: "type.button" }
+        }))
+      ]
+    };
+    MODAL = {
+      key: "Modal",
+      slots: ["content", "overlay", "header", "title", "description", "footer", "close"],
+      detachedSlots: ["overlay"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          overlay: { fill: c("surface.overlay") },
+          content: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            paddingX: "spacing.inset-surface",
+            paddingY: "spacing.inset-surface",
+            gap: "spacing.gap-group",
+            shadow: "shadow.2xl"
+          },
+          header: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.heading-sm" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          footer: { gap: "spacing.gap-control" },
+          close: { text: c("content.secondary"), radius: "radius.control", height: "size.xs" }
+        }))
+      ]
+    };
+    COMPONENT_RECIPES = {
+      Button: BUTTON,
+      Input: INPUT,
+      Card: CARD,
+      Modal: MODAL
     };
   }
 });
@@ -5082,7 +5335,7 @@ function buildThemeContext(store, scopeTheme, scopeThemes) {
   };
   const shippedFamilies = familiesOf(themeNames);
   const anyThemeFamilies = familiesOf(Object.keys(store.themeSources));
-  const customKeys = new Set(store.customColors.map((c) => c.key));
+  const customKeys = new Set(store.customColors.map((c2) => c2.key));
   const shipsFamily = (key2) => {
     const base = key2.replace(/-dark$/, "").replace(/-a$/, "");
     if (shippedFamilies.has(base)) return true;
@@ -5270,11 +5523,11 @@ function generateTokenJSON(source, opts) {
     addFamily("success-dark", store.successDarkScale);
     addFamily("info-dark", store.infoDarkScale);
   }
-  store.customColors.forEach((c) => {
-    if (!shipsFamily(c.key)) return;
-    Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming));
-    if (hasDarkTheme && c.darkScale && Object.keys(c.darkScale).length) {
-      Object.assign(primitive, flattenScale(`${c.key}-dark`, c.darkScale, colorNaming));
+  store.customColors.forEach((c2) => {
+    if (!shipsFamily(c2.key)) return;
+    Object.assign(primitive, flattenScale(c2.key, c2.scale, colorNaming));
+    if (hasDarkTheme && c2.darkScale && Object.keys(c2.darkScale).length) {
+      Object.assign(primitive, flattenScale(`${c2.key}-dark`, c2.darkScale, colorNaming));
     }
   });
   const primitiveAlpha = {};
@@ -5298,10 +5551,10 @@ function generateTokenJSON(source, opts) {
   alphaDarkOf("success", store.successDarkScale);
   alphaOf("info", store.infoScale);
   alphaDarkOf("info", store.infoDarkScale);
-  store.customColors.forEach((c) => {
-    const pages = resolveFamilyPages(store, c.key);
-    alphaOf(c.key, c.scale, pages.light);
-    alphaDarkOf(c.key, c.darkScale, pages.dark);
+  store.customColors.forEach((c2) => {
+    const pages = resolveFamilyPages(store, c2.key);
+    alphaOf(c2.key, c2.scale, pages.light);
+    alphaDarkOf(c2.key, c2.darkScale, pages.dark);
   });
   Object.assign(primitiveAlpha, flattenScale("black-a", BLACK_ALPHA_SCALE, colorNaming));
   Object.assign(primitiveAlpha, flattenScale("white-a", WHITE_ALPHA_SCALE, colorNaming));
@@ -5518,6 +5771,11 @@ function generateTokenJSON(source, opts) {
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
+    // Which token paints which part of each component — the table the web
+    // stylesheet is generated from (lib/componentRecipes.ts). The plugin binds
+    // the same roles, so Figma and the web cannot drift. Additive: no
+    // schemaVersion bump (an older plugin ignores it, like `shadowsDark`).
+    componentRecipes: serializeRecipes(),
     // Figma Variable.description copy — collection → var name → text.
     // Additive: older plugins ignore. Built from ALL_ROLES, CATEGORICAL_ROLE_COMMENTS,
     // LAYOUT_ROLES, TYPE_ROLES (same catalogues as the Semantics table / Skill).
@@ -5548,6 +5806,7 @@ var init_tokenGenerator = __esm({
     init_themeModes();
     init_themeFoundations();
     init_tokenDescriptions();
+    init_componentRecipes();
     init_figmaSyncModes();
     TOKEN_SCHEMA_VERSION = 7;
     activeThemeHint = null;
@@ -6589,12 +6848,12 @@ var init_useDesignStore = __esm({
           setInfoColor: (hex) => set({ infoColor: hex }),
           setInfoScale: (scale) => set({ infoScale: scale }),
           setInfoDarkScale: (scale) => set({ infoDarkScale: scale }),
-          addCustomColor: (c) => set(
-            (state2) => state2.customColors.some((x) => x.key === c.key) ? state2 : { customColors: [...state2.customColors, c] }
+          addCustomColor: (c2) => set(
+            (state2) => state2.customColors.some((x) => x.key === c2.key) ? state2 : { customColors: [...state2.customColors, c2] }
           ),
           updateCustomColor: (key2, updates) => set((state2) => ({
             customColors: state2.customColors.map(
-              (c) => c.key === key2 ? { ...c, ...updates } : c
+              (c2) => c2.key === key2 ? { ...c2, ...updates } : c2
             )
           })),
           // Refuses while a theme still references the family: a theme resolves
@@ -6615,7 +6874,7 @@ var init_useDesignStore = __esm({
               })
             );
             return {
-              customColors: state2.customColors.filter((c) => c.key !== key2),
+              customColors: state2.customColors.filter((c2) => c2.key !== key2),
               themeSources
             };
           }),
@@ -6790,7 +7049,7 @@ var init_useDesignStore = __esm({
             const stillUsed = (famKey) => Object.values(themeSources).some(
               (refs) => ["brand", "gray", "error", "warning", "success", "info"].some((s) => refs[s] === famKey) || refs.secondary === famKey || refs.tertiary === famKey
             );
-            const customColors = deletedSlots.size ? state2.customColors.filter((c) => !deletedSlots.has(c.key) || stillUsed(c.key)) : state2.customColors;
+            const customColors = deletedSlots.size ? state2.customColors.filter((c2) => !deletedSlots.has(c2.key) || stillUsed(c2.key)) : state2.customColors;
             const architectureOverrides = Object.fromEntries(
               Object.entries(state2.architectureOverrides).map(([arch, tokens]) => [
                 arch,
@@ -6876,7 +7135,7 @@ var init_useDesignStore = __esm({
             const stillUsed = (famKey) => Object.values(nextSources).some(
               (refs) => ["brand", "gray", "error", "warning", "success", "info"].some((s) => refs[s] === famKey) || refs.secondary === famKey || refs.tertiary === famKey
             );
-            const customColors = dropped.length ? state2.customColors.filter((c) => !dropped.includes(c.key) || stillUsed(c.key)) : state2.customColors;
+            const customColors = dropped.length ? state2.customColors.filter((c2) => !dropped.includes(c2.key) || stillUsed(c2.key)) : state2.customColors;
             return {
               themeKinds: { ...state2.themeKinds, [key2]: kind },
               themeSources: nextSources,
@@ -6941,9 +7200,9 @@ var init_useDesignStore = __esm({
           })),
           setGradientAssignment: (target, id) => set((state2) => ({ gradientAssignments: { ...state2.gradientAssignments, [target]: id } })),
           addSavedColor: (hex) => set(
-            (state2) => state2.savedColors.some((c) => c.toLowerCase() === hex.toLowerCase()) ? state2 : { savedColors: [...state2.savedColors, hex] }
+            (state2) => state2.savedColors.some((c2) => c2.toLowerCase() === hex.toLowerCase()) ? state2 : { savedColors: [...state2.savedColors, hex] }
           ),
-          removeSavedColor: (hex) => set((state2) => ({ savedColors: state2.savedColors.filter((c) => c.toLowerCase() !== hex.toLowerCase()) })),
+          removeSavedColor: (hex) => set((state2) => ({ savedColors: state2.savedColors.filter((c2) => c2.toLowerCase() !== hex.toLowerCase()) })),
           // Every component is included by default — the user removes what they don't want.
           toggleComponent: (key2) => set((state2) => ({
             selectedComponents: state2.selectedComponents.includes(key2) ? state2.selectedComponents.filter((k) => k !== key2) : [...state2.selectedComponents, key2]
@@ -7138,7 +7397,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 89,
+          version: 90,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -7467,13 +7726,13 @@ var init_useDesignStore = __esm({
                       continue;
                     }
                     const base = scale[9] ?? scale[1];
-                    const hit = state2.customColors.find((c) => (c.base ?? "").toLowerCase() === (base ?? "").toLowerCase());
+                    const hit = state2.customColors.find((c2) => (c2.base ?? "").toLowerCase() === (base ?? "").toLowerCase());
                     if (hit) {
                       refs[slot] = hit.key;
                       continue;
                     }
                     const key2 = slot === "brand" ? theme : `${theme}-${slot}`;
-                    if (!RESERVED_COLOR_KEYS.includes(key2) && !state2.customColors.some((c) => c.key === key2)) {
+                    if (!RESERVED_COLOR_KEYS.includes(key2) && !state2.customColors.some((c2) => c2.key === key2)) {
                       state2.customColors.push({
                         key: key2,
                         label: key2.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
@@ -7521,7 +7780,7 @@ var init_useDesignStore = __esm({
                 state2.successDarkScale = gen(state2.successColor);
                 state2.infoDarkScale = gen(state2.infoColor);
                 if (Array.isArray(state2.customColors)) {
-                  for (const c of state2.customColors) c.darkScale = gen(c.base);
+                  for (const c2 of state2.customColors) c2.darkScale = gen(c2.base);
                 }
                 if (state2.themes && typeof state2.themes === "object") {
                   for (const t of Object.keys(state2.themes)) {
@@ -8207,6 +8466,41 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) stepHeadings(sys?.snapshot);
               }
             }
+            if (version < 90) {
+              const reanchor = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                const algo = state2.colorAlgorithm ?? "default";
+                const shift = typeof state2.contrastShift === "number" ? state2.contrastShift : 0;
+                const tint = state2.neutralTint ?? DEFAULT_NEUTRAL_TINT;
+                const rebuild = (seed, page) => {
+                  if (typeof seed !== "string" || typeof page !== "string") return null;
+                  try {
+                    if (lightNeutralSolid(seed, page) === seed) return null;
+                    return generateLightNeutralScale(seed, algo, shift, page, tint);
+                  } catch {
+                    return null;
+                  }
+                };
+                const root = rebuild(state2.grayBaseColor, state2.pageBackground ?? state2.grayLightScale?.[1]);
+                if (root) state2.grayLightScale = root;
+                const grayKeys = /* @__PURE__ */ new Set();
+                for (const src of Object.values(state2.themeSources ?? {})) {
+                  const key2 = src?.gray;
+                  if (typeof key2 === "string") grayKeys.add(key2);
+                }
+                if (Array.isArray(state2.customColors)) {
+                  for (const fam of state2.customColors) {
+                    if (!fam || !grayKeys.has(fam.key)) continue;
+                    const next = rebuild(fam.base, fam.scale?.[1] ?? state2.pageBackground);
+                    if (next) fam.scale = next;
+                  }
+                }
+              };
+              reanchor(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) reanchor(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -8352,7 +8646,7 @@ var PRESET_GROUPS = [
     ]
   }
 ];
-var BRAND_PRESETS = PRESET_GROUPS.flatMap((g) => g.colors.map((c) => c.hex));
+var BRAND_PRESETS = PRESET_GROUPS.flatMap((g) => g.colors.map((c2) => c2.hex));
 var BRAND_SPECTRUM = ["Blues", "Pinks", "Warm", "Greens"].flatMap(
   (label) => PRESET_GROUPS.find((g) => g.label === label)?.colors ?? []
 );
@@ -8569,7 +8863,7 @@ function slotsFromAccent(hex, tint, states) {
 function scalesForSlot(slot, hex, s, neutralTint = s.neutralTint, pages = { light: s.pageBackground, dark: s.darkBackground }, rampShift = s.contrastShift) {
   if (slot === "gray") {
     return {
-      scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light, "light", neutralTint),
+      scale: generateLightNeutralScale(hex, s.colorAlgorithm, rampShift, pages.light, neutralTint),
       darkScale: generateDarkColorScale(hex, s.colorAlgorithm, rampShift, pages.dark, neutralTint)
     };
   }
@@ -8623,7 +8917,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
   };
   const eq = (a2, b) => a2.toLowerCase() === b.toLowerCase();
   try {
-    const taken = new Set(s.customColors.map((c) => c.key));
+    const taken = new Set(s.customColors.map((c2) => c2.key));
     const refs = {};
     for (const slot of FAMILY_SLOTS) {
       const slotHex = chosen[slot];
@@ -8632,7 +8926,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
         refs[slot] = g.key;
         continue;
       }
-      const existing = s.customColors.find((c) => eq(c.base, slotHex));
+      const existing = s.customColors.find((c2) => eq(c2.base, slotHex));
       if (existing) {
         refs[slot] = existing.key;
         continue;
@@ -8875,9 +9169,9 @@ function readHit(value) {
   const hex = normalizeColor(value);
   if (!hex) return null;
   try {
-    const [l, c, h] = chroma5(hex).oklch();
+    const [l, c2, h] = chroma5(hex).oklch();
     if (Number.isNaN(l)) return null;
-    return { hex: hex.slice(0, 7).toLowerCase(), l, c: Number.isNaN(c) ? 0 : c, h: Number.isNaN(h) ? 0 : h };
+    return { hex: hex.slice(0, 7).toLowerCase(), l, c: Number.isNaN(c2) ? 0 : c2, h: Number.isNaN(h) ? 0 : h };
   } catch {
     return null;
   }
@@ -9801,21 +10095,21 @@ function solidOf(scale) {
   return { fill: scale[pair.tone] || scale[9] || "", ink: SOLID_INKS[pair.ink] ?? "#ffffff" };
 }
 function studioLook(choices) {
-  const c = choices ?? {};
-  const preset = c.style ? themeStylePreset(c.style) : void 0;
+  const c2 = choices ?? {};
+  const preset = c2.style ? themeStylePreset(c2.style) : void 0;
   const TINTS = ["pure", "subtle", "tinted", "vivid"];
-  const tint = TINTS.includes(c.neutralTint) ? c.neutralTint : preset?.neutralTint ?? "subtle";
-  const accent2 = (typeof c.accent === "string" && HEX.test(c.accent) ? c.accent : preset?.accent ?? "#7f56d9").toLowerCase();
+  const tint = TINTS.includes(c2.neutralTint) ? c2.neutralTint : preset?.neutralTint ?? "subtle";
+  const accent2 = (typeof c2.accent === "string" && HEX.test(c2.accent) ? c2.accent : preset?.accent ?? "#7f56d9").toLowerCase();
   const accentMoved = !!preset && accent2 !== preset.accent.toLowerCase();
-  const kind = c.kind === "dark" || c.kind === "light" ? c.kind : preset?.preferredAppearance === "dark" ? "dark" : "light";
-  const shift = typeof c.contrastShift === "number" && Number.isFinite(c.contrastShift) ? Math.max(-1, Math.min(1, c.contrastShift)) : 0;
+  const kind = c2.kind === "dark" || c2.kind === "light" ? c2.kind : preset?.preferredAppearance === "dark" ? "dark" : "light";
+  const shift = typeof c2.contrastShift === "number" && Number.isFinite(c2.contrastShift) ? Math.max(-1, Math.min(1, c2.contrastShift)) : 0;
   const derived = harmonyFor(accent2, tint);
   const styled = !accentMoved && preset ? presetHarmony(preset) : null;
-  const pickedNeutral = typeof c.neutral === "string" && HEX.test(c.neutral) ? c.neutral.toLowerCase() : void 0;
+  const pickedNeutral = typeof c2.neutral === "string" && HEX.test(c2.neutral) ? c2.neutral.toLowerCase() : void 0;
   const gray = pickedNeutral || styled?.neutral || derived?.neutral || "#8b8d98";
   const seeded = !accentMoved && preset ? presetStates(preset) : derived?.states;
   const stateSeed = (slot, fallback) => {
-    const picked = c.states?.[slot];
+    const picked = c2.states?.[slot];
     if (typeof picked === "string" && HEX.test(picked)) return picked.toLowerCase();
     return seeded?.[slot] || fallback;
   };
@@ -9828,8 +10122,8 @@ function studioLook(choices) {
   const pageLight = backgroundFromBase(gray, "light", tint);
   const pageDark = backgroundFromBase(gray, "dark", tint);
   const page = kind === "dark" ? pageDark : pageLight;
-  const brand = kind === "dark" ? generateFamilyDarkScale(typeof c.accentDark === "string" && HEX.test(c.accentDark) ? c.accentDark.toLowerCase() : accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
-  const neutral = kind === "dark" ? generateDarkColorScale(gray, "radix", shift, pageDark, tint) : generateColorScale(gray, "radix", shift, pageLight, "light", tint);
+  const brand = kind === "dark" ? generateFamilyDarkScale(typeof c2.accentDark === "string" && HEX.test(c2.accentDark) ? c2.accentDark.toLowerCase() : accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
+  const neutral = kind === "dark" ? generateDarkColorScale(gray, "radix", shift, pageDark, tint) : generateLightNeutralScale(gray, "radix", shift, pageLight, tint);
   const family = (hex) => kind === "dark" ? generateFamilyDarkScale(hex, "radix", shift, pageDark) : generateColorScale(hex, "radix", shift, pageLight);
   const brandSolid = solidOf(brand);
   const states = {};
@@ -9840,16 +10134,16 @@ function studioLook(choices) {
     stateInk[slot] = solid.ink;
   }
   let box = 16, field = 8, control = 4;
-  if (c.radiusAxes && (c.radiusAxes.boxes || c.radiusAxes.fields || c.radiusAxes.selectors)) {
+  if (c2.radiusAxes && (c2.radiusAxes.boxes || c2.radiusAxes.fields || c2.radiusAxes.selectors)) {
     const pxOf = (step, fallback) => {
       const n = parseFloat(step ? RADIUS_STANDARD[step] ?? "" : "");
       return Number.isFinite(n) ? n : fallback;
     };
-    box = pxOf(c.radiusAxes.boxes, box);
-    field = pxOf(c.radiusAxes.fields, field);
-    control = pxOf(c.radiusAxes.selectors, control);
-  } else if (c.radiusPreset) {
-    const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c.radiusPreset);
+    box = pxOf(c2.radiusAxes.boxes, box);
+    field = pxOf(c2.radiusAxes.fields, field);
+    control = pxOf(c2.radiusAxes.selectors, control);
+  } else if (c2.radiusPreset) {
+    const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c2.radiusPreset);
     if (hit) {
       const px = radiusPresetPx(hit);
       box = px[0];
@@ -9862,14 +10156,14 @@ function studioLook(choices) {
     field = summary.radius.fields;
     control = summary.radius.selectors;
   }
-  const modeId = c.spacingMode || (preset ? matchSpacingMode(preset.foundations.sizes, preset.foundations.spacingRoles, preset.foundations.stroke) : null) || "quiet";
+  const modeId = c2.spacingMode || (preset ? matchSpacingMode(preset.foundations.sizes, preset.foundations.spacingRoles, preset.foundations.stroke) : null) || "quiet";
   const mode = SPACING_MODES.find((m) => m.id === modeId) ?? SPACING_MODES[1];
   const paint = spacingPaint(mode);
   let shadowCss = SHADOW_PRESETS.find((p) => p.label === "Soft").values.md;
-  const named = c.shadow ? SHADOW_PRESETS.find((p) => p.label === c.shadow) : void 0;
+  const named = c2.shadow ? SHADOW_PRESETS.find((p) => p.label === c2.shadow) : void 0;
   if (named) shadowCss = named.values.md;
   else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md;
-  const scale = Number.isInteger(c.typeScale) ? TYPE_SCALE_MODES[c.typeScale] : void 0;
+  const scale = Number.isInteger(c2.typeScale) ? TYPE_SCALE_MODES[c2.typeScale] : void 0;
   const summaryFonts = preset ? styleSummary(preset, RADIUS_STANDARD) : null;
   return {
     page: neutral[1] || page,
@@ -9891,8 +10185,8 @@ function studioLook(choices) {
     border: mode.border,
     shadow: kind === "dark" ? darkShadow(shadowCss) : shadowCss,
     factor: scale?.factor ?? 1,
-    heading: c.headingFont || summaryFonts?.heading || "Inter",
-    body: c.bodyFont || summaryFonts?.font || "Inter"
+    heading: c2.headingFont || summaryFonts?.heading || "Inter",
+    body: c2.bodyFont || summaryFonts?.font || "Inter"
   };
 }
 export {

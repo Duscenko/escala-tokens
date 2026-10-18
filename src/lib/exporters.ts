@@ -15,6 +15,7 @@ import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, e
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
+import { generateTokenJSON } from './tokenGenerator'
 import { dimensionCssVar, dimensionFromKey, dimensionScaleForStore, dimensionVar, parseDimension } from './dimensions'
 
 // Panel (background-secondary: cards, panels, sections) tokens — translucent
@@ -43,6 +44,34 @@ function paddingCssEntries(
 export type ShippedFileOptions = {
   /** Drop tablet and mobile overrides. Desktop values stay on `:root`. */
   desktopOnly?: boolean
+}
+
+/**
+ * Categorical role variables (`--color-action-primary-default`) per theme key.
+ * These are the names components and agents bind (`componentRecipes`,
+ * `agentBundle/names.webCodeSyntax`); variables.css used to ship only the flat
+ * role names, so a component built from the recipe had nothing to read.
+ * Values come from the SAME projection tokens.json ships.
+ */
+function categoricalRoleLines(store: ReturnType<typeof useDesignStore.getState>): Record<string, string[]> {
+  if (store.semanticArchitecture !== 'categorical') return {}
+  let arch: { tokens?: Record<string, Record<string, Record<string, string>>> } | undefined
+  try {
+    arch = (generateTokenJSON(store).colors as { architecture?: typeof arch }).architecture
+  } catch {
+    return {}
+  }
+  const out: Record<string, string[]> = {}
+  for (const [group, roles] of Object.entries(arch?.tokens ?? {})) {
+    for (const [key, byTheme] of Object.entries(roles)) {
+      for (const [theme, value] of Object.entries(byTheme)) {
+        // An unresolved ref (`{accent.11}`, empty ramp) is not a colour.
+        if (!value || value.startsWith('{')) continue
+        ;(out[theme] ??= []).push(`  --color-${group}-${key.replace(/\./g, '-')}: ${value};`)
+      }
+    }
+  }
+  return out
 }
 
 export function buildCSS(
@@ -128,6 +157,12 @@ export function buildCSS(
   Object.entries(semanticTokens).forEach(([k, v]) => {
     if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, rootKind)};`)
   })
+
+  const roleLines = categoricalRoleLines(store)
+  if (roleLines[rootKey]?.length) {
+    lines.push(`\n  /* Semantic roles (Categorical) — ${rootKind}. Components bind these. */`)
+    lines.push(...roleLines[rootKey])
+  }
 
   lines.push('\n  /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */')
   lines.push(`  --panel-blur: ${translucent ? 'blur(16px)' : 'none'};`)
@@ -262,7 +297,8 @@ export function buildCSS(
     const darkShadows = kind === 'dark'
       ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
       : []
-    if (!entries.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
+    const themeRoles = roleLines[theme] ?? []
+    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
     const themeSelector = theme === 'light'
       ? (rootKind === 'dark' ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]')
       : theme === 'dark'
@@ -279,6 +315,10 @@ export function buildCSS(
         }
         lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${next};`)
       })
+    }
+    if (themeRoles.length) {
+      lines.push(`  /* Semantic roles (Categorical) — ${theme} */`)
+      lines.push(...themeRoles)
     }
     if (hasFoundationOverride) {
       lines.push(`  /* Foundations — ${theme} */`)

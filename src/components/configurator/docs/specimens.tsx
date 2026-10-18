@@ -8,7 +8,7 @@
 // retunes Docs, Components, and Preview together — inline styles by design
 // (see CLAUDE.md conventions).
 
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -21,6 +21,13 @@ import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorC
 import { useI18n } from '../../../lib/i18n'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
+import { SHADCN_SKELETON } from '../../../lib/featureFlags'
+import { recipeVarStyle } from '../../../lib/recipeVars'
+import { RECIPE_CSS } from '../../../lib/recipeStyles'
+import { Button as SkButton } from '../../escala-ui/button'
+import { InputField as SkInputField } from '../../escala-ui/input'
+import { Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter, CardLink as SkCardLink } from '../../escala-ui/card'
+import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../escala-ui/dialog'
 
 export type AxisValues = Record<string, string>
 
@@ -2856,9 +2863,157 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
 
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
+
+// ── shadcn skeleton (flag `?skeleton=shadcn`) ─────────────────────────────────
+// Phase 0 of design-plans/shadcn-component-skeleton.md. The same SPECIMENS
+// signature, so no caller changes: when the flag is on, Button · Input · Card ·
+// Modal render the components in `escala-ui/` and every paint comes from
+// `lib/componentRecipes.ts` (the table the Figma plugin reads too), through
+// the generated sheet. This block replaces the four legacy specimens once the
+// spike is approved.
+
+// Injected at module load, before the first render: mounted from an effect, the
+// first specimens painted unstyled and then transitioned into their colours.
+if (SHADCN_SKELETON && typeof document !== 'undefined' && !document.getElementById('escala-component-recipes')) {
+  const el = document.createElement('style')
+  el.id = 'escala-component-recipes'
+  el.textContent = RECIPE_CSS
+  document.head.appendChild(el)
+}
+
+/** The previewed theme's variables, on a box that does not take part in layout. */
+function RecipeScope({ t, children }: { t: PreviewTokens; children: ReactNode }) {
+  return <div style={{ display: 'contents', ...recipeVarStyle(t) }}>{children}</div>
+}
+
+const lower = (s: string | undefined, fallback: string) => (s ?? fallback).toLowerCase()
+
+function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
+  const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
+  const iconPx = iconForControlStep(sz.sizeKey, t)
+  const state = (v.State ?? 'Default') as 'Default'
+  const loading = v.State === 'Loading'
+  const intent = v.Color === 'Danger' ? 'danger' : v.Color === 'Success' ? 'success' : 'brand'
+  const slots = ICON_SLOTS.Button
+  return (
+    <RecipeScope t={t}>
+      <SkButton
+        variant={lower(v.Style, 'Solid') as 'solid'}
+        intent={intent}
+        size={lower(v.Size, 'MD') as 'md'}
+        forceState={state}
+        style={{ width: w, minWidth: w != null ? 0 : undefined, maxWidth: w != null ? '100%' : undefined }}
+      >
+        {loading && (
+          <span
+            className="inline-block animate-spin rounded-full"
+            style={{ width: iconPx - 2, height: iconPx - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
+            aria-hidden
+          />
+        )}
+        {!loading && icons?.leading && (
+          <PreviewIcon prefix={icons.prefix} concept={icons.leadingConcept ?? buttonLeadingConcept(v.Color)} size={iconPx} />
+        )}
+        <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
+        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />}
+      </SkButton>
+    </RecipeScope>
+  )
+}
+
+function SkeletonInputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
+  const { t: translate } = useI18n()
+  const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
+  const size = (v.Size ?? 'MD') as 'MD'
+  const control = parseFloat(sizeRoleOf(t, size === 'MD' ? 'control' : 'compact', '40px')) || 40
+  const iconPx = iconForControl(control, t)
+  const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
+  const error = v.State === 'Error'
+  const slots = ICON_SLOTS.Input
+  const lead = icons?.leading
+    ? <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconPx} />
+    : meta.lead != null ? <span>{meta.lead}</span> : undefined
+  return (
+    <RecipeScope t={t}>
+      <SkInputField
+        label={translate(meta.label)}
+        hint={hideHint ? undefined : translate(error ? 'This field is required.' : 'This is a hint text.')}
+        size={size}
+        forceState={v.State === 'Filled' ? undefined : (v.State as 'Default')}
+        type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
+        placeholder={meta.placeholder}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        leading={lead}
+        trailing={icons?.trailing ? <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} /> : undefined}
+        loading={v.State === 'Loading'
+          ? <span className="inline-block animate-spin rounded-full" style={{ width: 13, height: 13, border: '2px solid currentColor', borderTopColor: 'transparent' }} aria-hidden />
+          : undefined}
+        width={w ?? 260}
+      />
+    </RecipeScope>
+  )
+}
+
+function SkeletonCardSpecimen({ t, w, children, elev }: SpecimenProps) {
+  const shadow = elev === false ? 'none' : elev ? shadowOf(t, elev, 'none') : undefined
+  return (
+    <RecipeScope t={t}>
+      <SkCard style={{ width: w ?? 280, boxShadow: shadow }}>
+        {children ?? (
+          <>
+            <SkCardHeader>
+              <SkCardTitle>Card title</SkCardTitle>
+              <SkCardDescription>Supporting copy that explains the grouped content inside this surface.</SkCardDescription>
+            </SkCardHeader>
+            <SkCardFooter>
+              <SkCardLink>Learn more →</SkCardLink>
+            </SkCardFooter>
+          </>
+        )}
+      </SkCard>
+    </RecipeScope>
+  )
+}
+
+function SkeletonModalSpecimen({ t }: { t: PreviewTokens }) {
+  return (
+    <RecipeScope t={t}>
+      <SkDialog open modal={false}>
+        <SkDialogContent inline style={{ width: 320 }} closeIcon={<PreviewIcon concept="close" size={16} />}>
+          <SkDialogHeader>
+            <SkDialogTitle>Delete project?</SkDialogTitle>
+            <SkDialogDescription>This action can't be undone. All tokens in this project will be removed.</SkDialogDescription>
+          </SkDialogHeader>
+          <SkDialogFooter>
+            <SkButton variant="outline" intent="brand" size="sm">Cancel</SkButton>
+            <SkButton variant="solid" intent="danger" size="sm">Delete</SkButton>
+          </SkDialogFooter>
+        </SkDialogContent>
+      </SkDialog>
+    </RecipeScope>
+  )
+}
+
+/** With the flag on, the skeleton; off, or with no projected architecture
+ *  (`recipeVarStyle` needs Categorical), the legacy specimen. */
+function withSkeleton<P extends { t: PreviewTokens }>(
+  legacy: (p: P) => ReactNode,
+  skeleton: (p: P) => ReactNode,
+): (p: P) => ReactNode {
+  if (!SHADCN_SKELETON) return legacy
+  // Elements, not calls: the two branches use different hooks, so each must
+  // be its own component or a theme without a projection would reorder them.
+  const Legacy = legacy as (p: P) => ReactElement
+  const Skeleton = skeleton as (p: P) => ReactElement
+  return (p: P) => (p.t.archTokens ? createElement(Skeleton, p) : createElement(Legacy, p))
+}
+
 export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
-  Button: ButtonSpecimen,
+  Button: withSkeleton(ButtonSpecimen, SkeletonButtonSpecimen),
   ButtonGroup: ButtonGroupSpecimen,
   CloseButton: CloseButtonSpecimen,
   FABButton: FABButtonSpecimen,
@@ -2866,7 +3021,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TextLink: TextLinkSpecimen,
   AppStoreBadge: AppStoreBadgeSpecimen,
   // Form Controls
-  Input: InputSpecimen,
+  Input: withSkeleton(InputSpecimen, SkeletonInputSpecimen),
   InputGroup: InputGroupSpecimen,
   Textarea: TextareaSpecimen,
   InputOTP: InputOTPSpecimen,
@@ -2897,11 +3052,11 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   FileFormat: FileFormatSpecimen,
   // Content & Surfaces
   Avatar: AvatarSpecimen,
-  Card: CardSpecimen,
+  Card: withSkeleton(CardSpecimen, SkeletonCardSpecimen),
   Divider: DividerSpecimen,
   Accordion: AccordionSpecimen,
   AspectRatio: AspectRatioSpecimen,
-  Modal: ModalSpecimen,
+  Modal: withSkeleton(ModalSpecimen, SkeletonModalSpecimen),
   Popover: PopoverSpecimen,
   Tooltip: TooltipSpecimen,
   InfoTooltip: InfoTooltipSpecimen,

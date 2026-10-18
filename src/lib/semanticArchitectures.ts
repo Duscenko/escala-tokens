@@ -686,6 +686,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // tint over any other surface. Everything reading text on it composites
   // first — see `audit.ts`'s `backdrop`.
   { group: 'surface', key: 'selected', light: '{accent-a.3}', dark: '{accent-a.3}' },
+  // Pressed twin of `selected`, the brand counterpart of `status.*.surface-pressed`
+  // ({fam-a.5}, two steps deeper). A soft brand button presses into it.
+  { group: 'surface', key: 'selected-pressed', light: '{accent-a.5}', dark: '{accent-a.5}' },
   // Inverse surface is dark-on-light and light-on-dark by definition.
   // Dark used `{neutral.4}` to dodge `{neutral-dark.12}`'s near-white flash —
   // that only worked while `neutral` still meant the LIGHT ramp. On a themed
@@ -848,12 +851,26 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // fill is actually the severity's colour in both. `{on:fam.solid}` follows it.
   { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.solid}' },
   { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.solid}' },
+  // Hover / pressed of the solid fill, SOLVED like `action.primary.hover` /
+  // `.pressed` ({step:<fam>+n}: n tones past the RESOLVED solid that still carry
+  // the solid's own ink). Before these existed, a Danger / Success button's
+  // hover was its rest fill at 88 % opacity in Figma and a chroma-darken on the
+  // web — two different numbers, neither a token. See
+  // design-plans/shadcn-component-skeleton.md (E15).
+  { group: 'status', key: 'critical.surface-solid-hover',   light: '{step:error+1}', dark: '{step:error+1}' },
+  { group: 'status', key: 'critical.surface-solid-pressed', light: '{step:error+2}', dark: '{step:error+2}' },
   { group: 'status', key: 'warning.surface-solid',  light: '{warning.solid}',     dark: '{warning.solid}' },
   { group: 'status', key: 'warning.on-solid',        light: '{on:warning.solid}', dark: '{on:warning.solid}' },
+  { group: 'status', key: 'warning.surface-solid-hover',   light: '{step:warning+1}', dark: '{step:warning+1}' },
+  { group: 'status', key: 'warning.surface-solid-pressed', light: '{step:warning+2}', dark: '{step:warning+2}' },
   { group: 'status', key: 'success.surface-solid',  light: '{success.solid}',     dark: '{success.solid}' },
   { group: 'status', key: 'success.on-solid',        light: '{on:success.solid}', dark: '{on:success.solid}' },
+  { group: 'status', key: 'success.surface-solid-hover',   light: '{step:success+1}', dark: '{step:success+1}' },
+  { group: 'status', key: 'success.surface-solid-pressed', light: '{step:success+2}', dark: '{step:success+2}' },
   { group: 'status', key: 'info.surface-solid',     light: '{info.solid}',        dark: '{info.solid}' },
   { group: 'status', key: 'info.on-solid',           light: '{on:info.solid}',    dark: '{on:info.solid}' },
+  { group: 'status', key: 'info.surface-solid-hover',   light: '{step:info+1}', dark: '{step:info+1}' },
+  { group: 'status', key: 'info.surface-solid-pressed', light: '{step:info+2}', dark: '{step:info+2}' },
   // Border — strokes, split by JOB rather than by weight: decoration (no
   // floor) vs. the control boundary (WCAG 1.4.11 ≥3:1 AND APCA Lc ≥45, the
   // `ui-component` intent, via `{ui:…}` — see `uiBoundaryRef`). `default` used
@@ -988,7 +1005,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
 // in the table, the export and Figma. Stable in-place sort — nothing else in the
 // array moves.
 const STATUS_SEVERITY_ORDER = ['critical', 'success', 'warning', 'info']
-const STATUS_SLOT_ORDER = ['surface', 'surface-pressed', 'surface-solid', 'on-solid', 'content', 'border', 'border-strong']
+const STATUS_SLOT_ORDER = ['surface', 'surface-pressed', 'surface-solid', 'surface-solid-hover', 'surface-solid-pressed', 'on-solid', 'content', 'border', 'border-strong']
 {
   const idx = (r: { group: string; key: string }) => {
     const [sev, ...slot] = r.key.split('.')
@@ -1029,6 +1046,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
+  'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
   'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} — a muted inverse chip, not the dark ramp's near-white step.",
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
@@ -1059,6 +1077,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes — solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
   'status.critical.content': '[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix\'s chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
+  'status.critical.surface-solid-hover': '[ROLE: Feedback Background Solid Hover] Hover of status.critical.surface-solid (a critical button). SOLVED ({step:error+1}) — one tone past the resolved solid that still carries status.critical.on-solid.',
+  'status.critical.surface-solid-pressed': '[ROLE: Feedback Background Solid Pressed] Pressed of status.critical.surface-solid. SOLVED ({step:error+2}).',
   'status.warning.surface': '[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.',
   'status.warning.content': '[ROLE: Feedback Text] Affects the text and glyph inside a warning alert, banner or toast. Ink on status.warning.surface. {warning.11} in both themes — the chromatic-text step, not tone 12. Often byte-identical to warning.border-strong and warning.surface-solid: the warning ramp has one tone that is both chromatic text, the 3:1 boundary and the solved solid. Three roles, one step — keep all three names.',
   'status.success.surface': '[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.',
@@ -1067,10 +1087,16 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.info.content': '[ROLE: Feedback Text] Affects the text and glyph inside an informational alert, banner or toast. Ink on status.info.surface. {info.11} in both themes — the chromatic-text step, not tone 12.',
   'status.warning.surface-solid': "[ROLE: Feedback Background Solid] Affects warning badges, pills and buttons. Solid fill. Pair with status.warning.on-solid. {warning.solid} in both themes — solved per appearance. On this ramp the solid lands on tone 11, the same step as content and border-strong. Do not delete the role because of that collision.",
   'status.warning.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.warning.surface-solid. Solved per theme against that fill, never assumed white — a warning solid is usually light enough to need dark ink.',
+  'status.warning.surface-solid-hover': '[ROLE: Feedback Background Solid Hover] Hover of status.warning.surface-solid (a warning button). SOLVED ({step:warning+1}) — one tone past the resolved solid that still carries status.warning.on-solid.',
+  'status.warning.surface-solid-pressed': '[ROLE: Feedback Background Solid Pressed] Pressed of status.warning.surface-solid. SOLVED ({step:warning+2}).',
   'status.success.surface-solid': "[ROLE: Feedback Background Solid] Affects success badges, pills and buttons. Solid fill. Pair with status.success.on-solid. {success.solid} in both themes — solved per appearance.",
   'status.success.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.success.surface-solid. Solved per theme against that fill.',
+  'status.success.surface-solid-hover': '[ROLE: Feedback Background Solid Hover] Hover of status.success.surface-solid (a success button). SOLVED ({step:success+1}) — one tone past the resolved solid that still carries status.success.on-solid.',
+  'status.success.surface-solid-pressed': '[ROLE: Feedback Background Solid Pressed] Pressed of status.success.surface-solid. SOLVED ({step:success+2}).',
   'status.info.surface-solid': "[ROLE: Feedback Background Solid] Affects info badges, pills and buttons. Solid fill. Pair with status.info.on-solid. {info.solid} in both themes — solved per appearance.",
   'status.info.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.info.surface-solid. Solved per theme against that fill.',
+  'status.info.surface-solid-hover': '[ROLE: Feedback Background Solid Hover] Hover of status.info.surface-solid (a info button). SOLVED ({step:info+1}) — one tone past the resolved solid that still carries status.info.on-solid.',
+  'status.info.surface-solid-pressed': '[ROLE: Feedback Background Solid Pressed] Pressed of status.info.surface-solid. SOLVED ({step:info+2}).',
   'status.critical.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a critical message — the edge of a MESSAGE, not a control boundary, so it is not measured for WCAG 1.4.11 (the severity is carried by status.critical.content and the glyph). An alpha primitive, {error-a.6}, because the tint it sits on is alpha too: a solid stroke over a translucent fill composites against a different backdrop than the fill and the two drift apart on any non-page surface. For a stroke that DOES bear a boundary obligation — an invalid input — use status.critical.border-strong.',
   'status.warning.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a warning message. {warning-a.6}. See status.critical.border for why it is alpha and why it carries no contrast floor.',
   'status.success.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a success message. {success-a.6}. See status.critical.border.',

@@ -43,7 +43,7 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 63 roles across five groups', () => {
+  it('ships 72 roles across five groups', () => {
     // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
     // semantic-border audit re-homed the severity strokes:
     //
@@ -57,7 +57,10 @@ describe('the categorical catalogue is complete', () => {
     //  four severities). Net +2 → 64; then `border.control` was folded into
     //  `border.strong` (one boundary role, not two) → 63. `action.ghost` is now neutral+brand only,
     //  which is the correct scope: intents of a BUTTON, not severities of a MESSAGE.
-    expect(roleIds).toHaveLength(63)
+    //  +9 (2026-10-18): hover/pressed of every `status.*.surface-solid` and
+    //  `surface.selected-pressed`, so component recipes need no opacity (E15 in
+    //  design-plans/shadcn-component-skeleton.md) → 72.
+    expect(roleIds).toHaveLength(72)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -68,7 +71,7 @@ describe('the categorical catalogue is complete', () => {
   // `status.info.surface-solid` alone would have made Info the second-best
   // equipped severity while warning and success still had none.
   it('gives every severity the identical role shape', () => {
-    const SHAPE = ['surface', 'surface-pressed', 'content', 'surface-solid', 'on-solid', 'border', 'border-strong']
+    const SHAPE = ['surface', 'surface-pressed', 'content', 'surface-solid', 'surface-solid-hover', 'surface-solid-pressed', 'on-solid', 'border', 'border-strong']
     for (const sev of ['critical', 'warning', 'success', 'info']) {
       const own = roleIds.filter((id) => id.startsWith(`status.${sev}.`))
         .map((id) => id.slice(`status.${sev}.`.length)).sort()

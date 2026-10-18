@@ -16,6 +16,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 import { buildVariableDescriptions } from './tokenDescriptions'
+import { serializeRecipes } from './componentRecipes'
 import {
   clampFigmaSyncModes,
   figmaSyncModeId,
@@ -788,6 +789,11 @@ export function generateTokenJSON(
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
+    // Which token paints which part of each component — the table the web
+    // stylesheet is generated from (lib/componentRecipes.ts). The plugin binds
+    // the same roles, so Figma and the web cannot drift. Additive: no
+    // schemaVersion bump (an older plugin ignores it, like `shadowsDark`).
+    componentRecipes: serializeRecipes(),
     // Figma Variable.description copy — collection → var name → text.
     // Additive: older plugins ignore. Built from ALL_ROLES, CATEGORICAL_ROLE_COMMENTS,
     // LAYOUT_ROLES, TYPE_ROLES (same catalogues as the Semantics table / Skill).
