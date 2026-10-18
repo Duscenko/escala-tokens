@@ -22,7 +22,7 @@ import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, darkShadow, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, colorAtHue, darkShadow, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
@@ -2196,7 +2196,7 @@ export default function ThemeQuickSettingsRail({
         key: neutralKey,
         label: `${labelRoot} Neutral`,
         base: linkedNeutral,
-        scale: generateColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.light, 'light', s.neutralTint),
+        scale: generateLightNeutralScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.light, s.neutralTint),
         darkScale: generateDarkColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.dark, s.neutralTint),
       })
       gray = neutralKey

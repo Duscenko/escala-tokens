@@ -12,7 +12,7 @@
 // mirrors what `mintTheme` would produce, minus the commit.
 
 import {
-  generateColorScale,
+  generateColorScale, generateLightNeutralScale,
   generateDarkColorScale,
   generateFamilyDarkScale,
 } from './colorUtils'
@@ -214,7 +214,7 @@ export function stylePreviewStore(
     infoColor: st.info,
     primaryScale: generateColorScale(preset.accent, alg, shift, light),
     primaryDarkScale: generateFamilyDarkScale(preset.accent, alg, shift, dark),
-    grayLightScale: generateColorScale(h.neutral, alg, shift, light, 'light', tint),
+    grayLightScale: generateLightNeutralScale(h.neutral, alg, shift, light, tint),
     grayDarkScale: generateDarkColorScale(h.neutral, alg, shift, dark, tint),
     errorScale: generateColorScale(st.error, alg, shift, light),
     errorDarkScale: generateFamilyDarkScale(st.error, alg, shift, dark),

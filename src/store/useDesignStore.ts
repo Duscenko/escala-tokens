@@ -35,7 +35,7 @@ import {
 } from '../lib/layoutTokens'
 import type { PhosphorWeight } from '../lib/phosphorIcons'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
-import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
+import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale, generateLightNeutralScale, lightNeutralSolid } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 89,
+      version: 90,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3451,6 +3451,45 @@ export const useDesignStore = create<DesignStore>()(
           stepHeadings(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) stepHeadings(sys?.snapshot)
+          }
+        }
+        if (version < 90) {
+          // v89→v90: a near-black Neutral used to be pinned to tone 9 of the
+          // LIGHT ramp, above the text tones (see `lightNeutralSolid`).
+          // Rebuild only the light ramps whose seed needs the re-anchor, for the
+          // system gray and every custom family a theme uses as its gray slot.
+          // Each is rebuilt on the page it already grows from (its tone 1 — the
+          // page verbatim for a neutral). Every other ramp is left byte-for-byte.
+          const reanchor = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const algo = state.colorAlgorithm ?? 'default'
+            const shift = typeof state.contrastShift === 'number' ? state.contrastShift : 0
+            const tint = state.neutralTint ?? DEFAULT_NEUTRAL_TINT
+            const rebuild = (seed: unknown, page: unknown) => {
+              if (typeof seed !== 'string' || typeof page !== 'string') return null
+              try {
+                if (lightNeutralSolid(seed, page) === seed) return null
+                return generateLightNeutralScale(seed, algo, shift, page, tint)
+              } catch { return null }
+            }
+            const root = rebuild(state.grayBaseColor, state.pageBackground ?? state.grayLightScale?.[1])
+            if (root) state.grayLightScale = root
+            const grayKeys = new Set<string>()
+            for (const src of Object.values(state.themeSources ?? {})) {
+              const key = (src as any)?.gray
+              if (typeof key === 'string') grayKeys.add(key)
+            }
+            if (Array.isArray(state.customColors)) {
+              for (const fam of state.customColors) {
+                if (!fam || !grayKeys.has(fam.key)) continue
+                const next = rebuild(fam.base, fam.scale?.[1] ?? state.pageBackground)
+                if (next) fam.scale = next
+              }
+            }
+          }
+          reanchor(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) reanchor(sys?.snapshot)
           }
         }
         return persisted

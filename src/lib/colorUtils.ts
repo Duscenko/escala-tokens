@@ -615,6 +615,56 @@ export function generateFamilyDarkScale(
  *     itself derives from the accent), so the whole dark ramp carries the
  *     accent's tint.
  */
+/**
+ * The tone-9 SOLID for a LIGHT neutral ramp — the light twin of what
+ * `generateDarkColorScale` already does for dark.
+ *
+ * `generateColorScale` writes its seed to tone 9 verbatim, and that is right
+ * for a brand: a navy or black button IS the brand. A NEUTRAL seed means
+ * something else — "this grey family": its hue and how tinted it is, not where
+ * tone 9 must land. Picked near-black (Flow's `#121316`, reported from a real
+ * export), tone 9 sat FURTHER from the page than the text tones 11–12, which
+ * are solved by contrast, so the ramp ran 9 #121316 · 10 #09090c · 11 #67676a
+ * · 12 #333335. Every role on 9 broke with it: `content.subtle` came out darker
+ * than `content.primary`, the flat catalogue's tertiary and quaternary inks
+ * went near-black.
+ *
+ * So when the seed sits at or beyond where tone 11 lands, tone 9 moves to
+ * a mid grey — the first lightness that works
+ * as a non-text boundary (WCAG 3:1 + APCA Lc 45, where Radix's own gray 9
+ * sits) — keeping the seed's hue and chroma. Any seed short of that floor is
+ * returned untouched, so every neutral the golden ramps cover keeps its ramp.
+ */
+export function lightNeutralSolid(neutralHex: string, background = '#ffffff'): string {
+  try {
+    const page = chroma(background).hex()
+    const seed = chroma(neutralHex).hex()
+    const [seedL, c, rawH] = chroma(seed).oklch()
+    const h = Number.isNaN(rawH) ? 0 : rawH
+    // Where tone 11 lands for this hue (same target and chroma `buildScale`
+    // uses). A seed at or past it cannot sit below 11 in the ramp.
+    const tone11 = lightnessForContrast({ wcag: 4.5, apcaLc: 75 }, h, Math.max(0, c) * 0.72, page, true)
+    if (seedL > chroma(tone11).oklch()[0] + 0.02) return neutralHex
+    return lightnessForContrast({ wcag: 3, apcaLc: 45 }, h, Math.max(0, c), page, true)
+  } catch {
+    return neutralHex
+  }
+}
+
+/** The LIGHT neutral ramp: `generateColorScale` on `lightNeutralSolid`. Every
+ *  call site that owns a NEUTRAL (the system's gray, a theme's gray slot) uses
+ *  this, never `generateColorScale` directly — the dark side already goes
+ *  through `generateDarkColorScale`. */
+export function generateLightNeutralScale(
+  neutralHex: string,
+  algorithm: ColorAlgorithm = 'default',
+  contrastShift = 0,
+  background?: string,
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
+): Record<number, string> {
+  return generateColorScale(lightNeutralSolid(neutralHex, background), algorithm, contrastShift, background, 'light', tint)
+}
+
 export function generateDarkColorScale(
   neutralHex: string,
   algorithm: ColorAlgorithm = 'default',

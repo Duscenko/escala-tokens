@@ -9,7 +9,7 @@ import type { ThemeFoundationOverride } from '../../lib/themeFoundations'
 import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
 import {
-  BASE_TONE, backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, readableInk,
+  BASE_TONE, backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, readableInk,
   type NeutralTint,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
@@ -598,7 +598,9 @@ export function ThemeForm({
           ? generateDarkColorScale(hex, colorAlgorithm, shift, themePages.dark, tint)
           : generateFamilyDarkScale(hex, colorAlgorithm, shift, themePages.dark)
       }
-      return generateColorScale(hex, colorAlgorithm, shift, themePages.light, 'light', isNeutral ? tint : undefined)
+      return isNeutral
+        ? generateLightNeutralScale(hex, colorAlgorithm, shift, themePages.light, tint)
+        : generateColorScale(hex, colorAlgorithm, shift, themePages.light, 'light')
     } catch { return {} }
   }
   const deps = [dark, colorAlgorithm, shift, themePages.light, themePages.dark, tint]

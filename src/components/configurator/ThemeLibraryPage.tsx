@@ -8,7 +8,7 @@ import { byRecent } from '../../lib/themeActivity'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
-import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
+import { backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
 import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
@@ -722,7 +722,7 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
   const dark = backgroundFromBase(slots.gray, 'dark', tint)
   const alg = store.colorAlgorithm
   const gen = (hex: string, neutral = false) =>
-    generateColorScale(hex, alg, shift, light, 'light', neutral ? tint : undefined)
+    neutral ? generateLightNeutralScale(hex, alg, shift, light, tint) : generateColorScale(hex, alg, shift, light, 'light')
   const genDark = (hex: string, neutral = false) =>
     neutral
       ? generateDarkColorScale(hex, alg, shift, dark, tint)

@@ -15,7 +15,7 @@
  */
 
 import {
-  generateColorScale,
+  generateColorScale, generateLightNeutralScale,
   generateFamilyDarkScale,
   generateDarkColorScale,
   backgroundFromBase,
@@ -58,7 +58,7 @@ export function buildSystem(name: string, brand: string, algorithm: ColorAlgorit
   const dark = (hex: string) => generateFamilyDarkScale(hex, algorithm, 0, darkBg)
 
   const scales: GlobalScales = {
-    gray: generateColorScale(neutral, algorithm, 0, lightBg, 'light', tint),
+    gray: generateLightNeutralScale(neutral, algorithm, 0, lightBg, tint),
     grayDark: generateDarkColorScale(neutral, algorithm, 0, darkBg, tint),
     brand: light(brand),
     error: light(states.error),

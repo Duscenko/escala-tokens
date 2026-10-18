@@ -5,7 +5,7 @@
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemeSources } from '../store/useDesignStore'
 import { FAMILY_SLOTS, type FamilySlot } from './themeSources'
 import {
-  generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony,
+  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony,
   type NeutralTint,
 } from './colorUtils'
 import { slugify } from './utils'
@@ -97,7 +97,7 @@ function scalesForSlot(
 ) {
   if (slot === 'gray') {
     return {
-      scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light, 'light', neutralTint),
+      scale: generateLightNeutralScale(hex, s.colorAlgorithm, rampShift, pages.light, neutralTint),
       darkScale: generateDarkColorScale(hex, s.colorAlgorithm, rampShift, pages.dark, neutralTint),
     }
   }

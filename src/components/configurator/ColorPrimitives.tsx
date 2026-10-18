@@ -20,7 +20,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
-  NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
+  NAMING_SCHEMES, BASE_TONE, generateColorScale, generateLightNeutralScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
   neutralFromBrand, readableInk,
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
@@ -1606,7 +1606,9 @@ export default function ColorPrimitives({
         : { light: pageBackground, dark: darkBackground, isGray: family.key === 'neutral' }
       const isNeutral = family.key === 'neutral' || pages.isGray
       return {
-        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pages.light, 'light', isNeutral ? neutralTint : undefined),
+        light: isNeutral
+          ? generateLightNeutralScale(family.base, colorAlgorithm, contrastShift, pages.light, neutralTint)
+          : generateColorScale(family.base, colorAlgorithm, contrastShift, pages.light, 'light'),
         dark: isNeutral
           ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, pages.dark, neutralTint)
           : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, pages.dark),

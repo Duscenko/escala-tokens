@@ -28,7 +28,7 @@ import {
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
-import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
+import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
 import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
@@ -434,7 +434,7 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     : generateColorScale(accent, 'radix', shift, pageLight)
   const neutral = kind === 'dark'
     ? generateDarkColorScale(gray, 'radix', shift, pageDark, tint)
-    : generateColorScale(gray, 'radix', shift, pageLight, 'light', tint)
+    : generateLightNeutralScale(gray, 'radix', shift, pageLight, tint)
   const family = (hex: string) => kind === 'dark'
     ? generateFamilyDarkScale(hex, 'radix', shift, pageDark)
     : generateColorScale(hex, 'radix', shift, pageLight)

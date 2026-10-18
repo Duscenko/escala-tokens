@@ -6,7 +6,7 @@
 // detected semantic values overlay them.
 
 import {
-  generateColorScale, generateDarkColorScale, recommendStateColors, neutralFromBrand,
+  generateColorScale, generateLightNeutralScale, generateDarkColorScale, recommendStateColors, neutralFromBrand,
 } from '../colorUtils'
 import {
   ALL_ROLES, recHexFor, sourceScaleFor, normalizeThemeValue, type GlobalScales,
@@ -66,7 +66,7 @@ export function materializeImport(analysis: ImportAnalysis, opts: MaterializeOpt
     snap.grayLightScale = { ...f.neutral.scale }
   } else if (f.accent) {
     snap.grayBaseColor = neutralFromBrand(f.accent.baseHex, snap.neutralTint)
-    snap.grayLightScale = generateColorScale(snap.grayBaseColor, algo, 0, snap.pageBackground)
+    snap.grayLightScale = generateLightNeutralScale(snap.grayBaseColor, algo, 0, snap.pageBackground)
   }
   // (No accent and no neutral → the default Figma gray ramp stays.)
 

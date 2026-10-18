@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type CustomColor, type ThemeSources } from '../store/useDesignStore'
 import {
-  generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
+  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
   recommendStateColors, neutralFromBrand, BASE_TONE, type ColorAlgorithm, type NeutralTint,
 } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
@@ -102,7 +102,9 @@ function customScalePair(
   darkHex?: string,
 ) {
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light', isGray ? s.neutralTint : undefined),
+    scale: isGray
+      ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint)
+      : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light'),
     darkScale: isGray
       ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
       : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark),
@@ -209,7 +211,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light',
     // chroma", which is only meaningful for the family the page is DERIVED
     // from — same hue. Feeding it to the accent would paint the page's
     // chroma at the accent's hue and turn its step 2 into a saturated fill.
-    const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, 'light', neutralTint) : null
+    const gScale = neutral ? generateLightNeutralScale(neutral, colorAlgorithm, contrastShift, nextBg, neutralTint) : null
     // The dark twin — same neutral (so it carries the accent's hue), but grown
     // out of the dark page instead of the light one.
     const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null
@@ -357,7 +359,7 @@ export function ensureColorScales() {
     if (!Object.keys(s.successScale).length)   s.setSuccessScale(gen(s.successColor))
     if (!Object.keys(s.infoScale).length)      s.setInfoScale(gen(s.infoColor))
     // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
-    if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
+    if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint))
     // Dark twins — backfills systems created before the two-scale model.
     if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(accentDarkBase(s)))
     if (empty(s.errorDarkScale))   s.setErrorDarkScale(genDark(s.errorColor))
@@ -434,7 +436,7 @@ export function useRegenerateScalesOnScaleSettings() {
       // Gray's dark twin is a genuine dark-neutral ramp (anchored to the dark
       // page), not the generic family transform — same split useEnsureColorScales
       // and the accent applier use.
-      s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
+      s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint))
       s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
       s.customColors.forEach((c) => {
         const pages = resolveFamilyPages(s, c.key)
@@ -459,7 +461,7 @@ export function useApplyPageBackground() {
     try {
       const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, hex)
       const brandScale = gen(s.primaryColor)
-      const grayScale = gen(s.grayBaseColor)
+      const grayScale = generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex, s.neutralTint)
       // Generate everything first — an invalid base throws before any write.
       const errorScale = gen(s.errorColor)
       const warningScale = gen(s.warningColor)
@@ -541,7 +543,7 @@ export function useApplyGrayColor() {
         // neutral edit shipped that family's whole dark ramp missing.
         s.updateCustomColor(refs.gray, {
           base: hex,
-          scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, bg, 'light', s.neutralTint),
+          scale: generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, bg, s.neutralTint),
           darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint),
         })
         const pages = { light: bg, dark: darkBg }
@@ -563,7 +565,7 @@ export function useApplyGrayColor() {
       // Generate everything first — an invalid base throws before any write.
       // `hex` IS the neutral here, so its two ramps take the tint; `gen` (used
       // for brand/status/customs below) deliberately doesn't.
-      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, bg, 'light', s.neutralTint)
+      const scale = generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, bg, s.neutralTint)
       const dScale = generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint)
       const brandScale = gen(s.primaryColor)
       const errorScale = gen(s.errorColor)
