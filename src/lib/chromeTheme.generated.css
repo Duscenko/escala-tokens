@@ -2,30 +2,54 @@
  * GENERATED FILE — do not edit by hand.
  * Regenerate with `npx tsx scripts/gen-chrome-theme.ts`.
  *
- * Chrome page / surface / elevated / hairline / primary+muted ink, resolved
- * from the Categorical projection of the default system (accent #2970ff,
- * radix). `--fg-faint` is not generated: it stays hand-tuned in index.css
- * as decorative metadata ink. See `src/lib/chromeTheme.ts`.
+ * Platform chrome resolved from the platform's own foundations
+ * (`src/lib/platformFoundations.json`, accent #7838f9).
+ * `--fg-faint` is not generated: it stays hand-tuned in index.css.
+ * See `src/lib/chromeTheme.ts`.
  */
 
 :root, .light {
-  --app: #fdfdff; /* surface.page ← neutral.1 */
-  --surface: #f1f1f2; /* surface.layer-1 ← neutral.2 */
-  --elevated: #e5e6e8; /* surface.layer-2 ← neutral.3 */
-  --fg: #33353a; /* content.primary ← neutral.12 */
-  --fg-muted: #686c76; /* content.secondary ← neutral.11 */
+  --app: #f9fafc; /* surface.page */
+  --nav: #f9fafc; /* surface.page */
+  --surface: #e4e5e6; /* surface.layer-1 */
+  --tab-bar: #e4e5e6; /* surface.layer-1 */
+  --rail-section: #e4e5e6; /* surface.layer-1 */
+  --panel: #e4e5e6; /* surface.layer-1 */
+  --chip-rest: #e4e5e6; /* surface.layer-1 */
+  --elevated: #cfd0d2; /* surface.layer-2 */
+  --side-panel: #cfd0d2; /* surface.layer-2 */
+  --input-bg: #f9fafc; /* surface.input */
+  --fg: #333335; /* content.primary */
+  --fg-muted: #67676a; /* content.secondary */
+  --line: #0000001a; /* border.subtle */
+  --line-strong: #00000026; /* border.default */
+  --line-emphasis: #00000080; /* border.strong */
+  --status-danger: #b53a30; /* status.critical.content */
+  --status-success: #05763c; /* status.success.content */
+  --status-warning: #965800; /* status.warning.content */
+  --status-info: #1968b4; /* status.info.content */
   --line-alpha: #0000001a; /* tracks --line */
-  --line: #0000001a; /* border.subtle ← black-a.2 */
-  --line-strong: #00000026; /* border.default ← black-a.3 */
 }
 
 .dark {
-  --app: #0e0f13; /* surface.page ← neutral-dark.1 */
-  --surface: #151515; /* surface.layer-1 ← neutral-dark.2 */
-  --elevated: #1b1b1c; /* surface.layer-2 ← neutral-dark.3 */
-  --fg: #e3e4e7; /* content.primary ← neutral-dark.12 */
-  --fg-muted: #c9ccd1; /* content.secondary ← neutral-dark.11 */
+  --app: #131416; /* surface.page */
+  --nav: #131416; /* surface.page */
+  --surface: #191a1b; /* surface.layer-1 */
+  --tab-bar: #191a1b; /* surface.layer-1 */
+  --rail-section: #191a1b; /* surface.layer-1 */
+  --panel: #191a1b; /* surface.layer-1 */
+  --chip-rest: #191a1b; /* surface.layer-1 */
+  --elevated: #1f1f21; /* surface.layer-2 */
+  --side-panel: #1f1f21; /* surface.layer-2 */
+  --input-bg: #131416; /* surface.input */
+  --fg: #e4e5e6; /* content.primary */
+  --fg-muted: #cccccf; /* content.secondary */
+  --line: #ffffff1a; /* border.subtle */
+  --line-strong: #ffffff26; /* border.default */
+  --line-emphasis: #ffffff99; /* border.strong */
+  --status-danger: #ffbcb0; /* status.critical.content */
+  --status-success: #83e09e; /* status.success.content */
+  --status-warning: #ffc174; /* status.warning.content */
+  --status-info: #9ed2ff; /* status.info.content */
   --line-alpha: #ffffff1a; /* tracks --line */
-  --line: #ffffff1a; /* border.subtle ← white-a.2 */
-  --line-strong: #ffffff26; /* border.default ← white-a.3 */
 }

@@ -23,9 +23,10 @@ import type { NeutralTint } from '../../lib/colorUtils'
 
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 
-/** The raised panel the roles and the accessibility readout sit on: a faint
- *  fill lit from the top edge only (Figma 211:723). */
-const CARD = 'flex flex-col gap-3 rounded-2xl border-t border-line bg-fg/[0.03] px-2.5 pb-2.5 pt-[11.75px]'
+/** The group the roles and the accessibility readout sit in. No fill of its
+ *  own: it sits on the inspector's `surface.layer-2`, and its rows carry
+ *  `layer-1` (platform foundations). */
+const CARD = 'flex flex-col gap-3 rounded-2xl px-2.5 pb-2.5 pt-[11.75px]'
 
 export interface ColorRoleRow {
   id: ColorRoleId
@@ -141,14 +142,15 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
   }
 
   // One row per role (Figma 212:1046): swatch · hex, then the role's name in
-  // its own inset pill with the lock. The selected row is the one the slider
-  // above edits, so it carries a full edge where the rest are lit from the top.
+  // its own inset pill with the lock. Rows are `surface.layer-1` on the
+  // `layer-2` panel (platform foundations); the selected row — the one the
+  // slider above edits — carries the `border.strong` edge.
   return (
     <div
       className={`flex h-[40.5px] items-center gap-2 rounded-[10px] px-[6.25px] transition-colors duration-150 ${
         on
-          ? 'bg-fg/[0.09] shadow-[inset_0_0_0_1px_var(--line-strong)]'
-          : 'border-t border-fg/[0.15] bg-fg/[0.06] hover:bg-fg/[0.08]'
+          ? 'bg-surface shadow-[inset_0_0_0_1.5px_var(--line-emphasis)]'
+          : 'bg-surface hover:shadow-[inset_0_0_0_1px_var(--line)]'
       }`}
     >
       <div className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2" onClick={() => { onSelect(); input.current?.focus() }}>

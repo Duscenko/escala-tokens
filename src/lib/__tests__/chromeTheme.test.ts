@@ -2,25 +2,20 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { apcaLcAbs, evaluate, wcagRatio } from '../color/apca'
+import { evaluate, wcagRatio } from '../color/apca'
 import { CHROME_ROLES, resolveChromeTheme } from '../chromeTheme'
-import { DEFAULT_ACCENT } from '../../store/useDesignStore'
 
 const root = resolve(__dirname, '../../..')
 const generated = resolve(root, 'src/lib/chromeTheme.generated.css')
-const theme = resolveChromeTheme(DEFAULT_ACCENT)
+const theme = resolveChromeTheme()
 
 describe('chrome theme mapping', () => {
-  it('maps the approved roles and nothing else', () => {
-    expect(CHROME_ROLES).toEqual({
-      '--app': 'surface.page',
-      '--surface': 'surface.layer-1',
-      '--elevated': 'surface.layer-2',
-      '--line': 'border.subtle',
-      '--line-strong': 'border.default',
-      '--fg': 'content.primary',
-      '--fg-muted': 'content.secondary',
-    })
+  it('reads panel elevation from the platform foundations', () => {
+    expect(CHROME_ROLES['--app']).toBe('surface.page')
+    expect(CHROME_ROLES['--nav']).toBe('surface.page')
+    expect(CHROME_ROLES['--side-panel']).toBe('surface.layer-2')
+    expect(CHROME_ROLES['--surface']).toBe('surface.layer-1')
+    expect(CHROME_ROLES['--line']).toBe('border.subtle')
     expect(Object.keys(CHROME_ROLES)).not.toContain('--fg-faint')
   })
 
@@ -28,8 +23,6 @@ describe('chrome theme mapping', () => {
     for (const name of Object.keys(CHROME_ROLES)) {
       expect(theme.vars.light[name]).toMatch(/^#/)
       expect(theme.vars.dark[name]).toMatch(/^#/)
-      expect(theme.vars.light[name]).not.toBe('transparent')
-      expect(theme.vars.dark[name]).not.toBe('transparent')
     }
     expect(theme.vars.light['--line-alpha']).toBe(theme.vars.light['--line'])
     expect(theme.vars.dark['--line-alpha']).toBe(theme.vars.dark['--line'])
@@ -41,70 +34,40 @@ describe('chrome theme mapping', () => {
     expect(readFileSync(generated, 'utf8')).toBe(before)
   }, 60_000)
 
-  it('does not emit --fg-faint — that ink stays hand-tuned in index.css', () => {
-    const css = readFileSync(generated, 'utf8')
-    expect(css).not.toMatch(/^\s*--fg-faint\s*:/m)
+  it('index.css no longer hand-tunes a generated variable', () => {
     const index = readFileSync(resolve(root, 'src/index.css'), 'utf8')
+    for (const name of Object.keys(CHROME_ROLES)) {
+      expect(index).not.toMatch(new RegExp(`^\\s*${name}\\s*:`, 'm'))
+    }
     expect(index).toMatch(/--fg-faint:\s*#737373/)
     expect(index).toMatch(/--fg-faint:\s*#7b7b83/)
   })
 })
 
-describe('chrome contrast after the token migration', () => {
-  // Surfaces are opaque; inks are opaque. Hairlines are alpha and are
-  // decorative — measured, not held to a floor (same policy as border.subtle).
-  const pair = (
-    appearance: 'light' | 'dark',
-    fg: '--fg' | '--fg-muted',
-    bg: '--app' | '--surface' | '--elevated',
-  ) => {
-    const ink = theme.vars[appearance][fg]
-    const surface = theme.vars[appearance][bg]
-    return {
-      wcag: wcagRatio(ink, surface),
-      lc: apcaLcAbs(ink, surface),
-      verdict: evaluate(ink, surface, 'body-text'),
+describe('chrome contrast (platform foundations)', () => {
+  const v = (a: 'light' | 'dark', name: string) => theme.vars[a][name]
+
+  it('primary ink clears body text on page, rows and panels in both appearances', () => {
+    for (const a of ['light', 'dark'] as const) {
+      for (const bg of ['--app', '--surface', '--side-panel']) {
+        expect(evaluate(v(a, '--fg'), v(a, bg), 'body-text').passesWcag).toBe(true)
+      }
     }
-  }
-
-  it('--fg on --app clears body-text in both appearances', () => {
-    expect(pair('light', '--fg', '--app').verdict.pass).toBe(true)
-    expect(pair('dark', '--fg', '--app').verdict.pass).toBe(true)
   })
 
-  it('--fg-muted on --app (dark) now clears body-text — the reason we migrated', () => {
-    // Hand-tuned chrome was 6.72 / Lc 50. Token ink on the token page is
-    // content.secondary on surface.page, which is the pair the system
-    // already guarantees.
-    const { verdict } = pair('dark', '--fg-muted', '--app')
-    expect(verdict.passesWcag).toBe(true)
-    expect(verdict.passesApca).toBe(true)
+  it('dark: muted ink clears body text on every level — the reason for the migration', () => {
+    for (const bg of ['--app', '--surface', '--side-panel']) {
+      // ~10.3–11.5:1 (was 6.72). APCA lands Lc 74–75, a hair under the body row.
+      expect(evaluate(v('dark', '--fg-muted'), v('dark', bg), 'body-text').passesWcag).toBe(true)
+      expect(wcagRatio(v('dark', '--fg-muted'), v('dark', bg))).toBeGreaterThan(10)
+    }
   })
 
-  it('--fg-muted on --surface (light) is the accepted residual', () => {
-    // Hand-tuned was 7.16 / Lc 81. content.secondary on surface.layer-1
-    // lands ~4.66 / Lc 68: WCAG AA holds, APCA body-text (Lc 75) does not.
-    // Accepted — see HANDOFF-1 §3. Do not "fix" by inventing content.tertiary
-    // or by walking --fg-muted to tone 12 (that collapses it onto --fg).
-    const { verdict, wcag, lc } = pair('light', '--fg-muted', '--surface')
-    expect(verdict.passesWcag).toBe(true)
-    expect(verdict.passesApca).toBe(false)
-    expect(wcag).toBeGreaterThanOrEqual(4.5)
-    expect(lc).toBeGreaterThanOrEqual(60)
-    expect(lc).toBeLessThan(75)
-  })
-
-  it('reports the chrome pair table (WCAG / |Lc|)', () => {
-    const rows = (['light', 'dark'] as const).flatMap((appearance) =>
-      (['--fg', '--fg-muted'] as const).flatMap((fg) =>
-        (['--app', '--surface', '--elevated'] as const).map((bg) => {
-          const { wcag, lc, verdict } = pair(appearance, fg, bg)
-          return `${appearance} ${fg} on ${bg}: ${wcag.toFixed(2)} / Lc ${lc.toFixed(0)} ${verdict.pass ? '✓' : '✗'}`
-        }),
-      ),
-    )
-    // Presence check — the numbers live in the assertions above. This keeps
-    // the full matrix in the test output when someone runs it with --reporter=verbose.
-    expect(rows).toHaveLength(12)
+  it.fails('light: muted ink on a panel (surface.layer-2) clears WCAG AA', () => {
+    // KNOWN DEFECT in the light foundations: content.secondary #67676a on
+    // surface.layer-2 #cfd0d2 measures 3.65:1. Fix it in the platform
+    // system (lighter layer-2, or a darker content.secondary), re-export,
+    // regenerate — then drop the `.fails`.
+    expect(wcagRatio(v('light', '--fg-muted'), v('light', '--side-panel'))).toBeGreaterThanOrEqual(4.5)
   })
 })

@@ -212,13 +212,6 @@
   --dur-theme: 280ms;
 
   /* ── Light theme (default) ── */
-  --nav: #f5f5f5;
-  --tab-bar: #ffffff;
-  --panel: rgba(255, 255, 255, 0.07);
-  --side-panel: #ffffff;
-  --rail-section: #ffffff;
-  --chip-rest: #e7e7e7;
-  --input-bg: #f2f2f2;
   /* Page / surface / elevated / primary+muted ink / hairlines come from
      `chromeTheme.generated.css` (`surface.page` · `layer-1` · `layer-2` ·
      `content.primary` · `content.secondary` · `border.subtle` ·
@@ -255,13 +248,9 @@
   --inverse-action-ink: #fafafa;
   /* Status — light. Ink shades clear AA on --app; warning goes to amber-700
      because amber-500/600 fails on white. */
-  --status-danger: #dc2626;
   --status-danger-solid: #ef4444;
-  --status-success: #059669;
   --status-success-solid: #10b981;
-  --status-warning: #b45309;
   --status-warning-solid: #f59e0b;
-  --status-info: #0284c7;
   --status-info-solid: #0ea5e9;
   --rainbow-ink: #fafafa;
   --rainbow-fill-a: #121213;
@@ -300,13 +289,6 @@
    own appearance (a dark theme's ramps have to be judged on a dark surface),
    so its light card must stay light even while the app chrome is dark. */
 .light {
-  --nav: #f5f5f5;
-  --tab-bar: #ffffff;
-  --panel: rgba(255, 255, 255, 0.07);
-  --side-panel: #ffffff;
-  --rail-section: #ffffff;
-  --chip-rest: #e7e7e7;
-  --input-bg: #f2f2f2;
   --fg-faint: #737373;
   --inverse-action: #18181b;
   --inverse-action-hover: #27272a;
@@ -318,13 +300,9 @@
   --rainbow-outline-fill-a: #ffffff;
   --rainbow-outline-fill-b: rgba(18, 18, 19, 0.6);
   --rainbow-outline-fill-c: rgba(18, 18, 19, 0);
-  --status-danger: #dc2626;
   --status-danger-solid: #ef4444;
-  --status-success: #059669;
   --status-success-solid: #10b981;
-  --status-warning: #b45309;
   --status-warning-solid: #f59e0b;
-  --status-info: #0284c7;
   --status-info-solid: #0ea5e9;
 
   color-scheme: light;
@@ -431,13 +409,6 @@
      panel #fff (+.030) → recessed chips (−.072); dark needs the larger steps
      because the luminance range near black is compressed. The generated
      `--elevated` (#1b1b1c) lands +.044 over the panel. */
-  --nav: #070709;
-  --tab-bar: #222223;
-  --panel: #1b1b1c;
-  --side-panel: #111113;
-  --rail-section: #222223;
-  --chip-rest: #202022;
-  --input-bg: #100f12;
   --fg-faint: #7b7b83;
   /* Chrome levels (dark) that are still hand-tuned:
        `--nav`        #070709  shell frame — TopNav, Themes library, footer,
@@ -453,13 +424,9 @@
   --inverse-action-ink: #fafafa;
   /* Status — dark. Ink lightens to the -400 shade (what the `dark:` variants
      used); solids stay saturated at their light value. */
-  --status-danger: #f87171;
   --status-danger-solid: #ef4444;
-  --status-success: #34d399;
   --status-success-solid: #10b981;
-  --status-warning: #fbbf24;
   --status-warning-solid: #f59e0b;
-  --status-info: #38bdf8;
   --status-info-solid: #0ea5e9;
 
   color-scheme: dark;
@@ -475,12 +442,6 @@
   --color-3: oklch(69.6% 0.165 251);
   --color-4: oklch(80.2% 0.134 225);
   --color-5: oklch(90.7% 0.231 133);
-}
-
-/* Home file browser — left column + shell (dark reference frame only). */
-.dark [data-home] {
-  --nav: #100e13;
-  --app: #100e13;
 }
 
 html {

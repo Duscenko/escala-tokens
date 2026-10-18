@@ -1,38 +1,56 @@
 /**
- * Chrome neutrals, derived from the Categorical projection of the default
- * system. The workspace already speaks `bg-app` / `text-fg` / `border-line`
- * (~2,200 call sites); those classes resolve through ~15 variables in
- * `index.css`. This module is the ONE place that says which semantic role
- * each of those variables is.
+ * Platform chrome, resolved from the PLATFORM'S OWN design system — the
+ * "Flow" foundations exported from Escala itself (`platformFoundations.json`,
+ * Categorical roles, Light + Dark). The workspace speaks `bg-app` /
+ * `bg-side-panel` / `text-fg` / `border-line` (~2,200 call sites); those
+ * classes resolve through the variables below, and this module is the ONE
+ * place that says which semantic role each variable is.
+ *
+ * Elevation, as the foundations define it:
+ *   surface.page     the frame behind everything (`--app`, `--nav`)
+ *   surface.layer-2  a PANEL (`--side-panel`, `--elevated`) + `border.subtle`
+ *   surface.layer-1  a ROW / control inside a panel (`--surface`, chips, tabs)
+ *   surface.input    a text field (`--input-bg`)
  *
  * Regenerated into `chromeTheme.generated.css` by `scripts/gen-chrome-theme.ts`.
- * Never hand-edit the generated file; never invent a hex here.
+ * Never hand-edit the generated file; to change the chrome, re-export the
+ * platform system from Escala over `platformFoundations.json` and regenerate.
  *
- * `--fg-faint` is deliberately absent. The system guarantees two readable
- * ink levels (`content.primary` / `content.secondary`). `content.subtle` is
- * a de-emphasis / watermark role (Lc ~21 in dark) and is not a third
- * readable tier. A `content.tertiary` role was measured and discarded: on
- * the dark ramp it collapses onto `content.secondary` for every seed (no
- * step between Lc 27 and Lc 75). Fixing that is a `buildScale` project,
- * not a chrome one. The hand-tuned `--fg-faint` stays in `index.css` as
- * decorative metadata ink — which is what it already is in practice.
+ * `--fg-faint` is deliberately absent: `content.subtle` is a watermark role
+ * (and in this export it resolves darker than `content.primary` in light),
+ * not a third readable ink. It stays hand-tuned in `index.css`.
  */
 
-import { buildSystem } from './color/audit'
-import {
-  buildArchitectureView,
-  type ProjectionInput,
-} from './semanticArchitectures'
+import foundations from './platformFoundations.json'
 
-/** CSS custom property → Categorical role id (`group.key`). */
+type RoleValue = { light: string; dark: string }
+const ROLES = foundations.roles as Record<string, RoleValue>
+
+/** The platform's brand anchor (tone 9). The shell derives the chrome accent ramp from it. */
+export const PLATFORM_ACCENT: string = foundations.accent
+
+/** CSS custom property → Categorical role id (`group.key`). Order = declaration order. */
 export const CHROME_ROLES = {
   '--app': 'surface.page',
+  '--nav': 'surface.page',
   '--surface': 'surface.layer-1',
+  '--tab-bar': 'surface.layer-1',
+  '--rail-section': 'surface.layer-1',
+  '--panel': 'surface.layer-1',
+  '--chip-rest': 'surface.layer-1',
   '--elevated': 'surface.layer-2',
-  '--line': 'border.subtle',
-  '--line-strong': 'border.default',
+  '--side-panel': 'surface.layer-2',
+  '--input-bg': 'surface.input',
   '--fg': 'content.primary',
   '--fg-muted': 'content.secondary',
+  '--line': 'border.subtle',
+  '--line-strong': 'border.default',
+  /** A selected row's edge (the open colour role) — the one stroke meant to be seen. */
+  '--line-emphasis': 'border.strong',
+  '--status-danger': 'status.critical.content',
+  '--status-success': 'status.success.content',
+  '--status-warning': 'status.warning.content',
+  '--status-info': 'status.info.content',
 } as const
 
 export type ChromeVar = keyof typeof CHROME_ROLES
@@ -41,94 +59,42 @@ export type ChromeAppearance = 'light' | 'dark'
 export type ChromeTheme = {
   vars: Record<ChromeAppearance, Record<string, string>>
   labels: Record<ChromeAppearance, Record<string, string>>
-  total: number
 }
 
-export function resolveChromeTheme(accent: string): ChromeTheme {
-  const system = buildSystem('chrome', accent, 'radix')
-  const input: ProjectionInput = {
-    themes: { light: {}, dark: {} },
-    themeKinds: { light: 'light', dark: 'dark' },
-    themePalettes: {},
-    scales: system.scales,
-    accent: system.accent,
-    pageBackground: system.lightBg,
-    darkBackground: system.darkBg,
-  }
-  const view = buildArchitectureView('categorical', input, system.errorSeed)
-  if (!view) throw new Error('categorical projection returned null')
-
-  const byId: Record<string, { light: string; dark: string; lightLabel: string; darkLabel: string }> = {}
-  for (const category of view.categories) {
-    for (const token of category.tokens) {
-      const light = token.modes.light
-      const dark = token.modes.dark
-      if (!light || !dark) {
-        throw new Error(`chrome role ${category.key}.${token.key} missing a mode`)
-      }
-      byId[`${category.key}.${token.key}`] = {
-        light: light.css,
-        dark: dark.css,
-        lightLabel: light.label,
-        darkLabel: dark.label,
-      }
-    }
-  }
-
+export function resolveChromeTheme(): ChromeTheme {
   const light: Record<string, string> = {}
   const dark: Record<string, string> = {}
-  const lightLabels: Record<string, string> = {}
-  const darkLabels: Record<string, string> = {}
+  const labels: Record<string, string> = {}
   for (const [cssVar, role] of Object.entries(CHROME_ROLES)) {
-    const resolved = byId[role]
-    if (!resolved) throw new Error(`chrome role ${role} is not in the projection`)
-    if (resolved.light === 'transparent' || resolved.dark === 'transparent') {
-      throw new Error(`chrome role ${role} resolved transparent — pageBackground missing?`)
-    }
-    light[cssVar] = resolved.light
-    dark[cssVar] = resolved.dark
-    lightLabels[cssVar] = `${role} ← ${resolved.lightLabel}`
-    darkLabels[cssVar] = `${role} ← ${resolved.darkLabel}`
+    const value = ROLES[role]
+    if (!value?.light || !value?.dark) throw new Error(`chrome role ${role} is not in platformFoundations.json`)
+    light[cssVar] = value.light
+    dark[cssVar] = value.dark
+    labels[cssVar] = role
   }
-  // `--line-alpha` is the same structural hairline as `--line`. It used to
-  // be the shared source both line roles aliased; they now resolve to
-  // different tokens, so the alpha alias tracks the decorative rung.
+  // `--line-alpha` is the same structural hairline as `--line`.
   light['--line-alpha'] = light['--line']
   dark['--line-alpha'] = dark['--line']
-
-  return { vars: { light, dark }, labels: { light: lightLabels, dark: darkLabels }, total: view.total }
+  labels['--line-alpha'] = 'tracks --line'
+  return { vars: { light, dark }, labels: { light: labels, dark: labels } }
 }
 
-const DECL_ORDER = [
-  '--app',
-  '--surface',
-  '--elevated',
-  '--fg',
-  '--fg-muted',
-  '--line-alpha',
-  '--line',
-  '--line-strong',
-] as const
-
 function block(selector: string, vars: Record<string, string>, labels: Record<string, string>): string {
-  const lines = DECL_ORDER.map((name) => {
-    const note = name === '--line-alpha' ? ' /* tracks --line */' : labels[name] ? ` /* ${labels[name]} */` : ''
-    return `  ${name}: ${vars[name]};${note}`
-  })
+  const lines = Object.keys(vars).map((name) => `  ${name}: ${vars[name]}; /* ${labels[name]} */`)
   return `${selector} {\n${lines.join('\n')}\n}`
 }
 
 /** Source of the committed `chromeTheme.generated.css`. */
-export function renderChromeThemeCss(accent: string): string {
-  const theme = resolveChromeTheme(accent)
+export function renderChromeThemeCss(): string {
+  const theme = resolveChromeTheme()
   return `/**
  * GENERATED FILE — do not edit by hand.
  * Regenerate with \`npx tsx scripts/gen-chrome-theme.ts\`.
  *
- * Chrome page / surface / elevated / hairline / primary+muted ink, resolved
- * from the Categorical projection of the default system (accent ${accent},
- * radix). \`--fg-faint\` is not generated: it stays hand-tuned in index.css
- * as decorative metadata ink. See \`src/lib/chromeTheme.ts\`.
+ * Platform chrome resolved from the platform's own foundations
+ * (\`src/lib/platformFoundations.json\`, accent ${PLATFORM_ACCENT}).
+ * \`--fg-faint\` is not generated: it stays hand-tuned in index.css.
+ * See \`src/lib/chromeTheme.ts\`.
  */
 
 ${block(':root, .light', theme.vars.light, theme.labels.light)}

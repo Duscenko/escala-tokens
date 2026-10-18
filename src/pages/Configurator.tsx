@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
+import { PLATFORM_ACCENT } from '../lib/chromeTheme'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
 import { PRO_MAX_MODES } from '../lib/entitlement'
 import { figmaModeCapFor, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
@@ -330,7 +331,7 @@ const ExportIcon: ComponentType = () => (
  *  / `--accent-ink`, the Layer 0 wash). Same value as `index.css`' fallback and
  *  `.impeccable.md`. Never derived from the previewed theme: see the note where
  *  the shell writes those vars. Both ramps are built once, at module load. */
-const ESCALA_CHROME_ACCENT = '#7f56d9'
+const ESCALA_CHROME_ACCENT = PLATFORM_ACCENT
 const ESCALA_CHROME_RAMPS = {
   light: generateColorScale(ESCALA_CHROME_ACCENT, 'radix', 0, '#ffffff', 'light'),
   dark: generateColorScale(ESCALA_CHROME_ACCENT, 'radix', 0, undefined, 'dark'),
