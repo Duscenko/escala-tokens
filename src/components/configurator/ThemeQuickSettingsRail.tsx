@@ -824,6 +824,20 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
   const ctx = useContext(EditionSwitchContext)
   const locked = !open && Boolean(ctx?.locked)
   const interactive = Boolean(ctx) && !open
+  // The OPEN row reads as a selected tab (Figma 211:706): glyph and name sit in
+  // a filled pill, the chevron outside it, and the row's value is left to the
+  // controls below rather than repeated in the header.
+  if (open) {
+    return (
+      <div className="flex h-11 w-full items-center gap-2.5 bg-elevated/40 px-3" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+        <span className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-elevated px-3">
+          <FoundationGlyph id={foundationKey} className="h-4 w-4 flex-shrink-0 text-fg" />
+          <span className="min-w-0 flex-1 truncate text-left text-ui text-fg">{t(title)}</span>
+        </span>
+        <Chevron open />
+      </div>
+    )
+  }
   const inner = (
     <>
       <FoundationGlyph id={foundationKey} className={`h-4 w-4 flex-shrink-0 ${open ? 'text-accent-ui' : 'text-fg-muted'}`} />
@@ -2499,7 +2513,7 @@ export default function ThemeQuickSettingsRail({
                         }}
                       />
                     </div>
-                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="h-9 w-9 rounded-xl" />
+                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="!w-10" />
                   </div>
                 )}
                 rows={colorRows}
@@ -2517,7 +2531,7 @@ export default function ThemeQuickSettingsRail({
                 onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
                 page={themePage[rampAppearance]}
                 after={(
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
                 {(['secondary', 'tertiary'] as const).map((rank) => {
                   const hex = extraHex(rank)
                   if (!hex) return null
@@ -2567,7 +2581,7 @@ export default function ThemeQuickSettingsRail({
                       addBrandExtra(themeKey, extraSeedHex(brandHex, nextExtra))
                     })}
                     title={t('Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics.')}
-                    className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-faint transition-colors hover:text-fg"
+                    className={`flex h-8 w-full items-center justify-center gap-1 border border-line text-caption text-fg-faint transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${RAIL_SURFACE_RADIUS}`}
                   >
                     <span aria-hidden className="text-ui leading-none">+</span>
                     {t('Add {rank}', { rank: t(BRAND_EXTRA_LABEL[nextExtra]).toLowerCase() })}

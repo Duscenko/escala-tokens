@@ -23,6 +23,10 @@ import type { NeutralTint } from '../../lib/colorUtils'
 
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 
+/** The raised panel the roles and the accessibility readout sit on: a faint
+ *  fill lit from the top edge only (Figma 211:723). */
+const CARD = 'flex flex-col gap-3 rounded-2xl border-t border-line bg-fg/[0.03] px-2.5 pb-2.5 pt-[11.75px]'
+
 export interface ColorRoleRow {
   id: ColorRoleId
   /** This theme's anchor (tone 9). */
@@ -70,7 +74,7 @@ export function ColorRolesPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-fg/[0.03] p-2.5">
+      <div className={CARD}>
         {header}
 
         {current.id === 'neutral' ? (
@@ -87,7 +91,7 @@ export function ColorRolesPanel({
           />
         )}
 
-        <div role="radiogroup" aria-label={t('Colour roles')} className="flex flex-col gap-1.5">
+        <div role="radiogroup" aria-label={t('Colour roles')} className="flex flex-col gap-2">
           {rows.map((row) => (
             <RoleRow
               key={row.id}
@@ -125,9 +129,6 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
   const [draft, setDraft] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const label = t(COLOR_ROLE_LABEL[row.id])
-  const pill = `flex h-9 min-w-0 items-center rounded-[10px] border transition-colors duration-150 ${
-    on ? 'border-line-strong bg-fg/[0.06]' : 'border-transparent bg-fg/[0.04] hover:bg-fg/[0.07]'
-  }`
   // Leaving the field writes only a CHANGED, valid hex. Writing back what was
   // shown is not a no-op: the neutral's dark row shows a derived tone, and
   // committing it would set the neutral itself and unlink it from the accent.
@@ -139,12 +140,21 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
     setDraft(null)
   }
 
+  // One row per role (Figma 212:1046): swatch · hex, then the role's name in
+  // its own inset pill with the lock. The selected row is the one the slider
+  // above edits, so it carries a full edge where the rest are lit from the top.
   return (
-    <div className="grid grid-cols-2 gap-1.5">
-      <div className={`${pill} gap-2 pl-1.5 pr-1.5`} onClick={() => { onSelect(); input.current?.focus() }}>
+    <div
+      className={`flex h-[40.5px] items-center gap-2 rounded-[10px] px-[6.25px] transition-colors duration-150 ${
+        on
+          ? 'bg-fg/[0.09] shadow-[inset_0_0_0_1px_var(--line-strong)]'
+          : 'border-t border-fg/[0.15] bg-fg/[0.06] hover:bg-fg/[0.08]'
+      }`}
+    >
+      <div className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2" onClick={() => { onSelect(); input.current?.focus() }}>
         <span
           aria-hidden
-          className="block h-5 w-5 flex-shrink-0 rounded-[6px] border border-fg/10"
+          className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
           style={{ background: row.hex }}
         />
         <input
@@ -161,20 +171,20 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
           readOnly={row.readOnly}
           title={row.readOnly ? t('Derived from the neutral base. Edit it in Light.') : undefined}
           aria-label={`${label} hex`}
-          className="min-w-0 flex-1 bg-transparent font-mono text-ui text-fg outline-none"
+          className="min-w-0 flex-1 bg-transparent text-ui tabular-nums text-fg outline-none"
         />
       </div>
       {/* The lock is a SIBLING of the label button, never inside it: an
           interactive element nested in a <button> is invalid, and a real
           mouse click on it went to the outer button (selecting the row) while
           the lock itself never fired. */}
-      <div className={`${pill} gap-1 pr-1`}>
+      <div className="flex h-[24.5px] min-w-0 flex-1 items-center gap-1 rounded-[5px] bg-fg/[0.08] pr-1">
         <button
           type="button"
           role="radio"
           aria-checked={on}
           onClick={onSelect}
-          className="flex h-full min-w-0 flex-1 items-center rounded-[10px] pl-2.5 text-left text-ui text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-full min-w-0 flex-1 items-center rounded-[5px] pl-2 text-left text-ui text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <span className="truncate">{label}</span>
         </button>
@@ -191,7 +201,7 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
               : (row.linked
                 ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
                 : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
-            className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint opacity-60'}`}
+            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint opacity-60'}`}
           >
             <LockGlyph size={13} />
           </button>
@@ -210,32 +220,38 @@ function AccessibilityReadout({ hex, page, appearance }: { hex: string; page: st
   const c = checkRoleColor(hex, page)
   const pageOk = c.pageWcag >= 3 && c.pageLc >= 45
   const labelOk = c.ink !== null
-  const grade = pageOk && labelOk ? 'good' : pageOk || labelOk ? 'fair' : 'poor'
+  // WCAG AA alone (3:1 as a shape, 4.5:1 with a label). A colour can clear it
+  // and still miss APCA, which is what asks for larger or heavier text.
+  const aaOk = c.pageWcag >= 3 && c.labelWcag >= 4.5
+  const grade = pageOk && labelOk ? 'good' : aaOk ? 'aa' : pageOk || labelOk ? 'fair' : 'poor'
   const white = c.labelInk === ROLE_LABEL_INKS[0]
   const tone = {
-    good: { dot: 'bg-status-success-solid', chip: 'bg-status-success/15 text-status-success', word: t('Good'), note: t('Reads well on this theme.') },
-    fair: { dot: 'bg-status-warning-solid', chip: 'bg-status-warning/15 text-status-warning', word: t('Fair'), note: !pageOk ? t('Faint against the page. Fine as a fill, weak as a line or icon.') : t('Labels on it need large or bold text.') },
-    poor: { dot: 'bg-status-danger-solid', chip: 'bg-status-danger/15 text-status-danger', word: t('Poor'), note: t('Hard to see on this page and hard to read on. Pick a deeper or brighter tone.') },
+    good: { dot: 'bg-status-success-solid', chip: 'bg-status-success/15 text-status-success', word: t('AA + APCA'), note: t('Reads well on this theme.') },
+    aa: { dot: 'bg-status-success-solid', chip: 'bg-status-success/15 text-status-success', word: t('AA Compliant'), note: t('Meets WCAG AA. Perceptual contrast (APCA) is lower, so labels on it read best at a larger or heavier size.') },
+    fair: { dot: 'bg-status-warning-solid', chip: 'bg-status-warning/15 text-status-warning', word: t('Partial AA'), note: !pageOk ? t('Faint against the page. Fine as a fill, weak as a line or icon.') : t('Labels on it need large or bold text.') },
+    poor: { dot: 'bg-status-danger-solid', chip: 'bg-status-danger/15 text-status-danger', word: t('Below AA'), note: t('Hard to see on this page and hard to read on. Pick a deeper or brighter tone.') },
   }[grade]
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-fg/[0.03] p-3">
+    <div className={CARD}>
       <div className="flex items-center justify-between">
-        <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Accessibility')}</span>
-        <span className={`rounded-md px-2 py-0.5 text-caption font-semibold ${tone.chip}`}>{tone.word}</span>
+        <span className="text-mini uppercase tracking-[0.1em] text-fg-faint">{t('Accessibility')}</span>
+        <span className={`rounded-md px-2 py-0.5 text-caption ${tone.chip}`}>{tone.word}</span>
       </div>
+      <div className="flex flex-col gap-1">
       <p className="flex items-baseline gap-2 text-caption text-fg-muted">
-        <span aria-hidden className={`h-2 w-2 flex-shrink-0 translate-y-[-1px] rounded-full ${tone.dot}`} />
-        <span className="font-semibold text-fg">{t(appearance === 'dark' ? 'Dark' : 'Light')}</span>
+        <span aria-hidden className={`h-[9px] w-[9px] flex-shrink-0 translate-y-[0.5px] rounded-full ${tone.dot}`} />
+        <span className="text-fg">{t(appearance === 'dark' ? 'Dark' : 'Light')}</span>
         <span className="tabular-nums">
           {t('{ratio}:1 on surface', { ratio: c.pageWcag.toFixed(1) })} · Lc {Math.round(c.pageLc)}
         </span>
       </p>
-      <p className="pl-4 text-caption tabular-nums text-fg-muted">
+      <p className="pl-[18px] text-caption tabular-nums text-fg-muted">
         {white
           ? t('white label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })
           : t('dark label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })} · Lc {Math.round(c.labelLc)}
       </p>
+      </div>
       <p className="text-caption text-fg-faint">{tone.note}</p>
     </div>
   )
