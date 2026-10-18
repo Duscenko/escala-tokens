@@ -13,7 +13,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { effectiveIconWeight, ICON_ROLES, iconSizesFor, type IconRole } from '../../../lib/iconSizing'
-import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, nestedRadiusOf, fitRadiusPx, concentricRadiusPx, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, controlInsetX, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -907,7 +907,7 @@ function SelectSpecimen({ t, v, w }: SpecimenProps) {
       style={{
         ...baseFont(t),
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        width: w ?? 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`,
+        width: w ?? 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: controlInsetX(t),
         borderRadius: radiusRoleOf(t, 'action'),
         border: `${strokeControl(t)} solid ${border}`,
         background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
@@ -1543,8 +1543,8 @@ function AppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
 function InputGroupSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', width: 300, height: sizeRoleOf(t, 'control', '40px'), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
-      <span style={{ display: 'flex', alignItems: 'center', padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, ...typeOf(t, 'placeholder'), color: t.fgMuted, background: t.neutralFill, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, ...typeOf(t, 'placeholder'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.neutralText }}>escala.design</span>
+      <span style={{ display: 'flex', alignItems: 'center', padding: controlInsetX(t), ...typeOf(t, 'placeholder'), color: t.fgMuted, background: t.neutralFill, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
+      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: controlInsetX(t), ...typeOf(t, 'placeholder'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.neutralText }}>escala.design</span>
       <span style={{ display: 'flex', alignItems: 'center', padding: `0 ${spaceOf(t, 14)}`, ...typeOf(t, 'button'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.brandText, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
     </div>
   )
@@ -2076,7 +2076,7 @@ function FieldSpecimen({ t }: { t: PreviewTokens }) {
       <span style={{ ...typeOf(t, 'label') }}>
         Workspace name <span style={{ color: errorInkOf(t) }}>*</span>
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), color: t.neutralText }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: controlInsetX(t), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), color: t.neutralText }}>
         Acme Inc.
       </div>
       <span style={{ ...typeOf(t, 'helper'), color: t.fgMuted }}>Shown to your teammates.</span>
@@ -2104,7 +2104,7 @@ function PasswordStrengthSpecimen({ t, v }: SpecimenProps) {
   const color = meta.level <= 1 ? errorInkOf(t) : meta.level <= 2 ? warningInkOf(t) : successInkOf(t)
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-control', '8px'), width: 260 }}>
-      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), letterSpacing: 2, color: t.neutralText }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: sizeRoleOf(t, 'control', '40px'), padding: controlInsetX(t), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.inputSurface ?? inputSurfaceOf(t), ...typeOf(t, 'placeholder'), letterSpacing: 2, color: t.neutralText }}>
         ••••••••
       </div>
       <div style={{ display: 'flex', gap: spacingRoleOf(t, 'gap-tight', '4px') }} aria-hidden>

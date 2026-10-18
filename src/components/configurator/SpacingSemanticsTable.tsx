@@ -8,6 +8,7 @@
 // Both show ONE viewport — the rail's Platform switch. Docs → Spacing compares
 // all three.
 
+import { Fragment, useState, type ReactNode } from 'react'
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import VariableSelect from '../ui/VariableSelect'
 import { usePreviewPlatform } from './PlatformRail'
@@ -16,7 +17,14 @@ import {
   SPACING_RESPONSIVE_FAMILIES,
   SPACING_RESPONSIVE_KEYS,
   SPACING_STEPS,
+  INSET_ROLES,
+  INSET_SIDES,
+  clearInsetSides,
   dimensionRoleValue,
+  insetSideKey,
+  insetSideOverrides,
+  withInsetSide,
+  type InsetRole,
   isSpacingResponsiveRef,
   layoutRoleIsDefault,
   roleDimensionPx,
@@ -115,6 +123,15 @@ export default function SpacingSemanticsTable({
   flashKey: string | null
   query: string
 }) {
+  // Which insets show their four sides. One with sides set opens on its own.
+  const [openSides, setOpenSides] = useState<Set<string>>(() => new Set(INSET_ROLES.map((r) => `${r}:auto`)))
+  const toggleSides = (inset: InsetRole) => setOpenSides((prev) => {
+    const next = new Set(prev)
+    const shown = next.has(inset) || (next.has(`${inset}:auto`) && Object.keys(insetSideOverrides(roles, inset)).length > 0)
+    next.delete(inset); next.delete(`${inset}:auto`)
+    if (!shown) next.add(inset)
+    return next
+  })
   const platformCtx = usePreviewPlatform()
   const platform: GridViewport = platformCtx?.previewPlatform ?? 'desktop'
   const pxOf = (step: string): number | null => {
@@ -123,6 +140,26 @@ export default function SpacingSemanticsTable({
     const n = parseFloat(spacing[step] ?? '')
     return Number.isFinite(n) ? n : null
   }
+
+  /** The token choices every non-overlap row offers: responsive tokens, then
+   *  the fixed steps. */
+  const tokenOptions = (value: string | undefined): ReactNode => (
+    <>
+      {SPACING_RESPONSIVE_FAMILIES.map((family) => (
+        <optgroup key={family} label={`Responsive · ${FAMILY_LABEL[family]}`}>
+          {SPACING_RESPONSIVE_KEYS.filter((k) => k.startsWith(`${family}-`)).map((k) => (
+            <option key={k} value={k}>{`${k}  ·  ${pxOf(SPACING_RESPONSIVE[k].desktop) ?? '—'} / ${pxOf(SPACING_RESPONSIVE[k].tablet) ?? '—'} / ${pxOf(SPACING_RESPONSIVE[k].mobile) ?? '—'}`}</option>
+          ))}
+        </optgroup>
+      ))}
+      <optgroup label="Fixed">
+        {SPACING_STEPS.map((s) => (
+          <option key={s} value={s}>{`space-${stepLabel(s)}  ·  ${pxOf(s) ?? '—'}px`}</option>
+        ))}
+        {value !== undefined && roleDimensionPx(value, true) !== null && <option value={value}>{`pinned · ${roleDimensionPx(value, true)}px`}</option>}
+      </optgroup>
+    </>
+  )
 
   if (collection === 'responsive') {
     const q = query.trim().toLowerCase()
@@ -193,9 +230,12 @@ export default function SpacingSemanticsTable({
         const modified = !layoutRoleIsDefault('spacing', role.key, value, spacing)
         const pinned = roleDimensionPx(value, true) !== null
         const overlap = role.group === 'overlap'
+        const inset = (INSET_ROLES as readonly string[]).includes(role.key) ? (role.key as InsetRole) : null
+        const sideCount = inset ? Object.keys(insetSideOverrides(roles, inset)).length : 0
+        const sidesOpen = inset !== null && (openSides.has(inset) || sideCount > 0 && openSides.has(`${inset}:auto`))
         return (
+          <Fragment key={role.key}>
           <div
-            key={role.key}
             id={`layout-role-spacing-${role.key}`}
             className={`${tableRowClass(i, ROLE_GRID)} ${flashKey === `spacing.${role.key}` ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
           >
@@ -207,6 +247,18 @@ export default function SpacingSemanticsTable({
               <span className="text-caption text-fg-faint truncate" title={role.description}>
                 {responsive ? 'Steps down on smaller screens' : 'Fixed — same on every viewport'}
               </span>
+              {inset && (
+                <button
+                  type="button"
+                  onClick={() => toggleSides(inset)}
+                  aria-expanded={sidesOpen}
+                  aria-controls={`inset-sides-${inset}`}
+                  className="mt-1 self-start flex items-center gap-1 rounded text-caption text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                >
+                  <svg aria-hidden width="10" height="10" viewBox="0 0 10 10" className={`transition-transform ${sidesOpen ? 'rotate-90' : ''}`}><path d="M3.5 2 6.5 5 3.5 8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  {sideCount ? `Sides · ${sideCount} set` : 'Sides · all equal'}
+                </button>
+              )}
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
               {/* A role references a TOKEN — the same choice on every platform. */}
@@ -223,19 +275,7 @@ export default function SpacingSemanticsTable({
                 </VariableSelect>
               ) : (
               <VariableSelect ariaLabel={`${role.key} token`} value={value} onChange={(next) => onRoles({ ...roles, [role.key]: next })}>
-                {SPACING_RESPONSIVE_FAMILIES.map((family) => (
-                  <optgroup key={family} label={`Responsive · ${FAMILY_LABEL[family]}`}>
-                    {SPACING_RESPONSIVE_KEYS.filter((k) => k.startsWith(`${family}-`)).map((k) => (
-                      <option key={k} value={k}>{`${k}  ·  ${pxOf(SPACING_RESPONSIVE[k].desktop) ?? '—'} / ${pxOf(SPACING_RESPONSIVE[k].tablet) ?? '—'} / ${pxOf(SPACING_RESPONSIVE[k].mobile) ?? '—'}`}</option>
-                    ))}
-                  </optgroup>
-                ))}
-                <optgroup label="Fixed">
-                  {SPACING_STEPS.map((s) => (
-                    <option key={s} value={s}>{`space-${stepLabel(s)}  ·  ${pxOf(s) ?? '—'}px`}</option>
-                  ))}
-                  {pinned && <option value={value}>{`pinned · ${roleDimensionPx(value, true)}px`}</option>}
-                </optgroup>
+                {tokenOptions(value)}
               </VariableSelect>
               )}
             </div>
@@ -251,6 +291,64 @@ export default function SpacingSemanticsTable({
               <ResetIcon />
             </button>
           </div>
+          {inset && sidesOpen && INSET_SIDES.map((side) => {
+            const key = insetSideKey(inset, side)
+            const own = roles[key]
+            const sideValue = own ?? value
+            const sideResponsive = isSpacingResponsiveRef(sideValue)
+            const sideStep = spacingRefStep(sideValue, platform)
+            // A control's height comes from Sizes: top and bottom only apply to
+            // a control without a fixed height (a chip, a text area).
+            const vertical = side === 'top' || side === 'bottom'
+            return (
+              <div key={key} id={inset === role.key && side === 'top' ? `inset-sides-${inset}` : undefined} className={`${tableRowClass(i, ROLE_GRID)} bg-elevated/40`}>
+                <div className="flex flex-col justify-center py-2 pl-8 pr-3 min-w-0 border-r border-line">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <code className="font-mono text-caption text-fg-muted truncate">spacing-{key}</code>
+                    {own !== undefined && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Set by hand" />}
+                  </span>
+                  <span className="text-caption text-fg-faint truncate">
+                    {own === undefined ? `Follows spacing-${inset}` : inset === 'inset-control' && vertical ? 'Only where the control has no fixed height' : 'Set by hand'}
+                  </span>
+                </div>
+                <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
+                  <VariableSelect
+                    ariaLabel={`${inset} ${side}`}
+                    value={own ?? ''}
+                    onChange={(next) => onRoles(withInsetSide(roles, inset, side, next || undefined))}
+                  >
+                    <option value="">{`Same as spacing-${inset}`}</option>
+                    {tokenOptions(own)}
+                  </VariableSelect>
+                </div>
+                <Cell step={sideStep} px={pxOf(sideStep)} accent={accent} desktopPx={platform === 'desktop' || !sideResponsive ? null : pxOf(spacingRefStep(sideValue))} />
+                <button
+                  type="button"
+                  onClick={() => onRoles(withInsetSide(roles, inset, side, undefined))}
+                  disabled={own === undefined}
+                  title={`Follow spacing-${inset} again`}
+                  aria-label={`Reset ${inset} ${side}`}
+                  className="flex items-center justify-center w-full h-full py-2 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+                >
+                  <ResetIcon />
+                </button>
+              </div>
+            )
+          })}
+          {inset && sidesOpen && sideCount > 0 && (
+            <div className={`${tableRowClass(i, ROLE_GRID)} bg-elevated/40`}>
+              <div className="col-span-4 flex items-center py-1.5 pl-8">
+                <button
+                  type="button"
+                  onClick={() => onRoles(clearInsetSides(roles, inset))}
+                  className="rounded text-caption text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                >
+                  Make all sides equal again
+                </button>
+              </div>
+            </div>
+          )}
+          </Fragment>
         )
       })}
     </div>

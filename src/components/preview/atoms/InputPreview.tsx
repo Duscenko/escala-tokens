@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { type PreviewTokens } from '../ButtonPreview'
-import { radiusRoleOf, sizeRoleOf, spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, sizeRoleOf, spacingRoleOf, controlInsetX, typeStyleOf } from '../../../lib/previewTokens'
 
 // A single labelled text field, fully driven by the user's tokens (radius,
 // border color, brand focus ring, text roles). It's a real <input>
@@ -28,7 +28,7 @@ export function InputPreview({ tokens, label, placeholder, type = 'text' }: Inpu
     background: tokens.surface,
     border: `1px solid ${focused ? tokens.brandSolid : border}`,
     borderRadius: radiusRoleOf(tokens, 'action', '8px'),
-    padding: `0 ${spacingRoleOf(tokens, 'inset-control', '12px')}`,
+    padding: controlInsetX(tokens),
     outline: 'none',
     boxShadow: focused ? `0 0 0 3px ${tokens.brandSolid}26` : 'none',
     transition: 'box-shadow .15s, border-color .15s',

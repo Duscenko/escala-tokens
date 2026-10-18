@@ -11,7 +11,7 @@ import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
-import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
+import { mergeLayoutRoles, withInsetSides, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
@@ -443,7 +443,7 @@ export function generateTokenJSON(
       // `Spacing/role/*`. Same split as the root: Desktop static steps, plus
       // which roles alias a responsive token.
       spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, 'desktop'),
-      spacingRoleRefs: mergeLayoutRoles('spacing', resolved.spacingRoles),
+      spacingRoleRefs: withInsetSides(resolved.spacingRoles),
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
@@ -694,7 +694,7 @@ export function generateTokenJSON(
     spacingRoles: spacingRolesAtViewport(store.spacingRoles, 'desktop'),
     // …and the responsive layer on top, additive: which roles alias a
     // responsive token (`component-md`), and the token table itself.
-    spacingRoleRefs: mergeLayoutRoles('spacing', store.spacingRoles),
+    spacingRoleRefs: withInsetSides(store.spacingRoles),
     spacingResponsive: SPACING_RESPONSIVE,
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).

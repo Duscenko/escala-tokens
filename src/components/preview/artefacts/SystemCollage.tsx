@@ -10,7 +10,7 @@ import {
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
-  typeStyleOf, spaceOf } from '../../../lib/previewTokens'
+  typeStyleOf, spaceOf, insetOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
@@ -291,7 +291,7 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
         borderRadius: radiusRoleOf(t, 'container', '16px'),
         // Elevation lives on `ScaledModule`'s OUTER frame — an inner
         // box-shadow is clipped by the photograph and shrunk by scale().
-        padding: spacingRoleOf(t, 'inset-surface', '20px'),
+        padding: insetOf(t, 'inset-surface', '20px'),
         display: 'flex',
         flexDirection: 'column',
         gap: gap(t, 'gap-control', '8px'),

@@ -11,7 +11,7 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -22,8 +22,8 @@ import { dimensionCssVar, dimensionFromKey, dimensionScaleForStore, dimensionVar
 // filter; page mode swaps in the primitives page background (light themes only).
 const PANEL_KEYS = ['background-secondary']
 
-/** `--padding-*` is a four-sided mirror of `spacing-inset-surface`. Emit the
- *  role alias when the stored px still matches that step; keep raw px only
+/** `--padding-*` is a four-sided mirror of `spacing-inset-surface`'s SIDES.
+ *  Emit the side alias when the stored px still matches it; keep raw px only
  *  when a side has drifted, so the leak is visible rather than silent. */
 function paddingCssEntries(
   padding: Record<string, string>,
@@ -32,11 +32,12 @@ function paddingCssEntries(
 ): [string, string][] {
   // The role may hold a step OR a pinned primitive — resolve through the same
   // helper everything else uses, so a pinned inset still collapses the mirror.
-  const resolved = resolveLayoutRole('spacing', spacingRoles, spacing, 'inset-surface')
-  return Object.entries(padding).map(([side, value]) => [
-    side,
-    resolved && value === resolved ? 'var(--spacing-inset-surface)' : dimensionVar(value),
-  ])
+  const sides = withInsetSides(spacingRoles)
+  return Object.entries(padding).map(([side, value]) => {
+    const key = `inset-surface-${side}`
+    const resolved = key in sides ? resolveLayoutRole('spacing', sides, spacing, key) : ''
+    return [side, resolved && value === resolved ? `var(--spacing-${key})` : dimensionVar(value)]
+  })
 }
 
 export type ShippedFileOptions = {
@@ -495,6 +496,7 @@ ${readmeLengthTable('spacing', spacing)}
 | Role | Aliases |
 |------|---------|
 ${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`${layoutValueCss('spacing', mergeLayoutRoles('spacing', spacingRoles)[r.key], spacing)}\` |`).join('\n')}
+${insetSideCssVars(spacingRoles, spacing).map((d) => { const [k, v] = d.replace(/;$/, '').split(': '); return `| \`${k}\` | \`${v}\` |` }).join('\n')}
 
 ### Padding — surface inset
 

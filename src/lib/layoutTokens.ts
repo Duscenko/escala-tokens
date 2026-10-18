@@ -102,7 +102,7 @@ export function spacingRefStep(value: string, viewport: GridViewport = 'desktop'
 
 /** Every spacing role read at one viewport (responsive refs → static steps). */
 export function spacingRolesAtViewport(roles: Record<string, string> | undefined, viewport: GridViewport): Record<string, string> {
-  const merged = mergeLayoutRoles('spacing', roles)
+  const merged = withInsetSides(roles)
   return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]))
 }
 
@@ -136,6 +136,15 @@ export function spacingRolesViewportCss(
     const step = spacingRefStep(value, viewport)
     if (step === spacingRefStep(value)) continue
     out.push(`--spacing-${role.key}: ${layoutValueCss('spacing', step, spacing)};`)
+  }
+  // A side that follows its inset aliases it and steps down for free; a side
+  // set to a responsive token needs its own override.
+  for (const { key } of INSET_SIDE_KEYS) {
+    const value = merged[key]
+    if (!isSpacingResponsiveRef(value)) continue
+    const step = spacingRefStep(value, viewport)
+    if (step === spacingRefStep(value)) continue
+    out.push(`--spacing-${key}: ${layoutValueCss('spacing', step, spacing)};`)
   }
   return out
 }
@@ -1454,6 +1463,87 @@ export const SPACING_ROLES: LayoutRole[] = [
   { key: 'overlap-2xl', label: 'Overlap 2xl', description: 'Nearly fully covered — a count badge on a stack.', group: 'overlap', primitive: 'dimension--32' },
 ]
 
+// ── Inset sides ─────────────────────────────────────────────────────────────
+// An inset is often NOT symmetric (a card with a tighter bottom, a chip with
+// less room on the icon side), so each inset role has four SIDES:
+// `inset-surface-top · -right · -bottom · -left`. A side holds the same kind of
+// value a role does (a step, a responsive token, a pinned primitive) — but only
+// when it was set by hand. An absent side FOLLOWS its inset, so changing
+// `inset-surface` still moves every side that was never touched, and a system
+// with no side set ships exactly what it shipped before.
+
+export const INSET_ROLES = ['inset-control', 'inset-surface', 'inset-page'] as const
+export type InsetRole = (typeof INSET_ROLES)[number]
+export const INSET_SIDES = ['top', 'right', 'bottom', 'left'] as const
+export type InsetSide = (typeof INSET_SIDES)[number]
+
+export function insetSideKey(role: InsetRole, side: InsetSide): string {
+  return `${role}-${side}`
+}
+
+/** Every side key with its inset and side, in role · top-right-bottom-left order. */
+export const INSET_SIDE_KEYS: { key: string; role: InsetRole; side: InsetSide }[] =
+  INSET_ROLES.flatMap((role) => INSET_SIDES.map((side) => ({ key: insetSideKey(role, side), role, side })))
+const INSET_SIDE_BY_KEY = new Map(INSET_SIDE_KEYS.map((entry) => [entry.key, entry]))
+
+export function isInsetSideKey(key: string): boolean {
+  return INSET_SIDE_BY_KEY.has(key)
+}
+
+/** The sides of one inset that were set by hand (absent = follows the inset). */
+export function insetSideOverrides(roles: Record<string, string> | undefined, role: InsetRole): Partial<Record<InsetSide, string>> {
+  const out: Partial<Record<InsetSide, string>> = {}
+  for (const side of INSET_SIDES) {
+    const value = roles?.[insetSideKey(role, side)]
+    if (typeof value === 'string') out[side] = value
+  }
+  return out
+}
+
+/** Set one side (`undefined` = follow the inset again). Writing the inset's own
+ *  value also means "follow", so a side never freezes on today's number. */
+export function withInsetSide(
+  roles: Record<string, string>,
+  role: InsetRole,
+  side: InsetSide,
+  value: string | undefined,
+): Record<string, string> {
+  const next = { ...roles }
+  const key = insetSideKey(role, side)
+  const base = mergeLayoutRoles('spacing', roles)[role]
+  if (value === undefined || value === base) delete next[key]
+  else next[key] = value
+  return next
+}
+
+/** Drop every side of one inset, so all four follow it again. */
+export function clearInsetSides(roles: Record<string, string>, role: InsetRole): Record<string, string> {
+  const next = { ...roles }
+  for (const side of INSET_SIDES) delete next[insetSideKey(role, side)]
+  return next
+}
+
+/** The merged spacing roles plus all twelve sides, each filled with its own
+ *  value or the inset it follows. What a consumer that does not know about
+ *  "follow" (tokens.json, the plugin, a preview) reads. */
+export function withInsetSides(roles: Record<string, string> | undefined): Record<string, string> {
+  const merged = mergeLayoutRoles('spacing', roles)
+  const out = { ...merged }
+  for (const { key, role } of INSET_SIDE_KEYS) out[key] = merged[key] ?? merged[role]
+  return out
+}
+
+/** CSS for the twelve sides: a side that follows aliases its inset
+ *  (`--spacing-inset-surface-top: var(--spacing-inset-surface)`), so it steps
+ *  down with it; a side set by hand aliases its own primitive. */
+export function insetSideCssVars(roles: Record<string, string> | undefined, steps?: Record<string, string>): string[] {
+  const merged = mergeLayoutRoles('spacing', roles)
+  return INSET_SIDE_KEYS.map(({ key, role }) => {
+    const own = merged[key]
+    return `--spacing-${key}: ${own === undefined ? `var(--spacing-${role})` : layoutValueCss('spacing', own, steps)};`
+  })
+}
+
 /**
  * SPACING MODES — four ready-made densities for the Theme preview's Spacing
  * edition, so a theme gets a coherent feel in one pick instead of three dials.
@@ -1607,6 +1697,15 @@ export function mergeLayoutRoles(
     const ok = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit, family === 'spacing') !== null || (family === 'spacing' && isSpacingResponsiveRef(hit)))
     out[role.key] = ok ? hit : role.primitive
   }
+  // Inset sides: kept only when set by hand and different from their inset —
+  // an absent side follows it (see INSET_SIDE_KEYS).
+  if (family === 'spacing') {
+    for (const { key, role } of INSET_SIDE_KEYS) {
+      const hit = bag[key]
+      const ok = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit, true) !== null || isSpacingResponsiveRef(hit))
+      if (ok && hit !== out[role]) out[key] = hit
+    }
+  }
   return out
 }
 
@@ -1689,7 +1788,7 @@ export function layoutRoleCssVars(
     if (family === 'breakpoint' && role.key === 'tablet') return `--breakpoint-tablet: ${target};`
     if (family === 'breakpoint' && role.key === 'desktop') return `--breakpoint-desktop: ${target};`
     return `${layoutRoleVar(family, role.key)}: ${target};`
-  })
+  }).concat(family === 'spacing' ? insetSideCssVars(map, steps) : [])
 }
 
 export function allLayoutRoleCssVars(

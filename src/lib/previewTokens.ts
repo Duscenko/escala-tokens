@@ -639,9 +639,26 @@ export function typeStyleOf(
   if (s.letterSpacing !== '0px') css.letterSpacing = s.letterSpacing
   return css
 }
+/** An inset as a CSS padding shorthand — `top right bottom left`, each side
+ *  its own value or the inset it follows (`t.spacingRoles` carries all twelve
+ *  sides already filled, see `withInsetSides`). */
+export function insetOf(t: PreviewTokens, role: 'inset-control' | 'inset-surface' | 'inset-page', fallback = ''): string {
+  const base = spacingRoleOf(t, role, fallback)
+  const side = (s: string) => spacingRoleOf(t, `${role}-${s}`, '') || base
+  const [top, right, bottom, left] = ['top', 'right', 'bottom', 'left'].map(side)
+  return top === right && right === bottom && bottom === left ? top : `${top} ${right} ${bottom} ${left}`
+}
+/** A fixed-height control's padding: only its LEFT and RIGHT inset sides —
+ *  its height comes from Sizes, so top and bottom stay 0. */
+export function controlInsetX(t: PreviewTokens, fallback = '12px'): string {
+  const base = spacingRoleOf(t, 'inset-control', fallback)
+  const right = spacingRoleOf(t, 'inset-control-right', '') || base
+  const left = spacingRoleOf(t, 'inset-control-left', '') || base
+  return `0 ${right} 0 ${left}`
+}
 /** CSS padding shorthand from the surface-padding token (top/right/bottom/left). */
 export function paddingOf(t: PreviewTokens, fallback = '20px'): string {
-  const fromRole = spacingRoleOf(t, 'inset-surface', '')
+  const fromRole = insetOf(t, 'inset-surface', '')
   if (fromRole) return fromRole
   const p = t.padding
   if (!p) return fallback

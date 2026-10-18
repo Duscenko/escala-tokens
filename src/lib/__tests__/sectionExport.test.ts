@@ -247,8 +247,10 @@ describe('buildCSS hairline guard', () => {
 
   it('aliases --padding-* onto spacing-inset-surface when the mirror still matches', () => {
     const css = buildCSS(useDesignStore.getState())
-    expect(css).toContain('--padding-top: var(--spacing-inset-surface);')
-    expect(css).toContain('--padding-left: var(--spacing-inset-surface);')
+    // Each side aliases its inset side, which follows the inset itself.
+    expect(css).toContain('--padding-top: var(--spacing-inset-surface-top);')
+    expect(css).toContain('--padding-left: var(--spacing-inset-surface-left);')
+    expect(css).toContain('--spacing-inset-surface-top: var(--spacing-inset-surface);')
     expect(css).not.toMatch(/--padding-top: 20px;/)
   })
 })

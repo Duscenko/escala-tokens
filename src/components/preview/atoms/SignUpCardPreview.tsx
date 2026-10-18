@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { type PreviewTokens } from '../ButtonPreview'
-import { radiusRoleOf, paddingOf, shadowOf, sizeRoleOf, spacingRoleOf, typeStyleOf, spaceOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, paddingOf, shadowOf, sizeRoleOf, spacingRoleOf, controlInsetX, typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import { InputPreview } from './InputPreview'
 
 // A composed sign-up card: title + two inputs + a full-width primary CTA. Every
@@ -22,7 +22,7 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
     color: tokens.onBrand,
     border: 'none',
     borderRadius: radiusRoleOf(tokens, 'action', '8px'),
-    padding: `0 ${spacingRoleOf(tokens, 'inset-control', '12px')}`,
+    padding: controlInsetX(tokens),
     ...typeStyleOf(tokens, 'button', { leading: false }),
     cursor: 'pointer',
   }

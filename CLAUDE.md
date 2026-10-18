@@ -2931,6 +2931,24 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   platform) and Spacing responsive (18 tokens, Component · Section · Layout, "Used by"
 >   chips back to the role). One viewport at a time via the Platform switch.
 
+> **INSET SIDES (2026-10-18): every inset role has four sides — `inset-control|surface|page`
+> `-top · -right · -bottom · -left` (`INSET_SIDE_KEYS`, `layoutTokens.ts`).** Reported as users
+> confused about top/bottom padding: an inset was one symmetric value. A side lives in
+> `spacingRoles` under its own key ONLY when set by hand (same value grammar as a role); an absent
+> side FOLLOWS its inset, so moving `inset-surface` still moves every untouched side and a system
+> with no side set ships exactly what it did before (no store migration). Writing the inset's own
+> value = follow (`withInsetSide`). Readers that do not know "follow" get `withInsetSides()` (filled):
+> tokens.json `spacingRoles` / `spacingRoleRefs` carry all twelve, so the plugin writes
+> `Spacing/role/inset-surface-top` etc. with no code change. CSS: a following side is
+> `var(--spacing-<inset>)` (steps down with it), a set side its primitive (+ its own media override
+> when on a responsive token); `--padding-*` alias `--spacing-inset-surface-<side>`. W3C aliases
+> `{spacing.<inset>}`. Previews: `insetOf(t, role)` (4-side shorthand) and `controlInsetX(t)` — a
+> fixed-height control uses only LEFT/RIGHT; its height comes from Sizes, so `inset-control-top/bottom`
+> only apply to a control with no fixed height. UI: Variables · Spacing semantics rows "Sides" (all
+> three insets); Theme inspector · Spacing · **Card padding** (`inset-surface` only). A Spacing mode
+> or the middle "All sides" value clears the sides. Not done: binding the sides in the plugin's
+> component padding, and the sides in Docs → Spacing.
+
 > **UPDATE (store v89): every HEADING steps one rung per platform cut.** Tablet used to
 > copy Desktop for Heading LG…XS. Now display 60·48·36 · xl 48·36·30 · lg 36·30·24 ·
 > md 30·24·20 · sm 24·20·18 · xs 20·18·16 · **heading-2xs (h6, new)** 18·16·16 on the

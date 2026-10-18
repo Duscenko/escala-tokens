@@ -29,7 +29,7 @@ import { buildAgentProductExport, buildSkillExport } from './skillExport'
 import { dimensionFromKey, dimensionRef, parseDimension } from './dimensions'
 import { phosphorCoreBody, phosphorIconSvgForFigma } from './phosphorIcons'
 import { PHOSPHOR_CORE } from './iconLibraries'
-import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, roleValuePx, type LayoutFamily } from './layoutTokens'
+import { LAYOUT_ROLES, INSET_SIDE_KEYS, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, roleValuePx, type LayoutFamily } from './layoutTokens'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'gradients' | 'typography' | 'spacing'
@@ -392,6 +392,14 @@ function dimWithRoles(
   const root = refRoot ?? (family === 'size' ? 'size' : family)
   for (const role of LAYOUT_ROLES[family]) {
     out[role.key] = token(roleRef(map[role.key], primitives, root), 'dimension')
+  }
+  // Inset sides: one that follows its inset aliases it; one set by hand
+  // aliases its own primitive.
+  if (family === 'spacing') {
+    for (const { key, role } of INSET_SIDE_KEYS) {
+      const own = map[key]
+      out[key] = token(own === undefined ? `{${root}.${role}}` : roleRef(own, primitives, root), 'dimension')
+    }
   }
   return out as W3CNode
 }

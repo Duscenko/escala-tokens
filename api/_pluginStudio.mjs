@@ -1135,7 +1135,7 @@ function buildTypeScale(factor) {
   }
   return { sizes, lineHeights };
 }
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_CATEGORIES;
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
 var init_typographyStandard = __esm({
   "src/lib/typographyStandard.ts"() {
     TYPE_SCALE_KEYS = [
@@ -1217,12 +1217,16 @@ var init_typographyStandard = __esm({
       { key: "font-family-heading", role: "display", label: "font-family-heading" },
       { key: "font-family-body", role: "body", label: "font-family-body" }
     ];
+    TYPO_GROUP_COUNT = FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3;
     TYPO_CATEGORIES = [
-      { key: "all", label: "All", count: 32 },
+      { key: "all", label: "All", count: TYPO_GROUP_COUNT },
       { key: "family", label: "Font family", count: FONT_FAMILY_ROWS.length },
       { key: "weight", label: "Font weight", count: FONT_WEIGHT_ROWS.length },
       { key: "size", label: "Font size", count: TYPE_SCALE_KEYS.length },
-      { key: "lineHeight", label: "Line height", count: TYPE_SCALE_KEYS.length }
+      { key: "lineHeight", label: "Line height", count: TYPE_SCALE_KEYS.length },
+      // Derived from each size (letterSpacingFor) — listed so the collection
+      // shows every primitive that ships, read-only in the table.
+      { key: "letterSpacing", label: "Letter spacing", count: TYPE_SCALE_KEYS.length }
     ];
   }
 });
@@ -1531,7 +1535,7 @@ function spacingRefStep(value, viewport = "desktop") {
   return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value;
 }
 function spacingRolesAtViewport(roles, viewport) {
-  const merged = mergeLayoutRoles("spacing", roles);
+  const merged = withInsetSides(roles);
   return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]));
 }
 function scaleRadiusFromLg(lg, current) {
@@ -1784,6 +1788,15 @@ function radiusRolesAreLegacyDefault(roles) {
   if (!roles) return true;
   return Object.entries(LEGACY_RADIUS_ROLE_RUNGS).every(([key2, rung]) => roles[key2] === void 0 || roles[key2] === rung);
 }
+function insetSideKey(role, side) {
+  return `${role}-${side}`;
+}
+function withInsetSides(roles) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  const out = { ...merged };
+  for (const { key: key2, role } of INSET_SIDE_KEYS) out[key2] = merged[key2] ?? merged[role];
+  return out;
+}
 function matchSpacingMode(sizes, spacingRoles, stroke) {
   const base = inferSizeBase(sizes ?? {});
   const inset = spacingRefStep(mergeLayoutRoles("spacing", spacingRoles)[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP);
@@ -1820,6 +1833,13 @@ function mergeLayoutRoles(family, stored) {
     const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, family === "spacing") !== null || family === "spacing" && isSpacingResponsiveRef(hit));
     out[role.key] = ok ? hit : role.primitive;
   }
+  if (family === "spacing") {
+    for (const { key: key2, role } of INSET_SIDE_KEYS) {
+      const hit = bag[key2];
+      const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, true) !== null || isSpacingResponsiveRef(hit));
+      if (ok && hit !== out[role]) out[key2] = hit;
+    }
+  }
   return out;
 }
 function nearestSpacingStep(spacing, targetPx) {
@@ -1833,7 +1853,7 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -2064,6 +2084,10 @@ var init_layoutTokens = __esm({
       { key: "overlap-xl", label: "Overlap xl", description: "Heavily stacked; only the edge shows.", group: "overlap", primitive: "dimension--24" },
       { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
     ];
+    INSET_ROLES = ["inset-control", "inset-surface", "inset-page"];
+    INSET_SIDES = ["top", "right", "bottom", "left"];
+    INSET_SIDE_KEYS = INSET_ROLES.flatMap((role) => INSET_SIDES.map((side) => ({ key: insetSideKey(role, side), role, side })));
+    INSET_SIDE_BY_KEY = new Map(INSET_SIDE_KEYS.map((entry) => [entry.key, entry]));
     SPACING_MODES = [
       { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: FIELD_BASE_MIN, insetStep: "3", border: 1 },
       { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
@@ -5199,7 +5223,7 @@ function generateTokenJSON(source, opts) {
       // `Spacing/role/*`. Same split as the root: Desktop static steps, plus
       // which roles alias a responsive token.
       spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, "desktop"),
-      spacingRoleRefs: mergeLayoutRoles("spacing", resolved.spacingRoles),
+      spacingRoleRefs: withInsetSides(resolved.spacingRoles),
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles("radius", resolved.radiusRoles),
@@ -5400,7 +5424,7 @@ function generateTokenJSON(source, opts) {
     spacingRoles: spacingRolesAtViewport(store.spacingRoles, "desktop"),
     // …and the responsive layer on top, additive: which roles alias a
     // responsive token (`component-md`), and the token table itself.
-    spacingRoleRefs: mergeLayoutRoles("spacing", store.spacingRoles),
+    spacingRoleRefs: withInsetSides(store.spacingRoles),
     spacingResponsive: SPACING_RESPONSIVE,
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).

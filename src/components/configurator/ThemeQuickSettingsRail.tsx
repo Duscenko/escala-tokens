@@ -42,6 +42,11 @@ import {
   INSET_SURFACE_ROLE,
   PADDING_DEFAULT_STEP,
   insetSurfacePadding,
+  INSET_SIDES,
+  clearInsetSides,
+  insetSideKey,
+  withInsetSide,
+  type InsetSide,
   SPACING_MODES,
   matchSpacingMode,
   type SpacingMode,
@@ -81,7 +86,7 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, SELECT_SHELL, SELECT_FOCUS, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
@@ -487,6 +492,50 @@ function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
  * is visible before it is made. The selection is READ from the tokens
  * (`matchSpacingMode`): edit a value elsewhere and no tile is lit.
  */
+/** Card padding, side by side: the inset in the middle sets all four at once,
+ *  and each side can leave it (a card with a tighter bottom, a sheet with no
+ *  top). A side left on "=" follows the middle value. Writes `inset-surface`
+ *  and its `-top · -right · -bottom · -left` sides (Variables · Spacing). */
+function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
+  spacing: Record<string, string>
+  spacingRoles: Record<string, string> | undefined
+  onBase: (step: string) => void
+  onSide: (side: InsetSide, step: string | undefined) => void
+}) {
+  const px = (step: string) => spacing[step] ?? `${Number(step.replace('_', '.')) * 4}px`
+  const base = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
+  const baseStep = SPACING_STEPS.includes(base as (typeof SPACING_STEPS)[number]) ? base : ''
+  const label: Record<InsetSide, string> = { top: 'Top', right: 'Right', bottom: 'Bottom', left: 'Left' }
+  const select = (ariaLabel: string, value: string, onChange: (v: string) => void, follow: boolean) => (
+    <select
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`h-7 w-[4.5rem] px-1.5 text-caption tabular-nums text-fg appearance-none text-center ${SELECT_SHELL} ${SELECT_FOCUS}`}
+    >
+      {follow && <option value="">= {baseStep ? px(baseStep) : '—'}</option>}
+      {!follow && !baseStep && <option value="">Custom</option>}
+      {SPACING_STEPS.map((step) => <option key={step} value={step}>{px(step)}</option>)}
+    </select>
+  )
+  const side = (s: InsetSide) => {
+    const own = spacingRoles?.[insetSideKey('inset-surface', s)]
+    return select(`Card padding ${label[s].toLowerCase()}`, own && SPACING_STEPS.includes(own as (typeof SPACING_STEPS)[number]) ? own : '', (v) => onSide(s, v || undefined), true)
+  }
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto_auto] items-center justify-items-center gap-1.5">
+      <span />{side('top')}<span />
+      {side('left')}
+      <div className="flex flex-col items-center gap-1 rounded-md border border-dashed border-line-strong px-2 py-2">
+        <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">All sides</span>
+        {select('Card padding, all sides', baseStep, (v) => v && onBase(v), false)}
+      </div>
+      {side('right')}
+      <span />{side('bottom')}<span />
+    </div>
+  )
+}
+
 function SpacingModeGrid({ value, onChange }: {
   value: SpacingMode['id'] | null
   onChange: (mode: SpacingMode) => void
@@ -1884,10 +1933,20 @@ export default function ThemeQuickSettingsRail({
   const setContainerInset = (key: string, stepIndex: number) => {
     const step = SPACING_STEPS[Math.max(0, Math.min(SPACING_STEPS.length - 1, stepIndex))]
     const px = spacing[step] ?? `${Number(step) * 4}px`
+    // Setting the whole inset makes it symmetric again: the sides follow it.
     patchThemeFoundations(key, {
-      spacingRoles: { ...spacingRoles, [INSET_SURFACE_ROLE]: step },
+      spacingRoles: clearInsetSides({ ...spacingRoles, [INSET_SURFACE_ROLE]: step }, 'inset-surface'),
       padding: insetSurfacePadding(px),
     })
+  }
+  // One side of the card padding; `undefined` follows the inset again. The
+  // `padding` mirror takes each side's px so `--padding-*` keeps aliasing.
+  const setContainerInsetSide = (key: string, side: InsetSide, step: string | undefined) => {
+    const roles = withInsetSide(spacingRoles ?? {}, 'inset-surface', side, step)
+    const base = roles[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
+    const pxOf = (s: string) => spacing[s] ?? `${Number(s.replace('_', '.')) * 4}px`
+    const padding = Object.fromEntries(INSET_SIDES.map((s) => [s, pxOf(roles[insetSideKey('inset-surface', s)] ?? base)]))
+    patchThemeFoundations(key, { spacingRoles: roles, padding })
   }
   const brandFamily = themeSources[previewTheme]?.brand ?? 'accent'
   const grayFamily = themeSources[previewTheme]?.gray ?? 'neutral'
@@ -2708,6 +2767,15 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
+          <SettingItem label="Card padding" hint="The inset of cards, modals and alerts (Spacing · Inset surface). The middle sets every side; change one side when the padding should not be symmetric.">
+            <InsetSidesCard
+              spacing={spacing}
+              spacingRoles={spacingRoles}
+              onBase={(step) => commit('Card padding updated', (themeKey) => setContainerInset(themeKey, SPACING_STEPS.indexOf(step as (typeof SPACING_STEPS)[number])))}
+              onSide={(side, step) => commit('Card padding updated', (themeKey) => setContainerInsetSide(themeKey, side, step))}
+            />
+          </SettingItem>
+
           <SettingItem
             label="Fields"
             hint={t('Base unit × 8 = SM, × 10 = Control (MD). Keep MD at least {minPx}px (base {minBase} or higher).', {
@@ -2782,7 +2850,8 @@ export default function ThemeQuickSettingsRail({
         {activePanel === 'sizes' && (
           inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
           inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
-          (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP
+          (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP ||
+          INSET_SIDES.some((side) => spacingRoles?.[insetSideKey('inset-surface', side)] !== undefined)
         ) && (
           <button
             type="button"
