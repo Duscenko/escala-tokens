@@ -18,8 +18,8 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonCloseButtonSpecimen, SkeletonFABButtonSpecimen,
-  SkeletonSocialLoginButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonAppStoreBadgeSpecimen,
+  SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen,
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
@@ -113,9 +113,8 @@ export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconCo
 /** Brand keeps the catalogue star. A severity button that still shows a star
  *  is advertising decoration as status — Danger is the error circle, Success
  *  the plain check (`check-circle` collapses to a star-shaped blob at SM). */
-export function buttonLeadingConcept(color?: string): IconConcept {
-  if (color === 'Danger') return 'error'
-  if (color === 'Success') return 'check'
+export function buttonLeadingConcept(variant?: string): IconConcept {
+  if (variant === 'destructive') return 'error'
   return ICON_SLOTS.Button.leading
 }
 
@@ -275,7 +274,7 @@ export function IconStyleOverview({ weight = 'regular', ariaLabel = 'Phosphor ic
  * the Color collage) that omits it renders byte-identical to before. It exists
  * because a few specimens echo fixed prose that made sense as a category demo
  * — `Badge` prints its `Color` axis value verbatim ("Brand", "Success"),
- * `TextLink` is one fixed sentence, `Card` is one fixed title/body/link — and
+ * `Card` is one fixed title/body/link — and
  * an artefact composing a real screen (a "Most popular" plan badge, a "Resend
  * code" link, a pricing card's own features) needs to say something the demo
  * never anticipated. The specimen still owns every visual: colour, radius,
@@ -305,17 +304,6 @@ export interface SpecimenProps {
   elev?: string | false
   /** Omit the helper line under fields — dense collage / sign-up modules. */
   hideHint?: boolean
-}
-
-// ── Button (Color × Style × State) ────────────────────────────────────────────
-
-// Button size scale — heights resolve from the Sizes foundation (sm–xl), so
-// editing Foundations · Sizes retunes every button size live.
-export const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number; padX: number; gap: number }> = {
-  SM: { sizeKey: 'sm', h: 32, f: 13, padX: 14, gap: 6 },
-  MD: { sizeKey: 'md', h: 40, f: 14, padX: 18, gap: 8 },
-  LG: { sizeKey: 'lg', h: 48, f: 15, padX: 22, gap: 8 },
-  XL: { sizeKey: 'xl', h: 56, f: 16, padX: 26, gap: 10 },
 }
 
 // ── Input (Size × State × Type) ───────────────────────────────────────────────
@@ -357,10 +345,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
-  CloseButton: SkeletonCloseButtonSpecimen,
-  FABButton: SkeletonFABButtonSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
-  TextLink: SkeletonTextLinkSpecimen,
   AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
   Input: SkeletonInputSpecimen,

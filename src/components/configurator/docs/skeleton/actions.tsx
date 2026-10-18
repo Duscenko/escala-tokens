@@ -1,79 +1,78 @@
+import type * as React from 'react'
 import type { SpecimenProps } from '../specimens'
-import { BUTTON_SIZE_SPECS, ICON_SLOTS, PreviewIcon, buttonLeadingConcept } from '../specimens'
+import { ICON_SLOTS, PreviewIcon, buttonLeadingConcept } from '../specimens'
 import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
-import { Button as SkButton, CloseButton as SkCloseButton, FABButton as SkFABButton } from '../../../escala-ui/button'
-import { ButtonGroup as SkButtonGroup, ButtonGroupItem as SkButtonGroupItem } from '../../../escala-ui/button-group'
-import { TextLink as SkTextLink } from '../../../escala-ui/link'
+import { Button as SkButton, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
+import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge } from '../../../escala-ui/app-store-badge'
-import { RecipeScope, lower } from './scope'
+import { RecipeScope } from './scope'
 
-const INTENT: Record<string, 'brand' | 'neutral' | 'danger' | 'success'> = {
-  Brand: 'brand', Neutral: 'neutral', Danger: 'danger', Success: 'success',
+/** shadcn size → the control step its icon is sized from (xs · sm · md · lg). */
+const ICON_STEP: Record<ButtonSize, string> = {
+  xs: 'xs', 'icon-xs': 'xs', sm: 'sm', 'icon-sm': 'sm', default: 'md', icon: 'md', lg: 'lg', 'icon-lg': 'lg',
 }
 
 export function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
-  const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
-  const iconPx = iconForControlStep(sz.sizeKey, t)
+  const variant = (v.Variant ?? 'default') as ButtonVariant
+  const size = (v.Size ?? 'default') as ButtonSize
+  const iconPx = iconForControlStep(ICON_STEP[size] ?? 'md', t)
   const loading = v.State === 'Loading'
+  const iconOnly = size.startsWith('icon')
   const slots = ICON_SLOTS.Button
+  const leadConcept = icons?.leadingConcept ?? buttonLeadingConcept(variant)
+  const spinner = (
+    <span
+      className="inline-block animate-spin rounded-full"
+      style={{ width: iconPx - 2, height: iconPx - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
+      aria-hidden
+    />
+  )
   return (
     <RecipeScope t={t}>
       <SkButton
-        variant={lower(v.Style, 'Solid') as 'solid'}
-        intent={INTENT[v.Color ?? 'Brand']}
-        size={lower(v.Size, 'MD') as 'md'}
+        variant={variant}
+        size={size}
         forceState={(v.State ?? 'Default') as 'Default'}
+        aria-label={iconOnly ? (typeof children === 'string' ? children : 'Add') : undefined}
         style={{ width: w, minWidth: w != null ? 0 : undefined, maxWidth: w != null ? '100%' : undefined }}
       >
-        {loading && (
-          <span
-            className="inline-block animate-spin rounded-full"
-            style={{ width: iconPx - 2, height: iconPx - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
-            aria-hidden
-          />
+        {iconOnly ? (
+          loading ? spinner : <PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? slots.leading} size={iconPx} />
+        ) : (
+          <>
+            {loading && spinner}
+            {!loading && icons?.leading && <PreviewIcon prefix={icons.prefix} concept={leadConcept} size={iconPx} />}
+            <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
+            {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />}
+          </>
         )}
-        {!loading && icons?.leading && (
-          <PreviewIcon prefix={icons.prefix} concept={icons.leadingConcept ?? buttonLeadingConcept(v.Color)} size={iconPx} />
-        )}
-        <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
-        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />}
       </SkButton>
     </RecipeScope>
   )
 }
 
 export function SkeletonButtonGroupSpecimen({ t, v }: SpecimenProps) {
+  const orientation = (v.Orientation ?? 'horizontal') as ButtonGroupOrientation
   return (
     <RecipeScope t={t}>
-      <SkButtonGroup size={lower(v.Size, 'MD') as 'md'}>
-        <SkButtonGroupItem>Day</SkButtonGroupItem>
-        <SkButtonGroupItem selected>Week</SkButtonGroupItem>
-        <SkButtonGroupItem>Month</SkButtonGroupItem>
+      <SkButtonGroup orientation={orientation} aria-label="Range">
+        <SkButton variant="outline">Day</SkButton>
+        <SkButton variant="outline">Week</SkButton>
+        <SkButton variant="outline">Month</SkButton>
       </SkButtonGroup>
     </RecipeScope>
   )
 }
 
-export function SkeletonCloseButtonSpecimen({ t, v }: SpecimenProps) {
-  const px = v.Size === 'SM' ? 24 : 32
+/** A dismiss control is shadcn's `Button variant="ghost" size="icon-sm"`. */
+export function SkeletonDismissSpecimen({ t, size = 'icon-sm' }: { t: SpecimenProps['t']; size?: ButtonSize }) {
   return (
     <RecipeScope t={t}>
-      <SkCloseButton size={v.Size === 'SM' ? 'sm' : 'md'} forceState={(v.State ?? 'Default') as 'Default'}>
-        <PreviewIcon concept="close" size={Math.round(px * 0.5)} />
-      </SkCloseButton>
-    </RecipeScope>
-  )
-}
-
-export function SkeletonFABButtonSpecimen({ t, v }: SpecimenProps) {
-  const px = v.Size === 'LG' ? 56 : 48
-  return (
-    <RecipeScope t={t}>
-      <SkFABButton size={v.Size === 'LG' ? 'lg' : 'md'} aria-label="New item">
-        <PreviewIcon concept="plus" size={Math.round(px * 0.42)} />
-      </SkFABButton>
+      <SkButton variant="ghost" size={size} aria-label="Close">
+        <PreviewIcon concept="close" size={iconForControlStep(ICON_STEP[size] ?? 'sm', t)} />
+      </SkButton>
     </RecipeScope>
   )
 }
@@ -94,15 +93,16 @@ export function SkeletonSocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonTextLinkSpecimen({ t, v, children }: SpecimenProps) {
-  const link = (
-    <SkTextLink href="#docs" onClick={(e) => e.preventDefault()} forceState={(v.State ?? 'Default') as 'Default'}>
-      {children ?? 'design tokens guide ↗'}
-    </SkTextLink>
+/** An inline link inside running copy: shadcn's `Button variant="link"` on an
+ *  <a>, without the control's height and padding (it sits on the text line). */
+export function SkeletonInlineLinkSpecimen({ t, children }: { t: SpecimenProps['t']; children: React.ReactNode }) {
+  return (
+    <RecipeScope t={t}>
+      <SkButton variant="link" asChild style={{ height: 'auto', paddingInline: 0, display: 'inline', verticalAlign: 'baseline' }}>
+        <a href="#" onClick={(e) => e.preventDefault()}>{children}</a>
+      </SkButton>
+    </RecipeScope>
   )
-  // With `children` the caller supplies the WHOLE sentence around the link
-  // ("Didn't get a code? <TextLink>Resend</TextLink>"), so only the anchor renders.
-  return <RecipeScope t={t}>{children ? link : <span style={{ font: 'var(--text-body-md-font-size) var(--font-family-body)' }}>Read the {link}</span>}</RecipeScope>
 }
 
 export function SkeletonAppStoreBadgeSpecimen({ t, v }: SpecimenProps) {

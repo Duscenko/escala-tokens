@@ -46,81 +46,40 @@ export const COMPONENTS: ComponentDef[] = [
     label: 'Button',
     category: 'Button & Actions',
     description:
-      'The core action component of the system. It covers primary, destructive and success intents across four visual styles and the full interaction lifecycle, so a generic button never has to be rebuilt.',
-    usage: 'Use for the single most important action on a surface. Limit to 1–2 per section.',
-    // NO 'Icon' axis. The Figma plugin used to ship it as a discrete
-    // None|Leading|Trailing VARIANT (three separate components), which is
-    // also why it could never represent both icons on one button. It's real,
-    // independent leading/trailing BOOLEAN + INSTANCE_SWAP properties on
-    // every variant now — a toggle per slot, not a value to pick from a
-    // dropdown — see `leadingIcon`/`trailingIcon` below. Removing this entry
-    // also just catches this file up to what `ButtonSpecimen` already does:
-    // it reads `icons.leading`/`icons.trailing` directly, never `v.Icon`.
+      'shadcn/ui Button: six variants (default, secondary, outline, ghost, destructive, link) and eight sizes, four of them square icon buttons. An icon-only ghost button is the dismiss control; a link button is an inline link.',
+    usage: 'Use default for the single most important action on a surface (1–2 per section); secondary/outline/ghost for the rest; destructive for an action that removes data. An icon-only button needs an aria-label.',
+    // Variant and Size are shadcn's own, value for value. State is a Figma
+    // axis only: in code it is pseudo-classes (forceState pins it in docs).
     axes: [
-      { name: 'Color', values: ['Brand', 'Neutral', 'Danger', 'Success'] },
-      { name: 'Style', values: ['Solid', 'Outline', 'Soft', 'Ghost'] },
-      { name: 'Size', values: ['MD', 'SM', 'LG', 'XL'] },
+      { name: 'Variant', values: ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] },
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'] },
       { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] },
     ],
     figmaSets: ['Button'],
     props: [
-      { name: 'variant', type: '"solid" | "outline" | "soft" | "ghost" | "default" | "secondary" | "destructive" | "link"', description: 'Visual emphasis (Escala styles). The shadcn names map onto it: default = solid, secondary = solid neutral, destructive = solid danger, link = ghost.' },
-      { name: 'intent', type: '"brand" | "neutral" | "danger" | "success"', description: 'Semantic colour. Defaults to neutral for outline / ghost (as in shadcn) and brand for solid / soft.' },
-      { name: 'size', type: '"sm" | "md" | "lg" | "xl" | "icon" | "icon-sm" | "icon-lg"', description: 'Control height — follows the Sizes foundation (compact · control · touch). icon* are square.' },
-      { name: 'loading', type: 'boolean', description: 'Replaces the leading icon with a spinner and sets aria-busy.' },
-      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled tokens.' },
+      { name: 'variant', type: '"default" | "secondary" | "outline" | "ghost" | "destructive" | "link"', description: 'Visual emphasis — shadcn\'s variants.' },
+      { name: 'size', type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"', description: 'Control height from the Sizes foundation (hit · compact · control · touch). icon* are square.' },
       { name: 'asChild', type: 'boolean', description: 'Render the child element (a link, a router link) with the Button styles — Radix Slot.' },
+      { name: 'loading', type: 'boolean', description: 'Escala: replaces the leading icon with a spinner and sets aria-busy.' },
+      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled tokens.' },
       { name: 'children', type: 'ReactNode', description: 'Label, with optional icons before / after it as plain children.' },
     ],
-    accessibility: 'Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. Icon-only buttons need an aria-label.',
+    accessibility: 'Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. Icon-only buttons (size icon*) need an aria-label.',
   },
   {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',
-    description: 'A row of attached buttons sharing one border, for related actions or exclusive views.',
-    usage: 'Use for 2–4 sibling actions of equal weight. For a single selected view, prefer Segmented Control.',
-    axes: [{ name: 'Size', values: ['MD', 'SM', 'LG'] }],
+    description: 'shadcn/ui Button Group: Buttons attached edge to edge, with an optional text segment and separator.',
+    usage: 'Use for 2–4 related actions that read as one control. For a single selected view, use Segmented Control or Tabs.',
+    axes: [{ name: 'Orientation', values: ['horizontal', 'vertical'] }],
     figmaSets: ['Button Group'],
     props: [
-      { name: 'size', type: '"sm" | "md" | "lg"', description: 'Shared height scale — follows the Sizes foundation.' },
-      { name: 'ButtonGroupItem selected', type: 'boolean', description: 'Marks the current choice (aria-pressed) and paints the selected fill.' },
-      { name: 'ButtonGroupSeparator', type: 'component', description: 'Optional divider between segments.' },
+      { name: 'orientation', type: '"horizontal" | "vertical"', description: 'Direction the buttons attach in.' },
+      { name: 'ButtonGroupText', type: 'component', description: 'A non-interactive segment (a label, a unit).' },
+      { name: 'ButtonGroupSeparator', type: 'component', description: 'A divider between two buttons of the same variant.' },
     ],
-    accessibility: 'role="group" on the container (add aria-label). Each item is a native <button> with aria-pressed.',
-  },
-  {
-    key: 'CloseButton',
-    label: 'Close Button',
-    category: 'Button & Actions',
-    description: 'Icon-only dismiss affordance shared by modals, banners, chips and toasts.',
-    usage: 'Place top-right of the surface it dismisses. Keep a minimum 24px hit area.',
-    axes: [
-      { name: 'Size', values: ['MD', 'SM'] },
-      { name: 'State', values: ['Default', 'Hover', 'Focused'] },
-    ],
-    figmaSets: ['Button Close'],
-    props: [
-      { name: 'size', type: '"sm" | "md"', description: 'Hit-area scale — 24 / 32px.' },
-      { name: 'children', type: 'ReactNode', description: 'The glyph (an X from your icon library).' },
-      { name: 'onClick', type: '() => void', description: 'Dismiss handler.' },
-    ],
-    accessibility: 'aria-label="Close" is built in — the glyph alone is not accessible.',
-  },
-  {
-    key: 'FABButton',
-    label: 'FAB Button',
-    category: 'Button & Actions',
-    description: 'Floating action button — a circular, elevated CTA for the primary screen action.',
-    usage: 'One per screen, anchored to a corner. Reserve for the single most common action.',
-    axes: [{ name: 'Size', values: ['MD', 'LG'] }],
-    figmaSets: ['Button FAB'],
-    props: [
-      { name: 'size', type: '"md" | "lg"', description: 'Diameter — 48 / 56px.' },
-      { name: 'children', type: 'ReactNode', description: 'Glyph at the centre (required).' },
-      { name: 'aria-label', type: 'string', description: 'Accessible name for the action (required — icon-only).' },
-    ],
-    accessibility: 'aria-label required (icon-only). Elevation is the shadow token, never colour alone.',
+    accessibility: 'role="group" on the container — add an aria-label. Each item is a real Button.',
   },
   {
     key: 'SocialLoginButton',
@@ -140,21 +99,6 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'onClick', type: '() => void', description: 'Starts the OAuth flow.' },
     ],
     accessibility: 'Native <button> with the full "Continue with …" label — never icon-only.',
-  },
-  {
-    key: 'TextLink',
-    label: 'Text Link',
-    category: 'Button & Actions',
-    description: 'Inline navigational link styled from the brand text token, with hover and disabled states.',
-    usage: 'Use for navigation inside copy. For actions, use Button — links navigate, buttons act.',
-    axes: [{ name: 'State', values: ['Default', 'Hover', 'Disabled'] }],
-    figmaSets: ['Text Link'],
-    props: [
-      { name: 'href', type: 'string', description: 'Destination URL.' },
-      { name: 'forceState', type: '"Default" | "Hover" | "Disabled"', description: 'Pin a state without a pointer (docs, tests).' },
-      { name: 'aria-disabled', type: 'boolean', description: 'Disabled links keep their element but drop the hover affordance.' },
-    ],
-    accessibility: 'Real <a> element. Underline on hover/focus so color is not the only signal.',
   },
   {
     key: 'AppStoreBadge',

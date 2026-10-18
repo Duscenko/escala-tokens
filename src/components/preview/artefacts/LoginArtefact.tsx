@@ -1,4 +1,5 @@
 import { SPECIMENS } from '../../configurator/docs/specimens'
+import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { radiusRoleOf, spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
@@ -11,7 +12,6 @@ const Button = SPECIMENS.Button
 const Checkbox = SPECIMENS.Checkbox
 const SocialLoginButton = SPECIMENS.SocialLoginButton
 const Divider = SPECIMENS.Divider
-const TextLink = SPECIMENS.TextLink
 
 /** Every gap is a spacing ROLE, never a number — `gap-group` is what the system
  *  itself calls "stacked fields", so this screen re-spaces when that role moves. */
@@ -40,13 +40,13 @@ function OrRule({ t }: { t: PreviewTokens }) {
  *
  * Every control is a catalogue specimen at `w: '100%'`, so the screen is made of
  * the exact renderers the Figma plugin ships; only the width (and, for Button
- * and TextLink, the label — see `SpecimenProps.children`) differ from the
+ * and the inline link, the label — see `SpecimenProps.children`) differ from the
  * Components playground. Most copy is still the specimen's own, unwritten
  * here — `Input`'s E-Mail and Password types already carry the right labels
  * and placeholders, `Checkbox` already reads "Remember me", and
  * `SocialLoginButton` already reads "Continue with …". The artefact supplies
  * only what no component provides on its own: the page's title/subtitle, and
- * the two labels ("Sign in", "Sign up") a generic Button/TextLink demo has no
+ * the two labels ("Sign in", "Sign up") a generic Button demo has no
  * way to guess.
  *
  * The CTA is `Size: 'LG'`, which resolves the same `lg` primitive the system's
@@ -99,7 +99,7 @@ function LoginScreen({ t, compact }: ArtefactProps) {
             <Checkbox t={t} v={{ Checked: 'True' }} />
             {/* `touch` is the system's own mobile-CTA height role; LG resolves
                 the same `lg` primitive it points at. */}
-            <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">{translate('Sign in')}</Button>
+            <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">{translate('Sign in')}</Button>
             <OrRule t={t} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
               <SocialLoginButton t={t} v={{ Provider: 'Google' }} w="100%" />
@@ -110,7 +110,7 @@ function LoginScreen({ t, compact }: ArtefactProps) {
 
         <p style={{ margin: 0, textAlign: 'center', ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
           {translate('Don’t have an account?')}{' '}
-          <TextLink t={t} v={{}}>{translate('Sign up')}</TextLink>
+          <SkeletonInlineLinkSpecimen t={t}>{translate('Sign up')}</SkeletonInlineLinkSpecimen>
         </p>
       </div>
     </DeviceFrame>

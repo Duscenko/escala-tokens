@@ -58,7 +58,7 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('### Variant properties')
     expect(md).toContain('`--radius-md`')
     expect(md).toContain('`--size-md`')
-    expect(md).toContain('var(--size-md)')
+    expect(md).toContain('var(--size-control)')
     expect(md).toContain('var(--radius-action)')
     expect(md).toContain('var(--stroke-control)')
     expect(md).not.toContain('Reconstruct the set')

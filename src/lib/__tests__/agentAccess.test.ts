@@ -271,7 +271,7 @@ describe('catalogue and contrast tools', () => {
     expect(list.some((c) => c.key === 'Button' && c.essential)).toBe(true)
     const button = getComponent('button')
     expect(button?.key).toBe('Button')
-    expect(button?.props.some((p) => p.name === 'intent')).toBe(true)
+    expect(button?.props.some((p) => p.name === 'variant')).toBe(true)
     expect(button?.accessibility).toMatch(/button/i)
   })
 

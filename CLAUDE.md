@@ -119,6 +119,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > - **Not done:** the `npx shadcn add` registry + shadcn-compatible `globals.css` (phase 4) and
 >   the ~22 shadcn-only components (phase 5).
 
+> **UPDATE (2026-10-18): variants are shadcn's EXACTLY (option A, supersedes E6).** Plan,
+> decisions and phase state: `design-plans/shadcn-variants-exact.md`. Phase 1 done: Button is
+> `variant` default·secondary·outline·ghost·destructive·link × `size` default·xs·sm·lg·icon·
+> icon-xs·icon-sm·icon-lg (catalogue axes `Variant` / `Size` carry those lowercase values, so
+> the recipe's `data-variant` / `data-size` ARE shadcn's attributes); CloseButton / FABButton /
+> TextLink are gone (ghost icon-sm · icon-lg · link); ButtonGroup is `orientation`. `State`
+> stays a Figma-only axis. Badge, Alert, forms, surfaces still carry Escala axes until their
+> phase. Tokens are untouched — the names are shadcn's, the lengths and roles are Escala's.
+
 > **UPDATE (2026-10-18): ONE component source, no pre-shadcn code left.** The catalogue's
 > 59 keys == the plugin's 59 CATALOG gates (checked), every `SPECIMENS` entry renders a
 > `components/escala-ui/` component, and the registry ships those same files. Removed:

@@ -8,7 +8,7 @@ import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
-import { COMPONENT_RECIPES, cssVarOf, recipeRows } from './componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, recipeRows, resolveRecipe } from './componentRecipes'
 import {
   LAYOUT_ROLES,
   RADIUS_STEPS,
@@ -339,14 +339,19 @@ function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
   const lines = [
     '## Characteristics',
     '',
-    'Bind layout to foundations. Size axis values are uppercase in Figma; CSS size tokens are lowercase.',
+    'Bind layout to foundations. The height of each Size value is the one its recipe binds (a Size role or a step).',
     '',
     '| Size variant | Height CSS | Height Figma | Live |',
     '|---|---|---|---|',
   ]
+  const recipe = COMPONENT_RECIPES[def.key]
   axis.values.forEach((v) => {
-    const key = v.toLowerCase()
-    lines.push(`| \`${v}\` | \`var(--size-${key})\` | \`${key}\` | \`${val(t?.sizes, key)}\` |`)
+    const ref = recipe ? resolveRecipe(recipe, { Size: v })[recipe.slots[0]]?.height : undefined
+    const name = ref ? ref.split('.')[1] : v.toLowerCase()
+    const isRole = LAYOUT_ROLES.size.some((r) => r.key === name)
+    const live = isRole && t ? roleVal(t, 'size', name) : val(t?.sizes, name)
+    const figma = figmaDim('Size', isRole ? `role/${name}` : name)
+    lines.push(`| \`${v}\` | \`var(${ref ? cssVarOf(ref) : `--size-${name}`})\` | \`${figma}\` | \`${live}\` |`)
   })
   lines.push(
     '',

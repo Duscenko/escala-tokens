@@ -101,7 +101,7 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 | Fase | Contenido | Hecho cuando |
 |---|---|---|
 | 0 · Decisiones | Cerrar 1–6 | ✅ aceptadas las 6 recomendaciones |
-| 1 · Acciones | Button (+ plegar CloseButton, FAB, TextLink), ButtonGroup | Web + plugin + recetas + paridad en verde |
+| 1 · Acciones | Button (+ plegar CloseButton, FAB, TextLink), ButtonGroup | ✅ 2026-10-18 · plugin 0.7.0 |
 | 2 · Indicadores y feedback | Badge, Alert, Sonner, Avatar, Spinner; borrar AlertBanner | ídem |
 | 3 · Formularios | Input, Select, Checkbox, RadioGroup, Switch, InputOTP, Field | ídem |
 | 4 · Superficies y navegación | Card, Separator, Dialog, Tabs, Sidebar, menús | ídem |
@@ -110,3 +110,23 @@ mismo). En código sigue siendo `forceState`, solo para la documentación.
 
 Cada fase es un commit en los dos repos a la vez: el test de paridad no deja
 que la web y el plugin queden desalineados entre fases.
+
+## Fase 1 — hecha (2026-10-18)
+
+- **Button**: `variant` default·secondary·outline·ghost·destructive·link, `size`
+  default·xs·sm·lg·icon·icon-xs·icon-sm·icon-lg, `data-variant` / `data-size` como
+  shadcn. Alturas: los roles de Size de Escala (hit 24 · compact 32 · control 40 ·
+  touch 48), no los px de shadcn — los nombres son de shadcn, las longitudes del
+  sistema. `destructive` es el suave de shadcn v4 (`status.critical.surface`).
+  Disabled es un rol, no opacidad.
+- **Plegados**: CloseButton → `Button variant="ghost" size="icon-sm"`, FABButton →
+  `size="icon-lg"` (se pierde la píldora y la sombra), TextLink → `variant="link"`
+  (en prosa: `SkeletonInlineLinkSpecimen`, sin alto ni padding). Store v91 los
+  quita de `selectedComponents`. Catálogo y plugin: 56 claves.
+- **ButtonGroup**: `orientation` horizontal·vertical; hijos son Buttons; las uniones
+  usan las clases de shadcn con `!` (la hoja de recetas no tiene capa).
+- **Plugin 0.7.0**: SPECS Button Variant×Size×State (18 en Overview, 288 en
+  catálogo completo); los sets viejos (`Button Close`, `Button FAB`, `Text Link`)
+  quedan aparcados en "not in this import" para no romper instancias enlazadas.
+- `agentContext`: la tabla de Size lee la altura de la receta (antes suponía
+  Size = paso de la escala).

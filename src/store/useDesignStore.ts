@@ -1971,7 +1971,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 90,
+      version: 91,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3490,6 +3490,21 @@ export const useDesignStore = create<DesignStore>()(
           reanchor(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) reanchor(sys?.snapshot)
+          }
+        }
+        if (version < 91) {
+          // v90→v91: the Button took shadcn's variants and sizes; CloseButton,
+          // FABButton and TextLink are Button variants/sizes now (ghost icon,
+          // icon-lg, link), not catalogue entries. Drop the retired keys.
+          const RETIRED = new Set(['CloseButton', 'FABButton', 'TextLink'])
+          const prune = (state: any) => {
+            if (Array.isArray(state?.selectedComponents)) {
+              state.selectedComponents = state.selectedComponents.filter((k: unknown) => !RETIRED.has(k as string))
+            }
+          }
+          prune(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) prune(sys?.snapshot)
           }
         }
         return persisted

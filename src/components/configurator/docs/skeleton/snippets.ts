@@ -1,8 +1,8 @@
 /**
  * Usage snippets for the shadcn-skeleton components. They show the API a
- * product actually imports (`@/components/ui/button` …): shadcn's anatomy and
- * prop names, plus Escala's axes (`variant` = style, `intent` = colour,
- * `size`). Nothing here names a prop the component in `escala-ui/` lacks.
+ * product actually imports (`@/components/ui/button` …): shadcn's anatomy,
+ * prop names and variant values. Nothing here names a prop the component in
+ * `escala-ui/` lacks.
  */
 import type { AxisValues, IconOpts } from '../specimens'
 import { ICON_COMPONENT, ICON_SLOTS, INPUT_META, buttonLeadingConcept } from '../specimens'
@@ -53,7 +53,7 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Popover: () =>
     `import {\n  Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription,\n} from "@/components/ui/popover"\n\n<Popover>\n  <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>\n  <PopoverContent>\n    <PopoverTitle>Share this system</PopoverTitle>\n    <PopoverDescription>Anyone with the link can view tokens and docs.</PopoverDescription>\n  </PopoverContent>\n</Popover>`,
   Tooltip: () =>
-    `import {\n  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,\n} from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><CloseButton aria-label="Copy"><Copy /></CloseButton></TooltipTrigger>\n    <TooltipContent>Copy to clipboard</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
+    `import {\n  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,\n} from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Copy"><Copy /></Button></TooltipTrigger>\n    <TooltipContent>Copy to clipboard</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
   InfoTooltip: () =>
     `import { InfoTooltip, TooltipProvider } from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <InfoTooltip content="Applies to new projects only." icon={<Info />}>\n    Default visibility\n  </InfoTooltip>\n</TooltipProvider>`,
   ScrollArea: () =>
@@ -121,27 +121,22 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <InputField type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
 
   ButtonGroup: (v) =>
-    `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${sizeProp(v)}>\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem selected>Week</ButtonGroupItem>\n  <ButtonGroupItem>Month</ButtonGroupItem>\n</ButtonGroup>`,
-  CloseButton: (v) =>
-    `import { CloseButton } from "@/components/ui/button"\n\n<CloseButton${v.Size === 'SM' ? ' size="sm"' : ''} onClick={dismiss}>\n  <X />\n</CloseButton>`,
-  FABButton: (v) =>
-    `import { FABButton } from "@/components/ui/button"\n\n<FABButton${v.Size === 'LG' ? ' size="lg"' : ''} aria-label="New item">\n  <Plus />\n</FABButton>`,
+    `import { Button } from "@/components/ui/button"\nimport { ButtonGroup } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} aria-label="Range">\n  <Button variant="outline">Day</Button>\n  <Button variant="outline">Week</Button>\n  <Button variant="outline">Month</Button>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>
     `import { SocialLoginButton } from "@/components/ui/social-login-button"\n\n<SocialLoginButton provider="${v.Provider ?? 'Google'}"${v.Size === 'LG' ? ' size="lg"' : ''} />`,
-  TextLink: (v) =>
-    `import { TextLink } from "@/components/ui/link"\n\n<TextLink href="/docs/tokens"${v.State === 'Disabled' ? ' aria-disabled' : ''}>\n  design tokens guide ↗\n</TextLink>`,
   AppStoreBadge: (v) =>
     `import { AppStoreBadge } from "@/components/ui/app-store-badge"\n\n<AppStoreBadge store="${v.Store ?? 'App Store'}" href={storeUrl} />`,
   Button: (v, icons) => {
-    const style = low(v.Style) || 'solid'
-    const variant = style !== 'solid' ? ` variant="${style}"` : ''
-    // `outline` and `ghost` default to neutral (as in shadcn); solid and soft to brand.
-    const defaultIntent = style === 'outline' || style === 'ghost' ? 'neutral' : 'brand'
-    const intent = (low(v.Color) || 'brand') !== defaultIntent ? ` intent="${low(v.Color) || 'brand'}"` : ''
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const iconOnly = (v.Size ?? '').startsWith('icon')
     const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
-    const lead = icons?.leading ? `  <${ICON_COMPONENT[icons.leadingConcept ?? buttonLeadingConcept(v.Color)]} />\n` : ''
+    if (iconOnly) {
+      return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags} aria-label="Add">\n  <${ICON_COMPONENT[icons?.leadingConcept ?? ICON_SLOTS.Button.leading]} />\n</Button>`
+    }
+    const lead = icons?.leading ? `  <${ICON_COMPONENT[icons.leadingConcept ?? buttonLeadingConcept(v.Variant)]} />\n` : ''
     const trail = icons?.trailing ? `\n  <${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />` : ''
-    return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${intent}${sizeProp(v)}${flags}>\n${lead}  Button${trail}\n</Button>`
+    return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags}>\n${lead}  Button${trail}\n</Button>`
   },
   Input: (v, icons) => {
     const type = ({ 'default': 'text', 'e-mail': 'email', 'password': 'password', 'search': 'search', 'phone-number': 'tel', 'website': 'url' } as Record<string, string>)[low(v.Type)] ?? 'text'
@@ -159,5 +154,5 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Card: () =>
     `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter, CardLink,\n} from "@/components/ui/card"\n\n<Card>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <CardLink href="#">Learn more →</CardLink>\n  </CardFooter>\n</Card>`,
   Modal: () =>
-    `import {\n  Dialog, DialogContent, DialogHeader, DialogTitle,\n  DialogDescription, DialogFooter,\n} from "@/components/ui/dialog"\n\n<Dialog open={open} onOpenChange={setOpen}>\n  <DialogContent>\n    <DialogHeader>\n      <DialogTitle>Delete project?</DialogTitle>\n      <DialogDescription>This action can't be undone.</DialogDescription>\n    </DialogHeader>\n    <DialogFooter>\n      <Button variant="outline">Cancel</Button>\n      <Button intent="danger">Delete</Button>\n    </DialogFooter>\n  </DialogContent>\n</Dialog>`,
+    `import {\n  Dialog, DialogContent, DialogHeader, DialogTitle,\n  DialogDescription, DialogFooter,\n} from "@/components/ui/dialog"\n\n<Dialog open={open} onOpenChange={setOpen}>\n  <DialogContent>\n    <DialogHeader>\n      <DialogTitle>Delete project?</DialogTitle>\n      <DialogDescription>This action can't be undone.</DialogDescription>\n    </DialogHeader>\n    <DialogFooter>\n      <Button variant="outline">Cancel</Button>\n      <Button variant="destructive">Delete</Button>\n    </DialogFooter>\n  </DialogContent>\n</Dialog>`,
 }

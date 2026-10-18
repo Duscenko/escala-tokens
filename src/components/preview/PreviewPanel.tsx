@@ -116,8 +116,8 @@ function ColorCollage({
           see the wrapper's own notes for why that's deliberate. */}
       <div className="flex flex-wrap items-center gap-2.5">
         <Live c="Button" t={tokens} v={{ Style: 'Solid' }} icons={icons} />
-        <Live c="Button" t={tokens} v={{ Style: 'Outline' }} />
-        <Live c="Button" t={tokens} v={{ Style: 'Soft' }} />
+        <Live c="Button" t={tokens} v={{ Variant: 'outline' }} />
+        <Live c="Button" t={tokens} v={{ Variant: 'secondary' }} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -457,10 +457,10 @@ export default function PreviewPanel({
                 token, type scale and variant axes. */}
             <Group title="Button">
               <Tile tokens={tokens}>
-                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Ghost' }} />
+                <ButtonSpec t={tokens} v={{ Variant: 'default' }} />
+                <ButtonSpec t={tokens} v={{ Variant: 'secondary' }} />
+                <ButtonSpec t={tokens} v={{ Variant: 'outline' }} />
+                <ButtonSpec t={tokens} v={{ Variant: 'ghost' }} />
               </Tile>
             </Group>
 
@@ -484,7 +484,7 @@ export default function PreviewPanel({
                 <div className="flex w-full flex-col gap-3">
                   <InputSpec t={tokens} v={{ Type: 'E-Mail', State: 'Default' }} w="100%" hideHint />
                   <InputSpec t={tokens} v={{ Type: 'Password', State: 'Default' }} w="100%" />
-                  <ButtonSpec t={tokens} v={{ Style: 'Solid' }} w="100%">Get started</ButtonSpec>
+                  <ButtonSpec t={tokens} v={{ Variant: 'default' }} w="100%">Get started</ButtonSpec>
                 </div>
               </Tile>
             </Group>

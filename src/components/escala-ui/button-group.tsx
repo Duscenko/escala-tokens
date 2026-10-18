@@ -1,39 +1,35 @@
-// Skeleton: shadcn/ui `bases/radix/ui/button-group.tsx` (MIT, see LICENSE-shadcn.md):
-// ButtonGroup + ButtonGroupSeparator, items are buttons. Appearance: recipe.
+// Skeleton: shadcn/ui `bases/radix/ui/button-group.tsx` (MIT, see LICENSE-shadcn.md).
+// ButtonGroup · ButtonGroupText · ButtonGroupSeparator, items are Buttons. The
+// attached-edge layout is shadcn's own (structure, not appearance); colour and
+// geometry come from the recipes (ButtonGroup, Button).
 import * as React from 'react'
+import { Slot } from 'radix-ui'
 import { cn } from '../../lib/utils'
 
-export type ButtonGroupSize = 'sm' | 'md' | 'lg'
-const SIZE: Record<ButtonGroupSize, string> = { sm: 'SM', md: 'MD', lg: 'LG' }
+export const BUTTON_GROUP_ORIENTATIONS = ['horizontal', 'vertical'] as const
+export type ButtonGroupOrientation = (typeof BUTTON_GROUP_ORIENTATIONS)[number]
+
+// `!`: the recipe sheet (unlayered) paints each Button's radius and border; the
+// group's joins must win over it, as shadcn's own style sheet does with `!`.
+const ORIENTATION: Record<ButtonGroupOrientation, string> = {
+  horizontal:
+    '[&>*:not(:first-child)]:rounded-l-none! [&>*:not(:first-child)]:border-l-0! [&>*:not(:last-child)]:rounded-r-none!',
+  vertical:
+    'flex-col [&>*:not(:first-child)]:rounded-t-none! [&>*:not(:first-child)]:border-t-0! [&>*:not(:last-child)]:rounded-b-none!',
+}
 
 function ButtonGroup({
-  className, size = 'md', ...props
-}: React.ComponentProps<'div'> & { size?: ButtonGroupSize }) {
+  className, orientation = 'horizontal', ...props
+}: React.ComponentProps<'div'> & { orientation?: ButtonGroupOrientation }) {
   return (
     <div
       role="group"
       data-slot="button-group"
       data-escala="ButtonGroup"
-      data-size={SIZE[size]}
-      className={cn('inline-flex items-stretch overflow-hidden', className)}
-      {...props}
-    />
-  )
-}
-
-/** One segment. `selected` is the group's current choice. */
-function ButtonGroupItem({
-  className, selected = false, ...props
-}: React.ComponentProps<'button'> & { selected?: boolean }) {
-  return (
-    <button
-      type="button"
-      data-slot="button-group-item"
-      data-part={selected ? 'ButtonGroup.itemSelected' : 'ButtonGroup.item'}
-      aria-pressed={selected}
+      data-orientation={orientation}
       className={cn(
-        'inline-flex cursor-pointer items-center whitespace-nowrap border-0 outline-none',
-        'transition-colors duration-150',
+        'group/button-group flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 [&>input]:flex-1',
+        ORIENTATION[orientation],
         className,
       )}
       {...props}
@@ -41,17 +37,34 @@ function ButtonGroupItem({
   )
 }
 
-function ButtonGroupSeparator({ className, ...props }: React.ComponentProps<'span'>) {
+function ButtonGroupText({
+  className, asChild = false, ...props
+}: React.ComponentProps<'div'> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : 'div'
   return (
-    <span
-      role="separator"
-      aria-orientation="vertical"
-      data-slot="button-group-separator"
-      data-part="ButtonGroup.separator"
-      className={cn('self-stretch', className)}
+    <Comp
+      data-slot="button-group-text"
+      data-part="ButtonGroup.text"
+      className={cn('flex items-center [&_svg]:pointer-events-none', className)}
       {...props}
     />
   )
 }
 
-export { ButtonGroup, ButtonGroupItem, ButtonGroupSeparator }
+function ButtonGroupSeparator({
+  className, orientation = 'vertical', ...props
+}: React.ComponentProps<'div'> & { orientation?: ButtonGroupOrientation }) {
+  return (
+    <div
+      role="separator"
+      aria-orientation={orientation}
+      data-slot="button-group-separator"
+      data-part="ButtonGroup.separator"
+      data-orientation={orientation}
+      className={cn('relative self-stretch', className)}
+      {...props}
+    />
+  )
+}
+
+export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText }

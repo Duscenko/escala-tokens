@@ -21,8 +21,6 @@ const CardSpec = SPECIMENS.Card
 const ButtonGroupSpec = SPECIMENS.ButtonGroup
 const FieldSpec = SPECIMENS.Field
 const ChipSpec = SPECIMENS.Chip
-const CloseSpec = SPECIMENS.CloseButton
-const FabSpec = SPECIMENS.FABButton
 const DividerSpec = SPECIMENS.Divider
 
 function num(v: string, fallback: number) {
@@ -59,7 +57,7 @@ function SpacingExamples({ role, t }: { role: string; t: PreviewTokens }) {
       >
         <span style={{ ...typeStyleOf(t, 'body-sm'), color: t.neutralText }}>Inset</span>
       </div>
-      {role === 'inset-control' && <ButtonSpec t={t} v={{ Style: 'Solid' }} />}
+      {role === 'inset-control' && <ButtonSpec t={t} v={{ Variant: 'default' }} />}
       {role === 'inset-surface' && <CardSpec t={t} v={{}} />}
     </div>
   )
@@ -83,16 +81,16 @@ function SizeExamples({ role, t }: { role: string; t: PreviewTokens }) {
       >
         {h}px
       </span>
-      {role === 'compact' && <ButtonSpec t={t} v={{ Size: 'SM' }} />}
+      {role === 'compact' && <ButtonSpec t={t} v={{ Size: 'sm' }} />}
       {role === 'control' && (
         <>
-          <ButtonSpec t={t} v={{ Size: 'MD' }} />
+          <ButtonSpec t={t} v={{ Size: 'default' }} />
           <InputSpec t={t} v={{}} />
         </>
       )}
-      {role === 'touch' && <ButtonSpec t={t} v={{ Size: 'LG' }} />}
-      {role === 'hit' && <CloseSpec t={t} v={{}} />}
-      {role === 'fab' && <FabSpec t={t} v={{ Size: 'LG' }} />}
+      {role === 'touch' && <ButtonSpec t={t} v={{ Size: 'lg' }} />}
+      {role === 'hit' && <ButtonSpec t={t} v={{ Variant: 'ghost', Size: 'icon-xs' }} icons={{ prefix: t.iconPrefix ?? 'lucide', leading: true, trailing: false, leadingConcept: 'close' }}>Close</ButtonSpec>}
+      {role === 'fab' && <ButtonSpec t={t} v={{ Size: 'icon-lg' }} />}
     </div>
   )
 }
@@ -103,13 +101,13 @@ function StrokeExamples({ role, t }: { role: string; t: PreviewTokens }) {
     return (
       <>
         <InputSpec t={t} v={{ State: 'Focused' }} />
-        <ButtonSpec t={t} v={{ Style: 'Outline', State: 'Focused' }} />
+        <ButtonSpec t={t} v={{ Variant: 'outline', State: 'Focused' }} />
       </>
     )
   }
   return (
     <>
-      <ButtonSpec t={t} v={{ Style: 'Outline' }} />
+      <ButtonSpec t={t} v={{ Variant: 'outline' }} />
       <InputSpec t={t} v={{}} />
       <CardSpec t={t} v={{}} />
     </>

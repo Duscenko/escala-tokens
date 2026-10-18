@@ -30,31 +30,28 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, BUTTON_GROUP, CLOSE_BUTTON, FAB_BUTTON, SOCIAL_LOGIN_BUTTON, TEXT_LINK, APP_STORE_BADGE } from './recipes/actions'
+import { BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
   CHECKBOX, RADIO, TOGGLE, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE,
   CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GROUP,
-} from './recipes/forms'
-import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces'
+} from './recipes/forms.js'
+import { CARD, MODAL, DIVIDER, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, INFO_TOOLTIP, SCROLL_AREA } from './recipes/surfaces.js'
 import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR,
-} from './recipes/navigation'
-import { INLINE_ALERT, ALERT_BANNER, TOAST } from './recipes/feedback'
-import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators'
+} from './recipes/navigation.js'
+import { INLINE_ALERT, ALERT_BANNER, TOAST } from './recipes/feedback.js'
+import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
   type TokenRef, type RecipeProp, type SlotProps, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
-} from './recipes/helpers'
-import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers'
+} from './recipes/helpers.js'
+import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
   ButtonGroup: BUTTON_GROUP,
-  CloseButton: CLOSE_BUTTON,
-  FABButton: FAB_BUTTON,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
-  TextLink: TEXT_LINK,
   AppStoreBadge: APP_STORE_BADGE,
   Input: INPUT,
   Textarea: TEXTAREA,

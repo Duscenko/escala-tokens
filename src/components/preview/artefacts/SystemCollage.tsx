@@ -2,6 +2,7 @@ import { fontStack } from '../../../lib/fonts'
 import { cloneElement, createContext, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
+import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -14,16 +15,10 @@ import {
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
-import { COMPONENTS } from '../../../lib/componentCatalogue'
 import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
 import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
-
-/** One axis's values for a catalogue component — same source as ThemePreviewHub. */
-function axisValuesOf(key: string, axis: string): string[] {
-  return COMPONENTS.find((c) => c.key === key)?.axes.find((a) => a.name === axis)?.values ?? []
-}
 
 /**
  * A catalogue specimen, marked up for Inspector mode.
@@ -49,7 +44,12 @@ const Card = inspectable('Card')
 const Avatar = inspectable('Avatar')
 const Badge = inspectable('Badge')
 const InputOTP = inspectable('InputOTP')
-const TextLink = inspectable('TextLink')
+/** An inline link in running copy: shadcn's `Button variant="link"`. */
+const InlineLink = ({ t, children }: { t: PreviewTokens; children: ReactNode }) => (
+  <TokenInspector component="Button" variant={{ Variant: 'link' }}>
+    <SkeletonInlineLinkSpecimen t={t}>{children}</SkeletonInlineLinkSpecimen>
+  </TokenInspector>
+)
 const Segmented = inspectable('SegmentedControl')
 const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
@@ -605,7 +605,7 @@ export function SystemCollage({
           <InputOTP t={tile(2)} v={{ State: 'Filled', Size: 'SM' }} />
           <span style={{ ...typeStyleOf(tile(2), 'body-sm'), color: muted(2) }}>
             {translate('Didn’t get a code?')}{' '}
-            <TextLink t={tile(2)} v={{}}>{translate('Resend')}</TextLink>
+            <InlineLink t={tile(2)}>{translate('Resend')}</InlineLink>
           </span>
         </ScaledModule>
     ),
@@ -616,12 +616,12 @@ export function SystemCollage({
           style={{ gap: gap(tile(3), 'gap-group', '16px') }}
         >
           <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(3), 'gap-control', '8px') }}>
-            {axisValuesOf('Button', 'Style').map((style) => (
+            {(['default', 'secondary', 'outline', 'ghost'] as const).map((variant) => (
               <InspectableLive
-                key={style}
+                key={variant}
                 c="Button"
                 t={tile(3)}
-                v={{ Style: style, Color: 'Brand', Size: 'SM' }}
+                v={{ Variant: variant, Size: 'sm' }}
                 w="100%"
               >
                 {translate('Click me')}
@@ -640,20 +640,20 @@ export function SystemCollage({
             <InspectableLive
               c="Button"
               t={tile(3)}
-              v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }}
+              v={{ Variant: 'destructive', Size: 'sm' }}
               icons={{ ...catalogueIcons(tile(3)), leading: false }}
               w="100%"
             >
-              {translate('Critical')}
+              {translate('Delete')}
             </InspectableLive>
             <InspectableLive
               c="Button"
               t={tile(3)}
-              v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }}
+              v={{ Variant: 'link', Size: 'sm' }}
               icons={{ ...catalogueIcons(tile(3)), leading: false }}
               w="100%"
             >
-              {translate('Success')}
+              {translate('Learn more')}
             </InspectableLive>
           </div>
         </ScaledModule>
@@ -694,7 +694,7 @@ export function SystemCollage({
           style={{ gap: gap(tile(5), 'gap-group', '16px') }}
         >
           <div className="flex justify-end" style={{ marginTop: -2 }}>
-            <InspectableLive c="CloseButton" t={tile(5)} v={{ Size: 'SM' }} />
+            <InspectableLive c="Button" t={tile(5)} v={{ Variant: 'ghost', Size: 'icon-sm' }} icons={catalogueIcons(tile(5), 'close')}>{translate('Close')}</InspectableLive>
           </div>
           <div
             className="flex flex-col items-center text-center"
@@ -722,7 +722,7 @@ export function SystemCollage({
           <InspectableLive
             c="Button"
             t={tile(5)}
-            v={{ Style: 'Solid', Size: 'MD' }}
+            v={{ Variant: 'default', Size: 'default' }}
             icons={catalogueIcons(tile(5), 'star')}
             w="100%"
           >
@@ -785,7 +785,7 @@ export function SystemCollage({
     credits: (
         <ScaledModule key="credits" t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: gap(tile(12), 'gap-control', '8px') }}>
           <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText, flex: '1 1 8em', minWidth: 0 }}>{translate('You have 2 credits left')}</span>
-          <InspectableLive c="Button" t={tile(12)} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
+          <InspectableLive c="Button" t={tile(12)} v={{ Variant: 'secondary', Size: 'sm' }}>{translate('Upgrade')}</InspectableLive>
         </ScaledModule>
     ),
     toggle: (
@@ -797,7 +797,7 @@ export function SystemCollage({
         <ScaledModule key="unsaved" t={tile(14)} appearance={appearanceAt(14)}>
           <div className="flex items-start justify-between" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
             <Well t={tile(14)} size={wellSm} icon="box" />
-            <InspectableLive c="CloseButton" t={tile(14)} v={{ Size: 'SM' }} />
+            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'ghost', Size: 'icon-sm' }} icons={catalogueIcons(tile(14), 'close')}>{translate('Close')}</InspectableLive>
           </div>
           <div>
             <p style={{ margin: 0, ...typeStyleOf(tile(14), 'heading-sm'), color: tile(14).neutralText }}>{translate('Unsaved changes')}</p>
@@ -806,8 +806,8 @@ export function SystemCollage({
             </p>
           </div>
           <div className="flex flex-col" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
-            <InspectableLive c="Button" t={tile(14)} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</InspectableLive>
-            <InspectableLive c="Button" t={tile(14)} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</InspectableLive>
+            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'outline', Size: 'sm' }} w="100%">{translate('Discard')}</InspectableLive>
+            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'default', Size: 'sm' }} w="100%">{translate('Save changes')}</InspectableLive>
           </div>
         </ScaledModule>
     ),

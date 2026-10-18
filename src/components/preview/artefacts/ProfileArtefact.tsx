@@ -62,7 +62,7 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
           >
             Danger zone
           </span>
-          <Button t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'LG' }} w="100%">Delete account</Button>
+          <Button t={t} v={{ Variant: 'destructive', Size: 'lg' }} w="100%">Delete account</Button>
         </div>
       </div>
     </DeviceFrame>

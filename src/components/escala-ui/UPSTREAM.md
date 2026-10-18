@@ -6,7 +6,8 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 
 | File | Upstream | What changed |
 |---|---|---|
-| `button.tsx` | `bases/radix/ui/button.tsx` | `cn-*` classes → `data-escala` + Escala axes (Color · Style · Size); shadcn `variant`/`size` names kept as aliases; `forceState`, `loading` |
+| `button.tsx` | `bases/radix/ui/button.tsx` | shadcn's `variant` / `size` values verbatim (`data-variant`, `data-size`); `cn-*` classes → `data-escala` + the recipe sheet; adds `forceState`, `loading`, `recipe` |
+| `button-group.tsx` | `bases/radix/ui/button-group.tsx` | `orientation` verbatim; join classes take `!` to win over the unlayered recipe sheet |
 | `input.tsx` | `bases/radix/ui/input.tsx` | `cn-input` → `data-part="Input.value"`; `InputField` composes label · field · hint (Escala's Input anatomy, shadcn's Field pattern) |
 | `card.tsx` | `bases/radix/ui/card.tsx` | `cn-card-*` → `data-part="Card.*"`; `CardLink` added |
 | `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Modal.*"`; `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |

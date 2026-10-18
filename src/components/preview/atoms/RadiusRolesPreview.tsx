@@ -29,8 +29,8 @@ function Examples({ role, tokens: t }: { role: string; tokens: PreviewTokens }) 
   if (role === 'action') {
     return (
       <>
-        <ButtonSpec t={t} v={{ Style: 'Solid' }} />
-        <ButtonSpec t={t} v={{ Style: 'Outline' }} />
+        <ButtonSpec t={t} v={{ Variant: 'default' }} />
+        <ButtonSpec t={t} v={{ Variant: 'outline' }} />
         <InputSpec t={t} v={{}} />
       </>
     )

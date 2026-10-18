@@ -42,8 +42,8 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('TabMenu')).toContain('surface.selected')
   })
 
-  it('TextLink binds the link roles, not accent copy', () => {
-    const roles = rolesForComponent('TextLink')
+  it('Button (link variant) binds the link roles, not accent copy', () => {
+    const roles = rolesForComponent('Button')
     expect(roles).toContain('content.link.default')
     expect(roles).toContain('content.link.hover')
   })

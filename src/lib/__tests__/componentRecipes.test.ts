@@ -124,13 +124,14 @@ describe('the generated stylesheet', () => {
     }
   })
 
-  it('paints each state with its own role (Brand Solid)', () => {
+  it('paints each state with its own role (shadcn variants)', () => {
     const css = recipeCss(COMPONENT_RECIPES.Button)
     const rule = (sel: string) => css.split('}').find((r) => r.includes(sel) && r.includes('background'))
-    expect(rule('[data-color="Brand"][data-style="Solid"] {')).toContain('var(--color-action-primary-default)')
-    expect(rule('[data-color="Brand"][data-style="Solid"]:hover')).toContain('var(--color-action-primary-hover)')
-    expect(rule('[data-color="Brand"][data-style="Solid"][data-force-state="Pressed"]')).toContain('var(--color-action-primary-pressed)')
-    expect(rule('[data-color="Danger"][data-style="Solid"]:hover')).toContain('var(--color-status-critical-surface-solid-hover)')
+    expect(rule('[data-variant="default"] {')).toContain('var(--color-action-primary-default)')
+    expect(rule('[data-variant="default"]:hover')).toContain('var(--color-action-primary-hover)')
+    expect(rule('[data-variant="default"][data-force-state="Pressed"]')).toContain('var(--color-action-primary-pressed)')
+    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-surface)')
+    expect(rule('[data-variant="destructive"]:hover')).toContain('var(--color-status-critical-surface-pressed)')
   })
 
   it('reads only names variables.css ships', async () => {

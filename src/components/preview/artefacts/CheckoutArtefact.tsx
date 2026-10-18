@@ -83,7 +83,7 @@ function CheckoutScreen({ t, compact }: ArtefactProps) {
           </span>
         </InlineAlert>
 
-        <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Pay $9.60</Button>
+        <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">Pay $9.60</Button>
       </div>
     </DeviceFrame>
   )

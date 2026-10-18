@@ -47,8 +47,8 @@ export function SkeletonModalSpecimen({ t }: { t: PreviewTokens }) {
             <SkDialogDescription>This action can't be undone. All tokens in this project will be removed.</SkDialogDescription>
           </SkDialogHeader>
           <SkDialogFooter>
-            <SkButton variant="outline" intent="brand" size="sm">Cancel</SkButton>
-            <SkButton variant="solid" intent="danger" size="sm">Delete</SkButton>
+            <SkButton variant="outline" size="sm">Cancel</SkButton>
+            <SkButton variant="destructive" size="sm">Delete</SkButton>
           </SkDialogFooter>
         </SkDialogContent>
       </SkDialog>

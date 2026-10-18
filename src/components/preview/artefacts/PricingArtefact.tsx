@@ -74,7 +74,7 @@ function PricingScreen({ t, compact }: ArtefactProps) {
             {FEATURES.map((f) => <Feature key={f} t={t}>{f}</Feature>)}
           </div>
 
-          <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Continue with Pro</Button>
+          <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">Continue with Pro</Button>
         </Card>
       </div>
     </DeviceFrame>

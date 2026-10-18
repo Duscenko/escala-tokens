@@ -1,4 +1,5 @@
 import { SPECIMENS } from '../../configurator/docs/specimens'
+import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
@@ -7,7 +8,6 @@ import type { ArtefactProps } from './types'
 const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const InputOTP = SPECIMENS.InputOTP
-const TextLink = SPECIMENS.TextLink
 const InlineAlert = SPECIMENS.InlineAlert
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
@@ -54,13 +54,13 @@ function OTPScreen({ t, compact }: ArtefactProps) {
               </span>
             </InlineAlert>
 
-            <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Verify</Button>
+            <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">Verify</Button>
           </div>
         </Card>
 
         <p style={{ margin: 0, textAlign: 'center', ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
           Didn’t get a code?{' '}
-          <TextLink t={t} v={{}}>Resend</TextLink>
+          <SkeletonInlineLinkSpecimen t={t}>Resend</SkeletonInlineLinkSpecimen>
         </p>
       </div>
     </DeviceFrame>
