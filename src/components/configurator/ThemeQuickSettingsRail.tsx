@@ -2625,26 +2625,41 @@ export default function ThemeQuickSettingsRail({
                 onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
                 page={themePage[rampAppearance]}
                 after={(
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col gap-2">
                 {(['secondary', 'tertiary'] as const).map((rank) => {
                   const hex = extraHex(rank)
                   if (!hex) return null
                   return (
                     <div key={rank} className="min-w-0">
-                      <div
-                        ref={(node) => { chipRefs.current[rank] = node }}
-                        className="flex flex-col items-center gap-1"
-                      >
+                      {/* Same row as Accent · Neutral · the states
+                          (ColorRolesPanel's RoleRow): name left, swatch + hex
+                          right. An extra palette is not a slider role, so the
+                          whole row opens its picker instead. */}
+                      <div ref={(node) => { chipRefs.current[rank] = node }}>
                         <button
                           type="button"
                           onClick={() => toggleChip(rank)}
                           aria-haspopup="dialog"
                           aria-expanded={openChip === rank}
                           aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
-                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                          style={{ background: hex }}
-                        />
-                        <span className="max-w-[4rem] truncate text-micro text-fg-faint">{t(BRAND_EXTRA_LABEL[rank])}</span>
+                          className={`flex w-full items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                            openChip === rank
+                              ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]'
+                              : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
+                          }`}
+                        >
+                          <span className={`flex h-[22.5px] min-w-0 flex-1 items-center pl-2 text-ui ${openChip === rank ? 'text-fg' : 'text-fg-muted'}`}>
+                            <span className="truncate">{t(BRAND_EXTRA_LABEL[rank])}</span>
+                          </span>
+                          <span className="flex h-[22.5px] w-[98px] flex-shrink-0 items-center gap-2 pr-1.5">
+                            <span
+                              aria-hidden
+                              className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
+                              style={{ background: hex }}
+                            />
+                            <span className="min-w-0 flex-1 text-ui tabular-nums text-fg">{hex.toUpperCase()}</span>
+                          </span>
+                        </button>
                       </div>
                       <ColorPickerPopover
                         open={openChip === rank}

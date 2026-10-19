@@ -19,7 +19,7 @@ import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { LockGlyph } from '../ui/icons'
 import { TintSlider } from './ThemeQuickSettingsRail'
-import type { NeutralTint } from '../../lib/colorUtils'
+import { readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 
@@ -110,7 +110,24 @@ export function ColorRolesPanel({
         {after}
       </div>
 
-      {current.id !== 'neutral' && <AccessibilityReadout hex={current.hex} page={page} appearance={appearance} />}
+      {current.id !== 'neutral' && (() => {
+        // A failing colour gets ONE action, not just a red label: the same
+        // solve the slider commits, at this colour's own hue. Offered only
+        // when that solve actually passes and differs from what is shown.
+        const hue = readHuePosition(current.hex).hue
+        const solved = solveAt(current.id, hue)
+        const fixable = !checkRoleColor(current.hex, page).passes
+          && solved.toLowerCase() !== current.hex.toLowerCase()
+          && checkRoleColor(solved, page).passes
+        return (
+          <AccessibilityReadout
+            hex={current.hex}
+            page={page}
+            appearance={appearance}
+            fix={fixable ? { hex: solved, apply: () => onHueCommit(current.id, hue) } : undefined}
+          />
+        )
+      })()}
       {current.id === 'neutral' && neutral && (
         <p className="px-1 text-mini text-fg-faint">
           {neutral.linked
@@ -224,7 +241,13 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
  *  page as a shape (WCAG 3:1 + APCA Lc 45) and with a label on it (WCAG 4.5:1
  *  + APCA Lc 60). Both metrics are shown, so a pass on one and a miss on the
  *  other is visible instead of averaged away. */
-function AccessibilityReadout({ hex, page, appearance }: { hex: string; page: string; appearance: ThemeAppearance }) {
+function AccessibilityReadout({ hex, page, appearance, fix }: {
+  hex: string
+  page: string
+  appearance: ThemeAppearance
+  /** The solved tone at this hue, when it passes where `hex` does not. */
+  fix?: { hex: string; apply: () => void }
+}) {
   const { t } = useI18n()
   const c = checkRoleColor(hex, page)
   const pageOk = c.pageWcag >= 3 && c.pageLc >= 45
@@ -262,6 +285,18 @@ function AccessibilityReadout({ hex, page, appearance }: { hex: string; page: st
       </p>
       </div>
       <p className="text-caption text-fg-faint">{tone.note}</p>
+      {fix && (
+        <button
+          type="button"
+          onClick={fix.apply}
+          title={t('Same hue, a tone that passes on this theme.')}
+          className="flex h-8 items-center justify-center gap-2 rounded-lg border border-line bg-elevated px-3 text-caption font-medium text-fg transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <span aria-hidden className="h-3 w-3 rounded-[4px] border border-fg/40" style={{ background: fix.hex }} />
+          {t('Use accessible tone')}
+          <span className="tabular-nums text-fg-muted">{fix.hex.toUpperCase()}</span>
+        </button>
+      )}
     </div>
   )
 }

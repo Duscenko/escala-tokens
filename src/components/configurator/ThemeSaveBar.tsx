@@ -452,9 +452,12 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
  * same rule as `ThemeSaveBar`; signed in, it is Save brand.
  */
 export function CreateStudioFooter({
-  error, committed, guest, onCancel, onCreate, onSave, onGetCode,
+  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode,
 }: {
   error?: string | null
+  /** The first design system in this browser: "brand" is not a word the
+   *  visitor knows yet, so the first action reads Continue. */
+  firstSystem?: boolean
   /** The brand exists (its colours were set). */
   committed: boolean
   guest: boolean
@@ -489,17 +492,19 @@ export function CreateStudioFooter({
         )}
         {!committed ? (
           <button type="button" onClick={onCreate} className={primary}>
-            <span className="truncate">{t('Create brand')}</span>
+            <span className="truncate">{firstSystem ? t('Continue') : t('Create brand')}</span>
           </button>
         ) : guest ? (
           <>
-            <button type="button" onClick={onSave} className={secondary}>{t('Done')}</button>
+            {/* Leaves the studio for the full editor. "Done" read as "finished,
+                saved", which a guest's brand is not. */}
+            <button type="button" onClick={onSave} className={secondary}>{t('Open in editor')}</button>
             <button type="button" onClick={onGetCode} className={primary}>{codeGlyph}<span className="truncate">{t('Get code')}</span></button>
           </>
         ) : (
           <>
             <button type="button" onClick={onGetCode} className={`${secondary} flex items-center gap-1.5`}>{codeGlyph}{t('Get code')}</button>
-            <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save brand')}</span></button>
+            <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>
           </>
         )}
       </div>

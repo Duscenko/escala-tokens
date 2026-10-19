@@ -1781,8 +1781,11 @@ export default function ThemeLibraryPage({
                 className="flex flex-shrink-0 items-center border-b border-line"
                 style={{ height: INSPECTOR_TABS_H }}
               >
-                {!(createStep === 'color' || !createdKey) && createdKey && (
-                  <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} /></div>
+                {/* Once the brand exists its name lives here on every row,
+                    Color included. Before that, ThemeForm portals its own
+                    name field into this band (pinIdentity). */}
+                {createdKey && (
+                  <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} showAppearance={false} /></div>
                 )}
               </div>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -1824,7 +1827,10 @@ export default function ThemeLibraryPage({
                 error={createError}
                 committed={Boolean(createdKey)}
                 guest={guest}
-                onCancel={studioOnly ? undefined : cancelCreate}
+                // The first system has nothing to go back to: Cancel would only
+                // drop the user on an empty Home.
+                onCancel={studioOnly || firstSystem ? undefined : cancelCreate}
+                firstSystem={firstSystem}
                 onCreate={() => submitHandle.current?.()}
                 onSave={() => { if (createdKey) finishCreate(createdKey) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}

@@ -330,7 +330,9 @@ export function ThemeIdentityBar({
 }
 
 /** Name and appearance of a theme that already exists — the studio's later steps. */
-export function MintedThemeIdentity({ themeKey, onClose }: { themeKey: string; onClose?: () => void }) {
+/** `showAppearance={false}` in the create studio: there the Color row's
+ *  themes picker is the only Light/Dark, so the band carries the name alone. */
+export function MintedThemeIdentity({ themeKey, onClose, showAppearance = true }: { themeKey: string; onClose?: () => void; showAppearance?: boolean }) {
   const store = useDesignStore()
   const label = themeDisplayName(themeKey, store.themeLabels)
   const [name, setName] = useState(label)
@@ -356,6 +358,7 @@ export function MintedThemeIdentity({ themeKey, onClose }: { themeKey: string; o
       nameLocked={themeKey === 'light' || themeKey === 'dark'}
       onSubmit={() => { if (name.trim()) store.setThemeLabel(themeKey, name) }}
       onClose={onClose}
+      showAppearance={showAppearance}
     />
   )
 }

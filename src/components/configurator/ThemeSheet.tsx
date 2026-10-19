@@ -1,6 +1,6 @@
 // Home + theme doors in TopNav. The house is an icon. The theme door is a
 // named chip (avatar · name · subtitle · chevron) that opens the system menu.
-// Empty reads "No system yet / Set one up". With a theme, the name is the
+// Empty reads "New design system / Not created yet". With a theme, the name is the
 // theme's; the subtitle is its appearance, or "System style" while trying one
 // on. The words stay visible at the preview's real width (the shell is already
 // desktop-only). A long name truncates inside the chip. Light/dark lives in TopNav's ☰.
@@ -31,12 +31,9 @@ function EmptySystemAvatar({ size = 18 }: { size?: number }) {
       className="text-fg-muted"
       aria-hidden
     >
-      <rect width="18" height="18" rx="4.5" fill="currentColor" opacity="0.16" />
-      <g fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="6.15" cy="7.1" r="0.85" fill="currentColor" stroke="none" />
-        <circle cx="11.85" cy="7.1" r="0.85" fill="currentColor" stroke="none" />
-        <path d="M6.2 12.15c.85-1.15 1.9-1.7 2.8-1.7s1.95.55 2.8 1.7" />
-      </g>
+      {/* A system not made yet: a dashed tile waiting to be filled, not a
+          sad face — the first screen should not read as an error. */}
+      <rect x="0.75" y="0.75" width="16.5" height="16.5" rx="4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2.4 2" opacity="0.7" />
     </svg>
   )
 }
@@ -299,7 +296,7 @@ export function ThemeAppearanceControl({
   const ownKeys = myThemeKeys(store.themeOrder, store.themes)
   const empty = ownKeys.length === 0 && !tryOn
   const name = empty
-    ? t('No system yet')
+    ? t('New design system')
     : tryOn
       ? tryOn.preset.shortLabel
       : themeDisplayName(previewTheme, store.themeLabels)
@@ -308,14 +305,14 @@ export function ThemeAppearanceControl({
     ? PRESET_AVATAR_RAMPS[`${tryOn.preset.id}:${tryOn.appearance}`]
     : themeBrandRamp(previewTheme, store.themeSources, store.themeKinds, store)
   const homeLabel = t('Home')
-  const themeLabel = empty ? t('No system yet') : t('Brand preview — {name}', { name })
+  const themeLabel = empty ? t('New design system') : t('Brand preview — {name}', { name })
   const menuSubtitle = empty
     ? t('Nothing set up here')
     : tryOn
       ? t('System style')
       : t('In this design system')
   const chipSubtitle = empty
-    ? t('Set one up')
+    ? t('Not created yet')
     : tryOn
       ? t('System style')
       // A brand's Light/Dark is a property of the board, not of which brand
