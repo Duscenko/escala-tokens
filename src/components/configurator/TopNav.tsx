@@ -238,6 +238,8 @@ interface TopNavProps {
   /** Signed in: the Plugin pill opens the workspace's Figma sync page instead
    *  of the Community listing (the account already has the plugin flow). */
   onOpenFigmaSync?: () => void
+  /** The brand on screen's accent vars, for the guest Sign up button only. */
+  signUpAccent?: CSSProperties
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -608,7 +610,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true, railAligned = false,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, onOpenFigmaSync,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, onOpenFigmaSync, signUpAccent,
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
@@ -746,7 +748,7 @@ export default function TopNav({
               </a>
             )
           })()}
-          <AccountControl onOpenLibrary={onOpenLibrary} />
+          <AccountControl onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} />
           {exportAction}
       </div>
     </header>

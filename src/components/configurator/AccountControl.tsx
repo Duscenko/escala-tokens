@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../lib/i18n'
 import { accountHref } from '../../lib/accountRoutes'
 import { displayNameOf, initialOf, signOut, useAuth } from '../../lib/auth'
@@ -39,12 +39,19 @@ function needsKey(status: LicenceStatus): boolean {
   return status === 'none' || status === 'expired' || status === 'invalid'
 }
 
-export default function AccountControl({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
-  if (!accountsEnabled) return null
-  return <AccountControlInner onOpenLibrary={onOpenLibrary} />
+interface AccountControlProps {
+  onOpenLibrary?: () => void
+  /** Re-declares `--accent-solid` / `--accent-ink` for the Sign up button, so it
+   *  wears the brand being edited (already solved for contrast by the shell). */
+  signUpAccent?: CSSProperties
 }
 
-function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
+export default function AccountControl({ onOpenLibrary, signUpAccent }: AccountControlProps) {
+  if (!accountsEnabled) return null
+  return <AccountControlInner onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} />
+}
+
+function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProps) {
   const savedCount = useDesignStore((s) => s.savedSystems.length)
   // A guest's brands live only in this browser. Signing UP is the way to keep
   // them, so it carries the save intent and returns to the workspace; with
@@ -113,6 +120,7 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
           href={loginHref({ next: keepsWork ? 'workspace' : 'library', mode: 'signup' })}
           onClick={() => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))}
           title={keepsWork ? t('Save your work with a free account') : undefined}
+          style={signUpAccent}
           className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg bg-accent-solid px-3 text-body font-semibold text-accent-ink transition-[filter] hover:brightness-110 ${FOCUS_RING}`}
         >
           {t('Sign up')}

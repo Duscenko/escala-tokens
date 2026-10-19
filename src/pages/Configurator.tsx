@@ -2476,6 +2476,7 @@ export default function Configurator() {
         navInMenu={componentsWithoutSystem}
         onOpenLibrary={requestHome}
         onOpenFigmaSync={openFigmaSyncPage}
+        signUpAccent={canvasAccentStyle}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.
