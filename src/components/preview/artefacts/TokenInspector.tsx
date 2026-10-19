@@ -566,7 +566,12 @@ export function InspectorOverlay({
     // scrolled into that spot.
     // Docked, the pin lives in the side panel and the ring re-measures every
     // frame (below), so scrolling the board keeps the selection.
+    // Any scroll counts, not only the canvas's own: on a Components page the
+    // stage sits in a scrolling ARTICLE, and a page scroll left the ring and
+    // badge floating where the specimen used to be. Scrolling the badge's own
+    // list is the one scroll that must not dismiss it.
     const onScroll = () => {
+      if (overBadge.current) return
       if (dockedRef.current && pinRef.current) { setHover(null); return }
       clearAll()
     }
@@ -575,13 +580,13 @@ export function InspectorOverlay({
     root.addEventListener('pointerdown', swallow, true)
     root.addEventListener('click', onClick, true)
     root.addEventListener('pointerleave', onLeave)
-    root.addEventListener('scroll', onScroll, true)
+    window.addEventListener('scroll', onScroll, true)
     return () => {
       root.removeEventListener('pointermove', onMove)
       root.removeEventListener('pointerdown', swallow, true)
       root.removeEventListener('click', onClick, true)
       root.removeEventListener('pointerleave', onLeave)
-      root.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('scroll', onScroll, true)
     }
   }, [active, rootRef, buildComponent, buildGroup, buildPage, clearAll])
 
