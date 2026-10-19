@@ -203,6 +203,8 @@ interface Target {
   measured: boolean
   /** Group only: how many inspectable components are inside. */
   size?: number
+  /** Group only: the components inside, to select one of them. */
+  members?: { el: Element; label: string }[]
   /** Component only: the rows the part under the pointer paints (the dot,
    *  the label). The badge still lists the whole component. */
   hitIds?: string[]
@@ -463,26 +465,20 @@ export function InspectorOverlay({
     const rect = rectOf(el)
     if (!rect) return null
     const t = tokensFor(el)
-    const { roles, members } = inspectGroup(t, el)
+    const { roles, members, memberEls, title } = inspectGroup(t, el)
     if (!members.length) return null
     const unique = Array.from(new Set(members))
     return {
       kind: 'group', el, rect, roles, measured: true, size: members.length,
-      // One kind of component in the box names itself; a mixed module has no
-      // honest single name, so it reports how many it holds and lets the rows
-      // (and the per-control highlight) say the rest.
-      label: unique.length === 1 ? unique[0] : `${members.length} components`,
+      members: memberEls.map((member, i) => ({ el: member, label: members[i] })),
+      // Named by its own heading (`Verify account`) — what a person calls the
+      // card. Without one, a single kind of component names itself and a
+      // mixed module says how many it holds.
+      label: title ?? (unique.length === 1 ? unique[0] : `${members.length} components`),
       appearance: appearanceFor(el),
     }
   }, [tokensFor, appearanceFor])
 
-  const buildFocus = useCallback((el: Element): FocusTarget | null => {
-    const label = el.getAttribute('data-inspect') || ''
-    const rect = rectOf(el)
-    if (!rect) return null
-    const t = tokensFor(el)
-    return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
-  }, [tokensFor])
 
   // The pin snapshots the roles it measured on click. Editing one of them in
   // Token Details repaints the specimen in the same frame; the row has to
@@ -520,14 +516,6 @@ export function InspectorOverlay({
       const { leaf, group } = markers(e.target as Element | null)
       const pinned = pinRef.current
 
-      // A pinned group turns its own children into a highlight rather than a
-      // new badge — level 3 in the header note.
-      if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
-        if (focusHeld.current) return
-        const next = buildFocus(leaf)
-        setFocus((prev) => (prev && prev.el === next?.el ? prev : next))
-        return
-      }
       // Pinned means "I'm working on this": hovering elsewhere no longer
       // re-targets, or the pin would just be a slower hover.
       if (pinned) return
@@ -570,17 +558,9 @@ export function InspectorOverlay({
       e.stopPropagation()
       const pinned = pinRef.current
 
-      if (pinned?.kind === 'group' && leaf && pinned.el.contains(leaf)) {
-        const next = buildFocus(leaf)
-        if (!next) return
-        // Clicking the held control again releases it back to following the
-        // pointer, so the same gesture undoes itself.
-        const releasing = focusHeld.current && focusRef.current?.el === next.el
-        focusHeld.current = !releasing
-        setFocus(next)
-        return
-      }
-
+      // Inside a pinned group a click on a control SELECTS that control —
+      // the group's list holds only its own paints, so reading a child's
+      // tokens means making the child the selection.
       const hit = e.target as Element
       const target = leaf
         ? buildComponent(leaf, hit)
@@ -620,7 +600,7 @@ export function InspectorOverlay({
       root.removeEventListener('pointerleave', onLeave)
       root.removeEventListener('scroll', onScroll, true)
     }
-  }, [active, rootRef, buildComponent, buildGroup, buildFocus, clearAll])
+  }, [active, rootRef, buildComponent, buildGroup, clearAll])
 
   const pinLabel = pin
     ? pin.kind === 'component' ? `<${pin.trace?.component ?? pin.label} />` : pin.label
@@ -709,7 +689,7 @@ export function InspectorOverlay({
   const previewTokens = tokensFor(target.el)
   const pageCss = previewTokens.archTokens?.['surface.page'] ?? previewTokens.pageBackground ?? previewTokens.surface ?? '#ffffff'
   const a11y = accessibilityReport(roles, pageCss)
-  const lit = pin?.kind === 'group' && focus ? new Set(focus.ids) : null
+  const lit = pin?.kind === 'group' && focus && focus.ids.length ? new Set(focus.ids) : null
   // The part under the pointer, inside one component: lit, but the other rows
   // keep full strength — they are still on screen, just not under the cursor.
   const touched = !lit && kind === 'component' && target.hitIds?.length ? new Set(target.hitIds) : null
@@ -789,7 +769,7 @@ export function InspectorOverlay({
               className="truncate font-mono text-ui text-accent-ui"
               title={focus ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit` : undefined}
             >
-              {kind === 'component' && !focus && onOpenComponent ? (
+              {kind === 'component' && onOpenComponent ? (
                 // The name is the door to that component's page, like a cover's
                 // title on the board's Components view.
                 <button
@@ -803,8 +783,8 @@ export function InspectorOverlay({
                     <path d="M5 11 11 5M6 5h5v5" />
                   </svg>
                 </button>
-              ) : kind === 'component' || focus
-                ? <>&lt;{focus ? focus.label : (trace?.component ?? label)} /&gt;</>
+              ) : kind === 'component'
+                ? <>&lt;{trace?.component ?? label} /&gt;</>
                 : label}
               {trace && target.hitSlot && target.hitSlot !== trace.slots[0]?.slot && trace.slots.some((slot) => slot.slot === target.hitSlot) && (
                 <span className="text-fg-faint"> › {target.hitSlot}</span>
@@ -851,6 +831,37 @@ export function InspectorOverlay({
                   ))}
               </div>
             )}
+        {kind === 'group' && target.members && target.members.length > 0 && (
+          <div className="flex flex-shrink-0 flex-col gap-0.5 border-b border-line/60 px-2 py-1.5">
+            <span className="px-1 text-nano font-semibold uppercase tracking-widest text-fg-faint">{t('Contains')}</span>
+            <ul className="m-0 flex flex-wrap gap-1 p-0">
+              {target.members.map((member, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Re-read the marker live: a re-render can replace the
+                      // node the pin captured.
+                      const live = target.el.querySelectorAll('[data-inspect]')[i] ?? member.el
+                      const next = buildComponent(live)
+                      if (!next) return
+                      setFocus(null); setHover(null); setPin(next)
+                    }}
+                    onPointerEnter={() => {
+                      const live = target.el.querySelectorAll('[data-inspect]')[i] ?? member.el
+                      const rect = rectOf(live)
+                      if (rect) setFocus({ el: live, label: member.label, rect, ids: [] })
+                    }}
+                    onPointerLeave={() => setFocus(null)}
+                    className="rounded-md border border-line px-1.5 py-0.5 font-mono text-micro text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                  >
+                    &lt;{member.label} /&gt;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {trace ? (
           <>
             {a11yBlock}
