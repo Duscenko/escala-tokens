@@ -11,20 +11,20 @@
 :root, .light {
   --app: #f9fafc; /* surface.page */
   --nav: #f9fafc; /* surface.page */
-  --surface: #e4e5e6; /* surface.layer-1 */
-  --tab-bar: #e4e5e6; /* surface.layer-1 */
-  --rail-section: #e4e5e6; /* surface.layer-1 */
-  --panel: #e4e5e6; /* surface.layer-1 */
-  --chip-rest: #e4e5e6; /* surface.layer-1 */
-  --elevated: #cfd0d2; /* surface.layer-2 */
+  --surface: #eceef0; /* surface.layer-1 */
+  --tab-bar: #eceef0; /* surface.layer-1 */
+  --rail-section: #eceef0; /* surface.layer-1 */
+  --panel: #eceef0; /* surface.layer-1 */
+  --chip-rest: #eceef0; /* surface.layer-1 */
+  --elevated: #e1e3e6; /* surface.layer-2 */
   --side-panel: #f9fafc; /* surface.page */
   --input-bg: #f9fafc; /* surface.input */
   --fg: #333335; /* content.primary */
-  --fg-muted: #67676a; /* content.secondary */
+  --fg-muted: #616164; /* content.secondary */
   --line: #0000001a; /* border.subtle */
   --line-strong: #00000026; /* border.default */
   --line-emphasis: #00000099; /* border.control-hover */
-  --chrome-control: #b8b9bb; /* action.secondary.default */
+  --chrome-control: #f9fafc; /* surface.page */
   --chrome-control-pressed: #9fa0a2; /* action.secondary.pressed */
   --status-danger: #b53a30; /* status.critical.content */
   --status-success: #05763c; /* status.success.content */

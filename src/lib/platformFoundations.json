@@ -7,7 +7,7 @@
       "dark": "#e4e5e6"
     },
     "content.secondary": {
-      "light": "#67676a",
+      "light": "#616164",
       "dark": "#cccccf"
     },
     "content.subtle": {
@@ -83,11 +83,11 @@
       "dark": "#131416"
     },
     "surface.layer-1": {
-      "light": "#e4e5e6",
+      "light": "#eceef0",
       "dark": "#191a1b"
     },
     "surface.layer-2": {
-      "light": "#cfd0d2",
+      "light": "#e1e3e6",
       "dark": "#1f1f21"
     },
     "surface.accent": {

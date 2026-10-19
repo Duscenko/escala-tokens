@@ -65,8 +65,13 @@ describe('chrome contrast (platform foundations)', () => {
     }
   })
 
-  it('light: muted ink on a panel clears WCAG AA', () => {
-    // Was 3.65:1 while the light panel read surface.layer-2 (#cfd0d2).
-    expect(wcagRatio(v('light', '--fg-muted'), v('light', '--side-panel'))).toBeGreaterThanOrEqual(4.5)
+  it('light: muted ink clears WCAG AA on every chrome level', () => {
+    // 2026-10-19: layer-1 #e4e5e6 → #eceef0, layer-2 #cfd0d2 → #e1e3e6 and
+    // content.secondary #67676a → #616164. Before, muted ink measured 4.47
+    // on a row and 3.65 on layer-2 (the inspector panel and every
+    // selected / hovered `bg-elevated` fill).
+    for (const bg of ['--app', '--surface', '--elevated', '--side-panel', '--chrome-control']) {
+      expect(wcagRatio(v('light', '--fg-muted'), v('light', bg))).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })

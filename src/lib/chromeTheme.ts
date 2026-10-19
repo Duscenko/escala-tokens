@@ -55,7 +55,13 @@ export const CHROME_ROLES = {
   /** A selected row's edge (the open colour role) — the one stroke meant to be seen. */
   '--line-emphasis': 'border.control-hover',
   /** A secondary control on a row: the selected role's swatch + hex pill, "Show". */
-  '--chrome-control': 'action.secondary.default',
+  /**
+   * Dark raises the control one step over its row. Light's
+   * action.secondary.default is a button FILL (mid-grey), and as the label
+   * well of a picker it left `--fg-muted` under 3:1. In light a control on a
+   * grey row is the page-white chip (the segmented-control convention).
+   */
+  '--chrome-control': { light: 'surface.page', dark: 'action.secondary.default' },
   /** The selected segment of a segmented control. */
   '--chrome-control-pressed': 'action.secondary.pressed',
   '--status-danger': 'status.critical.content',
