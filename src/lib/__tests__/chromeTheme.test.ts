@@ -12,7 +12,9 @@ const theme = resolveChromeTheme()
 describe('chrome theme mapping', () => {
   it('reads panel elevation from the platform foundations', () => {
     expect(CHROME_ROLES['--app']).toBe('surface.page')
-    expect(CHROME_ROLES['--nav']).toBe('surface.page')
+    // Light: the frame sits between page and layer-1, so white panels lift off it.
+    expect(chromeRoleFor('--nav', 'light')).toBe('surface.page~surface.layer-1')
+    expect(chromeRoleFor('--nav', 'dark')).toBe('surface.page')
     expect(chromeRoleFor('--side-panel', 'dark')).toBe('surface.layer-2')
     // Light: the panel sits on the page, never on the downward light layer-2.
     expect(chromeRoleFor('--side-panel', 'light')).toBe('surface.page')

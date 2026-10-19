@@ -1,65 +1,65 @@
 {
-  "source": "escala-platform.md (Flow) — platform chrome foundations",
+  "source": "escala-platform.md (Flow) \u2014 platform chrome foundations",
   "accent": "#7838f9",
   "roles": {
     "content.primary": {
-      "light": "#333335",
+      "light": "#33353a",
       "dark": "#e4e5e6"
     },
     "content.secondary": {
-      "light": "#616164",
+      "light": "#606570",
       "dark": "#cccccf"
     },
     "content.subtle": {
-      "light": "#121316",
+      "light": "#6c727f",
       "dark": "#626366"
     },
     "content.accent": {
-      "light": "#6f4fce",
+      "light": "#7555cd",
       "dark": "#dac2ff"
     },
     "content.on-action": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#e4e5e6"
     },
     "content.inverse": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#131416"
     },
     "content.disabled": {
-      "light": "#5d5e61",
+      "light": "#9fa3ab",
       "dark": "#434446"
     },
     "content.link.default": {
-      "light": "#6f4fce",
+      "light": "#7555cd",
       "dark": "#dac2ff"
     },
     "content.link.hover": {
-      "light": "#37286a",
+      "light": "#3a2a69",
       "dark": "#eddfff"
     },
     "action.primary.default": {
-      "light": "#7838f9",
+      "light": "#7839ee",
       "dark": "#6a4c9c"
     },
     "action.primary.hover": {
-      "light": "#6939d5",
+      "light": "#6939cc",
       "dark": "#845ac5"
     },
     "action.primary.pressed": {
-      "light": "#6f4fce",
+      "light": "#7555cd",
       "dark": "#a76bff"
     },
     "action.secondary.default": {
-      "light": "#b8b9bb",
+      "light": "#d7d9dc",
       "dark": "#252628"
     },
     "action.secondary.hover": {
-      "light": "#9fa0a2",
+      "light": "#c8cacf",
       "dark": "#2d2d2f"
     },
     "action.secondary.pressed": {
-      "light": "#9fa0a2",
+      "light": "#c8cacf",
       "dark": "#38383b"
     },
     "action.disabled.default": {
@@ -79,31 +79,31 @@
       "dark": "#ffffff1a"
     },
     "surface.page": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#131416"
     },
     "surface.layer-1": {
-      "light": "#eceef0",
+      "light": "#f1f1f2",
       "dark": "#191a1b"
     },
     "surface.layer-2": {
-      "light": "#e1e3e6",
+      "light": "#e5e6e8",
       "dark": "#1f1f21"
     },
     "surface.accent": {
-      "light": "#eeedf9",
+      "light": "#f1effb",
       "dark": "#1d1b22"
     },
     "surface.input": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#131416"
     },
     "surface.selected": {
-      "light": "#280ee11c",
+      "light": "#2308d21c",
       "dark": "#ba91f71f"
     },
     "surface.inverse": {
-      "light": "#333335",
+      "light": "#33353a",
       "dark": "#cccccf"
     },
     "surface.overlay": {
@@ -111,55 +111,55 @@
       "dark": "#00000099"
     },
     "status.critical.surface": {
-      "light": "#ffc7bc78",
+      "light": "#ffbeb169",
       "dark": "#f86a4f24"
     },
     "status.critical.surface-pressed": {
-      "light": "#ffc1b7ed",
+      "light": "#ffb5a9cc",
       "dark": "#fb654d4f"
     },
     "status.critical.surface-solid": {
-      "light": "#b53a30",
+      "light": "#bc3d32",
       "dark": "#9d3b32"
     },
     "status.critical.on-solid": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#e4e5e6"
     },
     "status.critical.content": {
-      "light": "#b53a30",
+      "light": "#bc3d32",
       "dark": "#ffbcb0"
     },
     "status.critical.border": {
-      "light": "#ffa89bed",
+      "light": "#ff9786cc",
       "dark": "#fa5d4973"
     },
     "status.critical.border-strong": {
-      "light": "#ff453a",
+      "light": "#f8362c",
       "dark": "#ffbcb0"
     },
     "status.success.surface": {
-      "light": "#0d96191c",
+      "light": "#0899131c",
       "dark": "#81f0841a"
     },
     "status.success.surface-pressed": {
-      "light": "#099a2440",
+      "light": "#05992340",
       "dark": "#69f78c38"
     },
     "status.success.surface-solid": {
-      "light": "#05763c",
+      "light": "#0f7b40",
       "dark": "#83e09e"
     },
     "status.success.on-solid": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#131416"
     },
     "status.success.content": {
-      "light": "#05763c",
+      "light": "#0f7b40",
       "dark": "#83e09e"
     },
     "status.success.border": {
-      "light": "#039c2659",
+      "light": "#069f295c",
       "dark": "#5bf88752"
     },
     "status.success.border-strong": {
@@ -167,55 +167,55 @@
       "dark": "#4dc277"
     },
     "status.warning.surface": {
-      "light": "#ffa94d29",
+      "light": "#fd78051f",
       "dark": "#f0a34f24"
     },
     "status.warning.surface-pressed": {
-      "light": "#ff9c344f",
+      "light": "#ffa36069",
       "dark": "#f8a84d4f"
     },
     "status.warning.surface-solid": {
-      "light": "#feb462",
+      "light": "#a45600",
       "dark": "#ff9f0a"
     },
     "status.warning.on-solid": {
-      "light": "#333335",
+      "light": "#fdfdff",
       "dark": "#131416"
     },
     "status.warning.content": {
-      "light": "#965800",
+      "light": "#a45600",
       "dark": "#ffc174"
     },
     "status.warning.border": {
-      "light": "#ffa14178",
+      "light": "#ffbc8bcc",
       "dark": "#faa44573"
     },
     "status.warning.border-strong": {
-      "light": "#965800",
+      "light": "#a45600",
       "dark": "#ffc174"
     },
     "status.info.surface": {
-      "light": "#0775e31f",
+      "light": "#036fe61f",
       "dark": "#5eaaf71f"
     },
     "status.info.surface-pressed": {
-      "light": "#0575f545",
+      "light": "#0174f445",
       "dark": "#479efd4a"
     },
     "status.info.surface-solid": {
-      "light": "#1968b4",
+      "light": "#206cb9",
       "dark": "#245e9b"
     },
     "status.info.on-solid": {
-      "light": "#f9fafc",
+      "light": "#fdfdff",
       "dark": "#e4e5e6"
     },
     "status.info.content": {
-      "light": "#1968b4",
+      "light": "#206cb9",
       "dark": "#9ed2ff"
     },
     "status.info.border": {
-      "light": "#0276f961",
+      "light": "#0478fa63",
       "dark": "#3d99fc6e"
     },
     "status.info.border-strong": {
@@ -239,15 +239,15 @@
       "dark": "#ffffffb3"
     },
     "border.accent": {
-      "light": "#8d6efa",
+      "light": "#8f6ef2",
       "dark": "#845ac5"
     },
     "border.focus": {
-      "light": "#7838f9",
+      "light": "#7839ee",
       "dark": "#b182ff"
     },
     "border.ring.default": {
-      "light": "#2b06f357",
+      "light": "#2903e557",
       "dark": "#ac7afc6e"
     },
     "border.rim-highlight": {

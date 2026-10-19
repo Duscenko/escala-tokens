@@ -9,27 +9,27 @@
  */
 
 :root, .light {
-  --app: #f9fafc; /* surface.page */
-  --nav: #f9fafc; /* surface.page */
-  --surface: #eceef0; /* surface.layer-1 */
-  --tab-bar: #eceef0; /* surface.layer-1 */
-  --rail-section: #eceef0; /* surface.layer-1 */
-  --panel: #eceef0; /* surface.layer-1 */
-  --chip-rest: #eceef0; /* surface.layer-1 */
-  --elevated: #e1e3e6; /* surface.layer-2 */
-  --side-panel: #f9fafc; /* surface.page */
-  --input-bg: #f9fafc; /* surface.input */
-  --fg: #333335; /* content.primary */
-  --fg-muted: #616164; /* content.secondary */
+  --app: #fdfdff; /* surface.page */
+  --nav: #f7f7f9; /* surface.page~surface.layer-1 */
+  --surface: #f1f1f2; /* surface.layer-1 */
+  --tab-bar: #f1f1f2; /* surface.layer-1 */
+  --rail-section: #f1f1f2; /* surface.layer-1 */
+  --panel: #f1f1f2; /* surface.layer-1 */
+  --chip-rest: #f1f1f2; /* surface.layer-1 */
+  --elevated: #e5e6e8; /* surface.layer-2 */
+  --side-panel: #fdfdff; /* surface.page */
+  --input-bg: #fdfdff; /* surface.input */
+  --fg: #33353a; /* content.primary */
+  --fg-muted: #606570; /* content.secondary */
   --line: #0000001a; /* border.subtle */
   --line-strong: #00000026; /* border.default */
   --line-emphasis: #00000099; /* border.control-hover */
-  --chrome-control: #f9fafc; /* surface.page */
-  --chrome-control-pressed: #9fa0a2; /* action.secondary.pressed */
-  --status-danger: #b53a30; /* status.critical.content */
-  --status-success: #05763c; /* status.success.content */
-  --status-warning: #965800; /* status.warning.content */
-  --status-info: #1968b4; /* status.info.content */
+  --chrome-control: #fdfdff; /* surface.page */
+  --chrome-control-pressed: #c8cacf; /* action.secondary.pressed */
+  --status-danger: #bc3d32; /* status.critical.content */
+  --status-success: #0f7b40; /* status.success.content */
+  --status-warning: #a45600; /* status.warning.content */
+  --status-info: #206cb9; /* status.info.content */
   --line-alpha: #0000001a; /* tracks --line */
 }
 

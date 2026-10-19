@@ -32,7 +32,12 @@ export const PLATFORM_ACCENT: string = foundations.accent
 /** CSS custom property → Categorical role id (`group.key`). Order = declaration order. */
 export const CHROME_ROLES = {
   '--app': 'surface.page',
-  '--nav': 'surface.page',
+  /**
+   * The shell frame (`SHELL_CHROME`) the white card and panel sit on. Light
+   * takes the midpoint of page and layer-1 (`a~b`, see `resolveRole`): a
+   * subtle grey that lets the white panels lift, lighter than a layer-1 row.
+   */
+  '--nav': { light: 'surface.page~surface.layer-1', dark: 'surface.page' },
   '--surface': 'surface.layer-1',
   '--tab-bar': 'surface.layer-1',
   '--rail-section': 'surface.layer-1',
@@ -85,6 +90,25 @@ export type ChromeTheme = {
   labels: Record<ChromeAppearance, Record<string, string>>
 }
 
+function roleHex(role: string, a: ChromeAppearance): string {
+  const value = ROLES[role]?.[a]
+  if (!value) throw new Error(`chrome role ${role} (${a}) is not in platformFoundations.json`)
+  return value
+}
+
+/**
+ * A role id, or `a~b`: the sRGB midpoint of two opaque roles — a step between
+ * two levels of the platform ladder, still derived from its roles.
+ */
+function resolveRole(role: string, a: ChromeAppearance): string {
+  const parts = role.split('~')
+  if (parts.length === 1) return roleHex(role, a)
+  const [x, y] = parts.map((r) => roleHex(r, a))
+  if (x.length !== 7 || y.length !== 7) throw new Error(`chrome mix ${role} needs opaque roles`)
+  const ch = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)
+  return '#' + [0, 1, 2].map((i) => Math.round((ch(x, i) + ch(y, i)) / 2).toString(16).padStart(2, '0')).join('')
+}
+
 export function resolveChromeTheme(): ChromeTheme {
   const light: Record<string, string> = {}
   const dark: Record<string, string> = {}
@@ -93,8 +117,7 @@ export function resolveChromeTheme(): ChromeTheme {
   for (const cssVar of Object.keys(CHROME_ROLES) as ChromeVar[]) {
     for (const a of ['light', 'dark'] as const) {
       const role = chromeRoleFor(cssVar, a)
-      const value = ROLES[role]?.[a]
-      if (!value) throw new Error(`chrome role ${role} (${a}) is not in platformFoundations.json`)
+      const value = resolveRole(role, a)
       vars[a][cssVar] = value
       labels[a][cssVar] = role
     }
