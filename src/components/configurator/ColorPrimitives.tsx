@@ -573,11 +573,11 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compa
           aria-haspopup="dialog"
           aria-label={swatchLabel ?? 'Open color picker'}
           title={swatchLabel ?? 'Open color picker'}
-          className={`${compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-black/10' : SWATCH} transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
+          className={`${compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-line-strong' : SWATCH} transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
           style={{ backgroundColor: value }}
         />
       ) : (
-        <span className={compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-black/10' : SWATCH} style={{ backgroundColor: value }} />
+        <span className={compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-line-strong' : SWATCH} style={{ backgroundColor: value }} />
       )}
       <input
         value={draft}
@@ -651,7 +651,7 @@ function AlphaHexCell({ value, solid, solidName, compact, appearance }: {
   return (
     <div className={`flex items-center min-w-0 ${compact ? 'gap-1.5' : 'gap-2'}`}>
       <span
-        className={`${compact ? 'w-4 h-4 rounded-[3px] ring-1 ring-black/10' : SWATCH} relative overflow-hidden flex-shrink-0 ${appearance ?? ''}`}
+        className={`${compact ? 'w-4 h-4 rounded-[3px] ring-1 ring-line-strong' : SWATCH} relative overflow-hidden flex-shrink-0 ${appearance ?? ''}`}
         style={{ ...CHECKER, backgroundSize: compact ? '5px 5px' : '6px 6px' }}
         title={title}
       >

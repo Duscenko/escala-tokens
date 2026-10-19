@@ -114,7 +114,10 @@ export { neutralCuratedPalette }
 // The system's color chip — a rounded SQUARE, never a dot. Every swatch in
 // these controls (trigger · dropdown option · custom row · state row) shares it,
 // so the shape can't drift apart again.
-export const SWATCH = 'w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10'
+// The edge is a chrome TOKEN (`--line-strong`), not black/10: a near-white
+// tone (accent-1 = #FFFFFF) vanished into a light row, and black/10 is
+// invisible on a dark one. The same hairline holds on either surface.
+export const SWATCH = 'w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-line-strong'
 
 // ── The Color hub's left column, in its two states ──────────────────────────
 // Lives HERE, not in one tab, because the column is shared: Primitives lists

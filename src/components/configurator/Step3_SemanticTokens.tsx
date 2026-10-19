@@ -384,7 +384,7 @@ export function ArchModeEditor({
 // 5px — the two curves stay parallel. A shared `rounded-md` sat further out
 // than that inset and the chip read rounder than the square inside it.
 const VALUE_SWATCH =
-  'h-3.5 w-3.5 flex-shrink-0 rounded-[3px] ring-1 ring-black/10 dark:ring-white/10'
+  'h-3.5 w-3.5 flex-shrink-0 rounded-[3px] ring-1 ring-line-strong'
 const VALUE_CHIP =
   'inline-flex max-w-full items-center gap-1.5 rounded-[5px] border bg-surface py-[2px] pl-[2px] pr-2 text-caption font-mono text-fg-muted'
 
