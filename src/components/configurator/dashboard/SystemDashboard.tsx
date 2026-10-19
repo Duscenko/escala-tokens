@@ -307,7 +307,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo,
   onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
-  onEditRole, onOpenComponent, docsExits, onExportBrand, onAddBrand, addBrandBlocked, maxBrands,
+  onEditRole, onOpenComponent, docsExits, onExportBrand, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -342,6 +342,8 @@ export default function SystemDashboard({
   onExportBrand?: (key: string) => void
   /** Overview: the empty slot's +. */
   onAddBrand?: () => void
+  /** Overview: the + → import a brand from another system's context or JSON. */
+  onImportBrand?: (json: Record<string, unknown>, name: string) => { key: string } | { error: string }
   /** Why a brand cannot be added right now. */
   addBrandBlocked?: string
   /** How many brands this plan holds. */
@@ -399,6 +401,7 @@ export default function SystemDashboard({
           onOpenColorTheme={onOpenColorTheme}
           onExportBrand={onExportBrand}
           onAddBrand={onAddBrand}
+          onImportBrand={onImportBrand}
           addBrandBlocked={addBrandBlocked}
           maxBrands={maxBrands}
         />

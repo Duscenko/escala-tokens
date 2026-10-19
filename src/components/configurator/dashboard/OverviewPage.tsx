@@ -5,11 +5,12 @@
 // brand on screen carries a 2px rule in its own colour. A visitor with no
 // account is told there that signing in is what keeps these brands.
 
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { goToLogin, useAccess } from '../../../lib/access'
 import { generateTokenJSON } from '../../../lib/tokenGenerator'
 import { THEME_STYLE_PRESETS } from '../../../lib/themePresets'
+import { readBrandPayload, type BrandSource } from '../../../lib/importBrand'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import { wcagRatio } from '../../../lib/color/apca'
 import { BRAND_THEME_DEFS, brandThemesSummary, shippedThemes } from '../../../lib/brandThemes'
@@ -129,9 +130,147 @@ function CollectionGlyph({ which, ramp, heading }: { which: CollectionKey; ramp:
   return <span aria-hidden className="w-4 flex-shrink-0 text-ui font-semibold leading-none text-fg" style={{ fontFamily: fontStack(heading) }}>Aa</span>
 }
 
+type ImportBrand = (json: Record<string, unknown>, name: string) => { key: string } | { error: string }
+
+const MENU_ITEM = 'flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-ui text-fg transition-colors hover:bg-fg/[0.06] focus-visible:bg-fg/[0.06] focus-visible:outline-none'
+
+/** The slot's +: the same three doors as the plugin's Add Brand Variant —
+ *  start from blank, or bring a brand in from another Escala system's agent
+ *  context (the Figma Copy context) or its tokens.json. A dropdown, not a
+ *  modal: choosing an import turns it into a paste box in place. */
+function AddBrandMenu({ onBlank, onImport, blocked }: {
+  onBlank: () => void
+  onImport?: ImportBrand
+  blocked?: string
+}) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<BrandSource | null>(null)
+  const [text, setText] = useState('')
+  const [fileName, setFileName] = useState<string | undefined>()
+  const [error, setError] = useState<string | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const firstRef = useRef<HTMLButtonElement>(null)
+  const read = mode ? readBrandPayload(text, mode, fileName) : null
+
+  const close = () => { setOpen(false); setMode(null); setText(''); setFileName(undefined); setError(null) }
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (!rootRef.current?.contains(e.target as Node)) close() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  useEffect(() => { if (open && !mode) firstRef.current?.focus() }, [open, mode])
+
+  const pickFile = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = mode === 'context' ? '.md,.txt,text/markdown,text/plain' : '.json,application/json'
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) return
+      file.text().then((value) => { setText(value); setFileName(file.name); setError(null) })
+    }
+    input.click()
+  }
+  const add = () => {
+    if (!read?.ok || !onImport) return
+    const res = onImport(read.json, read.name)
+    if ('error' in res) setError(res.error)
+    else close()
+  }
+  const onMenuKey = (e: React.KeyboardEvent) => {
+    if (mode || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
+    const items = [...(rootRef.current?.querySelectorAll<HTMLButtonElement>('[role=menuitem]') ?? [])]
+    const i = items.indexOf(document.activeElement as HTMLButtonElement)
+    const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length
+    e.preventDefault()
+    items[next]?.focus()
+  }
+
+  return (
+    <div ref={rootRef} className="relative flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => (open ? close() : setOpen(true))}
+        disabled={Boolean(blocked)}
+        title={blocked ?? t('Add brand')}
+        aria-label={t('Add brand')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <PlusGlyph />
+      </button>
+      {open && (
+        <div
+          role={mode ? 'dialog' : 'menu'}
+          aria-label={mode === 'context' ? t('Import agent context') : mode === 'json' ? t('Import JSON') : t('Add brand')}
+          onKeyDown={onMenuKey}
+          className={`absolute top-full z-20 mt-2 flex flex-col rounded-2xl border border-line-strong bg-elevated p-1.5 text-left shadow-xl ${mode ? 'w-[22rem] gap-2.5 p-3' : 'w-60'}`}
+        >
+          {!mode ? (
+            <>
+              <button ref={firstRef} type="button" role="menuitem" className={MENU_ITEM} onClick={() => { close(); onBlank() }} title={t('Pick a colour; font, radius and spacing come from this system.')}>
+                <PlusGlyph />{t('Start from blank')}
+              </button>
+              {onImport && (
+                <>
+                  <button type="button" role="menuitem" className={MENU_ITEM} onClick={() => setMode('context')} title={t('Paste what Copy context gave you in Figma sync.')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M9 15l11-11M14 4h6v6" /></svg>
+                    {t('Import agent context')}
+                  </button>
+                  <button type="button" role="menuitem" className={MENU_ITEM} onClick={() => setMode('json')} title={t('An Escala tokens.json file.')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4c-2 0-2 2-2 4s-2 4-2 4 2 0 2 4 0 4 2 4M16 4c2 0 2 2 2 4s2 4 2 4-2 0-2 4 0 4-2 4" /></svg>
+                    {t('Import JSON')}
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-ui font-semibold text-fg">{mode === 'context' ? t('Import agent context') : t('Import JSON')}</p>
+              <p className="text-caption text-fg-muted">
+                {mode === 'context'
+                  ? t('In Figma sync, press Copy context and paste it here. Its colours and foundations become a new brand of this system.')
+                  : t('Paste an Escala tokens.json, or choose the file. Its colours and foundations become a new brand of this system.')}
+              </p>
+              <textarea
+                autoFocus
+                value={text}
+                onChange={(e) => { setText(e.target.value); setFileName(undefined); setError(null) }}
+                rows={7}
+                spellCheck={false}
+                placeholder={mode === 'context' ? t('Paste the context here') : t('Paste the JSON here')}
+                className="w-full resize-none rounded-lg border border-line bg-app px-2.5 py-2 font-mono text-caption text-fg outline-none focus:border-line-strong"
+              />
+              <button type="button" onClick={pickFile} className={`${TEXT_LINK} self-start text-caption`}>
+                {mode === 'context' ? t('Choose a .md file') : t('Choose a .json file')}
+              </button>
+              <p role="status" aria-live="polite" className={`min-h-[1rem] text-caption ${error || (read && !read.ok && read.error) ? 'text-status-danger' : 'text-fg-muted'}`}>
+                {error ?? (read && !read.ok ? t(read.error) : read?.ok ? t('Ready: “{name}”. It is added as a new brand.', { name: read.name }) : '')}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={add} disabled={!read?.ok} className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+                  {t('Add as brand')}
+                </button>
+                <button type="button" onClick={() => { setMode(null); setText(''); setError(null) }} className="h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+                  {t('Back')}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OverviewPage({
   dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, onOpenColorTheme,
-  onAddBrand, addBrandBlocked, maxBrands,
+  onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   dash: Dashboard
   header: ReactNode
@@ -149,8 +288,10 @@ export default function OverviewPage({
   onExportBrand?: (key: string) => void
   /** A theme chip opens Variables · Color for that brand in that appearance. */
   onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
-  /** The empty slot's +. */
+  /** The empty slot's + → Start from blank. */
   onAddBrand?: () => void
+  /** The + → Import agent context / Import JSON: mint the payload as a brand. */
+  onImportBrand?: ImportBrand
   /** Why a brand cannot be added right now (the plan's cap). */
   addBrandBlocked?: string
   /** How many brands this plan holds. */
@@ -292,18 +433,7 @@ export default function OverviewPage({
             className="flex min-w-[16rem] flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center"
             style={{ backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.4px)', backgroundSize: '18px 18px' }}
           >
-            {onAddBrand && (
-              <button
-                type="button"
-                onClick={onAddBrand}
-                disabled={Boolean(addBrandBlocked)}
-                title={addBrandBlocked ?? t('Add brand')}
-                aria-label={t('Add brand')}
-                className={`grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-              >
-                <PlusGlyph />
-              </button>
-            )}
+            {onAddBrand && <AddBrandMenu onBlank={onAddBrand} onImport={onImportBrand} blocked={addBrandBlocked} />}
             <p className="text-ui font-semibold text-fg">{t('Add brand')}</p>
             {guest ? (
               <button

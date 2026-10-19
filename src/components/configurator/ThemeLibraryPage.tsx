@@ -11,6 +11,7 @@ import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
 import { useEntitlement } from '../../lib/useEntitlement'
+import { addBrandFromPayload } from '../../lib/importBrand'
 import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
@@ -1601,6 +1602,15 @@ export default function ThemeLibraryPage({
         onOpenComponent={onOpenComponent}
         onExportBrand={onGetCode}
         onAddBrand={onCreateTheme}
+        onImportBrand={(json, name) => {
+          const res = addBrandFromPayload(json, name)
+          if ('error' in res) return res
+          // Kept like a brand the studio makes (saved to the account when there
+          // is one), and put on screen so its card is the one lit.
+          keepCreatedBrand(res.key)
+          onSelectTheme(res.key)
+          return res
+        }}
         addBrandBlocked={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
         maxBrands={maxThemes}
         overviewHeader={() => (
