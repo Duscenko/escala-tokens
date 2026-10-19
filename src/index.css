@@ -45,6 +45,13 @@
   inherits: true;
   initial-value: #ffffff;
 }
+/* The workspace canvas behind the cards — one step lighter than --nav in
+   light, so header and rail separate from it without a line. */
+@property --canvas {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
 @property --line-width {
   syntax: "<length>";
   inherits: true;
@@ -105,6 +112,7 @@
   --color-fg-muted: var(--fg-muted);
   --color-fg-faint: var(--fg-faint);
   --color-nav: var(--nav);
+  --color-canvas: var(--canvas);
   --color-tab-bar: var(--tab-bar);
   --color-panel: var(--panel);
   --color-side-panel: var(--side-panel);

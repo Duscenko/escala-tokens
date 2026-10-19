@@ -198,7 +198,7 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
     <nav
       aria-label={ariaLabel}
       data-shell-chrome=""
-      className="flex h-full flex-shrink-0 flex-col items-center gap-2 overflow-y-auto pt-3 pb-3 scrollbar-thin"
+      className="flex h-full flex-shrink-0 flex-col items-center gap-2 overflow-y-auto pt-3 pb-3 scrollbar-thin bg-nav"
       style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
     >
       {items.map(({ key, label }) => {

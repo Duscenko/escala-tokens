@@ -2541,7 +2541,7 @@ export default function Configurator() {
           </div>
         )}
         <div
-          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-canvas' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>

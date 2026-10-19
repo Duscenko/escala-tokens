@@ -31,13 +31,18 @@ export const PLATFORM_ACCENT: string = foundations.accent
 
 /** CSS custom property → Categorical role id (`group.key`). Order = declaration order. */
 export const CHROME_ROLES = {
-  '--app': 'surface.page',
   /**
-   * The shell frame (`SHELL_CHROME`) the white card and panel sit on. Light
-   * takes the midpoint of page and layer-1 (`a~b`, see `resolveRole`): a
-   * subtle grey that lets the white panels lift, lighter than a layer-1 row.
+   * LIGHT chrome is a hand-set cool ladder (literal hex, see `resolveRole`),
+   * not the platform ramp: card / panel / input pure white, the canvas
+   * behind the cards #f8f9fc, header + left rail + footer #f1f3f9, hairlines
+   * #e2e8f0. White surfaces float on the canvas; header and rail separate
+   * from it by fill, not by a line. Dark still reads the roles.
    */
-  '--nav': { light: 'surface.page~surface.layer-1', dark: 'surface.page' },
+  '--app': { light: '#ffffff', dark: 'surface.page' },
+  /** Header, left rail, footer (`SHELL_CHROME`). */
+  '--nav': { light: '#f1f3f9', dark: 'surface.page' },
+  /** The workspace area the card and inspector sit on. */
+  '--canvas': { light: '#f8f9fc', dark: 'surface.page' },
   '--surface': 'surface.layer-1',
   '--tab-bar': 'surface.layer-1',
   '--rail-section': 'surface.layer-1',
@@ -51,11 +56,11 @@ export const CHROME_ROLES = {
    * inspector mid-grey. In light the panel sits on the page level and its
    * hairline separates it, exactly like the canvas card beside it (`bg-app`).
    */
-  '--side-panel': { light: 'surface.page', dark: 'surface.layer-2' },
-  '--input-bg': 'surface.input',
+  '--side-panel': { light: '#ffffff', dark: 'surface.layer-2' },
+  '--input-bg': { light: '#ffffff', dark: 'surface.input' },
   '--fg': 'content.primary',
   '--fg-muted': 'content.secondary',
-  '--line': 'border.subtle',
+  '--line': { light: '#e2e8f0', dark: 'border.subtle' },
   '--line-strong': 'border.default',
   /** A selected row's edge (the open colour role) — the one stroke meant to be seen. */
   '--line-emphasis': 'border.control-hover',
@@ -97,10 +102,11 @@ function roleHex(role: string, a: ChromeAppearance): string {
 }
 
 /**
- * A role id, or `a~b`: the sRGB midpoint of two opaque roles — a step between
- * two levels of the platform ladder, still derived from its roles.
+ * A role id, a literal `#rrggbb` (the hand-set light ladder), or `a~b`: the
+ * sRGB midpoint of two opaque roles.
  */
 function resolveRole(role: string, a: ChromeAppearance): string {
+  if (/^#[0-9a-f]{6}$/i.test(role)) return role
   const parts = role.split('~')
   if (parts.length === 1) return roleHex(role, a)
   const [x, y] = parts.map((r) => roleHex(r, a))
@@ -119,7 +125,7 @@ export function resolveChromeTheme(): ChromeTheme {
       const role = chromeRoleFor(cssVar, a)
       const value = resolveRole(role, a)
       vars[a][cssVar] = value
-      labels[a][cssVar] = role
+      labels[a][cssVar] = role.startsWith('#') ? 'hand-set light ladder' : role
     }
   }
   // `--line-alpha` is the same structural hairline as `--line`.

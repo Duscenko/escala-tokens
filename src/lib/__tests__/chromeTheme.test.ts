@@ -11,15 +11,19 @@ const theme = resolveChromeTheme()
 
 describe('chrome theme mapping', () => {
   it('reads panel elevation from the platform foundations', () => {
-    expect(CHROME_ROLES['--app']).toBe('surface.page')
-    // Light: the frame sits between page and layer-1, so white panels lift off it.
-    expect(chromeRoleFor('--nav', 'light')).toBe('surface.page~surface.layer-1')
+    // Dark reads the roles; light is the hand-set cool ladder: white surfaces
+    // on a #f8f9fc canvas, header + rail one step darker.
+    expect(chromeRoleFor('--app', 'dark')).toBe('surface.page')
     expect(chromeRoleFor('--nav', 'dark')).toBe('surface.page')
+    expect(chromeRoleFor('--canvas', 'dark')).toBe('surface.page')
     expect(chromeRoleFor('--side-panel', 'dark')).toBe('surface.layer-2')
-    // Light: the panel sits on the page, never on the downward light layer-2.
-    expect(chromeRoleFor('--side-panel', 'light')).toBe('surface.page')
+    expect(theme.vars.light['--app']).toBe('#ffffff')
+    expect(theme.vars.light['--side-panel']).toBe('#ffffff')
+    expect(theme.vars.light['--canvas']).toBe('#f8f9fc')
+    expect(theme.vars.light['--nav']).toBe('#f1f3f9')
+    expect(theme.vars.light['--line']).toBe('#e2e8f0')
     expect(CHROME_ROLES['--surface']).toBe('surface.layer-1')
-    expect(CHROME_ROLES['--line']).toBe('border.subtle')
+    expect(chromeRoleFor('--line', 'dark')).toBe('border.subtle')
     expect(Object.keys(CHROME_ROLES)).not.toContain('--fg-faint')
   })
 

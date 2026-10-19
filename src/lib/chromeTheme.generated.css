@@ -9,19 +9,20 @@
  */
 
 :root, .light {
-  --app: #fdfdff; /* surface.page */
-  --nav: #f7f7f9; /* surface.page~surface.layer-1 */
+  --app: #ffffff; /* hand-set light ladder */
+  --nav: #f1f3f9; /* hand-set light ladder */
+  --canvas: #f8f9fc; /* hand-set light ladder */
   --surface: #f1f1f2; /* surface.layer-1 */
   --tab-bar: #f1f1f2; /* surface.layer-1 */
   --rail-section: #f1f1f2; /* surface.layer-1 */
   --panel: #f1f1f2; /* surface.layer-1 */
   --chip-rest: #f1f1f2; /* surface.layer-1 */
   --elevated: #e5e6e8; /* surface.layer-2 */
-  --side-panel: #fdfdff; /* surface.page */
-  --input-bg: #fdfdff; /* surface.input */
+  --side-panel: #ffffff; /* hand-set light ladder */
+  --input-bg: #ffffff; /* hand-set light ladder */
   --fg: #33353a; /* content.primary */
   --fg-muted: #606570; /* content.secondary */
-  --line: #0000001a; /* border.subtle */
+  --line: #e2e8f0; /* hand-set light ladder */
   --line-strong: #00000026; /* border.default */
   --line-emphasis: #00000099; /* border.control-hover */
   --chrome-control: #fdfdff; /* surface.page */
@@ -30,12 +31,13 @@
   --status-success: #0f7b40; /* status.success.content */
   --status-warning: #a45600; /* status.warning.content */
   --status-info: #206cb9; /* status.info.content */
-  --line-alpha: #0000001a; /* tracks --line */
+  --line-alpha: #e2e8f0; /* tracks --line */
 }
 
 .dark {
   --app: #131416; /* surface.page */
   --nav: #131416; /* surface.page */
+  --canvas: #131416; /* surface.page */
   --surface: #191a1b; /* surface.layer-1 */
   --tab-bar: #191a1b; /* surface.layer-1 */
   --rail-section: #191a1b; /* surface.layer-1 */
