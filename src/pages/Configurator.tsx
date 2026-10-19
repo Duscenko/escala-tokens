@@ -1340,7 +1340,9 @@ export default function Configurator() {
     setTab('foundations')
     setThemeHubSurface('artefacts')
     // No theme left: the same first screen a new visitor gets, the studio.
-    setStylePreview(studio ? null : guestStarterPreview())
+    // A guest who already made a brand keeps seeing THAT brand: the Cupertino
+    // try-on here covered their own work (reached via a stale stored session).
+    setStylePreview(null)
     setGuestStudio(studio)
     setHomeCreating(studio)
     setThemeWorkspaceTab(studio ? 'library' : 'preview')
@@ -2669,8 +2671,10 @@ export default function Configurator() {
                     exploringRandom={exploringRandomKey === previewTheme}
                     onExploringRandomEnd={() => { setExploringRandomKey(null); setRandomDraftKey(null) }}
                     randomDraft={brandIsDraft(previewTheme)}
-                    onBackHome={() => { setStylePreview(null); openLibraryPage() }}
-                    onBackToStyles={() => { setStylePreview(null); openLibraryPage(); setOpenStylesRequest(true) }}
+                    // Home is an account place: a guest's breadcrumb has no
+                    // "Home" crumb (it used to bounce them to sign-up).
+                    onBackHome={sessionAllowsHome ? () => { setStylePreview(null); openLibraryPage() } : undefined}
+                    onBackToStyles={sessionAllowsHome ? () => { setStylePreview(null); openLibraryPage(); setOpenStylesRequest(true) } : undefined}
                     onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}

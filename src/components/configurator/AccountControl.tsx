@@ -5,6 +5,7 @@ import { displayNameOf, initialOf, signOut, useAuth } from '../../lib/auth'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
+import { useSavedBrandKeys } from '../../lib/libraryStatus'
 import { useLicence, type LicenceStatus } from '../../lib/licence'
 import { consumeLicenceReturn, lookupPurchase } from '../../lib/licencePurchase'
 import { LicenceModal } from './LicenceModal'
@@ -15,12 +16,13 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayo
  *  and this header control must not. */
 const AVATAR_TILE_RADIUS = 27 * (8 / 31)
 
-// TopNav's account entry: a "Sign in" link to /login when signed out, an initial
+// TopNav's account entry: "Sign in" + "Sign up" when signed out, an initial
 // that opens a small menu (email · Sign out) when signed in. Renders NOTHING
 // while accounts are off (`accountsEnabled`), so the production header is
 // unchanged until ACCOUNTS_LIVE flips. The login itself is a page, not a dialog.
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
 /** Closing the paste dialog silences the automatic open for this tab only.
  *  A new visit asks again until the key is valid. */
 const PROMPT_DISMISS = 'sd-licence-prompt'
@@ -44,6 +46,10 @@ export default function AccountControl({ onOpenLibrary }: { onOpenLibrary?: () =
 
 function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
   const savedCount = useDesignStore((s) => s.savedSystems.length)
+  // A guest's brands live only in this browser. Signing UP is the way to keep
+  // them, so it carries the save intent and returns to the workspace; with
+  // nothing made yet it lands on the new account's Home.
+  const guestBrandCount = useSavedBrandKeys().length
   const { t } = useI18n()
   const { user, loading } = useAuth()
   // PRO on this chip is a bought licence only. Promo / launch entitlements
@@ -93,14 +99,23 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   if (loading) return licenceDialog
 
   if (!user) {
+    const keepsWork = guestBrandCount > 0
     return (
       <>
         <a
           href={loginHref({ next: 'library' })}
           onClick={() => rememberReturn('library')}
-          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-medium text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
+          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-2.5 text-body font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS_RING}`}
         >
           {t('Sign in')}
+        </a>
+        <a
+          href={loginHref({ next: keepsWork ? 'workspace' : 'library', mode: 'signup' })}
+          onClick={() => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))}
+          title={keepsWork ? t('Save your work with a free account') : undefined}
+          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg bg-accent-solid px-3 text-body font-semibold text-accent-ink transition-[filter] hover:brightness-110 ${FOCUS_RING}`}
+        >
+          {t('Sign up')}
         </a>
         {licenceDialog}
       </>
