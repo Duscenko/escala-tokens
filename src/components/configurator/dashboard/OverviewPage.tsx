@@ -150,7 +150,7 @@ function SyncChip({ name, state, detail, onClick }: {
 }
 
 export default function OverviewPage({
-  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onOpenColorTheme, timeAgo, onSyncFigma, onOpenGithub,
+  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onOpenColorTheme, timeAgo, onOpenGithub,
 }: {
   dash: Dashboard
   header: ReactNode
@@ -167,7 +167,6 @@ export default function OverviewPage({
   onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** "2h ago" for the sync rows. */
   timeAgo: (iso: string) => string
-  onSyncFigma: () => void
   onOpenGithub: () => void
 }) {
   const { t } = useI18n()
@@ -241,14 +240,9 @@ export default function OverviewPage({
                   {t('Brands')}
                 </th>
                 <th scope="col" className={`sticky right-0 z-[2] whitespace-nowrap border-b border-l ${RULE} bg-side-panel p-0 ${ROW_H}`}>
-                  {/* Where the whole system goes. Each chip is the page for that destination. */}
+                  {/* Where the whole system goes. Figma is not synced from here
+                      any more, so only GitHub keeps a chip. */}
                   <div className="flex h-full items-center justify-end gap-1.5 px-3">
-                    <SyncChip
-                      name="Figma"
-                      state={dash.figma}
-                      detail={store.figmaLastPublishAt ? timeAgo(store.figmaLastPublishAt) : null}
-                      onClick={onSyncFigma}
-                    />
                     <SyncChip
                       name="GitHub"
                       state={dash.github}

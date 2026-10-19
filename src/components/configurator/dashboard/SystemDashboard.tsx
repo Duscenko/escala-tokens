@@ -386,7 +386,6 @@ export default function SystemDashboard({
           onEditBrand={onEditBrand}
           onOpenColorTheme={onOpenColorTheme}
           timeAgo={timeAgo}
-          onSyncFigma={onSyncFigma}
           onOpenGithub={onOpenGithub}
         />
       )}
