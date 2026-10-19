@@ -148,6 +148,10 @@ export function inspectGroupAttrs(active: boolean): Record<string, string> {
  *  inspector hit-testing (crosshair, page badge, click-to-pin). */
 export const INSPECT_EXEMPT_ATTR = 'data-inspect-exempt'
 
+/** Stamped on the control that turns inspector mode on — Escape's second
+ *  press returns focus to it. */
+export const INSPECTOR_TOGGLE_ATTR = 'data-inspector-toggle'
+
 function isInspectExempt(node: Element | null): boolean {
   return !!node?.closest?.(`[${INSPECT_EXEMPT_ATTR}]`)
 }
@@ -647,9 +651,10 @@ export function InspectorOverlay({
     return () => cancelAnimationFrame(frame)
   }, [pin])
 
-  // Escape unwinds one layer at a time — held control, pin, hover — then exits
-  // inspector mode (keyboard parity with the header toggle; works on Esc / iOS
-  // hardware keyboards too).
+  // Escape is TWO steps, always: the first press drops the selection (a held
+  // control, else the pin), the second leaves inspector mode and hands focus
+  // back to the toggle that entered it. A transient hover is not a step — it
+  // made Escape cost a third press whenever the pointer rested on the board.
   const target = pin ?? hover
   useEffect(() => {
     if (!active) return
@@ -658,30 +663,25 @@ export function InspectorOverlay({
       // Token Details is on top and closes itself on Escape; one press must
       // not also drop the selection underneath it.
       if (editingRef.current) return
-      if (focusHeld.current) {
+      if (focusHeld.current || pinRef.current) {
         focusHeld.current = false
-        setFocus(null)
-        e.preventDefault()
-        return
-      }
-      if (pinRef.current) {
         setPin(null)
         setFocus(null)
         e.preventDefault()
         return
       }
-      if (hover) {
-        overBadge.current = false
-        setHover(null)
-        e.preventDefault()
-        return
-      }
-      onExitMode?.()
+      overBadge.current = false
+      setHover(null)
+      if (!onExitMode) return
+      onExitMode()
       e.preventDefault()
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`[${INSPECTOR_TOGGLE_ATTR}]`)?.focus()
+      })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [active, hover, onExitMode])
+  }, [active, onExitMode])
 
   // With nothing selected, keep the pin's presence wrapper mounted at the SAME
   // place in the tree as below (second child of the fragment): unmounting it

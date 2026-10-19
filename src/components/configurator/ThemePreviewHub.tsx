@@ -14,7 +14,7 @@ import { BoardThemeSwitch } from './BrandThemesPicker'
 /** The Generator board — the region Theme · Components switches. */
 const BOARD_PANEL_ID = 'generator-board'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
-import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
+import { InspectorModeProvider, InspectorOverlay, INSPECTOR_TOGGLE_ATTR } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
@@ -172,8 +172,8 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
   const hint = disabled && disabledTitle
     ? disabledTitle
     : active
-      ? t('Return to normal interaction on the canvas')
-      : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`
+      ? `${t('Return to normal interaction on the canvas')} (Esc)`
+      : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}. ${t('Esc deselects, Esc again exits')}`
   const button = (
     <button
       type="button"
@@ -183,6 +183,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       aria-disabled={disabled || undefined}
       aria-label={label}
       aria-keyshortcuts={active ? 'Escape' : undefined}
+      {...{ [INSPECTOR_TOGGLE_ATTR]: '' }}
       // The toolbar segment gets the dark hint (name, no paragraph); the
       // standalone pill keeps the native tooltip with the longer explanation.
       title={bare && !(disabled && disabledTitle) ? undefined : hint}
