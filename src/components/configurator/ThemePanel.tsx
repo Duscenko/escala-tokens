@@ -267,11 +267,15 @@ export function ThemeIdentityBar({
   const fieldRef = useRef<HTMLInputElement>(null)
   return (
     <div className={`flex w-full min-w-0 items-center gap-1.5 ${padded ? 'px-3' : ''}`}>
-      <div className={`flex ${rowClass} min-w-0 flex-1 items-center rounded-lg border border-line bg-surface px-2.5 transition-colors duration-200 hover:border-line-strong focus-within:border-line-strong motion-reduce:transition-none ${nameLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+      {/* In the create studio (`padded`) the row is one of the form's field
+          rows — Name · Theme · Style share height, fill, edge and type. */}
+      <div className={`flex min-w-0 flex-1 items-center rounded-lg border transition-colors duration-200 hover:border-line-strong focus-within:border-line-strong motion-reduce:transition-none ${
+        padded ? 'h-11 border-line-strong/80 bg-elevated/70 px-3.5' : `${rowClass} border-line bg-surface px-2.5`
+      } ${nameLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
         <span
           aria-hidden
           onMouseDown={(e) => { e.preventDefault(); if (!nameLocked) fieldRef.current?.focus() }}
-          className="shrink-0 cursor-text select-none text-body text-fg-faint"
+          className={`shrink-0 cursor-text select-none ${padded ? 'text-ui text-fg-muted' : 'text-body text-fg-faint'}`}
         >
           {t('Name')}:
         </span>
@@ -287,7 +291,7 @@ export function ThemeIdentityBar({
           title={nameLocked ? t('Locked — reserved export key') : undefined}
           autoFocus={autoFocus}
           spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent pl-1.5 text-body text-fg outline-none disabled:cursor-not-allowed"
+          className={`min-w-0 flex-1 bg-transparent pl-1.5 text-fg outline-none disabled:cursor-not-allowed ${padded ? 'text-ui font-medium' : 'text-body'}`}
         />
       </div>
       {showAppearance && (
@@ -750,7 +754,7 @@ export function ThemeForm({
         })()}
 
         <div className="flex-shrink-0">
-          <BrandThemesPicker value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
+          <BrandThemesPicker field={firstStep} value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
         </div>
 
         {/* Style — shown on the create form even while System Styles are

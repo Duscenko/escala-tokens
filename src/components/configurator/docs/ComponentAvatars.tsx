@@ -257,3 +257,42 @@ function ComponentCard({
     </div>
   )
 }
+
+/**
+ * Every component as a large cover, painted entirely in the system's own
+ * tokens (card, label, specimen) — the create studio's "Components" view.
+ * Pure preview: the covers are inert, nothing opens.
+ */
+export function ComponentCoversGrid({ tokens }: { tokens: PreviewTokens }) {
+  const items = COMPONENTS
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) =>
+      CATEGORIES.indexOf(a.c.category) - CATEGORIES.indexOf(b.c.category) || a.i - b.i)
+    .map(({ c }) => c)
+  const card = tokens.archTokens?.['surface.layer-1'] ?? tokens.surface
+  return (
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">
+      {items.map((def) => {
+        const Specimen = SPECIMENS[def.key]
+        return (
+          <li
+            key={def.key}
+            className="relative flex h-[220px] flex-col overflow-hidden rounded-2xl"
+            style={{ background: card, boxShadow: `inset 0 0 0 1px ${tokens.borderDefault ?? 'transparent'}` }}
+          >
+            <span className="px-5 pt-4 text-ui" style={{ color: tokens.neutralText }}>{def.label}</span>
+            <span aria-hidden inert className="relative block min-h-0 flex-1">
+              {Specimen && (
+                <span className="absolute inset-x-5 bottom-5 top-2">
+                  <FittedSpecimen>
+                    <Specimen t={tokens} v={axisDefaults(def)} />
+                  </FittedSpecimen>
+                </span>
+              )}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}

@@ -3,6 +3,7 @@ import {
   BRAND_THEME_CHOICES, brandThemeChoiceFor, brandThemeLabel, plannedBrandThemes, type BrandThemeId,
 } from '../../lib/brandThemes'
 import { useI18n } from '../../lib/i18n'
+import { SELECT_CARD } from './themeWorkspaceLayout'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
@@ -17,7 +18,7 @@ const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
  *
  *  The segments come from `BRAND_THEME_CHOICES` (derived from the theme
  *  registry), never a list typed here, so a third theme shows up on its own. */
-export function BrandThemesPicker({ value, onChange, lead, onLead, label = true }: {
+export function BrandThemesPicker({ value, onChange, lead, onLead, label = true, field = false }: {
   value: readonly BrandThemeId[]
   onChange: (ids: BrandThemeId[]) => void
   /** The theme this brand leads with. On Free a brand ships one theme, so a
@@ -28,6 +29,9 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true 
   onLead?: (id: BrandThemeId) => void
   /** The caption above the row. Off where the host already names the field. */
   label?: boolean
+  /** One field row like the form's Name and Style rows: the label inside on
+   *  the left, the segments on the right, no caption above. */
+  field?: boolean
 }) {
   const { t } = useI18n()
   const limited = useOneThemePlan()
@@ -38,13 +42,8 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true 
   const leadId = lead && singles.some((c) => c.ids[0] === lead) ? lead : singles[0]?.ids[0]
   const caption = limited ? t('Themes this brand ships') : t('Theme')
 
-  return (
-    <div className="flex flex-col gap-1.5">
-      {label && (
-        <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{caption}</p>
-      )}
-      <div role="radiogroup" aria-label={caption} className="flex h-8 select-none items-center gap-0.5 rounded-lg border border-line p-0.5">
-        {singles.map((choice) => {
+  const segments = (
+        singles.map((choice) => {
           const id = choice.ids[0]
           // Pro ships both, so the lit segment is the theme on screen.
           const on = limited ? choice.id === current.id : both ? id === leadId : choice.id === current.id
@@ -69,7 +68,27 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true 
               <span className="truncate">{name}</span>
             </button>
           )
-        })}
+        })
+  )
+
+  if (field) {
+    return (
+      <div className={`flex h-11 items-center gap-3 pl-3.5 pr-1.5 ${SELECT_CARD}`}>
+        <span className="flex-shrink-0 text-ui text-fg-muted">{caption}</span>
+        <div role="radiogroup" aria-label={caption} className="ml-auto flex h-8 min-w-0 max-w-[11rem] flex-1 select-none items-center gap-0.5 rounded-md bg-app/50 p-0.5">
+          {segments}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {label && (
+        <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{caption}</p>
+      )}
+      <div role="radiogroup" aria-label={caption} className="flex h-8 select-none items-center gap-0.5 rounded-lg border border-line p-0.5">
+        {segments}
       </div>
     </div>
   )
