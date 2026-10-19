@@ -4,6 +4,7 @@ import type { TokenJSON } from '../src/lib/agentBundle/types.js'
 import { tokenBlobKey } from '../src/lib/publishTrust.js'
 import { isServable, stripLicence } from '../src/lib/licenceGate.js'
 import { isDeletedSystem } from '../src/lib/deletedSystem.js'
+import { HOSTED_MCP } from '../src/lib/hostedSync.js'
 import { clientIp, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 const CORS_HEADERS = {
@@ -52,6 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   applyCors(res)
+
+  // Paused: answer fast and free — no body parsing, no Blob read, no rate-limit bookkeeping.
+  if (!HOSTED_MCP) {
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
+    return res.status(410).json({ error: 'The hosted Escala MCP is paused. Use the offline agent skill and design.md from Export.' })
+  }
 
   if (req.method === 'HEAD') {
     res.setHeader('Cache-Control', 'no-store')
