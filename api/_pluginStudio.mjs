@@ -190,6 +190,45 @@ var init_componentCatalogue = __esm({
         accessibility: 'role="group" on the container \u2014 add an aria-label. Each item is a real Button.'
       },
       {
+        key: "ToggleGroup",
+        label: "Toggle Group",
+        category: "Button & Actions",
+        description: "shadcn/ui Toggle Group: a set of two-state buttons \u2014 one or several pressed at a time.",
+        usage: "Use for formatting toggles (bold \xB7 italic \xB7 underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.",
+        axes: [
+          { name: "Variant", values: ["default", "outline"] },
+          { name: "Size", values: ["default", "sm", "lg"] }
+        ],
+        figmaSets: ["Toggle Group"],
+        props: [
+          { name: "type", type: '"single" | "multiple"', description: "One pressed item, or any number." },
+          { name: "variant", type: '"default" | "outline"', description: "shadcn's toggle variants: no edge, or the control boundary." },
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Item height \u2014 the Button heights." },
+          { name: "value / defaultValue / onValueChange", type: "string | string[]", description: "The pressed item(s)." },
+          { name: "ToggleGroupItem value", type: "component", description: 'One toggle; Radix writes data-state="on" when pressed.' }
+        ],
+        accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).'
+      },
+      {
+        key: "Toggle",
+        label: "Toggle",
+        category: "Button & Actions",
+        description: "shadcn/ui Toggle: a two-state button \u2014 on or off.",
+        usage: "Use for one setting that is on or off and acts at once (bold, mute). For a set of them use Toggle Group; for a setting saved later use Switch.",
+        axes: [
+          { name: "Variant", values: ["default", "outline"] },
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Pressed", values: ["False", "True"] }
+        ],
+        figmaSets: ["Toggle"],
+        props: [
+          { name: "variant", type: '"default" | "outline"', description: "shadcn's toggle variants: no edge, or the control boundary." },
+          { name: "size", type: '"default" | "sm" | "lg"', description: "The Button heights." },
+          { name: "pressed / defaultPressed / onPressedChange", type: "boolean", description: 'Controlled or uncontrolled state; Radix writes data-state="on".' }
+        ],
+        accessibility: "Radix Toggle: a button with aria-pressed. Give an icon-only toggle an aria-label."
+      },
+      {
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
@@ -336,6 +375,42 @@ var init_componentCatalogue = __esm({
           { name: "SelectContent / SelectItem", type: "component", description: "The list; it portals into the theme scope." }
         ],
         accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".'
+      },
+      {
+        key: "NativeSelect",
+        label: "Native Select",
+        category: "Form Controls",
+        description: "shadcn/ui Native Select: the browser's own <select>, drawn as the field box with a chevron.",
+        usage: "Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.",
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["Native Select"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "The Select heights." },
+          { name: "NativeSelectOption / NativeSelectOptGroup", type: "component", description: "The options, as <option> / <optgroup>." },
+          { name: "\u2026select attributes", type: 'React.ComponentProps<"select">', description: "value, onChange, disabled, name \u2014 a real <select>." }
+        ],
+        accessibility: "A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field)."
+      },
+      {
+        key: "Calendar",
+        label: "Calendar",
+        category: "Form Controls",
+        description: "shadcn/ui Calendar: a month grid to pick a date or a range (react-day-picker).",
+        usage: "Use to pick a date when the day of the week matters, or a range. For a known date (a birthday) a text field with a format is faster.",
+        axes: [
+          { name: "Mode", values: ["single", "range"] }
+        ],
+        figmaSets: ["Calendar"],
+        props: [
+          { name: "mode", type: '"single" | "range" | "multiple"', description: "What a click selects." },
+          { name: "selected / onSelect", type: "Date | DateRange", description: "Controlled selection." },
+          { name: "showOutsideDays", type: "boolean", description: "Days of the next and previous month (default true)." },
+          { name: "\u2026DayPicker props", type: "DayPickerProps", description: "Locale, disabled days, number of months." }
+        ],
+        accessibility: "react-day-picker: a grid with arrow-key navigation; each day is a button announced with its full date."
       },
       {
         key: "Combobox",
@@ -590,6 +665,20 @@ var init_componentCatalogue = __esm({
         accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.'
       },
       {
+        key: "Kbd",
+        label: "Kbd",
+        category: "Indicators",
+        description: "shadcn/ui Kbd: a keyboard key cap, and KbdGroup for a shortcut of several keys.",
+        usage: "Use to show a shortcut beside a command or in a tooltip (\u2318 K). Not for buttons \u2014 a Kbd is not clickable.",
+        axes: [],
+        figmaSets: ["Kbd"],
+        props: [
+          { name: "children", type: "ReactNode", description: "The key (\u2318, Shift, K)." },
+          { name: "KbdGroup", type: "component", description: "Spaces several Kbd as one shortcut." }
+        ],
+        accessibility: "Rendered as <kbd>, which assistive tech announces as keyboard input. Spell modifier names in an aria-label when the glyph alone is ambiguous."
+      },
+      {
         key: "Rating",
         label: "Rating",
         category: "Indicators",
@@ -681,6 +770,22 @@ var init_componentCatalogue = __esm({
         accessibility: "Headers are buttons with aria-expanded + aria-controls on their panel."
       },
       {
+        key: "Collapsible",
+        label: "Collapsible",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Collapsible: one trigger that shows or hides a panel of content.",
+        usage: "Use for a single expandable region (more repositories, advanced options). For several stacked sections use Accordion.",
+        axes: [{ name: "Open", values: ["False", "True"] }],
+        figmaSets: ["Collapsible"],
+        props: [
+          { name: "open / defaultOpen / onOpenChange", type: "boolean", description: "Controlled or uncontrolled visibility." },
+          { name: "CollapsibleTrigger", type: "component", description: "The row that toggles it; the chevron turns when open." },
+          { name: "CollapsibleContent", type: "component", description: "The panel shown when open." },
+          { name: "CollapsibleItem", type: "component", description: "A bordered row inside the panel." }
+        ],
+        accessibility: "Radix Collapsible: the trigger is a button with aria-expanded and aria-controls; Space / Enter toggles."
+      },
+      {
         key: "AspectRatio",
         label: "Aspect Ratio",
         category: "Content & Surfaces",
@@ -711,6 +816,58 @@ var init_componentCatalogue = __esm({
         accessibility: 'role="dialog", aria-modal="true". Focus trapped inside. Returns focus on close.'
       },
       {
+        key: "AlertDialog",
+        label: "Alert Dialog",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Alert Dialog: a modal that interrupts to confirm an important action.",
+        usage: "Use only for a decision that needs an answer now (delete, discard changes). For anything else use Dialog or a Toast.",
+        axes: [
+          { name: "Size", values: ["default", "sm"] }
+        ],
+        figmaSets: ["Alert Dialog"],
+        props: [
+          { name: "AlertDialogContent size", type: '"default" | "sm"', description: "sm: narrow, centred, two equal buttons." },
+          { name: "AlertDialogMedia", type: "component", description: "An icon above the title." },
+          { name: "AlertDialogTitle / AlertDialogDescription", type: "component", description: "The question and its consequence." },
+          { name: "AlertDialogAction / AlertDialogCancel", type: "component", description: "Buttons (default and outline; any variant)." }
+        ],
+        accessibility: 'role="alertdialog": focus moves to Cancel, Esc closes, and nothing behind it can be reached until it is answered.'
+      },
+      {
+        key: "Sheet",
+        label: "Sheet",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Sheet: a panel that slides in from an edge of the screen.",
+        usage: "Use for secondary tasks that keep the page in context (filters, details, settings). For a blocking decision use Alert Dialog.",
+        axes: [
+          { name: "Side", values: ["right", "left", "top", "bottom"] }
+        ],
+        figmaSets: ["Sheet"],
+        props: [
+          { name: "SheetContent side", type: '"top" | "right" | "bottom" | "left"', description: "The edge it slides from." },
+          { name: "showCloseButton", type: "boolean", description: "The ghost icon-sm close (default true)." },
+          { name: "SheetHeader / SheetTitle / SheetDescription / SheetFooter", type: "component", description: "The parts." }
+        ],
+        accessibility: "A Radix Dialog: focus is trapped inside, Esc closes and focus returns to the trigger."
+      },
+      {
+        key: "Drawer",
+        label: "Drawer",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Drawer: a panel dragged up from the bottom (vaul), with a grab handle.",
+        usage: "Use on touch layouts for short tasks (share, quick actions). On desktop prefer Dialog or Sheet.",
+        axes: [
+          { name: "Direction", values: ["bottom", "top", "left", "right"] }
+        ],
+        figmaSets: ["Drawer"],
+        props: [
+          { name: "direction", type: '"bottom" | "top" | "left" | "right"', description: "The edge it comes from; bottom shows the handle." },
+          { name: "DrawerHeader / DrawerTitle / DrawerDescription / DrawerFooter", type: "component", description: "The parts." },
+          { name: "DrawerTrigger / DrawerClose", type: "component", description: "Open and close." }
+        ],
+        accessibility: "Built on Radix Dialog: focus is trapped and Esc closes; dragging is never the only way to close it."
+      },
+      {
         key: "Popover",
         label: "Popover",
         category: "Content & Surfaces",
@@ -725,6 +882,21 @@ var init_componentCatalogue = __esm({
           { name: "PopoverTitle / PopoverDescription", type: "component", description: "Heading and body copy." }
         ],
         accessibility: "Trigger gets aria-haspopup + aria-expanded. Esc closes; focus returns to trigger."
+      },
+      {
+        key: "HoverCard",
+        label: "Hover Card",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Hover Card: a preview card shown when hovering a link.",
+        usage: "Use to preview what a link points to (a profile, a page) for sighted pointer users. Never put the only copy of information or an action in it.",
+        axes: [],
+        figmaSets: ["Hover Card"],
+        props: [
+          { name: "openDelay / closeDelay", type: "number", description: "Hover timing." },
+          { name: "HoverCardTrigger asChild", type: "component", description: "The link it previews." },
+          { name: "HoverCardContent align sideOffset", type: "component", description: "The card." }
+        ],
+        accessibility: "Hover-only: keyboard and touch users never see it, so it must only repeat what the link already offers."
       },
       {
         key: "Tooltip",
@@ -754,6 +926,151 @@ var init_componentCatalogue = __esm({
           { name: "ScrollAreaRow", type: "component", description: "A list row inside the viewport." }
         ],
         accessibility: "Container is keyboard-scrollable (tabIndex 0 + arrow keys) with an aria-label."
+      },
+      {
+        key: "Table",
+        label: "Table",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Table: header, rows, cells, footer and caption \u2014 a hairline under each row.",
+        usage: "Use for tabular data people compare across columns. For a list of items with one action each prefer a list; for sorting and filtering build a data table on top.",
+        axes: [],
+        figmaSets: ["Table"],
+        props: [
+          { name: "TableHeader / TableBody / TableFooter", type: "component", description: "<thead>, <tbody>, <tfoot>." },
+          { name: "TableRow", type: "component", description: 'A row; data-state="selected" highlights it.' },
+          { name: "TableHead / TableCell", type: "component", description: "Header and body cells." },
+          { name: "TableCaption", type: "component", description: "A caption under the table." }
+        ],
+        accessibility: "A real <table>: header cells are <th> so each cell is announced with its column. Give the table a caption or aria-label."
+      },
+      {
+        key: "Item",
+        label: "Item",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Item: a list row \u2014 media, title, description and actions.",
+        usage: "Use for rows of settings, people, files or results. For tabular data compared across columns use Table.",
+        axes: [
+          { name: "Variant", values: ["default", "outline", "muted"] },
+          { name: "Size", values: ["default", "sm", "xs"] }
+        ],
+        figmaSets: ["Item"],
+        props: [
+          { name: "variant", type: '"default" | "outline" | "muted"', description: "No edge, a hairline, or the muted surface." },
+          { name: "size", type: '"default" | "sm" | "xs"', description: "Padding, gap and media size." },
+          { name: "ItemMedia variant", type: '"default" | "icon" | "image"', description: "A glyph, an icon, or a cropped image." },
+          { name: "ItemContent / ItemTitle / ItemDescription / ItemActions", type: "component", description: "The parts." },
+          { name: "asChild", type: "boolean", description: "Render as a link or button." }
+        ],
+        accessibility: 'Group items in ItemGroup (role="list"). A clickable item is a real link or button (asChild).'
+      },
+      {
+        key: "Attachment",
+        label: "Attachment",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Attachment: a file on a message or a form \u2014 media, name, size, actions \u2014 with an upload state.",
+        usage: "Use to show files attached to a message, a comment or a form. For the drop target itself use Dropzone or File Upload.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "xs"] },
+          { name: "Orientation", values: ["horizontal", "vertical"] },
+          { name: "State", values: ["idle", "uploading", "processing", "error", "done"] }
+        ],
+        figmaSets: ["Attachment"],
+        props: [
+          { name: "state", type: '"idle" | "uploading" | "processing" | "error" | "done"', description: "The upload state; error paints the media and description critical." },
+          { name: "size", type: '"default" | "sm" | "xs"', description: "Padding and media size." },
+          { name: "orientation", type: '"horizontal" | "vertical"', description: "A row, or a tile." },
+          { name: "AttachmentMedia / AttachmentTitle / AttachmentDescription / AttachmentActions / AttachmentAction", type: "component", description: "The parts; an action is a ghost icon-xs Button." }
+        ],
+        accessibility: "Announce upload progress and errors in text (the description), not by colour alone."
+      },
+      {
+        key: "Message",
+        label: "Message",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Message: one chat message \u2014 avatar, header, the bubble and a footer.",
+        usage: "Use for conversation threads (support chat, AI assistants). The body is a Bubble.",
+        axes: [
+          { name: "Align", values: ["start", "end"] }
+        ],
+        figmaSets: ["Message"],
+        props: [
+          { name: "align", type: '"start" | "end"', description: "Who wrote it: the other party, or you." },
+          { name: "MessageAvatar / MessageHeader / MessageContent / MessageFooter", type: "component", description: "The parts." },
+          { name: "MessageGroup", type: "component", description: "Stacks messages." }
+        ],
+        accessibility: "Render a thread as a list with each message's author and time in text; announce new messages with a live region."
+      },
+      {
+        key: "Bubble",
+        label: "Bubble",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Bubble: the body of a chat message, in seven variants, with optional reactions.",
+        usage: "Use inside Message. Default for your own messages, muted or outline for the other party, destructive for a failed send.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"] },
+          { name: "Align", values: ["start", "end"] }
+        ],
+        figmaSets: ["Bubble"],
+        props: [
+          { name: "variant", type: '"default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"', description: "How the bubble is painted." },
+          { name: "align", type: '"start" | "end"', description: "Which side it sits on." },
+          { name: "BubbleContent asChild", type: "component", description: "The text box; a link or button with asChild." },
+          { name: "BubbleReactions side align", type: "component", description: "Emoji reactions pinned to an edge." }
+        ],
+        accessibility: "The bubble's colour must not be the only signal of who wrote it \u2014 keep the author in the Message header."
+      },
+      {
+        key: "Resizable",
+        label: "Resizable",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Resizable: panels split by handles you drag to resize (react-resizable-panels).",
+        usage: "Use for editor layouts where people tune the space (a sidebar, a preview). Not for content that should simply reflow.",
+        axes: [
+          { name: "Orientation", values: ["horizontal", "vertical"] }
+        ],
+        figmaSets: ["Resizable"],
+        props: [
+          { name: "ResizablePanelGroup orientation", type: '"horizontal" | "vertical"', description: "The split direction." },
+          { name: "ResizablePanel defaultSize minSize", type: "number", description: "Each panel, in percent." },
+          { name: "ResizableHandle withHandle", type: "boolean", description: "A visible grip on the handle." }
+        ],
+        accessibility: "Each handle is a separator you can focus and move with the arrow keys."
+      },
+      {
+        key: "Carousel",
+        label: "Carousel",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Carousel: slides you swipe or step through with previous / next (Embla).",
+        usage: "Use for a set of comparable items people browse (images, plans). Do not hide important content in later slides.",
+        axes: [
+          { name: "Orientation", values: ["horizontal", "vertical"] }
+        ],
+        figmaSets: ["Carousel"],
+        props: [
+          { name: "orientation", type: '"horizontal" | "vertical"', description: "The scroll axis." },
+          { name: "opts / plugins / setApi", type: "Embla", description: "Loop, alignment, autoplay, the API." },
+          { name: "CarouselContent / CarouselItem", type: "component", description: "The track and each slide." },
+          { name: "CarouselPrevious / CarouselNext", type: "component", description: "Outline icon-sm Buttons, round." }
+        ],
+        accessibility: 'role="region" aria-roledescription="carousel"; arrow keys step; each slide is a group labelled "slide".'
+      },
+      {
+        key: "Chart",
+        label: "Chart",
+        category: "Content & Surfaces",
+        description: "shadcn/ui Chart: Recharts with a config of series \u2192 colour, a tooltip and a legend in the system.",
+        usage: "Use for trends and comparisons. Colour the series with the system's chart palette and pair colour with a second encoding (labels, legend).",
+        axes: [
+          { name: "Type", values: ["bar", "line", "area"] }
+        ],
+        figmaSets: ["Chart"],
+        props: [
+          { name: "ChartContainer config", type: "ChartConfig", description: "Series \u2192 label and colour; sets --color-<key>." },
+          { name: "ChartTooltip / ChartTooltipContent", type: "component", description: "The hover readout (indicator dot | line | dashed)." },
+          { name: "ChartLegend / ChartLegendContent", type: "component", description: "The legend." },
+          { name: "\u2026Recharts", type: "BarChart \xB7 LineChart \xB7 AreaChart", description: "The chart itself." }
+        ],
+        accessibility: "Give the chart a text alternative (a summary or the table). accessibilityLayer adds keyboard navigation in Recharts."
       },
       // ── Feedback ────────────────────────────────────────────────────────────────
       {
@@ -787,6 +1104,34 @@ var init_componentCatalogue = __esm({
           { name: "children (icon)", type: "ReactNode", description: "An <svg> (or AlertIcon) as the first child takes the icon column." }
         ],
         accessibility: 'role="alert". The icon is decorative; the title carries the meaning.'
+      },
+      {
+        key: "Skeleton",
+        label: "Skeleton",
+        category: "Feedback",
+        description: "shadcn/ui Skeleton: a placeholder block that pulses while content loads.",
+        usage: "Use in the shape of the content that is coming (a line, an avatar, a card) so the layout does not jump. For an action in progress use Spinner.",
+        axes: [],
+        figmaSets: ["Skeleton"],
+        props: [
+          { name: "className / style", type: "string | CSSProperties", description: "The size and shape of the content it stands in for." }
+        ],
+        accessibility: 'Decorative: mark the loading region with aria-busy="true" and hide the skeletons with aria-hidden.'
+      },
+      {
+        key: "Empty",
+        label: "Empty",
+        category: "Feedback",
+        description: "shadcn/ui Empty: the empty state \u2014 media, title, description and the actions under them.",
+        usage: "Use when a list, search or page has nothing to show yet; say why and offer the next step. Not for errors \u2014 use Alert.",
+        axes: [{ name: "Media", values: ["default", "icon"] }],
+        figmaSets: ["Empty"],
+        props: [
+          { name: "EmptyHeader / EmptyTitle / EmptyDescription", type: "component", description: "The message." },
+          { name: "EmptyMedia variant", type: '"default" | "icon"', description: "An illustration or avatar as is, or a glyph on a muted tile." },
+          { name: "EmptyContent", type: "component", description: "The actions (a Button, a link)." }
+        ],
+        accessibility: "Keep the title a real heading when it labels a region; the actions are ordinary buttons and links."
       },
       // ── Navigation ──────────────────────────────────────────────────────────────
       {
@@ -900,6 +1245,38 @@ var init_componentCatalogue = __esm({
           { name: "DropdownMenuContent / Separator / Shortcut", type: "component", description: "The panel (portals into the theme scope), a rule and a key hint." }
         ],
         accessibility: 'ARIA menu pattern: role="menu"/"menuitem", arrow keys + typeahead, Esc closes.'
+      },
+      {
+        key: "Menubar",
+        label: "Menubar",
+        category: "Navigation",
+        description: "shadcn/ui Menubar: a persistent bar of menus, as in desktop apps (File \xB7 Edit \xB7 View).",
+        usage: "Use in app-like tools with many commands grouped by menu. For a few actions behind one button use Dropdown Menu.",
+        axes: [],
+        figmaSets: ["Menubar"],
+        props: [
+          { name: "MenubarMenu / MenubarTrigger / MenubarContent", type: "component", description: "One menu." },
+          { name: "MenubarItem variant", type: '"default" | "destructive"', description: "A command." },
+          { name: "MenubarSeparator / MenubarShortcut / MenubarLabel", type: "component", description: "Grouping and key hints." },
+          { name: "MenubarSub / MenubarCheckboxItem / MenubarRadioItem", type: "component", description: "Submenus and toggles." }
+        ],
+        accessibility: "Radix Menubar: arrow keys move between menus and items, Esc closes, type-ahead finds items."
+      },
+      {
+        key: "NavigationMenu",
+        label: "Navigation Menu",
+        category: "Navigation",
+        description: "shadcn/ui Navigation Menu: site navigation whose triggers open panels of links.",
+        usage: "Use for marketing and docs sites with grouped destinations. For an app's main navigation use Sidebar or Navbar.",
+        axes: [],
+        figmaSets: ["Navigation Menu"],
+        props: [
+          { name: "NavigationMenuList / NavigationMenuItem", type: "component", description: "The bar." },
+          { name: "NavigationMenuTrigger / NavigationMenuContent", type: "component", description: "A trigger and its panel." },
+          { name: "NavigationMenuLink", type: "component", description: "A destination." },
+          { name: "viewport", type: "boolean", description: "Panels share one animated viewport (default true)." }
+        ],
+        accessibility: "Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them."
       },
       {
         key: "ContextMenu",
@@ -2105,6 +2482,14 @@ var init_apca = __esm({
       "large-text": { wcag: 3, apcaLc: 60 },
       "action-label": { wcag: 4.5, apcaLc: 60 },
       "ui-component": { wcag: 3, apcaLc: 45 },
+      // The resting outline of a field / select / checkbox — the stroke that
+      // identifies the control. WCAG 1.4.11's 3:1 is the requirement; Lc 45 is
+      // APCA's LARGE-TEXT row and, held on a 1px hairline, it pushed the dark
+      // outline to white-a.8 = 7.25:1 — more than twice the requirement, the
+      // "fields look too strong" report. Lc 15 is APCA's floor for a non-text
+      // element to stay discernible. Lands on black-a.7 (3.94:1) / white-a.6
+      // (3.81:1): the values the soft System Styles had already chosen by hand.
+      "control-boundary": { wcag: 3, apcaLc: 15 },
       decorative: { wcag: null, apcaLc: null },
       surface: { wcag: null, apcaLc: null }
     };
@@ -4123,7 +4508,7 @@ function uiBoundaryRef(fam, start, kind, look) {
 function uiBoundaryTone(fam, start, kind, look) {
   return Number(REF_RE.exec(uiBoundaryRef(fam, start, kind, look))?.[2] ?? start);
 }
-function uiAlphaBoundaryRef(fam, start, kind, look) {
+function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI) {
   const page = look(kind === "dark" ? "neutral-dark" : "neutral", 1);
   if (!page) return `{${fam}.${start}}`;
   const ramp = rampOf(look, fam);
@@ -4135,8 +4520,8 @@ function uiAlphaBoundaryRef(fam, start, kind, look) {
     const hex = compositeOver(raw, page);
     const w = checkContrast(hex, page);
     const lc = Math.abs(apcaLc(hex, page));
-    if (w >= WCAG_UI && lc >= APCA_UI) return `{${fam}.${t}}`;
-    const score = Math.min(w / WCAG_UI, lc / APCA_UI);
+    if (w >= WCAG_UI && lc >= apcaMin) return `{${fam}.${t}}`;
+    const score = Math.min(w / WCAG_UI, lc / apcaMin);
     if (score > bestScore) {
       bestScore = score;
       fallback = t;
@@ -4144,8 +4529,8 @@ function uiAlphaBoundaryRef(fam, start, kind, look) {
   }
   return `{${fam}.${fallback}}`;
 }
-function uiAlphaBoundaryTone(fam, start, kind, look) {
-  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look))?.[2] ?? start);
+function uiAlphaBoundaryTone(fam, start, kind, look, apcaMin = APCA_UI) {
+  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look, apcaMin))?.[2] ?? start);
 }
 function solidStepRef(fam, _offset, solidTone, look, inkHex, used) {
   const ramp = rampOf(look, fam);
@@ -4194,7 +4579,7 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
   };
   const solidToneFor = (fam) => solidFor(fam).tone;
   return roles.map((r) => {
-    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL) + 1, 12), kind, look, APCA_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
       const s = solidFor(fam);
       return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used);
     }).replace(/\{chart\.(\d)\}/g, (_m, n) => chartSlots[Number(n) - 1] ?? "");
@@ -4308,7 +4693,7 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
@@ -4318,6 +4703,7 @@ var init_semanticArchitectures = __esm({
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
     APCA_UI = INTENT_THRESHOLDS["ui-component"].apcaLc ?? 45;
+    APCA_CONTROL = INTENT_THRESHOLDS["control-boundary"].apcaLc ?? 15;
     INK_REFS = ["{neutral.1}", "{neutral.12}"];
     REF_RE = /^\{([a-z-]+)\.(\d+)\}$/;
     TEXT_END_TONE = 12;
@@ -4695,11 +5081,18 @@ var init_semanticArchitectures = __esm({
       // to, so it can't collapse onto rest. It's not a nicety: the Figma plugin
       // draws every control's hover stroke from this concept (20+ call sites), so a
       // hover that resolved lighter than rest would be the stroke RECEDING on hover.
-      // `strong` IS the control boundary now (there is no separate `border.control`):
-      // the stroke of an input, select, checkbox, unfilled button, and the edge of a
-      // selected/emphasised grouping. Same SOLVED value `control` had.
+      // `control` is the resting outline of a field, select, checkbox, radio,
+      // switch track and unfilled button — the stroke that identifies the control.
+      // Solved to WCAG 1.4.11's 3:1 with APCA's non-text floor (`control-boundary`),
+      // NOT Lc 45: held to the large-text row, the dark outline walked to
+      // white-a.8 = 7.25:1 and every field read heavier than the text inside it.
+      // Measured: black-a.7 (3.94:1) light, white-a.6 (3.81:1) dark.
+      // `strong` is EMPHASIS — the edge of a grouping that must read before its
+      // neighbours — and keeps the stricter ui-component solve (black-a.7 /
+      // white-a.8). In light the two land on one step; in dark `strong` is heavier.
+      { group: "border", key: "control", light: "{ctl-a:black-a.5}", dark: "{ctl-a:white-a.5}" },
+      { group: "border", key: "control-hover", light: "{ctl+a:black-a.5}", dark: "{ctl+a:white-a.5}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
-      { group: "border", key: "control-hover", light: "{ui+a:black-a.5}", dark: "{ui+a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
       // NOT a state indicator: anything that says "this control is selected /
       // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -4839,8 +5232,9 @@ var init_semanticArchitectures = __esm({
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.",
-      "border.strong": "[ROLE: Strong Border / Control Boundary] Affects the resting border of inputs, selects, checkboxes and unfilled buttons \u2014 anywhere the stroke is the only sign of a control \u2014 and the edge of a grouping that must read before its neighbours. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
-      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.strong) border. One step past whatever border.strong RESOLVED to ({ui+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.9} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and unfilled buttons \u2014 anywhere the stroke is the only sign of a control. WCAG 1.4.11 (3:1) against the page, with APCA Lc 15 as the visibility floor \u2014 not Lc 45, which is the large-text row and made the dark outline 7.25:1. SOLVED on the alpha ladder ({ctl-a:\u2026}): {black-a.7} in light, {white-a.6} in dark for the default system.",
+      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
+      "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned \u2014 the ring is always the user's own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field \u2014 focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only \u2014 the translucent halo is border.ring.*.",
       "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
@@ -4854,7 +5248,6 @@ var init_semanticArchitectures = __esm({
       "action.primary-pressed": "action.primary.pressed",
       "action.neutral": "action.secondary.default",
       "action.disabled": "action.disabled.default",
-      "border.control": "border.strong",
       "action.ghost.neutral.hover": "action.ghost.hover",
       "action.ghost.neutral.pressed": "action.ghost.pressed",
       "status.critical-bg": "status.critical.surface",
@@ -4996,7 +5389,7 @@ function buttonPaint(variant, state2) {
     case "secondary":
       return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), ring: ring("border.ring.default") } };
     case "outline":
-      return { root: { fill: c(pressed ? "action.ghost.pressed" : hover ? "action.ghost.hover" : "surface.page"), stroke: c("border.strong"), text: c("content.primary"), ring: ring("border.ring.default") } };
+      return { root: { fill: c(pressed ? "action.ghost.pressed" : hover ? "action.ghost.hover" : "surface.page"), stroke: c("border.control"), text: c("content.primary"), ring: ring("border.ring.default") } };
     case "ghost":
       return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), ring: ring("border.ring.default") } };
     case "destructive":
@@ -5005,7 +5398,7 @@ function buttonPaint(variant, state2) {
       return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), ring: ring("border.ring.default") } };
   }
 }
-var BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_STATES, BUTTON_GEOMETRY, BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE;
+var BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_STATES, BUTTON_GEOMETRY, BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -5042,7 +5435,7 @@ var init_actions = __esm({
         part({}, () => ({
           text: {
             fill: c("surface.layer-2"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             text: c("content.primary"),
             radius: "radius.action",
@@ -5050,7 +5443,7 @@ var init_actions = __esm({
             gap: "spacing.2",
             font: "type.label"
           },
-          separator: { fill: c("border.strong") }
+          separator: { fill: c("border.control") }
         })),
         part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
           separator: o === "horizontal" ? { width: "stroke.control" } : { height: "stroke.control" }
@@ -5069,7 +5462,7 @@ var init_actions = __esm({
         part({}, () => ({
           root: {
             fill: c("surface.layer-1"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             text: c("content.primary"),
             radius: "radius.action",
@@ -5094,6 +5487,52 @@ var init_actions = __esm({
         }))
       ]
     };
+    TOGGLE_GROUP_VARIANTS = ["default", "outline"];
+    TOGGLE_GROUP_SIZES = ["default", "sm", "lg"];
+    TOGGLE_HEIGHT = { sm: "size.compact", default: "size.control", lg: "size.touch" };
+    TOGGLE_GROUP = {
+      key: "ToggleGroup",
+      slots: ["root", "item"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.1" }
+        })),
+        part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
+          item: variant === "outline" ? {
+            fill: NONE,
+            stroke: c("border.control"),
+            strokeWidth: "stroke.control",
+            text: c("content.secondary"),
+            font: "type.button",
+            radius: "radius.action",
+            gap: "spacing.1"
+          } : { fill: NONE, text: c("content.secondary"), font: "type.button", radius: "radius.action", gap: "spacing.1" },
+          "item:hover": { fill: c("action.ghost.hover"), text: c("content.primary") },
+          'item[data-state="on"]': { fill: c("surface.layer-2"), text: c("content.primary") }
+        })),
+        part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
+          item: { height: TOGGLE_HEIGHT[size], paddingX: "spacing.2_5" }
+        }))
+      ]
+    };
+    TOGGLE = {
+      key: "Toggle",
+      slots: ["root"],
+      defaults: { Variant: "default", Size: "default", Pressed: "False" },
+      parts: [
+        part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
+          root: variant === "outline" ? { stroke: c("border.control"), strokeWidth: "stroke.control", font: "type.button", radius: "radius.action", gap: "spacing.1" } : { font: "type.button", radius: "radius.action", gap: "spacing.1" }
+        })),
+        part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
+          root: { height: TOGGLE_HEIGHT[size], paddingX: "spacing.2_5" }
+        })),
+        part({ Pressed: ["False", "True"] }, (pressed) => ({
+          root: pressed === "True" ? { fill: c("surface.layer-2"), text: c("content.primary") } : { fill: NONE, text: c("content.secondary") },
+          "root:hover": { fill: c("action.ghost.hover"), text: c("content.primary") }
+        }))
+      ]
+    };
   }
 });
 
@@ -5103,7 +5542,7 @@ function fieldBox(state2) {
   if (state2 === "Error") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: NONE };
   if (state2 === "Focused" || state2 === "Open") return { fill: c("surface.input"), stroke: c("border.focus"), ring: c("border.ring.default") };
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
-  return { fill: c("surface.input"), stroke: c("border.strong"), ring: NONE };
+  return { fill: c("surface.input"), stroke: c("border.control"), ring: NONE };
 }
 function checkPaint(checked, state2) {
   const on = checked === "True";
@@ -5115,7 +5554,7 @@ function checkPaint(checked, state2) {
   else if (on) {
     const fill = c(hover ? "action.primary.hover" : "action.primary.default");
     root = { fill, stroke: fill, ring };
-  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.strong"), ring };
+  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.control"), ring };
   return { root, indicator: { text: c(disabled ? "content.disabled" : "content.on-action") } };
 }
 function switchPaint(checked, state2) {
@@ -5129,7 +5568,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -5196,7 +5635,7 @@ var init_forms = __esm({
         part({}, () => ({
           root: {
             fill: c("surface.input"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             radius: "radius.action",
             height: "size.control"
@@ -5207,7 +5646,7 @@ var init_forms = __esm({
           button: { text: c("content.accent"), font: "type.button", paddingX: "spacing.4" },
           "button:hover": { fill: c("action.ghost.hover") },
           "button:active": { fill: c("action.ghost.pressed") },
-          separator: { fill: c("border.strong"), width: "stroke.control" }
+          separator: { fill: c("border.control"), width: "stroke.control" }
         }))
       ]
     };
@@ -5219,7 +5658,7 @@ var init_forms = __esm({
         part({}, () => ({
           root: {
             fill: c("surface.input"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             radius: "radius.action",
             height: "size.control"
@@ -5230,7 +5669,7 @@ var init_forms = __esm({
           "button:active": { fill: c("action.ghost.pressed") },
           "button:disabled": { text: c("content.disabled") },
           value: { text: c("content.primary"), font: "type.body-md", width: "size.2xl" },
-          separator: { fill: c("border.strong"), width: "stroke.control" }
+          separator: { fill: c("border.control"), width: "stroke.control" }
         }))
       ]
     };
@@ -5242,7 +5681,7 @@ var init_forms = __esm({
         part({}, () => ({
           root: {
             fill: c("surface.input"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             radius: "radius.action",
             minHeight: "size.control",
@@ -5328,7 +5767,7 @@ var init_forms = __esm({
           group: { gap: "spacing.gap-control" },
           slot: {
             fill: c("surface.input"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             radius: "radius.action",
             text: c("content.primary"),
@@ -5364,7 +5803,7 @@ var init_forms = __esm({
           root: { gap: "spacing.3" },
           item: {
             fill: c("surface.input"),
-            stroke: c("border.strong"),
+            stroke: c("border.control"),
             strokeWidth: "stroke.control",
             radius: "radius.pill",
             height: "selector.control",
@@ -5514,7 +5953,7 @@ var init_forms = __esm({
           return {
             root: {
               fill: state2 === "Dragging" ? c("surface.accent") : error ? c("status.critical.surface") : NONE,
-              stroke: c(error ? "status.critical.border-strong" : state2 === "Dragging" ? "border.accent" : "border.strong")
+              stroke: c(error ? "status.critical.border-strong" : state2 === "Dragging" ? "border.accent" : "border.control")
             },
             icon: { fill: c(error ? "status.critical.surface" : "surface.selected"), text: c(error ? "status.critical.content" : "content.accent") },
             link: { text: c("content.accent") },
@@ -5523,11 +5962,58 @@ var init_forms = __esm({
         })
       ]
     };
+    NATIVE_SELECT_STATES = ["Default", "Hover", "Focused", "Disabled"];
+    NATIVE_SELECT = {
+      key: "NativeSelect",
+      slots: ["root", "select", "icon"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({}, () => ({
+          select: { ...FIELD_FIXED, font: "type.placeholder" }
+        })),
+        part({ Size: ["default", "sm"] }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
+        part({ State: NATIVE_SELECT_STATES }, (state2) => {
+          const disabled = state2 === "Disabled";
+          return {
+            select: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
+            icon: { text: c(disabled ? "content.disabled" : "content.secondary") }
+          };
+        })
+      ]
+    };
+    CALENDAR = {
+      key: "Calendar",
+      slots: ["root", "caption", "weekday", "day"],
+      defaults: { Mode: "single" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            paddingX: "spacing.3",
+            paddingY: "spacing.3",
+            text: c("content.primary")
+          },
+          caption: { text: c("content.primary"), font: "type.label" },
+          weekday: { text: c("content.secondary"), font: "type.caption" },
+          day: { text: c("content.primary"), font: "type.body-sm", radius: "radius.action", height: "size.compact", width: "size.compact" },
+          "day:hover": { fill: c("action.ghost.hover") },
+          'day[data-today="true"]': { fill: c("surface.layer-2") },
+          'day[data-outside="true"]': { text: c("content.subtle") },
+          'day[data-range-middle="true"]': { fill: c("surface.layer-2"), text: c("content.primary") },
+          'day[data-selected-single="true"]': { fill: c("action.primary.default"), text: c("content.on-action") },
+          'day[data-range-start="true"]': { fill: c("action.primary.default"), text: c("content.on-action") },
+          'day[data-range-end="true"]': { fill: c("action.primary.default"), text: c("content.on-action") }
+        }))
+      ]
+    };
   }
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA;
+var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -5692,6 +6178,301 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    COLLAPSIBLE = {
+      key: "Collapsible",
+      slots: ["root", "trigger", "icon", "content", "item"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.2" },
+          trigger: { text: c("content.primary"), font: "type.label", gap: "spacing.4", paddingX: "spacing.1", paddingY: "spacing.1" },
+          icon: { text: c("content.secondary"), radius: "radius.action", width: "size.compact", height: "size.compact" },
+          "trigger:hover": { text: c("content.primary") },
+          content: { gap: "spacing.2" },
+          item: {
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            paddingX: "spacing.4",
+            paddingY: "spacing.2",
+            text: c("content.primary"),
+            font: "type.body-sm"
+          }
+        }))
+      ]
+    };
+    TABLE = {
+      key: "Table",
+      slots: ["root", "row", "head", "cell", "footer", "caption"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { text: c("content.primary"), font: "type.body-sm" },
+          row: { stroke: c("border.default"), strokeBottomWidth: "stroke.divider" },
+          "row:hover": { fill: c("action.ghost.hover") },
+          'row[data-state="selected"]': { fill: c("surface.selected") },
+          head: { text: c("content.primary"), font: "type.label", height: "size.control", paddingX: "spacing.2" },
+          cell: { paddingX: "spacing.2", paddingY: "spacing.2" },
+          footer: { fill: c("surface.layer-2"), font: "type.label" },
+          caption: { text: c("content.secondary"), font: "type.body-sm" }
+        }))
+      ]
+    };
+    ALERT_DIALOG = {
+      key: "AlertDialog",
+      slots: ["content", "overlay", "header", "media", "title", "description", "footer"],
+      detachedSlots: ["overlay"],
+      defaults: { Size: "default" },
+      parts: [
+        part({}, () => ({
+          overlay: { fill: c("surface.overlay") },
+          content: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            shadow: "shadow.2xl",
+            text: c("content.primary")
+          },
+          header: { gap: "spacing.1_5" },
+          media: { fill: c("surface.layer-1"), text: c("content.primary"), radius: "radius.action", width: "size.control", height: "size.control" },
+          title: { text: c("content.primary"), font: "type.heading-sm" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          footer: { gap: "spacing.gap-control" }
+        })),
+        part({ Size: ["default", "sm"] }, (size) => ({
+          content: size === "sm" ? { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" } : { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.gap-group" }
+        }))
+      ]
+    };
+    SHEET = {
+      key: "Sheet",
+      slots: ["content", "overlay", "header", "title", "description", "footer"],
+      detachedSlots: ["overlay"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          overlay: { fill: c("surface.overlay") },
+          content: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            shadow: "shadow.lg",
+            gap: "spacing.4",
+            text: c("content.primary")
+          },
+          header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
+          title: { text: c("content.primary"), font: "type.heading-sm" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
+        }))
+      ]
+    };
+    DRAWER = {
+      key: "Drawer",
+      slots: ["content", "overlay", "handle", "header", "title", "description", "footer"],
+      detachedSlots: ["overlay"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          overlay: { fill: c("surface.overlay") },
+          content: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            text: c("content.primary")
+          },
+          handle: { fill: c("surface.layer-1"), radius: "radius.pill" },
+          header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
+          title: { text: c("content.primary"), font: "type.heading-sm" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
+        }))
+      ]
+    };
+    HOVER_CARD = {
+      key: "HoverCard",
+      slots: ["root"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            shadow: "shadow.lg",
+            paddingX: "spacing.4",
+            paddingY: "spacing.4",
+            gap: "spacing.2",
+            text: c("content.primary"),
+            font: "type.body-sm"
+          }
+        }))
+      ]
+    };
+    ITEM_VARIANTS = ["default", "outline", "muted"];
+    ITEM_SIZES = ["default", "sm", "xs"];
+    ITEM_GEOMETRY = {
+      default: { paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.2_5" },
+      sm: { paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.2_5" },
+      xs: { paddingX: "spacing.2_5", paddingY: "spacing.2", gap: "spacing.2" }
+    };
+    ITEM_MEDIA = { default: "size.control", sm: "size.compact", xs: "size.xs" };
+    ITEM = {
+      key: "Item",
+      slots: ["root", "media", "content", "title", "description", "actions"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.action", strokeWidth: "stroke.control", text: c("content.primary") },
+          media: { text: c("content.primary") },
+          content: { gap: "spacing.1" },
+          title: { text: c("content.primary"), font: "type.label", gap: "spacing.2" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          actions: { gap: "spacing.2" }
+        })),
+        part({ Variant: ITEM_VARIANTS }, (variant) => ({
+          root: variant === "outline" ? { fill: NONE, stroke: c("border.default") } : variant === "muted" ? { fill: c("surface.layer-2"), stroke: NONE } : { fill: NONE, stroke: NONE }
+        })),
+        part({ Size: ITEM_SIZES }, (size) => ({
+          root: ITEM_GEOMETRY[size],
+          'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: "radius.control" }
+        }))
+      ]
+    };
+    ATTACHMENT_SIZES = ["default", "sm", "xs"];
+    ATTACHMENT_GEOMETRY = {
+      default: { paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.2_5" },
+      sm: { paddingX: "spacing.1_5", paddingY: "spacing.1_5", gap: "spacing.2" },
+      xs: { paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.1_5" }
+    };
+    ATTACHMENT_MEDIA = { default: "size.control", sm: "size.compact", xs: "size.xs" };
+    ATTACHMENT = {
+      key: "Attachment",
+      slots: ["root", "media", "content", "title", "description", "actions"],
+      defaults: { Size: "default" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            text: c("content.primary")
+          },
+          media: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.control" },
+          'media[data-state="error"]': { fill: c("status.critical.surface"), text: c("status.critical.content") },
+          content: { gap: "spacing.0_5" },
+          title: { text: c("content.primary"), font: "type.label" },
+          description: { text: c("content.secondary"), font: "type.caption" },
+          'description[data-state="error"]': { text: c("status.critical.content") },
+          actions: { gap: "spacing.1" }
+        })),
+        part({ Size: ATTACHMENT_SIZES }, (size) => ({
+          root: ATTACHMENT_GEOMETRY[size],
+          media: { width: ATTACHMENT_MEDIA[size], height: ATTACHMENT_MEDIA[size] }
+        }))
+      ]
+    };
+    MESSAGE = {
+      key: "Message",
+      slots: ["root", "avatar", "content", "header", "footer"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.2" },
+          avatar: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.pill", width: "size.compact", height: "size.compact", font: "type.caption" },
+          content: { gap: "spacing.1" },
+          header: { text: c("content.secondary"), font: "type.caption", gap: "spacing.1_5" },
+          footer: { text: c("content.subtle"), font: "type.caption", gap: "spacing.1" }
+        }))
+      ]
+    };
+    BUBBLE_VARIANTS = ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"];
+    BUBBLE_PAINT = {
+      default: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") },
+      secondary: { fill: c("action.secondary.default"), stroke: NONE, text: c("content.accent") },
+      muted: { fill: c("surface.layer-2"), stroke: NONE, text: c("content.primary") },
+      tinted: { fill: c("surface.accent"), stroke: NONE, text: c("content.accent") },
+      outline: { fill: c("surface.page"), stroke: c("border.default"), text: c("content.primary") },
+      ghost: { fill: NONE, stroke: NONE, text: c("content.primary"), paddingX: "spacing.0", paddingY: "spacing.0" },
+      destructive: { fill: c("status.critical.surface"), stroke: NONE, text: c("status.critical.content") }
+    };
+    BUBBLE = {
+      key: "Bubble",
+      slots: ["root", "content", "reactions"],
+      defaults: { Variant: "default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.1" },
+          reactions: { fill: c("surface.layer-2"), text: c("content.primary"), radius: "radius.pill", paddingX: "spacing.1_5", paddingY: "spacing.0_5", gap: "spacing.1", font: "type.caption" }
+        })),
+        part({ Variant: BUBBLE_VARIANTS }, (variant) => ({
+          content: {
+            radius: "radius.container",
+            strokeWidth: "stroke.control",
+            paddingX: "spacing.3",
+            paddingY: "spacing.2",
+            font: "type.body-sm",
+            ...BUBBLE_PAINT[variant]
+          }
+        }))
+      ]
+    };
+    RESIZABLE = {
+      key: "Resizable",
+      slots: ["root", "panel", "handle", "grip"],
+      defaults: { Orientation: "horizontal" },
+      parts: [
+        part({}, () => ({
+          root: { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", text: c("content.primary") },
+          panel: { paddingX: "spacing.4", paddingY: "spacing.4", font: "type.label" },
+          grip: { fill: c("border.default"), radius: "radius.pill" },
+          "handle:focus-visible": { fill: c("border.focus") }
+        })),
+        part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
+          handle: o === "horizontal" ? { fill: c("border.default"), width: "stroke.divider" } : { fill: c("border.default"), height: "stroke.divider" }
+        }))
+      ]
+    };
+    CAROUSEL = {
+      key: "Carousel",
+      slots: ["root", "item", "previous", "next"],
+      defaults: { Orientation: "horizontal" },
+      parts: [
+        part({ Orientation: ["horizontal", "vertical"] }, () => ({
+          root: { text: c("content.primary") },
+          previous: { radius: "radius.pill" },
+          next: { radius: "radius.pill" }
+        }))
+      ]
+    };
+    CHART = {
+      key: "Chart",
+      slots: ["root", "tooltip", "label", "legend"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { text: c("content.secondary"), font: "type.caption" },
+          tooltip: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            shadow: "shadow.xl",
+            paddingX: "spacing.2_5",
+            paddingY: "spacing.1_5",
+            gap: "spacing.1_5",
+            text: c("content.primary"),
+            font: "type.caption"
+          },
+          label: { text: c("content.secondary") },
+          legend: { text: c("content.secondary"), gap: "spacing.4", font: "type.caption" }
+        }))
+      ]
+    };
   }
 });
 
@@ -5724,7 +6505,7 @@ function menu(key2) {
   };
   return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
 }
-var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR;
+var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -5935,11 +6716,80 @@ var init_navigation = __esm({
         }))
       ]
     };
+    MENUBAR = {
+      key: "Menubar",
+      slots: ["root", "trigger", "content", "item", "separator", "shortcut"],
+      detachedSlots: ["content", "item", "separator", "shortcut"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-1"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
+            radius: "radius.action",
+            height: "size.compact",
+            paddingX: "spacing.0_5",
+            paddingY: "spacing.0_5",
+            gap: "spacing.0_5"
+          },
+          trigger: { text: c("content.primary"), font: "type.label", radius: "radius.control", paddingX: "spacing.2", paddingY: "spacing.0_5" },
+          "trigger:hover": { fill: c("action.ghost.hover") },
+          'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
+          'trigger[data-active="true"]': { fill: c("action.ghost.hover") },
+          content: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            shadow: "shadow.lg",
+            paddingX: "spacing.1",
+            paddingY: "spacing.1"
+          },
+          item: {
+            text: c("content.primary"),
+            font: "type.body-sm",
+            radius: "radius.control",
+            paddingX: "spacing.2_5",
+            paddingY: "spacing.1_5",
+            gap: "spacing.2_5"
+          },
+          "item[data-highlighted]": { fill: c("action.ghost.hover") },
+          "item:hover": { fill: c("action.ghost.hover") },
+          'item[data-variant="destructive"]': { text: c("status.critical.content") },
+          separator: { fill: c("border.subtle"), height: "stroke.divider" },
+          shortcut: { text: c("content.subtle"), font: "type.caption" }
+        }))
+      ]
+    };
+    NAVIGATION_MENU = {
+      key: "NavigationMenu",
+      slots: ["root", "trigger", "viewport", "content", "link"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.0" },
+          trigger: { text: c("content.primary"), font: "type.label", radius: "radius.action", height: "size.compact", paddingX: "spacing.2_5", gap: "spacing.1" },
+          "trigger:hover": { fill: c("action.ghost.hover") },
+          'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
+          viewport: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.subtle"),
+            strokeWidth: "stroke.control",
+            radius: "radius.overlay",
+            shadow: "shadow.lg"
+          },
+          content: { paddingX: "spacing.1_5", paddingY: "spacing.1_5", gap: "spacing.1" },
+          link: { text: c("content.primary"), font: "type.body-sm", radius: "radius.action", paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.1" },
+          "link:hover": { fill: c("action.ghost.hover") }
+        }))
+      ]
+    };
   }
 });
 
 // src/lib/recipes/feedback.ts
-var ALERT_VARIANTS, ALERT, SONNER;
+var ALERT_VARIANTS, ALERT, SONNER, SKELETON, EMPTY;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
@@ -6010,6 +6860,36 @@ var init_feedback = __esm({
         }))
       ]
     };
+    SKELETON = {
+      key: "Skeleton",
+      slots: ["root"],
+      defaults: {},
+      parts: [part({}, () => ({ root: { fill: c("surface.layer-2"), radius: "radius.action" } }))]
+    };
+    EMPTY = {
+      key: "Empty",
+      slots: ["root", "header", "media", "title", "description", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            stroke: c("border.default"),
+            strokeWidth: "stroke.control",
+            radius: "radius.container",
+            paddingX: "spacing.6",
+            paddingY: "spacing.6",
+            gap: "spacing.4",
+            text: c("content.primary")
+          },
+          header: { gap: "spacing.2" },
+          media: { text: c("content.primary") },
+          'media[data-variant="icon"]': { fill: c("surface.layer-2"), radius: "radius.action", width: "size.compact", height: "size.compact" },
+          title: { text: c("content.primary"), font: "type.label" },
+          description: { text: c("content.secondary"), font: "type.body-sm" },
+          content: { gap: "spacing.2_5" }
+        }))
+      ]
+    };
   }
 });
 
@@ -6030,7 +6910,7 @@ function badgePaint(variant) {
       return { root: { fill: NONE, stroke: NONE, text: c("content.link.default") } };
   }
 }
-var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR;
+var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -6097,7 +6977,7 @@ var init_indicators = __esm({
           root: { fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") },
           "root:hover": { fill: c("surface.selected-pressed") }
         } : {
-          root: { fill: NONE, stroke: c("border.strong"), text: c("content.primary") },
+          root: { fill: NONE, stroke: c("border.control"), text: c("content.primary") },
           "root:hover": { fill: c("surface.accent"), stroke: c("border.control-hover") }
         })
       ]
@@ -6191,6 +7071,24 @@ var init_indicators = __esm({
         }))
       ]
     };
+    KBD = {
+      key: "Kbd",
+      slots: ["root"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            text: c("content.secondary"),
+            font: "type.caption",
+            radius: "radius.control",
+            paddingX: "spacing.1_5",
+            paddingY: "spacing.0_5",
+            gap: "spacing.1"
+          }
+        }))
+      ]
+    };
   }
 });
 
@@ -6241,6 +7139,28 @@ var init_componentRecipes = __esm({
       FileFormat: FILE_FORMAT,
       Avatar: AVATAR,
       Separator: SEPARATOR,
+      Collapsible: COLLAPSIBLE,
+      Table: TABLE,
+      ToggleGroup: TOGGLE_GROUP,
+      NativeSelect: NATIVE_SELECT,
+      Kbd: KBD,
+      Skeleton: SKELETON,
+      Empty: EMPTY,
+      Toggle: TOGGLE,
+      Calendar: CALENDAR,
+      AlertDialog: ALERT_DIALOG,
+      Sheet: SHEET,
+      Drawer: DRAWER,
+      HoverCard: HOVER_CARD,
+      Item: ITEM,
+      Attachment: ATTACHMENT,
+      Message: MESSAGE,
+      Bubble: BUBBLE,
+      Resizable: RESIZABLE,
+      Carousel: CAROUSEL,
+      Chart: CHART,
+      Menubar: MENUBAR,
+      NavigationMenu: NAVIGATION_MENU,
       Accordion: ACCORDION,
       AspectRatio: ASPECT_RATIO,
       Popover: POPOVER,
@@ -6850,6 +7770,12 @@ var init_mcp = __esm({
   }
 });
 
+// src/lib/featureFlags.ts
+var init_featureFlags = __esm({
+  "src/lib/featureFlags.ts"() {
+  }
+});
+
 // src/lib/agentInstall.ts
 function mcpOrigin(origin) {
   const raw = (origin || "").trim();
@@ -6868,6 +7794,7 @@ var init_agentInstall = __esm({
   "src/lib/agentInstall.ts"() {
     init_names();
     init_mcp();
+    init_featureFlags();
     DEFAULT_PUBLISH_ORIGIN = "https://escalatokens.com";
   }
 });
@@ -7274,6 +8201,12 @@ var init_pluginAccount = __esm({
 // src/store/useDesignStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+function moveBorderStrongToControl(state2) {
+  const cat = state2?.architectureOverrides?.categorical;
+  if (!cat || typeof cat !== "object" || !cat["border.strong"]) return;
+  if (!cat["border.control"]) cat["border.control"] = cat["border.strong"];
+  delete cat["border.strong"];
+}
 function renameSemanticKeys(map) {
   if (!map || typeof map !== "object") return map;
   const out = {};
@@ -7451,7 +8384,7 @@ function buildSavedSystemEntry(state2, snapshot, nameOverride) {
     source: state2.githubRepo ? "github" : "local"
   };
 }
-var RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE, DEFAULT_GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
+var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE, DEFAULT_GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
 var init_useDesignStore = __esm({
   "src/store/useDesignStore.ts"() {
     init_figmaSyncModes();
@@ -7472,6 +8405,24 @@ var init_useDesignStore = __esm({
     init_iconLibraries();
     init_themeModes();
     init_brandThemes();
+    COMPONENTS_V97 = ["ToggleGroup", "NativeSelect", "Kbd", "Collapsible", "Table", "Skeleton", "Empty"];
+    COMPONENTS_V98 = [
+      "Toggle",
+      "Calendar",
+      "AlertDialog",
+      "Sheet",
+      "Drawer",
+      "HoverCard",
+      "Item",
+      "Attachment",
+      "Message",
+      "Bubble",
+      "Resizable",
+      "Carousel",
+      "Chart",
+      "Menubar",
+      "NavigationMenu"
+    ];
     RESERVED_COLOR_KEYS = ["accent", "neutral", "error", "warning", "success", "info"];
     DEFAULT_THEME_SOURCES = {
       brand: "accent",
@@ -8375,7 +9326,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 96,
+          version: 99,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -9549,6 +10500,40 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) drop(sys?.snapshot);
               }
             }
+            if (version < 97) {
+              const ADDED = [...COMPONENTS_V97];
+              const before = COMPONENT_KEYS.filter((k) => !ADDED.includes(k) && !COMPONENTS_V98.includes(k));
+              const grow = (state2) => {
+                const sel = state2?.selectedComponents;
+                if (!Array.isArray(sel)) return;
+                const have = new Set(sel);
+                if (before.every((k) => have.has(k))) state2.selectedComponents = [...sel, ...ADDED.filter((k) => !have.has(k))];
+              };
+              grow(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) grow(sys?.snapshot);
+              }
+            }
+            if (version < 98) {
+              const ADDED = [...COMPONENTS_V98];
+              const before = COMPONENT_KEYS.filter((k) => !ADDED.includes(k));
+              const grow = (state2) => {
+                const sel = state2?.selectedComponents;
+                if (!Array.isArray(sel)) return;
+                const have = new Set(sel);
+                if (before.every((k) => have.has(k))) state2.selectedComponents = [...sel, ...ADDED.filter((k) => !have.has(k))];
+              };
+              grow(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) grow(sys?.snapshot);
+              }
+            }
+            if (version < 99) {
+              moveBorderStrongToControl(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) moveBorderStrongToControl(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -10351,12 +11336,12 @@ var A_STRONG_D = "{white-a.8}";
 var softBorders = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.strong": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D },
   "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
 };
 var natureSemantics = {
-  "border.strong": { light: "{neutral-a.5}", dark: "{accent-a.4}" },
+  "border.control": { light: "{neutral-a.5}", dark: "{accent-a.4}" },
   "border.subtle": { dark: "{accent-a.2}" },
   "content.primary": { light: "{accent.12}" },
   "surface.input": { light: "{white-a.6}" },
@@ -10369,7 +11354,7 @@ var natureSemantics = {
 var coreSemantics = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.strong": { light: "{neutral.5}", dark: "{white-a.3}" },
+  "border.control": { light: "{neutral.5}", dark: "{white-a.3}" },
   "border.control-hover": { light: "{neutral.7}", dark: "{white-a.5}" },
   "border.subtle": { light: "{black-a.3}", dark: "{white-a.1}" },
   "content.primary": { dark: "{accent.12}" },
@@ -10378,7 +11363,7 @@ var coreSemantics = {
 var glassSemantics = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{black-a.2}" },
-  "border.strong": { light: "{accent-a.4}", dark: "{accent-a.3}" },
+  "border.control": { light: "{accent-a.4}", dark: "{accent-a.3}" },
   "border.control-hover": { light: "{black-a.9}", dark: "{white-a.8}" },
   "border.subtle": { light: "{accent-a.3}", dark: "{accent-a.2}" },
   "border.rim-highlight": { light: "{white-a.9}", dark: "{white-a.4}" },
@@ -10394,21 +11379,21 @@ var filledBorders = {
   // Dark input goes to 4, not 3: `DARK_DEPTH` just moved the card to 3, and a
   // filled field that matches its own card is not a filled field.
   "surface.input": { light: "{neutral.3}", dark: "{neutral-dark.4}" },
-  "border.strong": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
   // `border.subtle` follows the schema (black-a.2 / white-a.2). No override.
 };
 var retroSemantics = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.strong": { light: "{neutral.9}", dark: "{accent.4}" },
+  "border.control": { light: "{neutral.9}", dark: "{accent.4}" },
   "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
   "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
 };
 var inkBorders = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.strong": { light: "{accent.10}", dark: "{accent.8}" },
+  "border.control": { light: "{accent.10}", dark: "{accent.8}" },
   "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
   "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
 };
@@ -10654,6 +11639,7 @@ var THEME_STYLE_PRESETS = [
       // five rungs go to the ramp's text tone.
       "border.control-hover": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
       "border.default": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+      "border.control": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
       "border.strong": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
       "border.subtle": { light: "{neutral.11}", dark: "{neutral-dark.11}" }
     }
@@ -10707,7 +11693,7 @@ var THEME_STYLE_PRESETS = [
     semantics: {
       ...DARK_DEPTH,
       "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-      "border.strong": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
     }
   },
@@ -10786,7 +11772,7 @@ var THEME_STYLE_PRESETS = [
     semantics: {
       ...DARK_DEPTH,
       "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.3}" },
-      "border.strong": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
     }
   },
@@ -10815,7 +11801,7 @@ var THEME_STYLE_PRESETS = [
     semantics: {
       ...DARK_DEPTH,
       "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-      "border.strong": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
     }
   }
