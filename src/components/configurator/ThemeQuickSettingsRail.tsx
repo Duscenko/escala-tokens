@@ -2305,7 +2305,15 @@ export default function ThemeQuickSettingsRail({
    *  passing tone nearest your colour, dark the dimmest one that still passes
    *  (`solveRoleColor`). Both start from the LIGHT colour, so the dark anchor
    *  is always a function of the brand, never of an earlier dark solve. */
-  const roleAtHue = (id: ColorRoleId, hue: number) => ({
+  const roleAtHue = (id: ColorRoleId, hue: number) => id === 'neutral'
+    ? (() => {
+        // A neutral is a hue at the tint's saturation (`neutralFromBrand`),
+        // so the slider moves only the hue; the dark anchor is derived from
+        // this one base by the gray applier.
+        const hex = neutralFromBrand(colorAtHue({ saturation: 1, lightness: 0.5 }, hue), activeTint)
+        return { light: hex, dark: hex }
+      })()
+    : ({
     light: roleColorAtHue(roleHex(id, 'light'), hue, 'light', themePage.light),
     dark: roleColorAtHue(roleHex(id, 'light'), hue, 'dark', themePage.dark),
   })
@@ -2319,8 +2327,11 @@ export default function ThemeQuickSettingsRail({
   }
   const commitRoleHue = (id: ColorRoleId, hue: number) => {
     setRolePreview(null)
-    if (id === 'neutral') return
     const { light, dark } = roleAtHue(id, hue)
+    if (id === 'neutral') {
+      commit('Neutral updated', (themeKey) => applyNeutral(light, themeKey))
+      return
+    }
     if (id === 'accent') {
       commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
       setAccentPreview(null)

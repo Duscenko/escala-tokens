@@ -1,5 +1,5 @@
 import type * as React from 'react'
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
@@ -189,16 +189,38 @@ export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
     else toast[type](message, opts)
     return () => { toast.dismiss(`${id}-toast`) }
   }, [id, type, message, description])
+  // Sonner sizes its list from `getBoundingClientRect`, which a `scale()`d
+  // ancestor (the board's photographed tiles) shrinks: the list collapsed to
+  // the scaled height and stacked toasts overlapped. `offsetHeight` ignores
+  // transforms, so the front toast is measured here instead.
+  const box = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const root = box.current
+    if (!root) return
+    let ro: ResizeObserver | null = null
+    const attach = () => {
+      const toastEl = root.querySelector<HTMLElement>('[data-sonner-toast]')
+      if (!toastEl || ro) return
+      ro = new ResizeObserver(() => setHeight(toastEl.offsetHeight))
+      ro.observe(toastEl)
+      setHeight(toastEl.offsetHeight)
+    }
+    attach()
+    const mo = new MutationObserver(attach)
+    mo.observe(root, { childList: true, subtree: true })
+    return () => { mo.disconnect(); ro?.disconnect() }
+  }, [])
   const icon = (concept: 'success' | 'info' | 'warning' | 'error') => <PreviewIcon concept={concept} size={iconOf(16)} />
   return (
     <RecipeScope t={t}>
-      <div style={{ width: w ?? 356, maxWidth: '100%' }}>
+      <div ref={box} style={{ width: w ?? 356, maxWidth: '100%' }}>
         <SkToaster
           id={id}
           offset={0}
           mobileOffset={0}
           icons={{ success: icon('success'), info: icon('info'), warning: icon('warning'), error: icon('error'), loading: <SkSpinner /> }}
-          style={{ position: 'relative', inset: 'auto', transform: 'none', width: '100%', height: 'var(--front-toast-height)', '--width': '100%' } as React.CSSProperties}
+          style={{ position: 'relative', inset: 'auto', transform: 'none', width: '100%', height: height ?? 'var(--front-toast-height)', '--width': '100%' } as React.CSSProperties}
         />
       </div>
     </RecipeScope>

@@ -5243,6 +5243,7 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 - [x] Icons: live Iconify browser per library + sanitized custom SVG upload (`customIcons`)
 - [x] Gradients: `Foundations · Gradients` — named linear/radial gradients with a rich HSV `ColorField` picker (opacity + hex + saved swatches), assignable to card covers + avatars, exported as tokens (`gradients` + `--gradient-*` + README)
 - [ ] GitHub: OAuth App flow (popup + serverless token exchange) to replace the manual PAT
+- [ ] Import: read ANY uploaded JSON (W3C/DTCG, Tokens Studio, Style Dictionary, shadcn/Tailwind exports, a custom shape), recognise how it is built, map it onto Escala's model (ramps, roles, foundations) and load it — as a new brand or as the whole system. Today the Overview "+" (Import JSON / agent context, `lib/importBrand.ts`) only accepts an Escala tokens.json or the Figma Copy context; other shapes get a message pointing to Home's Import JSON. Later development, noted 2026-10-19.
 - [x] Semantic: `themePalettes` (per-theme ramps) retired for `themeSources` (per-theme
       family references) — store v39 migrates old palettes into real Primitives families
 - [ ] Semantic: surface custom color families as token sources (needs per-family role generation in Step3)

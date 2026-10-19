@@ -82,7 +82,23 @@ export function ColorRolesPanel({
         {header}
 
         {current.id === 'neutral' ? (
-          <TintSlider hueHex={current.hex} value={neutralTint} onChange={onNeutralTint} />
+          <>
+            {/* Unlocked, the neutral picks its own hue on the whole wheel — a
+                cool grey under a warm accent, or any complementary pairing.
+                Linked, the hue is the accent's, so only the tint moves. */}
+            {!current.linked && (
+              <SpectrumSlider
+                key={`neutral-${appearance}`}
+                value={current.hex}
+                band={[0, 360]}
+                colorAt={(hue) => solveAt('neutral', hue)}
+                ariaLabel={`${t(COLOR_ROLE_LABEL.neutral)} hue`}
+                onPreview={onHuePreview ? (hex, hue) => onHuePreview('neutral', hex, hue) : undefined}
+                onCommit={(_hex, hue) => onHueCommit('neutral', hue)}
+              />
+            )}
+            <TintSlider hueHex={current.hex} value={neutralTint} onChange={onNeutralTint} />
+          </>
         ) : (
           <SpectrumSlider
             key={`${current.id}-${appearance}`}
