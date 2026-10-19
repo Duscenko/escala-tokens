@@ -225,6 +225,15 @@ export function ComponentCatalogueHero({
               ) : (
                 <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
               )}
+              {/* The stage paints the BRAND's appearance, not the site's: in
+                  site-dark a light brand is a white stage, and without this
+                  chip that read as a bug. It names what is on screen. */}
+              <span
+                data-inspect-exempt=""
+                className="absolute top-3 left-3 text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-muted border border-line"
+              >
+                {t('Previewing: {appearance}', { appearance: t(appearance === 'dark' ? 'Dark' : 'Light') })}
+              </span>
               {variantCount > 1 && (
                 <span
                   data-inspect-exempt=""
