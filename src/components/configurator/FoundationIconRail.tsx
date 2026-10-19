@@ -94,7 +94,7 @@ export function RailTile({
       aria-pressed={aria['aria-pressed']}
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
-      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
+      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
         compact ? '' : 'w-[72px] gap-1 py-1'
       } ${className}`}
     >
@@ -103,7 +103,8 @@ export function RailTile({
           The active glyph scales inside that fixed 40px box (`transform` does
           not change layout), so the tile's height stays put. */}
       <span
-        className={`relative flex items-center justify-center rounded-[12px] transition-[color,background-color,box-shadow] w-10 h-10 ${on
+        style={{ width: RAIL_TILE_SIZE, height: RAIL_TILE_SIZE }}
+        className={`relative flex items-center justify-center rounded-lg transition-[color,background-color,box-shadow] ${on
           ? 'bg-accent-ui/[0.16] text-fg'
           : 'text-fg-faint group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
       >

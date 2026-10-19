@@ -443,7 +443,7 @@ export function ThemeRailScrollRegion({
 }
 
 function Chevron({ open }: { open: boolean }) {
-  return <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  return <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint transition-[transform,color] group-hover/row:text-fg ${open ? 'rotate-180' : ''}`} aria-hidden><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
 function InfoIcon() {
@@ -877,6 +877,11 @@ function EditList({ active, locked, onPick }: {
 const EditionSwitchContext = createContext<{
   select: (key: QuickPanelFoundation) => void
   locked?: boolean
+  /** Every row folded: the open row's header was clicked. `activePanel`
+   *  stays put (the board and icon rail keep following it); only the
+   *  accordion closes. Any row click opens it again. */
+  collapsed?: boolean
+  setCollapsed?: (collapsed: boolean) => void
 } | null>(null)
 
 /**
@@ -910,18 +915,34 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
   const locked = !open && Boolean(ctx?.locked)
   const interactive = Boolean(ctx) && !open
   // Rows are names, not icons (Figma 1:6895): the glyphs live in the Edit
-  // list (header → Edit). The open row is the section title over its controls.
+  // list (header → Edit). The open row is the section title over its controls;
+  // clicking it folds the accordion.
   if (open) {
+    const title_ = <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
+    if (!ctx?.setCollapsed) {
+      return (
+        <div className="flex h-12 w-full items-center gap-3 px-5" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+          {title_}
+          <Chevron open />
+        </div>
+      )
+    }
     return (
-      <div className="flex h-12 w-full items-center gap-3 px-5" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
-        <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
+      <button
+        type="button"
+        aria-expanded
+        aria-controls={panelId}
+        onClick={() => ctx.setCollapsed?.(true)}
+        className="group/row flex h-12 w-full items-center gap-3 px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+      >
+        {title_}
         <Chevron open />
-      </div>
+      </button>
     )
   }
   const inner = (
     <>
-      <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted">{t(title)}</span>
+      <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted transition-colors group-hover/row:text-fg group-disabled/row:text-fg-muted">{t(title)}</span>
       {summary != null && <span className="flex min-w-0 max-w-[45%] flex-shrink-0 items-center justify-end gap-1.5 truncate font-mono text-mini tabular-nums text-fg-faint">{summary}</span>}
       {locked ? <LockGlyph /> : <Chevron open={open} />}
     </>
@@ -937,8 +958,8 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
       aria-controls={panelId}
       disabled={locked}
       title={locked ? t('Finish customizing your brand to see full Variables and Docs.') : undefined}
-      onClick={() => ctx?.select(foundationKey as QuickPanelFoundation)}
-      className={`${shell} transition-colors hover:bg-fg/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent`}
+      onClick={() => { ctx?.setCollapsed?.(false); ctx?.select(foundationKey as QuickPanelFoundation) }}
+      className={`group/row ${shell} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {inner}
     </button>
@@ -968,6 +989,8 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
 }) {
   const { t } = useI18n()
   const panelId = `quick-edition-${foundationKey}`
+  const ctx = useContext(EditionSwitchContext)
+  open = open && !ctx?.collapsed
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
       <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} />
@@ -1833,6 +1856,11 @@ export default function ThemeQuickSettingsRail({
   const inBand = useInspectorHeader()
   // Header → Edit swaps the accordion for the list of editions, in place.
   const [editList, setEditList] = useState(false)
+  // The open row's header folds the accordion; picking a foundation anywhere
+  // (a row, the icon rail, the board) opens it again.
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [collapsedFor, setCollapsedFor] = useState(activePanel)
+  if (collapsedFor !== activePanel) { setCollapsedFor(activePanel); setRailCollapsed(false) }
   const brandLabel = useDesignStore((state) => state.themeLabels[previewTheme]) || defaultThemeLabel(previewTheme)
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
@@ -2539,7 +2567,7 @@ export default function ThemeQuickSettingsRail({
                         }}
                       />
                     </div>
-                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} className="!h-9 !w-[45px]" />
+                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} />
                   </div>
                 )}
                 rows={colorRows}
@@ -2969,7 +2997,7 @@ export default function ThemeQuickSettingsRail({
   )
   // Guided setup opens one step at a time: the strip stays, the other steps wait.
   const switchable = (
-    <EditionSwitchContext.Provider value={onSelectPanel ? { select: onSelectPanel, locked: setupStep != null } : null}>{aside}</EditionSwitchContext.Provider>
+    <EditionSwitchContext.Provider value={onSelectPanel ? { select: onSelectPanel, locked: setupStep != null, collapsed: railCollapsed, setCollapsed: setRailCollapsed } : null}>{aside}</EditionSwitchContext.Provider>
   )
   return embed
     ? <InspectorHeaderInline>{switchable}</InspectorHeaderInline>
