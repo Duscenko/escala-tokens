@@ -911,7 +911,8 @@ export default function Configurator() {
     return { page: docs ? 'docs' : 'overview', doc: (place?.workspace === 'system' && place.doc) || DEFAULT_DOC_KEY }
   })
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
-    () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? COMPONENTS.find((c) => c.key === 'Button') ?? null,
+    // No component in the link → the catalogue index (every component as a card).
+    () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? null,
   )
   const [exportMode, setExportMode] = useState<ExportMode>(null)
   // Manual Figma publishing is one interaction shared by the top bar and the
@@ -1843,6 +1844,10 @@ export default function Configurator() {
     setTab('components')
     setActiveComponent(c)
   }
+  const openComponentsIndex = () => {
+    setComponentFromSystem(false)
+    setActiveComponent(null)
+  }
   const changeTab = (t: Tab) => {
     commitVisit()
     if (t === 'components') {
@@ -2221,6 +2226,7 @@ export default function Configurator() {
         onSelect={selectComponent}
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
         actionsSlot={componentActionsSlot}
+        search={componentSearch}
       />
     )
     // Constant, NOT keyed on the open component: the view owns its own article
@@ -2626,6 +2632,18 @@ export default function Configurator() {
                     </div>
                   )}
                   {componentFromSystem && <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>}
+                  {activeComponent && !componentFromSystem && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={openComponentsIndex}
+                        className="inline-flex h-7 flex-shrink-0 items-center rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                      >
+                        {t('Components')}
+                      </button>
+                      <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
+                    </>
+                  )}
                   <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
                     {t(activeComponent?.category ?? 'Components')}
                   </h2>
@@ -2890,6 +2908,7 @@ export default function Configurator() {
               icons={CATEGORY_ICONS}
               active={activeComponent}
               onSelect={selectComponent}
+              onOpenIndex={openComponentsIndex}
               search={componentSearch}
               onSearch={setComponentSearch}
             />

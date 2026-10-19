@@ -4,9 +4,10 @@
 // The rail keeps the names; this row is how you recognise one before opening it.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
+import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../../lib/componentCatalogue'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS } from './specimens'
+import { useI18n } from '../../../lib/i18n'
 import { axisDefaults } from './componentArticle'
 
 function useHorizontalScrollFade<T extends HTMLElement>(contentKey: string) {
@@ -137,7 +138,7 @@ function ComponentAvatar({
 /** Scales the specimen so the whole of it sits inside the avatar well.
  *  A fixed scale clipped the wide ones (a text link, a store badge) and left
  *  a fragment that no longer looked like the component. */
-function FittedSpecimen({ children }: { children: ReactNode }) {
+export function FittedSpecimen({ children }: { children: ReactNode }) {
   const frameRef = useRef<HTMLSpanElement>(null)
   const innerRef = useRef<HTMLSpanElement>(null)
   const [scale, setScale] = useState(1)
@@ -171,5 +172,88 @@ function FittedSpecimen({ children }: { children: ReactNode }) {
         {children}
       </span>
     </span>
+  )
+}
+
+/**
+ * The catalogue's landing page: every component as a card, its cover the
+ * component's own specimen (the same render the avatar strip uses, larger),
+ * category + name below. Ordered by category so neighbours belong together.
+ */
+export function ComponentsIndex({
+  tokens, onSelect, search = '',
+}: {
+  tokens: PreviewTokens
+  onSelect: (c: ComponentDef) => void
+  search?: string
+}) {
+  const { t } = useI18n()
+  const q = search.trim().toLowerCase()
+  const items = COMPONENTS
+    .map((c, i) => ({ c, i }))
+    .filter(({ c }) => !q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
+    .sort((a, b) =>
+      CATEGORIES.indexOf(a.c.category) - CATEGORIES.indexOf(b.c.category) || a.i - b.i)
+    .map(({ c }) => c)
+
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
+      <header className="mb-6">
+        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Components')}</h1>
+        <p className="mt-2 max-w-2xl text-strong leading-relaxed text-fg-muted">{t('Every component in the library, drawn with your tokens. Open one to see its variants, code and the roles it reads.')}</p>
+        <p className="mt-2 text-caption text-fg-faint">{items.length} {t(items.length === 1 ? 'component' : 'components')}</p>
+      </header>
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3">
+        {items.map((def) => (
+          <li key={def.key}>
+            <ComponentCard def={def} tokens={tokens} onSelect={onSelect} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ComponentCard({
+  def, tokens, onSelect,
+}: {
+  def: ComponentDef
+  tokens: PreviewTokens
+  onSelect: (c: ComponentDef) => void
+}) {
+  const { t } = useI18n()
+  const Specimen = SPECIMENS[def.key]
+  const category = t(def.category)
+  return (
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors hover:border-line-strong has-[>button:focus-visible]:ring-2 has-[>button:focus-visible]:ring-accent-ui/50">
+      <span
+        aria-hidden
+        inert
+        className="relative block h-[136px] w-full overflow-hidden border-b border-line"
+        style={{ background: tokens.surface }}
+      >
+        {Specimen ? (
+          <span className="absolute inset-4 transition-transform duration-200 ease-out group-hover:scale-[1.03]">
+            <FittedSpecimen>
+              <Specimen t={tokens} v={axisDefaults(def)} />
+            </FittedSpecimen>
+          </span>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-heading text-fg-faint">
+            {def.label.slice(0, 1)}
+          </span>
+        )}
+      </span>
+      <span aria-hidden className="flex flex-col gap-0.5 px-3.5 py-3">
+        <span className="truncate text-caption text-fg-faint">{category}</span>
+        <span className="truncate text-strong font-medium text-fg">{def.label}</span>
+      </span>
+      <button
+        type="button"
+        aria-label={`${def.label}, ${category}`}
+        onClick={() => onSelect(def)}
+        className="absolute inset-0 cursor-pointer rounded-2xl focus-visible:outline-none"
+      />
+    </div>
   )
 }

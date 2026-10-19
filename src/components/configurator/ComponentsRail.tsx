@@ -44,19 +44,24 @@ export default function ComponentsRail({
   icons,
   active,
   onSelect,
+  onOpenIndex,
   search = '',
   onSearch,
 }: {
   icons: Record<string, ComponentType>
+  /** null = the index page is open. */
   active: ComponentDef | null
   onSelect: (c: ComponentDef) => void
+  /** Opens the catalogue index (every component as a card). */
+  onOpenIndex?: () => void
   search?: string
   onSearch?: (q: string) => void
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion() ?? false
-  const activeKey = active?.key ?? COMPONENTS[0].key
-  const activeCategory = active?.category ?? CATEGORIES[0]
+  const activeKey = active?.key ?? null
+  // On the index no category is selected; the strip shows none lit.
+  const activeCategory = active?.category ?? ''
 
   const q = search.trim().toLowerCase()
   const groups = useMemo(
@@ -146,6 +151,26 @@ export default function ComponentsRail({
       )}
 
       <nav aria-label={t('Components')} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 pb-3 pt-2">
+        {onOpenIndex && !q && (
+          <button
+            type="button"
+            onClick={onOpenIndex}
+            aria-current={active ? undefined : 'page'}
+            className={`mb-1 flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              active ? ROW_IDLE : ROW_ACTIVE
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden className="flex-shrink-0">
+              <rect x="2" y="2" width="5" height="5" rx="1.2" />
+              <rect x="9" y="2" width="5" height="5" rx="1.2" />
+              <rect x="2" y="9" width="5" height="5" rx="1.2" />
+              <rect x="9" y="9" width="5" height="5" rx="1.2" />
+            </svg>
+            <span className="min-w-0 flex-1 truncate">{t('All components')}</span>
+            <span className="text-caption text-fg-faint">{COMPONENTS.length}</span>
+          </button>
+        )}
+
         {groups.length === 0 && (
           <p className="px-2 pt-1 text-caption leading-relaxed text-fg-faint">
             {t('No components match')} “{search.trim()}”.

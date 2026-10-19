@@ -332,7 +332,7 @@ export function SkeletonAlertDialogSpecimen({ t, v }: SpecimenProps) {
   const size = (v.Size ?? 'default') as AlertDialogSize
   return (
     <RecipeScope t={t}>
-      <SkAlertDialog open>
+      <SkAlertDialog open inline>
         <SkAlertDialogContent inline size={size} style={{ width: size === 'sm' ? 300 : 400 }}>
           <SkAlertDialogHeader>
             {size === 'sm' && <SkAlertDialogMedia><PreviewIcon concept="close" size={iconOf(20)} /></SkAlertDialogMedia>}

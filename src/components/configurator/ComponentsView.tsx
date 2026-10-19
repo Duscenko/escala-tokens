@@ -17,13 +17,16 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { ComponentArticle } from './docs/componentArticle'
-import { ComponentAvatarStrip } from './docs/ComponentAvatars'
+import { ComponentAvatarStrip, ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, actionsSlot,
+  previewTheme = 'light', active, onSelect, onInspectRole, actionsSlot, search = '',
 }: {
   previewTheme?: string
+  /** null = the catalogue index (every component as a card). */
   active: ComponentDef | null
+  /** The directory's search; on the index it filters the cards too. */
+  search?: string
   onSelect: (c: ComponentDef) => void
   /** A role named on the open component. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
@@ -39,7 +42,21 @@ export default function ComponentsView({
 
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
-  }, [def.key])
+  }, [def.key, active])
+
+  if (!active) {
+    return (
+      <div ref={articleRef} className="h-full min-h-0 overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          <ComponentsIndex tokens={tokens} onSelect={onSelect} search={search} />
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex min-h-0">
