@@ -83,9 +83,9 @@ import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
-import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
+import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_SHELL, SELECT_FOCUS, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import { PickerField } from '../ui/PickerField'
@@ -503,6 +503,7 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
   onBase: (step: string) => void
   onSide: (side: InsetSide, step: string | undefined) => void
 }) {
+  const { t } = useI18n()
   const px = (step: string) => spacing[step] ?? `${Number(step.replace('_', '.')) * 4}px`
   const base = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
   const baseStep = SPACING_STEPS.includes(base as (typeof SPACING_STEPS)[number]) ? base : ''
@@ -512,7 +513,9 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`h-7 w-[4.5rem] px-1.5 text-caption tabular-nums text-fg appearance-none text-center ${SELECT_SHELL} ${SELECT_FOCUS}`}
+      // A cell of the role-row family: same 30.5px height, radius and
+      // surface, the inset edge on hover.
+      className="h-[30.5px] w-full min-w-0 cursor-pointer appearance-none rounded-[10px] bg-surface px-1.5 text-center text-ui tabular-nums text-fg transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       {follow && <option value="">= {baseStep ? px(baseStep) : '—'}</option>}
       {!follow && !baseStep && <option value="">Custom</option>}
@@ -524,11 +527,11 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
     return select(`Card padding ${label[s].toLowerCase()}`, own && SPACING_STEPS.includes(own as (typeof SPACING_STEPS)[number]) ? own : '', (v) => onSide(s, v || undefined), true)
   }
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto_auto] items-center justify-items-center gap-1.5">
+    <div className="grid grid-cols-3 items-center gap-1.5">
       <span />{side('top')}<span />
       {side('left')}
-      <div className="flex flex-col items-center gap-1 rounded-md border border-dashed border-line-strong px-2 py-2">
-        <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">All sides</span>
+      <div className="flex min-w-0 flex-col items-center gap-1 rounded-[10px] border border-dashed border-line-strong p-1">
+        <span className="truncate text-micro uppercase tracking-[0.12em] text-fg-faint">{t('All sides')}</span>
         {select('Card padding, all sides', baseStep, (v) => v && onBase(v), false)}
       </div>
       {side('right')}
@@ -2781,12 +2784,13 @@ export default function ThemeQuickSettingsRail({
               field, like Colour's role rows), then the roles they grade. The
               notes that used to be hover hints now open with the list, where
               the choice is made. */}
-          <div className="flex min-w-0 flex-col gap-1.5 px-5 py-2.5">
+          <div className="flex min-w-0 flex-col gap-2 px-5 py-2.5">
             <PickerField
               label="Body"
               ariaLabel="Body font family"
               value={typography.fontFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
+              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: fontStack(typography.fontFamily) }}>Aa</span>}
               options={familyOptions(typography.fontFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
@@ -2801,6 +2805,7 @@ export default function ThemeQuickSettingsRail({
               ariaLabel="Display font family"
               value={headingFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
+              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: fontStack(headingFamily) }}>Aa</span>}
               options={familyOptions(headingFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
@@ -2951,6 +2956,7 @@ export default function ThemeQuickSettingsRail({
               ariaLabel="Icon weight"
               note="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision."
               value={iconWeight ?? 'regular'}
+              leading={<PhosphorWeightProvider weight={iconWeight ?? 'regular'}><PreviewIcon concept="home" size={14} /></PhosphorWeightProvider>}
               options={PHOSPHOR_WEIGHTS.map((weight) => ({
                 value: weight,
                 label: weight.charAt(0).toUpperCase() + weight.slice(1),

@@ -4,9 +4,9 @@
  * chevron on the right), opening a list that can be searched.
  *
  * The shell is the Colour edition's role row (`ColorRolesPanel` · RoleRow):
- * `rounded-[10px] bg-surface p-1`, an inset edge on hover and a stronger one
- * while open. The left pill is the role row's selected hex pill
- * (`bg-chrome-control`). So a font, a type scale and an icon weight read as the
+ * `rounded-[10px] bg-surface p-1` around a 22.5px line (30.5px in all), an
+ * inset edge on hover and a stronger one while open. The right pill is the
+ * role row's hex pill: it fills with `bg-chrome-control` while open. So a font, a type scale and an icon weight read as the
  * same control as Accent · Neutral · the states, one card up.
  *
  * The list is PORTALED and `fixed`: the inspector's scroll column clips an
@@ -183,16 +183,20 @@ export function PickerField<T extends string>({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
-        className={`flex h-10 w-full min-w-0 items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        className={`group flex h-[30.5px] w-full min-w-0 items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           open ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]' : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
         }`}
       >
-        <span className="flex h-full w-[42%] max-w-[132px] flex-shrink-0 items-center rounded-[7px] bg-chrome-control px-2.5 text-ui text-fg-muted">
+        {/* Name: plain text, like a role row's name — muted at rest, full ink
+            while the field is open or hovered. */}
+        <span className={`flex h-[22.5px] min-w-0 flex-1 items-center pl-2 text-ui transition-colors ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
           <span className="truncate">{t(label)}</span>
         </span>
-        <span className="flex min-w-0 flex-1 items-center gap-2 pl-1 pr-2">
-          {leading ? <span aria-hidden className="flex flex-shrink-0 items-center text-fg-muted">{leading}</span> : null}
-          <span className="min-w-0 flex-1 truncate text-ui font-medium text-fg" style={render?.(value)}>{shown}</span>
+        {/* Value: the role row's hex pill — a fixed share of the row so every
+            field's value starts on one line, filled while the list is open. */}
+        <span className={`flex h-[22.5px] w-[58%] flex-shrink-0 items-center gap-2 rounded-[6px] pl-1.5 pr-1.5 transition-colors ${open ? 'bg-chrome-control' : ''}`}>
+          {leading ? <span aria-hidden className="flex h-[22.5px] w-[22.5px] flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
+          <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />
         </span>
       </button>

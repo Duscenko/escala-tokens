@@ -1,11 +1,13 @@
-// The Color edition, as one list of roles under one slider.
+// The Color edition, as one list of roles. Each role carries its own slider.
 //
-// Accent · Neutral · Success · Critical · Warning · Info are rows: a swatch
-// with its hex beside the role's name. Picking a row points the slider above
-// at it, so there is one control to learn instead of a slider per colour.
-// The slider is scoped per role — Accent sweeps the whole wheel, a status
-// colour only the band where it still reads as that status (Warning can move
-// between orange and yellow, never into green).
+// Accent · Neutral · Success · Critical · Warning · Info are rows: the role's
+// name, a chip that names its constraint in one word ("green", "linked"),
+// and a swatch with its hex. The rows start closed — the
+// list reads as a palette. Opening a row reveals its hue slider (scoped to the
+// role's band, so Warning moves between orange and yellow and never into
+// green), the contrast check, and the switch back to the derived value. The
+// rule is the same as before; it is shown as a range, not hidden behind a
+// padlock that reads as "read-only".
 //
 // The rows show the theme being edited: switch to Dark and every swatch is
 // that theme's own anchor. A hue move lands in BOTH themes, each holding its
@@ -13,23 +15,23 @@
 // the same colour, tuned for the page it sits on.
 
 import { useRef, useState, type ReactNode } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
-import { LockGlyph } from '../ui/icons'
 import { TintSlider } from './ThemeQuickSettingsRail'
 import { readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 
-/** The group the roles and the accessibility readout sit in. No fill of its
- *  own: it sits on the inspector's `surface.layer-2`, and its rows carry
- *  `layer-1` (platform foundations). */
-const CARD = 'flex flex-col gap-3.5'
-/** The accessibility readout: a `surface.layer-1` card lit from the top edge
- *  (Figma 1:7003). */
-const READOUT_CARD = 'flex flex-col gap-3.5 rounded-[18px] border-t border-line bg-surface px-[11.25px] pb-[11.25px] pt-[12.25px]'
+/** The family a status hue band reads as, named on the row's chip. */
+const BAND_FAMILY: Partial<Record<ColorRoleId, string>> = {
+  success: 'green',
+  error: 'red',
+  warning: 'amber',
+  info: 'blue',
+}
 
 export interface ColorRoleRow {
   id: ColorRoleId
@@ -49,7 +51,7 @@ export function ColorRolesPanel({
   page, after,
 }: {
   appearance: ThemeAppearance
-  /** Light / Dark and Random, drawn above the slider. */
+  /** Light / Dark and Random, drawn above the rows. */
   header: ReactNode
   rows: ColorRoleRow[]
   selected: ColorRoleId
@@ -67,105 +69,77 @@ export function ColorRolesPanel({
   /** Neutral: follow the accent's hue. A status: follow the accent's
    *  chroma, solved for contrast. All four statuses share one switch. */
   onToggleLink: (id: ColorRoleId) => void
-  /** The page this theme paints on — the accessibility readout measures against it. */
+  /** The page this theme paints on — the contrast check measures against it. */
   page: string
   /** Rows that are not roles (extra brand palettes). */
   after?: ReactNode
 }) {
   const { t } = useI18n()
-  const current = rows.find((row) => row.id === selected) ?? rows[0]
-  const neutral = rows.find((row) => row.id === 'neutral')
+  // Which row is open. Closed by default: the slider only shows once you
+  // reach for a colour. Opening a row also selects it, so the preview's
+  // highlight and the open row never disagree.
+  const [open, setOpen] = useState<ColorRoleId | null>(null)
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className={CARD}>
-        {header}
-
-        {current.id === 'neutral' ? (
-          <>
-            {/* Unlocked, the neutral picks its own hue on the whole wheel — a
-                cool grey under a warm accent, or any complementary pairing.
-                Linked, the hue is the accent's, so only the tint moves. */}
-            {!current.linked && (
-              <SpectrumSlider
-                key={`neutral-${appearance}`}
-                value={current.hex}
-                band={[0, 360]}
-                colorAt={(hue) => solveAt('neutral', hue)}
-                ariaLabel={`${t(COLOR_ROLE_LABEL.neutral)} hue`}
-                onPreview={onHuePreview ? (hex, hue) => onHuePreview('neutral', hex, hue) : undefined}
-                onCommit={(_hex, hue) => onHueCommit('neutral', hue)}
-              />
-            )}
-            <TintSlider hueHex={current.hex} value={neutralTint} onChange={onNeutralTint} />
-          </>
-        ) : (
-          <SpectrumSlider
-            key={`${current.id}-${appearance}`}
-            value={current.hex}
-            band={COLOR_ROLE_BAND[current.id]}
-            colorAt={(hue) => solveAt(current.id, hue)}
-            ariaLabel={`${t(COLOR_ROLE_LABEL[current.id])} hue`}
-            onPreview={onHuePreview ? (hex, hue) => onHuePreview(current.id, hex, hue) : undefined}
-            onCommit={(_hex, hue) => onHueCommit(current.id, hue)}
-          />
-        )}
-
-        <div role="radiogroup" aria-label={t('Colour roles')} className="flex flex-col gap-2">
-          {rows.map((row) => (
-            <RoleRow
-              key={row.id}
-              row={row}
-              on={row.id === current.id}
-              onSelect={() => onSelect(row.id)}
-              onHex={(hex) => onHex(row.id, hex)}
-              onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
-            />
-          ))}
-        </div>
-        {after}
-      </div>
-
-      {current.id !== 'neutral' && (() => {
-        // A failing colour gets ONE action, not just a red label: the same
-        // solve the slider commits, at this colour's own hue. Offered only
-        // when that solve actually passes and differs from what is shown.
-        const hue = readHuePosition(current.hex).hue
-        const solved = solveAt(current.id, hue)
-        const fixable = !checkRoleColor(current.hex, page).passes
-          && solved.toLowerCase() !== current.hex.toLowerCase()
-          && checkRoleColor(solved, page).passes
-        return (
-          <AccessibilityReadout
-            hex={current.hex}
-            page={page}
+      {header}
+      {/* One grid for every row — [name] [badge] [hex] — shared through
+          subgrid, so the badges start on one line after the widest name in
+          any language instead of hugging each name. */}
+      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_98px] gap-y-2">
+        {rows.map((row) => (
+          <RoleRow
+            key={row.id}
+            row={row}
+            on={row.id === selected}
+            open={open === row.id}
             appearance={appearance}
-            fix={fixable ? { hex: solved, apply: () => onHueCommit(current.id, hue) } : undefined}
+            page={page}
+            neutralTint={neutralTint}
+            onToggle={() => {
+              onSelect(row.id)
+              setOpen((current) => (current === row.id ? null : row.id))
+            }}
+            onFocusHex={() => { onSelect(row.id); setOpen(row.id) }}
+            onHex={(hex) => onHex(row.id, hex)}
+            onHuePreview={onHuePreview ? (hex, hue) => onHuePreview(row.id, hex, hue) : undefined}
+            onHueCommit={(hue) => onHueCommit(row.id, hue)}
+            solveAt={(hue) => solveAt(row.id, hue)}
+            onNeutralTint={onNeutralTint}
+            onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
           />
-        )
-      })()}
-      {current.id === 'neutral' && neutral && (
-        <p className="px-1 text-mini text-fg-faint">
-          {neutral.linked
-            ? t('Neutral follows the accent. Unlock it to pick your own.')
-            : t('Neutral is set by hand. Lock it to follow the accent again.')}
-        </p>
-      )}
+        ))}
+      </div>
+      {after}
     </div>
   )
 }
 
-function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
+function RoleRow({
+  row, on, open, appearance, page, neutralTint,
+  onToggle, onFocusHex, onHex, onHuePreview, onHueCommit, solveAt, onNeutralTint, onToggleLink,
+}: {
   row: ColorRoleRow
   on: boolean
-  onSelect: () => void
+  open: boolean
+  appearance: ThemeAppearance
+  page: string
+  neutralTint: NeutralTint
+  onToggle: () => void
+  onFocusHex: () => void
   onHex: (hex: string) => void
+  onHuePreview?: (hex: string, hue: number) => void
+  onHueCommit: (hue: number) => void
+  solveAt: (hue: number) => string
+  onNeutralTint: (tint: NeutralTint) => void
   onToggleLink?: () => void
 }) {
   const { t } = useI18n()
+  const reduce = useReducedMotion()
   const [draft, setDraft] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const label = t(COLOR_ROLE_LABEL[row.id])
+  const panelId = `color-role-${row.id}`
   // Leaving the field writes only a CHANGED, valid hex. Writing back what was
   // shown is not a no-op: the neutral's dark row shows a derived tone, and
   // committing it would set the neutral itself and unlink it from the accent.
@@ -177,142 +151,208 @@ function RoleRow({ row, on, onSelect, onHex, onToggleLink }: {
     setDraft(null)
   }
 
-  // One row per role (Figma 1:6928): the role's name and its lock lead, the
-  // swatch + hex sit in their own pill on the right. Rows are
-  // `surface.layer-1` on the `layer-2` panel; the selected row — the one the
-  // slider above edits — carries the `border.control-hover` edge and its hex
-  // pill fills with `action.secondary.default`.
+  // The constraint, in words. Accent has none — it sweeps the whole wheel.
+  const family = BAND_FAMILY[row.id]
+  // The closed row only has room for one word; the open row says it in full.
+  const chip = row.id === 'neutral'
+    ? (row.linked ? t('linked') : t('own hue'))
+    : family ? t(family) : null
+  const rule = row.id === 'neutral'
+    ? (row.linked
+      ? t('Hue comes from the accent. Only the tint moves.')
+      : t('Its own hue, anywhere on the wheel.'))
+    : family
+      ? t('Hue stays in the {family} band. Lightness and saturation follow the slider.', { family: t(family) })
+      : null
+
   return (
     <div
-      className={`flex items-center gap-2 rounded-[10px] bg-surface p-1 transition-shadow duration-150 ${
-        on
+      role="listitem"
+      className={`col-span-full grid grid-cols-subgrid rounded-[10px] bg-surface transition-shadow duration-150 ${
+        open || on
           ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]'
           : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
       }`}
     >
-      {/* The lock is a SIBLING of the label button, never inside it: an
-          interactive element nested in a <button> is invalid, and a real
-          mouse click on it went to the outer button (selecting the row) while
-          the lock itself never fired. */}
-      <div className="flex min-w-0 flex-1 items-center gap-1 pr-1">
+      <div className="col-span-full grid grid-cols-subgrid items-center p-1">
+        {/* The hex field is a SIBLING of the toggle, never inside it: an
+            input nested in a <button> is invalid. */}
         <button
           type="button"
-          role="radio"
-          aria-checked={on}
-          onClick={onSelect}
-          className={`flex h-[22.5px] min-w-0 flex-1 items-center rounded-md pl-2 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className={`col-span-2 grid h-[22.5px] min-w-0 grid-cols-subgrid items-center gap-x-2 rounded-md pl-2 pr-2 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on || open ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
         >
-          <span className="truncate">{label}</span>
+          <span className="whitespace-nowrap">{label}</span>
+          {chip && (
+            <span title={rule ?? undefined} className="justify-self-start truncate rounded-full border border-line px-1.5 text-mini leading-[15px] text-fg-faint">
+              {chip}
+            </span>
+          )}
         </button>
-        {onToggleLink && (
-          <button
-            type="button"
-            onClick={onToggleLink}
-            aria-label={row.id === 'neutral'
-              ? (row.linked ? t('Unlock Neutral from the accent') : t('Lock Neutral to the accent'))
-              : (row.linked ? t('Unlock states from the accent') : t('Lock states to the accent'))}
-            aria-pressed={row.linked}
-            title={row.id === 'neutral'
-              ? (row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.'))
-              : (row.linked
-                ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
-                : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
-            className={`flex h-[22.5px] w-[22.5px] flex-shrink-0 items-center justify-center rounded transition-colors hover:bg-fg/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${row.linked ? 'text-fg-muted' : 'text-fg-faint'}`}
+        <div
+          className={`flex h-[22.5px] min-w-0 cursor-text items-center gap-2 rounded-[6px] pr-1.5 transition-colors ${open ? 'bg-chrome-control' : ''}`}
+          onClick={() => input.current?.focus()}
+        >
+          <span
+            aria-hidden
+            className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
+            style={{ background: row.hex }}
+          />
+          <input
+            ref={input}
+            value={draft ?? row.hex.toUpperCase()}
+            onFocus={(event) => { onFocusHex(); setDraft(row.hex.toUpperCase()); event.currentTarget.select() }}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={save}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur()
+              if (event.key === 'Escape') { setDraft(null); event.currentTarget.blur() }
+            }}
+            spellCheck={false}
+            readOnly={row.readOnly}
+            title={row.readOnly ? t('Derived from the neutral base. Edit it in Light.') : undefined}
+            aria-label={`${label} hex`}
+            className="min-w-0 flex-1 bg-transparent text-ui tabular-nums text-fg outline-none"
+          />
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id={panelId}
+            key="body"
+            initial={reduce ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="col-span-full overflow-hidden"
           >
-            <LockGlyph size={12} />
-          </button>
+            {/* Inset to the name on the left and the hex pill on the right,
+                so the slider spans exactly the row's own content. */}
+            <div className="flex flex-col gap-2.5 pb-2.5 pl-3 pr-1 pt-1">
+              {rule && <p className="text-caption text-fg-faint">{rule}</p>}
+              {row.id === 'neutral' ? (
+                <>
+                  {/* Unlinked, the neutral picks its own hue on the whole
+                      wheel. Linked, the hue is the accent's — only the tint moves. */}
+                  {!row.linked && (
+                    <SpectrumSlider
+                      key={`neutral-${appearance}`}
+                      value={row.hex}
+                      band={[0, 360]}
+                      colorAt={solveAt}
+                      ariaLabel={`${label} hue`}
+                      onPreview={onHuePreview}
+                      onCommit={(_hex, hue) => onHueCommit(hue)}
+                    />
+                  )}
+                  <TintSlider hueHex={row.hex} value={neutralTint} onChange={onNeutralTint} />
+                </>
+              ) : (
+                <SpectrumSlider
+                  key={`${row.id}-${appearance}`}
+                  value={row.hex}
+                  band={COLOR_ROLE_BAND[row.id]}
+                  colorAt={solveAt}
+                  ariaLabel={`${label} hue`}
+                  onPreview={onHuePreview}
+                  onCommit={(_hex, hue) => onHueCommit(hue)}
+                />
+              )}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {row.id !== 'neutral' && (
+                  <ContrastChip
+                    hex={row.hex}
+                    page={page}
+                    appearance={appearance}
+                    solveAt={solveAt}
+                    onFix={onHueCommit}
+                  />
+                )}
+                {onToggleLink && (
+                  <button
+                    type="button"
+                    onClick={onToggleLink}
+                    aria-pressed={row.linked}
+                    title={row.id === 'neutral'
+                      ? (row.linked ? t('Follows the accent. Click to set it by hand.') : t('Set by hand. Click to follow the accent.'))
+                      : (row.linked
+                        ? t('Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.')
+                        : t('Set by hand. Click to make all four states follow the accent’s chroma.'))}
+                    className={`h-6 rounded-md px-2 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                      row.linked ? 'bg-accent-ui/15 text-fg' : 'bg-fg/8 text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {row.linked ? t('Derived from accent') : t('Derive from accent')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
         )}
-      </div>
-      <div
-        className={`flex h-[22.5px] w-[98px] flex-shrink-0 cursor-text items-center gap-2 rounded-[6px] pr-1.5 transition-colors ${on ? 'bg-chrome-control' : ''}`}
-        onClick={() => { onSelect(); input.current?.focus() }}
-      >
-        <span
-          aria-hidden
-          className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
-          style={{ background: row.hex }}
-        />
-        <input
-          ref={input}
-          value={draft ?? row.hex.toUpperCase()}
-          onFocus={(event) => { onSelect(); setDraft(row.hex.toUpperCase()); event.currentTarget.select() }}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={save}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.currentTarget.blur()
-            if (event.key === 'Escape') { setDraft(null); event.currentTarget.blur() }
-          }}
-          spellCheck={false}
-          readOnly={row.readOnly}
-          title={row.readOnly ? t('Derived from the neutral base. Edit it in Light.') : undefined}
-          aria-label={`${label} hex`}
-          className="min-w-0 flex-1 bg-transparent text-ui tabular-nums text-fg outline-none"
-        />
-      </div>
+      </AnimatePresence>
     </div>
   )
 }
 
-/** The selected colour measured the way the solver measures it: against the
- *  page as a shape (WCAG 3:1 + APCA Lc 45) and with a label on it (WCAG 4.5:1
- *  + APCA Lc 60). Both metrics are shown, so a pass on one and a miss on the
- *  other is visible instead of averaged away. */
-function AccessibilityReadout({ hex, page, appearance, fix }: {
+/** The role measured the way the solver measures it: against the page as a
+ *  shape (WCAG 3:1 + APCA Lc 45) and with a label on it (WCAG 4.5:1 + APCA
+ *  Lc 60). One chip with the label ratio; both metrics in its tooltip, so a
+ *  pass on one and a miss on the other is still visible. A failing colour
+ *  gets ONE action: the same solve the slider commits, at its own hue. */
+function ContrastChip({ hex, page, appearance, solveAt, onFix }: {
   hex: string
   page: string
   appearance: ThemeAppearance
-  /** The solved tone at this hue, when it passes where `hex` does not. */
-  fix?: { hex: string; apply: () => void }
+  solveAt: (hue: number) => string
+  onFix: (hue: number) => void
 }) {
   const { t } = useI18n()
   const c = checkRoleColor(hex, page)
   const pageOk = c.pageWcag >= 3 && c.pageLc >= 45
   const labelOk = c.ink !== null
-  // WCAG AA alone (3:1 as a shape, 4.5:1 with a label). A colour can clear it
-  // and still miss APCA, which is what asks for larger or heavier text.
   const aaOk = c.pageWcag >= 3 && c.labelWcag >= 4.5
   const grade = pageOk && labelOk ? 'good' : aaOk ? 'aa' : pageOk || labelOk ? 'fair' : 'poor'
-  const white = c.labelInk === ROLE_LABEL_INKS[0]
-  const tone = {
-    good: { dot: 'bg-status-success-solid', chip: 'bg-status-success/15 text-status-success', word: t('AA + APCA'), note: t('Reads well on this theme.') },
-    aa: { dot: 'bg-status-success-solid', chip: 'bg-status-success/15 text-status-success', word: t('AA Compliant'), note: t('Meets WCAG AA. Perceptual contrast (APCA) is lower, so labels on it read best at a larger or heavier size.') },
-    fair: { dot: 'bg-status-warning-solid', chip: 'bg-status-warning/15 text-status-warning', word: t('Partial AA'), note: !pageOk ? t('Faint against the page. Fine as a fill, weak as a line or icon.') : t('Labels on it need large or bold text.') },
-    poor: { dot: 'bg-status-danger-solid', chip: 'bg-status-danger/15 text-status-danger', word: t('Below AA'), note: t('Hard to see on this page and hard to read on. Pick a deeper or brighter tone.') },
+  const style = {
+    good: 'bg-status-success/15 text-status-success',
+    aa: 'bg-status-success/15 text-status-success',
+    fair: 'bg-status-warning/15 text-status-warning',
+    poor: 'bg-status-danger/15 text-status-danger',
   }[grade]
+  const word = grade === 'good' || grade === 'aa' ? 'AA' : grade === 'fair' ? t('Partial AA') : t('Below AA')
+  const white = c.labelInk === ROLE_LABEL_INKS[0]
+  const detail = [
+    `${t(appearance === 'dark' ? 'Dark' : 'Light')}: ${t('{ratio}:1 on surface', { ratio: c.pageWcag.toFixed(1) })} · Lc ${Math.round(c.pageLc)}`,
+    `${white
+      ? t('white label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })
+      : t('dark label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })} · Lc ${Math.round(c.labelLc)}`,
+  ].join('\n')
+
+  const hue = readHuePosition(hex).hue
+  const solved = solveAt(hue)
+  const fixable = !checkRoleColor(hex, page).passes
+    && solved.toLowerCase() !== hex.toLowerCase()
+    && checkRoleColor(solved, page).passes
 
   return (
-    <div className={READOUT_CARD}>
-      <div className="flex items-center justify-between">
-        <span className="text-mini uppercase tracking-[0.1em] text-fg-faint">{t('Accessibility')}</span>
-        <span className={`rounded-md px-2 py-0.5 text-caption ${tone.chip}`}>{tone.word}</span>
-      </div>
-      <div className="flex flex-col gap-1">
-      <p className="flex items-baseline gap-2 text-caption text-fg-muted">
-        <span aria-hidden className={`h-[9px] w-[9px] flex-shrink-0 translate-y-[0.5px] rounded-full ${tone.dot}`} />
-        <span className="text-fg">{t(appearance === 'dark' ? 'Dark' : 'Light')}</span>
-        <span className="tabular-nums">
-          {t('{ratio}:1 on surface', { ratio: c.pageWcag.toFixed(1) })} · Lc {Math.round(c.pageLc)}
-        </span>
-      </p>
-      <p className="pl-[18px] text-caption tabular-nums text-fg-muted">
-        {white
-          ? t('white label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })
-          : t('dark label {ratio}:1', { ratio: c.labelWcag.toFixed(1) })} · Lc {Math.round(c.labelLc)}
-      </p>
-      </div>
-      <p className="text-caption text-fg-faint">{tone.note}</p>
-      {fix && (
+    <>
+      <span title={detail} className={`h-6 rounded-md px-2 text-caption leading-6 tabular-nums ${style}`}>
+        {word} {c.labelWcag.toFixed(1)}:1
+      </span>
+      {fixable && (
         <button
           type="button"
-          onClick={fix.apply}
+          onClick={() => onFix(hue)}
           title={t('Same hue, a tone that passes on this theme.')}
-          className="flex h-8 items-center justify-center gap-2 rounded-lg border border-line bg-elevated px-3 text-caption font-medium text-fg transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-6 items-center gap-1.5 rounded-md bg-fg/8 px-2 text-caption text-fg transition-colors hover:bg-fg/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          <span aria-hidden className="h-3 w-3 rounded-[4px] border border-fg/40" style={{ background: fix.hex }} />
+          <span aria-hidden className="h-2.5 w-2.5 rounded-[3px] border border-fg/40" style={{ background: solved }} />
           {t('Use accessible tone')}
-          <span className="tabular-nums text-fg-muted">{fix.hex.toUpperCase()}</span>
         </button>
       )}
-    </div>
+    </>
   )
 }
