@@ -105,9 +105,10 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  * coming back for the next one is a sequence, and a mode that dropped every
  * time the pointer left the canvas couldn't survive it.
  *
- * Icon-only at rest; hover/focus slides out **Inspector**. Armed it fills with
- * the previewed theme's brand solid and stays open reading **Exit inspector**,
- * so the way out is written on the control itself, not only in a tooltip.
+ * Labelled at rest (**Inspector**) and armed (**Exit inspector**), the same
+ * size in light and dark; only a narrow header band drops the label (container
+ * query). Armed it fills with the previewed theme's brand solid, so the way out
+ * is written on the control itself, not only in a tooltip.
  */
 const HEADER_CONTROL_DISABLED = 'opacity-40 pointer-events-none'
 
@@ -154,7 +155,11 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
         style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
       >
         <InspectGlyph size={16} hint={!active} />
-        <RevealLabel open={active}>{label}</RevealLabel>
+        {/* Labelled at rest AND armed, in both chromes — the label only
+            drops when the header band itself is too narrow to hold it
+            (a container query, never the appearance). `aria-label` names
+            the control either way. */}
+        <span aria-hidden className="ml-1.5 hidden whitespace-nowrap @[30rem]/hubhead:inline">{label}</span>
       </button>
     </div>
   )
@@ -667,7 +672,7 @@ export default function ThemePreviewHub({
                   sits top-left; Inspect, Figma sync and Docs stay on the right.
                   Light/Dark lives on Color edition's header so the ramps and
                   the board cannot disagree. */}
-              <div className={`flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
+              <div className={`@container/hubhead flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
                 ) : docsOpen ? (
