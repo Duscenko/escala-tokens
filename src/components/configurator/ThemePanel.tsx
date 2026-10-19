@@ -5,7 +5,6 @@ import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSourc
 import { resolveThemePalette, themeDisplayName, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import { mintTheme, slotsFromAccent, type MintPages } from '../../lib/themeMint'
 import { THEME_STYLE_PRESETS, presetStates, type ThemeStyleSemantics } from '../../lib/themePresets'
-import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import type { ThemeFoundationOverride } from '../../lib/themeFoundations'
 import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
@@ -171,13 +170,12 @@ type ThemeFormProps = {
  * without making the common case pay for it.
  */
 
-/** "Style · Scratch ⇅" — one row that opens the list of Escala's styles.
- *  Scratch first; each style shows its accent and its one-line description. */
+/** "Style · Felt ⌄" — one row that opens Scratch + Escala's styles. Picking
+ *  one only seeds THIS form: nothing is tried on or added until the brand is
+ *  created. The dot shows the accent in the form right now, not the style's
+ *  shipped one — after Random or a moved slider the two differ. */
 function StylePicker({ value, accent, onChange }: {
   value: string
-  /** The accent in the form right now. The trigger shows THIS, not the style's
-   *  shipped accent: after Random or a moved slider the two differ, and a dot
-   *  in the old colour said the board and the form disagreed. */
   accent: string
   onChange: (id: string) => void
 }) {
@@ -204,37 +202,39 @@ function StylePicker({ value, accent, onChange }: {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex h-9 w-full items-center gap-2 px-2.5 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`}
+        className={`flex h-11 w-full items-center gap-2 px-3.5 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`}
       >
         <span className="text-ui text-fg-muted">{t('Style')}</span>
         <span className="ml-auto flex min-w-0 items-center gap-1.5 text-ui font-medium text-fg">
           {current && <span aria-hidden className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: accent }} />}
           <span className="truncate">{current ? current.shortLabel : t('Scratch')}</span>
         </span>
-        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint"><path d="M2 5l3-3 3 3M2 9l3 3 3-3" /></svg>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 text-fg-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}><path d="M3 4.5 6 7.5l3-3" /></svg>
       </button>
       {open && (
-        <div role="listbox" aria-label={t('Style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-72 flex-col overflow-y-auto ${SELECT_LIST}`}>
-          <p className="px-2 pb-1 pt-1.5 text-mini font-medium uppercase tracking-wide text-fg-faint">{t('Escala inspirations')}</p>
-          {options.map((o) => (
-            <button
-              key={o.id || 'scratch'}
-              type="button"
-              role="option"
-              aria-selected={o.id === value}
-              onClick={() => { onChange(o.id); setOpen(false) }}
-              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${o.id === value ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated hover:text-fg'}`}
-            >
-              {o.accent
-                ? <span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full" style={{ background: o.accent }} />
-                : <span aria-hidden className="flex h-3 w-3 flex-shrink-0 items-center justify-center text-ui leading-none">+</span>}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-ui font-medium">{o.label}</span>
-                <span className="block truncate text-mini text-fg-faint">{o.note}</span>
-              </span>
-              {o.id === value && <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-accent-ui"><path d="M2.5 6.5l2.5 2.5L9.5 3.5" /></svg>}
-            </button>
-          ))}
+        <div role="listbox" aria-label={t('Style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-80 flex-col overflow-y-auto ${SELECT_LIST}`}>
+          {options.map((o) => {
+            const on = o.id === value
+            return (
+              <button
+                key={o.id || 'scratch'}
+                type="button"
+                role="option"
+                aria-selected={on}
+                onClick={() => { onChange(o.id); setOpen(false) }}
+                className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors ${on ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated hover:text-fg'}`}
+              >
+                {o.accent
+                  ? <span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full" style={{ background: on ? accent : o.accent }} />
+                  : <span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full border border-dashed border-fg-faint" />}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-ui font-medium">{o.label}</span>
+                  <span className="block truncate text-mini text-fg-faint">{o.note}</span>
+                </span>
+                {on && <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-accent-ui"><path d="M2.5 6.5l2.5 2.5L9.5 3.5" /></svg>}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>
@@ -753,6 +753,22 @@ export function ThemeForm({
           <BrandThemesPicker value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
         </div>
 
+        {/* Style — shown on the create form even while System Styles are
+            hidden elsewhere (SYSTEM_STYLES_VISIBLE): here the person is
+            already making their own system, a style only seeds the form. */}
+        {firstStep && !isEdit && (
+          <div className="flex-shrink-0">
+            <StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} />
+            {startPreset && (
+              <p className="mt-1.5 px-1 text-mini leading-relaxed text-fg-faint">
+                {slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
+                  ? startPreset.detail
+                  : t('{name}, with your own accent.', { name: startPreset.shortLabel })}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Accent — the one required decision. `.light`/`.dark` are the app's
             own token sets (index.css); `.light` exists precisely so a subtree
             can opt back OUT of dark chrome. A ramp is judged against the page
@@ -817,18 +833,6 @@ export function ThemeForm({
                   )
                 })}
               </div>
-              {firstStep && !isEdit && SYSTEM_STYLES_VISIBLE && (
-                <div>
-                  <StylePicker value={styleId} accent={slots.brand} onChange={pickStyle} />
-                  {startPreset && (
-                    <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
-                      {slots.brand.toLowerCase() === startPreset.accent.toLowerCase()
-                        ? startPreset.detail
-                        : t('{name}, with your own accent.', { name: startPreset.shortLabel })}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           ) : (
           <ColorPickerPanel

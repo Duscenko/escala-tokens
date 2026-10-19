@@ -21,6 +21,9 @@ export const CLI_PUBLISHED = false
 // their own. The flow is now enter → the editor (create studio) → change →
 // export. While this is false nothing seeds a try-on, Home has no System
 // styles row, "How do you want to start" offers Blank · From code only, and
-// the create form has no Style picker. The presets, the try-on overlay and
+// the create form had no Style picker. Exception (2026-10-19): the create
+// form shows a "Start from" list again — there the person is already making
+// their own system, and a style only seeds the form (nothing is tried on or
+// added). The presets, the try-on overlay and
 // `openStyleForEditing` are untouched; flip this to bring them back.
 export const SYSTEM_STYLES_VISIBLE = false
