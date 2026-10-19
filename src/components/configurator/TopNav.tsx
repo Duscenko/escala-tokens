@@ -635,8 +635,10 @@ export default function TopNav({
         }}
       >
         <div className="flex w-max items-center gap-3">
+          {/* Border only: a filled tile here sat right above the rail's
+              active (filled) tile and read as one more pressed state. */}
           <span
-            className="flex flex-shrink-0 items-center justify-center rounded-lg bg-elevated"
+            className="flex flex-shrink-0 items-center justify-center rounded-lg border border-line-strong"
             style={{ width: RAIL_TILE_SIZE, height: RAIL_TILE_SIZE }}
           >
             <BrandMark size={24} />
