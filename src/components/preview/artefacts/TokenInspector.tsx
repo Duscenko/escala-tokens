@@ -61,6 +61,8 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
 import { slotUnder, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
 import { TokenTraceList } from './TokenTracePanel'
+import { MiddleTruncate } from '../../ui/MiddleTruncate'
+import { useCopyOnClick } from '../../../lib/useCopyOnClick'
 import { motion, useReducedMotion } from 'framer-motion'
 import { InspectorPortal, useInInspector } from '../../configurator/WorkspaceInspector'
 
@@ -245,6 +247,21 @@ function LengthMark({ kind }: { kind: 'radius' | 'text' | 'size' }) {
   return (
     <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center" aria-hidden>
       <span className="h-3 w-3 rounded-tl-md border-l border-t border-fg-muted" />
+    </span>
+  )
+}
+
+/** A role id that keeps its last segment visible (`content.li…default`)
+ *  and copies itself on click — the row around it opens Token Details. */
+function RoleName({ id, className }: { id: string; className: string }) {
+  const { copied, props } = useCopyOnClick(id)
+  return (
+    <span
+      {...props}
+      title={copied ? 'Copied' : `${id} — click to copy`}
+      className={`flex min-w-0 flex-1 rounded font-mono text-mini hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${className}`}
+    >
+      {copied ? 'Copied' : <MiddleTruncate text={id} />}
     </span>
   )
 }
@@ -874,7 +891,7 @@ export function InspectorOverlay({
                               <span className="block h-full w-full" style={{ background: role.css }} />
                             </span>
                           )}
-                        <span className={`min-w-0 flex-1 truncate font-mono text-mini ${isLit ? 'text-fg' : 'text-fg-muted'}`}>{role.id}</span>
+                        <RoleName id={role.id} className={isLit ? 'text-fg' : 'text-fg-muted'} />
                         <span className="w-[9ch] flex-shrink-0 font-mono text-nano tabular-nums text-fg-muted">
                           {role.kind && role.kind !== 'color' ? role.css : displayHex(role.css)}
                         </span>

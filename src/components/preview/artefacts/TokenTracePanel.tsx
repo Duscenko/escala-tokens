@@ -16,6 +16,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { ElementTrace, TraceKind, TraceRow } from '../../../lib/tokenTrace'
 import { displayHex } from '../../../lib/tokenInspector'
+import { MiddleTruncate } from '../../ui/MiddleTruncate'
+import { useCopyOnClick } from '../../../lib/useCopyOnClick'
 
 const CHECKER: React.CSSProperties = {
   backgroundImage:
@@ -110,26 +112,14 @@ function ValueMark({ row }: { row: TraceRow }) {
 
 /** The CSS custom property as a chip that copies itself. */
 function VarChip({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false)
-  const copy = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    const text = name.includes('*') ? name : `var(${name})`
-    void navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1100)
-    }).catch(() => {})
-  }
+  const { copied, props } = useCopyOnClick(name.includes('*') ? name : `var(${name})`)
   return (
     <span
-      role="button"
-      tabIndex={0}
-      onClick={copy}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') copy(e as unknown as React.MouseEvent) }}
-      title={copied ? 'Copied' : `Copy ${name}`}
-      className="min-w-0 max-w-full truncate rounded-md bg-accent-ui/10 px-1.5 py-0.5 font-mono text-nano text-accent-ui transition-colors hover:bg-accent-ui/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      {...props}
+      title={copied ? 'Copied' : `${name} — click to copy`}
+      className="flex min-w-0 max-w-full rounded-md bg-accent-ui/10 px-1.5 py-0.5 font-mono text-nano text-accent-ui transition-colors hover:bg-accent-ui/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
-      {copied ? 'Copied' : name}
+      {copied ? 'Copied' : <MiddleTruncate text={name} />}
     </span>
   )
 }
