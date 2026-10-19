@@ -1233,6 +1233,9 @@ export function AboutHome({
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
+                // Painted from frame one: the sweep is a sheen over text already
+                // laid out at its final size, never a reveal from blank.
+                keepTextVisible
                 duration={HERO_SWEEP_S}
                 delay={HERO_AT.sweep}
                 className="text-[30px] font-normal leading-[1.12] tracking-[-0.02em] sm:text-[36px]"
