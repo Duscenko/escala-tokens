@@ -121,8 +121,10 @@ export function RandomThemeButton({
       onClick={onClick}
       aria-label={text}
       title={text}
-      className={`relative flex items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        icon ? `h-8 w-8 flex-shrink-0 ${className}` : 'h-8 w-full text-mini font-normal'
+      // The icon square is border-only: a filled square beside the Light/Dark
+      // switch and above the colour rows read as one more pressed state.
+      className={`relative flex items-center justify-center gap-1.5 rounded-lg text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:text-fg active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        icon ? `h-8 w-8 flex-shrink-0 bg-transparent ${className}` : 'h-8 w-full bg-line text-mini font-normal hover:bg-elevated'
       }`}
     >
       <ShuffleGlyph />
