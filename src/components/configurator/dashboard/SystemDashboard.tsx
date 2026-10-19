@@ -307,7 +307,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo,
   onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
-  onEditRole, onOpenComponent, docsExits,
+  onEditRole, onOpenComponent, docsExits, onExportBrand, onAddBrand, addBrandBlocked, maxBrands,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -338,6 +338,14 @@ export default function SystemDashboard({
   onOpenComponent?: (key: string) => void
   /** Where a Docs recipe leaves for: Figma, Export, Save, GitHub. */
   docsExits: DocsExits
+  /** Overview: a brand card's Export. */
+  onExportBrand?: (key: string) => void
+  /** Overview: the empty slot's +. */
+  onAddBrand?: () => void
+  /** Why a brand cannot be added right now. */
+  addBrandBlocked?: string
+  /** How many brands this plan holds. */
+  maxBrands?: number
 }) {
   const { t } = useI18n()
   const dash = useDashboard(brand)
@@ -389,8 +397,10 @@ export default function SystemDashboard({
           onSelectBrand={onSelectBrand}
           onEditBrand={onEditBrand}
           onOpenColorTheme={onOpenColorTheme}
-          timeAgo={timeAgo}
-          onOpenGithub={onOpenGithub}
+          onExportBrand={onExportBrand}
+          onAddBrand={onAddBrand}
+          addBrandBlocked={addBrandBlocked}
+          maxBrands={maxBrands}
         />
       )}
       {noBrands && (shown === 'docs' || shown === 'status') && (

@@ -1,24 +1,25 @@
-// OVERVIEW — a modes table. Each saved brand is a column, each foundation is
-// a row, and the last column is the empty slot that adds a brand (the same
-// gesture as a Figma mode). The column on screen carries a 2px rule in that
-// brand's own colour. Cells carry a short summary, not a specimen. A number
-// appears only where a contrast pair fails, and only on the brand on screen.
+// OVERVIEW — the system matrix. Each saved brand is a card: its name, where
+// it came from, the themes it ships and the five Figma collections it fills,
+// each with the number of variables it puts there. The open space beside the
+// cards is the slot that adds a brand (the same gesture as a Figma mode). The
+// brand on screen carries a 2px rule in its own colour. A visitor with no
+// account is told there that signing in is what keeps these brands.
 
 import { useMemo, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
-import { useAccess } from '../../../lib/access'
+import { goToLogin, useAccess } from '../../../lib/access'
+import { generateTokenJSON } from '../../../lib/tokenGenerator'
+import { THEME_STYLE_PRESETS } from '../../../lib/themePresets'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import { wcagRatio } from '../../../lib/color/apca'
 import { BRAND_THEME_DEFS, brandThemesSummary, shippedThemes } from '../../../lib/brandThemes'
 import { fontStack } from '../../../lib/fonts'
-import { foundationFacts, type FoundationFacts } from '../../../lib/systemDashboard'
+import { foundationFacts } from '../../../lib/systemDashboard'
 import { useTheme } from '../../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
 import { AppearanceGlyph } from '../colorControls'
 import { ThemeAvatar } from '../ThemeLibraryRail'
-import { CHROME_CONTROL_SHELL } from '../themeWorkspaceLayout'
-import { SOURCE_LABEL, Tag, TEXT_LINK } from './parts'
-import type { SourceState } from '../../../lib/systemDashboard'
+import { Tag, TEXT_LINK } from './parts'
 import type { Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
 
@@ -48,110 +49,89 @@ function brandMark(ramp: ColorScale | undefined, fallback: string, page: string)
   return candidates[0] ?? fallback
 }
 
-const TONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const
-const ROWS = ['color', 'radius', 'spacing', 'shadow', 'typography'] as const
-type RowKey = (typeof ROWS)[number]
-
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
-const RULE = 'border-line'
-const ROW_H = 'h-11'
+
+type CollectionKey = 'colorPrimitives' | 'colorSemantics' | 'dimensionPrimitives' | 'dimensionSemantics' | 'typography'
+const COLLECTIONS: { key: CollectionKey; label: string; foundation: string }[] = [
+  { key: 'colorPrimitives', label: 'Color Primitives', foundation: 'color' },
+  { key: 'colorSemantics', label: 'Color Semantics', foundation: 'color' },
+  { key: 'dimensionPrimitives', label: 'Dimension Primitives', foundation: 'spacing' },
+  { key: 'dimensionSemantics', label: 'Dimension Semantics', foundation: 'spacing' },
+  { key: 'typography', label: 'Typography', foundation: 'typography' },
+]
+
+const size = (value: unknown) => (value && typeof value === 'object' ? Object.keys(value).length : 0)
+
+/** What one brand puts in each Figma collection, counted off the SAME
+ *  `generateTokenJSON` call its export is built from — so the numbers cannot
+ *  disagree with the file. They count values in tokens.json, grouped the way
+ *  the plugin groups its collections. */
+function brandCounts(store: Parameters<typeof generateTokenJSON>[0], key: string) {
+  type Bag = Record<string, unknown>
+  const json = generateTokenJSON(store, { theme: key }) as unknown as Bag & {
+    colors?: Bag & { architecture?: { tokens?: Record<string, Bag> } }
+    dimensionRefs?: Record<string, Bag>
+    typography?: Bag
+    viewports?: unknown[]
+  }
+  const colors = json.colors ?? {}
+  const archGroups: Record<string, Bag> = colors.architecture?.tokens ?? {}
+  const colorSemantics = Object.values(archGroups).reduce((n, group) => n + size(group), 0)
+  const refs: Record<string, Bag> = json.dimensionRefs ?? {}
+  const dimensionSemantics = Object.values(refs).reduce((n, group) => n + size(group), 0)
+    + size(json.spacingRoles) + size(json.radiusRoles) + size(json.strokeRoles) + size(json.sizeRoles)
+    + size(json.selectorRoles) + size(json.spacingResponsive) + size(json.radiusResponsive) + size(json.breakpointRoles)
+  const type: Bag = json.typography ?? {}
+  // Families (body + display), the four scales, and each role's size · weight · family.
+  const typography = 2 + size(type.sizes) + size(type.lineHeights) + size(type.letterSpacings) + size(type.weights) + size(type.roles) * 3
+  const counts: Record<CollectionKey, number> = {
+    colorPrimitives: size(colors.primitive) + size(colors.primitiveAlpha),
+    colorSemantics,
+    dimensionPrimitives: size(json.dimensions),
+    dimensionSemantics,
+    typography,
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0)
+  const platforms = Array.isArray(json.viewports) && json.viewports.length ? json.viewports.length : 1
+  return { counts, total, platforms }
+}
 
 function PlusGlyph() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
     </svg>
   )
 }
 
-function CheckGlyph() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M2.5 6.2 4.8 8.5 9.5 3.5" />
-    </svg>
-  )
-}
-
-/** The themes a brand ships, as labelled chips. The editor always has every
- *  theme; this row reflects the brand's ship list, not export plan trimming. */
-function ThemesCell({ ids, selected, brandName, onOpen }: {
-  ids: readonly string[]
-  selected: boolean
-  brandName: string
-  onOpen?: (appearance: 'light' | 'dark') => void
-}) {
-  const { t } = useI18n()
-  const summary = t(brandThemesSummary(ids))
-  return (
-    <div role="group" aria-label={summary} className={`flex h-full min-w-0 items-center gap-1.5 px-3 ${selected ? CHROME_CONTROL_SHELL : ''}`}>
-      <span className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-elevated p-0.5">
-        {BRAND_THEME_DEFS.map((def) => {
-          const on = ids.includes(def.id)
-          const name = t(def.label)
-          const chip = `inline-flex h-[27px] items-center gap-1.5 rounded-md px-1.5 text-caption ${
-            on ? 'bg-fg/[0.08] text-fg-muted' : 'text-fg-faint opacity-50'
-          }`
-          if (on && onOpen) {
-            return (
-              <button
-                key={def.id}
-                type="button"
-                onClick={() => onOpen(def.base)}
-                title={t('Open {theme} colors', { theme: name })}
-                aria-label={`${brandName} — ${t('Open {theme} colors', { theme: name })}`}
-                className={`${chip} transition-colors hover:bg-fg/[0.14] hover:text-fg ${FOCUS}`}
-              >
-                <AppearanceGlyph kind={def.base} size={12} />
-                {name}
-              </button>
-            )
-          }
-          return (
-            <span key={def.id} className={chip}>
-              <AppearanceGlyph kind={def.base} size={12} />
-              {name}
-            </span>
-          )
-        })}
+/** One glyph per collection, drawn from the brand itself where it can be. */
+function CollectionGlyph({ which, ramp, heading }: { which: CollectionKey; ramp: ColorScale | undefined; heading: string }) {
+  if (which === 'colorPrimitives') {
+    return <span aria-hidden className="block h-4 w-4 flex-shrink-0 rounded-[4px]" style={{ background: ramp?.[9] }} />
+  }
+  if (which === 'colorSemantics') {
+    return (
+      <span aria-hidden className="flex flex-shrink-0 gap-1">
+        {[1, 4, 9, 11].map((tone) => <span key={tone} className="block h-4 w-4 rounded-[4px] border border-fg/10" style={{ background: ramp?.[tone] }} />)}
       </span>
-    </div>
-  )
-}
-
-const SYNC_DOT: Record<SourceState, string> = {
-  synced: 'bg-status-success-solid',
-  stale: 'bg-status-warning-solid',
-  never: 'bg-fg-faint',
-}
-
-/** One destination's sync state: name and a dot. The dot is never the only
- *  carrier — the label and title say the state in words. */
-function SyncChip({ name, state, detail, onClick }: {
-  name: string
-  state: SourceState
-  detail: string | null
-  onClick: () => void
-}) {
-  const { t } = useI18n()
-  const status = t(SOURCE_LABEL[state])
-  const title = [`${name} — ${status}`, detail].filter(Boolean).join(' · ')
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-line px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/[0.05] hover:text-fg ${FOCUS}`}
-    >
-      <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${SYNC_DOT[state]}`} />
-      {name}
-      <span className="hidden font-normal text-fg-faint xl:inline">{status}</span>
-    </button>
-  )
+    )
+  }
+  if (which === 'dimensionPrimitives') {
+    return <span aria-hidden className="block h-4 w-4 flex-shrink-0 rounded-tl-[10px] border-l-[1.5px] border-t-[1.5px] border-fg-muted" />
+  }
+  if (which === 'dimensionSemantics') {
+    return (
+      <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 text-fg-muted">
+        <path d="M2 3v10M14 3v10M5 8h6M6.5 6.5 5 8l1.5 1.5M9.5 6.5 11 8 9.5 9.5" />
+      </svg>
+    )
+  }
+  return <span aria-hidden className="w-4 flex-shrink-0 text-ui font-semibold leading-none text-fg" style={{ fontFamily: fontStack(heading) }}>Aa</span>
 }
 
 export default function OverviewPage({
-  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onOpenColorTheme, timeAgo, onOpenGithub,
+  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, onOpenColorTheme,
+  onAddBrand, addBrandBlocked, maxBrands,
 }: {
   dash: Dashboard
   header: ReactNode
@@ -161,277 +141,184 @@ export default function OverviewPage({
   onOpenBrand?: () => void
   /** Absent while the Status board is on hold. */
   onOpenStatus?: () => void
-  /** Makes that brand the one on screen. Stays on Overview when the column name is clicked. */
+  /** Makes that brand the one on screen. */
   onSelectBrand: (key: string) => void
   /** Opens that brand in the editor. */
   onEditBrand: (key: string) => void
+  /** Opens that brand's code (Code tab). */
+  onExportBrand?: (key: string) => void
   /** A theme chip opens Variables · Color for that brand in that appearance. */
   onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
-  /** "2h ago" for the sync rows. */
-  timeAgo: (iso: string) => string
-  onOpenGithub: () => void
+  /** The empty slot's +. */
+  onAddBrand?: () => void
+  /** Why a brand cannot be added right now (the plan's cap). */
+  addBrandBlocked?: string
+  /** How many brands this plan holds. */
+  maxBrands?: number
 }) {
   const { t } = useI18n()
-  // GitHub is an account feature: a visitor without one sees no chip.
   const { guest } = useAccess()
   const chrome = useTheme()
   const { store, roles, contrast } = dash
   const brand = roles.brand
   const savedBrands = useSavedBrandKeys()
   const failing = savedBrands.length === 0 ? 0 : contrast.failing.length
-  const openHint = t('Open in Docs')
 
-  const columns = useMemo(() => savedBrands.map((key) => {
+  const cards = useMemo(() => savedBrands.map((key) => {
     const facts = foundationFacts(store, key)
     const ramp = themeBrandRamp(key, store.themeSources, store.themeKinds, store)
-    const themeIds = shippedThemes(
-      store.brandThemes,
-      key,
-      store.themeKinds[key] === 'dark' ? 'dark' : 'light',
-    )
+    const themeIds = shippedThemes(store.brandThemes, key, store.themeKinds[key] === 'dark' ? 'dark' : 'light')
+    const origin = store.themeOrigin?.[key]
     return {
       key,
       facts,
       ramp,
       themeIds,
+      origin: THEME_STYLE_PRESETS.find((preset) => preset.id === origin)?.shortLabel ?? null,
       appearance: store.themeKinds[key] === 'dark' ? 'dark' as const : 'light' as const,
       name: themeDisplayName(key, store.themeLabels),
       mark: brandMark(ramp, store.primaryColor, CHROME_PAGE[chrome]),
+      ...brandCounts(store, key),
     }
   }), [savedBrands, store, chrome])
 
-  const open = (key: string, go: () => void) => {
+  const openRow = (key: string, foundation: string) => {
     onSelectBrand(key)
-    go()
-  }
-
-  const rowLabel: Record<RowKey, string> = {
-    color: t('Color'),
-    radius: t('Radius'),
-    spacing: t('Spacing'),
-    shadow: t('Shadow'),
-    typography: t('Typography'),
+    if (foundation === 'color' && onOpenBrand) onOpenBrand()
+    else onOpenFoundation(foundation)
   }
 
   return (
     <>
       {header}
 
-      <section aria-labelledby="overview-system" className="flex w-full min-w-0 flex-col gap-3">
-        {/* The wrapper owns the frame and the scroll. `overflow-hidden` on the table
-            itself made IT the scroll container, so the sticky name and Add brand
-            columns stuck to a box that never scrolled and fell off at tight widths. */}
-        <div className="min-w-0 w-full overflow-x-auto rounded-xl border border-line">
-          <table
-            className="w-full min-w-full table-auto border-separate border-spacing-0"
-          >
-            <colgroup>
-              <col className="w-36" />
-              {/* Brand columns HUG their content (a 1px width is a floor, so each
-                  takes its nowrap min-content). The trailing Add-brand column has no
-                  width and takes the slack, like an empty Figma mode slot. */}
-              {columns.map((column) => <col key={column.key} style={{ width: '1px' }} />)}
-              <col />
-            </colgroup>
-            <thead>
-              <tr>
-                <th
-                  id="overview-system"
-                  scope="colgroup"
-                  colSpan={columns.length + 1}
-                  className={`sticky left-0 border-b ${RULE} bg-side-panel px-3 text-left text-strong font-medium text-fg ${ROW_H}`}
-                >
-                  {t('Brands')}
-                </th>
-                <th scope="col" className={`sticky right-0 z-[2] whitespace-nowrap border-b border-l ${RULE} bg-side-panel p-0 ${ROW_H}`}>
-                  {/* Where the whole system goes. Figma is not synced from here
-                      any more, so only GitHub keeps a chip. */}
-                  <div className="flex h-full items-center justify-end gap-1.5 px-3">
-                    {!guest && <SyncChip
-                      name="GitHub"
-                      state={dash.github}
-                      detail={store.githubRepo ? [store.githubRepo, store.githubLastPushAt ? timeAgo(store.githubLastPushAt) : null].filter(Boolean).join(' · ') : null}
-                      onClick={onOpenGithub}
-                    />}
-                  </div>
-                </th>
-              </tr>
-              <tr>
-                <th scope="col" className={`sticky left-0 z-[1] border-b ${RULE} bg-side-panel px-3 text-left text-ui font-medium text-fg ${ROW_H}`}>
-                  {t('Foundation')}
-                </th>
-                {columns.map((column) => {
-                  const selected = column.key === brand
-                  return (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      className={`border-b border-l ${RULE} ${selected ? 'bg-surface' : 'bg-app'} whitespace-nowrap p-0 ${ROW_H}`}
-                      style={selected ? { boxShadow: `inset 0 -2px 0 0 ${column.mark}` } : undefined}
-                    >
-                      <div className="flex h-full items-center gap-4 px-3">
-                        <button
-                          type="button"
-                          onClick={() => onSelectBrand(column.key)}
-                          aria-pressed={selected}
-                          title={column.name}
-                          className={`flex h-full min-w-0 flex-1 items-center gap-2 text-left text-ui font-semibold transition-colors hover:bg-fg/[0.04] ${FOCUS} ${selected ? 'text-fg' : 'text-fg-muted'}`}
-                        >
-                          <ThemeAvatar
-                            size={22}
-                            ramp={column.ramp}
-                            appearance={column.appearance}
-                            fallback={store.primaryColor}
-                          />
-                          <span className="min-w-0 max-w-[12rem] flex-1 truncate">{column.name}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onEditBrand(column.key)}
-                          title={t('Edit brand')}
-                          className={`flex-shrink-0 rounded-sm text-caption font-medium text-fg hover:underline ${FOCUS}`}
-                        >
-                          {t('Edit')}
-                        </button>
-                      </div>
-                    </th>
-                  )
-                })}
-                <th scope="col" className={`border-b border-l ${RULE} bg-side-panel p-0 ${ROW_H}`} />
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row" className={`sticky left-0 z-[1] border-b ${RULE} bg-app px-3 text-left text-caption font-medium text-fg-muted ${ROW_H}`}>
-                  {t('Themes')}
-                </th>
-                {columns.map((column) => (
-                  <td key={column.key} className={`border-b border-l ${RULE} ${column.key === brand ? 'bg-surface' : 'bg-app'} whitespace-nowrap p-0 ${ROW_H}`}>
-                    <ThemesCell
-                      ids={column.themeIds}
-                      selected={column.key === brand}
-                      brandName={column.name}
-                      onOpen={onOpenColorTheme ? (appearance) => onOpenColorTheme(column.key, appearance) : undefined}
-                    />
-                  </td>
-                ))}
-                <td className={`border-b border-l ${RULE} bg-app ${ROW_H}`} />
-              </tr>
-              {ROWS.map((row, index) => {
-                const last = index === ROWS.length - 1
-                return (
-                  <tr key={row}>
-                    <th
-                      scope="row"
-                      className={`sticky left-0 z-[1] bg-app px-3 text-left text-caption font-medium text-fg-muted ${ROW_H} ${last ? '' : `border-b ${RULE}`}`}
-                    >
-                      {rowLabel[row]}
-                    </th>
-                    {columns.map((column) => {
-                      const selected = column.key === brand
-                      const accentHex = (column.ramp?.[9] ?? store.primaryColor).toUpperCase()
+      <section aria-label={t('Brands')} className="flex w-full min-w-0 flex-col gap-3">
+        <div className="flex min-h-[26rem] w-full min-w-0 overflow-x-auto rounded-2xl border border-line">
+          {cards.map((card) => {
+            const selected = card.key === brand
+            return (
+              <article
+                key={card.key}
+                aria-label={card.name}
+                className={`flex w-[18rem] flex-shrink-0 flex-col border-r border-line ${selected ? 'bg-surface' : 'bg-app'}`}
+                style={{ boxShadow: selected ? `inset 0 2px 0 0 ${card.mark}` : undefined }}
+              >
+                <header className="flex items-center gap-3 border-b border-line px-4 py-4">
+                  <button
+                    type="button"
+                    onClick={() => onSelectBrand(card.key)}
+                    aria-pressed={selected}
+                    title={card.name}
+                    className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left ${FOCUS}`}
+                  >
+                    <ThemeAvatar size={34} ramp={card.ramp} appearance={card.appearance} fallback={store.primaryColor} />
+                    <span className="min-w-0 flex-1 truncate text-title font-semibold text-fg">{card.name}</span>
+                  </button>
+                  {onExportBrand && (
+                    <button type="button" onClick={() => onExportBrand(card.key)} className={`flex-shrink-0 rounded-md px-1.5 py-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS}`}>
+                      {t('Export')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onEditBrand(card.key)}
+                    title={t('Edit brand')}
+                    className={`flex-shrink-0 rounded-lg border border-line px-2.5 py-1 text-caption font-medium text-fg transition-colors hover:bg-fg/[0.05] ${FOCUS}`}
+                  >
+                    {t('Edit')}
+                  </button>
+                </header>
+
+                <div className="border-b border-line px-4 py-3">
+                  <p className="text-caption font-semibold text-fg">{card.origin ?? t('Custom')}</p>
+                  <p className="truncate text-mini text-fg-faint" title={t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}>
+                    {t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
+                  </p>
+                </div>
+
+                <div role="group" aria-label={t(brandThemesSummary(card.themeIds))} className="border-b border-line px-3 py-2.5">
+                  <div className="flex gap-1 rounded-xl border border-line bg-app p-1">
+                    {BRAND_THEME_DEFS.map((def) => {
+                      const on = card.themeIds.includes(def.id)
+                      const lead = on && def.base === card.appearance
+                      const label = t(def.label)
                       return (
-                        <td
-                          key={column.key}
-                          className={`border-l ${RULE} ${selected ? 'bg-surface' : 'bg-app'} whitespace-nowrap p-0 ${ROW_H} ${last ? '' : 'border-b'}`}
+                        <button
+                          key={def.id}
+                          type="button"
+                          disabled={!on || !onOpenColorTheme}
+                          onClick={() => onOpenColorTheme?.(card.key, def.base)}
+                          title={on ? t('Open {theme} colors', { theme: label }) : t('{theme} is not shipped', { theme: label })}
+                          className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption transition-colors disabled:cursor-default ${FOCUS} ${
+                            lead ? 'bg-elevated font-semibold text-fg' : on ? 'text-fg-muted hover:text-fg' : 'text-fg-faint opacity-50'
+                          }`}
                         >
-                          <SummaryCell
-                            row={row}
-                            facts={column.facts}
-                            ramp={column.ramp}
-                            themeIds={column.themeIds}
-                            accentHex={accentHex}
-                            failing={selected && row === 'color' ? failing : 0}
-                            hint={row === 'color' && onOpenBrand ? t('Brand preview') : openHint}
-                            onClick={() => open(column.key, () => {
-                              if (row === 'color') (onOpenBrand ? onOpenBrand() : onOpenFoundation('color'))
-                              else onOpenFoundation(row)
-                            })}
-                          />
-                        </td>
+                          <AppearanceGlyph kind={def.base} size={13} />
+                          {label}
+                        </button>
                       )
                     })}
-                    <td className={`border-l ${RULE} bg-app ${ROW_H} ${last ? '' : 'border-b'}`} />
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+
+                <ul className="flex flex-col">
+                  {COLLECTIONS.map((collection) => (
+                    <li key={collection.key} className="border-b border-line last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => openRow(card.key, collection.foundation)}
+                        title={t('Open in Docs')}
+                        className={`flex h-12 w-full items-center gap-3 px-4 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
+                      >
+                        <CollectionGlyph which={collection.key} ramp={card.ramp} heading={card.facts.fonts.heading} />
+                        <span className="min-w-0 flex-1 truncate text-ui text-fg">{collection.label}</span>
+                        <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{card.counts[collection.key]}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {selected && failing > 0 && (
+                  <div className="mt-auto flex items-center gap-2 border-t border-line px-4 py-2.5">
+                    <Tag tone="warning">{t('{n} pairs under AA', { n: failing })}</Tag>
+                    {onOpenStatus && <button type="button" onClick={onOpenStatus} className={TEXT_LINK}>{t('See what fails')}</button>}
+                  </div>
+                )}
+              </article>
+            )
+          })}
+
+          {/* The slot a new brand fills, like an empty Figma mode column. */}
+          <div
+            className="flex min-w-[16rem] flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center"
+            style={{ backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.4px)', backgroundSize: '18px 18px' }}
+          >
+            {onAddBrand && (
+              <button
+                type="button"
+                onClick={onAddBrand}
+                disabled={Boolean(addBrandBlocked)}
+                title={addBrandBlocked ?? t('Add brand')}
+                aria-label={t('Add brand')}
+                className={`grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+              >
+                <PlusGlyph />
+              </button>
+            )}
+            <p className="text-ui font-semibold text-fg">{t('Add brand')}</p>
+            {guest ? (
+              <button
+                type="button"
+                onClick={() => goToLogin('save-library')}
+                className={`${TEXT_LINK} text-caption`}
+              >
+                {t('Sign in to save these brands')}
+              </button>
+            ) : maxBrands ? (
+              <p className="text-caption tabular-nums text-fg-faint">{t('{n} of {max} brands used', { n: cards.length, max: maxBrands })}</p>
+            ) : null}
+          </div>
         </div>
-        {failing > 0 && onOpenStatus && (
-          <button type="button" onClick={onOpenStatus} className={`${TEXT_LINK} self-start`}>{t('See what fails')}</button>
-        )}
       </section>
     </>
-  )
-}
-
-function SummaryCell({
-  row, facts, ramp, themeIds, accentHex, failing, hint, onClick,
-}: {
-  row: RowKey
-  facts: FoundationFacts
-  ramp: ColorScale | undefined
-  themeIds: readonly string[]
-  accentHex: string
-  failing: number
-  hint: string
-  onClick: () => void
-}) {
-  const { t } = useI18n()
-  const fonts = facts.fonts.heading === facts.fonts.body
-    ? facts.fonts.body
-    : `${facts.fonts.heading} · ${facts.fonts.body}`
-  const radius = `${facts.radius.boxes} · ${facts.radius.fields} · ${facts.radius.selectors}`
-  const spacing = `${facts.spacing ? t(facts.spacing) : t('Custom')}${facts.fieldHeight ? ` · ${facts.fieldHeight}` : ''}`
-  const shadow = facts.shadow ? t(facts.shadow) : t('Custom')
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={row === 'radius'
-        ? `${t('Boxes')} ${facts.radius.boxes} · ${t('Fields')} ${facts.radius.fields} · ${t('Selectors')} ${facts.radius.selectors}`
-        : hint}
-      className={`flex h-full w-full min-w-0 items-center gap-2 px-3 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
-    >
-      {row === 'color' && (
-        <>
-          <span aria-hidden className="flex h-3 w-14 flex-shrink-0 overflow-hidden rounded-sm border border-fg/10">
-            {TONES.map((tone) => <span key={tone} className="h-full flex-1" style={{ background: ramp?.[tone] ?? 'transparent' }} />)}
-          </span>
-          <span className="sr-only">{t(brandThemesSummary(themeIds))}</span>
-          <span className="min-w-0 flex-1 truncate text-caption text-fg-muted">{accentHex}</span>
-          {failing > 0 && <Tag tone="warning">{t('{n} pairs under AA', { n: failing })}</Tag>}
-        </>
-      )}
-      {row === 'radius' && (
-        <>
-          <span
-            aria-hidden
-            className="block h-3.5 w-3.5 flex-shrink-0 border-l-2 border-t-2 border-fg-muted"
-            style={{ borderTopLeftRadius: Math.min(facts.radius.boxes, 8) }}
-          />
-          <span className="min-w-0 flex-1 truncate text-caption tabular-nums text-fg-muted">{radius}</span>
-        </>
-      )}
-      {row === 'spacing' && (
-        <span className="min-w-0 flex-1 truncate text-caption text-fg-muted">{spacing}</span>
-      )}
-      {row === 'shadow' && (
-        <>
-          <span aria-hidden className="light flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md bg-elevated">
-            <span className="block h-2.5 w-2.5 rounded-[3px] bg-app" style={{ boxShadow: facts.shadowMd }} />
-          </span>
-          <span className="min-w-0 flex-1 truncate text-caption text-fg-muted">{shadow}</span>
-        </>
-      )}
-      {row === 'typography' && (
-        <>
-          <span aria-hidden className="flex-shrink-0 text-ui font-semibold leading-none text-fg" style={{ fontFamily: fontStack(facts.fonts.heading) }}>Aa</span>
-          <span className="min-w-0 flex-1 truncate text-caption text-fg-muted">{fonts}</span>
-        </>
-      )}
-    </button>
   )
 }

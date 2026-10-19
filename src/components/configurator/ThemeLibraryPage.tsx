@@ -10,6 +10,7 @@ import { openStyleForEditing } from '../../lib/adoptPreset'
 import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { COLLAGE_TILE_COUNT, startRandomTheme } from '../../lib/randomTheme'
 import { backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
+import { useEntitlement } from '../../lib/useEntitlement'
 import { goToLogin, useAccess, useOneThemePlan, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
@@ -1256,6 +1257,8 @@ export default function ThemeLibraryPage({
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
   const { guest, tier } = useAccess()
+  // How many brands this plan holds — the Overview's empty slot states it.
+  const { maxThemes } = useEntitlement()
   const needsPro = useNeedsProForAnotherTheme()
   const brandsLine = useBrandsLine()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
@@ -1596,6 +1599,10 @@ export default function ThemeLibraryPage({
         onEditBrand={onOpenPreview}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
+        onExportBrand={onGetCode}
+        onAddBrand={onCreateTheme}
+        addBrandBlocked={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
+        maxBrands={maxThemes}
         overviewHeader={() => (
           <>
             {confirmDeleteSystem && (
@@ -1631,7 +1638,6 @@ export default function ThemeLibraryPage({
                 </div>
               )}
             </AnimatePresence>
-            <GuestAccountCard />
             <AccountCloudStatus />
           </>
         )}
