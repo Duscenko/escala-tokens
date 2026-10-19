@@ -637,6 +637,10 @@ const isFillRole = (id: string) => id.startsWith('surface.') || /\.surface(-|$)/
 export function chromeIds(candidates: string[], where: PaintSlot): string[] {
   const fits = where === 'ink' ? isInkRole : where === 'stroke' ? isStrokeRole : isFillRole
   const preferred = candidates.filter(fits)
+  // Chrome text (a heading, a caption) is page ink; the on-fill inks
+  // (`content.on-action`, `*.on-solid`, `content.inverse`) only share its hex.
+  const plain = where === 'ink' ? preferred.filter((id) => !/(^|\.)on-|inverse/.test(id)) : preferred
+  if (plain.length) return plain
   if (preferred.length) return preferred
   // Nothing of the slot's own family shares the hex: never name a role of
   // the WRONG family either (a surface for an ink, a content role for a fill).
@@ -916,9 +920,17 @@ export function inspectPage(t: PreviewTokens): Inspection {
 
 /** A group's members and their combined roles. */
 export interface GroupInspection {
+  /** What the CONTAINER itself paints — its fill, edge, corner and the text
+   *  that is not a component (its heading, a caption). Not the union of its
+   *  children: two cards holding the same controls read near-identical that
+   *  way, which says nothing about the card you picked. */
   roles: InspectedRole[]
   /** Catalogue keys of the inspectable components inside, in DOM order. */
   members: string[]
+  /** The member elements, same order — the panel lists them to select one. */
+  memberEls: Element[]
+  /** The container's own first line of text (`Verify account`), or null. */
+  title: string | null
 }
 
 /** One WCAG contrast pair the inspector can verify from resolved roles. */
@@ -1051,8 +1063,13 @@ export function accessibilityReport(roles: InspectedRole[], pageCss: string): Ac
   return { contrasts, touch }
 }
 
+/**
+ * A container (a collage module): its OWN paints, plus which components it
+ * holds. Membership is read from the DOM (`[data-inspect]` descendants), never
+ * declared on the container, so the list cannot name a member it no longer
+ * renders. Selecting a member is how you read that member's tokens.
+ */
 export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
-  const members: string[] = []
   const roles: InspectedRole[] = []
   const arch = t.archTokens
   if (arch) {
@@ -1066,26 +1083,27 @@ export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
       }
     }
   }
-  for (const child of Array.from(el.querySelectorAll('[data-inspect]'))) {
-    const key = child.getAttribute('data-inspect') || ''
-    if (!key) continue
-    members.push(key)
-    // Unmeasured children dump the component's WHOLE union — six variants
-    // that aren't on screen. A GradientAvatar with a CSS gradient (no
-    // `backgroundColor` to match) would otherwise inject `content.primary`
-    // as the accent hex, which is the cyan swatch on a white heading.
-    const inspection = inspectElement(t, key, child)
-    if (!inspection.measured) continue
-    for (const role of inspection.roles) {
-      if (roles.some((existing) => existing.id === role.id)) continue
-      roles.push(role)
-    }
-  }
+  const memberEls = Array.from(el.querySelectorAll('[data-inspect]'))
+    .filter((child) => !!child.getAttribute('data-inspect'))
+  const members = memberEls.map((child) => child.getAttribute('data-inspect') as string)
   // The frame itself — a module's own corner, a title that isn't a
-  // component. Nested markers were already measured above.
+  // component. Nested markers are deliberately NOT folded in.
   for (const role of measureGeometry(t, el)) {
     if (roles.some((existing) => existing.id === role.id)) continue
     roles.push(role)
   }
-  return { roles, members }
+  return { roles, members, memberEls, title: groupTitle(el) }
+}
+
+/** The first run of text the container paints itself (not inside a
+ *  component) — what a person would call the card. */
+function groupTitle(el: Element): string | null {
+  const nodes = [el, ...Array.from(el.querySelectorAll('*')).slice(0, MAX_NODES)]
+  for (const node of nodes) {
+    if (node !== el && node.closest('[data-inspect]')) continue
+    if (!paintsText(node)) continue
+    const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim()
+    if (text) return text.length > 40 ? `${text.slice(0, 39)}…` : text
+  }
+  return null
 }
