@@ -589,7 +589,11 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compa
         className={
           compact
             ? 'w-[4.25rem] flex-shrink-0 bg-transparent text-caption font-mono tabular-nums text-fg px-1 py-0 outline-none'
-            : 'flex-1 min-w-0 bg-app text-body font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors'
+            // One field look on every row: in light `bg-app` matched the plain
+            // row and only showed as a pill on the striped one. The field takes
+            // its own fill + a resting hairline, so row parity can't change it.
+            // (Dark already read as a pill on both — its edge stays hidden.)
+            : 'flex-1 min-w-0 bg-input-bg text-body font-mono tabular-nums text-fg rounded-md border border-line dark:border-transparent hover:border-line-strong focus:border-fg px-1.5 py-1 outline-none transition-colors'
         }
       />
       {!compact && (
