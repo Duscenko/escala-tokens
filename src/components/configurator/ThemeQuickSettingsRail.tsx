@@ -14,15 +14,14 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit } from '../../lib/editHistory'
-import { Fragment, createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, darkShadow, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, colorAtHue, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
@@ -86,9 +85,11 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, SELECT_SHELL, SELECT_FOCUS, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_SHELL, SELECT_FOCUS, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
+import { PickerField } from '../ui/PickerField'
+import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
@@ -536,46 +537,46 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
   )
 }
 
-function SpacingModeGrid({ value, onChange }: {
+function SpacingModeGrid({ value, spacing, sizes, stroke, onChange }: {
   value: SpacingMode['id'] | null
+  /** The theme's own scale, so a drawn inset is the px it will really be. */
+  spacing: Record<string, string>
+  sizes: Record<string, string>
+  stroke: Record<string, string> | undefined
   onChange: (mode: SpacingMode) => void
 }) {
   const { t } = useI18n()
-  const order: SpacingMode['id'][] = ['compact', 'airy', 'quiet', 'bold']
+  const order: SpacingMode['id'][] = ['compact', 'quiet', 'airy', 'bold']
+  const insetPx = (step: string) => parseFloat(spacing[step] ?? '') || Number(step) * 4
+  const current = SPACING_MODES.find((m) => m.id === value)
   return (
     <div>
-      <div role="radiogroup" aria-label={t('Spacing mode')} className="grid grid-cols-2 gap-1.5">
-        {order.map((id) => {
+      <PickerField
+        label="Mode"
+        ariaLabel="Spacing mode"
+        value={value ?? ''}
+        valueLabel={t('Custom')}
+        leading={current
+          ? <SpacingModeGlyph size="sm" fieldBase={current.fieldBase} insetPx={insetPx(current.insetStep)} border={current.border} />
+          : <SpacingModeGlyph size="sm" fieldBase={inferSizeBase(sizes) ?? SIZE_DEFAULT_BASE} insetPx={12} border={parseFloat(stroke?.sm ?? '1') || 1} />}
+        options={order.map((id) => {
           const mode = SPACING_MODES.find((m) => m.id === id)!
-          const on = value === id
-          // The drawing, at ~1/4 scale: inset, control height and stroke all
-          // come from the mode itself.
-          const inset = Math.round((Number(mode.insetStep) * 4) / 3)
-          const control = Math.round((mode.fieldBase * 10) / 3)
-          return (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              title={t(mode.description)}
-              onClick={() => onChange(mode)}
-              className={`flex flex-col items-start gap-1.5 rounded-lg border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                on ? 'border-accent-ui bg-accent-ui/[0.08]' : 'border-line hover:border-line-strong hover:bg-elevated'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="flex w-full flex-col justify-end rounded-[4px] bg-fg/[0.05]"
-                style={{ height: 34, padding: inset, border: `${mode.border}px solid color-mix(in srgb, var(--fg) 45%, transparent)` }}
-              >
-                <span className="block rounded-[2px] bg-fg/30" style={{ height: control }} />
-              </span>
-              <span className={`text-caption font-medium ${on ? 'text-fg' : 'text-fg-muted'}`}>{t(mode.label)}</span>
-            </button>
-          )
+          return {
+            value: id,
+            label: mode.label,
+            description: `${t('Field')} ${Math.round(mode.fieldBase * 10)} · ${t('Card')} ${insetPx(mode.insetStep)} · ${t('Border')} ${mode.border}`,
+          }
         })}
-      </div>
+        optionVisual={(id, selected) => {
+          const mode = SPACING_MODES.find((m) => m.id === id)!
+          return <SpacingModeGlyph fieldBase={mode.fieldBase} insetPx={insetPx(mode.insetStep)} border={mode.border} selected={selected} />
+        }}
+        note="Four ready-made densities. Each sets field size, card padding and border width together — ordinary tokens, still editable in Variables."
+        onChange={(id) => {
+          const mode = SPACING_MODES.find((m) => m.id === id)
+          if (mode) onChange(mode)
+        }}
+      />
       {value === null && (
         <p className="mt-1.5 text-micro text-fg-faint">{t('Custom — values set by hand. Pick a mode to reset all three.')}</p>
       )}
@@ -1159,57 +1160,6 @@ function RangeInput({ min, max, step, value, onChange, onScrubStart, onScrubEnd,
   )
 }
 
-function Menu<T extends string>({
-  value, options, onChange, ariaLabel, render,
-}: {
-  value: string
-  /** `group` is an optional eyebrow the list breaks on. With 65 typefaces a
-   *  flat column is a wall you scroll rather than a set you scan; the header
-   *  only renders when it CHANGES, so an ungrouped caller is unaffected. */
-  options: { value: T; label: string; description?: string; group?: string }[]
-  onChange: (value: T) => void
-  ariaLabel: string
-  render?: (value: string) => React.CSSProperties
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const close = (event: MouseEvent) => { if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false) }
-    const esc = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', close)
-    document.addEventListener('keydown', esc)
-    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc) }
-  }, [open])
-  return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} className={SELECT_TRIGGER}>
-        <span className="min-w-0 flex-1 truncate text-body text-fg" style={render?.(value)}>{options.find((option) => option.value === value)?.label ?? value}</span>
-        <Chevron open={open} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.12 }} role="listbox" className={`absolute z-40 top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto ${SELECT_LIST}`}>
-            {options.map((option, index) => (
-              <Fragment key={option.value}>
-              {option.group && option.group !== options[index - 1]?.group ? (
-                <div className={`px-2.5 pb-1 text-micro font-semibold uppercase tracking-[0.14em] text-fg-faint ${index ? 'mt-2 border-t border-line pt-2' : 'pt-1'}`}>
-                  {option.group}
-                </div>
-              ) : null}
-              <button type="button" role="option" aria-selected={option.value === value} onClick={() => { onChange(option.value); setOpen(false) }} className={`${SELECT_OPTION} ${option.value === value ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`} style={render?.(option.value)}>
-                <span className="block text-body">{option.label}</span>
-                {option.description ? <span className="block mt-0.5 text-mini text-fg-faint">{option.description}</span> : null}
-              </button>
-              </Fragment>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
 /** A base-unit card whose preview uses the thing being sized: compact controls
  * for fields and actual square selectors. This keeps the ramp legible without
  * borrowing the generic analytics-bar language used by component libraries. */
@@ -1338,40 +1288,33 @@ const PLATFORM_LABEL: Record<string, string> = { desktop: 'Desktop', tablet: 'Ta
  * a sample in the role's own family and weight, and size / line height /
  * letter spacing at the previewed platform.
  */
+/** The Text scale field's leading mark: an "A" over a rule. */
+function TextScaleGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M4 11.5L8 2.5L12 11.5M5.6 8h4.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2.5 14h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function TypeScaleCard({
-  typography, platform, onScrub, onScrubStart, onScrubEnd,
+  typography, platform,
 }: {
   typography: TypePrimitives & { roles?: object }
   platform: string
-  onScrub: (modeIndex: number) => void
-  onScrubStart?: () => void
-  onScrubEnd?: () => void
 }) {
   const { t } = useI18n()
-  const mode = inferTypeScaleMode(typography.sizes)
-  const index = mode ? TYPE_SCALE_MODES.findIndex((m) => m.key === mode) : 2
   const groups = TYPE_ROLE_GROUPS.map((group) => ({
     ...group,
     rows: typeRolesInGroup(group.id).map((role) => ({ key: role.key, label: role.label, style: typeRoleStyle(typography, role.key, platform) })),
   }))
   return (
     <div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-mini font-medium text-fg-muted">{t(mode ? TYPE_SCALE_MODES[index].label : 'Custom')}</span>
+      <div className="flex items-center justify-end gap-2">
         <span className="text-mini text-fg-faint">{t(PLATFORM_LABEL[asTypeViewport(platform)])}</span>
       </div>
-      <RangeInput
-        min={0}
-        max={TYPE_SCALE_MODES.length - 1}
-        step={1}
-        value={index}
-        onChange={onScrub}
-        onScrubStart={onScrubStart}
-        onScrubEnd={onScrubEnd}
-        ariaLabel="Type scale"
-        className={ROW_GAP_CONTROL}
-      />
-      <div className="mt-3 flex flex-col gap-2">
+      <div className="mt-1.5 flex flex-col gap-2">
         {groups.map((group) => (
           <section key={group.id} aria-label={t(group.label)} className="rounded-lg border border-line">
             <div className="flex items-center justify-between px-2.5 pt-2 pb-1">
@@ -1487,43 +1430,37 @@ function RadiusCard({
   const { t } = useI18n()
   const matched = matchRadiusRolePreset(radiusRoles)
   const [fineOpen, setFineOpen] = useState(matched === null)
+  // What each axis resolves to now, for the closed field's mark when no preset matches.
+  const radiusPx = (key: string) => {
+    const group = RADIUS_GROUPS.find((g) => g.key === key)
+    return group ? Math.round(parseFloat(radius[radiusRoleAt(radiusRoles, radiusRoleViewports, group.roles[0], platform)] ?? '') || 0) : 0
+  }
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Radius preset">
-        {RADIUS_ROLE_PRESETS.map((preset) => {
+      <PickerField
+        label="Preset"
+        ariaLabel="Radius preset"
+        value={matched ?? ''}
+        valueLabel={t('Custom')}
+        leading={(() => {
+          const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === matched)
+          const [boxes, fields, selectors] = preset ? radiusPresetPx(preset) : [radiusPx('boxes'), radiusPx('fields'), radiusPx('selectors')]
+          return <RadiusPresetGlyph size="sm" boxes={boxes} fields={fields} selectors={selectors} />
+        })()}
+        options={RADIUS_ROLE_PRESETS.map((preset) => {
           const [boxes, fields, selectors] = radiusPresetPx(preset)
-          const on = matched === preset.label
-          return (
-            <button
-              key={preset.label}
-              type="button"
-              aria-pressed={on}
-              title={`Boxes ${boxes} · Fields ${fields} · Selectors ${selectors}`}
-              onClick={() => onPreset(preset.label)}
-              className={`flex min-w-0 flex-col items-start gap-1.5 rounded-lg border p-2 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                on
-                  ? 'border-accent-ui bg-accent-ui/[0.08] text-fg'
-                  : 'border-line text-fg-muted hover:border-line-strong hover:bg-elevated'
-              }`}
-            >
-              <span aria-hidden className="flex h-[34px] w-full items-end">
-                <span
-                  className="block h-full w-full border-l-2 border-t-2"
-                  style={{
-                    borderColor: 'color-mix(in srgb, var(--fg) 55%, transparent)',
-                    borderTopLeftRadius: Math.min(boxes, CORNER_MAX),
-                    background: 'color-mix(in srgb, var(--fg) 5%, transparent)',
-                  }}
-                />
-              </span>
-              <span>{preset.label}</span>
-              <small className="-mt-0.5 block text-micro tabular-nums opacity-65">{boxes} · {fields} · {selectors}</small>
-            </button>
-          )
+          return { value: preset.label, label: preset.label, description: `${boxes} · ${fields} · ${selectors}px` }
         })}
-      </div>
+        optionVisual={(label, selected) => {
+          const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label)!
+          const [boxes, fields, selectors] = radiusPresetPx(preset)
+          return <RadiusPresetGlyph boxes={boxes} fields={fields} selectors={selectors} selected={selected} />
+        }}
+        note="A preset sets boxes, fields and selectors together. Fine-tune rounds each one on its own."
+        onChange={onPreset}
+      />
       {matched === null && (
-        <p className="text-mini text-fg-faint">Custom — corners were set by hand below.</p>
+        <p className="-mt-1.5 text-mini text-fg-faint">{t('Custom — corners were set by hand below.')}</p>
       )}
       {/* Same disclosure as Colour's Fine-tune: a title, what is inside it, and
           a Show / Hide chip. Opens by itself when the corners were set by hand,
@@ -1590,36 +1527,31 @@ function RadiusCard({
 }
 
 function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; onChange: (value: Record<string, string>) => void }) {
+  const { t } = useI18n()
   const active = matchShadowPreset(shadows)
-  // These tiles sit on the CHROME, so they follow the chrome's appearance, not
+  // The drawings sit on the CHROME, so they follow the chrome's appearance, not
   // the previewed theme's. The stored ramp is the LIGHT one — a near-black
-  // shadow that is mathematically the dark page — so in dark chrome every
-  // option read as the same flat square. `darkShadow` is the same twin the
-  // board, the export and Variables' Shadow table use.
+  // shadow that is mathematically the dark page — so `darkShadow` (the twin the
+  // board, the export and Variables' Shadow table use) paints it in dark chrome.
   const chromeDark = useTheme() === 'dark'
   return (
-    <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Shadow depth">
-      {SHADOW_PRESETS.map((preset) => {
-        const selected = active === preset.label
-        return (
-          <button
-            key={preset.label}
-            type="button"
-            aria-pressed={selected}
-            title={preset.description}
-            onClick={() => onChange({ ...preset.values })}
-            className={`flex min-w-0 flex-col items-center gap-2 rounded-lg border px-1 py-2 text-micro font-medium transition-[border-color,background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-line-strong bg-elevated text-fg' : 'border-line bg-app text-fg-faint hover:border-line-strong hover:text-fg'}`}
-          >
-            <span
-              className="h-6 w-6 rounded bg-surface"
-              style={{ boxShadow: chromeDark ? darkShadow(preset.values.md) : preset.values.md }}
-              aria-hidden
-            />
-            <span className="truncate">{preset.label}</span>
-          </button>
-        )
-      })}
-    </div>
+    <PickerField
+      label="Depth"
+      ariaLabel="Shadow depth"
+      value={active ?? ''}
+      valueLabel={t('Custom')}
+      leading={<ShadowPresetGlyph size="sm" values={shadows} dark={chromeDark} />}
+      options={SHADOW_PRESETS.map((preset) => ({ value: preset.label, label: preset.label, description: preset.description }))}
+      optionVisual={(label, selected) => {
+        const preset = SHADOW_PRESETS.find((p) => p.label === label)!
+        return <ShadowPresetGlyph values={preset.values} dark={chromeDark} selected={selected} />
+      }}
+      note="Grades the complete elevation ramp used by cards, menus, modals, and toasts."
+      onChange={(label) => {
+        const preset = SHADOW_PRESETS.find((p) => p.label === label)
+        if (preset) onChange({ ...preset.values })
+      }}
+    />
   )
 }
 
@@ -2806,41 +2738,58 @@ export default function ThemeQuickSettingsRail({
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
         <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <SettingItem label="Body font">
-            <Menu
+          {/* One stack of labelled fields (the label pill sits INSIDE the
+              field, like Colour's role rows), then the roles they grade. The
+              notes that used to be hover hints now open with the list, where
+              the choice is made. */}
+          <div className="flex min-w-0 flex-col gap-1.5 px-5 py-2.5">
+            <PickerField
+              label="Body"
               ariaLabel="Body font family"
               value={typography.fontFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
               options={familyOptions(typography.fontFamily)}
+              searchPlaceholder="Search fonts"
+              emptyLabel="No fonts match"
+              note="Headings, body text and controls."
               onChange={(value) => commit('Typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, fontFamily: value }) })}
             />
-          </SettingItem>
-
-          {/* Only the Display role reads this family (`font-family-heading`);
-              H1–H6 follow the body stack — the same rule Variables and Docs
-              state. It was labelled "Heading font", which promised a change
-              to every heading that never happened. */}
-          <SettingItem label="Display font" hint="Display titles only. Headings, body and controls use the body font.">
-            <Menu
+            {/* Only the Display role reads this family (`font-family-heading`);
+                H1–H6 follow the body stack — the same rule Variables and Docs
+                state. */}
+            <PickerField
+              label="Display"
               ariaLabel="Display font family"
               value={headingFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
               options={familyOptions(headingFamily)}
+              searchPlaceholder="Search fonts"
+              emptyLabel="No fonts match"
+              note="Display titles only. Headings, body and controls use the body font."
               onChange={(value) => commit('Heading typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, headingFontFamily: value }) })}
             />
-          </SettingItem>
-
-          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Rows show size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.">
-            <TypeScaleCard
-              typography={typography}
-              platform={previewPlatform}
-              onScrubStart={() => beginScrub('Type scale updated')}
-              onScrubEnd={endScrub}
-              onScrub={(i) => applyScrub('Type scale updated', (themeKey) => {
-                const { sizes: nextSizes, lineHeights } = buildTypeScale(TYPE_SCALE_MODES[i].factor)
+            <PickerField
+              label="Text scale"
+              ariaLabel="Type scale"
+              value={inferTypeScaleMode(typography.sizes) ?? ''}
+              valueLabel={t('Custom')}
+              leading={<TextScaleGlyph />}
+              options={TYPE_SCALE_MODES.map((mode) => ({
+                value: mode.key,
+                label: mode.label,
+                description: `×${mode.factor} · ${t('body')} ${parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 0}px`,
+              }))}
+              note="Grades every caption, label, body style and heading together."
+              onChange={(key) => commit('Type scale updated', (themeKey) => {
+                const mode = TYPE_SCALE_MODES.find((m) => m.key === key)
+                if (!mode) return
+                const { sizes: nextSizes, lineHeights } = buildTypeScale(mode.factor)
                 setTypography(themeKey, { ...typography, sizes: nextSizes, lineHeights })
               })}
             />
+          </div>
+          <SettingItem label="Type roles" hint="Size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.">
+            <TypeScaleCard typography={typography} platform={previewPlatform} />
           </SettingItem>
         </EditionCard>
           )
@@ -2848,7 +2797,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Radius" foundationKey="radius" open={activePanel === 'radius'} summary={t(matchRadiusRolePreset(foundations.radiusRoles) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <SettingItem label="Radius" hint="The preset sets the scale; boxes, fields and selectors then round independently on it.">
+          <SettingItem>
             <RadiusCard
               radius={radius}
               radiusRoles={foundations.radiusRoles}
@@ -2863,7 +2812,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Shadow" foundationKey="shadow" open={activePanel === 'shadow'} summary={t(matchShadowPreset(shadows) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
+          <SettingItem>
             <ShadowCard
               shadows={shadows}
               onChange={(value) => commit('Shadow depth updated', (themeKey) => setShadows(themeKey, value))}
@@ -2880,9 +2829,12 @@ export default function ThemeQuickSettingsRail({
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
             ]} />
           </SettingItem>
-          <SettingItem label="Mode" hint="Four ready-made densities. Each sets field size, card padding (Spacing · Inset surface) and border width together — ordinary tokens, still editable in Variables.">
+          <SettingItem>
             <SpacingModeGrid
               value={matchSpacingMode(sizes, spacingRoles, stroke)}
+              spacing={spacing}
+              sizes={sizes}
+              stroke={stroke}
               onChange={(mode) => commit(`Spacing mode: ${mode.label}`, (themeKey) => {
                 setSizes(themeKey, buildSizesFromBase(mode.fieldBase))
                 setContainerInset(themeKey, SPACING_STEPS.indexOf(mode.insetStep))
@@ -2954,9 +2906,11 @@ export default function ThemeQuickSettingsRail({
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
           </div>
-          <SettingItem label="Icon weight" hint="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision.">
-            <Menu
+          <div className="min-w-0 px-5 py-2.5">
+            <PickerField
+              label="Weight"
               ariaLabel="Icon weight"
+              note="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision."
               value={iconWeight ?? 'regular'}
               options={PHOSPHOR_WEIGHTS.map((weight) => ({
                 value: weight,
@@ -2964,7 +2918,7 @@ export default function ThemeQuickSettingsRail({
               }))}
               onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
             />
-          </SettingItem>
+          </div>
           <SettingItem label="Icon sizes" hint="Three sizes that follow your control height — larger buttons and fields get larger glyphs, smaller ones smaller. The same size on Desktop, Tablet and Mobile.">
             <IconSizeLadder weight={iconWeight ?? 'regular'} sizes={sizes} />
           </SettingItem>
