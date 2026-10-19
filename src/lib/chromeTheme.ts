@@ -39,7 +39,14 @@ export const CHROME_ROLES = {
   '--panel': 'surface.layer-1',
   '--chip-rest': 'surface.layer-1',
   '--elevated': 'surface.layer-2',
-  '--side-panel': 'surface.layer-2',
+  /**
+   * The raised panel (inspector, Components directory). Dark lifts it one
+   * step toward the viewer (layer-2). Light must NOT: its ladder steps DOWN
+   * (page → layer-1 → layer-2 get darker), so layer-2 painted the whole
+   * inspector mid-grey. In light the panel sits on the page level and its
+   * hairline separates it, exactly like the canvas card beside it (`bg-app`).
+   */
+  '--side-panel': { light: 'surface.page', dark: 'surface.layer-2' },
   '--input-bg': 'surface.input',
   '--fg': 'content.primary',
   '--fg-muted': 'content.secondary',
@@ -58,6 +65,13 @@ export const CHROME_ROLES = {
 } as const
 
 export type ChromeVar = keyof typeof CHROME_ROLES
+type ChromeRole = string | { light: string; dark: string }
+
+/** The role a chrome var reads in one appearance. */
+export function chromeRoleFor(cssVar: ChromeVar, appearance: ChromeAppearance): string {
+  const role: ChromeRole = CHROME_ROLES[cssVar]
+  return typeof role === 'string' ? role : role[appearance]
+}
 export type ChromeAppearance = 'light' | 'dark'
 
 export type ChromeTheme = {
@@ -68,19 +82,23 @@ export type ChromeTheme = {
 export function resolveChromeTheme(): ChromeTheme {
   const light: Record<string, string> = {}
   const dark: Record<string, string> = {}
-  const labels: Record<string, string> = {}
-  for (const [cssVar, role] of Object.entries(CHROME_ROLES)) {
-    const value = ROLES[role]
-    if (!value?.light || !value?.dark) throw new Error(`chrome role ${role} is not in platformFoundations.json`)
-    light[cssVar] = value.light
-    dark[cssVar] = value.dark
-    labels[cssVar] = role
+  const labels: Record<ChromeAppearance, Record<string, string>> = { light: {}, dark: {} }
+  const vars = { light, dark }
+  for (const cssVar of Object.keys(CHROME_ROLES) as ChromeVar[]) {
+    for (const a of ['light', 'dark'] as const) {
+      const role = chromeRoleFor(cssVar, a)
+      const value = ROLES[role]?.[a]
+      if (!value) throw new Error(`chrome role ${role} (${a}) is not in platformFoundations.json`)
+      vars[a][cssVar] = value
+      labels[a][cssVar] = role
+    }
   }
   // `--line-alpha` is the same structural hairline as `--line`.
   light['--line-alpha'] = light['--line']
   dark['--line-alpha'] = dark['--line']
-  labels['--line-alpha'] = 'tracks --line'
-  return { vars: { light, dark }, labels: { light: labels, dark: labels } }
+  labels.light['--line-alpha'] = 'tracks --line'
+  labels.dark['--line-alpha'] = 'tracks --line'
+  return { vars, labels }
 }
 
 function block(selector: string, vars: Record<string, string>, labels: Record<string, string>): string {

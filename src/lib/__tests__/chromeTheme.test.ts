@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { evaluate, wcagRatio } from '../color/apca'
-import { CHROME_ROLES, resolveChromeTheme } from '../chromeTheme'
+import { CHROME_ROLES, chromeRoleFor, resolveChromeTheme } from '../chromeTheme'
 
 const root = resolve(__dirname, '../../..')
 const generated = resolve(root, 'src/lib/chromeTheme.generated.css')
@@ -13,7 +13,9 @@ describe('chrome theme mapping', () => {
   it('reads panel elevation from the platform foundations', () => {
     expect(CHROME_ROLES['--app']).toBe('surface.page')
     expect(CHROME_ROLES['--nav']).toBe('surface.page')
-    expect(CHROME_ROLES['--side-panel']).toBe('surface.layer-2')
+    expect(chromeRoleFor('--side-panel', 'dark')).toBe('surface.layer-2')
+    // Light: the panel sits on the page, never on the downward light layer-2.
+    expect(chromeRoleFor('--side-panel', 'light')).toBe('surface.page')
     expect(CHROME_ROLES['--surface']).toBe('surface.layer-1')
     expect(CHROME_ROLES['--line']).toBe('border.subtle')
     expect(Object.keys(CHROME_ROLES)).not.toContain('--fg-faint')
@@ -63,11 +65,8 @@ describe('chrome contrast (platform foundations)', () => {
     }
   })
 
-  it.fails('light: muted ink on a panel (surface.layer-2) clears WCAG AA', () => {
-    // KNOWN DEFECT in the light foundations: content.secondary #67676a on
-    // surface.layer-2 #cfd0d2 measures 3.65:1. Fix it in the platform
-    // system (lighter layer-2, or a darker content.secondary), re-export,
-    // regenerate — then drop the `.fails`.
+  it('light: muted ink on a panel clears WCAG AA', () => {
+    // Was 3.65:1 while the light panel read surface.layer-2 (#cfd0d2).
     expect(wcagRatio(v('light', '--fg-muted'), v('light', '--side-panel'))).toBeGreaterThanOrEqual(4.5)
   })
 })
