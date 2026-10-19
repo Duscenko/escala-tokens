@@ -893,6 +893,11 @@ export function AboutHome({
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
+                // The headline is the page's first read: a reveal-from-nothing
+                // left it blank (then half-drawn) on the first frames. Painted
+                // from frame one, the sweep is a sheen over text already laid
+                // out at its final size.
+                keepTextVisible
                 className="text-[30px] font-semibold leading-[1.1] tracking-tight sm:text-[38px]"
               />
             </h1>

@@ -197,7 +197,9 @@ export function DiaTextReveal({
   const [activeIndex, setActiveIndex] = useState(0)
   const [measuredWidths, setMeasuredWidths] = useState<number[]>([])
 
-  const sweepPos = useMotionValue(SWEEP_START)
+  // Reduced motion starts AT the end: seeding SWEEP_START and correcting it in
+  // an effect painted one frame of fully transparent text first.
+  const sweepPos = useMotionValue(prefersReducedMotion ? SWEEP_END : SWEEP_START)
 
   const backgroundImage = useTransform(sweepPos, (pos) =>
     buildGradient(
