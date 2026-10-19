@@ -6,7 +6,7 @@ import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
-import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
+import { InspectorModeProvider, InspectorOverlay, INSPECTOR_TOGGLE_ATTR } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
@@ -128,8 +128,8 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
   const hint = disabled && disabledTitle
     ? disabledTitle
     : active
-      ? t('Return to normal interaction on the canvas')
-      : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`
+      ? `${t('Return to normal interaction on the canvas')} (Esc)`
+      : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}. ${t('Esc deselects, Esc again exits')}`
   return (
     <div
       className={`flex h-8 items-center rounded-lg border p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
@@ -146,6 +146,8 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
         aria-pressed={active}
         aria-disabled={disabled}
         aria-label={label}
+        aria-keyshortcuts={active ? 'Escape' : undefined}
+        {...{ [INSPECTOR_TOGGLE_ATTR]: '' }}
         title={hint}
         className={`${HEADER_CONTROL_BTN} ${
           active && !disabled
