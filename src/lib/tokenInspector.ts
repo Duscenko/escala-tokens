@@ -417,8 +417,15 @@ export function rolesForPaints(
     // are one tone): the slot decides which one this paint is. A stroke takes
     // the border role when there is one; a fill or an ink never does.
     const isBorder = (id: string) => id.startsWith('border.') || /\.border(-|$)/.test(id)
-    const slotted = owned.filter((id) => (paint.where === 'stroke') === isBorder(id))
-    for (const id of slotted.length ? slotted : owned) {
+    let slotted = owned.filter((id) => (paint.where === 'stroke') === isBorder(id))
+    // An ink is never a surface. When the declared union only offers a
+    // surface for this hex (`surface.inverse` and `content.secondary` are one
+    // value in dark), the measured glyph is the content role that shares it.
+    if (paint.where === 'ink') {
+      const inks = slotted.filter((id) => !isFillRole(id))
+      slotted = inks.length ? inks : candidates.filter(isInkRole)
+    }
+    for (const id of slotted.length ? slotted : owned.filter((id) => paint.where !== 'ink' || !isFillRole(id))) {
       if (roles.some((role) => role.id === id)) continue
       roles.push({ id, css: paint.css, where: paint.where })
     }
@@ -617,12 +624,24 @@ export function pairTabMenuScopes(
   return out
 }
 
-/** Chrome fills/strokes prefer surface and border roles when several ids
- *  share the hex — a card should name `surface.layer-1`, not whatever
- *  action/content role happens to collide with it. */
-function chromeIds(candidates: string[]): string[] {
-  const preferred = candidates.filter((id) => id.startsWith('surface.') || id.startsWith('border.'))
-  return preferred.length ? preferred : candidates
+/** Which family of role a chrome paint can name when several ids share the
+ *  hex — decided by the SLOT it was painted in. A card fill names
+ *  `surface.layer-1`, a stroke a `border.*`, and an INK a `content.*` (or a
+ *  status ink): `surface.inverse` and `content.secondary` are one hex in dark,
+ *  and a muted caption reported as `surface.inverse` read as text painted with
+ *  a surface token. */
+const isInkRole = (id: string) => id.startsWith('content.') || /\.(content|on-solid)$/.test(id)
+const isStrokeRole = (id: string) => id.startsWith('border.') || /\.border(-|$)/.test(id)
+const isFillRole = (id: string) => id.startsWith('surface.') || /\.surface(-|$)/.test(id)
+
+export function chromeIds(candidates: string[], where: PaintSlot): string[] {
+  const fits = where === 'ink' ? isInkRole : where === 'stroke' ? isStrokeRole : isFillRole
+  const preferred = candidates.filter(fits)
+  if (preferred.length) return preferred
+  // Nothing of the slot's own family shares the hex: never name a role of
+  // the WRONG family either (a surface for an ink, a content role for a fill).
+  const neutral = candidates.filter((id) => !(where === 'ink' ? isFillRole(id) || isStrokeRole(id) : isInkRole(id)))
+  return neutral.length ? neutral : candidates
 }
 
 /** A corner, a text run, or the element's own height, already in px. */
@@ -902,16 +921,6 @@ export interface GroupInspection {
   members: string[]
 }
 
-/**
- * Every role painted by the components INSIDE a container — the answer to
- * "what does this whole cluster consume", which is the question you're asking
- * when you point at the box rather than at one control in it.
- *
- * Membership is read from the DOM (`[data-inspect]` descendants), never
- * declared on the container: a module that gains a component gains its roles
- * here with nothing to update, and a label listing components a module no
- * longer holds is impossible to write.
- */
 /** One WCAG contrast pair the inspector can verify from resolved roles. */
 export interface ContrastCheck {
   id: string
@@ -1051,7 +1060,7 @@ export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
     for (const paint of observeChromePaints(el)) {
       const candidates = index.get(paint.key)
       if (!candidates) continue
-      for (const id of chromeIds(candidates)) {
+      for (const id of chromeIds(candidates, paint.where)) {
         if (roles.some((existing) => existing.id === id)) continue
         roles.push({ id, css: paint.css, where: paint.where })
       }

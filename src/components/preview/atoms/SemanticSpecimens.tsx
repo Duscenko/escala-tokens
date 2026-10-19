@@ -575,6 +575,7 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const r = radiusRoleOf(t, 'container', '8px')
+  const inverseInk = slotOf(t, 'content-inverse', 'content.inverse', t.surface).css
 
   // **Nothing here substitutes a colour. Every slot renders the token's REAL
   // value, and a failing pair is reported rather than repaired.**
@@ -706,8 +707,10 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
               an inverse surface, the one place the vivid tone is unambiguously
               the right token. */}
           <span style={{ width: 7, height: 7, borderRadius: 999, background: severities[2].dot.css }} />
-          <span style={{ color: t.surface, ...typeOf(t, 'body-sm'), flex: 1 }}>Changes saved.</span>
-          <span style={{ color: t.surface, ...typeOf(t, 'button'), textDecoration: 'underline' }}>Undo</span>
+          {/* Ink on the inverse surface is `content.inverse` — the page fill
+              (`t.surface`) only matched it by value. */}
+          <span style={{ color: inverseInk, ...typeOf(t, 'body-sm'), flex: 1 }}>Changes saved.</span>
+          <span style={{ color: inverseInk, ...typeOf(t, 'button'), textDecoration: 'underline' }}>Undo</span>
         </div>
       </Section>
     </Frame>
