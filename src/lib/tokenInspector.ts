@@ -192,6 +192,13 @@ export function normalizeColor(css: string | null | undefined): string | null {
   return a === 0 ? null : rgbaKey(r, g, b, a)
 }
 
+/** Whether a colour paints with less than full opacity — the swatch then
+ *  sits on a checkerboard so it cannot read as a solid. */
+export function isTranslucent(css: string): boolean {
+  const key = normalizeColor(css)
+  return !!key && parseFloat(key.split(',')[3]) < 0.995
+}
+
 /** value → role ids, built once per resolved token map. Several roles can
  *  share a value, so this is one-to-many by construction. */
 const INDEX_CACHE = new WeakMap<Record<string, string>, Map<string, string[]>>()

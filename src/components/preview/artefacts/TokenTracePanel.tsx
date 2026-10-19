@@ -15,13 +15,16 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 import type { ElementTrace, TraceKind, TraceRow } from '../../../lib/tokenTrace'
-import { displayHex } from '../../../lib/tokenInspector'
+import { displayHex, isTranslucent } from '../../../lib/tokenInspector'
 import { MiddleTruncate } from '../../ui/MiddleTruncate'
 import { useCopyOnClick } from '../../../lib/useCopyOnClick'
 
 const CHECKER: React.CSSProperties = {
+  // The squares are the chrome ink at low strength, so the pattern reads
+  // on a light AND a dark panel (a fixed black tint vanished in dark).
+  ['--inspect-checker' as string]: 'color-mix(in srgb, var(--fg) 16%, transparent)',
   backgroundImage:
-    'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
+    'linear-gradient(45deg,var(--inspect-checker) 25%,transparent 25%),linear-gradient(-45deg,var(--inspect-checker) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--inspect-checker) 75%),linear-gradient(-45deg,transparent 75%,var(--inspect-checker) 75%)',
   backgroundSize: '6px 6px',
   backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
 }
@@ -54,16 +57,15 @@ function stateLabel(state: string): string {
   return state.replace(/^data-/, '')
 }
 
-function isAlpha(css: string): boolean {
-  return /^#[0-9a-f]{8}$/i.test(css.trim()) || /^rgba\(/i.test(css.trim()) || /^#[0-9a-f]{4}$/i.test(css.trim())
-}
 
 /** The glyph left of a value: a real swatch for colour, a drawn mark for a length. */
 function ValueMark({ row }: { row: TraceRow }) {
   const box = 'flex h-5 w-5 flex-shrink-0 items-center justify-center'
   if (row.kind === 'color') {
     return (
-      <span className="h-5 w-5 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/15" style={isAlpha(row.value) ? CHECKER : undefined} aria-hidden>
+      // `ring-line-strong` (the Variables SWATCH edge): a chrome token, so a
+      // near-page swatch keeps an edge in light AND dark.
+      <span className="h-5 w-5 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-line-strong" style={isTranslucent(row.value) ? CHECKER : undefined} aria-hidden>
         <span className="block h-full w-full" style={{ background: row.value }} />
       </span>
     )

@@ -53,7 +53,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  accessibilityReport, displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
+  accessibilityReport, displayHex, inspectElement, isTranslucent, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
@@ -163,8 +163,11 @@ function rectOf(el: Element): DOMRect | null {
 /** Checkerboard behind a translucent swatch — the same cue every other alpha
  *  surface in the app uses, so an 8-digit role can't read as a solid. */
 const CHECKER: React.CSSProperties = {
+  // The squares are the chrome ink at low strength, so the pattern reads
+  // on a light AND a dark panel (a fixed black tint vanished in dark).
+  ['--inspect-checker' as string]: 'color-mix(in srgb, var(--fg) 16%, transparent)',
   backgroundImage:
-    'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
+    'linear-gradient(45deg,var(--inspect-checker) 25%,transparent 25%),linear-gradient(-45deg,var(--inspect-checker) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--inspect-checker) 75%),linear-gradient(-45deg,transparent 75%,var(--inspect-checker) 75%)',
   backgroundSize: '6px 6px',
   backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
 }
@@ -884,8 +887,8 @@ export function InspectorOverlay({
                           ? <LengthMark kind={role.kind} />
                           : (
                             <span
-                              className="h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-black/10 dark:ring-white/15"
-                              style={role.css.length > 7 ? CHECKER : undefined}
+                              className="h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-line-strong"
+                              style={isTranslucent(role.css) ? CHECKER : undefined}
                               aria-hidden
                             >
                               <span className="block h-full w-full" style={{ background: role.css }} />
