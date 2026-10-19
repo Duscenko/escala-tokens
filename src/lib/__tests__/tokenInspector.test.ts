@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accessibilityReport, displayHex, geometryRoles, inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
+import { accessibilityReport, chromeIds, displayHex, geometryRoles, inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
 import type { PreviewTokens } from '../../components/preview/ButtonPreview'
 import { familiesForRampLock, parseRef, pickRampCell } from '../../components/configurator/Step3_SemanticTokens'
 
@@ -465,5 +465,18 @@ describe('geometryRoles', () => {
 
   it('leaves a content-sized box off the size ramp', () => {
     expect(geometryRoles(t, { radii: [], type: [], height: 200 })).toEqual([])
+  })
+})
+
+describe('chromeIds — the paint slot picks the role family (#6)', () => {
+  it('an ink sharing a hex with a surface names the content role', () => {
+    expect(chromeIds(['surface.inverse', 'content.secondary'], 'ink')).toEqual(['content.secondary'])
+  })
+  it('a fill keeps the surface and a stroke the border', () => {
+    expect(chromeIds(['content.primary', 'surface.layer-1'], 'fill')).toEqual(['surface.layer-1'])
+    expect(chromeIds(['surface.layer-2', 'border.subtle'], 'stroke')).toEqual(['border.subtle'])
+  })
+  it('an ink never falls back to a surface when no content role shares it', () => {
+    expect(chromeIds(['surface.inverse', 'action.primary.default'], 'ink')).toEqual(['action.primary.default'])
   })
 })
