@@ -258,9 +258,9 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
  *  Supersedes `ShipsAs`, which listed the same three destinations as static,
  *  hand-written naming PATTERNS in a 3-row table. Two things changed and both
  *  matter: the values are now the user's own, resolved live (see `useIt.ts`),
- *  and each one is copyable. The third tab is **Copy context to Agents**:
- *  the brief for this page (the facts it states, plus the live values), not
- *  a generic MCP call. tokens.json stays named in the Code tab's note.
+ *  and each one is copyable. **Copy context to Agents** is an action beside
+ *  the tabs (not a third tab): the brief for this page (the facts it states,
+ *  plus the live values). tokens.json stays named in the Code tab's note.
  *
  *  Tabs rather than three rows at once, for the same reason Create UI's
  *  Installation block uses them: one destination is the one you're actually
@@ -275,9 +275,15 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
 export function UseItBlock({ useIt, trailingActions }: { useIt: UseIt; trailingActions?: ReactNode }) {
   const { t } = useI18n()
   const [active, setActive] = useState<UseItDestId>('code')
+  // The agent brief is an ACTION, not a place to read: it sat in the tab row
+  // as a third "tab" labelled "Copy context to Agents", which read like a
+  // destination and copied nothing until a second click. It is a button now,
+  // beside the tabs; the tabs are the two destinations you read (Figma, Code).
+  const agent = useIt.destinations.find((d) => d.id === 'ai')
+  const tabs = useIt.destinations.filter((d) => d.id !== 'ai')
   // Falls back to the first destination rather than rendering an empty pane if
   // a caller ever ships a partial descriptor.
-  const dest = useIt.destinations.find((d) => d.id === active) ?? useIt.destinations[0]
+  const dest = tabs.find((d) => d.id === active) ?? tabs[0]
   if (!dest) return null
 
   return (
@@ -285,7 +291,7 @@ export function UseItBlock({ useIt, trailingActions }: { useIt: UseIt; trailingA
       <BlockChrome
         left={
           <div role="tablist" aria-label={t('Destination')} className="flex items-center gap-1">
-            {useIt.destinations.map((d) => (
+            {tabs.map((d) => (
               <button
                 key={d.id}
                 role="tab"
@@ -301,18 +307,47 @@ export function UseItBlock({ useIt, trailingActions }: { useIt: UseIt; trailingA
           </div>
         }
       >
-        <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-3">
           {trailingActions}
           <CopyButton text={dest.code} />
+          {agent && <CopyActionButton text={agent.code} label={t(agent.label)} />}
         </div>
       </BlockChrome>
-      <CodePane code={dest.code} minH={0} scroll={dest.id === 'ai'} />
+      <CodePane code={dest.code} minH={0} />
       {dest.note && (
         <p className="px-4 py-2 text-caption leading-relaxed text-fg-faint border-t border-line break-words">
           {t(dest.note, dest.noteVars)}
         </p>
       )}
     </div>
+  )
+}
+
+/** A bordered action that copies `text` — reads as a button, not as one of
+ *  the tabs beside it. */
+function CopyActionButton({ text, label }: { text: string; label: string }) {
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong px-2.5 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      {copied ? (
+        <><span className="text-status-success" aria-hidden>✓</span> {t('Copied')}</>
+      ) : (
+        <>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2" /></svg>
+          {label}
+        </>
+      )}
+    </button>
   )
 }
 
