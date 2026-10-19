@@ -6,6 +6,7 @@
 
 import { useMemo, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
+import { useAccess } from '../../../lib/access'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import { wcagRatio } from '../../../lib/color/apca'
 import { BRAND_THEME_DEFS, brandThemesSummary, shippedThemes } from '../../../lib/brandThemes'
@@ -158,7 +159,8 @@ export default function OverviewPage({
   onOpenFoundation: (key: string) => void
   /** Color opens the brand preview, on the Color edition. */
   onOpenBrand?: () => void
-  onOpenStatus: () => void
+  /** Absent while the Status board is on hold. */
+  onOpenStatus?: () => void
   /** Makes that brand the one on screen. Stays on Overview when the column name is clicked. */
   onSelectBrand: (key: string) => void
   /** Opens that brand in the editor. */
@@ -170,6 +172,8 @@ export default function OverviewPage({
   onOpenGithub: () => void
 }) {
   const { t } = useI18n()
+  // GitHub is an account feature: a visitor without one sees no chip.
+  const { guest } = useAccess()
   const chrome = useTheme()
   const { store, roles, contrast } = dash
   const brand = roles.brand
@@ -243,12 +247,12 @@ export default function OverviewPage({
                   {/* Where the whole system goes. Figma is not synced from here
                       any more, so only GitHub keeps a chip. */}
                   <div className="flex h-full items-center justify-end gap-1.5 px-3">
-                    <SyncChip
+                    {!guest && <SyncChip
                       name="GitHub"
                       state={dash.github}
                       detail={store.githubRepo ? [store.githubRepo, store.githubLastPushAt ? timeAgo(store.githubLastPushAt) : null].filter(Boolean).join(' · ') : null}
                       onClick={onOpenGithub}
-                    />
+                    />}
                   </div>
                 </th>
               </tr>
@@ -354,7 +358,7 @@ export default function OverviewPage({
             </tbody>
           </table>
         </div>
-        {failing > 0 && (
+        {failing > 0 && onOpenStatus && (
           <button type="button" onClick={onOpenStatus} className={`${TEXT_LINK} self-start`}>{t('See what fails')}</button>
         )}
       </section>

@@ -604,7 +604,7 @@ export default function ExportWizard({
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  {WIZARD_DESTINATIONS.map((f) => {
+                  {WIZARD_DESTINATIONS.filter((f) => f.key !== 'github' || onConnectGithub).map((f) => {
                     const isGitHub = f.key === 'github'
                     const on = isGitHub
                       ? isGitHubDestination

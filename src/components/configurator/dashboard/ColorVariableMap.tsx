@@ -81,7 +81,8 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
   onOpenComponent?: (key: string) => void
   /** Opens this role's primitive picker in the inspector. The map stays. */
   onEditRole?: (roleId: string) => void
-  onOpenStatus: (elementId: string) => void
+  /** Absent while the Status board is on hold. */
+  onOpenStatus?: (elementId: string) => void
 }) {
   const { t } = useI18n()
   const checkText = useCheckText()
@@ -351,11 +352,13 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                       <span>{checkText(contrast).text}</span>
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => onOpenStatus(tokenElementId(role.id))} className={BTN}>
-                      {t('Open in status board')}
-                    </button>
-                  </div>
+                  {onOpenStatus && (
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => onOpenStatus(tokenElementId(role.id))} className={BTN}>
+                        {t('Open in status board')}
+                      </button>
+                    </div>
+                  )}
                 </Card>
               </div>
             </div>

@@ -12,6 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { useI18n } from '../../../lib/i18n'
+import { goToLogin, useAccess } from '../../../lib/access'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
@@ -42,7 +43,11 @@ const PAGE_GLYPH: Record<DashPage, ReactNode> = {
 }
 
 // Releases and Components are built but not in the menu.
-const NAV: DashPage[] = ['overview', 'docs', 'status', 'integrations']
+/** Status board is ON HOLD (2026-10-19): it confused people and needs a
+ *  rethink. Its page, store fields and links stay in the code; flip this to
+ *  bring it back everywhere at once. */
+export const STATUS_BOARD_ON = false
+const NAV: DashPage[] = STATUS_BOARD_ON ? ['overview', 'docs', 'status', 'integrations'] : ['overview', 'docs', 'integrations']
 
 function BrandChevron({ open }: { open: boolean }) {
   return (
@@ -252,19 +257,18 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithub }: {
+function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
   dash: Dashboard
-  figmaThemes: readonly string[]
   timeAgo: (iso: string) => string
-  onSyncFigma: () => void
   onOpenGithub: () => void
 }) {
   const { t } = useI18n()
-  const { store, figma, github } = dash
-  // File & modes lists one entry per theme a brand ships, so a brand can repeat.
-  const brandNames = [...new Set(figmaThemes)].map((key) => themeDisplayName(key, store.themeLabels))
-  const viewports = store.figmaSyncSelection?.viewports ?? []
+  const { guest } = useAccess()
+  const { store, github } = dash
   const when = (iso: string | null) => (iso ? timeAgo(iso) : t('Never'))
+  // GitHub is the one destination here. Figma is synced from the plugin, not
+  // from this page. Connecting a repository is an account feature: a visitor
+  // without one is asked to sign in first, and nothing else on the page asks.
   return (
     <>
       <PageHeader
@@ -272,35 +276,37 @@ function IntegrationsPage({ dash, figmaThemes, timeAgo, onSyncFigma, onOpenGithu
         detail={t('Where this design system goes. If a destination is behind, what it holds is older than what you see here.')}
       />
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card title="Figma" right={<SourcePill state={figma} />}>
-          <dl className="flex flex-col">
-            <Fact label={t('Last publish')}>{when(store.figmaLastPublishAt)}</Fact>
-            <Fact label={t('Brands')}>{brandNames.length ? brandNames.join(' · ') : '—'}</Fact>
-            <Fact label={t('Viewports')}>{viewports.length ? viewports.map((v) => t(v.charAt(0).toUpperCase() + v.slice(1))).join(' · ') : '—'}</Fact>
-            <Fact label={t('Auto-sync')}>{store.autoSyncFigma ? t('On') : t('Off')}</Fact>
-          </dl>
-          <button type="button" onClick={onSyncFigma} className={`${figma === 'synced' ? BTN : BTN_PRIMARY} self-start`}>{t('Open Figma sync')}</button>
+        <Card title="GitHub" right={guest ? undefined : <SourcePill state={github} />}>
+          {guest ? (
+            <>
+              <p className="text-caption text-fg-muted">
+                {t('Sign in to push this design system to a GitHub repository: tokens.json, variables.css and README.md.')}
+              </p>
+              <button type="button" onClick={() => goToLogin(undefined, 'signin')} className={`${BTN_PRIMARY} self-start`}>
+                {t('Sign in to connect GitHub')}
+              </button>
+            </>
+          ) : (
+            <>
+              <dl className="flex flex-col">
+                <Fact label={t('Repository')}>{store.githubRepo ?? '—'}</Fact>
+                <Fact label={t('Last push')}>{when(store.githubRepo ? store.githubLastPushAt : null)}</Fact>
+                <Fact label={t('Files')}>tokens.json · variables.css · README.md</Fact>
+              </dl>
+              <button type="button" onClick={onOpenGithub} className={`${github === 'stale' || !store.githubRepo ? BTN_PRIMARY : BTN} self-start`}>
+                {store.githubRepo ? t('Open GitHub') : t('Connect GitHub')}
+              </button>
+            </>
+          )}
         </Card>
-
-        <Card title="GitHub" right={<SourcePill state={github} />}>
-          <dl className="flex flex-col">
-            <Fact label={t('Repository')}>{store.githubRepo ?? '—'}</Fact>
-            <Fact label={t('Last push')}>{when(store.githubRepo ? store.githubLastPushAt : null)}</Fact>
-            <Fact label={t('Files')}>tokens.json · variables.css · README.md</Fact>
-          </dl>
-          <button type="button" onClick={onOpenGithub} className={`${github === 'stale' || !store.githubRepo ? BTN_PRIMARY : BTN} self-start`}>
-            {store.githubRepo ? t('Open GitHub') : t('Connect GitHub')}
-          </button>
-        </Card>
-
       </div>
     </>
   )
 }
 
 export default function SystemDashboard({
-  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo, figmaThemes,
-  onSyncFigma, onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
+  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo,
+  onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
   onEditRole, onOpenComponent, docsExits,
 }: {
   page: DashPage
@@ -317,8 +323,6 @@ export default function SystemDashboard({
   onBack?: () => void
   timeAgo: (iso: string) => string
   /** Brands the Figma sync publishes (File & modes). */
-  figmaThemes: readonly string[]
-  onSyncFigma: () => void
   onOpenGithub: () => void
   onEditFoundation?: (key: string) => void
   /** Overview's Color card: open the brand preview on the Color edition. */
@@ -364,7 +368,7 @@ export default function SystemDashboard({
   }
   useEffect(() => { setEditingRole(null) }, [brand, docKey, page])
   // Releases and Components have no menu entry; a page kept from before lands on Overview.
-  const shown: DashPage = page === 'releases' || page === 'components' ? 'overview' : page
+  const shown: DashPage = page === 'releases' || page === 'components' || (page === 'status' && !STATUS_BOARD_ON) ? 'overview' : page
   const doc = DASH_DOCS.some((item) => item.key === docKey) ? docKey : DEFAULT_DOC_KEY
   return (
     <>
@@ -381,7 +385,7 @@ export default function SystemDashboard({
           header={overviewHeader(noBrands ? 0 : dash.tokenCount)}
           onOpenFoundation={openDoc}
           onOpenBrand={onOpenBrand}
-          onOpenStatus={() => openStatus()}
+          onOpenStatus={STATUS_BOARD_ON ? () => openStatus() : undefined}
           onSelectBrand={onSelectBrand}
           onEditBrand={onEditBrand}
           onOpenColorTheme={onOpenColorTheme}
@@ -408,7 +412,7 @@ export default function SystemDashboard({
           appearance={appearance}
           docScope={{ themeKey: brand }}
           lead={doc === 'color'
-            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole ? (roleId) => { if (onEditRole(roleId) !== false) setEditingRole(roleId) } : undefined} onOpenStatus={(id) => openStatus(id)} />
+            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole ? (roleId) => { if (onEditRole(roleId) !== false) setEditingRole(roleId) } : undefined} onOpenStatus={STATUS_BOARD_ON ? (id) => openStatus(id) : undefined} />
             : ROLE_TABLE_KEYS.has(doc)
               ? <FoundationRolesTable dash={dash} foundation={doc} onEdit={onEditFoundation} />
               : onEditFoundation
@@ -431,9 +435,7 @@ export default function SystemDashboard({
       {shown === 'integrations' && (
         <IntegrationsPage
           dash={dash}
-          figmaThemes={figmaThemes}
           timeAgo={timeAgo}
-          onSyncFigma={onSyncFigma}
           onOpenGithub={onOpenGithub}
         />
       )}

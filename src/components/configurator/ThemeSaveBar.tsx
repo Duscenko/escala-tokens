@@ -313,6 +313,7 @@ export default function ThemeSaveBar({
  *  where it is, and only offers the account. */
 export function UnsavedNotice() {
   const { t } = useI18n()
+  const { guest } = useAccess()
   const githubRepo = useDesignStore((s) => s.githubRepo)
   const githubLastPushAt = useDesignStore((s) => s.githubLastPushAt)
   const onGithub = Boolean(githubRepo && githubLastPushAt)
@@ -355,7 +356,9 @@ export function UnsavedNotice() {
             <button type="button" onClick={() => { setOpen(false); goToLogin('save-library') }} className={link}>
               {t('Save with an account')}
             </button>
-            {!onGithub && (
+            {/* GitHub needs an account, so a visitor's only way to keep the
+                system is saving with one. */}
+            {!onGithub && !guest && (
               <button type="button" onClick={() => { setOpen(false); requestOpenGithub() }} className={link}>
                 {t('Push to GitHub')}
               </button>

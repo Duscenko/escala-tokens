@@ -474,7 +474,8 @@ function ExportPill({
 }: {
   onExport: () => void
   onSyncFigma: () => void
-  onConnectGithub: () => void
+  /** Absent for a visitor with no account: GitHub needs one. */
+  onConnectGithub?: () => void
   onExportCode: () => void
 }) {
   const { t } = useI18n()
@@ -568,10 +569,12 @@ function ExportPill({
             <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><FigmaGlyph size={14} /></span>
             {t('Sync Figma')}
           </button>
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
-            {t('Connect GitHub')}
-          </button>
+          {onConnectGithub && (
+            <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
+              <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
+              {t('Connect GitHub')}
+            </button>
+          )}
         </div>,
         document.body,
       )}
@@ -1696,7 +1699,16 @@ export default function Configurator() {
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }
+  /** GitHub is an account feature. Every door hides itself for a visitor
+   *  with no account; this catches any that does not, and sends them to
+   *  sign in instead of opening the connect flow. */
+  const githubNeedsAccount = () => {
+    if (!access.guest) return false
+    goToLogin(undefined, 'signin')
+    return true
+  }
   const openGithubPage = () => {
+    if (githubNeedsAccount()) return
     leaveExportWizard()
     commitVisit()
     setExportMode(null)
@@ -1839,6 +1851,7 @@ export default function Configurator() {
     setTab(t)
   }
   const openExport = (mode: Exclude<ExportMode, null>) => {
+    if (mode === 'github' && githubNeedsAccount()) return
     commitVisit()
     setExportMode(mode)
   }
@@ -2470,7 +2483,7 @@ export default function Configurator() {
           <ExportPill
             onExport={openSectionExport}
             onSyncFigma={openFigmaSyncPage}
-            onConnectGithub={openGithubPage}
+            onConnectGithub={access.guest ? undefined : openGithubPage}
             onExportCode={openGetCodePage}
           />
         ) : undefined}
@@ -2705,7 +2718,7 @@ export default function Configurator() {
                       onOpenFigmaSync: () => setThemeHubSurface('figma'),
                       onOpenExport: openSectionExport,
                       onOpenSave: () => openExport('save'),
-                      onOpenGithub: () => setThemeHubSurface('github'),
+                      onOpenGithub: () => { if (!githubNeedsAccount()) setThemeHubSurface('github') },
                     }}
                   />
                 </motion.div>
@@ -2753,7 +2766,6 @@ export default function Configurator() {
                     onGetCode={openCodeForTheme}
                     onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
-                    figmaThemes={figmaSyncModes.map((mode) => mode.theme)}
                     onCreateTheme={openCreateTheme}
                     onOpenRandom={openRandomTheme}
                     createPending={createPending}
@@ -3021,7 +3033,7 @@ export default function Configurator() {
             themeScope={themeExportScope}
             themeScopeLabel={themeExportScope ? (store.themeLabels[themeExportScope] || themeExportScope) : undefined}
             onClose={() => { setSectionExportOpen(false); setThemeExportScope(null) }}
-            onConnectGithub={() => { setSectionExportOpen(false); openExport('github') }}
+            onConnectGithub={access.guest ? undefined : () => { setSectionExportOpen(false); openExport('github') }}
             onAddSyncOption={() => { setSectionExportOpen(false); setThemeExportScope(null); openFigmaSyncDetails() }}
           />
         )}

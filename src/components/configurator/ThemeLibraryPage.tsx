@@ -214,6 +214,7 @@ function ThemeCard({
   onDuplicate: () => void
 }) {
   const { t } = useI18n()
+  const { guest } = useAccess()
   const timeAgo = useTimeAgo()
   const store = useDesignStore()
   const kind = store.themeKinds[themeKey] ?? 'light'
@@ -330,7 +331,8 @@ function ThemeCard({
           pinned={pinned}
           onTogglePin={() => { setMenuOpen(false); onTogglePin() }}
           onSyncFigma={() => { setMenuOpen(false); onSyncFigma() }}
-          onShareGithub={() => { setMenuOpen(false); onShareGithub() }}
+          // GitHub needs an account: the row is not offered to a visitor.
+          onShareGithub={guest ? undefined : () => { setMenuOpen(false); onShareGithub() }}
           onDuplicate={() => { setMenuOpen(false); onDuplicate() }}
           onRename={() => { setMenuOpen(false); setDraft(name); setRenaming(true) }}
           onAskDelete={() => { setMenuOpen(false); setConfirmDelete(true) }}
@@ -1152,7 +1154,6 @@ function StyleCard({ preset, owned, appearance, onPreview, onOpen }: {
 
 export default function ThemeLibraryPage({
   previewTheme,
-  figmaThemes,
   onSelectTheme,
   onOpenPreview,
   onGuestBrandCreated,
@@ -1188,8 +1189,6 @@ export default function ThemeLibraryPage({
   docsExits,
 }: {
   previewTheme: string
-  /** Themes the live Figma sync publishes (File & modes). */
-  figmaThemes: string[]
   /** Make this the theme every other page reads, without leaving Home. */
   onSelectTheme: (key: string) => void
   onOpenPreview: (key: string) => void
@@ -1589,8 +1588,6 @@ export default function ThemeLibraryPage({
         docsExits={docsExits ?? NO_DOCS_EXITS}
         onBack={systemOnly ? onGoHome : () => setSectionState({ kind: 'libraries' })}
         timeAgo={timeAgo}
-        figmaThemes={figmaThemes}
-        onSyncFigma={() => onSyncFigma(previewTheme)}
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenBrand={onOpenBrand}
