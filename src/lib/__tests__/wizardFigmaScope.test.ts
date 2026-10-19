@@ -26,6 +26,8 @@ const parse = (sel: WizardSelection) => JSON.parse(buildWizardExport(sel)[0].con
   viewports?: string[]
   typography?: { role: Record<string, Record<string, unknown>> }
   grid?: { breakpoint: Record<string, unknown>; frame: Record<string, unknown> }
+  'Dimension Semantics'?: Record<string, unknown>
+  Typography?: Record<string, unknown>
 }
 
 describe('Escala JSON for Figma without Pro', () => {
@@ -37,15 +39,13 @@ describe('Escala JSON for Figma without Pro', () => {
     expect(parse({ ...base, figmaScope: { viewports: ['desktop'] } }).viewports).toEqual(['desktop'])
   })
 
-  it('cuts W3C to Desktop roles and frames', () => {
+  it('cuts W3C to the Desktop viewport mode', () => {
     const open = parse({ ...base, format: 'w3c' })
-    expect(open.grid?.breakpoint.mobile).toBeDefined()
+    expect(Object.keys(open['Dimension Semantics'] ?? {})).toEqual(['Desktop', 'Tablet', 'Mobile'])
+    expect(Object.keys(open.Typography ?? {})).toEqual(['Desktop', 'Tablet', 'Mobile'])
     const cut = parse({ ...base, format: 'w3c', figmaScope: freeScope })
-    expect(cut.grid?.breakpoint.mobile).toBeUndefined()
-    expect(Object.keys(cut.grid?.frame ?? {})).toEqual(['desktop'])
-    for (const role of Object.values(cut.typography?.role ?? {})) {
-      expect(Object.keys(role)).toEqual(['desktop'])
-    }
+    expect(Object.keys(cut['Dimension Semantics'] ?? {})).toEqual(['Desktop'])
+    expect(Object.keys(cut.Typography ?? {})).toEqual(['Desktop'])
   })
 
   it('cuts Markdown the same way', () => {

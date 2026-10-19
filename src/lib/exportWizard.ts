@@ -16,6 +16,7 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
+import { figmaCollectionsW3C } from './figmaCollections'
 import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
@@ -73,7 +74,7 @@ export interface WizardSelection {
   format: WizardFormat
   structure: WizardStructure
   colorFormat: ColorFormat
-  /** W3C only — semantic values that sit on a primitive tone ship as `{color.accent.600}` references. */
+  /** W3C only — values that alias a variable ship as `{Collection.Mode.path}` references (`{Color Primitives.Default.Accents.Accent.09}`). */
   includeAliases: boolean
   /** Escala JSON only — whether `atoms` ships at all (which components, per
    *  `useDesignStore`'s `selectedComponents` — the SAME list the Components
@@ -269,10 +270,6 @@ export function selectionCount(
 
 // ── W3C DTCG ─────────────────────────────────────────────────────────────────
 
-type W3CNode = { [k: string]: W3CNode } | { $value: unknown; $type: string }
-
-const token = (value: unknown, type: string): W3CNode => ({ $value: value, $type: type })
-
 // `accent-500` → ['accent', '500'] · `neutral-dark-300` → ['neutral-dark', '300'].
 const splitFlat = (name: string): [string, string] => {
   const i = name.lastIndexOf('-')
@@ -300,253 +297,24 @@ export function primitiveGroupOf(family: string): (typeof PRIMITIVE_GROUPS)[numb
   if (STATES.includes(seg)) return 'States'
   return 'Accents'
 }
-const GROUP_RANK: Record<string, number> = { Accents: 0, Neutrals: 1, States: 2 }
-
-function w3cPrimitives(full: TokenJSON, families?: string[], appearance?: 'light' | 'dark'): W3CNode {
-  const out: Record<string, Record<string, Record<string, W3CNode>>> = {}
-  for (const [name, hex] of Object.entries(pickedPrimitives(full, families, appearance))) {
-    const [family, tone] = splitFlat(name)
-    const group = primitiveGroupOf(family)
-    ;((out[group] ??= {})[family] ??= {})[tone] = token(hex, 'color')
-  }
-  // Accents → Neutrals → States, whatever order the tokens arrived in.
-  const ordered: Record<string, Record<string, Record<string, W3CNode>>> = {}
-  for (const g of Object.keys(out).sort((a, b) => GROUP_RANK[a] - GROUP_RANK[b])) ordered[g] = out[g]
-  return ordered as unknown as W3CNode
+// ── Wizard collections → Figma collections ──────────────────────────────────
+// Gradients and shadows are Figma STYLES, not variables, so the collections
+// document has no place for them.
+const DIMENSION_GROUPS_OF: Partial<Record<WizardCollection, string[]>> = {
+  spacing: ['Spacing'], radius: ['Radius'], stroke: ['Stroke'], sizes: ['Size', 'Selector'], icons: ['Icon'], grid: ['Grid'],
 }
 
-/** hex → `{color.<group>.<family>.<tone>}` over the exported primitives (first hit wins).
- *  Scoped to the families actually shipping, so an alias can never reference a
- *  token this file left out. */
-function aliasMap(full: TokenJSON, families?: string[]): Map<string, string> {
-  const map = new Map<string, string>()
-  for (const [name, hex] of Object.entries(pickedPrimitives(full, families))) {
-    const [family, tone] = splitFlat(name)
-    const key = hex.toLowerCase()
-    if (!map.has(key)) map.set(key, `{color.${primitiveGroupOf(family)}.${family}.${tone}}`)
-  }
-  return map
+function figmaCollectionsFor(ordered: WizardCollection[]): string[] {
+  const out: string[] = []
+  if (ordered.includes('primitives')) out.push('Color Primitives')
+  if (ordered.includes('semantics')) out.push('Color Semantics')
+  if (ordered.some((k) => DIMENSION_GROUPS_OF[k])) out.push('Dimension Primitives', 'Dimension Semantics')
+  if (ordered.includes('typography')) out.push('Typography')
+  return out
 }
 
-function w3cSemantics(full: TokenJSON, modes: string[], aliases: boolean, families?: string[]): W3CNode {
-  const refs = aliases ? aliasMap(full, families) : null
-  const out: Record<string, Record<string, W3CNode>> = {}
-  for (const mode of modes) {
-    const theme = full.colors.themes[mode]
-    if (!theme) continue
-    out[mode] = {}
-    for (const [role, hex] of Object.entries(theme)) {
-      if (!hex) continue
-      out[mode][role] = token(refs?.get(hex.toLowerCase()) ?? hex, 'color')
-    }
-  }
-  return out as W3CNode
-}
-
-const isPx = (v: string) => /(px|rem|em|%)$/.test(v)
-
-/** A length becomes a real alias to its Dimension primitive (`{dimension.16}`);
- *  anything else (a count, `none`, a rem) keeps its literal value. The
- *  `dimension` root ships whenever a numeric collection does, so the alias
- *  always resolves inside the same document. */
-const lengthToken = (v: string): W3CNode => {
-  const n = parseDimension(v)
-  return n !== null ? token(dimensionRef(n), 'dimension') : token(v, isPx(v) ? 'dimension' : 'number')
-}
-
-/** Collections whose values are lengths — any of them pulls in `dimension`. */
-const DIMENSION_COLLECTIONS: readonly WizardCollection[] = ['spacing', 'radius', 'sizes', 'stroke', 'grid', 'icons']
-
-/** Sample glyphs shipped in the W3C `icon.glyph` group — a test set, not the
- *  library. Regular weight, 256 grid, black fill (Figma accepts it on paste). */
-export const W3C_TEST_GLYPHS = ['home', 'search', 'settings'] as const
-
-function w3cDimensions(full: TokenJSON): W3CNode {
-  const dims = (full.dimensions ?? {}) as Record<string, string>
-  return Object.fromEntries(
-    Object.entries(dims)
-      .sort(([a], [b]) => dimensionFromKey(a) - dimensionFromKey(b))
-      .map(([k, v]) => [k, token(v, 'dimension')]),
-  ) as W3CNode
-}
-
-/** A role's alias: the Dimension primitive it resolves to (`{dimension.16}`),
- *  whether it holds a step or a pinned primitive. A value that resolves to no
- *  length falls back to the step's own path. */
-function roleRef(value: string, steps: Record<string, string> | undefined, stepPath: string): string {
-  const px = roleValuePx(value, steps)
-  return px !== null ? dimensionRef(px) : `{${stepPath}.${value}}`
-}
-
-function dimWithRoles(
-  family: LayoutFamily,
-  primitives: Record<string, string>,
-  roles: Record<string, string> | undefined,
-  /** Dotted path this group sits at, when it isn't the tree's own root — an
-   *  alias has to name the full path or no DTCG importer can follow it. Same
-   *  reason breakpoints alias `{grid.breakpoint.md}` rather than `{breakpoint.md}`. */
-  refRoot?: string,
-): W3CNode {
-  const out = Object.fromEntries(Object.entries(primitives).map(([k, v]) => [k, lengthToken(v)])) as Record<string, W3CNode>
-  const map = mergeLayoutRoles(family, roles)
-  const root = refRoot ?? (family === 'size' ? 'size' : family)
-  for (const role of LAYOUT_ROLES[family]) {
-    out[role.key] = token(roleRef(map[role.key], primitives, root), 'dimension')
-  }
-  // Inset sides: one that follows its inset aliases it; one set by hand
-  // aliases its own primitive.
-  if (family === 'spacing') {
-    for (const { key, role } of INSET_SIDE_KEYS) {
-      const own = map[key]
-      out[key] = token(own === undefined ? `{${root}.${role}}` : roleRef(own, primitives, root), 'dimension')
-    }
-  }
-  return out as W3CNode
-}
-
-function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
-  const dim = (o: Record<string, string>) =>
-    Object.fromEntries(Object.entries(o).map(([k, v]) => [k, token(v, isPx(v) ? 'dimension' : 'number')])) as W3CNode
-  switch (key) {
-    case 'typography': {
-      const t = full.typography
-      const roles = t.roles ?? {}
-      const roleNode: W3CNode = {}
-      for (const [key, modes] of Object.entries(roles)) {
-        const pack = (alias: { family: string; size: string; weight: string }): W3CNode => ({
-          fontFamily: token(`{typography.fontFamily.${alias.family === 'display' ? 'heading' : 'body'}}`, 'fontFamily'),
-          fontSize: token(`{typography.size.${alias.size}}`, 'dimension'),
-          fontWeight: token(`{typography.weight.${alias.weight}}`, 'fontWeight'),
-          lineHeight: token(`{typography.lineHeight.${alias.size}}`, 'dimension'),
-          letterSpacing: token(`{typography.letterSpacing.${alias.size}}`, 'dimension'),
-        })
-        const roleModes: Record<string, W3CNode> = { desktop: pack(modes.desktop) }
-        if (!desktopOnlyPayload(full)) {
-          roleModes.tablet = pack(modes.tablet ?? modes.desktop)
-          roleModes.mobile = pack(modes.mobile)
-        }
-        ;(roleNode as Record<string, W3CNode>)[key] = roleModes
-      }
-      return {
-        fontFamily: {
-          heading: token(t.headingFontFamily ?? t.fontFamily, 'fontFamily'),
-          body: token(t.fontFamily, 'fontFamily'),
-        },
-        size: dim(t.sizes),
-        lineHeight: dim(t.lineHeights ?? {}),
-        letterSpacing: dim(t.letterSpacings ?? letterSpacingsFor(t.sizes)),
-        weight: Object.fromEntries(Object.entries(t.weights).map(([k, v]) => [k, token(v, 'fontWeight')])) as W3CNode,
-        role: roleNode,
-      }
-    }
-    case 'spacing': return dimWithRoles('spacing', full.spacing, full.spacingRoles)
-    case 'radius': return dimWithRoles('radius', full.radius, full.radiusRoles)
-    // Selector nests under the `size` root as its own group — one collection,
-    // one W3C root, same shape breakpoints already take under `grid`.
-    case 'sizes': return {
-      ...dimWithRoles('size', full.sizes, full.sizeRoles),
-      selector: dimWithRoles('selector', full.selector ?? {}, full.selectorRoles, 'size.selector'),
-    } as W3CNode
-    case 'stroke': return dimWithRoles('stroke', full.stroke ?? {}, full.strokeRoles)
-    case 'grid': {
-      const bps = extractBreakpoints(full.grid)
-      const cuts = mergeLayoutRoles('breakpoint', full.breakpointRoles)
-      const frame = mergeGridFrame(full.gridFrame)
-      const breakpoint: Record<string, W3CNode> = {}
-      for (const step of BREAKPOINT_STEPS) {
-        breakpoint[step] = lengthToken(bps[step])
-      }
-      breakpoint.desktop = token(roleRef(cuts.desktop, bps, 'grid.breakpoint'), 'dimension')
-      if (!desktopOnlyPayload(full)) {
-        breakpoint.mobile = token(roleRef(cuts.mobile, bps, 'grid.breakpoint'), 'dimension')
-      }
-      const pack = (alias: { columns: string; gutter: string; margin: string; container: string }): W3CNode => ({
-        columns: token(Number(alias.columns), 'number'),
-        gutter: token(roleRef(alias.gutter, full.spacing, 'spacing'), 'dimension'),
-        margin: token(roleRef(alias.margin, full.spacing, 'spacing'), 'dimension'),
-        container: alias.container === 'none'
-          ? token('none', 'string')
-          : token(roleRef(alias.container, bps, 'grid.breakpoint'), 'dimension'),
-      })
-      const frameNode: Record<string, W3CNode> = { desktop: pack(frame.desktop) }
-      if (!desktopOnlyPayload(full)) frameNode.mobile = pack(frame.mobile)
-      return {
-        breakpoint,
-        frame: frameNode,
-      }
-    }
-    case 'shadow':
-      return Object.fromEntries(Object.entries(full.shadows).map(([k, v]) => [k, token(v, 'shadow')])) as W3CNode
-    case 'gradients': {
-      const node: Record<string, W3CNode> = {}
-      for (const [slug, css] of Object.entries(full.gradients)) {
-        const darkCss = full.gradientsDark[slug]
-        node[slug] = darkCss && darkCss !== css
-          ? { light: token(css, 'gradient'), dark: token(darkCss, 'gradient') }
-          : token(css, 'gradient')
-      }
-      return node as W3CNode
-    }
-    case 'icons': {
-      const node: Record<string, W3CNode> = {
-        library: token(full.icons.name, 'string'),
-      }
-      if (full.icons.package) node.package = token(full.icons.package, 'string')
-      if (full.icons.repo) node.repo = token(full.icons.repo, 'string')
-      const ai = full.icons.aiSource
-      if (ai?.repo) {
-        node.aiSource = token(ai.repo, 'string')
-        node.aiPackage = token(ai.npm, 'string')
-      }
-      // Three sizes, each a Dimension primitive. The same px in every viewport.
-      const sizes = full.icons.sizes
-      if (sizes?.scale) {
-        for (const [role, px] of Object.entries(sizes.scale)) node[role] = lengthToken(px)
-      }
-      const glyphs: Record<string, W3CNode> = {}
-      for (const concept of W3C_TEST_GLYPHS) {
-        const slug = PHOSPHOR_CORE[concept]
-        const body = slug ? phosphorCoreBody(slug) : undefined
-        if (body) glyphs[concept] = token(phosphorIconSvgForFigma(body), 'string')
-      }
-      if (Object.keys(glyphs).length) node.glyph = glyphs as W3CNode
-      return node as W3CNode
-    }
-    default: return {}
-  }
-}
-
-// Root keys per collection in the W3C tree (also the per-collection filenames).
-const W3C_ROOT: Record<WizardCollection, string> = {
-  primitives: 'color', semantics: 'semantic', gradients: 'gradient', typography: 'typography',
-  spacing: 'spacing', radius: 'radius',
-  shadow: 'shadow', grid: 'grid', sizes: 'size', stroke: 'stroke', icons: 'icon',
-}
-
-function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON): W3CNode {
-  if (key === 'primitives') return w3cPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)
-  if (key === 'semantics') {
-    const primitivesShipped = sel.collections.includes('primitives')
-    // An alias is only resolvable if the primitives it points at are actually
-    // IN this export — a semantics-only run used to alias `{color.accent.9}`
-    // unconditionally (`pickedPrimitives` with no family filter falls back to
-    // the WHOLE unscoped primitive set), producing a document with references
-    // to a `color` tree that was never written anywhere in the output. Every
-    // DTCG-aware importer (Tokens Studio, Figma Variables import, Style
-    // Dictionary) either throws or silently drops the token on a reference it
-    // can't resolve — this is why "W3C export → Figma won't read the file"
-    // reproduces reliably on a Semantics-only run with aliases left on (the
-    // wizard's default). Falling back to the resolved hex here is what
-    // `includeAliases: false` already does deliberately (see the toggle's own
-    // "Resolved to hex" label) — reusing that path means a semantics-only
-    // export is not a special case, just the same fallback with a different
-    // trigger. `ExportWizard.tsx`'s step-3 Summary row mirrors this so the UI
-    // never claims "Included" for a file that will actually ship hex.
-    const families = primitivesShipped ? sel.primitiveFamilies : undefined
-    const modes = sel.figmaScope?.modes?.length ? full.colors.themeOrder : sel.modes
-    return w3cSemantics(full, modes, sel.includeAliases && primitivesShipped, families)
-  }
-  return w3cSection(key, full)
+function dimensionGroupsFor(ordered: WizardCollection[]): string[] {
+  return ordered.flatMap((k) => DIMENSION_GROUPS_OF[k] ?? [])
 }
 
 // ── Public entry ─────────────────────────────────────────────────────────────
@@ -616,20 +384,38 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   }
 
   if (sel.format === 'w3c') {
-    const withDimensions = ordered.some((k) => DIMENSION_COLLECTIONS.includes(k))
+    // The Figma file, written down: the five collections the plugin creates,
+    // each mode a group under its collection (lib/figmaCollections). The
+    // plugin's own W3C export runs the same converter over the file's real
+    // variables, so the two downloads share one shape.
+    const include = figmaCollectionsFor(ordered)
+    const families = sel.primitiveFamilies ? new Set(sel.primitiveFamilies) : null
+    const keepPrimitive = families || sel.primitiveAppearance
+      ? (key: string, alpha: boolean) => {
+          if (key === 'Background') return !families
+          if (alpha && families) return false
+          const family = primitiveFamilyOf(key)
+          if (families && !families.has(family)) return false
+          if (sel.primitiveAppearance) return (splitFlat(key)[0].endsWith('-dark')) === (sel.primitiveAppearance === 'dark')
+          return true
+        }
+      : undefined
+    const tree = figmaCollectionsW3C(full, {
+      include,
+      dimensionGroups: dimensionGroupsFor(ordered),
+      semanticModes: sel.figmaScope?.modes?.length ? undefined : sel.modes,
+      keepPrimitive,
+      aliases: sel.includeAliases,
+      project,
+    })
     if (sel.structure === 'per-collection') {
-      const files = ordered.map((key) => ({
-        name: `${W3C_ROOT[key]}.tokens.json`,
-        content: JSON.stringify({ [W3C_ROOT[key]]: w3cTreeFor(key, sel, full) }, null, 2),
+      const { $description, $extensions } = tree
+      return include.map((name) => ({
+        name: `${name.toLowerCase().replace(/\s+/g, '-')}.tokens.json`,
+        content: JSON.stringify({ $description, $extensions, [name]: tree[name] }, null, 2),
         language: 'json' as const,
       }))
-      return withDimensions
-        ? [{ name: 'dimension.tokens.json', content: JSON.stringify({ dimension: w3cDimensions(full) }, null, 2), language: 'json' as const }, ...files]
-        : files
     }
-    const tree: Record<string, W3CNode> = {}
-    if (withDimensions) tree.dimension = w3cDimensions(full)
-    for (const key of ordered) tree[W3C_ROOT[key]] = w3cTreeFor(key, sel, full)
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
   }
 
@@ -733,18 +519,19 @@ export function buildAlphaFamilyExport(
   const flat = flattenScale(tokenPrefix, scale, naming)
 
   if (format === 'w3c') {
-    const family: Record<string, W3CNode> = {}
-    for (const [name, hex] of Object.entries(flat)) {
-      const [, tone] = splitFlat(name)
-      family[tone] = token(hex, 'color')
-    }
+    // Same document shape as every other W3C export — Color Primitives only,
+    // narrowed to this alpha ramp. `colors.primitiveAlpha` keys a twin by its
+    // BARE family (`accent-3`), the neutral ladder keeps its `-a` (`black-a-3`).
+    const ladder = tokenPrefix === 'black-a' || tokenPrefix === 'white-a'
+    const base = ladder ? tokenPrefix : tokenPrefix.replace(/-a$/, '')
     const project = useDesignStore.getState().projectName || 'escala'
     const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'escala'
-    return [{
-      name: `${slug}.tokens.json`,
-      content: JSON.stringify({ color: { [tokenPrefix]: family } }, null, 2),
-      language: 'json',
-    }]
+    const tree = figmaCollectionsW3C(generateTokenJSON(), {
+      include: ['Color Primitives'],
+      keepPrimitive: (key, alpha) => alpha && splitFlat(key)[0] === base,
+      project,
+    })
+    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
   }
 
   return []

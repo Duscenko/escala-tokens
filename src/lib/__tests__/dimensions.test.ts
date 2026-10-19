@@ -136,38 +136,42 @@ describe('dimension primitives — W3C export', () => {
     useDesignStore.setState(makeDesignDefaults())
   })
 
-  it('ships a dimension root and aliases every length into it', async () => {
+  it('ships Dimension Primitives and aliases every Dimension Semantics length into it', async () => {
     const { buildWizardExport } = await import('../exportWizard')
     const [file] = buildWizardExport({
       collections: ['radius', 'spacing', 'grid'], modes: [], format: 'w3c', structure: 'single',
       colorFormat: 'hex', includeAliases: true, includeComponents: false,
     })
     const tree = JSON.parse(file.content)
-    expect(tree.dimension['16']).toEqual({ $value: '16px', $type: 'dimension' })
-    expect(tree.radius.full).toEqual({ $value: '{dimension.9999}', $type: 'dimension' })
-    expect(tree.grid.breakpoint.md).toEqual({ $value: '{dimension.768}', $type: 'dimension' })
-    // Every {dimension.N} in the document resolves inside it.
-    const refs = [...file.content.matchAll(/\{dimension\.(-?[\d_]+)\}/g)].map((m) => m[1])
+    expect(tree['Dimension Primitives'].Default['16']).toEqual({ $type: 'dimension', $value: '16px' })
+    expect(tree['Dimension Semantics'].Desktop.Radius.role.container.$value).toMatch(/^\{Dimension (Primitives|Semantics)\./)
+    expect(tree['Dimension Semantics'].Desktop.Grid.columns.$value).toBe('{Dimension Primitives.Default.columns.12}')
+    // Every reference in the document resolves inside it.
+    const resolve = (ref: string) => ref.slice(1, -1).split('.').reduce((n: any, k) => n?.[k], tree)
+    const refs = [...file.content.matchAll(/"(\{[^"}]+\})"/g)].map((m) => m[1])
     expect(refs.length).toBeGreaterThan(10)
-    expect(refs.filter((k) => !tree.dimension[k])).toEqual([])
+    expect(refs.filter((r) => !resolve(r))).toEqual([])
   })
 
-  it('per-collection structure ships dimension.tokens.json alongside', async () => {
+  it('per-collection structure ships one file per Figma collection', async () => {
     const { buildWizardExport } = await import('../exportWizard')
     const files = buildWizardExport({
       collections: ['radius'], modes: [], format: 'w3c', structure: 'per-collection',
       colorFormat: 'hex', includeAliases: true, includeComponents: false,
     })
-    expect(files.map((f) => f.name)).toEqual(['dimension.tokens.json', 'radius.tokens.json'])
+    expect(files.map((f) => f.name)).toEqual(['dimension-primitives.tokens.json', 'dimension-semantics.tokens.json'])
   })
 
-  it('a colour-only export does not drag the dimension root in', async () => {
+  it('a colour-only export does not drag the dimension collections in', async () => {
     const { buildWizardExport } = await import('../exportWizard')
     const [file] = buildWizardExport({
       collections: ['primitives'], modes: [], format: 'w3c', structure: 'single',
       colorFormat: 'hex', includeAliases: true, includeComponents: false,
     })
-    expect(JSON.parse(file.content).dimension).toBeUndefined()
+    const tree = JSON.parse(file.content)
+    expect(tree['Dimension Primitives']).toBeUndefined()
+    expect(tree['Dimension Semantics']).toBeUndefined()
+    expect(tree['Color Primitives']).toBeDefined()
   })
 })
 

@@ -743,7 +743,7 @@ export default function ExportWizard({
                       <span className="min-w-0">
                         <span className="block text-ui text-fg">Include aliases (variable references)</span>
                         <span className="block text-body text-fg-faint truncate">
-                          Semantics ship as <code className="font-mono">{'{color.accent.600}'}</code> instead of a loose hex
+                          Semantics ship as <code className="font-mono">{'{Color Primitives.Default.Accents.Accent.09}'}</code> instead of a loose hex
                         </span>
                       </span>
                     </button>
@@ -753,12 +753,18 @@ export default function ExportWizard({
                         file/section that was never shipped, and that's the
                         reliable way a W3C export "won't import" or errors on
                         open. `buildWizardExport` already falls back to hex in
-                        this exact case (see `w3cTreeFor`), so this is only
+                        this exact case (`figmaCollectionsW3C`'s `include`), so this is only
                         telling the truth about output the checkbox above can't. */}
                     {includeAliases && collections.includes('semantics') && !collections.includes('primitives') && (
                       <p className="px-3 text-caption text-fg-faint leading-snug">
                         Primitives isn't part of this export, so aliases have nothing to point at —
                         Semantics will ship resolved hex values regardless of this toggle.
+                      </p>
+                    )}
+                    {(collections.includes('gradients') || collections.includes('shadow')) && (
+                      <p className="px-3 text-caption text-fg-faint leading-snug">
+                        Gradients and shadows are Figma styles, not variables, so this file — the five
+                        Figma collections — does not carry them. Escala JSON and CSS do.
                       </p>
                     )}
                   </>
@@ -850,7 +856,7 @@ export default function ExportWizard({
                 )}
                 <SummaryRow label="Going to" value={isGitHubDestination ? 'GitHub repository' : wizardFormatLabel(format)} />
                 <SummaryRow label="Structure" value={isGitHubDestination ? 'Repository bundle · 4 files' : files.length > 1 ? `${files.length} files` : 'Single file'} />
-                {/* Mirrors `w3cTreeFor`'s own condition exactly — aliases only ever
+                {/* Mirrors `figmaCollectionsW3C`'s `include` rule — colour aliases only ever
                     ship when Primitives is part of THIS export, or the row
                     would claim "Included" for a file shipping hex. */}
                 {format === 'w3c' && (

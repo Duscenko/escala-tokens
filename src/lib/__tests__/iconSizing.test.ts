@@ -57,8 +57,8 @@ describe('icon sizing', () => {
 })
 
 describe('W3C icon group', () => {
-  it('ships the three sizes as dimension aliases, plus the test glyphs', async () => {
-    const { buildWizardExport, W3C_TEST_GLYPHS } = await import('../exportWizard')
+  it('ships the three sizes as Dimension Semantics aliases of their primitives', async () => {
+    const { buildWizardExport } = await import('../exportWizard')
     const [file] = buildWizardExport({
       collections: ['icons'],
       modes: ['light'],
@@ -70,13 +70,11 @@ describe('W3C icon group', () => {
     })
     const doc = JSON.parse(file.content)
     const resolve = (ref: string) => ref.slice(1, -1).split('.').reduce((n: any, k) => n?.[k], doc)
-    expect(doc.icon.small.$value).toBe('{dimension.16}')
-    expect(resolve(doc.icon.small.$value)?.$value).toBe('16px')
-    expect(doc.icon.medium.$value).toBe('{dimension.20}')
-    expect(doc.icon.large.$value).toBe('{dimension.24}')
-    expect(doc.icon.role).toBeUndefined()
-    expect(doc.icon.size).toBeUndefined()
-    expect(Object.keys(doc.icon.glyph)).toEqual([...W3C_TEST_GLYPHS])
-    expect(doc.icon.glyph.home.$value).toMatch(/^<svg[^>]+viewBox="0 0 256 256"/)
+    const icon = doc['Dimension Semantics'].Desktop.Icon.role
+    expect(icon.small.$value).toBe('{Dimension Primitives.Default.16}')
+    expect(resolve(icon.small.$value)?.$value).toBe('16px')
+    expect(icon.medium.$value).toBe('{Dimension Primitives.Default.20}')
+    expect(icon.large.$value).toBe('{Dimension Primitives.Default.24}')
+    expect(Object.keys(doc['Dimension Semantics'].Desktop)).toEqual(['Icon'])
   })
 })

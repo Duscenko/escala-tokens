@@ -369,6 +369,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   roles it consumes (derive from `componentColorFields.generated.ts`) before a `role` scope
 >   can exist. Copy is English-only for now (no es/fr entries yet).
 
+> **UPDATE (2026-10-19): the W3C export IS the Figma file — five collections, a group per mode.**
+> Supersedes every W3C note below (`{color.accent.9}`, a `dimension` root, `semantic.<theme>` with
+> flat roles, `icon.glyph`). Web and plugin produce ONE shape: top-level groups `Color Primitives`
+> (`Default`) · `Color Semantics` (one group per theme column, Categorical `Content/Action/Surface/
+> Status/Border` + `panel-background`) · `Dimension Primitives` (`Default`, + `columns/<n>`) ·
+> `Dimension Semantics` (`Desktop/Tablet/Mobile` → Spacing · Radius · Stroke · Size · Selector · Icon ·
+> Grid) · `Typography` (viewports → size · weight · line-height · letter-spacing · families · role).
+> Aliases are `{Collection.Mode.path}`; an alias into a collection the export leaves out is written
+> as its value. ONE converter, `lib/figmaCollections/w3cTree.ts` (no imports) — the plugin's build
+> bundles that same file (`code.ts` imports `../../escala-tokens/...`, like `agentBundle/fromJson`).
+> The web builds the variable snapshot from tokens.json (`fromTokens.ts`, a MIRROR of the plugin's
+> `importVariables` naming — change both together); the plugin reads the file's real variables.
+> Gradients and shadows are Figma STYLES and are not in this document (Escala JSON and CSS carry
+> them). Locked by `figmaCollections.test.ts`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**
