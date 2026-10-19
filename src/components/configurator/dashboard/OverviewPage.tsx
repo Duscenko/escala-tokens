@@ -372,8 +372,8 @@ export default function OverviewPage({
 
                 <div className="border-b border-line px-4 py-3">
                   <p className="text-caption font-semibold text-fg">{card.origin ?? t('Custom')}</p>
-                  <p className="truncate text-mini text-fg-faint" title={t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}>
-                    {t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
+                  <p className="truncate text-mini text-fg-faint" title={t(card.themeIds.length === 1 ? '{n} variables · {m} theme mode · {p} platforms' : '{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}>
+                    {t(card.themeIds.length === 1 ? '{n} variables · {m} theme mode · {p} platforms' : '{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
                   </p>
                 </div>
 

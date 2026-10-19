@@ -11,7 +11,8 @@ import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { useFreeTier } from '../../lib/access'
-import { shippedBundle } from '../../lib/freeExport'
+import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
+import { brandAppearances } from '../../lib/brandThemes'
 import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
 import { brandContext } from '../../lib/contextSource'
 import { ContextFilters, useContextOptions } from '../ui/ContextControls'
@@ -326,7 +327,7 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
     ? [
         [compactCount(facts.primitives), t('primitives')],
         [compactCount(facts.tokens), t('tokens')],
-        [String(facts.modes), t('modes')],
+        [String(facts.modes), facts.modes === 1 ? t('mode') : t('modes')],
         [compactCount(facts.cssBytes), 'CSS'],
       ]
     : []
@@ -405,14 +406,12 @@ export default function ThemeCodeFormat({
       projectFallback: source.projectName,
       iconKey: source.iconAiSource,
     })
+    // Free ships what Export ships for this brand (`freeScopeFor`): every
+    // theme the brand lists, not just the appearance on screen — a Free cut
+    // of one appearance said "1 modes" beside System's "2 theme modes".
     const appearance = previewAppearance ?? source.themeKinds[effectiveScope ?? ''] ?? 'light'
     const cut = free
-      ? shippedBundle(asStore, {
-          themes: [appearance],
-          modes: [{ theme: appearance, appearance }],
-          viewports: ['desktop'],
-          gridStyles: ['xl-desktop'],
-        }, true)
+      ? shippedBundle(asStore, freeScopeFor(asStore, effectiveScope ?? undefined, appearance), true)
       : null
     const css = cut?.css ?? buildCSS(asStore)
     const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
@@ -426,7 +425,12 @@ export default function ThemeCodeFormat({
   // Agent context is CUT to what the person asked for — scope, theme, detail —
   // and the file on screen is exactly the paste. `all · both · full` is the
   // file this tab always showed (every references/ file, in package order).
-  const defaultAppearance = previewAppearance ?? store.themeKinds[effectiveScope ?? ''] ?? 'light'
+  // The brief opens on the modes the brand SHIPS (Light + Dark → both), the
+  // same list System and the facts above count — not on the one on screen.
+  const shipped = effectiveScope ? brandAppearances(store.brandThemes, effectiveScope) : []
+  const defaultAppearance: ContextAppearance = shipped.length > 1
+    ? 'both'
+    : shipped[0] ?? previewAppearance ?? store.themeKinds[effectiveScope ?? ''] ?? 'light'
   const [ctx, setCtx] = useContextOptions('all', defaultAppearance)
   const ctxAppearance = ctx.appearance
   const agentMd = useMemo(() => {

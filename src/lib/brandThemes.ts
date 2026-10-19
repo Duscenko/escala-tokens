@@ -65,6 +65,18 @@ export function shippedThemes(
   return [preferred, ...ids.filter((id) => id !== preferred)]
 }
 
+/** The appearances `brand` ships, `preferred` first — THE mode list every
+ *  surface counts and names (System's brand cards, Code's facts and its
+ *  agent brief), so they cannot disagree about how many modes a brand has. */
+export function brandAppearances(
+  brandThemes: BrandThemes | undefined,
+  brand: string,
+  preferred?: ThemeAppearance,
+): ThemeAppearance[] {
+  const ids = shippedThemes(brandThemes, brand, preferred as BrandThemeId | undefined)
+  return [...new Set(ids.map((id) => brandThemeDef(id)?.base).filter((a): a is ThemeAppearance => !!a))]
+}
+
 export function shipsEveryTheme(ids: readonly BrandThemeId[]): boolean {
   return BRAND_THEME_IDS.every((id) => ids.includes(id))
 }
