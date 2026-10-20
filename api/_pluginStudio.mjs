@@ -2112,7 +2112,7 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -2201,6 +2201,7 @@ var init_layoutTokens = __esm({
       md: "2px",
       lg: "4px"
     };
+    STROKE_SM_STOPS = [0, 0.5, 1, 1.5, 2];
     BREAKPOINT_STEPS = ["sm", "md", "lg", "xl", "2xl"];
     BREAKPOINT_STANDARD = {
       // 2xl is 1440, not Tailwind's 1536: it is the widest of the six named grid
@@ -4248,6 +4249,53 @@ function ensureColorScales() {
       const lightLeaked = c2.scale?.[1]?.toLowerCase() === pages.light.toLowerCase() && next.scale[1].toLowerCase() !== pages.light.toLowerCase();
       if (darkLeaked || lightLeaked) s.updateCustomColor(c2.key, next);
     });
+  } catch {
+  }
+}
+function setGlobalStateRole(s, role, patch) {
+  if (role === "error") {
+    if (patch.color !== void 0) s.setErrorColor(patch.color);
+    if (patch.scale !== void 0) s.setErrorScale(patch.scale);
+    if (patch.darkScale !== void 0) s.setErrorDarkScale(patch.darkScale);
+  } else if (role === "warning") {
+    if (patch.color !== void 0) s.setWarningColor(patch.color);
+    if (patch.scale !== void 0) s.setWarningScale(patch.scale);
+    if (patch.darkScale !== void 0) s.setWarningDarkScale(patch.darkScale);
+  } else if (role === "success") {
+    if (patch.color !== void 0) s.setSuccessColor(patch.color);
+    if (patch.scale !== void 0) s.setSuccessScale(patch.scale);
+    if (patch.darkScale !== void 0) s.setSuccessDarkScale(patch.darkScale);
+  } else {
+    if (patch.color !== void 0) s.setInfoColor(patch.color);
+    if (patch.scale !== void 0) s.setInfoScale(patch.scale);
+    if (patch.darkScale !== void 0) s.setInfoDarkScale(patch.darkScale);
+  }
+}
+function applyStateColorForAppearance(role, hex, appearance, fromLink = false, themeKey) {
+  const s = useDesignStore.getState();
+  try {
+    if (!fromLink && s.linkStatesToAccent) s.setLinkStatesToAccent(false);
+    const refs = themeKey ? s.themeSources[themeKey] : void 0;
+    const familyKey = refs?.[role];
+    if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
+      const pages = resolveThemePages(s, themeKey);
+      if (appearance === "light") {
+        s.updateCustomColor(familyKey, { base: hex, scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) });
+      } else {
+        s.updateCustomColor(familyKey, {
+          darkBase: hex,
+          darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark)
+        });
+      }
+      return;
+    }
+    if (appearance === "light") {
+      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground);
+      setGlobalStateRole(s, role, { color: hex, scale });
+      return;
+    }
+    const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground);
+    setGlobalStateRole(s, role, { darkScale: dark });
   } catch {
   }
 }
@@ -11886,6 +11934,7 @@ function adoptPreset(preset, appearance, opts = {}) {
 }
 
 // src/lib/pluginStudio.ts
+var STATE_SLOTS = ["error", "warning", "success", "info"];
 function studioOptions() {
   const radius = RADIUS_STANDARD;
   return {
@@ -11909,6 +11958,8 @@ function studioOptions() {
       ...spacingPaint(m)
     })),
     shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md, mdDark: darkShadow(p.values.md) })),
+    insetSteps: SPACING_STEPS.map((step) => ({ step, px: Number(step.replace("_", ".")) * SPACING_DEFAULT_BASE })),
+    borderStops: [...STROKE_SM_STOPS],
     iconWeights: [...PHOSPHOR_WEIGHTS],
     neutralTints: ["pure", "subtle", "tinted", "vivid"],
     contrast: { min: -1, max: 1, step: 0.05 },
@@ -11987,6 +12038,10 @@ function buildStudioTokens(choices, tier) {
   if (typeof choices.accentDark === "string" && HEX.test(choices.accentDark)) {
     applyAccentDarkColor(choices.accentDark.toLowerCase(), key2);
   }
+  for (const slot of STATE_SLOTS) {
+    const hex = choices.statesDark?.[slot];
+    if (typeof hex === "string" && HEX.test(hex)) applyStateColorForAppearance(slot, hex.toLowerCase(), "dark", true, key2);
+  }
   const patch = (partial) => useDesignStore.getState().patchThemeFoundations(key2, partial);
   const resolved = () => resolveThemeFoundations(useDesignStore.getState(), key2);
   const known = (family) => family && FONT_PRESETS.some((f) => f.value === family) ? family : void 0;
@@ -12026,6 +12081,17 @@ function buildStudioTokens(choices, tier) {
       spacingRoles: { ...f.spacingRoles, [INSET_SURFACE_ROLE]: step },
       padding: insetSurfacePadding(px)
     });
+  }
+  if (choices.cardInset && SPACING_STEPS.includes(choices.cardInset)) {
+    const f = resolved();
+    const step = choices.cardInset;
+    patch({
+      spacingRoles: { ...f.spacingRoles, [INSET_SURFACE_ROLE]: step },
+      padding: insetSurfacePadding(f.spacing[step] ?? `${Number(step.replace("_", ".")) * SPACING_DEFAULT_BASE}px`)
+    });
+  }
+  if (typeof choices.borderWidth === "number" && STROKE_SM_STOPS.includes(choices.borderWidth)) {
+    patch({ stroke: { ...resolved().stroke, sm: `${choices.borderWidth}px` } });
   }
   const shadow = SHADOW_PRESETS.find((p) => p.label === choices.shadow);
   if (shadow) patch({ shadows: { ...shadow.values } });
@@ -12136,11 +12202,15 @@ function studioLook(choices) {
   const brand = kind === "dark" ? generateFamilyDarkScale(typeof c2.accentDark === "string" && HEX.test(c2.accentDark) ? c2.accentDark.toLowerCase() : accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
   const neutral = kind === "dark" ? generateDarkColorScale(gray, "radix", shift, pageDark, tint) : generateLightNeutralScale(gray, "radix", shift, pageLight, tint);
   const family = (hex) => kind === "dark" ? generateFamilyDarkScale(hex, "radix", shift, pageDark) : generateColorScale(hex, "radix", shift, pageLight);
+  const darkSeed = (slot) => {
+    const hex = c2.statesDark?.[slot];
+    return typeof hex === "string" && HEX.test(hex) ? hex.toLowerCase() : null;
+  };
   const brandSolid = solidOf(brand);
   const states = {};
   const stateInk = {};
   for (const slot of ["error", "warning", "success", "info"]) {
-    const solid = solidOf(family(seeds[slot]));
+    const solid = solidOf(family(kind === "dark" && darkSeed(slot) || seeds[slot]));
     states[slot] = solid.fill;
     stateInk[slot] = solid.ink;
   }

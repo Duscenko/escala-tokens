@@ -12,7 +12,9 @@
 // `startNewSystem()` and the final `generateTokenJSON`.
 
 import { useDesignStore } from '../store/useDesignStore'
-import { ensureColorScales, applyAccentColor, applyAccentDarkColor } from './colorActions'
+import { ensureColorScales, applyAccentColor, applyAccentDarkColor, applyStateColorForAppearance } from './colorActions'
+
+const STATE_SLOTS = ['error', 'warning', 'success', 'info'] as const
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
 import { generateTokenJSON } from './tokenGenerator'
@@ -65,6 +67,10 @@ export interface StudioChoices {
   /** -1 (softer) … 1 (stronger), the rail's contrast shift. */
   contrastShift?: number
   states?: Partial<Record<'error' | 'warning' | 'success' | 'info', string>>
+  /** #rrggbb per severity — the Dark anchor, solved for the dark page the way
+   *  the web's Color edition does (`colorRoles.solveRoleColor`). Absent, a
+   *  severity's dark ramp grows from its light seed. */
+  statesDark?: Partial<Record<'error' | 'warning' | 'success' | 'info', string>>
   /** A `SPACING_MODES` id. */
   spacingMode?: string
   /** Card padding — a `SPACING_STEPS` step for the surface inset, on top of
@@ -210,6 +216,11 @@ export function buildStudioTokens(
   // ramp stays on the accent. Same retint the web's accent row runs on Dark.
   if (typeof choices.accentDark === 'string' && HEX.test(choices.accentDark)) {
     applyAccentDarkColor(choices.accentDark.toLowerCase(), key)
+  }
+  // Each severity's Dark anchor, the web's `writeState(…, 'dark')`.
+  for (const slot of STATE_SLOTS) {
+    const hex = choices.statesDark?.[slot]
+    if (typeof hex === 'string' && HEX.test(hex)) applyStateColorForAppearance(slot, hex.toLowerCase(), 'dark', true, key)
   }
   const patch = (partial: Parameters<typeof s0.patchThemeFoundations>[1]) =>
     useDesignStore.getState().patchThemeFoundations(key, partial)
@@ -458,11 +469,15 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
   const family = (hex: string) => kind === 'dark'
     ? generateFamilyDarkScale(hex, 'radix', shift, pageDark)
     : generateColorScale(hex, 'radix', shift, pageLight)
+  const darkSeed = (slot: 'error' | 'warning' | 'success' | 'info') => {
+    const hex = c.statesDark?.[slot]
+    return typeof hex === 'string' && HEX.test(hex) ? hex.toLowerCase() : null
+  }
   const brandSolid = solidOf(brand)
   const states = {} as StudioLook['states']
   const stateInk = {} as StudioLook['stateInk']
   for (const slot of ['error', 'warning', 'success', 'info'] as const) {
-    const solid = solidOf(family(seeds[slot]))
+    const solid = solidOf(family((kind === 'dark' && darkSeed(slot)) || seeds[slot]))
     states[slot] = solid.fill
     stateInk[slot] = solid.ink
   }

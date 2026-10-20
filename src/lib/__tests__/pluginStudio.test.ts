@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildStudioTokens, studioOptions, studioLook, readCode, harmonyFor } from '../pluginStudio'
+import { darkTwinOf } from '../colorRoles'
+import { backgroundFromBase, neutralFromBrand } from '../colorUtils'
 
 type Payload = { colors: { themeOrder: string[] }; viewports?: string[]; radiusRoles?: Record<string, string>; typography: { fontFamily: string }; shadows: Record<string, string> }
 
@@ -160,5 +162,23 @@ describe('plugin studio build', () => {
     const styled = studioLook({ style: 'core-minimal' })
     expect(styled.box).toBe(core?.radius.boxes)
     expect(styled.accentRamp[8].toLowerCase()).toBe(core?.accent.toLowerCase())
+  })
+
+  it('a severity\'s Dark anchor (statesDark) drives the dark board and the build, as the web\'s Color edition writes it', () => {
+    const accent = '#008189'
+    const pages = (() => {
+      const g = neutralFromBrand(accent, 'subtle')
+      return { dark: backgroundFromBase(g, 'dark', 'subtle') }
+    })()
+    const critical = darkTwinOf('#d92d20', pages.dark)
+    const plain = studioLook({ accent, kind: 'dark', states: { error: '#d92d20' } })
+    const anchored = studioLook({ accent, kind: 'dark', states: { error: '#d92d20' }, statesDark: { error: critical } })
+    expect(anchored.states.error).not.toBe(plain.states.error)
+    // Light never reads the dark anchor.
+    expect(studioLook({ accent, kind: 'light', states: { error: '#d92d20' }, statesDark: { error: critical } }).states.error)
+      .toBe(studioLook({ accent, kind: 'light', states: { error: '#d92d20' } }).states.error)
+    const built = buildStudioTokens({ accent, name: 'Anchored', states: { error: '#d92d20' }, statesDark: { error: critical } }, 'pro')
+    expect('error' in built).toBe(false)
+    expect(JSON.stringify((built as { tokens: unknown }).tokens).toLowerCase()).toContain(critical.toLowerCase())
   })
 })
