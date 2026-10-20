@@ -282,7 +282,7 @@ export const DRAWER: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
         radius: 'radius.overlay', text: c('content.primary'),
       },
-      handle: { fill: c('surface.layer-1'), radius: 'radius.pill' },
+      handle: { fill: c('surface.inverse'), radius: 'radius.pill' },
       header: { gap: 'spacing.0_5', paddingX: 'spacing.4', paddingY: 'spacing.4' },
       title: { text: c('content.primary'), font: OVERLAY_TITLE },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
