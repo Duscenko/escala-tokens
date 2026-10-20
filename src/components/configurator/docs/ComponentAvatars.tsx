@@ -138,8 +138,11 @@ function ComponentAvatar({
 
 /** Scales the specimen so the whole of it sits inside the avatar well.
  *  A fixed scale clipped the wide ones (a text link, a store badge) and left
- *  a fragment that no longer looked like the component. */
-export function FittedSpecimen({ children }: { children: ReactNode }) {
+ *  a fragment that no longer looked like the component.
+ *  The specimen is a picture (`pointer-events-none`) unless `interactive`:
+ *  the board's covers pass it while Inspect is on, or every hover fell through
+ *  to the empty frame and the inspector could only pick "Page". */
+export function FittedSpecimen({ children, interactive = false }: { children: ReactNode; interactive?: boolean }) {
   const frameRef = useRef<HTMLSpanElement>(null)
   const innerRef = useRef<HTMLSpanElement>(null)
   const [scale, setScale] = useState(1)
@@ -167,7 +170,7 @@ export function FittedSpecimen({ children }: { children: ReactNode }) {
     <span ref={frameRef} className="absolute inset-0">
       <span
         ref={innerRef}
-        className="pointer-events-none absolute left-1/2 top-1/2 w-max"
+        className={`${interactive ? '' : 'pointer-events-none '}absolute left-1/2 top-1/2 w-max`}
         style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
       >
         {children}
@@ -323,7 +326,7 @@ export function ComponentCoversGrid({ tokens, onOpen }: {
             <span aria-hidden inert={!inspecting} className="relative block min-h-0 flex-1">
               {Specimen && (
                 <span className="absolute inset-x-5 bottom-5 top-2">
-                  <FittedSpecimen>
+                  <FittedSpecimen interactive={inspecting}>
                     <TokenInspector component={def.key} variant={axisDefaults(def)}>
                       <Specimen t={tokens} v={axisDefaults(def)} />
                     </TokenInspector>
