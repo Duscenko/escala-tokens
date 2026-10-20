@@ -223,7 +223,7 @@ interface TopNavProps {
   search?: ReactNode
   /** Guided export — transversal, same wizard as elsewhere in the shell. */
   exportAction?: ReactNode
-  /** Home door (`ThemeAppearanceControl`). Light/dark stays its own control. */
+  /** The brand on screen (`ThemeAppearanceControl`). Light/dark is its own control beside it. */
   themeControl?: ReactNode
   /** Opens the Themes library page (saved themes and systems). Shown in the
    *  signed-in account menu; absent on public pages, which have no workspace. */
@@ -510,7 +510,10 @@ function TopNavCompactMenu({
             ))}
           </div>
           </div>
-          <div className={`${always ? 'mt-1 border-t border-line pt-1.5' : 'min-[1080px]:pt-0 max-[1079px]:mt-1 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-1.5'} pb-0.5`} role="group" aria-label={t('Appearance')}>
+          {/* The Generator (`always`) carries the sun/moon in the bar itself, where
+              the Home door used to be, so ☰ does not repeat it there. */}
+          {!always && (
+          <div className="min-[1080px]:pt-0 max-[1079px]:mt-1 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-1.5 pb-0.5" role="group" aria-label={t('Appearance')}>
             <p className="px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Appearance')}</p>
             <div className="grid grid-cols-2 gap-1 px-0.5">
               {(['light', 'dark'] as const).map((appearance) => {
@@ -533,6 +536,7 @@ function TopNavCompactMenu({
               })}
             </div>
           </div>
+          )}
       </ChromeAnchoredDropdown>
     </div>
   )
@@ -715,6 +719,8 @@ export default function TopNav({
             always={always}
           />
           </div>
+          {/* Light/dark sits where the Home door was: one tap, every visitor. */}
+          {always && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           {themeControl}
           {/* The plugin lives on Figma Community, so this is a link OUT, not a
               workspace destination. The label drops before the glyph does. */}

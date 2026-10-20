@@ -263,9 +263,7 @@ export function StartDesignModal({
 export function ThemeAppearanceControl({
   previewTheme,
   stylePreview,
-  homeOpen,
   themeOpen,
-  onOpenLibrary,
   onOpenTheme,
   onCreateTheme,
   onOpenComponents,
@@ -275,10 +273,8 @@ export function ThemeAppearanceControl({
 }: {
   previewTheme: string
   stylePreview: StylePreview | null
-  homeOpen: boolean
   /** Theme preview workspace is on screen — the avatar reads as pressed. */
   themeOpen: boolean
-  onOpenLibrary: () => void
   onOpenTheme: () => void
   /** Opens the start choices. Blank is the create studio. */
   onCreateTheme: () => void
@@ -304,7 +300,6 @@ export function ThemeAppearanceControl({
   const ramp = tryOn
     ? PRESET_AVATAR_RAMPS[`${tryOn.preset.id}:${tryOn.appearance}`]
     : themeBrandRamp(previewTheme, store.themeSources, store.themeKinds, store)
-  const homeLabel = t('Home')
   const themeLabel = empty ? t('New design system') : t('Brand preview — {name}', { name })
   const menuSubtitle = empty
     ? t('Nothing set up here')
@@ -331,18 +326,6 @@ export function ThemeAppearanceControl({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={onOpenLibrary}
-        aria-pressed={homeOpen}
-        aria-label={homeLabel}
-        title={homeLabel}
-        className={`${ICON} ${homeOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''}`}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
-        </svg>
-      </button>
       <button
         ref={triggerRef}
         type="button"

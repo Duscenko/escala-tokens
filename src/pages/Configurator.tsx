@@ -2435,13 +2435,15 @@ export default function Configurator() {
   const changeWorkspaceNav = (next: WorkspaceNavKey) => {
     if (next === 'components') { changeTab('components'); return }
     if (next === 'overview') { openThemePreviewPage(); return }
+    // Home (the system tab) is never blocked: with no brand yet, it is the
+    // table where the first one is added.
+    if (next === 'system') { openSystemPage(); return }
     const reason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
     if (reason) {
       showToast(reason, undefined, true)
       return
     }
     if (next === 'code') openGetCodePage()
-    else if (next === 'system') openSystemPage()
     else {
       leaveExportWizard()
       commitVisit()
@@ -2465,13 +2467,16 @@ export default function Configurator() {
       active={workspaceNav}
       onSelect={changeWorkspaceNav}
       items={[
-        { key: 'overview', label: t('Overview') },
+        // The system tab IS Home now (the top-bar Home was folded into it, see
+        // design-plans/home-into-system.md); the brand board reads "Board".
+        // Keys and URLs stay `system` / `overview`.
+        { key: 'system', label: t('Home') },
+        { key: 'overview', label: t('Board') },
         { key: 'variables', label: t('Variables') },
-        { key: 'system', label: t('System') },
         { key: 'code', label: t('Code') },
         { key: 'components', label: t('Components') },
       ]}
-      dimmed={railBlockedReason ? ['variables', 'system', 'code'] : undefined}
+      dimmed={railBlockedReason ? ['variables', 'code'] : undefined}
       dimmedReason={railBlockedReason ?? undefined}
     />
   ) : null
@@ -2525,9 +2530,7 @@ export default function Configurator() {
           <ThemeAppearanceControl
             previewTheme={previewTheme}
             stylePreview={stylePreview}
-            homeOpen={themesCanvas && themeWorkspaceTab === 'library' && sessionAllowsHome}
             themeOpen={themesCanvas && themeWorkspaceTab === 'preview'}
-            onOpenLibrary={requestHome}
             onOpenTheme={openThemePreviewPage}
             onCreateTheme={openCreateTheme}
             onOpenComponents={() => changeTab('components')}
@@ -2620,13 +2623,13 @@ export default function Configurator() {
                       <button
                         type="button"
                         onClick={returnToSystem}
-                        aria-label={t('Back to System')}
+                        aria-label={t('Back to Home')}
                         className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                       >
                         <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="M7.5 2.5 4 6l3.5 3.5" />
                         </svg>
-                        {t('System')}
+                        {t('Home')}
                       </button>
                       <button
                         type="button"
