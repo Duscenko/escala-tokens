@@ -761,9 +761,14 @@ export function ThemeForm({
           )
         })()}
 
-        <div className="flex-shrink-0">
-          <BrandThemesPicker field={firstStep} value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
-        </div>
+        {/* Light · Dark sits in the Color header beside Shuffle, as in the
+            editor's Color edition. Only the expanded slot form keeps it as
+            its own row (it has no such header). */}
+        {moreOpen && (
+          <div className="flex-shrink-0">
+            <BrandThemesPicker field={firstStep} value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
+          </div>
+        )}
 
         {/* Style — shown on the create form even while System Styles are
             hidden elsewhere (SYSTEM_STYLES_VISIBLE): here the person is
@@ -796,7 +801,9 @@ export function ThemeForm({
               appearance="light"
               header={(
                 <div className="flex items-center gap-2">
-                  <p className="min-w-0 flex-1 truncate text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Color')}</p>
+                  <div className="min-w-0 flex-1">
+                    <BrandThemesPicker label={false} value={ships} lead={kind} onLead={(id) => pickKind(brandThemeDef(id)?.base ?? 'light')} onChange={pickShips} />
+                  </div>
                   {canUndoRandom && (
                     <button
                       type="button"

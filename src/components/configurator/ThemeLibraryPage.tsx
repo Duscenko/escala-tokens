@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { InspectorToggle } from './ThemePreviewHub'
+import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -771,11 +773,13 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
  *  screen, and the inspector is the tool you use on it. The number is the step
  *  the footer counts, so the two never disagree. The hint is behind "?" —
  *  one sentence nobody needs twice. */
-function CreateBoardHeader({ title, stepLabel, lead }: {
+function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
   title: string
   stepLabel: string
   /** The board's view switch. It leads, as in the Generator's header. */
   lead?: ReactNode
+  /** The Inspector toggle, on the right as in the Generator's header. */
+  trailing?: ReactNode
 }) {
   return (
     <div
@@ -787,13 +791,17 @@ function CreateBoardHeader({ title, stepLabel, lead }: {
         <span className="truncate">{title}</span>
         <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
       </h2>
+      {trailing}
     </div>
   )
 }
 
 function CreateBoard({
-  store, themeKey, appearance, title, stepLabel, platform = 'desktop',
+  store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent,
 }: {
+  /** Components view: a cover's ↗ opens that component's page. Only once the
+   *  brand exists — a draft has no page to show it on. */
+  onOpenComponent?: (key: string) => void
   store: ReturnType<typeof useDesignStore.getState>
   /** The studio's platform switch: the board resolves against this viewport. */
   platform?: GridViewport
@@ -805,6 +813,11 @@ function CreateBoard({
   // What the board shows: the bento board, or every component as a cover.
   // Light / Dark is the panel's Theme row — the board has no second toggle.
   const [view, setView] = useState<BoardView>('theme')
+  // Inspector mode, as in the Generator: on by default, so pointing at a
+  // component names the tokens that paint it while the brand is being made.
+  // There is no Token Details here, so the list is read-only (no `onPick`).
+  const [inspecting, setInspecting] = useState(true)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
   const panelId = `create-board-${useId().replace(/:/g, '')}`
   const tokensByAppearance = useMemo(() => ({
     light: resolvePreviewTokens(store, themeKey, 'light', platform),
@@ -818,8 +831,15 @@ function CreateBoard({
   const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
   return (
     <div className={`flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
-      <CreateBoardHeader title={title} stepLabel={stepLabel} lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />} />
-      <div id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+      <CreateBoardHeader
+        title={title}
+        stepLabel={stepLabel}
+        lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />}
+        trailing={<InspectorToggle active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />}
+      />
+      <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
+        <InspectorModeProvider active={inspecting}>
         {view === 'theme' ? (
           <SystemCollage
             layout={platform === 'desktop' ? 'board' : 'phones'}
@@ -829,9 +849,18 @@ function CreateBoard({
             projectName={store.projectName}
           />
         ) : (
-          <ComponentCoversGrid tokens={stage} />
+          <ComponentCoversGrid tokens={stage} onOpen={onOpenComponent ? (def) => onOpenComponent(def.key) : undefined} />
         )}
+        </InspectorModeProvider>
+        </div>
       </div>
+      <InspectorOverlay
+        active={inspecting}
+        rootRef={canvasRef}
+        tokensByAppearance={tokensByAppearance}
+        defaultAppearance={appearance}
+        onExitMode={() => setInspecting(false)}
+      />
     </div>
   )
 }
@@ -1873,6 +1902,7 @@ export default function ThemeLibraryPage({
               : (createDraft?.kind ?? 'dark')}
             title={firstSystem ? t('Customize your design system') : t('New brand')}
             stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
+            onOpenComponent={createdKey ? onOpenComponent : undefined}
           />
         </>
       ) : studioOnly ? null : (

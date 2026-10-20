@@ -184,7 +184,7 @@ export function PickerField<T extends string>({
         aria-controls={open ? listId : undefined}
         aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
         className={`group flex h-[30.5px] w-full min-w-0 items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-          open ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]' : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
+          open ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]' : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
         }`}
       >
         {/* Name: plain text, like a role row's name — muted at rest, full ink

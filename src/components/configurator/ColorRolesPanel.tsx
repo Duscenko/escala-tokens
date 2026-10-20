@@ -172,7 +172,7 @@ function RoleRow({
       role="listitem"
       className={`col-span-full grid grid-cols-subgrid rounded-[10px] bg-surface transition-shadow duration-150 ${
         open || on
-          ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]'
+          ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
           : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
       }`}
     >

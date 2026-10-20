@@ -13,6 +13,7 @@ const BOARD_PANEL_ID = 'generator-board'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
+import type { ComponentDef } from '../../lib/componentCatalogue'
 import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
@@ -116,7 +117,7 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  */
 const HEADER_CONTROL_DISABLED = 'opacity-40 cursor-not-allowed'
 
-function InspectorToggle({ active, onChange, accent, ink, disabled = false, disabledTitle }: {
+export function InspectorToggle({ active, onChange, accent, ink, disabled = false, disabledTitle }: {
   active: boolean
   onChange: (v: boolean) => void
   /** The PREVIEWED theme's brand solid + its solved label ink. This is the one
@@ -139,11 +140,14 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
       ? t('Return to normal interaction on the canvas')
       : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`
   return (
+    // Same pill as Theme · Components beside it: the frame colour (`bg-nav`),
+    // a solid hairline, h-9 / rounded-xl, no shadow. The dashed edge it used
+    // to wear read as a drop target next to a solid control.
     <div
-      className={`flex h-8 items-center rounded-lg border p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
+      className={`flex h-9 items-center rounded-xl border bg-nav p-1 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
         disabled
           ? `border-line ${HEADER_CONTROL_DISABLED}`
-          : `border-dashed ${active ? (accent ? '' : 'border-accent-ui/50') : 'border-line hover:border-line-strong'}`
+          : active ? (accent ? '' : 'border-accent-ui/50') : 'border-line hover:border-line-strong'
       }`}
       style={active && accent && !disabled ? { borderColor: `color-mix(in srgb, ${accent} 50%, transparent)` } : undefined}
     >
@@ -156,7 +160,7 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
         aria-label={label}
         aria-keyshortcuts={active ? 'Escape' : undefined}
         title={hint}
-        className={`${HEADER_CONTROL_BTN} ${
+        className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
           active && !disabled
             ? (accent ? '' : 'bg-accent-solid text-accent-ink')
             : `text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`
@@ -246,8 +250,10 @@ const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
   view, previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
-  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange,
+  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange, onOpenComponent,
 }: {
+  /** Components view: a cover's ↗ opens that component's page. */
+  onOpenComponent?: (def: ComponentDef) => void
   /** Theme (the bento board) or Components (every component as a cover). */
   view: BoardView
   previewTheme: string
@@ -346,7 +352,7 @@ function ArtefactsView({
               />
             ) : (
               <div className={boardAppearance === 'dark' ? 'dark' : 'light'}>
-                <ComponentCoversGrid tokens={stageTokens} />
+                <ComponentCoversGrid tokens={stageTokens} onOpen={onOpenComponent} />
               </div>
             )}
           </InspectorModeProvider>
@@ -399,11 +405,14 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
   )
 }
 
+/** The board view last chosen this session (Theme · Components). */
+let lastBoardView: BoardView = 'theme'
+
 export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
@@ -430,6 +439,8 @@ export default function ThemePreviewHub({
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
   /** Open the Components destination — catalogue link in the Button teaser header. */
   onOpenComponents: () => void
+  /** Open one component's page — the ↗ on a board cover. */
+  onOpenComponent?: (def: ComponentDef) => void
   onEditFoundation: (key: string) => void
   /** Keep the Variables icon rail in sync when the reader jumps foundations in-doc. */
   onSyncFoundationFromDoc: (foundationKey: string) => void
@@ -486,7 +497,10 @@ export default function ThemePreviewHub({
   // screen is how a first-time visitor learns what the colour step is setting.
   // Only an unsaved Random draft keeps it off.
   const [inspecting, setInspecting] = useState(true)
-  const [boardView, setBoardView] = useState<BoardView>('theme')
+  // Survives the hub unmounting, so a cover's ↗ → the component page → "Brand"
+  // lands back on the Components view instead of the bento board.
+  const [boardView, setBoardViewState] = useState<BoardView>(() => lastBoardView)
+  const setBoardView = (view: BoardView) => { lastBoardView = view; setBoardViewState(view) }
   useEffect(() => {
     if (randomDraft) setInspecting(false)
   }, [randomDraft])
@@ -797,6 +811,7 @@ export default function ThemePreviewHub({
                     onPickRole={pickRole}
                     onSelectionChange={setInspectedSelection}
                     onOpenRoleInVariables={onOpenInVariables}
+                    onOpenComponent={onOpenComponent}
                   />
                 ) : null}
                   </>

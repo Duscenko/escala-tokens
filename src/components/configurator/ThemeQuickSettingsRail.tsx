@@ -13,6 +13,7 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
+import { releaseInspectorPin } from '../preview/artefacts/TokenInspector'
 import { recordEdit } from '../../lib/editHistory'
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
@@ -2507,8 +2508,10 @@ export default function ThemeQuickSettingsRail({
             editing={editList}
             title={editList ? t('Edit {name}', { name: brandLabel }) : t('Theme')}
             name={<ThemeNameField key={previewTheme} previewTheme={previewTheme} />}
-            onEdit={onSelectPanel ? () => setEditList(true) : undefined}
-            onBack={() => setEditList(false)}
+            // The docked inspector pin covers this panel: drop it, or the
+            // edit list opens underneath and the button looks dead.
+            onEdit={onSelectPanel ? () => { releaseInspectorPin(); setEditList(true) } : undefined}
+            onBack={() => { releaseInspectorPin(); setEditList(false) }}
           />
         </InspectorHeaderPortal>
       )}
@@ -2624,7 +2627,7 @@ export default function ThemeQuickSettingsRail({
                           aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
                           className={`flex w-full items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                             openChip === rank
-                              ? 'shadow-[inset_0_0_0_1px_var(--line-emphasis)]'
+                              ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
                               : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
                           }`}
                         >

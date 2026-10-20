@@ -9,6 +9,7 @@ import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS } from './specimens'
 import { useI18n } from '../../../lib/i18n'
 import { axisDefaults } from './componentArticle'
+import { INSPECT_EXEMPT_ATTR, TokenInspector, useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
 function useHorizontalScrollFade<T extends HTMLElement>(contentKey: string) {
   const ref = useRef<T>(null)
@@ -260,10 +261,24 @@ function ComponentCard({
 
 /**
  * Every component as a large cover, painted entirely in the system's own
- * tokens (card, label, specimen) — the create studio's "Components" view.
- * Pure preview: the covers are inert, nothing opens.
+ * tokens (card, label, specimen) — the board's "Components" view.
+ *
+ * Two doors per cover, and they never compete:
+ *  · the name (`onOpen`) opens that component's page; its ↗ shows on hover.
+ *    It is the only clickable thing on the card and is exempt from inspector mode, so it
+ *    navigates whether or not Inspect is on.
+ *  · with inspector mode on (`InspectorModeProvider` above), the specimen is a
+ *    `TokenInspector` target: point at it, get the tokens it paints. The cover
+ *    is `inert` only while the mode is OFF — an inert subtree is skipped by
+ *    hit-testing, which is exactly what the overlay needs to reach.
  */
-export function ComponentCoversGrid({ tokens }: { tokens: PreviewTokens }) {
+export function ComponentCoversGrid({ tokens, onOpen }: {
+  tokens: PreviewTokens
+  /** Opens the component's page. Omit and no arrow renders. */
+  onOpen?: (def: ComponentDef) => void
+}) {
+  const { t } = useI18n()
+  const inspecting = useInspectorActive()
   const items = COMPONENTS
     .map((c, i) => ({ c, i }))
     .sort((a, b) =>
@@ -277,15 +292,41 @@ export function ComponentCoversGrid({ tokens }: { tokens: PreviewTokens }) {
         return (
           <li
             key={def.key}
-            className="relative flex h-[220px] flex-col overflow-hidden rounded-2xl"
+            className="group relative flex h-[220px] flex-col overflow-hidden rounded-2xl"
             style={{ background: card, boxShadow: `inset 0 0 0 1px ${tokens.borderDefault ?? 'transparent'}` }}
           >
-            <span className="px-5 pt-4 text-ui" style={{ color: tokens.neutralText }}>{def.label}</span>
-            <span aria-hidden inert className="relative block min-h-0 flex-1">
+            <span className="flex min-w-0 px-5 pt-4">
+              {onOpen ? (
+                // The name IS the door: the arrow beside it stays hidden until
+                // the card is hovered (or the name has keyboard focus), so the
+                // grid reads as specimens, not a list of links.
+                <button
+                  type="button"
+                  onClick={() => onOpen(def)}
+                  aria-label={`${t('Open')} ${def.label}`}
+                  {...{ [INSPECT_EXEMPT_ATTR]: '' }}
+                  className="-mx-1.5 -my-0.5 flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-ui transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-[color-mix(in_srgb,var(--cover-ink)_8%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cover-ink)]"
+                  style={{ color: tokens.neutralText, ['--cover-ink' as string]: tokens.neutralText }}
+                >
+                  <span className="truncate">{def.label}</span>
+                  <svg
+                    width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+                    className="flex-shrink-0 -translate-x-1 opacity-0 transition-[opacity,transform] duration-150 ease-[var(--ease-out-quint)] group-hover:translate-x-0 group-hover:opacity-70 group-focus-within:translate-x-0 group-focus-within:opacity-70 motion-reduce:translate-x-0 motion-reduce:transition-none"
+                  >
+                    <path d="M5 11 11 5M6 5h5v5" />
+                  </svg>
+                </button>
+              ) : (
+                <span className="truncate text-ui" style={{ color: tokens.neutralText }}>{def.label}</span>
+              )}
+            </span>
+            <span aria-hidden inert={!inspecting} className="relative block min-h-0 flex-1">
               {Specimen && (
                 <span className="absolute inset-x-5 bottom-5 top-2">
                   <FittedSpecimen>
-                    <Specimen t={tokens} v={axisDefaults(def)} />
+                    <TokenInspector component={def.key} variant={axisDefaults(def)}>
+                      <Specimen t={tokens} v={axisDefaults(def)} />
+                    </TokenInspector>
                   </FittedSpecimen>
                 </span>
               )}

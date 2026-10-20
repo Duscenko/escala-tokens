@@ -66,6 +66,15 @@ import { InspectorPortal, useInInspector } from '../../configurator/WorkspaceIns
 
 const InspectorActiveContext = createContext(false)
 
+const RELEASE_PIN_EVENT = 'escala:inspector-release-pin'
+
+/** Drops the inspector's pinned selection. The docked pin covers the whole
+ *  right-hand panel, so a control in that panel's header that opens another
+ *  view (the rail's Edit) calls this, or its view would open underneath. */
+export function releaseInspectorPin(): void {
+  window.dispatchEvent(new Event(RELEASE_PIN_EVENT))
+}
+
 export function InspectorModeProvider({ active, children }: { active: boolean; children: ReactNode }) {
   return <InspectorActiveContext.Provider value={active}>{children}</InspectorActiveContext.Provider>
 }
@@ -340,8 +349,9 @@ export function InspectorOverlay({
   tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
   /** Fallback when the pointer isn't over a per-tile appearance subtree. */
   defaultAppearance: ThemeAppearance
-  /** A role was chosen — open it in the quick rail. */
-  onPick: (roleId: string, css: string, appearance: ThemeAppearance) => void
+  /** A role was chosen — open it in the quick rail. Omit where there is no
+   *  Token Details to open (the create studio): the list is then read-only. */
+  onPick?: (roleId: string, css: string, appearance: ThemeAppearance) => void
   /** Leave the canvas for the full Semantics table. It takes ONE role because
    *  that is what the table can scroll to; the badge sends whichever row is in
    *  play (the lit control's first role, else the top of the list) rather than
@@ -389,6 +399,11 @@ export function InspectorOverlay({
     focusHeld.current = false
     setHover(null); setPin(null); setFocus(null)
   }, [])
+
+  useEffect(() => {
+    window.addEventListener(RELEASE_PIN_EVENT, clearAll)
+    return () => window.removeEventListener(RELEASE_PIN_EVENT, clearAll)
+  }, [clearAll])
 
   const tokensFor = useCallback((el: Element | null): PreviewTokens => {
     const node = el?.closest?.('[data-collage-appearance]')
@@ -807,11 +822,11 @@ export function InspectorOverlay({
             <TokenTraceList
               trace={trace}
               hitSlot={target.hitSlot}
-              onPick={(row) => {
+              onPick={onPick ? (row) => {
                 if (!row.pickId) return
                 if (!pinRef.current) { setPin(target); setHover(null) }
                 onPick(row.pickId, row.value, target.appearance)
-              }}
+              } : undefined}
             />
           </>
         ) : roles.length === 0 ? (
@@ -891,6 +906,7 @@ export function InspectorOverlay({
                           // Radius, text and size open the same drawer; it picks a
                           // primitive instead of a colour ramp.
                           onClick={() => {
+                            if (!onPick) return
                             if (!pinRef.current) { setPin(target); setHover(null) }
                             onPick(role.id, role.css, target.appearance)
                           }}

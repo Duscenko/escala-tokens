@@ -2715,6 +2715,11 @@ export default function Configurator() {
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}
+                    onOpenComponent={(def) => {
+                      // The page's breadcrumb leads back to this brand.
+                      setComponentFromSystem(true)
+                      selectComponent(def)
+                    }}
                     onEditFoundation={(key) => {
                       const reason = themeTablesBlocked()
                       if (reason) { showToast(reason, undefined, true); return }

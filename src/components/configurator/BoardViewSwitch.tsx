@@ -1,6 +1,5 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
 
 /** What the board shows: the bento board of the brand, or every catalogue
  *  component as a cover painted in its tokens. */
@@ -71,7 +70,11 @@ export function BoardViewSwitch({ value, onChange, panelId }: {
       role="tablist"
       aria-label={t('Board view')}
       onKeyDown={onKeyDown}
-      className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
+      // The pill wears the frame colour (`--nav`, what the left rail is
+      // painted with) over the board, with a hairline edge and no shadow.
+      // `bg-nav` reads the card's own `.light` / `.dark` class, so it stays
+      // the frame's colour for the appearance on screen.
+      className="flex h-9 flex-shrink-0 items-center gap-0.5 rounded-xl border border-line bg-nav p-1"
     >
       {VIEWS.map((view) => {
         const on = value === view
@@ -85,7 +88,9 @@ export function BoardViewSwitch({ value, onChange, panelId }: {
             aria-controls={panelId}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(view)}
-            className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
+            className={`flex h-7 items-center gap-1.5 rounded-lg px-3 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+              on ? 'bg-fg/[0.09] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+            }`}
           >
             {glyphs[view]}
             {labels[view]}

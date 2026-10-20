@@ -228,6 +228,11 @@
      `border.default`). `--fg-faint` stays hand-tuned: the system has no
      third readable ink (see `src/lib/chromeTheme.ts`). */
   --fg-faint: #6a6a70;
+  /* Selected / open row in the inspector panel (a colour role, an open
+     picker). `--line-emphasis` (60–70 % ink) read as a hard white outline in
+     dark; this sits one clear step above the hover edge (`--line-strong`,
+     15 %) without shouting. No shadow: the panel is flat, the edge is the cue. */
+  --line-selected: rgb(0 0 0 / 0.3);
   /* Chrome lines — TWO colour roles, ONE width. Hairline is 0.8px on
      retina and floors to 1px below 2dppx (same guard `hairlineSafe` uses
      for token strokes — a sub-pixel line vanishes on 1x). Do not invent a
@@ -311,6 +316,7 @@ header[data-top-nav] .bg-chip-rest {
    so its light card must stay light even while the app chrome is dark. */
 .light {
   --fg-faint: #6a6a70;
+  --line-selected: rgb(0 0 0 / 0.3);
   --inverse-action: #18181b;
   --inverse-action-hover: #27272a;
   --inverse-action-ink: #fafafa;
@@ -431,6 +437,7 @@ header[data-top-nav] .bg-chip-rest {
      because the luminance range near black is compressed. The generated
      `--elevated` (#1b1b1c) lands +.044 over the panel. */
   --fg-faint: #85858d;
+  --line-selected: rgb(255 255 255 / 0.28);
   /* Chrome levels (dark) that are still hand-tuned:
        `--nav`        #070709  shell frame — TopNav, Themes library, footer,
                                Artefacts well (`SHELL_CHROME`)
