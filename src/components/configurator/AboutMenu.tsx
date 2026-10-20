@@ -20,6 +20,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { FooterLinks } from './FooterLinks'
 import { PublicHeader } from '../public/PublicReadingPage'
+import { AboutInspectDemo } from './AboutInspectDemo'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -556,12 +557,12 @@ const SHOTS = {
   primitives: { file: 'primitives', size: [1360, 850], alt: 'The Primitives table: one accent family with a dark and a light column, step 9 marked as the anchor' },
   semantics: { file: 'semantics', size: [1360, 850], alt: 'The Semantics table with Token Details open on a role, showing the ramp it can point at' },
   contrast: { file: 'contrast', size: [1200, 900], alt: 'The contrast grid: every pair of the twelve accent steps measured with APCA' },
-  type: { file: 'type', size: [1360, 850], alt: 'The Font edition panel: body and heading font and a five-step text scale slider' },
-  radius: { file: 'radius', size: [1360, 850], alt: 'The Radius edition panel with Fields at the roundest step while Boxes keep theirs' },
+  type: { file: 'type', size: [1360, 850], alt: 'The Font panel: body and display font, the text scale and every type role' },
+  radius: { file: 'radius', size: [1360, 850], alt: 'The Radius panel: one preset sets boxes, fields and selectors, with fine-tune for each' },
   spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing semantics table with the Mobile platform selected' },
   components: { file: 'components', size: [1360, 850], alt: 'The Button page in Components: a live playground with colour, style, size and state controls' },
-  docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page, built from the system\'s own accent ramps' },
-  code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the theme\'s variables.css with CSS, Markdown and Agent context views' },
+  docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page with its variable map, built from the system\'s own ramps and roles' },
+  code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the brand\'s agent context, with its CSS and shadcn files beside it' },
   figma: { file: 'figma', size: [1360, 850], alt: 'The Figma page: the agent context to copy, and the brands, themes and viewports it carries' },
 } satisfies Record<string, AboutShotSpec>
 
@@ -905,6 +906,18 @@ export function AboutHome({
           <Stat value={ALL_ROLES.length} label={t('Semantic roles')} delay={0.16} />
         </motion.div>
 
+        {/* ── Try the inspector — the one live piece of the workspace, and the
+            one a PHONE visitor can use: real components, painted with this
+            browser's system, traced token by token (`AboutInspectDemo`). ── */}
+        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+          <SectionHeader
+            eyebrow={t('Try the inspector')}
+            title={t('Tap a component. See the tokens it is made of.')}
+            lead={t('Every component in Escala reads its colour, radius and spacing from tokens. Pick one, change a value, and watch the card follow.')}
+          />
+          <AboutInspectDemo />
+        </section>
+
         {/* ── Start from a style — split: media left, copy right. Hidden with
             the styles themselves (SYSTEM_STYLES_VISIBLE): the page must not
             promise a door the product no longer opens. ── */}
@@ -1036,7 +1049,9 @@ export function AboutHome({
             <div className="relative flex flex-col items-center gap-4 bg-elevated/20 px-6 py-16 text-center">
               <Eyebrow>{t('Get started')}</Eyebrow>
               <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-fg">
-                {t('Your own token system. Free to build. Pro for the UI Kit and more than 10 modes.')}
+                {OPEN_BETA
+                  ? t('Your own token system. Everything is open during the beta.')
+                  : t('Your own token system. Free to build. Pro for the UI Kit and more than 10 modes.')}
               </h2>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                 <RainbowButton
@@ -1259,23 +1274,25 @@ export function AboutScaffold({
     <div className={cn('flex h-screen flex-col bg-app text-fg', wrapperClassName)}>
       {/* TopNav stays pinned — same shell as `/pricing` and `/contact`. */}
       <div className="flex-shrink-0">
-        {headerMode === 'workspace' ? (
-          <PublicHeader current="about" openEditor="/" />
-        ) : (
-          <>
-            {/* Phone + narrow reading: brand + language + appearance only. */}
-            <div className="flex h-14 items-center justify-between gap-3 border-b border-line px-4">
-              <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
-                <BrandMark size={24} />
-                <span className="text-ui font-semibold text-fg">Escala Tokens</span>
-              </a>
-              <div className="flex items-center gap-2">
-                <LanguageMenu />
-                <AppearanceToggle value={theme} onChange={setTheme} />
-              </div>
-            </div>
-          </>
+        {/* `/about` on a laptop gets the public TopNav; below `md` its links and
+            sign-in don't fit, so a phone always gets the slim bar. CSS, not a
+            JS check, so there is no flash. */}
+        {headerMode === 'workspace' && (
+          <div className="hidden md:block">
+            <PublicHeader current="about" openEditor="/" />
+          </div>
         )}
+        {/* Phone + narrow reading: brand + language + appearance only. */}
+        <div className={cn('flex h-14 items-center justify-between gap-3 border-b border-line px-4', headerMode === 'workspace' && 'md:hidden')}>
+          <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+            <BrandMark size={24} />
+            <span className="text-ui font-semibold text-fg">Escala Tokens</span>
+          </a>
+          <div className="flex items-center gap-2">
+            <LanguageMenu />
+            <AppearanceToggle value={theme} onChange={setTheme} />
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">

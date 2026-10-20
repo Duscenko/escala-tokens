@@ -48,151 +48,161 @@ async function findChromium() {
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
-// Layout (2026-10, brands & themes): [icon rail] [canvas CARD] [INSPECTOR 288].
-// The inspector's tabs are Brand · Variables · System. Code is the `</>` button
-// in the canvas header; Docs is a page of System; Components and Figma sync are
-// reached from the header menu / Export menu.
-const inspectorTab = (p, name) => p.getByRole('tab', { name, exact: true }).click()
-const rail = (p, name) => p.locator(`nav button:has-text("${name}")`).first()
+// Layout (2026-10-20): [icon rail: Home · Board · Variables · Code · Components]
+// [canvas CARD] [INSPECTOR 288]. A fresh browser has NO brand, so every capture
+// first adds one through the real flow (`seedBrand`) — no fixture to go stale
+// with store migrations. Crops are MEASURED off the live layout, never typed.
 const settle = (p, ms = 700) => p.waitForTimeout(ms)
 const blur = (p) => p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
+/** A tile of the left icon rail. */
+// Visible only: the top nav carries hidden copies of some names (Components).
+const rail = (p, name) => p.getByRole('button', { name, exact: true }).filter({ visible: true }).first()
+/** A control inside the right inspector. */
+const inspector = (p) => p.locator('#workspace-inspector')
 
-async function openBrand(p, edition) {
-  await inspectorTab(p, 'Brand')
-  await settle(p, 500)
+async function seedBrand(p) {
+  await p.goto(BASE + '/?section=system', { waitUntil: 'networkidle' })
+  await settle(p, 1000)
+  await p.getByRole('button', { name: 'Add brand' }).last().click()
+  await settle(p, 400)
+  await p.getByText('Start from blank', { exact: true }).click()
+  await settle(p, 400)
+  await p.getByText('Blank', { exact: true }).click()
+  await settle(p, 1200)
+  await p.getByRole('button', { name: 'Continue', exact: true }).click()
+  await settle(p, 800)
+  await p.getByRole('button', { name: 'Save', exact: true }).click()
+  await settle(p, 1200)
+}
+
+async function openBoard(p, row) {
+  await rail(p, 'Board').click()
+  await settle(p, 700)
   // The board opens in inspect mode; shots want the plain board.
   await p.getByRole('button', { name: 'Exit inspector' }).click({ timeout: 1000 }).catch(() => {})
   await settle(p, 300)
-  if (edition) await rail(p, edition).click()
-  await settle(p)
+  if (row) {
+    await inspector(p).getByRole('button', { name: new RegExp(`^${row}\\b`) }).first().click()
+    await settle(p)
+  }
 }
 async function openVariables(p, foundation) {
-  await inspectorTab(p, 'Variables')
-  await settle(p, 500)
-  if (foundation) await rail(p, foundation).click()
+  await rail(p, 'Variables').click()
+  await settle(p, 700)
+  if (foundation) await inspector(p).getByRole('tab', { name: foundation, exact: true }).first().click()
   await settle(p)
 }
 
-const TOP = 66
-const LEFT = 65
-/** The canvas card, measured: from the icon rail to the inspector's left edge.
- *  `maxW` keeps a 4:3 crop inside the card's own height. */
-async function card(p, maxW = 1062) {
-  const i = await p.locator('#workspace-inspector').boundingBox()
-  return { x: LEFT, y: TOP, width: Math.min(maxW, Math.floor(i.x - 14 - LEFT)) }
+/** The canvas card and the inspector, measured. */
+async function layout(p) {
+  const card = await p.locator('main main').first().boundingBox()
+  const ins = await inspector(p).boundingBox()
+  return { card, ins }
 }
-/** Card + inspector, for the 16:10 shots (the inspector is half the story). */
-const WIDE = { x: 60, y: 52, width: 1370 }
-/** System pages and Code have no icon rail: their card starts at the left edge. */
-const FULL = { x: 12, y: 50, width: 1416 }
+/** The canvas card alone (4:3 shots). */
+async function cardCrop(p) {
+  const { card } = await layout(p)
+  return { x: Math.round(card.x - 6), y: Math.round(card.y - 6), width: Math.round(card.width + 12) }
+}
+/** Card + inspector (16:10 shots — the inspector is half the story). */
+async function wideCrop(p) {
+  const { card, ins } = await layout(p)
+  const x = Math.round(card.x - 6)
+  return { x, y: Math.round(card.y - 6), width: Math.round(ins.x + ins.width + 6 - x) }
+}
 
 /** A shot: where it goes, its slot ratio, how to reach the state, what to crop. */
 const SHOTS = [
   {
-    name: 'system-styles', ratio: '4:3',
-    // The workspace opens with a System Style tried on (Glass): its overview in
-    // the inspector — palette, font, radius, icon weight — is the picture.
-    async setup() { return { x: 592, y: 56, width: 848 } },
-  },
-  {
     name: 'primitives', ratio: '16:10',
-    async setup(p) { await openVariables(p, 'Color'); return WIDE },
+    async setup(p) { await openVariables(p); return wideCrop(p) },
   },
   {
     name: 'semantics', ratio: '16:10',
     async setup(p) {
-      await openVariables(p, 'Color')
-      await p.getByText('Color semantics', { exact: true }).first().click()
+      await openVariables(p)
+      await inspector(p).getByRole('button', { name: 'Color semantics', exact: true }).click()
       await settle(p)
-      // The row's sliders icon (far-right column of the card) opens Token Details.
-      const row = await p.getByText('action.primary.default', { exact: true }).first().boundingBox()
-      await p.mouse.click(1099, row.y + row.height / 2)
+      // The row's sliders icon opens Token Details.
+      await p.getByRole('button', { name: 'Edit action.primary.default scale' }).click()
       await settle(p, 900)
-      return WIDE
+      return wideCrop(p)
     },
   },
   {
     name: 'contrast', ratio: '4:3',
     async setup(p) {
-      await openBrand(p, 'Color')
-      await p.getByRole('button', { name: /Contrast grid/ }).click()
+      await openBoard(p)
+      await inspector(p).getByRole('button', { name: /Contrast grid/ }).click()
       await settle(p, 900)
-      return card(p)
+      return cardCrop(p)
     },
   },
   {
     name: 'type', ratio: '16:10',
-    async setup(p) { await openBrand(p, 'Font'); return WIDE },
+    async setup(p) { await openBoard(p, 'Font'); return wideCrop(p) },
   },
   {
     name: 'radius', ratio: '16:10',
     async setup(p) {
-      await openBrand(p, 'Radius')
-      // The About copy's point: Fields go as round as they can while Boxes stay put —
-      // a pill button never turns the cards into stadiums.
-      await p.getByRole('button', { name: /^Boxes radius 2xl/ }).click()
-      await p.getByRole('button', { name: /^Fields radius 4xl/ }).click()
+      await openBoard(p, 'Radius')
+      // Fine-tune shows the three axes — Boxes · Fields · Selectors — the About copy's point.
+      await inspector(p).getByRole('button', { name: /^Show/ }).first().click({ timeout: 2000 }).catch(() => {})
       await settle(p, 600)
-      return WIDE
+      return wideCrop(p)
     },
   },
   {
     name: 'spacing', ratio: '4:3',
     async setup(p) {
       await openVariables(p, 'Spacing')
-      // Responsive now lives inside the roles ("Steps down on smaller screens");
-      // the Platform switch (inspector) is Desktop · Tablet · Mobile — pick the last.
-      await p.locator('xpath=//*[@id="workspace-inspector"]//*[normalize-space()="Platform"][not(*)]/following::button[3]').click()
+      await inspector(p).getByRole('button', { name: 'Mobile', exact: true }).first().click({ timeout: 2000 }).catch(() => {})
       await settle(p, 700)
-      return card(p)
+      return cardCrop(p)
     },
   },
   // ── The four destinations: what the tokens become ──
   {
-    name: 'components', ratio: '16:10', viewport: { width: 1440, height: 960 },
+    name: 'components', ratio: '16:10',
     async setup(p) {
-      await p.goto(BASE + '/components', { waitUntil: 'networkidle' })
+      await rail(p, 'Components').click()
+      await settle(p, 1200)
+      // A component's own page (the playground), not the index.
+      await p.locator('li').filter({ has: p.getByText('Button', { exact: true }) }).first().click()
       await settle(p, 1500)
-      // The index is a list; the guide shows a component's own page (the playground).
-      await p.getByText('Button', { exact: true }).first().click()
-      await settle(p, 1500)
-      return { x: 0, y: 52, width: 1400 }
+      // Components' right panel is its own directory, not #workspace-inspector:
+      // crop from the icon rail's edge to the window's.
+      return { x: 74, y: 54, width: 1440 - 8 - 74 }
     },
   },
   {
     name: 'docs', ratio: '16:10',
     async setup(p) {
-      await inspectorTab(p, 'System')
+      await rail(p, 'Home').click()
+      await settle(p, 700)
+      await inspector(p).getByRole('button', { name: 'Docs', exact: true }).click()
       await settle(p, 600)
-      await p.getByRole('button', { name: 'Docs', exact: true }).click()
+      await inspector(p).getByRole('button', { name: 'Color', exact: true }).first().click({ timeout: 2000 }).catch(() => {})
       await settle(p, 1200)
-      return FULL
+      return wideCrop(p)
     },
   },
   {
     name: 'code', ratio: '16:10',
     async setup(p) {
-      await p.getByRole('button', { name: 'Get code' }).first().click()
+      await rail(p, 'Code').click()
       await settle(p, 1200)
-      return FULL
+      return wideCrop(p)
     },
   },
   {
-    name: 'figma', ratio: '16:10', viewport: { width: 1440, height: 990 },
+    name: 'figma', ratio: '16:10',
     async setup(p) {
-      await p.getByRole('button', { name: 'More export destinations' }).click()
+      await p.getByRole('button', { name: /^Export/ }).first().click()
       await settle(p, 400)
-      await p.getByText('Sync Figma', { exact: true }).click()
-      await settle(p, 1200)
-      // The launch-promo strip ("free until October 31 · N days left") dates the
-      // picture within weeks; the guide shows the page without it (when it exists).
-      await p.getByText(/is free until|Escala Pro is/).first().evaluate((el) => {
-        let n = el
-        while (n.parentElement && n.getBoundingClientRect().width < 700) n = n.parentElement
-        n.style.display = 'none'
-      }).catch(() => {})
-      await settle(p, 300)
-      return { x: 0, y: 54, width: 1440 }
+      await p.getByText('Sync with Figma', { exact: true }).click()
+      await settle(p, 1500)
+      return wideCrop(p)
     },
   },
 ]
@@ -221,19 +231,7 @@ async function capture(browser, shot, appearance) {
   }, appearance)
   const p = await ctx.newPage()
   try {
-    await p.goto(BASE + '/', { waitUntil: 'networkidle' })
-    await settle(p, 1200)
-    // Every shot starts from the same workspace: setup wizard skipped (if shown),
-    // promo strip closed (if shown), and the tried-on style added as a design system
-    // so Variables and System unlock — except the System-style shot, which wants
-    // the try-on overview itself.
-    await p.getByRole('button', { name: 'Skip setup' }).click({ timeout: 1500 }).catch(() => {})
-    await p.getByRole('button', { name: 'Dismiss promo announcement' }).click({ timeout: 1000 }).catch(() => {})
-    await settle(p, 500)
-    if (shot.name !== 'system-styles' && shot.name !== 'components') {
-      await p.getByRole('button', { name: 'Add design system' }).click({ timeout: 3000 }).catch(() => {})
-      await settle(p, 1000)
-    }
+    await seedBrand(p)
     const crop = await shot.setup(p)
     if (process.env.DEBUG_SHOTS) await p.screenshot({ path: join(process.env.DEBUG_SHOTS, `dbg-${shot.name}-${appearance}.png`) })
     await blur(p)
