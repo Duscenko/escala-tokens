@@ -7,6 +7,7 @@ import type { TokenJSON } from './agentBundle/types'
 import { captureCodeSnapshot } from './codeScope'
 import { freeDownloadStore } from './freeFigmaScope'
 import { generateTokenJSON } from './tokenGenerator'
+import { escalaPayloadSection } from './escalaPayloadFence'
 import { buildSystemContext, type ContextAppearance, type SystemContextRequest } from './contextRequest'
 
 /** One brand's tokens, in one appearance or both. Built from the SAME
@@ -66,12 +67,23 @@ export function onlyAppearance(json: TokenJSON, appearance: 'light' | 'dark'): T
 /** The paste itself: one brand, cut to the request. The ONE entry point every
  *  "context for agents" surface calls (Variables' Copy context, Code's Agent
  *  context and its appearance menu), so the JSON narrowing and the renderer's
- *  appearance labels cannot be paired wrongly at a call site. */
+ *  appearance labels cannot be paired wrongly at a call site.
+ *
+ *  At scope `all` it ends with the brand's complete Escala JSON in the
+ *  plugin's fence, the same block the Figma page's context carries: ONE
+ *  context for Figma and agents, so All foundations pastes into the plugin's
+ *  context card. A single foundation stays light (no JSON: ~32k tokens would
+ *  make a Radius paste 50x heavier, and the plugin cannot import a fragment;
+ *  it tells the person to copy All foundations instead). */
 export function brandContext(
   store: DesignSnapshot,
   brand: string,
   req: SystemContextRequest & { appearance: ContextAppearance },
   projectFallback?: string,
 ): string {
-  return buildSystemContext(contextTokenJson(store, brand, req.appearance), req, projectFallback)
+  const json = contextTokenJson(store, brand, req.appearance)
+  const md = buildSystemContext(json, req, projectFallback)
+  if (req.scope !== 'all') return md
+  const payload = projectFallback && !json.project?.trim() ? { ...json, project: projectFallback } : json
+  return md.trimEnd() + '\n\n---\n\n' + escalaPayloadSection(JSON.stringify(payload))
 }

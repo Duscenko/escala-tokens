@@ -7,7 +7,8 @@ import ts from 'typescript'
 import { makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import { ensureColorScales } from '../colorActions'
 import { captureCodeSnapshot } from '../codeScope'
-import { brandContext, contextTokenJson } from '../contextSource'
+import { brandContext, brandContext as brandContextFull, contextTokenJson } from '../contextSource'
+import { extractEscalaPayload } from '../figmaContext'
 import { CONTEXT_FOUNDATIONS, cutComponentContext } from '../contextRequest'
 import { buildCSS } from '../exporters'
 import { buildAgentSkillFiles } from '../agentBundle'
@@ -101,6 +102,8 @@ describe('appearance narrowing', () => {
 
   it('shadows and gradients carry the asked appearance, under its own label', () => {
     const store = useDesignStore.getState()
+    // The prose only: the trailing Escala JSON is the whole payload the plugin imports.
+    const brandContext = (...a: Parameters<typeof brandContextFull>) => brandContextFull(...a).split('\n## Escala JSON\n')[0]
     const both = contextTokenJson(store, brand, 'both')
     const darkMd = brandContext(store, brand, { scope: 'shadow', detail: 'tokens', appearance: 'dark' })
     expect(darkMd).toContain('| Figma style | CSS | Dark |')
@@ -117,6 +120,38 @@ describe('appearance narrowing', () => {
     // Both: the Skill's own foundations.md now ships the dark gradients too.
     const gBoth = brandContext(store, brand, { scope: 'gradients', detail: 'tokens', appearance: 'both' })
     expect(gBoth).toContain(both.gradientsDark![slug])
+  })
+})
+
+describe('one context for Figma and agents', () => {
+  it('All foundations ends with an Escala JSON the plugin reads as a system', () => {
+    const store = useDesignStore.getState()
+    for (const req of [
+      { scope: 'all', detail: 'full', appearance: 'both' },
+      { scope: 'all', detail: 'tokens', appearance: 'light' },
+    ] as const) {
+      const md = brandContext(store, brand, req, store.projectName)
+      const raw = JSON.parse(extractEscalaPayload(md))
+      expect(raw.colors).toBeTruthy()
+      expect(raw.project).toBeTruthy()
+    }
+  })
+
+  it("the plugin's Copy context (agentMarkdownFromJSON) goes back into the web as a brand", async () => {
+    const { agentMarkdownFromJSON } = await import('../agentBundle')
+    const { readBrandPayload } = await import('../importBrand')
+    const json = generateTokenJSON(captureCodeSnapshot(useDesignStore.getState(), brand)) as unknown as TokenJSON
+    const md = agentMarkdownFromJSON(json)
+    expect(JSON.parse(extractEscalaPayload(md)).colors).toBeTruthy()
+    expect(readBrandPayload(md, 'context').ok).toBe(true)
+  })
+
+  it('one foundation stays light: no JSON, and a title the plugin recognises as partial', () => {
+    const store = useDesignStore.getState()
+    const md = brandContext(store, brand, { scope: 'radius', detail: 'tokens', appearance: 'light' }, store.projectName)
+    expect(md).not.toContain('```json')
+    // escala-figma-plugin/src/ui.html classifyPaste reads this line (kind 'partial').
+    expect(md).toMatch(/^# .+ — radius tokens$/m)
   })
 })
 

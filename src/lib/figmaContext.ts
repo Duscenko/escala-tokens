@@ -17,9 +17,8 @@ import { generateTokenJSON } from './tokenGenerator'
 import { brandThemesFromSyncModes, FIGMA_VIEWPORT_LABEL, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from './figmaSyncModes'
 import { brandThemesSummary } from './brandThemes'
 
-/** The fence info string. The plugin also accepts a plain ```json fence and a
- *  bare JSON paste, so this is a label, not a contract. */
-export const FIGMA_CONTEXT_FENCE = 'json escala-tokens'
+import { escalaPayloadFence } from './escalaPayloadFence'
+export { FIGMA_CONTEXT_FENCE, escalaPayloadFence, escalaPayloadSection } from './escalaPayloadFence'
 
 export interface FigmaContextInput {
   /** Name the system takes in Figma (`project`). */
@@ -72,9 +71,7 @@ export function figmaContextMarkdown(parts: { project: string; brandLines: strin
     `- Brands: ${parts.brandLines.join(' · ') || '—'}`,
     `- Viewports: ${parts.viewports.join(' · ')}`,
     '',
-    '```' + FIGMA_CONTEXT_FENCE,
-    parts.json,
-    '```',
+    escalaPayloadFence(parts.json),
   ].join('\n')
   return withAgentEnvelope('global', parts.project, body)
 }

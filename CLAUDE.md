@@ -362,6 +362,13 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   scope row). Code's Agent context shows the same filters inline above the file, so the file
 >   on screen IS the paste. Theme + Detail are remembered per browser (`sd-context-prefs`);
 >   scope follows the page. Free locks Theme to the previewed appearance.
+> - **UPDATE (2026-10-20): ONE context for Figma AND agents.** `brandContext` ends every paste
+>   at scope **All foundations** with the brand's complete Escala JSON in the plugin's fence
+>   (`escalaPayloadFence`, shared with the Figma page's `figmaContextMarkdown`), so that paste
+>   imports in the plugin's context card. A single foundation stays light, NO JSON: measured, the
+>   JSON is ~32k tokens and turned a 0.7k Radius paste into 33k. The plugin reads such a paste as
+>   `partial` (title `# Name — <foundation> tokens`, no JSON) and says to copy All foundations.
+>   Don't add a second, Figma-only paste, and don't attach the JSON to a foundation cut.
 > - **Retired:** the `.MD` tab (PreviewPanel only mounts under Save, so it was unreachable) and
 >   Code's Markdown/README format (README still ships via Export and GitHub). Don't re-add a
 >   second markdown surface; add a scope or a detail level instead.
