@@ -48,12 +48,24 @@
 // it must not also drag the Slider or switch the TabMenu underneath.
 
 import {
-  createContext, useCallback, useContext, useEffect, useRef, useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  accessibilityReport, displayHex, inspectElement, inspectGroup, inspectHitTarget, inspectPage, INSPECTOR_BLIND_SPOT, paintedRoleIds, type InspectedRole,
+  accessibilityReport,
+  displayHex,
+  inspectElement,
+  inspectGroup,
+  inspectHitTarget,
+  INSPECTOR_BLIND_SPOT,
+  paintedRoleIds,
+  type InspectedRole,
 } from '../../../lib/tokenInspector'
 import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
@@ -455,15 +467,6 @@ export function InspectorOverlay({
     return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
   }, [tokensFor])
 
-  const buildPage = useCallback((el: Element): Target | null => {
-    const rect = rectOf(el)
-    if (!rect) return null
-    const t = tokensFor(el)
-    const { roles, measured } = inspectPage(t)
-    if (!roles.length) return null
-    return { kind: 'page', el, label: 'Page', rect, roles, measured, appearance: appearanceFor(el) }
-  }, [tokensFor, appearanceFor])
-
   // The pin snapshots the roles it measured on click. Editing one of them in
   // Token Details repaints the specimen in the same frame; the row has to
   // follow, or it keeps naming the px you just replaced.
@@ -472,16 +475,14 @@ export function InspectorOverlay({
     if (!current) return
     const next = current.kind === 'component'
       ? buildComponent(current.el)
-      : current.kind === 'group'
-        ? buildGroup(current.el)
-        : buildPage(current.el)
+      : buildGroup(current.el)
     if (!next) return
     const stamp = (roles: { id: string; css: string }[]) => roles.map((role) => `${role.id}:${role.css}`).join('|')
     const traceStamp = (target: Target) => (target.trace?.slots ?? [])
       .flatMap((slot) => slot.rows.map((row) => `${row.key}:${row.value}`)).join('|')
     if (stamp(current.roles) === stamp(next.roles) && traceStamp(current) === traceStamp(next)) return
     setPin((prev) => (prev && prev.el === current.el ? { ...next, rect: prev.rect } : prev))
-  }, [tokensByAppearance, buildComponent, buildGroup, buildPage])
+  }, [tokensByAppearance, buildComponent, buildGroup])
 
   useEffect(() => {
     if (!active) { clearAll(); return }
@@ -515,11 +516,14 @@ export function InspectorOverlay({
       if (pinned) return
 
       const hit = e.target as Element
+      // Only components and groups are targets. The empty board between them
+      // used to fall back to a whole-"Page" target, which swallowed every
+      // pointer that missed a control; it is gone (nothing to inspect there).
       const target = leaf
         ? buildComponent(leaf, hit)
         : group
-          ? (buildGroup(group) ?? buildPage(root))
-          : buildPage(root)
+          ? buildGroup(group)
+          : null
       if (!target) { setHover(null); return }
       setHover((prev) =>
         prev && prev.el === target.el && prev.rect.top === target.rect.top && prev.rect.left === target.rect.left
@@ -564,9 +568,10 @@ export function InspectorOverlay({
       const target = leaf
         ? buildComponent(leaf, hit)
         : group
-          ? (buildGroup(group) ?? buildPage(root))
-          : buildPage(root)
-      if (!target) return
+          ? buildGroup(group)
+          : null
+      // A click on empty board lets go of whatever was pinned.
+      if (!target) { if (pinned) { focusHeld.current = false; setFocus(null); setPin(null) } return }
       if (pinned && pinned.el === target.el) { setPin(null); return }
       focusHeld.current = false
       setFocus(null)
@@ -598,7 +603,7 @@ export function InspectorOverlay({
       root.removeEventListener('pointerleave', onLeave)
       root.removeEventListener('scroll', onScroll, true)
     }
-  }, [active, rootRef, buildComponent, buildGroup, buildFocus, buildPage, clearAll])
+  }, [active, rootRef, buildComponent, buildGroup, buildFocus, clearAll])
 
   const pinLabel = pin
     ? pin.kind === 'component' ? `<${pin.trace?.component ?? pin.label} />` : pin.label
