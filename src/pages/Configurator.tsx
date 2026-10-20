@@ -740,11 +740,11 @@ export default function Configurator() {
     const w = incomingPlace?.workspace
     // The brand's Docs moved into the System tab: an old Docs link opens there.
     if (w === 'documentation' || (incomingPlace?.tab === 'foundations' && incomingPlace.surface === 'documentation')) return 'system'
-    // Home is the signed-in file list. A leftover `?section=library` after
-    // sign-out must not bring it back.
-    if (w === 'library' && !signedInEntry) return 'preview'
+    // Home is the system tab now (design-plans/home-into-system.md): an old
+    // `?section=library` link opens it, and so does a signed-in visit to `/`.
+    if (w === 'library') return signedInEntry ? 'system' : 'preview'
     if (w) return w
-    return signedInEntry ? 'library' : 'preview'
+    return signedInEntry ? 'system' : 'preview'
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
   // TopNav's theme sheet (browse the EscalaUI themes · My themes · CREATE).
@@ -833,13 +833,6 @@ export default function Configurator() {
   useEffect(() => { markGuestEntered() }, [])
   // Leaving the studio without creating keeps the earlier brand for good.
   useEffect(() => { if (!guestStudio) replaceBrandsOnNextMint([]) }, [guestStudio])
-  // No brand, no design system: its System page has nothing to show, so a link
-  // or a reload that lands there goes to Home, where the first brand is made.
-  useEffect(() => {
-    if (themeWorkspaceTab !== 'system' || savedBrandKeys.length > 0) return
-    if (access.loading || !useDesignStore.persist.hasHydrated()) return
-    setThemeWorkspaceTab('library')
-  }, [themeWorkspaceTab, savedBrandKeys.length, access.loading])
   /** Drop the unsaved Random theme and land on Home, where "New design system"
    *  offers Blank, From code and the rest. The theme was minted the moment
    *  Random was pressed, so leaving without this would keep it in My themes. */
@@ -853,7 +846,7 @@ export default function Configurator() {
     setRandomDraftKey(null)
     if (next) changePreviewTheme(next)
     live.removeTheme(key)
-    openLibraryPage()
+    openSystemPage()
     showToast(t('Random brand discarded.'))
   }
   /** Brands that Home would throw away: the draft on the board, or the one the
@@ -885,7 +878,7 @@ export default function Configurator() {
       forgetUnsavedBrand(key)
       live.removeTheme(key)
     })
-    openLibraryPage()
+    openSystemPage()
   }
   const startRandomFromMenu = () => {
     // "Add new theme → Random" makes ANOTHER theme. Free has its one: ask for
@@ -1681,7 +1674,7 @@ export default function Configurator() {
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }
-  const openThemeLibraryFromCode = () => openLibraryPage()
+  const openThemeLibraryFromCode = () => openSystemPage()
   /** Docs destination, opened at a specific foundation — the reverse of
    *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
    *  Documentation tab, whose accordion is a reading surface for the column,
@@ -2099,7 +2092,7 @@ export default function Configurator() {
             return
           }
           if (sessionAllowsHome && accountsEnabled) {
-            openLibraryPage()
+            openSystemPage()
             return
           }
           commitVisit()
@@ -2705,7 +2698,7 @@ export default function Configurator() {
                     randomDraft={brandIsDraft(previewTheme)}
                     // Home is an account place: a guest's breadcrumb has no
                     // "Home" crumb (it used to bounce them to sign-up).
-                    onBackHome={sessionAllowsHome ? () => { setStylePreview(null); openLibraryPage() } : undefined}
+                    onBackHome={sessionAllowsHome ? () => { setStylePreview(null); openSystemPage() } : undefined}
                     onBackToStyles={sessionAllowsHome ? () => { setStylePreview(null); openLibraryPage(); setOpenStylesRequest(true) } : undefined}
                     onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
@@ -2780,7 +2773,6 @@ export default function Configurator() {
                       const reason = themeTablesBlocked()
                       if (reason) { showToast(reason, undefined, true); return false }
                     }}
-                    onGoHome={sessionAllowsHome ? requestHome : undefined}
                     onOpenStyles={openSystemStyles}
                     systemPlace={systemPlace}
                     onSystemPlace={setSystemPlace}

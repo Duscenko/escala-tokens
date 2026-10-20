@@ -1,6 +1,17 @@
 # Home merges into System — System becomes "Home"
 
-Status: plan, 2026-10-20. Nothing built yet.
+Status (2026-10-20): steps 1–3 done.
+- 1 ✅ sun/moon in the bar (every visitor); ☰ no longer repeats Appearance.
+- 2 ✅ rail `Home · Board · Variables · Code · Components`; Home never dimmed.
+  Leftovers removed: the "Home /" crumb and "All design systems" back link on the page.
+- 3 ✅ `?section=library`, login `next=library`, About's Start building, Random discard,
+  leave-with-drafts, Code's library door and the board's Home crumb all open the system
+  tab. The empty-system → old Home redirect is gone (the page shows Add brand).
+  `/` with no section still opens About (it always did; the old "signed-in `/` opens
+  Home" note was stale).
+  **Deliberately left until step 4:** the account menu's "Saved design systems" still
+  opens the old file browser — it is the only way to reach the OTHER systems until the
+  header switcher exists. The create studio still runs on the internal `library` tab.
 
 ## Why
 

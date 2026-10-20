@@ -27,7 +27,9 @@ export type LoginIntent = 'save-library' | 'export'
 export type LoginMode = 'signin' | 'signup'
 
 const NEXT_PATH: Record<LoginNext, string> = {
-  library: '/?section=library',
+  // `library` is kept as a name (links already sent); it opens Home, which is
+  // the system tab now.
+  library: '/?section=system',
   workspace: '/',
   plugin: '/plugin',
   account: '/account',
