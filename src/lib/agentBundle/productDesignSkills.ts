@@ -10,6 +10,9 @@
 import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
 import { COMPONENT_RECIPES, cssVarOf, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
 import { RADIUS_GROUPS } from '../layoutTokens'
+import { recipeCss, recipeCssVars } from '../recipeStyles'
+import { componentFileName, componentImportLine } from '../agentContext'
+import { SCREEN_PATTERNS } from './screenPatterns'
 import { mdCell } from '../utils.js'
 import {
   FIGMA_PROP_LABEL, figmaLayerName, figmaRefsFor, isFigmaProp, isPseudoSlot, semanticRoleIds, type FigmaRef,
@@ -38,6 +41,12 @@ export function componentBuildPath(key: string): string {
   return `skills/component-build/components/${key.replace(/[^A-Za-z0-9]+/g, '')}.md`
 }
 
+export function componentReactPath(key: string): string {
+  return `skills/component-build/react/${key.replace(/[^A-Za-z0-9]+/g, '')}.md`
+}
+
+export const RECIPES_CSS_PATH = 'skills/component-build/react/recipes.css'
+
 export function buildDesignSkillFiles(json: TokenJSON): AgentBundleFile[] {
   const project = projectOf(json)
   const slug = slugOf(project)
@@ -45,6 +54,9 @@ export function buildDesignSkillFiles(json: TokenJSON): AgentBundleFile[] {
   return [
     { path: 'skills/component-build/SKILL.md', text: componentBuildSkill(project, slug, keys) },
     ...keys.map((key) => ({ path: componentBuildPath(key), text: componentBuildFile(json, key) })),
+    ...keys.map((key) => ({ path: componentReactPath(key), text: componentReactFile(key) })),
+    { path: RECIPES_CSS_PATH, text: recipesCss(keys) },
+    { path: 'skills/screen-compose/SKILL.md', text: screenComposeSkill(json, project, slug, keys) },
     { path: 'skills/design-review/SKILL.md', text: designReviewSkill(json, project, slug) },
     { path: 'skills/handoff-spec/SKILL.md', text: handoffSkill(json, project, slug, keys) },
   ]
@@ -94,20 +106,21 @@ function componentBuildSkill(project: string, slug: string, keys: string[]): str
     const def = COMPONENTS.find((c) => c.key === key)
     const recipe = COMPONENT_RECIPES[key]
     const layers = figmaSlotsOf(recipe).map((s) => `\`${figmaLayerName(s)}\``).join(' · ')
-    return `| ${mdCell(def?.label ?? key)} | ${def?.figmaSets.length ? def.figmaSets.map((s) => `\`${s}\``).join(', ') : '—'} | ${layers} | [${key}](${componentBuildPath(key).replace('skills/component-build/', '')}) |`
+    const rel = (p: string) => p.replace('skills/component-build/', '')
+    return `| ${mdCell(def?.label ?? key)} | ${def?.figmaSets.length ? def.figmaSets.map((s) => `\`${s}\``).join(', ') : '—'} | ${layers} | [Figma](${rel(componentBuildPath(key))}) · [React](${rel(componentReactPath(key))}) |`
   })
   return `---
 name: ${slug}-component-build
-description: "Build or dress ${project} components in Figma: which variable goes on each layer, with layers named after the recipe slots. Use when creating, rebuilding or checking a component set in Figma."
+description: "Build ${project} components in Figma or in React: which variable goes on each Figma layer, and which data attributes and CSS variables the React component carries. Layers and parts are named after the recipe slots. Use when creating, rebuilding or checking a component."
 ---
 
-# ${project} — build a component in Figma
+# ${project} — build a component
 
-Design skills · Figma. Load \`AGENTS.md\` and \`SKILL.md\` first.
+Design skills. Load \`AGENTS.md\` and \`SKILL.md\` first.
 
-Every component is ONE recipe: the same table paints the web component and the Figma component set. The Escala plugin builds the sets for you (sync from Escala). Use this skill when you build one by hand, extend one, or check one.
+Every component is ONE recipe: the same table paints the Figma component set and the web component. The Escala plugin builds the Figma sets for you (sync from Escala). Use this skill when you build one by hand, extend one, or check one.
 
-## Rules
+## Figma rules
 
 1. **Name each layer after its slot.** The component itself is \`root\`. A part is its slot name (\`label\`, \`icon\`, \`thumb\`). A second copy of a part takes a suffix (\`icon-leading\`, \`icon-trailing\`). A data state is a suffix too (\`item-highlighted\`, \`cell-active\`).
 2. **Bind, never type a value.** Each property in the component's file names the variable or style to bind. No hex, no px, no primitive colour ramp.
@@ -115,6 +128,14 @@ Every component is ONE recipe: the same table paints the web component and the F
 4. **A sum has no single variable** (\`Selector/role/control\` + \`2\`): set the resulting length and leave a note; do not bind one of the terms alone.
 5. **"Not published in this system"** means the recipe asks for a token this system does not ship. Do not invent one: report it.
 6. Text layers take a text style \`Type/<role>\` (a text style listed on \`root\` goes on the component's text layers); shadows take an effect style \`Shadow/<step>\`.
+
+## React rules
+
+1. **Use the component file if the repo has it** (\`components/ui/<name>.tsx\`, shadcn's skeleton, from Escala). It already sets the attributes the stylesheet reads. Otherwise start from \`templates/component/\` and add them.
+2. **Load the styles once, in this order:** \`variables.css\` (the tokens), then [\`react/recipes.css\`](react/recipes.css) (every component below, painted only with \`var()\`). Copy both into the app's styles.
+3. **The stylesheet paints by attribute, never by class**: the root carries \`data-escala="<Component>"\` and one \`data-<axis>\` per variant property; every other part carries \`data-part="<Component>.<slot>"\`. States come from the real element: \`:hover\`, \`:active\`, \`:focus-visible\`, \`aria-disabled="true"\`, \`aria-invalid="true"\`. \`data-force-state\` pins a state for docs only.
+4. **No colour, length or font in \`className\` or \`style\`.** An override uses the same \`var()\` the recipe uses for that part.
+5. Run \`node checkers/token-lint.mjs\` on the files you touched.
 
 ## Components
 
@@ -341,4 +362,200 @@ ${[...dimRows, ...iconRows].join('\n')}
 |---|---|
 ${[...typeRows, ...shadowRows].join('\n')}
 `
+}
+
+// ── component-build: React ─────────────────────────────────────────────────
+
+/** Axes the stylesheet reads from an attribute (every axis a part depends on, but State). */
+export function recipeAttributeAxes(recipe: ComponentRecipe): string[] {
+  const axes: string[] = []
+  for (const p of recipe.parts) for (const a of p.axes) if (a !== 'State' && !axes.includes(a)) axes.push(a)
+  return axes
+}
+
+function axisValues(recipe: ComponentRecipe, axis: string): string[] {
+  const values: string[] = []
+  for (const p of recipe.parts) {
+    const i = p.axes.indexOf(axis)
+    if (i < 0) continue
+    for (const combo of Object.keys(p.values)) {
+      const v = combo.split('|')[i]
+      if (!values.includes(v)) values.push(v)
+    }
+  }
+  return values
+}
+
+/** The DOM a slot is painted on: `data-part="<Key>.<base>"` plus its own state. */
+export function slotDomSelector(recipe: ComponentRecipe, slot: string): string {
+  const dom = recipe.dom?.slots?.[slot]
+  if (dom) return dom
+  const pseudo = recipe.pseudoSlots?.[slot]
+  if (pseudo) return `${slotDomSelector(recipe, pseudo.of)}${pseudo.pseudo}`
+  const m = /^([A-Za-z-]+)(.*)$/.exec(slot)
+  const base = m?.[1] ?? slot
+  const rest = m?.[2] ?? ''
+  if (base === recipe.slots[0]) return `${recipe.dom?.root ?? `[data-escala="${recipe.key}"]`}${rest}`
+  return `${recipe.dom?.slots?.[base] ?? `[data-part="${recipe.key}.${base}"]`}${rest}`
+}
+
+/** Note on a part the sheet has no rule for: it inherits from the root. */
+export const UNPAINTED = 'no rule of its own: inherits from the root'
+
+/** The attribute and pseudo pieces of a selector, each one the sheet must write. */
+export function selectorPieces(selector: string): string[] {
+  return selector.match(/\[[^\]]+\]|::?[a-z-]+(?:\([^)]*\))?/g) ?? []
+}
+
+export function componentReactFile(key: string): string {
+  const recipe = COMPONENT_RECIPES[key]
+  const def = COMPONENTS.find((c) => c.key === key)
+  const label = def?.label ?? key
+  const attrs = recipeAttributeAxes(recipe)
+  const hasState = recipe.parts.some((p) => p.axes.includes('State'))
+  const detached = new Set(recipe.detachedSlots ?? [])
+  const css = recipeCss(recipe)
+  const vars = recipeCssVars(css).filter((v) => !v.startsWith('--escala-'))
+
+  return [
+    `# ${label} — React`,
+    '',
+    def?.description ?? '',
+    '',
+    `File: \`components/ui/${componentFileName(key)}.tsx\` (shadcn skeleton).`,
+    '',
+    '```tsx',
+    componentImportLine(key),
+    '```',
+    '',
+    `Styles: the \`/* ${key} */\` block of [\`recipes.css\`](recipes.css), after \`variables.css\`.`,
+    '',
+    '## Attributes',
+    '',
+    '| Attribute | On | Values |',
+    '|---|---|---|',
+    `| \`data-escala="${key}"\` | root | — |`,
+    ...attrs.map((a) => `| \`data-${a.toLowerCase()}\` | root | ${axisValues(recipe, a).map((v) => (v === recipe.defaults[a] ? `**${v}**` : v)).join(' · ')} |`),
+    ...(hasState ? [`| \`data-force-state\` | root | ${axisValues(recipe, 'State').join(' · ')} (docs only; product code uses the real state) |`] : []),
+    '',
+    ...(recipe.dom ? [`The DOM of this component comes from a library: its root is \`${recipe.dom.root}\`.`, ''] : []),
+    '## Parts',
+    '',
+    '| Slot | Selector | Note |',
+    '|---|---|---|',
+    ...figmaSlotsOf(recipe).map((slot, i) => {
+      const selector = slotDomSelector(recipe, slot)
+      const notes = [
+        i === 0 ? 'root' : detached.has(slot) ? 'rendered outside the root (portal)' : recipe.pseudoSlots?.[slot] ? 'pseudo-element' : '',
+        selectorPieces(selector).every((piece) => css.includes(piece)) ? '' : UNPAINTED,
+      ].filter(Boolean)
+      return `| \`${slot}\` | \`${selector}\` | ${notes.join('; ')} |`
+    }),
+    '',
+    '## Variables it reads',
+    '',
+    vars.map((v) => `\`${v}\``).join(' · '),
+    '',
+  ].join('\n')
+}
+
+function recipesCss(keys: string[]): string {
+  return [
+    '/* Component styles generated by Escala from the component recipes.',
+    ' * Every value is a var() from variables.css: load that file first.',
+    ' * Painted by attribute: data-escala, data-<axis>, data-part. */',
+    '',
+    ...keys.map((key) => `/* ${key} */\n${recipeCss(COMPONENT_RECIPES[key]).trim()}\n`),
+  ].join('\n')
+}
+
+// ── screen-compose ─────────────────────────────────────────────────────────
+
+function stepPx(json: TokenJSON, step: string | undefined): number | null {
+  if (!step) return null
+  const pinned = /^dimension-(-?[\d_]+)$/.exec(step)
+  if (pinned) return Number(pinned[1].replace('_', '.'))
+  const n = parseFloat(json.spacing?.[step] ?? '')
+  return Number.isFinite(n) ? n : null
+}
+
+/** A spacing role's px per viewport (Desktop · Tablet · Mobile). */
+export function spacingRolePx(json: TokenJSON, role: string): [number | null, number | null, number | null] {
+  const ref = json.spacingRoleRefs?.[role] ?? json.spacingRoles?.[role]
+  const responsive = ref ? json.spacingResponsive?.[ref] : undefined
+  if (responsive) return [stepPx(json, responsive.desktop), stepPx(json, responsive.tablet ?? responsive.desktop), stepPx(json, responsive.mobile)]
+  const one = stepPx(json, ref)
+  return [one, one, one]
+}
+
+const pxCell = (n: number | null) => (n === null ? '—' : `${n}px`)
+
+function screenComposeSkill(json: TokenJSON, project: string, slug: string, keys: string[]): string {
+  const roles = [...new Set(SCREEN_PATTERNS.flatMap((p) => p.spacing.map((s) => s.role)))]
+  const spacingRows = roles.filter((r) => json.spacingRoles?.[r] !== undefined).map((r) => {
+    const [d, t, m] = spacingRolePx(json, r)
+    return `| \`Spacing/role/${r}\` | \`var(--spacing-${r})\` | ${pxCell(d)} | ${pxCell(t)} | ${pxCell(m)} |`
+  })
+  const gridRows = (json.gridStyles ?? []).map((g) =>
+    `| \`Grid/${g.label ?? g.key}\` | ${g.viewport ?? '—'} | ${g.width ?? '—'} | ${g.columns ?? '—'} | ${g.column ?? '—'} | ${g.gutter ?? '—'} | ${g.margin ?? '—'}${g.sidebar ? ` (sidebar ${g.sidebar})` : ''} |`)
+  const typeRoles = [...new Set(SCREEN_PATTERNS.flatMap((p) => p.type.map((t) => t.role)))]
+    .filter((r) => json.typography?.roles?.[r])
+  const link = (key: string) => keys.includes(key)
+    ? `[${key}](../component-build/components/${key.replace(/[^A-Za-z0-9]+/g, '')}.md)`
+    : `${key} (not in this system's selection: add it in Escala)`
+  const axes = (a?: Record<string, string>) => (a ? ` · ${Object.entries(a).map(([k, v]) => `${k}=${v}`).join(', ')}` : '')
+
+  const patterns = SCREEN_PATTERNS.map((p) => [
+    `### ${p.label}`,
+    '',
+    p.purpose,
+    '',
+    ...p.parts.map((part, i) => `${i + 1}. ${link(part.key)}${axes(part.axes)}: ${part.use}.`),
+    '',
+    `- Spacing: ${p.spacing.map((s) => `\`Spacing/role/${s.role}\` between ${s.between}`).join(' · ')}.`,
+    `- Type: ${p.type.map((t) => `\`Type/${t.role}\` for ${t.use}`).join(' · ')}.`,
+    ...(p.radius ? [`- Radius: ${p.radius.map((r) => `\`Radius/role/${r.role}\` for ${r.use}`).join(' · ')}.`] : []),
+    ...(p.cardShadow ? [`- The card's elevation: \`Shadow/${p.cardShadow}\`.`] : []),
+    '',
+  ].join('\n'))
+
+  return `---
+name: ${slug}-screen-compose
+description: "Compose ${project} screens (login, verification, pricing, checkout, settings) from the system's components, spacing roles, type roles and grid styles. Use when designing or building a full screen in Figma or in code."
+---
+
+# ${project} — compose a screen
+
+Design skills · Figma and code. Load \`AGENTS.md\` first. A screen is the system's components on the system's grid, spaced by ROLE. It picks no numbers of its own.
+
+## Rules
+
+1. **The page sits on a grid style.** In Figma apply the layout grid style; in code the page inset is \`var(--grid-margin)\` and the content width \`var(--grid-container)\` (both step down per viewport).
+2. **Every gap is a spacing role**, from the outside in: \`gap-section\` between blocks, \`gap-group\` between controls of one group, \`gap-control\` inside a row, \`gap-tight\` between a title and its subtitle. Bind the role (\`Spacing/role/<role>\` / \`var(--spacing-<role>)\`), never its px.
+3. **Text uses type roles** (\`Type/<role>\` / \`var(--text-<role>-*)\`).
+4. **One primary action per screen**, full width on mobile, \`size=lg\` (it resolves the touch height). A destructive action goes last.
+5. **Controls come from \`skills/component-build/\`**, never redrawn.
+6. Review the result with \`skills/design-review/SKILL.md\`.
+
+## Grid styles
+
+| Figma style | Viewport | Width | Columns | Column | Gutter | Margin |
+|---|---|---|---|---|---|---|
+${gridRows.join('\n')}
+
+## Spacing roles
+
+| Figma | CSS | Desktop | Tablet | Mobile |
+|---|---|---|---|---|
+${spacingRows.join('\n')}
+
+## Type roles
+
+${typeRoles.map((r) => `\`Type/${r}\``).join(' · ')}
+
+## Patterns
+
+These are the screens Escala renders from this system (Artefacts). Follow their structure; change the copy.
+
+${patterns.join('\n')}`
 }

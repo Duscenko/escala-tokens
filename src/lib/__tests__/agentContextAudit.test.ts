@@ -419,3 +419,90 @@ describe('component-build ↔ recipes', () => {
     }
   })
 })
+
+describe('component-build (React) ↔ recipes, escala-ui and variables.css', () => {
+  it('every part, attribute and variable the React files cite is one the stylesheet and the component use', async () => {
+    const { readFileSync, existsSync } = await import('node:fs')
+    const { join, dirname } = await import('node:path')
+    const { fileURLToPath } = await import('node:url')
+    const { COMPONENT_RECIPES } = await import('../componentRecipes')
+    const { recipeCss } = await import('../recipeStyles')
+    const { componentFileName } = await import('../agentContext')
+    const { UNPAINTED, buildDesignSkillFiles, componentReactPath, figmaSlotsOf, selectorPieces } = await import('../agentBundle/productDesignSkills')
+    const uiDir = join(dirname(fileURLToPath(import.meta.url)), '../../components/escala-ui')
+    const files = buildDesignSkillFiles(productJson([...COMPONENT_KEYS]))
+    for (const key of COMPONENT_KEYS) {
+      const recipe = COMPONENT_RECIPES[key]
+      if (!recipe) continue
+      const md = files.find((f) => f.path === componentReactPath(key))?.text
+      expect(md, key).toBeTruthy()
+      const css = recipeCss(recipe)
+      const slots = new Set(figmaSlotsOf(recipe))
+      for (const [slot, selector, note] of tableRows(md!, 'Slot')) {
+        expect(slots.has(slot), `${key}: ${slot}`).toBe(true)
+        // Every piece of the selector is one the generated sheet writes — or the
+        // row says the sheet has no rule for that part.
+        const painted = selectorPieces(selector).every((piece) => css.includes(piece))
+        expect(painted || note.includes(UNPAINTED), `${key}: ${slot} ${selector}`).toBe(true)
+        if (slot === recipe.slots[0]) expect(painted, `${key}: root`).toBe(true)
+      }
+      const src = existsSync(join(uiDir, `${componentFileName(key)}.tsx`)) ? readFileSync(join(uiDir, `${componentFileName(key)}.tsx`), 'utf8') : ''
+      for (const [attr] of tableRows(md!, 'Attribute')) {
+        const name = attr.replace(/=.*$/, '')
+        if (name === 'data-force-state' || name === 'data-escala') continue
+        expect(css, `${key}: ${name}`).toContain(`[${name}=`)
+        if (src && !recipe.dom) expect(src, `${key}: escala-ui sets ${name}`).toContain(name)
+      }
+    }
+  })
+
+  it('recipes.css only reads variables that variables.css declares', async () => {
+    const { recipeCssVars } = await import('../recipeStyles')
+    const { RECIPES_CSS_PATH, buildDesignSkillFiles } = await import('../agentBundle/productDesignSkills')
+    const sheet = buildDesignSkillFiles(productJson([...COMPONENT_KEYS])).find((f) => f.path === RECIPES_CSS_PATH)!.text
+    const declared = new Set([
+      ...[...buildCSS(captureCodeSnapshot(useDesignStore.getState(), brand) as never).matchAll(/(--[\w-]+):/g)].map((m) => m[1]),
+      ...[...sheet.matchAll(/(--[\w-]+):/g)].map((m) => m[1]),
+    ])
+    const used = recipeCssVars(sheet)
+    expect(used.length).toBeGreaterThan(100)
+    expect(used.filter((v) => !declared.has(v))).toEqual([])
+  })
+})
+
+describe('screen-compose ↔ artefacts', () => {
+  it('every pattern mirrors the artefact it names', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { join, dirname } = await import('node:path')
+    const { fileURLToPath } = await import('node:url')
+    const { SCREEN_PATTERNS } = await import('../agentBundle/screenPatterns')
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../components/preview/artefacts')
+    const index = readFileSync(join(dir, 'index.ts'), 'utf8')
+    for (const p of SCREEN_PATTERNS) {
+      const src = readFileSync(join(dir, p.source), 'utf8')
+      expect(src, p.key).toContain(`key: '${p.key}'`)
+      expect(index, p.key).toContain(p.source.replace(/\.tsx$/, ''))
+      const rendered = new Set([...src.matchAll(/SPECIMENS\.(\w+)/g)].map((m) => m[1]))
+      expect([...new Set(p.parts.map((x) => x.key))].sort(), p.key).toEqual([...rendered].sort())
+      for (const s of p.spacing) expect(src, `${p.key}: ${s.role}`).toContain(`'${s.role}'`)
+      const spacing = new Set([...src.matchAll(/gap\(t, '([\w-]+)'/g)].map((m) => m[1]))
+      expect([...spacing].sort(), p.key).toEqual(p.spacing.map((s) => s.role).sort())
+      const type = new Set([...src.matchAll(/typeStyleOf\(t, '([\w-]+)'/g)].map((m) => m[1]))
+      expect(p.type.map((t) => t.role).sort(), p.key).toEqual([...type].sort())
+      for (const r of p.radius ?? []) expect(src, `${p.key}: ${r.role}`).toContain(`radiusRoleOf(t, '${r.role}'`)
+      if (p.cardShadow) expect(src, p.key).toContain(`elev="${p.cardShadow}"`)
+      for (const part of p.parts) for (const [axis, value] of Object.entries(part.axes ?? {})) expect(src, `${p.key}: ${part.key} ${axis}`).toContain(`${axis}: '${value}'`)
+    }
+    expect(SCREEN_PATTERNS.length).toBe((index.match(/_ARTEFACT,/g) ?? []).length)
+  })
+
+  it('every grid style screen-compose names is one the payload ships', async () => {
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const json = productJson()
+    const md = buildAgentProductFiles(json).files.find((f) => f.path === 'skills/screen-compose/SKILL.md')!.text
+    const labels = new Set((json.gridStyles ?? []).map((g) => g.label ?? g.key))
+    const cited = [...md.matchAll(/`Grid\/([^`]+)`/g)].map((m) => m[1])
+    expect(cited.length).toBe(labels.size)
+    for (const c of cited) expect(labels.has(c), c).toBe(true)
+  })
+})

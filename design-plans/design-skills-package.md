@@ -157,7 +157,28 @@ Plan original de la Fase 1:
 - `handoff-spec`: la capa → variable que un ingeniero necesita.
 - Test de paridad: cada slot citado existe en la receta y en el plugin.
 
-**Fase 2 — código (ingeniero)**
+**Fase 2 — código (ingeniero)** — ✅ HECHA (2026-10-20)
+- `component-build` tiene ahora dos mitades: el `SKILL.md` lleva reglas de Figma y de React, y el
+  índice enlaza `components/<Key>.md` (Figma) y `react/<Key>.md` (React) por componente.
+- `react/<Key>.md`: archivo de `escala-ui` e import (`componentFileName` / `componentImportLine`),
+  los atributos que lee la hoja (`data-escala`, `data-<eje>` con sus valores, `data-force-state` solo
+  para docs), el selector de cada parte (`data-part="<Key>.<slot>"`, estados y pseudo) y las
+  variables CSS que lee. Una parte sin regla propia lo dice ("inherits from the root").
+- `react/recipes.css`: `recipeCss()` de cada componente seleccionado, solo `var()`; se carga
+  después de `variables.css`. Es la misma hoja que pinta la web.
+- `skills/screen-compose/SKILL.md`: reglas (grid style, espaciado por rol de fuera a dentro, roles
+  de tipo, una acción primaria), tabla de grid styles (`gridStyles`), roles de espaciado con px por
+  Desktop · Tablet · Mobile (`spacingRoleRefs` + `spacingResponsive`), y los cinco patrones.
+- Los patrones viven en `agentBundle/screenPatterns.ts` (Login · Verify code · Pricing · Checkout ·
+  Profile): un ESPEJO de `components/preview/artefacts/`, porque los artefactos son React y el
+  paquete no puede importarlos. Un test lee el código de cada artefacto y exige que los
+  componentes (`SPECIMENS.*`), los roles de espaciado, tipo y radio, los ejes y la sombra de la
+  tarjeta coincidan, y que haya un patrón por artefacto registrado.
+- Tests: cada parte y atributo citado existe en la hoja generada (y el componente de `escala-ui`
+  pone el atributo); `recipes.css` solo lee variables que declara `variables.css`; cada grid style
+  citado existe en el payload.
+
+Plan original de la Fase 2:
 - `component-build` en React sobre `components/escala-ui/`.
 - `screen-compose`: patrones de pantalla desde los artefactos; espaciado por rol,
   grid por estilo.
