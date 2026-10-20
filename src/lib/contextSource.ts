@@ -8,6 +8,8 @@ import { captureCodeSnapshot } from './codeScope'
 import { freeDownloadStore } from './freeFigmaScope'
 import { generateTokenJSON } from './tokenGenerator'
 import { escalaPayloadSection } from './escalaPayloadFence'
+import { brandThemeDef, shippedThemes } from './brandThemes'
+import { normalizeFigmaViewports, type FigmaSyncMode } from './figmaSyncModes'
 import { buildSystemContext, type ContextAppearance, type SystemContextRequest } from './contextRequest'
 
 /** One brand's tokens, in one appearance or both. Built from the SAME
@@ -84,6 +86,23 @@ export function brandContext(
   const json = contextTokenJson(store, brand, req.appearance)
   const md = buildSystemContext(json, req, projectFallback)
   if (req.scope !== 'all') return md
-  const payload = projectFallback && !json.project?.trim() ? { ...json, project: projectFallback } : json
-  return md.trimEnd() + '\n\n---\n\n' + escalaPayloadSection(JSON.stringify(payload))
+  return md.trimEnd() + '\n\n---\n\n' + escalaPayloadSection(JSON.stringify(pluginPayload(store, brand, req.appearance, json.project?.trim() || projectFallback)))
+}
+
+/** The JSON a paste hands the Figma plugin: generated exactly like the Figma
+ *  page's context (`buildFigmaContext`) — the brand's themes as
+ *  `brand::appearance` columns, every viewport. The prose's JSON
+ *  (`contextTokenJson`) names plain `light` / `dark` columns, which the plugin
+ *  reads as two brands called "Light" and "Dark". */
+export function pluginPayload(store: DesignSnapshot, brand: string, appearance: ContextAppearance, project?: string) {
+  const ids = appearance === 'both' ? shippedThemes((store as { brandThemes?: Parameters<typeof shippedThemes>[0] }).brandThemes, brand) : []
+  const modes: FigmaSyncMode[] = appearance === 'both'
+    ? ids.map((id) => ({ theme: brand, appearance: brandThemeDef(id)?.base ?? 'light' }))
+    : [{ theme: brand, appearance }]
+  return generateTokenJSON(store, {
+    theme: brand,
+    modes: modes.length ? modes : [{ theme: brand, appearance: 'light' }],
+    viewports: normalizeFigmaViewports(undefined),
+    ...(project ? { project } : {}),
+  })
 }

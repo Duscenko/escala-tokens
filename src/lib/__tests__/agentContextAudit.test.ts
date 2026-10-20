@@ -134,6 +134,11 @@ describe('one context for Figma and agents', () => {
       const raw = JSON.parse(extractEscalaPayload(md))
       expect(raw.colors).toBeTruthy()
       expect(raw.project).toBeTruthy()
+      // ONE brand in the plugin: columns are brand::appearance, never a plain
+      // light / dark (which the plugin's matrix reads as two brands).
+      const cols: string[] = raw.colors.themeOrder
+      expect(new Set(cols.map((c) => c.split('::')[0])).size).toBe(1)
+      expect(cols.every((c) => c.includes('::'))).toBe(true)
     }
   })
 
