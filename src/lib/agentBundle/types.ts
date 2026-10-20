@@ -152,6 +152,8 @@ export interface AgentBundleOptions {
   /** The payload was narrowed to ONE appearance (`contextSource.onlyAppearance`):
    *  value columns are labelled with it instead of Light + Dark. Omitted = both. */
   appearance?: 'light' | 'dark'
+  /** Date the package is stamped with (`YYYY-MM-DD`). Defaults to today. */
+  generatedAt?: string
 }
 
 export interface AgentBundleFile {

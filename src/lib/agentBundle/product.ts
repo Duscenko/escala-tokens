@@ -6,6 +6,7 @@ import { buildDesignSkillFiles } from './productDesignSkills'
 import { buildTemplateFiles } from './productTemplates'
 import { buildCheckerFile } from './productChecker'
 import { skillName } from './names'
+import { packageStamp } from './stamp'
 import type { AgentBundleFile, AgentBundleOptions, SkillPackage, TokenJSON } from './types'
 
 export interface ProductPackage extends SkillPackage {
@@ -24,13 +25,14 @@ export function buildAgentProductFiles(json: TokenJSON, opts: AgentBundleOptions
 } {
   const skill = buildAgentSkillFiles(json, opts)
   const project = json.project?.trim() || opts.projectFallback?.trim() || 'Design system'
+  const stamp = packageStamp(json, opts.generatedAt ?? new Date().toISOString().slice(0, 10))
   const files = [
-    ...buildContextFiles(json),
+    ...buildContextFiles(json, stamp),
     ...skill.files,
     ...buildTaskSkillFiles(json),
     ...buildDesignSkillFiles(json),
     ...buildTemplateFiles(json),
-    buildCheckerFile(json),
+    buildCheckerFile(json, stamp),
   ]
   return { name: skillName(project), files }
 }

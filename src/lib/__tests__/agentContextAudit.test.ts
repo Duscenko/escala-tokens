@@ -506,3 +506,116 @@ describe('screen-compose ↔ artefacts', () => {
     for (const c of cited) expect(labels.has(c), c).toBe(true)
   })
 })
+
+describe('package freshness (Fase 3)', () => {
+  it('the stamp names the payload: same system, same fingerprint; one value changed, another', async () => {
+    const { systemFingerprint } = await import('../agentBundle/stamp')
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const json = productJson()
+    expect(systemFingerprint(json)).toBe(systemFingerprint(JSON.parse(JSON.stringify(json))))
+    const changed = JSON.parse(JSON.stringify(json)) as TokenJSON
+    changed.spacing = { ...changed.spacing, 4: '17px' }
+    expect(systemFingerprint(changed)).not.toBe(systemFingerprint(json))
+    const agents = buildAgentProductFiles(json, { generatedAt: '2026-10-20' }).files.find((f) => f.path === 'AGENTS.md')!.text
+    expect(agents).toContain(`fingerprint: ${systemFingerprint(json)}`)
+    expect(agents).toContain('generated: 2026-10-20')
+    expect(agents).toContain('--check-version')
+  })
+
+  it('token-lint --check-version accepts the variables.css of its own system and names a changed token', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const { mkdtempSync, writeFileSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const snapshot = captureCodeSnapshot(useDesignStore.getState(), brand)
+    const json = generateTokenJSON(snapshot) as unknown as TokenJSON
+    const css = buildCSS(snapshot as never)
+    const dir = mkdtempSync(join(tmpdir(), 'escala-lint-'))
+    writeFileSync(join(dir, 'token-lint.mjs'), buildAgentProductFiles(json).files.find((f) => f.path === 'checkers/token-lint.mjs')!.text)
+    writeFileSync(join(dir, 'variables.css'), css)
+    const ok = execFileSync('node', ['token-lint.mjs', '--check-version'], { cwd: dir, encoding: 'utf8' })
+    expect(ok).toContain('matches this package')
+    const target = /--color-action-primary-default:\s*([^;]+);/.exec(css)!
+    writeFileSync(join(dir, 'old.css'), css.replace(target[0], '--color-action-primary-default: #123456;'))
+    let failed = ''
+    try {
+      execFileSync('node', ['token-lint.mjs', '--check-version', '--css', 'old.css'], { cwd: dir, encoding: 'utf8', stdio: 'pipe' })
+    } catch (e) {
+      failed = String((e as { stderr?: string }).stderr)
+    }
+    expect(failed).toContain('--color-action-primary-default')
+    expect(failed).toContain('#123456')
+  })
+
+  it('a push writes the package where the unzip command installs it, for both agents', async () => {
+    const { repoSkillFiles } = await import('../agentBundle/repoSkills')
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const { skillInstallPath } = await import('../agentInstall')
+    const json = productJson()
+    const pushed = repoSkillFiles(json, { generatedAt: '2026-10-20' })
+    expect(pushed.prefixes).toEqual([skillInstallPath('claude', json.project ?? ''), skillInstallPath('cursor', json.project ?? '')])
+    const pkg = buildAgentProductFiles(json, { generatedAt: '2026-10-20' }).files
+    expect(pushed.files.length).toBe(pkg.length * 2)
+    for (const prefix of pushed.prefixes) {
+      for (const f of pkg) expect(pushed.files.find((p) => p.path === `${prefix}${f.path}`)?.content, f.path).toBe(f.text)
+    }
+  })
+})
+
+describe('GitHub push: one commit', () => {
+  type Call = { method: string; path: string; body?: Record<string, unknown> }
+  function mockGitHub(opts: { empty?: boolean; existing?: string[] } = {}) {
+    const calls: Call[] = []
+    const fetchMock = async (url: string, init?: RequestInit) => {
+      const path = url.replace('https://api.github.com', '')
+      const method = init?.method ?? 'GET'
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined
+      calls.push({ method, path, body })
+      const json = (status: number, data: unknown) => new Response(JSON.stringify(data), { status })
+      if (path === '/repos/o/r') return json(200, { default_branch: 'main' })
+      if (path === '/repos/o/r/git/ref/heads/main') return opts.empty ? json(409, { message: 'Git Repository is empty.' }) : json(200, { object: { sha: 'head' } })
+      if (path === '/repos/o/r/git/commits/head') return json(200, { tree: { sha: 'base' } })
+      if (path.startsWith('/repos/o/r/git/trees/base')) return json(200, { tree: (opts.existing ?? []).map((p) => ({ path: p, type: 'blob' })) })
+      if (path === '/repos/o/r/git/trees') return json(201, { sha: 'tree2' })
+      if (path === '/repos/o/r/git/commits') return json(201, { sha: 'commit2' })
+      if (path === '/repos/o/r/git/refs/heads/main') return json(200, {})
+      if (path.startsWith('/repos/o/r/contents/')) return method === 'GET' ? json(404, { message: 'Not Found' }) : json(201, {})
+      return json(404, { message: `unexpected ${method} ${path}` })
+    }
+    return { calls, fetchMock }
+  }
+
+  it('writes every file in one tree, deletes stale package files, and moves the branch once', async () => {
+    const { commitFiles } = await import('../github')
+    const { calls, fetchMock } = mockGitHub({ existing: ['.claude/skills/x/old.md', '.claude/skills/x/AGENTS.md', 'src/app.ts'] })
+    const real = globalThis.fetch
+    globalThis.fetch = fetchMock as typeof fetch
+    try {
+      await commitFiles('t', 'o/r', [{ path: 'tokens.json', content: '{}' }, { path: '.claude/skills/x/AGENTS.md', content: '# x' }], 'msg', ['.claude/skills/x/'])
+    } finally {
+      globalThis.fetch = real
+    }
+    const tree = calls.find((c) => c.method === 'POST' && c.path === '/repos/o/r/git/trees')!.body!
+    const entries = tree.tree as { path: string; content?: string; sha?: null }[]
+    expect(tree.base_tree).toBe('base')
+    expect(entries.map((e) => e.path).sort()).toEqual(['.claude/skills/x/AGENTS.md', '.claude/skills/x/old.md', 'tokens.json'])
+    expect(entries.find((e) => e.path === '.claude/skills/x/old.md')!.sha).toBeNull()
+    expect(entries.some((e) => e.path === 'src/app.ts')).toBe(false)
+    expect(calls.filter((c) => c.path === '/repos/o/r/git/commits' && c.method === 'POST')).toHaveLength(1)
+    expect(calls.find((c) => c.method === 'PATCH')!.body).toEqual({ sha: 'commit2' })
+  })
+
+  it('an empty repo falls back to the Contents API', async () => {
+    const { commitFiles } = await import('../github')
+    const { calls, fetchMock } = mockGitHub({ empty: true })
+    const real = globalThis.fetch
+    globalThis.fetch = fetchMock as typeof fetch
+    try {
+      await commitFiles('t', 'o/r', [{ path: 'tokens.json', content: '{}' }], 'msg')
+    } finally {
+      globalThis.fetch = real
+    }
+    expect(calls.some((c) => c.method === 'PUT' && c.path === '/repos/o/r/contents/tokens.json')).toBe(true)
+  })
+})

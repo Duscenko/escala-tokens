@@ -1,4 +1,5 @@
 import { figmaSemanticName, webCodeSyntax } from './names'
+import type { PackageStamp } from './stamp'
 import type { AgentBundleFile, TokenJSON } from './types'
 
 const F = figmaSemanticName
@@ -7,15 +8,15 @@ function projectName(json: TokenJSON): string {
   return json.project?.trim() || 'Design system'
 }
 
-export function buildContextFiles(json: TokenJSON): AgentBundleFile[] {
+export function buildContextFiles(json: TokenJSON, stamp?: PackageStamp): AgentBundleFile[] {
   const project = projectName(json)
   return [
-    { path: 'AGENTS.md', text: buildAgentsMd(json, project) },
+    { path: 'AGENTS.md', text: buildAgentsMd(json, project, stamp) },
     { path: 'llms.txt', text: buildLlmsTxt(json, project) },
   ]
 }
 
-function buildAgentsMd(json: TokenJSON, project: string): string {
+function buildAgentsMd(json: TokenJSON, project: string, stamp?: PackageStamp): string {
   const icons = json.icons?.aiSource
   return [
     `---`,
@@ -23,6 +24,11 @@ function buildAgentsMd(json: TokenJSON, project: string): string {
     `format: agent-context/v1`,
     `scope: global`,
     `title: ${project}`,
+    ...(stamp ? [
+      `generated: ${stamp.generated}`,
+      `schemaVersion: ${stamp.schemaVersion ?? 'unknown'}`,
+      `fingerprint: ${stamp.fingerprint}`,
+    ] : []),
     `---`,
     ``,
     `# ${project}`,
@@ -61,6 +67,13 @@ function buildAgentsMd(json: TokenJSON, project: string): string {
     `4. Icons: ${icons?.repo ? `only ${icons.repo} (\`${icons.npm}\`)` : 'only the set named under Icons in SKILL.md'}. Do not mix families.`,
     `5. If a name is not in the Token catalog, do not invent it.`,
     ``,
+    ...(stamp ? [
+      `## Version`,
+      ``,
+      `Generated ${stamp.generated} from ${project} (schema ${stamp.schemaVersion ?? 'unknown'}, fingerprint \`${stamp.fingerprint}\`). This package is a snapshot: when the system changes in Escala, export it again (or push to GitHub, which rewrites these folders).`,
+      `\`node checkers/token-lint.mjs --check-version\` compares it with the repo's \`variables.css\` and lists the tokens that differ.`,
+      ``,
+    ] : []),
     `Architecture: \`${json.colors.semanticArchitecture ?? json.colors.architecture?.kind ?? 'categorical'}\`.`,
     json.atoms?.length ? `Selected components (\`atoms\`): ${json.atoms.join(', ')}.` : '',
     ``,

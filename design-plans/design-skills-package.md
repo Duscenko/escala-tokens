@@ -183,7 +183,32 @@ Plan original de la Fase 2:
 - `screen-compose`: patrones de pantalla desde los artefactos; espaciado por rol,
   grid por estilo.
 
-**Fase 3 — frescura**
+**Fase 3 — frescura** — ✅ HECHA (2026-10-20)
+- **Sello** (`agentBundle/stamp.ts`): `AGENTS.md` lleva en el frontmatter `generated`,
+  `schemaVersion` y `fingerprint` (hash estable del `TokenJSON`, cyrb53) y una sección "Version".
+  `generatedAt` es inyectable en `AgentBundleOptions` (por defecto, hoy).
+- **`token-lint --check-version [--css <ruta>]`**: el linter lleva `EXPECT`, los valores que
+  `variables.css` resuelve en `:root` para el sistema del paquete (roles semánticos del primer tema +
+  pasos de spacing, radius y size), resuelve la cadena de `var()` del `variables.css` del repo y
+  lista lo que difiere (exit 1). Sin la bandera, el lint normal avisa sin fallar si encuentra un
+  `variables.css` de otra versión. Se compara por VALORES, no por un hash dentro de `variables.css`,
+  para no tocar `buildCSS` ni depender de que el CSS y el paquete salgan del mismo scope.
+- **El push a GitHub escribe las skills** (`GitHubConnectView` → `repoSkillFiles`): el paquete
+  entero en `.claude/skills/<sistema>/` y `.cursor/skills/<sistema>/` (las rutas de
+  `skillInstallPath`, las mismas que el unzip), generado desde el `tokens.json` que se empuja al lado.
+- **Un solo commit**: `github.ts` → `commitFiles` usa la Git Data API (árbol → commit → ref); ~80
+  archivos son 6-7 peticiones y un commit, no uno por archivo. Los archivos de esas dos carpetas que
+  el paquete ya no trae se borran en el mismo commit (las carpetas espejan el paquete); nada fuera
+  de ellas se toca. Repo vacío → vuelve a `pushFiles` (Contents API). Sin cambios → no hay commit.
+- Tests: huella estable y sensible a un valor; el `token-lint` generado, ejecutado con `node`,
+  acepta el `variables.css` de su propio sistema y nombra el token cambiado; el push escribe el
+  paquete exacto en las dos carpetas de `skillInstallPath`; `commitFiles` con `fetch` simulado (un
+  árbol, borrado de obsoletos, un PATCH, y el fallback de repo vacío).
+- No probado contra GitHub real (solo con `fetch` simulado). La mención del push en el wizard de
+  Export (`ExportWizard.tsx`, con cambios sin commit de otra sesión) sigue hablando solo de
+  `.escala/system.json`.
+
+Plan original de la Fase 3:
 - Sello de versión + aviso en `token-lint`.
 - El push a GitHub escribe las skills.
 

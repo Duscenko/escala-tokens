@@ -115,6 +115,62 @@ export async function getFile(token: string, repo: string, path: string): Promis
   }
 }
 
+/** A repo with no commit yet: the Git Data API has no branch to build on. */
+function isEmptyRepoError(e: unknown): boolean {
+  return e instanceof Error && /empty|not found/i.test(e.message)
+}
+
+/**
+ * Writes every file in ONE commit (Git Data API: tree → commit → ref), so a
+ * push of the agent package (~80 files) is a handful of requests and one
+ * commit, not one commit per file. Files under `prune` prefixes that this push
+ * does not carry are deleted in the same commit — those folders mirror the
+ * package. An empty repo (no branch yet) falls back to `pushFiles`, which
+ * creates it.
+ */
+export async function commitFiles(
+  token: string,
+  repo: string,
+  files: RepoFile[],
+  message: string,
+  prune: string[] = [],
+): Promise<void> {
+  const { default_branch: branch } = await gh<GitHubRepo>(token, `/repos/${repo}`)
+  let head: string
+  try {
+    head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${branch}`)).object.sha
+  } catch (e) {
+    if (!isEmptyRepoError(e)) throw e
+    return pushFiles(token, repo, files, message)
+  }
+  const base = (await gh<{ tree: { sha: string } }>(token, `/repos/${repo}/git/commits/${head}`)).tree.sha
+  const keep = new Set(files.map((f) => f.path))
+  let stale: string[] = []
+  if (prune.length) {
+    const tree = await gh<{ tree: { path: string; type: string }[] }>(token, `/repos/${repo}/git/trees/${base}?recursive=1`)
+    stale = tree.tree
+      .filter((t) => t.type === 'blob' && prune.some((p) => t.path.startsWith(p)) && !keep.has(t.path))
+      .map((t) => t.path)
+  }
+  const entries = [
+    ...files.map((f) => ({ path: f.path, mode: '100644', type: 'blob', content: f.content })),
+    ...stale.map((path) => ({ path, mode: '100644', type: 'blob', sha: null })),
+  ]
+  const tree = await gh<{ sha: string }>(token, `/repos/${repo}/git/trees`, {
+    method: 'POST',
+    body: JSON.stringify({ base_tree: base, tree: entries }),
+  })
+  if (tree.sha === base) return // nothing changed: no empty commit
+  const commit = await gh<{ sha: string }>(token, `/repos/${repo}/git/commits`, {
+    method: 'POST',
+    body: JSON.stringify({ message, tree: tree.sha, parents: [head] }),
+  })
+  await gh(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ sha: commit.sha }),
+  })
+}
+
 /**
  * Pushes the design-system files sequentially (the Contents API rejects
  * concurrent writes to the same branch with 409s).

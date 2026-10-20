@@ -6,10 +6,12 @@ import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { slugify } from '../../lib/utils'
 import { ESCALA_SYSTEM_PATH, parseEscalaSystem, serializeEscalaSystem } from '../../lib/escalaSystem'
+import { repoSkillFiles, repoSkillFolders } from '../../lib/agentBundle/repoSkills'
+import type { TokenJSON } from '../../lib/agentBundle/types'
 import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
 import {
   getStoredToken, setStoredToken, clearStoredToken,
-  validateToken, listRepos, createRepo, pushFiles, getFile,
+  validateToken, listRepos, createRepo, commitFiles, getFile,
   type GitHubUser, type GitHubRepo, type GitHubPushState,
 } from '../../lib/github'
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
@@ -237,10 +239,17 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
         }),
       },
     ]
+    // Design skills: the agent package, written where an agent reads it
+    // (`.claude/skills/<system>/`, `.cursor/skills/<system>/`), generated from
+    // the tokens.json pushed beside it. Both folders mirror the package.
+    const skills = repoSkillFiles(JSON.parse(shipped.tokens) as TokenJSON, {
+      projectFallback: live.projectName,
+      iconKey: live.iconAiSource,
+    })
+    const perFolder = skills.files.length / skills.prefixes.length
+    setPushLog([...files.map((f) => f.path), ...skills.prefixes.map((p) => `${p} (${perFolder} files)`)])
     try {
-      await pushFiles(token, githubRepo, files, `chore(tokens): update ${projectName} design tokens`, (path) =>
-        setPushLog((prev) => [...prev, path]),
-      )
+      await commitFiles(token, githubRepo, [...files, ...skills.files], `chore(tokens): update ${projectName} design tokens and Design skills`, skills.prefixes)
       setGithubLastPushAt(new Date().toISOString())
       // A successful push is what "saves" a design system — upsert it into the
       // local registry (id = repo full_name, so re-pushes update the entry).
@@ -433,9 +442,12 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
         <p className="text-xs text-fg-faint leading-relaxed">
           Commits <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>,{' '}
           <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">variables.css</code>,{' '}
-          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code> and{' '}
-          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">{ESCALA_SYSTEM_PATH}</code> to{' '}
-          <span className="text-fg-muted font-mono text-caption">{githubRepo ?? '—'}</span>.
+          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code>,{' '}
+          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">{ESCALA_SYSTEM_PATH}</code> and the
+          Design skills ({repoSkillFolders(projectName).map((p, i) => (
+            <span key={p}>{i > 0 && ', '}<code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">{p}</code></span>
+          ))}) to{' '}
+          <span className="text-fg-muted font-mono text-caption">{githubRepo ?? '—'}</span>, in one commit.
           The <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">.escala</code> file is the
           editor — without it, this repo is an export, not a save. Keep the repo private: it can hold the publish claim.
           {githubLastPushAt && (
