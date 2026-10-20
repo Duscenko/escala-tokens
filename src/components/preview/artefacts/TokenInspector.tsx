@@ -976,6 +976,14 @@ export function InspectorOverlay({
   // compact tag: it only has to say what a click would select.
   const dockedPin = docked && !!pin
   const hoverTag = docked && !pin
+  // The rings follow a pinned element while the board scrolls, so they are
+  // clipped to the canvas the element scrolls INSIDE. Unclipped, a selection
+  // scrolled past the canvas edge stayed painted over the top bar and the
+  // inspector. Read at render: every move of the ring is a state change.
+  const viewport = rootRef.current?.getBoundingClientRect()
+  const ringClip = viewport && typeof window !== 'undefined'
+    ? `inset(${Math.max(0, viewport.top)}px ${Math.max(0, window.innerWidth - viewport.right)}px ${Math.max(0, window.innerHeight - viewport.bottom)}px ${Math.max(0, viewport.left)}px)`
+    : undefined
 
   return (
     <>
@@ -984,9 +992,11 @@ export function InspectorOverlay({
           {/* A group is the coarser target, so it gets the quieter ring — with a
               control lit inside it, two rings of equal weight would compete for
               the "this is what the badge is about" reading. */}
-          <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} editing={!!editing && !!pin && !focus} />
-          {focus && <InspectRing rect={focus.rect} variant="focus" editing={!!editing && !!pin} />}
-          {hoverTag && <HoverTag rect={rect} kind={kind} name={kind === 'component' ? (trace?.component ?? label) : label} count={trace ? traceTokenCount(trace) : roles.length} hint={t('Click to inspect')} />}
+          <div className="absolute inset-0" style={{ clipPath: ringClip }}>
+            <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} editing={!!editing && !!pin && !focus} />
+            {focus && <InspectRing rect={focus.rect} variant="focus" editing={!!editing && !!pin} />}
+            {hoverTag && <HoverTag rect={rect} kind={kind} name={kind === 'component' ? (trace?.component ?? label) : label} count={trace ? traceTokenCount(trace) : roles.length} hint={t('Click to inspect')} />}
+          </div>
           {!docked && (
             <div
               className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-line bg-rail-section shadow-lg"
