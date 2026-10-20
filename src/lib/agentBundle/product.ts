@@ -2,6 +2,7 @@ import { zipStore } from '../zipStore'
 import { buildAgentSkillFiles } from './skill'
 import { buildContextFiles } from './productContext'
 import { buildTaskSkillFiles } from './productSkills'
+import { buildDesignSkillFiles } from './productDesignSkills'
 import { buildTemplateFiles } from './productTemplates'
 import { buildCheckerFile } from './productChecker'
 import { skillName } from './names'
@@ -27,6 +28,7 @@ export function buildAgentProductFiles(json: TokenJSON, opts: AgentBundleOptions
     ...buildContextFiles(json),
     ...skill.files,
     ...buildTaskSkillFiles(json),
+    ...buildDesignSkillFiles(json),
     ...buildTemplateFiles(json),
     buildCheckerFile(json),
   ]

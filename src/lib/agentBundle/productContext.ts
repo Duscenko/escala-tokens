@@ -1,6 +1,7 @@
 import { figmaSemanticName, webCodeSyntax } from './names'
-import type { TokenJSON } from './types'
-import type { AgentBundleFile } from './types'
+import type { AgentBundleFile, TokenJSON } from './types'
+
+const F = figmaSemanticName
 
 function projectName(json: TokenJSON): string {
   return json.project?.trim() || 'Design system'
@@ -43,11 +44,19 @@ function buildAgentsMd(json: TokenJSON, project: string): string {
     `| Component scaffolds | \`templates/component/\` |`,
     `| Lint leftover hex/px | \`checkers/token-lint.mjs\` |`,
     ``,
+    `## Design skills (Figma)`,
+    ``,
+    `| Need | File |`,
+    `|---|---|`,
+    `| Build or dress a component in Figma, layer by layer | \`skills/component-build/SKILL.md\` |`,
+    `| Review a Figma frame against the system | \`skills/design-review/SKILL.md\` |`,
+    `| Hand a frame to engineering (layer → variable → CSS) | \`skills/handoff-spec/SKILL.md\` |`,
+    ``,
     `## Hard rules`,
     ``,
     `1. Semantics over primitives. \`${figmaSemanticName('action.primary.default')}\` not a raw ramp step.`,
     `2. Figma names use \`/\`. CSS uses hyphens inside \`var()\`: \`${webCodeSyntax('action.primary.default')}\`.`,
-    `3. Pair fills with their ink: Action/primary/* → Content/on-action. Status surface → Status content. Inputs: Surface/input + Border/strong. Focus: Border/focus, never Border/accent.`,
+    `3. Pair fills with their ink: \`${F('action.primary.default')}\` → \`${F('content.on-action')}\`. Status surface → its status content (\`${F('status.critical.surface')}\` → \`${F('status.critical.content')}\`). Field outline: \`${F('surface.input')}\` + \`${F('border.control')}\`, never \`${F('border.strong')}\`. Focus: \`${F('border.focus')}\`, never \`${F('border.accent')}\`.`,
     `4. Icons: ${icons?.repo ? `only ${icons.repo} (\`${icons.npm}\`)` : 'only the set named under Icons in SKILL.md'}. Do not mix families.`,
     `5. If a name is not in the Token catalog, do not invent it.`,
     ``,
@@ -77,6 +86,12 @@ function buildLlmsTxt(json: TokenJSON, project: string): string {
     `- [Implement UI](skills/code/SKILL.md)`,
     `- [Audit contrast](skills/a11y-audit/SKILL.md)`,
     `- [Migrate hex/px](skills/migrate/SKILL.md)`,
+    ``,
+    `## Design skills`,
+    ``,
+    `- [Build a component in Figma](skills/component-build/SKILL.md): which variable goes on each layer, layers named after the recipe slots`,
+    `- [Review a frame](skills/design-review/SKILL.md): detached values, fill/ink pairs, radius axes, spacing scale`,
+    `- [Handoff spec](skills/handoff-spec/SKILL.md): layer → Figma variable → CSS for engineers`,
     ``,
     `## Generation`,
     ``,

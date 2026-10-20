@@ -21,6 +21,7 @@ import { generateTokenJSON } from '../tokenGenerator'
 import { offlineSkillCommand, unzipSkillCommand } from '../agentInstall'
 import { CLI_PUBLISHED } from '../featureFlags'
 import type { TokenJSON } from '../agentBundle/types'
+import { figmaSemanticName } from '../agentBundle/names'
 
 let brand = ''
 
@@ -243,5 +244,178 @@ describe('a paste is the brand that was asked for', () => {
     expect(row(brand)).not.toBe(row(second.key))
     // Dark only: one value column.
     expect(row(brand)!.split('|').filter((c) => c.trim()).length).toBe(3)
+  })
+})
+
+// ── Design skills (design-plans/design-skills-package.md) ──────────────────
+
+const SEMANTIC_GROUPS = 'Content|Action|Surface|Status|Border'
+
+function productJson(atoms?: string[]): TokenJSON {
+  const json = generateTokenJSON(captureCodeSnapshot(useDesignStore.getState(), brand)) as unknown as TokenJSON
+  return atoms ? { ...json, atoms } : json
+}
+
+function figmaRoleNames(json: TokenJSON): Set<string> {
+  const names = new Set<string>()
+  for (const [group, tokens] of Object.entries(json.colors.architecture?.tokens ?? {})) {
+    for (const key of Object.keys(tokens)) names.add(figmaSemanticName(`${group}.${key}`))
+  }
+  return names
+}
+
+/** Every `Content/…`-shaped name a text cites; a `*` segment is a wildcard. */
+function citedSemanticNames(text: string): string[] {
+  return [...text.matchAll(new RegExp(`\\b(?:${SEMANTIC_GROUPS})(?:/[A-Za-z0-9*-]+)+`, 'g'))].map((m) => m[0])
+}
+
+function existsAsRole(name: string, roles: Set<string>): boolean {
+  if (!name.includes('*')) return roles.has(name)
+  const re = new RegExp(`^${name.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\/]/g, '\\$&')).join('[^/]+(?:/[^/]+)*')}$`)
+  return [...roles].some((r) => re.test(r))
+}
+
+/** The `.md` rows of a table with a `Bind to` and a `Collection` column. */
+function bindingCells(md: string): { bind: string; collection: string }[] {
+  const out: { bind: string; collection: string }[] = []
+  let header: string[] | null = null
+  for (const line of md.split('\n')) {
+    if (!line.startsWith('|')) { header = null; continue }
+    const cells = line.split('|').slice(1, -1).map((c) => c.trim())
+    if (cells.includes('Bind to')) { header = cells; continue }
+    if (!header || cells[0].startsWith('---')) continue
+    out.push({ bind: cells[header.indexOf('Bind to')], collection: cells[header.indexOf('Collection')] })
+  }
+  return out
+}
+
+function tableRows(md: string, firstHeader: string): string[][] {
+  const rows: string[][] = []
+  let on = false
+  for (const line of md.split('\n')) {
+    if (!line.startsWith('|')) { on = false; continue }
+    const cells = line.split('|').slice(1, -1).map((c) => c.trim().replace(/`/g, ''))
+    if (cells[0] === firstHeader) { on = true; continue }
+    if (on && !cells[0].startsWith('---')) rows.push(cells)
+  }
+  return rows
+}
+
+describe('design skills cite only names the system ships', () => {
+  it('every semantic Figma name in AGENTS.md and skills/*/SKILL.md is a role of the payload', async () => {
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const json = productJson()
+    const roles = figmaRoleNames(json)
+    const files = buildAgentProductFiles(json).files.filter((f) => f.path === 'AGENTS.md' || /^skills\/[^/]+\/SKILL\.md$/.test(f.path))
+    expect(files.length).toBeGreaterThanOrEqual(7)
+    for (const f of files) {
+      for (const name of citedSemanticNames(f.text)) expect(existsAsRole(name, roles), `${f.path}: ${name}`).toBe(true)
+    }
+  })
+
+  it('the field outline is Border/control everywhere a pairing is taught', async () => {
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const files = buildAgentProductFiles(productJson()).files
+    const agents = files.find((f) => f.path === 'AGENTS.md')!.text
+    const code = files.find((f) => f.path === 'skills/code/SKILL.md')!.text
+    for (const text of [agents, code]) {
+      expect(text).toContain(`\`${figmaSemanticName('surface.input')}\` + \`${figmaSemanticName('border.control')}\``)
+      expect(text).not.toMatch(/Surface\/input`? \+ `?Border\/strong/)
+    }
+    const a11y = files.find((f) => f.path === 'skills/a11y-audit/SKILL.md')!.text
+    expect(a11y).toContain('action-label WCAG 4.5 / Lc 60')
+    expect(a11y).toContain(`\`${figmaSemanticName('status.critical.on-solid')}\` | \`${figmaSemanticName('status.critical.surface-solid')}\``)
+  })
+
+  it('every variable and style the design skills bind exists in the payload', async () => {
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const json = productJson([...COMPONENT_KEYS])
+    const roles = figmaRoleNames(json)
+    const dims: Record<string, Record<string, string> | undefined> = {
+      Radius: json.radiusRoles, Spacing: json.spacingRoles, Size: json.sizeRoles, Selector: json.selectorRoles,
+      Stroke: json.strokeRoles, Icon: json.icons?.sizes?.roles,
+    }
+    const files = buildAgentProductFiles(json).files.filter((f) => f.path.startsWith('skills/'))
+    let checked = 0
+    for (const f of files) {
+      expect(f.text, f.path).not.toContain('not published in this system')
+      for (const { bind, collection } of bindingCells(f.text)) {
+        const names = bind.split(' + ').map((n) => n.replace(/`/g, ''))
+        const cols = collection.split(' + ')
+        expect(names.length, `${f.path}: ${bind}`).toBe(cols.length)
+        names.forEach((name, i) => {
+          checked++
+          const col = cols[i]
+          if (col === 'Color Semantics') expect(roles.has(name), `${f.path}: ${name}`).toBe(true)
+          else if (col === 'Dimension Primitives') expect(json.dimensions?.[name], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else {
+            const [group, , role] = name.split('/')
+            expect(col, `${f.path}: ${name}`).toBe('Dimension Semantics')
+            expect(dims[group]?.[role], `${f.path}: ${name}`).toBeDefined()
+          }
+        })
+      }
+      // Role and style names cited in prose (review rules, handoff tables).
+      for (const m of f.text.matchAll(/`((Radius|Spacing|Size|Selector|Stroke|Icon)\/role\/([\w-]+)|Type\/([\w-]+)|Shadow\/([\w-]+))`/g)) {
+        if (m[2]) expect(dims[m[2]]?.[m[3]], `${f.path}: ${m[1]}`).toBeDefined()
+        else if (m[4]) expect(json.typography.roles?.[m[4]], `${f.path}: ${m[1]}`).toBeDefined()
+        else expect(json.shadows?.[m[5]], `${f.path}: ${m[1]}`).toBeDefined()
+      }
+    }
+    expect(checked).toBeGreaterThan(500)
+  })
+
+  it('AGENTS.md and llms.txt route to every design skill, and the package ships it', async () => {
+    const { buildAgentProductFiles } = await import('../agentBundle/product')
+    const files = buildAgentProductFiles(productJson()).files
+    const paths = new Set(files.map((f) => f.path))
+    for (const skill of ['component-build', 'design-review', 'handoff-spec']) {
+      const path = `skills/${skill}/SKILL.md`
+      expect(paths.has(path), path).toBe(true)
+      expect(files.find((f) => f.path === 'AGENTS.md')!.text).toContain(path)
+      expect(files.find((f) => f.path === 'llms.txt')!.text).toContain(path)
+    }
+  })
+})
+
+describe('component-build ↔ recipes', () => {
+  it('every layer a component file cites is a slot of its recipe, named the way the plugin names it', async () => {
+    const { existsSync } = await import('node:fs')
+    const { join, dirname } = await import('node:path')
+    const { fileURLToPath } = await import('node:url')
+    const { COMPONENT_RECIPES, serializeRecipes } = await import('../componentRecipes')
+    const { buildDesignSkillFiles, componentBuildPath, figmaSlotsOf } = await import('../agentBundle/productDesignSkills')
+    const { figmaLayerName } = await import('../agentBundle/figmaRefs')
+    const pluginFile = join(dirname(fileURLToPath(import.meta.url)), '../../../../escala-figma-plugin/src/recipes.ts')
+    const plugin = existsSync(pluginFile) ? await import(/* @vite-ignore */ pluginFile) : null
+    const table = serializeRecipes()
+
+    const json = productJson([...COMPONENT_KEYS])
+    const files = buildDesignSkillFiles(json)
+    for (const key of COMPONENT_KEYS) {
+      const recipe = COMPONENT_RECIPES[key]
+      if (!recipe) continue
+      const md = files.find((f) => f.path === componentBuildPath(key))?.text
+      expect(md, key).toBeTruthy()
+      const recipeSlots = new Set(figmaSlotsOf(recipe))
+      const layers = tableRows(md!, 'Layer').filter((r) => r.length === 3)
+      expect(layers.length, key).toBe(recipeSlots.size)
+      const layerNames = new Set<string>()
+      for (const [layer, slot] of layers) {
+        expect(recipeSlots.has(slot), `${key}: ${slot}`).toBe(true)
+        expect(layer, `${key}: ${slot}`).toBe(figmaLayerName(slot))
+        if (plugin) expect(plugin.slotMatchesLayer(slot, layer), `${key}: ${slot} → ${layer}`).toBe(true)
+        layerNames.add(layer)
+      }
+      if (plugin) for (const s of plugin.recipeLayerSlots(table, key) as string[]) expect(layerNames.has(figmaLayerName(s)), `${key}: plugin slot ${s}`).toBe(true)
+      // Binding rows only name layers listed above.
+      for (const row of [...tableRows(md!, 'Layer').filter((r) => r.length === 5), ...tableRows(md!, 'When')]) {
+        const layer = row.length === 6 ? row[1] : row[0]
+        if (layer === '—') continue
+        expect(layerNames.has(layer), `${key}: ${layer}`).toBe(true)
+      }
+    }
   })
 })

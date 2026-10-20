@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "escala-tokens": {
-      "type": "http",
-      "url": "https://escalatokens.com/api/mcp"
-    }
-  }
-}
