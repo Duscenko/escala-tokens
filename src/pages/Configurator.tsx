@@ -2490,7 +2490,9 @@ export default function Configurator() {
         // Home (the file browser) has no theme open to export.
         exportAction={componentsWithoutSystem ? (
           <GoToGeneratorButton onClick={() => handleNav('variables')} />
-        ) : ((tab === 'foundations' && !(themesCanvas && themeWorkspaceTab === 'library')) || tab === 'components') ? (
+        // Home exports from each brand column (its menu holds every way out),
+        // so the bar's Export pill would be a second door to the same wizard.
+        ) : ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
           <ExportPill
             onExport={openSectionExport}
             onSyncFigma={openFigmaSyncPage}
@@ -2791,6 +2793,7 @@ export default function Configurator() {
                       setExportRun((n) => n + 1)
                       setSectionExportOpen(true)
                     }}
+                    onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     onCreateTheme={openCreateTheme}
                     createPending={createPending}

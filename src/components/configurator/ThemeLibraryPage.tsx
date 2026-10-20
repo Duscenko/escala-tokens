@@ -425,6 +425,7 @@ export default function ThemeLibraryPage({
   onGetCode,
   onExportBrand,
   onExportAll,
+  onSyncFigma,
   onShareGithub,
   onCreateTheme,
   createPending = false,
@@ -455,6 +456,8 @@ export default function ThemeLibraryPage({
   onExportBrand?: (key: string) => void
   /** Home's Export all: the wizard with every brand checked (the bundle). */
   onExportAll?: () => void
+  /** A brand column's Export menu → Sync with Figma for that brand. */
+  onSyncFigma?: (key: string) => void
   /** Preview the theme and open the GitHub page. */
   onShareGithub: (key: string) => void
   /** Opens the theme sheet on its create view (owned by the shell). */
@@ -613,6 +616,7 @@ export default function ThemeLibraryPage({
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         onExportBrand={onExportBrand ?? onGetCode}
+        brandExport={{ all: onExportAll, figma: onSyncFigma, code: onGetCode, github: onShareGithub }}
         onAddBrand={onCreateTheme}
         onImportBrand={(json, name) => {
           const res = addBrandFromPayload(json, name)
@@ -801,16 +805,6 @@ export default function ThemeLibraryPage({
           trail={homeTrail}
           action={(
             <div className="flex items-center gap-2">
-              {dashPage === 'overview' && onExportAll && savedMine.length > 0 && (
-                <button
-                  type="button"
-                  onClick={onExportAll}
-                  title={t('Export every brand of {name} in one bundle', { name: store.projectName })}
-                  className="inline-flex h-8 items-center rounded-lg border border-line px-3 text-caption font-semibold text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                >
-                  {t('Export all')}
-                </button>
-              )}
               {dashPage === 'overview' && (
                 <AddBrandButton
                   onClick={onCreateTheme}

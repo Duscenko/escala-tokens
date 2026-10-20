@@ -378,9 +378,12 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   no brand it is the table where the first one is added.
 > - **Top bar:** the house is gone; in its place `AppearanceToggle` (sun/moon) for EVERY visitor.
 >   The ☰ menu no longer repeats Appearance on the Generator.
-> - **The page** (`ThemeLibraryPage` `systemOnly` → `SystemDashboard`): brands table with Add brand,
->   **Export all** (wizard with every brand, `exportAllModes`) and a brand column's **Export**
->   (wizard scoped to it, `openThemeExport` — it used to leave for Code). The right panel lists the
+> - **The page** (`ThemeLibraryPage` `systemOnly` → `SystemDashboard`): brands table with Add brand.
+>   **ONE export on Home: each brand column's Export menu** (`BrandExportMenu`, `OverviewPage`):
+>   Export <brand> (wizard scoped, `openThemeExport`) · Export all N brands (bundle, `exportAllModes`;
+>   only with 2+ brands) · Sync with Figma · Get code · Connect GitHub. The header has no Export and
+>   the top bar's Export pill is hidden on Home (it stays on Board / Variables / Code / Components) —
+>   three doors to one wizard read as three different things. The right panel lists the
 >   other design systems (`DesignSystemsNav`: load in place, `+` new) — the only door to them; the
 >   account menu's "Saved design systems" is gone.
 > - **Every old Home door opens the system tab:** `?section=library`, login `next=library`

@@ -20,6 +20,7 @@ import { useTheme } from '../../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
 import { AppearanceGlyph } from '../colorControls'
 import { ThemeAvatar } from '../ThemeLibraryRail'
+import { ChromeAnchoredDropdown } from '../TopNav'
 import { Tag, TEXT_LINK } from './parts'
 import type { Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
@@ -269,7 +270,7 @@ function AddBrandMenu({ onBlank, onImport, blocked }: {
 }
 
 export default function OverviewPage({
-  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, onOpenColorTheme,
+  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport, onOpenColorTheme,
   onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   dash: Dashboard
@@ -286,6 +287,8 @@ export default function OverviewPage({
   onEditBrand: (key: string) => void
   /** Opens that brand's code (Code tab). */
   onExportBrand?: (key: string) => void
+  /** The rest of a brand column's Export menu (Home). */
+  brandExport?: BrandExportActions
   /** A theme chip opens Variables · Color for that brand in that appearance. */
   onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** The empty slot's + → Start from blank. */
@@ -356,9 +359,13 @@ export default function OverviewPage({
                     <span className="min-w-0 flex-1 truncate text-title font-semibold text-fg">{card.name}</span>
                   </button>
                   {onExportBrand && (
-                    <button type="button" onClick={() => onExportBrand(card.key)} className={`flex-shrink-0 rounded-md px-1.5 py-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS}`}>
-                      {t('Export')}
-                    </button>
+                    <BrandExportMenu
+                      brandKey={card.key}
+                      brandName={card.name}
+                      brandCount={cards.length}
+                      onExportBrand={onExportBrand}
+                      actions={brandExport}
+                    />
                   )}
                   <button
                     type="button"
@@ -449,6 +456,82 @@ export default function OverviewPage({
           </div>
         </div>
       </section>
+    </>
+  )
+}
+
+/** Home's export actions beyond "this brand": the bundle and the other ways out. */
+export interface BrandExportActions {
+  /** Every brand of the design system in one bundle. */
+  all?: () => void
+  figma?: (key: string) => void
+  code?: (key: string) => void
+  github?: (key: string) => void
+}
+
+/**
+ * The ONE export on Home (design-plans/home-into-system.md): each brand column
+ * carries it, and the menu says how — this brand, all brands, Figma, code,
+ * GitHub. Home has no header Export and the top bar's Export pill is hidden
+ * there, so three doors to the same wizard became one.
+ */
+function BrandExportMenu({ brandKey, brandName, brandCount, onExportBrand, actions }: {
+  brandKey: string
+  brandName: string
+  brandCount: number
+  onExportBrand: (key: string) => void
+  actions?: BrandExportActions
+}) {
+  const { t } = useI18n()
+  const { guest } = useAccess()
+  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const items: { key: string; label: string; hint: string; go: () => void }[] = [
+    { key: 'brand', label: t('Export {name}', { name: brandName }), hint: t('Pick what ships and download the files.'), go: () => onExportBrand(brandKey) },
+    ...(actions?.all && brandCount > 1
+      ? [{ key: 'all', label: t('Export all {n} brands', { n: brandCount }), hint: t('Every brand in one bundle, one theme column each.'), go: actions.all }]
+      : []),
+    ...(actions?.figma ? [{ key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), go: () => actions.figma?.(brandKey) }] : []),
+    ...(actions?.code ? [{ key: 'code', label: t('Get code'), hint: t('CSS, JSON and every format, ready to copy.'), go: () => actions.code?.(brandKey) }] : []),
+    ...(actions?.github && !guest ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the files to a repository.'), go: () => actions.github?.(brandKey) }] : []),
+  ]
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((next) => !next)}
+        className={`inline-flex flex-shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-caption font-medium transition-colors hover:text-fg ${open ? 'text-fg' : 'text-fg-muted'} ${FOCUS}`}
+      >
+        {t('Export')}
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={anchorRef}
+        align="left"
+        gap={6}
+        menuAriaLabel={t('Export {name}', { name: brandName })}
+        className="w-72 rounded-lg border border-line-strong bg-app p-1 shadow-lg"
+      >
+        {items.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpen(false); item.go() }}
+            className={`flex w-full flex-col items-start rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/[0.06] ${FOCUS}`}
+          >
+            <span className="text-caption font-medium text-fg">{item.label}</span>
+            <span className="text-mini leading-snug text-fg-muted">{item.hint}</span>
+          </button>
+        ))}
+      </ChromeAnchoredDropdown>
     </>
   )
 }

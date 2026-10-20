@@ -27,6 +27,9 @@ Status (2026-10-20): ALL STEPS DONE (1–6).
   `onOpenSystem`, …). Pinned is deleted: store v100 drops `pinned` / `togglePinned`, the ⋯
   menu's "Pin to Home" is gone, parked account files no longer carry it. The cloud record
   still sends `pinned: []` (older builds validate it). CLAUDE.md has the UPDATE note.
+- Follow-up: three exports confused (top pill · header Export all · column Export). Home now has
+  ONE: the brand column's Export opens a menu (this brand · all N brands · Figma · code ·
+  GitHub). Header Export all removed; the top pill is hidden on Home only.
 
 ## Why
 

@@ -25,6 +25,7 @@ import type { DocsExits } from '../docs/getStarted'
 import { BTN, BTN_PRIMARY, Card, NavRow, PageHeader, SourcePill } from './parts'
 import { DASH_DOCS, DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashboard, type DashPage, type Dashboard } from './dashboardData'
 import OverviewPage from './OverviewPage'
+import type { BrandExportActions } from './OverviewPage'
 import StatusBoardPage, { type StatusFilter, type StatusKind } from './StatusBoardPage'
 import ColorVariableMap from './ColorVariableMap'
 import FoundationRolesTable from './FoundationRolesTable'
@@ -310,7 +311,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, navExtra, timeAgo,
   onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
-  onEditRole, onOpenComponent, docsExits, onExportBrand, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
+  onEditRole, onOpenComponent, docsExits, onExportBrand, brandExport, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -345,6 +346,8 @@ export default function SystemDashboard({
   docsExits: DocsExits
   /** Overview: a brand card's Export. */
   onExportBrand?: (key: string) => void
+  /** The rest of each brand column's Export menu. */
+  brandExport?: BrandExportActions
   /** Overview: the empty slot's +. */
   onAddBrand?: () => void
   /** Overview: the + → import a brand from another system's context or JSON. */
@@ -405,6 +408,7 @@ export default function SystemDashboard({
           onEditBrand={onEditBrand}
           onOpenColorTheme={onOpenColorTheme}
           onExportBrand={onExportBrand}
+          brandExport={brandExport}
           onAddBrand={onAddBrand}
           onImportBrand={onImportBrand}
           addBrandBlocked={addBrandBlocked}
