@@ -4,7 +4,7 @@
 // access.ts (that module already imports the store).
 
 import { hasStoredSession } from './auth'
-import { entitlementAt } from './entitlement'
+import { BETA_MAX_BRANDS, OPEN_BETA, entitlementAt } from './entitlement'
 import { readLicenceState, type LicenceStatus } from './licence'
 import { accountsEnabled } from './supabase'
 
@@ -15,6 +15,16 @@ export const FREE_SYSTEM_LIMIT = 1
 /** Shown when a create is refused. Already translated in i18n. */
 export const FREE_ANOTHER_THEME_ERROR =
   'Free includes one design system with three brands, each with Light and Dark. Pro adds brands and systems.'
+
+/** Shown when the open beta's brand limit refuses a create. */
+export const BETA_BRAND_LIMIT_ERROR =
+  'During the open beta a design system holds up to five brands.'
+
+/** Open beta: no plan, ONE cost limit — the brands a design system holds,
+ *  for everyone, account or not. */
+export function betaBrandLimitReached(count: number): boolean {
+  return OPEN_BETA && count >= BETA_MAX_BRANDS
+}
 
 /** Free may start another design system while it holds fewer than the limit. */
 export function freeAnotherSystemBlocked(input: {
@@ -44,6 +54,7 @@ export function licenceStillOpen(status: LicenceStatus, hasKey: boolean): boolea
  *  no stored session (tests, the plugin studio, a signed-out tab), during the
  *  launch promo, and while a saved key is still unchecked. */
 export function freeAnotherThemeBlockedNow(count: number): boolean {
+  if (OPEN_BETA) return betaBrandLimitReached(count)
   if (!accountsEnabled || !hasStoredSession()) return false
   if (entitlementAt(new Date()).promo) return false
   const licence = readLicenceState()

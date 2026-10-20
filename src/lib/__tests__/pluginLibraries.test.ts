@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 // The plugin's "My themes" list. Reported: systems deleted on the web kept
 // appearing in the plugin and kept syncing. The real handlers, with Blob,

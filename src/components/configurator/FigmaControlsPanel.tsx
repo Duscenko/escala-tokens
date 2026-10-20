@@ -21,7 +21,7 @@ import { useEntitlement } from '../../lib/useEntitlement'
 import { useFreeTier } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
-import { PRO_MAX_MODES } from '../../lib/entitlement'
+import { OPEN_BETA, PRO_MAX_MODES } from '../../lib/entitlement'
 import { FigmaLogo, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph, THEME_BAND_H } from './colorControls'
 import { QUICK_RAIL_STACK_GAP, QUICK_SETTINGS_WIDTH, RailCard, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
@@ -149,7 +149,7 @@ export default function FigmaControlsPanel({
                     <EditIcon />
                   </span>
                 </div>
-                <button
+                {!OPEN_BETA && <button
                   type="button"
                   onClick={() => setLicenceOpen(true)}
                   className={`self-start rounded text-caption text-fg-faint transition-colors hover:text-fg ${FOCUS}`}
@@ -157,7 +157,7 @@ export default function FigmaControlsPanel({
                   {valid && entitlement.licence.expiresAt
                     ? t('Active until {date}', { date: new Date(entitlement.licence.expiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) })
                     : t('Have a licence key?')}
-                </button>
+                </button>}
               </div>
             </RailCard>
 

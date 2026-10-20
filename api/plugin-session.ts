@@ -21,7 +21,7 @@ import { userFromJwt } from './_authUser.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
-import { entitlementAt, FREE_MAX_MODES, FREE_MAX_THEMES, PRO_MAX_MODES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
+import { BETA_MAX_BRANDS, entitlementAt, FREE_MAX_MODES, OPEN_BETA, FREE_MAX_THEMES, PRO_MAX_MODES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 // The Figma plugin cannot share the browser session. Sign-in is a short-lived
@@ -72,6 +72,9 @@ function tierPayload(tier: PluginTier): { tier: PluginTier; maxThemes: number; m
 }
 
 function tierOf(session: Pick<SessionRecord, 'proUntil' | 'plan'> | null | undefined, now = new Date()): { tier: PluginTier; maxThemes: number } {
+  // Open beta: everyone is Pro, capped at the beta's brand limit (Light +
+  // Dark each), which is about cost, not value.
+  if (OPEN_BETA) return { tier: 'pro', maxThemes: BETA_MAX_BRANDS, maxModes: BETA_MAX_BRANDS * 2 } as ReturnType<typeof tierPayload>
   if (entitlementAt(now).promo) return tierPayload('pro')
   if (!session) return tierPayload('unknown')
   const licensed = !!session.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())
@@ -682,9 +685,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', '60')
       return res.status(429).json({ error: 'Too many requests.' })
     }
-    let tier: 'pro' | 'free' = 'free'
-    const licenceKey = licenceKeyFrom(req)
-    if (licenceKey) {
+    let tier: 'pro' | 'free' = OPEN_BETA ? 'pro' : 'free'
+    const licenceKey = OPEN_BETA ? '' : licenceKeyFrom(req)
+    // Open beta: every build is the full scope, key or not, account or not.
+    if (OPEN_BETA) { /* tier already 'pro' */ } else if (licenceKey) {
       if (licenceKey.length > MAX_LICENCE_KEY) return res.status(401).json({ error: 'Add your licence key again.' })
       const decided = await tierForLicenceKey(licenceKey)
       if (decided.tier === 'unavailable') {

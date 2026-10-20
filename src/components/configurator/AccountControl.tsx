@@ -9,6 +9,7 @@ import { useSavedBrandKeys } from '../../lib/libraryStatus'
 import { useLicence, type LicenceStatus } from '../../lib/licence'
 import { consumeLicenceReturn, lookupPurchase } from '../../lib/licencePurchase'
 import { LicenceModal } from './LicenceModal'
+import { OPEN_BETA } from '../../lib/entitlement'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
 /** The tile is `h-6 w-6` = 1.5rem = 27px at the 18px root, × `AVATAR_RADIUS`
@@ -72,7 +73,8 @@ function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProp
 
   useEffect(() => {
     const email = user?.email
-    if (loading || !email || !needsKey(licenceStatus)) return
+    // Open beta: nothing to buy, so never prompt for a key.
+    if (OPEN_BETA || loading || !email || !needsKey(licenceStatus)) return
     let cancel = false
     const ask = () => {
       if (cancel || promptDismissed()) return
@@ -131,7 +133,7 @@ function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProp
   }
 
   const licensed = licenceStatus === 'valid'
-  const planLabel = licensed ? 'PRO' : t('Free')
+  const planLabel = OPEN_BETA ? t('Beta') : licensed ? 'PRO' : t('Free')
   const initial = initialOf(user)
   const name = displayNameOf(user)
 

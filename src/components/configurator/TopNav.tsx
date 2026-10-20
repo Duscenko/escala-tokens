@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
+import { OPEN_BETA } from '../../lib/entitlement'
 import { FOUNDATION_ICON_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
 
@@ -184,7 +185,8 @@ const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
   { key: 'docs', label: 'Docs' },
-  { key: 'pricing', label: 'Pricing' },
+  // Open beta: the route stays `/pricing`, it shows the beta page instead.
+  { key: 'pricing', label: OPEN_BETA ? 'Open beta' : 'Pricing' },
 ]
 
 interface TopNavProps {

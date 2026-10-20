@@ -56,6 +56,24 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
+> every Free / Pro limit below while it lasts. Decided because the product is new and unknown:
+> nobody would buy it yet, so it is positioned first and priced later. ONE switch:
+> `OPEN_BETA` in `src/lib/openBeta.ts` (re-exported by `entitlement.ts`; the plugin mirrors it
+> at the top of `ui.html`'s account state). It rides on the existing `promo` path, so the client,
+> `api/tokens.ts` (no licence to publish or serve), `api/account-files.ts`, `api/plugin-session.ts`
+> (every session is `pro`, `studio-build` is full scope with no key) all open at once.
+> - **One limit, about COST not value: `BETA_MAX_BRANDS` = 5 brands per design system, for
+>   everyone, account or not** (`betaBrandLimitReached`, read by `useNeedsProForAnotherTheme`
+>   and `freeAnotherThemeBlockedNow`; the plugin caps a system at 10 modes). Hobby meters Blob
+>   writes and function runs. The cloud keeps 10 systems per account (`PRO_CLOUD_SYSTEMS`).
+> - `/pricing` renders `OpenBetaPage` (the nav says "Open beta"); `PricingPage` stays for when
+>   pricing returns. `UpgradeToProNotice` says "Open beta limit" with no pricing link. Account
+>   chip / page say Beta; no licence prompts. An account still only buys KEEPING the work.
+> - Tests of the paid rules run with the switch off (`vi.mock('../openBeta', …)`);
+>   `openBeta.test.ts` locks the beta. To bring plans back: flip `OPEN_BETA` in BOTH repos,
+>   rebuild the plugin, `npm run bundle:plugin`. Plugin 0.14.0.
+
 > **UPDATE (2026-10-07): LOGIN FUNNEL — anonymous → free account → Pro.** Supersedes every note
 > below that says accounts are optional or that the workspace "never gates". The Generator still
 > OPENS without an account (no login screen in front of it, the theme on screen is editable), but

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FREE_MAX_THEMES, PRO_MAX_THEMES, entitlementAt, promoDaysLeft, type Entitlement } from './entitlement'
+import { BETA_MAX_BRANDS, FREE_MAX_THEMES, OPEN_BETA, PRO_MAX_THEMES, entitlementAt, promoDaysLeft, type Entitlement } from './entitlement'
 import { isLiveEnvironment } from './figmaSync'
 import { useLicence, type LicenceState } from './licence'
 
@@ -47,9 +47,9 @@ function view(e: Entitlement, confirmed: boolean, licence: LicenceState): Entitl
   return {
     ...e,
     pro,
-    maxThemes: pro ? PRO_MAX_THEMES : FREE_MAX_THEMES,
+    maxThemes: OPEN_BETA ? BETA_MAX_BRANDS : pro ? PRO_MAX_THEMES : FREE_MAX_THEMES,
     licence,
-    daysLeft: e.promo ? promoDaysLeft(now, e.promoEndsAt) : 0,
+    daysLeft: e.promo && !OPEN_BETA ? promoDaysLeft(now, e.promoEndsAt) : 0,
     launchDaysLeft: e.launchPrice ? promoDaysLeft(now, e.launchEndsAt) : 0,
     confirmed,
   }

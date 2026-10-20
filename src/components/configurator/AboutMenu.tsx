@@ -7,7 +7,7 @@ import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
-import { PRICING_PATH } from '../../lib/entitlement'
+import { OPEN_BETA, PRICING_PATH } from '../../lib/entitlement'
 import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
@@ -785,7 +785,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
           { label: t('Generator'), onClick: onStart },
           { label: t('Components'), onClick: onOpenComponents },
           { label: t('Use in Figma'), onClick: () => onOpenDocsPage('figma') },
-          { label: t('Pricing'), href: PRICING_PATH },
+          { label: t(OPEN_BETA ? 'Open beta' : 'Pricing'), href: PRICING_PATH },
           { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog') },
         ]}
       />
@@ -1047,7 +1047,7 @@ export function AboutHome({
                   {t('Start building')}
                   <ArrowGlyph />
                 </RainbowButton>
-                <a href={PRICING_PATH} className={secondaryCta}>{t('See pricing')}</a>
+                <a href={PRICING_PATH} className={secondaryCta}>{t(OPEN_BETA ? 'About the open beta' : 'See pricing')}</a>
               </div>
             </div>
           </div>

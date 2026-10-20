@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { FREE_MAX_THEMES, PRO_MAX_THEMES, PROMO_ENDS_AT, entitlementAt, promoDaysLeft } from '../entitlement'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 describe('launch promo entitlement', () => {
   it('ends at 23:59:59 on Oct 7 in Paris (CEST, before the Oct 25 DST change)', () => {

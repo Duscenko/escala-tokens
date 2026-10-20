@@ -10,7 +10,8 @@ import {
 } from './colorUtils'
 import { slugify } from './utils'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
-import { FREE_ANOTHER_THEME_ERROR, freeAnotherThemeBlockedNow } from './freeThemeLimit'
+import { BETA_BRAND_LIMIT_ERROR, FREE_ANOTHER_THEME_ERROR, freeAnotherThemeBlockedNow } from './freeThemeLimit'
+import { OPEN_BETA } from './entitlement'
 import { savedBrandKeysFrom } from './libraryStatus'
 import { finishThemeSetup, forgetUnsavedBrand, useThemeSetup } from './themeSetup'
 import { INDUSTRY_SPECTRUM } from './industryPacks'
@@ -145,10 +146,10 @@ export function mintTheme(
     const saved = savedBrandKeysFrom(s).length
     // Free keeps the themes it already has and cannot mint another. Edit
     // (editKey set) is a write to one of those, so it stays open.
-    if (freeAnotherThemeBlockedNow(saved)) return { error: FREE_ANOTHER_THEME_ERROR }
+    if (freeAnotherThemeBlockedNow(saved)) return { error: OPEN_BETA ? BETA_BRAND_LIMIT_ERROR : FREE_ANOTHER_THEME_ERROR }
     // On Free this brand fills the one slot, so a stale draft cannot ride
     // along and be saved as a second brand. Pro keeps every draft.
-    if (freeAnotherThemeBlockedNow(1)) {
+    if (!OPEN_BETA && freeAnotherThemeBlockedNow(1)) {
       const kept = new Set(savedBrandKeysFrom(s))
       for (const key of Object.keys(useThemeSetup.getState().unsaved)) {
         if (kept.has(key) || !s.themes[key]) continue

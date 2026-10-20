@@ -12,12 +12,17 @@
 //                           Desktop and Mobile, saves three brands.
 //   pro   promo or licence → everything else.
 //
+// OPEN BETA (2026-10-20, `OPEN_BETA` in entitlement.ts): every tier is `pro`
+// for an account, and the only limit left is `BETA_MAX_BRANDS` brands per
+// design system — for everyone, account or not.
+//
 // The hard limits stay on the server (hosted sync). No component reads
 // `useAuth` / `useEntitlement` to make this call on its own.
 
 import { hasStoredSession, useAuth } from './auth'
 import { accountsEnabled } from './supabase'
-import { FREE_MY_THEME_LIMIT, freeAnotherSystemBlocked, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
+import { OPEN_BETA } from './entitlement'
+import { FREE_MY_THEME_LIMIT, betaBrandLimitReached, freeAnotherSystemBlocked, freeAnotherThemeBlocked, licenceStillOpen } from './freeThemeLimit'
 import { cloudSystemCount, type CloudFiles } from './accountCloud'
 import { useLicence } from './licence'
 import { useEntitlement } from './useEntitlement'
@@ -66,6 +71,7 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
  *  false, so the full view shows instead of a flash of the limit. */
 export function useFreeTier(): boolean {
   const { tier, loading } = useAccess()
+  if (OPEN_BETA) return false
   return accountsEnabled && !loading && tier !== 'pro'
 }
 
@@ -82,6 +88,7 @@ export function useOneThemePlan(): boolean {
  *  Tablet and Mobile. */
 export function useNonProPlan(): boolean {
   const { tier, loading } = useAccess()
+  if (OPEN_BETA) return false
   return accountsEnabled && !loading && tier !== 'pro'
 }
 
@@ -99,6 +106,8 @@ export function useNeedsProForAnotherTheme(): boolean {
   // Drafts the create studio or Random left behind are not brands yet: they
   // are hidden everywhere, so they must not spend the Free allowance either.
   const count = useSavedBrandKeys().length
+  // Open beta: no plan to upgrade to, only the cost limit on brands.
+  if (OPEN_BETA) return betaBrandLimitReached(count)
   const signedIn = Boolean(user) || (accountsEnabled && loading && hasStoredSession())
   return freeAnotherThemeBlocked({
     accountsOn: accountsEnabled,

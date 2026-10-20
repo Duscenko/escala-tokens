@@ -1,3 +1,4 @@
+import { BETA_MAX_BRANDS, OPEN_BETA } from './openBeta.js'
 // Entitlement: what this browser may sync right now.
 //
 // The free-for-everyone Pro period ended 7 Oct 2026 (Paris). After that the
@@ -9,6 +10,10 @@
 /** Last second of October 7, Europe/Paris. Still CEST (+02:00); DST ends
  *  Oct 25. Written as an offset, never a local-time string. */
 export const PROMO_ENDS_AT = '2026-10-07T23:59:59+02:00'
+
+// The open beta switch lives in its own module so tests of the paid rules can
+// turn it off (`vi.mock('../openBeta', …)`) — see openBeta.ts.
+export { BETA_MAX_BRANDS, OPEN_BETA } from './openBeta.js'
 
 /** Figma modes (theme columns: brand × Light/Dark) one file may carry. Free
  *  ships every brand, theme and viewport up to 10 modes; Pro goes past 10, up
@@ -56,13 +61,13 @@ export interface Entitlement {
 }
 
 export function entitlementAt(now: Date): Entitlement {
-  const promo = now.getTime() <= Date.parse(PROMO_ENDS_AT)
+  const promo = OPEN_BETA || now.getTime() <= Date.parse(PROMO_ENDS_AT)
   const launchPrice = now.getTime() <= Date.parse(PRO_LAUNCH_ENDS_AT)
   return {
     promo,
     promoEndsAt: PROMO_ENDS_AT,
     pro: promo,
-    maxThemes: promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
+    maxThemes: OPEN_BETA ? BETA_MAX_BRANDS : promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
     launchPrice,
     launchEndsAt: PRO_LAUNCH_ENDS_AT,
     priceUsd: PRO_PRICE_USD, // one flat price; the launch tier was dropped

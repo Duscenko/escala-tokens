@@ -26,6 +26,9 @@ vi.mock('../../../api/_blob.js', async () => {
 })
 
 import handler from '../../../api/tokens'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 const PROMO = '2026-10-05T12:00:00Z'
 const AFTER = '2026-11-05T12:00:00Z'

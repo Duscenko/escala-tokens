@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { LICENCE_SEAL_MS, LICENCE_STAMP, isServable, stampLicence, stripLicence } from '../licenceGate'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 const PROMO = new Date('2026-10-05T12:00:00Z')
 const AFTER = new Date('2026-11-05T12:00:00Z')

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { PRICING_PATH } from '../../lib/entitlement'
+import { BETA_MAX_BRANDS, OPEN_BETA, PRICING_PATH } from '../../lib/entitlement'
 import { useI18n } from '../../lib/i18n'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
@@ -9,6 +9,18 @@ const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
  *  File & modes and the agent connection use the same words. */
 export function UpgradeToProNotice({ detail }: { detail?: string | null }) {
   const { t } = useI18n()
+  // Open beta: there is no plan to buy. The only thing that can refuse a
+  // create is the beta's brand limit, so say that — no pricing link.
+  if (OPEN_BETA) {
+    return (
+      <div className="flex flex-col items-stretch gap-1.5 text-center">
+        <p className="text-ui font-medium text-fg">{t('Open beta limit')}</p>
+        <p className="text-caption text-fg-faint">
+          {t('During the open beta a design system holds up to {count} brands.', { count: String(BETA_MAX_BRANDS) })}
+        </p>
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col items-stretch gap-2">
       <a
@@ -36,7 +48,7 @@ export function UpgradeToProDialog({ open, onClose, detail }: { open: boolean; o
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={t('Upgrade to Pro')}
+        aria-label={t(OPEN_BETA ? 'Open beta limit' : 'Upgrade to Pro')}
         className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >

@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 // Pro belongs to the ACCOUNT. The real handlers, with Blob, Supabase and Polar
 // replaced by an in-memory stand-in. It exists for one report, made twice: a

@@ -6,11 +6,12 @@ import { PublicReadingPage } from './components/public/PublicReadingPage'
 import { LegalPage } from './components/public/LegalPage'
 import { ContactPage } from './components/public/ContactPage'
 import { PricingPage } from './components/public/PricingPage'
+import { OpenBetaPage } from './components/public/OpenBetaPage'
 import { LoginPage } from './components/public/LoginPage'
 import { AccountPage } from './components/public/AccountPage'
 import { matchAccountPath } from './lib/accountRoutes'
 import { PluginConnectPage } from './components/public/PluginConnectPage'
-import { PRICING_PATH } from './lib/entitlement'
+import { OPEN_BETA, PRICING_PATH } from './lib/entitlement'
 import { CONTACT_PATH, LEGAL_PATH, LICENSE_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
 import { applyDocumentHead } from './lib/documentHead'
@@ -137,7 +138,7 @@ function App() {
   if (path === PRICING_PATH) {
     return (
       <>
-        <PricingPage />
+        {OPEN_BETA ? <OpenBetaPage /> : <PricingPage />}
         <ToastHost />
       </>
     )

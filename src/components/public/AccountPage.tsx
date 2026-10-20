@@ -10,6 +10,7 @@ import { AppearanceToggle, BrandMark, LanguageMenu } from '../configurator/TopNa
 import { COPYRIGHT_LINE } from '../configurator/AboutMenu'
 import { FooterLinks } from '../configurator/FooterLinks'
 import { LicenceModal } from '../configurator/LicenceModal'
+import { OPEN_BETA } from '../../lib/entitlement'
 import { INSPECTOR_TABS_H, SHELL_CHROME } from '../configurator/themeWorkspaceLayout'
 import { accountHref, matchAccountPath } from '../../lib/accountRoutes'
 import { setTheme, useTheme } from '../../lib/theme'
@@ -273,16 +274,16 @@ function AccountHome({ user }: { user: User }) {
               <div className="flex flex-col gap-4">
                 <div>
                   <p className="text-ui font-medium text-fg">{t('Plan')}</p>
-                  <p className="mt-1 text-body text-fg-muted">{licensed ? 'Pro' : t('Free')}</p>
+                  <p className="mt-1 text-body text-fg-muted">{OPEN_BETA ? t('Open beta: everything is included, free.') : licensed ? 'Pro' : t('Free')}</p>
                 </div>
-                <button
+                {!OPEN_BETA && <button
                   type="button"
                   aria-haspopup="dialog"
                   onClick={() => setLicenceOpen(true)}
                   className={PRIMARY}
                 >
                   {licensed ? t('Manage licence') : t('Activate licence')}
-                </button>
+                </button>}
               </div>
             )}
           </div>
@@ -422,10 +423,10 @@ function ProfilePanel({ user, licensed, onPlan }: { user: User; licensed: boolea
         </Row>
         <Row label={t('Plan')}>
           <div className="flex items-center gap-3">
-            <span className="font-medium text-fg">{licensed ? 'Pro' : t('Free')}</span>
-            <button type="button" onClick={onPlan} className={`rounded-sm text-ui text-fg-muted underline-offset-2 hover:text-fg hover:underline ${FOCUS}`}>
+            <span className="font-medium text-fg">{OPEN_BETA ? t('Open beta') : licensed ? 'Pro' : t('Free')}</span>
+            {!OPEN_BETA && <button type="button" onClick={onPlan} className={`rounded-sm text-ui text-fg-muted underline-offset-2 hover:text-fg hover:underline ${FOCUS}`}>
               {licensed ? t('Manage licence') : t('Activate licence')}
-            </button>
+            </button>}
           </div>
         </Row>
       </Group>

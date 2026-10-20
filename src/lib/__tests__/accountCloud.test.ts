@@ -8,6 +8,9 @@ import {
   type CloudFiles,
   type CloudSavedSystem,
 } from '../accountCloud'
+// These tests pin the PAID rules, so they run with the open beta switched off.
+vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
+
 
 // An account's design systems live in the cloud, not in one browser. These
 // run the real handler (Blob and Supabase in memory) and the pure decision
