@@ -223,6 +223,12 @@ export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
       <div ref={box} style={{ width: w ?? 356, maxWidth: '100%' }}>
         <SkToaster
           id={id}
+          // Sonner collapses a stack and EXPANDS it on hover. A specimen holds
+          // one toast, so expanding shows nothing new — it only re-measured the
+          // list, changed its height and shifted the whole board under the
+          // pointer (8 layout shifts per pass; the inspector then highlighted
+          // the toast that had moved there). Starting expanded makes hover a no-op.
+          expand
           offset={0}
           mobileOffset={0}
           icons={{ success: icon('success'), info: icon('info'), warning: icon('warning'), error: icon('error'), loading: <SkSpinner /> }}
