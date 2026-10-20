@@ -195,7 +195,7 @@ export function buildAgentSkillFiles(json: TokenJSON, opts: AgentBundleOptions =
   }
 }
 
-/** Skill zip from a TokenJSON payload. Safe to call from Vitest, Vercel, or MCP. */
+/** Skill zip from a TokenJSON payload. Safe to call from Vitest, Vercel, or the CLI. */
 export function buildAgentBundle(json: TokenJSON, opts: AgentBundleOptions = {}): SkillPackage {
   const { name, files } = buildAgentSkillFiles(json, opts)
   const encoder = new TextEncoder()

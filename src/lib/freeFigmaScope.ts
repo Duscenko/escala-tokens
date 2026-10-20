@@ -5,7 +5,7 @@
 //
 // A SOFT limit, and meant to be understood as one: the exporter is MIT, so a
 // fork can lift it, and the compiled plugin can still be read. The hard limits
-// live on the server (live MCP). The same cut is applied to every
+// live on the server (hosted sync). The same cut is applied to every
 // download a Free account can take — Figma JSON, CSS, W3C, Tailwind, Markdown,
 // the Skill zip and the agent package — and it is simply absent whenever the
 // account is Pro (or accounts are off, so a local checkout stays whole).

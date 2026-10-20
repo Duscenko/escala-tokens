@@ -2,7 +2,7 @@
  * Publish-endpoint trust helpers — DOM-free, no Node crypto.
  *
  * Git is the durable save (see `escalaSystem.ts`). `/api/tokens` is a live-sync
- * cache for Figma/MCP. GET stays unauthenticated. POST is same-origin and,
+ * cache for Figma and the CLI. GET stays unauthenticated. POST is same-origin and,
  * once a slug has been claimed, bearer-gated. `?list=1` no longer enumerates.
  */
 

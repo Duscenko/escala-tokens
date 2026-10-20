@@ -61,7 +61,7 @@ export function isServable(data: unknown, now: Date): boolean {
   return true
 }
 
-/** The payload without the stamp — consumers (the plugin, the MCP) never see it. */
+/** The payload without the stamp — consumers (the plugin, the CLI) never see it. */
 export function stripLicence<T>(data: T): T {
   if (!data || typeof data !== 'object' || !(LICENCE_STAMP in (data as object))) return data
   const rest = { ...(data as Record<string, unknown>) }

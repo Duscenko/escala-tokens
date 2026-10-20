@@ -1,3 +1,6 @@
+> **SUPERADO (2026-10-20):** el MCP alojado se borró. La dirección ahora es
+> `design-skills-package.md`. Este documento queda como historia.
+
 # Lead "Use with AI" with the Live (MCP) connection; demote the zip to the offline fallback
 
 Written against: `8389513` + the uncommitted working tree of 2026-08-26 (the

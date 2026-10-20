@@ -881,7 +881,6 @@ export default function ExportWizard({
                   <AgentInstallPanel
                     key={format}
                     initialClient={format === 'skill' ? 'make' : 'cursor'}
-                    variant="export"
                   />
                 </div>
               )}

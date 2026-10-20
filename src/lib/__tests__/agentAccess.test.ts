@@ -8,16 +8,12 @@ import { COMPONENT_KEYS } from '../componentCatalogue'
 import { generateTokenJSON } from '../tokenGenerator'
 import { makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import {
-  callTool,
   checkContrast,
   getComponent,
-  handleMcpMessage,
   listComponents,
-  mcpDiscovery,
   normalizeTokenId,
   parseIntent,
   resolveToken,
-  TOOL_SPECS,
 } from '../agentAccess'
 
 const accessDir = join(dirname(fileURLToPath(import.meta.url)), '../agentAccess')
@@ -92,39 +88,6 @@ const THEMED_FIXTURE: TokenJSON = {
   radius: { lg: '32px' },
   foundationsByTheme: { 'material--elevation': { radius: { lg: '16px' } } },
 }
-
-describe('tool schemas match the handlers', () => {
-  // Exactly the arguments each schema marks `required`, and nothing more.
-  const MINIMAL: Record<string, Record<string, unknown>> = {
-    get_tokens: { project: 'parity' },
-    resolve_token: { project: 'parity', token: 'accent-6' },
-    list_components: {},
-    get_component: { key: 'Button' },
-    list_icons: { project: 'parity' },
-    check_contrast: { foreground: '#111111', background: '#ffffff' },
-  }
-
-  it('covers every shipped tool', () => {
-    expect(Object.keys(MINIMAL).sort()).toEqual(TOOL_SPECS.map((t) => t.name).sort())
-  })
-
-  // `list_icons` declared `project` optional while its handler had always
-  // thrown without it — an agent trusting the schema called with no args and
-  // got an error instead of icons. Required must mean required, both ways.
-  it.each(TOOL_SPECS.map((t) => [t.name] as const))('%s succeeds on exactly its required args', async (name) => {
-    const spec = TOOL_SPECS.find((t) => t.name === name)!
-    expect(Object.keys(MINIMAL[name]!).sort()).toEqual([...(spec.inputSchema.required ?? [])].sort())
-    await expect(callTool(name, MINIMAL[name], load)).resolves.toBeDefined()
-  })
-
-  it.each(
-    TOOL_SPECS.flatMap((t) => (t.inputSchema.required ?? []).map((arg) => [t.name, arg] as const)),
-  )('%s rejects when required %s is missing', async (name, arg) => {
-    const args = { ...MINIMAL[name] }
-    delete args[arg]
-    await expect(callTool(name, args, load)).rejects.toThrow()
-  })
-})
 
 describe('resolve_token on a theme-minted system', () => {
   // Every one of these returned `unknown` before `themeSources` was consulted —
@@ -285,78 +248,7 @@ describe('catalogue and contrast tools', () => {
   })
 })
 
-describe('MCP JSON-RPC', () => {
-  it('get_tokens requires a project slug', async () => {
-    await expect(callTool('get_tokens', {}, load)).rejects.toThrow(/project is required/)
-  })
-
-  it('initialize + tools/list + resolve_token', async () => {
-    const init = await handleMcpMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'test', version: '0' } },
-    }, load)
-    expect(init && 'result' in init && (init as { result: { serverInfo: { name: string } } }).result.serverInfo.name).toBe('escala-tokens')
-
-    const listed = await handleMcpMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, load) as { result: { tools: { name: string }[] } }
-    expect(listed.result.tools.map((t) => t.name)).toEqual(TOOL_SPECS.map((t) => t.name))
-
-    const call = await handleMcpMessage({
-      jsonrpc: '2.0',
-      id: 3,
-      method: 'tools/call',
-      params: { name: 'resolve_token', arguments: { token: 'action.primary.default', project: 'parity' } },
-    }, load) as { result: { structuredContent: { css: string }; isError?: boolean } }
-    expect(call.result.isError).toBeUndefined()
-    expect(call.result.structuredContent.css).toBe('var(--color-action-primary-default)')
-  })
-
-  it('unknown token is a tool error, not a crash', async () => {
-    const call = await handleMcpMessage({
-      jsonrpc: '2.0',
-      id: 4,
-      method: 'tools/call',
-      params: { name: 'resolve_token', arguments: { token: 'nope', project: 'parity' } },
-    }, load) as { result: { isError: boolean; content: { text: string }[] } }
-    expect(call.result.isError).toBe(true)
-    expect(call.result.content[0]?.text).toMatch(/Unknown token/)
-  })
-
-  it('list_icons reads aiSource from JSON', async () => {
-    const icons = await callTool('list_icons', { project: 'parity' }, load) as { aiSource: { repo: string }; custom: string[] }
-    expect(icons.aiSource.repo).toContain('untitleduico')
-    expect(icons.custom).toEqual(['star'])
-  })
-
-  it('notifications produce no response', async () => {
-    const res = await handleMcpMessage({ jsonrpc: '2.0', method: 'notifications/initialized' }, load)
-    expect(res).toBeNull()
-  })
-})
-
-describe('discovery and schema publish', () => {
-  it('lists the six tools', () => {
-    expect(mcpDiscovery('https://escalatokens.com').tools).toEqual([
-      'get_tokens',
-      'resolve_token',
-      'list_components',
-      'get_component',
-      'list_icons',
-      'check_contrast',
-    ])
-  })
-
-  it('requires a published project slug and exposes action-label', () => {
-    const getTokens = TOOL_SPECS.find((t) => t.name === 'get_tokens')
-    const resolve = TOOL_SPECS.find((t) => t.name === 'resolve_token')
-    const contrast = TOOL_SPECS.find((t) => t.name === 'check_contrast')
-    expect(getTokens?.inputSchema.required).toEqual(['project'])
-    expect(resolve?.inputSchema.required).toEqual(['token', 'project'])
-    const intent = contrast?.inputSchema.properties.intent as { enum?: string[] }
-    expect(intent.enum).toContain('action-label')
-  })
-
+describe('schema publish', () => {
   it('public schema matches docs/agent-native/tokens.schema.json', () => {
     const docs = readFileSync(join(repoRoot, 'docs/agent-native/tokens.schema.json'), 'utf8')
     const pub = readFileSync(join(repoRoot, 'public/docs/agent-native/tokens.schema.json'), 'utf8')
@@ -497,22 +389,12 @@ describe('resolve_token matches the current payload', () => {
     expect(resolveToken(JSON_FIXTURE, 'icon.medium').found).toBe(false)
   })
 
-  it('list_icons returns the weight and the size scale', async () => {
-    const json = published()
-    const icons = await callTool('list_icons', { project: 'live' }, async () => json) as {
-      weight: string
-      sizes: {
-        roles: Record<string, string>
-        scale: Record<string, string>
-        viewports?: { mobile?: Record<string, string> }
-      }
-      themes: Record<string, { weight?: string }>
-    }
+  it('ships the icon weight and the size scale', () => {
+    const icons = published().icons!
     expect(icons.weight).toBeTruthy()
-    expect(icons.sizes.scale.small).toBe('16px')
-    expect(icons.sizes.scale.medium).toBe('20px')
-    expect(icons.sizes.scale.large).toBe('24px')
-    expect(icons.sizes.viewports?.mobile?.small).toBe(icons.sizes.scale.small)
-    expect(icons.themes.light?.weight ?? icons.themes[json.colors.themeOrder?.[0] ?? '']?.weight).toBeTruthy()
+    expect(icons.sizes?.scale?.small).toBe('16px')
+    expect(icons.sizes?.scale?.medium).toBe('20px')
+    expect(icons.sizes?.scale?.large).toBe('24px')
+    expect(icons.sizes?.viewports?.mobile?.small).toBe(icons.sizes?.scale?.small)
   })
 })

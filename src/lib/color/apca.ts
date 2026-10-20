@@ -54,7 +54,7 @@ const LO_CLIP = 0.1
  *  harmless the moment translucent alpha primitives shipped (`accent-a-*`,
  *  `black-a-*`, …, see design-plans/alpha-primitives.md) — a role resolving
  *  to one of those and fed straight into `checkContrast`/`evaluate` (the
- *  `check_contrast` MCP tool takes arbitrary strings from a caller) would
+ *  agent-facing `checkContrast` takes arbitrary strings from a caller) would
  *  silently score against the WRONG colour with no error, no warning, and a
  *  passing-looking number, since a translucent grey read as opaque black
  *  always "passes." A translucent input therefore throws now, with a pointer

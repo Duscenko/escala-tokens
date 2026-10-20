@@ -4,7 +4,7 @@
  *
  * The registry and the shadcn `globals.css` both run on the server against the
  * published payload, where there is no store and no `buildCSS`. So this reads
- * the payload the same way the MCP does (`resolveToken`) and returns values
+ * the payload through `resolveToken` and returns values
  * under the SAME names `buildCSS` emits — `cssVarOf` decides both.
  *
  * Scope, deliberately: one brand, its Light and Dark themes, the DESKTOP reading

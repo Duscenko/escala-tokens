@@ -22,7 +22,7 @@ import {
 } from '../../lib/publicSeo'
 import { encodeWorkspaceSection } from '../../lib/workspaceLink'
 import { getTheme, setTheme, useTheme } from '../../lib/theme'
-import { GUIDE_FIGMA_KEY, GUIDE_MCP_KEY } from '../configurator/docs/getStarted'
+import { GUIDE_FIGMA_KEY } from '../configurator/docs/getStarted'
 
 function go(href: string) {
   window.location.assign(href)
@@ -89,7 +89,6 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
 }
 
 const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
-  mcp: '/docs/mcp',
   figma: '/docs/figma',
   changelog: '/docs/changelog',
   faq: '/docs/faq',

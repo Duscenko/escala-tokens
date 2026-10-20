@@ -270,7 +270,7 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
  *  matter: the values are now the user's own, resolved live (see `useIt.ts`),
  *  and each one is copyable. The third tab is **Copy context to Agents**:
  *  the brief for this page (the facts it states, plus the live values), not
- *  a generic MCP call. tokens.json stays named in the Code tab's note.
+ *  a generic tool call. tokens.json stays named in the Code tab's note.
  *
  *  Tabs rather than three rows at once, for the same reason Create UI's
  *  Installation block uses them: one destination is the one you're actually

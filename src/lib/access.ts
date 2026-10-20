@@ -12,7 +12,7 @@
 //                           Desktop and Mobile, saves three brands.
 //   pro   promo or licence → everything else.
 //
-// The hard limits stay on the server (hosted sync, MCP). No component reads
+// The hard limits stay on the server (hosted sync). No component reads
 // `useAuth` / `useEntitlement` to make this call on its own.
 
 import { hasStoredSession, useAuth } from './auth'
@@ -60,8 +60,8 @@ export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'sig
 
 /** Not Pro, accounts actually on — the Free plan, with or without an account.
  *  A visitor with no account exports exactly what a Free account exports, so
- *  opening Export to guests does not make them MORE than Free. Export, MCP
- *  and File & modes use this — `!entitlement.pro` alone would wall a fork
+ *  opening Export to guests does not make them MORE than Free. Export and
+ *  File & modes use this — `!entitlement.pro` alone would wall a fork
  *  that has no account to upgrade. While the session is loading this is
  *  false, so the full view shows instead of a flash of the limit. */
 export function useFreeTier(): boolean {

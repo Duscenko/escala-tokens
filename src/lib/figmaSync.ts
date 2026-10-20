@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HOSTED_LIVE_SYNC } from './hostedSync'
 import { useDesignStore } from '../store/useDesignStore'
 import { generateTokenJSON, setActiveThemeHint, type GenerateTokenOptions } from './tokenGenerator'
-import { DEFAULT_PUBLISH_ORIGIN, mcpOrigin } from './agentInstall'
+import { DEFAULT_PUBLISH_ORIGIN, canonicalOrigin } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 import { isPublishId } from './publishId'
@@ -60,33 +60,20 @@ export function legacyProjectId(fileName?: string, projectName?: string): string
 }
 
 /**
- * Origin used for published URLs (Figma Sync and MCP). Same host for both so
- * a project slug copied from Sync is valid on `resolve_token`.
+ * Origin used for published URLs shown to the person (Figma Sync).
  *
  * **A localhost origin resolves to the deployed apex, never to itself.** This
  * is DISPLAY-ONLY — the POST goes through `syncPath()`, a relative URL on the
  * current origin, so nothing here can send a dev build's publish to
- * production. What it fixes is the opposite direction: served from
- * `vite dev` (5173) or `vite preview` (4173), this returned that origin and
- * the AI-agents panel printed
- * `claude mcp add --transport http escala-tokens http://localhost:4173/api/mcp`
- * — a command that registers a server which can never answer. `api/*.ts` are
- * Vercel functions; Vite serves the bundle and nothing else, so that path is a
- * hard 404 (measured). `isLiveEnvironment()` right above already encodes
- * exactly this fact for the publish flow — it existed and this function simply
- * wasn't asking it.
- *
- * Deliberately NOT special-casing `vercel dev` (port 3000), where a local
- * `/api/mcp` genuinely does answer: an MCP entry is written once into a
- * long-lived editor config, and one pointing at a dev server that is up only
- * while you happen to be running it is a worse default than one pointing at
- * the always-on deployment. Someone testing the local function can still edit
- * the host by hand.
+ * production. Served from `vite dev` / `vite preview`, a localhost URL would
+ * name an `/api/*` path Vite never serves (`api/*.ts` are Vercel functions),
+ * so a copied URL there could never answer. `isLiveEnvironment()` right above
+ * encodes exactly that fact for the publish flow.
  */
 export function publishOrigin(): string {
   if (typeof window === 'undefined') return DEFAULT_PUBLISH_ORIGIN
   if (!isLiveEnvironment()) return DEFAULT_PUBLISH_ORIGIN
-  return mcpOrigin(window.location.origin || DEFAULT_PUBLISH_ORIGIN)
+  return canonicalOrigin(window.location.origin || DEFAULT_PUBLISH_ORIGIN)
 }
 
 /** Relative endpoint used for the POST (and what the plugin should GET). */

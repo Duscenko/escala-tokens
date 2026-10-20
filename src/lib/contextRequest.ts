@@ -130,7 +130,7 @@ export interface SystemContextRequest {
 
 /** The paste for a brand (or one of its foundations), from a TokenJSON that
  *  the caller has ALREADY narrowed to the requested appearance — see
- *  `contextTokenJson` in `contextSource.ts`. Pure, so tests and the MCP can
+ *  `contextTokenJson` in `contextSource.ts`. Pure, so tests and the agent package can
  *  call it without a store.
  *
  *  `{ scope: 'all', detail: 'full' }` is byte-identical to what the Code tab's

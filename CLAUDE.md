@@ -410,6 +410,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > Gradients and shadows are Figma STYLES and are not in this document (Escala JSON and CSS carry
 > them). Locked by `figmaCollections.test.ts`.
 
+> **UPDATE (2026-10-20): the hosted MCP is DELETED, not paused.** It had been answering 410
+> behind `HOSTED_MCP` / `MCP_VISIBLE` (Hobby plan, no revenue behind it). Removed: `api/mcp.ts`,
+> `lib/agentAccess/{mcp,callTool,types}.ts` (`TOOL_SPECS`), `.mcp.json`, both flags, the Docs
+> "MCP" page (`GUIDE_MCP_KEY`, `/docs/mcp`, `GUIDE_AI_LANDING` → `GET_STARTED_KEY`), the Docs
+> menu entry, Code's "Send to your agent" (`AgentHandoff`, `agentSetupPrompt`), the CLI's
+> `mcp init`, every MCP builder in `agentInstall.ts` (`mcpOrigin` is now `canonicalOrigin`), and
+> the About page's install widget. **Kept:** `resolveToken` / `components` / `contrast` in
+> `lib/agentAccess` (the shadcn registry reads them) and `AgentInstallPanel`, now offline-only
+> (Cursor · Claude Code · Figma Make) and mounted ONLY on Export's AI step. The agent package is
+> AGENTS.md + llms.txt + SKILL.md + references + `skills/{code,a11y-audit,migrate}` + templates
+> + a token linter — **there is no design.md**; copy that claimed one was fixed. Every MCP note
+> below is history. Next: `design-plans/design-skills-package.md`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**

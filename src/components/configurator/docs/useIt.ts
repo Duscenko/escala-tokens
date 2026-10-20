@@ -14,7 +14,7 @@
 //    `buildCSS` renames a variable, this block renames with it.
 //
 // 2. **One contract, three outputs.** The rendered block (`UseItBlock` in
-//    `blocks.tsx`), the "Copy Page" markdown, and the MCP reply all read
+//    `blocks.tsx`), and the "Copy Page" markdown both read
 //    THIS module, so a page can never claim something the export or the
 //    agent would contradict — the same rule the export wizard already
 //    follows ("everything derives from ONE generateTokenJSON() call").
@@ -48,9 +48,8 @@ export const USE_IT_TITLE = 'Use it'
 export const USE_IT_LEAD =
   'Figma and code, plus the brief for this page. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.'
 
-/** Under the agent-brief pane. A paste, not a live connection — the MCP
- *  install lives on Docs → Use in code, and this tab must not send the
- *  reader there for a one-off copy. */
+/** Under the agent-brief pane. A paste for a one-off chat; the agent package
+ *  for a repo lives in Export → AI assistant. */
 const CONTEXT_NOTE =
   'The brief for this page: the same facts it states, with the live values. Paste it into a chat.'
 

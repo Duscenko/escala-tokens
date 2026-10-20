@@ -16,7 +16,6 @@ import {
   AGENT_CONTEXT_FAQ_ID, OPEN_FAQ_EVENT, takePendingFaqItem,
 } from '../../../lib/aiContext'
 import { useI18n } from '../../../lib/i18n'
-import { MCP_VISIBLE } from '../../../lib/featureFlags'
 
 export const FAQ_KEY = '__faq'
 
@@ -101,13 +100,9 @@ const FAQ_ITEMS: {
     id: AGENT_CONTEXT_FAQ_ID,
     q: 'Send this system to an agent',
     paras: [
-      MCP_VISIBLE
-        ? 'Copy page puts a markdown brief on the clipboard — token names, semantic roles, and how they map in Figma and CSS. It is a snapshot you paste, not a live MCP connection.'
-        : 'Copy page puts a markdown brief on the clipboard — token names, semantic roles, and how they map in Figma and CSS. It is a snapshot you paste.',
+      'Copy page puts a markdown brief on the clipboard — token names, semantic roles, and how they map in Figma and CSS. It is a snapshot you paste.',
       'Paste it into Google Stitch, Claude (Claude Code or Claude Design), Figma Make’s chat, Cursor, or any LLM so the agent uses this system’s roles instead of inventing hex and px.',
-      MCP_VISIBLE
-        ? 'A live connection in the product repo is Docs → Use in code (MCP). The Figma Make Skill zip is a separate install on that page — Copy page does not upload a zip.'
-        : 'For files that live in the product repo, use Export → AI assistant: the offline agent skill and design.md. Copy page does not upload a zip.',
+      'For files that live in the product repo, use Export → AI assistant: the Design skills (AGENTS.md and agent skills). Copy page does not upload a zip.',
     ],
   },
   {

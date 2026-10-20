@@ -6,22 +6,16 @@ import { buildAgentProductFiles, type AgentBundleFile, type TokenJSON } from './
 import { slugify } from './utils'
 import {
   DEFAULT_PUBLISH_ORIGIN,
-  MCP_SERVER_NAME,
-  mcpConfigPath,
-  mcpEndpoint,
-  mcpOrigin,
+  canonicalOrigin,
   skillInstallPath,
-  type McpClient,
   type SkillAgent,
 } from './agentInstall'
 
 export const CLI_USAGE = `Usage:
   npx @escala/cli skill --from <slug> [--client cursor|claude] [--host <origin>]
-  npx @escala/cli mcp init [--client cursor|claude|vscode] [--url <mcp-url>]
 
 Installs THIS published system into the product repo (not Escala).
 skill  writes the agent guide (same files as Export → AI assistant).
-mcp    writes the live-token connection (same JSON as Docs → Use with AI).
 
 The system must already be published (Escala → Figma → Sync).
 Unzip the AI assistant zip by hand if it is not published yet.`
@@ -36,12 +30,6 @@ export type CliParseResult =
       origin: string
       cwd: string
     }
-  | {
-      kind: 'mcp'
-      client: McpClient
-      origin: string
-      cwd: string
-    }
 
 export interface CliIo {
   cwd: string
@@ -53,12 +41,8 @@ export interface CliIo {
   error: (msg: string) => void
 }
 
-export function originFromMcpUrl(urlOrOrigin: string): string {
-  const trimmed = urlOrOrigin.trim().replace(/\/$/, '')
-  const stripped = trimmed.endsWith('/api/mcp')
-    ? trimmed.slice(0, -'/api/mcp'.length)
-    : trimmed
-  return mcpOrigin(stripped || DEFAULT_PUBLISH_ORIGIN)
+export function originFromHost(host: string): string {
+  return canonicalOrigin(host.trim().replace(/\/$/, '') || DEFAULT_PUBLISH_ORIGIN)
 }
 
 export function tokensUrl(origin: string, slug: string): string {
@@ -84,23 +68,6 @@ export function planSkillInstall(json: TokenJSON, client: SkillAgent): {
   }
 }
 
-export function mergeMcpConfig(existing: unknown, client: McpClient, origin: string): Record<string, unknown> {
-  const url = mcpEndpoint(origin)
-  const base = existing && typeof existing === 'object' && !Array.isArray(existing)
-    ? { ...(existing as Record<string, unknown>) }
-    : {}
-  if (client === 'vscode') {
-    const servers = isPlain(base.servers) ? { ...base.servers } : {}
-    return { ...base, servers: { ...servers, [MCP_SERVER_NAME]: { url, type: 'http' } } }
-  }
-  const servers = isPlain(base.mcpServers) ? { ...base.mcpServers } : {}
-  return { ...base, mcpServers: { ...servers, [MCP_SERVER_NAME]: { url, type: 'http' } } }
-}
-
-function isPlain(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
 export function parseCliArgs(argv: string[], opts: { cwd?: string } = {}): CliParseResult {
   const cwd = opts.cwd ?? '.'
   if (argv.length === 0 || argv[0] === 'help' || argv.includes('--help') || argv.includes('-h')) {
@@ -118,20 +85,8 @@ export function parseCliArgs(argv: string[], opts: { cwd?: string } = {}): CliPa
     const slug = slugify(from) || from
     const client = parseSkillClient(flags.values.client)
     if (!client) return { kind: 'error', message: '--client must be cursor or claude.' }
-    const origin = originFromMcpUrl(flags.values.host ?? flags.values.url ?? DEFAULT_PUBLISH_ORIGIN)
+    const origin = originFromHost(flags.values.host ?? DEFAULT_PUBLISH_ORIGIN)
     return { kind: 'skill', slug, client, origin, cwd: flags.values.cwd ?? cwd }
-  }
-
-  if (command === 'mcp') {
-    if (rest[0] !== 'init') {
-      return { kind: 'error', message: 'Usage: npx @escala/cli mcp init [--client cursor|claude|vscode]' }
-    }
-    const flags = readFlags(rest.slice(1))
-    if (!flags.ok) return { kind: 'error', message: flags.message }
-    const client = parseMcpClient(flags.values.client)
-    if (!client) return { kind: 'error', message: '--client must be cursor, claude, or vscode.' }
-    const origin = originFromMcpUrl(flags.values.url ?? flags.values.host ?? DEFAULT_PUBLISH_ORIGIN)
-    return { kind: 'mcp', client, origin, cwd: flags.values.cwd ?? cwd }
   }
 
   return { kind: 'error', message: `Unknown command "${command}".\n\n${CLI_USAGE}` }
@@ -140,12 +95,6 @@ export function parseCliArgs(argv: string[], opts: { cwd?: string } = {}): CliPa
 function parseSkillClient(raw: string | undefined): SkillAgent | null {
   if (raw === undefined || raw === 'cursor') return 'cursor'
   if (raw === 'claude') return 'claude'
-  return null
-}
-
-function parseMcpClient(raw: string | undefined): McpClient | null {
-  if (raw === undefined || raw === 'cursor') return 'cursor'
-  if (raw === 'claude' || raw === 'vscode') return raw
   return null
 }
 
@@ -196,49 +145,29 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     return 1
   }
 
-  if (cmd.kind === 'skill') {
-    const url = tokensUrl(cmd.origin, cmd.slug)
-    let data: unknown
-    try {
-      const res = await io.fetch(url)
-      if (!res.ok) {
-        io.error(`No published system at ${url} (${res.status}).\nPublish from Escala (Figma → Sync), then retry. Or unzip the AI assistant zip by hand.`)
-        return 1
-      }
-      data = await res.json()
-    } catch {
-      io.error(`Could not fetch ${url}. Check the host and that the system is published.`)
+  const url = tokensUrl(cmd.origin, cmd.slug)
+  let data: unknown
+  try {
+    const res = await io.fetch(url)
+    if (!res.ok) {
+      io.error(`No published system at ${url} (${res.status}).\nPublish from Escala (Figma → Sync), then retry. Or unzip the AI assistant zip by hand.`)
       return 1
     }
-    if (!isPublishedTokens(data)) {
-      io.error(`Response at ${url} is not an Escala token payload.`)
-      return 1
-    }
-    const { relativeDir, files } = planSkillInstall(data, cmd.client)
-    for (const file of files) {
-      const dest = joinPath(cmd.cwd, relativeDir, file.path)
-      io.mkdirp(parentDir(dest))
-      io.writeFile(dest, file.text)
-    }
-    io.log(`Installed ${files.length} files → ${relativeDir}/`)
-    return 0
+    data = await res.json()
+  } catch {
+    io.error(`Could not fetch ${url}. Check the host and that the system is published.`)
+    return 1
   }
-
-  const relative = mcpConfigPath(cmd.client)
-  const dest = joinPath(cmd.cwd, relative)
-  const raw = io.readFile(dest)
-  let existing: unknown
-  if (raw !== null) {
-    try {
-      existing = JSON.parse(raw)
-    } catch {
-      io.error(`${relative} is not valid JSON. Fix or delete it, then retry.`)
-      return 1
-    }
+  if (!isPublishedTokens(data)) {
+    io.error(`Response at ${url} is not an Escala token payload.`)
+    return 1
   }
-  const next = mergeMcpConfig(existing, cmd.client, cmd.origin)
-  io.mkdirp(parentDir(dest))
-  io.writeFile(dest, `${JSON.stringify(next, null, 2)}\n`)
-  io.log(`Wrote ${relative}`)
+  const { relativeDir, files } = planSkillInstall(data, cmd.client)
+  for (const file of files) {
+    const dest = joinPath(cmd.cwd, relativeDir, file.path)
+    io.mkdirp(parentDir(dest))
+    io.writeFile(dest, file.text)
+  }
+  io.log(`Installed ${files.length} files → ${relativeDir}/`)
   return 0
 }

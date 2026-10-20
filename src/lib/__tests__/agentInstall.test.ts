@@ -1,29 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { skillName } from '../agentBundle/names'
-import { MCP_SERVER_NAME } from '../agentAccess/mcp'
 import {
   CLI_PACKAGE,
   DEFAULT_PUBLISH_ORIGIN,
-  FIGMA_MAKE_URL,
-  agentSetupPrompt,
-  claudeChatUrl,
-  cliMcpInitCommand,
+  canonicalOrigin,
   cliSkillCommand,
-  cursorPromptUrl,
-  figmaAgentLead,
-  mcpClaudeAddCommand,
-  mcpConfigPath,
-  mcpCursorConfig,
-  mcpEndpoint,
-  mcpVscodeConfig,
   skillFolderName,
   skillInstallPath,
 } from '../agentInstall'
 import {
   CLI_USAGE,
   isPublishedTokens,
-  mergeMcpConfig,
-  originFromMcpUrl,
+  originFromHost,
   parseCliArgs,
   planSkillInstall,
   runCli,
@@ -44,53 +32,18 @@ const FIXTURE: TokenJSON = {
 }
 
 describe('agentInstall recipes', () => {
-  // MCP recipes stay on the apex so a generated config never depends on a
-  // www→apex redirect (POST is not always followed). Both hosts have certs.
+  // Copied URLs stay on the apex so they never depend on a www→apex redirect.
   it('defaults the public origin to the apex host, not www and not a Vercel preview host', () => {
     expect(DEFAULT_PUBLISH_ORIGIN).toBe('https://escalatokens.com')
-    expect(mcpEndpoint(DEFAULT_PUBLISH_ORIGIN)).toBe('https://escalatokens.com/api/mcp')
     expect(DEFAULT_PUBLISH_ORIGIN).not.toMatch(/vercel\.app/)
     expect(DEFAULT_PUBLISH_ORIGIN).not.toMatch(/\/\/www\./)
   })
 
-  it('points MCP at /api/mcp on the given origin', () => {
-    expect(mcpEndpoint('https://escalatokens.com')).toBe('https://escalatokens.com/api/mcp')
-    expect(mcpEndpoint('https://escalatokens.com/')).toBe('https://escalatokens.com/api/mcp')
-  })
-
-  it('rewrites www to the apex so MCP recipes stay on one host', () => {
-    expect(mcpEndpoint('https://www.escalatokens.com')).toBe('https://escalatokens.com/api/mcp')
-    expect(mcpEndpoint('https://www.escalatokens.com/')).toBe('https://escalatokens.com/api/mcp')
-    expect(originFromMcpUrl('https://www.escalatokens.com/api/mcp')).toBe('https://escalatokens.com')
-  })
-
-  it('builds Cursor mcp.json with the server name the endpoint advertises', () => {
-    const json = JSON.parse(mcpCursorConfig('https://escalatokens.com'))
-    expect(json).toEqual({
-      mcpServers: { 'escala-tokens': { url: 'https://escalatokens.com/api/mcp', type: 'http' } },
-    })
-  })
-
-  it('builds VS Code mcp.json as type http', () => {
-    const json = JSON.parse(mcpVscodeConfig('https://preview.example'))
-    expect(json.servers['escala-tokens']).toEqual({
-      url: 'https://preview.example/api/mcp',
-      type: 'http',
-    })
-  })
-
-  it('points Claude CLI at the same MCP URL as Cursor mcp.json', () => {
-    const origin = 'https://escalatokens.com'
-    const json = JSON.parse(mcpCursorConfig(origin))
-    expect(mcpClaudeAddCommand(origin)).toBe(
-      `claude mcp add --transport http --scope project ${MCP_SERVER_NAME} ${json.mcpServers[MCP_SERVER_NAME].url}`,
-    )
-    // Claude's project file is the same payload Cursor writes — only the path differs.
-    expect(mcpConfigPath('claude')).toBe('.mcp.json')
-    expect(JSON.parse(mcpCursorConfig(origin)).mcpServers[MCP_SERVER_NAME]).toEqual({
-      url: 'https://escalatokens.com/api/mcp',
-      type: 'http',
-    })
+  it('rewrites www to the apex and passes preview hosts through', () => {
+    expect(canonicalOrigin('https://www.escalatokens.com')).toBe('https://escalatokens.com')
+    expect(canonicalOrigin('https://www.escalatokens.com/')).toBe('https://escalatokens.com')
+    expect(canonicalOrigin('https://preview.example')).toBe('https://preview.example')
+    expect(canonicalOrigin('')).toBe(DEFAULT_PUBLISH_ORIGIN)
   })
 
   it('installs the skill under the zip folder name', () => {
@@ -112,65 +65,13 @@ describe('agentInstall recipes', () => {
     expect(cliSkillCommand(slug, 'claude', 'https://preview.example')).toBe(
       `npx ${CLI_PACKAGE} skill --from acme-app --client claude --host https://preview.example`,
     )
-    const mcp = cliMcpInitCommand('cursor', 'https://escalatokens.com')
-    expect(mcp).toBe(`npx ${CLI_PACKAGE} mcp init --client cursor --url https://escalatokens.com/api/mcp`)
-    expect(parseCliArgs(mcp.replace(`npx ${CLI_PACKAGE} `, '').split(' '))).toMatchObject({
-      kind: 'mcp',
-      client: 'cursor',
-      origin: 'https://escalatokens.com',
-    })
-  })
-
-  it('names MCP config files per client', () => {
-    expect(mcpConfigPath('cursor')).toBe('.cursor/mcp.json')
-    expect(mcpConfigPath('claude')).toBe('.mcp.json')
-    expect(mcpConfigPath('vscode')).toBe('.vscode/mcp.json')
-  })
-
-  it('Get code Open-in URLs carry the same MCP setup prompt, not a catalog dump', () => {
-    const prompt = agentSetupPrompt('https://escalatokens.com', 'hola')
-    expect(prompt).toContain('https://escalatokens.com/api/mcp')
-    expect(prompt).toContain('get_tokens with project "hola"')
-    expect(prompt).toContain('resolve_token with the same project "hola"')
-    expect(prompt).toContain('not www.escalatokens.com')
-    expect(prompt).not.toContain('www.escalatokens.com/api')
-    const claude = claudeChatUrl(prompt)
-    expect(claude.startsWith('https://claude.ai/new?q=')).toBe(true)
-    expect(new URL(claude).searchParams.get('q')).toBe(prompt)
-    const cursor = cursorPromptUrl(prompt)
-    expect(cursor.startsWith('https://cursor.com/link/prompt?')).toBe(true)
-    expect(new URL(cursor).searchParams.get('text')).toBe(prompt)
-  })
-
-  it('PROMPT names the exact add path for the selected client', () => {
-    const claude = agentSetupPrompt('https://escalatokens.com', 'hola', 'claude')
-    expect(claude).toContain(mcpClaudeAddCommand('https://escalatokens.com'))
-    expect(claude).toContain('resolve_token with the same project "hola"')
-    const cursor = agentSetupPrompt('https://www.escalatokens.com', 'hola', 'cursor')
-    expect(cursor).toContain('.cursor/mcp.json')
-    expect(cursor).toContain('https://escalatokens.com/api/mcp')
-    expect(cursor).not.toContain('www.escalatokens.com/api')
-    const vscode = agentSetupPrompt('https://escalatokens.com', 'hola', 'vscode')
-    expect(vscode).toContain('"servers"')
-    expect(vscode).toContain('.vscode/mcp.json')
-  })
-
-  it('Figma Agent lead is Make + skill, never a live MCP add', () => {
-    expect(FIGMA_MAKE_URL).toBe('https://www.figma.com/make')
-    const lead = figmaAgentLead('Acme App')
-    expect(lead).toContain('Acme App')
-    expect(lead).toContain('figma-use')
-    expect(lead).toContain('Action/primary/default')
-    expect(lead).toMatch(/cannot hold a live MCP/i)
-    expect(lead).not.toMatch(/mcp add|\/api\/mcp/)
   })
 })
 
 describe('cliInstall', () => {
-  it('normalizes --url to the publish origin', () => {
-    expect(originFromMcpUrl('https://escalatokens.com/api/mcp')).toBe('https://escalatokens.com')
-    expect(originFromMcpUrl('https://escalatokens.com/api/mcp/')).toBe('https://escalatokens.com')
-    expect(originFromMcpUrl('https://preview.example')).toBe('https://preview.example')
+  it('normalizes --host to the publish origin', () => {
+    expect(originFromHost('https://www.escalatokens.com/')).toBe('https://escalatokens.com')
+    expect(originFromHost('https://preview.example')).toBe('https://preview.example')
   })
 
   it('points token fetch at the frozen /api/tokens contract', () => {
@@ -188,23 +89,8 @@ describe('cliInstall', () => {
     expect(parseCliArgs(['skill'])).toMatchObject({ kind: 'error' })
     expect(parseCliArgs(['skill', '--from', 'acme', '--client', 'make'])).toMatchObject({ kind: 'error' })
     expect(parseCliArgs(['wat'])).toMatchObject({ kind: 'error' })
+    expect(parseCliArgs(['mcp', 'init'])).toMatchObject({ kind: 'error' })
     expect(parseCliArgs(['--help'])).toEqual({ kind: 'help' })
-  })
-
-  it('merges MCP JSON without dropping other servers', () => {
-    const merged = mergeMcpConfig(
-      { mcpServers: { other: { url: 'https://example' } } },
-      'cursor',
-      'https://escalatokens.com',
-    )
-    expect(merged.mcpServers).toEqual({
-      other: { url: 'https://example' },
-      [MCP_SERVER_NAME]: { url: 'https://escalatokens.com/api/mcp', type: 'http' },
-    })
-    const vscode = mergeMcpConfig({}, 'vscode', 'https://preview.example')
-    expect(vscode.servers).toEqual({
-      [MCP_SERVER_NAME]: { url: 'https://preview.example/api/mcp', type: 'http' },
-    })
   })
 
   it('plans skill files under the same folder the zip uses', () => {
@@ -237,25 +123,6 @@ describe('cliInstall', () => {
     const skillMd = [...written.keys()].find((p) => p.endsWith('SKILL.md'))
     expect(skillMd).toBe(`/repo/${skillInstallPath('cursor', 'Acme App')}SKILL.md`)
     expect(written.get(skillMd!)?.startsWith('---')).toBe(true)
-  })
-
-  it('merges into an existing Cursor mcp.json', async () => {
-    const written = new Map<string, string>()
-    const code = await runCli(['mcp', 'init', '--client', 'cursor'], {
-      cwd: '/repo',
-      fetch: async () => ({ ok: false, status: 500, json: async () => ({}) }),
-      readFile: (path) => path === '/repo/.cursor/mcp.json'
-        ? JSON.stringify({ mcpServers: { kept: { url: 'https://kept' } } })
-        : null,
-      writeFile: (path, text) => { written.set(path, text) },
-      mkdirp: () => {},
-      log: () => {},
-      error: () => {},
-    })
-    expect(code).toBe(0)
-    const json = JSON.parse(written.get('/repo/.cursor/mcp.json')!)
-    expect(json.mcpServers.kept).toEqual({ url: 'https://kept' })
-    expect(json.mcpServers[MCP_SERVER_NAME].url).toBe(`${DEFAULT_PUBLISH_ORIGIN}/api/mcp`)
   })
 
   it('returns 1 when the blob is missing', async () => {

@@ -6,7 +6,6 @@ import { setTheme, useTheme } from '../../lib/theme'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
-import { TOOL_SPECS } from '../../lib/agentAccess/types'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { PRICING_PATH } from '../../lib/entitlement'
 import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
@@ -18,8 +17,7 @@ import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
-import AgentInstallPanel from './AgentInstallPanel'
-import { MCP_VISIBLE, SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
+import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { FooterLinks } from './FooterLinks'
 import { PublicHeader } from '../public/PublicReadingPage'
 
@@ -136,17 +134,9 @@ export function useAboutSections(): {
           {t('The point is')} <span className="text-fg">{t('no bloat')}</span>
           {t(": you export the tokens you actually chose, not a framework's opinion of a design system. Everything on screen derives from one payload, so the preview, the export and what lands in Figma can't disagree.")}
         </P>
-        {MCP_VISIBLE ? (
-          <P>
-            {t('That same payload is also queryable')}{' '}
-            <span className="text-fg">{t('live, by AI coding agents')}</span>{' '}
-            {t('such as Cursor, Claude Code and Copilot, through a Model Context Protocol (MCP) server this project publishes. Instead of guessing a hex or a spacing value, your agent looks the real token up.')}
-          </P>
-        ) : (
-          <P>
-            {t('That same payload also ships as an agent skill and a design.md, so AI coding agents such as Cursor, Claude Code and Copilot use your real tokens instead of guessing a hex or a spacing value.')}
-          </P>
-        )}
+        <P>
+          {t('That same payload also ships as Design skills (AGENTS.md and agent skills), so AI coding agents such as Cursor and Claude Code use your real tokens instead of guessing a hex or a spacing value.')}
+        </P>
       </div>
     ),
   },
@@ -762,11 +752,10 @@ function FooterColumn({ title, items }: { title: string; items: FooterItem[] }) 
   )
 }
 
-/** The About tab's own footer: brand + one line, then Product · AI · Social.
+/** The About tab's own footer: brand + one line, then Product · Social.
  *  Navigation only — legal links and the copyright are the shell strip's job. */
-function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
+function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
   onStart: () => void
-  onLearnAI: () => void
   onOpenDocsPage: (page: DocsMenuPage) => void
   onOpenComponents: () => void
 }) {
@@ -780,7 +769,7 @@ function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
     // nothing in that strip is repeated here.
   ]
   return (
-    <footer className={`grid grid-cols-2 gap-10 px-6 pb-16 pt-14 ${MCP_VISIBLE ? 'sm:grid-cols-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]' : 'sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]'}`}>
+    <footer className="grid grid-cols-2 gap-10 px-6 pb-16 pt-14 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]">
       <div className="col-span-2 flex flex-col gap-3 sm:col-span-full lg:col-span-1">
         <span className="flex items-center gap-2.5">
           <BrandMark size={24} />
@@ -800,15 +789,6 @@ function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
           { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog') },
         ]}
       />
-      {MCP_VISIBLE && (
-        <FooterColumn
-          title={t('AI')}
-          items={[
-            { label: 'MCP', onClick: () => onOpenDocsPage('mcp') },
-            { label: t('Connect your agent'), onClick: onLearnAI },
-          ]}
-        />
-      )}
       <FooterColumn title={t('Social')} items={social} />
     </footer>
   )
@@ -841,7 +821,7 @@ function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
  *  are imported (`THEME_STYLE_PRESETS.length`, `COMPONENT_KEYS.length`, …),
  *  never typed. */
 export function AboutHome({
-  onStart, onLearnAI, onOpenDocsPage, onOpenComponents,
+  onStart, onOpenDocsPage, onOpenComponents,
   foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
 }: {
   onStart: () => void
@@ -851,9 +831,6 @@ export function AboutHome({
   onOpenDocsPage: (page: DocsMenuPage) => void
   /** The Components destination (footer link). */
   onOpenComponents: () => void
-  /** Opens Docs → Get started → "Use in code" (its Connect section is the
-   *  agent guide). `Configurator.tsx` wires this to `openDocs(GUIDE_CODE_KEY)`. */
-  onLearnAI: () => void
   /** Defaults to `FOUNDATION_KEYS.length`, the list a test keeps equal to
    *  `Configurator`'s `FOUNDATIONS`, so the public page states the same count. */
   foundationCount?: number
@@ -909,11 +886,6 @@ export function AboutHome({
               {t('Start building')}
               <ArrowGlyph />
             </RainbowButton>
-            {MCP_VISIBLE && (
-              <button type="button" onClick={onLearnAI} className={secondaryCta}>
-                {t('Connect your agent')}
-              </button>
-            )}
           </motion.div>
         </motion.div>
 
@@ -926,12 +898,11 @@ export function AboutHome({
           initial={reduceMotion ? false : 'hidden'}
           animate="show"
           variants={statsContainer}
-          className={`mx-6 grid grid-cols-2 gap-6 border-b border-line pb-14 ${MCP_VISIBLE ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}
+          className="mx-6 grid grid-cols-2 gap-6 border-b border-line pb-14 sm:grid-cols-3"
         >
           <Stat value={foundationCount} label={t('Foundations you configure')} delay={0} />
           <Stat value={COMPONENT_KEYS.length} label={t('Components in the catalogue')} delay={0.08} />
           <Stat value={ALL_ROLES.length} label={t('Semantic roles')} delay={0.16} />
-          {MCP_VISIBLE && <Stat value={TOOL_SPECS.length} label={t('MCP tools your agent can call')} delay={0.24} />}
         </motion.div>
 
         {/* ── Start from a style — split: media left, copy right. Hidden with
@@ -1028,32 +999,15 @@ export function AboutHome({
 
         <FeatureSection
           eyebrow={t('04 · Code and agents')}
-          title={MCP_VISIBLE ? t('Real files for your repo. Live tokens for your agent.') : t('Real files for your repo. An offline skill for your agent.')}
-          body={MCP_VISIBLE
-            ? t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or let an agent read the published system over MCP.')
-            : t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or hand an agent the offline skill and design.md.')}
+          title={t('Real files for your repo. Design skills your agent reads.')}
+          body={t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or drop the Design skills into your product repo.')}
           points={[
             t('CSS variables with light and dark in one file'),
             t('W3C design tokens that keep their aliases'),
-            MCP_VISIBLE
-              ? t('{count} MCP tools that resolve tokens when your agent asks', { count: TOOL_SPECS.length })
-              : t('An agent skill and design.md for Cursor and Claude Code'),
+            t('AGENTS.md and agent skills for Cursor and Claude Code'),
           ]}
           media={SHOTS.code}
-          action={MCP_VISIBLE ? (
-            <button type="button" onClick={onLearnAI} className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
-              {t('See how to connect')}
-              <ArrowGlyph size={10} />
-            </button>
-          ) : undefined}
-        >
-          {/* The real "Connect your agent" widget — same component Docs and the
-              Export wizard use, every string from `agentInstall.ts`. */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-line bg-elevated/20 p-4">
-            <span className="text-ui font-semibold text-fg">{MCP_VISIBLE ? t('Connect your agent') : t('Give your agent the system')}</span>
-            <AgentInstallPanel variant="about" />
-          </div>
-        </FeatureSection>
+        />
 
         <FeatureSection
           flip
@@ -1142,7 +1096,7 @@ export function AboutHome({
         {/* ── Footer — NAVIGATION back into the product. The shell's 28px strip
             under every view stays the only colophon (copyright · Contact ·
             Legal · Privacy · Terms · MIT), so none of that is repeated here. ── */}
-        <AboutFooter onStart={onStart} onLearnAI={onLearnAI} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
+        <AboutFooter onStart={onStart} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
       </div>
     </div>
   )
@@ -1339,7 +1293,6 @@ export function AboutScaffold({
           scroll={false}
           videoTapToPlay={Boolean(notice)}
           onStart={start}
-          onLearnAI={() => go(MCP_VISIBLE ? '/docs/mcp' : '/docs')}
           onOpenDocsPage={(page) => go(`/docs/${page}`)}
           onOpenComponents={() => go('/components')}
         />

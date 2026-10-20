@@ -1,5 +1,5 @@
 // Shared upgrade dialog for the Generator shell. Plan limits (extra themes,
-// systems, hosted sync, MCP) live in `lib/access.ts` and on `/pricing`.
+// systems, hosted sync) live in `lib/access.ts` and on `/pricing`.
 
 import { create } from 'zustand'
 

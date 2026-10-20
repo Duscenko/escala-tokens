@@ -1,5 +1,10 @@
 # Pricing y empaquetado: Free / Design / Complete
 
+> **2026-10-20:** el MCP en vivo se borró (código, endpoint y textos). Toda mención
+> al MCP abajo es historia. El paquete para agentes es offline: `design-skills-package.md`.
+> **Las Design skills son Free para todos** (decisión del dueño): "Skill solo en pago" abajo
+> ya no aplica.
+
 Plan y auditoría, no implementación. Escrito el 2026-10-03. Sustituye la parte de
 "qué se vende" de `multitheme-subscription.md` (allí siguen valiendo la arquitectura de
 licencia, la promo y el enforcement en `api/tokens.ts`).

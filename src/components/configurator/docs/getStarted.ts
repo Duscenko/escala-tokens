@@ -1,15 +1,13 @@
-// Get started — the Docs landing and the three destination articles.
+// Get started — the Docs landing and its destination article (Figma).
 // Keys are not foundation keys (they never collide with FOUNDATION_DOCS).
 // The whole-system token sheet stays `OVERVIEW_KEY` (`__overview`), renamed
 // in the rail to "System reference" so it is not the first thing a new
 // user opens.
 
 import { FOUNDATION_DOCS, OVERVIEW_KEY } from './foundationDocs'
-import { MCP_VISIBLE } from '../../../lib/featureFlags'
 
 export const GET_STARTED_KEY = '__get-started'
 export const GUIDE_FIGMA_KEY = '__guide-figma'
-export const GUIDE_MCP_KEY = '__guide-mcp'
 
 export const GUIDE_PAGE_COPY: Record<string, { title: string; lead: string }> = {
   [GET_STARTED_KEY]: {
@@ -20,28 +18,19 @@ export const GUIDE_PAGE_COPY: Record<string, { title: string; lead: string }> = 
     title: 'Use in Figma',
     lead: 'Install the Escala plugin once. Copy the agent context from the Figma page and paste it into the plugin — you do not maintain a second set of variables by hand.',
   },
-  [GUIDE_MCP_KEY]: {
-    title: 'MCP',
-    lead: 'Connect your agent to Escala’s live token server so it can resolve the published system instead of guessing values.',
-  },
 }
 
 /**
- * Docs now exposes only the destinations that need their own operating
- * instructions: Figma and the live MCP connection. Code formats stay in the
+ * Docs exposes only the destinations that need their own operating
+ * instructions: Figma. Code formats and the offline agent package stay in the
  * Generator's own export surface, where they are selected.
  */
 export const GUIDE_PAGES: { key: string; label: string }[] = [
   { key: GET_STARTED_KEY, label: 'Get started' },
   { key: GUIDE_FIGMA_KEY, label: 'Use in Figma' },
-  // Hidden while the live MCP is paused (`lib/featureFlags`).
-  ...(MCP_VISIBLE ? [{ key: GUIDE_MCP_KEY, label: 'MCP' }] : []),
 ]
 
-/** Where "learn how to connect an agent" and the Docs default land. */
-export const GUIDE_AI_LANDING = MCP_VISIBLE ? GUIDE_MCP_KEY : GET_STARTED_KEY
-
-/** Get started → two destinations → the token sheet. */
+/** Get started → Figma → the token sheet. */
 export const DOCS_INTRO_PAGES: { key: string; label: string }[] = [
   ...GUIDE_PAGES,
   { key: OVERVIEW_KEY, label: 'System reference' },

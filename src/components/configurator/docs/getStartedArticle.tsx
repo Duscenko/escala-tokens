@@ -1,30 +1,18 @@
 // Get started articles — destinations, not file formats.
 // Create UI's docs shape (what you get → where it lands) without their CLI.
-// Install (Cursor / Claude Code / VS Code / Figma Make, MCP steps or one pasted prompt)
-// is `AgentInstallPanel` — the same component the Export wizard shows on step 3, so the
-// two cannot drift.
+// The offline agent package is installed from Export (`AgentInstallPanel` on its
+// last step), not from here.
 
 import { type ReactNode } from 'react'
-import { useDesignStore } from '../../../store/useDesignStore'
 import { useI18n } from '../../../lib/i18n'
 import { withAgentEnvelope } from '../../../lib/aiContext'
-import {
-  cliMcpInitCommand,
-  offlineSkillCommand,
-  mcpCursorConfig,
-  skillFolderName,
-  skillInstallPath,
-} from '../../../lib/agentInstall'
-import { publishOrigin, syncProjectId } from '../../../lib/figmaSync'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
 import { AIContextButton } from '../../ui/AIContextButton'
-import AgentInstallPanel from '../AgentInstallPanel'
-import { CLI_PUBLISHED, MCP_VISIBLE } from '../../../lib/featureFlags'
 import {
   DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
 import {
-  GET_STARTED_KEY, GUIDE_MCP_KEY, GUIDE_FIGMA_KEY, GUIDE_PAGE_COPY,
+  GET_STARTED_KEY, GUIDE_FIGMA_KEY, GUIDE_PAGE_COPY,
   introPager, type DocsExits,
 } from './getStarted'
 
@@ -39,12 +27,6 @@ export function getStartedToc(key: string, t: Translate = (source) => source): T
       { id: 'file', label: t('Optional file') },
     ]
   }
-  if (key === GUIDE_MCP_KEY) {
-    return [
-      { id: 'description', label: t('Overview') },
-      { id: 'connect', label: t('Connect your agent') },
-    ]
-  }
   return [
     { id: 'description', label: t('Overview') },
     { id: 'configured', label: t('What you configured') },
@@ -52,10 +34,7 @@ export function getStartedToc(key: string, t: Translate = (source) => source): T
   ]
 }
 
-function guideMarkdown(key: string, project: string, origin: string, slug: string): string {
-  const folder = skillFolderName(project)
-  const cursorPath = skillInstallPath('cursor', project)
-  const claudePath = skillInstallPath('claude', project)
+function guideMarkdown(key: string): string {
   if (key === GUIDE_FIGMA_KEY) {
     return [
       '# Use in Figma',
@@ -70,43 +49,6 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       '',
     ].join('\n')
   }
-  if (key === GUIDE_MCP_KEY) {
-    return [
-      '# MCP',
-      '',
-      'Connect an agent to Escala’s live token server so it resolves your published system at call time instead of inventing values.',
-      '',
-      'Live tokens resolve against the published system at call time, so an agent never gets a value the solver has since rejected — the way a stale snapshot can. Publish (Figma → Sync) first, then in the product repo:',
-      '',
-      '```json',
-      mcpCursorConfig(origin),
-      '```',
-      '',
-      ...(CLI_PUBLISHED ? [`Or: \`${cliMcpInitCommand('cursor', origin)}\``, ''] : []),
-      `Tools that read the published system (\`get_tokens\`, \`resolve_token\`, \`list_icons\`) require \`project\`. This system's slug is \`${slug}\` — the same slug Figma Sync uses.`,
-      '',
-      'Also install the offline package, so the agent knows your token NAMES with no network — which the connection alone cannot answer, since an agent with only a connection does not know what to ask for:',
-      '',
-      '```',
-      offlineSkillCommand('cursor', slug, project, origin),
-      '```',
-      '',
-      `Claude Code: \`${offlineSkillCommand('claude', slug, project, origin)}\``,
-      '',
-      'Or unzip by hand:',
-      '',
-      `- Cursor: \`${cursorPath}\``,
-      `- Claude Code: \`${claudePath}\``,
-      '- Figma Make: upload the zip as-is (it cannot hold a live connection).',
-      '',
-      'Folder name inside the zip:',
-      '',
-      `\`${folder}\``,
-      '',
-      'No install at all: **Copy context to Agents** pastes the system into a chat.',
-      '',
-    ].join('\n')
-  }
   return [
     '# Get started',
     '',
@@ -115,7 +57,7 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     'Take it somewhere:',
     '',
     '- **Figma** — plugin + Sync.',
-    '- **Code** — `variables.css` from Save, W3C JSON from Export, a GitHub remote' + (MCP_VISIBLE ? ', and the MCP connection an AI agent resolves real values through' : ', and the offline agent skill') + '. All of it lands in the product repo.',
+    '- **Code** — `variables.css` from Save, W3C JSON from Export, a GitHub remote, and the Design skills (AGENTS.md and agent skills). All of it lands in the product repo.',
     '',
     'Do not choose between Markdown, Skill, and Agent bundle. Export asks where the system is going.',
   ].join('\n')
@@ -154,7 +96,7 @@ function DestinationRow({
   )
 }
 
-function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
+function GetStartedLanding({ onOpen, exits }: { onOpen: (key: string) => void; exits: DocsExits }) {
   const { t } = useI18n()
   return (
     <>
@@ -173,7 +115,7 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
       <DocSection
         id="start"
         title={t('Take it somewhere')}
-        description={t('Two places, not three file formats. Figma is a design tool; everything else lands in the product repo.')}
+        description={t('Two places, not a menu of file formats. Figma is a design tool and has its own guide; everything else — CSS, W3C JSON, the Design skills — lands in the product repo through Export.')}
       >
         <div className="flex flex-col gap-2">
           <DestinationRow
@@ -181,14 +123,8 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
             hint={t('Install the Escala plugin, copy the agent context, and paste it in. Variables land in the file you already design in.')}
             onClick={() => onOpen(GUIDE_FIGMA_KEY)}
           />
-          {MCP_VISIBLE && (
-            <DestinationRow
-              title={t('MCP')}
-              hint={t('Connect an AI agent to the live token server so it resolves your system instead of guessing values.')}
-              onClick={() => onOpen(GUIDE_MCP_KEY)}
-            />
-          )}
         </div>
+        <ExitButton onClick={exits.onOpenExport}>{t('Open Export')}</ExitButton>
       </DocSection>
     </>
   )
@@ -241,28 +177,6 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
   )
 }
 
-/**
- * MCP is its own operating page: a live contract for agents, rather than a
- * second reference sheet or a code-format chooser.
- */
-function McpGuide() {
-  const { t } = useI18n()
-  return (
-    <>
-      <DocSection
-        id="connect"
-        title={t('Connect your agent')}
-        description={t('An agent writing this code needs the same rule. Publish (Sync), then connect it so it resolves real values at call time — resolve_token, check_contrast — instead of guessing: a stale snapshot can hand out a tone the solver has since rejected. Step 3 installs the offline package, which teaches it your token names with no network.')}
-      >
-        <AgentInstallPanel variant="docs" />
-        <p className="text-body text-fg-faint leading-relaxed">
-          {t('Neither, for a one-off?')} <span className="text-fg-muted">{t('Copy context to Agents')}</span> {t('(the control at the top of this page) pastes the system straight into a chat — no files, no restart. Connect when every chat in the repo should already know the tokens.')}
-        </p>
-      </DocSection>
-    </>
-  )
-}
-
 export function GetStartedArticle({
   pageKey, onOpen, exits, showPager = true,
 }: {
@@ -272,11 +186,8 @@ export function GetStartedArticle({
   showPager?: boolean
 }) {
   const { t } = useI18n()
-  const projectName = useDesignStore((s) => s.projectName) || 'Escala'
   const meta = GUIDE_PAGE_COPY[pageKey] ?? GUIDE_PAGE_COPY[GET_STARTED_KEY]
   const pager = introPager(pageKey)
-  const origin = publishOrigin()
-  const slug = syncProjectId()
 
   return (
     <div className="flex flex-col gap-8">
@@ -287,7 +198,7 @@ export function GetStartedArticle({
         actions={
           <AIContextButton
             scope="global"
-            markdown={() => withAgentEnvelope('global', t(meta.title), guideMarkdown(pageKey, projectName, origin, slug))}
+            markdown={() => withAgentEnvelope('global', t(meta.title), guideMarkdown(pageKey))}
           />
         }
       />
@@ -296,10 +207,8 @@ export function GetStartedArticle({
 
       {pageKey === GUIDE_FIGMA_KEY ? (
         <FigmaGuide exits={exits} />
-      ) : pageKey === GUIDE_MCP_KEY && MCP_VISIBLE ? (
-        <McpGuide />
       ) : (
-        <GetStartedLanding onOpen={onOpen} />
+        <GetStartedLanding onOpen={onOpen} exits={exits} />
       )}
 
       {showPager && <Pager prev={pager.prev} next={pager.next} onOpen={onOpen} />}

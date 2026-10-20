@@ -1,4 +1,3 @@
-import { MCP_VISIBLE } from '../featureFlags'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -6,7 +5,7 @@ import { COMPONENTS } from '../componentCatalogue'
 import { FOUNDATION_DOCS, OVERVIEW_KEY } from '../../components/configurator/docs/foundationDocs'
 import { CHANGELOG_KEY } from '../../components/configurator/docs/changelogArticle'
 import { FAQ_KEY } from '../../components/configurator/docs/faqArticle'
-import { GET_STARTED_KEY, GUIDE_FIGMA_KEY, GUIDE_MCP_KEY } from '../../components/configurator/docs/getStarted'
+import { GET_STARTED_KEY, GUIDE_FIGMA_KEY } from '../../components/configurator/docs/getStarted'
 import {
   matchPublicPath,
   pageForWorkspaceSection,
@@ -23,7 +22,6 @@ describe('public reading pages', () => {
   it('keeps the workspace section ids the plugin already sends', () => {
     const cases = [
       { page: { kind: 'component' as const, key: 'Button' }, section: 'components/Button' },
-      { page: { kind: 'doc' as const, docKey: GUIDE_MCP_KEY }, section: `docs/${GUIDE_MCP_KEY}` },
       { page: { kind: 'doc' as const, docKey: GUIDE_FIGMA_KEY }, section: `docs/${GUIDE_FIGMA_KEY}` },
       { page: { kind: 'doc' as const, docKey: 'color' }, section: 'docs/color' },
     ]
@@ -50,8 +48,8 @@ describe('public reading pages', () => {
 
   it('maps catalogue and docs keys onto crawlable paths without replacing the query protocol', () => {
     expect(matchPublicPath('/components/Button')).toEqual({ kind: 'component', key: 'Button' })
-    // The MCP page is hidden (lib/featureFlags): its path resolves to nothing.
-    expect(matchPublicPath('/docs/mcp')).toEqual(MCP_VISIBLE ? { kind: 'doc', docKey: GUIDE_MCP_KEY } : null)
+    // The MCP page was removed: its old path resolves to nothing.
+    expect(matchPublicPath('/docs/mcp')).toBeNull()
     expect(matchPublicPath('/docs/figma')).toEqual({ kind: 'doc', docKey: GUIDE_FIGMA_KEY })
     expect(publicDocPath(GET_STARTED_KEY)).toBe('/docs')
     expect(publicDocPath(CHANGELOG_KEY)).toBe('/docs/changelog')
@@ -80,7 +78,7 @@ describe('public reading pages', () => {
     expect(xml).not.toContain('section=')
     expect(xml).not.toContain('/api/')
     expect(xml).not.toContain('vercel.app')
-    expect(sitemapPaths().includes('/docs/mcp')).toBe(MCP_VISIBLE)
+    expect(sitemapPaths()).not.toContain('/docs/mcp')
     expect(sitemapPaths()).toContain('/docs/figma')
     expect(sitemapPaths()).toContain('/')
   })

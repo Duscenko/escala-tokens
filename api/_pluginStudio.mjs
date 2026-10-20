@@ -5539,7 +5539,7 @@ var init_actions = __esm({
 // src/lib/recipes/forms.ts
 function fieldBox(state2) {
   if (state2 === "Disabled") return { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring: NONE };
-  if (state2 === "Error") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: NONE };
+  if (state2 === "Error") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: c("status.critical.border") };
   if (state2 === "Focused" || state2 === "Open") return { fill: c("surface.input"), stroke: c("border.focus"), ring: c("border.ring.default") };
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
   return { fill: c("surface.input"), stroke: c("border.control"), ring: NONE };
@@ -5568,7 +5568,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -5627,22 +5627,29 @@ var init_forms = __esm({
         })
       ]
     };
+    GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
+    GROUP_CONTROL = '[data-slot="input-group-control"]';
     INPUT_GROUP = {
       key: "InputGroup",
       slots: ["root", "addon", "input", "button", "separator"],
       defaults: {},
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.input"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            height: "size.control"
-          },
-          "root:focus-within": FIELD_FOCUS,
-          addon: { fill: c("surface.layer-1"), text: c("content.secondary"), font: "type.placeholder", paddingX: "spacing.inset-control" },
+          root: { ...fieldBox("Default"), strokeWidth: "stroke.control", radius: "radius.action", height: "size.control" },
+          [`root:hover${GROUP_LIVE}`]: fieldBox("Hover"),
+          'root[data-force-state="Hover"]': fieldBox("Hover"),
+          [`root:has(${GROUP_CONTROL}:focus-visible)${GROUP_LIVE}`]: fieldBox("Focused"),
+          'root[data-force-state="Focused"]': fieldBox("Focused"),
+          [`root:has(${GROUP_CONTROL}[aria-invalid="true"])`]: fieldBox("Error"),
+          'root[data-force-state="Error"]': fieldBox("Error"),
+          "root:has(:disabled)": fieldBox("Disabled"),
+          'root[aria-disabled="true"]': fieldBox("Disabled"),
+          // shadcn's addon is transparent: it holds an icon, text, kbd or button.
+          addon: { text: c("content.secondary"), font: "type.placeholder", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
           input: { text: c("content.primary"), font: "type.placeholder", paddingX: "spacing.inset-control" },
+          "input::placeholder": { text: c("content.subtle") },
+          "input:disabled": { text: c("content.disabled") },
+          "input:disabled::placeholder": { text: c("content.disabled") },
           button: { text: c("content.accent"), font: "type.button", paddingX: "spacing.4" },
           "button:hover": { fill: c("action.ghost.hover") },
           "button:active": { fill: c("action.ghost.pressed") },
@@ -5749,8 +5756,15 @@ var init_forms = __esm({
       parts: [
         part({}, () => ({
           root: { ...FIELD_FIXED, height: "size.control", paddingX: "spacing.inset-control" },
+          // shadcn's ComboboxInput is an InputGroup: the field box takes the
+          // control's live states (hover, focus, invalid, disabled).
+          [`root:hover:not(:focus-within)${GROUP_LIVE}`]: fieldBox("Hover"),
           "root:focus-within": FIELD_FOCUS,
+          'root:has([aria-invalid="true"])': fieldBox("Error"),
+          "root:has(:disabled)": fieldBox("Disabled"),
           input: { text: c("content.primary"), font: "type.placeholder" },
+          "input::placeholder": { text: c("content.subtle") },
+          "input:disabled": { text: c("content.disabled") },
           icon: { text: c("content.secondary") },
           content: { ...MENU_CONTENT },
           ...MENU_ITEM
@@ -7713,63 +7727,6 @@ var init_tokenGenerator = __esm({
   }
 });
 
-// src/lib/agentAccess/contrast.ts
-var init_contrast = __esm({
-  "src/lib/agentAccess/contrast.ts"() {
-    init_apca();
-  }
-});
-
-// src/lib/agentAccess/components.ts
-var ESSENTIAL;
-var init_components = __esm({
-  "src/lib/agentAccess/components.ts"() {
-    init_componentCatalogue();
-    ESSENTIAL = new Set(ESSENTIAL_COMPONENT_KEYS);
-  }
-});
-
-// src/lib/agentAccess/resolveLayers.ts
-var init_resolveLayers = __esm({
-  "src/lib/agentAccess/resolveLayers.ts"() {
-    init_dimensionCore();
-  }
-});
-
-// src/lib/agentAccess/resolveToken.ts
-var init_resolveToken = __esm({
-  "src/lib/agentAccess/resolveToken.ts"() {
-    init_names();
-    init_resolveLayers();
-  }
-});
-
-// src/lib/agentAccess/types.ts
-var INTENT_ENUM;
-var init_types = __esm({
-  "src/lib/agentAccess/types.ts"() {
-    init_apca();
-    INTENT_ENUM = Object.keys(INTENT_THRESHOLDS);
-  }
-});
-
-// src/lib/agentAccess/callTool.ts
-var init_callTool = __esm({
-  "src/lib/agentAccess/callTool.ts"() {
-    init_contrast();
-    init_components();
-    init_resolveToken();
-    init_types();
-  }
-});
-
-// src/lib/agentAccess/mcp.ts
-var init_mcp = __esm({
-  "src/lib/agentAccess/mcp.ts"() {
-    init_callTool();
-  }
-});
-
 // src/lib/featureFlags.ts
 var init_featureFlags = __esm({
   "src/lib/featureFlags.ts"() {
@@ -7777,7 +7734,7 @@ var init_featureFlags = __esm({
 });
 
 // src/lib/agentInstall.ts
-function mcpOrigin(origin) {
+function canonicalOrigin(origin) {
   const raw = (origin || "").trim();
   if (!raw) return DEFAULT_PUBLISH_ORIGIN;
   const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
@@ -7793,7 +7750,6 @@ var DEFAULT_PUBLISH_ORIGIN;
 var init_agentInstall = __esm({
   "src/lib/agentInstall.ts"() {
     init_names();
-    init_mcp();
     init_featureFlags();
     DEFAULT_PUBLISH_ORIGIN = "https://escalatokens.com";
   }
@@ -7857,7 +7813,7 @@ function legacyProjectId(fileName, projectName) {
 function publishOrigin() {
   if (typeof window === "undefined") return DEFAULT_PUBLISH_ORIGIN;
   if (!isLiveEnvironment()) return DEFAULT_PUBLISH_ORIGIN;
-  return mcpOrigin(window.location.origin || DEFAULT_PUBLISH_ORIGIN);
+  return canonicalOrigin(window.location.origin || DEFAULT_PUBLISH_ORIGIN);
 }
 function syncPath(fileName) {
   return `/api/tokens?project=${encodeURIComponent(syncProjectId(fileName))}`;
@@ -8741,10 +8697,6 @@ var init_useDesignStore = __esm({
               Object.entries(st.elementStatus ?? {}).filter(([, decision]) => decision.status !== "approved")
             )
           })),
-          pinned: [],
-          togglePinned: (id) => set((st) => ({
-            pinned: st.pinned.includes(id) ? st.pinned.filter((p) => p !== id) : [...st.pinned, id]
-          })),
           figmaSyncSelection: { modes: null, viewports: [...FIGMA_VIEWPORTS] },
           setFigmaSyncSelection: (patch) => set((st) => ({ figmaSyncSelection: { ...st.figmaSyncSelection, ...patch } })),
           // Color scale generation
@@ -9011,7 +8963,6 @@ var init_useDesignStore = __esm({
               customColors,
               ...saved ? {
                 savedSystems: saved.savedSystems,
-                pinned: withoutLibraryPins(state2.pinned, saved.droppedIds),
                 // Erased above: it is no longer published, and says so.
                 figmaLastPublishAt: null
               } : {}
@@ -9261,8 +9212,7 @@ var init_useDesignStore = __esm({
               ...makeDesignDefaults(),
               projectCreated: true,
               systemStarted: false,
-              savedSystems: dropped.savedSystems,
-              pinned: withoutLibraryPins(state2.pinned, dropped.droppedIds)
+              savedSystems: dropped.savedSystems
             };
           }),
           // See the interface comment for why identity/connection fields are
@@ -9282,20 +9232,14 @@ var init_useDesignStore = __esm({
           reconcileSavedSystems: () => set((state2) => {
             const next = reconcileSavedSystems(state2.savedSystems, state2);
             if (next.savedSystems === state2.savedSystems) return state2;
-            return {
-              savedSystems: next.savedSystems,
-              pinned: withoutLibraryPins(state2.pinned, next.droppedIds)
-            };
+            return { savedSystems: next.savedSystems };
           }),
           saveCurrentSystem: () => set((state2) => {
             const snapshot = captureSnapshot(state2);
             const entry = buildSavedSystemEntry(state2, snapshot);
             const upserted = state2.savedSystems.some((s) => s.id === entry.id) ? state2.savedSystems.map((s) => s.id === entry.id ? entry : s) : [...state2.savedSystems, entry];
             const next = reconcileSavedSystems(upserted, state2);
-            return {
-              savedSystems: next.savedSystems,
-              pinned: withoutLibraryPins(state2.pinned, next.droppedIds)
-            };
+            return { savedSystems: next.savedSystems };
           }),
           saveCurrentSystemAsTheme: (themeKey, name) => set((state2) => {
             const full = captureSnapshot(state2);
@@ -9326,7 +9270,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 99,
+          version: 100,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -10533,6 +10477,9 @@ var init_useDesignStore = __esm({
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) moveBorderStrongToControl(sys?.snapshot);
               }
+            }
+            if (version < 100) {
+              delete persisted.pinned;
             }
             return persisted;
           }

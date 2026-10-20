@@ -75,7 +75,7 @@ import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
-import { GUIDE_AI_LANDING, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
+import { GET_STARTED_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
 import { OPEN_FAQ_EVENT } from '../lib/aiContext'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -1437,7 +1437,7 @@ export default function Configurator() {
   // Docs exposes only focused operating pages from the top-menu. The token
   // reference stays in the preview's contextual documentation surface, so the
   // global destination never duplicates it.
-  const [docFoundationKey, setDocFoundationKey] = useState<string>(() => incomingPlace?.doc ?? GUIDE_AI_LANDING)
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(() => incomingPlace?.doc ?? GET_STARTED_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
 
@@ -1684,13 +1684,11 @@ export default function Configurator() {
   // Docs' focused pages, ONE mapping for every door to them — TopNav's Docs menu
   // and the About tab (its FAQ link and footer) — so the two can't disagree.
   const openDocsPage = (page: DocsMenuPage) => {
-    openDocs(page === 'mcp'
-      ? GUIDE_AI_LANDING
-      : page === 'figma'
-        ? GUIDE_FIGMA_KEY
-        : page === 'changelog'
-          ? CHANGELOG_KEY
-          : FAQ_KEY)
+    openDocs(page === 'figma'
+      ? GUIDE_FIGMA_KEY
+      : page === 'changelog'
+        ? CHANGELOG_KEY
+        : FAQ_KEY)
   }
   const leaveExportWizard = () => setSectionExportOpen(false)
   const openFigmaSyncPage = () => {
@@ -2089,7 +2087,6 @@ export default function Configurator() {
           setTab('foundations')
           changeThemeWorkspaceTab('preview')
         }}
-        onLearnAI={() => openDocs(GUIDE_AI_LANDING)}
         onOpenDocsPage={openDocsPage}
         onOpenComponents={() => changeTab('components')}
         foundationCount={FOUNDATIONS.length}
