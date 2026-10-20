@@ -949,6 +949,23 @@ export function InspectorOverlay({
             Every role this component can use. {INSPECTOR_BLIND_SPOT}
           </p>
         )}
+        {/* Docked, the panel IS the inspector's whole surface, so it carries
+            the way out: back to using the component, without hunting for the
+            toggle on the canvas. */}
+        {docked && onExitMode && (
+          <div className="flex flex-shrink-0 items-center justify-between gap-2 border-t border-line px-3 py-2">
+            <button
+              type="button"
+              onClick={() => { clearAll(); onExitMode() }}
+              aria-keyshortcuts="Escape"
+              className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              <InspectGlyph size={13} />
+              {t('Exit inspector')}
+            </button>
+            <kbd className="rounded border border-line px-1.5 py-px font-mono text-nano text-fg-faint">Esc</kbd>
+          </div>
+        )}
     </>
   )
 

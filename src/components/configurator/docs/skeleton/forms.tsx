@@ -5,7 +5,7 @@ import { iconForControl, iconOf, selectorRoleOf, sizeRoleOf } from '../../../../
 import { useI18n } from '../../../../lib/i18n'
 import { Input as SkInput } from '../../../escala-ui/input'
 import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
-import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
+import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { InputStepper as SkInputStepper } from '../../../escala-ui/input-stepper'
 import { InputTag as SkInputTag } from '../../../escala-ui/input-tag'
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
@@ -32,7 +32,7 @@ import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOpt
  * row — Field · FieldLabel · Input · FieldDescription — so a screen can show
  * an e-mail or password field without a second input component.
  */
-export function SkeletonInputSpecimen({ t, v, w, hideHint }: SpecimenProps) {
+export function SkeletonInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProps) {
   const { t: translate } = useI18n()
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
@@ -50,7 +50,36 @@ export function SkeletonInputSpecimen({ t, v, w, hideHint }: SpecimenProps) {
       style={v.Type ? undefined : { width: w ?? 260 }}
     />
   )
-  if (!v.Type) return <RecipeScope t={t}>{input}</RecipeScope>
+  // shadcn composes icons as InputGroup > InputGroupInput + InputGroupAddon.
+  const slots = ICON_SLOTS.Input
+  const iconPx = iconForControl(sizeRoleOf(t, 'control'), t)
+  const withIcons = Boolean(icons?.leading || icons?.trailing)
+  const control = withIcons ? (
+    <SkInputGroup forceState={state} style={{ width: w ?? 260 }}>
+      <SkGroupInput
+        type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
+        placeholder={meta.placeholder}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        aria-label={translate(meta.label)}
+        aria-invalid={v.State === 'Error' || undefined}
+        disabled={v.State === 'Disabled'}
+      />
+      {icons?.leading && (
+        <SkAddon align="inline-start">
+          <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconPx} />
+        </SkAddon>
+      )}
+      {icons?.trailing && (
+        <SkAddon align="inline-end">
+          <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />
+        </SkAddon>
+      )}
+    </SkInputGroup>
+  ) : input
+  if (!v.Type) return <RecipeScope t={t}>{control}</RecipeScope>
   return (
     <RecipeScope t={t}>
       <SkField style={{ width: w ?? 260 }}>
@@ -83,7 +112,7 @@ export function SkeletonInputGroupSpecimen({ t, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkInputGroup style={{ width: w ?? 300 }}>
-        <SkAddon>https://</SkAddon>
+        <SkAddon><SkGroupText>https://</SkGroupText></SkAddon>
         <SkGroupSeparator />
         <SkGroupInput defaultValue="escala.design" aria-label="Domain" />
         <SkGroupSeparator />

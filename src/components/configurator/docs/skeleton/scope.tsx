@@ -15,11 +15,16 @@ import { RECIPE_CSS } from '../../../../lib/recipeStyles'
 
 // Injected at module load, before the first render: mounted from an effect, the
 // first specimens painted unstyled and then transitioned into their colours.
-if (typeof document !== 'undefined' && !document.getElementById('escala-component-recipes')) {
-  const el = document.createElement('style')
-  el.id = 'escala-component-recipes'
-  el.textContent = RECIPE_CSS
-  document.head.appendChild(el)
+// The text is rewritten when the element already exists: under HMR a recipe
+// edit re-runs this module, and a guard on the id kept the OLD sheet painting.
+if (typeof document !== 'undefined') {
+  let el = document.getElementById('escala-component-recipes')
+  if (!el) {
+    el = document.createElement('style')
+    el.id = 'escala-component-recipes'
+    document.head.appendChild(el)
+  }
+  if (el.textContent !== RECIPE_CSS) el.textContent = RECIPE_CSS
 }
 
 /** `display: contents` — a box-less wrapper, so it cannot disturb the layout. */

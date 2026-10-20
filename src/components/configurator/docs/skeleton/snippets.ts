@@ -178,8 +178,15 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const trail = icons?.trailing ? `\n  <${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />` : ''
     return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags}>\n${lead}  Button${trail}\n</Button>`
   },
-  Input: (v) =>
-    `import { Input } from "@/components/ui/input"\n\n<Input type="email" placeholder="you@company.com"${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''} />`,
+  Input: (v, icons) => {
+    const flags = `${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''}`
+    if (icons?.leading || icons?.trailing) {
+      const lead = icons.leading ? `  <InputGroupAddon>\n    <${ICON_COMPONENT[ICON_SLOTS.Input.leading]} />\n  </InputGroupAddon>\n` : ''
+      const trail = icons.trailing ? `  <InputGroupAddon align="inline-end">\n    <${ICON_COMPONENT[ICON_SLOTS.Input.trailing]} />\n  </InputGroupAddon>\n` : ''
+      return `import {\n  InputGroup, InputGroupAddon, InputGroupInput,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupInput placeholder="you@company.com"${flags} />\n${lead}${trail}</InputGroup>`
+    }
+    return `import { Input } from "@/components/ui/input"\n\n<Input type="email" placeholder="you@company.com"${flags} />`
+  },
 
   Card: (v) =>
     `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter,\n} from "@/components/ui/card"\n\n<Card${v.Size === 'sm' ? ' size="sm"' : ''}>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <Button variant="link" size="sm">Learn more →</Button>\n  </CardFooter>\n</Card>`,

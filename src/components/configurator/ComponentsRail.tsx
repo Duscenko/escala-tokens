@@ -47,6 +47,7 @@ export default function ComponentsRail({
   onOpenIndex,
   search = '',
   onSearch,
+  onInspectorSlot,
 }: {
   icons: Record<string, ComponentType>
   /** null = the index page is open. */
@@ -56,6 +57,8 @@ export default function ComponentsRail({
   onOpenIndex?: () => void
   search?: string
   onSearch?: (q: string) => void
+  /** Callback ref for the dock a pinned component's token list renders into. */
+  onInspectorSlot?: (el: HTMLElement | null) => void
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion() ?? false
@@ -99,7 +102,7 @@ export default function ComponentsRail({
   return (
     <aside
       aria-label={t('Components')}
-      className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
+      className="relative my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
       style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
       <div
@@ -243,6 +246,10 @@ export default function ComponentsRail({
           )
         })}
       </nav>
+      {/* Where a pinned component's token list docks (InspectorPortal). It
+          covers the directory; leaving the inspector brings the list back.
+          `contents`: the panel positions itself against the aside. */}
+      <div ref={onInspectorSlot} className="contents" />
     </aside>
   )
 }

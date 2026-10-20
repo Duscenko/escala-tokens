@@ -39,12 +39,12 @@ function Combobox({
       data-slot="combobox"
       data-escala="Combobox"
       data-force-state={forceOpen ? 'Open' : undefined}
-      className={cn('relative flex flex-col', className)}
+      className={cn('relative flex flex-col justify-center', className)}
       style={{ width }}
       {...props}
     >
       <div data-part="Combobox.field" className="contents">
-        <div role="presentation" className="flex items-center" data-part="Combobox.row">
+        <div role="presentation" className="flex h-full min-w-0 items-center gap-[var(--spacing-gap-control)]" data-part="Combobox.row">
           <input
             data-part="Combobox.input"
             role="combobox"
@@ -53,7 +53,7 @@ function Combobox({
             aria-autocomplete="list"
             value={focus || forceOpen ? query : chosen?.label ?? ''}
             placeholder={chosen?.label ?? placeholder}
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 outline-none"
+            className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed"
             onChange={(e) => { setQuery(e.target.value); setActive(0) }}
             onFocus={() => setFocus(true)}
             onBlur={() => setFocus(false)}
@@ -64,7 +64,7 @@ function Combobox({
               else if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
             }}
           />
-          <span data-part="Combobox.icon" className="inline-flex shrink-0">{icon}</span>
+          <span data-part="Combobox.icon" aria-hidden className="pointer-events-none inline-flex shrink-0">{icon}</span>
         </div>
       </div>
       {open && (

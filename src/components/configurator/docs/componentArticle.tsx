@@ -31,6 +31,8 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
+import { InspectGlyph } from '../../ui/icons'
+import { AppearanceGlyph } from '../colorControls'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
   CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
@@ -126,6 +128,83 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
     </div>
   )
 }
+// ── Playground canvas controls ──────────────────────────────────────────────
+
+const INSPECT_PREF_KEY = 'sd-playground-inspect'
+
+function readInspectPref(): boolean {
+  try { return localStorage.getItem(INSPECT_PREF_KEY) !== 'off' } catch { return true }
+}
+
+function writeInspectPref(on: boolean) {
+  try { localStorage.setItem(INSPECT_PREF_KEY, on ? 'on' : 'off') } catch { /* private mode: this session only */ }
+}
+
+/** Inspector on / off. The name stays "Inspect" and `aria-pressed` carries
+ *  the state, so a screen reader hears one answer, not two. */
+function InspectSwitch({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      title={active
+        ? t('Turn the inspector off to use the component')
+        : t('Turn the inspector on to see the tokens that paint the component')}
+      className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium transition-colors duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui ${
+        active ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'
+      }`}
+    >
+      <InspectGlyph size={14} />
+      <span>{t('Inspect')}</span>
+      <span
+        aria-hidden
+        className={`h-1.5 w-1.5 rounded-full transition-colors duration-150 ${active ? 'bg-accent-ui' : 'bg-line-strong'}`}
+      />
+    </button>
+  )
+}
+
+/** Light · Dark for this canvas only. Chrome-painted, so it reads the same
+ *  over a light and a dark stage. */
+function AppearanceSwitch({ value, onChange }: { value: ThemeAppearance; onChange: (v: ThemeAppearance) => void }) {
+  const { t } = useI18n()
+  const options: { key: ThemeAppearance; label: string }[] = [
+    { key: 'light', label: t('Light') },
+    { key: 'dark', label: t('Dark') },
+  ]
+  return (
+    <div
+      role="group"
+      aria-label={t('Preview appearance')}
+      data-inspect-exempt=""
+      className="absolute top-3 left-3 flex items-center gap-0.5 rounded-full border border-line bg-elevated/80 p-0.5 backdrop-blur-sm"
+    >
+      {options.map((o) => {
+        const on = value === o.key
+        const name = t('Preview in {appearance}', { appearance: o.label })
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={on}
+            aria-label={name}
+            title={name}
+            className={`flex h-6 items-center gap-1 rounded-full px-2 text-mini font-medium transition-colors duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-ui ${
+              on ? 'bg-surface text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
+            }`}
+          >
+            <AppearanceGlyph kind={o.key} size={12} />
+            {on && <span aria-hidden>{o.label}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Hero: the live playground, with the doc block's Preview/Code toggle ──────
 //
 // `values`/icon toggles and the `snippet` they produce are OWNED by
@@ -142,7 +221,7 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
 // once by the parent and passed down, is what makes that impossible again.
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing, appearance: appearanceProp, onInspectRole,
+  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -163,11 +242,28 @@ export function ComponentCatalogueHero({
   appearance?: ThemeAppearance
   /** A role named by the hover badge. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
+  /** The brand on screen — the canvas resolves its OTHER appearance from it. */
+  previewTheme?: string
 }) {
   const { t } = useI18n()
   const [view, setView] = useState<'preview' | 'code'>('preview')
   const canvasRef = useRef<HTMLDivElement>(null)
   const appearance = appearanceProp ?? 'light'
+  // The canvas can show the brand's other appearance without changing the
+  // brand on screen: only this stage repaints, the rest of the page does not.
+  const [canvasAppearance, setCanvasAppearance] = useState<ThemeAppearance>(appearance)
+  const store = useDesignStore()
+  const canvasTokens = canvasAppearance === appearance
+    ? tokens
+    : resolvePreviewTokens(store, previewTheme ?? 'light', canvasAppearance)
+  // Inspecting captures the pointer, so the specimen cannot be used while it
+  // is on. Off = a normal, interactive component. Remembered per browser.
+  const [inspecting, setInspecting] = useState(readInspectPref)
+  const toggleInspecting = () => {
+    const next = !inspecting
+    setInspecting(next)
+    writeInspectPref(next)
+  }
 
   const slots = ICON_SLOTS[def.key]
   const Specimen = SPECIMENS[def.key]
@@ -178,15 +274,15 @@ export function ComponentCatalogueHero({
   // has something behind it to visibly soften — a flat canvas can't show it.
   // `backgroundColor`/`backgroundImage` (not the `background` shorthand) so
   // toggling the pattern on/off never mixes shorthand and longhand styles.
-  const showPattern = tokens.panelBackground === 'translucent' && PANEL_COMPONENTS.has(def.key)
+  const showPattern = canvasTokens.panelBackground === 'translucent' && PANEL_COMPONENTS.has(def.key)
   const canvasStyle = {
-    backgroundColor: tokens.surface,
+    backgroundColor: canvasTokens.surface,
     backgroundImage: showPattern
       ? [
-          `radial-gradient(circle at 15% 20%, ${withAlpha(tokens.brandSolid, 0.55)}, transparent 42%)`,
-          `radial-gradient(circle at 85% 15%, ${withAlpha(tokens.successColor ?? '#17b26a', 0.5)}, transparent 40%)`,
-          `radial-gradient(circle at 75% 85%, ${withAlpha(tokens.warningColor ?? '#f79009', 0.45)}, transparent 45%)`,
-          `radial-gradient(circle at 20% 85%, ${withAlpha(tokens.infoColor ?? '#2e90fa', 0.4)}, transparent 40%)`,
+          `radial-gradient(circle at 15% 20%, ${withAlpha(canvasTokens.brandSolid, 0.55)}, transparent 42%)`,
+          `radial-gradient(circle at 85% 15%, ${withAlpha(canvasTokens.successColor ?? '#17b26a', 0.5)}, transparent 40%)`,
+          `radial-gradient(circle at 75% 85%, ${withAlpha(canvasTokens.warningColor ?? '#f79009', 0.45)}, transparent 45%)`,
+          `radial-gradient(circle at 20% 85%, ${withAlpha(canvasTokens.infoColor ?? '#2e90fa', 0.4)}, transparent 40%)`,
         ].join(', ')
       : 'none',
   }
@@ -203,37 +299,34 @@ export function ComponentCatalogueHero({
             </div>
           }
         >
-          {headerTrailing ?? <CopyButton text={snippet} label={t('Copy snippet')} />}
+          <div className="flex items-center gap-1.5">
+            {view === 'preview' && <InspectSwitch active={inspecting} onToggle={toggleInspecting} />}
+            {headerTrailing ?? <CopyButton text={snippet} label={t('Copy snippet')} iconOnly />}
+          </div>
         </BlockChrome>
 
         {view === 'preview' ? (
-          <InspectorModeProvider active>
+          <InspectorModeProvider active={inspecting}>
             <div
               ref={canvasRef}
-              className="min-h-[300px] flex items-center justify-center p-10 relative overflow-hidden"
-              style={{ ...canvasStyle, cursor: 'crosshair' }}
+              className="min-h-[300px] flex items-center justify-center p-10 relative overflow-hidden transition-colors duration-200 ease-[var(--ease-out-quint)]"
+              style={{ ...canvasStyle, cursor: inspecting ? 'crosshair' : undefined }}
             >
               {/* The empty canvas is not a page to inspect. Only the specimen
                   answers; pointing at the padding clears the badge. */}
-              <div data-inspect-exempt="" className="absolute inset-0" aria-hidden />
+              {inspecting && <div data-inspect-exempt="" className="absolute inset-0" aria-hidden />}
               {Specimen ? (
                 <div className="relative">
                   <TokenInspector component={def.key} variant={values}>
-                    <Specimen t={tokens} v={values} icons={icons} />
+                    <Specimen t={canvasTokens} v={values} icons={icons} />
                   </TokenInspector>
                 </div>
               ) : (
                 <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
               )}
-              {/* The stage paints the BRAND's appearance, not the site's: in
-                  site-dark a light brand is a white stage, and without this
-                  chip that read as a bug. It names what is on screen. */}
-              <span
-                data-inspect-exempt=""
-                className="absolute top-3 left-3 text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-muted border border-line"
-              >
-                {t('Previewing: {appearance}', { appearance: t(appearance === 'dark' ? 'Dark' : 'Light') })}
-              </span>
+              {/* The stage paints the BRAND's appearance, not the site's. The
+                  switch names which one is on screen and flips only this stage. */}
+              <AppearanceSwitch value={canvasAppearance} onChange={setCanvasAppearance} />
               {variantCount > 1 && (
                 <span
                   data-inspect-exempt=""
@@ -244,12 +337,13 @@ export function ComponentCatalogueHero({
               )}
             </div>
             <InspectorOverlay
-              active
+              active={inspecting}
               rootRef={canvasRef}
-              tokensByAppearance={{ light: tokens, dark: tokens }}
-              defaultAppearance={appearance}
+              tokensByAppearance={{ light: canvasTokens, dark: canvasTokens }}
+              defaultAppearance={canvasAppearance}
               onPick={(roleId) => onInspectRole?.(roleId)}
               onOpenTable={onInspectRole}
+              onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
             />
           </InspectorModeProvider>
         ) : (
@@ -260,7 +354,9 @@ export function ComponentCatalogueHero({
       </div>
       {view === 'preview' && (
         <p className="px-1 text-mini text-fg-faint">
-          {t('Hover the component to see its borders and the tokens that paint it.')}
+          {inspecting
+            ? t('Hover the component to see its borders and the tokens that paint it.')
+            : t('Inspector off — the component responds to clicks and typing.')}
         </p>
       )}
       </div>
@@ -617,6 +713,7 @@ export function ComponentArticle({
         snippet={heroCode}
         appearance={appearance}
         onInspectRole={onInspectRole}
+        previewTheme={previewTheme}
       />
 
       {/* Use it — Figma · Code · the agent brief, same as a foundation page.

@@ -12,7 +12,10 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } fro
 /** The box every text-like control draws: fill, edge and focus halo by state. */
 export function fieldBox(state: string): SlotProps {
   if (state === 'Disabled') return { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), ring: NONE }
-  if (state === 'Error') return { fill: c('surface.input'), stroke: c('status.critical.border-strong'), ring: NONE }
+  // shadcn: `border-destructive` + a soft destructive ring (`ring-destructive/20`).
+  // The stroke is the contrast-bearing boundary (pale in dark — see its role),
+  // the halo is `status.critical.border`, the alpha red that carries the hue.
+  if (state === 'Error') return { fill: c('surface.input'), stroke: c('status.critical.border-strong'), ring: c('status.critical.border') }
   if (state === 'Focused' || state === 'Open') return { fill: c('surface.input'), stroke: c('border.focus'), ring: c('border.ring.default') }
   if (state === 'Hover') return { fill: c('surface.input'), stroke: c('border.control-hover'), ring: NONE }
   return { fill: c('surface.input'), stroke: c('border.control'), ring: NONE }
@@ -82,19 +85,35 @@ export const TEXTAREA: ComponentRecipe = {
 
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
+// The group IS the field box, so it paints what the bare Input paints in each
+// state — shadcn moves the control's focus / invalid styling onto the group
+// with `has-[…]`. Selectors, not a State axis: the catalogue (= the plugin's
+// Figma set) ships Input Group with no variants. Same specificity ladder as the
+// recipe's own state suffixes, emitted in order Hover < Focused < Error < Disabled.
+const GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))'
+const GROUP_CONTROL = '[data-slot="input-group-control"]'
+
 export const INPUT_GROUP: ComponentRecipe = {
   key: 'InputGroup',
   slots: ['root', 'addon', 'input', 'button', 'separator'],
   defaults: {},
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', height: 'size.control',
-      },
-      'root:focus-within': FIELD_FOCUS,
-      addon: { fill: c('surface.layer-1'), text: c('content.secondary'), font: 'type.placeholder', paddingX: 'spacing.inset-control' },
+      root: { ...fieldBox('Default'), strokeWidth: 'stroke.control', radius: 'radius.action', height: 'size.control' },
+      [`root:hover${GROUP_LIVE}`]: fieldBox('Hover'),
+      'root[data-force-state="Hover"]': fieldBox('Hover'),
+      [`root:has(${GROUP_CONTROL}:focus-visible)${GROUP_LIVE}`]: fieldBox('Focused'),
+      'root[data-force-state="Focused"]': fieldBox('Focused'),
+      [`root:has(${GROUP_CONTROL}[aria-invalid="true"])`]: fieldBox('Error'),
+      'root[data-force-state="Error"]': fieldBox('Error'),
+      'root:has(:disabled)': fieldBox('Disabled'),
+      'root[aria-disabled="true"]': fieldBox('Disabled'),
+      // shadcn's addon is transparent: it holds an icon, text, kbd or button.
+      addon: { text: c('content.secondary'), font: 'type.placeholder', paddingX: 'spacing.inset-control', gap: 'spacing.gap-control' },
       input: { text: c('content.primary'), font: 'type.placeholder', paddingX: 'spacing.inset-control' },
+      'input::placeholder': { text: c('content.subtle') },
+      'input:disabled': { text: c('content.disabled') },
+      'input:disabled::placeholder': { text: c('content.disabled') },
       button: { text: c('content.accent'), font: 'type.button', paddingX: 'spacing.4' },
       'button:hover': { fill: c('action.ghost.hover') },
       'button:active': { fill: c('action.ghost.pressed') },
@@ -198,8 +217,15 @@ export const COMBOBOX: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: { ...FIELD_FIXED, height: 'size.control', paddingX: 'spacing.inset-control' },
+      // shadcn's ComboboxInput is an InputGroup: the field box takes the
+      // control's live states (hover, focus, invalid, disabled).
+      [`root:hover:not(:focus-within)${GROUP_LIVE}`]: fieldBox('Hover'),
       'root:focus-within': FIELD_FOCUS,
+      'root:has([aria-invalid="true"])': fieldBox('Error'),
+      'root:has(:disabled)': fieldBox('Disabled'),
       input: { text: c('content.primary'), font: 'type.placeholder' },
+      'input::placeholder': { text: c('content.subtle') },
+      'input:disabled': { text: c('content.disabled') },
       icon: { text: c('content.secondary') },
       content: { ...MENU_CONTENT },
       ...MENU_ITEM,

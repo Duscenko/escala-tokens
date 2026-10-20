@@ -19,8 +19,12 @@ import type { UseIt, UseItDestId } from './useIt'
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
 export function CopyButton({
-  text, label, title,
-}: { text: string; label?: string; title?: string }) {
+  text, label, title, iconOnly = false,
+}: {
+  text: string; label?: string; title?: string
+  /** Icon only: `label` becomes the accessible name and the tooltip. */
+  iconOnly?: boolean
+}) {
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   async function copy() {
@@ -30,12 +34,18 @@ export function CopyButton({
   }
   return (
     <button
+      type="button"
       onClick={copy}
-      title={title}
-      className="flex items-center gap-1.5 text-caption text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
+      title={title ?? (iconOnly ? (copied ? t('Copied') : label ?? t('Copy')) : undefined)}
+      aria-label={iconOnly ? (copied ? t('Copied') : label ?? t('Copy')) : undefined}
+      className={`flex items-center gap-1.5 text-caption text-fg-muted hover:text-fg transition-colors whitespace-nowrap ${
+        iconOnly ? 'h-7 w-7 justify-center rounded-md hover:bg-elevated/60' : ''
+      }`}
     >
       {copied ? (
-        <><span className="text-status-success">✓</span> {t('Copied')}</>
+        <><span className="text-status-success">✓</span>{!iconOnly && <> {t('Copied')}</>}</>
+      ) : iconOnly ? (
+        <svg width="13" height="13" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2" /></svg>
       ) : (
         <>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2" /></svg>

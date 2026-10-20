@@ -897,6 +897,8 @@ export default function Configurator() {
   // side panel portals into (see WorkspaceInspector). State, not a ref, so the
   // portals re-render once it mounts.
   const [inspectorSlot, setInspectorSlot] = useState<HTMLElement | null>(null)
+  // Components' directory panel docks a pinned component's tokens the same way.
+  const [componentsSlot, setComponentsSlot] = useState<HTMLElement | null>(null)
   const [inspectorHeaderSlot, setInspectorHeaderSlot] = useState<HTMLElement | null>(null)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
@@ -2551,7 +2553,7 @@ export default function Configurator() {
         <div
           className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
-          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
+          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : componentsCanvas ? componentsSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {/* Home has no rail: the foundations belong to a theme being edited, and the
               way HOME itself is reached is the theme avatar in the top bar. */}
@@ -2912,6 +2914,7 @@ export default function Configurator() {
               onOpenIndex={openComponentsIndex}
               search={componentSearch}
               onSearch={setComponentSearch}
+              onInspectorSlot={setComponentsSlot}
             />
           )}
           {themesCanvas && !homePage && (
