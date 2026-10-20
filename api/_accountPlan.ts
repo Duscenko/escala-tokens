@@ -163,7 +163,8 @@ export async function claimKeyForAccount(
       ? index.accounts.filter((a): a is string => typeof a === 'string' && a.length > 0)
       : []
     stored = await readJsonBlob<AccountPlanRecord>(accountPlanKey(user.id), { fresh: true })
-  } catch {
+  } catch (err) {
+    console.info(JSON.stringify({ evt: 'account_plan', op: 'claim_read_error', error: String((err as Error)?.message ?? err).slice(0, 160) }))
     return 'failed'
   }
   const member = accounts.includes(id)

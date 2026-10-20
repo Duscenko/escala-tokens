@@ -208,7 +208,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const claim = licence?.valid && user
         ? await claimKeyForAccount(user, { hash: licenceKeyHash(licenceKey), expiresAt: licence.expiresAt, customerEmail: licence.customerEmail }, 'cookie')
         : null
-      if (licence?.valid && claim !== 'refused') {
+      // `failed`: the claim could not be read, so whose key it is is unknown.
+      // It falls to the account's own record below, never to the key.
+      if (licence?.valid && claim !== 'refused' && claim !== 'failed') {
         logLicence(licenceKey, project, true, null)
         try { await rememberLicenceSlug(licenceKey, project) } catch { /* the refund webhook misses this slug; the publish itself stands */ }
         licenceUntil = licence.expiresAt
@@ -221,7 +223,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
         }
         if (!plan) {
-          if (licenceKey) logLicence(licenceKey, project, false, claim === 'refused' ? 'other_account' : licence?.reason ?? 'invalid')
+          if (licenceKey) logLicence(licenceKey, project, false, claim === 'refused' ? 'other_account' : claim === 'failed' ? 'unreadable' : licence?.reason ?? 'invalid')
           return res.status(402).json({
             error: licence?.reason === 'expired'
               ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'

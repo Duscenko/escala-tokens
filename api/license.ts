@@ -172,7 +172,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const saved = await ensureAccountProof(user.id, { until: result.expiresAt ?? 'lifetime', keyHash: licenceKeyHash(key) })
       if (saved === 'written') console.info(JSON.stringify({ evt: 'account_plan', op: 'promote', via: 'key' }))
     }
-    if (user && (!result.valid || claim === 'refused')) {
+    // `failed` is a storage error BEFORE this account's right to the key was
+    // decided. It used to fall through to `answer()` → valid, so every account
+    // signed in on a browser holding someone's key read as Pro whenever the
+    // claim could not be read (seen in production: Google sign-ins on the
+    // owner's browser came up Pro). It is judged like `refused`, except that
+    // "not Pro by its own record" is "cannot tell", not "Free".
+    if (user && (!result.valid || claim === 'refused' || claim === 'failed')) {
       // No key of this account's here (a typo, an expired one, a full device
       // cap, someone else's). The account may still be Pro by its own record.
       const plan = await accountPro(user)
@@ -180,12 +186,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.info(JSON.stringify({ evt: 'account_plan', op: 'read', via: plan.via, host: requestHost(req) }))
         return answerAccount(res, plan, keep)
       }
-      if (claim === 'refused') {
+      if (claim === 'refused' || claim === 'failed') {
         // The cookie stays: it is the other account's, on this same browser.
-        return res.status(plan === 'unknown' ? 502 : 200).json({
+        const cannotTell = plan === 'unknown' || claim === 'failed'
+        return res.status(cannotTell ? 502 : 200).json({
           valid: false,
           expiresAt: null,
-          ...(plan === 'unknown' ? { reason: 'unavailable' } : {}),
+          ...(cannotTell ? { reason: 'unavailable' } : {}),
           hasKey: false,
           stored: false,
         })

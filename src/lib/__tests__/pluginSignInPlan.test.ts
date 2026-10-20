@@ -12,6 +12,8 @@ vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
 
 const BLOB = 'https://blob.test/'
 const store = new Map<string, string>()
+/** Blob keys whose read answers 500, as a storage outage would. */
+const broken = new Set<string>()
 
 vi.mock('@vercel/blob', () => {
   class BlobNotFoundError extends Error {}
@@ -44,6 +46,7 @@ function json(status: number, body: unknown) {
 function fakeFetch(input: unknown, init?: { headers?: Record<string, string>; body?: string }): Promise<Response> {
   const url = String(input)
   if (url.startsWith(BLOB)) {
+    if ([...broken].some((prefix) => url.slice(BLOB.length).startsWith(prefix))) return Promise.resolve(json(500, null))
     const raw = store.get(url.slice(BLOB.length))
     return Promise.resolve(raw === undefined ? json(404, null) : json(200, JSON.parse(raw)))
   }
@@ -135,7 +138,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-beforeEach(() => { store.clear() })
+beforeEach(() => { store.clear(); broken.clear() })
 
 describe('plugin sign-in plan', () => {
   it('an account with no key anywhere signs in as Free, not as an unknown that cannot build', async () => {
@@ -271,6 +274,18 @@ describe('the web, in a browser that holds no key', () => {
     // The buyer has it the moment they sign in there, with nothing to paste.
     expect((await pageLoad({ jwt: 'jwt-ana', cookie: true })).body).toMatchObject({ valid: true, via: 'key' })
     expect((await pageLoad({ jwt: 'jwt-ana' })).body).toMatchObject({ valid: true, via: 'account' })
+  })
+
+  it('a sign-in whose claim on the key cannot be read is not Pro (the Google sign-ins report)', async () => {
+    // Production: `bind … result: failed` on the owner's key, and every account
+    // signed in on that browser read valid. A failed read decides nothing.
+    await pageLoad({ jwt: 'jwt-ana', cookie: true })
+    broken.add('licence-accounts/')
+    const bo = await pageLoad({ jwt: 'jwt-bo', cookie: true })
+    expect(bo.body).toMatchObject({ valid: false, reason: 'unavailable' })
+    expect(bo.body.via).toBeUndefined()
+    // The owner is still Pro: the account's own record answers.
+    expect((await pageLoad({ jwt: 'jwt-ana', cookie: true })).body).toMatchObject({ valid: true, via: 'account' })
   })
 
   it('with nobody signed in, the key in the browser still answers for itself', async () => {
