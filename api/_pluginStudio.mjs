@@ -70,15 +70,24 @@ var init_brandThemes = __esm({
   }
 });
 
+// src/lib/openBeta.ts
+var OPEN_BETA, BETA_MAX_BRANDS;
+var init_openBeta = __esm({
+  "src/lib/openBeta.ts"() {
+    OPEN_BETA = true;
+    BETA_MAX_BRANDS = 5;
+  }
+});
+
 // src/lib/entitlement.ts
 function entitlementAt(now) {
-  const promo = now.getTime() <= Date.parse(PROMO_ENDS_AT);
+  const promo = OPEN_BETA || now.getTime() <= Date.parse(PROMO_ENDS_AT);
   const launchPrice = now.getTime() <= Date.parse(PRO_LAUNCH_ENDS_AT);
   return {
     promo,
     promoEndsAt: PROMO_ENDS_AT,
     pro: promo,
-    maxThemes: promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
+    maxThemes: OPEN_BETA ? BETA_MAX_BRANDS : promo ? PRO_MAX_THEMES : FREE_MAX_THEMES,
     launchPrice,
     launchEndsAt: PRO_LAUNCH_ENDS_AT,
     priceUsd: PRO_PRICE_USD,
@@ -89,6 +98,8 @@ function entitlementAt(now) {
 var PROMO_ENDS_AT, FREE_MAX_MODES, PRO_MAX_MODES, FREE_MAX_THEMES, PRO_MAX_THEMES, PRO_PRICE_USD, PRO_LAUNCH_ENDS_AT;
 var init_entitlement = __esm({
   "src/lib/entitlement.ts"() {
+    init_openBeta();
+    init_openBeta();
     PROMO_ENDS_AT = "2026-10-07T23:59:59+02:00";
     FREE_MAX_MODES = 10;
     PRO_MAX_MODES = 40;
@@ -3416,6 +3427,9 @@ var init_licence = __esm({
 });
 
 // src/lib/freeThemeLimit.ts
+function betaBrandLimitReached(count) {
+  return OPEN_BETA && count >= BETA_MAX_BRANDS;
+}
 function freeAnotherThemeBlocked(input) {
   return input.accountsOn && input.signedIn && !input.pro && input.count >= FREE_MY_THEME_LIMIT;
 }
@@ -3423,13 +3437,14 @@ function licenceStillOpen(status, hasKey) {
   return hasKey && (status === "checking" || status === "unavailable");
 }
 function freeAnotherThemeBlockedNow(count) {
+  if (OPEN_BETA) return betaBrandLimitReached(count);
   if (!accountsEnabled || !hasStoredSession()) return false;
   if (entitlementAt(/* @__PURE__ */ new Date()).promo) return false;
   const licence = readLicenceState();
   if (licence.status === "valid" || licenceStillOpen(licence.status, licence.hasKey)) return false;
   return freeAnotherThemeBlocked({ accountsOn: true, signedIn: true, pro: false, count });
 }
-var FREE_MY_THEME_LIMIT, FREE_ANOTHER_THEME_ERROR;
+var FREE_MY_THEME_LIMIT, FREE_ANOTHER_THEME_ERROR, BETA_BRAND_LIMIT_ERROR;
 var init_freeThemeLimit = __esm({
   "src/lib/freeThemeLimit.ts"() {
     init_auth();
@@ -3438,6 +3453,7 @@ var init_freeThemeLimit = __esm({
     init_supabase();
     FREE_MY_THEME_LIMIT = 3;
     FREE_ANOTHER_THEME_ERROR = "Free includes one design system with three brands, each with Light and Dark. Pro adds brands and systems.";
+    BETA_BRAND_LIMIT_ERROR = "During the open beta a design system holds up to five brands.";
   }
 });
 
@@ -4722,10 +4738,11 @@ var init_semanticArchitectures = __esm({
       { group: "content", key: "on-action", light: "{on:accent.solid}", dark: "{on:accent.solid}" },
       { group: "content", key: "inverse", light: "{neutral.1}", dark: "{neutral-dark.1}" },
       // ink on surface.inverse
-      // Disabled ink — tone 7. Categorical used to have no disabled ink at all and
-      // the preview panel fell back to another scheme's value for the slot;
-      // adopting the tone natively means that fallback is no longer needed.
-      { group: "content", key: "disabled", light: "{neutral.7}", dark: "{neutral-dark.7}" },
+      // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
+      // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
+      // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
+      // ≈2.8–3.0:1 — muted, still well below body text (≈9:1), still legible.
+      { group: "content", key: "disabled", light: "{neutral.7}", dark: "{neutral-dark.10}" },
       // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
       // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
       // solved for AA as text (same bug class as shadcn's `muted.foreground` fix
@@ -5722,7 +5739,7 @@ var init_forms = __esm({
       fill: c("surface.layer-2"),
       stroke: c("border.subtle"),
       strokeWidth: "stroke.control",
-      radius: "radius.overlay",
+      radius: "radius.action",
       shadow: "shadow.lg",
       paddingX: "spacing.1",
       paddingY: "spacing.1"
@@ -6027,7 +6044,7 @@ var init_forms = __esm({
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -6056,6 +6073,7 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    OVERLAY_TITLE = "type.heading-2xs";
     DIALOG = {
       key: "Dialog",
       slots: ["content", "overlay", "header", "title", "description", "footer"],
@@ -6074,8 +6092,8 @@ var init_surfaces = __esm({
             gap: "spacing.gap-group",
             shadow: "shadow.2xl"
           },
-          header: { gap: "spacing.gap-tight" },
-          title: { text: c("content.primary"), font: "type.heading-sm" },
+          header: { gap: "spacing.1_5" },
+          title: { text: c("content.primary"), font: OVERLAY_TITLE },
           description: { text: c("content.secondary"), font: "type.body-sm" },
           footer: { gap: "spacing.gap-control" }
         }))
@@ -6105,15 +6123,19 @@ var init_surfaces = __esm({
           },
           "item:not(:first-child)": { stroke: c("border.subtle"), strokeTopWidth: "stroke.divider" },
           trigger: {
+            // A row label, not a section heading: shadcn's `text-sm font-medium`.
+            // `heading-xs` (20/600) made three questions outweigh the answer.
             text: c("content.primary"),
-            font: "type.heading-xs",
+            font: "type.label",
             paddingX: "spacing.4",
             paddingY: "spacing.3",
             gap: "spacing.2_5"
           },
           "trigger:hover": { fill: c("action.ghost.hover") },
           icon: { text: c("content.secondary") },
-          content: { text: c("content.secondary"), font: "type.body-sm", paddingX: "spacing.4", paddingY: "spacing.3" }
+          // The answer hugs its question: no top inset (shadcn's `pt-0`), so the
+          // trigger's own bottom padding is the only gap between them.
+          content: { text: c("content.secondary"), font: "type.body-sm", paddingX: "spacing.4", paddingBottom: "spacing.3" }
         }))
       ]
     };
@@ -6151,7 +6173,7 @@ var init_surfaces = __esm({
             gap: "spacing.1_5",
             text: c("content.primary")
           },
-          title: { text: c("content.primary"), font: "type.heading-xs" },
+          title: { text: c("content.primary"), font: OVERLAY_TITLE },
           body: { text: c("content.secondary"), font: "type.body-sm" },
           arrow: { paint: c("surface.layer-2") }
         }))
@@ -6250,7 +6272,7 @@ var init_surfaces = __esm({
           },
           header: { gap: "spacing.1_5" },
           media: { fill: c("surface.layer-1"), text: c("content.primary"), radius: "radius.action", width: "size.control", height: "size.control" },
-          title: { text: c("content.primary"), font: "type.heading-sm" },
+          title: { text: c("content.primary"), font: OVERLAY_TITLE },
           description: { text: c("content.secondary"), font: "type.body-sm" },
           footer: { gap: "spacing.gap-control" }
         })),
@@ -6276,7 +6298,7 @@ var init_surfaces = __esm({
             text: c("content.primary")
           },
           header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
-          title: { text: c("content.primary"), font: "type.heading-sm" },
+          title: { text: c("content.primary"), font: OVERLAY_TITLE },
           description: { text: c("content.secondary"), font: "type.body-sm" },
           footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
         }))
@@ -6299,7 +6321,7 @@ var init_surfaces = __esm({
           },
           handle: { fill: c("surface.layer-1"), radius: "radius.pill" },
           header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
-          title: { text: c("content.primary"), font: "type.heading-sm" },
+          title: { text: c("content.primary"), font: OVERLAY_TITLE },
           description: { text: c("content.secondary"), font: "type.body-sm" },
           footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
         }))
@@ -6329,10 +6351,12 @@ var init_surfaces = __esm({
     ITEM_VARIANTS = ["default", "outline", "muted"];
     ITEM_SIZES = ["default", "sm", "xs"];
     ITEM_GEOMETRY = {
-      default: { paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.2_5" },
-      sm: { paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.2_5" },
-      xs: { paddingX: "spacing.2_5", paddingY: "spacing.2", gap: "spacing.2" }
+      default: { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" },
+      sm: { paddingX: "spacing.4", paddingY: "spacing.3", gap: "spacing.2_5" },
+      xs: { paddingX: "spacing.3", paddingY: "spacing.2", gap: "spacing.2" }
     };
+    ITEM_DESCRIPTION = { default: "type.body-sm", sm: "type.caption", xs: "type.caption" };
+    ITEM_CONTENT_GAP = { default: "spacing.1", sm: "spacing.0_5", xs: "spacing.0_5" };
     ITEM_MEDIA = { default: "size.control", sm: "size.compact", xs: "size.xs" };
     ITEM = {
       key: "Item",
@@ -6342,9 +6366,8 @@ var init_surfaces = __esm({
         part({}, () => ({
           root: { radius: "radius.action", strokeWidth: "stroke.control", text: c("content.primary") },
           media: { text: c("content.primary") },
-          content: { gap: "spacing.1" },
           title: { text: c("content.primary"), font: "type.label", gap: "spacing.2" },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
+          description: { text: c("content.secondary") },
           actions: { gap: "spacing.2" }
         })),
         part({ Variant: ITEM_VARIANTS }, (variant) => ({
@@ -6352,6 +6375,8 @@ var init_surfaces = __esm({
         })),
         part({ Size: ITEM_SIZES }, (size) => ({
           root: ITEM_GEOMETRY[size],
+          content: { gap: ITEM_CONTENT_GAP[size] },
+          description: { font: ITEM_DESCRIPTION[size] },
           'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: "radius.control" }
         }))
       ]
@@ -6497,7 +6522,7 @@ function menu(key2) {
       fill: c("surface.layer-2"),
       stroke: c("border.subtle"),
       strokeWidth: "stroke.control",
-      radius: "radius.overlay",
+      radius: MENU_PANEL_RADIUS,
       shadow: "shadow.lg",
       paddingX: "spacing.1",
       paddingY: "spacing.1"
@@ -6519,7 +6544,7 @@ function menu(key2) {
   };
   return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
 }
-var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -6537,7 +6562,7 @@ var init_navigation = __esm({
           trigger: { stroke: NONE, strokeBottomWidth: "stroke.md" },
           'trigger[data-state="active"]': { text: c("content.primary"), stroke: c("content.primary") }
         } : {
-          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.0_5", paddingY: "spacing.0_5", gap: "spacing.0_5" },
+          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
           trigger: { radius: "radius.control" },
           'trigger[data-state="active"]': { fill: c("surface.page"), text: c("content.primary"), shadow: "shadow.xs" }
         })
@@ -6577,8 +6602,9 @@ var init_navigation = __esm({
         // elevation contract says (layer-1 is the card it sits on).
         part({}, () => ({
           root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
-          pill: { fill: c("surface.input"), radius: "radius.action", shadow: "shadow.xs" },
-          item: { text: c("content.secondary"), font: "type.button", radius: "radius.action" },
+          // Concentric: the track's `radius.action` minus its `spacing.1` inset.
+          pill: { fill: c("surface.input"), radius: "radius.control", shadow: "shadow.xs" },
+          item: { text: c("content.secondary"), font: "type.button", radius: "radius.control" },
           "item:hover": { text: c("content.primary") },
           'item[aria-checked="true"]': { text: c("content.primary") }
         })),
@@ -6616,11 +6642,12 @@ var init_navigation = __esm({
             paddingY: "spacing.1",
             gap: "spacing.0_5"
           },
-          pill: { fill: c("action.primary.default"), radius: "radius.action" },
+          // A pill track holds pill cells (concentric at any inset).
+          pill: { fill: c("action.primary.default"), radius: "radius.pill" },
           cell: {
             text: c("content.secondary"),
             font: "type.body-sm",
-            radius: "radius.action",
+            radius: "radius.pill",
             height: "size.compact",
             minHeight: "size.compact",
             paddingX: "spacing.1_5"
@@ -6650,6 +6677,7 @@ var init_navigation = __esm({
         }))
       ]
     };
+    MENU_PANEL_RADIUS = "radius.action";
     DROPDOWN_MENU = menu("DropdownMenu");
     CONTEXT_MENU = menu("ContextMenu");
     COMMAND = {
@@ -6714,7 +6742,7 @@ var init_navigation = __esm({
           button: {
             text: c("content.primary"),
             font: "type.body-sm",
-            radius: "radius.control",
+            radius: "radius.action",
             height: "size.compact",
             paddingX: "spacing.2",
             gap: "spacing.2"
@@ -6726,7 +6754,7 @@ var init_navigation = __esm({
           'button[data-size="lg"]': { height: "size.touch" }
         })),
         part({ Variant: ["sidebar", "floating", "inset"] }, (variant) => ({
-          root: variant === "floating" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", shadow: "shadow.sm" } : variant === "sidebar" ? { stroke: c("border.default"), strokeWidth: "stroke.control" } : { stroke: NONE }
+          root: variant === "floating" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", shadow: "shadow.sm" } : variant === "sidebar" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container" } : { stroke: NONE }
         }))
       ]
     };
@@ -6743,8 +6771,8 @@ var init_navigation = __esm({
             strokeWidth: "stroke.control",
             radius: "radius.action",
             height: "size.compact",
-            paddingX: "spacing.0_5",
-            paddingY: "spacing.0_5",
+            paddingX: "spacing.1",
+            paddingY: "spacing.1",
             gap: "spacing.0_5"
           },
           trigger: { text: c("content.primary"), font: "type.label", radius: "radius.control", paddingX: "spacing.2", paddingY: "spacing.0_5" },
@@ -6755,7 +6783,7 @@ var init_navigation = __esm({
             fill: c("surface.layer-2"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
-            radius: "radius.overlay",
+            radius: MENU_PANEL_RADIUS,
             shadow: "shadow.lg",
             paddingX: "spacing.1",
             paddingY: "spacing.1"
@@ -6803,7 +6831,7 @@ var init_navigation = __esm({
 });
 
 // src/lib/recipes/feedback.ts
-var ALERT_VARIANTS, ALERT, SONNER, SKELETON, EMPTY;
+var ALERT_VARIANTS, ALERT, SONNER_TYPES, SONNER_ICON, SONNER, SKELETON, EMPTY;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
@@ -6838,10 +6866,19 @@ var init_feedback = __esm({
         })
       ]
     };
+    SONNER_TYPES = ["default", "success", "info", "warning", "error", "loading"];
+    SONNER_ICON = {
+      default: "content.primary",
+      loading: "content.secondary",
+      success: "status.success.content",
+      info: "status.info.content",
+      warning: "status.warning.content",
+      error: "status.critical.content"
+    };
     SONNER = {
       key: "Sonner",
       slots: ["root", "icon", "title", "description", "action"],
-      defaults: {},
+      defaults: { Type: "default" },
       dom: {
         // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
         // after ours: the toaster and `[data-styled]` in the selector outrank it.
@@ -6861,7 +6898,6 @@ var init_feedback = __esm({
             paddingY: "spacing.4",
             gap: "spacing.1_5"
           },
-          icon: { text: c("content.primary") },
           title: { font: "type.label" },
           description: { text: c("content.secondary"), font: "type.body-sm" },
           action: {
@@ -6871,7 +6907,8 @@ var init_feedback = __esm({
             paddingX: "spacing.2",
             font: "type.caption"
           }
-        }))
+        })),
+        part({ Type: SONNER_TYPES }, (type) => ({ icon: { text: c(SONNER_ICON[type]) } }))
       ]
     };
     SKELETON = {
@@ -10500,6 +10537,7 @@ init_colorUtils();
 init_utils();
 init_themeLibrary();
 init_freeThemeLimit();
+init_entitlement();
 
 // src/lib/libraryStatus.ts
 init_themeLibrary();
@@ -10868,8 +10906,8 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
   }
   if (!editKey) {
     const saved = savedBrandKeysFrom(s).length;
-    if (freeAnotherThemeBlockedNow(saved)) return { error: FREE_ANOTHER_THEME_ERROR };
-    if (freeAnotherThemeBlockedNow(1)) {
+    if (freeAnotherThemeBlockedNow(saved)) return { error: OPEN_BETA ? BETA_BRAND_LIMIT_ERROR : FREE_ANOTHER_THEME_ERROR };
+    if (!OPEN_BETA && freeAnotherThemeBlockedNow(1)) {
       const kept = new Set(savedBrandKeysFrom(s));
       for (const key3 of Object.keys(useThemeSetup.getState().unsaved)) {
         if (kept.has(key3) || !s.themes[key3]) continue;
