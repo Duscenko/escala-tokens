@@ -1704,7 +1704,7 @@ export default function ColorPrimitives({
                     title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
                     aria-label={f.label}
                     className={`${COLLAPSED_RAIL_WELL} rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                      isActive ? 'bg-elevated shadow-sm' : 'hover:bg-elevated/50'
+                      isActive ? 'bg-fg/[0.09]' : 'hover:bg-fg/[0.06]'
                     }`}
                   >
                     <FamilySwatch family={f} dark={darkPreview} />
@@ -1721,7 +1721,7 @@ export default function ColorPrimitives({
             aria-label="Gradients"
             title="Gradients"
             className={`${COLLAPSED_RAIL_WELL} rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-              gradientsOpen ? 'bg-elevated shadow-sm ring-2 ring-accent-ui' : 'hover:bg-elevated/50'
+              gradientsOpen ? 'bg-elevated shadow-sm ring-2 ring-accent-ui' : 'hover:bg-fg/[0.06]'
             }`}
           >
             <GradientRailMark previewTheme={previewTheme} />
@@ -1852,7 +1852,7 @@ export default function ColorPrimitives({
                   <div
                     aria-current={isActive}
                     className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
-                      isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                      isActive ? 'bg-fg/[0.09] text-fg' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
                     }`}
                   >
                     <FamilySwatch
@@ -2069,7 +2069,7 @@ export default function ColorPrimitives({
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${col} — shown in preview` : `Show ${col} in the preview`}
                         className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
-                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-fg/[0.06]'
                         }`}
                       >
                         <EyeIcon active={isPreviewed} />

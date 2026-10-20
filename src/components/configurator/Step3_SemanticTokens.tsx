@@ -1325,7 +1325,7 @@ export default function Step3_SemanticTokens({
                   className={`rounded-lg transition-colors ${
                     railCollapsed ? COLLAPSED_RAIL_WELL : 'flex w-full items-center gap-2.5 px-2.5 py-2 text-left'
                   } ${
-                    isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    isActive ? 'bg-fg/[0.09] text-accent-ui' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
                   }`}
                 >
                   <span className="grid size-[16px] place-items-center flex-shrink-0" aria-hidden>{item.icon}</span>
@@ -1401,7 +1401,7 @@ export default function Step3_SemanticTokens({
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${label} — shown in preview` : `Show ${label} in the preview`}
                         className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1.5 rounded-md transition-colors ${
-                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-fg/[0.06]'
                         }`}
                       >
                         <EyeIcon active={isPreviewed} />
@@ -1590,7 +1590,7 @@ export default function Step3_SemanticTokens({
                       className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
                         isPreviewed
                           ? 'text-accent-ui'
-                          : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                          : 'text-fg-faint hover:text-fg-muted hover:bg-fg/[0.06]'
                       }`}
                     >
                       <EyeIcon active={isPreviewed} />

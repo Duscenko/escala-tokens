@@ -523,7 +523,7 @@ export default function Step4_Typography({
                   onClick={() => setActiveCategory(c.key)}
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors ${
-                    isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    isActive ? 'bg-fg/[0.09] text-fg' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
                   }`}
                 >
                   <span className="text-ui flex-1 min-w-0 truncate">{c.label}</span>

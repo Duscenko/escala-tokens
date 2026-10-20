@@ -121,7 +121,7 @@ export default function ThemeCodeScopeRail({
                 tabIndex={selectedFormat ? 0 : -1}
                 onClick={() => onFormat(item.key)}
                 className={`flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                  selectedFormat ? 'bg-elevated font-semibold text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  selectedFormat ? 'bg-fg/[0.09] font-semibold text-fg' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
                 }`}
               >
                 <FormatGlyph format={item.key} />

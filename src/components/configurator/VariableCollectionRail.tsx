@@ -179,7 +179,7 @@ export function RailGroupNav<Key extends string>({
             className={`rounded-lg text-left transition-colors ${
               collapsed ? COLLAPSED_RAIL_WELL : 'flex w-full items-center gap-2 px-2 py-2'
             } ${
-              selected ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+              selected ? 'bg-fg/[0.09] text-fg' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
             }`}
           >
             {collapsed ? (

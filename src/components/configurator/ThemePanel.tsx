@@ -912,7 +912,7 @@ export function ThemeForm({
             type="button"
             onClick={() => setAdjustOpen((v) => !v)}
             aria-expanded={adjustOpen}
-            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-elevated/50 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-fg/[0.06] transition-colors"
           >
             <span className="flex-1 min-w-0">
               <span className="block text-body font-medium text-fg">{t('Adjust colours')}</span>

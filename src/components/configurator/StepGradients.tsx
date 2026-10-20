@@ -79,7 +79,7 @@ export function GradientNavList({
               onClick={() => onSelect(g.id)}
               aria-current={active ? 'page' : undefined}
               className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                active ? 'bg-fg/[0.09] text-accent-ui' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
               }`}
             >
               <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: cssOf(g) }} aria-hidden />

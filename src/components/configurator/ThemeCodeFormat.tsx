@@ -6,8 +6,6 @@ import { buildShadcnGlobalsCss } from '../../lib/shadcnGlobals'
 import type { TokenJSON } from '../../lib/agentBundle/types'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
-import { agentSetupPrompt } from '../../lib/agentInstall'
-import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { useFreeTier } from '../../lib/access'
@@ -21,7 +19,6 @@ import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORK
 import { ChromeAnchoredDropdown } from './TopNav'
 import ThemeCodeScopeRail, { FormatGlyph, resolveCodeTheme, type CodeFormatKey, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
-import { MCP_VISIBLE } from '../../lib/featureFlags'
 
 export type { CodeThemeScope }
 export { resolveCodeTheme }
@@ -55,15 +52,6 @@ function CopyIcon({ done = false }: { done?: boolean }) {
     return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m3.25 8.25 3 3 6.5-6.5" /></svg>
   }
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden><rect x="5.25" y="2.25" width="7.5" height="9" rx="1.5" /><path d="M10.75 12v.75a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5v-8a1.5 1.5 0 0 1 1.5-1.5H4" /></svg>
-}
-
-function DestLogo({ name }: { name: 'claudecode' | 'cursor' | 'figma' }) {
-  return (
-    <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center" aria-hidden>
-      <img src={`/ide-logos/${name}-dark.svg`} alt="" className="h-3.5 w-3.5 dark:hidden" />
-      <img src={`/ide-logos/${name}-light.svg`} alt="" className="hidden h-3.5 w-3.5 dark:block" />
-    </span>
-  )
 }
 
 async function writeClipboard(text: string) {
@@ -103,6 +91,10 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
     window.setTimeout(() => setCopied(false), 1800)
     showToast(agentContext ? t('Copied the agent context. Paste it into any agent.') : t('Copied the file on this page.'))
   }
+  // It sits in the file header, whose fill IS the chip's (`--chip-rest`): with
+  // no edge the control had no shape, and a hovered or open half lit up as a
+  // loose block. The hairline gives the hover and open fills a frame to sit in.
+  const edge = 'border border-line'
   const label = (
     <>
       <CopyIcon done={copied} />
@@ -116,7 +108,7 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
         type="button"
         disabled={disabled}
         onClick={() => void copyText(pageContent)}
-        className={`inline-flex h-8 items-center gap-2 rounded-lg px-2.5 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} disabled:pointer-events-none disabled:opacity-40 ${block ? 'w-full justify-center' : 'flex-shrink-0'} ${COPY_FOCUS}`}
+        className={`inline-flex h-8 items-center gap-2 rounded-lg px-2.5 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${edge} ${CHROME_CONTROL_HOVER} disabled:pointer-events-none disabled:opacity-40 ${block ? 'w-full justify-center' : 'flex-shrink-0'} ${COPY_FOCUS}`}
       >
         {label}
       </button>
@@ -127,11 +119,11 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
   // chevron picks which theme to copy.
   const half = `inline-flex h-full items-center transition-shadow ${CHROME_CONTROL_HOVER} disabled:pointer-events-none disabled:opacity-40 ${COPY_FOCUS}`
   return (
-    <div ref={rootRef} className={`inline-flex h-8 flex-shrink-0 overflow-hidden rounded-lg text-caption font-medium text-fg ${CHROME_CONTROL_SHELL}`}>
+    <div ref={rootRef} className={`inline-flex h-8 flex-shrink-0 overflow-hidden rounded-lg text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${edge}`}>
       <button type="button" disabled={disabled} onClick={() => void copyText(pageContent)} className={`${half} gap-2 pl-2.5 pr-2`}>
         {label}
       </button>
-      <span aria-hidden className="my-2 w-px bg-fg/15" />
+      <span aria-hidden className="w-px self-stretch bg-line" />
       <button
         type="button"
         disabled={disabled}
@@ -183,52 +175,6 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
         })}
       </ChromeAnchoredDropdown>
     </div>
-  )
-}
-
-/**
- * Where the theme goes next. "Use this theme" lands here, so the page opens
- * on the question it exists to answer — which agent — with one click each:
- * Claude and Cursor copy the MCP setup prompt to paste into your LLM.
- */
-function AgentHandoff({ themeName }: { themeName: string }) {
-  const { t } = useI18n()
-
-  const copySetupPrompt = async (client: 'claude' | 'cursor') => {
-    const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), client)
-    const copiedOk = await writeClipboard(prompt)
-    showToast(copiedOk
-      ? t('Copied the setup prompt. Paste it into {client}.', { client: client === 'claude' ? 'Claude' : 'Cursor' })
-      : t('Couldn’t copy — try again'))
-  }
-
-  // GHOST links, not filled chips: the page already carries a row of filled
-  // controls (filters, Copy, Edit brand), and three more fills made it read as
-  // a wall of buttons. These leave the app, so the ↗ says "opens elsewhere" —
-  // the cue that they are actions — and hover gives them the chip wash.
-  const btn = `group inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-[color,background-color] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg ${COPY_FOCUS}`
-  const items: { key: string; icon: ReactNode; title: string; hint: string; run: () => void }[] = [
-    { key: 'claude', icon: <DestLogo name="claudecode" />, title: t('Claude'), hint: t('Copy the MCP setup prompt for Claude'), run: () => void copySetupPrompt('claude') },
-    { key: 'cursor', icon: <DestLogo name="cursor" />, title: t('Cursor'), hint: t('Copy the MCP setup prompt for Cursor'), run: () => void copySetupPrompt('cursor') },
-  ]
-
-  // A strip, not a card: three destinations don't need a heading and a
-  // paragraph to explain them, and every pixel spent here was taken from the
-  // file below. "Copy context" left this row — the file's own Copy button
-  // copies exactly the context on screen, so it was the same action twice.
-  return (
-    <section aria-label={t('Give {name} to your agent', { name: themeName })} className="mx-3 mb-3 flex flex-shrink-0 flex-wrap items-center gap-1">
-      <span className="mr-1 pl-2 text-caption text-fg-faint">{t('Send to your agent')}</span>
-      {items.map((item) => (
-        <button key={item.key} type="button" onClick={item.run} title={item.hint} aria-label={item.hint} className={btn}>
-          {item.icon}
-          <span className="truncate underline decoration-fg/25 underline-offset-[3px] transition-colors group-hover:decoration-fg/60">{item.title}</span>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint transition-[color,transform] duration-150 group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-fg">
-            <path d="M4 8 8 4M4.5 4H8v3.5" />
-          </svg>
-        </button>
-      ))}
-    </section>
   )
 }
 
@@ -484,9 +430,6 @@ export default function ThemeCodeFormat({
               <span className="font-medium text-fg">{active.label}</span>
             </nav>
           </header>
-        ) : null}
-        {MCP_VISIBLE && effectiveScope ? (
-          <AgentHandoff themeName={scopedLabel} />
         ) : null}
         <div className="flex min-h-0 flex-1 p-3 pt-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
