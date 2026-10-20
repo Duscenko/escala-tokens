@@ -53,6 +53,11 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "Attach running Vite",
+      "url": "http://localhost:5173",
+      "port": 5173
     }
   ]
 }
