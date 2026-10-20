@@ -2,7 +2,7 @@
 //
 // There is no hosted sync to sign in to any more, so the system travels the
 // way an agent context does: one message on the clipboard. It is written for
-// two readers at once — the plugin (Home → Agent Context → Import) and any AI
+// two readers at once — the plugin (its context card → Import into this file) and any AI
 // agent the person pastes it into — so it is Markdown with the complete Escala
 // JSON payload in ONE fenced block. The plugin reads only that block
 // (`extractEscalaPayload`, mirrored in escala-figma-plugin/src/ui.html); the
@@ -66,7 +66,7 @@ export function buildFigmaContext(input: FigmaContextInput): FigmaContext {
  *  JSON fence the plugin imports. */
 export function figmaContextMarkdown(parts: { project: string; brandLines: string[]; viewports: string[]; json: string }): string {
   const body = [
-    'Paste this whole message into the Escala plugin in Figma: Home → Agent Context → Import.',
+    'Paste this whole message into the Escala plugin in Figma: the context card (⌘V) → Import into this file.',
     'An AI agent can read it too — the JSON block below is the complete token system (primitives, semantic roles, typography, dimensions, components).',
     '',
     `- Brands: ${parts.brandLines.join(' · ') || '—'}`,

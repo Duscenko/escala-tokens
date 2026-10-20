@@ -43,7 +43,7 @@ const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 // Hosted sync is off, so nothing is published from here. The page builds ONE
 // message (`lib/figmaContext`): Markdown plus the Escala JSON scoped to what
 // the controls panel has checked (file, brands × themes, viewports). The
-// person copies it into the plugin's Home → Agent Context. The controls live
+// person pastes it into the plugin's context card. The controls live
 // in `FigmaControlsPanel` (inspector); this surface only shows the stack.
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenGithub,
@@ -84,7 +84,7 @@ export default function FigmaSyncView({
     try {
       await navigator.clipboard.writeText(context.text)
       setCopied(true)
-      showToast(t('Copied. In Figma, open the Escala plugin → Agent Context and paste it.'))
+      showToast(t('Copied. In Figma, open the Escala plugin and paste it in the context card.'))
     } catch {
       showToast(t('Couldn’t copy — try again'))
     }
@@ -92,8 +92,11 @@ export default function FigmaSyncView({
 
   const steps = [
     { title: t('Copy the context'), hint: t('Your system as one message, scoped by the panel on the right.') },
-    { title: t('Open the Escala plugin in Figma'), hint: t('On Home, choose Agent Context.') },
-    { title: t('Paste it and press Import'), hint: t('Variables, styles and components land in your file.') },
+    // The plugin's own words: an empty file opens on "Set up your design
+    // system", whose context card takes the paste; the button is "Import into
+    // this file". A file that already holds a system pastes on its Import page.
+    { title: t('Open the Escala plugin in Figma'), hint: t('A new file opens on “Set up your design system”.') },
+    { title: t('Paste it in the context card'), hint: t('Press ⌘V, then Import into this file. A file that already has a system: paste it on Import.') },
   ]
 
   return (

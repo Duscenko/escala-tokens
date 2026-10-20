@@ -215,7 +215,7 @@ export function useAboutSections(): {
           <li>{t('Install Escala Tokens from Figma Community.')}</li>
           <li>{t('In Escala, open Figma and press Copy context.')}</li>
           <li>{t('In the Figma desktop app, run')} <span className="text-fg">Plugins → Escala Tokens</span>.</li>
-          <li>{t('Paste it into Home → Agent Context and press Import: variables, styles and components land in your file.')}</li>
+          <li>{t('Paste it into the plugin’s context card (⌘V) and press Import into this file: variables, styles and components land in your file.')}</li>
         </ol>
         <P>
           {t("The same context works in any AI agent: paste it into Cursor, Claude Code or Copilot and it builds with your real tokens. You choose which brands, themes and viewports it carries.")}
@@ -1059,7 +1059,7 @@ export function AboutHome({
           flip
           eyebrow={t('05 · Agent context for Figma')}
           title={t('Copy your system. Paste it into Figma or any AI agent.')}
-          body={t('Press Copy context, open the Escala plugin in Figma, paste it into Home → Agent Context and press Import. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
+          body={t('Press Copy context, open the Escala plugin in Figma, paste it into the context card and press Import into this file. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
           points={[
             t('One message carries the whole system'),
             t('Pick which brands, themes and viewports it includes'),

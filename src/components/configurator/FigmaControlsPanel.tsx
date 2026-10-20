@@ -285,7 +285,7 @@ export default function FigmaControlsPanel({
             layout="stacked"
             version={PLUGIN_VERSION}
             updateAvailable={pluginUpdateAvailable}
-            info="Sign in from the Escala plugin. Your folders show up there. Paste the agent context into Home → Agent Context and press Import."
+            info="Sign in from the Escala plugin. Your folders show up there. Paste the agent context into the plugin’s context card and press Import into this file."
           />
         </div>
       </aside>

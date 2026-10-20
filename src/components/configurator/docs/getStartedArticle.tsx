@@ -60,12 +60,12 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     return [
       '# Use in Figma',
       '',
-      'Install the Escala plugin once. Copy the agent context from the Figma page and paste it into the plugin — Home → Agent Context → Import.',
+      'Install the Escala plugin once. Copy the agent context from the Figma page and paste it into the plugin’s context card, then Import into this file.',
       '',
       `1. Install Escala Tokens from Figma Community: ${FIGMA_PLUGIN_COMMUNITY}`,
       '2. In the Figma desktop app, run Plugins → Escala Tokens.',
       '3. On escalatokens.com open Figma, check brands and viewports, then Copy context.',
-      '4. In the plugin, Home → Agent Context → paste → Import.',
+      '4. In the plugin, paste it in the context card (⌘V) → Import into this file.',
       '5. Optional file: Export → Escala JSON (the same payload, as a download).',
       '',
     ].join('\n')
@@ -220,12 +220,12 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
       <DocSection
         id="context"
         title={t('Copy the context')}
-        description={t('The Figma page builds one message — your brands, themes and viewports, plus the Escala JSON. Paste it into the plugin: Home → Agent Context → Import.')}
+        description={t('The Figma page builds one message — your brands, themes and viewports, plus the Escala JSON. Paste it into the plugin’s context card, then Import into this file.')}
       >
         <ol className="list-decimal pl-4 text-ui text-fg-muted leading-relaxed flex flex-col gap-1 mb-3">
           <li>{t('Open Figma in the workspace. Check the brands and viewports to ship.')}</li>
           <li>{t('Press Copy context.')}</li>
-          <li>{t('In the plugin, Home → Agent Context → paste → Import.')}</li>
+          <li>{t('In the plugin, paste it in the context card (⌘V) → Import into this file.')}</li>
         </ol>
         <ExitButton onClick={exits.onOpenFigmaSync}>{t('Open Figma')}</ExitButton>
       </DocSection>

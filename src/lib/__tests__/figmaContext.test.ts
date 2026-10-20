@@ -9,7 +9,7 @@ describe('Figma agent context', () => {
     expect(text).toContain('format: agent-context/v1')
     expect(text).toContain('source: escala-tokens')
     expect(text).toContain('# Agent context — Acme')
-    expect(text).toContain('Agent Context')
+    expect(text).toContain('context card (⌘V) → Import into this file')
     expect(text).toContain('Brands: Acme (Light + Dark)')
     expect(text).toContain('Viewports: Desktop · Mobile')
     expect(text).toContain('```json escala-tokens')

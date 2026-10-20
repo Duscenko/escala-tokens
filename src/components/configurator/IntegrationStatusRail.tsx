@@ -191,7 +191,7 @@ export default function IntegrationStatusRail({
             ) : (
               <>
                 <StatusRow label="Bridge" value="Copy context" />
-                <StatusRow label="Plugin" value="Agent Context → Import" />
+                <StatusRow label="Plugin" value="Context card → Import" />
                 <StatusRow
                   label="GitHub"
                   value={
