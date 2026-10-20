@@ -139,11 +139,21 @@ export function resolveRecipe(recipe: ComponentRecipe, v: AxisValues = {}): Slot
   return out
 }
 
-/** `min(a,b)` — the smaller of two lengths (a radius capped at a step).
- *  Returns its terms, or null for a plain ref. */
-export function minTerms(ref: string): string[] | null {
-  const m = /^min\((.+)\)$/.exec(ref)
-  return m ? m[1].split(',').map((s) => s.trim()) : null
+/** A length computed from two refs: `min(a,b)` — the smaller (a radius
+ *  capped at a step); `sub(a,b)` — `a − b`, never below 0 (an inner radius
+ *  concentric with its panel: the panel's radius minus its inset). */
+export function refFn(ref: string): { fn: 'min' | 'sub'; terms: string[] } | null {
+  const m = /^(min|sub)\((.+)\)$/.exec(ref)
+  return m ? { fn: m[1] as 'min' | 'sub', terms: m[2].split(',').map((s) => s.trim()) } : null
+}
+/** The CSS for a computed ref, given how one term is written. */
+export function refFnCss(f: { fn: 'min' | 'sub'; terms: string[] }, term: (ref: string) => string): string {
+  const parts = f.terms.map(term)
+  return f.fn === 'min' ? `min(${parts.join(', ')})` : `max(0px, calc(${parts.join(' - ')}))`
+}
+/** Its px from the terms' px. */
+export function refFnPx(fn: 'min' | 'sub', px: number[]): number {
+  return fn === 'min' ? Math.min(...px) : Math.max(0, px[0] - px.slice(1).reduce((a, b) => a + b, 0))
 }
 
 /** Every token reference the recipe can use, deduplicated. A sum
@@ -155,7 +165,7 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
       for (const props of Object.values(slots)) {
         for (const ref of Object.values(props)) {
           if (!ref || ref === NONE) continue
-          for (const term of minTerms(ref) ?? ref.split('+')) refs.add(term)
+          for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }
       }
     }

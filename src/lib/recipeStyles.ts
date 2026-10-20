@@ -17,7 +17,7 @@
  *    playground). With it set, the real `:hover` / `:active` rules stand down.
  */
 import {
-  COMPONENT_RECIPES, cssVarOf, minTerms, type ComponentRecipe, type RecipeProp, type SlotProps,
+  COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, type ComponentRecipe, type RecipeProp, type SlotProps,
 } from './componentRecipes.js'
 
 /** Axes the CSS reads from an attribute (everything except the State axis). */
@@ -72,8 +72,8 @@ function declarations(props: SlotProps): string[] {
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
       case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
       case 'radius': {
-        const cap = minTerms(ref)
-        out.push(`border-radius: ${cap ? `min(${cap.map((r) => v(r)).join(', ')})` : v(ref)}`)
+        const f = refFn(ref)
+        out.push(`border-radius: ${f ? refFnCss(f, (r) => v(r)) : v(ref)}`)
         break
       }
       case 'paddingX': out.push(`padding-inline: ${dim(ref)}`); break

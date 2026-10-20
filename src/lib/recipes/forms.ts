@@ -5,7 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
-import { c, NONE, part, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -178,16 +178,16 @@ export const INPUT_TAG: ComponentRecipe = {
 // shadcn's trigger sizes: default (control 40) · sm (compact 32).
 const SELECT_GEOMETRY: Record<string, string> = { default: 'size.control', sm: 'size.compact' }
 const MENU_ITEM: SlotMap = {
-  item: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
+  item: { text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
   'item[data-highlighted]': { fill: c('action.ghost.hover') },
   'item[data-state="checked"]': { fill: c('surface.selected'), text: c('content.accent') },
   'item[data-disabled]': { text: c('content.disabled') },
 }
-// The list panel is `radius.action` with a `spacing.1` inset: its rows'
-// `radius.control` is then concentric (the menus' rule, `navigation.ts`).
+// The list panel is a box (`radius.container`) with a `spacing.1` inset: its
+// rows take its radius minus that inset (the menus' rule, `navigation.ts`).
 const MENU_CONTENT: SlotProps = {
   fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-  radius: 'radius.action', shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
+  radius: PANEL_RADIUS, shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
 }
 
 export const SELECT: ComponentRecipe = {

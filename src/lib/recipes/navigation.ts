@@ -3,7 +3,7 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap } from './helpers.js'
 
 // ── Tabs (underline) ───────────────────────────────────────────────────────
 
@@ -149,10 +149,11 @@ export const STEPPER: ComponentRecipe = {
 
 // ── Menus ──────────────────────────────────────────────────────────────────
 
-// A menu panel is `radius.action` with a `spacing.1` inset, so its rows'
-// `radius.control` is concentric (8 − 4 = 4). At `radius.overlay` (16) the
-// highlighted row read as a square tag inside a round panel.
-export const MENU_PANEL_RADIUS = 'radius.action'
+// A menu panel is a box: `radius.container` (Boxes), with a `spacing.1` inset.
+// Its rows take the panel's radius minus that inset, so the highlighted row is
+// concentric with the panel at any Boxes value (16 − 4 = 12). A fixed
+// `radius.control` row read as a square tag inside a round panel.
+export const MENU_PANEL_RADIUS = PANEL_RADIUS
 
 function menu(key: string): ComponentRecipe {
   const slots: SlotMap = {
@@ -161,7 +162,7 @@ function menu(key: string): ComponentRecipe {
       shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
     },
     item: {
-      text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
+      text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
     },
     'item[data-highlighted]': { fill: c('action.ghost.hover') },
     'item:hover': { fill: c('action.ghost.hover') },
@@ -192,7 +193,7 @@ export const COMMAND: ComponentRecipe = {
       kbd: { text: c('content.subtle'), font: 'type.caption', stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.control', paddingX: 'spacing.1_5' },
       list: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
       heading: { text: c('content.subtle'), font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1' },
-      item: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5' },
+      item: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5' },
       'item[data-highlighted]': { fill: c('action.ghost.hover') },
       'item:hover': { fill: c('action.ghost.hover') },
     })),
@@ -208,7 +209,7 @@ export const NAVBAR: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
         paddingX: 'spacing.4', paddingY: 'spacing.2_5', gap: 'spacing.5',
       },
       logo: { fill: c('action.primary.default'), radius: 'radius.control', width: 'spacing.6', height: 'spacing.6' },
@@ -271,10 +272,10 @@ export const MENUBAR: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
         height: 'size.compact', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
       },
-      trigger: { text: c('content.primary'), font: 'type.label', radius: 'radius.control', paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
+      trigger: { text: c('content.primary'), font: 'type.label', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
       'trigger:hover': { fill: c('action.ghost.hover') },
       'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
       'trigger[data-active="true"]': { fill: c('action.ghost.hover') },
@@ -283,7 +284,7 @@ export const MENUBAR: ComponentRecipe = {
         shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
       },
       item: {
-        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
+        text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
       },
       'item[data-highlighted]': { fill: c('action.ghost.hover') },
       'item:hover': { fill: c('action.ghost.hover') },
@@ -308,10 +309,10 @@ export const NAVIGATION_MENU: ComponentRecipe = {
       'trigger:hover': { fill: c('action.ghost.hover') },
       'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
       viewport: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay', shadow: 'shadow.lg',
+        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS, shadow: 'shadow.lg',
       },
       content: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5', gap: 'spacing.1' },
-      link: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action', paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.1' },
+      link: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.1' },
       'link:hover': { fill: c('action.ghost.hover') },
     })),
   ],

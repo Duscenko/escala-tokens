@@ -1,5 +1,5 @@
 import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
-import { COMPONENT_RECIPES, cssVarOf, minTerms, resolveRecipe, type SlotProps } from '../componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, resolveRecipe, type SlotProps } from '../componentRecipes'
 import type { AgentBundleFile, TokenJSON } from './types'
 
 function keysToScaffold(json: TokenJSON): string[] {
@@ -64,8 +64,8 @@ function propLines(key: string): string[] {
 function styleOf(props: SlotProps): [string, string][] {
   const v = (ref?: string) => {
     if (!ref || ref === 'none') return null
-    const cap = minTerms(ref)
-    if (cap) return [`min(${cap.map((r) => `var(${cssVarOf(r)})`).join(', ')})`]
+    const f = refFn(ref)
+    if (f) return [refFnCss(f, (r) => `var(${cssVarOf(r)})`)]
     return ref.split('+').map((r) => `var(${cssVarOf(r)})`)
   }
   const one = (ref?: string) => {

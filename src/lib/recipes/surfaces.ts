@@ -1,4 +1,4 @@
-import { c, NONE, part, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotProps } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotProps } from './helpers.js'
 
 // ── Card ───────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export const ASPECT_RATIO: ComponentRecipe = {
     part({ Ratio: ['16:9', '4:3', '1:1'] as const }, () => ({
       root: {
         fill: c('surface.selected'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        text: c('content.accent'), radius: 'radius.action', font: 'type.button',
+        text: c('content.accent'), radius: PANEL_RADIUS, font: 'type.button',
       },
     })),
   ],
@@ -158,7 +158,7 @@ export const SCROLL_AREA: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
         paddingX: 'spacing.1_5', paddingY: 'spacing.1_5',
       },
       row: { text: c('content.primary'), font: 'type.body-sm', paddingX: 'spacing.2_5', paddingY: 'spacing.2', radius: 'radius.control' },
@@ -333,7 +333,7 @@ export const ITEM: ComponentRecipe = {
   defaults: { Variant: 'default', Size: 'default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.action', strokeWidth: 'stroke.control', text: c('content.primary') },
+      root: { radius: PANEL_RADIUS, strokeWidth: 'stroke.control', text: c('content.primary') },
       media: { text: c('content.primary') },
       title: { text: c('content.primary'), font: 'type.label', gap: 'spacing.2' },
       description: { text: c('content.secondary') },
@@ -498,7 +498,7 @@ export const CHART: ComponentRecipe = {
     part({}, () => ({
       root: { text: c('content.secondary'), font: 'type.caption' },
       tooltip: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
         shadow: 'shadow.xl', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.1_5', text: c('content.primary'), font: 'type.caption',
       },
       label: { text: c('content.secondary') },

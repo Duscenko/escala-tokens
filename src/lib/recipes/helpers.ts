@@ -65,3 +65,9 @@ export function part(axes: Record<string, readonly string[]>, build: (...values:
  *  (the `2xl` step): a textarea, an attachment card. A pill one-line field
  *  (Fields at its roundest) would otherwise turn these boxes into blobs. */
 export const TALL_FIELD_RADIUS = 'min(radius.action,radius.2xl)'
+
+/** A box that holds content (a menu, a list panel, a bar): the Boxes radius. */
+export const PANEL_RADIUS = 'radius.container'
+/** A row inside a panel inset by `spacing.1` (a menu item, a bar's trigger):
+ *  concentric with the panel, its radius minus that inset. */
+export const PANEL_ROW_RADIUS = 'sub(radius.container,spacing.1)'
