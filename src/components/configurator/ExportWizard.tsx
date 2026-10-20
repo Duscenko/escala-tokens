@@ -14,7 +14,8 @@ import { AppearanceGlyph } from './colorControls'
 import { brandThemesSummary, countShippedThemes, shippedThemes } from '../../lib/brandThemes'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import AgentInstallPanel from './AgentInstallPanel'
-import { freeFigmaScope } from '../../lib/freeFigmaScope'
+import { freeFigmaScope, type FigmaScope } from '../../lib/freeFigmaScope'
+import { defaultFigmaSyncModes } from '../../lib/figmaSyncModes'
 import { useFreeTier } from '../../lib/access'
 import { PRICING_PATH, FREE_MAX_MODES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
@@ -284,9 +285,25 @@ export default function ExportWizard({
   // screen, Desktop. Skill and the agent package included — a Free account
   // was shipping every theme through Export → AI.
   const free = useFreeTier()
+  // The brands step 1 picked. "Export <brand>" opens on that one brand, and
+  // every file follows the pick — the Figma JSON and the AI package used to
+  // ship EVERY brand whatever was picked (only W3C's semantic layer narrowed),
+  // while Get code shows one brand. Picked = all brands → no scope, so a
+  // whole-system export stays byte-identical. The scope is the plugin
+  // payload's (`pluginPayload`, the Figma page): brand::appearance columns.
+  const pickedBrands = modes.filter((key) => figmaBrands.includes(key))
+  const brandScope: FigmaScope | undefined = !free && pickedBrands.length > 0 && pickedBrands.length < figmaBrands.length
+    ? {
+        themes: pickedBrands,
+        modes: defaultFigmaSyncModes(pickedBrands, store.themeKinds, store.brandThemes),
+        viewports: ['desktop', 'tablet', 'mobile'],
+      }
+    : undefined
+  const shownBrands = brandScope ? pickedBrands : figmaBrands
+  const shownThemeCount = countShippedThemes(shownBrands, store.brandThemes)
   const figmaScope = free
     ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance, store.brandThemes)
-    : undefined
+    : brandScope
   // Every family picked = unscoped, so an untouched export keeps producing the
   // exact same payload it did before family scoping existed.
   const allFamilies = families.length === famMeta.length
@@ -778,17 +795,17 @@ export default function ExportWizard({
                     {/* What the Figma file carries, already filled from what each
                         brand ships — the same answer Sync's File & modes shows.
                         A brand is changed on its own card, not here. */}
-                    {!figmaScope && format === 'escala' && figmaBrands.length > 0 && (
+                    {!free && format === 'escala' && figmaBrands.length > 0 && (
                       <p className="mx-3 mb-2 rounded-lg bg-fg/[0.05] px-3 py-2 text-body text-fg-muted">
                         <span className="font-semibold text-fg">
-                          {figmaBrands.length} {figmaBrands.length === 1 ? 'brand' : 'brands'} · {figmaThemeCount} {figmaThemeCount === 1 ? 'theme' : 'themes'} in Figma
+                          {shownBrands.length} {shownBrands.length === 1 ? 'brand' : 'brands'} · {shownThemeCount} {shownThemeCount === 1 ? 'theme' : 'themes'} in Figma
                         </span>
                         {': '}
-                        {figmaBrands.map((key) => `${themeDisplayName(key, store.themeLabels)} ${brandThemesSummary(shippedThemes(store.brandThemes, key)).replace(/ only$/, '')}`).join(' · ')}
+                        {shownBrands.map((key) => `${themeDisplayName(key, store.themeLabels)} ${brandThemesSummary(shippedThemes(store.brandThemes, key)).replace(/ only$/, '')}`).join(' · ')}
                         . Each theme is one mode of Color Semantics.
                       </p>
                     )}
-                    {figmaScope && (
+                    {free && (
                       <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
                         <span className="font-semibold text-fg">Free ships every brand and viewport, up to {FREE_MAX_MODES} modes.</span>{' '}
                         More than {FREE_MAX_MODES} modes and the complete UI Kit come with Escala Pro.{' '}
@@ -849,9 +866,9 @@ export default function ExportWizard({
                   <>
                     <SummaryRow
                       label="Brands"
-                      value={figmaScope?.themes?.[0] ? themeDisplayName(figmaScope.themes[0], store.themeLabels) : 'All'}
+                      value={figmaScope?.themes?.length ? figmaScope.themes.map((k) => themeDisplayName(k, store.themeLabels)).join(', ') : 'All'}
                     />
-                    <SummaryRow label="Viewports" value={figmaScope ? 'Desktop' : 'Desktop, Tablet, Mobile'} />
+                    <SummaryRow label="Viewports" value={(figmaScope?.viewports ?? ['desktop', 'tablet', 'mobile']).map((v) => v.charAt(0).toUpperCase() + v.slice(1)).join(', ')} />
                   </>
                 )}
                 <SummaryRow label="Going to" value={isGitHubDestination ? 'GitHub repository' : wizardFormatLabel(format)} />

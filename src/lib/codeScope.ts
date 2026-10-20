@@ -7,7 +7,7 @@ import {
 } from '../store/useDesignStore'
 import { GLOBAL_FAMILY } from './themeSources'
 import { resolveThemeFoundations } from './themeFoundations'
-import { appearanceOrder, type ThemeAppearance } from './themeModes'
+import { appearanceOrder, themeModeKey, type ThemeAppearance } from './themeModes'
 import { themeContextFromStore } from './tokenGenerator'
 
 type FamilyRecord = { base: string; scale: ColorScale; darkScale?: ColorScale }
@@ -128,8 +128,39 @@ export function scopeSnapshotForCode(snapshot: DesignSnapshot, themeKey: string)
     themeLabels: {},
     themeSources: sources ? { light: sources, dark: sources } : {},
     themeOrigin: {},
-    architectureOverrides: {},
+    // From the ORIGINAL snapshot: `scopeSnapshotToTheme` keeps only bare
+    // `<theme>` keys and drops the `<theme>::<appearance>` ones styles write.
+    architectureOverrides: overridesForCode(snapshot.architectureOverrides, themeKey, preferred),
   }
+}
+
+/** The theme's role overrides — a System Style's borders, inputs and inks, and
+ *  every hand-edit — re-keyed onto the code snapshot's `light` / `dark`
+ *  columns. They are keyed by mode (`<theme>::light`), and those columns no
+ *  longer exist here; dropping them made Get code ship the schema default
+ *  where the board, Figma and Export show the style's own value (Core's
+ *  `border.control` came out `#00000080` instead of `{neutral.5}`). A bare
+ *  `<theme>` key (older data) applies to the theme's own appearance. */
+function overridesForCode(
+  all: DesignSnapshot['architectureOverrides'] | undefined,
+  themeKey: string,
+  preferred: ThemeAppearance,
+): DesignSnapshot['architectureOverrides'] {
+  const out: DesignSnapshot['architectureOverrides'] = {}
+  for (const [arch, roles] of Object.entries(all ?? {})) {
+    const kept: Record<string, Record<string, string>> = {}
+    for (const [role, byMode] of Object.entries(roles ?? {})) {
+      const entry: Record<string, string> = {}
+      if (byMode[themeKey]) entry[preferred] = byMode[themeKey]
+      for (const appearance of ['light', 'dark'] as const) {
+        const ref = byMode[themeModeKey(themeKey, appearance)]
+        if (ref) entry[appearance] = ref
+      }
+      if (Object.keys(entry).length) kept[role] = entry
+    }
+    if (Object.keys(kept).length) out[arch] = kept
+  }
+  return out
 }
 
 export function captureCodeSnapshot(store: DesignSnapshot, themeKey: string): DesignSnapshot {

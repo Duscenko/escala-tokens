@@ -161,8 +161,10 @@ const NAV_ICONS: Record<WorkspaceNavKey, ReactNode> = {
   ),
   system: (
     <svg {...NAV_ICON_PROPS}>
-      <path d="M10 5.4C8.9 4.3 7.4 3.8 5.6 3.8H3.4v10.6h2.8c1.5 0 2.8.5 3.8 1.5 1-1 2.3-1.5 3.8-1.5h2.8V3.8h-2.2c-1.8 0-3.3.5-4.4 1.6Z" />
-      <path d="M10 5.4v10.5M5.6 7.2h2M5.6 10h2M12.4 7.2h2M12.4 10h2" />
+      {/* Home: a house (it was a book while this tab read "System"). */}
+      <path d="M3.5 8.6 10 3.4l6.5 5.2" />
+      <path d="M5 7.5v8.1a.9.9 0 0 0 .9.9h8.2a.9.9 0 0 0 .9-.9V7.5" />
+      <path d="M8.2 16.5v-4.3a.6.6 0 0 1 .6-.6h2.4a.6.6 0 0 1 .6.6v4.3" />
     </svg>
   ),
   code: (

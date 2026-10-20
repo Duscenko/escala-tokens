@@ -583,10 +583,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
   { group: 'content', key: 'on-action', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
-  // Disabled ink — tone 7. Categorical used to have no disabled ink at all and
-  // the preview panel fell back to another scheme's value for the slot;
-  // adopting the tone natively means that fallback is no longer needed.
-  { group: 'content', key: 'disabled', light: '{neutral.7}', dark: '{neutral-dark.7}' },
+  // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
+  // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
+  // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
+  // ≈2.8–3.0:1 — muted, still well below body text (≈9:1), still legible.
+  { group: 'content', key: 'disabled', light: '{neutral.7}', dark: '{neutral-dark.10}' },
   // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
   // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
   // solved for AA as text (same bug class as shadcn's `muted.foreground` fix

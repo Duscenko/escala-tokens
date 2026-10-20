@@ -523,9 +523,9 @@ function ExportPill({
   const items: { key: string; label: string; hint: string; glyph: ReactNode; go: () => void }[] = [
     { key: 'json', label: t('Export JSON'), hint: t('Pick what ships and download the files.'), glyph: <ExportIcon />, go: onExport },
     { key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), glyph: <FigmaGlyph size={14} />, go: onSyncFigma },
-    { key: 'code', label: t('Get code'), hint: t('CSS, JSON and every format, ready to copy.'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onExportCode },
+    { key: 'code', label: t('Get code'), hint: t('Agent context, CSS and shadcn, ready to copy.'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onExportCode },
     ...(onConnectGithub
-      ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the files to a repository.'), glyph: <GitHubGlyph size={14} />, go: onConnectGithub }]
+      ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the whole design system to a repository.'), glyph: <GitHubGlyph size={14} />, go: onConnectGithub }]
       : []),
   ]
   const itemClass = `flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`

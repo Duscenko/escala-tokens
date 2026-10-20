@@ -492,8 +492,10 @@ function BrandExportMenu({ brandKey, brandName, brandCount, onExportBrand, actio
       ? [{ key: 'all', label: t('Export all {n} brands', { n: brandCount }), hint: t('Every brand in one bundle, one theme column each.'), go: actions.all }]
       : []),
     ...(actions?.figma ? [{ key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), go: () => actions.figma?.(brandKey) }] : []),
-    ...(actions?.code ? [{ key: 'code', label: t('Get code'), hint: t('CSS, JSON and every format, ready to copy.'), go: () => actions.code?.(brandKey) }] : []),
-    ...(actions?.github && !guest ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the files to a repository.'), go: () => actions.github?.(brandKey) }] : []),
+    ...(actions?.code ? [{ key: 'code', label: t('Get code'), hint: t('Agent context, CSS and shadcn, ready to copy.'), go: () => actions.code?.(brandKey) }] : []),
+    // GitHub is an account feature (hidden for a guest). It ships the whole
+    // system, not this brand — the hint says so.
+    ...(actions?.github && !guest ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the whole design system to a repository.'), go: () => actions.github?.(brandKey) }] : []),
   ]
   return (
     <>
