@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { cleanFontSources, upsertFontSource, type FontSource } from '../lib/customFonts'
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
@@ -521,6 +522,10 @@ export interface DesignSnapshot {
   gradientAssignments: GradientAssignments
   // Scratch palette for the custom color picker's "Saved" swatches.
   savedColors: string[]
+  /** Font families this system ADDED beyond the built-in list, and where each
+   *  loads from (lib/customFonts.ts). Only signed-in accounts with a saved
+   *  system can add one; the token value stays the family name. */
+  fontSources: FontSource[]
   selectedComponents: string[]
   completedFoundations: string[]
   iconLibrary: string
@@ -642,6 +647,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
+    fontSources: [],
     // A brand-new system starts with the curated essentials, not all 58 — see
     // ESSENTIAL_COMPONENT_KEYS. Existing systems are untouched: this only runs
     // for a store with no persisted state at all (migrate() above handles
@@ -1054,6 +1060,11 @@ interface DesignStore {
   savedColors: string[]
   addSavedColor: (hex: string) => void
   removeSavedColor: (hex: string) => void
+
+  // Added font families (lib/customFonts.ts)
+  fontSources: FontSource[]
+  addFontSource: (source: FontSource) => void
+  removeFontSource: (family: string) => void
 
   // Components — every component ships selected by default (toggle = remove)
   selectedComponents: string[]
@@ -1718,6 +1729,10 @@ export const useDesignStore = create<DesignStore>()(
             ? state
             : { savedColors: [...state.savedColors, hex] }
         ),
+      addFontSource: (source) => set((state) => ({ fontSources: upsertFontSource(state.fontSources ?? [], source) })),
+      removeFontSource: (family) => set((state) => ({
+        fontSources: (state.fontSources ?? []).filter((s) => s.family.toLowerCase() !== family.toLowerCase()),
+      })),
       removeSavedColor: (hex) =>
         set((state) => ({ savedColors: state.savedColors.filter((c) => c.toLowerCase() !== hex.toLowerCase()) })),
 
@@ -1961,7 +1976,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 100,
+      version: 101,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3622,6 +3637,17 @@ export const useDesignStore = create<DesignStore>()(
           // v99→v100: Home's Pinned list is gone (design-plans/home-into-system.md).
           // Nothing reads or writes it any more.
           delete persisted.pinned
+        }
+        if (version < 101) {
+          // v100→v101: added font families (lib/customFonts.ts). Every system,
+          // saved copies included, starts with none.
+          const seedFonts = (state: any) => {
+            if (state && typeof state === 'object') state.fontSources = cleanFontSources(state.fontSources)
+          }
+          seedFonts(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedFonts(sys?.snapshot)
+          }
         }
         return persisted
       },

@@ -50,7 +50,7 @@ function SearchGlyph() {
 
 export function PickerField<T extends string>({
   label, value, valueLabel, options, onChange, ariaLabel, leading, render, note, optionVisual,
-  searchPlaceholder = 'Search', emptyLabel = 'No matches', searchable,
+  searchPlaceholder = 'Search', emptyLabel = 'No matches', searchable, footer,
 }: {
   label: string
   value: string
@@ -72,6 +72,8 @@ export function PickerField<T extends string>({
   emptyLabel?: string
   /** Defaults to on for lists of `SEARCH_FROM` options or more. */
   searchable?: boolean
+  /** A row pinned under the list (e.g. "Add font"); gets a closer. */
+  footer?: (close: () => void) => React.ReactNode
 }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -286,6 +288,7 @@ export function PickerField<T extends string>({
                   )
                 })}
               </div>
+              {footer ? <div className="flex-shrink-0 border-t border-line p-1">{footer(() => close(false))}</div> : null}
             </motion.div>
           )}
         </AnimatePresence>,

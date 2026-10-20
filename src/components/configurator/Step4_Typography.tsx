@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import ScrubInput from '../ui/ScrubInput'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
+import { AddFontButton, AddFontDialog } from './AddFontDialog'
+import { useDesignStore } from '../../store/useDesignStore'
 import VariableCollectionRail from './VariableCollectionRail'
 import {
   TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
@@ -62,18 +64,26 @@ function FontPickerPopover({
   value,
   onSelect,
   onClose,
+  onAddFont,
 }: {
   value: string
   onSelect: (family: string) => void
   onClose: () => void
+  /** Opens AddFontDialog (the parent owns it: this popover closes on any
+   *  click outside itself, the dialog included). */
+  onAddFont: () => void
 }) {
+  const fontSources = useDesignStore((s) => s.fontSources) ?? []
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
   const q = query.trim().toLowerCase()
-  const matches = q ? POPULAR_GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(q)) : POPULAR_GOOGLE_FONTS
-  const exact = POPULAR_GOOGLE_FONTS.some((f) => f.toLowerCase() === q)
+  // Families this system added come first, then the Google list.
+  const all = [...fontSources.map((f) => f.family).filter((f) => !POPULAR_GOOGLE_FONTS.includes(f)), ...POPULAR_GOOGLE_FONTS]
+  const matches = q ? all.filter((f) => f.toLowerCase().includes(q)) : all
+  const exact = all.some((f) => f.toLowerCase() === q)
+  const stackOf = (f: string) => fontStack(f, fontSources.find((s) => s.family === f)?.category)
 
   // Lazy-load each option's webfont as it scrolls into view (avoids 200 requests).
   useEffect(() => {
@@ -143,7 +153,7 @@ function FontPickerPopover({
               key={f}
               data-family={f}
               onClick={() => onSelect(f)}
-              style={{ fontFamily: fontStack(f) }}
+              style={{ fontFamily: stackOf(f) }}
               className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[15px] transition-colors ${
                 active ? 'bg-fg/10 text-fg' : 'text-fg hover:bg-elevated/60'
               }`}
@@ -160,6 +170,9 @@ function FontPickerPopover({
         {matches.length === 0 && !q && (
           <p className="px-3 py-6 text-center text-ui text-fg-faint">No fonts</p>
         )}
+      </div>
+      <div className="border-t border-line p-1">
+        <AddFontButton onOpen={() => { onClose(); onAddFont() }} />
       </div>
     </div>
   )
@@ -224,6 +237,7 @@ export default function Step4_Typography({
 
   const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
   const [pickerRole, setPickerRole] = useState<'display' | 'body' | null>(null)
+  const [addFontFor, setAddFontFor] = useState<'display' | 'body' | null>(null)
   const query = externalQuery ?? ''
 
   const bodyFont = typography.fontFamily
@@ -290,8 +304,14 @@ export default function Step4_Typography({
                     value={family}
                     onClose={() => setPickerRole(null)}
                     onSelect={(f) => { setFamily(r.role, f); loadGoogleFont(f); setPickerRole(null) }}
+                    onAddFont={() => setAddFontFor(r.role)}
                   />
                 )}
+                <AddFontDialog
+                  open={addFontFor === r.role}
+                  onClose={() => setAddFontFor(null)}
+                  onAdded={(f) => setFamily(r.role, f)}
+                />
               </div>
               <div className={previewCell}>
                 <span className="text-fg whitespace-nowrap text-[18px]" style={{ fontFamily: fontStack(family) }}>Ag</span>

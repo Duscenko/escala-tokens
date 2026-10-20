@@ -11,6 +11,7 @@ import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
+import { fontSourceUrl } from './customFonts'
 import { mergeLayoutRoles, withInsetSides, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
@@ -677,6 +678,10 @@ export function generateTokenJSON(
       letterSpacings: letterSpacingsFor(typography.sizes),
       weights: typography.weights,
       roles: mergeTypeRoles(typography.roles),
+      // Where the families this system ADDED load from (lib/customFonts).
+      // Additive and only present when there are some, so every other
+      // system's tokens.json is unchanged.
+      ...((store.fontSources ?? []).length ? { sources: store.fontSources.map((f) => ({ ...f, href: fontSourceUrl(f) })) } : {}),
     },
     // ── Dimension primitives — ONE global collection of numbers, named by
     // value (`16`, `-4`, `9999`, `3_5`), single mode. Every numeric foundation

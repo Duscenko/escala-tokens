@@ -74,6 +74,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   `openBeta.test.ts` locks the beta. To bring plans back: flip `OPEN_BETA` in BOTH repos,
 >   rebuild the plugin, `npm run bundle:plugin`. Plugin 0.14.0.
 
+> **UPDATE (2026-10-20): a system can ADD font families — phase 1 (store v101).** Any Google
+> Fonts family by name, or a stylesheet URL from an allowed provider (Google · Adobe Fonts ·
+> Fontshare · Bunny), stored in `fontSources` (`lib/customFonts.ts`); the token value stays the
+> family NAME. Only a signed-in account with the system SAVED can add one (`useFontAccess`); a font
+> already added is usable by anyone. `buildCSS` prepends `@import` for added families in use;
+> tokens.json adds `typography.sources` only when there are some. Plan + phase 2 (uploaded
+> `.woff2`): `design-plans/custom-fonts.md`.
+
 > **UPDATE (2026-10-20): the PLUGIN's theme panel IS the web's accordion (plugin 0.15.0).** Reported
 > as the plugin showing a 5-step wizard ("Step 1 of 5", Continue →) while the platform has the
 > accordion — one product, two shapes. `ui.html` now renders create AND edit as

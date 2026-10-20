@@ -29,7 +29,7 @@ import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
 import { WORKSPACE_SECTION_PARAM } from './workspaceLink'
 import { useDesignStore } from '../store/useDesignStore'
-import { useSavedBrandKeys } from './libraryStatus'
+import { useLibraryStatus, useSavedBrandKeys } from './libraryStatus'
 
 export type AccessTier = 'anon' | 'free' | 'pro'
 
@@ -144,4 +144,17 @@ export function useNeedsProForAnotherSystem(): boolean {
     pro: pro || licenceStillOpen(licence.status, licence.hasKey),
     systems,
   })
+}
+
+/** Who may ADD a font family (lib/customFonts): a signed-in account whose
+ *  design system on screen has a saved copy. Using a font already added stays
+ *  open to everyone — it is part of the system. */
+export type FontAccess = 'loading' | 'guest' | 'unsaved' | 'ok'
+
+export function useFontAccess(): FontAccess {
+  const { guest, loading } = useAccess()
+  const status = useLibraryStatus()
+  if (loading) return 'loading'
+  if (guest) return 'guest'
+  return status === 'none' ? 'unsaved' : 'ok'
 }

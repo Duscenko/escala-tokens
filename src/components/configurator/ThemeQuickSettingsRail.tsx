@@ -90,6 +90,7 @@ import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROM
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import { PickerField } from '../ui/PickerField'
+import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
@@ -1938,6 +1939,9 @@ export default function ThemeQuickSettingsRail({
     : (foundations.sizeRoles?.control ?? 'md')
   const setIconWeight = (key: string, value: PhosphorWeight) =>
     patchThemeFoundations(key, { iconWeight: value })
+  // Font families this system added + which Font field opened "Add font".
+  const fontSources = useDesignStore((s) => s.fontSources) ?? []
+  const [addFontFor, setAddFontFor] = useState<'body' | 'display' | null>(null)
   // Every write takes an explicit theme KEY rather than closing over
   // `previewTheme`, because during a try-on the first edit adopts the style and
   // the write has to land on the NEWLY minted theme — a key that does not exist
@@ -2779,13 +2783,23 @@ export default function ThemeQuickSettingsRail({
           // Sans) couldn't be seen or changed here. `headingFontFamily`
           // undefined means "same as body", which is exactly what Variables'
           // display row falls back to.
-          const familyOptions = (current: string) =>
-            FONT_PRESETS.some((item) => item.value === current)
-              ? FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category }))
-              : [
-                  { value: current, label: current, group: 'In this theme' },
-                  ...FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category })),
-                ]
+          // Built-in list, then the families this system ADDED (AddFontDialog),
+          // then — only if it is neither — the value the theme already holds.
+          const added = fontSources.filter((f) => !FONT_PRESETS.some((p) => p.value === f.family))
+          const familyOptions = (current: string) => {
+            const known = FONT_PRESETS.some((item) => item.value === current) || added.some((f) => f.family === current)
+            return [
+              ...(known ? [] : [{ value: current, label: current, group: 'In this theme' }]),
+              ...added.map((f) => ({ value: f.family, label: f.family, group: 'Added to this system' })),
+              ...FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category })),
+            ]
+          }
+          const stackOf = (family: string) => fontStack(family, fontSources.find((f) => f.family === family)?.category)
+          const setBody = (value: string) => commit('Typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, fontFamily: value }) })
+          const setDisplay = (value: string) => commit('Heading typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, headingFontFamily: value }) })
+          const addFontFooter = (field: 'body' | 'display') => (close: () => void) => (
+            <AddFontButton onOpen={() => { close(); setAddFontFor(field) }} />
+          )
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
         <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
@@ -2798,13 +2812,14 @@ export default function ThemeQuickSettingsRail({
               label="Body"
               ariaLabel="Body font family"
               value={typography.fontFamily}
-              render={(value) => ({ fontFamily: fontStack(value) })}
-              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: fontStack(typography.fontFamily) }}>Aa</span>}
+              render={(value) => ({ fontFamily: stackOf(value) })}
+              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: stackOf(typography.fontFamily) }}>Aa</span>}
               options={familyOptions(typography.fontFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
               note="Headings, body text and controls."
-              onChange={(value) => commit('Typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, fontFamily: value }) })}
+              onChange={setBody}
+              footer={addFontFooter('body')}
             />
             {/* Only the Display role reads this family (`font-family-heading`);
                 H1–H6 follow the body stack — the same rule Variables and Docs
@@ -2813,13 +2828,19 @@ export default function ThemeQuickSettingsRail({
               label="Display"
               ariaLabel="Display font family"
               value={headingFamily}
-              render={(value) => ({ fontFamily: fontStack(value) })}
-              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: fontStack(headingFamily) }}>Aa</span>}
+              render={(value) => ({ fontFamily: stackOf(value) })}
+              leading={<span className="text-ui font-medium leading-none text-fg" style={{ fontFamily: stackOf(headingFamily) }}>Aa</span>}
               options={familyOptions(headingFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
               note="Display titles only. Headings, body and controls use the body font."
-              onChange={(value) => commit('Heading typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, headingFontFamily: value }) })}
+              onChange={setDisplay}
+              footer={addFontFooter('display')}
+            />
+            <AddFontDialog
+              open={addFontFor !== null}
+              onClose={() => setAddFontFor(null)}
+              onAdded={(family) => (addFontFor === 'display' ? setDisplay(family) : setBody(family))}
             />
             <PickerField
               label="Text scale"

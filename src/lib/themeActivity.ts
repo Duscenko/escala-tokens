@@ -22,7 +22,7 @@ const PER_THEME = [
 /** Snapshot keys that are not part of how any theme LOOKS. */
 const NOT_DESIGN = new Set<keyof DesignSnapshot>([
   ...PER_THEME, 'themeUpdatedAt', 'themeOrder', 'projectName', 'projectDescription', 'publishId',
-  'figmaLastPublishAt', 'githubRepo', 'githubLastPushAt', 'savedColors', 'completedFoundations', 'selectedComponents',
+  'figmaLastPublishAt', 'githubRepo', 'githubLastPushAt', 'savedColors', 'fontSources', 'completedFoundations', 'selectedComponents',
   // Governance, not design: a status decision or a release changes no token.
   'elementStatus', 'releases', 'releaseBaseline',
 ])

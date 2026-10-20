@@ -2,6 +2,7 @@
 // Markdown so designers can copy a single slice into an AI prompt or codebase.
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
+import { findFontSource } from './customFonts'
 import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
 import chroma from 'chroma-js'
@@ -309,8 +310,8 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   if (section === 'typography') {
     const t = store.typography
     const lines = [
-      `--font-family-heading: ${fontStack(t.headingFontFamily ?? t.fontFamily)};`,
-      `--font-family-body: ${fontStack(t.fontFamily)};`,
+      `--font-family-heading: ${fontStack(t.headingFontFamily ?? t.fontFamily, findFontSource(store.fontSources, t.headingFontFamily ?? t.fontFamily)?.category)};`,
+      `--font-family-body: ${fontStack(t.fontFamily, findFontSource(store.fontSources, t.fontFamily)?.category)};`,
     ]
     Object.entries(t.sizes).forEach(([k, v]) => lines.push(`--font-size-${k}: ${v};`))
     Object.entries(t.lineHeights ?? {}).forEach(([k, v]) => lines.push(`--line-height-${k}: ${v};`))

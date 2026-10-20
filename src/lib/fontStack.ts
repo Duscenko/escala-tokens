@@ -108,9 +108,11 @@ const MONO_HINTS = ['mono', 'code', 'consol', 'courier']
 // Full CSS font-family stack with a category-appropriate generic fallback —
 // e.g. fontStack('Fraunces') → "'Fraunces', serif" (not sans-serif). Works for
 // any family name (incl. arbitrary Google Fonts), inferring the generic fallback.
-export function fontStack(family: string): string {
+export function fontStack(family: string, category?: FontPreset['category']): string {
   const preset = FONT_PRESETS.find((f) => f.value === family)
   if (preset) return `'${family}', ${FALLBACK[preset.category]}`
+  // A family the system ADDED (lib/customFonts) says its own category.
+  if (category) return `'${family}', ${FALLBACK[category]}`
   const lower = family.toLowerCase()
   const generic = MONO_HINTS.some((h) => lower.includes(h))
     ? 'monospace'

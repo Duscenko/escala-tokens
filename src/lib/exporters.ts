@@ -5,6 +5,7 @@ import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
+import { findFontSource, fontImportLines } from './customFonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { toneLabel, withAlpha, darkShadow, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -93,6 +94,13 @@ export function buildCSS(
     return hex
   }
   const lines: string[] = [':root {']
+  // Added families (lib/customFonts) carry their own generic fallback and get
+  // an @import at the top of the file — only the ones a theme actually uses.
+  const usedFamilies = new Set<string>()
+  const stackFor = (family: string) => {
+    usedFamilies.add(family)
+    return fontStack(family, findFontSource(store.fontSources, family)?.category)
+  }
 
   // Primitive families — names match tokens.json (`accent`/`neutral`, the
   // Figma-plugin contract) so variables.css and tokens.json stay in lockstep.
@@ -177,8 +185,8 @@ export function buildCSS(
     .forEach(([k, v]) => lines.push(`  --dimension-${k}: ${v};`))
 
   lines.push('\n  /* Typography */')
-  lines.push(`  --font-family-heading: ${fontStack(typography.headingFontFamily ?? typography.fontFamily)};`)
-  lines.push(`  --font-family-body: ${fontStack(typography.fontFamily)};`)
+  lines.push(`  --font-family-heading: ${stackFor(typography.headingFontFamily ?? typography.fontFamily)};`)
+  lines.push(`  --font-family-body: ${stackFor(typography.fontFamily)};`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
   Object.entries(letterSpacingsFor(typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`))
@@ -322,8 +330,8 @@ export function buildCSS(
     }
     if (hasFoundationOverride) {
       lines.push(`  /* Foundations — ${theme} */`)
-      lines.push(`  --font-family-heading: ${fontStack(foundations.typography.headingFontFamily ?? foundations.typography.fontFamily)};`)
-      lines.push(`  --font-family-body: ${fontStack(foundations.typography.fontFamily)};`)
+      lines.push(`  --font-family-heading: ${stackFor(foundations.typography.headingFontFamily ?? foundations.typography.fontFamily)};`)
+      lines.push(`  --font-family-body: ${stackFor(foundations.typography.fontFamily)};`)
       Object.entries(foundations.typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
       Object.entries(foundations.typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
       Object.entries(letterSpacingsFor(foundations.typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`))
@@ -381,7 +389,8 @@ export function buildCSS(
     }
   }
 
-  return lines.join('\n')
+  const imports = fontImportLines(store.fontSources, usedFamilies)
+  return [...(imports.length ? [...imports, ''] : []), ...lines].join('\n')
 }
 
 /** README table for a map of lengths: Token · Value · the Dimension primitive it aliases. */
