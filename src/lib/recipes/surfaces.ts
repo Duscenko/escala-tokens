@@ -1,4 +1,4 @@
-import { c, NONE, part, type ComponentRecipe, type SlotProps } from './helpers.js'
+import { c, NONE, part, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotProps } from './helpers.js'
 
 // ── Card ───────────────────────────────────────────────────────────────────
 
@@ -375,7 +375,7 @@ export const ATTACHMENT: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
+        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: TALL_FIELD_RADIUS,
         text: c('content.primary'),
       },
       media: { fill: c('surface.layer-2'), text: c('content.secondary'), radius: 'radius.control' },

@@ -60,3 +60,8 @@ export function part(axes: Record<string, readonly string[]>, build: (...values:
   return { axes: Object.keys(axes), values }
 }
 
+
+/** The Fields radius for a box taller than one line, never rounder than 16px
+ *  (the `2xl` step): a textarea, an attachment card. A pill one-line field
+ *  (Fields at its roundest) would otherwise turn these boxes into blobs. */
+export const TALL_FIELD_RADIUS = 'min(radius.action,radius.2xl)'

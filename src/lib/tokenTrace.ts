@@ -15,7 +15,7 @@
 // not listed; a property it binds is listed even when it paints nothing visible
 // in this state, because that is still the token it reads.
 
-import { COMPONENT_RECIPES, cssVarOf, resolveRecipe, splitRef, type RecipeProp } from './componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, minTerms, resolveRecipe, splitRef, type RecipeProp } from './componentRecipes'
 import { previewDimension } from './recipeVars'
 import { typeStyleOf } from './previewTokens'
 import { SIZE_ROLES } from './layoutTokens'
@@ -93,7 +93,7 @@ const PROP_ORDER: RecipeProp[] = [
 ]
 
 function kindOf(ref: string): TraceKind {
-  const ns = splitRef(ref.split('+')[0])[0]
+  const ns = splitRef((minTerms(ref) ?? ref.split('+'))[0])[0]
   switch (ns) {
     case 'color': return 'color'
     case 'radius': return 'radius'
@@ -107,6 +107,9 @@ function kindOf(ref: string): TraceKind {
 
 /** The drawer id for a ref, in the convention `SemanticTokenDrawer` reads. */
 function pickIdOf(ref: string): string | undefined {
+  // A capped radius opens the role it follows (the cap is a fixed step).
+  const cap = minTerms(ref)
+  if (cap) return pickIdOf(cap[0])
   if (ref.includes('+')) return undefined
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return name
@@ -127,6 +130,13 @@ function sumPx(values: string[]): string {
 }
 
 function resolveValue(t: PreviewTokens, ref: string): { cssVar: string; value: string; facets?: TraceFacet[] } {
+  const cap = minTerms(ref)
+  if (cap) {
+    const parts = cap.map((term) => resolveValue(t, term))
+    const nums = parts.map((p) => parseFloat(p.value))
+    const value = nums.every(Number.isFinite) ? `${Math.min(...nums)}px` : parts[0].value
+    return { cssVar: `min(${parts.map((p) => p.cssVar).join(', ')})`, value }
+  }
   const terms = ref.split('+')
   if (terms.length > 1) {
     const parts = terms.map((term) => resolveValue(t, term))

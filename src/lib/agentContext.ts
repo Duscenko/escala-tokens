@@ -8,7 +8,7 @@ import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
-import { COMPONENT_RECIPES, cssVarOf, resolveRecipe, type ComponentRecipe, type RecipePart } from './componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, minTerms, resolveRecipe, type ComponentRecipe, type RecipePart } from './componentRecipes'
 import {
   LAYOUT_ROLES,
   RADIUS_STEPS,
@@ -206,6 +206,12 @@ function liveDimension(ref: string, t: AgentFoundationTokens): string {
     const isRole = LAYOUT_ROLES[family].some((r) => r.key === name)
     return isRole ? roleVal(t, family, name) : (primitivesOf(t, family)[name] ?? '—')
   }
+  const cap = minTerms(ref)
+  if (cap) {
+    const vals = cap.map(one)
+    const nums = vals.map((v) => parseFloat(v))
+    return nums.every(Number.isFinite) ? `${Math.min(...nums)}px` : vals[0]
+  }
   const terms = ref.split('+').map(one)
   return terms.every((v) => v === '—') ? '—' : terms.join(' + ')
 }
@@ -233,6 +239,8 @@ function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
       const id = row.ref.slice(row.ref.indexOf('.') + 1)
       const css = row.ref.startsWith('type.')
         ? `\`${cssVarOf(row.ref, 'font-size')}\` …`
+        : minTerms(row.ref)
+          ? `\`min(${minTerms(row.ref)!.map((r) => `var(${cssVarOf(r)})`).join(', ')})\``
         : row.ref.includes('+')
           ? row.ref.split('+').map((r) => `\`${cssVarOf(r)}\``).join(' + ')
           : `\`${cssVarOf(row.ref)}\``

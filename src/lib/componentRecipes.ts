@@ -139,6 +139,13 @@ export function resolveRecipe(recipe: ComponentRecipe, v: AxisValues = {}): Slot
   return out
 }
 
+/** `min(a,b)` — the smaller of two lengths (a radius capped at a step).
+ *  Returns its terms, or null for a plain ref. */
+export function minTerms(ref: string): string[] | null {
+  const m = /^min\((.+)\)$/.exec(ref)
+  return m ? m[1].split(',').map((s) => s.trim()) : null
+}
+
 /** Every token reference the recipe can use, deduplicated. A sum
  *  (`selector.control+spacing.1`) contributes each of its terms. */
 export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
@@ -148,7 +155,7 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
       for (const props of Object.values(slots)) {
         for (const ref of Object.values(props)) {
           if (!ref || ref === NONE) continue
-          for (const term of ref.split('+')) refs.add(term)
+          for (const term of minTerms(ref) ?? ref.split('+')) refs.add(term)
         }
       }
     }

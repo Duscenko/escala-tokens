@@ -73,7 +73,9 @@ function oneRef(ref: string, json: TokenJSON, roles: Set<string>): FigmaRef | nu
  *  has no single variable: every term is returned, and null if any is unknown. */
 export function figmaRefsFor(ref: string, json: TokenJSON, roles = semanticRoleIds(json)): FigmaRef[] | null {
   const out: FigmaRef[] = []
-  for (const term of ref.split('+')) {
+  // A capped radius binds its role in Figma (the cap is a fixed step, no variable).
+  const cap = /^min\((.+)\)$/.exec(ref)
+  for (const term of cap ? [cap[1].split(',')[0].trim()] : ref.split('+')) {
     const r = oneRef(term, json, roles)
     if (!r) return null
     out.push(r)

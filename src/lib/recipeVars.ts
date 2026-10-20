@@ -30,7 +30,8 @@ export function previewDimension(t: PreviewTokens, ref: string): Record<string, 
     value ? { [cssVarOf(ref)]: value } : {}
   switch (ns) {
     case 'size': return one(sizeRoleOf(t, name, '') || t.sizes?.[name])
-    case 'radius': return one(radiusRoleOf(t, name))
+    // A role, or a fixed step of the ramp (the cap in `min(radius.action,radius.2xl)`).
+    case 'radius': return one(radiusRoleOf(t, name, t.radius?.[name] ?? ''))
     case 'icon': return one(`${iconRoleOf(t, name as 'small' | 'medium' | 'large')}px`)
     case 'selector': return one(selectorRoleOf(t, name, '') || t.selector?.[name])
     case 'spacing': return one(t.spacing?.[name] || spacingRoleOf(t, name, ''))

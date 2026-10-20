@@ -8,7 +8,7 @@
 // exist.
 
 import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
-import { COMPONENT_RECIPES, cssVarOf, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, minTerms, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
 import { RADIUS_GROUPS } from '../layoutTokens'
 import { recipeCss, recipeCssVars } from '../recipeStyles'
 import { componentFileName, componentImportLine } from '../agentContext'
@@ -67,7 +67,8 @@ export function buildDesignSkillFiles(json: TokenJSON): AgentBundleFile[] {
 /** `Bind to` and `Collection` cells for one reference, in the same order. */
 function bindCells(ref: string, json: TokenJSON, roles: Set<string>): [string, string, string] {
   const refs: FigmaRef[] | null = figmaRefsFor(ref, json, roles)
-  const css = ref.split('+').map((r) => `\`${cssVarOf(r, 'font-size').replace(/-font-size$/, '-*')}\``).join(' + ')
+  const cap = minTerms(ref)
+  const css = cap ? `\`min(${cap.map((r) => cssVarOf(r)).join(', ')})\`` : ref.split('+').map((r) => `\`${cssVarOf(r, 'font-size').replace(/-font-size$/, '-*')}\``).join(' + ')
   if (!refs) return [`not published in this system (\`${ref}\`)`, '—', css]
   return [
     refs.map((r) => `\`${r.name}\``).join(' + '),

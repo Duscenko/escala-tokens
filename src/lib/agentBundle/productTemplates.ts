@@ -1,5 +1,5 @@
 import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
-import { COMPONENT_RECIPES, cssVarOf, resolveRecipe, type SlotProps } from '../componentRecipes'
+import { COMPONENT_RECIPES, cssVarOf, minTerms, resolveRecipe, type SlotProps } from '../componentRecipes'
 import type { AgentBundleFile, TokenJSON } from './types'
 
 function keysToScaffold(json: TokenJSON): string[] {
@@ -62,7 +62,12 @@ function propLines(key: string): string[] {
 // recipe gets the neutral page surface and ink, nothing guessed.
 
 function styleOf(props: SlotProps): [string, string][] {
-  const v = (ref?: string) => (ref && ref !== 'none' ? ref.split('+').map((r) => `var(${cssVarOf(r)})`) : null)
+  const v = (ref?: string) => {
+    if (!ref || ref === 'none') return null
+    const cap = minTerms(ref)
+    if (cap) return [`min(${cap.map((r) => `var(${cssVarOf(r)})`).join(', ')})`]
+    return ref.split('+').map((r) => `var(${cssVarOf(r)})`)
+  }
   const one = (ref?: string) => {
     const parts = v(ref)
     if (!parts) return null

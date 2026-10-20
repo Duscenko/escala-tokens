@@ -5,7 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
+import { c, NONE, part, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -66,6 +66,9 @@ export const TEXTAREA: ComponentRecipe = {
       label: { font: 'type.label' },
       field: {
         ...FIELD_FIXED,
+        // A multi-line box: the Fields radius, capped. A pill one-line field
+        // (Fields at its roundest) would otherwise turn the box into a blob.
+        radius: TALL_FIELD_RADIUS,
         minHeight: 'size.2xl+spacing.6', paddingY: 'spacing.2_5', font: 'type.placeholder',
       },
       hint: { font: 'type.helper' },
