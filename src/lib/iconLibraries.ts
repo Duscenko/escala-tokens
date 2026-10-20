@@ -6,6 +6,8 @@
 // other GitHub repos are AI-context recommendations — not bundled, they don't
 // drive the live browser. See `ICON_AI_SOURCES`.
 
+import { PHOSPHOR_COMPONENT_ICONS } from '../generated/phosphor-icons'
+
 export interface IconLibraryDef {
   key: string
   label: string
@@ -138,72 +140,33 @@ export function iconAiContext(aiSourceKey?: string): {
   return { source, instruction, markdown }
 }
 
-/** Canonical UI concepts → Phosphor **slug** (specimens resolve the regular-weight
- *  glyph body via `phosphorCoreBody`). Must stay in sync with `CORE_SLUGS` in
- *  `scripts/fetch-phosphor-icons.mjs` — a test asserts every value resolves. */
-export const PHOSPHOR_CORE: Record<string, string> = {
-  star: 'star',
-  arrow: 'arrow-right',
-  search: 'magnifying-glass',
-  eye: 'eye',
-  plus: 'plus',
-  upload: 'upload-simple',
-  info: 'info',
-  success: 'check-circle',
-  warning: 'warning',
-  error: 'x-circle',
-  home: 'house',
-  box: 'cube',
-  grid: 'grid-four',
-  image: 'image',
-  text: 'text-t',
-  settings: 'gear',
-  palette: 'palette',
-  bookmark: 'bookmark-simple',
-  heart: 'heart',
-  share: 'share-network',
-  user: 'user',
-  users: 'users',
-  zap: 'lightning',
-  check: 'check',
-  chevron: 'caret-down',
-  close: 'x',
-  chat: 'chat-circle',
-  mail: 'envelope-simple',
-}
+/** The component icon set — the generic glyphs components embed (eye, close,
+ *  check, flag…). ONE list, `src/lib/componentIcons.json`; the generator inlines
+ *  it here (names only) and, with every weight, in
+ *  `generated/phosphor-component-icons.ts`, which the Figma plugin bundles. */
+export const COMPONENT_ICONS = PHOSPHOR_COMPONENT_ICONS
+export type ComponentIconName = typeof PHOSPHOR_COMPONENT_ICONS[number]['name']
 
-/** Canonical UI concepts → Phosphor React component name, for copy snippets
+/** Older concept names specimens still use, kept as aliases of a set icon. */
+const CONCEPT_ALIASES = { arrow: 'arrow-right', chevron: 'chevron-down' } as const satisfies Record<string, ComponentIconName>
+export type IconConcept = ComponentIconName | keyof typeof CONCEPT_ALIASES
+
+const SLUG_OF = Object.fromEntries(COMPONENT_ICONS.map((i) => [i.name, i.slug])) as Record<ComponentIconName, string>
+const COMPONENT_OF = Object.fromEntries(COMPONENT_ICONS.map((i) => [i.name, i.component])) as Record<ComponentIconName, string>
+
+/** Concept → Phosphor **slug** (specimens resolve the regular-weight glyph body
+ *  via `phosphorCoreBody`; the generator inlines a body for every one). */
+export const PHOSPHOR_CORE: Record<IconConcept, string> = {
+  ...SLUG_OF,
+  ...Object.fromEntries(Object.entries(CONCEPT_ALIASES).map(([k, v]) => [k, SLUG_OF[v]])),
+} as Record<IconConcept, string>
+
+/** Concept → Phosphor React component name, for copy snippets
  *  (`import { MagnifyingGlass } from '@phosphor-icons/react'`). */
-export const PHOSPHOR_CORE_COMPONENT: Record<string, string> = {
-  star: 'Star',
-  arrow: 'ArrowRight',
-  search: 'MagnifyingGlass',
-  eye: 'Eye',
-  plus: 'Plus',
-  upload: 'UploadSimple',
-  info: 'Info',
-  success: 'CheckCircle',
-  warning: 'Warning',
-  error: 'XCircle',
-  home: 'House',
-  box: 'Cube',
-  grid: 'GridFour',
-  image: 'Image',
-  text: 'TextT',
-  settings: 'Gear',
-  palette: 'Palette',
-  bookmark: 'BookmarkSimple',
-  heart: 'Heart',
-  share: 'ShareNetwork',
-  user: 'User',
-  users: 'Users',
-  zap: 'Lightning',
-  check: 'Check',
-  chevron: 'CaretDown',
-  close: 'X',
-  chat: 'ChatCircle',
-  mail: 'EnvelopeSimple',
-}
+export const PHOSPHOR_CORE_COMPONENT: Record<IconConcept, string> = {
+  ...COMPONENT_OF,
+  ...Object.fromEntries(Object.entries(CONCEPT_ALIASES).map(([k, v]) => [k, COMPONENT_OF[v]])),
+} as Record<IconConcept, string>
 
 // Generic line glyphs shown as decorative previews — not the Phosphor set.
 export const SAMPLE_GLYPHS: { name: string; path: string }[] = [

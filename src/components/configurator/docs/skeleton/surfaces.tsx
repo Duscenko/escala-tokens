@@ -152,7 +152,7 @@ export function SkeletonAlertSpecimen({ t, v, w, children }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkAlert variant={variant} style={{ width: w ?? 320, maxWidth: '100%' }}>
-        <SkAlertIcon><PreviewIcon concept={destructive ? 'error' : 'info'} size={iconOf(15)} /></SkAlertIcon>
+        <SkAlertIcon><PreviewIcon concept={destructive ? 'alert' : 'info'} size={iconOf(15)} /></SkAlertIcon>
         {children ?? (
           <>
             <SkAlertTitle>{destructive ? 'Export failed' : 'Heads up'}</SkAlertTitle>
@@ -248,7 +248,7 @@ export function SkeletonCollapsibleSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkCollapsible key={String(open)} defaultOpen={open} style={{ width: w ?? 300 }}>
-        <SkCollapsibleTrigger icon={<PreviewIcon concept="chevron" size={iconOf(13)} />}>3 starred repositories</SkCollapsibleTrigger>
+        <SkCollapsibleTrigger icon={<PreviewIcon concept="chevrons-up-down" size={iconOf(13)} />}>3 starred repositories</SkCollapsibleTrigger>
         <SkCollapsibleItem>escala/tokens</SkCollapsibleItem>
         <SkCollapsibleContent>
           <SkCollapsibleItem>escala/figma-plugin</SkCollapsibleItem>
@@ -347,7 +347,7 @@ export function SkeletonAlertDialogSpecimen({ t, v }: SpecimenProps) {
       <SkAlertDialog open inline>
         <SkAlertDialogContent inline size={size} style={{ width: size === 'sm' ? 300 : 400 }}>
           <SkAlertDialogHeader>
-            {size === 'sm' && <SkAlertDialogMedia><PreviewIcon concept="close" size={iconOf(20)} /></SkAlertDialogMedia>}
+            {size === 'sm' && <SkAlertDialogMedia><PreviewIcon concept="trash" size={iconOf(20)} /></SkAlertDialogMedia>}
             <SkAlertDialogTitle>Delete this project?</SkAlertDialogTitle>
             <SkAlertDialogDescription>This removes every token and brand in it. You can't undo this.</SkAlertDialogDescription>
           </SkAlertDialogHeader>
@@ -440,7 +440,7 @@ export function SkeletonAttachmentSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkAttachment state={state} size={(v.Size ?? 'default') as AttachmentSize} orientation={vertical ? 'vertical' : 'horizontal'} style={{ width: vertical ? 160 : 280 }}>
-        <SkAttachmentMedia><PreviewIcon concept="box" size={iconOf(16)} /></SkAttachmentMedia>
+        <SkAttachmentMedia><PreviewIcon concept="file" size={iconOf(16)} /></SkAttachmentMedia>
         <SkAttachmentContent>
           <SkAttachmentTitle>brand-tokens.json</SkAttachmentTitle>
           <SkAttachmentDescription>{sub[state]}</SkAttachmentDescription>

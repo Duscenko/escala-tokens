@@ -15,7 +15,7 @@ import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { effectiveIconWeight, ICON_ROLES, iconSizesFor } from '../../../lib/iconSizing'
 
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
-import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
+import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen,
@@ -95,12 +95,7 @@ export const AVATAR_STACK_HUES = [0, 42, 96, 168, 214]
 // Specimens render Phosphor glyphs (regular weight) from the committed catalog.
 // Concept names map through PHOSPHOR_CORE so Button/Input slots stay stable.
 
-export type IconConcept =
-  | 'star' | 'arrow' | 'search' | 'eye'
-  | 'plus' | 'upload' | 'info' | 'success' | 'warning' | 'error'
-  | 'home' | 'box' | 'grid' | 'image' | 'text' | 'settings' | 'palette'
-  | 'bookmark' | 'heart' | 'share' | 'user' | 'users' | 'zap' | 'check'
-  | 'chevron' | 'close' | 'chat' | 'mail'
+export type { IconConcept }
 
 export function iconName(_prefix: string, concept: IconConcept): string {
   return PHOSPHOR_CORE[concept] ?? concept
@@ -108,7 +103,7 @@ export function iconName(_prefix: string, concept: IconConcept): string {
 
 // PascalCase component name for copy snippets
 // (`import { MagnifyingGlass } from "@phosphor-icons/react"`).
-export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONENT as Record<IconConcept, string>
+export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONENT
 
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
 export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconConcept }> = {

@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
+  COMPONENT_ICONS,
   ICON_AI_SOURCES,
   PHOSPHOR_LIBRARY,
   DEFAULT_ICON_AI_SOURCE,
   type IconAiSource,
 } from '../../lib/iconLibraries'
 import { PhosphorIconBrowser } from './PhosphorIconBrowser'
+import { phosphorCoreBody, phosphorIconMaskUrl } from '../../lib/phosphorIcons'
 import { sanitizeSvg, slugify } from '../../lib/utils'
 
 const MAX_CUSTOM_ICONS = 50
@@ -132,6 +134,47 @@ function AiSourceRow({ source, selected, onSelect }: { source: IconAiSource; sel
   )
 }
 
+/** The generic icons components embed (close, check, eye…) — the same list the
+ *  Figma plugin builds as `icon/<name>` components (`lib/componentIcons.json`). */
+function ComponentIconSet() {
+  const groups = [...new Set(COMPONENT_ICONS.map((i) => i.group))]
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <h3 className="text-base font-semibold text-fg">Component icons</h3>
+        <p className="text-body text-fg-muted leading-relaxed mt-1">
+          {COMPONENT_ICONS.length} Phosphor glyphs the components use: a dialog's close, a password's eye, a select's chevron. The Figma plugin ships them as <code className="font-mono text-fg-muted">icon/&lt;name&gt;</code> components, embedded in the components that need them.
+        </p>
+      </div>
+      {groups.map((group) => (
+        <div key={group} className="flex flex-col gap-1.5">
+          <span className="text-caption font-semibold text-fg-faint">{group}</span>
+          <ul className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))' }}>
+            {COMPONENT_ICONS.filter((i) => i.group === group).map((icon) => {
+              const body = phosphorCoreBody(icon.slug)
+              const mask = body ? phosphorIconMaskUrl(body) : undefined
+              return (
+                <li
+                  key={icon.name}
+                  title={`${icon.use} · Phosphor ${icon.component}`}
+                  className="flex flex-col items-center gap-1.5 rounded-lg border border-line bg-surface/40 px-2 py-2.5"
+                >
+                  <span
+                    aria-hidden
+                    className="h-5 w-5 bg-fg"
+                    style={{ maskImage: mask, WebkitMaskImage: mask, maskSize: 'contain', WebkitMaskSize: 'contain', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }}
+                  />
+                  <span className="text-caption text-fg-muted truncate max-w-full">{icon.name}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function IconLibrary() {
   const { iconAiSource, setIconAiSource } = useDesignStore()
   const selectedSource = iconAiSource ?? DEFAULT_ICON_AI_SOURCE
@@ -151,6 +194,10 @@ export default function IconLibrary() {
             GitHub
           </a>
         </p>
+      </div>
+
+      <div className="border-t border-line pt-6">
+        <ComponentIconSet />
       </div>
 
       <div className="border-t border-line pt-6">

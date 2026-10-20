@@ -333,10 +333,26 @@ export function SkeletonLabelSpecimen({ t }: SpecimenProps) {
 }
 
 export function SkeletonPasswordStrengthSpecimen({ t, v }: SpecimenProps) {
+  // The visibility toggle is the component set's eye / eye-off pair.
+  const [visible, setVisible] = useState(false)
+  const iconPx = iconForControl(sizeRoleOf(t, 'control'), t)
   return (
     <RecipeScope t={t}>
       <SkPasswordStrength strength={(v.Strength ?? 'fair') as Strength} width={260}>
-        <SkInput type="password" defaultValue="hunter2hunter2" aria-label="Password" />
+        <SkInputGroup style={{ width: '100%' }}>
+          <SkGroupInput type={visible ? 'text' : 'password'} defaultValue="hunter2hunter2" aria-label="Password" />
+          <SkAddon align="inline-end">
+            <button
+              type="button"
+              aria-label={visible ? 'Hide password' : 'Show password'}
+              aria-pressed={visible}
+              onClick={() => setVisible((x) => !x)}
+              className="inline-flex cursor-pointer items-center border-0 bg-transparent p-0 text-current"
+            >
+              <PreviewIcon concept={visible ? 'eye-off' : 'eye'} size={iconPx} />
+            </button>
+          </SkAddon>
+        </SkInputGroup>
       </SkPasswordStrength>
     </RecipeScope>
   )

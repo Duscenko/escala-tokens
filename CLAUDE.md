@@ -4731,6 +4731,22 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   to give Material its M3 look is an underline FIELD SHAPE, which is a second axis and
 >   its own change.
 
+> **UPDATE (2026-10-20): the COMPONENT ICON SET — one list, web AND plugin (plugin 0.16.0).**
+> `src/lib/componentIcons.json` is the ONE list of generic glyphs components embed (65: home,
+> arrows, chevrons, close, check, eye / eye-off, flag, search, sign-out, status…), each an Escala
+> name → Phosphor slug. `npm run gen:phosphor-icons` writes it into the index
+> (`PHOSPHOR_COMPONENT_ICONS`, names + regular bodies) and into
+> `src/generated/phosphor-component-icons.ts` (all six weights, no imports), which the plugin
+> bundles. `PHOSPHOR_CORE` / `IconConcept` are DERIVED from it (+ aliases `arrow`, `chevron`), so
+> a specimen can only name a glyph the plugin also ships. The plugin makes one main component per
+> icon (`icon/<name>`, `icon/home` is the old placeholder) on the icon-placeholders board, redraws
+> it only when the theme weight changes (pluginData `glyphWeight`), and every icon slot passes the
+> glyph it needs (`makeIconSlot(…, glyph)`: dialog close → close, select → chevron-down, alert →
+> info / alert, pagination → chevron-left/right…). Swap instance lists the set first. ⬡ Icons builds
+> the whole set from the bundled bodies for Phosphor (no Iconify request). The downloaded Phosphor
+> repo was NOT copied in: its 9,072 SVGs are byte-identical to `@phosphor-icons/core@2.1.1`.
+> Locked by `phosphor-icons.test.ts`.
+
 > **ICON SIZES are tokens now — `lib/iconSizing.ts`, three layers like radius/spacing.**
 > Scale `icon-size-xs…2xl` = 12 · 14 · 16 · 20 · 24 · 32 (each a Dimension primitive).
 > Roles are DERIVED, never stored: `icon-control-sm…xl` = that control's height ×

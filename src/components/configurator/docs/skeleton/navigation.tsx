@@ -56,9 +56,9 @@ export function SkeletonBreadcrumbSpecimen({ t }: SpecimenProps) {
       <SkBreadcrumb>
         <SkBreadcrumbList>
           <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Home</SkBreadcrumbLink></SkBreadcrumbItem>
-          <SkBreadcrumbSeparator />
+          <SkBreadcrumbSeparator><PreviewIcon concept="chevron-right" size={iconOf(12)} /></SkBreadcrumbSeparator>
           <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Library</SkBreadcrumbLink></SkBreadcrumbItem>
-          <SkBreadcrumbSeparator />
+          <SkBreadcrumbSeparator><PreviewIcon concept="chevron-right" size={iconOf(12)} /></SkBreadcrumbSeparator>
           <SkBreadcrumbItem><SkBreadcrumbPage>Design tokens</SkBreadcrumbPage></SkBreadcrumbItem>
         </SkBreadcrumbList>
       </SkBreadcrumb>
@@ -68,7 +68,9 @@ export function SkeletonBreadcrumbSpecimen({ t }: SpecimenProps) {
 
 export function SkeletonPaginationSpecimen({ t }: SpecimenProps) {
   const [page, setPage] = useState(2)
-  return <RecipeScope t={t}><SkPagination pages={[1, 2, 3, '…', 8]} page={page} onPageChange={setPage} /></RecipeScope>
+  return <RecipeScope t={t}><SkPagination pages={[1, 2, 3, '…', 8]} page={page} onPageChange={setPage}
+    prevIcon={<PreviewIcon concept="chevron-left" size={iconOf(13)} />}
+    nextIcon={<PreviewIcon concept="chevron-right" size={iconOf(13)} />} /></RecipeScope>
 }
 
 export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {

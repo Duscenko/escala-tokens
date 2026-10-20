@@ -22,8 +22,8 @@ export function SkeletonCalendarSpecimen({ t, v }: SpecimenProps) {
   const [day, setDay] = useState<Date | undefined>(new Date(2026, 9, 14))
   const [range, setRange] = useState<DateRange | undefined>({ from: new Date(2026, 9, 12), to: new Date(2026, 9, 17) })
   const icons = {
-    prevIcon: <span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><PreviewIcon concept="chevron" size={iconOf(13)} /></span>,
-    nextIcon: <span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}><PreviewIcon concept="chevron" size={iconOf(13)} /></span>,
+    prevIcon: <PreviewIcon concept="chevron-left" size={iconOf(13)} />,
+    nextIcon: <PreviewIcon concept="chevron-right" size={iconOf(13)} />,
   }
   return (
     <RecipeScope t={t}>
@@ -78,8 +78,8 @@ export function SkeletonChartSpecimen({ t, v, w }: SpecimenProps) {
 
 export function SkeletonCarouselSpecimen({ t, v }: SpecimenProps) {
   const vertical = v.Orientation === 'vertical'
-  const prev = <span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><PreviewIcon concept="chevron" size={iconOf(13)} /></span>
-  const next = <span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}><PreviewIcon concept="chevron" size={iconOf(13)} /></span>
+  const prev = <PreviewIcon concept="chevron-left" size={iconOf(13)} />
+  const next = <PreviewIcon concept="chevron-right" size={iconOf(13)} />
   return (
     <RecipeScope t={t}>
       <div style={{ padding: vertical ? '48px 0' : '0 48px' }}>

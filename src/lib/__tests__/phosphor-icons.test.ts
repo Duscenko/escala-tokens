@@ -10,7 +10,13 @@ import {
   getIconAiSource,
   getIconLibrary,
   iconAiContext,
+  COMPONENT_ICONS,
 } from '../iconLibraries'
+import {
+  COMPONENT_ICONS as PLUGIN_COMPONENT_ICONS,
+  COMPONENT_ICON_BODIES,
+} from '../../generated/phosphor-component-icons'
+import componentIconList from '../componentIcons.json'
 import {
   PHOSPHOR_CORE_BODIES,
   PHOSPHOR_ICONS_COUNT,
@@ -85,7 +91,7 @@ describe('phosphor catalog', () => {
   })
 
   it('has a component name for every concept', () => {
-    for (const concept of Object.keys(PHOSPHOR_CORE)) {
+    for (const concept of Object.keys(PHOSPHOR_CORE) as (keyof typeof PHOSPHOR_CORE)[]) {
       expect(PHOSPHOR_CORE_COMPONENT[concept], `missing component name for ${concept}`).toMatch(/^[A-Z][A-Za-z]*$/)
     }
   })
@@ -101,5 +107,38 @@ describe('phosphor catalog', () => {
     expect(peekPhosphorWeight('regular')).toBe(PHOSPHOR_CORE_BODIES)
     const bold = await loadPhosphorWeight('bold')
     expect(peekPhosphorWeight('bold')).toBe(bold)
+  })
+})
+
+// The component icon set is ONE list (componentIcons.json). The web reads it via
+// the index, the Figma plugin via phosphor-component-icons.ts — both generated.
+describe('component icon set', () => {
+  it('has unique names and slugs that exist in Phosphor', () => {
+    const names = COMPONENT_ICONS.map((i) => i.name)
+    expect(new Set(names).size).toBe(names.length)
+    for (const icon of COMPONENT_ICONS) expect(findPhosphorIcon(icon.slug), icon.slug).toBeTruthy()
+  })
+
+  it('covers the glyphs components need', () => {
+    const names = new Set<string>(COMPONENT_ICONS.map((i) => i.name))
+    for (const n of ['home', 'eye', 'eye-off', 'close', 'check', 'flag', 'arrow-left', 'arrow-right', 'chevron-down', 'search', 'sign-out', 'trash']) {
+      expect(names.has(n), n).toBe(true)
+    }
+  })
+
+  it('is regenerated from componentIcons.json (web index and plugin file agree)', () => {
+    const fromJson = componentIconList.icons.map((i) => `${i.name}:${i.slug}`)
+    expect(COMPONENT_ICONS.map((i) => `${i.name}:${i.slug}`)).toEqual(fromJson)
+    expect(PLUGIN_COMPONENT_ICONS.map((i) => `${i.name}:${i.slug}`)).toEqual(fromJson)
+  })
+
+  it('ships every icon in all six weights for the plugin', () => {
+    for (const w of PHOSPHOR_WEIGHTS) {
+      for (const icon of COMPONENT_ICONS) {
+        expect(COMPONENT_ICON_BODIES[w][icon.slug], `${icon.slug} ${w}`).toContain('<path')
+      }
+    }
+    // regular bodies are the same markup the web inlines
+    for (const icon of COMPONENT_ICONS) expect(COMPONENT_ICON_BODIES.regular[icon.slug]).toBe(phosphorCoreBody(icon.slug))
   })
 })
