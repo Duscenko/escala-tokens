@@ -179,7 +179,10 @@ export default function FigmaControlsPanel({
                   return (
                     <div
                       key={key}
-                      className={`flex min-w-0 items-center gap-2 rounded-lg border border-line px-2.5 h-10 ${selected ? 'bg-fg/8 text-fg' : 'text-fg-muted'}`}
+                      // Same height as the Viewports rows below (h-9); the right inset
+                      // matches the segmented control's top/bottom one, so it sits in
+                      // the row instead of hanging off its edge.
+                      className={`flex h-9 min-w-0 items-center gap-2 rounded-lg border border-line pl-2.5 pr-1 transition-colors ${selected ? 'bg-fg/8 text-fg' : 'text-fg-muted hover:bg-fg/[0.04]'}`}
                     >
                       <button
                         type="button"
@@ -189,23 +192,23 @@ export default function FigmaControlsPanel({
                           commit(toggleFigmaSyncTheme(syncModes, key, themeKinds, PRO_MAX_MODES))
                           onSelectTheme(key)
                         }}
-                        className={`flex min-w-0 flex-1 items-center gap-2 text-left ${FOCUS}`}
+                        className={`flex min-w-0 flex-1 items-center gap-2 self-stretch rounded-md text-left ${FOCUS}`}
                       >
                         <CheckMark selected={selected} />
                         <span className="h-3 w-3 flex-shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15" style={{ background: swatch }} aria-hidden />
                         <span className={`min-w-0 flex-1 truncate text-caption ${selected ? 'font-semibold text-fg' : 'font-medium'}`}>{name}</span>
                       </button>
-                      <div className="flex flex-shrink-0 items-center">
+                      {/* One segmented control: Light and Dark are two halves of the
+                          same choice, not two loose tiles. */}
+                      <div className="flex flex-shrink-0 items-center gap-0.5 rounded-md bg-fg/[0.05] p-0.5" role="group" aria-label={t('Themes of {name}', { name })}>
                         {(['light', 'dark'] as const).map((appearance) => {
                           const on = appearance === 'light' ? lightOn : darkOn
-                          const blocked = false
                           const label = t(appearance === 'light' ? 'Light' : 'Dark')
                           return (
                             <button
                               key={appearance}
                               type="button"
                               aria-pressed={on}
-                              disabled={blocked}
                               title={label}
                               aria-label={`${name} ${label}`}
                               onClick={() => {
@@ -213,8 +216,8 @@ export default function FigmaControlsPanel({
                                 commit(toggleFigmaSyncAppearance(syncModes, key, appearance, PRO_MAX_MODES))
                                 onSelectTheme(key)
                               }}
-                              className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${FOCUS} ${
-                                on ? 'bg-fg/14 text-fg' : blocked ? 'cursor-not-allowed text-fg-faint opacity-40' : 'text-fg-faint hover:bg-fg/8 hover:text-fg'
+                              className={`grid h-6 w-7 place-items-center rounded-[5px] transition-colors ${FOCUS} ${
+                                on ? 'bg-fg/14 text-fg' : 'text-fg-faint hover:bg-fg/8 hover:text-fg'
                               }`}
                             >
                               <AppearanceGlyph kind={appearance} size={13} />
@@ -226,7 +229,9 @@ export default function FigmaControlsPanel({
                   )
                 })}
                 {!cannotSync && summary ? (
-                  <p className="px-1 pt-1 text-caption leading-snug text-fg-faint" aria-live="polite">{summary}</p>
+                  // The rows already show what ships and the header counts it; the
+                  // sentence stays for screen readers, which hear each change.
+                  <p className="sr-only" aria-live="polite">{summary}</p>
                 ) : null}
               </div>
             </RailCard>
