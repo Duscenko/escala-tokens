@@ -296,7 +296,9 @@ export function ComponentCoversGrid({ tokens, onOpen }: {
           <li
             key={def.key}
             className="group relative flex h-[220px] flex-col overflow-hidden rounded-2xl"
-            style={{ background: card, boxShadow: `inset 0 0 0 1px ${tokens.borderDefault ?? 'transparent'}` }}
+            // No outline: the card's fill (surface.layer-1) already separates it
+            // from the page, and 59 stroked boxes read as a spreadsheet.
+            style={{ background: card }}
           >
             <span className="flex min-w-0 px-5 pt-4">
               {onOpen ? (
