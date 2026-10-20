@@ -23,7 +23,6 @@ const KEY_PREFIX = 'sd-account-files:'
 interface ParkedAccountFiles {
   snapshot: DesignSnapshot
   savedSystems: SavedSystem[]
-  pinned: string[]
   autoSyncFigma: boolean
   figmaSyncSelection: { modes: FigmaSyncMode[] | null; viewports: FigmaViewport[] }
 }
@@ -51,7 +50,6 @@ export function parkAccountFiles(userId: string): boolean {
     const parked: ParkedAccountFiles = {
       snapshot: captureSnapshot(state),
       savedSystems: state.savedSystems,
-      pinned: state.pinned,
       autoSyncFigma: state.autoSyncFigma,
       figmaSyncSelection: state.figmaSyncSelection,
     }
@@ -62,14 +60,13 @@ export function parkAccountFiles(userId: string): boolean {
   }
 }
 
-/** Blank workspace: no My themes, no saved folders, no pins. Auto-sync stays
+/** Blank workspace: no My themes, no saved folders. Auto-sync stays
  *  off so the empty system does not publish over the account's blob. */
 export function closeAccountFiles(): void {
   useDesignStore.setState({
     ...makeDesignDefaults(),
     projectCreated: true,
     savedSystems: [],
-    pinned: [],
     autoSyncFigma: false,
     figmaSyncSelection: { modes: null, viewports: [...FIGMA_VIEWPORTS] },
   })
@@ -82,8 +79,7 @@ function isParked(value: unknown): value is ParkedAccountFiles {
     parked.snapshot
     && typeof parked.snapshot.projectName === 'string'
     && Array.isArray(parked.snapshot.themeOrder)
-    && Array.isArray(parked.savedSystems)
-    && Array.isArray(parked.pinned),
+    && Array.isArray(parked.savedSystems),
   )
 }
 
@@ -115,13 +111,13 @@ function uniqueId(id: string, taken: Set<string>): string {
  *  design systems that were already saved — and still have a brand — are
  *  shelved beside it. A parked draft is not filed as a folder. */
 function shelveBesideLive(parked: ParkedAccountFiles): void {
-  shelveSavedSystems(parked.savedSystems, parked.pinned)
+  shelveSavedSystems(parked.savedSystems)
 }
 
 /** File these saved systems beside the ones in the store, renaming an id
  *  that is already taken. The system on screen is untouched. */
-export function shelveSavedSystems(savedSystems: SavedSystem[], pinned: string[]): void {
-  const parked = { savedSystems, pinned }
+export function shelveSavedSystems(savedSystems: SavedSystem[]): void {
+  const parked = { savedSystems }
   const state = useDesignStore.getState()
   const taken = new Set(state.savedSystems.map((s) => s.id))
   const shelved: SavedSystem[] = []
@@ -133,7 +129,6 @@ export function shelveSavedSystems(savedSystems: SavedSystem[], pinned: string[]
   }
   useDesignStore.setState({
     savedSystems: shelved.length ? [...state.savedSystems, ...shelved] : state.savedSystems,
-    pinned: [...new Set([...state.pinned, ...parked.pinned])],
   })
 }
 
@@ -153,7 +148,6 @@ export function reopenAccountFiles(userId: string): void {
       ...parked.snapshot,
       projectCreated: true,
       savedSystems: parked.savedSystems,
-      pinned: parked.pinned,
       autoSyncFigma: Boolean(parked.autoSyncFigma),
       figmaSyncSelection: parked.figmaSyncSelection?.viewports
         ? parked.figmaSyncSelection

@@ -26,7 +26,7 @@ import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/Th
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
-import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, startThemeSetup as startThemeSetupState, useSetupStep, useThemeSetup } from '../lib/themeSetup'
+import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useSetupStep, useThemeSetup } from '../lib/themeSetup'
 import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
@@ -1423,8 +1423,6 @@ export default function Configurator() {
     setImportOpen(true)
   }
   const [newSystemOpen, setNewSystemOpen] = useState(false)
-  const [enterFolderTick, setEnterFolderTick] = useState(0)
-  const [openStylesRequest, setOpenStylesRequest] = useState(false)
   // Components catalogue — filters the master list by label/key. ONE search
   // state now: Documentation carried a second, identical one (`docsSearch`)
   // over the same catalogue, so a filter typed in one section was invisible in
@@ -1583,14 +1581,6 @@ export default function Configurator() {
   // board opens on the current step; the rest of the rail waits. Ends on
   // Finish or "Skip setup", after which every edition is open again.
   const setupStep = useSetupStep(themeWorkspaceTab === 'preview' ? previewTheme : null)
-  const beginThemeSetup = (key: string) => {
-    commitVisit()
-    startThemeSetupState(key)
-    changePreviewTheme(key)
-    setActiveFoundation(SETUP_STEPS[1])
-    setThemeWorkspaceTab('preview')
-    setThemeHubSurface('artefacts')
-  }
   useEffect(() => {
     if (setupStep == null) return
     setActiveFoundation(SETUP_STEPS[setupStep])
@@ -1786,13 +1776,6 @@ export default function Configurator() {
     setGuestStudio(true)
     setHomeCreating(true)
     setThemeWorkspaceTab('library')
-  }
-  const openSystemStyles = () => {
-    if (!SYSTEM_STYLES_VISIBLE) return
-    // A System style is a way to START another theme, so it is Pro on Free.
-    if (needsAnotherThemePro) { setUpgradeOpen(true); return }
-    openLibraryPage()
-    setOpenStylesRequest(true)
   }
   // An empty workspace never shows a blank board. With no brand and no style
   // tried on, Brand / Variables / Code would only say "Add a brand to My
@@ -2710,7 +2693,6 @@ export default function Configurator() {
                     // Home is an account place: a guest's breadcrumb has no
                     // "Home" crumb (it used to bounce them to sign-up).
                     onBackHome={sessionAllowsHome ? () => { setStylePreview(null); openSystemPage() } : undefined}
-                    onBackToStyles={sessionAllowsHome ? () => { setStylePreview(null); openLibraryPage(); setOpenStylesRequest(true) } : undefined}
                     onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
@@ -2779,12 +2761,10 @@ export default function Configurator() {
                     key={themeWorkspaceTab === 'system' ? 'system' : guestStudio ? 'guest-studio' : `home-${homeResetTick}`}
                     studioOnly={themeWorkspaceTab !== 'system' && guestStudio}
                     systemOnly={themeWorkspaceTab === 'system'}
-                    onOpenSystem={openSystemPage}
                     onEditRole={() => {
                       const reason = themeTablesBlocked()
                       if (reason) { showToast(reason, undefined, true); return false }
                     }}
-                    onOpenStyles={openSystemStyles}
                     systemPlace={systemPlace}
                     onSystemPlace={setSystemPlace}
                     previewAppearance={previewAppearance}
@@ -2799,14 +2779,6 @@ export default function Configurator() {
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                     onGuestBrandCreated={announceGuestBrand}
-                    onStartTheme={beginThemeSetup}
-                    onPreviewStyle={(preset) => {
-                      // Same try-on the theme sheet makes: the board paints the
-                      // style, the rail shows it with Add theme. Nothing is added.
-                      setThemeWorkspaceTab('preview')
-                      setThemeHubSurface('artefacts')
-                      setStylePreview({ preset, appearance: theme === 'dark' ? 'dark' : 'light' })
-                    }}
                     onGetCode={openCodeForTheme}
                     // Home's table: one brand, or all of them, without leaving it.
                     onExportBrand={(key) => {
@@ -2819,18 +2791,12 @@ export default function Configurator() {
                       setExportRun((n) => n + 1)
                       setSectionExportOpen(true)
                     }}
-                    onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     onCreateTheme={openCreateTheme}
-                    onOpenRandom={openRandomTheme}
                     createPending={createPending}
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={openNewSystem}
-                    onImport={openImport}
-                    enterFolderTick={enterFolderTick}
-                    openStylesRequest={openStylesRequest}
-                    onStylesRequestHandled={() => setOpenStylesRequest(false)}
                     onOpenBrand={() => {
                       setActiveFoundation('color')
                       openThemePreviewPage()
@@ -3103,7 +3069,6 @@ export default function Configurator() {
         importsSystem={savedBrandKeys.length > 0}
         onBlank={beginBlankBrand}
         onFromCode={openImport}
-        onSystemStyles={SYSTEM_STYLES_VISIBLE ? openSystemStyles : undefined}
       />
 
       {/* Import-your-design-system window */}

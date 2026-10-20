@@ -40,6 +40,8 @@ export interface CloudSavedSystem {
 export interface CloudFiles {
   snapshot: CloudSnapshot
   savedSystems: CloudSavedSystem[]
+  /** Always `[]` since Pinned was removed. Kept on the wire because older
+   *  builds reject a record without it (`isCloudFiles`). */
   pinned: string[]
   autoSyncFigma: boolean
   figmaSyncSelection: unknown

@@ -122,7 +122,9 @@ export function localCloudFiles(): CloudFiles {
   return {
     snapshot: captureSnapshot(state) as unknown as CloudFiles['snapshot'],
     savedSystems: state.savedSystems as unknown as CloudFiles['savedSystems'],
-    pinned: state.pinned,
+    // Pinned was removed (design-plans/home-into-system.md). The record keeps
+    // the field, always empty, so a browser on an older build still reads it.
+    pinned: [],
     autoSyncFigma: state.autoSyncFigma,
     figmaSyncSelection: state.figmaSyncSelection,
   }
@@ -226,7 +228,6 @@ async function adopt(record: CloudRecord, etag: string): Promise<void> {
     ...(files.snapshot as object),
     projectCreated: true,
     savedSystems: [...(files.savedSystems as unknown as SavedSystem[]), ...keptHere],
-    pinned: files.pinned,
     autoSyncFigma: Boolean(files.autoSyncFigma),
     figmaSyncSelection: selection && Array.isArray(selection.viewports)
       ? (files.figmaSyncSelection as never)
@@ -264,7 +265,7 @@ async function decide(etag: string | null, record: CloudRecord | null, loginInte
     // the account's saved systems are filed beside it — the same rule
     // `reopenAccountFiles` follows for a parked copy.
     const files = await migrated(record)
-    shelveSavedSystems(files.savedSystems as unknown as SavedSystem[], files.pinned)
+    shelveSavedSystems(files.savedSystems as unknown as SavedSystem[])
     ready = true
     return push()
   }

@@ -369,6 +369,29 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   roles it consumes (derive from `componentColorFields.generated.ts`) before a `role` scope
 >   can exist. Copy is English-only for now (no es/fr entries yet).
 
+> **UPDATE (2026-10-20): HOME IS THE SYSTEM TAB — the top-bar Home and its file browser are GONE.**
+> Supersedes "Home is the file browser", "opening the design system on screen in Home shows its
+> DASHBOARD", every Recents / Pinned / "Pin to Home" note, and the System-tab label. Plan + state:
+> `design-plans/home-into-system.md`.
+> - **Rail:** `Home · Board · Variables · Code · Components`. "Home" is the `system` key (URLs stay
+>   `?section=system`), "Board" is the `overview` key (the brand board). Home is never dimmed: with
+>   no brand it is the table where the first one is added.
+> - **Top bar:** the house is gone; in its place `AppearanceToggle` (sun/moon) for EVERY visitor.
+>   The ☰ menu no longer repeats Appearance on the Generator.
+> - **The page** (`ThemeLibraryPage` `systemOnly` → `SystemDashboard`): brands table with Add brand,
+>   **Export all** (wizard with every brand, `exportAllModes`) and a brand column's **Export**
+>   (wizard scoped to it, `openThemeExport` — it used to leave for Code). The right panel lists the
+>   other design systems (`DesignSystemsNav`: load in place, `+` new) — the only door to them; the
+>   account menu's "Saved design systems" is gone.
+> - **Every old Home door opens the system tab:** `?section=library`, login `next=library`
+>   (`NEXT_PATH.library = '/?section=system'`), About's Start building, discards. `/` with no
+>   section still opens About (it always did).
+> - **The `library` tab hosts ONLY the create studio.** Closing it lands on Home (an effect in
+>   `Configurator`); no old file browser can render.
+> - **Pinned is deleted** (store v100 drops `pinned` / `togglePinned`). The cloud record
+>   (`accountCloud.ts`) still carries `pinned: []` on the wire because older builds reject a record
+>   without it; do not remove it from `isCloudFiles` writes until those builds are gone.
+
 > **UPDATE (2026-10-19): the W3C export IS the Figma file — five collections, a group per mode.**
 > Supersedes every W3C note below (`{color.accent.9}`, a `dimension` root, `semantic.<theme>` with
 > flat roles, `icon.glyph`). Web and plugin produce ONE shape: top-level groups `Color Primitives`

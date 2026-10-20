@@ -1,6 +1,6 @@
 # Home merges into System — System becomes "Home"
 
-Status (2026-10-20): steps 1–3 done.
+Status (2026-10-20): ALL STEPS DONE (1–6).
 - 1 ✅ sun/moon in the bar (every visitor); ☰ no longer repeats Appearance.
 - 2 ✅ rail `Home · Board · Variables · Code · Components`; Home never dimmed.
   Leftovers removed: the "Home /" crumb and "All design systems" back link on the page.
@@ -21,6 +21,12 @@ Status (2026-10-20): steps 1–3 done.
   header opens it with every saved brand checked (`exportAllModes` → `initialModes`).
   Free is still cut by the wizard's own `freeFigmaScope`. Not verified with 2+ brands
   (the test system has one).
+- 6 ✅ the old file browser is deleted from `ThemeLibraryPage` (2053 → ~850 lines): Recents,
+  System styles view, All design systems, the saved-folder view, `HomeNav`, folder / theme /
+  style cards, and their props (`enterFolderTick`, `openStylesRequest`, `onGoHome`,
+  `onOpenSystem`, …). Pinned is deleted: store v100 drops `pinned` / `togglePinned`, the ⋯
+  menu's "Pin to Home" is gone, parked account files no longer carry it. The cloud record
+  still sends `pinned: []` (older builds validate it). CLAUDE.md has the UPDATE note.
 
 ## Why
 

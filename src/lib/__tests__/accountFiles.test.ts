@@ -22,7 +22,6 @@ beforeEach(() => {
     ...makeDesignDefaults(),
     projectCreated: true,
     savedSystems: [],
-    pinned: [],
     autoSyncFigma: false,
   })
 })
@@ -37,7 +36,6 @@ function saveAurora(): void {
   store.addTheme('aurora', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
   store.setThemeLabel('aurora', 'Aurora')
   store.saveCurrentSystem()
-  store.togglePinned('theme:aurora')
 }
 
 describe('account files on sign-out', () => {
@@ -49,7 +47,6 @@ describe('account files on sign-out', () => {
     const closed = useDesignStore.getState()
     expect(myThemeKeys(closed.themeOrder, closed.themes)).toEqual([])
     expect(closed.savedSystems).toEqual([])
-    expect(closed.pinned).toEqual([])
     expect(closed.projectName).toBe('Escala')
     expect(closed.autoSyncFigma).toBe(false)
   })
@@ -64,7 +61,6 @@ describe('account files on sign-out', () => {
     expect(myThemeKeys(opened.themeOrder, opened.themes)).toEqual(['aurora'])
     expect(opened.projectName).toBe('My files')
     expect(opened.savedSystems.map((s) => s.name)).toEqual(['My files'])
-    expect(opened.pinned).toEqual(['theme:aurora'])
 
     opened.setProjectName('Edited after reopen')
     reopenAccountFiles('user-1')

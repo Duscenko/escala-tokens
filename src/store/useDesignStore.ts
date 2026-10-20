@@ -842,11 +842,6 @@ interface DesignStore {
   setElementStatus: (id: string, status: ElementStatus | null) => void
   /** Releases: file a release and make the tokens it shipped the new baseline. */
   publishRelease: (release: ReleaseRecord, baseline: Record<string, string>) => void
-  // Home's Pinned shortcuts: `theme:<key>` / `library:<id>`. A global
-  // preference (not per-system) — an id the system on screen no longer has is
-  // simply not shown, the same pruning-on-read figmaSyncSelection does.
-  pinned: string[]
-  togglePinned: (id: string) => void
   // File & modes: which `theme::appearance` columns and which viewports the
   // live sync publishes. `modes: null` = untouched, follow the default (every
   // theme in My themes). Persisted because it used to be component state: a
@@ -1217,10 +1212,6 @@ export const useDesignStore = create<DesignStore>()(
           Object.entries(st.elementStatus ?? {}).filter(([, decision]) => decision.status !== 'approved'),
         ),
       })),
-      pinned: [],
-      togglePinned: (id) => set((st) => ({
-        pinned: st.pinned.includes(id) ? st.pinned.filter((p) => p !== id) : [...st.pinned, id],
-      })),
       figmaSyncSelection: { modes: null, viewports: [...FIGMA_VIEWPORTS] },
       setFigmaSyncSelection: (patch) => set((st) => ({ figmaSyncSelection: { ...st.figmaSyncSelection, ...patch } })),
 
@@ -1576,7 +1567,6 @@ export const useDesignStore = create<DesignStore>()(
             ...(saved
               ? {
                   savedSystems: saved.savedSystems,
-                  pinned: withoutLibraryPins(state.pinned, saved.droppedIds),
                   // Erased above: it is no longer published, and says so.
                   figmaLastPublishAt: null,
                 }
@@ -1902,7 +1892,6 @@ export const useDesignStore = create<DesignStore>()(
             projectCreated: true,
             systemStarted: false,
             savedSystems: dropped.savedSystems,
-            pinned: withoutLibraryPins(state.pinned, dropped.droppedIds),
           }
         }),
       // See the interface comment for why identity/connection fields are
@@ -1924,10 +1913,7 @@ export const useDesignStore = create<DesignStore>()(
         set((state) => {
           const next = reconcileSavedSystems(state.savedSystems, state)
           if (next.savedSystems === state.savedSystems) return state
-          return {
-            savedSystems: next.savedSystems,
-            pinned: withoutLibraryPins(state.pinned, next.droppedIds),
-          }
+          return { savedSystems: next.savedSystems }
         }),
       saveCurrentSystem: () =>
         set((state) => {
@@ -1937,10 +1923,7 @@ export const useDesignStore = create<DesignStore>()(
             ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
             : [...state.savedSystems, entry]
           const next = reconcileSavedSystems(upserted, state)
-          return {
-            savedSystems: next.savedSystems,
-            pinned: withoutLibraryPins(state.pinned, next.droppedIds),
-          }
+          return { savedSystems: next.savedSystems }
         }),
       saveCurrentSystemAsTheme: (themeKey, name) =>
         set((state) => {
@@ -1978,7 +1961,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 99,
+      version: 100,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3634,6 +3617,11 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) moveBorderStrongToControl(sys?.snapshot)
           }
+        }
+        if (version < 100) {
+          // v99→v100: Home's Pinned list is gone (design-plans/home-into-system.md).
+          // Nothing reads or writes it any more.
+          delete persisted.pinned
         }
         return persisted
       },

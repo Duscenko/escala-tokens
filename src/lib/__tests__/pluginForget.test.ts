@@ -20,7 +20,7 @@ beforeEach(() => {
   clearPublishErased(A)
   clearPublishErased(B)
   vi.stubGlobal('window', {})
-  useDesignStore.setState({ ...makeDesignDefaults(), projectCreated: true, savedSystems: [], pinned: [], publishId: A })
+  useDesignStore.setState({ ...makeDesignDefaults(), projectCreated: true, savedSystems: [], publishId: A })
 })
 afterEach(() => vi.unstubAllGlobals())
 

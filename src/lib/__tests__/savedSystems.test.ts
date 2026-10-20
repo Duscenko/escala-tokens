@@ -106,7 +106,6 @@ describe('Home lists only design systems that still have a brand', () => {
       ...makeDesignDefaults(),
       projectCreated: true,
       savedSystems: [],
-      pinned: [],
       githubRepo: null,
     })
   })

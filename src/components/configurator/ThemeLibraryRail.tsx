@@ -278,8 +278,6 @@ export function ThemeOptionsMenu({
   onRename,
   onDuplicate,
   onAskDelete,
-  pinned,
-  onTogglePin,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
@@ -294,9 +292,6 @@ export function ThemeOptionsMenu({
   onRename: () => void
   onDuplicate?: () => void
   onAskDelete: () => void
-  /** Home's Pinned shortcut — omitted where there is no Pinned list. */
-  pinned?: boolean
-  onTogglePin?: () => void
 }) {
   const { t } = useI18n()
   const reduceMotion = useReducedMotion()
@@ -374,16 +369,6 @@ export function ThemeOptionsMenu({
             maxHeight: place.max,
           }}
         >
-          {onTogglePin && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={onTogglePin}
-              className={THEME_MENU_ITEM}
-            >
-              {pinned ? t('Unpin') : t('Pin to Home')}
-            </button>
-          )}
           <button
             type="button"
             role="menuitem"
