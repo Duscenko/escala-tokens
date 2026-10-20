@@ -1288,13 +1288,17 @@ export default function Configurator() {
   // already on step 3) could hand that state to the next export. A fresh key
   // per open makes "opened again" mean "started again".
   const [exportRun, setExportRun] = useState(0)
+  /** Home's Export all: every brand checked (the bundle). Null = the wizard's own default. */
+  const [exportAllModes, setExportAllModes] = useState<string[] | null>(null)
   const openSectionExport = () => {
     setThemeExportScope(null)
+    setExportAllModes(null)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
   const openThemeExport = (themeKey: string) => {
     setThemeExportScope(themeKey)
+    setExportAllModes(null)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
@@ -2804,6 +2808,17 @@ export default function Configurator() {
                       setStylePreview({ preset, appearance: theme === 'dark' ? 'dark' : 'light' })
                     }}
                     onGetCode={openCodeForTheme}
+                    // Home's table: one brand, or all of them, without leaving it.
+                    onExportBrand={(key) => {
+                      if (brandIsDraft(key)) { showToast(randomDraftHint, undefined, true); return }
+                      openThemeExport(key)
+                    }}
+                    onExportAll={() => {
+                      setThemeExportScope(null)
+                      setExportAllModes(savedBrandKeys)
+                      setExportRun((n) => n + 1)
+                      setSectionExportOpen(true)
+                    }}
                     onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     onCreateTheme={openCreateTheme}
@@ -3068,12 +3083,12 @@ export default function Configurator() {
         {sectionExportOpen && (
           <ExportWizard
             key={exportRun}
-            initialModes={themeExportScope ? [themeExportScope] : undefined}
+            initialModes={themeExportScope ? [themeExportScope] : exportAllModes ?? undefined}
             activeTheme={previewTheme}
             activeAppearance={previewAppearance}
             themeScope={themeExportScope}
             themeScopeLabel={themeExportScope ? (store.themeLabels[themeExportScope] || themeExportScope) : undefined}
-            onClose={() => { setSectionExportOpen(false); setThemeExportScope(null) }}
+            onClose={() => { setSectionExportOpen(false); setThemeExportScope(null); setExportAllModes(null) }}
             onConnectGithub={access.guest ? undefined : () => { setSectionExportOpen(false); openExport('github') }}
             onAddSyncOption={() => { setSectionExportOpen(false); setThemeExportScope(null); openFigmaSyncDetails() }}
           />

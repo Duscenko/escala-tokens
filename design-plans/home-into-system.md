@@ -16,6 +16,11 @@ Status (2026-10-20): steps 1–3 done.
   systems" entry is gone. The rail's Home asks before throwing away a draft
   (`requestHome`). The `library` tab hosts ONLY the create studio: closing it lands
   on Home, so the old file browser can no longer be reached.
+- 5 ✅ the brand column's **Export** opens the wizard scoped to that brand
+  (`openThemeExport`, it used to leave for the Code page); **Export all** in Home's
+  header opens it with every saved brand checked (`exportAllModes` → `initialModes`).
+  Free is still cut by the wizard's own `freeFigmaScope`. Not verified with 2+ brands
+  (the test system has one).
 
 ## Why
 
