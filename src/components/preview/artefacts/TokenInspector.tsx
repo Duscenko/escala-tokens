@@ -352,7 +352,7 @@ function HoverTag({ rect, kind, name, count, hint }: {
 }
 
 export function InspectorOverlay({
-  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing, onExitMode, onSelectionChange,
+  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, onOpenComponent, editing, onExitMode, onSelectionChange,
 }: {
   active: boolean
   /** The scroll container the canvas paints into — hit-testing is scoped to it
@@ -369,6 +369,9 @@ export function InspectorOverlay({
    *  play (the lit control's first role, else the top of the list) rather than
    *  inventing a component-shaped destination the table doesn't have. */
   onOpenTable?: (roleId: string) => void
+  /** The pinned component's name becomes a link to its page (catalogue key).
+   *  Omit where there is no page to go to. */
+  onOpenComponent?: (key: string) => void
   /** Whether a role picked here is currently open in Token Details. The pin is
    *  held for the whole edit (that is what keeps the ring on the element being
    *  edited) and RELEASED when the drawer closes — otherwise the board reads as
@@ -773,7 +776,21 @@ export function InspectorOverlay({
               className="truncate font-mono text-ui text-accent-ui"
               title={focus ? `${focus.label} — ${focus.ids.length} of ${roles.length} lit` : undefined}
             >
-              {kind === 'component' || focus
+              {kind === 'component' && !focus && onOpenComponent ? (
+                // The name is the door to that component's page, like a cover's
+                // title on the board's Components view.
+                <button
+                  type="button"
+                  onClick={() => { const key = trace?.component ?? label; clearAll(); onOpenComponent(key) }}
+                  title={t('Open {name}', { name: trace?.component ?? label })}
+                  className="group/open inline-flex max-w-full items-center gap-1 rounded-sm text-left underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                >
+                  <span className="truncate">&lt;{trace?.component ?? label} /&gt;</span>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 opacity-60 transition-opacity group-hover/open:opacity-100">
+                    <path d="M5 11 11 5M6 5h5v5" />
+                  </svg>
+                </button>
+              ) : kind === 'component' || focus
                 ? <>&lt;{focus ? focus.label : (trace?.component ?? label)} /&gt;</>
                 : label}
               {trace && target.hitSlot && target.hitSlot !== trace.slots[0]?.slot && trace.slots.some((slot) => slot.slot === target.hitSlot) && (

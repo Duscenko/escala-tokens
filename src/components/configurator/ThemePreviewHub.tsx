@@ -13,7 +13,7 @@ const BOARD_PANEL_ID = 'generator-board'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import type { ComponentDef } from '../../lib/componentCatalogue'
+import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
@@ -365,6 +365,10 @@ function ArtefactsView({
         defaultAppearance={boardAppearance}
         onPick={onPickRole}
         onOpenTable={onOpenRoleInVariables}
+        onOpenComponent={onOpenComponent ? (key) => {
+          const def = COMPONENTS.find((c) => c.key === key)
+          if (def) onOpenComponent(def)
+        } : undefined}
         editing={editingRole}
         onExitMode={() => onInspectingChange(false)}
         onSelectionChange={onSelectionChange}
