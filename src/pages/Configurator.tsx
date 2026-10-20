@@ -862,7 +862,7 @@ export default function Configurator() {
   /** Every user-facing Home door: a draft asks before it is lost. */
   const requestHome = () => {
     if (draftsLeftBehind().length > 0) { setLeaveDraftOpen(true); return }
-    openLibraryPage()
+    openSystemPage()
   }
   const leaveAndDiscardDrafts = () => {
     const keys = draftsLeftBehind()
@@ -2331,6 +2331,14 @@ export default function Configurator() {
     || themeWorkspaceTab === 'system'
     || (themeWorkspaceTab === 'preview' && docsPanelOpen)
   const homeFileBrowser = themesCanvas && themeWorkspaceTab === 'library' && !homeCreating && sessionAllowsHome
+  // The old Home file browser is gone (design-plans/home-into-system.md): the
+  // `library` tab only hosts the create studio now. Closing the studio (or
+  // landing there without one) goes to Home, the system tab.
+  useEffect(() => {
+    if (themeWorkspaceTab !== 'library' || homeCreating || guestStudio || createPending) return
+    if (!sessionAllowsHome) return
+    setThemeWorkspaceTab('system')
+  }, [themeWorkspaceTab, homeCreating, guestStudio, createPending, sessionAllowsHome])
   // The guest studio ends when they leave it for another Generator tab, or
   // when persist hydrates a SAVED system. A mint from studio step 1 is still
   // a draft — refresh must keep the studio, not the finished-looking board.
@@ -2430,7 +2438,7 @@ export default function Configurator() {
     if (next === 'overview') { openThemePreviewPage(); return }
     // Home (the system tab) is never blocked: with no brand yet, it is the
     // table where the first one is added.
-    if (next === 'system') { openSystemPage(); return }
+    if (next === 'system') { requestHome(); return }
     const reason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
     if (reason) {
       showToast(reason, undefined, true)
@@ -2488,7 +2496,6 @@ export default function Configurator() {
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
         navInMenu={componentsWithoutSystem}
-        onOpenLibrary={requestHome}
         onOpenFigmaSync={openFigmaSyncPage}
         signUpAccent={canvasAccentStyle}
         // Export is for the two surfaces that hold a system you're shaping —

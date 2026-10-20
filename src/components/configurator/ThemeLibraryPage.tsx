@@ -968,6 +968,76 @@ function HomeNav({
   )
 }
 
+/**
+ * Home's right panel, under the pages: every design system this account holds.
+ * The one on screen is lit; another loads in place (asking first only when the
+ * one on screen holds work that is not kept anywhere). This is the ONLY door to
+ * the other systems — the old Home file browser is gone
+ * (design-plans/home-into-system.md).
+ */
+function DesignSystemsNav({ onNewSystem }: { onNewSystem: () => void }) {
+  const { t } = useI18n()
+  const store = useDesignStore()
+  const { guest } = useAccess()
+  const unsavedBrands = useUnsavedBrands()
+  const [pendingLoad, setPendingLoad] = useState<string | null>(null)
+  const currentId = activeLibraryId(store)
+  const others = otherDesignSystems(store.savedSystems, store)
+  const mine = myThemeKeys(store.themeOrder, store.themes)
+  // A guest has one system in this browser and nowhere to keep a second.
+  if (guest && others.length === 0) return null
+  const load = (id: string) => {
+    flushLibraryAutosave()
+    store.loadSystem(id)
+    setPendingLoad(null)
+  }
+  const requestLoad = (id: string) => {
+    // The system on screen is kept (saved, nothing still a draft): switching
+    // loses nothing, so there is nothing to confirm.
+    const kept = mine.length === 0
+      || (store.savedSystems.some((sys) => sys.id === currentId) && !mine.some((key) => unsavedBrands.has(key)))
+    if (kept) load(id)
+    else setPendingLoad(id)
+  }
+  const iconBtn = 'flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  return (
+    <NavGroup
+      label={t('Design systems')}
+      action={(
+        <button type="button" onClick={onNewSystem} aria-label={t('New design system')} title={t('New design system')} className={iconBtn}><PlusGlyph /></button>
+      )}
+    >
+      <NavRow
+        on
+        icon={<FolderIcon size={13} />}
+        label={store.projectName}
+        title={t('{name} — the design system on screen', { name: store.projectName })}
+        onClick={() => setPendingLoad(null)}
+      />
+      {others.map((sys) => (
+        <div key={sys.id} className="flex flex-col gap-1">
+          <NavRow
+            on={false}
+            icon={<FolderIcon size={13} />}
+            label={sys.name}
+            title={t('Open {name}', { name: sys.name })}
+            onClick={() => requestLoad(sys.id)}
+          />
+          {pendingLoad === sys.id && (
+            <div className="mx-1 mb-1 flex flex-col gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-2">
+              <span className="text-micro leading-relaxed text-fg-muted">{t('Replace what is on screen?')}</span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => load(sys.id)} className="text-caption font-semibold text-accent-ui hover:underline">{t('Load')}</button>
+                <button type="button" onClick={() => setPendingLoad(null)} className="text-caption text-fg-faint hover:text-fg">{t('Cancel')}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </NavGroup>
+  )
+}
+
 // ── System styles ────────────────────────────────────────────────────────────
 
 /**
@@ -1634,6 +1704,7 @@ export default function ThemeLibraryPage({
         appearance={previewAppearance}
         docsExits={docsExits ?? NO_DOCS_EXITS}
         onBack={systemOnly ? onGoHome : () => setSectionState({ kind: 'libraries' })}
+        navExtra={systemOnly ? <DesignSystemsNav onNewSystem={onNewSystem} /> : undefined}
         timeAgo={timeAgo}
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}

@@ -9,9 +9,13 @@ Status (2026-10-20): steps 1–3 done.
   tab. The empty-system → old Home redirect is gone (the page shows Add brand).
   `/` with no section still opens About (it always did; the old "signed-in `/` opens
   Home" note was stale).
-  **Deliberately left until step 4:** the account menu's "Saved design systems" still
-  opens the old file browser — it is the only way to reach the OTHER systems until the
-  header switcher exists. The create studio still runs on the internal `library` tab.
+- 4 ✅ (reshaped) no header switcher: the **right panel** lists the design systems
+  under the pages (`DesignSystemsNav` in `ThemeLibraryPage`): the one on screen lit,
+  another loads in place (asks "Replace what is on screen?" only when the current one
+  holds unsaved work), `+` = New design system. The account menu's "Saved design
+  systems" entry is gone. The rail's Home asks before throwing away a draft
+  (`requestHome`). The `library` tab hosts ONLY the create studio: closing it lands
+  on Home, so the old file browser can no longer be reached.
 
 ## Why
 

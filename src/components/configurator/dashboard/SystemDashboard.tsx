@@ -183,13 +183,15 @@ export function BrandSelect({ brand, onSelect, appearance = 'inline' }: {
   )
 }
 
-function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
+function DashboardNav({ page, onPage, docKey, onDocKey, onBack, extra }: {
   page: DashPage
   onPage: (next: DashPage) => void
   docKey: string
   onDocKey: (key: string) => void
   /** Back to the list of design systems. Absent where there is no such list to go to. */
   onBack?: () => void
+  /** Drawn under the pages: Home's list of design systems. */
+  extra?: ReactNode
 }) {
   const { t } = useI18n()
   return (
@@ -243,6 +245,7 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack }: {
             </div>
           ))}
         </div>
+        {extra}
       </nav>
     </InspectorPortal>
   )
@@ -305,7 +308,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 }
 
 export default function SystemDashboard({
-  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, timeAgo,
+  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, navExtra, timeAgo,
   onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
   onEditRole, onOpenComponent, docsExits, onExportBrand, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
@@ -321,6 +324,8 @@ export default function SystemDashboard({
   /** Home's own title row for the design system, given the token count to state. */
   overviewHeader: (tokenCount: number) => ReactNode
   onBack?: () => void
+  /** Under the menu: the design systems you can switch to (Home). */
+  navExtra?: ReactNode
   timeAgo: (iso: string) => string
   /** Brands the Figma sync publishes (File & modes). */
   onOpenGithub: () => void
@@ -382,7 +387,7 @@ export default function SystemDashboard({
   const doc = DASH_DOCS.some((item) => item.key === docKey) ? docKey : DEFAULT_DOC_KEY
   return (
     <>
-      <DashboardNav page={shown} onPage={onPage} docKey={doc} onDocKey={openDoc} onBack={onBack} />
+      <DashboardNav page={shown} onPage={onPage} docKey={doc} onDocKey={openDoc} onBack={onBack} extra={navExtra} />
       <SemanticTokenDrawer
         previewTheme={brand}
         previewAppearance={appearance}
