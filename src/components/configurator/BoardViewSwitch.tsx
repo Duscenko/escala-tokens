@@ -1,0 +1,97 @@
+import { useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useI18n } from '../../lib/i18n'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+
+/** What the board shows: the bento board of the brand, or every catalogue
+ *  component as a cover painted in its tokens. */
+export type BoardView = 'theme' | 'components'
+
+const VIEWS: BoardView[] = ['theme', 'components']
+
+/** The id of a view's tab, so the board region can name itself after it
+ *  (`aria-labelledby`). */
+export function boardTabId(panelId: string, view: BoardView): string {
+  return `${panelId}-tab-${view}`
+}
+
+/**
+ * Theme · Components, at the head of the board. One control for the create
+ * studio and the Generator, so the switch does not disappear when the studio
+ * hands over to the editor. Same segmented pill as Light / Dark and
+ * Desktop / Tablet / Mobile.
+ *
+ * It is a real tab list (WAI-ARIA tabs, automatic activation): one tab stop,
+ * the arrows move between the two views and select them, Home / End jump to
+ * the ends, and each tab points at the board it shows (`aria-controls`) —
+ * the board region carries `role="tabpanel"` with `boardTabId` as its label.
+ */
+export function BoardViewSwitch({ value, onChange, panelId }: {
+  value: BoardView
+  onChange: (view: BoardView) => void
+  /** The board region this switch drives. */
+  panelId: string
+}) {
+  const { t } = useI18n()
+  const listRef = useRef<HTMLDivElement>(null)
+  const glyphs: Record<BoardView, ReactNode> = {
+    theme: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
+        <path d="M2.5 3.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v8.5a2 2 0 0 1-4 0Z" />
+        <path d="M7.5 5.5 9.6 3.4a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4L6.3 12.7" />
+        <circle cx="5.5" cy="12" r=".6" fill="currentColor" />
+      </svg>
+    ),
+    components: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+        <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2" />
+        <rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2" />
+        <rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2" />
+        <rect x="9" y="9" width="4.5" height="4.5" rx="1.2" />
+      </svg>
+    ),
+  }
+  const labels: Record<BoardView, string> = { theme: t('Theme'), components: t('Components') }
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const at = VIEWS.indexOf(value)
+    const next = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? VIEWS[(at + 1) % VIEWS.length]
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? VIEWS[(at - 1 + VIEWS.length) % VIEWS.length]
+        : event.key === 'Home' ? VIEWS[0]
+          : event.key === 'End' ? VIEWS[VIEWS.length - 1]
+            : null
+    if (!next) return
+    event.preventDefault()
+    onChange(next)
+    listRef.current?.querySelector<HTMLButtonElement>(`#${CSS.escape(boardTabId(panelId, next))}`)?.focus()
+  }
+
+  return (
+    <div
+      ref={listRef}
+      role="tablist"
+      aria-label={t('Board view')}
+      onKeyDown={onKeyDown}
+      className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
+    >
+      {VIEWS.map((view) => {
+        const on = value === view
+        return (
+          <button
+            key={view}
+            id={boardTabId(panelId, view)}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            aria-controls={panelId}
+            tabIndex={on ? 0 : -1}
+            onClick={() => onChange(view)}
+            className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
+          >
+            {glyphs[view]}
+            {labels[view]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

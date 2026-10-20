@@ -810,7 +810,10 @@ export function SystemCollage({
     ),
     sidebar: (
         <ScaledModule key="sidebar" t={tile(18)} appearance={appearanceAt(18)} chrome={false} elev="sm">
-          <Sidebar t={tile(18)} v={{}} w="100%" />
+          {/* A tile is a panel, so the sidebar is shadcn's `floating` variant
+              (radius.container). The flush `sidebar` variant has square
+              corners and drew them inside the tile's rounded frame. */}
+          <Sidebar t={tile(18)} v={{ Variant: 'floating' }} w="100%" />
         </ScaledModule>
     ),
     inputTag: (

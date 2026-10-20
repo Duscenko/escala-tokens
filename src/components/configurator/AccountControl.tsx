@@ -120,8 +120,8 @@ function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProp
           href={loginHref({ next: keepsWork ? 'workspace' : 'library', mode: 'signup' })}
           onClick={() => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))}
           title={keepsWork ? t('Save your work with a free account') : undefined}
-          style={signUpAccent}
-          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg bg-accent-solid px-3 text-body font-semibold text-accent-ink transition-[filter] hover:brightness-110 ${FOCUS_RING}`}
+          style={{ backgroundColor: 'var(--rainbow-fill-a)', color: 'var(--rainbow-ink)' }}
+          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-semibold transition-[filter] hover:brightness-110 ${FOCUS_RING}`}
         >
           {t('Sign up')}
         </a>

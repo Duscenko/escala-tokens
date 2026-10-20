@@ -1,11 +1,12 @@
+import type { KeyboardEvent } from 'react'
 import { useOneThemePlan } from '../../lib/access'
 import {
   BRAND_THEME_CHOICES, brandThemeChoiceFor, brandThemeLabel, plannedBrandThemes, type BrandThemeId,
 } from '../../lib/brandThemes'
 import { useI18n } from '../../lib/i18n'
-import { SELECT_CARD } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_CARD } from './themeWorkspaceLayout'
 
-const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui'
 
 /** The brand's theme row: Light · Dark.
  *
@@ -42,6 +43,19 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
   const leadId = lead && singles.some((c) => c.ids[0] === lead) ? lead : singles[0]?.ids[0]
   const caption = limited ? t('Themes this brand ships') : t('Theme')
 
+  // WAI-ARIA radio group: arrows move focus AND select, wrapping at the ends.
+  const onRadioKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
+    if (!step) return
+    event.preventDefault()
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'))
+    const at = radios.findIndex((radio) => radio === document.activeElement)
+    const next = radios[(at + step + radios.length) % radios.length]
+    next?.focus()
+    next?.click()
+  }
+
   const segments = (
         singles.map((choice) => {
           const id = choice.ids[0]
@@ -61,8 +75,15 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
                 if (!both && everyTheme.length) onChange([...everyTheme])
                 onLead?.(id)
               }}
-              className={`flex h-full min-w-0 flex-1 items-center justify-center rounded-md px-2 text-caption font-medium transition-colors duration-150 ease-out ${FOCUS} ${
-                on ? 'bg-fg/8 text-fg' : 'text-fg-muted hover:text-fg'
+              // Roving tab stop: only the checked segment is in the tab order;
+              // the arrows move between them (`onRadioKeys`).
+              tabIndex={on ? 0 : -1}
+              // The selected segment was a fg/8 wash at the same weight as the
+              // others, so "which one is on" rested on a faint fill alone. It
+              // now uses the segmented-control language (raised fill +
+              // semibold) shared with Desktop / Tablet / Mobile.
+              className={`flex h-full min-w-0 flex-1 items-center justify-center rounded-md px-2 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none ${FOCUS} ${
+                on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
               }`}
             >
               <span className="truncate">{name}</span>
@@ -75,7 +96,7 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
     return (
       <div className={`flex h-11 items-center gap-3 pl-3.5 pr-1.5 ${SELECT_CARD}`}>
         <span className="flex-shrink-0 text-ui text-fg-muted">{caption}</span>
-        <div role="radiogroup" aria-label={caption} className="ml-auto flex h-8 min-w-0 max-w-[11rem] flex-1 select-none items-center gap-0.5 rounded-md bg-app/50 p-0.5">
+        <div role="radiogroup" aria-label={caption} onKeyDown={onRadioKeys} className={`ml-auto flex h-8 min-w-0 max-w-[11rem] flex-1 select-none items-center gap-0.5 rounded-md p-0.5 ${CHROME_CONTROL_SHELL}`}>
           {segments}
         </div>
       </div>
@@ -87,7 +108,7 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
       {label && (
         <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{caption}</p>
       )}
-      <div role="radiogroup" aria-label={caption} className="flex h-8 select-none items-center gap-0.5 rounded-lg border border-line p-0.5">
+      <div role="radiogroup" aria-label={caption} onKeyDown={onRadioKeys} className={`flex h-8 select-none items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}>
         {segments}
       </div>
     </div>

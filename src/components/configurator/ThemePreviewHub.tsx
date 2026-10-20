@@ -5,6 +5,11 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
+import { ComponentCoversGrid } from './docs/ComponentAvatars'
+import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+
+/** The Generator board — the region Theme · Components switches. */
+const BOARD_PANEL_ID = 'generator-board'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
@@ -93,7 +98,7 @@ function RevealLabel({ open, children }: { open: boolean; children: ReactNode })
 
 /** Inner button of the header controls: square at rest (the 16px glyph
  *  centred in the 28px track), widening only by its label. */
-const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.75rem_-_16px)/2)] text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.75rem_-_16px)/2)] text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui focus-visible:ring-offset-1 focus-visible:ring-offset-app'
 
 /**
  * Inspector mode toggle — Figma `41:1544` / `41:1545` (Button - Inspect tokens).
@@ -109,7 +114,7 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  * the previewed theme's brand solid and stays open reading **Exit inspector**,
  * so the way out is written on the control itself, not only in a tooltip.
  */
-const HEADER_CONTROL_DISABLED = 'opacity-40 pointer-events-none'
+const HEADER_CONTROL_DISABLED = 'opacity-40 cursor-not-allowed'
 
 function InspectorToggle({ active, onChange, accent, ink, disabled = false, disabledTitle }: {
   active: boolean
@@ -123,6 +128,10 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
   disabledTitle?: string
 }) {
   const { t } = useI18n()
+  // The name is the ACTION, so it says what a press does ("Inspector" /
+  // "Exit inspector") and matches the visible text (WCAG 2.5.3). Pairing a
+  // changing name with `aria-pressed` made a screen reader announce "Exit
+  // inspector, toggle button, pressed" — two answers to one question.
   const label = active ? t('Exit inspector') : t('Inspector')
   const hint = disabled && disabledTitle
     ? disabledTitle
@@ -140,11 +149,12 @@ function InspectorToggle({ active, onChange, accent, ink, disabled = false, disa
     >
       <button
         type="button"
-        onClick={() => onChange(!active)}
-        disabled={disabled}
-        aria-pressed={active}
-        aria-disabled={disabled}
+        // `aria-disabled`, not `disabled`: a disabled button leaves the tab
+        // order and drops its tooltip, so the reason it is off was unreachable.
+        onClick={() => { if (!disabled) onChange(!active) }}
+        aria-disabled={disabled || undefined}
         aria-label={label}
+        aria-keyshortcuts={active ? 'Escape' : undefined}
         title={hint}
         className={`${HEADER_CONTROL_BTN} ${
           active && !disabled
@@ -235,9 +245,11 @@ const DRAWER_GUTTER = 24
 const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
-  previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
+  view, previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange,
 }: {
+  /** Theme (the bento board) or Components (every component as a cover). */
+  view: BoardView
   previewTheme: string
   previewPlatform: GridViewport
   accentPreview: string | null
@@ -315,19 +327,28 @@ function ArtefactsView({
   return (
     <div
       ref={canvasRef}
+      id={BOARD_PANEL_ID}
+      role="tabpanel"
+      aria-labelledby={boardTabId(BOARD_PANEL_ID, view)}
       className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} py-5 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
       <div className="mx-auto w-full">
         <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
-            <SystemCollage
-              layout={previewPlatform === 'desktop' ? 'board' : 'phones'}
-              frameTokens={stageTokens}
-              tokensByAppearance={tokensByAppearance}
-              tileAppearances={tileAppearances}
-              projectName={store.projectName}
-            />
+            {view === 'theme' ? (
+              <SystemCollage
+                layout={previewPlatform === 'desktop' ? 'board' : 'phones'}
+                frameTokens={stageTokens}
+                tokensByAppearance={tokensByAppearance}
+                tileAppearances={tileAppearances}
+                projectName={store.projectName}
+              />
+            ) : (
+              <div className={boardAppearance === 'dark' ? 'dark' : 'light'}>
+                <ComponentCoversGrid tokens={stageTokens} />
+              </div>
+            )}
           </InspectorModeProvider>
         </div>
       </div>
@@ -465,6 +486,7 @@ export default function ThemePreviewHub({
   // screen is how a first-time visitor learns what the colour step is setting.
   // Only an unsaved Random draft keeps it off.
   const [inspecting, setInspecting] = useState(true)
+  const [boardView, setBoardView] = useState<BoardView>('theme')
   useEffect(() => {
     if (randomDraft) setInspecting(false)
   }, [randomDraft])
@@ -698,14 +720,25 @@ export default function ThemePreviewHub({
                     <span aria-current="page" className="min-w-0 truncate px-1.5 font-semibold text-fg">{stylePreview.preset.label}</span>
                   </nav>
                 ) : (
-                  // The board's title is the THEME, editable in place, plus whether
-                  // it is saved — the tab strip already says this is Theme.
-                  <span className="flex min-w-0 items-center gap-2 -ml-2">
-                    <ThemeNameField
-                      key={previewTheme}
-                      previewTheme={previewTheme}
-                      readOnlyLabel={needsMyTheme ? hubViewLabel : stylePreview?.preset.label}
-                    />
+                  // The brand's name heads the inspector (ThemeQuickSettingsRail's
+                  // header), next to Edit. The board only names what is not a
+                  // brand of yours yet: the empty state, a style tried on.
+                  // The board's view switch LEADS: it says what is on screen,
+                  // like tabs. Inspect stays on the right, beside the panel
+                  // its readings open in.
+                  <span className="flex min-w-0 items-center gap-2">
+                    {!needsMyTheme && (
+                      <BoardViewSwitch value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
+                    )}
+                    {(needsMyTheme || stylePreview) && (
+                      <span className={`min-w-0 ${needsMyTheme ? '-ml-2' : ''}`}>
+                        <ThemeNameField
+                          key={previewTheme}
+                          previewTheme={previewTheme}
+                          readOnlyLabel={needsMyTheme ? hubViewLabel : stylePreview?.preset.label}
+                        />
+                      </span>
+                    )}
                   </span>
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
@@ -750,6 +783,7 @@ export default function ThemePreviewHub({
                 ) : null}
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView
+                    view={boardView}
                     previewTheme={previewTheme}
                     previewPlatform={boardPlatform}
                     accentPreview={accentPreview}

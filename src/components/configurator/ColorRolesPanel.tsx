@@ -48,7 +48,7 @@ export function ColorRolesPanel({
   appearance, header, rows, selected, onSelect,
   onHex, onHuePreview, onHueCommit, solveAt,
   neutralTint, onNeutralTint, onToggleLink,
-  page, after,
+  page, after, defaultOpen = null,
 }: {
   appearance: ThemeAppearance
   /** Light / Dark and Random, drawn above the rows. */
@@ -73,12 +73,14 @@ export function ColorRolesPanel({
   page: string
   /** Rows that are not roles (extra brand palettes). */
   after?: ReactNode
+  /** A row open on mount — the create form opens Accent, its one decision. */
+  defaultOpen?: ColorRoleId | null
 }) {
   const { t } = useI18n()
   // Which row is open. Closed by default: the slider only shows once you
   // reach for a colour. Opening a row also selects it, so the preview's
   // highlight and the open row never disagree.
-  const [open, setOpen] = useState<ColorRoleId | null>(null)
+  const [open, setOpen] = useState<ColorRoleId | null>(defaultOpen)
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -86,7 +88,7 @@ export function ColorRolesPanel({
       {/* One grid for every row — [name] [badge] [hex] — shared through
           subgrid, so the badges start on one line after the widest name in
           any language instead of hugging each name. */}
-      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_98px] gap-y-2">
+      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_104px] gap-y-2">
         {rows.map((row) => (
           <RoleRow
             key={row.id}

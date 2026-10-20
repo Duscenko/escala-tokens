@@ -73,11 +73,9 @@ export function InspectorModeProvider({ active, children }: { active: boolean; c
 /**
  * Marks a subtree as one catalogue component, for the overlay to hit-test.
  *
- * INERT WHEN OFF: returns the children untouched, so the collage's DOM with
- * inspector mode disabled is byte-identical to before this existed. That
- * matters more here than in most opt-in wrappers — this thing wraps every
- * specimen on the canvas, so "it costs nothing when unused" has to be
- * literally true rather than approximately true.
+ * INERT WHEN OFF: a boxless `display: contents` span with no attributes, so
+ * nothing hit-tests it and layout is untouched. It stays mounted in both
+ * modes so toggling Inspect never remounts the specimen inside it.
  */
 export function TokenInspector({
   component, variant, children,
@@ -90,11 +88,16 @@ export function TokenInspector({
   children: ReactNode
 }) {
   const active = useContext(InspectorActiveContext)
-  if (!active) return <>{children}</>
+  // The wrapper is ALWAYS rendered; only its attributes depend on the mode.
+  // Swapping between a fragment and a span changed the element type at this
+  // position, so React remounted every specimen whenever Inspect was toggled:
+  // local state was lost (the Sidebar's active row, a flipped Switch) and the
+  // Sonner list re-measured a toast that had just been dismissed, collapsing
+  // its tile. `display: contents` generates no box, so layout is unchanged.
   return (
     <span
-      data-inspect={component}
-      data-inspect-variant={variant ? JSON.stringify(variant) : undefined}
+      data-inspect={active ? component : undefined}
+      data-inspect-variant={active && variant ? JSON.stringify(variant) : undefined}
       style={{ display: 'contents' }}
     >
       {children}
@@ -140,12 +143,13 @@ export function useInspectorActive(): boolean {
 function rectOf(el: Element): DOMRect | null {
   const own = el.getBoundingClientRect()
   if (own.width || own.height) return own
-  const kids = Array.from(el.children)
-  if (!kids.length) return null
+  // Boxless wrappers nest: a recipe component sits inside `RecipeScope`, which
+  // is `display: contents` too. Reading only the direct children found that
+  // second zero box and gave up, so Card, Sidebar and Sonner never highlighted.
   let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity
-  for (const kid of kids) {
-    const r = kid.getBoundingClientRect()
-    if (!r.width && !r.height) continue
+  for (const kid of Array.from(el.children)) {
+    const r = rectOf(kid)
+    if (!r) continue
     left = Math.min(left, r.left); top = Math.min(top, r.top)
     right = Math.max(right, r.right); bottom = Math.max(bottom, r.bottom)
   }

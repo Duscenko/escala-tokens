@@ -10,16 +10,15 @@ import { adoptPreset } from '../../lib/adoptPreset'
 export { mintTheme, slotsFromAccent, type MintPages }
 import {
   BASE_TONE, backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, readableInk,
-  type NeutralTint,
+  colorAtHue, neutralFromBrand, type NeutralTint,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
 import { BRAND_THEME_IDS, brandThemeDef, shippedThemes, type BrandThemeId } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
-import { accentCuratedPalette } from '../../lib/industryPacks'
-import SpectrumSlider from '../ui/SpectrumSlider'
-import { AccentAxisSlider } from './ThemeQuickSettingsRail'
+import { ColorRolesPanel } from './ColorRolesPanel'
+import { COLOR_ROLE_ORDER, roleColorAtHue, type ColorRoleId } from '../../lib/colorRoles'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
@@ -204,7 +203,7 @@ function StylePicker({ value, accent, onChange }: {
         aria-expanded={open}
         className={`flex h-11 w-full items-center gap-2 px-3.5 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`}
       >
-        <span className="text-ui text-fg-muted">{t('Style')}</span>
+        <span className="flex-shrink-0 text-ui text-fg-muted">{t('Start from style')}</span>
         <span className="ml-auto flex min-w-0 items-center gap-1.5 text-ui font-medium text-fg">
           {current && <span aria-hidden className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: accent }} />}
           <span className="truncate">{current ? current.shortLabel : t('Scratch')}</span>
@@ -212,7 +211,7 @@ function StylePicker({ value, accent, onChange }: {
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 text-fg-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}><path d="M3 4.5 6 7.5l3-3" /></svg>
       </button>
       {open && (
-        <div role="listbox" aria-label={t('Style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-80 flex-col overflow-y-auto ${SELECT_LIST}`}>
+        <div role="listbox" aria-label={t('Start from style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-80 flex-col overflow-y-auto ${SELECT_LIST}`}>
           {options.map((o) => {
             const on = o.id === value
             return (
@@ -267,10 +266,12 @@ export function ThemeIdentityBar({
   const fieldRef = useRef<HTMLInputElement>(null)
   return (
     <div className={`flex w-full min-w-0 items-center gap-1.5 ${padded ? 'px-3' : ''}`}>
-      {/* In the create studio (`padded`) the row is one of the form's field
-          rows — Name · Theme · Style share height, fill, edge and type. */}
+      {/* In the create studio (`padded`) the row shares the form's fill, edge
+          and type, but keeps the band's height: at h-11 it left 5px above and
+          below inside the 60px band against 13.5px at the sides. At h-8 the gap
+          is 12px all round, the same as the brand name after it is created. */}
       <div className={`flex min-w-0 flex-1 items-center rounded-lg border transition-colors duration-200 hover:border-line-strong focus-within:border-line-strong motion-reduce:transition-none ${
-        padded ? 'h-11 border-line-strong/80 bg-elevated/70 px-3.5' : `${rowClass} border-line bg-surface px-2.5`
+        padded ? `${rowClass} border-line-strong/80 bg-elevated/70 px-3` : `${rowClass} border-line bg-surface px-2.5`
       } ${nameLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
         <span
           aria-hidden
@@ -366,6 +367,13 @@ export function MintedThemeIdentity({ themeKey, onClose, showAppearance = true }
     />
   )
 }
+
+/** The editor's colour roles, read off the create form's family slots. */
+const ROLE_SLOT: Record<ColorRoleId, FamilySlot> = {
+  accent: 'brand', neutral: 'gray', success: 'success', error: 'error', warning: 'warning', info: 'info',
+}
+/** The four states link and unlink together, as in the editor. */
+const STATE_SLOTS: FamilySlot[] = ['success', 'error', 'warning', 'info']
 
 export function ThemeForm({
   onClose,
@@ -558,7 +566,7 @@ export function ThemeForm({
   // Create stays on the compact accent chooser. Edit opens on the full picker
   // and the six slots; nothing on the create step flips that.
   const moreOpen = !firstStep
-  const curated = useMemo(() => accentCuratedPalette(slots.brand), [slots.brand])
+  const [colorRole, setColorRole] = useState<ColorRoleId>('accent')
   const [err, setErr] = useState<string | null>(null)
   useEffect(() => { onErrorChange?.(err) }, [err, onErrorChange])
 
@@ -773,11 +781,78 @@ export function ThemeForm({
           </div>
         )}
 
-        {/* Accent — the one required decision. `.light`/`.dark` are the app's
-            own token sets (index.css); `.light` exists precisely so a subtree
-            can opt back OUT of dark chrome. A ramp is judged against the page
-            it ships on, so the card is painted in the theme's appearance even
-            while the chrome is the other one. */}
+        {/* Colour — the same list the editor's Color edition shows
+            (ColorRolesPanel): one row per role, swatch + hex, the row opens its
+            hue slider and contrast check. The create form used to draw its own
+            card (hue + saturation + six swatches), a second way to pick the
+            same colours. Neutral and the four states start linked to the
+            accent; editing one detaches it, as in the editor. */}
+        {!moreOpen ? (
+          <div className="flex-shrink-0">
+            {/* The draft holds ONE base per family (its light anchor; the dark
+                ramp is generated from it), so rows, solve and contrast check
+                all read the light page. */}
+            <ColorRolesPanel
+              appearance="light"
+              header={(
+                <div className="flex items-center gap-2">
+                  <p className="min-w-0 flex-1 truncate text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Color')}</p>
+                  {canUndoRandom && (
+                    <button
+                      type="button"
+                      onClick={undoRandom}
+                      aria-label={t('Undo random')}
+                      title={t('Undo random')}
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center text-fg-muted hover:text-fg ${SELECT_SHELL} ${SELECT_FOCUS}`}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5.5 3.5 2.5 6.5l3 3" /><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" /></svg>
+                    </button>
+                  )}
+                  <RandomThemeButton onClick={spinRandom} label={t('Shuffle colours')} variant="icon" />
+                </div>
+              )}
+              rows={COLOR_ROLE_ORDER.map((id) => ({
+                id,
+                hex: slots[ROLE_SLOT[id]],
+                linked: id === 'neutral' ? derived.has('gray') : id === 'accent' ? undefined : STATE_SLOTS.every((slot) => derived.has(slot)),
+              }))}
+              selected={colorRole}
+              onSelect={setColorRole}
+              defaultOpen="accent"
+              onHex={(id, hex) => setSlot(ROLE_SLOT[id], hex)}
+              onHueCommit={(id, hue) => {
+                if (id === 'neutral') setSlot('gray', neutralFromBrand(colorAtHue({ saturation: 1, lightness: 0.5 }, hue), tint))
+                else setSlot(ROLE_SLOT[id], roleColorAtHue(slots[ROLE_SLOT[id]], hue, 'light', themePages.light))
+              }}
+              solveAt={(id, hue) => (id === 'neutral'
+                ? neutralFromBrand(colorAtHue({ saturation: 1, lightness: 0.5 }, hue), tint)
+                : roleColorAtHue(slots[ROLE_SLOT[id]], hue, 'light', themePages.light))}
+              neutralTint={tint}
+              onNeutralTint={(next) => {
+                setTint(next)
+                if (derived.has('gray')) setSlots((prev) => ({ ...prev, gray: slotsFromAccent(prev.brand, next).gray }))
+              }}
+              onToggleLink={(id) => {
+                const group: FamilySlot[] = id === 'neutral' ? ['gray'] : STATE_SLOTS
+                const linking = !group.every((slot) => derived.has(slot))
+                setDerived((prev) => {
+                  const next = new Set(prev)
+                  group.forEach((slot) => (linking ? next.add(slot) : next.delete(slot)))
+                  return next
+                })
+                if (linking) {
+                  const harmony = slotsFromAccent(slots.brand, tint)
+                  setSlots((prev) => {
+                    const next = { ...prev }
+                    group.forEach((slot) => { next[slot] = harmony[slot] })
+                    return next
+                  })
+                }
+              }}
+              page={themePages.light}
+            />
+          </div>
+        ) : (
         <section
           className={`${dark ? 'dark' : 'light'} flex-shrink-0 rounded-xl border border-line p-3 transition-[background-color,border-color] duration-200`}
           style={{ backgroundColor: page }}
@@ -807,38 +882,6 @@ export function ThemeForm({
               tuned to the current hue with the selection box and the
               Muted / Vivid / High contrast options — not a static swatch list.
               `dynamicAccentPalette` + `palette={[]}` is exactly that call. */}
-          {!moreOpen ? (
-            // The first step's chooser: a hue strip that keeps the colour vivid
-            // at every angle (the Theme rail's own control) and six curated
-            // neighbours of the current hue. The full picker is one click away.
-            <div className="flex flex-col gap-3">
-              <SpectrumSlider value={slots.brand} ariaLabel={t('Accent hue')} onCommit={setAccent} />
-              <AccentAxisSlider
-                axis="saturation"
-                label={t('Saturation')}
-                value={slots.brand}
-                onPreview={setAccent}
-                onCommit={setAccent}
-              />
-              <div className="flex gap-1.5" role="group" aria-label={t('Curated accents')}>
-                {curated.map((c) => {
-                  const on = c.hex.toLowerCase() === slots.brand.toLowerCase()
-                  return (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      onClick={() => setAccent(c.hex)}
-                      aria-pressed={on}
-                      aria-label={c.label}
-                      title={c.label}
-                      className={`h-8 flex-1 rounded-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? 'ring-2 ring-fg ring-offset-2 ring-offset-[var(--app)]' : ''}`}
-                      style={{ backgroundColor: c.hex }}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          ) : (
           <ColorPickerPanel
             value={slots.brand}
             onChange={setAccent}
@@ -850,8 +893,8 @@ export function ThemeForm({
             appearance={kind}
             fieldAppearance={kind}
           />
-          )}
         </section>
+        )}
 
         {/* The six slots — edit only. Create asks for the accent; neutral and
             the four states already follow it, and Color edition is where they

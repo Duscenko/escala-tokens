@@ -47,8 +47,8 @@ describe('chrome theme mapping', () => {
     for (const name of Object.keys(CHROME_ROLES)) {
       expect(index).not.toMatch(new RegExp(`^\\s*${name}\\s*:`, 'm'))
     }
-    expect(index).toMatch(/--fg-faint:\s*#737373/)
-    expect(index).toMatch(/--fg-faint:\s*#7b7b83/)
+    expect(index).toMatch(/--fg-faint:\s*#6a6a70/)
+    expect(index).toMatch(/--fg-faint:\s*#85858d/)
   })
 })
 

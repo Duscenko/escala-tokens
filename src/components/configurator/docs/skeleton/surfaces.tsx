@@ -199,12 +199,18 @@ export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
     const root = box.current
     if (!root) return
     let ro: ResizeObserver | null = null
+    let watched: HTMLElement | null = null
+    // Sonner swaps the toast node (a dismiss + re-add with the same id). An
+    // observer left on the detached node reported 0 and the list collapsed,
+    // so a new node is re-observed.
     const attach = () => {
       const toastEl = root.querySelector<HTMLElement>('[data-sonner-toast]')
-      if (!toastEl || ro) return
-      ro = new ResizeObserver(() => setHeight(toastEl.offsetHeight))
+      if (!toastEl || toastEl === watched) return
+      ro?.disconnect()
+      watched = toastEl
+      ro = new ResizeObserver(() => { if (toastEl.isConnected && toastEl.offsetHeight) setHeight(toastEl.offsetHeight) })
       ro.observe(toastEl)
-      setHeight(toastEl.offsetHeight)
+      if (toastEl.offsetHeight) setHeight(toastEl.offsetHeight)
     }
     attach()
     const mo = new MutationObserver(attach)

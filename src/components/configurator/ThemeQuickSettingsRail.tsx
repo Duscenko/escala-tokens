@@ -14,7 +14,7 @@
 // theme-scoped foundation and repaint the specimens beside this rail.
 
 import { recordEdit } from '../../lib/editHistory'
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
@@ -792,9 +792,12 @@ export function RailCard({ title, trailing, footer, flush, children }: {
 
 /** The inspector band for the Theme panel (Figma 1:6886): the panel's name and
  *  the door to the list of editions, or — in that list — the way back. */
-function PanelHeader({ editing, title, onEdit, onBack }: {
+function PanelHeader({ editing, title, name, onEdit, onBack }: {
   editing: boolean
   title: string
+  /** The brand's name field. It takes the title's place at rest, so the
+   *  panel is headed by WHAT is being edited instead of the word "Theme". */
+  name?: ReactNode
   onEdit?: () => void
   onBack: () => void
 }) {
@@ -815,7 +818,9 @@ function PanelHeader({ editing, title, onEdit, onBack }: {
           </svg>
         </button>
       )}
-      <span className="min-w-0 flex-1 truncate text-title text-fg">{title}</span>
+      {!editing && name
+        ? <div className="flex min-w-0 flex-1">{name}</div>
+        : <span className="min-w-0 flex-1 truncate text-title text-fg">{title}</span>}
       {!editing && onEdit && (
         <button
           type="button"
@@ -2501,6 +2506,7 @@ export default function ThemeQuickSettingsRail({
           <PanelHeader
             editing={editList}
             title={editList ? t('Edit {name}', { name: brandLabel }) : t('Theme')}
+            name={<ThemeNameField key={previewTheme} previewTheme={previewTheme} />}
             onEdit={onSelectPanel ? () => setEditList(true) : undefined}
             onBack={() => setEditList(false)}
           />
@@ -2625,7 +2631,7 @@ export default function ThemeQuickSettingsRail({
                           <span className={`flex h-[22.5px] min-w-0 flex-1 items-center pl-2 text-ui ${openChip === rank ? 'text-fg' : 'text-fg-muted'}`}>
                             <span className="truncate">{t(BRAND_EXTRA_LABEL[rank])}</span>
                           </span>
-                          <span className="flex h-[22.5px] w-[98px] flex-shrink-0 items-center gap-2 pr-1.5">
+                          <span className="flex h-[22.5px] w-[104px] flex-shrink-0 items-center gap-2 pr-1.5">
                             <span
                               aria-hidden
                               className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"

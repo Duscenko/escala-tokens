@@ -227,7 +227,7 @@
      `content.primary` · `content.secondary` · `border.subtle` ·
      `border.default`). `--fg-faint` stays hand-tuned: the system has no
      third readable ink (see `src/lib/chromeTheme.ts`). */
-  --fg-faint: #737373;
+  --fg-faint: #6a6a70;
   /* Chrome lines — TWO colour roles, ONE width. Hairline is 0.8px on
      retina and floors to 1px below 2dppx (same guard `hairlineSafe` uses
      for token strokes — a sub-pixel line vanishes on 1x). Do not invent a
@@ -288,6 +288,17 @@
   }
 }
 
+/* TopNav sits on `--nav`, and `--chip-rest` (#f1f1f2 light) measured 1.02:1
+   against it, so the menu and Figma chips had no visible shape. On the frame a
+   chip takes the chrome-control fill (a step OFF the frame in both themes) and
+   a hairline. The outline (not a box-shadow) leaves the inset hover wash and
+   the focus ring alone. */
+header[data-top-nav] .bg-chip-rest {
+  background-color: var(--chrome-control);
+  outline: var(--line-width) solid var(--line-strong);
+  outline-offset: calc(-1 * var(--line-width));
+}
+
 /* Hairline painted as a fill (`RailDivider`, inline separators). Same
    `--line-width` as the border utilities so a seam and a rule can meet. */
 .bg-line.h-px { height: var(--line-width); }
@@ -299,7 +310,7 @@
    own appearance (a dark theme's ramps have to be judged on a dark surface),
    so its light card must stay light even while the app chrome is dark. */
 .light {
-  --fg-faint: #737373;
+  --fg-faint: #6a6a70;
   --inverse-action: #18181b;
   --inverse-action-hover: #27272a;
   --inverse-action-ink: #fafafa;
@@ -406,9 +417,9 @@
      #171717/#262626 is the flat "default dark" look; a trace of chroma is what
      reads as a deliberate dark theme.
 
-     `--fg-faint` moved #6b6b6b → #7b7b83: on the raised surface it measured
-     2.68:1, under the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on
-     `--surface`. */
+     `--fg-faint` moved #6b6b6b → #7b7b83 → #85858d: the second step because
+     the frame (`--nav`) carries labels too, and #7b7b83 read 4.39:1 there.
+     Now 5.04 on `--nav`, 4.76 on `--surface`, 4.50 on `--elevated`. */
   /* Elevation ladder (dark), recalibrated 2026-10-06 for the card + inspector
      layout — measured in OKLab ΔL, since WCAG is useless this close to black:
        `--nav`        #070709  L .130  the FRAME behind the card and inspector
@@ -419,7 +430,7 @@
      panel #fff (+.030) → recessed chips (−.072); dark needs the larger steps
      because the luminance range near black is compressed. The generated
      `--elevated` (#1b1b1c) lands +.044 over the panel. */
-  --fg-faint: #7b7b83;
+  --fg-faint: #85858d;
   /* Chrome levels (dark) that are still hand-tuned:
        `--nav`        #070709  shell frame — TopNav, Themes library, footer,
                                Artefacts well (`SHELL_CHROME`)

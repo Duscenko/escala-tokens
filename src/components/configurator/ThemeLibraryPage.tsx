@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
@@ -30,6 +30,7 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
+import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { CreateStudioFooter } from './ThemeSaveBar'
@@ -770,16 +771,19 @@ function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, 
  *  screen, and the inspector is the tool you use on it. The number is the step
  *  the footer counts, so the two never disagree. The hint is behind "?" —
  *  one sentence nobody needs twice. */
-function CreateBoardHeader({ title, stepLabel }: {
+function CreateBoardHeader({ title, stepLabel, lead }: {
   title: string
   stepLabel: string
+  /** The board's view switch. It leads, as in the Generator's header. */
+  lead?: ReactNode
 }) {
   return (
     <div
-      className="flex flex-shrink-0 items-center border-b border-line px-5"
+      className="flex flex-shrink-0 items-center gap-4 border-b border-line px-5"
       style={{ minHeight: INSPECTOR_TABS_H }}
     >
-      <h2 className="flex min-w-0 items-baseline gap-2 text-ui font-semibold text-fg">
+      {lead}
+      <h2 className="flex min-w-0 flex-1 items-baseline gap-2 text-ui font-semibold text-fg">
         <span className="truncate">{title}</span>
         <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
       </h2>
@@ -787,38 +791,35 @@ function CreateBoardHeader({ title, stepLabel }: {
   )
 }
 
-type CreateBoardView = 'theme' | 'components'
-
 function CreateBoard({
-  store, themeKey, appearance, header, platform = 'desktop',
+  store, themeKey, appearance, title, stepLabel, platform = 'desktop',
 }: {
   store: ReturnType<typeof useDesignStore.getState>
   /** The studio's platform switch: the board resolves against this viewport. */
   platform?: GridViewport
   themeKey: string
   appearance: 'light' | 'dark'
-  header?: ReactNode
+  title: string
+  stepLabel: string
 }) {
-  // What the board shows (the bento board, or every component as a cover) and
-  // a preview-only appearance flip. The flip never writes the brand's theme:
-  // the panel's Theme row does that, and moving it resets the flip.
-  const [view, setView] = useState<CreateBoardView>('theme')
-  const [flipFor, setFlipFor] = useState<'light' | 'dark' | null>(null)
-  const shown: 'light' | 'dark' = flipFor === appearance ? (appearance === 'dark' ? 'light' : 'dark') : appearance
+  // What the board shows: the bento board, or every component as a cover.
+  // Light / Dark is the panel's Theme row — the board has no second toggle.
+  const [view, setView] = useState<BoardView>('theme')
+  const panelId = `create-board-${useId().replace(/:/g, '')}`
   const tokensByAppearance = useMemo(() => ({
     light: resolvePreviewTokens(store, themeKey, 'light', platform),
     dark: resolvePreviewTokens(store, themeKey, 'dark', platform),
   }), [store, themeKey, platform])
-  const stage = tokensByAppearance[shown]
+  const stage = tokensByAppearance[appearance]
   const tiles = useMemo(
-    () => Array.from({ length: COLLAGE_TILE_COUNT }, () => shown),
-    [shown],
+    () => Array.from({ length: COLLAGE_TILE_COUNT }, () => appearance),
+    [appearance],
   )
   const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
   return (
-    <div className={`relative flex min-h-0 flex-1 flex-col ${shown === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
-      {header}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-24 pt-5">
+    <div className={`flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
+      <CreateBoardHeader title={title} stepLabel={stepLabel} lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />} />
+      <div id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {view === 'theme' ? (
           <SystemCollage
             layout={platform === 'desktop' ? 'board' : 'phones'}
@@ -830,69 +831,6 @@ function CreateBoard({
         ) : (
           <ComponentCoversGrid tokens={stage} />
         )}
-      </div>
-      <CreateBoardSwitch
-        view={view}
-        onView={setView}
-        appearance={shown}
-        onFlip={() => setFlipFor((f) => (f === appearance ? null : appearance))}
-      />
-    </div>
-  )
-}
-
-/** The board's floating switch: Theme · Components, and a light/dark flip.
- *  Always drawn in the dark chrome so it reads the same over either board. */
-function CreateBoardSwitch({ view, onView, appearance, onFlip }: {
-  view: CreateBoardView
-  onView: (v: CreateBoardView) => void
-  appearance: 'light' | 'dark'
-  onFlip: () => void
-}) {
-  const { t } = useI18n()
-  const seg = (on: boolean) => `flex h-9 items-center gap-2 rounded-xl px-4 text-ui font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-    on ? 'bg-elevated text-fg shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]' : 'text-fg-muted hover:text-fg'
-  }`
-  return (
-    <div className="dark pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center">
-      <div className="pointer-events-auto flex items-center gap-1.5">
-        <div role="tablist" aria-label={t('Board view')} className="flex items-center gap-1 rounded-2xl border border-line bg-app p-1 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
-          <button type="button" role="tab" aria-selected={view === 'theme'} onClick={() => onView('theme')} className={seg(view === 'theme')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
-              <path d="M2.5 3.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v8.5a2 2 0 0 1-4 0Z" />
-              <path d="M7.5 5.5 9.6 3.4a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4L6.3 12.7" />
-              <circle cx="5.5" cy="12" r=".6" fill="currentColor" />
-            </svg>
-            {t('Theme')}
-          </button>
-          <button type="button" role="tab" aria-selected={view === 'components'} onClick={() => onView('components')} className={seg(view === 'components')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-              <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2" />
-              <rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2" />
-              <rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2" />
-              <rect x="9" y="9" width="4.5" height="4.5" rx="1.2" />
-            </svg>
-            {t('Components')}
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={onFlip}
-          aria-label={t(appearance === 'dark' ? 'Preview in light' : 'Preview in dark')}
-          title={t(appearance === 'dark' ? 'Preview in light' : 'Preview in dark')}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-line bg-app text-fg shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          {appearance === 'dark' ? (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
-              <circle cx="8" cy="8" r="3" />
-              <path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9" />
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
-              <path d="M13 9.6A5.5 5.5 0 1 1 6.4 3a4.5 4.5 0 0 0 6.6 6.6Z" />
-            </svg>
-          )}
-        </button>
       </div>
     </div>
   )
@@ -1933,12 +1871,8 @@ export default function ThemeLibraryPage({
             appearance={createdKey
               ? (store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light')
               : (createDraft?.kind ?? 'dark')}
-            header={(
-              <CreateBoardHeader
-                title={firstSystem ? t('Customize your design system') : t('New brand')}
-                stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
-              />
-            )}
+            title={firstSystem ? t('Customize your design system') : t('New brand')}
+            stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
           />
         </>
       ) : studioOnly ? null : (

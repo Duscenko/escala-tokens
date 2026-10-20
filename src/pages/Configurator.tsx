@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
@@ -439,7 +439,7 @@ function PreviewThemeSwitch({
 }
 
 const EXPORT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
-const EXPORT_MENU_W = 220
+const EXPORT_MENU_W = 264
 const EXPORT_HALF =
   'transition-[color,background-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)]'
 
@@ -500,7 +500,10 @@ function ExportPill({
       setOpen(false)
     }
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key !== 'Escape') return
+      setOpen(false)
+      // Focus moved into the menu on open; give it back to the pill.
+      rootRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
     }
     document.addEventListener('pointerdown', onPointer)
     document.addEventListener('keydown', onKey)
@@ -515,38 +518,57 @@ function ExportPill({
     go()
   }
 
-  const itemClass = `flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-caption font-medium text-fg transition-colors hover:bg-fg/8 ${EXPORT_FOCUS}`
+  // Every destination is a row with a name and what it gives you, so the
+  // choice is made in the menu, not by guessing what "Export" will open.
+  const items: { key: string; label: string; hint: string; glyph: ReactNode; go: () => void }[] = [
+    { key: 'json', label: t('Export JSON'), hint: t('Pick what ships and download the files.'), glyph: <ExportIcon />, go: onExport },
+    { key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), glyph: <FigmaGlyph size={14} />, go: onSyncFigma },
+    { key: 'code', label: t('Get code'), hint: t('CSS, JSON and every format, ready to copy.'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onExportCode },
+    ...(onConnectGithub
+      ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the files to a repository.'), glyph: <GitHubGlyph size={14} />, go: onConnectGithub }]
+      : []),
+  ]
+  const itemClass = `flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`
+
+  // Arrow keys move between rows; the first row takes focus on open.
+  useEffect(() => {
+    if (!open || !pos) return
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
+  }, [open, pos])
+  const onMenuKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    event.preventDefault()
+    const rows = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
+    const at = rows.indexOf(document.activeElement as HTMLButtonElement)
+    const next = event.key === 'ArrowDown' ? (at + 1) % rows.length : (at - 1 + rows.length) % rows.length
+    rows[next]?.focus()
+  }
 
   return (
     <div ref={rootRef} className="relative inline-flex h-8 flex-shrink-0">
-      <div className="inline-flex h-8 overflow-hidden rounded-lg bg-white text-black">
-        <button
-          type="button"
-          onClick={onExport}
-          className={`inline-flex h-full items-center gap-1.5 px-2.5 text-caption font-medium ${EXPORT_HALF} active:scale-[0.98] ${EXPORT_FOCUS}`}
-        >
-          <ExportIcon />
-          <span>{t('Export')}</span>
-        </button>
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-label={t('More export destinations')}
-          onClick={() => setOpen((next) => !next)}
-          className={`grid h-full w-8 place-items-center border-l border-black/10 ${EXPORT_HALF} ${EXPORT_FOCUS}`}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={open ? 'rotate-180' : undefined}>
-            <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
+      {/* ONE button: the whole pill opens the menu. It used to be split —
+          "Export" went straight to the wizard and only the chevron listed the
+          other destinations, which most people never opened. */}
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((next) => !next)}
+        className={`inline-flex h-8 items-center gap-1.5 rounded-lg bg-white pl-2.5 pr-2 text-caption font-medium text-black ring-1 ring-inset ring-black/15 dark:ring-0 ${EXPORT_HALF} active:scale-[0.98] ${EXPORT_FOCUS} ${open ? 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)]' : ''}`}
+      >
+        <ExportIcon />
+        <span>{t('Export')}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={`ml-0.5 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
       {open && pos && createPortal(
         <div
           ref={menuRef}
           role="menu"
-          aria-label={t('More export destinations')}
-          className="fixed z-[70] overflow-hidden rounded-lg border border-line-strong bg-app py-1 shadow-lg"
+          aria-label={t('Export')}
+          onKeyDown={onMenuKey}
+          className="fixed z-[70] overflow-y-auto rounded-lg border border-line-strong bg-app p-1 shadow-lg"
           style={{
             width: EXPORT_MENU_W,
             left: pos.left,
@@ -554,27 +576,15 @@ function ExportPill({
             maxHeight: place.max,
           }}
         >
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExport)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><ExportIcon /></span>
-            {t('Export')}
-          </button>
-          <div className="my-1 border-t border-line" />
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExportCode)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">
-              <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />
-            </span>
-            {t('Get code')}
-          </button>
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onSyncFigma)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><FigmaGlyph size={14} /></span>
-            {t('Sync Figma')}
-          </button>
-          {onConnectGithub && (
-            <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
-              <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
-              {t('Connect GitHub')}
+          {items.map((item) => (
+            <button key={item.key} type="button" role="menuitem" className={itemClass} onClick={() => pick(item.go)}>
+              <span className="mt-px grid h-4 w-4 flex-shrink-0 place-items-center text-fg">{item.glyph}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-caption font-medium text-fg">{item.label}</span>
+                <span className="block text-mini leading-snug text-fg-muted">{item.hint}</span>
+              </span>
             </button>
-          )}
+          ))}
         </div>,
         document.body,
       )}
@@ -2547,7 +2557,7 @@ export default function Configurator() {
           </div>
         )}
         <div
-          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-canvas' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>

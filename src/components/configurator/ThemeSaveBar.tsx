@@ -329,7 +329,7 @@ export function UnsavedNotice() {
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [open])
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center gap-2">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -345,6 +345,12 @@ export function UnsavedNotice() {
           <circle cx="8" cy="5" r="0.5" fill="currentColor" />
         </svg>
       </button>
+      {/* The warning carries its own way out, not only behind the ⓘ. */}
+      {guest && (
+        <button type="button" onClick={() => goToLogin('save-library')} className={`ml-auto ${link}`}>
+          {t('Save with an account')}
+        </button>
+      )}
       {open && (
         <div role="dialog" aria-label={t('Not saved')} className="absolute bottom-full left-0 z-20 mb-2 flex w-full min-w-[220px] flex-col gap-2 rounded-lg border border-line-strong bg-elevated px-3 py-2.5 shadow-lg">
           <p className="m-0 text-caption leading-snug text-fg-muted">
@@ -498,12 +504,9 @@ export function CreateStudioFooter({
             <span className="truncate">{firstSystem ? t('Continue') : t('Create brand')}</span>
           </button>
         ) : guest ? (
-          <>
-            {/* Leaves the studio for the full editor. "Done" read as "finished,
-                saved", which a guest's brand is not. */}
-            <button type="button" onClick={onSave} className={secondary}>{t('Open in editor')}</button>
-            <button type="button" onClick={onGetCode} className={primary}>{codeGlyph}<span className="truncate">{t('Get code')}</span></button>
-          </>
+          // One way out: the code. "Open in editor" sat beside it and read as a
+          // second editor, while the visitor is already in one.
+          <button type="button" onClick={onGetCode} className={primary}>{codeGlyph}<span className="truncate">{t('Get code')}</span></button>
         ) : (
           <>
             <button type="button" onClick={onGetCode} className={`${secondary} flex items-center gap-1.5`}>{codeGlyph}{t('Get code')}</button>
