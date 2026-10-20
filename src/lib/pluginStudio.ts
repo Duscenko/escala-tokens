@@ -24,7 +24,7 @@ import { SHADOW_PRESETS } from './shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from './phosphorIcons'
 import {
   INSET_SURFACE_ROLE, RADIUS_GROUPS, RADIUS_GROUP_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD,
-  SPACING_DEFAULT_BASE, SPACING_MODES, SPACING_STEPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
+  SPACING_DEFAULT_BASE, SPACING_MODES, SPACING_STEPS, STROKE_SM_STOPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
@@ -67,6 +67,11 @@ export interface StudioChoices {
   states?: Partial<Record<'error' | 'warning' | 'success' | 'info', string>>
   /** A `SPACING_MODES` id. */
   spacingMode?: string
+  /** Card padding — a `SPACING_STEPS` step for the surface inset, on top of
+   *  the spacing mode (the web rail's Spacing · Card padding). */
+  cardInset?: string
+  /** Border width in px, one of `STROKE_SM_STOPS` (Spacing · Border width). */
+  borderWidth?: number
   /** A `SHADOW_PRESETS` label. */
   shadow?: string
   iconWeight?: string
@@ -91,6 +96,8 @@ export function studioOptions() {
       ...spacingPaint(m),
     })),
     shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md, mdDark: darkShadow(p.values.md) })),
+    insetSteps: SPACING_STEPS.map((step) => ({ step, px: Number(step.replace('_', '.')) * SPACING_DEFAULT_BASE })),
+    borderStops: [...STROKE_SM_STOPS],
     iconWeights: [...PHOSPHOR_WEIGHTS],
     neutralTints: ['pure', 'subtle', 'tinted', 'vivid'],
     contrast: { min: -1, max: 1, step: 0.05 },
@@ -250,6 +257,19 @@ export function buildStudioTokens(
       spacingRoles: { ...f.spacingRoles, [INSET_SURFACE_ROLE]: step },
       padding: insetSurfacePadding(px),
     })
+  }
+
+  // Card padding and Border width refine the mode, like the web's rows below it.
+  if (choices.cardInset && (SPACING_STEPS as readonly string[]).includes(choices.cardInset)) {
+    const f = resolved()
+    const step = choices.cardInset
+    patch({
+      spacingRoles: { ...f.spacingRoles, [INSET_SURFACE_ROLE]: step },
+      padding: insetSurfacePadding(f.spacing[step] ?? `${Number(step.replace('_', '.')) * SPACING_DEFAULT_BASE}px`),
+    })
+  }
+  if (typeof choices.borderWidth === 'number' && (STROKE_SM_STOPS as readonly number[]).includes(choices.borderWidth)) {
+    patch({ stroke: { ...resolved().stroke, sm: `${choices.borderWidth}px` } })
   }
 
   const shadow = SHADOW_PRESETS.find((p) => p.label === choices.shadow)

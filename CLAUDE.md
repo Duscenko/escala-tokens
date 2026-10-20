@@ -74,6 +74,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   `openBeta.test.ts` locks the beta. To bring plans back: flip `OPEN_BETA` in BOTH repos,
 >   rebuild the plugin, `npm run bundle:plugin`. Plugin 0.14.0.
 
+> **UPDATE (2026-10-20): the PLUGIN's theme panel IS the web's accordion (plugin 0.15.0).** Reported
+> as the plugin showing a 5-step wizard ("Step 1 of 5", Continue →) while the platform has the
+> accordion — one product, two shapes. `ui.html` now renders create AND edit as
+> `renderStudioAccordion`: identity on top (create only: Name + "Themes this brand ships" — Light +
+> Dark · Light only · Dark only, the `BrandThemesPicker` words), then the web's six rows in its
+> order (`ST_ROWS`: Color · Font · Radius · Shadow · Spacing · Icons), a closed row = name ·
+> current value · chevron, one open, the open one folds. Platform (which viewports ship) lives in
+> Spacing only, as on the web. Footer: create = Cancel + **Build in Figma**, edit = Cancel + Save
+> changes. New in the plugin: the Icons row (`iconWeight`), Spacing's Card padding + Border width
+> (`StudioChoices.cardInset` / `borderWidth`, `studioOptions().insetSteps` / `borderStops`), and
+> Saturation in Color's Fine-tune; the contrast card is folded like the web's Contrast grid. The
+> 2-step "Add brand" flow is unchanged. **When a web rail row changes, change its plugin row too.**
+
 > **UPDATE (2026-10-07): LOGIN FUNNEL — anonymous → free account → Pro.** Supersedes every note
 > below that says accounts are optional or that the workspace "never gates". The Generator still
 > OPENS without an account (no login screen in front of it, the theme on screen is editable), but

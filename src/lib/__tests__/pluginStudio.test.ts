@@ -28,6 +28,17 @@ describe('plugin studio build', () => {
     expect(o.spacingModes.length).toBe(4)
     expect(JSON.stringify(out.tokens)).toContain('Geist')
   })
+  it('applies Card padding and Border width on top of the spacing mode', () => {
+    const o = studioOptions()
+    expect(o.insetSteps.find((x) => x.step === '6')?.px).toBe(24)
+    expect(o.borderStops).toEqual([0, 0.5, 1, 1.5, 2])
+    const out = buildStudioTokens({ accent: '#2970ff', name: 'A', spacingMode: 'quiet', cardInset: '8', borderWidth: 2 }, 'pro')
+    if ('error' in out) throw new Error(out.error)
+    const t = out.tokens as { stroke?: Record<string, string>; spacingRoles?: Record<string, string>; foundationsByTheme?: Record<string, { stroke?: Record<string, string>; spacingRoles?: Record<string, string> }> }
+    const f = Object.values(t.foundationsByTheme ?? {})[0] ?? t
+    expect(f.stroke?.sm ?? t.stroke?.sm).toBe('2px')
+    expect(f.spacingRoles?.['inset-surface'] ?? t.spacingRoles?.['inset-surface']).toBe('8')
+  })
   it('adopts a System Style', () => {
     const o = studioOptions()
     expect(o.styles.length).toBeGreaterThan(3)
