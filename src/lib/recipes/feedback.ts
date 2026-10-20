@@ -41,13 +41,23 @@ export const ALERT: ComponentRecipe = {
 // ── Sonner ─────────────────────────────────────────────────────────────────
 // shadcn's Toaster maps Sonner onto the popover: `--normal-bg: var(--popover)`,
 // `--normal-text: var(--popover-foreground)`, `--normal-border: var(--border)`.
-// The toast `type` changes only the icon, as in shadcn — so the recipe has no
-// axis. Sonner renders the DOM, so the parts are its own attributes.
+// The toast `type` changes only the icon, as in shadcn — and the icon takes
+// that severity's ink (`status.*.content`), so a success reads as a success
+// and not as a neutral note with a tick. Sonner puts `data-type` on the toast,
+// which is the attribute the `Type` axis reads. Sonner renders the DOM, so the
+// parts are its own attributes.
+
+export const SONNER_TYPES = ['default', 'success', 'info', 'warning', 'error', 'loading'] as const
+const SONNER_ICON: Record<string, string> = {
+  default: 'content.primary', loading: 'content.secondary',
+  success: 'status.success.content', info: 'status.info.content',
+  warning: 'status.warning.content', error: 'status.critical.content',
+}
 
 export const SONNER: ComponentRecipe = {
   key: 'Sonner',
   slots: ['root', 'icon', 'title', 'description', 'action'],
-  defaults: {},
+  defaults: { Type: 'default' },
   dom: {
     // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
     // after ours: the toaster and `[data-styled]` in the selector outrank it.
@@ -60,7 +70,6 @@ export const SONNER: ComponentRecipe = {
         fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', text: c('content.primary'),
         radius: 'radius.container', shadow: 'shadow.lg', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.1_5',
       },
-      icon: { text: c('content.primary') },
       title: { font: 'type.label' },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       action: {
@@ -68,6 +77,7 @@ export const SONNER: ComponentRecipe = {
         paddingX: 'spacing.2', font: 'type.caption',
       },
     })),
+    part({ Type: SONNER_TYPES }, (type) => ({ icon: { text: c(SONNER_ICON[type]) } })),
   ],
 }
 

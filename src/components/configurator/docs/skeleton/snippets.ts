@@ -121,7 +121,7 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Icon: (v) =>
     `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
   Rating: (v) =>
-    `import { Rating } from "@/components/ui/rating"\n\n<Rating value={4}${v.Interactive === 'True' ? ' onValueChange={setScore}' : ''} star={<Star />} label="4.0 · 128 reviews" />`,
+    `import { Rating } from "@/components/ui/rating"\n\n<Rating value={4}${v.Interactive === 'True' ? ' onValueChange={setScore}' : ''} star={<Star />} starOn={<Star weight="fill" />} label="4.0 · 128 reviews" />`,
   FileFormat: (v) =>
     `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'pdf'}" />`,
   Avatar: (v) =>

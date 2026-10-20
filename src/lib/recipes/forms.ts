@@ -180,9 +180,11 @@ const MENU_ITEM: SlotMap = {
   'item[data-state="checked"]': { fill: c('surface.selected'), text: c('content.accent') },
   'item[data-disabled]': { text: c('content.disabled') },
 }
+// The list panel is `radius.action` with a `spacing.1` inset: its rows'
+// `radius.control` is then concentric (the menus' rule, `navigation.ts`).
 const MENU_CONTENT: SlotProps = {
   fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-  radius: 'radius.overlay', shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
+  radius: 'radius.action', shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
 }
 
 export const SELECT: ComponentRecipe = {

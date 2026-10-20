@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
-import { PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
+import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
 import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
@@ -28,13 +28,19 @@ export function SkeletonStatusBadgeSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'online') as Presence} /></RecipeScope>
 }
 
-export function SkeletonChipSpecimen({ t, v }: SpecimenProps) {
+// Keyed by the axis values, so flipping `Selected` in the playground re-seeds
+// the chip's own toggle state (a key on the inner Chip left it stale).
+export function SkeletonChipSpecimen(props: SpecimenProps) {
+  const { v } = props
+  return <ChipPlayground key={`${v.Selected}-${v.Dismissible}-${v.Size}`} {...props} />
+}
+
+function ChipPlayground({ t, v }: SpecimenProps) {
   const small = v.Size === 'sm'
   const [selected, setSelected] = useState((v.Selected ?? 'False') === 'True')
   return (
     <RecipeScope t={t}>
       <SkChip
-        key={`${v.Selected}-${v.Dismissible}-${v.Size}`}
         selected={selected}
         onPressedChange={setSelected}
         size={small ? 'sm' : 'default'}
@@ -67,15 +73,25 @@ export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonRatingSpecimen({ t, v }: SpecimenProps) {
+export function SkeletonRatingSpecimen(props: SpecimenProps) {
+  return <RatingPlayground key={props.v.Interactive} {...props} />
+}
+
+// Interactive: a click sets the score and the label follows it. Filled stars
+// are the fill weight of the same glyph, so a score reads at a glance.
+function RatingPlayground({ t, v }: SpecimenProps) {
+  const interactive = (v.Interactive ?? 'False') === 'True'
+  const [score, setScore] = useState(4)
+  const size = iconOf(18)
   return (
     <RecipeScope t={t}>
       <SkRating
-        key={v.Interactive}
-        value={4}
-        interactive={(v.Interactive ?? 'False') === 'True'}
-        star={<PreviewIcon concept="star" size={iconOf(18)} />}
-        label="4.0 · 128 reviews"
+        value={score}
+        onValueChange={interactive ? setScore : undefined}
+        interactive={interactive}
+        star={<PreviewIcon concept="star" size={size} />}
+        starOn={<PhosphorWeightProvider weight="fill"><PreviewIcon concept="star" size={size} /></PhosphorWeightProvider>}
+        label={`${score.toFixed(1)} · 128 reviews`}
       />
     </RecipeScope>
   )

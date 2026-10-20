@@ -68,7 +68,20 @@ function AttachmentDescription({ className, ...props }: React.ComponentProps<'sp
 }
 
 function AttachmentActions({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="attachment-actions" data-part="Attachment.actions" className={cn('flex shrink-0 items-center', className)} {...props} />
+  // Vertical: the actions float over the top-right corner (shadcn), at the
+  // card's own inset, instead of dropping to a row of their own under the text.
+  return (
+    <div
+      data-slot="attachment-actions"
+      data-part="Attachment.actions"
+      className={cn(
+        'flex shrink-0 items-center',
+        'group-data-[orientation=vertical]/attachment:absolute group-data-[orientation=vertical]/attachment:top-[var(--spacing-1)] group-data-[orientation=vertical]/attachment:right-[var(--spacing-1)] group-data-[orientation=vertical]/attachment:z-20',
+        className,
+      )}
+      {...props}
+    />
+  )
 }
 
 function AttachmentAction({ variant, size = 'icon-xs', ...props }: React.ComponentProps<typeof Button>) {

@@ -9,6 +9,9 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap } from './helpers.js'
 
 // shadcn's TabsList variants: `default` is a muted track whose active trigger
 // is raised on the page colour; `line` is an underline under the active one.
+// The track is concentric with its trigger: `radius.action` (8) minus the
+// `spacing.1` inset (4) is exactly `radius.control` (4) — a 2px inset left the
+// trigger's corners visibly squarer than the track around them.
 export const TABS: ComponentRecipe = {
   key: 'Tabs',
   slots: ['root', 'trigger'],
@@ -25,7 +28,7 @@ export const TABS: ComponentRecipe = {
           'trigger[data-state="active"]': { text: c('content.primary'), stroke: c('content.primary') },
         }
       : {
-          root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5', gap: 'spacing.0_5' },
+          root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5' },
           trigger: { radius: 'radius.control' },
           'trigger[data-state="active"]': { fill: c('surface.page'), text: c('content.primary'), shadow: 'shadow.xs' },
         }),
@@ -68,8 +71,9 @@ export const SEGMENTED_CONTROL: ComponentRecipe = {
     // elevation contract says (layer-1 is the card it sits on).
     part({}, () => ({
       root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5' },
-      pill: { fill: c('surface.input'), radius: 'radius.action', shadow: 'shadow.xs' },
-      item: { text: c('content.secondary'), font: 'type.button', radius: 'radius.action' },
+      // Concentric: the track's `radius.action` minus its `spacing.1` inset.
+      pill: { fill: c('surface.input'), radius: 'radius.control', shadow: 'shadow.xs' },
+      item: { text: c('content.secondary'), font: 'type.button', radius: 'radius.control' },
       'item:hover': { text: c('content.primary') },
       'item[aria-checked="true"]': { text: c('content.primary') },
     })),
@@ -108,9 +112,10 @@ export const PAGINATION: ComponentRecipe = {
         fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.pill',
         paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
       },
-      pill: { fill: c('action.primary.default'), radius: 'radius.action' },
+      // A pill track holds pill cells (concentric at any inset).
+      pill: { fill: c('action.primary.default'), radius: 'radius.pill' },
       cell: {
-        text: c('content.secondary'), font: 'type.body-sm', radius: 'radius.action',
+        text: c('content.secondary'), font: 'type.body-sm', radius: 'radius.pill',
         height: 'size.compact', minHeight: 'size.compact', paddingX: 'spacing.1_5',
       },
       'cell:hover': { text: c('content.primary') },
@@ -144,10 +149,15 @@ export const STEPPER: ComponentRecipe = {
 
 // ── Menus ──────────────────────────────────────────────────────────────────
 
+// A menu panel is `radius.action` with a `spacing.1` inset, so its rows'
+// `radius.control` is concentric (8 − 4 = 4). At `radius.overlay` (16) the
+// highlighted row read as a square tag inside a round panel.
+export const MENU_PANEL_RADIUS = 'radius.action'
+
 function menu(key: string): ComponentRecipe {
   const slots: SlotMap = {
     root: {
-      fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
+      fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
       shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
     },
     item: {
@@ -216,6 +226,9 @@ export const NAVBAR: ComponentRecipe = {
 // shadcn's Sidebar: `sidebar` sits flush with a hairline, `floating` is a
 // rounded raised panel, `inset` drops the edge (the page content is inset
 // beside it). A menu button is the ghost hover; the active one keeps it.
+// Escala draws the sidebar as a panel, so `sidebar` is rounded too, and the
+// buttons are concentric with it: `radius.container` minus the `spacing.2`
+// inset lands on `radius.action` (16 − 8 = 8).
 export const SIDEBAR: ComponentRecipe = {
   key: 'Sidebar',
   slots: ['root', 'group', 'label', 'menu', 'button'],
@@ -227,7 +240,7 @@ export const SIDEBAR: ComponentRecipe = {
       label: { text: c('content.secondary'), font: 'type.caption', height: 'size.compact', paddingX: 'spacing.2' },
       menu: { gap: 'spacing.1' },
       button: {
-        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.control',
+        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action',
         height: 'size.compact', paddingX: 'spacing.2', gap: 'spacing.2',
       },
       'button:hover': { fill: c('action.ghost.hover') },
@@ -240,7 +253,7 @@ export const SIDEBAR: ComponentRecipe = {
       root: variant === 'floating'
         ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container', shadow: 'shadow.sm' }
         : variant === 'sidebar'
-          ? { stroke: c('border.default'), strokeWidth: 'stroke.control' }
+          ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container' }
           : { stroke: NONE },
     })),
   ],
@@ -259,14 +272,14 @@ export const MENUBAR: ComponentRecipe = {
     part({}, () => ({
       root: {
         fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
-        height: 'size.compact', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5', gap: 'spacing.0_5',
+        height: 'size.compact', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
       },
       trigger: { text: c('content.primary'), font: 'type.label', radius: 'radius.control', paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
       'trigger:hover': { fill: c('action.ghost.hover') },
       'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
       'trigger[data-active="true"]': { fill: c('action.ghost.hover') },
       content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
+        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
         shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
       },
       item: {

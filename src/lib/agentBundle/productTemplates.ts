@@ -83,6 +83,7 @@ function styleOf(props: SlotProps): [string, string][] {
   push('width', one(props.width))
   push('paddingInline', one(props.paddingX))
   push('paddingBlock', one(props.paddingY))
+  push('paddingBottom', one(props.paddingBottom))
   push('gap', one(props.gap))
   push('boxShadow', one(props.shadow))
   if (props.font && props.font !== 'none') {

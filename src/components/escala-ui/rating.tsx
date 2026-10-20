@@ -8,13 +8,15 @@ export interface RatingProps extends Omit<React.ComponentProps<'div'>, 'onChange
   onValueChange?: (value: number) => void
   /** Rendered once per star. */
   star?: React.ReactNode
+  /** The glyph for a filled star (a fill-weight icon); defaults to `star`. */
+  starOn?: React.ReactNode
   /** "4.0 · 128 reviews" */
   label?: React.ReactNode
   /** Draw as interactive without wiring (docs, previews). */
   interactive?: boolean
 }
 
-function Rating({ value = 0, onValueChange, star = '★', label, interactive, className, ...props }: RatingProps) {
+function Rating({ value = 0, onValueChange, star = '★', starOn, label, interactive, className, ...props }: RatingProps) {
   const live = interactive ?? onValueChange != null
   const [hover, setHover] = React.useState<number | null>(null)
   const shown = hover ?? value
@@ -30,7 +32,7 @@ function Rating({ value = 0, onValueChange, star = '★', label, interactive, cl
       <span data-part="Rating.stars" className="flex" onMouseLeave={() => setHover(null)}>
         {[1, 2, 3, 4, 5].map((n) => {
           const on = n <= Math.round(shown)
-          const inner = <span data-part={on ? 'Rating.starOn' : 'Rating.star'} className="inline-flex">{star}</span>
+          const inner = <span data-part={on ? 'Rating.starOn' : 'Rating.star'} className="inline-flex">{on ? starOn ?? star : star}</span>
           return live ? (
             <button
               key={n} type="button" aria-label={`${n} stars`}

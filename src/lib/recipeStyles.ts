@@ -74,6 +74,8 @@ function declarations(props: SlotProps): string[] {
       case 'radius': out.push(`border-radius: ${v(ref)}`); break
       case 'paddingX': out.push(`padding-inline: ${dim(ref)}`); break
       case 'paddingY': out.push(`padding-block: ${dim(ref)}`); break
+      // The bottom inset alone (an accordion answer hugs its question above it).
+      case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break
       case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break

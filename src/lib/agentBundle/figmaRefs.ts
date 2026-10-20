@@ -87,7 +87,7 @@ export function figmaRefsFor(ref: string, json: TokenJSON, roles = semanticRoleI
  *  in the plugin's recipes.ts), then the two it applies as a STYLE. */
 export const FIGMA_VARIABLE_PROPS = [
   'fill', 'stroke', 'text', 'ring',
-  'paddingX', 'paddingY', 'gap', 'radius', 'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'height', 'minHeight', 'width',
+  'paddingX', 'paddingY', 'paddingBottom', 'gap', 'radius', 'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'height', 'minHeight', 'width',
 ] as const
 export const FIGMA_STYLE_PROPS = ['font', 'shadow'] as const
 const FIGMA_PROPS = new Set<string>([...FIGMA_VARIABLE_PROPS, ...FIGMA_STYLE_PROPS])
@@ -103,6 +103,7 @@ export const FIGMA_PROP_LABEL: Record<string, string> = {
   ring: 'Focus ring (effect colour)',
   paddingX: 'Horizontal padding',
   paddingY: 'Vertical padding',
+  paddingBottom: 'Bottom padding',
   gap: 'Gap',
   radius: 'Corner radius',
   strokeWidth: 'Stroke weight',

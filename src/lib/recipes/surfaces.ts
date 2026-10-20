@@ -29,6 +29,12 @@ export const CARD: ComponentRecipe = {
   ],
 }
 
+// An overlay's title (Dialog, AlertDialog, Sheet, Drawer, Popover) is the
+// smallest heading — shadcn's `text-lg` — so it leads the body copy by one
+// rung instead of three. `heading-sm` (24 over 14) read as a page headline
+// squeezed into a 320px panel.
+const OVERLAY_TITLE = 'type.heading-2xs'
+
 // ── Dialog ─────────────────────────────────────────────────────────────────
 // shadcn's Dialog: the close control is a ghost icon-sm Button (its recipe).
 
@@ -45,8 +51,8 @@ export const DIALOG: ComponentRecipe = {
         radius: 'radius.overlay', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface',
         gap: 'spacing.gap-group', shadow: 'shadow.2xl',
       },
-      header: { gap: 'spacing.gap-tight' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
+      header: { gap: 'spacing.1_5' },
+      title: { text: c('content.primary'), font: OVERLAY_TITLE },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.gap-control' },
     })),
@@ -81,11 +87,15 @@ export const ACCORDION: ComponentRecipe = {
       },
       'item:not(:first-child)': { stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider' },
       trigger: {
-        text: c('content.primary'), font: 'type.heading-xs', paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.2_5',
+        // A row label, not a section heading: shadcn's `text-sm font-medium`.
+        // `heading-xs` (20/600) made three questions outweigh the answer.
+        text: c('content.primary'), font: 'type.label', paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.2_5',
       },
       'trigger:hover': { fill: c('action.ghost.hover') },
       icon: { text: c('content.secondary') },
-      content: { text: c('content.secondary'), font: 'type.body-sm', paddingX: 'spacing.4', paddingY: 'spacing.3' },
+      // The answer hugs its question: no top inset (shadcn's `pt-0`), so the
+      // trigger's own bottom padding is the only gap between them.
+      content: { text: c('content.secondary'), font: 'type.body-sm', paddingX: 'spacing.4', paddingBottom: 'spacing.3' },
     })),
   ],
 }
@@ -118,7 +128,7 @@ export const POPOVER: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
         shadow: 'shadow.xl', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.1_5', text: c('content.primary'),
       },
-      title: { text: c('content.primary'), font: 'type.heading-xs' },
+      title: { text: c('content.primary'), font: OVERLAY_TITLE },
       body: { text: c('content.secondary'), font: 'type.body-sm' },
       arrow: { paint: c('surface.layer-2') },
     })),
@@ -222,7 +232,7 @@ export const ALERT_DIALOG: ComponentRecipe = {
       },
       header: { gap: 'spacing.1_5' },
       media: { fill: c('surface.layer-1'), text: c('content.primary'), radius: 'radius.action', width: 'size.control', height: 'size.control' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
+      title: { text: c('content.primary'), font: OVERLAY_TITLE },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.gap-control' },
     })),
@@ -250,7 +260,7 @@ export const SHEET: ComponentRecipe = {
         shadow: 'shadow.lg', gap: 'spacing.4', text: c('content.primary'),
       },
       header: { gap: 'spacing.0_5', paddingX: 'spacing.4', paddingY: 'spacing.4' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
+      title: { text: c('content.primary'), font: OVERLAY_TITLE },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.2', paddingX: 'spacing.4', paddingY: 'spacing.4' },
     })),
@@ -274,7 +284,7 @@ export const DRAWER: ComponentRecipe = {
       },
       handle: { fill: c('surface.layer-1'), radius: 'radius.pill' },
       header: { gap: 'spacing.0_5', paddingX: 'spacing.4', paddingY: 'spacing.4' },
-      title: { text: c('content.primary'), font: 'type.heading-sm' },
+      title: { text: c('content.primary'), font: OVERLAY_TITLE },
       description: { text: c('content.secondary'), font: 'type.body-sm' },
       footer: { gap: 'spacing.2', paddingX: 'spacing.4', paddingY: 'spacing.4' },
     })),
@@ -304,11 +314,17 @@ export const HOVER_CARD: ComponentRecipe = {
 
 export const ITEM_VARIANTS = ['default', 'outline', 'muted'] as const
 export const ITEM_SIZES = ['default', 'sm', 'xs'] as const
+// shadcn: default `p-4 gap-4`, sm `px-4 py-3 gap-2.5`, xs one step tighter.
+// The three used to share two geometries, so `sm` was `default`.
 const ITEM_GEOMETRY: Record<string, SlotProps> = {
-  default: { paddingX: 'spacing.3', paddingY: 'spacing.2_5', gap: 'spacing.2_5' },
-  sm: { paddingX: 'spacing.3', paddingY: 'spacing.2_5', gap: 'spacing.2_5' },
-  xs: { paddingX: 'spacing.2_5', paddingY: 'spacing.2', gap: 'spacing.2' },
+  default: { paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.4' },
+  sm: { paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.2_5' },
+  xs: { paddingX: 'spacing.3', paddingY: 'spacing.2', gap: 'spacing.2' },
 }
+// The description steps down with the row, so the title always leads it:
+// at sm / xs a body-sized description matched the title's size and wrapped.
+const ITEM_DESCRIPTION: Record<string, string> = { default: 'type.body-sm', sm: 'type.caption', xs: 'type.caption' }
+const ITEM_CONTENT_GAP: Record<string, string> = { default: 'spacing.1', sm: 'spacing.0_5', xs: 'spacing.0_5' }
 const ITEM_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.compact', xs: 'size.xs' }
 
 export const ITEM: ComponentRecipe = {
@@ -319,9 +335,8 @@ export const ITEM: ComponentRecipe = {
     part({}, () => ({
       root: { radius: 'radius.action', strokeWidth: 'stroke.control', text: c('content.primary') },
       media: { text: c('content.primary') },
-      content: { gap: 'spacing.1' },
       title: { text: c('content.primary'), font: 'type.label', gap: 'spacing.2' },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
+      description: { text: c('content.secondary') },
       actions: { gap: 'spacing.2' },
     })),
     part({ Variant: ITEM_VARIANTS }, (variant) => ({
@@ -333,6 +348,8 @@ export const ITEM: ComponentRecipe = {
     })),
     part({ Size: ITEM_SIZES }, (size) => ({
       root: ITEM_GEOMETRY[size],
+      content: { gap: ITEM_CONTENT_GAP[size] },
+      description: { font: ITEM_DESCRIPTION[size] },
       'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: 'radius.control' },
     })),
   ],
