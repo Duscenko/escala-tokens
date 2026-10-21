@@ -13,7 +13,9 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } fro
 //   secondary   bg-secondary → action.secondary.*     · page ink
 //   outline     border + bg-background, hover muted   · page ink
 //   ghost       transparent, hover muted              · page ink
-//   destructive bg-destructive/10 → status.critical.surface (soft, as v4)
+//   destructive the critical SOLID → status.critical.surface-solid* · on-solid
+//               (Escala's call: a Delete reads as a solid action, the soft
+//               tint stays for Badge, Bubble and Alert)
 //   link        text-primary → content.link.*
 // shadcn dims a disabled button with opacity; a recipe never does, so disabled
 // is a role (action.disabled / content.disabled).
@@ -48,7 +50,7 @@ function buttonPaint(variant: string, state: string): SlotMap {
     case 'ghost':
       return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'destructive':
-      return { root: { fill: c(hover || pressed ? 'status.critical.surface-pressed' : 'status.critical.surface'), stroke: NONE, text: c('status.critical.content'), ring: ring('status.critical.border') } }
+      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), ring: ring('status.critical.border') } }
     default: // link
       return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), ring: ring('border.ring.default') } }
   }

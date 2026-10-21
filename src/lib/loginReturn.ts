@@ -16,6 +16,7 @@
 
 import { LOGIN_PATH } from './legal'
 import { decodeWorkspaceSection } from './workspaceLink'
+import { canonicalizePublishId } from './publishId'
 
 /** `workspace` returns to the Generator section the person left from (see
  *  `section` below). Still a closed list: the section is re-validated against
@@ -44,6 +45,10 @@ interface PendingReturn {
   intent: LoginIntent | null
   /** Workspace section id for `next: 'workspace'`. */
   section?: string
+  /** Publish id the workspace was opened on (`?project=`) — the plugin's
+   *  "Save to GitHub" sends a system the browser may not hold yet. Re-validated
+   *  as a publish id, so it can only ever add `project=esc_…` to the return. */
+  project?: string
   at: number
 }
 
@@ -82,13 +87,23 @@ export function readLoginSearch(search: string): { next: LoginNext | null; mode:
 
 export function pathForNext(next: LoginNext | null): string {
   if (next === 'workspace') {
-    const section = readPending()?.section
-    return isSection(section) ? `/?section=${encodeURIComponent(section)}` : '/'
+    const pending = readPending()
+    const section = pending?.section
+    const project = pending?.project
+    const params = new URLSearchParams()
+    if (project) params.set('project', project)
+    if (isSection(section)) params.set('section', section)
+    const query = params.toString()
+    return query ? `/?${query}` : '/'
   }
   // No pending destination: Home. A workspace return that fails its section
   // check still falls back to `/` above, so a bad section cannot be steered
   // onto the library by this default.
   return next ? NEXT_PATH[next] : NEXT_PATH.library
+}
+
+function projectOf(value: unknown): string | undefined {
+  return typeof value === 'string' ? canonicalizePublishId(value) ?? undefined : undefined
 }
 
 function readPending(): PendingReturn | null {
@@ -102,6 +117,7 @@ function readPending(): PendingReturn | null {
       next: parsed.next,
       intent: isIntent(parsed.intent) ? parsed.intent : null,
       section: isSection(parsed.section) ? parsed.section : undefined,
+      project: projectOf(parsed.project),
       at: parsed.at,
     }
   } catch {
@@ -111,12 +127,14 @@ function readPending(): PendingReturn | null {
 
 /** Keeps `next` for the OAuth round trip. Called by the login page on open;
  *  an existing intent for the same destination is preserved. */
-export function rememberReturn(next: LoginNext, intent?: LoginIntent | null, section?: string | null): void {
+export function rememberReturn(next: LoginNext, intent?: LoginIntent | null, section?: string | null, project?: string | null): void {
   const prev = readPending()
-  const kept = intent ?? (prev?.next === next ? prev.intent : null)
-  const keptSection = isSection(section) ? section : (prev?.next === next ? prev.section : undefined)
+  const same = prev?.next === next
+  const kept = intent ?? (same ? prev.intent : null)
+  const keptSection = isSection(section) ? section : (same ? prev.section : undefined)
+  const keptProject = projectOf(project) ?? (same ? prev.project : undefined)
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ next, intent: kept, section: keptSection, at: Date.now() }))
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ next, intent: kept, section: keptSection, project: keptProject, at: Date.now() }))
   } catch {
     // Storage blocked: the return simply falls back to Home.
   }

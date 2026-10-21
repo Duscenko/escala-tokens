@@ -84,8 +84,10 @@ function AttachmentActions({ className, ...props }: React.ComponentProps<'div'>)
   )
 }
 
-function AttachmentAction({ variant, size = 'icon-xs', ...props }: React.ComponentProps<typeof Button>) {
-  return <Button data-slot="attachment-action" variant={variant ?? 'ghost'} size={size} {...props} />
+function AttachmentAction({ variant, size = 'icon-xs', style, ...props }: React.ComponentProps<typeof Button>) {
+  // The glyph takes Attachment.actions' ink (content.secondary), as the
+  // plugin's icon slot does — the ghost Button only lends its hover wash.
+  return <Button data-slot="attachment-action" variant={variant ?? 'ghost'} size={size} style={{ color: 'inherit', ...style }} {...props} />
 }
 
 function AttachmentTrigger({ className, asChild = false, type, ...props }: React.ComponentProps<'button'> & { asChild?: boolean }) {

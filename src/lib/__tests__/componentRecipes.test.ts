@@ -130,8 +130,10 @@ describe('the generated stylesheet', () => {
     expect(rule('[data-variant="default"] {')).toContain('var(--color-action-primary-default)')
     expect(rule('[data-variant="default"]:hover')).toContain('var(--color-action-primary-hover)')
     expect(rule('[data-variant="default"][data-force-state="Pressed"]')).toContain('var(--color-action-primary-pressed)')
-    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-surface)')
-    expect(rule('[data-variant="destructive"]:hover')).toContain('var(--color-status-critical-surface-pressed)')
+    // Destructive is the critical SOLID with its own ink (a Delete reads as an action).
+    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-surface-solid)')
+    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-on-solid)')
+    expect(rule('[data-variant="destructive"]:hover')).toContain('var(--color-status-critical-surface-solid-hover)')
   })
 
   it('reads only names variables.css ships', async () => {

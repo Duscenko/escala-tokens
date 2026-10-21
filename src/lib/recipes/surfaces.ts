@@ -384,7 +384,9 @@ export const ATTACHMENT: ComponentRecipe = {
       title: { text: c('content.primary'), font: 'type.label' },
       description: { text: c('content.secondary'), font: 'type.caption' },
       'description[data-state="error"]': { text: c('status.critical.content') },
-      actions: { gap: 'spacing.1' },
+      // The remove × is an icon slot inked content.secondary — a quiet
+      // control on the file, never the title's ink.
+      actions: { gap: 'spacing.1', text: c('content.secondary') },
     })),
     part({ Size: ATTACHMENT_SIZES }, (size) => ({
       root: ATTACHMENT_GEOMETRY[size],

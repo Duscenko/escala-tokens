@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { generatePublishId } from '../publishId'
 import {
   loginHref,
   pathForNext,
@@ -94,6 +95,20 @@ describe('loginReturn', () => {
       rememberReturn('workspace')
       expect(pathForNext('workspace')).toBe('/?section=code%2Fcore--minimalist')
       expect(takeLoginIntent('workspace')).toBe('save-library')
+    })
+
+    it('carries the system the plugin opened (Save to GitHub) back with the section', () => {
+      const id = generatePublishId()
+      rememberReturn('workspace', null, 'themes/github', id)
+      expect(pathForNext('workspace')).toBe(`/?project=${id}&section=themes%2Fgithub`)
+      // The login page re-remembers on open: the project survives it.
+      rememberReturn('workspace')
+      expect(pathForNext('workspace')).toBe(`/?project=${id}&section=themes%2Fgithub`)
+    })
+
+    it('drops a project that is not a publish id', () => {
+      rememberReturn('workspace', null, 'themes/github', 'https://evil.example')
+      expect(pathForNext('workspace')).toBe('/?section=themes%2Fgithub')
     })
   })
 

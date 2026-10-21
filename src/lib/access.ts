@@ -27,7 +27,7 @@ import { cloudSystemCount, type CloudFiles } from './accountCloud'
 import { useLicence } from './licence'
 import { useEntitlement } from './useEntitlement'
 import { loginHref, rememberReturn, type LoginIntent } from './loginReturn'
-import { WORKSPACE_SECTION_PARAM } from './workspaceLink'
+import { WORKSPACE_PROJECT_PARAM, WORKSPACE_SECTION_PARAM } from './workspaceLink'
 import { useDesignStore } from '../store/useDesignStore'
 import { useLibraryStatus, useSavedBrandKeys } from './libraryStatus'
 
@@ -57,9 +57,10 @@ export function useAccess(): Access {
 /** Leave for `/login` (sign-up first), coming back to THIS Generator section
  *  and finishing `intent` there. The edits on screen live in the persisted
  *  store, so the round trip loses nothing. */
-export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'signup', section?: string): void {
-  const fromUrl = new URLSearchParams(window.location.search).get(WORKSPACE_SECTION_PARAM)
-  rememberReturn('workspace', intent ?? null, section ?? fromUrl)
+export function goToLogin(intent?: LoginIntent, mode: 'signup' | 'signin' = 'signup', section?: string, project?: string): void {
+  const params = new URLSearchParams(window.location.search)
+  const fromUrl = params.get(WORKSPACE_SECTION_PARAM)
+  rememberReturn('workspace', intent ?? null, section ?? fromUrl, project ?? params.get(WORKSPACE_PROJECT_PARAM))
   window.location.assign(loginHref({ next: 'workspace', mode }))
 }
 

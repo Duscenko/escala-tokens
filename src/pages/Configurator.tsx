@@ -698,7 +698,14 @@ export default function Configurator() {
     const id = incomingWorkspace.project ? canonicalizePublishId(incomingWorkspace.project) : null
     if (!id) return
     let cancel = false
-    const run = () => { if (!cancel) void adoptBridgedProject(id) }
+    // "Save to GitHub" from the plugin: an empty workspace may have moved to
+    // the create studio while the system was loading — land on GitHub again.
+    const run = () => {
+      if (cancel) return
+      void adoptBridgedProject(id).then((adopted) => {
+        if (adopted && !cancel && incomingWorkspace.place?.surface === 'github') openGithubRef.current()
+      })
+    }
     if (useDesignStore.persist.hasHydrated()) run()
     const unsub = useDesignStore.persist.onFinishHydration(run)
     return () => { cancel = true; unsub() }
@@ -1764,6 +1771,15 @@ export default function Configurator() {
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('github')
   }
+  // The plugin's "Save to GitHub" opens `?project=<id>&section=themes/github`.
+  // GitHub is an account feature: a browser with no session signs in first and
+  // comes back to the same system and the same screen.
+  const githubDeepLinkRef = useRef(incomingPlace?.surface === 'github')
+  useEffect(() => {
+    if (!githubDeepLinkRef.current || access.loading) return
+    githubDeepLinkRef.current = false
+    if (access.guest) goToLogin(undefined, 'signin', 'themes/github', incomingWorkspace.project ?? undefined)
+  }, [access.loading, access.guest, incomingWorkspace.project])
   // The guest notice's "Push to GitHub" (`requestOpenGithub`) lands here.
   const openGithubRef = useRef(openGithubPage)
   openGithubRef.current = openGithubPage

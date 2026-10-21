@@ -99,6 +99,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > dense). Random still only shows on a never-kept draft. One Undo on screen — don't put one
 > back in the footer.
 
+> **UPDATE (2026-10-21): Button `destructive` is the critical SOLID** — `status.critical.surface-solid`
+> (+ `-hover` / `-pressed`) with `status.critical.on-solid`, owner's call over shadcn v4's soft tint (a
+> Delete reads as an action). Badge, Bubble and Alert keep the soft `status.critical.surface`. The
+> Attachment remove × is an icon slot inked `content.secondary` (`Attachment.actions.text`; the web's
+> ghost `AttachmentAction` inherits it). The plugin's `systemIconButton` sets the nested Icon's
+> **Glyph** (`setNestedGlyph`) — `'Icon leading icon'` no longer exists, so the Dialog's × kept a
+> placeholder glyph.
+
+> **UPDATE (2026-10-21): the PLUGIN saves to GitHub THROUGH THE WEB (route A).** The GitHub
+> token lives only in the browser (`sd-github-token`), so the plugin never pushes. Plugin →
+> Export → "Save to GitHub" (`saveToGithub`, `ui.html`): a file that follows a system opens it,
+> otherwise it publishes with `op=bridge` first (signs in if needed, pending action `github`),
+> then opens `/?project=<id>&section=themes/github`. The web adopts the bridged system
+> (`adoptBridgedProject`, then re-lands on GitHub in case an empty workspace moved away) and
+> `GitHubConnectView`'s push writes tokens + the agent context (AGENTS.md, Design skills). A
+> guest is sent to sign in and comes back with BOTH `project` and `section`
+> (`rememberReturn(…, project)`, re-validated as a publish id). A server-side push (route B)
+> would need GitHub tokens stored per account — not built.
+
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:
 > nobody would buy it yet, so it is positioned first and priced later. ONE switch:
