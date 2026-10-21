@@ -16,7 +16,7 @@
 //   component           → `agentContextMarkdown`, filtered the same way
 // So a filtered paste can never name a token the full file does not.
 
-import { buildAgentSkillFiles } from './agentBundle'
+import { buildAgentSkillFiles } from './agentBundle/skill'
 import type { TokenJSON } from './agentBundle/types'
 import type { ThemeAppearance } from './themeModes'
 
