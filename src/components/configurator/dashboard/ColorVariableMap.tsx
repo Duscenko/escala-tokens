@@ -11,12 +11,16 @@ import { componentsByRole, findingFails, tokenElementId, tokenMapping } from '..
 import { CHECKER } from '../checker'
 import { BTN, BTN_PRIMARY, Card, EmptyRow, Mark, ROW, StatusPill, Swatch, TD, TH, Tag } from './parts'
 import { useCheckText, type Dashboard } from './dashboardData'
+import MapWires, { type Wire } from './MapWires'
 
 const labelOf = (key: string) => COMPONENTS.find((c) => c.key === key)?.label ?? key
 
 const cssVarOf = (id: string) => `var(--color-${id.replace(/\./g, '-')})`
 
-const PILL = 'inline-flex h-7 min-w-0 max-w-full items-center gap-2 rounded-full border px-2.5 text-caption'
+/** From this width the map lays its three stages side by side and wires
+ *  them, a variables graph; below it they stack on the spine. The CSS
+ *  container query and the JS measure must agree: 34rem at the 18px root. */
+const WIRED_MIN_PX = 612
 
 /** A stage on the map's spine. The mark sits on the rule; the label names the stage. */
 function MapStep({ mark, label, step, children }: {
@@ -27,10 +31,43 @@ function MapStep({ mark, label, step, children }: {
 }) {
   return (
     <div className={`map-step relative flex min-w-0 flex-col gap-2 ${step === 'role' ? 'map-step-role' : step === 'use' ? 'map-step-use' : ''}`}>
-      <span aria-hidden className="absolute -left-4 top-[5px] h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fg-faint" />
+      <span aria-hidden className={`absolute -left-4 top-[5px] h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fg-faint @[34rem]:hidden`} />
       <span className="text-micro font-medium text-fg-faint">{mark} {label}</span>
       {children}
     </div>
+  )
+}
+
+/** A component that reads the role, and what it paints with it. A node of the
+ *  graph: the wire lands on its left edge. */
+function ComponentNode({ id, label, paints, on, onEnter, onOpen }: {
+  id: string
+  label: string
+  paints: string[]
+  on: boolean
+  onEnter: () => void
+  onOpen?: () => void
+}) {
+  const shown = paints.slice(0, 3)
+  const more = paints.length - shown.length
+  return (
+    <button
+      type="button"
+      data-wire={id}
+      onMouseEnter={onEnter}
+      onFocus={onEnter}
+      onClick={onOpen}
+      title={paints.join(' · ') || undefined}
+      className={`map-node flex min-w-0 max-w-full flex-col items-stretch rounded-lg border bg-surface text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 @[34rem]:w-full ${
+        on ? 'border-accent-ui/60 bg-accent-ui/[0.08]' : 'border-line hover:border-line-strong'
+      }`}
+    >
+      <span className="truncate px-2.5 pt-1.5 text-caption font-medium text-fg">{label}</span>
+      <span className="flex flex-col gap-px px-2.5 pb-1.5 pt-0.5">
+        {shown.map((p) => <span key={p} className="truncate font-mono text-micro text-fg-faint">{p}</span>)}
+        {more > 0 && <span className="font-mono text-micro text-fg-faint">+{more}</span>}
+      </span>
+    </button>
   )
 }
 
@@ -45,20 +82,28 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 }
 
 /** A colour you can read and copy. The hex sits under the plate so a translucent fill never has to carry ink. */
-function ColorPlate({ appearance, primitive, css, caption, copyLabel, onCopy }: {
+function ColorPlate({ id, appearance, primitive, css, caption, copyLabel, on, onEnter, onCopy }: {
+  id: string
   appearance: string
   primitive: string
   css: string
   caption: string
   copyLabel: string
+  on: boolean
+  onEnter: () => void
   onCopy: () => void
 }) {
   return (
     <button
       type="button"
+      data-wire={id}
+      onMouseEnter={onEnter}
+      onFocus={onEnter}
       onClick={onCopy}
       aria-label={copyLabel}
-      className="group flex w-[10.5rem] max-w-full flex-col gap-1.5 rounded-xl border border-line bg-surface p-1.5 text-left transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className={`map-node group flex w-[10.5rem] max-w-full flex-col gap-1.5 rounded-xl border bg-surface p-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 @[34rem]:w-full ${
+        on ? 'border-accent-ui/60' : 'border-line hover:border-line-strong'
+      }`}
     >
       <span
         aria-hidden
@@ -114,6 +159,22 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
 
   const [mapComponent, setMapComponent] = useState<string>('all')
   const [focusComponent, setFocusComponent] = useState<string | null>(null)
+  // The plate under the pointer: its wire to the role lights.
+  const [focusMode, setFocusMode] = useState<string | null>(null)
+  // Measured, not assumed: the wires exist only once the stages sit side by side.
+  const flowRef = useRef<HTMLDivElement>(null)
+  const [wired, setWired] = useState(false)
+  const hasRole = role != null
+  useEffect(() => {
+    const el = flowRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const read = () => setWired(el.getBoundingClientRect().width >= WIRED_MIN_PX)
+    read()
+    const ro = new ResizeObserver(read)
+    ro.observe(el)
+    return () => ro.disconnect()
+    // The flow remounts with the pin, so the observer has to follow it.
+  }, [hasRole, roleId])
   const mapping = useMemo(() => tokenMapping(store.selectedComponents), [store.selectedComponents])
   const mappingShown = mapComponent === 'all' ? mapping : mapping.filter((row) => row.component === mapComponent)
   const firstMode = roles.modeKeys[0]
@@ -170,6 +231,14 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
   const primitivePath = role
     ? roles.modeKeys.map((mode) => role.modes[mode]?.label).filter((label): label is string => Boolean(label)).join(' · ')
     : ''
+  // Plate → role per mode, then role → every component that reads it.
+  const wires: Wire[] = [
+    ...roles.modeKeys.map((mode, index): Wire => ({ from: `p:${mode}`, to: 'role', stage: 'primitive', index })),
+    ...usedBy.map((key, index): Wire => ({ from: 'role', to: `c:${key}`, stage: 'component', index })),
+  ]
+  const lit = focusComponent ? `c:${focusComponent}` : focusMode ? `p:${focusMode}` : null
+  // A hover preview re-wires with a fade; only a pin draws the wires in.
+  const previewing = role != null && role.id !== flowKey
 
   return (
     <section aria-labelledby="color-variable-map" className="flex min-w-0 flex-col gap-4">
@@ -236,33 +305,43 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
 
               <div className="flex min-w-0 flex-col gap-4">
                 <Card title={t('Variable map')} right={element && <StatusPill status={element.status} />}>
-                  <div key={flowKey} className="flex flex-col gap-3">
+                  <div key={flowKey} className="@container flex flex-col gap-3">
                     <p className="font-mono text-micro text-fg">
                       {primitivePath}
                       <span aria-hidden className="px-1.5 text-fg-faint">→</span>
                       {role.id}
                     </p>
-                    <div className="map-flow relative flex flex-col gap-4 pl-5">
-                    <span aria-hidden className="pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-line" />
-                    <span aria-hidden className="map-spine pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-accent-ui" />
+                    <div
+                      ref={flowRef}
+                      onMouseLeave={() => { setFocusMode(null); setFocusComponent(null) }}
+                      className={`map-flow relative flex flex-col gap-4 pl-5 @[34rem]:grid @[34rem]:items-start @[34rem]:gap-x-10 @[34rem]:pl-0 @[34rem]:[grid-template-columns:9.5rem_10.5rem_minmax(0,1fr)] ${wired ? 'map-flow-wired' : ''}`}
+                    >
+                    <span aria-hidden className={`pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-line @[34rem]:hidden`} />
+                    <span aria-hidden className={`map-spine pointer-events-none absolute bottom-1 left-[5px] top-1 w-px bg-accent-ui @[34rem]:hidden`} />
+                    {wired && (
+                      <MapWires key={role.id} containerRef={flowRef} wires={wires} lit={lit} mode={previewing ? 'fade' : 'draw'} />
+                    )}
                     <MapStep mark="1" label={t('Primitive')}>
-                      <div className="flex flex-wrap gap-2">
+                      <div className={`flex flex-wrap gap-2 @[34rem]:flex-col @[34rem]:flex-nowrap`}>
                         {roles.modeKeys.map((mode) => (
                           <ColorPlate
                             key={mode}
+                            id={`p:${mode}`}
                             appearance={roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}
                             primitive={role.modes[mode]?.label ?? '—'}
                             css={role.modes[mode]?.css ?? 'transparent'}
                             caption={copied ? t('Copied') : (role.modes[mode]?.css ?? '—')}
                             copyLabel={copyLabel}
+                            on={focusMode === mode}
+                            onEnter={() => { setFocusMode(mode); setFocusComponent(null) }}
                             onCopy={() => copyVar(role.id)}
                           />
                         ))}
                       </div>
                     </MapStep>
                     <MapStep mark="2" label={t('Role')} step="role">
-                      <div className="flex w-full min-w-[11rem] max-w-sm flex-col gap-2">
-                        <div className="flex flex-col gap-1.5 rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5">
+                      <div className={`flex w-full min-w-[11rem] max-w-sm flex-col gap-2 @[34rem]:min-w-0`}>
+                        <div data-wire="role" className="flex flex-col gap-1.5 rounded-xl border border-accent-ui/50 bg-accent-ui/[0.06] p-1.5">
                           <span
                             aria-hidden
                             className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
@@ -300,25 +379,18 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                       {usedBy.length === 0 ? (
                         <span className="flex h-7 items-center text-caption text-fg-faint">{t('No component in this system reads it')}</span>
                       ) : (
-                        <div className="flex flex-wrap gap-1.5" onMouseLeave={() => setFocusComponent(null)}>
-                          {usedBy.map((key) => {
-                            const paints = mapping.filter((row) => row.component === key && row.role === role.id).map((row) => row.property)
-                            const on = focusComponent === key
-                            return (
-                              <button
-                                key={key}
-                                type="button"
-                                onMouseEnter={() => setFocusComponent(key)}
-                                onClick={() => onOpenComponent?.(key)}
-                                title={paints.join(' · ') || undefined}
-                                className={`${PILL} border-line text-fg transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                                  on ? 'border-accent-ui/60 bg-accent-ui/[0.1]' : ''
-                                }`}
-                              >
-                                {labelOf(key)}
-                              </button>
-                            )
-                          })}
+                        <div className={`flex flex-wrap gap-1.5 @[34rem]:flex-col @[34rem]:flex-nowrap @[34rem]:gap-2`}>
+                          {usedBy.map((key) => (
+                            <ComponentNode
+                              key={key}
+                              id={`c:${key}`}
+                              label={labelOf(key)}
+                              paints={mapping.filter((row) => row.component === key && row.role === role.id).map((row) => row.property)}
+                              on={focusComponent === key}
+                              onEnter={() => { setFocusComponent(key); setFocusMode(null) }}
+                              onOpen={onOpenComponent ? () => onOpenComponent(key) : undefined}
+                            />
+                          ))}
                         </div>
                       )}
                     </MapStep>

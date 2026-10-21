@@ -776,6 +776,37 @@ button:focus-visible > .generator-cue-live {
 .map-flow .map-step-role { animation-delay: 180ms; }
 .map-flow .map-step-use { animation-delay: 380ms; }
 
+/* The map's wires. A pin draws each one from its source to its target
+   (dashoffset over a unit pathLength); a hover preview only fades the new
+   set in, so skimming the role list never replays the draw. The wire under
+   the pointer thickens and the rest recede — stroke and opacity only. */
+@keyframes map-wire-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes map-wire-fade {
+  from { opacity: 0; }
+}
+.map-wire {
+  stroke: var(--accent-ui);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  opacity: 0.55;
+  transition: opacity 180ms var(--ease-out-quint), stroke-width 180ms var(--ease-out-quint);
+}
+.map-wire[data-on] { opacity: 1; stroke-width: 2.25; }
+.map-wire[data-off] { opacity: 0.16; }
+.map-wire-draw { animation: map-wire-draw 420ms var(--ease-out-quint) both; }
+.map-wire-fade { animation: map-wire-fade 160ms var(--ease-out-quint) both; }
+/* The wire cascade has its own timing; the stage reveal would double it. */
+.map-flow-wired .map-step { animation: none; }
+.map-node {
+  transition: border-color 160ms var(--ease-out-quint), background-color 160ms var(--ease-out-quint), transform 160ms var(--ease-out-quint);
+}
+.map-node:hover { transform: translateX(2px); }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
   .animate-rainbow,
@@ -784,9 +815,12 @@ button:focus-visible > .generator-cue-live {
   .generator-cue-live,
   .generator-entry::after,
   .map-spine,
-  .map-flow .map-step {
+  .map-flow .map-step,
+  .map-wire {
     animation: none !important;
   }
+  .map-wire, .map-node { transition: none; }
+  .map-node:hover { transform: none; }
   .generator-entry::after { opacity: 0; }
   .generator-entry .generator-cue { transition: none; transform: none !important; }
   .generator-cue-live,
