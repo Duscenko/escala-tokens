@@ -710,6 +710,40 @@ button:focus-visible > .generator-cue-live {
   transform: none;
 }
 
+/* The top bar's Generator tab — the entrance to the engine, so it is a
+   capsule, not a faint peer of About · Components. ONE loop in the bar: a
+   sheen crosses the capsule every 6s (the hexagon's own pulse is off here, two
+   loops side by side read as noise); hover turns the hexagon one face (60°).
+   Transform + opacity only. */
+@keyframes generator-entry-sheen {
+  0%, 78% { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+.generator-entry {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.generator-entry::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--accent-ui) 28%, transparent) 50%, transparent 70%);
+  transform: translateX(-130%);
+  animation: generator-entry-sheen 6s var(--ease-out-quint) infinite;
+}
+.generator-entry[aria-current='page']::after { animation: none; opacity: 0; }
+.generator-entry .generator-cue-live { animation: none; }
+.generator-entry .generator-cue {
+  transition: transform 0.45s var(--ease-out-quint);
+}
+.generator-entry:hover .generator-cue,
+.generator-entry:focus-visible .generator-cue {
+  transform: rotate(60deg);
+}
+
 /* Variable map. The spine draws once, top to bottom, and each stage arrives
    as the line reaches it — so Primitive → Role → Components reads in order.
    It plays when a role is pinned, then the accent recedes and the quiet rule
@@ -739,10 +773,13 @@ button:focus-visible > .generator-cue-live {
   .inspect-ring-stroke,
   .random-theme-border,
   .generator-cue-live,
+  .generator-entry::after,
   .map-spine,
   .map-flow .map-step {
     animation: none !important;
   }
+  .generator-entry::after { opacity: 0; }
+  .generator-entry .generator-cue { transition: none; transform: none !important; }
   .generator-cue-live,
   .map-spine,
   .map-flow .map-step {

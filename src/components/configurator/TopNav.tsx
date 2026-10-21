@@ -684,13 +684,19 @@ export default function TopNav({
             if (key === 'docs') {
               return <DocsNavMenu key={key} active={on || nav === 'pricing'} onOpenDocsPage={onOpenDocsPage} />
             }
+            // Generator is the entrance to the engine, not a peer of About —
+            // a tinted capsule with the label at full ink (`generator-entry`
+            // in index.css carries its sheen and the hexagon's hover turn).
+            const entry = key === 'variables'
             return (
               <button
                 key={key}
                 onClick={() => onNav(key)}
                 aria-current={on ? 'page' : undefined}
-                className={`inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
-                  on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
+                className={`inline-flex items-center gap-1.5 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+                  entry
+                    ? `generator-entry rounded-full bg-accent-ui/[0.08] px-2.5 py-1 font-semibold text-fg ring-1 ring-inset ring-accent-ui/25 hover:bg-accent-ui/[0.14] hover:ring-accent-ui/45 active:scale-[0.97] transition-[background-color,box-shadow,transform]`
+                    : `rounded-md px-0.5 py-1 ${on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'}`
                 }`}
               >
                 {key === 'variables' && <GeneratorMark live={!on} />}
