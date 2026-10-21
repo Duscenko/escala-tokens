@@ -1,16 +1,9 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { captureCodeSnapshot } from '../../lib/codeScope'
-import { buildCSS } from '../../lib/exporters'
-import { buildShadcnGlobalsCss } from '../../lib/shadcnGlobals'
-import type { TokenJSON } from '../../lib/agentBundle/types'
-import { generateTokenJSON } from '../../lib/tokenGenerator'
-import { buildAgentSkillFiles } from '../../lib/agentBundle'
+import { CONTEXT_SCOPES, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
-import { useFreeTier } from '../../lib/access'
-import { shippedBundle } from '../../lib/freeExport'
-import { CONTEXT_APPEARANCES, CONTEXT_FOUNDATIONS, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
+import { CONTEXT_APPEARANCES, type ContextAppearance } from '../../lib/contextRequest'
 import { brandContext } from '../../lib/contextSource'
 import { ContextFilters, useContextOptions } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -42,27 +35,16 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
 
 const PREVIEW_LINE_LIMIT = 32
 
-/** Every scope the Agent context can be cut to: the whole brand, then one
- *  foundation at a time. */
-const CONTEXT_SCOPES: ContextScope[] = ['all', ...CONTEXT_FOUNDATIONS.map((f) => f.key)]
 
 const COPY_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
-function CopyIcon({ done = false }: { done?: boolean }) {
+export function CopyIcon({ done = false }: { done?: boolean }) {
   if (done) {
     return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m3.25 8.25 3 3 6.5-6.5" /></svg>
   }
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden><rect x="5.25" y="2.25" width="7.5" height="9" rx="1.5" /><path d="M10.75 12v.75a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5v-8a1.5 1.5 0 0 1 1.5-1.5H4" /></svg>
 }
 
-async function writeClipboard(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    return false
-  }
-}
 
 /** Copies the file on screen. The destinations that used to hide in this
  *  button's dropdown are the hand-off strip above the file now. */
@@ -208,7 +190,7 @@ function highlightedCss(line: string): ReactNode {
   return line
 }
 
-function CodeLine({ value, number, format }: { value: string; number: number; format: Format }) {
+export function CodeLine({ value, number, format }: { value: string; number: number; format: Format }) {
   // Agent context is prose (headings, paragraphs, lists) plus markdown tables,
   // not a declaration dump. `min-w-max` + `whitespace-pre` on CSS/Markdown is
   // what keeps tables and `--var:` rows intact; the same pair turns Agent
@@ -229,26 +211,6 @@ function CodeLine({ value, number, format }: { value: string; number: number; fo
  * Read-only companion to Export. Inspect/copy the same CSS, documentation and
  * agent contract that the existing export flow ships.
  */
-/** What a theme's export carries, counted off the SAME `generateTokenJSON`
- *  call the files are built from, so the numbers can't disagree with them. */
-type ExportFacts = { primitives: number; tokens: number; modes: number; cssBytes: number }
-
-function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): ExportFacts {
-  const colors = (json as { colors?: Record<string, unknown> }).colors ?? {}
-  const count = (value: unknown) => (value && typeof value === 'object' ? Object.keys(value).length : 0)
-  const primitives = count(colors.primitive) + count(colors.primitiveAlpha)
-  const groups = ((colors.architecture as { tokens?: Record<string, Record<string, Record<string, string>>> } | undefined)?.tokens) ?? {}
-  let tokens = 0
-  const modeKeys = new Set<string>()
-  for (const group of Object.values(groups)) {
-    for (const modes of Object.values(group)) {
-      tokens += 1
-      Object.keys(modes ?? {}).forEach((key) => modeKeys.add(key))
-    }
-  }
-  return { primitives, tokens, modes: modeKeys.size, cssBytes: new Blob([css]).size }
-}
-
 function compactCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k`
   return String(n)
@@ -343,41 +305,10 @@ export default function ThemeCodeFormat({
   const format = formatProp ?? localFormat
   const setFormat = (next: Format) => { setLocalFormat(next); onFormatChange?.(next) }
   const [expanded, setExpanded] = useState(false)
-  const free = useFreeTier()
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const effectiveScope = resolveCodeTheme(listed, scope, previewTheme)
-  // One library theme, both appearances. Kits save still uses
-  // scopeSnapshotToTheme; this file is what someone pastes.
-  const source = useMemo(() => (
-    effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
-  ), [store, effectiveScope])
-  const artifacts = useMemo(() => {
-    if (!source) return { css: '', shadcn: '', skillMd: '', facts: null }
-    const asStore = source as ReturnType<typeof useDesignStore.getState>
-    const json = generateTokenJSON(source)
-    const { files } = buildAgentSkillFiles(json, {
-      projectFallback: source.projectName,
-      iconKey: source.iconAiSource,
-    })
-    const appearance = previewAppearance ?? source.themeKinds[effectiveScope ?? ''] ?? 'light'
-    const cut = free
-      ? shippedBundle(asStore, {
-          themes: [appearance],
-          modes: [{ theme: appearance, appearance }],
-          viewports: ['desktop'],
-          gridStyles: ['xl-desktop'],
-        }, true)
-      : null
-    const css = cut?.css ?? buildCSS(asStore)
-    const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
-    return {
-      css,
-      shadcn: buildShadcnGlobalsCss(shipped as unknown as TokenJSON, { project: source.projectName }),
-      skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
-      facts: exportFacts(shipped, css),
-    }
-  }, [source, free, previewAppearance, effectiveScope])
+  const artifacts = useCodeArtifacts(effectiveScope, previewAppearance)
   // Agent context is CUT to what the person asked for — scope, theme, detail —
   // and the file on screen is exactly the paste. `all · both · full` is the
   // file this tab always showed (every references/ file, in package order).

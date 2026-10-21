@@ -70,6 +70,13 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > "Exit inspector" only while something is pinned (`pinned`); inspect mode still starts on. A
 > guest's board header says "Sample screens drawn from your tokens" (its login-card artefact
 > read as a wall). Don't add a fourth door or a second name for one of the three.
+> **The three doors open IN the right panel, not on another page** (phase 1b): `ShipPanel.tsx`
+> layers over the inspector slot (z-30, like Token Details) with Back to editing / Esc, a
+> short preview, Copy + Download, and a link to the long view (Code tab, Figma page). Its
+> content comes from the pages' own builders — `useCodeArtifacts` (`codeArtifacts.ts`, shared
+> with the Code tab), `brandContext`, `buildFigmaContext` — never a second renderer.
+> `openShip(key, kind)` in `Configurator` is the one entry for every door; the panel closes
+> whenever the place it opened on changes (`shipWhere`).
 
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:

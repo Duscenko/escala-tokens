@@ -624,7 +624,11 @@ export default function ThemeLibraryPage({
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         onExportBrand={onExportBrand ?? onGetCode}
-        brandExport={{ all: onExportAll, figma: onSyncFigma, code: onGetCode, agent: onGetAgentContext, github: onShareGithub }}
+        // CSS · Figma · Agent open in the inspector (`onShip`); the pages are
+        // the fallback where no shell provides the panel.
+        brandExport={onShip
+          ? { all: onExportAll, code: (k) => onShip(k).css(), figma: (k) => onShip(k).figma(), agent: (k) => onShip(k).agent(), github: onShareGithub }
+          : { all: onExportAll, figma: onSyncFigma, code: onGetCode, agent: onGetAgentContext, github: onShareGithub }}
         onAddBrand={onCreateTheme}
         onImportBrand={(json, name) => {
           const res = addBrandFromPayload(json, name)

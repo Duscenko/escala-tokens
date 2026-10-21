@@ -32,7 +32,8 @@ import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, us
 import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
-import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorHeaderPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
+import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorHeaderPortal, InspectorPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
+import ShipPanel, { type ShipKind } from '../components/configurator/ShipPanel'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
@@ -1652,14 +1653,55 @@ export default function Configurator() {
     setCodeFormat(format)
     setThemeWorkspaceTab('code')
   }
-  /** The three doors out for one brand — the inspector footer's Ship row and
-   *  the create studio's. Figma selects the brand as the sync target, like the
-   *  per-brand menu does. */
+  // ── Ship, inside the inspector ──────────────────────────────────────────
+  // CSS · Figma · Agent open IN the right-hand panel (`ShipPanel`), over
+  // whatever it held, so the board stays on screen while you copy. "Back to
+  // editing" (or Esc) closes it. It belongs to the place it was opened on:
+  // moving anywhere else (another rail tab, a surface, a section) closes it,
+  // so coming back never finds a stale panel.
+  const shipWhere = `${tab}|${themeWorkspaceTab}|${themeHubSurface}|${exportMode ?? ''}`
+  const [ship, setShip] = useState<{ key: string; kind: ShipKind; at: string } | null>(null)
+  if (ship && ship.at !== shipWhere) setShip(null)
+  const openShip = (key: string | null, kind: ShipKind) => {
+    if (!key) { showToast(t('Add a brand to get its code.'), undefined, true); return }
+    if (brandIsDraft(key)) { showToast(randomDraftHint, undefined, true); return }
+    leaveExportWizard()
+    let at = shipWhere
+    // Outside the Generator there is no inspector to open in: land on the
+    // brand's board, the place where you see what you ship. The studio's
+    // inspector is the create form; the brand it made is kept by then, so the
+    // board is where it goes too.
+    if (tab !== 'foundations' || exportMode || themeWorkspaceTab === 'library') {
+      commitVisit()
+      setExportMode(null)
+      setTab('foundations')
+      setThemeWorkspaceTab('preview')
+      setThemeHubSurface('artefacts')
+      at = `foundations|preview|artefacts|`
+    }
+    if (key !== previewTheme) changePreviewTheme(key)
+    // Figma ships this brand: select it as the sync target, the same rule
+    // the per-brand "Sync with Figma" has always followed.
+    if (kind === 'figma') chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds, store.brandThemes, PRO_MAX_MODES))
+    setShip({ key, kind, at })
+  }
+  /** The three doors out for one brand — the inspector footer's Ship row, the
+   *  create studio's, Home's brand menu. */
   const shipFor = (key: string): ShipActions => ({
-    css: () => openCodeForTheme(key, 'css'),
-    figma: () => syncFigmaForTheme(key),
-    agent: () => openCodeForTheme(key, 'agent'),
+    css: () => openShip(key, 'css'),
+    figma: () => openShip(key, 'figma'),
+    agent: () => openShip(key, 'agent'),
   })
+  /** The Export pill ships the brand the Code tab would show. */
+  const shipCurrent = (kind: ShipKind) => openShip(resolveCodeTheme(myThemeKeys(themeOrder, themes), '', previewTheme) || null, kind)
+  /** The panel's "Open full file" / Figma options: the long view, panel closed. */
+  const openShipFull = (kind: ShipKind) => {
+    if (!ship) return
+    const key = ship.key
+    setShip(null)
+    if (kind === 'figma') syncFigmaForTheme(key)
+    else openCodeForTheme(key, kind)
+  }
   /**
    * Per-theme twin of the canvas header's Sync button. Same shape as
    * `openCodeForTheme` directly above, plus one thing that shape doesn't need:
@@ -1710,14 +1752,6 @@ export default function Configurator() {
         : FAQ_KEY)
   }
   const leaveExportWizard = () => setSectionExportOpen(false)
-  const openFigmaSyncPage = () => {
-    leaveExportWizard()
-    commitVisit()
-    setExportMode(null)
-    setTab('foundations')
-    setThemeWorkspaceTab('preview')
-    setThemeHubSurface('figma')
-  }
   /** GitHub is an account feature. Every door hides itself for a visitor
    *  with no account; this catches any that does not, and sends them to
    *  sign in instead of opening the connect flow. */
@@ -2515,9 +2549,9 @@ export default function Configurator() {
         // so the bar's Export pill would be a second door to the same wizard.
         ) : ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
           <ExportPill
-            onCss={() => openGetCodePage('css')}
-            onFigma={openFigmaSyncPage}
-            onAgent={() => openGetCodePage('agent')}
+            onCss={() => shipCurrent('css')}
+            onFigma={() => shipCurrent('figma')}
+            onAgent={() => shipCurrent('agent')}
             onMore={openSectionExport}
           />
         ) : undefined}
@@ -2940,6 +2974,25 @@ export default function Configurator() {
               onSearch={setComponentSearch}
               onInspectorSlot={setComponentsSlot}
             />
+          )}
+          {ship && themesCanvas && !homePage && (
+            <InspectorPortal>
+              <ShipPanel
+                key={ship.key}
+                themeKey={ship.key}
+                kind={ship.kind}
+                onKindChange={(kind) => {
+                  if (kind === 'figma') chooseFigmaSyncModes(defaultFigmaSyncModes([ship.key], themeKinds, store.brandThemes, PRO_MAX_MODES))
+                  setShip({ ...ship, kind })
+                }}
+                onClose={() => setShip(null)}
+                onOpenFull={openShipFull}
+                previewAppearance={previewAppearance}
+                figmaFileName={figmaFileName}
+                figmaSyncModes={figmaSyncModes}
+                figmaViewports={figmaViewports}
+              />
+            </InspectorPortal>
           )}
           {themesCanvas && !homePage && (
             <WorkspaceInspector

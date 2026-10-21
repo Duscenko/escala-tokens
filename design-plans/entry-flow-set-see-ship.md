@@ -23,6 +23,24 @@ Phase 1 landed as:
 - Measured after: Start → Continue → CSS → Copy = 3 clicks (was 5); Figma 3 (was 6);
   Agent 3 (was 4). Phase 2 removes Continue.
 
+Phase 1b DONE — Ship opens IN the inspector, no navigation:
+- `ShipPanel.tsx` is a layer over the inspector slot (`absolute inset-0 z-30`, the same
+  move as Token Details at z-20): "Back to editing" (and Esc, handled on the panel so the
+  board's token inspector does not also take it) · tabs CSS · Figma · Agent · a short
+  preview · **Copy** (icon turns to a check) + **Download** · a link to the long view
+  (Code tab on that format, or the Figma page for brands/themes/viewports).
+- Content comes from the SAME builders as the pages: `useCodeArtifacts`
+  (`codeArtifacts.ts`, extracted from `ThemeCodeFormat`, which now uses it too),
+  `brandContext` with the remembered Scope · Theme · Detail, `buildFigmaContext`. Verified:
+  Copy CSS hands over the 40,857-char variables.css the Code tab counts; the Figma panel
+  reports the same 149 KB as its page.
+- Every door opens it: the inspector footer, the create studio (brand kept, lands on the
+  Board), Home's brand menu (opens on Home), the top Export pill (from Components it
+  lands on the Board). `openShip` in `Configurator` is the one entry; Figma selects the
+  brand as the sync target, as the per-brand menu always did.
+- The panel belongs to the place it opened on (`shipWhere`): any rail / tab / surface
+  change closes it, so coming back never finds a stale one.
+
 The promise on the About hero is one sentence: *set your foundations, then hand them
 to Figma, your code and your AI agent*. The product delivers all three, but the walk
 from the hero to any of them is longer and more branched than the sentence, and the
