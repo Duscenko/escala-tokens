@@ -21,6 +21,7 @@ import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
 import { AppearanceGlyph } from '../colorControls'
 import { ThemeAvatar } from '../ThemeLibraryRail'
 import { ChromeAnchoredDropdown } from '../TopNav'
+import { GitHubGlyph } from '../../ui/icons'
 import { Tag, TEXT_LINK } from './parts'
 import type { Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
@@ -430,6 +431,30 @@ export default function OverviewPage({
                       </button>
                     </li>
                   ))}
+                  {/* The integration row: where this design system's code
+                      lives. One repository per system, so every column reads
+                      the same; it opens the same GitHub screen as Export. */}
+                  {brandExport?.github && (
+                    <li className="border-t border-line">
+                      <button
+                        type="button"
+                        onClick={() => brandExport.github?.(card.key)}
+                        title={store.githubRepo ? t('Push to {repo}', { repo: store.githubRepo }) : t('Connect a GitHub repository')}
+                        className={`flex h-12 w-full items-center gap-3 px-4 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
+                      >
+                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-fg"><GitHubGlyph size={16} /></span>
+                        <span className="min-w-0 flex-1 truncate text-ui text-fg">GitHub</span>
+                        {store.githubRepo ? (
+                          <span className="flex min-w-0 items-center gap-1.5 text-caption text-fg-faint">
+                            <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${store.githubLastPushAt ? 'bg-status-success-solid' : 'bg-fg-faint'}`} />
+                            <span className="truncate">{store.githubRepo.split('/').pop()}</span>
+                          </span>
+                        ) : (
+                          <span className="flex-shrink-0 text-caption font-medium text-accent-ui">{t('Connect')}</span>
+                        )}
+                      </button>
+                    </li>
+                  )}
                 </ul>
                 {selected && failing > 0 && (
                   <div className="mt-auto flex items-center gap-2 border-t border-line px-4 py-2.5">
