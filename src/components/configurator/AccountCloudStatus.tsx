@@ -10,15 +10,17 @@ import {
 import { signOut } from '../../lib/auth'
 import { useI18n } from '../../lib/i18n'
 
-const LINE: Partial<Record<Status, { text: string; tone: 'ok' | 'muted' | 'warn' }>> = {
-  loading: { text: 'Opening your files from your account…', tone: 'muted' },
-  pending: { text: 'Saving to your account…', tone: 'muted' },
-  saving: { text: 'Saving to your account…', tone: 'muted' },
-  saved: { text: 'Saved to your account. Open it in any browser.', tone: 'ok' },
-  offline: { text: 'Could not reach your account. Changes are kept in this browser and will be saved when it is back.', tone: 'warn' },
-  outdated: { text: 'Your account was saved by a newer version of Escala. Reload the page to keep saving.', tone: 'warn' },
-  'too-large': { text: 'Too large to save to your account. It is kept in this browser.', tone: 'warn' },
-  unavailable: { text: 'Saving to your account is not available right now. Your work is kept in this browser.', tone: 'warn' },
+// `short` is what the line says; `text` is the full reason, on hover and to
+// screen readers. A status is a glance, not a paragraph.
+const LINE: Partial<Record<Status, { short: string; text: string; tone: 'ok' | 'muted' | 'warn' }>> = {
+  loading: { short: 'Opening your account…', text: 'Opening your files from your account…', tone: 'muted' },
+  pending: { short: 'Saving to your account…', text: 'Saving to your account…', tone: 'muted' },
+  saving: { short: 'Saving to your account…', text: 'Saving to your account…', tone: 'muted' },
+  saved: { short: 'Saved to your account', text: 'Saved to your account. Open it in any browser.', tone: 'ok' },
+  offline: { short: 'Not saved to your account', text: 'Could not reach your account. Changes are kept in this browser and will be saved when it is back.', tone: 'warn' },
+  outdated: { short: 'Reload to keep saving', text: 'Your account was saved by a newer version of Escala. Reload the page to keep saving.', tone: 'warn' },
+  'too-large': { short: 'Too large for your account', text: 'Too large to save to your account. It is kept in this browser.', tone: 'warn' },
+  unavailable: { short: 'Not saved to your account', text: 'Saving to your account is not available right now. Your work is kept in this browser.', tone: 'warn' },
 }
 
 /** One line under Home's title: where the signed-in account's files live. */
@@ -32,9 +34,10 @@ export function AccountCloudStatus() {
   const dot = line.tone === 'ok' ? 'bg-status-success-solid' : line.tone === 'warn' ? 'bg-status-warning-solid' : 'bg-fg-faint'
   return (
     <div className="flex flex-col gap-1" role="status" aria-live="polite">
-      <p className="flex items-center gap-2 text-caption text-fg-muted">
+      <p className="flex min-w-0 items-center gap-2 text-caption text-fg-muted" title={t(line.text)}>
         <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />
-        {t(line.text)}
+        <span aria-hidden className="truncate">{t(line.short)}</span>
+        <span className="sr-only">{t(line.text)}</span>
       </p>
       {localOnly > 0 && (status === 'saved' || status === 'pending' || status === 'saving') && (
         <p className="pl-3.5 text-caption text-fg-faint">

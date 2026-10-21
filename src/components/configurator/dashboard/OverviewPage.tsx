@@ -23,7 +23,7 @@ import { ThemeAvatar } from '../ThemeLibraryRail'
 import { ChromeAnchoredDropdown } from '../TopNav'
 import { GitHubGlyph } from '../../ui/icons'
 import { Tag, TEXT_LINK } from './parts'
-import type { Dashboard } from './dashboardData'
+import { DASH_DOCS, DEFAULT_DOC_KEY, type Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
 
 /** Chrome page the rule and Edit sit on. Same hexes as `--app`. */
@@ -103,6 +103,23 @@ function PlusGlyph({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
+/** The same page glyph as Docs in the System menu, at the collection rows' 16px. */
+function DocsGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 3h9l4 4v14H6V3ZM14 3v5h5M9 13h7M9 17h7" />
+    </svg>
+  )
+}
+
+function ChevronGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m9 6 6 6-6 6" />
     </svg>
   )
 }
@@ -277,10 +294,12 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
 }
 
 export default function OverviewPage({
-  dash, header, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport, onOpenColorTheme,
+  dash, header, footer, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport, onOpenColorTheme,
   onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   dash: Dashboard
+  /** Under the table. */
+  footer?: ReactNode
   header: ReactNode
   /** Opens that foundation's page in Docs. */
   onOpenFoundation: (key: string) => void
@@ -391,6 +410,22 @@ export default function OverviewPage({
                   </p>
                 </div>
 
+                {/* The brand's reference, right under what it is: the rows
+                    below open one foundation each, this opens the whole Docs. */}
+                <button
+                  type="button"
+                  onClick={() => { onSelectBrand(card.key); onOpenFoundation(DEFAULT_DOC_KEY) }}
+                  title={t('Open {name} docs', { name: card.name })}
+                  className={`group flex h-12 w-full items-center gap-3 border-b border-line px-4 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
+                >
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-fg"><DocsGlyph /></span>
+                  <span className="min-w-0 flex-1 truncate text-ui text-fg">{t('Docs')}</span>
+                  <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{t('{n} pages', { n: DASH_DOCS.length })}</span>
+                  <span aria-hidden className="flex-shrink-0 text-fg-faint transition-transform duration-150 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
+                    <ChevronGlyph />
+                  </span>
+                </button>
+
                 <div role="group" aria-label={t(brandThemesSummary(card.themeIds))} className="border-b border-line px-3 py-2.5">
                   <div className="flex gap-1 rounded-xl border border-line bg-app p-1">
                     {BRAND_THEME_DEFS.map((def) => {
@@ -486,6 +521,7 @@ export default function OverviewPage({
             ) : null}
           </div>
         </div>
+        {footer}
       </section>
     </>
   )

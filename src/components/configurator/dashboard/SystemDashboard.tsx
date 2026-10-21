@@ -48,7 +48,9 @@ const PAGE_GLYPH: Record<DashPage, ReactNode> = {
  *  rethink. Its page, store fields and links stay in the code; flip this to
  *  bring it back everywhere at once. */
 export const STATUS_BOARD_ON = false
-const NAV: DashPage[] = STATUS_BOARD_ON ? ['overview', 'docs', 'status', 'integrations'] : ['overview', 'docs', 'integrations']
+// Docs is not a menu row: its door is each brand's Docs row on Overview. While
+// a Docs page is open, the panel lists the pages (see DashboardNav).
+const NAV: DashPage[] = STATUS_BOARD_ON ? ['overview', 'status', 'integrations'] : ['overview', 'integrations']
 
 function BrandChevron({ open }: { open: boolean }) {
   return (
@@ -215,18 +217,15 @@ function DashboardNav({ page, onPage, docKey, onDocKey, onBack, extra }: {
                 on={page === key}
                 icon={PAGE_GLYPH[key]}
                 label={t(DASH_PAGE_LABEL[key])}
-                trailing={key === 'docs' ? (
-                  <BrandChevron open={page === 'docs'} />
-                ) : key === 'status' ? (
+                trailing={key === 'status' ? (
                   <span className="flex-shrink-0 text-mini font-light leading-none text-fg-faint">Beta</span>
                 ) : undefined}
-                // Docs is an accordion: open → foundation list; click again →
-                // collapse back to Overview. Other rows are one-shot navigations.
-                onClick={() => onPage(key === 'docs' && page === 'docs' ? 'overview' : key)}
+                onClick={() => onPage(key)}
               />
-              {/* Docs lists its pages while it is open: one per foundation. */}
-              {key === 'docs' && page === 'docs' && (
-                <ul className="mb-1 ml-[1.125rem] flex flex-col gap-0.5 border-l border-line pl-2">
+              {/* Reading Docs: its pages, one per foundation, hang under
+                  Brands — the place Docs is opened from and returns to. */}
+              {key === 'overview' && page === 'docs' && (
+                <ul aria-label={t('Docs')} className="mb-1 ml-[1.125rem] flex flex-col gap-0.5 border-l border-line pl-2">
                   {DASH_DOCS.map((doc) => (
                     <li key={doc.key}>
                       <button
@@ -309,7 +308,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 }
 
 export default function SystemDashboard({
-  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, onBack, navExtra, timeAgo,
+  page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, overviewFooter, onBack, navExtra, timeAgo,
   onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onOpenColorTheme,
   onEditRole, onOpenComponent, docsExits, onExportBrand, brandExport, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
@@ -324,6 +323,8 @@ export default function SystemDashboard({
   appearance: ThemeAppearance
   /** Home's own title row for the design system, given the token count to state. */
   overviewHeader: (tokenCount: number) => ReactNode
+  /** Under the brands table: where the work is kept. */
+  overviewFooter?: ReactNode
   onBack?: () => void
   /** Under the menu: the design systems you can switch to (Home). */
   navExtra?: ReactNode
@@ -401,6 +402,7 @@ export default function SystemDashboard({
         <OverviewPage
           dash={dash}
           header={overviewHeader(noBrands ? 0 : dash.tokenCount)}
+          footer={overviewFooter}
           onOpenFoundation={openDoc}
           onOpenBrand={onOpenBrand}
           onOpenStatus={STATUS_BOARD_ON ? () => openStatus() : undefined}

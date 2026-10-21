@@ -612,9 +612,11 @@ export default function ThemeLibraryPage({
                 </div>
               )}
             </AnimatePresence>
-            <AccountCloudStatus />
           </>
         )}
+        // Where the work is kept is a fact about the table, not a heading:
+        // it reads under the brands, quiet, instead of above them.
+        overviewFooter={<AccountCloudStatus />}
       />
   )
 
