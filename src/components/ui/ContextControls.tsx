@@ -18,6 +18,7 @@ import {
   SEGMENT_INACTIVE,
   SELECT_FOCUS,
 } from '../configurator/themeWorkspaceLayout'
+import { FIELD_NAME, FIELD_ROW } from './PickerField'
 
 // The filters every "context for agents" surface shares — Code's Agent
 // context, Variables' Copy context, a component page's Copy context. One set
@@ -77,9 +78,12 @@ export function useContextOptions(scope: ContextScope, fallbackAppearance: Conte
 }
 
 function Segmented<K extends string>({
-  label, items, value, onChange, disabledKeys, disabledHint, labelClass,
+  label, items, value, onChange, disabledKeys, disabledHint, labelClass, rowClass, fill = false,
 }: {
   labelClass: string
+  rowClass: string
+  /** Stacked: the track fills the field column and its keys share it. */
+  fill?: boolean
   label: string
   items: { key: K; label: string; hint?: string }[]
   value: K
@@ -89,12 +93,12 @@ function Segmented<K extends string>({
 }) {
   const { t } = useI18n()
   return (
-    <div className="flex items-center gap-2">
+    <div className={rowClass}>
       <span className={labelClass}>{t(label)}</span>
       {/* The inspector's segmented control (foundation tabs, Light / Dark):
           a borderless `chip-rest` track with a raised selected key. Shared
           tokens, so the two can't drift. */}
-      <div role="radiogroup" aria-label={t(label)} className={`flex h-8 items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}>
+      <div role="radiogroup" aria-label={t(label)} className={`flex h-8 min-w-0 items-center gap-0.5 rounded-lg p-0.5 ${fill ? 'w-full' : ''} ${CHROME_CONTROL_SHELL}`}>
         {items.map((item) => {
           const selected = item.key === value
           const disabled = disabledKeys?.includes(item.key) ?? false
@@ -107,7 +111,7 @@ function Segmented<K extends string>({
               disabled={disabled}
               title={disabled ? disabledHint : item.hint ? t(item.hint) : undefined}
               onClick={() => onChange(item.key)}
-              className={`inline-flex h-7 items-center rounded-md px-2.5 text-caption transition-[color,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 ${selected ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
+              className={`inline-flex h-7 min-w-0 items-center justify-center rounded-md text-caption ${fill ? 'flex-1 px-1' : 'px-2.5'} transition-[color,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 ${selected ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
             >
               {t(item.label)}
             </button>
@@ -136,27 +140,30 @@ export function ContextFilters({
   const { t } = useI18n()
   // In a toolbar row the values name themselves ("Light · Dark · Both",
   // "Values · Full brief"), so the captions are for screen readers only.
-  const labelClass = layout === 'row'
-    ? 'sr-only'
-    : 'w-[68px] flex-shrink-0 text-mini font-semibold uppercase tracking-widest text-fg-faint'
+  // Stacked, each filter is a field row like the rest of the inspector
+  // (`FIELD_ROW`: sentence-case name | control in the 58% column), so the
+  // three controls share one left and one right edge.
+  const stack = layout !== 'row'
+  const labelClass = stack ? `${FIELD_NAME} text-fg-muted` : 'sr-only'
+  const rowClass = stack ? FIELD_ROW : 'flex items-center gap-2'
   const appearanceDisabled = lockedAppearance
     ? CONTEXT_APPEARANCES.map((a) => a.key).filter((k) => k !== lockedAppearance)
     : undefined
   return (
     <div className={layout === 'row' ? 'flex min-w-0 flex-wrap items-center gap-2' : 'flex flex-col gap-2'}>
       {scopes && scopes.length > 1 ? (
-        <label className="flex items-center gap-2">
+        <label className={rowClass}>
           <span className={labelClass}>{t('Scope')}</span>
           {/* The workspace dropdown shell, not the bare native control: its
               arrow sat on the field's own padding, flush against the border.
               `appearance-none` + a drawn chevron at `right-2.5` mirrors the
               text's `pl-2.5`, the same build `VariableSelect` uses. Still a
               native <select>, so keyboard and type-to-jump stay free. */}
-          <span className="relative inline-flex min-w-0">
+          <span className={`relative inline-flex min-w-0 ${stack ? 'w-full' : ''}`}>
             <select
               value={opts.scope}
               onChange={(e) => onChange({ scope: e.target.value as ContextScope })}
-              className={`h-8 min-w-0 cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${SELECT_FOCUS}`}
+              className={`h-8 min-w-0 ${stack ? 'w-full' : ''} cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${SELECT_FOCUS}`}
             >
               {scopes.map((s) => (
                 <option key={s} value={s}>
@@ -177,6 +184,8 @@ export function ContextFilters({
       {showAppearance ? (
       <Segmented
           labelClass={labelClass}
+          rowClass={rowClass}
+          fill={stack}
           label="Theme"
           items={CONTEXT_APPEARANCES}
           value={lockedAppearance ?? opts.appearance}
@@ -187,6 +196,8 @@ export function ContextFilters({
       ) : null}
       <Segmented
         labelClass={labelClass}
+        rowClass={rowClass}
+        fill={stack}
         label="Detail"
         items={CONTEXT_DETAILS}
         value={opts.detail}
