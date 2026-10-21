@@ -64,6 +64,11 @@ export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
 export const SEGMENT_SELECTED_FILL = 'bg-app shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-fg/[0.16] dark:shadow-none'
 export const SEGMENT_ACTIVE = `${SEGMENT_SELECTED_FILL} font-semibold text-fg`
 export const SEGMENT_INACTIVE = 'font-medium text-fg/75 hover:bg-fg/[0.06] hover:text-fg'
+/** A selected row in any side-panel list (Variables collections, Home's menu,
+ *  design systems, Account): a neutral lift of the ink, never a hardcoded
+ *  tint. Hover is the same lift, lighter. */
+export const NAV_ROW_ON = 'bg-fg/[0.09] font-semibold text-fg'
+export const NAV_ROW_OFF = 'font-medium text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
 export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:hover:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] hover:text-fg'
 
 export const CHROME_CONTROL_ACTIVE = 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.08)] text-fg dark:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.09)]'

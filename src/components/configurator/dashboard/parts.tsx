@@ -6,6 +6,7 @@ import { useI18n } from '../../../lib/i18n'
 import type { SourceState } from '../../../lib/systemDashboard'
 import type { ElementStatus } from '../../../lib/systemDashboardTypes'
 import { CHECKER } from '../checker'
+import { NAV_ROW_OFF, NAV_ROW_ON } from '../themeWorkspaceLayout'
 import { STATUS_LABEL, STATUS_TONE, type MarkState, type Tone } from './dashboardData'
 
 // ── Buttons ──────────────────────────────────────────────────────────────────
@@ -187,7 +188,7 @@ export function NavRow({ on, icon, label, trailing, onClick, title }: {
       aria-current={on ? 'page' : undefined}
       title={title ?? label}
       className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-        on ? 'bg-[#7468EF1A] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+        on ? NAV_ROW_ON : NAV_ROW_OFF
       }`}
     >
       <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">{icon}</span>

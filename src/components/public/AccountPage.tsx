@@ -35,6 +35,7 @@ import { LOCALES, useI18n } from '../../lib/i18n'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { useLicence } from '../../lib/licence'
 import { accountsEnabled } from '../../lib/supabase'
+import { NAV_ROW_OFF, NAV_ROW_ON } from '../configurator/themeWorkspaceLayout'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const FIELD = `h-12 w-full rounded-2xl border border-line bg-transparent px-4 dark:border-white/[0.08] text-ui text-fg placeholder:text-fg-faint transition-colors hover:border-line-strong focus:border-line-strong ${FOCUS}`
@@ -133,8 +134,8 @@ function sectionFromLocation(): SectionId {
 }
 
 const RAIL_ITEM = 'flex h-8 w-full min-w-0 flex-shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
-const RAIL_ON = 'bg-[#7468EF1A] font-semibold text-fg'
-const RAIL_OFF = 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+const RAIL_ON = NAV_ROW_ON
+const RAIL_OFF = NAV_ROW_OFF
 
 function Glyph({ children }: { children: ReactNode }) {
   return (
@@ -365,7 +366,7 @@ function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(option.key)}
-            className={`h-8 rounded-lg px-3 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? 'bg-[#7468EF1A] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'}`}
+            className={`h-8 rounded-lg px-3 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on ? NAV_ROW_ON : NAV_ROW_OFF}`}
           >
             {option.label}
           </button>
