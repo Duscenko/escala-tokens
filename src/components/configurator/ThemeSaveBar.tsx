@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
+import { myThemeKeys } from '../../lib/themeLibrary'
 import { undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
@@ -401,6 +402,9 @@ export default function ThemeSaveBar({
 export function UnsavedNotice() {
   const { t } = useI18n()
   const { guest } = useAccess()
+  // First run says "your tokens": "design system" and "brand" wait until
+  // there is a second one to tell apart (phase 3 of the entry-flow plan).
+  const oneBrand = useDesignStore((s) => myThemeKeys(s.themeOrder, s.themes).length <= 1)
   const githubRepo = useDesignStore((s) => s.githubRepo)
   const githubLastPushAt = useDesignStore((s) => s.githubLastPushAt)
   const onGithub = Boolean(githubRepo && githubLastPushAt)
@@ -443,7 +447,9 @@ export function UnsavedNotice() {
           <p className="m-0 text-caption leading-snug text-fg-muted">
             {onGithub
               ? t('On GitHub ({repo}), not saved on Escala. It stays in this browser.', { repo: githubRepo ?? '' })
-              : t('Not saved. This design system lives only in this browser.')}
+              : oneBrand
+                ? t('Not saved. Your tokens live only in this browser.')
+                : t('Not saved. This design system lives only in this browser.')}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <button type="button" onClick={() => { setOpen(false); goToLogin('save-library') }} className={link}>

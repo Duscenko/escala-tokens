@@ -209,6 +209,8 @@ const es: Record<string, string> = {
   'Get code': 'Obtener código',
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Llevar a',
+  'Set your foundations': 'Define tus fundaciones',
+  'Not saved. Your tokens live only in this browser.': 'No está guardado. Tus tokens solo viven en este navegador.',
   '{n} foundations': '{n} fundaciones',
   '{n} changed': '{n} cambiadas',
   'Back to editing': 'Volver a editar',
@@ -1790,6 +1792,8 @@ const fr: Record<string, string> = {
   'Get code': 'Obtenir le code',
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Envoyer vers',
+  'Set your foundations': 'Définissez vos fondations',
+  'Not saved. Your tokens live only in this browser.': 'Non enregistré. Vos tokens vivent uniquement dans ce navigateur.',
   '{n} foundations': '{n} fondations',
   '{n} changed': '{n} modifiées',
   'Back to editing': 'Retour à l’édition',

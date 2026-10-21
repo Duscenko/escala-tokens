@@ -86,6 +86,10 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > header reads `6 foundations · n changed` — a count off `useEditHistory`, not a stepper.
 > `ThemeForm`'s `firstStep` / scratch-draft path no longer has a caller in the studio. Don't
 > put a form or a Continue back in front of the accordion.
+> **Phase 3: a guest with ONE brand sees no Home tile** (`navRail` in `Configurator`; it stays
+> while Home is the page on screen, and returns with a second brand or an account), and the
+> first run says "your tokens": studio title "Set your foundations", `UnsavedNotice` "Your
+> tokens live only in this browser." "Design system" / "brand" return with a second brand.
 
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:

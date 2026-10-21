@@ -2511,7 +2511,13 @@ export default function Configurator() {
         // The system tab IS Home now (the top-bar Home was folded into it, see
         // design-plans/home-into-system.md); the brand board reads "Board".
         // Keys and URLs stay `system` / `overview`.
-        { key: 'system', label: t('Home') },
+        // A guest with one brand has no use for the table of brands and
+        // systems: Home appears with a second brand or an account
+        // (design-plans/entry-flow-set-see-ship.md, phase 3). It stays while
+        // it is the page on screen, so a deep link never loses its tile.
+        ...(access.guest && myThemeKeys(themeOrder, themes).length <= 1 && workspaceNav !== 'system'
+          ? []
+          : [{ key: 'system' as const, label: t('Home') }]),
         { key: 'overview', label: t('Board') },
         { key: 'variables', label: t('Variables') },
         { key: 'code', label: t('Code') },

@@ -816,7 +816,9 @@ export default function ThemeLibraryPage({
               platform={studioPlatform}
               themeKey={createdKey}
               appearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
-              title={firstSystem ? t('Customize your design system') : t('New brand')}
+              // The first run says what the hero promised — foundations, your
+              // tokens — not "design system" or "brand" (phase 3).
+              title={firstSystem ? t('Set your foundations') : t('New brand')}
               // Not a step: how big the job is, and how much of it was touched.
               stepLabel={`${t('{n} foundations', { n: String(CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
               onOpenComponent={onOpenComponent}

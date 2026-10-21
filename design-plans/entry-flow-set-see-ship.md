@@ -1,6 +1,6 @@
 # Entry flow — Set · See · Ship
 
-Status (2026-10-21): phases 1, 1b and 2 DONE, phase 3 open. Written after walking the product
+Status (2026-10-21): ALL PHASES DONE (1, 1b, 2, 3). Written after walking the product
 as a guest in a clean browser (dev build, accounts on, 1440×900).
 
 Phase 1 landed as:
@@ -61,8 +61,17 @@ Phase 2 DONE — one accordion, no Continue (`ThemeLibraryPage`):
   (the brand cap) and retries it.
 - Measured after: Start → CSS → Copy = 2 clicks (the target).
 
-Not done (phase 3): "your tokens" copy on first run, Home deferred to a second brand
-or an account.
+Phase 3 DONE — words and the guest rail:
+- First run says **your tokens**: the studio's first-system title is "Set your
+  foundations" (what the hero promised), and `UnsavedNotice` reads "Not saved. Your
+  tokens live only in this browser." while there is one brand. "Design system" and
+  "brand" come back with a second brand (`myThemeKeys(...).length > 1`).
+- The rail hides **Home** for a guest with one brand (`Configurator` `navRail` items),
+  unless Home is the page on screen (a deep link keeps its tile). It returns with a second
+  brand or an account. **Code stays** on the rail, against the plan's three-tile sketch:
+  "Open full file" in the Ship panel lands there, and a page with no tile reads as lost.
+- Not changed: Home's own copy ("Brands · Add brand · Sign in to save these brands") — a
+  guest with one brand no longer reaches it from the rail.
 
 The promise on the About hero is one sentence: *set your foundations, then hand them
 to Figma, your code and your AI agent*. The product delivers all three, but the walk
