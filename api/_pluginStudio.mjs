@@ -5514,11 +5514,14 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE;
+var c, NONE, TALL_FIELD_RADIUS, PANEL_RADIUS, PANEL_ROW_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
     NONE = "none";
+    TALL_FIELD_RADIUS = "min(radius.action,radius.2xl)";
+    PANEL_RADIUS = "radius.container";
+    PANEL_ROW_RADIUS = "sub(radius.container,spacing.1)";
   }
 });
 
@@ -5765,6 +5768,9 @@ var init_forms = __esm({
           label: { font: "type.label" },
           field: {
             ...FIELD_FIXED,
+            // A multi-line box: the Fields radius, capped. A pill one-line field
+            // (Fields at its roundest) would otherwise turn the box into a blob.
+            radius: TALL_FIELD_RADIUS,
             minHeight: "size.2xl+spacing.6",
             paddingY: "spacing.2_5",
             font: "type.placeholder"
@@ -5869,7 +5875,7 @@ var init_forms = __esm({
     };
     SELECT_GEOMETRY = { default: "size.control", sm: "size.compact" };
     MENU_ITEM = {
-      item: { text: c("content.primary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
+      item: { text: c("content.primary"), font: "type.body-sm", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
       "item[data-highlighted]": { fill: c("action.ghost.hover") },
       'item[data-state="checked"]': { fill: c("surface.selected"), text: c("content.accent") },
       "item[data-disabled]": { text: c("content.disabled") }
@@ -5878,7 +5884,7 @@ var init_forms = __esm({
       fill: c("surface.layer-2"),
       stroke: c("border.subtle"),
       strokeWidth: "stroke.control",
-      radius: "radius.action",
+      radius: PANEL_RADIUS,
       shadow: "shadow.lg",
       paddingX: "spacing.1",
       paddingY: "spacing.1"
@@ -6289,7 +6295,7 @@ var init_surfaces = __esm({
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
             text: c("content.accent"),
-            radius: "radius.action",
+            radius: PANEL_RADIUS,
             font: "type.button"
           }
         }))
@@ -6342,7 +6348,7 @@ var init_surfaces = __esm({
             fill: c("surface.layer-1"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
-            radius: "radius.action",
+            radius: PANEL_RADIUS,
             paddingX: "spacing.1_5",
             paddingY: "spacing.1_5"
           },
@@ -6503,7 +6509,7 @@ var init_surfaces = __esm({
       defaults: { Variant: "default", Size: "default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.action", strokeWidth: "stroke.control", text: c("content.primary") },
+          root: { radius: PANEL_RADIUS, strokeWidth: "stroke.control", text: c("content.primary") },
           media: { text: c("content.primary") },
           title: { text: c("content.primary"), font: "type.label", gap: "spacing.2" },
           description: { text: c("content.secondary") },
@@ -6537,7 +6543,7 @@ var init_surfaces = __esm({
             fill: c("surface.layer-1"),
             stroke: c("border.default"),
             strokeWidth: "stroke.control",
-            radius: "radius.action",
+            radius: TALL_FIELD_RADIUS,
             text: c("content.primary")
           },
           media: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.control" },
@@ -6638,7 +6644,7 @@ var init_surfaces = __esm({
             fill: c("surface.layer-2"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
-            radius: "radius.action",
+            radius: PANEL_RADIUS,
             shadow: "shadow.xl",
             paddingX: "spacing.2_5",
             paddingY: "spacing.1_5",
@@ -6669,7 +6675,7 @@ function menu(key2) {
     item: {
       text: c("content.primary"),
       font: "type.body-sm",
-      radius: "radius.control",
+      radius: PANEL_ROW_RADIUS,
       paddingX: "spacing.2_5",
       paddingY: "spacing.1_5",
       gap: "spacing.2_5"
@@ -6816,7 +6822,7 @@ var init_navigation = __esm({
         }))
       ]
     };
-    MENU_PANEL_RADIUS = "radius.action";
+    MENU_PANEL_RADIUS = PANEL_RADIUS;
     DROPDOWN_MENU = menu("DropdownMenu");
     CONTEXT_MENU = menu("ContextMenu");
     COMMAND = {
@@ -6838,7 +6844,7 @@ var init_navigation = __esm({
           kbd: { text: c("content.subtle"), font: "type.caption", stroke: c("border.subtle"), strokeWidth: "stroke.control", radius: "radius.control", paddingX: "spacing.1_5" },
           list: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
           heading: { text: c("content.subtle"), font: "type.caption", paddingX: "spacing.2_5", paddingY: "spacing.1" },
-          item: { text: c("content.primary"), font: "type.body-sm", radius: "radius.control", paddingX: "spacing.2_5", paddingY: "spacing.1_5" },
+          item: { text: c("content.primary"), font: "type.body-sm", radius: "sub(radius.container,spacing.1_5)", paddingX: "spacing.2_5", paddingY: "spacing.1_5" },
           "item[data-highlighted]": { fill: c("action.ghost.hover") },
           "item:hover": { fill: c("action.ghost.hover") }
         }))
@@ -6854,7 +6860,7 @@ var init_navigation = __esm({
             fill: c("surface.layer-1"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
-            radius: "radius.action",
+            radius: PANEL_RADIUS,
             paddingX: "spacing.4",
             paddingY: "spacing.2_5",
             gap: "spacing.5"
@@ -6908,13 +6914,13 @@ var init_navigation = __esm({
             fill: c("surface.layer-1"),
             stroke: c("border.default"),
             strokeWidth: "stroke.control",
-            radius: "radius.action",
+            radius: PANEL_RADIUS,
             height: "size.compact",
             paddingX: "spacing.1",
             paddingY: "spacing.1",
             gap: "spacing.0_5"
           },
-          trigger: { text: c("content.primary"), font: "type.label", radius: "radius.control", paddingX: "spacing.2", paddingY: "spacing.0_5" },
+          trigger: { text: c("content.primary"), font: "type.label", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2", paddingY: "spacing.0_5" },
           "trigger:hover": { fill: c("action.ghost.hover") },
           'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
           'trigger[data-active="true"]': { fill: c("action.ghost.hover") },
@@ -6930,7 +6936,7 @@ var init_navigation = __esm({
           item: {
             text: c("content.primary"),
             font: "type.body-sm",
-            radius: "radius.control",
+            radius: PANEL_ROW_RADIUS,
             paddingX: "spacing.2_5",
             paddingY: "spacing.1_5",
             gap: "spacing.2_5"
@@ -6957,11 +6963,11 @@ var init_navigation = __esm({
             fill: c("surface.layer-2"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
-            radius: "radius.overlay",
+            radius: PANEL_RADIUS,
             shadow: "shadow.lg"
           },
           content: { paddingX: "spacing.1_5", paddingY: "spacing.1_5", gap: "spacing.1" },
-          link: { text: c("content.primary"), font: "type.body-sm", radius: "radius.action", paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.1" },
+          link: { text: c("content.primary"), font: "type.body-sm", radius: "sub(radius.container,spacing.1_5)", paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.1" },
           "link:hover": { fill: c("action.ghost.hover") }
         }))
       ]
