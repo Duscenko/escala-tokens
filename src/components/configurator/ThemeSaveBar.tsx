@@ -54,7 +54,12 @@ function DiceGlyph({ face }: { face: number }) {
  *  crossing arrows) in the Color section above. Hover tips the die; a click
  *  ROLLS it — a hop and a turn, landing on a new face mid-air — so the action
  *  reads as chance before the board repaints. */
-export function RandomWholeThemeButton({ onClick, label }: { onClick: () => void; label: string }) {
+export function RandomWholeThemeButton({ onClick, label, compact = false }: {
+  onClick: () => void
+  label: string
+  /** 32px, for footers whose buttons are `h-8` (the create studio). */
+  compact?: boolean
+}) {
   const reduce = useReducedMotion()
   const [face, setFace] = useState(5)
   const [rolls, setRolls] = useState(0)
@@ -80,7 +85,7 @@ export function RandomWholeThemeButton({ onClick, label }: { onClick: () => void
       onClick={roll}
       aria-label={label}
       title={label}
-      className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className={`group flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
     >
       <span className="flex transition-transform duration-200 ease-[var(--ease-out-quint)] motion-safe:group-hover:-translate-y-px motion-safe:group-hover:-rotate-12">
         <motion.span
@@ -461,8 +466,11 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
  * same rule as `ThemeSaveBar`; signed in, it is Save brand.
  */
 export function CreateStudioFooter({
-  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode,
+  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode, onRandom,
 }: {
+  /** Roll a whole new theme on this brand (the save bar's die). Shown once
+   *  the brand exists, beside the way out. */
+  onRandom?: () => void
   error?: string | null
   /** The first design system in this browser: "brand" is not a word the
    *  visitor knows yet, so the first action reads Continue. */
@@ -498,6 +506,9 @@ export function CreateStudioFooter({
           >
             {t('Cancel')}
           </button>
+        )}
+        {committed && onRandom && (
+          <RandomWholeThemeButton compact onClick={onRandom} label={t('Random theme')} />
         )}
         {!committed ? (
           <button type="button" onClick={onCreate} className={primary}>

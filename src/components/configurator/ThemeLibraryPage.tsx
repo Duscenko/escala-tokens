@@ -513,6 +513,8 @@ export default function ThemeLibraryPage({
   const [createError, setCreateError] = useState<string | null>(null)
   const pendingStep = useRef<CreateStep | null>(null)
   const submitHandle = useRef<(() => void) | null>(null)
+  // The embedded rail's Random, for the footer's die.
+  const randomHandle = useRef<(() => void) | null>(null)
   const skipHandle = useRef<(() => void) | null>(null)
   useEffect(() => {
     if (creating) return
@@ -762,6 +764,7 @@ export default function ThemeLibraryPage({
                   // any order. There are no steps left to walk.
                   <ThemeQuickSettingsRail
                     embed
+                    randomHandle={randomHandle}
                     key={createdKey}
                     previewTheme={createdKey}
                     previewAppearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
@@ -784,6 +787,7 @@ export default function ThemeLibraryPage({
                 onCreate={() => submitHandle.current?.()}
                 onSave={() => { if (createdKey) finishCreate(createdKey) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
+                onRandom={() => randomHandle.current?.()}
               />
             </div>
           </InspectorPortal>

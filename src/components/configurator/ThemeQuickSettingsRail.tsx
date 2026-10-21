@@ -1799,6 +1799,7 @@ export default function ThemeQuickSettingsRail({
   previewPlatform = 'desktop',
   onPreviewPlatformChange,
   embed = false,
+  randomHandle,
   lockAdvanced = false,
   exploringRandom = false,
   onExploringRandomEnd,
@@ -1849,6 +1850,9 @@ export default function ThemeQuickSettingsRail({
   /** Render in the page column instead of the inspector. The create studio
    *  uses the inspector for the step list, so the edition sits in the card. */
   embed?: boolean
+  /** Hands this rail's Random (a whole new theme) to a footer it does not
+   *  render — the create studio's die. Same pattern as `submitHandle`. */
+  randomHandle?: { current: (() => void) | null }
   /** Create studio: advanced edition waits until the brand is finished, same
    *  as guided setup (`setupStep`). */
   lockAdvanced?: boolean
@@ -2462,6 +2466,7 @@ export default function ThemeQuickSettingsRail({
       if (label) useDesignStore.getState().setThemeLabel(themeKey, label)
     })
   }
+  if (randomHandle) randomHandle.current = applyRandomTheme
 
   const parsedStrokeSm = parseFloat(stroke?.sm ?? '1px')
   const strokeSm = Number.isFinite(parsedStrokeSm) ? parsedStrokeSm : 1
