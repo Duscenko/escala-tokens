@@ -324,8 +324,28 @@ export default function ThemeSaveBar({
   // The Ship row stands in for the Get code primary wherever that primary
   // would have shown: the brand is kept (or a guest's), so the next move is
   // the way out, and there are three of them, not one.
-  const shipOut = Boolean(ship) && use
+  // A signed-in DRAFT ships from the same row: the panel has ONE layout,
+  // saved or not, and "not saved" is the status line under it (with Save
+  // brand as its action), not a second primary button stacked on top.
+  const draftShip = Boolean(ship) && !inactive && draft && !access.guest && !exploringRandom
+  const shipOut = Boolean(ship) && (use || draftShip)
   const showAction = !(guestPrimary && inactive)
+  const saveBrand = (anchor: HTMLElement | null) => {
+    const s = useDesignStore.getState()
+    s.saveCurrentSystem()
+    if (themeKey) forgetUnsavedBrand(themeKey)
+    setJustSaved(true)
+    // The kept theme throws its OWN colours: accent first, then states.
+    const accent = anchor
+      ? getComputedStyle(anchor).getPropertyValue('--accent-solid').trim()
+      : ''
+    burstConfetti(anchor, [
+      accent || s.primaryColor, accent || s.primaryColor,
+      s.successColor, s.warningColor, s.infoColor, s.errorColor,
+    ])
+    showToast(t('Brand saved'))
+    if (exploringRandom) onSaved?.()
+  }
   const label = use
     ? t('Get code')
     : justSaved || kept
@@ -372,20 +392,7 @@ export default function ThemeSaveBar({
           // A guest signs up first; the shell finishes the save on return.
           if (access.guest) { goToLogin('save-library'); return }
           if (kept) return
-          const s = useDesignStore.getState()
-          s.saveCurrentSystem()
-          if (themeKey) forgetUnsavedBrand(themeKey)
-          setJustSaved(true)
-          // The kept theme throws its OWN colours: accent first, then states.
-          const accent = saveRef.current
-            ? getComputedStyle(saveRef.current).getPropertyValue('--accent-solid').trim()
-            : ''
-          burstConfetti(saveRef.current, [
-            accent || s.primaryColor, accent || s.primaryColor,
-            s.successColor, s.warningColor, s.infoColor, s.errorColor,
-          ])
-          showToast(t('Brand saved'))
-          if (exploringRandom) onSaved?.()
+          saveBrand(saveRef.current)
         }}
         disabled={inactive || (kept && !use && !justSaved)}
         className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-[opacity,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
@@ -414,7 +421,11 @@ export default function ThemeSaveBar({
       ))}
       {/* Last line: where the work lives — "Not saved" for a guest, "Saved to
           your account" (or why not) signed in. Status reads after the action. */}
-      {(guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
+      {draftShip ? (
+        <div className="border-t border-line pt-2.5">
+          <UnsavedNotice onSave={saveBrand} />
+        </div>
+      ) : (guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
     </div>
   )
 }
@@ -423,8 +434,15 @@ export default function ThemeSaveBar({
  *  are the two ways to keep it. Information, not a gate — everything else on
  *  the page works without an account. A system already pushed to GitHub says
  *  where it is, and only offers the account. */
-export function UnsavedNotice() {
+export function UnsavedNotice({ onSave, onDiscard }: {
+  /** Signed in, a brand not kept yet: the line's action saves it here
+   *  instead of sending to sign-up. Gets the link as the confetti anchor. */
+  onSave?: (anchor: HTMLElement | null) => void
+  /** A draft that can be thrown away (the create studio's Cancel). */
+  onDiscard?: () => void
+} = {}) {
   const { t } = useI18n()
+  const saveLinkRef = useRef<HTMLButtonElement>(null)
   const { guest } = useAccess()
   // First run says "your tokens": "design system" and "brand" wait until
   // there is a second one to tell apart (phase 3 of the entry-flow plan).
@@ -450,7 +468,7 @@ export function UnsavedNotice() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="flex items-center gap-1.5 rounded text-caption text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className="flex items-center gap-1.5 rounded text-caption font-medium text-status-warning transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >
         <span aria-hidden className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
         <span>{t('Not saved')}</span>
@@ -461,27 +479,44 @@ export function UnsavedNotice() {
         </svg>
       </button>
       {/* The warning carries its own way out, not only behind the ⓘ. */}
-      {guest && (
-        <button type="button" onClick={() => goToLogin('save-library')} className={`ml-auto ${link}`}>
+      {onDiscard && (
+        <button type="button" onClick={onDiscard} className={`ml-auto rounded text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+          {t('Discard')}
+        </button>
+      )}
+      {onSave ? (
+        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}${link}`}>
+          {t('Save brand')}
+        </button>
+      ) : guest && (
+        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}${link}`}>
           {t('Save with an account')}
         </button>
       )}
       {open && (
         <div role="dialog" aria-label={t('Not saved')} className="absolute bottom-full left-0 z-20 mb-2 flex w-full min-w-[220px] flex-col gap-2 rounded-lg border border-line-strong bg-elevated px-3 py-2.5 shadow-lg">
           <p className="m-0 text-caption leading-snug text-fg-muted">
-            {onGithub
+            {onSave
+              ? t('Not saved. This brand is not in your design system yet.')
+              : onGithub
               ? t('On GitHub ({repo}), not saved on Escala. It stays in this browser.', { repo: githubRepo ?? '' })
               : oneBrand
                 ? t('Not saved. Your tokens live only in this browser.')
                 : t('Not saved. This design system lives only in this browser.')}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={() => { setOpen(false); goToLogin('save-library') }} className={link}>
-              {t('Save with an account')}
-            </button>
+            {onSave ? (
+              <button type="button" onClick={() => { setOpen(false); onSave(saveLinkRef.current) }} className={link}>
+                {t('Save brand')}
+              </button>
+            ) : (
+              <button type="button" onClick={() => { setOpen(false); goToLogin('save-library') }} className={link}>
+                {t('Save with an account')}
+              </button>
+            )}
             {/* GitHub needs an account, so a visitor's only way to keep the
                 system is saving with one. */}
-            {!onGithub && !guest && (
+            {!onSave && !onGithub && !guest && (
               <button type="button" onClick={() => { setOpen(false); requestOpenGithub() }} className={link}>
                 {t('Push to GitHub')}
               </button>
@@ -611,20 +646,18 @@ export function CreateStudioFooter({
   ) : null
   return (
     // Same chrome as a saved brand's footer (ThemeSaveBar), not `bg-app`.
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
-        // The way out is three doors of equal weight (CSS · Figma · Agent),
-        // the promise on the About hero made good here. Signed in, Save keeps
-        // the brand on the row above them. Random moved to the board's header.
+        // The SAME layout as a saved brand's footer (ThemeSaveBar): the three
+        // doors out, then the status line. Not being saved is that line —
+        // "Not saved" with Save brand (and Discard) on it — never a second
+        // primary button stacked over the doors.
         <>
-          {(!guest || cancelButton) && (
-            <div className="flex items-center gap-2">
-              {cancelButton}
-              {!guest && <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save brand')}</span></button>}
-            </div>
-          )}
           <ShipRow ship={ship} />
+          <div className="border-t border-line pt-2.5">
+            <UnsavedNotice onSave={guest ? undefined : () => onSave()} onDiscard={onCancel} />
+          </div>
         </>
       ) : (
       <div className="flex items-center gap-2">
@@ -645,7 +678,7 @@ export function CreateStudioFooter({
         )}
       </div>
       )}
-      {committed && <FooterStatus guest={guest} />}
+      {committed && !ship && <FooterStatus guest={guest} />}
     </div>
   )
 }
