@@ -31,6 +31,7 @@ import {
 import { applyDocumentHead } from '../../lib/documentHead'
 import { authLinkType } from '../../lib/authEmail'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
+import { PRICING_PATH } from '../../lib/entitlement'
 import { accountsEnabled, authProviders, supabase, type AuthProvider } from '../../lib/supabase'
 import { forgetLoginReturn, pathForNext, pendingNext, readLoginSearch, rememberReturn, workspaceReturnContext } from '../../lib/loginReturn'
 
@@ -38,6 +39,7 @@ const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
   figma: '/docs/figma',
   changelog: '/docs/changelog',
   faq: '/docs/faq',
+  beta: PRICING_PATH,
 }
 
 type Mode = 'signin' | 'signup' | 'reset' | 'recovery'

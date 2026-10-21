@@ -341,15 +341,20 @@ export function resolvePreviewTokens(
     )
     if (view) {
       const flatMap: Record<string, string> = {}
+      const labelMap: Record<string, string> = {}
       for (const cat of view.categories) {
         for (const tk of cat.tokens) {
           // Categorical resolves `themeKey` directly; Vibrancy/Tonal only ever
           // carry 'light'/'dark', so fall back to the kind for those.
           const v = tk.modes[modeKey] ?? tk.modes[dark ? 'dark' : 'light']
-          if (v) flatMap[`${cat.key}.${tk.key}`] = v.css
+          if (v) {
+            flatMap[`${cat.key}.${tk.key}`] = v.css
+            labelMap[`${cat.key}.${tk.key}`] = v.label
+          }
         }
       }
       tokens.archTokens = flatMap
+      tokens.archLabels = labelMap
       // Only overwrite a field when the architecture actually defines that slot,
       // so a projection that omits one keeps the flat-resolved value instead of
       // blanking the atom out.

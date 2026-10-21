@@ -21,6 +21,7 @@ import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { FooterLinks } from './FooterLinks'
 import { PublicHeader } from '../public/PublicReadingPage'
 import { AboutInspectDemo } from './AboutInspectDemo'
+import { useIsPhone } from '../../lib/useIsPhone'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -848,6 +849,7 @@ export function AboutHome({
   const contactId = `${uid}-contact`
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
+  const isPhone = useIsPhone()
 
   const secondaryCta =
     'inline-flex h-10 items-center gap-1.5 rounded-[13px] border border-line-strong px-5 text-ui font-semibold text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
@@ -906,9 +908,11 @@ export function AboutHome({
           <Stat value={ALL_ROLES.length} label={t('Semantic roles')} delay={0.16} />
         </motion.div>
 
-        {/* ── Try the inspector — the one live piece of the workspace, and the
-            one a PHONE visitor can use: real components, painted with this
-            browser's system, traced token by token (`AboutInspectDemo`). ── */}
+        {/* ── Try the inspector — PHONE ONLY. On a laptop the real inspector is
+            one click away in the workspace, so a demo of it here is a detour;
+            on a phone it is the one live piece of the workspace a visitor can
+            use. Mounted only below `md` (`useIsPhone`), not hidden. ── */}
+        {isPhone && (
         <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
           <SectionHeader
             eyebrow={t('Try the inspector')}
@@ -917,6 +921,7 @@ export function AboutHome({
           />
           <AboutInspectDemo />
         </section>
+        )}
 
         {/* ── Start from a style — split: media left, copy right. Hidden with
             the styles themselves (SYSTEM_STYLES_VISIBLE): the page must not
@@ -1310,7 +1315,7 @@ export function AboutScaffold({
           scroll={false}
           videoTapToPlay={Boolean(notice)}
           onStart={start}
-          onOpenDocsPage={(page) => go(`/docs/${page}`)}
+          onOpenDocsPage={(page) => go(page === 'beta' ? PRICING_PATH : `/docs/${page}`)}
           onOpenComponents={() => go('/components')}
         />
 

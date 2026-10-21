@@ -117,6 +117,9 @@ export interface PreviewTokens {
   // P6b). Adding an architecture must not require remembering this line.
   architecture?: SemanticArchitecture
   archTokens?: Record<string, string>
+  /** The primitive each `archTokens` entry reads (`accent.9`, `white-a.2`) —
+   *  for surfaces that name a colour by its token, never by its hex. */
+  archLabels?: Record<string, string>
   /** The previewed theme's accent and neutral ramps (1–12) in the previewed
    *  appearance — for specimens that show the PALETTE itself (Theme preview's
    *  Color style card). Optional: every other call site reads roles. */

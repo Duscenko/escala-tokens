@@ -92,6 +92,7 @@ const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
   figma: '/docs/figma',
   changelog: '/docs/changelog',
   faq: '/docs/faq',
+  beta: PRICING_PATH,
 }
 
 const NAV_PATH: Record<TopNavKey, string | null> = {
@@ -106,30 +107,20 @@ const NAV_PATH: Record<TopNavKey, string | null> = {
  *  Contact and the legal pages. It IS the workspace's `TopNav`, not a look-
  *  alike: same lockup, same centred section nav and Docs menu, same Language
  *  and Appearance controls, so leaving the configurator for a reading page
- *  never changes the frame around it. The Export pill's slot holds the way
- *  back into the configurator instead. `current` null lights nothing, the
+ *  never changes the frame around it. The way back into the configurator is
+ *  the nav's own Generator tab — a second "Open the configurator" button
+ *  beside it was the same door twice. `current` null lights nothing, the
  *  same as the workspace's export/connect views. */
 export function PublicHeader({ current = null, openEditor = '/' }: { current?: TopNavKey | null; openEditor?: string }) {
-  const { t } = useI18n()
   const theme = useTheme()
   return (
-    <>
     <TopNav
       nav={current}
       onNav={(key) => go(NAV_PATH[key] ?? openEditor)}
       onOpenDocsPage={(page) => go(DOCS_PAGE_PATH[page])}
       chromeAppearance={theme}
       onChromeAppearanceChange={setTheme}
-      exportAction={(
-        <a
-          href={openEditor}
-          className="inline-flex h-8 flex-shrink-0 items-center rounded-lg bg-white px-2.5 text-caption font-medium text-black transition-shadow hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
-        >
-          {t('Open the configurator')}
-        </a>
-      )}
     />
-    </>
   )
 }
 

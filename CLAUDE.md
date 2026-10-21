@@ -67,7 +67,9 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   everyone, account or not** (`betaBrandLimitReached`, read by `useNeedsProForAnotherTheme`
 >   and `freeAnotherThemeBlockedNow`; the plugin caps a system at 10 modes). Hobby meters Blob
 >   writes and function runs. The cloud keeps 10 systems per account (`PRO_CLOUD_SYSTEMS`).
-> - `/pricing` renders `OpenBetaPage` (the nav says "Open beta"); `PricingPage` stays for when
+> - `/pricing` renders `OpenBetaPage` ("Open beta" is an entry of the Docs menu, not a top-bar
+>   tab — the bar is About · Generator · Components · Docs; public pages have no separate "Open
+>   the configurator" button, Generator is that door); `PricingPage` stays for when
 >   pricing returns. `UpgradeToProNotice` says "Open beta limit" with no pricing link. Account
 >   chip / page say Beta; no licence prompts. An account still only buys KEEPING the work.
 > - Tests of the paid rules run with the switch off (`vi.mock('../openBeta', …)`);

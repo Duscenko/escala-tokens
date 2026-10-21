@@ -160,7 +160,7 @@ export function ChromeAnchoredDropdown({
 // (`/pricing`), so the shell navigates to it instead of switching a tab, and
 // `PricingPage`'s own `PublicHeader` lights it.
 export type TopNavKey = 'about' | 'variables' | 'components' | 'docs' | 'pricing'
-export type DocsMenuPage = 'figma' | 'changelog' | 'faq'
+export type DocsMenuPage = 'figma' | 'changelog' | 'faq' | 'beta'
 
 /** The product hexagon, cropped out of `BrandMark`. It sits beside Generator
  *  and eases up in scale on a slow rest, so that word is the one item in the
@@ -185,8 +185,9 @@ const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
   { key: 'docs', label: 'Docs' },
-  // Open beta: the route stays `/pricing`, it shows the beta page instead.
-  { key: 'pricing', label: OPEN_BETA ? 'Open beta' : 'Pricing' },
+  // Open beta (`/pricing`) is NOT a section tab: it lives in the Docs menu
+  // (`DOCS_MENU_PAGES`), so the top bar carries only the four places you work
+  // or read in. The `pricing` key still lights Docs while that page is open.
 ]
 
 interface TopNavProps {
@@ -312,10 +313,16 @@ function HelpIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="8" cy="8" r="5.5" /><path d="M6.45 6.35a1.7 1.7 0 0 1 3.3.56c0 1.45-1.7 1.65-1.7 2.8M8 11.7h.01" /></svg>
 }
 
+function BetaIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6.25 2.5h3.5M6.75 2.5v3.6L3.4 11.9a1.1 1.1 0 0 0 .95 1.6h7.3a1.1 1.1 0 0 0 .95-1.6L9.25 6.1V2.5M4.9 9.5h6.2" /></svg>
+}
+
 const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] = [
   { key: 'figma', label: 'Use in Figma', icon: <FigmaGlyph className="h-3.5 w-3.5" /> },
   { key: 'changelog', label: 'Changelog', icon: <ClockIcon /> },
   { key: 'faq', label: 'FAQ', icon: <HelpIcon /> },
+  // Was its own top-bar tab; the route stays `/pricing`.
+  { key: 'beta', label: OPEN_BETA ? 'Open beta' : 'Pricing', icon: <BetaIcon /> },
 ]
 
 const COMPACT_MENU_ITEM =
@@ -675,7 +682,7 @@ export default function TopNav({
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {
-              return <DocsNavMenu key={key} active={on} onOpenDocsPage={onOpenDocsPage} />
+              return <DocsNavMenu key={key} active={on || nav === 'pricing'} onOpenDocsPage={onOpenDocsPage} />
             }
             return (
               <button

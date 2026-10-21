@@ -1684,6 +1684,8 @@ export default function Configurator() {
   // Docs' focused pages, ONE mapping for every door to them — TopNav's Docs menu
   // and the About tab (its FAQ link and footer) — so the two can't disagree.
   const openDocsPage = (page: DocsMenuPage) => {
+    // Open beta sits in the Docs menu but is its own public page (`/pricing`).
+    if (page === 'beta') { window.location.assign(PRICING_PATH); return }
     openDocs(page === 'figma'
       ? GUIDE_FIGMA_KEY
       : page === 'changelog'

@@ -17,7 +17,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { ElementTrace, TraceKind, TraceRow } from '../../../lib/tokenTrace'
 import { displayHex } from '../../../lib/tokenInspector'
 
-const CHECKER: React.CSSProperties = {
+export const CHECKER: React.CSSProperties = {
   backgroundImage:
     'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
   backgroundSize: '6px 6px',
@@ -40,7 +40,7 @@ function filterOf(kind: TraceKind): Exclude<Filter, 'all'> {
 }
 
 /** Anatomy slot names as the reader says them: `tagRemove` → `Tag remove`. */
-function slotLabel(slot: string): string {
+export function slotLabel(slot: string): string {
   const words = slot.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[-_]/g, ' ')
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
@@ -52,34 +52,37 @@ function stateLabel(state: string): string {
   return state.replace(/^data-/, '')
 }
 
-function isAlpha(css: string): boolean {
+export function isAlpha(css: string): boolean {
   return /^#[0-9a-f]{8}$/i.test(css.trim()) || /^rgba\(/i.test(css.trim()) || /^#[0-9a-f]{4}$/i.test(css.trim())
 }
 
-/** The glyph left of a value: a real swatch for colour, a drawn mark for a length. */
-function ValueMark({ row }: { row: TraceRow }) {
-  const box = 'flex h-5 w-5 flex-shrink-0 items-center justify-center'
+/** The glyph left of a value: a real swatch for colour, a drawn mark for a length.
+ *  `lg` is the touch size (the About page's phone inspector). */
+export function ValueMark({ row, size = 'sm' }: { row: TraceRow; size?: 'sm' | 'lg' }) {
+  const lg = size === 'lg'
+  const box = `flex flex-shrink-0 items-center justify-center ${lg ? 'h-9 w-9 rounded-lg bg-surface' : 'h-5 w-5'}`
+  const glyph = lg ? 'h-4 w-4' : 'h-3.5 w-3.5'
   if (row.kind === 'color') {
     return (
-      <span className="h-5 w-5 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/15" style={isAlpha(row.value) ? CHECKER : undefined} aria-hidden>
+      <span className={`${lg ? 'h-9 w-9 rounded-lg' : 'h-5 w-5 rounded-md'} flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/15`} style={isAlpha(row.value) ? CHECKER : undefined} aria-hidden>
         <span className="block h-full w-full" style={{ background: row.value }} />
       </span>
     )
   }
   if (row.kind === 'type') {
-    return <span className={`${box} text-mini font-semibold text-fg-muted`} aria-hidden>Aa</span>
+    return <span className={`${box} ${lg ? 'text-ui' : 'text-mini'} font-semibold text-fg-muted`} aria-hidden>Aa</span>
   }
   if (row.kind === 'radius') {
     return (
       <span className={box} aria-hidden>
-        <span className="h-3 w-3 rounded-tl-md border-l-[1.5px] border-t-[1.5px] border-fg-muted" />
+        <span className={`${lg ? 'h-3.5 w-3.5' : 'h-3 w-3'} rounded-tl-md border-l-[1.5px] border-t-[1.5px] border-fg-muted`} />
       </span>
     )
   }
   if (row.kind === 'spacing') {
     return (
       <span className={box} aria-hidden>
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-fg-muted">
+        <svg viewBox="0 0 16 16" className={`${glyph} text-fg-muted`}>
           <path d="M2 4v8M14 4v8M4 8h8M6 6l-2 2 2 2M10 6l2 2-2 2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
@@ -88,20 +91,20 @@ function ValueMark({ row }: { row: TraceRow }) {
   if (row.kind === 'stroke') {
     return (
       <span className={box} aria-hidden>
-        <span className="h-3 w-3 rounded-[3px] border-[1.5px] border-fg-muted" />
+        <span className={`${lg ? 'h-3.5 w-3.5' : 'h-3 w-3'} rounded-[3px] border-[1.5px] border-fg-muted`} />
       </span>
     )
   }
   if (row.kind === 'shadow') {
     return (
       <span className={box} aria-hidden>
-        <span className="h-3 w-3 rounded-[3px] bg-elevated" style={{ boxShadow: row.value }} />
+        <span className={`${lg ? 'h-3.5 w-3.5' : 'h-3 w-3'} rounded-[3px] bg-elevated`} style={{ boxShadow: row.value }} />
       </span>
     )
   }
   return (
     <span className={box} aria-hidden>
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-fg-muted">
+      <svg viewBox="0 0 16 16" className={`${glyph} text-fg-muted`}>
         <path d="M8 2v12M6 4l2-2 2 2M6 12l2 2 2-2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
