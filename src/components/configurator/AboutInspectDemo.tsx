@@ -568,14 +568,16 @@ export function AboutInspectDemo() {
 
           {/* ── The accent: Core's blue, or a shuffle of it — never typed ── */}
           <div
-            className="flex items-center gap-1 rounded-2xl border border-line bg-app/85 p-1 pl-1.5 shadow-lg backdrop-blur-md"
+            className="flex w-full max-w-[340px] items-center gap-1 rounded-2xl border border-line bg-app/85 p-1 pl-1.5 shadow-lg backdrop-blur-md"
           >
             <span
               className="h-7 w-7 flex-shrink-0 rounded-full ring-1 ring-black/10 transition-colors duration-300 dark:ring-white/15"
               style={{ background: tokens.archTokens['action.primary.default'] }}
               aria-hidden
             />
-            <span className="flex min-w-[4.5rem] flex-col px-1.5 leading-tight">
+            {/* Same width as the card above (`max-w-[340px]`): the name takes
+                the slack, the actions stay at the right edge. */}
+            <span className="flex min-w-0 flex-1 flex-col px-1.5 leading-tight">
               <span className="text-mini text-fg-faint">{t('Accent')}</span>
               <span className="text-body font-medium text-fg" aria-live="polite">{isCore ? 'Core' : t('Shuffled')}</span>
             </span>
