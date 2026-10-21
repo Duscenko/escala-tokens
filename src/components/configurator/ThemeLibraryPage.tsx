@@ -27,7 +27,7 @@ import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
-import { CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
+import { BoardHistoryControls, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -226,9 +226,10 @@ function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
       style={{ minHeight: INSPECTOR_TABS_H }}
     >
       {lead}
+      {/* The title holds; the count gives way first on a narrow window. */}
       <h2 className="flex min-w-0 flex-1 items-baseline gap-2 text-ui font-semibold text-fg">
-        <span className="truncate">{title}</span>
-        <span className="flex-shrink-0 font-normal text-fg-muted">· {stepLabel}</span>
+        <span className="flex-shrink-0">{title}</span>
+        <span className="min-w-0 truncate font-normal text-fg-muted">· {stepLabel}</span>
       </h2>
       {trailing}
     </div>
@@ -236,8 +237,10 @@ function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
 }
 
 function CreateBoard({
-  store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent,
+  store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent, onRandom,
 }: {
+  /** A whole new look for the draft — the header's die. */
+  onRandom?: () => void
   /** Components view: a cover's ↗ opens that component's page. Only once the
    *  brand exists — a draft has no page to show it on. */
   onOpenComponent?: (key: string) => void
@@ -274,7 +277,12 @@ function CreateBoard({
         title={title}
         stepLabel={stepLabel}
         lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />}
-        trailing={<InspectorToggle active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />}
+        trailing={(
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <BoardHistoryControls onRandom={onRandom} />
+            <InspectorToggle active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
+          </div>
+        )}
       />
       <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
@@ -806,7 +814,6 @@ export default function ThemeLibraryPage({
                 onSave={() => { if (createdKey) finishCreate(createdKey) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
                 ship={createdKey ? shipCreated(createdKey) : undefined}
-                onRandom={() => randomHandle.current?.()}
               />
             </div>
           </InspectorPortal>
@@ -822,6 +829,7 @@ export default function ThemeLibraryPage({
               // Not a step: how big the job is, and how much of it was touched.
               stepLabel={`${t('{n} foundations', { n: String(CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
               onOpenComponent={onOpenComponent}
+              onRandom={() => randomHandle.current?.()}
             />
           )}
         </>

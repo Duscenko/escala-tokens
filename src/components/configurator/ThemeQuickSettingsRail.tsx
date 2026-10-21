@@ -3070,7 +3070,6 @@ export default function ThemeQuickSettingsRail({
       {!embed && !tryOn && (setupStep != null ? <ThemeSetupBar themeKey={previewTheme} /> : (
         <ThemeSaveBar
           exploringRandom={exploringRandom}
-          onRandom={exploringRandom || access.guest ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
           onGetCode={onUseTheme}
           ship={ship}

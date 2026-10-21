@@ -90,6 +90,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > while Home is the page on screen, and returns with a second brand or an account), and the
 > first run says "your tokens": studio title "Set your foundations", `UnsavedNotice` "Your
 > tokens live only in this browser." "Design system" / "brand" return with a second brand.
+> **The inspector footer is the way OUT, then where the work lives — nothing else.** Order:
+> the Ship row ("Ship to" eyebrow over CSS · Figma · Agent), then the status line LAST
+> (`FooterStatus`: "Not saved · Save with an account" for a guest, `AccountCloudStatus` signed
+> in). Undo · Redo · Random moved to the BOARD header as one pill beside Inspector
+> (`BoardHistoryControls` in `ThemeSaveBar.tsx`, on the Board and the create studio): they act
+> on the board, and stacked in the footer they read as part of shipping (reported as too
+> dense). Random still only shows on a never-kept draft. One Undo on screen — don't put one
+> back in the footer.
 
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:

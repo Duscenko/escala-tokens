@@ -32,7 +32,8 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
-import type { ShipActions } from './ThemeSaveBar'
+import { BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
+import { useLibraryStatus } from '../../lib/libraryStatus'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
@@ -216,10 +217,9 @@ export function GetCodeButton({ onOpen, disabled = false, disabledTitle }: { onO
 
 /**
  * Reset — the whole-theme way back to its origin, shown only once the theme
- * differs from the style it was made from. Undo and Redo are NOT here: the
- * footer beside "Use this theme" already carries Undo, and two Undo buttons on
- * one screen read as two different things (reported). ⌘Z / ⇧⌘Z still walk the
- * same history from the keyboard.
+ * differs from the style it was made from. Undo and Redo are NOT here: they
+ * are `BoardHistoryControls`, right beside it on the same header — ONE Undo on
+ * screen (two read as two different things, reported).
  */
 function EditHistoryControls({ previewTheme }: { previewTheme: string }) {
   const reset = useThemeReset(previewTheme)
@@ -509,6 +509,13 @@ export default function ThemePreviewHub({
   // screen is how a first-time visitor learns what the colour step is setting.
   // Only an unsaved Random draft keeps it off.
   const [inspecting, setInspecting] = useState(true)
+  // The rail owns "a whole new theme"; it hands it here so the die sits on
+  // the board it repaints (`BoardHistoryControls`), not in the footer.
+  const randomHandle = useRef<(() => void) | null>(null)
+  const libraryStatus = useLibraryStatus()
+  // Random rewrites the brand in place, so it exists only on a draft that
+  // was never kept — the same rule the footer's die followed.
+  const canRandom = (exploringRandom || guest) && libraryStatus === 'none' && !stylePreview
   // Survives the hub unmounting, so a cover's ↗ → the component page → "Brand"
   // lands back on the Components view instead of the bento board.
   const [boardView, setBoardViewState] = useState<BoardView>(() => lastBoardView)
@@ -685,6 +692,7 @@ export default function ThemePreviewHub({
           onExploringRandomEnd={onExploringRandomEnd}
           onUseTheme={onGetCode}
           ship={ship}
+          randomHandle={randomHandle}
           onDiscardRandom={onDiscardRandom}
         />
       )}
@@ -778,8 +786,12 @@ export default function ThemePreviewHub({
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
-                  {/* A guest already has Undo beside Random in the inspector
-                      footer. Reset for that flow lives in the theme settings. */}
+                  {/* History (Undo · Redo · Random) acts on the board, so it
+                      sits on the board's header, for every visitor. Reset stays
+                      beside it for an account. */}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
+                    <BoardHistoryControls onRandom={canRandom ? () => randomHandle.current?.() : undefined} />
+                  )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !guest && (
                     <EditHistoryControls previewTheme={previewTheme} />
                   )}

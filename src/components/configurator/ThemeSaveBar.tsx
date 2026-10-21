@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
 import { myThemeKeys } from '../../lib/themeLibrary'
-import { undoEdit, useEditHistory } from '../../lib/editHistory'
+import { redoEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
@@ -51,22 +51,11 @@ function AgentGlyph() {
 
 /** Three equal doors. Each opens ONE page; none is the primary, because which
  *  one you came for is yours to say. */
-export function ShipRow({ ship, leading }: {
-  ship: ShipActions
-  /** Controls that share the footer (Undo, the die, Cancel). They take a row
-   *  of their own above the doors, with the "Ship to" eyebrow at its end:
-   *  three labelled buttons beside two 36px squares do not fit a 288px rail. */
-  leading?: ReactNode
-}) {
+export function ShipRow({ ship }: { ship: ShipActions }) {
   const { t } = useI18n()
   return (
     <div className="flex flex-col gap-2">
-      {leading !== undefined && (
-        <div className="flex items-center gap-2">
-          {leading}
-          <span className="ml-auto text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Ship to')}</span>
-        </div>
-      )}
+      <span aria-hidden className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Ship to')}</span>
       <div role="group" aria-label={t('Ship to')} className="flex items-center gap-1.5">
         <button type="button" onClick={ship.css} className={SHIP_BUTTON} title={t('Copy or download variables.css')}>
           <CodeGlyph /><span className="truncate">{t('CSS')}</span>
@@ -78,6 +67,60 @@ export function ShipRow({ ship, leading }: {
           <AgentGlyph /><span className="truncate">{t('Agent')}</span>
         </button>
       </div>
+    </div>
+  )
+}
+
+/** One segment of the history pill: a 28px square inside the 36px shell. */
+const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+/**
+ * Undo · Redo · Random, on the BOARD's header — the surface they act on.
+ * They used to sit in the inspector footer, stacked with the save status and
+ * the Ship doors: three jobs in one 288px band, and Undo read as part of
+ * shipping (reported as "too dense"). Here they sit beside Inspector, in the
+ * same 36px pill shell, so history and "roll a new look" are things you do
+ * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
+ */
+export function BoardHistoryControls({ onRandom }: {
+  /** A whole new theme — only while the brand is a draft (see callers). */
+  onRandom?: () => void
+}) {
+  const { t } = useI18n()
+  const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
+  const lastRedo = useEditHistory((h) => h.future[h.future.length - 1]?.label)
+  const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
+  const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
+  return (
+    <div role="group" aria-label={t('History')} className="flex h-9 items-center gap-0.5 rounded-xl border border-line bg-nav p-1">
+      <button type="button" onClick={() => undoEdit()} disabled={!lastUndo} aria-label={undoLabel} title={`${undoLabel} (⌘Z)`} className={HISTORY_SEGMENT}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M5.5 3.5 2.5 6.5l3 3" />
+          <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+        </svg>
+      </button>
+      <button type="button" onClick={() => redoEdit()} disabled={!lastRedo} aria-label={redoLabel} title={`${redoLabel} (⇧⌘Z)`} className={HISTORY_SEGMENT}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M10.5 3.5l3 3-3 3" />
+          <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
+        </svg>
+      </button>
+      {onRandom && (
+        <>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
+          <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+        </>
+      )}
+    </div>
+  )
+}
+
+/** The footer's last line: where the work lives. Status reads after the
+ *  action, like a document's "Saved" under its toolbar, never above it. */
+function FooterStatus({ guest, divided = true }: { guest: boolean; divided?: boolean }) {
+  return (
+    <div className={divided ? 'border-t border-line pt-2.5' : undefined}>
+      {guest ? <UnsavedNotice /> : <AccountCloudStatus />}
     </div>
   )
 }
@@ -123,11 +166,13 @@ function DiceGlyph({ face }: { face: number }) {
  *  crossing arrows) in the Color section above. Hover tips the die; a click
  *  ROLLS it — a hop and a turn, landing on a new face mid-air — so the action
  *  reads as chance before the board repaints. */
-export function RandomWholeThemeButton({ onClick, label, compact = false }: {
+export function RandomWholeThemeButton({ onClick, label, compact = false, bare = false }: {
   onClick: () => void
   label: string
   /** 32px, for footers whose buttons are `h-8` (the create studio). */
   compact?: boolean
+  /** A segment of `BoardHistoryControls`: 28px, no edge of its own. */
+  bare?: boolean
 }) {
   const reduce = useReducedMotion()
   const [face, setFace] = useState(5)
@@ -154,7 +199,9 @@ export function RandomWholeThemeButton({ onClick, label, compact = false }: {
       onClick={roll}
       aria-label={label}
       title={label}
-      className={`group flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+      className={bare
+        ? `group ${HISTORY_SEGMENT}`
+        : `group flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
     >
       <span className="flex transition-transform duration-200 ease-[var(--ease-out-quint)] motion-safe:group-hover:-translate-y-px motion-safe:group-hover:-rotate-12">
         <motion.span
@@ -220,7 +267,6 @@ export function RandomThemeButton({
 export default function ThemeSaveBar({
   inactive = false,
   exploringRandom = false,
-  onRandom,
   onSaved,
   onDiscard,
   onGetCode,
@@ -235,7 +281,6 @@ export default function ThemeSaveBar({
   inactive?: boolean
   /** A theme minted from Home → Random, not yet saved. */
   exploringRandom?: boolean
-  onRandom?: () => void
   /** After a successful save while exploring — the shell leaves this mode. */
   onSaved?: () => void
   /** While exploring: throw the draft away and go back to Home to start from
@@ -252,8 +297,6 @@ export default function ThemeSaveBar({
   const access = useAccess()
   const status = useLibraryStatus()
   const unsavedBrands = useUnsavedBrands()
-  const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
-  const canUndo = useEditHistory((h) => h.past.length > 0)
   const [justSaved, setJustSaved] = useState(false)
   const saveRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -278,6 +321,7 @@ export default function ThemeSaveBar({
   // would have shown: the brand is kept (or a guest's), so the next move is
   // the way out, and there are three of them, not one.
   const shipOut = Boolean(ship) && use
+  const showAction = !(guestPrimary && inactive)
   const label = use
     ? t('Get code')
     : justSaved || kept
@@ -285,30 +329,6 @@ export default function ThemeSaveBar({
     : guestPrimary
       ? t('Save with an account')
       : t('Save brand')
-  const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
-  // Random rewrites the theme in place. Once it is in the library — saved, or
-  // saved and edited since — that would overwrite the kept design system, so
-  // the door closes. It exists only on a draft (never saved: `none`).
-  const showRandom = Boolean(onRandom) && !inactive && status === 'none' && (exploringRandom || guestPrimary)
-  const undoButton = (
-    <button
-      type="button"
-      onClick={() => undoEdit()}
-      disabled={inactive || !canUndo}
-      aria-label={undoLabel}
-      title={`${undoLabel} (⌘Z)`}
-      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-    >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M5.5 3.5 2.5 6.5l3 3" />
-        <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-      </svg>
-    </button>
-  )
-  const randomButton = showRandom && onRandom ? (
-    <RandomWholeThemeButton onClick={onRandom} label={t('Random theme')} />
-  ) : null
-
   return (
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
     // stretches a portaled panel): as a direct slot child (Variables) the bar
@@ -329,18 +349,15 @@ export default function ThemeSaveBar({
           </button>
         </div>
       )}
-      {guestPrimary && <UnsavedNotice />}
-      {/* Signed in: where the work lives, in words — "Saved to your account"
-          while the cloud engine has it, or why it is only in this browser. */}
-      {!access.guest && <AccountCloudStatus />}
-      {/* Variables greys the row out; a guest there already has the notice's
-          two actions, so a dead grey "Save with an account" would only repeat it. */}
-      {!(guestPrimary && inactive) && (shipOut && ship ? (
-        <ShipRow ship={ship} leading={<>{undoButton}{randomButton}</>} />
+      {/* Undo and Random live on the board's header now
+          (`BoardHistoryControls`): this footer is the way OUT, then where the
+          work lives. Variables greys the row out; a guest there already has
+          the status line's two actions, so a dead grey "Save with an account"
+          would only repeat it. */}
+      {showAction && (shipOut && ship ? (
+        <ShipRow ship={ship} />
       ) : (
       <div className="flex items-center gap-2">
-      {undoButton}
-      {randomButton}
       <button
         ref={saveRef}
         type="button"
@@ -391,6 +408,9 @@ export default function ThemeSaveBar({
       </button>
       </div>
       ))}
+      {/* Last line: where the work lives — "Not saved" for a guest, "Saved to
+          your account" (or why not) signed in. Status reads after the action. */}
+      {(guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
     </div>
   )
 }
@@ -554,13 +574,10 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
  * Save + the Ship row (signed in).
  */
 export function CreateStudioFooter({
-  error, committed, guest, onCancel, onCreate, onSave, onGetCode, onRandom, ship,
+  error, committed, guest, onCancel, onCreate, onSave, onGetCode, ship,
 }: {
   /** The three doors out once the brand exists. Replaces the Get code button. */
   ship?: ShipActions
-  /** Roll a whole new theme on this brand (the save bar's die). Shown once
-   *  the brand exists, beside the way out. */
-  onRandom?: () => void
   error?: string | null
   /** The brand exists (its colours were set). */
   committed: boolean
@@ -588,34 +605,25 @@ export function CreateStudioFooter({
       {t('Cancel')}
     </button>
   ) : null
-  const randomButton = committed && onRandom ? (
-    <RandomWholeThemeButton compact onClick={onRandom} label={t('Random theme')} />
-  ) : null
   return (
     <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-3 py-3">
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
-      {committed && guest && <UnsavedNotice />}
-      {committed && !guest && <AccountCloudStatus />}
       {committed && ship ? (
         // The way out is three doors of equal weight (CSS · Figma · Agent),
         // the promise on the About hero made good here. Signed in, Save keeps
-        // the brand on the row above them.
-        guest ? (
-          <ShipRow ship={ship} leading={<>{cancelButton}{randomButton}</>} />
-        ) : (
-          <>
+        // the brand on the row above them. Random moved to the board's header.
+        <>
+          {(!guest || cancelButton) && (
             <div className="flex items-center gap-2">
               {cancelButton}
-              {randomButton}
-              <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>
+              {!guest && <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>}
             </div>
-            <ShipRow ship={ship} />
-          </>
-        )
+          )}
+          <ShipRow ship={ship} />
+        </>
       ) : (
       <div className="flex items-center gap-2">
         {cancelButton}
-        {randomButton}
         {!committed ? (
           <button type="button" onClick={onCreate} className={primary}>
             <span className="truncate">{t('Create brand')}</span>
@@ -632,6 +640,7 @@ export function CreateStudioFooter({
         )}
       </div>
       )}
+      {committed && <FooterStatus guest={guest} />}
     </div>
   )
 }
