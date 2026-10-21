@@ -18,7 +18,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_NAME, FIELD_ROW } from '../ui/PickerField'
+import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW } from '../ui/PickerField'
 import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { TintSlider } from './ThemeQuickSettingsRail'
@@ -185,7 +185,7 @@ function RoleRow({
         >
           <span
             aria-hidden
-            className="block h-[26px] w-[26px] flex-shrink-0 rounded-[4px] border border-fg/40"
+            className={`${FIELD_LEAD} block border border-fg/40`}
             style={{ background: row.hex }}
           />
           <input

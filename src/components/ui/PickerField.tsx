@@ -37,9 +37,14 @@ export const FIELD_ROW = 'grid h-8 w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] 
 export const FIELD_NAME = 'min-w-0 truncate text-left text-ui transition-colors'
 /** The control: the one surface on the row. Pass `FIELD_CONTROL_ON` while it
  *  is open or selected; the rest state picks up `group-hover` from the row. */
-export const FIELD_CONTROL = 'flex h-8 min-w-0 items-center gap-2 rounded-lg bg-surface pl-[5px] pr-2.5 transition-shadow duration-150'
+export const FIELD_CONTROL = 'flex h-8 min-w-0 items-center gap-2 rounded-lg bg-surface pl-[3px] pr-2.5 transition-shadow duration-150'
 export const FIELD_CONTROL_ON = 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
 export const FIELD_CONTROL_REST = 'group-hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
+/** What leads the control — a colour swatch, an icon. Square, the field's
+ *  height less a 3px inset, so it sits the SAME 3px from top, bottom and left
+ *  (`pl-[3px]` above), and its radius is the field's less that inset:
+ *  concentric with the field at either root size (h-8 / rounded-lg are rem). */
+export const FIELD_LEAD = 'h-[calc(100%-6px)] aspect-square flex-shrink-0 rounded-[calc(0.5rem-3px)]'
 
 const SEARCH_FROM = 9
 const LIST_GAP = 6
@@ -202,8 +207,9 @@ export function PickerField<T extends string>({
         className={`group ${FIELD_ROW} rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
         <span className={`${FIELD_NAME} ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(label)}</span>
-        <span className={`${FIELD_CONTROL} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
-          {leading ? <span aria-hidden className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
+        {/* No leading item: the text keeps the same inset as the chevron side. */}
+        <span className={`${FIELD_CONTROL} ${leading ? '' : '!pl-2.5'} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
+          {leading ?<span aria-hidden className={`${FIELD_LEAD} flex items-center justify-center text-fg-muted`}>{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />
         </span>

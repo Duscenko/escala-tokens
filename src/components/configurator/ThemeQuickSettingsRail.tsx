@@ -89,7 +89,7 @@ import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorContr
 import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
-import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
+import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
@@ -2683,7 +2683,7 @@ export default function ThemeQuickSettingsRail({
                           <span className={`${FIELD_CONTROL} ${openChip === rank ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
                             <span
                               aria-hidden
-                              className="block h-[26px] w-[26px] flex-shrink-0 rounded-[4px] border border-fg/40"
+                              className={`${FIELD_LEAD} block border border-fg/40`}
                               style={{ background: hex }}
                             />
                             <span className="min-w-0 flex-1 text-ui tabular-nums text-fg">{hex.toUpperCase()}</span>
