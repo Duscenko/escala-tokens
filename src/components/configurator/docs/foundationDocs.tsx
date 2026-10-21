@@ -81,6 +81,8 @@ export interface SystemDoc {
   /** The light page the roles are read against — what a translucent role is
    *  composited over before its label ink is solved. */
   pageLight: string
+  /** The dark page — what the white alpha ladder is drawn over. */
+  pageDark: string
   typography: ReturnType<typeof useDesignStore.getState>['typography']
   spacing: Record<string, string>
   padding: Record<string, string>
@@ -358,6 +360,9 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
     [primitiveFamilies, store.pageBackground],
   )
 
+  // The dark page, for the white ladder: Neutral Dark tone 1 is that page.
+  const pageDark = primitiveFamilies.find((f) => f.label === 'Neutral Dark')?.scale?.[1] ?? store.darkBackground
+
   const alphaFamilies = useMemo(() => {
     const twin = (label: string, scale: Record<number, string>, bg: string) =>
       ({ label, scale: generateAlphaScale(scale, bg, 'light') })
@@ -375,7 +380,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
   }, [primitiveFamilies, pageLight])
 
   return {
-    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming, pageLight,
+    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming, pageLight, pageDark,
     typography: foundations.typography,
     spacing: foundations.spacing,
     padding: foundations.padding,
@@ -466,58 +471,64 @@ export function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>
   )
 }
 
+/** The stack the ramps sit in: one per row, a rule between them. */
+const RAMP_LIST = 'flex flex-col divide-y divide-line [&>*]:py-4 [&>*:first-child]:pt-1 [&>*:last-child]:pb-0'
+
 /**
- * One colour family as a card: the anchor (tone 9) as a tall block carrying the
- * family's name and hex, beside the whole ramp as a column of labelled rows, each
- * painted in its own colour. The labels and hexes sit ON their swatches — one
- * object instead of a strip of chips with captions underneath — and the ink on
- * each is solved against THAT swatch, so every row stays readable.
+ * One colour family as ONE strip: the name over a single rounded bar of its
+ * tones, edge to edge, with each step's label centred under its own swatch.
+ * Reading a ramp is comparing neighbours, so they touch — no gaps, no per-tone
+ * card — and every family is the same width, so step N lines up down the page.
+ * The hex is on hover and click copies it: the strip stays legible at the
+ * article's width, where twelve hex codes in a row would not fit.
  */
-export function PrimitiveCard({ label, scale, naming, alpha = false }: {
+export function PrimitiveCard({ label, scale, naming, page }: {
   label: string
   scale: Record<number, string>
   naming: ColorNaming
-  /** Translucent ramp: every swatch sits on the checkerboard AlphaRamp uses, and
-   *  the ink is the page's own (`--fg`) — a translucent fill has no single
-   *  colour to solve a label against, it is judged on whatever is behind it. */
-  alpha?: boolean
+  /** Translucent ramp: the page it was solved against. Each swatch is split on
+   *  its diagonal — the wash over a checker cut from that page below-left, over
+   *  the page itself above-right — so its opacity AND the colour it actually
+   *  paints there read at once. A twin's upper half is its solid tone. */
+  page?: string
 }) {
   const tones = Object.keys(scale).map(Number).sort((a, b) => a - b)
-  const anchor = scale[9] ?? scale[tones[Math.floor(tones.length / 2)]]
-  if (!anchor) return null
-  const ink = (bg: string) => (alpha ? 'var(--fg)' : readableInk(bg, '#0a0d12', '#ffffff'))
-  // The wash over the checkerboard, as ONE background so it needs no wrapper.
-  const paint = (hex: string): CSSProperties => (alpha
+  if (!tones.length) return null
+  // One background per swatch, no wrappers. Alpha layers, top first: the wash,
+  // the page over the upper-right half, the checker under all of it. The
+  // checker is the page and a grey step off it, so it reads on either page.
+  const paint = (hex: string): CSSProperties => (page
     ? {
-        backgroundImage: `linear-gradient(${hex}, ${hex}), repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)`,
-        backgroundSize: 'auto, 10px 10px',
-        color: ink(hex),
+        backgroundImage: `linear-gradient(${hex}, ${hex}), linear-gradient(to top right, transparent 50%, ${page} 50%), repeating-conic-gradient(${page} 0% 25%, color-mix(in srgb, ${page} 82%, #808080) 0% 50%)`,
+        backgroundSize: 'auto, auto, 10px 10px',
       }
-    : { background: hex, color: ink(hex) })
+    : { background: hex })
   return (
-    <div className="flex min-w-0 overflow-hidden rounded-xl ring-1 ring-black/10 dark:ring-white/15">
-      <div
-        className="flex w-[44%] flex-shrink-0 flex-col justify-between p-5"
-        style={paint(anchor)}
-      >
-        <span className="text-heading font-semibold leading-tight [overflow-wrap:anywhere]">{label}</span>
-        <span className="text-caption font-mono uppercase tabular-nums opacity-80">{anchor}</span>
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col">
+    <div className="flex min-w-0 flex-col gap-2">
+      <span className="truncate text-ui font-semibold text-fg">{label}</span>
+      <div className="flex h-14 overflow-hidden rounded-xl ring-1 ring-inset ring-fg/10">
         {tones.map((tone) => {
           const hex = scale[tone]
+          const name = toneLabel(naming, tone)
           return (
-            <div
+            <button
               key={tone}
-              className="flex h-8 items-center justify-between gap-3 px-3.5 text-caption"
+              type="button"
+              title={`${name} · ${hex.toUpperCase()}`}
+              aria-label={`${label} ${name}: ${hex.toUpperCase()}`}
+              onClick={() => { void navigator.clipboard?.writeText(hex.toUpperCase()).catch(() => {}) }}
+              className="min-w-0 flex-1 transition-[filter] duration-150 hover:brightness-110 focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui"
               style={paint(hex)}
-              title={hex}
-            >
-              <span className="font-medium tabular-nums">{toneLabel(naming, tone)}</span>
-              <span className="font-mono uppercase tabular-nums opacity-70">{hex}</span>
-            </div>
+            />
           )
         })}
+      </div>
+      <div className="flex" aria-hidden>
+        {tones.map((tone) => (
+          <span key={tone} className="min-w-0 flex-1 truncate text-center font-mono text-micro tabular-nums text-fg-faint">
+            {toneLabel(naming, tone)}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -832,12 +843,12 @@ color:      var(--color-content-on-action);
         title: 'Primitives',
         description: 'The raw color ramps — unopinionated source values that every semantic token aliases. Never used directly in designs.',
         render: (c) => (
-          <div className="@container">
-            <div className="grid grid-cols-1 gap-4 @min-[760px]:grid-cols-2">
-              {c.primitiveFamilies.map((fam) => (
-                <PrimitiveCard key={fam.label} label={fam.label} scale={fam.scale} naming={c.colorNaming} />
-              ))}
-            </div>
+          // One family per row, full width, so a tone sits in the same column
+          // in every family down the page.
+          <div className={RAMP_LIST}>
+            {c.primitiveFamilies.map((fam) => (
+              <PrimitiveCard key={fam.label} label={fam.label} scale={fam.scale} naming={c.colorNaming} />
+            ))}
           </div>
         ),
       },
@@ -846,16 +857,16 @@ color:      var(--color-content-on-action);
         title: 'Alpha',
         description: 'Translucent primitives — for anything painted ON TOP of a surface the token cannot know in advance. Two different contracts, deliberately not merged: a family TWIN is solved so tone N reproduces the solid tone N over its own page (the opacity is a result, so the ladder is not monotonic and tone 1 is fully transparent); black/white is a fixed opacity ladder — 5 to 95 % — for scrims, neutral washes and the dark-mode elevation rim, where the ink really is black or white and the opacity IS the decision.',
         render: (c) => (
-          <div className="@container">
-            <div className="grid grid-cols-1 gap-4 @min-[760px]:grid-cols-2">
-              {c.alphaFamilies.map((fam) => (
-                <PrimitiveCard key={fam.label} label={`${fam.label} Alpha`} scale={fam.scale} naming={c.colorNaming} alpha />
-              ))}
-              {/* The two fixed ladders keep their "fixed" contract in the name:
-                  a family twin is SOLVED against its page, these are not. */}
-              <PrimitiveCard label="Black Alpha" scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} alpha />
-              <PrimitiveCard label="White Alpha" scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} alpha />
-            </div>
+          <div className={RAMP_LIST}>
+            {c.alphaFamilies.map((fam) => (
+              <PrimitiveCard key={fam.label} label={`${fam.label} Alpha`} scale={fam.scale} naming={c.colorNaming} page={c.pageLight} />
+            ))}
+            {/* The two fixed ladders keep their "fixed" contract in the name:
+                a family twin is SOLVED against its page, these are not. Black
+                darkens a light page, white lightens a dark one: each is shown
+                on the page it is for. */}
+            <PrimitiveCard label="Black Alpha" scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} page={c.pageLight} />
+            <PrimitiveCard label="White Alpha" scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} page={c.pageDark} />
           </div>
         ),
       },
