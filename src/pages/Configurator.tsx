@@ -2458,6 +2458,8 @@ export default function Configurator() {
     : themeWorkspaceTab === 'code' ? 'code'
     : themeWorkspaceTab === 'system' ? 'system'
     : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts' ? 'overview'
+    // The create studio is a board too: a first visitor stands on Board.
+    : themeWorkspaceTab === 'library' ? 'overview'
       : null
   const continueToAccount = (mode: 'signup' | 'signin') => {
     let key = previewTheme
@@ -2495,9 +2497,9 @@ export default function Configurator() {
   }
   // The rail is where you are in the product; it stays on every Generator
   // surface and on Components, so each of its five entries leads back to the
-  // other four. Home is a file browser with its own menu, and a visitor with
-  // no system yet has nothing for Variables / System / Code to open.
-  const navRailVisible = (themesCanvas && themeWorkspaceTab !== 'library')
+  // other four. The create studio (`library`) keeps it too, in the same place,
+  // so a first visitor's screen has the editor's shape from the start.
+  const navRailVisible = themesCanvas
     || (railVisible && tab === 'components')
   // Without a system yet, Components still shows the rail (it is where you are
   // in the product); Variables / System / Code are dimmed — nothing to open.
