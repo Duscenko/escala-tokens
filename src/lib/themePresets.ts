@@ -632,8 +632,12 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     states: { error: '#e5252c', warning: '#ffb302', success: '#00c853', info: '#2962ff' },
     foundations: {
       typography: typography('Space Grotesk', 'Space Grotesk'),
-      spacing: buildSpacingFromBase(5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(5)),
+      // 4px base (spacing stays on the 4/8 grid); the roomier feel is the
+      // card inset one step deeper instead.
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
+      padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),
       sizes: buildSizesFromBase(4.5),
@@ -725,8 +729,12 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     states: { error: '#b91c1c', warning: '#c2410c', success: '#047857', info: '#1d4ed8' },
     foundations: {
       typography: typography('IBM Plex Sans', 'IBM Plex Sans'),
-      spacing: buildSpacingFromBase(3.5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(3.5)),
+      // 4px base, not 3.5 — a 3.5 base put every step off the pixel grid
+      // (1.75 · 5.25 · 8.75px). Density comes from a tighter card inset.
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '4' },
+      padding: { top: '16px', right: '16px', bottom: '16px', left: '16px' },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
       sizes: buildSizesFromBase(3.5),
@@ -750,8 +758,10 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     states: { error: '#e11d48', warning: '#f59e0b', success: '#22c55e', info: '#6366f1' },
     foundations: {
       typography: typography('Plus Jakarta Sans', 'Plus Jakarta Sans'),
-      spacing: buildSpacingFromBase(4.5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(4.5)),
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
+      padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: '4xl', fields: '4xl', selectors: '2xl' }),
       sizes: buildSizesFromBase(4.5),

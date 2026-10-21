@@ -148,6 +148,15 @@ describe('system style presets', () => {
     }
   })
 
+  it('puts every style\'s spacing on a 4px or 8px base', () => {
+    // A 3.5 / 4.5 / 5px base put the scale off the pixel grid (1.75 · 5.25 ·
+    // 8.75px). Density belongs in the roles (card inset), not the base unit.
+    for (const preset of THEME_STYLE_PRESETS) {
+      const base = parseFloat(preset.foundations.spacing?.['1'] ?? '4px')
+      expect([4, 8], preset.id).toContain(base)
+    }
+  })
+
   it('spreads the accents around the hue wheel', () => {
     const hues = THEME_STYLE_PRESETS
       .map((p) => chroma(p.accent).oklch()[2])
