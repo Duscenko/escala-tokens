@@ -97,12 +97,12 @@ export default function ShipPanel({
         <span className="ml-auto min-w-0 truncate pr-1 text-caption text-fg-faint" title={name}>{name}</span>
       </div>
 
-      <div className="flex-shrink-0 px-3 pt-3">
+      <div className="flex-shrink-0 px-[var(--inspector-inset)] pt-[var(--inspector-inset)]">
         <div
           role="tablist"
           aria-label={t('Ship to')}
           onKeyDown={onTabKey}
-          className="flex h-9 items-center gap-0.5 rounded-lg border border-line bg-app p-0.5"
+          className="flex h-8 items-center gap-0.5 rounded-lg border border-line bg-app p-0.5"
         >
           {KINDS.map((k) => {
             const selected = k.key === kind
@@ -126,7 +126,7 @@ export default function ShipPanel({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3 pt-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-[var(--inspector-inset)]">
         {kind === 'css' && <CssShip themeKey={themeKey} previewAppearance={previewAppearance} onOpenFull={() => onOpenFull('css')} />}
         {kind === 'agent' && <AgentShip themeKey={themeKey} previewAppearance={previewAppearance} onOpenFull={() => onOpenFull('agent')} />}
         {kind === 'figma' && (
@@ -173,7 +173,7 @@ function ShipActions({ text, fileName, mime, copyLabel, copiedToast, disabled = 
         type="button"
         onClick={() => void copy()}
         disabled={disabled}
-        className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
+        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
       >
         <CopyIcon done={copied} />
         <span className="truncate">{copied ? t('Copied') : copyLabel}</span>
@@ -184,7 +184,7 @@ function ShipActions({ text, fileName, mime, copyLabel, copiedToast, disabled = 
         disabled={disabled}
         aria-label={`${t('Download')} ${fileName}`}
         title={`${t('Download')} ${fileName}`}
-        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
+        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10" />
