@@ -2860,6 +2860,7 @@ export default function Configurator() {
                     onSyncFigma={syncFigmaForTheme}
                     onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
                     onCreateTheme={openCreateTheme}
+                    onStartBlank={() => (needsAnotherThemePro ? setUpgradeOpen(true) : beginBlankBrand())}
                     createPending={createPending}
                     onCreateHandled={() => setCreatePending(false)}
                     onOpenReset={() => setResetOpen(true)}

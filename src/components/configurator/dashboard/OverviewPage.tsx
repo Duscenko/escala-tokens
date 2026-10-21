@@ -98,9 +98,9 @@ function brandCounts(store: Parameters<typeof generateTokenJSON>[0], key: string
   return { counts, total, platforms }
 }
 
-function PlusGlyph() {
+function PlusGlyph({ size = 18 }: { size?: number }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
     </svg>
   )
@@ -139,10 +139,13 @@ const MENU_ITEM = 'flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-lef
  *  start from blank, or bring a brand in from another Escala system's agent
  *  context (the Figma Copy context) or its tokens.json. A dropdown, not a
  *  modal: choosing an import turns it into a paste box in place. */
-function AddBrandMenu({ onBlank, onImport, blocked }: {
+export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }: {
   onBlank: () => void
   onImport?: ImportBrand
   blocked?: string
+  /** `circle`: the empty slot's +. `button`: the page header's Add brand,
+   *  whose menu opens under it, aligned to its right edge. */
+  variant?: 'circle' | 'button'
 }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -192,7 +195,7 @@ function AddBrandMenu({ onBlank, onImport, blocked }: {
   }
 
   return (
-    <div ref={rootRef} className="relative flex flex-col items-center">
+    <div ref={rootRef} className={`relative flex flex-col ${variant === 'button' ? 'items-end' : 'items-center'}`}>
       <button
         type="button"
         onClick={() => (open ? close() : setOpen(true))}
@@ -201,16 +204,19 @@ function AddBrandMenu({ onBlank, onImport, blocked }: {
         aria-label={t('Add brand')}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className={variant === 'button'
+          ? 'inline-flex h-8 items-center gap-2 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+          : 'grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'}
       >
-        <PlusGlyph />
+        <PlusGlyph size={variant === 'button' ? 14 : 18} />
+        {variant === 'button' && t('Add brand')}
       </button>
       {open && (
         <div
           role={mode ? 'dialog' : 'menu'}
           aria-label={mode === 'context' ? t('Import agent context') : mode === 'json' ? t('Import JSON') : t('Add brand')}
           onKeyDown={onMenuKey}
-          className={`absolute top-full z-20 mt-2 flex flex-col rounded-2xl border border-line-strong bg-elevated p-1.5 text-left shadow-xl ${mode ? 'w-[22rem] gap-2.5 p-3' : 'w-60'}`}
+          className={`absolute top-full z-30 mt-2 flex flex-col ${variant === 'button' ? 'right-0' : ''} rounded-2xl border border-line-strong bg-elevated p-1.5 text-left shadow-xl ${mode ? 'w-[22rem] gap-2.5 p-3' : 'w-60'}`}
         >
           {!mode ? (
             <>

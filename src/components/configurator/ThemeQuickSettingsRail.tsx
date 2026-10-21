@@ -86,10 +86,10 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
-import { PickerField } from '../ui/PickerField'
+import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
@@ -805,10 +805,12 @@ function PanelHeader({ editing, title, name, onEdit, onBack }: {
   onBack: () => void
 }) {
   const { t } = useI18n()
-  // The band already insets (60px − 2.5rem) / 2 on each side; this lands the
-  // text on the panel's 20px inset like every row below it.
+  // The band already insets (60px − 2.5rem) / 2 on each side; 0.25rem more
+  // lands it on `--inspector-inset` = (60px − 2rem) / 2, the space above and
+  // below the field — so the header's sides match its top and bottom, and
+  // every row below.
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 px-[calc(20px_-_(60px_-_2.5rem)/2)]">
+    <div className="flex w-full min-w-0 items-center gap-2 px-1">
       {editing && (
         <button
           type="button"
@@ -861,7 +863,7 @@ function EditList({ active, locked, onPick }: {
 }) {
   const { t } = useI18n()
   return (
-    <nav aria-label={t('Editions')} className="flex flex-col px-5">
+    <nav aria-label={t('Editions')} className="flex flex-col px-[var(--inspector-inset)]">
       {EDIT_LIST.map((item) => (
         <button
           key={item.key}
@@ -932,7 +934,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
     const title_ = <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
     if (!ctx?.setCollapsed) {
       return (
-        <div className="flex h-12 w-full items-center gap-3 px-5" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+        <div className="flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
           {title_}
           <Chevron open />
         </div>
@@ -944,7 +946,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
         aria-expanded
         aria-controls={panelId}
         onClick={() => ctx.setCollapsed?.(true)}
-        className="group/row flex h-12 w-full items-center gap-3 px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
       >
         {title_}
         <Chevron open />
@@ -958,7 +960,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
       {locked ? <LockGlyph /> : <Chevron open={open} />}
     </>
   )
-  const shell = 'flex h-12 w-full items-center gap-3 px-5'
+  const shell = 'flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]'
   if (!interactive) {
     return <div className={shell} aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>{inner}</div>
   }
@@ -1008,7 +1010,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
       {open && (
       <div id={panelId}>
       {trailing && (
-        <div className="flex justify-end border-b border-line px-5 py-2">
+        <div className="flex justify-end border-b border-line px-[var(--inspector-inset)] py-2">
           {trailing}
         </div>
       )}
@@ -1016,7 +1018,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
       {footer !== undefined
         ? footer
         : showAdvancedEdition ? (
-          <div className="border-t border-line px-5 pb-2.5 pt-2">
+          <div className="border-t border-line px-[var(--inspector-inset)] pb-2.5 pt-2">
             <button
               type="button"
               onClick={() => onOpenAdvanced(foundationKey)}
@@ -1081,7 +1083,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   if (compact && hint && !advancedLabel) {
     return (
-      <div className="min-w-0 px-5 py-2">
+      <div className="min-w-0 px-[var(--inspector-inset)] py-2">
         <div className="flex items-start gap-2">
           {trailing}
           <div className="min-w-0 flex-1">{children}</div>
@@ -1092,7 +1094,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   const hasHeader = Boolean(label || trailing)
   return (
-    <div className={`min-w-0 px-5 ${compact ? 'py-2' : 'py-2.5'}`}>
+    <div className={`min-w-0 px-[var(--inspector-inset)] ${compact ? 'py-2' : 'py-2.5'}`}>
       {hasHeader && (
         // No `min-h` — the header is one label line tall, full stop. It was
         // `min-h-7` (31.5px) to reserve room for the trailing buttons, i.e.
@@ -2536,12 +2538,32 @@ export default function ThemeQuickSettingsRail({
           />
         </InspectorHeaderPortal>
       )}
-      {adoptError && <p role="alert" className="flex-shrink-0 px-5 pt-3 text-mini text-status-danger">{adoptError}</p>}
+      {/* The create studio has no inspector band to portal into: it draws the
+          same band here, so a new brand's panel reads exactly like a saved
+          one's (name field + Edit, then the accordion). */}
+      {!inBand && startStyle && !tryOn && (
+        <div
+          className="flex flex-shrink-0 items-center border-b border-line"
+          style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
+        >
+          <PanelHeader
+            editing={editList}
+            title={editList ? t('Edit {name}', { name: brandLabel }) : t('Theme')}
+            name={<ThemeNameField key={previewTheme} previewTheme={previewTheme} />}
+            onEdit={onSelectPanel ? () => setEditList(true) : undefined}
+            onBack={() => setEditList(false)}
+          />
+        </div>
+      )}
+      {adoptError && <p role="alert" className="flex-shrink-0 px-[var(--inspector-inset)] pt-3 text-mini text-status-danger">{adoptError}</p>}
       {/* Only this region scrolls; the Undo bar below is a pinned footer, so it
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className="flex flex-1 min-h-0 flex-col">
-      <ThemeRailScrollRegion padClass={inBand ? 'pb-3' : 'py-3'}>
+      {/* Under a header band (the inspector's, or the create studio's Name
+          band) the accordion starts flush: its rows carry their own height and
+          dividers, so top padding only left a strip above Color. */}
+      <ThemeRailScrollRegion padClass={inBand || startStyle ? 'pb-3' : 'py-3'}>
       {editList && onSelectPanel && !tryOn ? (
         <EditList
           active={activePanel}
@@ -2553,7 +2575,7 @@ export default function ThemeQuickSettingsRail({
         // what it is and the one way to make it yours, instead of controls
         // that would have to adopt it behind your back.
         <section aria-label={t('EscalaUI styles')} className="min-w-0">
-          <div className="flex min-h-8 items-center border-b border-line px-5 pb-2 mb-3">
+          <div className="flex min-h-8 items-center border-b border-line px-[var(--inspector-inset)] pb-2 mb-3">
             <span className="min-w-0 truncate text-caption font-normal text-fg">{t('EscalaUI styles')}</span>
           </div>
           <StyleOverview
@@ -2592,11 +2614,11 @@ export default function ThemeQuickSettingsRail({
         >
           <div className="divide-y divide-line">
             {startStyle && (
-              <div className="px-5 pb-3 pt-3">
+              <div className="px-[var(--inspector-inset)] pb-3 pt-3">
                 <StylePicker value={startStyle.value} accent={liveAccent} onChange={startStyle.onChange} />
               </div>
             )}
-            <div className="px-5 pb-3.5 pt-0">
+            <div className="px-[var(--inspector-inset)] pb-3.5 pt-0">
               <ColorRolesPanel
                 appearance={rampAppearance}
                 header={(
@@ -2651,16 +2673,10 @@ export default function ThemeQuickSettingsRail({
                           aria-haspopup="dialog"
                           aria-expanded={openChip === rank}
                           aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
-                          className={`flex w-full items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                            openChip === rank
-                              ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
-                              : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
-                          }`}
+                          className={`group ${FIELD_ROW} rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
                         >
-                          <span className={`flex h-[22.5px] min-w-0 flex-1 items-center pl-2 text-ui ${openChip === rank ? 'text-fg' : 'text-fg-muted'}`}>
-                            <span className="truncate">{t(BRAND_EXTRA_LABEL[rank])}</span>
-                          </span>
-                          <span className="flex h-[22.5px] w-[104px] flex-shrink-0 items-center gap-2 pr-1.5">
+                          <span className={`${FIELD_NAME} ${openChip === rank ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(BRAND_EXTRA_LABEL[rank])}</span>
+                          <span className={`${FIELD_CONTROL} ${openChip === rank ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
                             <span
                               aria-hidden
                               className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
@@ -2724,7 +2740,7 @@ export default function ThemeQuickSettingsRail({
             {/* Fine-tune stays closed so Colour reads as accent, neutral and
                 states. Show opens Saturation, Brightness and Ramp contrast at
                 one height. The Contrast grid only opens the board overlay. */}
-            <div className="flex flex-col px-5 py-3">
+            <div className="flex flex-col px-[var(--inspector-inset)] py-3">
               <button
                 type="button"
                 onClick={() => setFineOpen((open) => !open)}
@@ -2825,11 +2841,11 @@ export default function ThemeQuickSettingsRail({
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
         <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          {/* One stack of labelled fields (the label pill sits INSIDE the
-              field, like Colour's role rows), then the roles they grade. The
+          {/* One stack of labelled fields (name | control, like Colour's role
+              rows), then the roles they grade. The
               notes that used to be hover hints now open with the list, where
               the choice is made. */}
-          <div className="flex min-w-0 flex-col gap-2 px-5 py-2.5">
+          <div className="flex min-w-0 flex-col gap-2 px-[var(--inspector-inset)] py-2.5">
             <PickerField
               label="Body"
               ariaLabel="Body font family"
@@ -2884,7 +2900,7 @@ export default function ThemeQuickSettingsRail({
               })}
             />
           </div>
-          <div className="flex flex-col px-5 py-3">
+          <div className="flex flex-col px-[var(--inspector-inset)] py-3">
             <button
               type="button"
               onClick={() => setTypeRolesOpen((open) => !open)}
@@ -2935,7 +2951,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Spacing" foundationKey="sizes" open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          {platformSwitch && <div className="px-5 pt-1 pb-3">{platformSwitch}</div>}
+          {platformSwitch && <div className="px-[var(--inspector-inset)] pt-1 pb-3">{platformSwitch}</div>}
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -3014,11 +3030,11 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Icons" foundationKey="icons" open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <div className="px-5 pt-1 pb-2">
+          <div className="px-[var(--inspector-inset)] pt-1 pb-2">
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
           </div>
-          <div className="min-w-0 px-5 py-2.5">
+          <div className="min-w-0 px-[var(--inspector-inset)] py-2.5">
             <PickerField
               label="Weight"
               ariaLabel="Icon weight"
@@ -3057,7 +3073,7 @@ export default function ThemeQuickSettingsRail({
           </button>
         )}
         {themeReset.show && (
-          <div className="px-5 pt-3">
+          <div className="px-[var(--inspector-inset)] pt-3">
             <ThemeResetButton wide mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />
           </div>
         )}

@@ -18,6 +18,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST } from '../ui/PickerField'
 import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { TintSlider } from './ThemeQuickSettingsRail'
@@ -88,7 +89,7 @@ export function ColorRolesPanel({
       {/* One grid for every row — [name] [badge] [hex] — shared through
           subgrid, so the badges start on one line after the widest name in
           any language instead of hugging each name. */}
-      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_104px] gap-y-2">
+      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_58%] gap-x-2 gap-y-2">
         {rows.map((row) => (
           <RoleRow
             key={row.id}
@@ -168,15 +169,10 @@ function RoleRow({
       : null
 
   return (
-    <div
-      role="listitem"
-      className={`col-span-full grid grid-cols-subgrid rounded-[10px] bg-surface transition-shadow duration-150 ${
-        open || on
-          ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
-          : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
-      }`}
-    >
-      <div className="col-span-full grid grid-cols-subgrid items-center p-1">
+    // Name | control, the same row as every PickerField (`FIELD_ROW`): the
+    // name and its chip are bare text, the swatch + hex is the one surface.
+    <div role="listitem" className="group col-span-full grid grid-cols-subgrid">
+      <div className="col-span-full grid h-[30.5px] grid-cols-subgrid items-center">
         {/* The hex field is a SIBLING of the toggle, never inside it: an
             input nested in a <button> is invalid. */}
         <button
@@ -184,7 +180,7 @@ function RoleRow({
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={panelId}
-          className={`col-span-2 grid h-[22.5px] min-w-0 grid-cols-subgrid items-center gap-x-2 rounded-md pl-2 pr-2 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on || open ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
+          className={`col-span-2 grid h-full min-w-0 grid-cols-subgrid items-center rounded-md text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on || open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
         >
           <span className="whitespace-nowrap">{label}</span>
           {chip && (
@@ -194,7 +190,7 @@ function RoleRow({
           )}
         </button>
         <div
-          className={`flex h-[22.5px] min-w-0 cursor-text items-center gap-2 rounded-[6px] pr-1.5 transition-colors ${open ? 'bg-chrome-control' : ''}`}
+          className={`${FIELD_CONTROL} cursor-text ${open || on ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}
           onClick={() => input.current?.focus()}
         >
           <span
@@ -232,9 +228,8 @@ function RoleRow({
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="col-span-full overflow-hidden"
           >
-            {/* Inset to the name on the left and the hex pill on the right,
-                so the slider spans exactly the row's own content. */}
-            <div className="flex flex-col gap-2.5 pb-2.5 pl-3 pr-1 pt-1">
+            {/* The slider spans the whole row, name edge to control edge. */}
+            <div className="flex flex-col gap-2.5 pb-1.5 pt-2.5">
               {rule && <p className="text-caption text-fg-faint">{rule}</p>}
               {row.id === 'neutral' ? (
                 <>

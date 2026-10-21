@@ -16,7 +16,6 @@ import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 import type { GridViewport } from '../../lib/layoutTokens'
-import { MintedThemeIdentity } from './ThemePanel'
 import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
@@ -36,6 +35,7 @@ import {
 } from './ThemeLibraryRail'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import SystemDashboard from './dashboard/SystemDashboard'
+import { AddBrandMenu } from './dashboard/OverviewPage'
 import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
 import type { DocsExits } from './docs/getStarted'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -156,26 +156,6 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes, onDeleteSyste
   )
 }
 
-/** Adds a brand to the system on screen. Sits beside the options menu, on the
- *  Brands page, because that is where the brands are listed. */
-function AddBrandButton({ onClick, disabled, title }: { onClick: () => void; disabled: boolean; title?: string }) {
-  const { t } = useI18n()
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title ?? t('Add brand')}
-      className={`inline-flex h-8 items-center gap-2 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        disabled ? 'cursor-not-allowed opacity-40' : 'hover:opacity-90'
-      }`}
-    >
-      <PlusGlyph />
-      {t('Add brand')}
-    </button>
-  )
-}
-
 /** Pins to the top of the Home card — same band as Theme preview's canvas
  *  header. Transparent fill; the file list scrolls under it. */
 function HomeStickyBar({ trail, action }: { trail: string; action?: ReactNode }) {
@@ -226,11 +206,10 @@ function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
       style={{ minHeight: INSPECTOR_TABS_H }}
     >
       {lead}
-      {/* The title holds; the count gives way first on a narrow window. */}
-      <h2 className="flex min-w-0 flex-1 items-baseline gap-2 text-ui font-semibold text-fg">
-        <span className="flex-shrink-0">{title}</span>
-        <span className="min-w-0 truncate font-normal text-fg-muted">· {stepLabel}</span>
-      </h2>
+      {/* The title and count are hidden for now (they added noise beside the
+          view switch); screen readers still get the heading. */}
+      <h2 className="sr-only">{title} · {stepLabel}</h2>
+      <div className="flex-1" aria-hidden />
       {trailing}
     </div>
   )
@@ -399,6 +378,7 @@ export default function ThemeLibraryPage({
   onSyncFigma,
   onShareGithub,
   onCreateTheme,
+  onStartBlank,
   createPending = false,
   onCreateHandled,
   onOpenReset,
@@ -437,6 +417,9 @@ export default function ThemeLibraryPage({
   onShareGithub: (key: string) => void
   /** Opens the theme sheet on its create view (owned by the shell). */
   onCreateTheme: () => void
+  /** Home's Add brand menu: "Start from blank" opens the studio directly —
+   *  the menu already asked how to start, so no second dialog. */
+  onStartBlank?: () => void
   /** Another door asked to create a theme: open the form, then report back. */
   createPending?: boolean
   onCreateHandled?: () => void
@@ -592,16 +575,8 @@ export default function ThemeLibraryPage({
         brandExport={onShip
           ? { all: onExportAll, code: (k) => onShip(k).css(), figma: (k) => onShip(k).figma(), agent: (k) => onShip(k).agent(), github: onShareGithub }
           : { all: onExportAll, figma: onSyncFigma, code: onGetCode, agent: onGetAgentContext, github: onShareGithub }}
-        onAddBrand={onCreateTheme}
-        onImportBrand={(json, name) => {
-          const res = addBrandFromPayload(json, name)
-          if ('error' in res) return res
-          // Kept like a brand the studio makes (saved to the account when there
-          // is one), and put on screen so its card is the one lit.
-          keepCreatedBrand(res.key)
-          onSelectTheme(res.key)
-          return res
-        }}
+        onAddBrand={onStartBlank ?? onCreateTheme}
+        onImportBrand={importBrand}
         addBrandBlocked={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
         maxBrands={maxThemes}
         overviewHeader={() => (
@@ -727,6 +702,16 @@ export default function ThemeLibraryPage({
     if (tier === 'anon') return
     useDesignStore.getState().saveCurrentSystem()
   }
+  // Function declaration on purpose: Home's `body` (built above) reads it.
+  function importBrand(json: Record<string, unknown>, name: string) {
+    const res = addBrandFromPayload(json, name)
+    if ('error' in res) return res
+    // Kept like a brand the studio makes (saved to the account when there
+    // is one), and put on screen so its card is the one lit.
+    keepCreatedBrand(res.key)
+    onSelectTheme(res.key)
+    return res
+  }
   const finishCreate = (key: string) => {
     keepCreatedBrand(key)
     setCreating(false)
@@ -771,15 +756,8 @@ export default function ThemeLibraryPage({
         <>
           <InspectorPortal>
             <div className="flex h-full min-h-0 flex-col">
-              {/* The brand's name and appearance head every row, Color included. */}
-              <div
-                className="flex flex-shrink-0 items-center border-b border-line"
-                style={{ height: INSPECTOR_TABS_H }}
-              >
-                {createdKey && (
-                  <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} showAppearance={false} /></div>
-                )}
-              </div>
+              {/* The name band + Edit is drawn by the rail itself, the same
+                  header a saved brand's inspector shows. */}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {createdKey && (
                   // Every foundation at once, as an accordion: open any row in
@@ -840,10 +818,11 @@ export default function ThemeLibraryPage({
           action={(
             <div className="flex items-center gap-2">
               {dashPage === 'overview' && (
-                <AddBrandButton
-                  onClick={onCreateTheme}
-                  disabled={!canAddMyTheme(mine.length)}
-                  title={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
+                <AddBrandMenu
+                  variant="button"
+                  onBlank={onStartBlank ?? onCreateTheme}
+                  onImport={importBrand}
+                  blocked={canAddMyTheme(mine.length) ? undefined : t(MY_THEME_FULL_ERROR, { count: mine.length })}
                 />
               )}
               <LibraryOptions

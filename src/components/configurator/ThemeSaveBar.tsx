@@ -54,8 +54,10 @@ function AgentGlyph() {
 export function ShipRow({ ship }: { ship: ShipActions }) {
   const { t } = useI18n()
   return (
+    // No "Ship to" eyebrow: three named doors in a row say it themselves, and
+    // the caption only added a line between Save and them. The group keeps the
+    // name for screen readers.
     <div className="flex flex-col gap-2">
-      <span aria-hidden className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Ship to')}</span>
       <div role="group" aria-label={t('Ship to')} className="flex items-center gap-1.5">
         <button type="button" onClick={ship.css} className={SHIP_BUTTON} title={t('Copy or download variables.css')}>
           <CodeGlyph /><span className="truncate">{t('CSS')}</span>
@@ -119,7 +121,9 @@ export function BoardHistoryControls({ onRandom }: {
  *  action, like a document's "Saved" under its toolbar, never above it. */
 function FooterStatus({ guest, divided = true }: { guest: boolean; divided?: boolean }) {
   return (
-    <div className={divided ? 'border-t border-line pt-2.5' : undefined}>
+    // `empty:hidden`: with no status to report (accounts off, nothing
+    // synced yet) the line would be a bare divider under the Ship row.
+    <div className={`empty:hidden ${divided ? 'border-t border-line pt-2.5' : ''}`}>
       {guest ? <UnsavedNotice /> : <AccountCloudStatus />}
     </div>
   )
@@ -333,7 +337,7 @@ export default function ThemeSaveBar({
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
     // stretches a portaled panel): as a direct slot child (Variables) the bar
     // must stay its own height, pinned under the scrolling nav.
-    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
       {exploringRandom && onDiscard && (
         // The way out of a draft: Random mints a real theme the moment it is
         // pressed, and Save is the only other door. Discard removes it and
@@ -530,7 +534,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
     burstConfetti(finishRef.current, [tk.brandSolid, tk.brandSolid, tk.successColor ?? '', tk.warningColor ?? '', tk.infoColor ?? '', tk.errorColor])
   }
   return (
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
       <div className="flex items-center gap-2">
         <span className="text-caption font-semibold text-fg">{t('Step {n} of {total}', { n: step + 1, total: SETUP_STEPS.length })}</span>
         <span className="flex flex-1 gap-1" aria-hidden>
@@ -606,7 +610,8 @@ export function CreateStudioFooter({
     </button>
   ) : null
   return (
-    <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-3 py-3">
+    // Same chrome as a saved brand's footer (ThemeSaveBar), not `bg-app`.
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
         // The way out is three doors of equal weight (CSS · Figma · Agent),
@@ -616,7 +621,7 @@ export function CreateStudioFooter({
           {(!guest || cancelButton) && (
             <div className="flex items-center gap-2">
               {cancelButton}
-              {!guest && <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>}
+              {!guest && <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save brand')}</span></button>}
             </div>
           )}
           <ShipRow ship={ship} />

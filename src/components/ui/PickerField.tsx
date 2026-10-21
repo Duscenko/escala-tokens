@@ -1,13 +1,16 @@
 /**
  * PickerField — the inspector's labelled select: ONE row that names what it
- * sets (a filled label pill on the left) and shows what it is set to (value +
- * chevron on the right), opening a list that can be searched.
+ * sets (plain text on the left) and shows what it is set to (a control on the
+ * right: value + chevron), opening a list that can be searched.
  *
- * The shell is the Colour edition's role row (`ColorRolesPanel` · RoleRow):
- * `rounded-[10px] bg-surface p-1` around a 22.5px line (30.5px in all), an
- * inset edge on hover and a stronger one while open. The right pill is the
- * role row's hex pill: it fills with `bg-chrome-control` while open. So a font, a type scale and an icon weight read as the
- * same control as Accent · Neutral · the states, one card up.
+ * The row is `FIELD_ROW`, shared with the Colour edition's role rows
+ * (`ColorRolesPanel` · RoleRow) and the extra-palette rows: the name is bare
+ * text on the panel's own inset, and only the CONTROL is a surface — a 58%
+ * pill on the right, inset-edged on hover and marked while open. That is the
+ * property-panel shape (name | control) the reference inspectors use; the
+ * name used to sit inside the pill too, which made every row one wide button
+ * and hid where the control began. So a font, a type scale and an icon weight
+ * read as the same control as Accent · Neutral · the states, one card up.
  *
  * The list is PORTALED and `fixed`: the inspector's scroll column clips an
  * absolute panel, and 60-odd typefaces are taller than the room under a field
@@ -26,6 +29,17 @@ export type PickerOption<T extends string> = {
   /** Eyebrow the list breaks on; a header renders only where it changes. */
   group?: string
 }
+
+/** Name | control: the control takes a fixed share of the row so every field's
+ *  value starts on one line, and the name gets what is left. */
+export const FIELD_ROW = 'grid h-[30.5px] w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] items-center gap-x-2'
+/** The name: bare text, muted at rest, full ink while the row is hot. */
+export const FIELD_NAME = 'min-w-0 truncate text-left text-ui transition-colors'
+/** The control: the one surface on the row. Pass `FIELD_CONTROL_ON` while it
+ *  is open or selected; the rest state picks up `group-hover` from the row. */
+export const FIELD_CONTROL = 'flex h-[30.5px] min-w-0 items-center gap-2 rounded-[8px] bg-surface pl-1 pr-2 transition-shadow duration-150'
+export const FIELD_CONTROL_ON = 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
+export const FIELD_CONTROL_REST = 'group-hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
 
 const SEARCH_FROM = 9
 const LIST_GAP = 6
@@ -185,18 +199,10 @@ export function PickerField<T extends string>({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
-        className={`group flex h-[30.5px] w-full min-w-0 items-center gap-2 rounded-[10px] bg-surface p-1 text-left transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-          open ? 'shadow-[inset_0_0_0_1px_var(--line-selected)]' : 'hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
-        }`}
+        className={`group ${FIELD_ROW} rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
-        {/* Name: plain text, like a role row's name — muted at rest, full ink
-            while the field is open or hovered. */}
-        <span className={`flex h-[22.5px] min-w-0 flex-1 items-center pl-2 text-ui transition-colors ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
-          <span className="truncate">{t(label)}</span>
-        </span>
-        {/* Value: the role row's hex pill — a fixed share of the row so every
-            field's value starts on one line, filled while the list is open. */}
-        <span className={`flex h-[22.5px] w-[58%] flex-shrink-0 items-center gap-2 rounded-[6px] pl-1.5 pr-1.5 transition-colors ${open ? 'bg-chrome-control' : ''}`}>
+        <span className={`${FIELD_NAME} ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(label)}</span>
+        <span className={`${FIELD_CONTROL} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
           {leading ? <span aria-hidden className="flex h-[22.5px] w-[22.5px] flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />

@@ -220,6 +220,10 @@
 :root {
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-theme: 280ms;
+  /* The inspector's ONE inset: the space a 2rem control leaves above and
+     below it in the 60px header band (INSPECTOR_TABS_H). Sides, header and
+     footer all use it, so the panel's padding is the same on every edge. */
+  --inspector-inset: calc((60px - 2rem) / 2);
 
   /* ── Light theme (default) ── */
   /* Page / surface / elevated / primary+muted ink / hairlines come from
