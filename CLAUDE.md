@@ -77,6 +77,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > with the Code tab), `brandContext`, `buildFigmaContext` — never a second renderer.
 > `openShip(key, kind)` in `Configurator` is the one entry for every door; the panel closes
 > whenever the place it opened on changes (`shipWhere`).
+> **Phase 2: the create studio has NO step 1 and NO Continue.** The brand is minted the
+> moment the studio opens (`mintStart` in `ThemeLibraryPage`: `adoptPreset` for a style,
+> `mintTheme` for Scratch; default Core), as a draft (`markBrandUnsaved`) until Save or a Ship
+> door keeps it. The six-row accordion is the first screen, Color open, with "Start from
+> style" at its head (`startStyle` on `ThemeQuickSettingsRail`; a pick re-mints the draft,
+> keeping its name). Font's Type roles table is a closed Show/Hide disclosure. The canvas
+> header reads `6 foundations · n changed` — a count off `useEditHistory`, not a stepper.
+> `ThemeForm`'s `firstStep` / scratch-draft path no longer has a caller in the studio. Don't
+> put a form or a Continue back in front of the accordion.
 
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:

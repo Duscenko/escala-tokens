@@ -93,6 +93,7 @@ import { PickerField } from '../ui/PickerField'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
+import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
@@ -1806,6 +1807,7 @@ export default function ThemeQuickSettingsRail({
   onUseTheme,
   ship,
   onDiscardRandom,
+  startStyle,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1865,6 +1867,10 @@ export default function ThemeQuickSettingsRail({
   /** The footer's three doors out (CSS · Figma · Agent); see `ThemeSaveBar`. */
   ship?: ShipActions
   onDiscardRandom?: () => void
+  /** Create studio: "Start from style" heads the Color row, so the whole first
+   *  step (style · name · appearance · accent · states) IS that row and there
+   *  is no Continue (design-plans/entry-flow-set-see-ship.md, phase 2). */
+  startStyle?: { value: string; onChange: (id: string) => void }
 }) {
   const { t } = useI18n()
   const inInspector = useInInspector()
@@ -1885,6 +1891,9 @@ export default function ThemeQuickSettingsRail({
   const applyState = useApplyStateColor()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [fineOpen, setFineOpen] = useState(false)
+  // Font's role table is the heaviest thing in the rail: closed until asked,
+  // like Colour's Fine-tune, so a row opens to its quick controls only.
+  const [typeRolesOpen, setTypeRolesOpen] = useState(false)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   // Which colour role the Color edition's slider is pointed at.
   const [colorRole, setColorRole] = useState<ColorRoleId>('accent')
@@ -2582,6 +2591,11 @@ export default function ThemeQuickSettingsRail({
           ) : undefined}
         >
           <div className="divide-y divide-line">
+            {startStyle && (
+              <div className="px-5 pb-3 pt-3">
+                <StylePicker value={startStyle.value} accent={liveAccent} onChange={startStyle.onChange} />
+              </div>
+            )}
             <div className="px-5 pb-3.5 pt-0">
               <ColorRolesPanel
                 appearance={rampAppearance}
@@ -2870,9 +2884,25 @@ export default function ThemeQuickSettingsRail({
               })}
             />
           </div>
-          <SettingItem label="Type roles" hint="Size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.">
-            <TypeScaleCard typography={typography} platform={previewPlatform} />
-          </SettingItem>
+          <div className="flex flex-col px-5 py-3">
+            <button
+              type="button"
+              onClick={() => setTypeRolesOpen((open) => !open)}
+              aria-expanded={typeRolesOpen}
+              className="group flex w-full min-w-0 items-center gap-2 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-caption font-medium text-fg">{t('Type roles')}</span>
+                <span className="block truncate text-mini text-fg-faint">{t('Size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.')}</span>
+              </span>
+              <span className={discloseChip(typeRolesOpen)}>{typeRolesOpen ? t('Hide') : t('Show')}</span>
+            </button>
+            {typeRolesOpen && (
+              <div className="mt-3 border-t border-line pt-3">
+                <TypeScaleCard typography={typography} platform={previewPlatform} />
+              </div>
+            )}
+          </div>
         </EditionCard>
           )
         })()}

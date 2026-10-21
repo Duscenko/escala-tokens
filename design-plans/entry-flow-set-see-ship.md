@@ -1,6 +1,6 @@
 # Entry flow — Set · See · Ship
 
-Status (2026-10-21): phase 1 DONE, phases 2–3 open. Written after walking the product
+Status (2026-10-21): phases 1, 1b and 2 DONE, phase 3 open. Written after walking the product
 as a guest in a clean browser (dev build, accounts on, 1440×900).
 
 Phase 1 landed as:
@@ -40,6 +40,29 @@ Phase 1b DONE — Ship opens IN the inspector, no navigation:
   brand as the sync target, as the per-brand menu always did.
 - The panel belongs to the place it opened on (`shipWhere`): any rail / tab / surface
   change closes it, so coming back never finds a stale one.
+
+Phase 2 DONE — one accordion, no Continue (`ThemeLibraryPage`):
+- The brand is MINTED THE MOMENT THE STUDIO OPENS (`mintStart`: a style through
+  `adoptPreset`, Scratch through `mintTheme` from the system's accent — the two paths
+  the old Continue took). The accordion is on screen from the first frame, Color open;
+  `ThemeForm`'s first-step branch, the scratch draft store (`CREATE_DRAFT_KEY`,
+  `scratchPreviewStore`) and `submitHandle` / `skipHandle` / `pendingStep` are gone from
+  the studio. The brand is a draft (`markBrandUnsaved`) until Save or a Ship door keeps
+  it; Cancel and Home's draft sweep drop it. A `mintedRef` guards the dev double-run of
+  the mount effect (it minted two brands).
+- "Start from style" heads the Color row (`ThemeQuickSettingsRail` `startStyle`, the
+  `StylePicker` `ThemeForm` used). Picking one re-mints the draft from it, keeping the
+  name. Default: Core (`DEFAULT_START_STYLE`), the style the hero shows.
+- Font's Type roles table is a Show/Hide disclosure (closed), like Colour's Fine-tune.
+- The canvas header reads `6 foundations · n changed`: rows edited since the studio
+  opened, counted off `useEditHistory` (each edit lands in the open row). A count, not
+  a stepper.
+- `CreateStudioFooter` has no Continue; "Create brand" only shows when the mint failed
+  (the brand cap) and retries it.
+- Measured after: Start → CSS → Copy = 2 clicks (the target).
+
+Not done (phase 3): "your tokens" copy on first run, Home deferred to a second brand
+or an account.
 
 The promise on the About hero is one sentence: *set your foundations, then hand them
 to Figma, your code and your AI agent*. The product delivers all three, but the walk

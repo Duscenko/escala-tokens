@@ -703,9 +703,9 @@ export default function Configurator() {
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
   // A visitor with no account and no theme of their own lands in the CREATE
-  // STUDIO (Home's first step: style + accent on an unminted draft), not on a
-  // try-on card. Nothing is written until Continue, so there is no theme to
-  // re-mint after a delete and no Free slot spent on a look nobody chose.
+  // STUDIO (the six-row accordion on a brand minted as the studio opens), not
+  // on a try-on card. That brand is a DRAFT (`markBrandUnsaved`) until Save or
+  // a Ship door keeps it, so a look nobody chose is dropped, not kept.
   const [guestFirstRun] = useState(() => {
     if (!accountsEnabled || hasStoredSession()) return false
     // No deep link: About is on screen, the studio opens from its CTA.

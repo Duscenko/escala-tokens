@@ -541,14 +541,14 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
 }
 
 /**
- * Home's create studio footer. No step count, no Continue: every foundation is
- * a row of the accordion above, edited in any order. Before the colours are
- * set there is one action (Create brand, which mints it). After, the two ways
- * out: keep the brand, or take the code. A guest's primary is Get code, the
- * same rule as `ThemeSaveBar`; signed in, it is Save brand.
+ * Home's create studio footer. No step count, no Continue: the brand is minted
+ * the moment the studio opens and every foundation is a row of the accordion
+ * above, edited in any order. "Create brand" shows only when that mint failed
+ * (the brand cap) and retries it. The ways out are the Ship row (a guest) or
+ * Save + the Ship row (signed in).
  */
 export function CreateStudioFooter({
-  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode, onRandom, ship,
+  error, committed, guest, onCancel, onCreate, onSave, onGetCode, onRandom, ship,
 }: {
   /** The three doors out once the brand exists. Replaces the Get code button. */
   ship?: ShipActions
@@ -556,9 +556,6 @@ export function CreateStudioFooter({
    *  the brand exists, beside the way out. */
   onRandom?: () => void
   error?: string | null
-  /** The first design system in this browser: "brand" is not a word the
-   *  visitor knows yet, so the first action reads Continue. */
-  firstSystem?: boolean
   /** The brand exists (its colours were set). */
   committed: boolean
   guest: boolean
@@ -615,7 +612,7 @@ export function CreateStudioFooter({
         {randomButton}
         {!committed ? (
           <button type="button" onClick={onCreate} className={primary}>
-            <span className="truncate">{firstSystem ? t('Continue') : t('Create brand')}</span>
+            <span className="truncate">{t('Create brand')}</span>
           </button>
         ) : guest ? (
           // One way out: the code. "Open in editor" sat beside it and read as a

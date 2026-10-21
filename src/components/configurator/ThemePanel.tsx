@@ -173,7 +173,7 @@ type ThemeFormProps = {
  *  one only seeds THIS form: nothing is tried on or added until the brand is
  *  created. The dot shows the accent in the form right now, not the style's
  *  shipped one — after Random or a moved slider the two differ. */
-function StylePicker({ value, accent, onChange }: {
+export function StylePicker({ value, accent, onChange }: {
   value: string
   accent: string
   onChange: (id: string) => void

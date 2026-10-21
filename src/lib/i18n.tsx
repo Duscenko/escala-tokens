@@ -209,6 +209,8 @@ const es: Record<string, string> = {
   'Get code': 'Obtener código',
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Llevar a',
+  '{n} foundations': '{n} fundaciones',
+  '{n} changed': '{n} cambiadas',
   'Back to editing': 'Volver a editar',
   'Open full file': 'Abrir archivo completo',
   'Copy CSS': 'Copiar CSS',
@@ -1788,6 +1790,8 @@ const fr: Record<string, string> = {
   'Get code': 'Obtenir le code',
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Envoyer vers',
+  '{n} foundations': '{n} fondations',
+  '{n} changed': '{n} modifiées',
   'Back to editing': 'Retour à l’édition',
   'Open full file': 'Ouvrir le fichier complet',
   'Copy CSS': 'Copier le CSS',

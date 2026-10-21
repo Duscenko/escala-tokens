@@ -1,23 +1,27 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { InspectorToggle } from './ThemePreviewHub'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import { activeLibraryId, useDesignStore } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
-import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
+import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
-import { backgroundFromBase, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale } from '../../lib/colorUtils'
+import { backgroundFromBase } from '../../lib/colorUtils'
 import { useEntitlement } from '../../lib/useEntitlement'
 import { addBrandFromPayload } from '../../lib/importBrand'
 import { useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
-import { resetThemeSemantics } from '../../lib/stylePreviewOverlay'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useThemeSetup } from '../../lib/themeSetup'
 import { flushLibraryAutosave, useUnsavedBrands } from '../../lib/libraryStatus'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 import type { GridViewport } from '../../lib/layoutTokens'
-import { MintedThemeIdentity, ThemeForm, type CreateDraft } from './ThemePanel'
+import { MintedThemeIdentity } from './ThemePanel'
+import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
+import { adoptPreset } from '../../lib/adoptPreset'
+import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
+import { useEditHistory } from '../../lib/editHistory'
+import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
@@ -190,6 +194,10 @@ function HomeStickyBar({ trail, action }: { trail: string; action?: ReactNode })
 
 // ── Left-column menu (inspector home slot) ───────────────────────────────────
 
+/** The style a new brand starts from: the one the About hero demonstrates,
+ *  so the board is a system from the first frame. Scratch is one pick away. */
+const DEFAULT_START_STYLE = 'core-minimal'
+
 const CREATE_STEPS = [
   { key: 'color', label: 'Color' },
   { key: 'typography', label: 'Font' },
@@ -199,53 +207,6 @@ const CREATE_STEPS = [
   { key: 'icons', label: 'Icons' },
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
-
-/** A theme key that is never persisted. The colour step paints the board from it. */
-const CREATE_DRAFT_KEY = '__create-draft'
-
-function scratchPreviewStore(store: ReturnType<typeof useDesignStore.getState>, draft: CreateDraft) {
-  const { slots, kind, tint, shift, foundations, semantics } = draft
-  const light = backgroundFromBase(slots.gray, 'light', tint)
-  const dark = backgroundFromBase(slots.gray, 'dark', tint)
-  const alg = store.colorAlgorithm
-  const gen = (hex: string, neutral = false) =>
-    neutral ? generateLightNeutralScale(hex, alg, shift, light, tint) : generateColorScale(hex, alg, shift, light, 'light')
-  const genDark = (hex: string, neutral = false) =>
-    neutral
-      ? generateDarkColorScale(hex, alg, shift, dark, tint)
-      : generateFamilyDarkScale(hex, alg, shift, dark)
-  return {
-    ...store,
-    neutralTint: tint,
-    pageBackground: light,
-    darkBackground: dark,
-    primaryColor: slots.brand,
-    grayBaseColor: slots.gray,
-    errorColor: slots.error,
-    warningColor: slots.warning,
-    successColor: slots.success,
-    infoColor: slots.info,
-    primaryScale: gen(slots.brand),
-    primaryDarkScale: genDark(slots.brand),
-    grayLightScale: gen(slots.gray, true),
-    grayDarkScale: genDark(slots.gray, true),
-    errorScale: gen(slots.error),
-    errorDarkScale: genDark(slots.error),
-    warningScale: gen(slots.warning),
-    warningDarkScale: genDark(slots.warning),
-    successScale: gen(slots.success),
-    successDarkScale: genDark(slots.success),
-    infoScale: gen(slots.info),
-    infoDarkScale: genDark(slots.info),
-    themeKinds: { ...store.themeKinds, [CREATE_DRAFT_KEY]: kind },
-    themeFoundations: foundations
-      ? { ...store.themeFoundations, [CREATE_DRAFT_KEY]: foundations }
-      : store.themeFoundations,
-    architectureOverrides: semantics
-      ? resetThemeSemantics(store.architectureOverrides, semantics, CREATE_DRAFT_KEY)
-      : store.architectureOverrides,
-  }
-}
 
 /** The studio's title lives on the CANVAS, not in the inspector: it names the
  *  screen, and the inspector is the tool you use on it. The number is the step
@@ -510,25 +471,30 @@ export default function ThemeLibraryPage({
   const store = useDesignStore()
   const chromeAppearance = useTheme() === 'dark' ? 'dark' : 'light'
   const [creating, setCreating] = useState(studioOnly)
-  const [identityHost, setIdentityHost] = useState<HTMLDivElement | null>(null)
-  const [createDraft, setCreateDraft] = useState<CreateDraft | null>(null)
-  const onDraftChange = useCallback((draft: CreateDraft) => setCreateDraft(draft), [])
   const [createStep, setCreateStep] = useState<CreateStep>('color')
   const [studioPlatform, setStudioPlatform] = useState<GridViewport>('desktop')
   const [createdKey, setCreatedKey] = useState<string | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
-  const pendingStep = useRef<CreateStep | null>(null)
-  const submitHandle = useRef<(() => void) | null>(null)
+  // "Start from style" on the Color row. The brand is re-minted from the pick.
+  const [startStyle, setStartStyle] = useState(DEFAULT_START_STYLE)
+  // Rows edited since the studio opened — the header's quiet trace
+  // ("6 foundations · 2 changed"). A count, not a stepper: it says how big
+  // the job is without ordering it.
+  const [changedRows, setChangedRows] = useState<Set<CreateStep>>(() => new Set())
   // The embedded rail's Random, for the footer's die.
   const randomHandle = useRef<(() => void) | null>(null)
-  const skipHandle = useRef<(() => void) | null>(null)
+  // The mint-on-open guard is a ref, not state: React runs that effect twice
+  // on a dev mount, and the second run still sees `createdKey` null — without
+  // it two brands were minted and the first one left as an orphan draft.
+  const mintedRef = useRef(false)
   useEffect(() => {
     if (creating) return
     setCreateStep('color')
     setCreatedKey(null)
     setCreateError(null)
-    setCreateDraft(null)
-    pendingStep.current = null
+    setStartStyle(DEFAULT_START_STYLE)
+    setChangedRows(new Set())
+    mintedRef.current = false
   }, [creating])
   useEffect(() => {
     onCreatingChange?.(creating)
@@ -546,17 +512,6 @@ export default function ThemeLibraryPage({
   // Brands made here and not saved yet stay out of the design system's own
   // views (its card, its dashboard) until the designer saves.
   const unsavedBrands = useUnsavedBrands()
-  // Refresh in the guest studio: Colour already minted a draft. Resume that
-  // brand instead of starting a second Colour step on top of it.
-  useEffect(() => {
-    if (!studioOnly || createdKey) return
-    const key = mine.find((item) => unsavedBrands.has(item))
-    if (!key) return
-    setCreatedKey(key)
-    const at = useThemeSetup.getState().drafts[key]
-    const step = at != null ? SETUP_STEPS[at] : 'color'
-    if (step && CREATE_STEPS.some((item) => item.key === step)) setCreateStep(step)
-  }, [studioOnly, createdKey, mine, unsavedBrands])
   const savedMine = mine.filter((key) => !unsavedBrands.has(key))
   // The design system on screen opens as a dashboard; this is its open page.
   // Kept while Home is open, so coming back resumes on the same page.
@@ -685,10 +640,75 @@ export default function ThemeLibraryPage({
     // Made here, not saved yet: the System tab and Variables wait for Save.
     markBrandUnsaved(key)
     setCreatedKey(key)
-    const jump = pendingStep.current
-    pendingStep.current = null
-    setCreateStep(jump && jump !== 'color' ? jump : 'typography')
   }
+  /**
+   * Mint the brand the studio edits. Runs the moment the studio opens (phase
+   * 2 of design-plans/entry-flow-set-see-ship.md): the accordion is on screen
+   * from the first frame, Color open, with no step and no Continue in front of
+   * it. A style goes through `adoptPreset`, Scratch through `mintTheme` from
+   * the system's accent — the two paths the old Continue took, unchanged. The
+   * brand is a draft (unsaved) until the person leaves through Save or Ship;
+   * Cancel and Home's draft sweep drop it, so nothing is kept that nobody chose.
+   */
+  const mintStart = (styleId: string, keepLabel?: string) => {
+    setCreateError(null)
+    const live = useDesignStore.getState()
+    const firstBrand = myThemeKeys(live.themeOrder, live.themes).length === 0
+    const preset = styleId ? THEME_STYLE_PRESETS.find((p) => p.id === styleId) : undefined
+    const kind = chromeAppearance
+    let res: { key: string } | { error: string }
+    if (preset) {
+      res = adoptPreset(preset, kind)
+    } else {
+      const tint = live.neutralTint
+      const slots = slotsFromAccent(live.primaryColor, tint)
+      const pages = { light: backgroundFromBase(slots.gray, 'light', tint), dark: backgroundFromBase(slots.gray, 'dark', tint) }
+      res = mintTheme(slots, kind, keepLabel || (firstBrand ? live.projectName : t('Brand')), null, tint, pages, live.contrastShift)
+    }
+    if ('error' in res) { setCreateError(t(res.error, { count: MY_THEME_HARD_CAP })); return }
+    // Blank on the first brand means "keep the design system name"; a later
+    // brand takes the style's short name until it is renamed in the band.
+    const label = keepLabel || (firstBrand ? live.projectName.trim() : (preset?.shortLabel ?? t('Brand')))
+    if (label) useDesignStore.getState().setThemeLabel(res.key, label)
+    onColorCommitted(res.key)
+  }
+  /** "Start from style" on the Color row: the draft is re-minted from the
+   *  pick, keeping its name. A style you only glanced at leaves nothing. */
+  const switchStyle = (id: string) => {
+    setStartStyle(id)
+    if (!createdKey) { mintStart(id); return }
+    const label = themeDisplayName(createdKey, store.themeLabels)
+    finishThemeSetup(createdKey)
+    forgetUnsavedBrand(createdKey)
+    deleteTheme(createdKey)
+    setChangedRows(new Set())
+    mintStart(id, label)
+  }
+  // The studio opened with no brand on it. A guest's refresh resumes the
+  // draft the studio already minted (it would otherwise mint a second one on
+  // top); anything else mints the brand this studio edits.
+  useEffect(() => {
+    if (!creating || createdKey || createError || mintedRef.current) return
+    mintedRef.current = true
+    const draft = studioOnly ? mine.find((item) => unsavedBrands.has(item)) : undefined
+    if (draft) {
+      setCreatedKey(draft)
+      const at = useThemeSetup.getState().drafts[draft]
+      const step = at != null ? SETUP_STEPS[at] : 'color'
+      if (step && CREATE_STEPS.some((item) => item.key === step)) setCreateStep(step)
+      return
+    }
+    mintStart(startStyle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creating, createdKey])
+  // Every edit lands in the row that is open: count that row as changed.
+  const openRow = useRef(createStep)
+  useEffect(() => { openRow.current = createStep }, [createStep])
+  useEffect(() => useEditHistory.subscribe((h, prev) => {
+    if (h.past.length <= prev.past.length) return
+    const row = openRow.current
+    setChangedRows((set) => (set.has(row) ? set : new Set(set).add(row)))
+  }), [])
   // Leaving the studio forward (Finish, Skip setup, the advanced editor) keeps
   // the brand. While it stayed a draft, the empty-board guard reopened the
   // studio on Colour — Finish jumped back to the first step. The library write
@@ -714,7 +734,6 @@ export default function ThemeLibraryPage({
     }
     setCreating(false)
   }
-  const createIndex = CREATE_STEPS.findIndex((item) => item.key === createStep)
   // The first system this browser makes: the studio says so, and what is on
   // the board is a draft until Create brand.
   const firstSystem = mine.every((key) => key === createdKey)
@@ -744,41 +763,20 @@ export default function ThemeLibraryPage({
         <>
           <InspectorPortal>
             <div className="flex h-full min-h-0 flex-col">
-              {/* The name sits on the same band the canvas title used to share. */}
+              {/* The brand's name and appearance head every row, Color included. */}
               <div
-                ref={setIdentityHost}
                 className="flex flex-shrink-0 items-center border-b border-line"
                 style={{ height: INSPECTOR_TABS_H }}
               >
-                {/* Once the brand exists its name lives here on every row,
-                    Color included. Before that, ThemeForm portals its own
-                    name field into this band (pinIdentity). */}
                 {createdKey && (
                   <div className="w-full px-3"><MintedThemeIdentity themeKey={createdKey} showAppearance={false} /></div>
                 )}
               </div>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {!createdKey ? (
-                  <ThemeForm
-                    key={createdKey ?? 'new'}
-                    firstStep
-                    holdAfterCreate
-                    hideFooter
-                    pinIdentity
-                    identityHost={identityHost}
-                    editKey={createdKey}
-                    submitHandle={submitHandle}
-                    skipHandle={skipHandle}
-                    onErrorChange={setCreateError}
-                    appearance={chromeAppearance}
-                    onClose={cancelCreate}
-                    onCreated={onColorCommitted}
-                    onFinishEarly={finishCreate}
-                    onDraftChange={onDraftChange}
-                  />
-                ) : (
+                {createdKey && (
                   // Every foundation at once, as an accordion: open any row in
-                  // any order. There are no steps left to walk.
+                  // any order. The brand exists from the first frame, so there
+                  // is no step in front of this and nothing to Continue past.
                   <ThemeQuickSettingsRail
                     embed
                     randomHandle={randomHandle}
@@ -790,6 +788,10 @@ export default function ThemeLibraryPage({
                     onOpenAdvanced={openAdvanced}
                     previewPlatform={studioPlatform}
                     onPreviewPlatformChange={setStudioPlatform}
+                    // Read off the brand (`themeOrigin`), not local state: the
+                    // studio can remount around a re-mint and must still name
+                    // the style the brand on screen came from.
+                    startStyle={{ value: store.themeOrigin?.[createdKey] ?? '', onChange: switchStyle }}
                   />
                 )}
               </div>
@@ -800,8 +802,7 @@ export default function ThemeLibraryPage({
                 // The first system has nothing to go back to: Cancel would only
                 // drop the user on an empty Home.
                 onCancel={studioOnly || firstSystem ? undefined : cancelCreate}
-                firstSystem={firstSystem}
-                onCreate={() => submitHandle.current?.()}
+                onCreate={() => mintStart(startStyle)}
                 onSave={() => { if (createdKey) finishCreate(createdKey) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
                 ship={createdKey ? shipCreated(createdKey) : undefined}
@@ -809,17 +810,18 @@ export default function ThemeLibraryPage({
               />
             </div>
           </InspectorPortal>
-          <CreateBoard
-            store={createdKey ? store : (createDraft ? scratchPreviewStore(store, createDraft) : store)}
-            platform={createdKey ? studioPlatform : 'desktop'}
-            themeKey={createdKey ?? CREATE_DRAFT_KEY}
-            appearance={createdKey
-              ? (store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light')
-              : (createDraft?.kind ?? 'dark')}
-            title={firstSystem ? t('Customize your design system') : t('New brand')}
-            stepLabel={t(CREATE_STEPS[Math.max(0, createIndex)].label)}
-            onOpenComponent={createdKey ? onOpenComponent : undefined}
-          />
+          {createdKey && (
+            <CreateBoard
+              store={store}
+              platform={studioPlatform}
+              themeKey={createdKey}
+              appearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
+              title={firstSystem ? t('Customize your design system') : t('New brand')}
+              // Not a step: how big the job is, and how much of it was touched.
+              stepLabel={`${t('{n} foundations', { n: String(CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
+              onOpenComponent={onOpenComponent}
+            />
+          )}
         </>
       ) : !systemOnly ? null : (
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
