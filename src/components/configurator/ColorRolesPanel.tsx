@@ -1,8 +1,8 @@
 // The Color edition, as one list of roles. Each role carries its own slider.
 //
 // Accent · Neutral · Success · Critical · Warning · Info are rows: the role's
-// name, a chip that names its constraint in one word ("green", "linked"),
-// and a swatch with its hex. The rows start closed — the
+// name and a swatch with its hex — the same FIELD_ROW every other field in the
+// panel uses. The rows start closed — the
 // list reads as a palette. Opening a row reveals its hue slider (scoped to the
 // role's band, so Warning moves between orange and yellow and never into
 // green), the contrast check, and the switch back to the derived value. The
@@ -18,7 +18,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST } from '../ui/PickerField'
+import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_NAME, FIELD_ROW } from '../ui/PickerField'
 import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { TintSlider } from './ThemeQuickSettingsRail'
@@ -26,7 +26,7 @@ import { readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 
-/** The family a status hue band reads as, named on the row's chip. */
+/** The family a status hue band reads as, named in the open row's rule. */
 const BAND_FAMILY: Partial<Record<ColorRoleId, string>> = {
   success: 'green',
   error: 'red',
@@ -84,12 +84,11 @@ export function ColorRolesPanel({
   const [open, setOpen] = useState<ColorRoleId | null>(defaultOpen)
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3">
       {header}
-      {/* One grid for every row — [name] [badge] [hex] — shared through
-          subgrid, so the badges start on one line after the widest name in
-          any language instead of hugging each name. */}
-      <div role="list" aria-label={t('Colour roles')} className="grid grid-cols-[max-content_minmax(0,1fr)_58%] gap-x-2 gap-y-2">
+      {/* Every row is a FIELD_ROW ([name] [control 58%]), so the hex fields
+          line up with Font, Radius and the extra palettes below. */}
+      <div role="list" aria-label={t('Colour roles')} className="flex flex-col gap-2">
         {rows.map((row) => (
           <RoleRow
             key={row.id}
@@ -156,10 +155,6 @@ function RoleRow({
 
   // The constraint, in words. Accent has none — it sweeps the whole wheel.
   const family = BAND_FAMILY[row.id]
-  // The closed row only has room for one word; the open row says it in full.
-  const chip = row.id === 'neutral'
-    ? (row.linked ? t('linked') : t('own hue'))
-    : family ? t(family) : null
   const rule = row.id === 'neutral'
     ? (row.linked
       ? t('Hue comes from the accent. Only the tint moves.')
@@ -171,8 +166,8 @@ function RoleRow({
   return (
     // Name | control, the same row as every PickerField (`FIELD_ROW`): the
     // name and its chip are bare text, the swatch + hex is the one surface.
-    <div role="listitem" className="group col-span-full grid grid-cols-subgrid">
-      <div className="col-span-full grid h-[30.5px] grid-cols-subgrid items-center">
+    <div role="listitem" className="group flex flex-col">
+      <div className={FIELD_ROW}>
         {/* The hex field is a SIBLING of the toggle, never inside it: an
             input nested in a <button> is invalid. */}
         <button
@@ -180,14 +175,9 @@ function RoleRow({
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={panelId}
-          className={`col-span-2 grid h-full min-w-0 grid-cols-subgrid items-center rounded-md text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on || open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
+          className={`${FIELD_NAME} h-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${on || open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
         >
-          <span className="whitespace-nowrap">{label}</span>
-          {chip && (
-            <span title={rule ?? undefined} className="justify-self-start truncate rounded-full border border-line px-1.5 text-mini leading-[15px] text-fg-faint">
-              {chip}
-            </span>
-          )}
+          {label}
         </button>
         <div
           className={`${FIELD_CONTROL} cursor-text ${open || on ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}
@@ -195,7 +185,7 @@ function RoleRow({
         >
           <span
             aria-hidden
-            className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
+            className="block h-[26px] w-[26px] flex-shrink-0 rounded-[4px] border border-fg/40"
             style={{ background: row.hex }}
           />
           <input
@@ -226,7 +216,7 @@ function RoleRow({
             animate={{ height: 'auto', opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="col-span-full overflow-hidden"
+            className="overflow-hidden"
           >
             {/* The slider spans the whole row, name edge to control edge. */}
             <div className="flex flex-col gap-2.5 pb-1.5 pt-2.5">

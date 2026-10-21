@@ -32,12 +32,12 @@ export type PickerOption<T extends string> = {
 
 /** Name | control: the control takes a fixed share of the row so every field's
  *  value starts on one line, and the name gets what is left. */
-export const FIELD_ROW = 'grid h-[30.5px] w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] items-center gap-x-2'
+export const FIELD_ROW = 'grid h-8 w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] items-center gap-x-2'
 /** The name: bare text, muted at rest, full ink while the row is hot. */
 export const FIELD_NAME = 'min-w-0 truncate text-left text-ui transition-colors'
 /** The control: the one surface on the row. Pass `FIELD_CONTROL_ON` while it
  *  is open or selected; the rest state picks up `group-hover` from the row. */
-export const FIELD_CONTROL = 'flex h-[30.5px] min-w-0 items-center gap-2 rounded-[8px] bg-surface pl-1 pr-2 transition-shadow duration-150'
+export const FIELD_CONTROL = 'flex h-8 min-w-0 items-center gap-2 rounded-lg bg-surface pl-[5px] pr-2.5 transition-shadow duration-150'
 export const FIELD_CONTROL_ON = 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
 export const FIELD_CONTROL_REST = 'group-hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
 
@@ -203,7 +203,7 @@ export function PickerField<T extends string>({
       >
         <span className={`${FIELD_NAME} ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(label)}</span>
         <span className={`${FIELD_CONTROL} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
-          {leading ? <span aria-hidden className="flex h-[22.5px] w-[22.5px] flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
+          {leading ? <span aria-hidden className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />
         </span>

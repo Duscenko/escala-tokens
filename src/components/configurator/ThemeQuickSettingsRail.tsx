@@ -154,6 +154,10 @@ export const RAIL_SURFACE_RADIUS = 'rounded-lg'
 const ROW_PREVIEW_H = 'h-8'
 /** Preview/readout → slider, and slider → its axis labels. */
 const ROW_GAP_CONTROL = 'mt-2'
+/** Every block in an edition: the inspector inset on all four sides, so a
+ *  section's air matches the panel's edges. The first block of a section
+ *  drops its top (EditionCard), sitting under its header like Color does. */
+const RAIL_BLOCK = 'min-w-0 p-[var(--inspector-inset)]'
 
 function defaultThemeLabel(key: string) {
   if (key === 'light') return 'Light'
@@ -518,7 +522,7 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
       onChange={(e) => onChange(e.target.value)}
       // A cell of the role-row family: same 30.5px height, radius and
       // surface, the inset edge on hover.
-      className="h-[30.5px] w-full min-w-0 cursor-pointer appearance-none rounded-[10px] bg-surface px-1.5 text-center text-ui tabular-nums text-fg transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className="h-8 w-full min-w-0 cursor-pointer appearance-none rounded-lg bg-surface px-1.5 text-center text-ui tabular-nums text-fg transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       {follow && <option value="">= {baseStep ? px(baseStep) : '—'}</option>}
       {!follow && !baseStep && <option value="">Custom</option>}
@@ -1014,11 +1018,11 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
           {trailing}
         </div>
       )}
-      <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
+      <div className={flush ? '[&>:first-child>:first-child]:pt-0' : 'divide-y divide-line [&>:first-child]:pt-0'}>{children}</div>
       {footer !== undefined
         ? footer
         : showAdvancedEdition ? (
-          <div className="border-t border-line px-[var(--inspector-inset)] pb-2.5 pt-2">
+          <div className="border-t border-line p-[var(--inspector-inset)]">
             <button
               type="button"
               onClick={() => onOpenAdvanced(foundationKey)}
@@ -1083,7 +1087,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   if (compact && hint && !advancedLabel) {
     return (
-      <div className="min-w-0 px-[var(--inspector-inset)] py-2">
+      <div className={RAIL_BLOCK}>
         <div className="flex items-start gap-2">
           {trailing}
           <div className="min-w-0 flex-1">{children}</div>
@@ -1094,7 +1098,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   const hasHeader = Boolean(label || trailing)
   return (
-    <div className={`min-w-0 px-[var(--inspector-inset)] ${compact ? 'py-2' : 'py-2.5'}`}>
+    <div className={RAIL_BLOCK}>
       {hasHeader && (
         // No `min-h` — the header is one label line tall, full stop. It was
         // `min-h-7` (31.5px) to reserve room for the trailing buttons, i.e.
@@ -2614,11 +2618,11 @@ export default function ThemeQuickSettingsRail({
         >
           <div className="divide-y divide-line">
             {startStyle && (
-              <div className="px-[var(--inspector-inset)] pb-3 pt-3">
+              <div className={RAIL_BLOCK}>
                 <StylePicker value={startStyle.value} accent={liveAccent} onChange={startStyle.onChange} />
               </div>
             )}
-            <div className="px-[var(--inspector-inset)] pb-3.5 pt-0">
+            <div className={RAIL_BLOCK}>
               <ColorRolesPanel
                 appearance={rampAppearance}
                 header={(
@@ -2679,7 +2683,7 @@ export default function ThemeQuickSettingsRail({
                           <span className={`${FIELD_CONTROL} ${openChip === rank ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
                             <span
                               aria-hidden
-                              className="block h-[22.5px] w-[22.5px] flex-shrink-0 rounded-[6px] border border-fg/40"
+                              className="block h-[26px] w-[26px] flex-shrink-0 rounded-[4px] border border-fg/40"
                               style={{ background: hex }}
                             />
                             <span className="min-w-0 flex-1 text-ui tabular-nums text-fg">{hex.toUpperCase()}</span>
@@ -2740,7 +2744,7 @@ export default function ThemeQuickSettingsRail({
             {/* Fine-tune stays closed so Colour reads as accent, neutral and
                 states. Show opens Saturation, Brightness and Ramp contrast at
                 one height. The Contrast grid only opens the board overlay. */}
-            <div className="flex flex-col px-[var(--inspector-inset)] py-3">
+            <div className={`flex flex-col ${RAIL_BLOCK}`}>
               <button
                 type="button"
                 onClick={() => setFineOpen((open) => !open)}
@@ -2845,7 +2849,7 @@ export default function ThemeQuickSettingsRail({
               rows), then the roles they grade. The
               notes that used to be hover hints now open with the list, where
               the choice is made. */}
-          <div className="flex min-w-0 flex-col gap-2 px-[var(--inspector-inset)] py-2.5">
+          <div className={`flex flex-col gap-2 ${RAIL_BLOCK}`}>
             <PickerField
               label="Body"
               ariaLabel="Body font family"
@@ -2900,7 +2904,7 @@ export default function ThemeQuickSettingsRail({
               })}
             />
           </div>
-          <div className="flex flex-col px-[var(--inspector-inset)] py-3">
+          <div className={`flex flex-col ${RAIL_BLOCK}`}>
             <button
               type="button"
               onClick={() => setTypeRolesOpen((open) => !open)}
@@ -2951,7 +2955,7 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Spacing" foundationKey="sizes" open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          {platformSwitch && <div className="px-[var(--inspector-inset)] pt-1 pb-3">{platformSwitch}</div>}
+          {platformSwitch && <div className={RAIL_BLOCK}>{platformSwitch}</div>}
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -3030,11 +3034,11 @@ export default function ThemeQuickSettingsRail({
 
         {(
         <EditionCard title="Icons" foundationKey="icons" open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <div className="px-[var(--inspector-inset)] pt-1 pb-2">
+          <div className={RAIL_BLOCK}>
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
           </div>
-          <div className="min-w-0 px-[var(--inspector-inset)] py-2.5">
+          <div className={RAIL_BLOCK}>
             <PickerField
               label="Weight"
               ariaLabel="Icon weight"
