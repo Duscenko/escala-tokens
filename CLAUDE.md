@@ -4803,6 +4803,57 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   to give Material its M3 look is an underline FIELD SHAPE, which is a second axis and
 >   its own change.
 
+> **UPDATE (2026-10-21, second pass): `border.control` is a HAIRLINE, and an icon slot IS the
+> `Icon` component (plugin 0.17.1).** Two owner decisions after seeing the file.
+> - **The field outline no longer claims WCAG 1.4.11.** `control-boundary` (`color/apca.ts`) is
+>   WCAG **1.4:1, no APCA term** — a visibility floor (black-a.2 reads 1.26, just under it), the
+>   weight shadcn draws `--border` at. The `{ctl-a:…}` walk starts at step 3 and lands on
+>   **black-a.3 (1.41:1) / white-a.3 (1.50:1)**, hover one step past (a.4 / a.4). It was 3:1 +
+>   Lc 15 (black-a.7 / white-a.6) and was reported twice as "los bordes de control están muy
+>   fuertes"; the owner chose the quiet edge. Consequence, stated: a control identified by its
+>   stroke ALONE no longer clears 1.4.11 — the System Styles' own rule applies ("a quiet border
+>   first gives the field a FILL"); `surface.input` is still `{neutral.1}` = the page, so a bare
+>   field is a hairline on the page, like shadcn's. `border.strong` keeps the ui-component solve.
+>   Presets: `A_DEFAULT_*` / `A_STRONG_*` moved to a.3 / a.4 so a "soft" style is never heavier
+>   than the schema; Neo keeps its solid `{neutral.9}` (the test holds Neo at 3:1, every other
+>   style at ≥ 1.3 on its field). shadcn's `--input` is `border.control` (`shadcnGlobals.ts`).
+> - **Outline Button is shadcn's: `surface.page` fill + `border.control` stroke + `content.primary`**
+>   — no `action.secondary` fill (a file showing that on `button-outline` is reading a stale
+>   published blob: Sync now, re-import). Secondary is the grey-filled variant.
+> - **Every icon slot is an INSTANCE of the `Icon` set when the file has it** (`makeIconSlot`):
+>   `Icon` builds FIRST (its category hoisted to the head of the build order; pages are
+>   independent, so only the Indicators page's board order moves), each variant holds an instance
+>   of `icon/home` bound to a set-level **Glyph** INSTANCE_SWAP, and a slot whose px is one of the
+>   three roles becomes `Icon` at that Size with its Glyph swapped (`close`, `trash`, `info`…),
+>   exposed — so a Dialog's panel offers Size sm · default · lg AND the glyph per element. The
+>   old frame + `icon/<name>` instance path stays as the fallback (no Icon set in the file — a
+>   Starter plan, a partial import — or an off-role px like Command's 13). `IconSlotResult.frame`
+>   is `FrameNode | InstanceNode`; `bindIconSlot` never binds an instance (a width binding would
+>   survive a Size swap). Button's / Input's set-level "Icon leading icon" swap props disappear
+>   on such files (pruned as stale); the nested Icon's Glyph takes their place.
+
+> **UPDATE (2026-10-21): a COMPOSITE embeds the system's OWN Button (plugin 0.17.0).** Reported
+> from Figma: Dialog's Cancel / Delete, Alert Dialog's footer, Sheet's Save, Drawer's Submit /
+> Cancel, Item's Enable, Card's footer link, Popover's and Empty's action were drawn boxes with a
+> label — "estos botones no son del design system". `systemButton(label, variant, size)` in
+> `code.ts` now inserts a REAL instance of the file's Button set (`instanceOfVariant('Button',
+> { Variant, Size, State: 'Default' })`, Label set, both icon slots off, `isExposedInstance` so
+> the label and variant edit from the composite's panel); the Dialog's and Sheet's × is a ghost
+> `icon-sm` Button with the `close` glyph swapped in (`systemIconButton`, through `cornerClose`).
+> `miniButton` is ONLY the fallback when the Button set is not in the file. Same mechanism Field
+> already used for its Input. Button is built first in the catalogue, so the set exists when the
+> composites are built. **A new composite that shows a button, a field or an icon inserts the
+> system's component — never redraws one.** Still drawn on purpose, because the recipe names the
+> layer as a slot of ITS OWN anatomy: Sonner's `action`, Input Group's `button`, Input Stepper's
+> `button-decrement / increment`, Combobox's trigger, Command's search row.
+> Two related fixes the same day: **`rowGap` is a recipe property** (`row-gap` in CSS; the plugin
+> leaves it to the builder's inner column) so Alert's root is `gap: spacing.3` (shadcn's
+> `gap-x-3`, the icon column) with `rowGap: spacing.0_5` — the recipe's 2px row gap used to land
+> as the icon gap in Figma. And **the `placeholder` type role is `text-sm` on every cut** (store
+> v102, `placeholderFollowsField`: only a placeholder still on the old 16px default moves) — the
+> size typed INTO a field, one tier with label, body-sm and button; `Type/placeholder` was 16/24
+> while every neighbour was 14/20.
+
 > **UPDATE (2026-10-20): the COMPONENT ICON SET — one list, web AND plugin (plugin 0.16.0).**
 > `src/lib/componentIcons.json` is the ONE list of generic glyphs components embed (65: home,
 > arrows, chevrons, close, check, eye / eye-off, flag, search, sign-out, status…), each an Escala

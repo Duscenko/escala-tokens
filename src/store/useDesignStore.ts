@@ -22,7 +22,7 @@ const COMPONENTS_V98 = [
   'Bubble', 'Resizable', 'Carousel', 'Chart', 'Menubar', 'NavigationMenu',
 ]
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
-import { mergeTypeRoles, migrateHeadingFamilyToBody, promoteReadingTypeIdentity, stepHeadingsPerCut, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
+import { mergeTypeRoles, migrateHeadingFamilyToBody, placeholderFollowsField, promoteReadingTypeIdentity, stepHeadingsPerCut, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -1976,7 +1976,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 101,
+      version: 102,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3647,6 +3647,28 @@ export const useDesignStore = create<DesignStore>()(
           seedFonts(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedFonts(sys?.snapshot)
+          }
+        }
+        if (version < 102) {
+          // v101→v102: the placeholder role sits on the field's own tier
+          // (text-sm, the size typed into the field) instead of 16px. Only a placeholder still on the old default moves; a
+          // hand-picked size stays. Root map, theme overlays and saved systems.
+          const movePlaceholder = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (state.typography && typeof state.typography === 'object') {
+              state.typography.roles = placeholderFollowsField(state.typography.roles)
+            }
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const ty = foundations[key]?.typography
+                if (ty && typeof ty === 'object') ty.roles = placeholderFollowsField(ty.roles)
+              }
+            }
+          }
+          movePlaceholder(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) movePlaceholder(sys?.snapshot)
           }
         }
         return persisted

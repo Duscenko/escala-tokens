@@ -66,7 +66,11 @@ describe('system style presets', () => {
   // Core, Glass, Nature and Retro are deliberate exceptions: their adopted
   // recipes use quiet / style-led edges — fill + rim (or press character)
   // identify the field. Owner waived the floor.
-  it('keeps every style\'s input border over WCAG 1.4.11 on its own field', () => {
+  // 2026-10-21: the field outline is a HAIRLINE by decision (see
+  // `control-boundary` in color/apca.ts) — visibly off the field (≥ 1.3:1,
+  // shadcn's own `--border` reads 1.26), not a 3:1 boundary. Neo keeps the
+  // full-strength solid stroke: its border IS the design.
+  it('keeps every style\'s input border visibly off its own field (Neo at boundary weight)', () => {
     for (const preset of THEME_STYLE_PRESETS) {
       if (
         preset.id === 'core-minimal'
@@ -84,7 +88,7 @@ describe('system style presets', () => {
         expect(
           checkContrast(border, input),
           `${preset.id} · ${mode}: border.control ${raw} on surface.input ${input}`,
-        ).toBeGreaterThanOrEqual(3)
+        ).toBeGreaterThanOrEqual(preset.id === 'neo-brutalism' ? 3 : 1.3)
       }
     }
   })

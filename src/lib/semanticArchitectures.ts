@@ -31,9 +31,10 @@ const APCA_BODY_TEXT = INTENT_THRESHOLDS['body-text'].apcaLc ?? 75
  *  intent. Shared by the focus-ring solver below. */
 const WCAG_UI = INTENT_THRESHOLDS['ui-component'].wcag ?? 3
 const APCA_UI = INTENT_THRESHOLDS['ui-component'].apcaLc ?? 45
-/** The resting outline of a field (`border.control`): WCAG 1.4.11 3:1 with
- *  APCA's non-text floor — see `control-boundary` in color/apca.ts. */
-const APCA_CONTROL = INTENT_THRESHOLDS['control-boundary'].apcaLc ?? 15
+/** The resting outline of a field (`border.control`): a hairline one step
+ *  off the page — see `control-boundary` in color/apca.ts. */
+const WCAG_CONTROL = INTENT_THRESHOLDS['control-boundary'].wcag ?? 1.4
+const APCA_CONTROL = INTENT_THRESHOLDS['control-boundary'].apcaLc ?? 0
 import { chartPalette } from './chartPalette'
 import type { ThemePalette } from '../store/useDesignStore'
 
@@ -301,7 +302,7 @@ function uiBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look
  * the accent, so unlike `{ui:neutral.N}` this lands on the same step for
  * essentially every system — measured, light clears at step 7, dark at 8.
  */
-function uiAlphaBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look, apcaMin = APCA_UI): string {
+function uiAlphaBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look, apcaMin = APCA_UI, wcagMin = WCAG_UI): string {
   const page = look(kind === 'dark' ? 'neutral-dark' : 'neutral', 1)
   if (!page) return `{${fam}.${start}}`
   const ramp = rampOf(look, fam) // raw #rrggbbaa steps of black-a / white-a
@@ -313,15 +314,15 @@ function uiAlphaBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', 
     const hex = compositeOver(raw, page) // opaque, over the page it sits on
     const w = checkContrast(hex, page)
     const lc = Math.abs(apcaLc(hex, page))
-    if (w >= WCAG_UI && lc >= apcaMin) return `{${fam}.${t}}`
-    const score = Math.min(w / WCAG_UI, lc / apcaMin)
+    if (w >= wcagMin && lc >= apcaMin) return `{${fam}.${t}}`
+    const score = Math.min(w / wcagMin, apcaMin > 0 ? lc / apcaMin : Infinity)
     if (score > bestScore) { bestScore = score; fallback = t }
   }
   return `{${fam}.${fallback}}`
 }
 
-function uiAlphaBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look: Look, apcaMin = APCA_UI): number {
-  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look, apcaMin))?.[2] ?? start)
+function uiAlphaBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look: Look, apcaMin = APCA_UI, wcagMin = WCAG_UI): number {
+  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look, apcaMin, wcagMin))?.[2] ?? start)
 }
 
 /**
@@ -500,11 +501,12 @@ function curatedRefs(
       // colon after `ui` in that regex would not match `ui-a:` / `ui+a:`, but
       // ordering it first keeps the intent obvious.
       // `{ctl-a:…}` / `{ctl+a:…}` — the same walk at the FIELD outline's floor
-      // (`control-boundary`: 3:1 + Lc 15) for `border.control` and its hover.
+      // (`control-boundary`: a 1.4:1 hairline, no APCA term) for
+      // `border.control` and its hover.
       .replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
-        uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL) + 1, 12), kind, look, APCA_CONTROL))
+        uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL))
       .replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
-        uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL))
+        uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL))
       .replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
       .replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
@@ -944,16 +946,17 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // draws every control's hover stroke from this concept (20+ call sites), so a
   // hover that resolved lighter than rest would be the stroke RECEDING on hover.
   // `control` is the resting outline of a field, select, checkbox, radio,
-  // switch track and unfilled button — the stroke that identifies the control.
-  // Solved to WCAG 1.4.11's 3:1 with APCA's non-text floor (`control-boundary`),
-  // NOT Lc 45: held to the large-text row, the dark outline walked to
-  // white-a.8 = 7.25:1 and every field read heavier than the text inside it.
-  // Measured: black-a.7 (3.94:1) light, white-a.6 (3.81:1) dark.
+  // switch track and outline button. It is a HAIRLINE now (`control-boundary`:
+  // 1.4:1, the first alpha step that is visibly off the page — shadcn's
+  // `--border` weight), not a 3:1 boundary: held to 3:1 + Lc 15 it landed on
+  // black-a.7 (3.94:1) / white-a.6 (3.81:1) and was reported twice as too
+  // strong; the owner chose the quiet edge (2026-10-21). Measured: black-a.3
+  // (1.41:1) light, white-a.3 (1.50:1) dark. A control that must clear WCAG
+  // 1.4.11 on its own does it with a FILL, not this stroke.
   // `strong` is EMPHASIS — the edge of a grouping that must read before its
-  // neighbours — and keeps the stricter ui-component solve (black-a.7 /
-  // white-a.8). In light the two land on one step; in dark `strong` is heavier.
-  { group: 'border', key: 'control',       light: '{ctl-a:black-a.5}',  dark: '{ctl-a:white-a.5}' },
-  { group: 'border', key: 'control-hover', light: '{ctl+a:black-a.5}', dark: '{ctl+a:white-a.5}' },
+  // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
+  { group: 'border', key: 'control',       light: '{ctl-a:black-a.3}',  dark: '{ctl-a:white-a.3}' },
+  { group: 'border', key: 'control-hover', light: '{ctl+a:black-a.3}', dark: '{ctl+a:white-a.3}' },
   { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
@@ -1124,8 +1127,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
   'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 (3:1) against the page, with APCA Lc 15 as the visibility floor — not Lc 45, which is the large-text row and made the dark outline 7.25:1. SOLVED on the alpha ladder ({ctl-a:…}): {black-a.7} in light, {white-a.6} in dark for the default system.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. A HAIRLINE at the weight modern systems draw it (shadcn\'s --border): SOLVED on the alpha ladder ({ctl-a:…}) to a 1.4:1 visibility floor, the first step visibly off the page — {black-a.3} (1.41:1) in light, {white-a.3} (1.50:1) in dark for the default system. It does NOT clear WCAG 1.4.11 on its own by design: a control that must be identified without a fill gives itself one (surface.input a step off the page).',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
   'border.focus': '[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only — the translucent halo is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',

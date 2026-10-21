@@ -1610,6 +1610,16 @@ function stepLargeTypeOnMobile(stored) {
   }
   return map;
 }
+function placeholderFollowsField(stored) {
+  const map = mergeTypeRoles(stored);
+  const role = TYPE_ROLES.find((r) => r.key === "placeholder");
+  const hit = map.placeholder;
+  if (!role || !hit) return map;
+  if (aliasesEqual(hit.desktop, LEGACY_PLACEHOLDER.desktop) && aliasesEqual(hit.tablet, LEGACY_PLACEHOLDER.tablet) && aliasesEqual(hit.mobile, LEGACY_PLACEHOLDER.mobile)) {
+    map.placeholder = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } };
+  }
+  return map;
+}
 function stepHeadingsPerCut(stored) {
   const map = mergeTypeRoles(stored);
   for (const role of TYPE_ROLES) {
@@ -1638,7 +1648,7 @@ function promoteReadingTypeIdentity(stored) {
   }
   return map;
 }
-var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_READING_MOBILE;
+var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_PLACEHOLDER, LEGACY_READING_MOBILE;
 var init_typeRoles = __esm({
   "src/lib/typeRoles.ts"() {
     init_typographyStandard();
@@ -1752,9 +1762,12 @@ var init_typeRoles = __esm({
         label: "Placeholder",
         description: "Input placeholder and empty-field hint.",
         group: "control",
-        desktop: a("body", "text-md", "regular"),
-        tablet: a("body", "text-md", "regular"),
-        mobile: a("body", "text-md", "regular")
+        // The size of the text typed INTO a field (shadcn Input: `md:text-sm`), so
+        // placeholder, value, label and button sit on one tier — on every cut,
+        // like every other body/control role.
+        desktop: a("body", "text-sm", "regular"),
+        tablet: a("body", "text-sm", "regular"),
+        mobile: a("body", "text-sm", "regular")
       },
       {
         key: "caption",
@@ -1812,6 +1825,11 @@ var init_typeRoles = __esm({
       "heading-md": { tablet: a("body", "display-sm", "semibold"), mobile: a("body", "display-xs", "semibold") },
       "heading-sm": { tablet: a("body", "display-xs", "semibold"), mobile: a("body", "text-xl", "semibold") },
       "heading-xs": { tablet: a("body", "text-xl", "semibold"), mobile: a("body", "text-lg", "semibold") }
+    };
+    LEGACY_PLACEHOLDER = {
+      desktop: a("body", "text-md", "regular"),
+      tablet: a("body", "text-md", "regular"),
+      mobile: a("body", "text-md", "regular")
     };
     LEGACY_READING_MOBILE = {
       "body-lg": a("body", "text-md", "regular"),
@@ -2563,14 +2581,19 @@ var init_apca = __esm({
       "large-text": { wcag: 3, apcaLc: 60 },
       "action-label": { wcag: 4.5, apcaLc: 60 },
       "ui-component": { wcag: 3, apcaLc: 45 },
-      // The resting outline of a field / select / checkbox — the stroke that
-      // identifies the control. WCAG 1.4.11's 3:1 is the requirement; Lc 45 is
-      // APCA's LARGE-TEXT row and, held on a 1px hairline, it pushed the dark
-      // outline to white-a.8 = 7.25:1 — more than twice the requirement, the
-      // "fields look too strong" report. Lc 15 is APCA's floor for a non-text
-      // element to stay discernible. Lands on black-a.7 (3.94:1) / white-a.6
-      // (3.81:1): the values the soft System Styles had already chosen by hand.
-      "control-boundary": { wcag: 3, apcaLc: 15 },
+      // The resting outline of a field / select / checkbox / outline button — a
+      // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
+      // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
+      // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
+      // (3.81:1): reported twice as "los bordes de control están muy fuertes",
+      // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
+      // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
+      // 1.26, below it) — not an accessibility claim: a control identified by its
+      // stroke alone no longer clears 1.4.11, which is why a field that must
+      // clear it gives itself a FILL (`surface.input` a step off the page), the
+      // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
+      // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
+      "control-boundary": { wcag: 1.4, apcaLc: null },
       decorative: { wcag: null, apcaLc: null },
       surface: { wcag: null, apcaLc: null }
     };
@@ -4663,7 +4686,7 @@ function uiBoundaryRef(fam, start, kind, look) {
 function uiBoundaryTone(fam, start, kind, look) {
   return Number(REF_RE.exec(uiBoundaryRef(fam, start, kind, look))?.[2] ?? start);
 }
-function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI) {
+function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI, wcagMin = WCAG_UI) {
   const page = look(kind === "dark" ? "neutral-dark" : "neutral", 1);
   if (!page) return `{${fam}.${start}}`;
   const ramp = rampOf(look, fam);
@@ -4675,8 +4698,8 @@ function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI) {
     const hex = compositeOver(raw, page);
     const w = checkContrast(hex, page);
     const lc = Math.abs(apcaLc(hex, page));
-    if (w >= WCAG_UI && lc >= apcaMin) return `{${fam}.${t}}`;
-    const score = Math.min(w / WCAG_UI, lc / apcaMin);
+    if (w >= wcagMin && lc >= apcaMin) return `{${fam}.${t}}`;
+    const score = Math.min(w / wcagMin, apcaMin > 0 ? lc / apcaMin : Infinity);
     if (score > bestScore) {
       bestScore = score;
       fallback = t;
@@ -4684,8 +4707,8 @@ function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI) {
   }
   return `{${fam}.${fallback}}`;
 }
-function uiAlphaBoundaryTone(fam, start, kind, look, apcaMin = APCA_UI) {
-  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look, apcaMin))?.[2] ?? start);
+function uiAlphaBoundaryTone(fam, start, kind, look, apcaMin = APCA_UI, wcagMin = WCAG_UI) {
+  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look, apcaMin, wcagMin))?.[2] ?? start);
 }
 function solidStepRef(fam, _offset, solidTone, look, inkHex, used) {
   const ramp = rampOf(look, fam);
@@ -4734,7 +4757,7 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
   };
   const solidToneFor = (fam) => solidFor(fam).tone;
   return roles.map((r) => {
-    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL) + 1, 12), kind, look, APCA_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
       const s = solidFor(fam);
       return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used);
     }).replace(/\{chart\.(\d)\}/g, (_m, n) => chartSlots[Number(n) - 1] ?? "");
@@ -4848,7 +4871,7 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
@@ -4858,7 +4881,8 @@ var init_semanticArchitectures = __esm({
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
     APCA_UI = INTENT_THRESHOLDS["ui-component"].apcaLc ?? 45;
-    APCA_CONTROL = INTENT_THRESHOLDS["control-boundary"].apcaLc ?? 15;
+    WCAG_CONTROL = INTENT_THRESHOLDS["control-boundary"].wcag ?? 1.4;
+    APCA_CONTROL = INTENT_THRESHOLDS["control-boundary"].apcaLc ?? 0;
     INK_REFS = ["{neutral.1}", "{neutral.12}"];
     REF_RE = /^\{([a-z-]+)\.(\d+)\}$/;
     TEXT_END_TONE = 12;
@@ -5238,16 +5262,17 @@ var init_semanticArchitectures = __esm({
       // draws every control's hover stroke from this concept (20+ call sites), so a
       // hover that resolved lighter than rest would be the stroke RECEDING on hover.
       // `control` is the resting outline of a field, select, checkbox, radio,
-      // switch track and unfilled button — the stroke that identifies the control.
-      // Solved to WCAG 1.4.11's 3:1 with APCA's non-text floor (`control-boundary`),
-      // NOT Lc 45: held to the large-text row, the dark outline walked to
-      // white-a.8 = 7.25:1 and every field read heavier than the text inside it.
-      // Measured: black-a.7 (3.94:1) light, white-a.6 (3.81:1) dark.
+      // switch track and outline button. It is a HAIRLINE now (`control-boundary`:
+      // 1.4:1, the first alpha step that is visibly off the page — shadcn's
+      // `--border` weight), not a 3:1 boundary: held to 3:1 + Lc 15 it landed on
+      // black-a.7 (3.94:1) / white-a.6 (3.81:1) and was reported twice as too
+      // strong; the owner chose the quiet edge (2026-10-21). Measured: black-a.3
+      // (1.41:1) light, white-a.3 (1.50:1) dark. A control that must clear WCAG
+      // 1.4.11 on its own does it with a FILL, not this stroke.
       // `strong` is EMPHASIS — the edge of a grouping that must read before its
-      // neighbours — and keeps the stricter ui-component solve (black-a.7 /
-      // white-a.8). In light the two land on one step; in dark `strong` is heavier.
-      { group: "border", key: "control", light: "{ctl-a:black-a.5}", dark: "{ctl-a:white-a.5}" },
-      { group: "border", key: "control-hover", light: "{ctl+a:black-a.5}", dark: "{ctl+a:white-a.5}" },
+      // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
+      { group: "border", key: "control", light: "{ctl-a:black-a.3}", dark: "{ctl-a:white-a.3}" },
+      { group: "border", key: "control-hover", light: "{ctl+a:black-a.3}", dark: "{ctl+a:white-a.3}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
       // NOT a state indicator: anything that says "this control is selected /
@@ -5388,8 +5413,8 @@ var init_semanticArchitectures = __esm({
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.",
-      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and unfilled buttons \u2014 anywhere the stroke is the only sign of a control. WCAG 1.4.11 (3:1) against the page, with APCA Lc 15 as the visibility floor \u2014 not Lc 45, which is the large-text row and made the dark outline 7.25:1. SOLVED on the alpha ladder ({ctl-a:\u2026}): {black-a.7} in light, {white-a.6} in dark for the default system.",
-      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. A HAIRLINE at the weight modern systems draw it (shadcn's --border): SOLVED on the alpha ladder ({ctl-a:\u2026}) to a 1.4:1 visibility floor, the first step visibly off the page \u2014 {black-a.3} (1.41:1) in light, {white-a.3} (1.50:1) in dark for the default system. It does NOT clear WCAG 1.4.11 on its own by design: a control that must be identified without a fill gives itself one (surface.input a step off the page).",
+      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned \u2014 the ring is always the user's own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field \u2014 focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only \u2014 the translucent halo is border.ring.*.",
       "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
@@ -5552,7 +5577,7 @@ function buttonPaint(variant, state2) {
     case "ghost":
       return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), ring: ring("border.ring.default") } };
     case "destructive":
-      return { root: { fill: c(hover || pressed ? "status.critical.surface-pressed" : "status.critical.surface"), stroke: NONE, text: c("status.critical.content"), ring: ring("status.critical.border") } };
+      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), ring: ring("status.critical.border") } };
     default:
       return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), ring: ring("border.ring.default") } };
   }
@@ -6552,7 +6577,9 @@ var init_surfaces = __esm({
           title: { text: c("content.primary"), font: "type.label" },
           description: { text: c("content.secondary"), font: "type.caption" },
           'description[data-state="error"]': { text: c("status.critical.content") },
-          actions: { gap: "spacing.1" }
+          // The remove × is an icon slot inked content.secondary — a quiet
+          // control on the file, never the title's ink.
+          actions: { gap: "spacing.1", text: c("content.secondary") }
         })),
         part({ Size: ATTACHMENT_SIZES }, (size) => ({
           root: ATTACHMENT_GEOMETRY[size],
@@ -6994,7 +7021,11 @@ var init_feedback = __esm({
             radius: "radius.container",
             paddingX: "spacing.4",
             paddingY: "spacing.3",
-            gap: "spacing.0_5",
+            // shadcn: `has-[>svg]:gap-x-3 gap-y-0.5` — the icon column is 12px off the
+            // text, title and description 2px apart. In Figma `gap` is the icon slot's
+            // spacing; the body column keeps the row gap.
+            gap: "spacing.3",
+            rowGap: "spacing.0_5",
             font: "type.body-sm"
           },
           title: { font: "type.label" },
@@ -9463,7 +9494,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 101,
+          version: 102,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -10683,6 +10714,25 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) seedFonts(sys?.snapshot);
               }
             }
+            if (version < 102) {
+              const movePlaceholder = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                if (state2.typography && typeof state2.typography === "object") {
+                  state2.typography.roles = placeholderFollowsField(state2.typography.roles);
+                }
+                const foundations = state2.themeFoundations;
+                if (foundations && typeof foundations === "object") {
+                  for (const key2 of Object.keys(foundations)) {
+                    const ty = foundations[key2]?.typography;
+                    if (ty && typeof ty === "object") ty.roles = placeholderFollowsField(ty.roles);
+                  }
+                }
+              };
+              movePlaceholder(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) movePlaceholder(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -11488,10 +11538,10 @@ var DARK_DEPTH = {
   "surface.layer-2": { dark: "{neutral-dark.4}" },
   "content.subtle": { dark: "{neutral-dark.10}" }
 };
-var A_DEFAULT_L = "{black-a.7}";
-var A_DEFAULT_D = "{white-a.6}";
-var A_STRONG_L = "{black-a.9}";
-var A_STRONG_D = "{white-a.8}";
+var A_DEFAULT_L = "{black-a.3}";
+var A_DEFAULT_D = "{white-a.3}";
+var A_STRONG_L = "{black-a.4}";
+var A_STRONG_D = "{white-a.4}";
 var softBorders = {
   ...DARK_DEPTH,
   "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
@@ -11775,8 +11825,12 @@ var THEME_STYLE_PRESETS = [
     states: { error: "#e5252c", warning: "#ffb302", success: "#00c853", info: "#2962ff" },
     foundations: {
       typography: typography("Space Grotesk", "Space Grotesk"),
-      spacing: buildSpacingFromBase(5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(5)),
+      // 4px base (spacing stays on the 4/8 grid); the roomier feel is the
+      // card inset one step deeper instead.
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
       sizes: buildSizesFromBase(4.5),
@@ -11868,8 +11922,12 @@ var THEME_STYLE_PRESETS = [
     states: { error: "#b91c1c", warning: "#c2410c", success: "#047857", info: "#1d4ed8" },
     foundations: {
       typography: typography("IBM Plex Sans", "IBM Plex Sans"),
-      spacing: buildSpacingFromBase(3.5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(3.5)),
+      // 4px base, not 3.5 — a 3.5 base put every step off the pixel grid
+      // (1.75 · 5.25 · 8.75px). Density comes from a tighter card inset.
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "4" },
+      padding: { top: "16px", right: "16px", bottom: "16px", left: "16px" },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: "lg", fields: "sm", selectors: "sm" }),
       sizes: buildSizesFromBase(3.5),
@@ -11893,8 +11951,10 @@ var THEME_STYLE_PRESETS = [
     states: { error: "#e11d48", warning: "#f59e0b", success: "#22c55e", info: "#6366f1" },
     foundations: {
       typography: typography("Plus Jakarta Sans", "Plus Jakarta Sans"),
-      spacing: buildSpacingFromBase(4.5),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(4.5)),
+      spacing: buildSpacingFromBase(4),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "4xl", selectors: "2xl" }),
       sizes: buildSizesFromBase(4.5),

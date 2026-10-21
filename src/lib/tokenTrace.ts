@@ -74,6 +74,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   paddingY: 'Padding Y',
   paddingBottom: 'Padding bottom',
   gap: 'Gap',
+  rowGap: 'Row gap',
   height: 'Height',
   minHeight: 'Min height',
   width: 'Width',
@@ -88,7 +89,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
   'fill', 'text', 'stroke', 'strokeTop', 'ring', 'paint',
-  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'height', 'minHeight', 'width', 'travel',
+  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
   'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font',
 ]
 

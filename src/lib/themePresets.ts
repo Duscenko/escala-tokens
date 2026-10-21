@@ -38,7 +38,8 @@ import {
  * `surface.input` ships as `{neutral.1}`, i.e. **exactly `surface.page`** (the
  * role's own comment says "same tone as surface.page by design"). With no fill
  * difference, the border is the ONLY thing identifying a text field, so
- * `border.control`'s `{ui:…}` solver is obliged to clear WCAG 1.4.11's 3:1 —
+ * `border.control`'s solver WAS obliged to clear WCAG 1.4.11's 3:1 (since
+ * 2026-10-21 it is a 1.4:1 hairline by decision — see `control-boundary`) —
  * and on a dark ramp the first tone that also clears APCA Lc 45 is tone 11, the
  * near-white TEXT tone. Measured across the six styles: a resting input in dark
  * drew a hairline at OKLab ΔL **+0.63 to +0.68** and **11–12:1** against its own
@@ -208,10 +209,13 @@ const DARK_DEPTH = {
   'content.subtle': { dark: '{neutral-dark.10}' },
 } satisfies ThemeStyleSemantics
 
-const A_DEFAULT_L = '{black-a.7}'
-const A_DEFAULT_D = '{white-a.6}'
-const A_STRONG_L = '{black-a.9}'
-const A_STRONG_D = '{white-a.8}'
+// The schema's own hairline (black-a.3 / white-a.3, see `border.control`) and
+// its hover one step past — a "soft" style must not ship a heavier edge than
+// the default system does.
+const A_DEFAULT_L = '{black-a.3}'
+const A_DEFAULT_D = '{white-a.3}'
+const A_STRONG_L = '{black-a.4}'
+const A_STRONG_D = '{white-a.4}'
 
 /** Quiet: filled field, mid-grey edge. Shared by Editorial and Playful. */
 const softBorders: ThemeStyleSemantics = {

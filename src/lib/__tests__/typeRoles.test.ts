@@ -118,7 +118,7 @@ describe('type roles', () => {
     })
     expect(stored.label.desktop.size).toBe('text-lg')
     expect(stored.label.desktop.weight).toBe('bold')
-    expect(stored.placeholder.desktop.size).toBe('text-md')
+    expect(stored.placeholder.desktop.size).toBe('text-sm')
     expect(Object.keys(stored)).toHaveLength(TYPE_ROLES.length)
   })
 

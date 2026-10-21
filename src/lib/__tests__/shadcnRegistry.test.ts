@@ -144,7 +144,8 @@ describe('shadcn globals.css (E4 map)', () => {
       expect(theme.dark![name], name).toBe(roleColor(synced, role, modes.dark!))
     }
     expect(theme.light.primary).toBe(roleColor(synced, 'action.primary.default', modes.light))
-    expect(theme.light.input).toBe(roleColor(synced, 'border.strong', modes.light))
+    // shadcn's `--input` is the field outline: border.control (shadcnGlobals.ts).
+    expect(theme.light.input).toBe(roleColor(synced, 'border.control', modes.light))
     expect(theme.light.radius).toMatch(/^\d+px$/)
     expect(Object.keys(theme.light).filter((k) => k.startsWith('chart-'))).toHaveLength(5)
   })

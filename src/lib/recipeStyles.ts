@@ -81,6 +81,9 @@ function declarations(props: SlotProps): string[] {
       // The bottom inset alone (an accordion answer hugs its question above it).
       case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break
+      // The gap between ROWS when it differs from `gap` (an Alert's icon column
+      // sits 12px off the text while title and description sit 2px apart).
+      case 'rowGap': out.push(`row-gap: ${dim(ref)}`); break
       case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       case 'font':

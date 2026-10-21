@@ -232,12 +232,13 @@ describe('the categorical catalogue is complete', () => {
   it('border.control/control-hover/strong are solved on the alpha ladder', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    // The field outline: WCAG 1.4.11 3:1 + APCA's non-text floor. Dark was
-    // white-a.8 (7.25:1) while it was held to Lc 45; now the first step at 3:1.
-    expect(label('control')?.light.label).toBe('black-a.7')
-    expect(label('control')?.dark.label).toBe('white-a.6')
-    expect(label('control-hover')?.light.label).toBe('black-a.8')
-    expect(label('control-hover')?.dark.label).toBe('white-a.7')
+    // The field outline is a HAIRLINE (2026-10-21): the first alpha step that
+    // is visibly off the page (1.4:1), shadcn's `--border` weight. It was held
+    // to 3:1 + Lc 15 (black-a.7 / white-a.6) and reported as too strong.
+    expect(label('control')?.light.label).toBe('black-a.3')
+    expect(label('control')?.dark.label).toBe('white-a.3')
+    expect(label('control-hover')?.light.label).toBe('black-a.4')
+    expect(label('control-hover')?.dark.label).toBe('white-a.4')
     // Emphasis keeps the stricter ui-component solve.
     expect(label('strong')?.light.label).toBe('black-a.7')
     expect(label('strong')?.dark.label).toBe('white-a.8')

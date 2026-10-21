@@ -188,9 +188,12 @@ export const TYPE_ROLES: TypeRole[] = [
     label: 'Placeholder',
     description: 'Input placeholder and empty-field hint.',
     group: 'control',
-    desktop: a('body', 'text-md', 'regular'),
-    tablet: a('body', 'text-md', 'regular'),
-    mobile: a('body', 'text-md', 'regular'),
+    // The size of the text typed INTO a field (shadcn Input: `md:text-sm`), so
+    // placeholder, value, label and button sit on one tier — on every cut,
+    // like every other body/control role.
+    desktop: a('body', 'text-sm', 'regular'),
+    tablet: a('body', 'text-sm', 'regular'),
+    mobile: a('body', 'text-sm', 'regular'),
   },
   {
     key: 'caption',
@@ -386,6 +389,33 @@ const LEGACY_HEADING_CUTS: Record<string, { tablet: TypeAlias; mobile: TypeAlias
  *  default — tablet and mobile are judged separately, so a hand-picked mobile
  *  survives even when tablet moves (detect, don't assume). Heading 2XS is
  *  seeded by mergeTypeRoles like any new catalogue role. */
+/** Pre-v102 placeholder: `text-md` on every cut, a step above the field's own
+ *  value text (`body-sm`), label and button. */
+const LEGACY_PLACEHOLDER: TypeRoleModes = {
+  desktop: a('body', 'text-md', 'regular'),
+  tablet: a('body', 'text-md', 'regular'),
+  mobile: a('body', 'text-md', 'regular'),
+}
+
+/** v102: a placeholder still on the pre-v102 default (16px everywhere) moves to
+ *  the field's own tier — `text-sm` on every cut. A hand-picked size stays. */
+export function placeholderFollowsField(
+  stored?: object | null,
+): Record<string, TypeRoleModes> {
+  const map = mergeTypeRoles(stored)
+  const role = TYPE_ROLES.find((r) => r.key === 'placeholder')
+  const hit = map.placeholder
+  if (!role || !hit) return map
+  if (
+    aliasesEqual(hit.desktop, LEGACY_PLACEHOLDER.desktop)
+    && aliasesEqual(hit.tablet, LEGACY_PLACEHOLDER.tablet)
+    && aliasesEqual(hit.mobile, LEGACY_PLACEHOLDER.mobile)
+  ) {
+    map.placeholder = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } }
+  }
+  return map
+}
+
 export function stepHeadingsPerCut(
   stored?: object | null,
 ): Record<string, TypeRoleModes> {

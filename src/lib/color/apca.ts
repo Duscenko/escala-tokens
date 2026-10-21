@@ -199,14 +199,19 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   'large-text':   { wcag: 3.0, apcaLc: 60 },
   'action-label': { wcag: 4.5, apcaLc: 60 },
   'ui-component': { wcag: 3.0, apcaLc: 45 },
-  // The resting outline of a field / select / checkbox — the stroke that
-  // identifies the control. WCAG 1.4.11's 3:1 is the requirement; Lc 45 is
-  // APCA's LARGE-TEXT row and, held on a 1px hairline, it pushed the dark
-  // outline to white-a.8 = 7.25:1 — more than twice the requirement, the
-  // "fields look too strong" report. Lc 15 is APCA's floor for a non-text
-  // element to stay discernible. Lands on black-a.7 (3.94:1) / white-a.6
-  // (3.81:1): the values the soft System Styles had already chosen by hand.
-  'control-boundary': { wcag: 3.0, apcaLc: 15 },
+  // The resting outline of a field / select / checkbox / outline button — a
+  // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
+  // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
+  // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
+  // (3.81:1): reported twice as "los bordes de control están muy fuertes",
+  // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
+  // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
+  // 1.26, below it) — not an accessibility claim: a control identified by its
+  // stroke alone no longer clears 1.4.11, which is why a field that must
+  // clear it gives itself a FILL (`surface.input` a step off the page), the
+  // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
+  // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
+  'control-boundary': { wcag: 1.4, apcaLc: null },
   decorative:     { wcag: null, apcaLc: null },
   surface:        { wcag: null, apcaLc: null },
 }

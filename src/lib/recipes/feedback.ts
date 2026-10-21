@@ -18,7 +18,11 @@ export const ALERT: ComponentRecipe = {
     part({}, () => ({
       root: {
         fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control',
-        radius: 'radius.container', paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.0_5',
+        radius: 'radius.container', paddingX: 'spacing.4', paddingY: 'spacing.3',
+        // shadcn: `has-[>svg]:gap-x-3 gap-y-0.5` — the icon column is 12px off the
+        // text, title and description 2px apart. In Figma `gap` is the icon slot's
+        // spacing; the body column keeps the row gap.
+        gap: 'spacing.3', rowGap: 'spacing.0_5',
         font: 'type.body-sm',
       },
       title: { font: 'type.label' },
