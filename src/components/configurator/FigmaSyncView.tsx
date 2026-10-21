@@ -110,7 +110,7 @@ export default function FigmaSyncView({
         {onClose && <BackToEditor onClose={onClose} />}
 
         <div className="flex flex-col gap-2">
-          <h2 className="m-0 text-title font-semibold text-fg">{t('Agent context → Figma')}</h2>
+          <h2 className="m-0 text-title font-semibold text-fg">{t('Your tokens → Figma')}</h2>
           <p className="m-0 max-w-xl text-ui leading-relaxed text-fg-muted">
             {t('Your system as one message: the brands, themes and viewports checked on the right. Paste it into the Escala plugin, or into any AI agent.')}
           </p>

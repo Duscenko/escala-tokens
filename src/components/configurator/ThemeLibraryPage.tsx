@@ -23,7 +23,7 @@ import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
-import { CreateStudioFooter } from './ThemeSaveBar'
+import { CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -423,6 +423,8 @@ export default function ThemeLibraryPage({
   onOpenPreview,
   onGuestBrandCreated,
   onGetCode,
+  onGetAgentContext,
+  onShip,
   onExportBrand,
   onExportAll,
   onSyncFigma,
@@ -452,6 +454,10 @@ export default function ThemeLibraryPage({
   /** Finish (or Skip setup) kept a brand for a visitor with no account. */
   onGuestBrandCreated?: (key: string) => void
   onGetCode: (key: string) => void
+  /** The Code tab on Agent context for that brand (Home's column menu). */
+  onGetAgentContext?: (key: string) => void
+  /** The create studio footer's three doors out for the brand it just made. */
+  onShip?: (key: string) => ShipActions
   /** Home's brand column Export: the wizard scoped to that brand. Falls back to Code. */
   onExportBrand?: (key: string) => void
   /** Home's Export all: the wizard with every brand checked (the bundle). */
@@ -618,7 +624,7 @@ export default function ThemeLibraryPage({
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         onExportBrand={onExportBrand ?? onGetCode}
-        brandExport={{ all: onExportAll, figma: onSyncFigma, code: onGetCode, github: onShareGithub }}
+        brandExport={{ all: onExportAll, figma: onSyncFigma, code: onGetCode, agent: onGetAgentContext, github: onShareGithub }}
         onAddBrand={onCreateTheme}
         onImportBrand={(json, name) => {
           const res = addBrandFromPayload(json, name)
@@ -713,6 +719,13 @@ export default function ThemeLibraryPage({
     setCreating(false)
     onGetCode(key)
   }
+  /** Every door out of the studio keeps the brand first, like Get code did. */
+  const shipCreated = (key: string): ShipActions | undefined => {
+    const ship = onShip?.(key)
+    if (!ship) return undefined
+    const leave = (go: () => void) => () => { keepCreatedBrand(key); setCreating(false); go() }
+    return { css: leave(ship.css), figma: leave(ship.figma), agent: leave(ship.agent) }
+  }
   const openAdvanced = (foundation: string) => {
     if (!createdKey) return
     keepCreatedBrand(createdKey)
@@ -787,6 +800,7 @@ export default function ThemeLibraryPage({
                 onCreate={() => submitHandle.current?.()}
                 onSave={() => { if (createdKey) finishCreate(createdKey) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
+                ship={createdKey ? shipCreated(createdKey) : undefined}
                 onRandom={() => randomHandle.current?.()}
               />
             </div>

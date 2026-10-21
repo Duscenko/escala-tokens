@@ -56,6 +56,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-21): THREE DOORS OUT — CSS · Figma · Agent — and "Get code" is not a
+> label any more.** Plan + measured walk: `design-plans/entry-flow-set-see-ship.md` (phase 1
+> done). Every way out of the Generator speaks the same three words: the inspector footer's
+> `ShipRow` (`ThemeSaveBar.tsx`, shown where Get code used to be the primary — a guest, a kept
+> brand, the create studio once the brand exists), the top bar's Export pill and Home's brand
+> column menu (both CSS · Figma · Agent · **More formats…** = the wizard; GitHub left both
+> menus — it is a wizard destination and an Integrations row). `shipFor(key)` in `Configurator`
+> builds the actions once: CSS / Agent open the Code tab ON THAT FORMAT (`codeFormat`, the tab
+> defaults to CSS, rail CSS · shadcn · Agent context), Figma selects the brand as the sync
+> target. The Figma page is "Your tokens → Figma"; TopNav's Plugin link is off inside the
+> Generator (`pluginLink`) because the plugin is that page's step 02. `InspectorToggle` reads
+> "Exit inspector" only while something is pinned (`pinned`); inspect mode still starts on. A
+> guest's board header says "Sample screens drawn from your tokens" (its login-card artefact
+> read as a wall). Don't add a fourth door or a second name for one of the three.
+
 > **UPDATE (2026-10-20): OPEN BETA — no plans, everything open, web AND plugin.** Supersedes
 > every Free / Pro limit below while it lasts. Decided because the product is new and unknown:
 > nobody would buy it yet, so it is positioned first and priced later. ONE switch:

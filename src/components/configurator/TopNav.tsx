@@ -237,9 +237,11 @@ interface TopNavProps {
   /** Components with no design system yet: there is nothing to browse around
    *  in, so the section tags fold into ☰ and the brand names the page. */
   navInMenu?: boolean
-  /** Signed in: the Plugin pill opens the workspace's Figma sync page instead
-   *  of the Community listing (the account already has the plugin flow). */
-  onOpenFigmaSync?: () => void
+  /** The Plugin link out to Figma Community. Off inside the Generator, where
+   *  the Figma door (the inspector footer, the Export pill) opens the sync
+   *  page and the plugin is its step 02 — a second Figma control in the bar
+   *  was one more door to the same place. */
+  pluginLink?: boolean
   /** The brand on screen's accent vars, for the guest Sign up button only. */
   signUpAccent?: CSSProperties
 }
@@ -621,7 +623,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true, railAligned = false,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, onOpenFigmaSync, signUpAccent,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, pluginLink = true, signUpAccent,
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
@@ -737,38 +739,26 @@ export default function TopNav({
           {themeControl}
           {/* The plugin lives on Figma Community, so this is a link OUT, not a
               workspace destination. The label drops before the glyph does. */}
-          {(() => {
+          {pluginLink && (
             // Icon-only: same 32×32 square as ☰ / Language / Appearance; label
             // widens the control from 1320px up.
-            const cls = [
-              GLOBAL_ICON_ACTION,
-              'min-[1320px]:inline-flex min-[1320px]:w-auto min-[1320px]:gap-1.5',
-              'min-[1320px]:border min-[1320px]:border-line min-[1320px]:px-2',
-              'text-caption font-medium hover:text-fg',
-            ].join(' ')
-            const inner = (
-              <>
-                <FigmaGlyph className="h-3 w-auto min-[1320px]:h-3.5" />
-                <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
-              </>
-            )
-            return onOpenFigmaSync ? (
-              <button type="button" onClick={onOpenFigmaSync} title={t('Bring to Figma')} aria-label={t('Plugin')} className={cls}>
-                {inner}
-              </button>
-            ) : (
-              <a
-                href={FIGMA_PLUGIN_COMMUNITY}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={t('Get the Escala Tokens plugin on Figma Community')}
-                aria-label={t('Plugin')}
-                className={cls}
-              >
-                {inner}
-              </a>
-            )
-          })()}
+            <a
+              href={FIGMA_PLUGIN_COMMUNITY}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t('Get the Escala Tokens plugin on Figma Community')}
+              aria-label={t('Plugin')}
+              className={[
+                GLOBAL_ICON_ACTION,
+                'min-[1320px]:inline-flex min-[1320px]:w-auto min-[1320px]:gap-1.5',
+                'min-[1320px]:border min-[1320px]:border-line min-[1320px]:px-2',
+                'text-caption font-medium hover:text-fg',
+              ].join(' ')}
+            >
+              <FigmaGlyph className="h-3 w-auto min-[1320px]:h-3.5" />
+              <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
+            </a>
+          )}
           <AccountControl onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} />
           {exportAction}
       </div>

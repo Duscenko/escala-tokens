@@ -465,7 +465,10 @@ export interface BrandExportActions {
   /** Every brand of the design system in one bundle. */
   all?: () => void
   figma?: (key: string) => void
+  /** The Code tab on CSS. */
   code?: (key: string) => void
+  /** The Code tab on Agent context. */
+  agent?: (key: string) => void
   github?: (key: string) => void
 }
 
@@ -483,19 +486,20 @@ function BrandExportMenu({ brandKey, brandName, brandCount, onExportBrand, actio
   actions?: BrandExportActions
 }) {
   const { t } = useI18n()
-  const { guest } = useAccess()
   const anchorRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
+  // The same three doors as the inspector footer and the top bar's Export
+  // pill — CSS · Figma · Agent — then "More formats…" (the wizard: W3C, Escala
+  // JSON, per-collection files, GitHub) and, with 2+ brands, the bundle.
+  // One vocabulary for every way out (design-plans/entry-flow-set-see-ship.md).
   const items: { key: string; label: string; hint: string; go: () => void }[] = [
-    { key: 'brand', label: t('Export {name}', { name: brandName }), hint: t('Pick what ships and download the files.'), go: () => onExportBrand(brandKey) },
+    ...(actions?.code ? [{ key: 'css', label: t('CSS'), hint: t('Copy or download variables.css'), go: () => actions.code?.(brandKey) }] : []),
+    ...(actions?.figma ? [{ key: 'figma', label: t('Figma'), hint: t('Copy the context and paste it in the plugin.'), go: () => actions.figma?.(brandKey) }] : []),
+    ...(actions?.agent ? [{ key: 'agent', label: t('Agent'), hint: t('One message your AI agent reads as the source of truth.'), go: () => actions.agent?.(brandKey) }] : []),
+    { key: 'brand', label: t('More formats…'), hint: t('W3C, Escala JSON, per-collection files, GitHub.'), go: () => onExportBrand(brandKey) },
     ...(actions?.all && brandCount > 1
       ? [{ key: 'all', label: t('Export all {n} brands', { n: brandCount }), hint: t('Every brand in one bundle, one theme column each.'), go: actions.all }]
       : []),
-    ...(actions?.figma ? [{ key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), go: () => actions.figma?.(brandKey) }] : []),
-    ...(actions?.code ? [{ key: 'code', label: t('Get code'), hint: t('Agent context, CSS and shadcn, ready to copy.'), go: () => actions.code?.(brandKey) }] : []),
-    // GitHub is an account feature (hidden for a guest). It ships the whole
-    // system, not this brand — the hint says so.
-    ...(actions?.github && !guest ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the whole design system to a repository.'), go: () => actions.github?.(brandKey) }] : []),
   ]
   return (
     <>

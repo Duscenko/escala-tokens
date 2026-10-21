@@ -92,7 +92,7 @@ import { useI18n } from '../../lib/i18n'
 import { PickerField } from '../ui/PickerField'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
-import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar } from './ThemeSaveBar'
+import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
@@ -1804,6 +1804,7 @@ export default function ThemeQuickSettingsRail({
   exploringRandom = false,
   onExploringRandomEnd,
   onUseTheme,
+  ship,
   onDiscardRandom,
 }: {
   previewTheme: string
@@ -1861,6 +1862,8 @@ export default function ThemeQuickSettingsRail({
   onExploringRandomEnd?: () => void
   /** Save bar's primary action: keep the theme and open Code. */
   onUseTheme?: () => void
+  /** The footer's three doors out (CSS · Figma · Agent); see `ThemeSaveBar`. */
+  ship?: ShipActions
   onDiscardRandom?: () => void
 }) {
   const { t } = useI18n()
@@ -3040,6 +3043,7 @@ export default function ThemeQuickSettingsRail({
           onRandom={exploringRandom || access.guest ? applyRandomTheme : undefined}
           onSaved={onExploringRandomEnd}
           onGetCode={onUseTheme}
+          ship={ship}
           themeKey={previewTheme}
           onDiscard={onDiscardRandom}
         />

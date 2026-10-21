@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
@@ -12,6 +12,74 @@ import { burstConfetti } from '../../lib/celebrate'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
 import { AccountCloudStatus } from './AccountCloudStatus'
+import { FigmaGlyph } from '../ui/icons'
+
+/**
+ * The three places a system ships to — the whole product's promise, in the
+ * footer of every editing inspector (design-plans/entry-flow-set-see-ship.md).
+ * One vocabulary everywhere: CSS · Figma · Agent. "Get code" is no longer a
+ * label: it opened the Code tab on Agent context, which is not the file most
+ * people came for.
+ */
+export interface ShipActions {
+  /** The Code tab on CSS (variables.css, shadcn beside it). */
+  css: () => void
+  /** The Figma page: copy the context, paste it in the plugin. */
+  figma: () => void
+  /** The Code tab on Agent context. */
+  agent: () => void
+}
+
+const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+function CodeGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+      <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
+      <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
+    </svg>
+  )
+}
+
+function AgentGlyph() {
+  // Same asset `FormatGlyph` paints on the Code rail (a mask, so it follows
+  // the button's ink). Not imported from there: that rail imports this file.
+  const mask = "url('/icons/settings/mcp.svg') center / contain no-repeat"
+  return <span aria-hidden className="h-3.5 w-3.5 flex-shrink-0 bg-current" style={{ WebkitMask: mask, mask }} />
+}
+
+/** Three equal doors. Each opens ONE page; none is the primary, because which
+ *  one you came for is yours to say. */
+export function ShipRow({ ship, leading }: {
+  ship: ShipActions
+  /** Controls that share the footer (Undo, the die, Cancel). They take a row
+   *  of their own above the doors, with the "Ship to" eyebrow at its end:
+   *  three labelled buttons beside two 36px squares do not fit a 288px rail. */
+  leading?: ReactNode
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-col gap-2">
+      {leading !== undefined && (
+        <div className="flex items-center gap-2">
+          {leading}
+          <span className="ml-auto text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Ship to')}</span>
+        </div>
+      )}
+      <div role="group" aria-label={t('Ship to')} className="flex items-center gap-1.5">
+        <button type="button" onClick={ship.css} className={SHIP_BUTTON} title={t('Copy or download variables.css')}>
+          <CodeGlyph /><span className="truncate">{t('CSS')}</span>
+        </button>
+        <button type="button" onClick={ship.figma} className={SHIP_BUTTON} title={t('Copy the context and paste it in the plugin.')}>
+          <FigmaGlyph size={13} /><span className="truncate">{t('Figma')}</span>
+        </button>
+        <button type="button" onClick={ship.agent} className={SHIP_BUTTON} title={t('One message your AI agent reads as the source of truth.')}>
+          <AgentGlyph /><span className="truncate">{t('Agent')}</span>
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /** Two crossing arrows — the shuffle mark every "surprise me" control uses. */
 function ShuffleGlyph() {
@@ -155,8 +223,12 @@ export default function ThemeSaveBar({
   onSaved,
   onDiscard,
   onGetCode,
+  ship,
   themeKey,
 }: {
+  /** The three doors out (CSS · Figma · Agent). When given they replace the
+   *  Get code primary: a kept brand (or a guest's) ships from here. */
+  ship?: ShipActions
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
   inactive?: boolean
@@ -201,6 +273,10 @@ export default function ThemeSaveBar({
   const draft = status === 'none' || unsavedBrands.has(themeKey ?? '') || exploringRandom
   const kept = !draft && !access.guest
   const use = (kept && Boolean(onGetCode) && !inactive && !justSaved) || guestGetCode
+  // The Ship row stands in for the Get code primary wherever that primary
+  // would have shown: the brand is kept (or a guest's), so the next move is
+  // the way out, and there are three of them, not one.
+  const shipOut = Boolean(ship) && use
   const label = use
     ? t('Get code')
     : justSaved || kept
@@ -213,6 +289,24 @@ export default function ThemeSaveBar({
   // saved and edited since — that would overwrite the kept design system, so
   // the door closes. It exists only on a draft (never saved: `none`).
   const showRandom = Boolean(onRandom) && !inactive && status === 'none' && (exploringRandom || guestPrimary)
+  const undoButton = (
+    <button
+      type="button"
+      onClick={() => undoEdit()}
+      disabled={inactive || !canUndo}
+      aria-label={undoLabel}
+      title={`${undoLabel} (⌘Z)`}
+      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M5.5 3.5 2.5 6.5l3 3" />
+        <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+      </svg>
+    </button>
+  )
+  const randomButton = showRandom && onRandom ? (
+    <RandomWholeThemeButton onClick={onRandom} label={t('Random theme')} />
+  ) : null
 
   return (
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
@@ -240,24 +334,12 @@ export default function ThemeSaveBar({
       {!access.guest && <AccountCloudStatus />}
       {/* Variables greys the row out; a guest there already has the notice's
           two actions, so a dead grey "Save with an account" would only repeat it. */}
-      {!(guestPrimary && inactive) && (
+      {!(guestPrimary && inactive) && (shipOut && ship ? (
+        <ShipRow ship={ship} leading={<>{undoButton}{randomButton}</>} />
+      ) : (
       <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => undoEdit()}
-        disabled={inactive || !canUndo}
-        aria-label={undoLabel}
-        title={`${undoLabel} (⌘Z)`}
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-      >
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M5.5 3.5 2.5 6.5l3 3" />
-          <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-        </svg>
-      </button>
-      {showRandom && onRandom ? (
-        <RandomWholeThemeButton onClick={onRandom} label={t('Random theme')} />
-      ) : null}
+      {undoButton}
+      {randomButton}
       <button
         ref={saveRef}
         type="button"
@@ -307,7 +389,7 @@ export default function ThemeSaveBar({
         <span className="truncate">{label}</span>
       </button>
       </div>
-      )}
+      ))}
     </div>
   )
 }
@@ -466,8 +548,10 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
  * same rule as `ThemeSaveBar`; signed in, it is Save brand.
  */
 export function CreateStudioFooter({
-  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode, onRandom,
+  error, committed, guest, firstSystem = false, onCancel, onCreate, onSave, onGetCode, onRandom, ship,
 }: {
+  /** The three doors out once the brand exists. Replaces the Get code button. */
+  ship?: ShipActions
   /** Roll a whole new theme on this brand (the save bar's die). Shown once
    *  the brand exists, beside the way out. */
   onRandom?: () => void
@@ -492,24 +576,43 @@ export function CreateStudioFooter({
       <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
     </svg>
   )
+  const cancelButton = onCancel ? (
+    <button
+      type="button"
+      onClick={onCancel}
+      className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      {t('Cancel')}
+    </button>
+  ) : null
+  const randomButton = committed && onRandom ? (
+    <RandomWholeThemeButton compact onClick={onRandom} label={t('Random theme')} />
+  ) : null
   return (
     <div className="flex flex-shrink-0 flex-col gap-2.5 border-t border-line bg-app px-3 py-3">
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && guest && <UnsavedNotice />}
       {committed && !guest && <AccountCloudStatus />}
+      {committed && ship ? (
+        // The way out is three doors of equal weight (CSS · Figma · Agent),
+        // the promise on the About hero made good here. Signed in, Save keeps
+        // the brand on the row above them.
+        guest ? (
+          <ShipRow ship={ship} leading={<>{cancelButton}{randomButton}</>} />
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              {cancelButton}
+              {randomButton}
+              <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>
+            </div>
+            <ShipRow ship={ship} />
+          </>
+        )
+      ) : (
       <div className="flex items-center gap-2">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-8 flex-shrink-0 rounded-lg px-1 text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            {t('Cancel')}
-          </button>
-        )}
-        {committed && onRandom && (
-          <RandomWholeThemeButton compact onClick={onRandom} label={t('Random theme')} />
-        )}
+        {cancelButton}
+        {randomButton}
         {!committed ? (
           <button type="button" onClick={onCreate} className={primary}>
             <span className="truncate">{firstSystem ? t('Continue') : t('Create brand')}</span>
@@ -525,6 +628,7 @@ export function CreateStudioFooter({
           </>
         )}
       </div>
+      )}
     </div>
   )
 }

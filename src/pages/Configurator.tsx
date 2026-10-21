@@ -23,6 +23,8 @@ import FoundationSwitchStrip from '../components/configurator/FoundationSwitchSt
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
+import type { CodeFormatKey } from '../components/configurator/ThemeCodeScopeRail'
+import type { ShipActions } from '../components/configurator/ThemeSaveBar'
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
@@ -467,16 +469,19 @@ function GoToGeneratorButton({ onClick }: { onClick: () => void }) {
 }
 
 function ExportPill({
-  onExport,
-  onSyncFigma,
-  onConnectGithub,
-  onExportCode,
+  onCss,
+  onFigma,
+  onAgent,
+  onMore,
 }: {
-  onExport: () => void
-  onSyncFigma: () => void
-  /** Absent for a visitor with no account: GitHub needs one. */
-  onConnectGithub?: () => void
-  onExportCode: () => void
+  /** The Code tab on CSS. */
+  onCss: () => void
+  /** The Figma page (copy the context, paste it in the plugin). */
+  onFigma: () => void
+  /** The Code tab on Agent context. */
+  onAgent: () => void
+  /** The wizard: W3C, Escala JSON, per-collection files, GitHub. */
+  onMore: () => void
 }) {
   const { t } = useI18n()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -518,15 +523,15 @@ function ExportPill({
     go()
   }
 
-  // Every destination is a row with a name and what it gives you, so the
-  // choice is made in the menu, not by guessing what "Export" will open.
+  // The same three doors as the inspector footer and Home's brand menu —
+  // CSS · Figma · Agent — then the wizard as "More formats…". One vocabulary
+  // for every way out (design-plans/entry-flow-set-see-ship.md). GitHub is a
+  // destination of the wizard and a row of Integrations, not a fifth door.
   const items: { key: string; label: string; hint: string; glyph: ReactNode; go: () => void }[] = [
-    { key: 'json', label: t('Export JSON'), hint: t('Pick what ships and download the files.'), glyph: <ExportIcon />, go: onExport },
-    { key: 'figma', label: t('Sync with Figma'), hint: t('Copy the context and paste it in the plugin.'), glyph: <FigmaGlyph size={14} />, go: onSyncFigma },
-    { key: 'code', label: t('Get code'), hint: t('Agent context, CSS and shadcn, ready to copy.'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onExportCode },
-    ...(onConnectGithub
-      ? [{ key: 'github', label: t('Connect GitHub'), hint: t('Push the whole design system to a repository.'), glyph: <GitHubGlyph size={14} />, go: onConnectGithub }]
-      : []),
+    { key: 'css', label: t('CSS'), hint: t('Copy or download variables.css'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onCss },
+    { key: 'figma', label: t('Figma'), hint: t('Copy the context and paste it in the plugin.'), glyph: <FigmaGlyph size={14} />, go: onFigma },
+    { key: 'agent', label: t('Agent'), hint: t('One message your AI agent reads as the source of truth.'), glyph: <ExportMenuGlyph src="/icons/settings/mcp.svg" />, go: onAgent },
+    { key: 'more', label: t('More formats…'), hint: t('W3C, Escala JSON, per-collection files, GitHub.'), glyph: <ExportIcon />, go: onMore },
   ]
   const itemClass = `flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`
 
@@ -1631,7 +1636,10 @@ export default function Configurator() {
       setDocsPanelOpen(false)
     }
   }
-  const openCodeForTheme = (key: string) => {
+  // Which file the Code tab opens on. The door decides — CSS for the CSS door,
+  // Agent context for the Agent door — and the page's own rail still switches.
+  const [codeFormat, setCodeFormat] = useState<CodeFormatKey>('css')
+  const openCodeForTheme = (key: string, format: CodeFormatKey = 'css') => {
     if (brandIsDraft(key)) {
       showToast(randomDraftHint, undefined, true)
       return
@@ -1641,8 +1649,17 @@ export default function Configurator() {
       if (reason) { showToast(reason, undefined, true); return }
     }
     changePreviewTheme(key)
+    setCodeFormat(format)
     setThemeWorkspaceTab('code')
   }
+  /** The three doors out for one brand — the inspector footer's Ship row and
+   *  the create studio's. Figma selects the brand as the sync target, like the
+   *  per-brand menu does. */
+  const shipFor = (key: string): ShipActions => ({
+    css: () => openCodeForTheme(key, 'css'),
+    figma: () => syncFigmaForTheme(key),
+    agent: () => openCodeForTheme(key, 'agent'),
+  })
   /**
    * Per-theme twin of the canvas header's Sync button. Same shape as
    * `openCodeForTheme` directly above, plus one thing that shape doesn't need:
@@ -1736,7 +1753,7 @@ export default function Configurator() {
     setDocsPanelOpen(false)
     setThemeWorkspaceTab('system')
   }
-  const openGetCodePage = () => {
+  const openGetCodePage = (format: CodeFormatKey = 'css') => {
     if (themeWorkspaceTab === 'preview') {
       const reason = themeTablesBlocked()
       if (reason) { showToast(reason, undefined, true); return }
@@ -1750,6 +1767,7 @@ export default function Configurator() {
     // so the switcher and the code agree.
     const resolved = resolveCodeTheme(myThemeKeys(themeOrder, themes), '', previewTheme)
     if (resolved && resolved !== previewTheme) changePreviewTheme(resolved)
+    setCodeFormat(format)
     setThemeWorkspaceTab('code')
   }
   const openLibraryPage = () => {
@@ -2484,7 +2502,9 @@ export default function Configurator() {
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
         navInMenu={componentsWithoutSystem}
-        onOpenFigmaSync={openFigmaSyncPage}
+        // Inside the Generator the Figma door is the inspector footer and the
+        // Export pill; the plugin is step 02 of the page they open.
+        pluginLink={tab !== 'foundations'}
         signUpAccent={canvasAccentStyle}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
@@ -2495,10 +2515,10 @@ export default function Configurator() {
         // so the bar's Export pill would be a second door to the same wizard.
         ) : ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
           <ExportPill
-            onExport={openSectionExport}
-            onSyncFigma={openFigmaSyncPage}
-            onConnectGithub={access.guest ? undefined : openGithubPage}
-            onExportCode={openGetCodePage}
+            onCss={() => openGetCodePage('css')}
+            onFigma={openFigmaSyncPage}
+            onAgent={() => openGetCodePage('agent')}
+            onMore={openSectionExport}
           />
         ) : undefined}
         brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) + (navRailVisible ? FOUNDATION_ICON_RAIL_WIDTH : 0) : null}
@@ -2689,6 +2709,7 @@ export default function Configurator() {
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
                     onGetCode={() => openCodeForTheme(previewTheme)}
+                    ship={shipFor(previewTheme)}
                     onCreateTheme={openCreateTheme}
                     exploringRandom={exploringRandomKey === previewTheme}
                     onExploringRandomEnd={() => { setExploringRandomKey(null); setRandomDraftKey(null) }}
@@ -2783,6 +2804,8 @@ export default function Configurator() {
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                     onGuestBrandCreated={announceGuestBrand}
                     onGetCode={openCodeForTheme}
+                    onGetAgentContext={(key) => openCodeForTheme(key, 'agent')}
+                    onShip={shipFor}
                     // Home's table: one brand, or all of them, without leaving it.
                     onExportBrand={(key) => {
                       if (brandIsDraft(key)) { showToast(randomDraftHint, undefined, true); return }
@@ -2831,6 +2854,8 @@ export default function Configurator() {
                   <ThemeCodeFormat
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
+                    format={codeFormat}
+                    onFormatChange={setCodeFormat}
                     // The theme switcher in the tab bar IS this page's picker.
                     scope={previewTheme}
                     onScopeChange={(next) => { if (next) changePreviewTheme(next) }}

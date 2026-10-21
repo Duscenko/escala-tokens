@@ -26,14 +26,15 @@ export { resolveCodeTheme }
 type Format = CodeFormatKey
 
 const FORMATS: { key: Format; label: string; file: string }[] = [
-  // Agent context leads and is the default: this page is where a theme is
-  // handed to an agent, and the files below are what that agent reads.
-  { key: 'agent', label: 'Agent context', file: 'references/*.md' },
+  // CSS leads and is the default: "Get code" used to open on Agent context,
+  // which is the Agent door's job (design-plans/entry-flow-set-see-ship.md).
+  // The shell picks the format for the door that was pressed (`format`).
   { key: 'css', label: 'CSS', file: 'variables.css' },
   // shadcn/ui's own variables, each answered by a Categorical role (E4). An
   // output format, not an architecture: a stock shadcn project pastes it over
   // its globals.css. Components come from the registry (`/r/<name>.json`).
   { key: 'shadcn', label: 'shadcn', file: 'globals.css' },
+  { key: 'agent', label: 'Agent context', file: 'references/*.md' },
   // README.md used to be a third format here. It said what Agent context says
   // in a different shape, and two markdown tabs read as "which one do I
   // paste?". It still ships where files ship: Export and GitHub.
@@ -313,7 +314,13 @@ export default function ThemeCodeFormat({
   showBreadcrumb = false,
   showScopeRail = true,
   onEditTheme,
+  format: formatProp,
+  onFormatChange,
 }: {
+  /** The format the door that opened this page asked for (CSS or Agent).
+   *  Controlled when given; the rail still switches, through `onFormatChange`. */
+  format?: Format
+  onFormatChange?: (format: Format) => void
   previewTheme: string
   /** Free keeps this appearance. Pro still ships both. */
   previewAppearance?: ThemeAppearance
@@ -332,7 +339,9 @@ export default function ThemeCodeFormat({
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
-  const [format, setFormat] = useState<Format>('agent')
+  const [localFormat, setLocalFormat] = useState<Format>(formatProp ?? 'css')
+  const format = formatProp ?? localFormat
+  const setFormat = (next: Format) => { setLocalFormat(next); onFormatChange?.(next) }
   const [expanded, setExpanded] = useState(false)
   const free = useFreeTier()
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]

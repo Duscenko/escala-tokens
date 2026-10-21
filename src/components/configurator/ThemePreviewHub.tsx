@@ -32,6 +32,7 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
+import type { ShipActions } from './ThemeSaveBar'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
@@ -117,8 +118,13 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  */
 const HEADER_CONTROL_DISABLED = 'opacity-40 cursor-not-allowed'
 
-export function InspectorToggle({ active, onChange, accent, ink, disabled = false, disabledTitle }: {
+export function InspectorToggle({ active, pinned = false, onChange, accent, ink, disabled = false, disabledTitle }: {
   active: boolean
+  /** Something is docked in the inspector. Only then does the control read
+   *  "Exit inspector": armed with nothing pinned (the first screen — the mode
+   *  starts on) it says what it is, not how to leave something you have not
+   *  entered. */
+  pinned?: boolean
   onChange: (v: boolean) => void
   /** The PREVIEWED theme's brand solid + its solved label ink. This is the one
    *  chrome control that deliberately follows the theme, not Escala's violet:
@@ -133,7 +139,7 @@ export function InspectorToggle({ active, onChange, accent, ink, disabled = fals
   // "Exit inspector") and matches the visible text (WCAG 2.5.3). Pairing a
   // changing name with `aria-pressed` made a screen reader announce "Exit
   // inspector, toggle button, pressed" — two answers to one question.
-  const label = active ? t('Exit inspector') : t('Inspector')
+  const label = active && pinned ? t('Exit inspector') : t('Inspector')
   const hint = disabled && disabledTitle
     ? disabledTitle
     : active
@@ -419,13 +425,15 @@ export default function ThemePreviewHub({
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
-  githubPushState, onGithubPushStateChange, docsExits, onGetCode, onCreateTheme,
+  githubPushState, onGithubPushStateChange, docsExits, onGetCode, ship, onCreateTheme,
   exploringRandom = false, onExploringRandomEnd, randomDraft = false, onDiscardRandom, onBackHome, onBackToStyles,
 }: {
   docsOpen: boolean
   onDocsOpenChange: (open: boolean) => void
   /** Opens the Code tab on this theme — the header's Get code door. */
   onGetCode?: () => void
+  /** The inspector footer's three doors out (CSS · Figma · Agent). */
+  ship?: ShipActions
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
   previewTheme: string
@@ -676,6 +684,7 @@ export default function ThemePreviewHub({
           exploringRandom={exploringRandom}
           onExploringRandomEnd={onExploringRandomEnd}
           onUseTheme={onGetCode}
+          ship={ship}
           onDiscardRandom={onDiscardRandom}
         />
       )}
@@ -748,6 +757,14 @@ export default function ThemePreviewHub({
                     {!needsMyTheme && (
                       <BoardViewSwitch value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
                     )}
+                    {/* A first-run board is a set of mock screens, one of them
+                        a login card. Without this line it read as the
+                        product's own wall (design-plans/entry-flow-set-see-ship.md). */}
+                    {!needsMyTheme && !stylePreview && guest && (
+                      <span className="hidden min-w-0 truncate text-caption text-fg-faint min-[1280px]:inline">
+                        {t('Sample screens drawn from your tokens')}
+                      </span>
+                    )}
                     {(needsMyTheme || stylePreview) && (
                       <span className={`min-w-0 ${needsMyTheme ? '-ml-2' : ''}`}>
                         <ThemeNameField
@@ -769,6 +786,7 @@ export default function ThemePreviewHub({
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
                     <InspectorToggle
                       active={inspecting}
+                      pinned={Boolean(inspectedSelection)}
                       onChange={setInspecting}
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
