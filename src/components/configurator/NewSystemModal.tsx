@@ -119,7 +119,7 @@ export default function NewSystemModal({
           <button
             onClick={create}
             disabled={!trimmed || taken}
-            className="px-4 py-2 rounded-lg text-xs font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-cta text-cta-ink transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Create design system
           </button>

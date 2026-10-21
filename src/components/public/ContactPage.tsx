@@ -309,7 +309,7 @@ export function ContactPage() {
                     <button
                       type="submit"
                       disabled={status.kind === 'sending'}
-                      className="flex-1 sm:flex-none min-h-11 md:min-h-0 px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+                      className="flex-1 sm:flex-none min-h-11 md:min-h-0 px-5 py-2 rounded-lg text-ui font-semibold bg-cta text-cta-ink disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                     >
                       {status.kind === 'sending' ? c.sending : c.send}
                     </button>

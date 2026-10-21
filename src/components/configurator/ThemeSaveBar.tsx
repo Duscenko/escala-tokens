@@ -398,7 +398,7 @@ export default function ThemeSaveBar({
         className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption font-semibold transition-[opacity,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           justSaved ? 'shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-solid)_35%,transparent)]' : ''
         } ${
-          inactive ? 'cursor-not-allowed bg-chip-rest text-fg-faint' : 'bg-accent-solid text-accent-ink disabled:opacity-50'
+          inactive ? 'cursor-not-allowed bg-chip-rest text-fg-faint' : 'bg-cta text-cta-ink disabled:opacity-50'
         }`}
       >
         {/* Saved → a check beside the label, so the dimmed button reads as
@@ -591,7 +591,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
           ref={finishRef}
           type="button"
           onClick={() => { if (advanceThemeSetup(themeKey)) { celebrate(); done() } }}
-          className="flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-cta text-caption font-semibold text-cta-ink transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <span className="truncate">{label}</span>
           {!last && (
@@ -627,7 +627,7 @@ export function CreateStudioFooter({
   onGetCode: () => void
 }) {
   const { t } = useI18n()
-  const primary = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const primary = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
   const secondary = 'h-8 flex-shrink-0 rounded-lg border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
   const codeGlyph = (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
@@ -746,7 +746,7 @@ export function CreateStudioBar({
         <button
           type="button"
           onClick={onContinue}
-          className="flex h-8 min-w-[7rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-8 min-w-[7rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <span className="truncate">{continueLabel}</span>
           {!last && (

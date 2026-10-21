@@ -143,6 +143,11 @@
   --color-accent-ink: var(--accent-ink);
   /* High-emphasis neutral action. Kept independent from chrome appearance so
      Export remains a near-white payoff button with dark ink in both modes. */
+  /* The chrome's primary action — the Sign up / Export look: white on the
+     dark chrome, near-black on the light one. Every labelled primary button
+     uses it; accent stays for SELECTION (segments, steps, active tiles). */
+  --color-cta: var(--rainbow-fill-a);
+  --color-cta-ink: var(--rainbow-ink);
   --color-inverse-action: var(--inverse-action);
   --color-inverse-action-hover: var(--inverse-action-hover);
   --color-inverse-action-ink: var(--inverse-action-ink);

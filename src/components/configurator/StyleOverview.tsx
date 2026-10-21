@@ -89,7 +89,7 @@ export function StyleOverview({
           <button
             type="button"
             onClick={onEdit}
-            className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
+            className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 ${FOCUS}`}
           >
             {owned ? (
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

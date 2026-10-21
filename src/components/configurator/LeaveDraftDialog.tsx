@@ -54,7 +54,7 @@ export default function LeaveDraftDialog({
             ref={stayRef}
             type="button"
             onClick={onStay}
-            className="h-9 rounded-xl bg-accent-solid px-4 text-body font-semibold text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            className="h-9 rounded-xl bg-cta px-4 text-body font-semibold text-cta-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
             {t('Keep editing')}
           </button>

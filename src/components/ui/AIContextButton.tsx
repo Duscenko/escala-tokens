@@ -168,7 +168,7 @@ function ContextPopoverBody({
         <button
           type="button"
           onClick={onCopy}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Copy')}
         </button>

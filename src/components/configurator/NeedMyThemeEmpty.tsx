@@ -28,7 +28,7 @@ export default function NeedMyThemeEmpty({
               <button
                 type="button"
                 onClick={onSeePreview}
-                className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                className="h-8 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
               >
                 {t('See it in Brand')}
               </button>

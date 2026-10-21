@@ -38,7 +38,7 @@ export function RegisterToContinueDialog({
         <button
           type="button"
           onClick={() => onContinue('signup')}
-          className="h-8 w-full rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="h-8 w-full rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {title}
         </button>

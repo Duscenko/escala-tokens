@@ -1024,14 +1024,14 @@ export default function ExportWizard({
             <button
               onClick={() => canNext && setStep((s) => (s + 1) as Step)}
               disabled={!canNext}
-              className="px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity"
+              className="px-5 py-2 rounded-lg text-ui font-semibold bg-cta text-cta-ink disabled:opacity-40 transition-opacity"
             >
               Next
             </button>
           ) : (
             <button
               onClick={runExport}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-ui font-semibold bg-cta text-cta-ink transition-opacity hover:opacity-90"
             >
               {isGitHubDestination ? <GitHubGlyph size={13} /> : (
                 <svg width="13" height="13" viewBox="0 0 11 11" fill="none" aria-hidden>

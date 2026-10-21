@@ -16,7 +16,7 @@ export const BTN =
   `inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-caption font-medium text-fg transition-colors hover:border-line-strong disabled:opacity-50 ${FOCUS}`
 
 export const BTN_PRIMARY =
-  `inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50 ${FOCUS}`
+  `inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-cta px-3.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 disabled:opacity-50 ${FOCUS}`
 
 export const TEXT_LINK =
   `rounded-sm text-caption font-medium text-accent-ui hover:underline ${FOCUS}`

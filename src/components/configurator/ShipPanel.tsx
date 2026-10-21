@@ -173,7 +173,7 @@ function ShipActions({ text, fileName, mime, copyLabel, copiedToast, disabled = 
         type="button"
         onClick={() => void copy()}
         disabled={disabled}
-        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
+        className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`}
       >
         <CopyIcon done={copied} />
         <span className="truncate">{copied ? t('Copied') : copyLabel}</span>

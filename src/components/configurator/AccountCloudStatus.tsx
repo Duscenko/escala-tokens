@@ -118,7 +118,7 @@ export function AccountCloudConflict() {
                   type="button"
                   autoFocus
                   onClick={() => { void resolveAccountCloudConflict('cloud') }}
-                  className={`${button} bg-accent-solid text-accent-ink hover:bg-accent-solid/90`}
+                  className={`${button} bg-cta text-cta-ink hover:opacity-90`}
                 >
                   {t("Use your account's")}
                 </button>

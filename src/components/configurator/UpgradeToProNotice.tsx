@@ -25,7 +25,7 @@ export function UpgradeToProNotice({ detail }: { detail?: string | null }) {
     <div className="flex flex-col items-stretch gap-2">
       <a
         href={PRICING_PATH}
-        className={`flex h-10 items-center justify-center gap-2 rounded-full bg-accent-solid px-4 text-ui font-medium text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
+        className={`flex h-10 items-center justify-center gap-2 rounded-full bg-cta px-4 text-ui font-medium text-cta-ink transition-opacity hover:opacity-90 ${FOCUS}`}
       >
         {t('Upgrade to Pro')}
       </a>

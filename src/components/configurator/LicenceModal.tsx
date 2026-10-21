@@ -175,7 +175,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
               ref={doneRef}
               type="button"
               onClick={onClose}
-              className={`ml-auto h-8 flex-shrink-0 rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
+              className={`ml-auto h-8 flex-shrink-0 rounded-lg bg-cta px-3.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 ${FOCUS}`}
             >
               {t('Done')}
             </button>
@@ -206,7 +206,7 @@ export function LicenceModal({ onClose }: { onClose: () => void }) {
               <button
                 type="submit"
                 disabled={!value.trim() || busy}
-                className={`h-10 flex-shrink-0 rounded-lg bg-accent-solid px-4 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
+                className={`h-10 flex-shrink-0 rounded-lg bg-cta px-4 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
               >
                 {busy ? t('Checking…') : t('Activate')}
               </button>

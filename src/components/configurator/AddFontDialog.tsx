@@ -255,7 +255,7 @@ export function AddFontDialog({ open, onClose, onAdded }: {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink disabled:opacity-40 ${FOCUS}`}
+            className={`h-8 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink disabled:opacity-40 ${FOCUS}`}
           >
             {check.state === 'checking' ? t('Checking…') : t('Add font')}
           </button>

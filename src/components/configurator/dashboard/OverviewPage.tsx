@@ -205,7 +205,7 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
         aria-haspopup="menu"
         aria-expanded={open}
         className={variant === 'button'
-          ? 'inline-flex h-8 items-center gap-2 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+          ? 'inline-flex h-8 items-center gap-2 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
           : 'grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'}
       >
         <PlusGlyph size={variant === 'button' ? 14 : 18} />
@@ -260,7 +260,7 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
                 {error ?? (read && !read.ok ? t(read.error) : read?.ok ? t('Ready: “{name}”. It is added as a new brand.', { name: read.name }) : '')}
               </p>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={add} disabled={!read?.ok} className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+                <button type="button" onClick={add} disabled={!read?.ok} className="h-8 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
                   {t('Add as brand')}
                 </button>
                 <button type="button" onClick={() => { setMode(null); setText(''); setError(null) }} className="h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
