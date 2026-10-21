@@ -331,7 +331,10 @@ export default function OverviewPage({
   const chrome = useTheme()
   const { store, roles, contrast } = dash
   const brand = roles.brand
-  const savedBrands = useSavedBrandKeys()
+  // A guest's table is empty: the brand on their Board lives in this browser
+  // and is not saved anywhere yet. The + below asks them to sign in to save it.
+  const keptBrands = useSavedBrandKeys()
+  const savedBrands = useMemo(() => (guest ? [] : keptBrands), [guest, keptBrands])
   const failing = savedBrands.length === 0 ? 0 : contrast.failing.length
 
   const cards = useMemo(() => savedBrands.map((key) => {
@@ -506,19 +509,30 @@ export default function OverviewPage({
             className="flex min-w-[16rem] flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center"
             style={{ backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.4px)', backgroundSize: '18px 18px' }}
           >
-            {onAddBrand && <AddBrandMenu onBlank={onAddBrand} onImport={onImportBrand} blocked={addBrandBlocked} />}
-            <p className="text-ui font-semibold text-fg">{t('Add brand')}</p>
             {guest ? (
-              <button
-                type="button"
-                onClick={() => goToLogin('save-library')}
-                className={`${TEXT_LINK} text-caption`}
-              >
-                {t('Sign in to save these brands')}
-              </button>
-            ) : maxBrands ? (
-              <p className="text-caption tabular-nums text-fg-faint">{t('{n} of {max} brands used', { n: cards.length, max: maxBrands })}</p>
-            ) : null}
+              // A guest's one action here: sign in, and the brand on their
+              // Board is saved into this table.
+              <>
+                <button
+                  type="button"
+                  onClick={() => goToLogin('save-library')}
+                  aria-label={t('Sign in to save your brand')}
+                  className="grid h-12 w-12 place-items-center rounded-full border border-line-strong bg-app text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                >
+                  <PlusGlyph />
+                </button>
+                <p className="text-ui font-semibold text-fg">{t('Sign in to save your brand')}</p>
+                <p className="max-w-[16rem] text-caption text-fg-faint">{t('Your design system lives in this browser until you sign in.')}</p>
+              </>
+            ) : (
+              <>
+                {onAddBrand && <AddBrandMenu onBlank={onAddBrand} onImport={onImportBrand} blocked={addBrandBlocked} />}
+                <p className="text-ui font-semibold text-fg">{t('Add brand')}</p>
+                {maxBrands ? (
+                  <p className="text-caption tabular-nums text-fg-faint">{t('{n} of {max} brands used', { n: cards.length, max: maxBrands })}</p>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
         {footer}

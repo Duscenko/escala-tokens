@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, 
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
-import { useTheme, setTheme } from '../lib/theme'
+import { getTheme, useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { PLATFORM_ACCENT } from '../lib/chromeTheme'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
@@ -42,7 +42,8 @@ import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../li
 import { startRandomTheme } from '../lib/randomTheme'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
-import { openStyleForEditing } from '../lib/adoptPreset'
+import { adoptPreset, openStyleForEditing } from '../lib/adoptPreset'
+import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { SYSTEM_STYLES_VISIBLE } from '../lib/featureFlags'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
@@ -52,7 +53,7 @@ import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { FooterLinks } from '../components/configurator/FooterLinks'
-import { guestEntered, markGuestEntered, markOnboarded } from '../lib/onboarding'
+import { markGuestEntered, markOnboarded } from '../lib/onboarding'
 import { replaceBrandsOnNextMint } from '../lib/themeMint'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
@@ -614,6 +615,31 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
   )
 }
 
+/** The style a visitor's first brand is made from. */
+const GUEST_START_STYLE = 'core-minimal'
+
+/**
+ * A visitor with no account gets the SAME Board a signed-in person does — there
+ * is no separate first-run studio. With no brand of their own yet, Core is made
+ * for them, KEPT (not a draft: Variables, Code and the Ship doors all open) and
+ * named after the design system. It lives in this browser; Home shows nothing
+ * in the table until they sign in to save it. Returns the brand to put on screen.
+ */
+function ensureGuestBrand(): string | null {
+  const live = useDesignStore.getState()
+  const mine = myThemeKeys(live.themeOrder, live.themes)
+  if (mine.length) return mine[0]
+  const preset = THEME_STYLE_PRESETS.find((p) => p.id === GUEST_START_STYLE) ?? THEME_STYLE_PRESETS[0]
+  if (!preset) return null
+  const res = adoptPreset(preset, getTheme() === 'dark' ? 'dark' : 'light', { track: false })
+  if ('error' in res) return null
+  const label = live.projectName.trim()
+  if (label) useDesignStore.getState().setThemeLabel(res.key, label)
+  finishThemeSetup(res.key)
+  forgetUnsavedBrand(res.key)
+  return res.key
+}
+
 export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   const { t } = useI18n()
@@ -702,47 +728,28 @@ export default function Configurator() {
   const [activeFoundation, setActiveFoundation] = useState<string>(() => incomingPlace?.foundation ?? 'color')
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
-  // A visitor with no account and no theme of their own lands in the CREATE
-  // STUDIO (the six-row accordion on a brand minted as the studio opens), not
-  // on a try-on card. That brand is a DRAFT (`markBrandUnsaved`) until Save or
-  // a Ship door keeps it, so a look nobody chose is dropped, not kept.
-  const [guestFirstRun] = useState(() => {
-    if (!accountsEnabled || hasStoredSession()) return false
-    // No deep link: About is on screen, the studio opens from its CTA.
-    if (!incomingPlace) return false
-    // A signed-out `library` link is the guest's first screen, not an empty Home.
-    // The workspace URL is rewritten as you move (`?section=variables`,
-    // `code`…), so a refresh always carries one. Inside the Generator none of
-    // them is a reason to skip the studio: with no brand there is nothing for
-    // those sections to show. Only About / Components / Docs deep links stay.
-    if (incomingPlace && incomingPlace.tab !== 'foundations') return false
-    // First entry of this tab session always opens the studio, even when the
-    // browser still holds a brand from an earlier visit (the steps are the
-    // front door, not the board). A refresh inside the session falls through
-    // to the rule below, so a guest mid-edit is not sent back to the studio.
-    if (!guestEntered()) return true
-    // A mint from studio step 1 is still a draft. Counting it as a system
-    // opened Theme preview after refresh and looked like work nobody saved.
-    return savedBrandKeysFrom(useDesignStore.getState()).length === 0
-  })
-  // Brands this browser held when the guest studio opened. They do not count as
-  // "the guest saved something" (that ends the studio) and the first brand the
-  // studio mints replaces them.
+  // A visitor with no account entering the Generator gets the SAME Board a
+  // signed-in person does: their own brand, or Core made for them
+  // (`ensureGuestBrand`, run by the guest effect below once the store has
+  // hydrated). There is no separate first-run studio any more.
+  const [guestFirstRun] = useState(() =>
+    accountsEnabled && !hasStoredSession() && incomingPlace?.tab === 'foundations')
+  // Brands this browser held before. Nothing replaces them now: the guest's own
+  // brand is the one on the board.
   const guestBaselineRef = useRef<Set<string> | null>(null)
   if (guestBaselineRef.current === null) {
-    guestBaselineRef.current = new Set(guestFirstRun ? savedBrandKeysFrom(useDesignStore.getState()) : [])
-    replaceBrandsOnNextMint([...guestBaselineRef.current])
+    guestBaselineRef.current = new Set()
+    replaceBrandsOnNextMint([])
   }
-  /** The studio is open for someone with no session. Home's file list stays
-   *  an account surface; only its create studio is shown. */
-  const [guestStudio, setGuestStudio] = useState(guestFirstRun)
+  /** The guest create studio. Retired as a first screen: it stays false, and
+   *  every door that opened it lands on the Board (`openGuestStudio`). */
+  const [guestStudio, setGuestStudio] = useState(false)
   // Home's create studio is open (it takes the inspector; the file list yields).
-  const [homeCreating, setHomeCreating] = useState(guestFirstRun)
+  const [homeCreating, setHomeCreating] = useState(false)
   /** Bumped when Home is pressed while the create studio is open: remounts
    *  the Home page so the studio closes. */
   const [homeResetTick, setHomeResetTick] = useState(0)
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
-    if (guestFirstRun) return 'library'
     const w = incomingPlace?.workspace
     // The brand's Docs moved into the System tab: an old Docs link opens there.
     if (w === 'documentation' || (incomingPlace?.tab === 'foundations' && incomingPlace.surface === 'documentation')) return 'system'
@@ -1344,8 +1351,6 @@ export default function Configurator() {
     return () => window.clearTimeout(timer)
   }, [authUser?.id])
   const leaveHomeForGuest = useCallback(() => {
-    const live = useDesignStore.getState()
-    const studio = accountsEnabled && savedBrandKeysFrom(live).length === 0
     setThemeEditor(false)
     setCreatePending(false)
     setExploringRandomKey(null)
@@ -1355,13 +1360,12 @@ export default function Configurator() {
     setDocsPanelOpen(false)
     setTab('foundations')
     setThemeHubSurface('artefacts')
-    // No theme left: the same first screen a new visitor gets, the studio.
-    // A guest who already made a brand keeps seeing THAT brand: the Cupertino
-    // try-on here covered their own work (reached via a stale stored session).
+    // The Board, like a new visitor: their brand, or Core made for them by
+    // the guest effect when there is none.
     setStylePreview(null)
-    setGuestStudio(studio)
-    setHomeCreating(studio)
-    setThemeWorkspaceTab(studio ? 'library' : 'preview')
+    setGuestStudio(false)
+    setHomeCreating(false)
+    setThemeWorkspaceTab('preview')
   }, [])
   // Sign-out already blanked the store. Home is that file list, so it leaves
   // with the session. The board is the same first screen a visitor sees.
@@ -1374,37 +1378,28 @@ export default function Configurator() {
     if (themeWorkspaceTab !== 'library' || guestStudio) return
     leaveHomeForGuest()
   }, [accountsEnabled, access.loading, authUser, themeWorkspaceTab, guestStudio, leaveHomeForGuest])
-  // A visitor with no account and no brand never sees an empty board: the
-  // studio is the one first screen (first visit, refresh, or after deleting
-  // the last brand). "Add a brand to My brands" asked them to decide before
-  // they had seen anything.
+  // A visitor with no account never sees an empty board, and never a studio:
+  // with no brand (first visit, or after deleting the last one) Core is made
+  // for them and put on the Board — the page a signed-in person uses.
   useEffect(() => {
     if (!accountsEnabled || access.loading || authUser || hasStoredSession()) return
     if (tab !== 'foundations' || exportMode) return
     if (!useDesignStore.persist.hasHydrated()) return
-    if (savedBrandKeys.length > 0) {
-      if (guestStudio && freshSavedCount > 0) {
-        setGuestStudio(false)
-        setHomeCreating(false)
-        // Finish already opened the brand. Only a studio that is still the
-        // page on screen needs a destination; overwriting preview sent the
-        // guest somewhere else the moment the brand counted as kept.
-        if (themeWorkspaceTab === 'library') {
-          setThemeWorkspaceTab(
-            incomingPlace?.workspace === 'library' || incomingPlace?.workspace === 'documentation'
-              ? 'preview'
-              : (incomingPlace?.workspace ?? 'preview'),
-          )
-        }
+    const live = useDesignStore.getState()
+    const mine = myThemeKeys(live.themeOrder, live.themes)
+    if (mine.length > 0) {
+      // A draft left by the retired first-run studio would keep Variables and
+      // Code shut. Nothing on a guest's board is a draft any more: keep it.
+      if (savedBrandKeys.length === 0 && !randomDraftKey) {
+        mine.forEach((key) => { finishThemeSetup(key); forgetUnsavedBrand(key) })
       }
+      if (themeWorkspaceTab === 'library') setThemeWorkspaceTab('preview')
       return
     }
-    if (guestStudio) return
-    // A brand is already on the board (mid-setup, or one Finish just kept).
-    // Reopening the studio here is the jump back to Colour.
-    if (myThemeKeys(themeOrder, themes).length > 0) return
-    leaveHomeForGuest()
-  }, [access.loading, authUser, tab, guestStudio, exportMode, themeOrder, themes, themeWorkspaceTab, savedBrandKeys.length, freshSavedCount, leaveHomeForGuest, incomingPlace])
+    const key = ensureGuestBrand()
+    if (key) changePreviewTheme(key)
+    setThemeWorkspaceTab((current) => (current === 'library' ? 'preview' : current))
+  }, [access.loading, authUser, tab, exportMode, themeOrder, themes, themeWorkspaceTab, savedBrandKeys.length, randomDraftKey])
   // Back from `/login` with a session: finish what was started while signed
   // out — once (`takeLoginIntent` forgets the return).
   useEffect(() => {
@@ -1821,15 +1816,21 @@ export default function Configurator() {
     }
     setThemeWorkspaceTab('library')
   }
+  /** Every guest "start" door (About's Start building, Variables in the top
+   *  bar, Blank with no brand): the Board, with their brand or Core. The name
+   *  is kept for its callers; there is no guest studio any more. */
   const openGuestStudio = () => {
     leaveExportWizard()
     commitVisit()
     setExportMode(null)
     setTab('foundations')
     setStylePreview(null)
-    setGuestStudio(true)
-    setHomeCreating(true)
-    setThemeWorkspaceTab('library')
+    setGuestStudio(false)
+    setHomeCreating(false)
+    const key = ensureGuestBrand()
+    if (key) changePreviewTheme(key)
+    setThemeHubSurface('artefacts')
+    setThemeWorkspaceTab('preview')
   }
   // An empty workspace never shows a blank board. With no brand and no style
   // tried on, Brand / Variables / Code would only say "Add a brand to My
@@ -1850,6 +1851,9 @@ export default function Configurator() {
   useEffect(() => {
     if (!workspaceIsEmpty) { emptyStartedRef.current = false; return }
     if (emptyStartedRef.current || access.loading || guestStudio) return
+    // A guest's empty workspace is the guest effect's: it makes Core. Running
+    // Blank here too raced it, saw the new brand and sent them to sign up.
+    if (accountsEnabled && !sessionAllowsHome) return
     if (!useDesignStore.persist.hasHydrated()) return
     if (importOpen || newSystemOpen || themeEditor || createPending || upgradeOpen || registerOpen) return
     emptyStartedRef.current = true
@@ -2513,13 +2517,9 @@ export default function Configurator() {
         // The system tab IS Home now (the top-bar Home was folded into it, see
         // design-plans/home-into-system.md); the brand board reads "Board".
         // Keys and URLs stay `system` / `overview`.
-        // A guest with one brand has no use for the table of brands and
-        // systems: Home appears with a second brand or an account
-        // (design-plans/entry-flow-set-see-ship.md, phase 3). It stays while
-        // it is the page on screen, so a deep link never loses its tile.
-        ...(access.guest && myThemeKeys(themeOrder, themes).length <= 1 && workspaceNav !== 'system'
-          ? []
-          : [{ key: 'system' as const, label: t('Home') }]),
+        // Home is there for everyone. A guest's table is empty — nothing is
+        // saved to an account yet — and its + asks them to sign in to save.
+        { key: 'system' as const, label: t('Home') },
         { key: 'overview', label: t('Board') },
         { key: 'variables', label: t('Variables') },
         { key: 'code', label: t('Code') },
