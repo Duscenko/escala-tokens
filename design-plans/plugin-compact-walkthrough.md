@@ -217,3 +217,21 @@ Phase 0 done the same day (plugin 0.17.3).
   all render with no page-level horizontal scroll. The wide view is unchanged.
 - Left for later: the System Matrix still scrolls sideways inside its own box
   (the Add-brand column); one brand at a time is part of phase 3's list work.
+
+## 7. Phase 2 — done (plugin 0.19.0)
+
+- **Tour**: 5 cards (Welcome · Start from a few choices · Every token is a reference ·
+  Themes and viewports · Build it, then ship it), counter, dots, Previous / Next →
+  Get started, Read more → `/about`, `/docs`, `/docs/color`, `/docs/spacing`, `/docs/figma`.
+  Esc, ←/→, focus kept inside the card.
+- **Shown once per person** (`tourSeen` in the user-scoped settings). Someone who
+  already used the plugin (a stored settings blob) is not interrupted — they are
+  marked as seen. The **"?"** in the top bar reopens it at any time.
+- **Pictures**: `npm run plugin:tour-shots` (also runs after `about:shots`) crops
+  the About captures to 16:10 → `public/plugin-tour/*.webp` (9–17 KB). The plugin
+  loads them from `https://www.escalatokens.com/plugin-tour/`, so **they appear
+  only once the site is deployed**; until then (or offline) a card shows without
+  its picture.
+- **Welcome screen**: not a new screen. The existing "Set up your design system"
+  start already answers "what now" (paste context · Start from blank · Import JSON),
+  and the tour sits in front of it on the first open.

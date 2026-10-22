@@ -6,7 +6,8 @@
   "author": "Cesar Durango (Duscenko)",
   "type": "module",
   "scripts": {
-    "about:shots": "node scripts/about-shots.mjs",
+    "about:shots": "node scripts/about-shots.mjs && node scripts/plugin-tour-shots.mjs",
+    "plugin:tour-shots": "node scripts/plugin-tour-shots.mjs",
     "dev": "vite",
     "build": "tsc -b && tsc -p api/tsconfig.json --noEmit && vite build",
     "lint": "eslint .",
