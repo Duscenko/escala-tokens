@@ -258,8 +258,9 @@ function CreateBoard({
         lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />}
         trailing={(
           <div className="flex flex-shrink-0 items-center gap-2">
-            <BoardHistoryControls onRandom={onRandom} />
-            <InspectorToggle active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
+            <BoardHistoryControls onRandom={onRandom}>
+              <InspectorToggle bare active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
+            </BoardHistoryControls>
           </div>
         )}
       />

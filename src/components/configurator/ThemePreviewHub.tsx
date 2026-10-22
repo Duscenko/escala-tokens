@@ -119,7 +119,7 @@ const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.7
  */
 const HEADER_CONTROL_DISABLED = 'opacity-40 cursor-not-allowed'
 
-export function InspectorToggle({ active, pinned = false, onChange, accent, ink, disabled = false, disabledTitle }: {
+export function InspectorToggle({ active, pinned = false, onChange, accent, ink, disabled = false, disabledTitle, bare = false }: {
   active: boolean
   /** Something is docked in the inspector. Only then does the control read
    *  "Exit inspector": armed with nothing pinned (the first screen — the mode
@@ -134,6 +134,9 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
   ink?: string
   disabled?: boolean
   disabledTitle?: string
+  /** No pill of its own: it is a segment inside `BoardHistoryControls`, which
+   *  owns the frame. Armed, the button alone carries the brand fill. */
+  bare?: boolean
 }) {
   const { t } = useI18n()
   // The name is the ACTION, so it says what a press does ("Inspector" /
@@ -146,6 +149,28 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
     : active
       ? t('Return to normal interaction on the canvas')
       : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`
+  const button = (
+    <button
+      type="button"
+      // `aria-disabled`, not `disabled`: a disabled button leaves the tab
+      // order and drops its tooltip, so the reason it is off was unreachable.
+      onClick={() => { if (!disabled) onChange(!active) }}
+      aria-disabled={disabled || undefined}
+      aria-label={label}
+      aria-keyshortcuts={active ? 'Escape' : undefined}
+      title={hint}
+      className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
+        active && !disabled
+          ? (accent ? '' : 'bg-accent-solid text-accent-ink')
+          : `text-fg ${disabled ? (bare ? HEADER_CONTROL_DISABLED : '') : CHROME_CONTROL_HOVER}`
+      }`}
+      style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
+    >
+      <InspectGlyph size={16} hint={!active} />
+      <RevealLabel open={active}>{label}</RevealLabel>
+    </button>
+  )
+  if (bare) return button
   return (
     // Same pill as Theme · Components beside it: the frame colour (`bg-nav`),
     // a solid hairline, h-9 / rounded-xl, no shadow. The dashed edge it used
@@ -158,25 +183,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       }`}
       style={active && accent && !disabled ? { borderColor: `color-mix(in srgb, ${accent} 50%, transparent)` } : undefined}
     >
-      <button
-        type="button"
-        // `aria-disabled`, not `disabled`: a disabled button leaves the tab
-        // order and drops its tooltip, so the reason it is off was unreachable.
-        onClick={() => { if (!disabled) onChange(!active) }}
-        aria-disabled={disabled || undefined}
-        aria-label={label}
-        aria-keyshortcuts={active ? 'Escape' : undefined}
-        title={hint}
-        className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
-          active && !disabled
-            ? (accent ? '' : 'bg-accent-solid text-accent-ink')
-            : `text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`
-        }`}
-        style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
-      >
-        <InspectGlyph size={16} hint={!active} />
-        <RevealLabel open={active}>{label}</RevealLabel>
-      </button>
+      {button}
     </div>
   )
 }
@@ -789,13 +796,26 @@ export default function ThemePreviewHub({
                   {/* History (Undo · Redo · Random) acts on the board, so it
                       sits on the board's header, for every visitor. Reset stays
                       beside it for an account. */}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
-                    <BoardHistoryControls onRandom={canRandom ? () => randomHandle.current?.() : undefined} />
-                  )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !guest && (
                     <EditHistoryControls previewTheme={previewTheme} />
                   )}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && (
+                  {/* Undo · Redo · Random · Inspector are ONE pill: all four act on
+                      the board. With no history (a style try-on) Inspector keeps
+                      its own pill. */}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview ? (
+                    <BoardHistoryControls onRandom={canRandom ? () => randomHandle.current?.() : undefined}>
+                      <InspectorToggle
+                        bare
+                        active={inspecting}
+                        pinned={Boolean(inspectedSelection)}
+                        onChange={setInspecting}
+                        accent={boardCanvasTokens.brandSolid}
+                        ink={boardCanvasTokens.onBrand}
+                        disabled={randomDraft}
+                        disabledTitle={headerActionsLockedHint}
+                      />
+                    </BoardHistoryControls>
+                  ) : !needsMyTheme && !contrastOpen && !docsOpen ? (
                     <InspectorToggle
                       active={inspecting}
                       pinned={Boolean(inspectedSelection)}
@@ -805,7 +825,7 @@ export default function ThemePreviewHub({
                       disabled={randomDraft}
                       disabledTitle={headerActionsLockedHint}
                     />
-                  )}
+                  ) : null}
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>

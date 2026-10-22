@@ -759,7 +759,7 @@ export default function TopNav({
               <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
             </a>
           )}
-          <AccountControl onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} />
+          <AccountControl onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} quiet={Boolean(exportAction)} />
           {exportAction}
       </div>
     </header>

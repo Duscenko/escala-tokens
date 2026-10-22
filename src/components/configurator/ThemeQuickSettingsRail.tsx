@@ -1503,14 +1503,15 @@ function RadiusCard({
         <p className="-mt-1.5 text-mini text-fg-faint">{t('Custom — corners were set by hand below.')}</p>
       )}
       {/* Same disclosure as Colour's Fine-tune: a title, what is inside it, and
-          a Show / Hide chip. Opens by itself when the corners were set by hand,
-          since that is the state the presets cannot describe. */}
+          a chevron (no Show / Hide word — aria-expanded carries the state).
+          Opens by itself when the corners were set by hand, since that is the
+          state the presets cannot describe. */}
       <div className="flex min-w-0 flex-col border-t border-line pt-3">
         <button
           type="button"
           onClick={() => setFineOpen((open) => !open)}
           aria-expanded={fineOpen}
-          className="group flex w-full min-w-0 items-center gap-2 text-left"
+          className="group/row flex w-full min-w-0 items-center gap-2 text-left"
         >
           <span className="min-w-0 flex-1">
             <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
@@ -1518,7 +1519,7 @@ function RadiusCard({
               {RADIUS_GROUPS.map((group) => group.label).join(' · ')}
             </span>
           </span>
-          <span className={discloseChip(fineOpen)}>{fineOpen ? t('Hide') : t('Show')}</span>
+          <Chevron open={fineOpen} />
         </button>
         {fineOpen && (
           <div className="mt-3 flex flex-col gap-3.5 border-t border-line pt-3">
@@ -1561,7 +1562,6 @@ function RadiusCard({
           </div>
         )}
       </div>
-      <p className="text-mini leading-snug text-fg-faint">Pick a preset; boxes, fields and selectors then round independently on it. Each corner is a responsive token, shown at the platform picked in Spacing: it rounds less on Tablet and Mobile.</p>
     </div>
   )
 }

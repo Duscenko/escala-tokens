@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
@@ -84,9 +84,11 @@ const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center 
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom }: {
+export function BoardHistoryControls({ onRandom, children }: {
   /** A whole new theme — only while the brand is a draft (see callers). */
   onRandom?: () => void
+  /** Board tools that join the pill after a divider (the Inspector). */
+  children?: ReactNode
 }) {
   const { t } = useI18n()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
@@ -111,6 +113,12 @@ export function BoardHistoryControls({ onRandom }: {
         <>
           <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
           <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+        </>
+      )}
+      {children && (
+        <>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
+          {children}
         </>
       )}
     </div>

@@ -45,14 +45,18 @@ interface AccountControlProps {
   /** Re-declares `--accent-solid` / `--accent-ink` for the Sign up button, so it
    *  wears the brand being edited (already solved for contrast by the shell). */
   signUpAccent?: CSSProperties
+  /** Another filled primary (Export, Go to generator) sits beside this control:
+   *  Sign up steps back to an outline so the bar has ONE solid action. A guest
+   *  can try and export without an account — the account only keeps the work. */
+  quiet?: boolean
 }
 
-export default function AccountControl({ onOpenLibrary, signUpAccent }: AccountControlProps) {
+export default function AccountControl({ onOpenLibrary, signUpAccent, quiet }: AccountControlProps) {
   if (!accountsEnabled) return null
-  return <AccountControlInner onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} />
+  return <AccountControlInner onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} quiet={quiet} />
 }
 
-function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProps) {
+function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountControlProps) {
   const savedCount = useDesignStore((s) => s.savedSystems.length)
   // A guest's brands live only in this browser. Signing UP is the way to keep
   // them, so it carries the save intent and returns to the workspace; with
@@ -122,8 +126,12 @@ function AccountControlInner({ onOpenLibrary, signUpAccent }: AccountControlProp
           href={loginHref({ next: keepsWork ? 'workspace' : 'library', mode: 'signup' })}
           onClick={() => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))}
           title={keepsWork ? t('Save your work with a free account') : undefined}
-          style={{ backgroundColor: 'var(--rainbow-fill-a)', color: 'var(--rainbow-ink)' }}
-          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-semibold transition-[filter] hover:brightness-110 ${FOCUS_RING}`}
+          style={quiet ? undefined : { backgroundColor: 'var(--rainbow-fill-a)', color: 'var(--rainbow-ink)' }}
+          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-semibold ${FOCUS_RING} ${
+            quiet
+              ? 'border border-line-strong text-fg transition-colors hover:bg-elevated'
+              : 'transition-[filter] hover:brightness-110'
+          }`}
         >
           {t('Sign up')}
         </a>
