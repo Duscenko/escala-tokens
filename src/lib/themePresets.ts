@@ -17,6 +17,7 @@ import {
   type GridFrameModes,
 } from './layoutTokens'
 import { SHADOW_PRESETS } from './shadowTokens'
+import { curatedMood } from './themeMoods'
 import type { ThemeFoundationOverride } from './themeFoundations'
 import { mergeTypeRoles } from './typeRoles'
 import {
@@ -148,6 +149,37 @@ export function presetHarmony(preset: ThemeStylePreset) {
 
 function accent(label: string): string {
   return BRAND_SPECTRUM.find((preset) => preset.label === label)?.hex ?? BRAND_SPECTRUM[0].hex
+}
+
+/**
+ * A style built from a DaisyUI mood (`themeMoods`): its colour inputs —
+ * accent, a neutral pinned with its OWN hue (so the page is not a tint of the
+ * accent), the tint level, four severities and the appearance it was designed
+ * in — taken verbatim from the mood, so the style and Random's spin of the
+ * same mood can never disagree.
+ */
+function moodColours(id: string): Pick<ThemeStylePreset, 'accent' | 'neutral' | 'neutralTint' | 'states' | 'preferredAppearance'> {
+  const mood = curatedMood(id)
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`)
+  return {
+    accent: mood.accent,
+    neutral: mood.neutral,
+    neutralTint: mood.neutralTint,
+    states: { ...mood.states },
+    preferredAppearance: mood.appearance,
+  }
+}
+
+/** The mood's geometry: three radius axes, border width, depth. */
+function moodShape(id: string) {
+  const mood = curatedMood(id)
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`)
+  return {
+    radius: { ...RADIUS_STANDARD },
+    radiusRoles: styleRadiusRoles(mood.radius),
+    stroke: { ...STROKE_STANDARD, sm: `${mood.border}px` },
+    shadows: { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values },
+  }
 }
 
 // ── Border recipes ──────────────────────────────────────────────────────────
@@ -834,6 +866,124 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
     },
+  },
+
+  // ── Moods: six styles after DaisyUI v5's built-in themes (MIT) ──────────
+  // What the twelve above never did: a PAGE with a hue of its own. Colour
+  // and geometry come from `themeMoods` (DaisyUI's values to the digit, mapped
+  // onto Escala's inputs); every ramp and ink is still solved here.
+  {
+    id: 'abyss-neon',
+    label: 'Abyss / Neon',
+    shortLabel: 'Abyss',
+    description: 'Deep, electric, and nocturnal.',
+    detail: 'A deep-sea teal page under a neon lime accent, pill selectors beside sharp fields. After DaisyUI’s Abyss.',
+    ...moodColours('abyss'),
+    foundations: {
+      typography: typography('Sora', 'Sora'),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape('abyss'),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: 'solid',
+      iconWeight: 'bold',
+    },
+    // A vivid teal dark ramp compresses its low steps even more than the
+    // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
+    // ΔL 0.070 against light's 0.072. One more step restores it.
+    semantics: { ...softBorders, 'surface.layer-2': { dark: '{neutral-dark.5}' } },
+  },
+  {
+    id: 'synthwave-night',
+    label: 'Synthwave / Night',
+    shortLabel: 'Synthwave',
+    description: 'Neon, nocturnal, and loud.',
+    detail: 'An ink-indigo page with a hot-pink accent and arcade severities. After DaisyUI’s Synthwave.',
+    ...moodColours('synthwave'),
+    foundations: {
+      typography: typography('Outfit', 'Outfit'),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape('synthwave'),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: 'solid',
+      iconWeight: 'duotone',
+    },
+    semantics: softBorders,
+  },
+  {
+    id: 'cupcake-pastel',
+    label: 'Cupcake / Pastel',
+    shortLabel: 'Cupcake',
+    description: 'Soft, sweet, and friendly.',
+    detail: 'Cream paper, a mint accent, pill fields and a 2px edge. After DaisyUI’s Cupcake.',
+    ...moodColours('cupcake'),
+    foundations: {
+      typography: typography('Figtree', 'Figtree'),
+      spacing: buildSpacingFromBase(4),
+      spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
+      padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
+      ...moodShape('cupcake'),
+      sizes: buildSizesFromBase(4.5),
+      selector: buildSelectorsFromBase(3.5),
+      panelBackground: 'solid',
+      iconWeight: 'regular',
+    },
+    semantics: softBorders,
+  },
+  {
+    id: 'arctic-frost',
+    label: 'Arctic / Frost',
+    shortLabel: 'Arctic',
+    description: 'Cool, muted, and calm.',
+    detail: 'Frosted blue-grey paper, a slate-blue accent and quiet severities. After DaisyUI’s Nord.',
+    ...moodColours('nord'),
+    foundations: {
+      typography: typography('Manrope', 'Manrope'),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape('nord'),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: 'solid',
+      iconWeight: 'light',
+    },
+    semantics: softBorders,
+  },
+  {
+    id: 'sunset-dusk',
+    label: 'Sunset / Dusk',
+    shortLabel: 'Sunset',
+    description: 'Warm light on a cool night.',
+    detail: 'A blue-slate page under a coral accent, with pastel severities. After DaisyUI’s Sunset.',
+    ...moodColours('sunset'),
+    foundations: {
+      typography: typography('DM Sans', 'Fraunces'),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape('sunset'),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: 'solid',
+      iconWeight: 'regular',
+    },
+    semantics: softBorders,
+  },
+  {
+    id: 'valentine-blush',
+    label: 'Blush / Valentine',
+    shortLabel: 'Blush',
+    description: 'Romantic, warm, and rounded.',
+    detail: 'Rose-tinted paper, a hot-pink accent and pill fields. After DaisyUI’s Valentine.',
+    ...moodColours('valentine'),
+    foundations: {
+      typography: typography('Plus Jakarta Sans', 'Playfair Display'),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape('valentine'),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: 'solid',
+      iconWeight: 'regular',
+    },
+    semantics: softBorders,
   },
 
 ]

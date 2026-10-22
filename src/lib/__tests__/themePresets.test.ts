@@ -161,13 +161,31 @@ describe('system style presets', () => {
     }
   })
 
-  it('spreads the accents around the hue wheel', () => {
-    const hues = THEME_STYLE_PRESETS
-      .map((p) => chroma(p.accent).oklch()[2])
-      .map((h) => (Number.isNaN(h) ? 0 : h))
-      .sort((a, b) => a - b)
-    for (let i = 1; i < hues.length; i++) {
-      expect(hues[i] - hues[i - 1], `hues too close: ${hues[i - 1]} / ${hues[i]}`).toBeGreaterThan(18)
+  // Three of the original six accents used to sit within 20° of each other
+  // (Core 262°, Glass 254°, Material 274°) — four styles plus two duplicates.
+  // Hue was the only colour axis then. Since the mood styles (2026-10-22) a
+  // style's PAGE carries its own hue too (Abyss: teal page, lime accent), so
+  // distinctness is judged on what a person sees: no two styles may share an
+  // appearance AND a near-identical accent AND a near-identical page.
+  it('keeps every pair of styles visibly distinct', () => {
+    const lab = (hex: string) => chroma(hex).oklab()
+    const dE = (a: string, b: string) => {
+      const [l1, a1, b1] = lab(a)
+      const [l2, a2, b2] = lab(b)
+      return Math.hypot(l1 - l2, a1 - a2, b1 - b2)
+    }
+    const look = THEME_STYLE_PRESETS.map((p) => {
+      const h = presetHarmony(p)
+      return { id: p.id, ap: p.preferredAppearance, accent: p.accent, page: p.preferredAppearance === 'dark' ? h.pageDark : h.pageLight }
+    })
+    for (let i = 0; i < look.length; i++) {
+      for (let j = i + 1; j < look.length; j++) {
+        const a = look[i]
+        const b = look[j]
+        if (a.ap !== b.ap) continue
+        const distinct = dE(a.accent, b.accent) >= 0.06 || dE(a.page, b.page) >= 0.02
+        expect(distinct, `${a.id} vs ${b.id}: accent ΔE ${dE(a.accent, b.accent).toFixed(3)}, page ΔE ${dE(a.page, b.page).toFixed(3)}`).toBe(true)
+      }
     }
   })
 

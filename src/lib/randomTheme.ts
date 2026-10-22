@@ -28,6 +28,9 @@ import {
   type TypeScaleMode,
 } from './typographyStandard'
 import type { ThemeAppearance } from './themeModes'
+import { RADIUS_STANDARD, STROKE_STANDARD, radiusRolesFromGroups } from './layoutTokens'
+import { SHADOW_PRESETS } from './shadowTokens'
+import { pickMood, type MoodStates, type ThemeMood } from './themeMoods'
 
 /** Relative positions — same contract as SpectrumSlider, so a voice stays
  *  vivid at every hue instead of ratcheting into mud. */
@@ -37,8 +40,6 @@ const ACCENT_VOICES: HuePosition[] = [
   { saturation: 0.80, lightness: 0.62 },
   { saturation: 0.74, lightness: 0.44 },
 ]
-
-const TINTS: NeutralTint[] = ['pure', 'subtle', 'tinted', 'vivid']
 
 type FontPair = readonly [body: string, heading: string]
 
@@ -109,23 +110,77 @@ function pickOther<T>(items: readonly T[], avoid: T | undefined, rng: () => numb
 }
 
 export interface RandomThemeInput {
+  /** The accent on screen. Kept for callers; the new accent comes from the
+   *  mood, which is never the one just shown (`avoidMood`). */
   accent: string
   bodyFont?: string
   headingFont?: string
   typeScale?: TypeScaleMode | null
   avoidScaffold?: string
+  /** The last spin's mood id — never drawn twice in a row. */
+  avoidMood?: string
   rng?: () => number
 }
 
 export interface RandomThemeRecipe {
   accent: string
+  /** Neutral seed with its OWN hue — the page is no longer a tint of the
+   *  accent (see `themeMoods`). Writing it unlinks the neutral from the
+   *  accent, which is the point: the two are separate decisions now. */
+  neutral: string
   neutralTint: NeutralTint
+  /** The mood's four severity seeds. */
+  states: MoodStates
+  /** The appearance the mood was designed in; the board opens on it. */
+  appearance: ThemeAppearance
+  /** Curated DaisyUI id, or `procedural`. */
+  moodId: string
   bodyFont: string
   headingFont: string
   typeScale: TypeScaleMode
   scaffoldId: string
   foundations: ThemeFoundationOverride
   semantics: ThemeStyleSemantics | undefined
+}
+
+/** Scaffolds whose elevation or stroke IS their signature — a mood keeps
+ *  their shadows (Neo's hard offset, Retro's ink, Nature's flat) instead of
+ *  painting its own depth over them. Neo also keeps its 2px stroke. */
+const SIGNATURE_SHADOWS = new Set(['neo-brutalism', 'retro-vintage', 'nature-organic'])
+
+/**
+ * A scaffold's semantics, minus the overrides tuned to THAT style's own
+ * accent and severities. Border, surface and ink recipes travel with the
+ * scaffold (they are its personality); `action.*` and `status.*` pins — e.g.
+ * Glass forcing `{accent.9}` as its dark button — were measured against
+ * Glass's cyan, and pinned onto a mood's pale lavender or neon lime they
+ * would bypass the solver that keeps the label readable.
+ */
+export function moodSafeSemantics(semantics: ThemeStyleSemantics | undefined): ThemeStyleSemantics | undefined {
+  if (!semantics) return semantics
+  const out: ThemeStyleSemantics = {}
+  for (const [token, modes] of Object.entries(semantics)) {
+    if (token.startsWith('action.') || token.startsWith('status.')) continue
+    out[token] = modes
+  }
+  return out
+}
+
+/** A mood's geometry painted over a scaffold: the three radius axes on the
+ *  standard ramp, the border width, and depth → Subtle / Soft elevation. */
+export function moodFoundations(scaffold: ThemeStylePreset, mood: ThemeMood): ThemeFoundationOverride {
+  const signature = SIGNATURE_SHADOWS.has(scaffold.id)
+  const stroke = { ...(scaffold.foundations.stroke ?? STROKE_STANDARD) }
+  if (scaffold.id !== 'neo-brutalism') stroke.sm = `${mood.border}px`
+  return {
+    ...scaffold.foundations,
+    radius: { ...RADIUS_STANDARD },
+    radiusRoles: radiusRolesFromGroups(mood.radius),
+    stroke,
+    shadows: signature
+      ? scaffold.foundations.shadows
+      : { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values },
+  }
 }
 
 export function randomAccentVoice(
@@ -181,24 +236,28 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
     rng,
     (a, b) => a === b,
   )
-  const keepScaffoldTint = rng() < 0.55
-  const neutralTint = keepScaffoldTint
-    ? scaffold.neutralTint
-    : pickOther(TINTS, scaffold.neutralTint, rng, (a, b) => a === b)
   const { sizes, lineHeights } = buildTypeScale(
     TYPE_SCALE_MODES.find((mode) => mode.key === typeScale)?.factor ?? 1,
   )
   const baseType = scaffold.foundations.typography
+  // Colour + geometry come from a MOOD (DaisyUI's built-ins, or its own
+  // randomiser) — see `themeMoods`. The scaffold keeps type, sizes, spacing,
+  // icon weight and its border recipe.
+  const mood = pickMood(rng, input.avoidMood)
   return {
-    accent: randomAccentVoice(input.accent, rng),
-    neutralTint,
+    accent: mood.accent,
+    neutral: mood.neutral,
+    neutralTint: mood.neutralTint,
+    states: { ...mood.states },
+    appearance: mood.appearance,
+    moodId: mood.id,
     bodyFont,
     headingFont,
     typeScale,
     scaffoldId: scaffold.id,
-    semantics: scaffold.semantics,
+    semantics: moodSafeSemantics(scaffold.semantics),
     foundations: {
-      ...scaffold.foundations,
+      ...moodFoundations(scaffold, mood),
       typography: {
         fontFamily: bodyFont,
         headingFontFamily: headingFont,
@@ -225,7 +284,10 @@ export function stylePreviewFromRecipe(
     preset: {
       ...scaffold,
       accent: recipe.accent,
+      neutral: recipe.neutral,
       neutralTint: recipe.neutralTint,
+      states: { ...recipe.states },
+      preferredAppearance: recipe.appearance,
       foundations: recipe.foundations,
       semantics: recipe.semantics,
     },
@@ -292,10 +354,11 @@ export function startRandomTheme(previewTheme: string, needsPro: boolean): Rando
   }
   const s = useDesignStore.getState()
   const recipe = randomTheme({ accent: s.primaryColor })
-  const slots = slotsFromAccent(recipe.accent, recipe.neutralTint)
+  const slots = slotsFromAccent(recipe.accent, recipe.neutralTint, recipe.states)
+  slots.gray = recipe.neutral
   const res = mintTheme(
     slots,
-    randomBoardAppearance(),
+    recipe.appearance,
     '',
     null,
     recipe.neutralTint,

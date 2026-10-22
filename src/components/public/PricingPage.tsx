@@ -24,6 +24,7 @@ import {
 import { useEntitlement } from '../../lib/useEntitlement'
 import { useAuth } from '../../lib/auth'
 import { checkoutUrl } from '../../lib/polar'
+import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 const PRICING_TITLE = 'Pricing — Escala Tokens'
 const PRICING_DESCRIPTION =
   'Escala is free to build and export. Pro adds what runs on our servers: the complete UI Kit in Figma and more than 10 modes per file.'
@@ -268,7 +269,7 @@ export function PricingPage() {
                 </p>
                 <div className="border-t border-line pt-7">
                   <Features items={[
-                    t('All 12 System Styles, unlimited brands while editing'),
+                    t('All {count} System Styles, unlimited brands while editing', { count: THEME_STYLE_PRESETS.length }),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
                     t('Open-source Figma plugin, manual import'),
                     t('The full agent context: every brand, theme and viewport, up to {n} modes in Figma', { n: free }),

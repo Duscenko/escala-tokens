@@ -11,8 +11,11 @@ import {
   randomLabelAfterTweak,
   randomBoardAppearance,
   randomTheme,
+  moodSafeSemantics,
   stylePreviewFromRecipe,
 } from '../randomTheme'
+import { PROCEDURAL_MOOD_ID, curatedMood } from '../themeMoods'
+import { radiusRolesFromGroups } from '../layoutTokens'
 import { guestStarterPreview } from '../stylePreviewOverlay'
 import { THEME_STYLE_PRESETS } from '../themePresets'
 import { TYPE_SCALE_MODES, inferTypeScaleMode } from '../typographyStandard'
@@ -58,13 +61,43 @@ describe('randomTheme', () => {
     }
   })
 
-  it('borrows a real System Style for geometry and borders', () => {
+  it('borrows a real System Style for sizes and borders, and a mood for radius', () => {
     const recipe = randomTheme({ accent: VIVID, rng: sequence(21) })
     const scaffold = THEME_STYLE_PRESETS.find((preset) => preset.id === recipe.scaffoldId)
     expect(scaffold).toBeDefined()
-    expect(recipe.foundations.radiusRoles).toEqual(scaffold?.foundations.radiusRoles)
-    expect(recipe.foundations.shadows).toEqual(scaffold?.foundations.shadows)
-    expect(recipe.semantics).toEqual(scaffold?.semantics)
+    expect(recipe.foundations.sizes).toEqual(scaffold?.foundations.sizes)
+    expect(recipe.foundations.spacing).toEqual(scaffold?.foundations.spacing)
+    expect(recipe.semantics).toEqual(moodSafeSemantics(scaffold?.semantics))
+    const mood = recipe.moodId === PROCEDURAL_MOOD_ID ? undefined : curatedMood(recipe.moodId)
+    if (mood) expect(recipe.foundations.radiusRoles).toEqual(radiusRolesFromGroups(mood.radius))
+  })
+
+  it('takes colour from a mood: own page hue, own severities, own appearance', () => {
+    for (let i = 0; i < 40; i++) {
+      const recipe = randomTheme({ accent: VIVID, rng: sequence(i + 101) })
+      if (recipe.moodId === PROCEDURAL_MOOD_ID) continue
+      const mood = curatedMood(recipe.moodId)!
+      expect(recipe.accent).toBe(mood.accent)
+      expect(recipe.neutral).toBe(mood.neutral)
+      expect(recipe.states).toEqual(mood.states)
+      expect(recipe.appearance).toBe(mood.appearance)
+    }
+  })
+
+  it('never draws the same mood twice in a row', () => {
+    let last: string | undefined
+    for (let i = 0; i < 60; i++) {
+      const recipe = randomTheme({ accent: VIVID, avoidMood: last, rng: sequence(i + 7) })
+      if (last && last !== PROCEDURAL_MOOD_ID) expect(recipe.moodId).not.toBe(last)
+      last = recipe.moodId
+    }
+  })
+
+  it('drops scaffold pins tuned to that style\'s own accent', () => {
+    const glass = THEME_STYLE_PRESETS.find((p) => p.id === 'cupertino-glass')!
+    const safe = moodSafeSemantics(glass.semantics)!
+    expect(Object.keys(safe).some((k) => k.startsWith('action.') || k.startsWith('status.'))).toBe(false)
+    expect(safe['border.control']).toEqual(glass.semantics?.['border.control'])
   })
 
   it('replaces the style typeface with a catalogued pair and a real type scale', () => {

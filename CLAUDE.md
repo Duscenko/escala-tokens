@@ -56,6 +56,28 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-22): RANDOM draws a MOOD, after DaisyUI's theme generator — `lib/themeMoods.ts`.**
+> Reported as Random feeling repetitive next to daisyui.com/theme-generator. DaisyUI's themes get their
+> character from moves Random never made: the PAGE has its own hue (Abyss: deep-teal page, neon-lime
+> primary), the four severities change with the theme, the three radius axes are independent, the
+> border is sometimes 2px. A mood is exactly those inputs: accent · neutral seed WITH ITS OWN HUE ·
+> tint · four severities · radius picks · border · depth · the appearance it was designed in.
+> `CURATED_MOODS` = 29 DaisyUI v5 built-ins (MIT, OKLCH to the digit, mapped by `moodFromSpec`; near-black
+> or white primaries and wireframe left out). `proceduralMoodSpec` = DaisyUI's own randomiser on our
+> Tailwind palette. `pickMood` draws curated 75 % / procedural 25 %, never the same mood twice in a row.
+> A severity seed whose SHIPPED hue (after gamut mapping) leaves its band falls back to Core's (cmyk's
+> magenta success, nord's pink info, retro's red-orange warning). Every ramp and ink is still solved
+> by Escala; `themeMoods.test.ts` asserts AA for body text, the primary label and every status solid,
+> both appearances, all curated moods + 40 procedural draws. In `randomTheme` the scaffold keeps type,
+> sizes, spacing, icon weight and its border recipe (`moodSafeSemantics` drops its `action.*` /
+> `status.*` pins, tuned to that style's own accent); the mood sets colour, radius, stroke and depth
+> (Neo / Retro / Nature keep their signature shadows). Writing the mood's neutral UNLINKS the neutral
+> from the accent, and its states unlink the states — deliberate. The board opens on the mood's
+> appearance (Board: view overlay; create studio: the draft's lead kind, inside the Undo snapshot).
+> **Six System Styles come from moods** (`moodColours` / `moodShape` in `themePresets.ts`): Abyss ·
+> Synthwave · Cupcake · Arctic (nord) · Sunset · Blush (valentine) — 18 styles. The hue-spread test
+> became "no two same-appearance styles share accent AND page" (a style's page carries a hue now).
+
 > **UPDATE (2026-10-21): THREE DOORS OUT — CSS · Figma · Agent — and "Get code" is not a
 > label any more.** Plan + measured walk: `design-plans/entry-flow-set-see-ship.md` (phase 1
 > done). Every way out of the Generator speaks the same three words: the inspector footer's

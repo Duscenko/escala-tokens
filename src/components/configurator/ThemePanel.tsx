@@ -27,7 +27,8 @@ import {
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { CreateStudioBar, RandomThemeButton } from './ThemeSaveBar'
-import { daringAccent, nextRandomLabel, oppositeNeutral, randomTheme } from '../../lib/randomTheme'
+import { nextRandomLabel, randomTheme } from '../../lib/randomTheme'
+import { pickMood } from '../../lib/themeMoods'
 
 // The six slots a theme references, in the order they read on screen: the two
 // that define the theme's character first, then the four intents.
@@ -510,6 +511,7 @@ export function ThemeForm({
   // spin remembers what it replaced, so one icon steps back.
   const randomPast = useRef<{ styleId: string; slots: Record<FamilySlot, string>; derived: Set<FamilySlot>; tint: NeutralTint; kind: 'light' | 'dark'; randomized: boolean }[]>([])
   const [canUndoRandom, setCanUndoRandom] = useState(false)
+  const lastMood = useRef<string | undefined>(undefined)
   // A spin that already has a brand writes through, so the board (which reads
   // the minted theme) moves with the card. Before the first mint the draft
   // overlay does that on its own.
@@ -523,12 +525,15 @@ export function ThemeForm({
   }
   function spinRandom() {
     randomPast.current.push({ styleId, slots, derived, tint, kind, randomized })
-    const rng = Math.random
-    const accent = daringAccent(slots.brand, rng)
-    const nextTint: NeutralTint = rng() < 0.5 ? 'vivid' : 'tinted'
+    // Colours come from a MOOD (DaisyUI's built-ins or its randomiser — see
+    // `themeMoods`): an accent, a neutral with its own hue, the tint, and four
+    // severities chosen together.
+    const mood = pickMood(Math.random, lastMood.current)
+    lastMood.current = mood.id
+    const nextTint = mood.neutralTint
+    const next = slotsFromAccent(mood.accent, nextTint, mood.states)
+    next.gray = mood.neutral
     if (stylePinned && startPreset) {
-      const next = slotsFromAccent(accent, nextTint, presetStates(startPreset))
-      next.gray = oppositeNeutral(accent, nextTint, rng)
       setErr(null)
       setSlots(next)
       setTint(nextTint)
@@ -538,16 +543,14 @@ export function ThemeForm({
       return
     }
     const recipe = randomTheme({ accent: slots.brand, avoidScaffold: styleId || undefined })
-    const preset = THEME_STYLE_PRESETS.find((p) => p.id === recipe.scaffoldId)
-    const next = slotsFromAccent(accent, nextTint, preset ? presetStates(preset) : undefined)
-    next.gray = oppositeNeutral(accent, nextTint, rng)
     setErr(null)
     setStyleId(recipe.scaffoldId)
     setRandomized(true)
     setTint(nextTint)
     setSlots(next)
+    setKind(mood.appearance)
     setDerived(new Set())
-    commitLook(next, nextTint, kind)
+    commitLook(next, nextTint, mood.appearance)
     setCanUndoRandom(true)
   }
   function undoRandom() {

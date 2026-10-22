@@ -74,7 +74,7 @@ import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
-import { randomTheme, randomBoardAppearance, randomLabelAfterTweak } from '../../lib/randomTheme'
+import { randomTheme, randomLabelAfterTweak } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
@@ -1926,6 +1926,7 @@ export default function ThemeQuickSettingsRail({
   const [adoptError, setAdoptError] = useState<string | null>(null)
   const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
   const lastRandomScaffold = useRef<string | undefined>(undefined)
+  const lastRandomMood = useRef<string | undefined>(undefined)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
@@ -2455,17 +2456,30 @@ export default function ThemeQuickSettingsRail({
       headingFont: headingFamily,
       typeScale: inferTypeScaleMode(typography.sizes ?? {}),
       avoidScaffold: lastRandomScaffold.current,
+      avoidMood: lastRandomMood.current,
       rng,
     })
     lastRandomScaffold.current = recipe.scaffoldId
-    onRandomBoardAppearance?.(randomBoardAppearance(rng))
+    lastRandomMood.current = recipe.moodId
     loadGoogleFont(recipe.bodyFont)
     loadGoogleFont(recipe.headingFont)
     commit(t('Random tweak applied'), (themeKey) => {
+      // The mood was designed in one appearance (Abyss is a dark page, Cupcake
+      // a light one): the board opens on it rather than on a coin flip. Inside
+      // the commit so one Undo also reverts it where it is stored (the studio).
+      onRandomBoardAppearance?.(recipe.appearance)
       setNeutralTint(recipe.neutralTint)
       writeAccent(themeKey, recipe.accent)
-      if (useDesignStore.getState().linkNeutralToAccent) {
-        applyNeutral(neutralFromBrand(recipe.accent, recipe.neutralTint), themeKey, true)
+      // The page gets its OWN hue now (Abyss: teal page, lime accent), so the
+      // neutral is written by hand — which unlinks it from the accent.
+      applyNeutral(recipe.neutral, themeKey)
+      // The mood's severities, after the neutral: their ramps anchor to the
+      // page it just produced. A hand-set state unlinks the states too.
+      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
+      for (const role of STATE_IDS) {
+        const hex = recipe.states[role]
+        writeState(themeKey, role, hex, 'light')
+        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
       }
       useDesignStore.getState().setThemeFoundations(themeKey, recipe.foundations)
       const next = useDesignStore.getState()

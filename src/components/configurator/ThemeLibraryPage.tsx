@@ -769,6 +769,14 @@ export default function ThemeLibraryPage({
                   <ThemeQuickSettingsRail
                     embed
                     randomHandle={randomHandle}
+                    // The studio board paints the draft's own lead theme, so a
+                    // Random mood's appearance (Abyss dark, Cupcake light)
+                    // becomes the draft's — what the create panel's Random does.
+                    onRandomBoardAppearance={(appearance) => {
+                      const live = useDesignStore.getState()
+                      const sources = live.themeSources[createdKey]
+                      if (sources && live.themeKinds[createdKey] !== appearance) live.updateTheme(createdKey, appearance, sources)
+                    }}
                     key={createdKey}
                     previewTheme={createdKey}
                     previewAppearance={store.themeKinds[createdKey] === 'dark' ? 'dark' : 'light'}
