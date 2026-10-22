@@ -235,3 +235,24 @@ Phase 0 done the same day (plugin 0.17.3).
 - **Welcome screen**: not a new screen. The existing "Set up your design system"
   start already answers "what now" (paste context · Start from blank · Import JSON),
   and the tour sits in front of it on the first open.
+
+## 8. Phase 3 — done (plugin 0.20.0)
+
+- **Variables** is a tab of the shell, second after System (`sysPage = 'variables'`,
+  `renderVariables`). Read off the payload stored in the file, so it can't disagree
+  with what landed in Figma.
+- Sections (collapsible, with counts): **Color primitives** (one ramp per family,
+  alpha twins over a checker, the ramp of the selected mode's appearance) ·
+  **Color · content / action / surface / status / border** (swatch · role ·
+  primitive chip) · **Radius · Spacing · Size · Selector · Border width** (role →
+  step · px, Desktop) · **Typography** (families + size / leading) · **Shadow**.
+- **The primitive chip** (`error-a · 3`) is found by hex: a role ships as a hex per
+  theme column and every one of them is a primitive's hex (asserted on the web by
+  `semanticPrimitiveLink.test.ts`). On the Core sample all 134 roles resolve; none
+  falls back to a bare hex. Family names drop the theme prefix (`core-gray` →
+  `neutral`) to read like the web's Variables.
+- **Search** filters every section; **theme select** lists the file's modes
+  (`themeOrder`, `themeLabels`). Footer: read-only + "Open Variables on the web".
+- Compact strip: Beta info is icon-only below 600px so eight tabs fit 400px.
+- Next (phase 4): a row opens Token Details — read-only with a link to that token
+  on the web for synced systems (decision 2), editable for plugin-made ones.
