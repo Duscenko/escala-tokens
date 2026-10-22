@@ -182,3 +182,30 @@ describe('plugin studio build', () => {
     expect(JSON.stringify((built as { tokens: unknown }).tokens).toLowerCase()).toContain(critical.toLowerCase())
   })
 })
+
+describe('roleOverrides (the plugin Token Details)', () => {
+  type Arch = { colors: { themeOrder: string[]; architecture: { tokens: Record<string, Record<string, Record<string, string>>> } } }
+  const build = (roleOverrides?: Record<string, Record<string, string>>) =>
+    (buildStudioTokens({ accent: '#2970ff', name: 'Core', roleOverrides }, 'pro') as { tokens: Arch }).tokens
+
+  it('re-points a role in one appearance only, to the primitive it names', () => {
+    const base = build()
+    const [light, dark] = base.colors.themeOrder
+    const status = base.colors.architecture.tokens.status
+    // By default surface-pressed reads error-a · 5: pointing surface at it must
+    // land on exactly that hex, in Light, and leave Dark alone.
+    const edited = build({ 'status.critical.surface': { light: '{error-a.5}' } }).colors.architecture.tokens.status
+    expect(edited['critical.surface'][light]).toBe(status['critical.surface-pressed'][light])
+    expect(edited['critical.surface'][light]).not.toBe(status['critical.surface'][light])
+    expect(edited['critical.surface'][dark]).toBe(status['critical.surface'][dark])
+  })
+
+  it('drops refs and role ids it does not recognise', () => {
+    const base = build()
+    const edited = build({
+      'status.critical.surface': { light: '{error-a.13}', dark: 'red' },
+      'bad role!': { light: '{accent.9}' },
+    })
+    expect(edited.colors.architecture.tokens).toEqual(base.colors.architecture.tokens)
+  })
+})

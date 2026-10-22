@@ -256,3 +256,31 @@ Phase 0 done the same day (plugin 0.17.3).
 - Compact strip: Beta info is icon-only below 600px so eight tabs fit 400px.
 - Next (phase 4): a row opens Token Details — read-only with a link to that token
   on the web for synced systems (decision 2), editable for plugin-made ones.
+
+## 9. Phase 4 — done (plugin 0.21.0)
+
+- **Token Details** opens from any colour role row in Variables: name · copyable
+  CSS variable · description · **Values**, one section per mode of the role's
+  theme (only the open one expanded), family select + 12-tone grid with the
+  current tone ringed (alpha over a checker). Esc / ✕ close.
+- **Editable when the system was made in the plugin** (the theme carries its
+  choices and the file is not synced). A pick is held until **Apply to this file**:
+  1. the role's hex in the stored payload becomes the picked primitive's hex and a
+     variables + styles import runs (`runImportNow(true)`), so the Figma variable
+     re-aliases to that primitive and the canvas follows; the plugin lands back on
+     Variables;
+  2. the pick is recorded as `roleOverrides[role][light|dark] = '{family.tone}'` in
+     the theme's choices, and the original hex in `escalaRoleDefaults` (what
+     **Reset** restores).
+- **Server**: `StudioChoices.roleOverrides` → `applyRoleOverrides` →
+  `setArchitectureOverride('categorical', role, theme::appearance, ref)`, the action
+  the web's table writes. Keyed by appearance so a re-mint under another key keeps
+  them; unknown roles/refs are dropped (tested in `pluginStudio.test.ts`).
+  `api/_pluginStudio.mjs` regenerated — **deploy the site** for a rebuild in the
+  plugin to keep the overrides.
+- **Read-only otherwise** (decision 2): synced from the web, or imported without
+  choices. The footer says why and **Edit on the web ↗** opens
+  `/?project=<publish id>&section=variables&token=<role>`; the web reads `token` once
+  (`Configurator`, `incomingToken`) and opens that role's Token Details.
+- Not yet: dimension roles (radius, spacing…) open nothing; Token Details for them
+  is the next step.

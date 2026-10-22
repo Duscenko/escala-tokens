@@ -1072,6 +1072,22 @@ export default function Configurator() {
     // `row` only scrolls to the row; `token` also opens its editor.
     setColorReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1, as: edit ? 'token' : 'row' }))
   }
+  // `?token=<role>` — the Figma plugin's "Edit on the web" for a system synced
+  // from here: land on that token's Token Details. Read in the state
+  // initializer, like `incomingWorkspace`: the shell rewrites the URL to
+  // `?project=&section=` on its first pass, which drops `token` (so a reload
+  // doesn't reopen it). Opened a beat later, once the incoming system is in.
+  const [incomingToken] = useState(() => {
+    const token = new URLSearchParams(window.location.search).get('token')
+    return token && /^[a-z0-9][a-z0-9._-]{0,80}$/.test(token) ? token : null
+  })
+  const openTokenRef = useRef(openTokenInVariables)
+  openTokenRef.current = openTokenInVariables
+  useEffect(() => {
+    if (!incomingToken) return
+    const timer = window.setTimeout(() => openTokenRef.current(incomingToken, true), 600)
+    return () => window.clearTimeout(timer)
+  }, [incomingToken])
   // Primitives' own 198px left column (accent-color cell · Groups · family
   // nav), collapsed to a swatch strip. Lifted for the same reason `colorTab`
   // is: TopNav's brand block continues this column's divider up through the

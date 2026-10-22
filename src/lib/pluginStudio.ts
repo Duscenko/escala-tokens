@@ -17,6 +17,7 @@ import { ensureColorScales, applyAccentColor, applyAccentDarkColor, applyStateCo
 const STATE_SLOTS = ['error', 'warning', 'success', 'info'] as const
 import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
+import { themeModeKey } from './themeModes'
 import { generateTokenJSON } from './tokenGenerator'
 import { defaultFigmaSyncModes } from './figmaSyncModes'
 import { themeDisplayName } from './themeSources'
@@ -81,6 +82,12 @@ export interface StudioChoices {
   /** A `SHADOW_PRESETS` label. */
   shadow?: string
   iconWeight?: string
+  /** Per-role picks made in the plugin's Token Details: role id → appearance →
+   *  `{family.tone}` (`{error-a.3}`, `{neutral.12}`). Applied after everything
+   *  else through `setArchitectureOverride`, the action the web's Variables
+   *  table writes — one override format. Keyed by APPEARANCE, not by theme
+   *  key, so they survive a rebuild that mints the theme under another key. */
+  roleOverrides?: Record<string, Partial<Record<'light' | 'dark', string>>>
 }
 
 /** What the plugin draws its six steps from — never hand-copied into the UI. */
@@ -288,6 +295,8 @@ export function buildStudioTokens(
 
   const weight = (PHOSPHOR_WEIGHTS as readonly string[]).includes(choices.iconWeight ?? '') ? (choices.iconWeight as PhosphorWeight) : undefined
   if (weight) patch({ iconWeight: weight })
+
+  applyRoleOverrides(key, choices.roleOverrides)
 
   // Ship it. Free and Pro both get this brand's Light + Dark; the difference is
   // Free's Desktop-only viewport and single grid style (more brands are gated
@@ -536,4 +545,30 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     heading: c.headingFont || summaryFonts?.heading || 'Inter',
     body: c.bodyFont || summaryFonts?.font || 'Inter',
   }
+}
+
+/** A role ref the plugin may send: a slot family (solid or alpha twin) or the
+ *  neutral alpha ladder, tone 1–12. Anything else is dropped, never stored. */
+const ROLE_REF = /^\{(?:(?:accent|neutral|error|warning|success|info)(?:-a)?|black-a|white-a)\.(?:[1-9]|1[0-2])\}$/
+const ROLE_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9-]+){1,3}$/
+
+/** The plugin's Token Details picks → `architectureOverrides` on this theme's
+ *  mode columns. Exported for the tests. */
+export function applyRoleOverrides(themeKey: string, overrides: StudioChoices['roleOverrides']): number {
+  if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) return 0
+  // Columns are `theme::appearance` (`themeModeKey`), the keys the web's
+  // Semantics table writes; the theme itself must exist.
+  if (!useDesignStore.getState().themeOrder.includes(themeKey)) return 0
+  let n = 0
+  for (const [role, byAppearance] of Object.entries(overrides).slice(0, 200)) {
+    if (!ROLE_ID.test(role) || !byAppearance || typeof byAppearance !== 'object') continue
+    for (const appearance of ['light', 'dark'] as const) {
+      const ref = byAppearance[appearance]
+      if (typeof ref !== 'string' || !ROLE_REF.test(ref)) continue
+      const column = themeModeKey(themeKey, appearance)
+      useDesignStore.getState().setArchitectureOverride('categorical', role, column, ref)
+      n++
+    }
+  }
+  return n
 }
