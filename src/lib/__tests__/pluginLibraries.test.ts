@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { LICENCE_STAMP } from '../licenceGate'
 // These tests pin the PAID rules, so they run with the open beta switched off.
 vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
 
@@ -245,5 +246,32 @@ describe('deleting a system on the web', () => {
     const out = await unregister(token, { ids: [B], deleteSystems: true })
     expect(out.body).toMatchObject({ ok: true, erased: [B], libraries: [] })
     expect(store.has(tokenKey(B))).toBe(false)
+  })
+})
+
+// Save to GitHub from the plugin publishes the file's system first (op=bridge).
+// The plugin has no login: it sends its licence key in X-Escala-Licence. The
+// bridge used to read only a session Bearer, so every plugin call got a 401
+// and the plugin then erased the key it had stored.
+describe('bridge from the plugin (paid rules)', () => {
+  const body = { name: 'Apollo', tokens: { project: 'Apollo', colors: { primitive: {} } } }
+
+  it('a good licence key publishes, unclaimed and stamped', async () => {
+    const out = await call(pluginSession, { op: 'bridge', body, headers: { 'x-escala-licence': GOOD_KEY } })
+    expect(out.status).toBe(200)
+    const id = String(out.body.id)
+    expect(id).toMatch(/^esc_/)
+    const stored = JSON.parse(store.get(tokenKey(id))!)
+    expect(stored.project).toBe('Apollo')
+    expect(stored[LICENCE_STAMP]).toBeDefined()
+    expect([...store.keys()].some((k) => k.startsWith('plugin-libraries/'))).toBe(false)
+  })
+
+  it('no key and a bad key are told Pro is needed, never "Sign in again"', async () => {
+    const none = await call(pluginSession, { op: 'bridge', body })
+    const bad = await call(pluginSession, { op: 'bridge', body, headers: { 'x-escala-licence': 'nope' } })
+    expect(none.status).toBe(402)
+    expect(bad.status).toBe(402)
+    expect(store.size).toBe(0)
   })
 })

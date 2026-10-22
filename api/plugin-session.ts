@@ -566,28 +566,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //    written — the browser that opens the system claims the slug on its
   //    first Sync, the same way a first publish from the configurator does.
   if (op === 'bridge' && req.method === 'POST') {
-    const token = parseBearer(req.headers.authorization) ?? ''
-    if (!token || token.length > 200) return res.status(401).json({ error: 'Sign in again.' })
+    // Three ways in. The plugin has no login any more, so a session (the old
+    // sign-in) is rare; a licence key in `X-Escala-Licence` is what a Pro
+    // plugin sends; and during the open beta nothing is needed at all — the
+    // id is minted here, unclaimed, and the browser that opens it claims it.
+    // Without a session there is no account to list the folder on.
     if (rateLimited(`${ip}:plugin-bridge`, 10)) {
       res.setHeader('Retry-After', '60')
-      return res.status(429).json({ error: 'Too many requests.' })
+      return res.status(429).json({ error: 'Too many requests. Try again in a minute.' })
     }
-    const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
-    if (!session || session.revoked || !session.userId) return res.status(401).json({ error: 'Sign in again.' })
-    const fresh = await withFreshPlan(token, session)
-    const tier = tierOf(fresh)
-    if (tier.tier === 'unknown') {
-      return res.status(503).json({ error: 'Could not confirm your plan. Try again in a moment.' })
+    const now = new Date()
+    const promo = entitlementAt(now).promo
+    const token = parseBearer(req.headers.authorization) ?? ''
+    let fresh: SessionRecord | null = null
+    let proUntil: string | null = null
+    if (token && token.length <= 200) {
+      const session = await readJsonBlob<SessionRecord>(sessionKey(sha256(token)), { fresh: true }).catch(() => null)
+      if (session && !session.revoked && session.userId) fresh = await withFreshPlan(token, session)
     }
-    if (tier.tier !== 'pro') return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+    if (fresh) {
+      const tier = tierOf(fresh)
+      if (tier.tier === 'unknown') {
+        return res.status(503).json({ error: 'Could not confirm your plan. Try again in a moment.' })
+      }
+      if (tier.tier !== 'pro') return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+      proUntil = fresh.proUntil === 'lifetime' || !fresh.proUntil ? null : fresh.proUntil
+    } else if (!promo) {
+      const key = licenceKeyFrom(req)
+      if (!key || key.length > MAX_LICENCE_KEY) return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+      // Anonymous publishes write a Blob each: a tighter hourly cap per IP.
+      if (rateLimited(`${ip}:plugin-bridge-key`, 30, 3_600_000)) {
+        res.setHeader('Retry-After', '3600')
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
+      }
+      const decided = await tierForLicenceKey(key)
+      if (decided.tier === 'unavailable') return res.status(503).json({ error: 'Could not confirm the key. Try again in a moment.' })
+      if (decided.tier !== 'pro') return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+      proUntil = decided.expiresAt
+    } else if (rateLimited(`${ip}:plugin-bridge-anon`, 30, 3_600_000)) {
+      res.setHeader('Retry-After', '3600')
+      return res.status(429).json({ error: 'Too many requests. Try again later.' })
+    }
     const payload = bridgePayload(jsonBody(req))
     if ('error' in payload) return res.status(400).json({ error: payload.error })
     const id = generatePublishId()
     const slug = slugifyProject(id)
     if (!slug) return res.status(500).json({ error: 'Could not start sync.' })
-    const now = new Date()
-    const promo = entitlementAt(now).promo
-    const until = fresh.proUntil === 'lifetime' || !fresh.proUntil ? null : fresh.proUntil
+    const until = proUntil
     const stored = promo ? payload.tokens : stampLicence(payload.tokens, until, now)
     const key = tokenBlobKey(slug)
     try {
@@ -599,12 +624,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       learnBlobBase(out.url, key)
       forgetBlob(key)
-      const libraries = upsertPluginLibraries(
-        await readLibraries(fresh.userId),
-        [{ id, name: payload.name }],
-        now.toISOString(),
-      )
-      await writeJson(librariesKey(fresh.userId), { libraries } satisfies LibraryRecord)
+      if (fresh) {
+        const libraries = upsertPluginLibraries(
+          await readLibraries(fresh.userId),
+          [{ id, name: payload.name }],
+          now.toISOString(),
+        )
+        await writeJson(librariesKey(fresh.userId), { libraries } satisfies LibraryRecord)
+      }
     } catch {
       return res.status(503).json({ error: 'Could not sync this theme. Try again.' })
     }
