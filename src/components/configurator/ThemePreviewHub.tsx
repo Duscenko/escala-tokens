@@ -33,7 +33,6 @@ import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
 import { BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
-import { useLibraryStatus } from '../../lib/libraryStatus'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
@@ -41,7 +40,7 @@ import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
-import { redoEdit, resetEditHistory, undoEdit } from '../../lib/editHistory'
+import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -519,10 +518,12 @@ export default function ThemePreviewHub({
   // The rail owns "a whole new theme"; it hands it here so the die sits on
   // the board it repaints (`BoardHistoryControls`), not in the footer.
   const randomHandle = useRef<(() => void) | null>(null)
-  const libraryStatus = useLibraryStatus()
-  // Random rewrites the brand in place, so it exists only on a draft that
-  // was never kept — the same rule the footer's die followed.
-  const canRandom = (exploringRandom || guest) && libraryStatus === 'none' && !stylePreview
+  // Random rewrites the brand in place, but every spin is ONE step of the
+  // pill's own Undo (the rail's `commit`), so it is offered on a kept brand
+  // too — to keep experimenting from what is on screen. A typed name is kept
+  // (`randomLabelAfterTweak`). Hidden only during a style try-on, where the
+  // rail has no theme to write to.
+  const canRandom = !stylePreview
   // Survives the hub unmounting, so a cover's ↗ → the component page → "Brand"
   // lands back on the Components view instead of the bento board.
   const [boardView, setBoardViewState] = useState<BoardView>(() => lastBoardView)
@@ -607,6 +608,12 @@ export default function ThemePreviewHub({
   // The edit history belongs to ONE theme: undoing an edit made on another
   // theme while looking at this one would change something off screen.
   useEffect(() => { resetEditHistory() }, [previewTheme])
+  // Undoing a Random spin puts the board back on the appearance it had: the
+  // spin's light/dark is a view overlay, so the theme's own Undo can't.
+  const lastRedoLabel = useEditHistory((h) => h.future[h.future.length - 1]?.label)
+  useEffect(() => {
+    if (lastRedoLabel === t('Random tweak applied')) setRandomBoardAppearance(null)
+  }, [lastRedoLabel, t])
   // ⌘Z / ⇧⌘Z (Ctrl on other platforms) while the board is on screen. Never
   // while typing — a text field keeps its own native undo.
   const historyKeysActive = surface === 'artefacts' && !docsOpen
