@@ -56,6 +56,17 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on
+> the page (3:1 + Lc 45) AND carries a label — no Light-only exception.** A first pass let Light pass on
+> the label alone (to keep `#ffd60a` from turning mustard); the plugin then graded `#5dff75` (1.3:1 on
+> white) and `#ffb04a` (1.8:1) "Good" while ghost buttons and links were invisible. Reported, reverted:
+> `rolePasses` (`colorRoles.ts`) is `check.passes` again. The cost, stated: a bright yellow / lime / cyan
+> gets deeper in Light (`#5dff75` → `#008427`, `#ffb04a` → `#a36600`); Dark keeps it bright. What stays
+> from that pass: a hex typed in Dark re-solves Light at the same hue (`lightTwinOf`) — web `setRoleHex`,
+> plugin `setCurAccent` / `setStateHex`. The plugin's chip shows the WEAKER figure ("1.3:1 on surface"
+> when the page fails, never the label's 10:1), and its hue bar draws the SOLVED colour per hue (the
+> web's `SpectrumSlider colorAt={solveAt}`), not a neon rainbow the solver then moves away from.
+
 > **UPDATE (2026-10-22): ADD BRAND · SAVE BRAND · "it was saved" — one way each.** Reported as
 > users still confused about how to add a brand, where Save is, and whether it worked. Measured:
 > the top bar's "Add new brand" offered Blank · **From code ("Imports a whole design system")**,

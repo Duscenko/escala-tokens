@@ -95,7 +95,7 @@ import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './Preset
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
 import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
-import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
+import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
@@ -2407,11 +2407,11 @@ export default function ThemeQuickSettingsRail({
       harmonizeStates(themeKey, accentAnchor('light'))
     })
   }
-  /** A typed or picked hex. In Dark it sets the dark anchor only — that is
-   *  an explicit choice for that theme. In Light it sets the light anchor AND
-   *  re-solves the dark one at the same hue (`darkTwinOf`): keeping the old
-   *  dark anchor left Variables with a green light ramp beside a gold dark
-   *  one. */
+  /** A typed or picked hex is ONE colour read two ways. In Light it sets the
+   *  light anchor and re-solves the dark one at the same hue (`darkTwinOf`).
+   *  In Dark it sets the dark anchor as typed and re-solves the light one
+   *  (`lightTwinOf`): keeping the old light anchor meant a colour chosen in
+   *  Dark came back as a different colour in Light. */
   const setRoleHex = (id: ColorRoleId, hex: string) => {
     if (id === 'neutral') {
       commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
@@ -2419,12 +2419,12 @@ export default function ThemeQuickSettingsRail({
     }
     const dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)
     if (id === 'accent') {
-      const light = rampAppearance === 'dark' ? accentAnchor('light') : hex
+      const light = rampAppearance === 'dark' ? lightTwinOf(hex, themePage.light) : hex
       commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
       return
     }
     commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
-      if (rampAppearance === 'light') writeState(themeKey, id, hex, 'light')
+      writeState(themeKey, id, rampAppearance === 'light' ? hex : lightTwinOf(hex, themePage.light), 'light')
       writeState(themeKey, id, dark, 'dark')
     })
   }

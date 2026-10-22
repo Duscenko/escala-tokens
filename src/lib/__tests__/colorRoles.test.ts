@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COLOR_ROLE_BAND, DARK_SATURATION_CAP, checkRoleColor, clampToBand, darkTwinOf, harmonizedState, roleColorAtHue, solveRoleColor, type StateRoleId } from '../colorRoles'
+import { COLOR_ROLE_BAND, DARK_SATURATION_CAP, checkRoleColor, rolePasses, clampToBand, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, solveRoleColor, type StateRoleId } from '../colorRoles'
 import { colorAtHue, readHuePosition } from '../colorUtils'
 import { wcagLuminance } from '../color/apca'
 
@@ -27,7 +27,7 @@ describe('Color edition roles — the solver', () => {
       for (const hue of HUES) {
         for (const appearance of ['light', 'dark'] as const) {
           const hex = roleColorAtHue(seed, hue, appearance, PAGES[appearance])
-          if (!checkRoleColor(hex, PAGES[appearance]).passes) misses.push(`${seed}@${hue} ${appearance} → ${hex}`)
+          if (!rolePasses(checkRoleColor(hex, PAGES[appearance]), appearance)) misses.push(`${seed}@${hue} ${appearance} → ${hex}`)
         }
       }
     }
@@ -59,11 +59,23 @@ describe('Color edition roles — the solver', () => {
     expect(Math.abs(readHuePosition(solved).position.lightness - readHuePosition(seed).position.lightness)).toBeLessThan(0.02)
   })
 
-  it('moves a light colour that fails to the nearest tone that passes', () => {
-    const seed = '#ffcc00' // bright yellow: invisible on a white page
-    expect(checkRoleColor(seed, PAGES.light).passes).toBe(false)
-    const solved = roleColorAtHue(seed, readHuePosition(seed).hue, 'light', PAGES.light)
-    expect(checkRoleColor(solved, PAGES.light).passes).toBe(true)
+  it('moves a light colour that is hard to see on white to the nearest tone that passes', () => {
+    // Reported: #5dff75 (1.3:1) and #ffb04a (1.8:1) graded "Good" in Light.
+    for (const seed of ['#ffcc00', '#5dff75', '#ffb04a', '#22d3ee', '#beff00', '#e0559a']) {
+      expect(checkRoleColor(seed, PAGES.light).passes).toBe(false)
+      const solved = roleColorAtHue(seed, readHuePosition(seed).hue, 'light', PAGES.light)
+      const c = checkRoleColor(solved, PAGES.light)
+      expect(c.passes).toBe(true)
+      expect(c.pageWcag).toBeGreaterThanOrEqual(3)
+      const d = Math.abs(readHuePosition(solved).hue - readHuePosition(seed).hue)
+      expect(Math.min(d, 360 - d)).toBeLessThan(4)
+    }
+  })
+
+  it('grades the same in Light and Dark — a label alone is not a pass', () => {
+    const c = checkRoleColor('#5dff75', PAGES.light)
+    expect(c.ink).not.toBe(null)
+    expect(rolePasses(c, 'light')).toBe(false)
   })
 })
 
@@ -102,6 +114,17 @@ describe('Color edition roles — light and dark are one colour', () => {
   })
 })
 
+describe('Color edition roles — a Dark pick reads the same in Light', () => {
+  it('gives a dark colour a light twin of the SAME hue that passes on white', () => {
+    for (const dark of ['#ffd60a', '#ff79c6', '#51fa7b', '#8be9fd', '#beff00', '#4fbed3']) {
+      const light = lightTwinOf(dark, PAGES.light)
+      const d = Math.abs(readHuePosition(light).hue - readHuePosition(dark).hue)
+      expect(Math.min(d, 360 - d)).toBeLessThan(3)
+      expect(rolePasses(checkRoleColor(light, PAGES.light), 'light')).toBe(true)
+    }
+  })
+})
+
 describe('Color edition roles — states follow the accent', () => {
   const STATES: [StateRoleId, string][] = [['success', '#34c759'], ['error', '#ff3b30'], ['warning', '#ff8a00'], ['info', '#01b5fc']]
   const ACCENTS = ['#669f2a', '#9522e9', '#2970ff', '#8a7f6a', '#ff5fa2']
@@ -113,7 +136,7 @@ describe('Color edition roles — states follow the accent', () => {
       for (const [role, seed] of STATES) {
         const { light, dark } = harmonizedState(role, seed, accent, PAGES)
         for (const [name, hex, page] of [['light', light, PAGES.light], ['dark', dark, PAGES.dark]] as const) {
-          if (!checkRoleColor(hex, page).passes) misses.push(`${role} ${name} for ${accent}: ${hex}`)
+          if (!rolePasses(checkRoleColor(hex, page), name)) misses.push(`${role} ${name} for ${accent}: ${hex}`)
           const hue = readHuePosition(hex).hue
           if (Math.abs(clampToBand(hue, COLOR_ROLE_BAND[role]) - hue) > 3) misses.push(`${role} ${name} hue ${hue} left its band`)
         }

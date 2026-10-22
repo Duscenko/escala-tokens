@@ -16,7 +16,7 @@
 
 import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, type ColorRoleId } from '../../lib/colorRoles'
+import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, rolePasses, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW } from '../ui/PickerField'
 import { useI18n } from '../../lib/i18n'
@@ -302,7 +302,8 @@ function ContrastChip({ hex, page, appearance, solveAt, onFix }: {
   const pageOk = c.pageWcag >= 3 && c.pageLc >= 45
   const labelOk = c.ink !== null
   const aaOk = c.pageWcag >= 3 && c.labelWcag >= 4.5
-  const grade = pageOk && labelOk ? 'good' : aaOk ? 'aa' : pageOk || labelOk ? 'fair' : 'poor'
+  // Good = visible on the page AND carrying a label, in every theme.
+  const grade = rolePasses(c, appearance) ? 'good' : aaOk ? 'aa' : pageOk || labelOk ? 'fair' : 'poor'
   const style = {
     good: 'bg-status-success/15 text-status-success',
     aa: 'bg-status-success/15 text-status-success',
@@ -320,9 +321,9 @@ function ContrastChip({ hex, page, appearance, solveAt, onFix }: {
 
   const hue = readHuePosition(hex).hue
   const solved = solveAt(hue)
-  const fixable = !checkRoleColor(hex, page).passes
+  const fixable = !rolePasses(c, appearance)
     && solved.toLowerCase() !== hex.toLowerCase()
-    && checkRoleColor(solved, page).passes
+    && rolePasses(checkRoleColor(solved, page), appearance)
 
   return (
     <>

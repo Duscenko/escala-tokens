@@ -72,6 +72,20 @@ export function checkRoleColor(hex: string, page: string): RoleCheck {
   }
 }
 
+/**
+ * Whether a role's anchor is accessible in ONE theme — the rule the solver
+ * picks with and the panels grade with. The SAME in Light and Dark: visible
+ * on the page as a shape (3:1 + Lc 45) AND carrying a label.
+ *
+ * A Light-only exception (label alone) was tried on 2026-10-22 and reverted
+ * the same day: it graded `#5dff75` at 1.3:1 and `#ffb04a` at 1.8:1 on white
+ * as "Good", i.e. buttons, ghost text and links nobody could see. A yellow or
+ * a lime does get deeper in Light — that is what 3:1 on white costs.
+ */
+export function rolePasses(check: RoleCheck, _appearance?: ThemeAppearance): boolean {
+  return check.passes
+}
+
 /** How far a colour is from passing, 0 = passes. Used only when no tone of
  *  the hue passes, to land on the closest one rather than a fixed step. */
 function shortfall(c: RoleCheck): number {
@@ -110,7 +124,7 @@ export function solveRoleColor(position: HuePosition, hue: number, appearance: T
     const hex = colorAtHue({ saturation, lightness }, hue)
     return { lightness, hex, check: checkRoleColor(hex, page) }
   })
-  const passing = candidates.filter((c) => c.check.passes)
+  const passing = candidates.filter((c) => rolePasses(c.check, appearance))
   let pick
   if (passing.length) {
     pick = appearance === 'dark'
@@ -135,6 +149,14 @@ export function roleColorAtHue(hex: string, hue: number, appearance: ThemeAppear
  *  never the new light hue next to the previous dark one. */
 export function darkTwinOf(lightHex: string, darkPage: string): string {
   return roleColorAtHue(lightHex, readHuePosition(lightHex).hue, 'dark', darkPage)
+}
+
+/** The light anchor that belongs to a colour chosen in DARK: the same hue,
+ *  solved for the light page (nearest tone a label reads on). A Dark pick
+ *  used to leave Light on its previous colour, so a brand that looked right
+ *  in Dark switched to a different one in Light. */
+export function lightTwinOf(darkHex: string, lightPage: string): string {
+  return roleColorAtHue(darkHex, readHuePosition(darkHex).hue, 'light', lightPage)
 }
 
 /** `hue` moved into `band` (clockwise), pinned to the nearer end if outside. */
