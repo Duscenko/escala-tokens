@@ -75,6 +75,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   and the login return. Don't add a second "saved" toast elsewhere.
 > - The studio board header shows its title ("New brand" / "Set your foundations").
 
+> **UPDATE (2026-10-22): DELETE A BRAND — web and plugin, and Figma follows (plugin 0.21.2).**
+> Home had no per-brand delete (only "delete all brands" / delete the system). Each brand column now
+> has a trash (`DeleteBrandButton`, `OverviewPage.tsx`, shown with 2+ brands; the last brand goes
+> with the system) with an in-place confirm. `removeTheme` already republishes a published system,
+> so a synced Figma file drops that brand's mode columns on its next sync (`pruneModes`). The
+> plugin's System Matrix has the same trash on each brand's tag row: a plugin-made brand is removed
+> from the payload (`dropBrand` → `stripTheme`, the code `mergeTheme` already used to replace a
+> brand; primitives another brand also added stay) and re-imported; a brand made on the web says to
+> delete it there. Same release: the plugin editor panel starts 10px under the header like the
+> canvas, its Contrast card no longer renders empty in the accordion (painted on the next frame
+> once attached), and the narrow window shows "Expand to preview your components live" atop the
+> editor (`#stExpandHint`, clicks Expand).
+
 > **UPDATE (2026-10-22): RANDOM draws a MOOD, after DaisyUI's theme generator — `lib/themeMoods.ts`.**
 > Reported as Random feeling repetitive next to daisyui.com/theme-generator. DaisyUI's themes get their
 > character from moves Random never made: the PAGE has its own hue (Abyss: deep-teal page, neon-lime

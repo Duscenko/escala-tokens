@@ -21,6 +21,7 @@ import { adoptPreset } from '../../lib/adoptPreset'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { useEditHistory } from '../../lib/editHistory'
 import { announceBrandSaved } from '../../lib/brandSaved'
+import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
@@ -574,6 +575,11 @@ export default function ThemeLibraryPage({
         onOpenColorTheme={onOpenColorTheme}
         onSelectBrand={onSelectTheme}
         onEditBrand={onOpenPreview}
+        onDeleteBrand={(key) => {
+          const name = themeDisplayName(key, store.themeLabels)
+          deleteTheme(key)
+          showToast(t('“{name}” deleted', { name }))
+        }}
         onEditRole={onEditRole}
         onOpenComponent={onOpenComponent}
         onExportBrand={onExportBrand ?? onGetCode}

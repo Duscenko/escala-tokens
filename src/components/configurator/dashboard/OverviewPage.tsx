@@ -329,7 +329,7 @@ export function AddBrandChoices({ onBlank, onImportMode, firstRef, itemClassName
 
 export default function OverviewPage({
   dash, header, footer, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport, onOpenColorTheme,
-  onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
+  onAddBrand, onImportBrand, addBrandBlocked, maxBrands, onDeleteBrand,
 }: {
   dash: Dashboard
   /** Under the table. */
@@ -359,6 +359,9 @@ export default function OverviewPage({
   addBrandBlocked?: string
   /** How many brands this plan holds. */
   maxBrands?: number
+  /** Removes that brand from the system. Shown only while there is another
+   *  brand: the last one goes with the system (the ⋯ menu's Delete). */
+  onDeleteBrand?: (key: string) => void
 }) {
   const { t } = useI18n()
   const { guest } = useAccess()
@@ -438,6 +441,9 @@ export default function OverviewPage({
                   >
                     {t('Edit')}
                   </button>
+                  {onDeleteBrand && cards.length > 1 && (
+                    <DeleteBrandButton name={card.name} onConfirm={() => onDeleteBrand(card.key)} />
+                  )}
                 </header>
 
                 <div className="border-b border-line px-4 py-3">
@@ -593,6 +599,59 @@ export interface BrandExportActions {
  * GitHub. Home has no header Export and the top bar's Export pill is hidden
  * there, so three doors to the same wizard became one.
  */
+/** A brand column's trash: asks once, in place, then removes the brand. The
+ *  published system follows (the store republishes on a removal), so a Figma
+ *  file drops this brand's mode columns the next time it syncs. */
+function DeleteBrandButton({ name, onConfirm }: { name: string; onConfirm: () => void }) {
+  const { t } = useI18n()
+  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={t('Delete {name}', { name })}
+        title={t('Delete brand')}
+        className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-status-danger/10 hover:text-status-danger ${open ? 'bg-status-danger/10 text-status-danger' : ''} ${FOCUS}`}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+        </svg>
+      </button>
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={anchorRef}
+        align="right"
+        gap={6}
+        menuAriaLabel={t('Delete {name}', { name })}
+        className="w-72 rounded-lg border border-line-strong bg-app p-3 shadow-lg"
+      >
+        <p className="text-caption font-semibold text-fg">{t('Delete “{name}”?', { name })}</p>
+        <p className="mt-1 text-mini leading-snug text-fg-muted">
+          {t('Its theme columns leave this design system. A Figma file synced with it drops them on its next sync.')}
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onConfirm() }}
+            className={`h-7 rounded-md bg-status-danger-solid px-2.5 text-mini font-semibold text-white transition-colors hover:bg-status-danger-solid/90 ${FOCUS}`}
+          >
+            {t('Delete brand')}
+          </button>
+          <button type="button" onClick={() => setOpen(false)} className={`h-7 rounded-md px-2.5 text-mini font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS}`}>
+            {t('Cancel')}
+          </button>
+        </div>
+      </ChromeAnchoredDropdown>
+    </>
+  )
+}
+
 function BrandExportMenu({ brandKey, brandName, brandCount, onExportBrand, actions }: {
   brandKey: string
   brandName: string
