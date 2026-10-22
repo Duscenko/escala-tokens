@@ -11194,6 +11194,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
 
 // src/lib/pluginStudio.ts
 init_themeFoundations();
+init_themeModes();
 init_tokenGenerator();
 init_figmaSyncModes();
 init_themeSources();
@@ -11515,6 +11516,130 @@ function approximateSource(text, name = "From code") {
 // src/lib/themePresets.ts
 init_colorUtils();
 init_layoutTokens();
+
+// src/lib/themeMoods.ts
+init_layoutTokens();
+init_colorUtils();
+init_gamut();
+
+// src/lib/color/scaleMatch.ts
+init_gamut();
+
+// src/lib/color/tailwind.ts
+init_gamut();
+
+// src/lib/themeMoods.ts
+var DAISY_MOOD_SPECS = {
+  forest: { scheme: "dark", base: [0.2084, 8e-3, 17.911], neutral: [0.307, 0.039, 171.364], primary: [0.6863, 0.185, 148.958], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
+  cyberpunk: { scheme: "light", base: [0.9451, 0.179, 104.32], neutral: [0.2304, 0.065, 269.31], primary: [0.7422, 0.209, 6.35], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "none", fields: "none", boxes: "none" }, border: 1, depth: 0 },
+  cupcake: { scheme: "light", base: [0.9779, 4e-3, 56.375], neutral: [0.27, 6e-3, 286.033], primary: [0.85, 0.138, 181.071], info: [0.68, 0.169, 237.323], success: [0.69, 0.17, 162.48], warning: [0.79, 0.184, 86.047], error: [0.64, 0.246, 16.439], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 1 },
+  fantasy: { scheme: "light", base: [1, 0, 0], neutral: [0.2781, 0.029, 256.847], primary: [0.3745, 0.189, 325.02], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+  cmyk: { scheme: "light", base: [1, 0, 0], neutral: [0.2178, 0, 0], primary: [0.7177, 0.133, 239.443], info: [0.6847, 0.094, 217.284], success: [0.4695, 0.162, 321.406], warning: [0.7124, 0.159, 52.023], error: [0.6201, 0.208, 28.717], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  emerald: { scheme: "light", base: [1, 0, 0], neutral: [0.3552, 0.032, 262.988], primary: [0.7666, 0.135, 153.45], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  nord: { scheme: "light", base: [0.9513, 7e-3, 260.731], neutral: [0.4523, 0.035, 264.131], primary: [0.5944, 0.077, 254.027], info: [0.6921, 0.062, 332.664], success: [0.7683, 0.074, 131.063], warning: [0.8549, 0.089, 84.093], error: [0.6061, 0.12, 15.341], radius: { selectors: "2xl", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
+  halloween: { scheme: "dark", base: [0.21, 6e-3, 56.043], neutral: [0.2437, 0.046, 65.681], primary: [0.7748, 0.204, 60.62], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.6572, 0.199, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+  night: { scheme: "dark", base: [0.2077, 0.039, 265.754], neutral: [0.2795, 0.036, 260.03], primary: [0.7535, 0.138, 232.661], info: [0.6845, 0.148, 237.251], success: [0.7845, 0.132, 181.911], warning: [0.8324, 0.139, 82.95], error: [0.7178, 0.17, 13.118], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  coffee: { scheme: "dark", base: [0.24, 0.023, 329.708], neutral: [0.1651, 0.015, 326.261], primary: [0.72, 0.123, 62.756], info: [0.7949, 0.063, 184.558], success: [0.7472, 0.072, 131.116], warning: [0.8815, 0.14, 87.722], error: [0.7732, 0.128, 31.871], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  winter: { scheme: "light", base: [1, 0, 0], neutral: [0.1962, 0.063, 257.651], primary: [0.5686, 0.255, 257.57], info: [0.8813, 0.085, 214.515], success: [0.8049, 0.077, 197.823], warning: [0.8917, 0.045, 71.47], error: [0.7309, 0.11, 20.076], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  light: { scheme: "light", base: [1, 0, 0], neutral: [0.14, 5e-3, 285.823], primary: [0.45, 0.24, 277.023], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
+  valentine: { scheme: "light", base: [0.97, 0.014, 343.198], neutral: [0.4, 0.153, 2.432], primary: [0.65, 0.241, 354.308], info: [0.86, 0.127, 207.078], success: [0.84, 0.143, 164.978], warning: [0.75, 0.183, 55.934], error: [0.63, 0.237, 25.331], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
+  lemonade: { scheme: "light", base: [0.9871, 0.02, 123.72], neutral: [0.3098, 0.075, 108.6], primary: [0.5892, 0.199, 134.6], info: [0.8619, 0.047, 224.14], success: [0.8619, 0.047, 157.85], warning: [0.8619, 0.047, 102.15], error: [0.8619, 0.047, 25.85], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  retro: { scheme: "light", base: [0.9164, 0.034, 90.515], neutral: [0.44, 0.011, 73.639], primary: [0.8, 0.114, 19.571], info: [0.58, 0.158, 241.966], success: [0.51, 0.096, 186.391], warning: [0.64, 0.222, 41.116], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
+  aqua: { scheme: "dark", base: [0.37, 0.146, 265.522], neutral: [0.27, 0.146, 265.522], primary: [0.8566, 0.144, 198.645], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.7395, 0.19, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+  dark: { scheme: "dark", base: [0.2533, 0.016, 252.42], neutral: [0.14, 5e-3, 285.823], primary: [0.58, 0.233, 277.117], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
+  dim: { scheme: "dark", base: [0.3086, 0.023, 264.149], neutral: [0.2473, 0.02, 264.094], primary: [0.8613, 0.141, 139.549], info: [0.8608, 0.142, 206.182], success: [0.8617, 0.142, 166.534], warning: [0.8616, 0.142, 94.818], error: [0.8242, 0.099, 33.756], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  dracula: { scheme: "dark", base: [0.2882, 0.022, 277.508], neutral: [0.3945, 0.032, 275.524], primary: [0.7546, 0.183, 346.812], info: [0.8826, 0.093, 212.846], success: [0.871, 0.219, 148.024], warning: [0.9553, 0.134, 112.757], error: [0.6822, 0.206, 24.43], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  corporate: { scheme: "light", base: [1, 0, 0], neutral: [0, 0, 0], primary: [0.58, 0.158, 241.966], info: [0.6, 0.126, 221.723], success: [0.62, 0.194, 149.214], warning: [0.85, 0.199, 91.936], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
+  bumblebee: { scheme: "light", base: [1, 0, 0], neutral: [0.37, 0.01, 67.558], primary: [0.85, 0.199, 91.936], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.7, 0.191, 22.216], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+  business: { scheme: "dark", base: [0.2435, 0, 0], neutral: [0.2744, 0.013, 253.041], primary: [0.417, 0.099, 251.473], info: [0.6262, 0.143, 240.033], success: [0.7023, 0.094, 156.596], warning: [0.7748, 0.115, 81.519], error: [0.5161, 0.146, 29.674], radius: { selectors: "none", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
+  acid: { scheme: "light", base: [0.98, 0, 0], neutral: [0.2131, 0.128, 278.68], primary: [0.719, 0.357, 330.759], info: [0.6072, 0.227, 252.05], success: [0.8572, 0.266, 158.53], warning: [0.9101, 0.212, 100.5], error: [0.6484, 0.293, 29.349], radius: { selectors: "2xl", fields: "2xl", boxes: "2xl" }, border: 1, depth: 1 },
+  sunset: { scheme: "dark", base: [0.22, 0.019, 237.69], neutral: [0.26, 0.019, 237.69], primary: [0.747, 0.158, 39.947], info: [0.8556, 0.085, 206.015], success: [0.8556, 0.085, 144.778], warning: [0.8557, 0.084, 74.427], error: [0.8551, 0.078, 16.886], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  garden: { scheme: "light", base: [0.9295, 2e-3, 17.197], neutral: [0.2416, 0.049, 89.07], primary: [0.6245, 0.278, 3.836], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  autumn: { scheme: "light", base: [0.9581, 0, 0], neutral: [0.5437, 0.037, 51.902], primary: [0.4072, 0.161, 17.53], info: [0.6922, 0.097, 207.284], success: [0.6099, 0.08, 174.616], warning: [0.7008, 0.164, 56.844], error: [0.5307, 0.241, 24.16], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+  pastel: { scheme: "light", base: [1, 0, 0], neutral: [0.55, 0.046, 257.417], primary: [0.9, 0.063, 306.703], info: [0.86, 0.127, 207.078], success: [0.87, 0.15, 154.449], warning: [0.83, 0.128, 66.29], error: [0.8, 0.114, 19.571], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 0 },
+  synthwave: { scheme: "dark", base: [0.15, 0.09, 281.288], neutral: [0.45, 0.24, 277.023], primary: [0.71, 0.202, 349.761], info: [0.74, 0.16, 232.661], success: [0.77, 0.152, 181.912], warning: [0.9, 0.182, 98.111], error: [0.737, 0.121, 32.639], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+  abyss: { scheme: "dark", base: [0.2, 0.08, 209], neutral: [0.3, 0.08, 209], primary: [0.92, 0.2653, 125], info: [0.74, 0.16, 232.661], success: [0.79, 0.209, 151.711], warning: [0.848, 0.1962, 84.62], error: [0.65, 0.1985, 24.22], radius: { selectors: "4xl", fields: "sm", boxes: "lg" }, border: 1, depth: 1 }
+};
+var SEVERITY_HUES = {
+  error: [[0, 45], [340, 360]],
+  warning: [[40, 112]],
+  success: [[118, 200]],
+  info: [[195, 290]]
+};
+var FALLBACK_STATES = {
+  error: "#d92d20",
+  warning: "#dc6803",
+  success: "#079455",
+  info: "#1570ef"
+};
+var hexOf = ([l, c2, h]) => oklchToHex(l, c2, h);
+function stateOf(role, value) {
+  const hex = hexOf(value);
+  const { c: c2, h: raw } = hexToOklch(hex);
+  const h = (raw % 360 + 360) % 360;
+  const inBand = SEVERITY_HUES[role].some(([lo, hi]) => h >= lo && h <= hi);
+  return c2 > 0.02 && inBand ? hex : FALLBACK_STATES[role];
+}
+function tintFor(base, appearance) {
+  if (base[1] < 3e-3) return "pure";
+  for (const spec of NEUTRAL_TINTS) {
+    if (spec.key === "pure") continue;
+    if (spec[appearance].cap >= base[1]) return spec.key;
+  }
+  return "vivid";
+}
+function neutralSeedFor(spec, tint) {
+  const appearance = spec.scheme;
+  const { mul } = NEUTRAL_TINTS.find((t) => t.key === tint)[appearance];
+  const hue = spec.base[1] > 4e-3 ? spec.base[2] : spec.neutral[1] > 8e-3 ? spec.neutral[2] : spec.base[2];
+  const chroma6 = Math.min(0.14, Math.max(spec.neutral[1], mul ? spec.base[1] / mul : 0, 4e-3));
+  return oklchToHex(0.52, chroma6, hue);
+}
+function moodFromSpec(id, spec) {
+  const tint = tintFor(spec.base, spec.scheme);
+  return {
+    id,
+    appearance: spec.scheme,
+    accent: hexOf(spec.primary),
+    neutral: neutralSeedFor(spec, tint),
+    neutralTint: tint,
+    states: {
+      error: stateOf("error", spec.error),
+      warning: stateOf("warning", spec.warning),
+      success: stateOf("success", spec.success),
+      info: stateOf("info", spec.info)
+    },
+    radius: { ...spec.radius },
+    border: spec.border,
+    depth: spec.depth
+  };
+}
+var CURATED_MOODS = Object.entries(DAISY_MOOD_SPECS).map(([id, spec]) => moodFromSpec(id, spec));
+function curatedMood(id) {
+  return CURATED_MOODS.find((mood) => mood.id === id);
+}
+var BRAND_WEIGHTS = {
+  amber: 3,
+  blue: 4,
+  cyan: 2,
+  emerald: 3,
+  fuchsia: 1,
+  green: 3,
+  indigo: 4,
+  lime: 3,
+  orange: 3,
+  pink: 3,
+  purple: 3,
+  red: 3,
+  rose: 1,
+  sky: 2,
+  teal: 3,
+  violet: 3,
+  yellow: 3
+};
+var BRAND_POOL = Object.entries(BRAND_WEIGHTS).flatMap(([name, w]) => Array(w).fill(name));
+
+// src/lib/themePresets.ts
 init_typeRoles();
 init_typographyStandard();
 function presetStates(preset) {
@@ -11532,6 +11657,27 @@ function presetHarmony(preset) {
 }
 function accent(label) {
   return BRAND_SPECTRUM.find((preset) => preset.label === label)?.hex ?? BRAND_SPECTRUM[0].hex;
+}
+function moodColours(id) {
+  const mood = curatedMood(id);
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
+  return {
+    accent: mood.accent,
+    neutral: mood.neutral,
+    neutralTint: mood.neutralTint,
+    states: { ...mood.states },
+    preferredAppearance: mood.appearance
+  };
+}
+function moodShape(id) {
+  const mood = curatedMood(id);
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
+  return {
+    radius: { ...RADIUS_STANDARD },
+    radiusRoles: styleRadiusRoles(mood.radius),
+    stroke: { ...STROKE_STANDARD, sm: `${mood.border}px` },
+    shadows: { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values }
+  };
 }
 var DARK_DEPTH = {
   "surface.layer-1": { dark: "{neutral-dark.3}" },
@@ -12023,6 +12169,123 @@ var THEME_STYLE_PRESETS = [
       "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
     }
+  },
+  // ── Moods: six styles after DaisyUI v5's built-in themes (MIT) ──────────
+  // What the twelve above never did: a PAGE with a hue of its own. Colour
+  // and geometry come from `themeMoods` (DaisyUI's values to the digit, mapped
+  // onto Escala's inputs); every ramp and ink is still solved here.
+  {
+    id: "abyss-neon",
+    label: "Abyss / Neon",
+    shortLabel: "Abyss",
+    description: "Deep, electric, and nocturnal.",
+    detail: "A deep-sea teal page under a neon lime accent, pill selectors beside sharp fields. After DaisyUI\u2019s Abyss.",
+    ...moodColours("abyss"),
+    foundations: {
+      typography: typography("Sora", "Sora"),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape("abyss"),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: "solid",
+      iconWeight: "bold"
+    },
+    // A vivid teal dark ramp compresses its low steps even more than the
+    // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
+    // ΔL 0.070 against light's 0.072. One more step restores it.
+    semantics: { ...softBorders, "surface.layer-2": { dark: "{neutral-dark.5}" } }
+  },
+  {
+    id: "synthwave-night",
+    label: "Synthwave / Night",
+    shortLabel: "Synthwave",
+    description: "Neon, nocturnal, and loud.",
+    detail: "An ink-indigo page with a hot-pink accent and arcade severities. After DaisyUI\u2019s Synthwave.",
+    ...moodColours("synthwave"),
+    foundations: {
+      typography: typography("Outfit", "Outfit"),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape("synthwave"),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: "solid",
+      iconWeight: "duotone"
+    },
+    semantics: softBorders
+  },
+  {
+    id: "cupcake-pastel",
+    label: "Cupcake / Pastel",
+    shortLabel: "Cupcake",
+    description: "Soft, sweet, and friendly.",
+    detail: "Cream paper, a mint accent, pill fields and a 2px edge. After DaisyUI\u2019s Cupcake.",
+    ...moodColours("cupcake"),
+    foundations: {
+      typography: typography("Figtree", "Figtree"),
+      spacing: buildSpacingFromBase(4),
+      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+      ...moodShape("cupcake"),
+      sizes: buildSizesFromBase(4.5),
+      selector: buildSelectorsFromBase(3.5),
+      panelBackground: "solid",
+      iconWeight: "regular"
+    },
+    semantics: softBorders
+  },
+  {
+    id: "arctic-frost",
+    label: "Arctic / Frost",
+    shortLabel: "Arctic",
+    description: "Cool, muted, and calm.",
+    detail: "Frosted blue-grey paper, a slate-blue accent and quiet severities. After DaisyUI\u2019s Nord.",
+    ...moodColours("nord"),
+    foundations: {
+      typography: typography("Manrope", "Manrope"),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape("nord"),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: "solid",
+      iconWeight: "light"
+    },
+    semantics: softBorders
+  },
+  {
+    id: "sunset-dusk",
+    label: "Sunset / Dusk",
+    shortLabel: "Sunset",
+    description: "Warm light on a cool night.",
+    detail: "A blue-slate page under a coral accent, with pastel severities. After DaisyUI\u2019s Sunset.",
+    ...moodColours("sunset"),
+    foundations: {
+      typography: typography("DM Sans", "Fraunces"),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape("sunset"),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: "solid",
+      iconWeight: "regular"
+    },
+    semantics: softBorders
+  },
+  {
+    id: "valentine-blush",
+    label: "Blush / Valentine",
+    shortLabel: "Blush",
+    description: "Romantic, warm, and rounded.",
+    detail: "Rose-tinted paper, a hot-pink accent and pill fields. After DaisyUI\u2019s Valentine.",
+    ...moodColours("valentine"),
+    foundations: {
+      typography: typography("Plus Jakarta Sans", "Playfair Display"),
+      spacing: buildSpacingFromBase(4),
+      ...moodShape("valentine"),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      panelBackground: "solid",
+      iconWeight: "regular"
+    },
+    semantics: softBorders
   }
 ];
 function themeStylePreset(id) {
@@ -12283,6 +12546,7 @@ function buildStudioTokens(choices, tier) {
   if (shadow) patch({ shadows: { ...shadow.values } });
   const weight = PHOSPHOR_WEIGHTS.includes(choices.iconWeight ?? "") ? choices.iconWeight : void 0;
   if (weight) patch({ iconWeight: weight });
+  applyRoleOverrides(key2, choices.roleOverrides);
   const s = useDesignStore.getState();
   const modes = defaultFigmaSyncModes([key2], s.themeKinds);
   const scope = tier === "free" ? { themes: [key2], modes, viewports: ["desktop"], gridStyles: ["xl-desktop"] } : { themes: [key2], modes };
@@ -12456,7 +12720,26 @@ function studioLook(choices) {
     body: c2.bodyFont || summaryFonts?.font || "Inter"
   };
 }
+var ROLE_REF = /^\{(?:(?:accent|neutral|error|warning|success|info)(?:-a)?|black-a|white-a)\.(?:[1-9]|1[0-2])\}$/;
+var ROLE_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9-]+){1,3}$/;
+function applyRoleOverrides(themeKey, overrides) {
+  if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) return 0;
+  if (!useDesignStore.getState().themeOrder.includes(themeKey)) return 0;
+  let n = 0;
+  for (const [role, byAppearance] of Object.entries(overrides).slice(0, 200)) {
+    if (!ROLE_ID.test(role) || !byAppearance || typeof byAppearance !== "object") continue;
+    for (const appearance of ["light", "dark"]) {
+      const ref = byAppearance[appearance];
+      if (typeof ref !== "string" || !ROLE_REF.test(ref)) continue;
+      const column = themeModeKey(themeKey, appearance);
+      useDesignStore.getState().setArchitectureOverride("categorical", role, column, ref);
+      n++;
+    }
+  }
+  return n;
+}
 export {
+  applyRoleOverrides,
   buildStudioTokens,
   harmonyFor,
   readCode,
