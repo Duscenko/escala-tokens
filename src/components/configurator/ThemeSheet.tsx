@@ -17,6 +17,8 @@ import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } fro
 import { ThemeAvatar } from './ThemeLibraryRail'
 import { PRESET_AVATAR_RAMPS } from './StyleOverview'
 import { ChromeAnchoredDropdown, FigmaGlyph } from './TopNav'
+import { AddBrandChoices, BrandImportForm, type ImportBrand } from './dashboard/OverviewPage'
+import type { BrandSource } from '../../lib/importBrand'
 
 const ICON = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
@@ -179,6 +181,7 @@ export function StartDesignModal({
   onSystemStyles,
   title,
   importsSystem = false,
+  onImportBrand,
 }: {
   open: boolean
   onClose: () => void
@@ -190,12 +193,20 @@ export function StartDesignModal({
   onSystemStyles?: () => void
   /** A brand already exists: From code imports a whole system. */
   importsSystem?: boolean
+  /** Adding a brand to a system that has one: the choices become Home's Add
+   *  brand menu (Start from blank · Import agent context · Import JSON), and
+   *  an import adds a BRAND. "From code" here used to import a whole design
+   *  system from a door labelled Add new brand. */
+  onImportBrand?: ImportBrand
 }) {
   const { t } = useI18n()
   const reduceMotion = useReducedMotion()
+  const [importMode, setImportMode] = useState<BrandSource | null>(null)
+  // Every way out lands back on the choices next time it opens.
+  const closeDialog = () => { setImportMode(null); onClose() }
   const dialogRef = useRef<HTMLDivElement>(null)
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+  const onCloseRef = useRef(closeDialog)
+  onCloseRef.current = closeDialog
   useEffect(() => {
     if (!open) return
     const opener = document.activeElement as HTMLElement | null
@@ -226,34 +237,58 @@ export function StartDesignModal({
     fn()
   }
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onClick={closeDialog}>
       <motion.div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="start-design-title"
-        className="w-full max-w-sm rounded-2xl border border-line bg-app p-5 shadow-2xl"
+        className={`w-full ${importMode ? 'max-w-md' : 'max-w-sm'} rounded-2xl border border-line bg-app p-5 shadow-2xl`}
         initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         onClick={(event) => event.stopPropagation()}
       >
+        {importMode && onImportBrand ? (
+          <div className="flex flex-col gap-2.5">
+            <h2 id="start-design-title" className="sr-only">{title ?? t('Add brand')}</h2>
+            <BrandImportForm
+              mode={importMode}
+              onImport={onImportBrand}
+              onBack={() => setImportMode(null)}
+              onDone={() => onCloseRef.current()}
+            />
+          </div>
+        ) : (
+        <>
         <h2 id="start-design-title" className="px-1 pb-3 text-title font-semibold text-fg">
           {title ?? t('How do you want to start?')}
         </h2>
+        {onImportBrand ? (
+          <div className="flex flex-col gap-0.5">
+            <AddBrandChoices
+              onBlank={pick(onBlank)}
+              onImportMode={setImportMode}
+              itemClassName={`${START_ITEM} h-11`}
+            />
+          </div>
+        ) : (
         <StartDesignChoices
           onBlank={pick(onBlank)}
           onFromCode={pick(onFromCode)}
           onSystemStyles={onSystemStyles ? pick(onSystemStyles) : undefined}
           importsSystem={importsSystem}
         />
-        <button
+        )}
+        </>
+        )}
+        {!importMode && <button
           type="button"
-          onClick={onClose}
+          onClick={closeDialog}
           className="mt-4 h-10 w-full rounded-xl border border-line bg-surface text-body font-medium text-fg transition-colors hover:bg-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Cancel')}
-        </button>
+        </button>}
       </motion.div>
     </div>,
     document.body,

@@ -56,6 +56,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-22): ADD BRAND · SAVE BRAND · "it was saved" — one way each.** Reported as
+> users still confused about how to add a brand, where Save is, and whether it worked. Measured:
+> the top bar's "Add new brand" offered Blank · **From code ("Imports a whole design system")**,
+> while Home's Add brand offered Start from blank · Import agent context · Import JSON (a BRAND);
+> Save brand on a draft was underlined text beside "Not saved", under three big CSS · Figma ·
+> Agent buttons; the studio's Save gave NO toast (only the Board's did, and it said "Brand saved");
+> a Ship door kept the draft silently; the studio's "New brand" title was `sr-only`.
+> - **Both Add brand doors render `AddBrandChoices` + `BrandImportForm`** (`OverviewPage.tsx`).
+>   `StartDesignModal` takes `onImportBrand`: with a saved brand (signed in) the dialog IS Home's
+>   menu and an import adds a brand (`importBrandFromTopBar` in `Configurator`). "From code" stays
+>   only for a system with no brand yet.
+> - **Save brand is a solid button** in the draft's status line (`UnsavedNotice` `onSave`), same
+>   layout as before (Ship row, then status) — not a second primary stacked over the doors.
+> - **ONE confirmation, `announceBrandSaved` (`lib/brandSaved.ts`)**: "“Acme” saved to Escala" +
+>   **See all brands** (→ Home, `OPEN_HOME_EVENT`). Used by the Board's Save, the studio's Save
+>   (with confetti), every door that keeps a draft (Ship, Get code, advanced edition), the import,
+>   and the login return. Don't add a second "saved" toast elsewhere.
+> - The studio board header shows its title ("New brand" / "Set your foundations").
+
 > **UPDATE (2026-10-22): RANDOM draws a MOOD, after DaisyUI's theme generator — `lib/themeMoods.ts`.**
 > Reported as Random feeling repetitive next to daisyui.com/theme-generator. DaisyUI's themes get their
 > character from moves Random never made: the PAGE has its own hue (Abyss: deep-teal page, neon-lime

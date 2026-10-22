@@ -149,9 +149,76 @@ function CollectionGlyph({ which, ramp, heading }: { which: CollectionKey; ramp:
   return <span aria-hidden className="w-4 flex-shrink-0 text-ui font-semibold leading-none text-fg" style={{ fontFamily: fontStack(heading) }}>Aa</span>
 }
 
-type ImportBrand = (json: Record<string, unknown>, name: string) => { key: string } | { error: string }
+export type ImportBrand = (json: Record<string, unknown>, name: string) => { key: string } | { error: string }
 
 const MENU_ITEM = 'flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-ui text-fg transition-colors hover:bg-fg/[0.06] focus-visible:bg-fg/[0.06] focus-visible:outline-none'
+
+/** The paste box behind "Import agent context" / "Import JSON": paste or pick
+ *  a file, see what was read, add it as a NEW BRAND of the system on screen.
+ *  Shared by Home's Add brand menu and the top bar's Add new brand dialog, so
+ *  both doors import the same way (a brand, never a whole system). */
+export function BrandImportForm({ mode, onImport, onBack, onDone }: {
+  mode: BrandSource
+  onImport: ImportBrand
+  onBack: () => void
+  onDone: () => void
+}) {
+  const { t } = useI18n()
+  const [text, setText] = useState('')
+  const [fileName, setFileName] = useState<string | undefined>()
+  const [error, setError] = useState<string | null>(null)
+  const read = readBrandPayload(text, mode, fileName)
+  const pickFile = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = mode === 'context' ? '.md,.txt,text/markdown,text/plain' : '.json,application/json'
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) return
+      file.text().then((value) => { setText(value); setFileName(file.name); setError(null) })
+    }
+    input.click()
+  }
+  const add = () => {
+    if (!read?.ok) return
+    const res = onImport(read.json, read.name)
+    if ('error' in res) setError(res.error)
+    else onDone()
+  }
+  return (
+    <>
+      <p className="text-ui font-semibold text-fg">{mode === 'context' ? t('Import agent context') : t('Import JSON')}</p>
+      <p className="text-caption text-fg-muted">
+        {mode === 'context'
+          ? t('In Figma sync, press Copy context and paste it here. Its colours and foundations become a new brand of this system.')
+          : t('Paste an Escala tokens.json, or choose the file. Its colours and foundations become a new brand of this system.')}
+      </p>
+      <textarea
+        autoFocus
+        value={text}
+        onChange={(e) => { setText(e.target.value); setFileName(undefined); setError(null) }}
+        rows={7}
+        spellCheck={false}
+        placeholder={mode === 'context' ? t('Paste the context here') : t('Paste the JSON here')}
+        className="w-full resize-none rounded-lg border border-line bg-app px-2.5 py-2 font-mono text-caption text-fg outline-none focus:border-line-strong"
+      />
+      <button type="button" onClick={pickFile} className={`${TEXT_LINK} self-start text-caption`}>
+        {mode === 'context' ? t('Choose a .md file') : t('Choose a .json file')}
+      </button>
+      <p role="status" aria-live="polite" className={`min-h-[1rem] text-caption ${error || (read && !read.ok && read.error) ? 'text-status-danger' : 'text-fg-muted'}`}>
+        {error ?? (read && !read.ok ? t(read.error) : read?.ok ? t('Ready: “{name}”. It is added as a new brand.', { name: read.name }) : '')}
+      </p>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={add} disabled={!read?.ok} className="h-8 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+          {t('Add as brand')}
+        </button>
+        <button type="button" onClick={onBack} className="h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+          {t('Back')}
+        </button>
+      </div>
+    </>
+  )
+}
 
 /** The slot's +: the same three doors as the plugin's Add Brand Variant —
  *  start from blank, or bring a brand in from another Escala system's agent
@@ -168,14 +235,10 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<BrandSource | null>(null)
-  const [text, setText] = useState('')
-  const [fileName, setFileName] = useState<string | undefined>()
-  const [error, setError] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const firstRef = useRef<HTMLButtonElement>(null)
-  const read = mode ? readBrandPayload(text, mode, fileName) : null
 
-  const close = () => { setOpen(false); setMode(null); setText(''); setFileName(undefined); setError(null) }
+  const close = () => { setOpen(false); setMode(null) }
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => { if (!rootRef.current?.contains(e.target as Node)) close() }
@@ -186,23 +249,6 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
   }, [open])
   useEffect(() => { if (open && !mode) firstRef.current?.focus() }, [open, mode])
 
-  const pickFile = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = mode === 'context' ? '.md,.txt,text/markdown,text/plain' : '.json,application/json'
-    input.onchange = () => {
-      const file = input.files?.[0]
-      if (!file) return
-      file.text().then((value) => { setText(value); setFileName(file.name); setError(null) })
-    }
-    input.click()
-  }
-  const add = () => {
-    if (!read?.ok || !onImport) return
-    const res = onImport(read.json, read.name)
-    if ('error' in res) setError(res.error)
-    else close()
-  }
   const onMenuKey = (e: React.KeyboardEvent) => {
     if (mode || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
     const items = [...(rootRef.current?.querySelectorAll<HTMLButtonElement>('[role=menuitem]') ?? [])]
@@ -237,59 +283,47 @@ export function AddBrandMenu({ onBlank, onImport, blocked, variant = 'circle' }:
           className={`absolute top-full z-30 mt-2 flex flex-col ${variant === 'button' ? 'right-0' : ''} rounded-2xl border border-line-strong bg-elevated p-1.5 text-left shadow-xl ${mode ? 'w-[22rem] gap-2.5 p-3' : 'w-60'}`}
         >
           {!mode ? (
-            <>
-              <button ref={firstRef} type="button" role="menuitem" className={MENU_ITEM} onClick={() => { close(); onBlank() }} title={t('Pick a colour; font, radius and spacing come from this system.')}>
-                <PlusGlyph />{t('Start from blank')}
-              </button>
-              {onImport && (
-                <>
-                  <button type="button" role="menuitem" className={MENU_ITEM} onClick={() => setMode('context')} title={t('Paste what Copy context gave you in Figma sync.')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M9 15l11-11M14 4h6v6" /></svg>
-                    {t('Import agent context')}
-                  </button>
-                  <button type="button" role="menuitem" className={MENU_ITEM} onClick={() => setMode('json')} title={t('An Escala tokens.json file.')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4c-2 0-2 2-2 4s-2 4-2 4 2 0 2 4 0 4 2 4M16 4c2 0 2 2 2 4s2 4 2 4-2 0-2 4 0 4-2 4" /></svg>
-                    {t('Import JSON')}
-                  </button>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="text-ui font-semibold text-fg">{mode === 'context' ? t('Import agent context') : t('Import JSON')}</p>
-              <p className="text-caption text-fg-muted">
-                {mode === 'context'
-                  ? t('In Figma sync, press Copy context and paste it here. Its colours and foundations become a new brand of this system.')
-                  : t('Paste an Escala tokens.json, or choose the file. Its colours and foundations become a new brand of this system.')}
-              </p>
-              <textarea
-                autoFocus
-                value={text}
-                onChange={(e) => { setText(e.target.value); setFileName(undefined); setError(null) }}
-                rows={7}
-                spellCheck={false}
-                placeholder={mode === 'context' ? t('Paste the context here') : t('Paste the JSON here')}
-                className="w-full resize-none rounded-lg border border-line bg-app px-2.5 py-2 font-mono text-caption text-fg outline-none focus:border-line-strong"
-              />
-              <button type="button" onClick={pickFile} className={`${TEXT_LINK} self-start text-caption`}>
-                {mode === 'context' ? t('Choose a .md file') : t('Choose a .json file')}
-              </button>
-              <p role="status" aria-live="polite" className={`min-h-[1rem] text-caption ${error || (read && !read.ok && read.error) ? 'text-status-danger' : 'text-fg-muted'}`}>
-                {error ?? (read && !read.ok ? t(read.error) : read?.ok ? t('Ready: “{name}”. It is added as a new brand.', { name: read.name }) : '')}
-              </p>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={add} disabled={!read?.ok} className="h-8 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
-                  {t('Add as brand')}
-                </button>
-                <button type="button" onClick={() => { setMode(null); setText(''); setError(null) }} className="h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
-                  {t('Back')}
-                </button>
-              </div>
-            </>
+            <AddBrandChoices
+              firstRef={firstRef}
+              onBlank={() => { close(); onBlank() }}
+              onImportMode={onImport ? setMode : undefined}
+            />
+          ) : onImport && (
+            <BrandImportForm mode={mode} onImport={onImport} onBack={() => setMode(null)} onDone={close} />
           )}
         </div>
       )}
     </div>
+  )
+}
+
+/** The three ways a brand starts, in one list both Add brand doors render. */
+export function AddBrandChoices({ onBlank, onImportMode, firstRef, itemClassName = MENU_ITEM }: {
+  onBlank: () => void
+  /** Omitted where importing is not available. */
+  onImportMode?: (mode: BrandSource) => void
+  firstRef?: React.RefObject<HTMLButtonElement | null>
+  itemClassName?: string
+}) {
+  const { t } = useI18n()
+  return (
+    <>
+      <button ref={firstRef} type="button" role="menuitem" className={itemClassName} onClick={onBlank} title={t('Pick a colour; font, radius and spacing come from this system.')}>
+        <PlusGlyph />{t('Start from blank')}
+      </button>
+      {onImportMode && (
+        <>
+          <button type="button" role="menuitem" className={itemClassName} onClick={() => onImportMode('context')} title={t('Paste what Copy context gave you in Figma sync.')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M9 15l11-11M14 4h6v6" /></svg>
+            {t('Import agent context')}
+          </button>
+          <button type="button" role="menuitem" className={itemClassName} onClick={() => onImportMode('json')} title={t('An Escala tokens.json file.')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 4c-2 0-2 2-2 4s-2 4-2 4 2 0 2 4 0 4 2 4M16 4c2 0 2 2 2 4s2 4 2 4-2 0-2 4 0 4-2 4" /></svg>
+            {t('Import JSON')}
+          </button>
+        </>
+      )}
+    </>
   )
 }
 

@@ -20,6 +20,8 @@ import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { useEditHistory } from '../../lib/editHistory'
+import { announceBrandSaved } from '../../lib/brandSaved'
+import { burstConfetti } from '../../lib/celebrate'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
@@ -206,9 +208,13 @@ function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
       style={{ minHeight: INSPECTOR_TABS_H }}
     >
       {lead}
-      {/* The title and count are hidden for now (they added noise beside the
-          view switch); screen readers still get the heading. */}
-      <h2 className="sr-only">{title} · {stepLabel}</h2>
+      {/* The title says what this screen IS — a new brand, not yet kept —
+          so the board is not mistaken for the Board of a saved one. The
+          count stays for screen readers only (it added noise). */}
+      <h2 className="flex min-w-0 items-center gap-2 text-ui font-semibold text-fg">
+        <span className="truncate">{title}</span>
+        <span className="sr-only"> · {stepLabel}</span>
+      </h2>
       <div className="flex-1" aria-hidden />
       {trailing}
     </div>
@@ -699,11 +705,16 @@ export default function ThemeLibraryPage({
   // the brand. While it stayed a draft, the empty-board guard reopened the
   // studio on Colour — Finish jumped back to the first step. The library write
   // still waits for an account; a guest saves from the brand's own bar.
+  // Every door that keeps it says so, naming the brand and the system: a Ship
+  // door saving on the way out used to be silent, so people never knew the
+  // brand had joined the system (or thought it had when it had not).
   const keepCreatedBrand = (key: string) => {
+    const wasDraft = Boolean(useThemeSetup.getState().unsaved[key])
     finishThemeSetup(key)
     forgetUnsavedBrand(key)
     if (tier === 'anon') return
     useDesignStore.getState().saveCurrentSystem()
+    if (wasDraft) announceBrandSaved(t, key)
   }
   // Function declaration on purpose: Home's `body` (built above) reads it.
   function importBrand(json: Record<string, unknown>, name: string) {
@@ -711,11 +722,18 @@ export default function ThemeLibraryPage({
     if ('error' in res) return res
     // Kept like a brand the studio makes (saved to the account when there
     // is one), and put on screen so its card is the one lit.
+    markBrandUnsaved(res.key)
     keepCreatedBrand(res.key)
     onSelectTheme(res.key)
     return res
   }
-  const finishCreate = (key: string) => {
+  const finishCreate = (key: string, anchor?: HTMLElement | null) => {
+    if (anchor && tier !== 'anon') {
+      // The kept brand throws its OWN colours, as Save brand on the Board does.
+      const s = useDesignStore.getState()
+      const tk = resolvePreviewTokens(s, key, s.themeKinds[key] === 'dark' ? 'dark' : 'light')
+      burstConfetti(anchor, [tk.brandSolid, tk.brandSolid, tk.successColor ?? '', tk.warningColor ?? '', tk.infoColor ?? '', tk.errorColor])
+    }
     keepCreatedBrand(key)
     setCreating(false)
     onOpenPreview(key)
@@ -800,7 +818,7 @@ export default function ThemeLibraryPage({
                 // drop the user on an empty Home.
                 onCancel={studioOnly || firstSystem ? undefined : cancelCreate}
                 onCreate={() => mintStart(startStyle)}
-                onSave={() => { if (createdKey) finishCreate(createdKey) }}
+                onSave={(anchor) => { if (createdKey) finishCreate(createdKey, anchor) }}
                 onGetCode={() => { if (createdKey) getCreatedCode(createdKey) }}
                 ship={createdKey ? shipCreated(createdKey) : undefined}
               />

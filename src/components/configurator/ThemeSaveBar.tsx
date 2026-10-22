@@ -10,6 +10,7 @@ import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
+import { announceBrandSaved } from '../../lib/brandSaved'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
 import { AccountCloudStatus } from './AccountCloudStatus'
@@ -351,7 +352,7 @@ export default function ThemeSaveBar({
       accent || s.primaryColor, accent || s.primaryColor,
       s.successColor, s.warningColor, s.infoColor, s.errorColor,
     ])
-    showToast(t('Brand saved'))
+    announceBrandSaved(t, themeKey)
     if (exploringRandom) onSaved?.()
   }
   const label = use
@@ -493,7 +494,13 @@ export function UnsavedNotice({ onSave, onDiscard }: {
         </button>
       )}
       {onSave ? (
-        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}${link}`}>
+        // A real button, not a link: keeping the brand is THE decision on a
+        // draft, and as underlined text beside "Not saved" it was missed —
+        // people shipped (or left) thinking the brand was already in the system.
+        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg bg-cta px-2.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2.5 6.5 5 9l4.5-5.5" />
+          </svg>
           {t('Save brand')}
         </button>
       ) : guest && (
@@ -631,7 +638,8 @@ export function CreateStudioFooter({
   guest: boolean
   onCancel?: () => void
   onCreate: () => void
-  onSave: () => void
+  /** Gets the pressed control, so the save can celebrate from it. */
+  onSave: (anchor?: HTMLElement | null) => void
   onGetCode: () => void
 }) {
   const { t } = useI18n()
@@ -664,7 +672,7 @@ export function CreateStudioFooter({
         <>
           <ShipRow ship={ship} />
           <div className="border-t border-line pt-2.5">
-            <UnsavedNotice onSave={guest ? undefined : () => onSave()} onDiscard={onCancel} />
+            <UnsavedNotice onSave={guest ? undefined : (anchor) => onSave(anchor)} onDiscard={onCancel} />
           </div>
         </>
       ) : (
@@ -681,7 +689,7 @@ export function CreateStudioFooter({
         ) : (
           <>
             <button type="button" onClick={onGetCode} className={`${secondary} flex items-center gap-1.5`}>{codeGlyph}{t('Get code')}</button>
-            <button type="button" onClick={onSave} className={primary}><span className="truncate">{t('Save')}</span></button>
+            <button type="button" onClick={(e) => onSave(e.currentTarget)} className={primary}><span className="truncate">{t('Save brand')}</span></button>
           </>
         )}
       </div>

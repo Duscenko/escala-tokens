@@ -111,6 +111,8 @@ import { clearPublishErased, onRepublishRequested, wasPublishErased } from '../l
 import { takeLoginIntent } from '../lib/loginReturn'
 import { RegisterToContinueDialog } from '../components/ui/LoginWall'
 import { OPEN_GITHUB_EVENT } from '../lib/guestSave'
+import { OPEN_HOME_EVENT, announceBrandSaved } from '../lib/brandSaved'
+import { addBrandFromPayload } from '../lib/importBrand'
 import { showToast } from '../components/ui/Toast'
 import { VariablesContextButton } from '../components/configurator/VariablesContextButton'
 
@@ -809,6 +811,20 @@ export default function Configurator() {
     openLibraryPage()
     setCreatePending(true)
   }
+  /** The top bar's Add new brand → Import: the same path as Home's Add brand
+   *  menu. The brand is kept at once and put on the Board. */
+  const importBrandFromTopBar = (json: Record<string, unknown>, name: string) => {
+    const res = addBrandFromPayload(json, name)
+    if ('error' in res) return res
+    finishThemeSetup(res.key)
+    forgetUnsavedBrand(res.key)
+    useDesignStore.getState().saveCurrentSystem()
+    announceBrandSaved(t, res.key)
+    changePreviewTheme(res.key)
+    setThemeHubSurface('artefacts')
+    changeThemeWorkspaceTab('preview')
+    return res
+  }
   /** Add new brand, from every door. Blank, from code (JSON or source), or a
    *  system style. Random is not a start option. */
   const openCreateTheme = () => {
@@ -1421,7 +1437,7 @@ export default function Configurator() {
       setSectionExportOpen(true)
     } else if (intent === 'save-library') {
       useDesignStore.getState().saveCurrentSystem()
-      showToast(t('Brand saved'))
+      announceBrandSaved(t, previewTheme)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access.loading, access.tier])
@@ -1788,6 +1804,13 @@ export default function Configurator() {
     window.addEventListener(OPEN_GITHUB_EVENT, open)
     return () => window.removeEventListener(OPEN_GITHUB_EVENT, open)
   }, [])
+  // "See all brands" on the brand-saved toast (`requestOpenHome`) lands here.
+  const openHomeRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    const open = () => openHomeRef.current()
+    window.addEventListener(OPEN_HOME_EVENT, open)
+    return () => window.removeEventListener(OPEN_HOME_EVENT, open)
+  }, [])
   /** The System tab: the dashboard of the design system on screen. */
   const openSystemPage = () => {
     leaveExportWizard()
@@ -1798,6 +1821,7 @@ export default function Configurator() {
     setDocsPanelOpen(false)
     setThemeWorkspaceTab('system')
   }
+  openHomeRef.current = openSystemPage
   const openGetCodePage = (format: CodeFormatKey = 'css') => {
     if (themeWorkspaceTab === 'preview') {
       const reason = themeTablesBlocked()
@@ -3177,6 +3201,9 @@ export default function Configurator() {
         importsSystem={savedBrandKeys.length > 0}
         onBlank={beginBlankBrand}
         onFromCode={openImport}
+        // A system that already has a brand: Add new brand offers the same
+        // three choices as Home's Add brand, and an import adds a BRAND.
+        onImportBrand={savedBrandKeys.length > 0 && !access.guest ? importBrandFromTopBar : undefined}
       />
 
       {/* Import-your-design-system window */}
