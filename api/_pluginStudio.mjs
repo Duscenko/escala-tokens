@@ -5632,21 +5632,21 @@ function buttonPaint(variant, state2) {
   const hover = state2 === "Hover";
   const pressed = state2 === "Pressed";
   const focus = state2 === "Focused";
-  const ring = focus ? c("border.focus") : NONE;
-  const halo = focus ? c("border.ring.default") : NONE;
+  const gap = focus ? c("surface.page") : NONE;
+  const halo = (role) => focus ? c(role) : NONE;
   switch (variant) {
     case "default":
-      return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: ring, ring: halo } };
+      return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: gap, ring: halo("border.ring.default") } };
     case "secondary":
-      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), focus: ring, ring: halo } };
+      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), focus: gap, ring: halo("border.control") } };
     case "outline":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: ring, ring: halo } };
+      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: NONE, ring: halo("border.control") } };
     case "ghost":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), focus: ring, ring: halo } };
+      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), focus: NONE, ring: halo("border.control") } };
     case "destructive":
-      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), focus: ring, ring: halo } };
+      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), focus: gap, ring: halo("status.critical.border") } };
     default:
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), focus: ring, ring: halo } };
+      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), focus: NONE, ring: halo("border.ring.default") } };
   }
 }
 var BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_STATES, BUTTON_GEOMETRY, BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
