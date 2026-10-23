@@ -168,8 +168,8 @@ describe('focus', () => {
     }
   })
 
-  it('Button, Checkbox and Switch focus with the border.focus edge and the halo', () => {
-    for (const key of ['Button', 'Checkbox', 'Switch']) {
+  it('Checkbox and Switch focus with the border.focus edge and the halo', () => {
+    for (const key of ['Checkbox', 'Switch']) {
       const def = COMPONENTS.find((c) => c.key === key)!
       for (const v of combos(def.axes.filter((a) => a.name !== 'State'))) {
         const root = resolveRecipe(COMPONENT_RECIPES[key], { ...v, State: 'Focused' }).root
@@ -180,6 +180,22 @@ describe('focus', () => {
     }
   })
 
+  // The focus takes the variant's colour; a solid fill is set off from its
+  // halo by a page-coloured inside edge (border.focus there was the fill's own
+  // accent tone and vanished).
+  it.each([
+    ['default', 'color.surface.page', 'color.border.ring.default'],
+    ['secondary', 'color.surface.page', 'color.border.control'],
+    ['destructive', 'color.surface.page', 'color.status.critical.border'],
+    ['outline', 'none', 'color.border.control'],
+    ['ghost', 'none', 'color.border.control'],
+    ['link', 'none', 'color.border.ring.default'],
+  ])('Button %s focuses with edge %s and halo %s', (variant, edge, halo) => {
+    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: variant, Size: 'default', State: 'Focused' }).root
+    expect(root.focus).toBe(edge)
+    expect(root.ring).toBe(halo)
+  })
+
   it('the ring clears WCAG 1.4.11 against the page it is set off onto, in both themes', () => {
     for (const mode of ['light', 'dark']) {
       expect(wcagRatio(roleHex['border.focus'][mode], roleHex['surface.page'][mode]), mode).toBeGreaterThanOrEqual(3)
@@ -187,7 +203,7 @@ describe('focus', () => {
   })
 
   it('renders as shadcn does: an inset border.focus edge plus a 3px halo outside it', () => {
-    const css = recipeCss(COMPONENT_RECIPES.Button)
+    const css = recipeCss(COMPONENT_RECIPES.Checkbox)
     expect(css).toContain('box-shadow: inset 0 0 0 var(--stroke-focus, 2px) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px)) var(--color-border-ring-default)')
     expect(css).toContain('border-color: var(--color-border-focus)')
     expect(css).toContain('outline: var(--stroke-focus, 2px) solid transparent')

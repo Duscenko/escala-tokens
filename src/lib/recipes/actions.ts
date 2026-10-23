@@ -44,25 +44,27 @@ function buttonPaint(variant: string, state: string): SlotMap {
   const hover = state === 'Hover'
   const pressed = state === 'Pressed'
   const focus = state === 'Focused'
-  // Focus is ONE solid `border.focus` ring set off from the button, for every
-  // variant: the translucent halo alone disappeared next to an accent fill
-  // (Figma audit: 54 Focused variants identical to Default). Destructive too —
-  // focus wins over the error colour (see `border.focus`).
-  const ring = focus ? c('border.focus') : NONE
-  const halo = focus ? c('border.ring.default') : NONE
+  // Focus takes the variant's own colour: the halo is the accent's for an
+  // accent button, the critical one for a destructive, the neutral one for a
+  // page-ink button. A solid fill also gets a `surface.page` inside edge — the
+  // gap that sets the fill off from its halo. With `border.focus` there the
+  // edge vanished on the primary fill, which is the same accent tone.
+  // Fill-less variants keep their own edge and add only the halo.
+  const gap = focus ? c('surface.page') : NONE
+  const halo = (role: string) => (focus ? c(role) : NONE)
   switch (variant) {
     case 'default':
-      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: ring, ring: halo } }
+      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: gap, ring: halo('border.ring.default') } }
     case 'secondary':
-      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: ring, ring: halo } }
+      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: gap, ring: halo('border.control') } }
     case 'outline':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: ring, ring: halo } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: NONE, ring: halo('border.control') } }
     case 'ghost':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: ring, ring: halo } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: NONE, ring: halo('border.control') } }
     case 'destructive':
-      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: ring, ring: halo } }
+      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: gap, ring: halo('status.critical.border') } }
     default: // link
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: ring, ring: halo } }
+      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: NONE, ring: halo('border.ring.default') } }
   }
 }
 
