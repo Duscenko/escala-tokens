@@ -48,6 +48,8 @@ function dim(ref: string): string {
   return parts.length === 1 ? vars[0] : `calc(${vars.join(' + ')})`
 }
 
+const HALO = 'calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px))'
+
 function declarations(props: SlotProps): string[] {
   const out: string[] = []
   const v = (ref: string, facet?: string) => `var(${cssVarOf(ref, facet)})`
@@ -65,14 +67,27 @@ function declarations(props: SlotProps): string[] {
       // One hairline on one side (an accordion row's divider, a tab strip's underline).
       case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
-      case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
-      // An outline, not a box-shadow: it follows border-radius, takes no layout,
-      // leaves an elevation shadow alone and survives forced-colors. The offset
-      // keeps it readable against an accent fill.
-      case 'focus':
-        if (ref === 'none') out.push('outline: none')
-        else out.push(`outline: var(--stroke-focus, 2px) solid ${v(ref)}`, 'outline-offset: var(--stroke-focus-offset, 2px)')
+      // The halo outside a focused control: `stroke.focus` + one hairline, i.e.
+      // shadcn's 3px at the default stroke ramp. Alone it is a FIELD's halo;
+      // with `focus` it is composed into one box-shadow below.
+      case 'ring':
+        if (props.focus && props.focus !== 'none') break
+        out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 ${HALO} ${v(ref)}`)
         break
+      // shadcn's `focus-visible:border-ring ring-[3px]`: the edge turns to
+      // `border.focus` (an inset `stroke.focus` ring, so a borderless button
+      // draws it too and nothing shifts) and the halo sits outside. The
+      // transparent outline is what forced-colors mode paints instead of both.
+      case 'focus': {
+        if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
+        const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
+        out.push(
+          `border-color: ${v(ref)}`,
+          `box-shadow: inset 0 0 0 var(--stroke-focus, 2px) ${v(ref)}${halo}`,
+          'outline: var(--stroke-focus, 2px) solid transparent',
+        )
+        break
+      }
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break

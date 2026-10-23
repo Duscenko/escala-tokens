@@ -2,7 +2,7 @@
  * Indicator recipes: Badge, StatusBadge, Chip, Progress, Spinner, Icon, Rating,
  * FileFormat, Avatar. Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Badge ──────────────────────────────────────────────────────────────────
 // shadcn's variants (`bases/radix/ui/badge.tsx`), painted through Escala roles
@@ -78,10 +78,10 @@ export const CHIP: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' },
-      'root:focus-visible': { focus: c('border.focus') },
+      'root:focus-visible': FOCUS,
       // The × is ~10px: its pointer target is the 24px hit area around it.
       remove: { hit: 'size.hit' },
-      'remove:focus-visible': { focus: c('border.focus') },
+      'remove:focus-visible': FOCUS,
     })),
     part({ Size: ['default', 'sm'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),
     part({ Selected: ['False', 'True'] as const }, (selected) => selected === 'True'

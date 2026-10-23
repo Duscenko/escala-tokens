@@ -3,7 +3,7 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, FOCUS } from './helpers.js'
 
 // ── Tabs (underline) ───────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export const TABS: ComponentRecipe = {
     part({}, () => ({
       trigger: { text: c('content.secondary'), font: 'type.button', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.1_5' },
       'trigger:hover': { text: c('content.primary') },
-      'trigger:focus-visible': { focus: c('border.focus') },
+      'trigger:focus-visible': FOCUS,
     })),
     part({ Variant: ['default', 'line'] as const }, (variant) => variant === 'line'
       ? {
@@ -50,7 +50,7 @@ export const TAB_MENU: ComponentRecipe = {
         text: c('content.secondary'), font: 'type.button', radius: 'radius.pill', paddingX: 'spacing.4', paddingY: 'spacing.1_5',
       },
       'item:hover': { text: c('content.primary') },
-      'item:focus-visible': { focus: c('border.focus') },
+      'item:focus-visible': FOCUS,
       'item[aria-selected="true"]': { text: c('content.accent') },
       'item[aria-selected="true"]:hover': { text: c('content.accent') },
     })),

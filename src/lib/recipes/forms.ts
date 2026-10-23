@@ -5,7 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -273,12 +273,13 @@ function checkPaint(checked: string, state: string): SlotMap {
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
   const focus = state === 'Focused' ? c('border.focus') : NONE
+  const ring = state === 'Focused' ? c('border.ring.default') : NONE
   let root: SlotProps
-  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus }
+  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus, ring }
   else if (on) {
     const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
-    root = { fill, stroke: fill, focus }
-  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), focus }
+    root = { fill, stroke: fill, focus, ring }
+  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), focus, ring }
   return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
 }
 
@@ -310,7 +311,7 @@ export const RADIO_GROUP: ComponentRecipe = {
         radius: 'radius.pill', height: 'selector.control', width: 'selector.control', hit: 'size.hit',
       },
       'item:hover': { stroke: c('border.control-hover') },
-      'item:focus-visible': { focus: c('border.focus') },
+      'item:focus-visible': FOCUS,
       'item[data-state="checked"]': { fill: c('action.primary.default'), stroke: c('action.primary.default') },
       'item:disabled': { fill: c('action.disabled.default'), stroke: c('action.disabled.default') },
       indicator: { fill: c('content.on-action'), radius: 'radius.pill', height: 'spacing.2', width: 'spacing.2' },
@@ -333,11 +334,12 @@ function switchPaint(checked: string, state: string): SlotMap {
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
   const focus = state === 'Focused' ? c('border.focus') : NONE
+  const ring = state === 'Focused' ? c('border.ring.default') : NONE
   const track = disabled ? 'action.disabled.default'
     : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
     : (hover ? 'action.secondary.hover' : 'action.secondary.default')
   return {
-    root: { fill: c(track), focus },
+    root: { fill: c(track), focus, ring },
     thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
   }
 }
@@ -376,7 +378,7 @@ export const SLIDER: ComponentRecipe = {
         fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
         height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm', hit: 'size.hit',
       },
-      'thumb:focus-visible': { focus: c('border.focus') },
+      'thumb:focus-visible': FOCUS,
     })),
   ],
 }

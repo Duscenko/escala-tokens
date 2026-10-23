@@ -1450,16 +1450,17 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
   {
     key: 'stroke',
     label: 'Stroke',
-    lead: 'Line weight — not paint. A 4-step primitive ramp (none · sm · md · lg = 0 / 1 / 2 / 4px) and intent aliases for divider, control border, focus-ring width and focus-ring offset. Color stays on `border.*`.',
-    why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and the focus ring is a WCAG 2.4.13 2px outline (`stroke-focus`), set off by `stroke-focus-offset`, whose paint is still `border.focus`.',
-    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `outline: var(--stroke-focus) solid var(--color-border-focus); outline-offset: var(--stroke-focus-offset)`. Never put a hex in a stroke token.',
+    lead: 'Line weight — not paint. A 4-step primitive ramp (none · sm · md · lg = 0 / 1 / 2 / 4px) and intent aliases for divider, control border and focus-ring width. Color stays on `border.*`.',
+    why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and the focus ring is a WCAG 2.4.13 2px edge (`stroke-focus`) plus a halo one hairline wider, whose paint is still `border.focus`.',
+    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `box-shadow: inset 0 0 0 var(--stroke-focus) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus) + var(--stroke-control)) var(--color-border-ring-default)`. Never put a hex in a stroke token.',
     usageCode: `border: var(--stroke-control) solid var(--color-border-strong);
 
 .hr { border-top: var(--stroke-divider) solid var(--color-border-subtle); }
 
 .button:focus-visible {
-  outline: var(--stroke-focus) solid var(--color-border-focus);
-  outline-offset: var(--stroke-focus-offset);
+  box-shadow:
+    inset 0 0 0 var(--stroke-focus) var(--color-border-focus),
+    0 0 0 calc(var(--stroke-focus) + var(--stroke-control)) var(--color-border-ring-default);
 }`,
     ships: {
       json: 'stroke · strokeRoles',

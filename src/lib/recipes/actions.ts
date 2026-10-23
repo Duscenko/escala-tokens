@@ -4,7 +4,7 @@
  *
  * `slot:hover` / `slot[attr]` keys give one PART its own state.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Button ─────────────────────────────────────────────────────────────────
 // shadcn's variants and sizes, verbatim (`bases/radix/ui/button.tsx`). What
@@ -37,6 +37,7 @@ function buttonPaint(variant: string, state: string): SlotMap {
         stroke: variant === 'outline' ? c('action.disabled.default') : NONE,
         text: c('content.disabled'),
         focus: NONE,
+        ring: NONE,
       },
     }
   }
@@ -48,19 +49,20 @@ function buttonPaint(variant: string, state: string): SlotMap {
   // (Figma audit: 54 Focused variants identical to Default). Destructive too —
   // focus wins over the error colour (see `border.focus`).
   const ring = focus ? c('border.focus') : NONE
+  const halo = focus ? c('border.ring.default') : NONE
   switch (variant) {
     case 'default':
-      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: ring } }
+      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: ring, ring: halo } }
     case 'secondary':
-      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: ring } }
+      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: ring, ring: halo } }
     case 'outline':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: ring } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: ring, ring: halo } }
     case 'ghost':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: ring } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: ring, ring: halo } }
     case 'destructive':
-      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: ring } }
+      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: ring, ring: halo } }
     default: // link
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: ring } }
+      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: ring, ring: halo } }
   }
 }
 
@@ -134,7 +136,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
       },
       'root:hover': { fill: c('action.ghost.hover') },
       'root:active': { fill: c('action.ghost.pressed') },
-      'root:focus-visible': { focus: c('border.focus') },
+      'root:focus-visible': FOCUS,
     })),
     part({ Size: ['default', 'lg'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
   ],
@@ -175,7 +177,7 @@ export const TOGGLE_GROUP: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: { gap: 'spacing.1' },
-      'item:focus-visible': { focus: c('border.focus') },
+      'item:focus-visible': FOCUS,
     })),
     part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
       item: variant === 'outline'
@@ -216,7 +218,7 @@ export const TOGGLE: ComponentRecipe = {
         ? { fill: c('surface.layer-2'), text: c('content.primary') }
         : { fill: NONE, text: c('content.secondary') },
       'root:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
-      'root:focus-visible': { focus: c('border.focus') },
+      'root:focus-visible': FOCUS,
     })),
   ],
 }

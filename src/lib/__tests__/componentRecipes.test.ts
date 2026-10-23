@@ -120,7 +120,9 @@ describe('the generated stylesheet', () => {
           for (const f of ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing']) expected.add(cssVarOf(ref, f))
         } else expected.add(cssVarOf(ref))
       }
-      const used = recipeCssVars(recipeCss(recipe)).filter((v) => v !== '--stroke-focus' && v !== '--stroke-focus-offset')
+      const used = recipeCssVars(recipeCss(recipe)).filter((v) => v !== '--stroke-focus' && v !== '--stroke-control')
+      // The focus halo reads `stroke.focus` + `stroke.control` without naming them.
+      for (const v of ['--stroke-focus', '--stroke-control']) expected.delete(v)
       expect(new Set(used), recipe.key).toEqual(expected)
     }
   })
@@ -166,12 +168,14 @@ describe('focus', () => {
     }
   })
 
-  it('Button, Checkbox and Switch focus with the solid border.focus ring', () => {
+  it('Button, Checkbox and Switch focus with the border.focus edge and the halo', () => {
     for (const key of ['Button', 'Checkbox', 'Switch']) {
       const def = COMPONENTS.find((c) => c.key === key)!
       for (const v of combos(def.axes.filter((a) => a.name !== 'State'))) {
-        expect(resolveRecipe(COMPONENT_RECIPES[key], { ...v, State: 'Focused' }).root.focus, `${key} ${JSON.stringify(v)}`)
-          .toBe('color.border.focus')
+        const root = resolveRecipe(COMPONENT_RECIPES[key], { ...v, State: 'Focused' }).root
+        if (root.fill === 'color.action.disabled.default') continue
+        expect(root.focus, `${key} ${JSON.stringify(v)}`).toBe('color.border.focus')
+        expect(root.ring, `${key} ${JSON.stringify(v)}`).toBe('color.border.ring.default')
       }
     }
   })
@@ -182,10 +186,11 @@ describe('focus', () => {
     }
   })
 
-  it('renders as an offset outline, not a box-shadow', () => {
+  it('renders as shadcn does: an inset border.focus edge plus a 3px halo outside it', () => {
     const css = recipeCss(COMPONENT_RECIPES.Button)
-    expect(css).toContain('outline: var(--stroke-focus, 2px) solid var(--color-border-focus)')
-    expect(css).toContain('outline-offset: var(--stroke-focus-offset, 2px)')
+    expect(css).toContain('box-shadow: inset 0 0 0 var(--stroke-focus, 2px) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px)) var(--color-border-ring-default)')
+    expect(css).toContain('border-color: var(--color-border-focus)')
+    expect(css).toContain('outline: var(--stroke-focus, 2px) solid transparent')
   })
 })
 

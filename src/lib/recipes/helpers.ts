@@ -51,6 +51,11 @@ export type AxisValues = Record<string, string | undefined>
 export const c = (role: string): TokenRef => `color.${role}`
 export const NONE = 'none'
 
+/** The keyboard-focus paint of everything that is not a text field — shadcn's
+ *  `focus-visible:border-ring ring-[3px] ring-ring/50`: the edge turns to
+ *  `border.focus` and a translucent halo (`border.ring.default`) sits outside it. */
+export const FOCUS: { focus: string; ring: string } = { focus: 'color.border.focus', ring: 'color.border.ring.default' }
+
 export function combos(axes: Record<string, readonly string[]>): string[][] {
   return Object.values(axes).reduce<string[][]>(
     (acc, values) => acc.flatMap((prefix) => values.map((v) => [...prefix, v])),

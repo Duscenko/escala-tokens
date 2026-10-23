@@ -2464,8 +2464,7 @@ var init_layoutTokens = __esm({
     STROKE_ROLES = [
       { key: "divider", label: "Divider", description: "Separator, table rules, layout splits.", group: "line", primitive: "sm" },
       { key: "control", label: "Control", description: "Input, card, outline button border-width.", group: "line", primitive: "sm" },
-      { key: "focus", label: "Focus", description: "Focus-ring width. Paint stays border.focus.", group: "line", primitive: "md" },
-      { key: "focus-offset", label: "Focus offset", description: "Gap between a control and its focus ring, so the ring reads against an accent fill.", group: "line", primitive: "md" }
+      { key: "focus", label: "Focus", description: "Focus-ring width: the inner edge of a focused control (the halo adds one more hairline). Paint stays border.focus.", group: "line", primitive: "md" }
     ];
     BREAKPOINT_ROLES = [
       { key: "desktop", label: "Desktop", description: "Min-width where the 12-col grid starts.", group: "viewport", primitive: "md" },
@@ -5482,7 +5481,7 @@ var init_semanticArchitectures = __esm({
       "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned \u2014 the ring is always the user's own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field \u2014 focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only \u2014 the translucent halo is border.ring.*.",
-      "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside a FIELD's border.focus stroke (Input, Textarea, Select\u2026). Never the only focus cue: a button, checkbox or switch focuses with a solid border.focus ring set off by stroke.focus-offset. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
+      "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
       "border.accent": "[ROLE: Accent Border] Border painted in the brand accent \u2014 a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     };
@@ -5604,11 +5603,12 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, TALL_FIELD_RADIUS, PANEL_RADIUS, PANEL_ROW_RADIUS;
+var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS, PANEL_ROW_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
     NONE = "none";
+    FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
     TALL_FIELD_RADIUS = "min(radius.action,radius.2xl)";
     PANEL_RADIUS = "radius.container";
     PANEL_ROW_RADIUS = "sub(radius.container,spacing.1)";
@@ -5624,7 +5624,8 @@ function buttonPaint(variant, state2) {
         fill: filled ? c("action.disabled.default") : NONE,
         stroke: variant === "outline" ? c("action.disabled.default") : NONE,
         text: c("content.disabled"),
-        focus: NONE
+        focus: NONE,
+        ring: NONE
       }
     };
   }
@@ -5632,19 +5633,20 @@ function buttonPaint(variant, state2) {
   const pressed = state2 === "Pressed";
   const focus = state2 === "Focused";
   const ring = focus ? c("border.focus") : NONE;
+  const halo = focus ? c("border.ring.default") : NONE;
   switch (variant) {
     case "default":
-      return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: ring } };
+      return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: ring, ring: halo } };
     case "secondary":
-      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), focus: ring } };
+      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), focus: ring, ring: halo } };
     case "outline":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: ring } };
+      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: ring, ring: halo } };
     case "ghost":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), focus: ring } };
+      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), focus: ring, ring: halo } };
     case "destructive":
-      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), focus: ring } };
+      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), focus: ring, ring: halo } };
     default:
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), focus: ring } };
+      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), focus: ring, ring: halo } };
   }
 }
 var BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_STATES, BUTTON_GEOMETRY, BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
@@ -5719,7 +5721,7 @@ var init_actions = __esm({
           },
           "root:hover": { fill: c("action.ghost.hover") },
           "root:active": { fill: c("action.ghost.pressed") },
-          "root:focus-visible": { focus: c("border.focus") }
+          "root:focus-visible": FOCUS
         })),
         part({ Size: ["default", "lg"] }, (size) => ({ root: SOCIAL_GEOMETRY[size] }))
       ]
@@ -5746,7 +5748,7 @@ var init_actions = __esm({
       parts: [
         part({}, () => ({
           root: { gap: "spacing.1" },
-          "item:focus-visible": { focus: c("border.focus") }
+          "item:focus-visible": FOCUS
         })),
         part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
           item: variant === "outline" ? {
@@ -5780,7 +5782,7 @@ var init_actions = __esm({
         part({ Pressed: ["False", "True"] }, (pressed) => ({
           root: pressed === "True" ? { fill: c("surface.layer-2"), text: c("content.primary") } : { fill: NONE, text: c("content.secondary") },
           "root:hover": { fill: c("action.ghost.hover"), text: c("content.primary") },
-          "root:focus-visible": { focus: c("border.focus") }
+          "root:focus-visible": FOCUS
         }))
       ]
     };
@@ -5800,12 +5802,13 @@ function checkPaint(checked, state2) {
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const focus = state2 === "Focused" ? c("border.focus") : NONE;
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
   let root;
-  if (disabled) root = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), focus };
+  if (disabled) root = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), focus, ring };
   else if (on) {
     const fill = c(hover ? "action.primary.hover" : "action.primary.default");
-    root = { fill, stroke: fill, focus };
-  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.control"), focus };
+    root = { fill, stroke: fill, focus, ring };
+  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.control"), focus, ring };
   return { root, indicator: { text: c(disabled ? "content.disabled" : "content.on-action") } };
 }
 function switchPaint(checked, state2) {
@@ -5813,9 +5816,10 @@ function switchPaint(checked, state2) {
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
   const focus = state2 === "Focused" ? c("border.focus") : NONE;
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
   const track2 = disabled ? "action.disabled.default" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "action.secondary.hover" : "action.secondary.default";
   return {
-    root: { fill: c(track2), focus },
+    root: { fill: c(track2), focus, ring },
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
@@ -6079,7 +6083,7 @@ var init_forms = __esm({
             hit: "size.hit"
           },
           "item:hover": { stroke: c("border.control-hover") },
-          "item:focus-visible": { focus: c("border.focus") },
+          "item:focus-visible": FOCUS,
           'item[data-state="checked"]': { fill: c("action.primary.default"), stroke: c("action.primary.default") },
           "item:disabled": { fill: c("action.disabled.default"), stroke: c("action.disabled.default") },
           indicator: { fill: c("content.on-action"), radius: "radius.pill", height: "spacing.2", width: "spacing.2" }
@@ -6128,7 +6132,7 @@ var init_forms = __esm({
             shadow: "shadow.sm",
             hit: "size.hit"
           },
-          "thumb:focus-visible": { focus: c("border.focus") }
+          "thumb:focus-visible": FOCUS
         }))
       ]
     };
@@ -6464,7 +6468,7 @@ var init_surfaces = __esm({
           icon: { text: c("content.secondary"), radius: "radius.action", width: "size.compact", height: "size.compact" },
           "trigger:hover": { text: c("content.primary") },
           // The focusable part is the icon button at the end of the row.
-          "icon:focus-visible": { focus: c("border.focus") },
+          "icon:focus-visible": FOCUS,
           content: { gap: "spacing.2" },
           item: {
             stroke: c("border.default"),
@@ -6799,7 +6803,7 @@ var init_navigation = __esm({
         part({}, () => ({
           trigger: { text: c("content.secondary"), font: "type.button", paddingX: "spacing.2", paddingY: "spacing.1", gap: "spacing.1_5" },
           "trigger:hover": { text: c("content.primary") },
-          "trigger:focus-visible": { focus: c("border.focus") }
+          "trigger:focus-visible": FOCUS
         })),
         part({ Variant: ["default", "line"] }, (variant) => variant === "line" ? {
           root: { fill: NONE, gap: "spacing.1" },
@@ -6828,7 +6832,7 @@ var init_navigation = __esm({
             paddingY: "spacing.1_5"
           },
           "item:hover": { text: c("content.primary") },
-          "item:focus-visible": { focus: c("border.focus") },
+          "item:focus-visible": FOCUS,
           'item[aria-selected="true"]': { text: c("content.accent") },
           'item[aria-selected="true"]:hover': { text: c("content.accent") }
         }))
@@ -7274,10 +7278,10 @@ var init_indicators = __esm({
       parts: [
         part({}, () => ({
           root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.label" },
-          "root:focus-visible": { focus: c("border.focus") },
+          "root:focus-visible": FOCUS,
           // The × is ~10px: its pointer target is the 24px hit area around it.
           remove: { hit: "size.hit" },
-          "remove:focus-visible": { focus: c("border.focus") }
+          "remove:focus-visible": FOCUS
         })),
         part({ Size: ["default", "sm"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),
         part({ Selected: ["False", "True"] }, (selected) => selected === "True" ? {
