@@ -11,7 +11,11 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } fro
 // each one PAINTS is shadcn's `cn-button-variant-*` read through Escala's roles:
 //   default     bg-primary → action.primary.*         · ink on it
 //   secondary   bg-secondary → action.secondary.*     · page ink
-//   outline     border + bg-background, hover muted   · page ink
+//   outline     border, NO fill at rest, hover muted  · page ink
+//               (Escala's call: shadcn's bg-background is the PAGE colour, so
+//               on a raised surface — a Dialog's Cancel, a Card's footer — it
+//               cut a page-coloured patch out of that surface; transparent
+//               shows whatever it sits on and only the outline reads)
 //   ghost       transparent, hover muted              · page ink
 //   destructive the critical SOLID → status.critical.surface-solid* · on-solid
 //               (Escala's call: a Delete reads as a solid action, the soft
@@ -46,7 +50,7 @@ function buttonPaint(variant: string, state: string): SlotMap {
     case 'secondary':
       return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'outline':
-      return { root: { fill: c(pressed ? 'action.ghost.pressed' : hover ? 'action.ghost.hover' : 'surface.page'), stroke: c('border.control'), text: c('content.primary'), ring: ring('border.ring.default') } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'ghost':
       return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
     case 'destructive':

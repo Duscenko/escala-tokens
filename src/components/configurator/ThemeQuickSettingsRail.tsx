@@ -22,7 +22,7 @@ import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, colorAtHue, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
@@ -82,7 +82,7 @@ import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, t
 import { PlatformSwitch, usePlanViewportLock } from './PlatformRail'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
-import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
+import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
@@ -1566,18 +1566,34 @@ function RadiusCard({
   )
 }
 
-function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; onChange: (value: Record<string, string>) => void }) {
+const SAME_AS_LIGHT = 'same-as-light'
+
+function ShadowCard({ shadows, shadowsDark, onChange, onChangeDark }: {
+  shadows: Record<string, string>
+  /** This theme's own dark ramp; undefined = Dark follows Light. */
+  shadowsDark?: Record<string, string>
+  onChange: (value: Record<string, string>) => void
+  /** undefined puts Dark back on Light's derived twin. */
+  onChangeDark: (value: Record<string, string> | undefined) => void
+}) {
   const { t } = useI18n()
   const active = matchShadowPreset(shadows)
+  // Light and Dark elevation behave differently (a dark page has almost no
+  // room left to go darker), so Dark is its own pick. Its drawings are always
+  // the dark twin — what the dark appearance will actually paint.
+  const activeDark = shadowsDark ? matchDarkShadowPreset(shadowsDark) : SAME_AS_LIGHT
+  const darkLead = activeDark === SAME_AS_LIGHT ? shadows
+    : SHADOW_PRESETS.find((p) => p.label === activeDark)?.values
   // The drawings sit on the CHROME, so they follow the chrome's appearance, not
   // the previewed theme's. The stored ramp is the LIGHT one — a near-black
   // shadow that is mathematically the dark page — so `darkShadow` (the twin the
   // board, the export and Variables' Shadow table use) paints it in dark chrome.
   const chromeDark = useTheme() === 'dark'
   return (
+    <>
     <PickerField
-      label="Depth"
-      ariaLabel="Shadow depth"
+      label="Light depth"
+      ariaLabel="Light shadow depth"
       value={active ?? ''}
       valueLabel={t('Custom')}
       leading={<ShadowPresetGlyph size="sm" values={shadows} dark={chromeDark} />}
@@ -1592,6 +1608,30 @@ function ShadowCard({ shadows, onChange }: { shadows: Record<string, string>; on
         if (preset) onChange({ ...preset.values })
       }}
     />
+    <PickerField
+      label="Dark depth"
+      ariaLabel="Dark shadow depth"
+      value={activeDark ?? ''}
+      valueLabel={t('Custom')}
+      leading={darkLead
+        ? <ShadowPresetGlyph size="sm" values={darkLead} dark />
+        : <ShadowPresetGlyph size="sm" values={shadowsDark ?? {}} dark={false} />}
+      options={[
+        { value: SAME_AS_LIGHT, label: 'Same as Light', description: 'Light’s depth, translated for a dark page: a deeper shadow and a 1px rim' },
+        ...SHADOW_PRESETS.map((preset) => ({ value: preset.label, label: preset.label, description: preset.description })),
+      ]}
+      optionVisual={(label, selected) => {
+        const values = label === SAME_AS_LIGHT ? shadows : SHADOW_PRESETS.find((p) => p.label === label)!.values
+        return <ShadowPresetGlyph values={values} dark selected={selected} />
+      }}
+      note="The dark appearance's own elevation ramp. Same as Light derives it from the light depth."
+      onChange={(label) => {
+        if (label === SAME_AS_LIGHT) { onChangeDark(undefined); return }
+        const preset = SHADOW_PRESETS.find((p) => p.label === label)
+        if (preset) onChangeDark(darkShadowMap(preset.values))
+      }}
+    />
+    </>
   )
 }
 
@@ -1951,7 +1991,7 @@ export default function ThemeQuickSettingsRail({
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
-  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
+  const { typography, radius, shadows, shadowsDark, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
   // ONE platform switch, in Spacing (where viewports matter most). Font,
   // Radius and the board still resolve against the platform it picks.
   const platformSwitch = onPreviewPlatformChange ? (
@@ -2014,6 +2054,7 @@ export default function ThemeQuickSettingsRail({
     }
   }
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
+  const setShadowsDark = (key: string, value: Record<string, string> | undefined) => patchThemeFoundations(key, { shadowsDark: value })
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
   const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
   const setStroke = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { stroke: value })
@@ -2957,11 +2998,15 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Shadow" foundationKey="shadow" open={activePanel === 'shadow'} summary={t(matchShadowPreset(shadows) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Shadow" foundationKey="shadow" open={activePanel === 'shadow'} summary={shadowsDark
+          ? `${t(matchShadowPreset(shadows) ?? 'Custom')} · ${t('Dark')} ${t(matchDarkShadowPreset(shadowsDark) ?? 'Custom')}`
+          : t(matchShadowPreset(shadows) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem>
             <ShadowCard
               shadows={shadows}
+              shadowsDark={shadowsDark}
               onChange={(value) => commit('Shadow depth updated', (themeKey) => setShadows(themeKey, value))}
+              onChangeDark={(value) => commit('Dark shadow depth updated', (themeKey) => setShadowsDark(themeKey, value))}
             />
           </SettingItem>
         </EditionCard>

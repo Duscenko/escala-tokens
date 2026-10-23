@@ -19,6 +19,7 @@
 // `accent-8`, not just that it happens to be #CCF57B today.
 
 import { useMemo, type CSSProperties, type ReactNode } from 'react'
+import { darkShadowsOf } from '../../../lib/shadowTokens'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../../../store/useDesignStore'
 import {
   ROLE_GROUPS, sourceScaleFor, recToneFor, SCALE_META, baseLabelForTone,
@@ -88,6 +89,8 @@ export interface SystemDoc {
   padding: Record<string, string>
   radius: Record<string, string>
   shadows: Record<string, string>
+  /** The dark appearance's ramp — the theme's own pick or the derived twin. */
+  shadowsDark: Record<string, string>
   grid: Record<string, string>
   gridFrame: ReturnType<typeof mergeGridFrame>
   sizes: Record<string, string>
@@ -266,6 +269,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
         padding: store.padding,
         radius: store.radius,
         shadows: store.shadows,
+        shadowsDark: darkShadowsOf(store),
         grid: store.grid,
         gridFrame: store.gridFrame,
         sizes: store.sizes,
@@ -284,6 +288,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
       padding: resolved.padding,
       radius: resolved.radius,
       shadows: resolved.shadows,
+      shadowsDark: darkShadowsOf(resolved),
       grid: resolved.grid,
       gridFrame: resolved.gridFrame,
       sizes: resolved.sizes,
@@ -386,6 +391,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
     padding: foundations.padding,
     radius: foundations.radius,
     shadows: foundations.shadows,
+    shadowsDark: foundations.shadowsDark,
     grid: foundations.grid,
     gridFrame: mergeGridFrame(foundations.gridFrame),
     sizes: foundations.sizes,

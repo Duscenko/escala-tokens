@@ -1,3 +1,5 @@
+import { darkShadowMap } from './colorUtils'
+
 export const SHADOW_PRESETS = [
   {
     label: 'None',
@@ -51,3 +53,23 @@ export function matchShadowPreset(shadows: Record<string, string>): string | nul
   return hit?.label ?? null
 }
 
+
+/** The ramp a theme's DARK appearance ships. A theme may pick its own
+ *  (`shadowsDark`, a complete dark ramp — Light and Dark elevation behave
+ *  differently, so one depth for both is a compromise); without one, dark is
+ *  the light ramp's derived twin (`darkShadow`: deeper alpha + a 1px rim),
+ *  exactly as before the field existed. A partial map fills its gaps from that
+ *  twin, so every step always has a value. */
+export function darkShadowsOf(f: { shadows: Record<string, string>; shadowsDark?: Record<string, string> }): Record<string, string> {
+  const derived = darkShadowMap(f.shadows)
+  return f.shadowsDark ? { ...derived, ...f.shadowsDark } : derived
+}
+
+/** The preset a dark ramp was picked from (its `darkShadowMap` twin), or null. */
+export function matchDarkShadowPreset(shadowsDark: Record<string, string>): string | null {
+  const hit = SHADOW_PRESETS.find((preset) => {
+    const dark = darkShadowMap(preset.values)
+    return SHADOW_STEPS.every((step) => (shadowsDark[step] ?? '') === dark[step])
+  })
+  return hit?.label ?? null
+}

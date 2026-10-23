@@ -4,10 +4,11 @@
 // empty semantic tokens so previews never render with undefined colors.
 
 import { anatomyIconPx, controlMdOf, iconRoleForControlStep, iconRoleForHeight, iconSizesFor, type IconRole } from './iconSizing'
+import { darkShadowsOf } from './shadowTokens'
 import { useEffect, type CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
-import { withAlpha, readableInk, darkShadowMap } from './colorUtils'
+import { withAlpha, readableInk } from './colorUtils'
 import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -297,7 +298,8 @@ export function resolvePreviewTokens(
     // background — invisible, not subtle. Derived here rather than at each call
     // site so EVERY specimen (Card, Modal, Toast, the collage) gets a readable
     // elevation in dark, not just the Shadow foundation's own preview.
-    shadows: kind === 'dark' ? darkShadowMap(foundations.shadows) : foundations.shadows,
+    // A theme may pick its own dark ramp (`darkShadowsOf`); without one it is this twin.
+    shadows: kind === 'dark' ? darkShadowsOf(foundations) : foundations.shadows,
     grid: foundations.grid,
     opacity: foundations.opacity,
     iconPrefix: getIconLibrary(store.iconLibrary).key,

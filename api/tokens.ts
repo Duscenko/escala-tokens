@@ -12,7 +12,7 @@ import {
 import { entitlementAt } from '../src/lib/entitlement.js'
 import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
 import { DELETED_SYSTEM_MESSAGE, isDeletedSystem } from '../src/lib/deletedSystem.js'
-import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
+import { blobWriteFailed, clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { rememberLicenceSlug, rememberLicenceSlugHash } from './_licenceIndex.js'
 import { accountPro, claimKeyForAccount } from './_accountPlan.js'
@@ -276,8 +276,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         contentType: 'application/json',
         allowOverwrite: true,
       })
-    } catch {
-      return res.status(503).json({ error: 'Storage unavailable. Try again shortly.' })
+    } catch (e) {
+      return res.status(503).json({ error: blobWriteFailed('publish', e) })
     }
     learnBlobBase(stored.url, key)
     forgetBlob(key)

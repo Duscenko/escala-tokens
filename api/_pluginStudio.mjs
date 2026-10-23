@@ -466,7 +466,7 @@ var init_componentCatalogue = __esm({
           { name: "Size", values: ["default", "sm"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
         ],
-        figmaSets: ["Native Select"],
+        figmaSets: ["Select"],
         props: [
           { name: "size", type: '"default" | "sm"', description: "The Select heights." },
           { name: "NativeSelectOption / NativeSelectOptGroup", type: "component", description: "The options, as <option> / <optgroup>." },
@@ -3794,6 +3794,68 @@ var init_hostedSync = __esm({
   }
 });
 
+// src/lib/shadowTokens.ts
+function matchShadowPreset(shadows) {
+  const hit = SHADOW_PRESETS.find(
+    (preset) => SHADOW_STEPS.every((step) => (shadows[step] ?? "") === preset.values[step])
+  );
+  return hit?.label ?? null;
+}
+function darkShadowsOf(f) {
+  const derived = darkShadowMap(f.shadows);
+  return f.shadowsDark ? { ...derived, ...f.shadowsDark } : derived;
+}
+var SHADOW_PRESETS, SHADOW_STEPS;
+var init_shadowTokens = __esm({
+  "src/lib/shadowTokens.ts"() {
+    init_colorUtils();
+    SHADOW_PRESETS = [
+      {
+        label: "None",
+        description: "Flat \u2014 no elevation anywhere",
+        values: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" }
+      },
+      {
+        label: "Subtle",
+        description: "Barely-there depth \u2014 quiet, minimal",
+        values: {
+          xs: "0 1px 1px rgba(10,13,18,0.03)",
+          sm: "0 1px 2px rgba(10,13,18,0.05)",
+          md: "0 2px 4px -1px rgba(10,13,18,0.05)",
+          lg: "0 6px 8px -2px rgba(10,13,18,0.04)",
+          xl: "0 10px 12px -2px rgba(10,13,18,0.04)",
+          "2xl": "0 12px 24px -6px rgba(10,13,18,0.08)"
+        }
+      },
+      {
+        label: "Soft",
+        description: "Balanced depth \u2014 the default ramp",
+        values: {
+          xs: "0 1px 2px rgba(10,13,18,0.05)",
+          sm: "0 1px 3px rgba(10,13,18,0.10), 0 1px 2px -1px rgba(10,13,18,0.10)",
+          md: "0 4px 6px -1px rgba(10,13,18,0.10), 0 2px 4px -2px rgba(10,13,18,0.06)",
+          lg: "0 12px 16px -4px rgba(10,13,18,0.08), 0 4px 6px -2px rgba(10,13,18,0.03)",
+          xl: "0 20px 24px -4px rgba(10,13,18,0.08), 0 8px 8px -4px rgba(10,13,18,0.03)",
+          "2xl": "0 24px 48px -12px rgba(10,13,18,0.18)"
+        }
+      },
+      {
+        label: "Strong",
+        description: "Pronounced depth \u2014 bold, high-contrast surfaces",
+        values: {
+          xs: "0 2px 4px rgba(10,13,18,0.10)",
+          sm: "0 2px 6px rgba(10,13,18,0.18), 0 2px 4px -1px rgba(10,13,18,0.16)",
+          md: "0 8px 12px -2px rgba(10,13,18,0.18), 0 4px 6px -3px rgba(10,13,18,0.12)",
+          lg: "0 20px 26px -6px rgba(10,13,18,0.16), 0 8px 10px -4px rgba(10,13,18,0.08)",
+          xl: "0 32px 40px -6px rgba(10,13,18,0.18), 0 14px 14px -6px rgba(10,13,18,0.08)",
+          "2xl": "0 40px 72px -16px rgba(10,13,18,0.32)"
+        }
+      }
+    ];
+    SHADOW_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
+  }
+});
+
 // src/lib/iconSizing.ts
 function controlMdOf(sizes) {
   const n = parseFloat(sizes?.md ?? "");
@@ -4451,6 +4513,8 @@ function resolveThemeFoundations(source, themeKey) {
     radius: completeRadiusScale(mergeMap(source.radius, override.radius)),
     opacity: mergeMap(source.opacity, override.opacity),
     shadows: mergeMap(source.shadows, override.shadows),
+    // Only this theme's own pick: a global light ramp never carries a dark one.
+    shadowsDark: override.shadowsDark,
     grid: mergeMap(source.grid, override.grid),
     sizes: mergeMap(source.sizes, override.sizes),
     selector: mergeMap(source.selector, override.selector),
@@ -5573,7 +5637,7 @@ function buttonPaint(variant, state2) {
     case "secondary":
       return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), ring: ring("border.ring.default") } };
     case "outline":
-      return { root: { fill: c(pressed ? "action.ghost.pressed" : hover ? "action.ghost.hover" : "surface.page"), stroke: c("border.control"), text: c("content.primary"), ring: ring("border.ring.default") } };
+      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), ring: ring("border.ring.default") } };
     case "ghost":
       return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), ring: ring("border.ring.default") } };
     case "destructive":
@@ -6921,7 +6985,8 @@ var init_navigation = __esm({
           },
           "button:hover": { fill: c("action.ghost.hover") },
           'button[data-active="true"]': { fill: c("action.ghost.hover"), font: "type.label" },
-          'button[data-variant="outline"]': { fill: c("surface.page"), stroke: c("border.default"), strokeWidth: "stroke.control" },
+          // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
+          'button[data-variant="outline"]': { fill: NONE, stroke: c("border.default"), strokeWidth: "stroke.control" },
           'button[data-size="sm"]': { height: "size.hit", font: "type.caption" },
           'button[data-size="lg"]': { height: "size.touch" }
         })),
@@ -7609,6 +7674,9 @@ function generateTokenJSON(source, opts) {
       radiusRoles: mergeLayoutRoles("radius", resolved.radiusRoles),
       radiusRoleViewports: resolved.radiusRoleViewports ?? {},
       shadows: resolved.shadows,
+      // THIS theme's dark elevation ramp: its own pick, else the derived twin
+      // (`darkShadowsOf`). The root `shadowsDark` stays the global twin.
+      shadowsDark: darkShadowsOf(resolved),
       grid: resolved.grid,
       gridFrame: mergeGridFrame(resolved.gridFrame),
       gridStyles: gridStylesOf(resolved.gridFrame, resolved.spacing, resolved.grid),
@@ -7920,6 +7988,7 @@ var TOKEN_SCHEMA_VERSION, activeThemeHint;
 var init_tokenGenerator = __esm({
   "src/lib/tokenGenerator.ts"() {
     init_useDesignStore();
+    init_shadowTokens();
     init_typographyStandard();
     init_iconSizing();
     init_iconLibraries();
@@ -11302,58 +11371,7 @@ function loadGoogleFont(family) {
 
 // src/lib/pluginStudio.ts
 init_typographyStandard();
-
-// src/lib/shadowTokens.ts
-var SHADOW_PRESETS = [
-  {
-    label: "None",
-    description: "Flat \u2014 no elevation anywhere",
-    values: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" }
-  },
-  {
-    label: "Subtle",
-    description: "Barely-there depth \u2014 quiet, minimal",
-    values: {
-      xs: "0 1px 1px rgba(10,13,18,0.03)",
-      sm: "0 1px 2px rgba(10,13,18,0.05)",
-      md: "0 2px 4px -1px rgba(10,13,18,0.05)",
-      lg: "0 6px 8px -2px rgba(10,13,18,0.04)",
-      xl: "0 10px 12px -2px rgba(10,13,18,0.04)",
-      "2xl": "0 12px 24px -6px rgba(10,13,18,0.08)"
-    }
-  },
-  {
-    label: "Soft",
-    description: "Balanced depth \u2014 the default ramp",
-    values: {
-      xs: "0 1px 2px rgba(10,13,18,0.05)",
-      sm: "0 1px 3px rgba(10,13,18,0.10), 0 1px 2px -1px rgba(10,13,18,0.10)",
-      md: "0 4px 6px -1px rgba(10,13,18,0.10), 0 2px 4px -2px rgba(10,13,18,0.06)",
-      lg: "0 12px 16px -4px rgba(10,13,18,0.08), 0 4px 6px -2px rgba(10,13,18,0.03)",
-      xl: "0 20px 24px -4px rgba(10,13,18,0.08), 0 8px 8px -4px rgba(10,13,18,0.03)",
-      "2xl": "0 24px 48px -12px rgba(10,13,18,0.18)"
-    }
-  },
-  {
-    label: "Strong",
-    description: "Pronounced depth \u2014 bold, high-contrast surfaces",
-    values: {
-      xs: "0 2px 4px rgba(10,13,18,0.10)",
-      sm: "0 2px 6px rgba(10,13,18,0.18), 0 2px 4px -1px rgba(10,13,18,0.16)",
-      md: "0 8px 12px -2px rgba(10,13,18,0.18), 0 4px 6px -3px rgba(10,13,18,0.12)",
-      lg: "0 20px 26px -6px rgba(10,13,18,0.16), 0 8px 10px -4px rgba(10,13,18,0.08)",
-      xl: "0 32px 40px -6px rgba(10,13,18,0.18), 0 14px 14px -6px rgba(10,13,18,0.08)",
-      "2xl": "0 40px 72px -16px rgba(10,13,18,0.32)"
-    }
-  }
-];
-var SHADOW_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
-function matchShadowPreset(shadows) {
-  const hit = SHADOW_PRESETS.find(
-    (preset) => SHADOW_STEPS.every((step) => (shadows[step] ?? "") === preset.values[step])
-  );
-  return hit?.label ?? null;
-}
+init_shadowTokens();
 
 // src/lib/phosphorIcons.ts
 init_phosphor_icons();
@@ -11516,6 +11534,7 @@ function approximateSource(text, name = "From code") {
 // src/lib/themePresets.ts
 init_colorUtils();
 init_layoutTokens();
+init_shadowTokens();
 
 // src/lib/themeMoods.ts
 init_layoutTokens();
@@ -12292,6 +12311,9 @@ function themeStylePreset(id) {
   return THEME_STYLE_PRESETS.find((preset) => preset.id === id);
 }
 
+// src/lib/pluginStudio.ts
+init_shadowTokens();
+
 // src/lib/adoptPreset.ts
 init_useDesignStore();
 
@@ -12300,6 +12322,7 @@ init_colorUtils();
 
 // src/lib/previewTokens.ts
 init_iconSizing();
+init_shadowTokens();
 init_useDesignStore();
 init_colorUtils();
 init_gradients();
@@ -12544,6 +12567,8 @@ function buildStudioTokens(choices, tier) {
   }
   const shadow = SHADOW_PRESETS.find((p) => p.label === choices.shadow);
   if (shadow) patch({ shadows: { ...shadow.values } });
+  const shadowDark = SHADOW_PRESETS.find((p) => p.label === choices.shadowDark);
+  if (shadowDark) patch({ shadowsDark: darkShadowMap(shadowDark.values) });
   const weight = PHOSPHOR_WEIGHTS.includes(choices.iconWeight ?? "") ? choices.iconWeight : void 0;
   if (weight) patch({ iconWeight: weight });
   applyRoleOverrides(key2, choices.roleOverrides);
@@ -12694,6 +12719,8 @@ function studioLook(choices) {
   const named = c2.shadow ? SHADOW_PRESETS.find((p) => p.label === c2.shadow) : void 0;
   if (named) shadowCss = named.values.md;
   else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md;
+  const namedDark = c2.shadowDark ? SHADOW_PRESETS.find((p) => p.label === c2.shadowDark) : void 0;
+  const darkCss = namedDark ? darkShadow(namedDark.values.md) : !named && preset?.foundations.shadowsDark?.md ? preset.foundations.shadowsDark.md : darkShadow(shadowCss);
   const scale = Number.isInteger(c2.typeScale) ? TYPE_SCALE_MODES[c2.typeScale] : void 0;
   const summaryFonts = preset ? styleSummary(preset, RADIUS_STANDARD) : null;
   return {
@@ -12714,7 +12741,7 @@ function studioLook(choices) {
     controlH: paint.controlH,
     pad: paint.pad,
     border: mode.border,
-    shadow: kind === "dark" ? darkShadow(shadowCss) : shadowCss,
+    shadow: kind === "dark" ? darkCss : shadowCss,
     factor: scale?.factor ?? 1,
     heading: c2.headingFont || summaryFonts?.heading || "Inter",
     body: c2.bodyFont || summaryFonts?.font || "Inter"

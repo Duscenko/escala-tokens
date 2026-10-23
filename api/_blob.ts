@@ -34,6 +34,23 @@ export function forgetBlob(key: string): void {
   cache.delete(key)
 }
 
+/**
+ * A failed Blob WRITE, logged with its cause and turned into the one message
+ * every publish path sends back. The cause matters: on 2026-10-22 every
+ * publish, bridge and account save answered 503 for hours while the plugin
+ * read "Could not sync this theme" — the store was `limits-exceeded-suspended`
+ * (Hobby Blob quota), which no retry and no theme can fix. Reads still work
+ * on a suspended store, so the site looks healthy until something writes.
+ * Diagnose with `vercel api /v1/storage/stores` → `status`.
+ */
+export function blobWriteFailed(where: string, e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e)
+  console.error(`blob_write_failed where=${where} message=${JSON.stringify(message)}`)
+  return /suspended|quota|limit/i.test(message)
+    ? 'escalatokens.com cannot save right now: its storage is paused. Try again later.'
+    : 'escalatokens.com cannot save right now. Try again shortly.'
+}
+
 async function fetchJson(url: string): Promise<unknown | null> {
   const raw = await fetch(url)
   if (raw.status === 404) return null

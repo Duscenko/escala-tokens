@@ -22,7 +22,7 @@ import { checkLicenceKey, licenceKeyHash } from './_licence.js'
 import { readLicenceCookie } from '../src/lib/licenceCookie.js'
 import type { StudioChoices } from '../src/lib/pluginStudio.js'
 import { BETA_MAX_BRANDS, entitlementAt, FREE_MAX_MODES, OPEN_BETA, FREE_MAX_THEMES, PRO_MAX_MODES, PRO_MAX_THEMES } from '../src/lib/entitlement.js'
-import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
+import { blobWriteFailed, clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 // The Figma plugin cannot share the browser session. Sign-in is a short-lived
 // code opened on escalatokens.com; this handler binds it to the account and
@@ -632,8 +632,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
         await writeJson(librariesKey(fresh.userId), { libraries } satisfies LibraryRecord)
       }
-    } catch {
-      return res.status(503).json({ error: 'Could not sync this theme. Try again.' })
+    } catch (e) {
+      return res.status(503).json({ error: blobWriteFailed('bridge', e) })
     }
     return res.status(200).json({ id, name: payload.name })
   }

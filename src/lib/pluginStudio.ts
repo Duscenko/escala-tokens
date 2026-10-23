@@ -31,7 +31,7 @@ import {
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
-import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
+import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
 import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
@@ -79,8 +79,12 @@ export interface StudioChoices {
   cardInset?: string
   /** Border width in px, one of `STROKE_SM_STOPS` (Spacing · Border width). */
   borderWidth?: number
-  /** A `SHADOW_PRESETS` label. */
+  /** A `SHADOW_PRESETS` label — the LIGHT appearance's elevation ramp. */
   shadow?: string
+  /** A `SHADOW_PRESETS` label for the DARK appearance, picked apart from
+   *  Light (it ships as that preset's dark twin). Absent = Dark follows Light,
+   *  the derived twin of `shadow` — what every system did before. */
+  shadowDark?: string
   iconWeight?: string
   /** Per-role picks made in the plugin's Token Details: role id → appearance →
    *  `{family.tone}` (`{error-a.3}`, `{neutral.12}`). Applied after everything
@@ -292,6 +296,8 @@ export function buildStudioTokens(
 
   const shadow = SHADOW_PRESETS.find((p) => p.label === choices.shadow)
   if (shadow) patch({ shadows: { ...shadow.values } })
+  const shadowDark = SHADOW_PRESETS.find((p) => p.label === choices.shadowDark)
+  if (shadowDark) patch({ shadowsDark: darkShadowMap(shadowDark.values) })
 
   const weight = (PHOSPHOR_WEIGHTS as readonly string[]).includes(choices.iconWeight ?? '') ? (choices.iconWeight as PhosphorWeight) : undefined
   if (weight) patch({ iconWeight: weight })
@@ -520,6 +526,12 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
   const named = c.shadow ? SHADOW_PRESETS.find((p) => p.label === c.shadow) : undefined
   if (named) shadowCss = named.values.md
   else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md
+  // Dark: its own pick, else a style's own dark ramp (only while Light is the
+  // style's too), else the derived twin of whatever Light is.
+  const namedDark = c.shadowDark ? SHADOW_PRESETS.find((p) => p.label === c.shadowDark) : undefined
+  const darkCss = namedDark ? darkShadow(namedDark.values.md)
+    : (!named && preset?.foundations.shadowsDark?.md) ? preset.foundations.shadowsDark.md
+    : darkShadow(shadowCss)
 
   const scale = Number.isInteger(c.typeScale) ? TYPE_SCALE_MODES[c.typeScale as number] : undefined
   const summaryFonts = preset ? styleSummary(preset, RADIUS_STANDARD as Record<string, string>) : null
@@ -540,7 +552,7 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     controlH: paint.controlH,
     pad: paint.pad,
     border: mode.border,
-    shadow: kind === 'dark' ? darkShadow(shadowCss) : shadowCss,
+    shadow: kind === 'dark' ? darkCss : shadowCss,
     factor: scale?.factor ?? 1,
     heading: c.headingFont || summaryFonts?.heading || 'Inter',
     body: c.bodyFont || summaryFonts?.font || 'Inter',

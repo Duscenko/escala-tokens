@@ -23,6 +23,9 @@ export interface ThemeFoundationOverride {
   radius?: Record<string, string>
   opacity?: Record<string, string>
   shadows?: Record<string, string>
+  /** This theme's DARK elevation ramp, when it was picked apart from the light
+   *  one. Absent = derived from `shadows` (see `darkShadowsOf`). */
+  shadowsDark?: Record<string, string>
   grid?: Record<string, string>
   sizes?: Record<string, string>
   selector?: Record<string, string>
@@ -92,6 +95,8 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     radius: completeRadiusScale(mergeMap(source.radius, override.radius)),
     opacity: mergeMap(source.opacity, override.opacity),
     shadows: mergeMap(source.shadows, override.shadows),
+    // Only this theme's own pick: a global light ramp never carries a dark one.
+    shadowsDark: override.shadowsDark,
     grid: mergeMap(source.grid, override.grid),
     sizes: mergeMap(source.sizes, override.sizes),
     selector: mergeMap(source.selector, override.selector),

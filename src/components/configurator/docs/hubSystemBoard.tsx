@@ -314,7 +314,7 @@ function ShadowSheet({ system, appearance }: { system: SystemDoc; appearance: 'l
       {SHADOW_STEPS.map((step) => {
         const raw = system.shadows[step]
         if (!raw) return null
-        const shadow = appearance === 'dark' ? darkShadow(raw) : raw
+        const shadow = appearance === 'dark' ? (system.shadowsDark?.[step] ?? darkShadow(raw)) : raw
         return (
           <span key={step} className="flex flex-col items-center gap-1.5">
             <span

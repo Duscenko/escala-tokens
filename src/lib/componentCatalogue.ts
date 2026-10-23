@@ -278,7 +278,7 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'Size', values: ['default', 'sm'] },
       { name: 'State', values: ['Default', 'Hover', 'Focused', 'Disabled'] },
     ],
-    figmaSets: ['Native Select'],
+    figmaSets: ['Select'],
     props: [
       { name: 'size', type: '"default" | "sm"', description: 'The Select heights.' },
       { name: 'NativeSelectOption / NativeSelectOptGroup', type: 'component', description: 'The options, as <option> / <optgroup>.' },

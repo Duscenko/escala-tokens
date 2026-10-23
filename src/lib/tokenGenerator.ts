@@ -1,4 +1,5 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
+import { darkShadowsOf } from './shadowTokens'
 import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
@@ -451,6 +452,9 @@ export function generateTokenJSON(
       radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
       radiusRoleViewports: resolved.radiusRoleViewports ?? {},
       shadows: resolved.shadows,
+      // THIS theme's dark elevation ramp: its own pick, else the derived twin
+      // (`darkShadowsOf`). The root `shadowsDark` stays the global twin.
+      shadowsDark: darkShadowsOf(resolved),
       grid: resolved.grid,
       gridFrame: mergeGridFrame(resolved.gridFrame),
       gridStyles: gridStylesOf(resolved.gridFrame, resolved.spacing, resolved.grid),

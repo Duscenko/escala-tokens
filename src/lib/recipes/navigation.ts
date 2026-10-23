@@ -246,7 +246,8 @@ export const SIDEBAR: ComponentRecipe = {
       },
       'button:hover': { fill: c('action.ghost.hover') },
       'button[data-active="true"]': { fill: c('action.ghost.hover'), font: 'type.label' },
-      'button[data-variant="outline"]': { fill: c('surface.page'), stroke: c('border.default'), strokeWidth: 'stroke.control' },
+      // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
+      'button[data-variant="outline"]': { fill: NONE, stroke: c('border.default'), strokeWidth: 'stroke.control' },
       'button[data-size="sm"]': { height: 'size.hit', font: 'type.caption' },
       'button[data-size="lg"]': { height: 'size.touch' },
     })),
