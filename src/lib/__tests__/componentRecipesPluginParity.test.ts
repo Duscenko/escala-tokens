@@ -57,7 +57,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       const web = resolveRecipe(COMPONENT_RECIPES.Button, v).root ?? {}
       const plan = plugin.buttonPlan(table, v)
       expect(plan, JSON.stringify(v)).toEqual({
-        fill: role(web.fill), stroke: role(web.stroke), text: role(web.text), ring: role(web.ring),
+        fill: role(web.fill), stroke: role(web.stroke), text: role(web.text), ring: role(web.ring), focus: role(web.focus),
       })
       for (const id of Object.values(plan as Record<string, string | null>)) {
         if (id) expect(plugin.figmaRoleName(id), id).toBe(figmaSemanticName(id))

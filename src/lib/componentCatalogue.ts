@@ -310,7 +310,7 @@ export const COMPONENTS: ComponentDef[] = [
     category: 'Form Controls',
     description: 'Type-ahead select — an input that filters a dropdown list as the user types.',
     usage: 'Use when options exceed ~10 items or need search. For short lists, plain Select is enough.',
-    axes: [{ name: 'State', values: ['Default', 'Open'] }],
+    axes: [{ name: 'State', values: ['Default', 'Focused', 'Open'] }],
     figmaSets: ['Combobox'],
     props: [
       { name: 'options', type: '{ label: string; value: string }[]', description: 'Filterable list.' },
@@ -1241,9 +1241,10 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 // `figmaSets` above names the component set(s) a key maps to in the plugin's
 // full CATALOG (../escala-figma-plugin/src/code.ts) — the variant matrix the
 // plugin CAN build. The default live import builds a FIXED 9-component sample
-// sheet ('⬡ Components Overview'). Its explicit Full catalogue option builds
-// all 58 component types, using representative source variants that cover each
-// axis value instead of materializing the 1,403-combination cartesian product.
+// sheet ('⬡ Components Overview'), each of the nine with every variant — the
+// same set the Full catalogue builds for it. The explicit Full catalogue option
+// builds every component type, using representative source variants that cover
+// each axis value instead of materializing the 1,403-combination cartesian product.
 //
 // Every one still ships as a full spec — props, variant axes,
 // tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
@@ -1251,7 +1252,7 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 // Figma file in the DEFAULT mode. Don't infer this from `figmaSets.length` —
 // that field describes full-catalogue capability.
 //
-// Keep this list in lockstep with the plugin's `SAMPLE` array in code.ts.
+// Keep this list in lockstep with the plugin's `SAMPLE_SETS` array in code.ts.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [
   'Button', 'Input', 'Select', 'Checkbox', 'Switch', 'Badge', 'StatusBadge', 'Sonner', 'Avatar',
 ]

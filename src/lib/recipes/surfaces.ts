@@ -183,6 +183,8 @@ export const COLLAPSIBLE: ComponentRecipe = {
       trigger: { text: c('content.primary'), font: 'type.label', gap: 'spacing.4', paddingX: 'spacing.1', paddingY: 'spacing.1' },
       icon: { text: c('content.secondary'), radius: 'radius.action', width: 'size.compact', height: 'size.compact' },
       'trigger:hover': { text: c('content.primary') },
+      // The focusable part is the icon button at the end of the row.
+      'icon:focus-visible': { focus: c('border.focus') },
       content: { gap: 'spacing.2' },
       item: {
         stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',

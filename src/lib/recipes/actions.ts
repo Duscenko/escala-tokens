@@ -175,6 +175,7 @@ export const TOGGLE_GROUP: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: { gap: 'spacing.1' },
+      'item:focus-visible': { focus: c('border.focus') },
     })),
     part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
       item: variant === 'outline'
@@ -215,6 +216,7 @@ export const TOGGLE: ComponentRecipe = {
         ? { fill: c('surface.layer-2'), text: c('content.primary') }
         : { fill: NONE, text: c('content.secondary') },
       'root:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
+      'root:focus-visible': { focus: c('border.focus') },
     })),
   ],
 }

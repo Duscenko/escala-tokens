@@ -76,7 +76,11 @@ export const CHIP: ComponentRecipe = {
   slots: ['root', 'remove'],
   defaults: { Selected: 'False', Dismissible: 'False', Size: 'default' },
   parts: [
-    part({}, () => ({ root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' } })),
+    part({}, () => ({
+      root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' },
+      'root:focus-visible': { focus: c('border.focus') },
+      'remove:focus-visible': { focus: c('border.focus') },
+    })),
     part({ Size: ['default', 'sm'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),
     part({ Selected: ['False', 'True'] as const }, (selected) => selected === 'True'
       ? {

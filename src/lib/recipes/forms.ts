@@ -235,7 +235,7 @@ export const COMBOBOX: ComponentRecipe = {
       content: { ...MENU_CONTENT },
       ...MENU_ITEM,
     })),
-    part({ State: ['Default', 'Open'] as const }, (state) => ({ root: fieldBox(state) })),
+    part({ State: ['Default', 'Focused', 'Open'] as const }, (state) => ({ root: fieldBox(state) })),
   ],
 }
 

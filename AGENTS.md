@@ -35,7 +35,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 5. **Store is persisted.** New Zustand fields need a migration. Emit them from `generateTokenJSON()` if consumers should see them.
 6. **`*Reference.ts` is generated** (`npm run gen:*`). Do not hand-edit.
 7. **Figma names use `/`, CSS uses hyphens + `var()`, JSON architecture uses dots.** `action.primary.default` → `Action/primary/default` → `var(--color-action-primary-default)`.
-8. **Plugin lives in** `../escala-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it. The default LIVE import renders `FIGMA_SAMPLE_KEYS` (9 keys); the explicit **Full catalogue** option renders all 58 `figmaSets` with representative variants (not the 1,403-combination cartesian product). Keep `FIGMA_SAMPLE_KEYS` in lockstep with `SAMPLE` and every `figmaSets` entry in lockstep with `CATALOG`.
+8. **Plugin lives in** `../escala-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it. The default LIVE import (Overview) renders `FIGMA_SAMPLE_KEYS` (9 keys), each with the same full variant set the Full catalogue gives it; the explicit **Full catalogue** option renders all 58 `figmaSets` with representative variants (not the 1,403-combination cartesian product). Keep `FIGMA_SAMPLE_KEYS` in lockstep with `SAMPLE` and every `figmaSets` entry in lockstep with `CATALOG`.
 9. **Desktop/laptop only.** Do not build phone editor layouts. `DesktopOnlyNotice` + About is the one reading-surface exception.
 10. **No `console.log` in production.** TypeScript strict. No `any` unless forced.
 
