@@ -15,8 +15,11 @@ export const ACCOUNT_FILES_PATH = '/api/account-files'
 export const FREE_CLOUD_SYSTEMS = 1
 export const PRO_CLOUD_SYSTEMS = 10
 
-/** Under Vercel's 4.5 MB request body limit, with room for the envelope. */
-export const MAX_CLOUD_BYTES = 4_000_000
+/** One design system is ~38 KB, plus ~2 KB a brand; a full Pro account (10
+ *  saved systems of 5 brands, plus the one on screen) is ~550 KB. 1 MB is
+ *  twice that, and keeps the free Supabase database (500 MB) from being
+ *  filled by a few hundred accounts. Over it, the files stay in the browser. */
+export const MAX_CLOUD_BYTES = 1_000_000
 const MAX_TRIMMED_IDS = 200
 
 export interface CloudSnapshot {

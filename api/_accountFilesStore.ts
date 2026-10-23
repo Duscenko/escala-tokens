@@ -58,6 +58,30 @@ export async function readFiles(userId: string): Promise<StoredFiles | null> {
   return { etag: row.etag, record: row.record }
 }
 
+/** What a save has to check, without the files: Supabase counts every byte
+ *  it sends as egress (5 GB a month on the free plan), and a save happens up
+ *  to every 20 s while someone edits. */
+export interface StoredMeta {
+  etag: string
+  revision: number
+  storeVersion: number
+  trimmedIds: string[]
+}
+
+export async function readMeta(userId: string): Promise<StoredMeta | null> {
+  const select = 'etag,revision:record->revision,storeVersion:record->storeVersion,trimmedIds:record->trimmedIds'
+  const res = await rest(`account_files?user_id=eq.${encodeURIComponent(userId)}&select=${select}`)
+  if (!res.ok) return failed(res, 'read_meta')
+  const rows = await res.json() as Array<Partial<Record<keyof StoredMeta, unknown>>>
+  const row = rows[0]
+  if (!row) return null
+  if (typeof row.etag !== 'string' || typeof row.revision !== 'number' || typeof row.storeVersion !== 'number' ||
+    !Array.isArray(row.trimmedIds) || !row.trimmedIds.every((id) => typeof id === 'string')) {
+    throw new StoreUnavailable('corrupt row')
+  }
+  return { etag: row.etag, revision: row.revision, storeVersion: row.storeVersion, trimmedIds: row.trimmedIds }
+}
+
 /**
  * Write `record` only if the row still holds `ifEtag` (null: only if there is
  * no row yet). The new etag, or `'stale'` when another save landed first.

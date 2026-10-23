@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { readFiles, StoreUnavailable, writeFiles } from '../../../api/_accountFilesStore'
+import { readFiles, readMeta, StoreUnavailable, writeFiles } from '../../../api/_accountFilesStore'
 import type { CloudRecord } from '../accountCloud'
 
 const record: CloudRecord = {
@@ -65,6 +65,13 @@ describe('account files store', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('etag=eq.e1')
     fetchMock.mockResolvedValueOnce(answer(200, []))
     expect(await writeFiles('u1', 'old', record)).toBe('stale')
+  })
+
+  it('reads metadata without the files', async () => {
+    fetchMock.mockResolvedValueOnce(answer(200, [{ etag: 'e1', revision: 3, storeVersion: 88, trimmedIds: ['a'] }]))
+    expect(await readMeta('u1')).toEqual({ etag: 'e1', revision: 3, storeVersion: 88, trimmedIds: ['a'] })
+    expect(String(fetchMock.mock.calls[0][0])).toContain('revision:record->revision')
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('select=etag,record&')
   })
 
   it('turns an error answer into StoreUnavailable', async () => {

@@ -137,13 +137,19 @@ function json(status: number, body: unknown) {
 
 // `public.account_files`, as PostgREST answers the filters the store sends.
 const rows = new Map<string, { etag: string; record: unknown }>()
+/** The `select` of every read that found a row: what Supabase sent back. */
+const reads: string[] = []
 
 function fakeTable(url: URL, init: { method?: string; body?: string }): Response {
   const userId = url.searchParams.get('user_id')?.replace(/^eq\./, '') ?? ''
   const method = init.method ?? 'GET'
   if (method === 'GET') {
     const row = rows.get(userId)
-    return json(200, row ? [row] : [])
+    if (!row) return json(200, [])
+    reads.push(url.searchParams.get('select') ?? '')
+    if (!url.searchParams.get('select')?.includes('record->')) return json(200, [row])
+    const r = row.record as { revision?: unknown; storeVersion?: unknown; trimmedIds?: unknown }
+    return json(200, [{ etag: row.etag, revision: r.revision, storeVersion: r.storeVersion, trimmedIds: r.trimmedIds }])
   }
   const body = JSON.parse(init.body ?? '{}') as { user_id?: string; etag: string; record: unknown }
   if (method === 'POST') {
@@ -177,7 +183,7 @@ function fakeFetch(input: unknown, init?: { headers?: Record<string, string>; me
 type Handler = (req: never, res: never) => unknown
 let handler: Handler
 
-async function call(opts: { method: 'GET' | 'PUT'; jwt?: string; body?: unknown; host?: string; origin?: string }) {
+async function call(opts: { method: 'GET' | 'PUT'; jwt?: string; body?: unknown; host?: string; origin?: string; ifNoneMatch?: string }) {
   const host = opts.host ?? 'www.escalatokens.com'
   const reply = { status: 200, body: {} as Record<string, unknown> }
   const res = {
@@ -194,6 +200,7 @@ async function call(opts: { method: 'GET' | 'PUT'; jwt?: string; body?: unknown;
       origin: opts.origin ?? `https://${host}`,
       'x-real-ip': '10.0.0.1',
       ...(opts.jwt ? { authorization: `Bearer ${opts.jwt}` } : {}),
+      ...(opts.ifNoneMatch ? { 'if-none-match': opts.ifNoneMatch } : {}),
     },
     body: opts.body ?? {},
   } as never, res as never)
@@ -219,7 +226,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-beforeEach(() => { blobs.clear(); rows.clear() })
+beforeEach(() => { blobs.clear(); rows.clear(); reads.length = 0 })
 
 describe('account files endpoint', () => {
   const work = files(snap('Acme', ['acme']), [saved('local:acme', 'Acme', ['acme'], '2026-10-13T00:00:00Z')])
@@ -270,6 +277,31 @@ describe('account files endpoint', () => {
     blobs.clear()
     const again = await call({ method: 'GET', jwt: 'jwt-ana' })
     expect(again.body.etag).toBe(first.body.etag)
+  })
+
+  it('a re-read naming the current etag gets 304 and no files', async () => {
+    const first = await call({ method: 'PUT', jwt: 'jwt-ana', body: { ifEtag: null, storeVersion: 88, files: work } })
+    reads.length = 0
+    const same = await call({ method: 'GET', jwt: 'jwt-ana', ifNoneMatch: first.body.etag as string })
+    expect(same.status).toBe(304)
+    expect(reads.every((s) => s.includes('record->'))).toBe(true)
+    const moved = await call({ method: 'GET', jwt: 'jwt-ana', ifNoneMatch: 'an-older-etag' })
+    expect(moved.status).toBe(200)
+    expect(moved.body.etag).toBe(first.body.etag)
+  })
+
+  it('a save reads only the metadata from Supabase', async () => {
+    const first = await call({ method: 'PUT', jwt: 'jwt-ana', body: { ifEtag: null, storeVersion: 88, files: work } })
+    reads.length = 0
+    const second = await call({ method: 'PUT', jwt: 'jwt-ana', body: { ifEtag: first.body.etag, storeVersion: 88, files: work } })
+    expect(second.status).toBe(200)
+    expect((second.body.record as { revision: number }).revision).toBe(2)
+    expect(reads.every((s) => s.includes('record->'))).toBe(true)
+  })
+
+  it('files over 1 MB are refused with 413', async () => {
+    const big = files(snap('Big', ['big'], { blob: 'x'.repeat(1_000_001) }))
+    expect((await call({ method: 'PUT', jwt: 'jwt-ana', body: { ifEtag: null, storeVersion: 88, files: big } })).status).toBe(413)
   })
 
   it('a store that fails answers 502, never a record', async () => {

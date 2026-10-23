@@ -161,7 +161,7 @@ async function token(): Promise<string | null> {
 type Answer =
   | { kind: 'ok'; etag: string | null; record: CloudRecord | null }
   | { kind: 'stale' | 'outdated'; etag: string | null; record: CloudRecord | null }
-  | { kind: 'too-large' | 'unavailable' | 'offline' | 'signed-out' }
+  | { kind: 'too-large' | 'unavailable' | 'offline' | 'signed-out' | 'unchanged' }
 
 /**
  * One request, sorted into what the engine does next. Only two answers mean
@@ -170,20 +170,26 @@ type Answer =
  * answer — a 5xx, an HTML error page from the platform, a body that is not
  * JSON — is `offline`: the server hiccuped, and the next try may well land.
  */
-async function request(method: 'GET' | 'PUT', body?: unknown, keepalive = false): Promise<Answer> {
+async function request(method: 'GET' | 'PUT', body?: unknown, keepalive = false, ifNoneMatch: string | null = null): Promise<Answer> {
   const jwt = await token()
   if (!jwt) return { kind: 'signed-out' }
   let res: Response
   try {
     res = await fetch(ACCOUNT_FILES_PATH, {
       method,
-      headers: { Authorization: `Bearer ${jwt}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {}),
+      },
       ...(body ? { body: JSON.stringify(body) } : {}),
       ...(keepalive ? { keepalive: true } : {}),
     })
   } catch {
     return { kind: 'offline' }
   }
+  // The etag we named is still the account's: nothing to download.
+  if (res.status === 304) return { kind: 'unchanged' }
   if (res.status === 413) return { kind: 'too-large' }
   if (res.status === 401) return { kind: 'signed-out' }
   if (res.status === 404 || res.status === 405) return { kind: 'unavailable' }
@@ -443,7 +449,7 @@ export async function refreshAccountCloud(): Promise<void> {
   if (Date.now() - lastRefresh < REFRESH_MS) return
   lastRefresh = Date.now()
   const who = running
-  const answer = await request('GET')
+  const answer = await request('GET', undefined, false, known)
   if (running !== who || inflight) return
   if (answer.kind === 'ok' && answer.etag !== known) await decide(answer.etag, answer.record)
 }

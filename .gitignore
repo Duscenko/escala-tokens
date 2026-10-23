@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Env files pulled with `vercel env pull` hold production secrets.
+.env
+.env.*
+*.env
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

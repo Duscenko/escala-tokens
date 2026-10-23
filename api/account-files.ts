@@ -12,7 +12,9 @@ import {
 import { entitlementAt } from '../src/lib/entitlement.js'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import { accountPro } from './_accountPlan.js'
-import { accountFilesConfigured, readFiles, writeFiles, type StoredFiles } from './_accountFilesStore.js'
+import {
+  accountFilesConfigured, readFiles, readMeta, writeFiles, type StoredFiles, type StoredMeta,
+} from './_accountFilesStore.js'
 import { userFromJwt } from './_authUser.js'
 import { rateLimited } from './_blob.js'
 
@@ -79,16 +81,29 @@ async function legacyRecord(userId: string): Promise<CloudRecord | null> {
   }
 }
 
-/** The account's files, importing the Blob-era record the first time. */
-async function currentFiles(userId: string): Promise<StoredFiles | null> {
-  const found = await readFiles(userId)
-  if (found) return found
+/** An account with no row yet: its Blob-era record, copied into the table. */
+async function importLegacy(userId: string): Promise<StoredFiles | null> {
   const legacy = await legacyRecord(userId)
   if (!legacy) return null
   const etag = await writeFiles(userId, null, legacy)
   if (etag === 'stale') return readFiles(userId)
   console.info(JSON.stringify({ evt: 'account_files', op: 'import_legacy', revision: legacy.revision }))
   return { etag, record: legacy }
+}
+
+async function currentFiles(userId: string): Promise<StoredFiles | null> {
+  return (await readFiles(userId)) ?? importLegacy(userId)
+}
+
+/** What a save checks. The full record is only fetched when there is no row
+ *  (the import) or when the save is refused and the browser needs it. */
+async function currentMeta(userId: string): Promise<StoredMeta | null> {
+  const meta = await readMeta(userId)
+  if (meta) return meta
+  const imported = await importLegacy(userId)
+  if (!imported) return null
+  const { revision, storeVersion, trimmedIds } = imported.record
+  return { etag: imported.etag, revision, storeVersion, trimmedIds }
 }
 
 function storeFailed(res: VercelResponse, op: string, err: unknown) {
@@ -129,15 +144,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'rate_limited' })
   }
 
-  let current: StoredFiles | null
-  try {
-    current = await currentFiles(user.id)
-  } catch (err) {
-    return storeFailed(res, 'read', err)
-  }
-
   if (req.method === 'GET') {
-    return res.status(200).json({ etag: current?.etag ?? null, record: current?.record ?? null })
+    try {
+      // A browser re-reading on focus names the etag it holds; most of the
+      // time nothing changed, and the answer is a few bytes, not the files.
+      const ifNoneMatch = req.headers['if-none-match']
+      if (typeof ifNoneMatch === 'string' && ifNoneMatch) {
+        const meta = await readMeta(user.id)
+        if (meta && meta.etag === ifNoneMatch) return res.status(304).end()
+      }
+      const current = await currentFiles(user.id)
+      return res.status(200).json({ etag: current?.etag ?? null, record: current?.record ?? null })
+    } catch (err) {
+      return storeFailed(res, 'read', err)
+    }
   }
 
   const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>
@@ -149,16 +169,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (JSON.stringify(body.files).length > MAX_CLOUD_BYTES) {
     return res.status(413).json({ error: 'too_large' })
   }
-  // Someone saved since this browser last read, or a newer app version wrote
-  // a shape this browser would only half understand.
-  if ((current?.etag ?? null) !== ifEtag) {
-    return res.status(409).json({ error: 'stale', etag: current?.etag ?? null, record: current?.record ?? null })
-  }
-  if (current && current.record.storeVersion > storeVersion) {
-    return res.status(409).json({ error: 'outdated', etag: current.etag, record: current.record })
+
+  let current: StoredMeta | null
+  try {
+    current = await currentMeta(user.id)
+    // Someone saved since this browser last read, or a newer app version wrote
+    // a shape this browser would only half understand.
+    const error = (current?.etag ?? null) !== ifEtag ? 'stale' : current && current.storeVersion > storeVersion ? 'outdated' : null
+    if (error) {
+      const now = await readFiles(user.id)
+      return res.status(409).json({ error, etag: now?.etag ?? null, record: now?.record ?? null })
+    }
+  } catch (err) {
+    return storeFailed(res, 'read', err)
   }
 
-  let pro = true
+  let pro: boolean
   try {
     pro = await proForPlan(user)
   } catch {
@@ -167,11 +193,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { files, trimmedIds } = trimToPlan(body.files, cloudSystemLimit(pro))
   const record: CloudRecord = {
     v: 1,
-    revision: (current?.record.revision ?? 0) + 1,
+    revision: (current?.revision ?? 0) + 1,
     savedAt: new Date().toISOString(),
     storeVersion,
     files,
-    trimmedIds: nextTrimmedIds(current?.record.trimmedIds ?? [], trimmedIds, files),
+    trimmedIds: nextTrimmedIds(current?.trimmedIds ?? [], trimmedIds, files),
   }
 
   try {
