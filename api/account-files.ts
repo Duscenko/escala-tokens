@@ -1,6 +1,5 @@
 import { createHmac } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { BlobPreconditionFailedError, get, put } from '@vercel/blob'
 import {
   cloudSystemLimit,
   isCloudFiles,
@@ -13,6 +12,7 @@ import {
 import { entitlementAt } from '../src/lib/entitlement.js'
 import { originAllowed, originsForHosts, parseBearer } from '../src/lib/publishTrust.js'
 import { accountPro } from './_accountPlan.js'
+import { accountFilesConfigured, readFiles, writeFiles, type StoredFiles } from './_accountFilesStore.js'
 import { userFromJwt } from './_authUser.js'
 import { rateLimited } from './_blob.js'
 
@@ -24,13 +24,15 @@ import { rateLimited } from './_blob.js'
 // browser and on both hosts. Before this, all of it lived in one origin's
 // localStorage (`sd-account-files:*` parked it there on sign-out).
 //
-// One blob per account, written with the etag the browser last read
-// (`ifMatch`). A browser holding an older copy gets 409 and the current
-// record, and must decide — it can never overwrite work saved elsewhere.
+// One Supabase row per account (`_accountFilesStore.ts`), written only if it
+// still holds the etag the browser last read. A browser holding an older copy
+// gets 409 and the current record, and must decide — it can never overwrite
+// work saved elsewhere.
 //
-// The key is an HMAC of the user id, because the store is public: without the
-// secret nobody can name another account's file. `ACCOUNT_FILES_SECRET` must
-// never change once set — a new secret names new, empty files.
+// Until 2026-10-23 the files were one Vercel Blob per account, and the Hobby
+// store got suspended for quota: every read answered 502 and nobody's work
+// reached their account. An account with no row yet imports its old blob once,
+// when the store lets us read it (`legacyRecord`).
 //
 // The plan decides how many design systems are kept (Free 1, Pro 10). A plan
 // that cannot be read keeps the Pro limit: uncertainty never deletes work.
@@ -46,16 +48,53 @@ function requestOrigins(req: VercelRequest): string[] {
   ])
 }
 
-function filesKey(userId: string, secret: string): string {
-  return `account-files/${createHmac('sha256', secret).update(userId).digest('hex')}.json`
+/** The old blob's public URL: an HMAC of the user id under the store's base,
+ *  because that store is public. `ACCOUNT_FILES_SECRET` named those files. */
+function legacyUrl(userId: string): string | null {
+  const secret = process.env.ACCOUNT_FILES_SECRET?.trim()
+  const storeId = process.env.BLOB_STORE_ID?.trim()
+  const base = process.env.BLOB_PUBLIC_BASE_URL?.trim() ||
+    (storeId ? `https://${storeId.replace(/^store_/, '').toLowerCase()}.public.blob.vercel-storage.com` : '')
+  if (!secret || !base) return null
+  return `${base.replace(/\/$/, '')}/account-files/${createHmac('sha256', secret).update(userId).digest('hex')}.json`
 }
 
-async function readRecord(key: string): Promise<{ etag: string; record: CloudRecord } | null> {
-  const found = await get(key, { access: 'public', useCache: false })
-  if (!found || found.statusCode !== 200) return null
-  const parsed: unknown = JSON.parse(await new Response(found.stream).text())
-  if (!isCloudRecord(parsed)) throw new Error('corrupt')
-  return { etag: found.blob.etag, record: parsed }
+/** The account's record from the Blob era, or null. Best effort: a suspended
+ *  store answers 403 to everything, and then the account starts from what its
+ *  browser holds. */
+async function legacyRecord(userId: string): Promise<CloudRecord | null> {
+  const url = legacyUrl(userId)
+  if (!url) return null
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    if (!res.ok) {
+      if (res.status !== 404) console.warn(`account_files legacy_read status=${res.status}`)
+      return null
+    }
+    const parsed: unknown = await res.json()
+    return isCloudRecord(parsed) ? parsed : null
+  } catch (err) {
+    console.warn(`account_files legacy_read error=${JSON.stringify(err instanceof Error ? err.message : String(err))}`)
+    return null
+  }
+}
+
+/** The account's files, importing the Blob-era record the first time. */
+async function currentFiles(userId: string): Promise<StoredFiles | null> {
+  const found = await readFiles(userId)
+  if (found) return found
+  const legacy = await legacyRecord(userId)
+  if (!legacy) return null
+  const etag = await writeFiles(userId, null, legacy)
+  if (etag === 'stale') return readFiles(userId)
+  console.info(JSON.stringify({ evt: 'account_files', op: 'import_legacy', revision: legacy.revision }))
+  return { etag, record: legacy }
+}
+
+function storeFailed(res: VercelResponse, op: string, err: unknown) {
+  const message = err instanceof Error ? err.message : String(err)
+  console.error(`account_files ${op}_failed message=${JSON.stringify(message)}`)
+  return res.status(502).json({ error: 'unavailable' })
 }
 
 async function proForPlan(user: { id: string; email: string }): Promise<boolean> {
@@ -77,8 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: 'forbidden' })
   }
 
-  const secret = process.env.ACCOUNT_FILES_SECRET?.trim()
-  if (!secret) return res.status(503).json({ error: 'unconfigured' })
+  if (!accountFilesConfigured()) return res.status(503).json({ error: 'unconfigured' })
 
   const jwt = parseBearer(req.headers.authorization)
   if (!jwt) return res.status(401).json({ error: 'signed_out' })
@@ -91,12 +129,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'rate_limited' })
   }
 
-  const key = filesKey(user.id, secret)
-  let current: { etag: string; record: CloudRecord } | null
+  let current: StoredFiles | null
   try {
-    current = await readRecord(key)
-  } catch {
-    return res.status(502).json({ error: 'unavailable' })
+    current = await currentFiles(user.id)
+  } catch (err) {
+    return storeFailed(res, 'read', err)
   }
 
   if (req.method === 'GET') {
@@ -138,13 +175,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const written = await put(key, JSON.stringify(record), {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'application/json',
-      cacheControlMaxAge: 60,
-      ...(current ? { ifMatch: current.etag } : { allowOverwrite: false }),
-    })
+    const etag = await writeFiles(user.id, current?.etag ?? null, record)
+    if (etag === 'stale') {
+      // Another save landed between our read and our write.
+      const now = await readFiles(user.id)
+      return res.status(409).json({ error: 'stale', etag: now?.etag ?? null, record: now?.record ?? null })
+    }
     console.info(JSON.stringify({
       evt: 'account_files',
       op: 'save',
@@ -153,19 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       trimmed: trimmedIds.length,
       pro,
     }))
-    return res.status(200).json({ etag: written.etag, record })
+    return res.status(200).json({ etag, record })
   } catch (err) {
-    // Another save landed between our read and our write.
-    const raced = err instanceof BlobPreconditionFailedError ||
-      (err instanceof Error && /already exists|precondition/i.test(err.message))
-    if (raced) {
-      try {
-        const now = await readRecord(key)
-        return res.status(409).json({ error: 'stale', etag: now?.etag ?? null, record: now?.record ?? null })
-      } catch {
-        return res.status(502).json({ error: 'unavailable' })
-      }
-    }
-    return res.status(502).json({ error: 'unavailable' })
+    return storeFailed(res, 'write', err)
   }
 }

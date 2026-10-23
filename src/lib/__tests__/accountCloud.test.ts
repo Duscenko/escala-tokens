@@ -135,8 +135,34 @@ function json(status: number, body: unknown) {
   return { status, ok: status >= 200 && status < 300, json: async () => body } as unknown as Response
 }
 
-function fakeFetch(input: unknown, init?: { headers?: Record<string, string> }): Promise<Response> {
+// `public.account_files`, as PostgREST answers the filters the store sends.
+const rows = new Map<string, { etag: string; record: unknown }>()
+
+function fakeTable(url: URL, init: { method?: string; body?: string }): Response {
+  const userId = url.searchParams.get('user_id')?.replace(/^eq\./, '') ?? ''
+  const method = init.method ?? 'GET'
+  if (method === 'GET') {
+    const row = rows.get(userId)
+    return json(200, row ? [row] : [])
+  }
+  const body = JSON.parse(init.body ?? '{}') as { user_id?: string; etag: string; record: unknown }
+  if (method === 'POST') {
+    if (rows.has(body.user_id ?? '')) return json(409, { code: '23505' })
+    rows.set(body.user_id ?? '', { etag: body.etag, record: body.record })
+    return json(201, null)
+  }
+  const ifEtag = url.searchParams.get('etag')?.replace(/^eq\./, '')
+  const row = rows.get(userId)
+  if (!row || row.etag !== ifEtag) return json(200, [])
+  rows.set(userId, { etag: body.etag, record: body.record })
+  return json(200, [{ etag: body.etag }])
+}
+
+function fakeFetch(input: unknown, init?: { headers?: Record<string, string>; method?: string; body?: string }): Promise<Response> {
   const url = String(input)
+  if (url.startsWith('https://supabase.test/rest/v1/account_files')) {
+    return Promise.resolve(fakeTable(new URL(url), init ?? {}))
+  }
   if (url.startsWith(BLOB)) {
     const found = blobs.get(url.slice(BLOB.length))
     return Promise.resolve(found ? json(200, JSON.parse(found.body)) : json(404, null))
@@ -179,6 +205,7 @@ beforeAll(async () => {
   process.env.VITE_SUPABASE_URL = 'https://supabase.test'
   process.env.VITE_SUPABASE_ANON_KEY = 'anon'
   process.env.ACCOUNT_FILES_SECRET = 'test-secret'
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test'
   delete process.env.POLAR_ACCESS_TOKEN
   vi.useFakeTimers({ now: new Date('2026-10-14T08:00:00Z'), toFake: ['Date'] })
   vi.stubGlobal('fetch', vi.fn(fakeFetch))
@@ -192,7 +219,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-beforeEach(() => { blobs.clear() })
+beforeEach(() => { blobs.clear(); rows.clear() })
 
 describe('account files endpoint', () => {
   const work = files(snap('Acme', ['acme']), [saved('local:acme', 'Acme', ['acme'], '2026-10-13T00:00:00Z')])
@@ -230,7 +257,25 @@ describe('account files endpoint', () => {
     await call({ method: 'PUT', jwt: 'jwt-ana', body: { ifEtag: null, storeVersion: 88, files: work } })
     const bo = await call({ method: 'GET', jwt: 'jwt-bo' })
     expect(bo.body.record).toBeNull()
-    expect([...blobs.keys()].every((k) => !k.includes('user-ana'))).toBe(true)
+  })
+
+  it('an account saved in the Blob era is imported once, then read from the table', async () => {
+    const { createHmac } = await import('node:crypto')
+    const key = `account-files/${createHmac('sha256', 'test-secret').update('user-ana').digest('hex')}.json`
+    const old = { v: 1, revision: 4, savedAt: '2026-10-20T00:00:00Z', storeVersion: 88, files: work, trimmedIds: [] }
+    blobs.set(key, { body: JSON.stringify(old), etag: '"old"' })
+    const first = await call({ method: 'GET', jwt: 'jwt-ana' })
+    expect(first.status).toBe(200)
+    expect((first.body.record as { revision: number }).revision).toBe(4)
+    blobs.clear()
+    const again = await call({ method: 'GET', jwt: 'jwt-ana' })
+    expect(again.body.etag).toBe(first.body.etag)
+  })
+
+  it('a store that fails answers 502, never a record', async () => {
+    rows.set('user-ana', { etag: 'e', record: { broken: true } })
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {})
+    expect((await call({ method: 'GET', jwt: 'jwt-ana' })).status).toBe(502)
   })
 
   it('Free keeps one design system; the rest are named so the browser keeps them locally', async () => {

@@ -187,11 +187,31 @@ function devRegistry(): Plugin {
   }
 }
 
+// Local only. Any `/api/*` route without a dev stand-in above is a Vercel
+// function that plain `vite` cannot run — and left alone, Vite answers with the
+// function's source as JavaScript. The page read that 200 as a server hiccup
+// ("Could not reach your account") and retried forever. A 404 is the honest
+// answer: the feature is not on this host (`vercel dev` runs the real ones).
+function devApiFallback(): Plugin {
+  return {
+    name: 'escala-dev-api-fallback',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.split('?')[0].startsWith('/api/')) return next()
+        res.statusCode = 404
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ error: 'not_on_vite_dev' }))
+      })
+    },
+  }
+}
+
 export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    ...(command === 'serve' ? [devLicence(), devRegistry()] : []),
+    ...(command === 'serve' ? [devLicence(), devRegistry(), devApiFallback()] : []),
   ],
   // The preview harness hands each session a free port through PORT (autoPort);
   // plain `vite` ignores it, so a second chat's server would collide on 5173.
