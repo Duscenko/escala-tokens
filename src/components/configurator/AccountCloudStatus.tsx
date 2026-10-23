@@ -4,6 +4,7 @@ import { useAccess } from '../../lib/access'
 import {
   localCloudFiles,
   resolveAccountCloudConflict,
+  retryAccountCloud,
   useAccountCloud,
   type AccountCloudStatus as Status,
 } from '../../lib/accountCloudSync'
@@ -23,6 +24,15 @@ const LINE: Partial<Record<Status, { short: string; text: string; tone: 'ok' | '
   unavailable: { short: 'Not saved to your account', text: 'Saving to your account is not available right now. Your work is kept in this browser.', tone: 'warn' },
 }
 
+/** A warning the person can do something about gets its action beside it —
+ *  never a yellow line alone. Reload is the browser's own button; too-large
+ *  has no retry that would land. */
+const ACTION: Partial<Record<Status, { label: string; run: () => void }>> = {
+  offline: { label: 'Try again', run: () => { void retryAccountCloud() } },
+  unavailable: { label: 'Try again', run: () => { void retryAccountCloud() } },
+  outdated: { label: 'Reload', run: () => { window.location.reload() } },
+}
+
 /** One line under Home's title: where the signed-in account's files live. */
 export function AccountCloudStatus() {
   const { t } = useI18n()
@@ -31,6 +41,7 @@ export function AccountCloudStatus() {
   const { tier } = useAccess()
   const line = LINE[status]
   if (!line) return null
+  const action = ACTION[status]
   const dot = line.tone === 'ok' ? 'bg-status-success-solid' : line.tone === 'warn' ? 'bg-status-warning-solid' : 'bg-fg-faint'
   return (
     <div className="flex flex-col gap-1" role="status" aria-live="polite">
@@ -38,6 +49,15 @@ export function AccountCloudStatus() {
         <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />
         <span aria-hidden className="truncate">{t(line.short)}</span>
         <span className="sr-only">{t(line.text)}</span>
+        {action && (
+          <button
+            type="button"
+            onClick={action.run}
+            className="ml-auto flex-shrink-0 rounded text-caption font-semibold text-fg underline-offset-2 transition-colors hover:text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t(action.label)}
+          </button>
+        )}
       </p>
       {localOnly > 0 && (status === 'saved' || status === 'pending' || status === 'saving') && (
         <p className="pl-3.5 text-caption text-fg-faint">

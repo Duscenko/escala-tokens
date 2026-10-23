@@ -13,6 +13,7 @@ import { burstConfetti } from '../../lib/celebrate'
 import { announceBrandSaved } from '../../lib/brandSaved'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
+import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { FigmaGlyph } from '../ui/icons'
 
@@ -333,16 +334,21 @@ export default function ThemeSaveBar({
   // The Ship row stands in for the Get code primary wherever that primary
   // would have shown: the brand is kept (or a guest's), so the next move is
   // the way out, and there are three of them, not one.
-  // A signed-in DRAFT ships from the same row: the panel has ONE layout,
-  // saved or not, and "not saved" is the status line under it (with Save
-  // brand as its action), not a second primary button stacked on top.
+  // A signed-in DRAFT keeps Save brand as the primary, full width, with the
+  // Ship row under it. It used to be the other way round — doors first,
+  // Save as a small button on the status line — and people shipped (or
+  // left) thinking the brand was already in the system. Keeping it is THE
+  // decision on a draft, so it takes the primary's place.
   const draftShip = Boolean(ship) && !inactive && draft && !access.guest && !exploringRandom
-  const shipOut = Boolean(ship) && (use || draftShip)
+  const shipOut = Boolean(ship) && use
   const showAction = !(guestPrimary && inactive)
   const saveBrand = (anchor: HTMLElement | null) => {
     const s = useDesignStore.getState()
     s.saveCurrentSystem()
     if (themeKey) forgetUnsavedBrand(themeKey)
+    // To the account now, not after the metering gap: the person just chose
+    // to keep it, and the status line under the button says when it landed.
+    void flushAccountCloud({ force: true })
     setJustSaved(true)
     // The kept theme throws its OWN colours: accent first, then states.
     const accent = anchor
@@ -428,11 +434,13 @@ export default function ThemeSaveBar({
       </button>
       </div>
       ))}
+      {/* A draft still ships: the three doors sit under Save, not instead of it. */}
+      {draftShip && ship && <ShipRow ship={ship} />}
       {/* Last line: where the work lives — "Not saved" for a guest, "Saved to
           your account" (or why not) signed in. Status reads after the action. */}
       {draftShip ? (
         <div className="border-t border-line pt-2.5">
-          <UnsavedNotice onSave={saveBrand} />
+          <UnsavedNotice onSave={saveBrand} quiet />
         </div>
       ) : (guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
     </div>
@@ -443,12 +451,15 @@ export default function ThemeSaveBar({
  *  are the two ways to keep it. Information, not a gate — everything else on
  *  the page works without an account. A system already pushed to GitHub says
  *  where it is, and only offers the account. */
-export function UnsavedNotice({ onSave, onDiscard }: {
+export function UnsavedNotice({ onSave, onDiscard, quiet = false }: {
   /** Signed in, a brand not kept yet: the line's action saves it here
    *  instead of sending to sign-up. Gets the link as the confetti anchor. */
   onSave?: (anchor: HTMLElement | null) => void
   /** A draft that can be thrown away (the create studio's Cancel). */
   onDiscard?: () => void
+  /** The Save brand button already sits above this line as the primary:
+   *  say "Not saved" without repeating it beside. The ⓘ still offers it. */
+  quiet?: boolean
 } = {}) {
   const { t } = useI18n()
   const saveLinkRef = useRef<HTMLButtonElement>(null)
@@ -493,7 +504,7 @@ export function UnsavedNotice({ onSave, onDiscard }: {
           {t('Discard')}
         </button>
       )}
-      {onSave ? (
+      {onSave && !quiet ? (
         // A real button, not a link: keeping the brand is THE decision on a
         // draft, and as underlined text beside "Not saved" it was missed —
         // people shipped (or left) thinking the brand was already in the system.
@@ -503,11 +514,13 @@ export function UnsavedNotice({ onSave, onDiscard }: {
           </svg>
           {t('Save brand')}
         </button>
-      ) : guest && (
-        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}${link}`}>
+      ) : guest && !onSave ? (
+        // A button, like Save brand above: for a visitor this IS the one way
+        // to keep the work, and as an underlined line it read as a footnote.
+        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}flex h-7 flex-shrink-0 items-center rounded-lg bg-cta px-2.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
           {t('Save with an account')}
         </button>
-      )}
+      ) : null}
       {open && (
         <div role="dialog" aria-label={t('Not saved')} className="absolute bottom-full left-0 z-20 mb-2 flex w-full min-w-[220px] flex-col gap-2 rounded-lg border border-line-strong bg-elevated px-3 py-2.5 shadow-lg">
           <p className="m-0 text-caption leading-snug text-fg-muted">
@@ -665,14 +678,24 @@ export function CreateStudioFooter({
     <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
-        // The SAME layout as a saved brand's footer (ThemeSaveBar): the three
-        // doors out, then the status line. Not being saved is that line —
-        // "Not saved" with Save brand (and Discard) on it — never a second
-        // primary button stacked over the doors.
+        // The SAME layout as a draft's footer in the editor (ThemeSaveBar):
+        // Save brand as the primary, the three doors under it, then the
+        // status line with Discard. A guest has no save here, so the doors
+        // lead and the line offers the account.
         <>
+          {!guest && (
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={(e) => onSave(e.currentTarget)} className={primary}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M2.5 6.5 5 9l4.5-5.5" />
+                </svg>
+                <span className="truncate">{t('Save brand')}</span>
+              </button>
+            </div>
+          )}
           <ShipRow ship={ship} />
           <div className="border-t border-line pt-2.5">
-            <UnsavedNotice onSave={guest ? undefined : (anchor) => onSave(anchor)} onDiscard={onCancel} />
+            <UnsavedNotice onSave={guest ? undefined : (anchor) => onSave(anchor)} onDiscard={onCancel} quiet={!guest} />
           </div>
         </>
       ) : (

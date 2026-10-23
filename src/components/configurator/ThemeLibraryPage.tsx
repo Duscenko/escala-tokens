@@ -12,6 +12,7 @@ import { useAccess, useNeedsProForAnotherTheme } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, useThemeSetup } from '../../lib/themeSetup'
 import { flushLibraryAutosave, useUnsavedBrands } from '../../lib/libraryStatus'
+import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
@@ -720,6 +721,9 @@ export default function ThemeLibraryPage({
     forgetUnsavedBrand(key)
     if (tier === 'anon') return
     useDesignStore.getState().saveCurrentSystem()
+    // Straight to the account: a kept brand must be there before the person
+    // opens another browser, not after the sync's metering gap.
+    void flushAccountCloud({ force: true })
     if (wasDraft) announceBrandSaved(t, key)
   }
   // Function declaration on purpose: Home's `body` (built above) reads it.

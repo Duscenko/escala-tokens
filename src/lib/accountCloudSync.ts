@@ -61,8 +61,15 @@ const BACKUP_PREFIX = 'sd-account-cloud-backup:'
 const IDLE_MS = 3_000
 /** Blob writes are a metered operation: at most one save per this window. */
 const MIN_GAP_MS = 20_000
-const RETRY_MS = 30_000
+/** After a failed request: 30 s, then 2 min, then every 5 min. A server that
+ *  answered HTML once (a cold start, a timeout) is usually back soon; one that
+ *  stays down must not be hammered — and must never be given up on, because
+ *  "not saved to your account" with no way back was the bug this fixes. */
+const RETRY_STEPS_MS = [30_000, 120_000, 300_000]
 const REFRESH_MS = 30_000
+/** `fetch` keepalive carries at most 64 KiB; a page that is closing can only
+ *  send a save that fits. */
+const KEEPALIVE_MAX_BYTES = 60_000
 
 let running: string | null = null
 let ready = false
@@ -76,6 +83,8 @@ let inflight: Promise<void> | null = null
 let again = false
 let lastWrite = 0
 let lastRefresh = 0
+/** Failed requests in a row — picks the next step of `RETRY_STEPS_MS`. */
+let failures = 0
 
 function setUi(patch: Partial<CloudUiState>): void {
   useAccountCloud.setState(patch)
@@ -154,7 +163,14 @@ type Answer =
   | { kind: 'stale' | 'outdated'; etag: string | null; record: CloudRecord | null }
   | { kind: 'too-large' | 'unavailable' | 'offline' | 'signed-out' }
 
-async function request(method: 'GET' | 'PUT', body?: unknown): Promise<Answer> {
+/**
+ * One request, sorted into what the engine does next. Only two answers mean
+ * "the feature is not here": a 404/405 (no such route on this host) and the
+ * server's own `503 unconfigured`. Everything else that is not a clean
+ * answer — a 5xx, an HTML error page from the platform, a body that is not
+ * JSON — is `offline`: the server hiccuped, and the next try may well land.
+ */
+async function request(method: 'GET' | 'PUT', body?: unknown, keepalive = false): Promise<Answer> {
   const jwt = await token()
   if (!jwt) return { kind: 'signed-out' }
   let res: Response
@@ -163,20 +179,22 @@ async function request(method: 'GET' | 'PUT', body?: unknown): Promise<Answer> {
       method,
       headers: { Authorization: `Bearer ${jwt}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
+      ...(keepalive ? { keepalive: true } : {}),
     })
   } catch {
     return { kind: 'offline' }
   }
   if (res.status === 413) return { kind: 'too-large' }
   if (res.status === 401) return { kind: 'signed-out' }
-  if (res.status === 503 || res.status === 404 || res.status === 405) return { kind: 'unavailable' }
-  if (!res.headers.get('content-type')?.includes('application/json')) return { kind: 'unavailable' }
+  if (res.status === 404 || res.status === 405) return { kind: 'unavailable' }
+  if (!res.headers.get('content-type')?.includes('application/json')) return { kind: 'offline' }
   let json: { etag?: unknown; record?: unknown; error?: unknown }
   try {
     json = await res.json()
   } catch {
-    return { kind: 'unavailable' }
+    return { kind: 'offline' }
   }
+  if (res.status === 503) return { kind: json.error === 'unconfigured' ? 'unavailable' : 'offline' }
   const etag = typeof json.etag === 'string' ? json.etag : null
   const record = (json.record ?? null) as CloudRecord | null
   if (res.status === 200) return { kind: 'ok', etag, record }
@@ -184,9 +202,26 @@ async function request(method: 'GET' | 'PUT', body?: unknown): Promise<Answer> {
   return { kind: 'offline' }
 }
 
+/** The next try after a failure, further away each time. `failures` only
+ *  moves here and in `recovered`, so one bad answer never resets the ladder. */
 function retryLater(fn: () => void): void {
   if (retryTimer) clearTimeout(retryTimer)
-  retryTimer = setTimeout(() => { retryTimer = null; fn() }, RETRY_MS)
+  const wait = RETRY_STEPS_MS[Math.min(failures, RETRY_STEPS_MS.length - 1)]
+  failures += 1
+  retryTimer = setTimeout(() => { retryTimer = null; fn() }, wait)
+}
+
+function recovered(): void {
+  failures = 0
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
+}
+
+/** Whether a save is still owed: the files differ from what the account holds. */
+function owed(): boolean {
+  if (!running) return false
+  const hash = hashOf(localCloudFiles())
+  return !(base && base.hash === hash && base.etag === known)
 }
 
 /** A record written by an older app version goes through the same migration
@@ -256,6 +291,7 @@ async function decide(etag: string | null, record: CloudRecord | null, loginInte
   if (plan === 'same') {
     if (etag) writeBase({ etag, hash: localHash })
     ready = true
+    recovered()
     setUi({ status: 'saved', savedAt: record?.savedAt ?? null, localOnly: localOnlyCount(record), conflict: null })
     return
   }
@@ -284,17 +320,22 @@ async function pull(loginIntent = false): Promise<void> {
   const answer = await request('GET')
   if (running !== who) return
   if (answer.kind === 'ok') return decide(answer.etag, answer.record, loginIntent)
-  if (answer.kind === 'unavailable') return setUi({ status: 'unavailable' })
-  setUi({ status: 'offline' })
+  if (answer.kind === 'signed-out') return
+  // `unavailable` and `offline` both come back on their own: the status line
+  // offers Try again meanwhile (`retryAccountCloud`).
+  setUi({ status: answer.kind === 'unavailable' ? 'unavailable' : 'offline' })
   retryLater(() => { void pull(loginIntent) })
 }
 
+/** Nothing may be sent while the person has a decision to make, or while a
+ *  newer app version owns the record. A server that is down is NOT blocked:
+ *  the retry ladder and Try again keep pushing. */
 function blocked(): boolean {
   const { status } = useAccountCloud.getState()
-  return status === 'conflict' || status === 'outdated' || status === 'unavailable'
+  return status === 'conflict' || status === 'outdated'
 }
 
-async function pushNow(): Promise<void> {
+async function pushNow(keepalive = false): Promise<void> {
   if (!running || !ready || blocked()) return
   const who = running
   const files = localCloudFiles()
@@ -309,22 +350,23 @@ async function pushNow(): Promise<void> {
     return
   }
   setUi({ status: 'saving' })
-  const answer = await request('PUT', { ifEtag: known, storeVersion: storeVersion(), files })
+  const answer = await request('PUT', { ifEtag: known, storeVersion: storeVersion(), files }, keepalive && text.length <= KEEPALIVE_MAX_BYTES)
   if (running !== who) return
   lastWrite = Date.now()
   if (answer.kind === 'ok' && answer.etag && answer.record) {
     writeBase({ etag: answer.etag, hash })
+    recovered()
     setUi({ status: 'saved', savedAt: answer.record.savedAt, localOnly: localOnlyCount(answer.record) })
     return
   }
   if (answer.kind === 'stale' || answer.kind === 'outdated') return decide(answer.etag, answer.record)
   if (answer.kind === 'too-large') return setUi({ status: 'too-large' })
-  if (answer.kind === 'unavailable') return setUi({ status: 'unavailable' })
-  setUi({ status: 'offline' })
+  if (answer.kind === 'signed-out') return
+  setUi({ status: answer.kind === 'unavailable' ? 'unavailable' : 'offline' })
   retryLater(() => schedulePush(0))
 }
 
-async function push(): Promise<void> {
+async function push(keepalive = false): Promise<void> {
   if (inflight) {
     again = true
     return inflight
@@ -333,7 +375,7 @@ async function push(): Promise<void> {
     try {
       do {
         again = false
-        await pushNow()
+        await pushNow(keepalive)
       } while (again && running)
     } finally {
       inflight = null
@@ -357,8 +399,42 @@ function onStoreChange(): void {
 
 function onVisibility(): void {
   if (typeof document === 'undefined') return
-  if (document.visibilityState === 'hidden') void flushAccountCloud()
+  if (document.visibilityState === 'hidden') void flushAccountCloud({ force: true, keepalive: true })
   else void refreshAccountCloud()
+}
+
+/** The page is going away (closed, navigated, put in the bfcache): one last
+ *  save that may outlive it. `visibilitychange` already fires for most of
+ *  these; `pagehide` is the one Safari and a closed tab reliably send. */
+function onPageHide(): void {
+  void flushAccountCloud({ force: true, keepalive: true })
+}
+
+/** With a save still owed, closing the tab asks first. Browsers draw their
+ *  own sentence; the string is only what makes them show it. */
+function onBeforeUnload(e: BeforeUnloadEvent): void {
+  if (!running || !ready || blocked()) return
+  if (!owed()) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+
+function listen(on: boolean): void {
+  const doc = typeof document === 'undefined' ? null : document
+  const win = typeof window === 'undefined' ? null : window
+  const method = on ? 'addEventListener' : 'removeEventListener'
+  doc?.[method]('visibilitychange', onVisibility)
+  win?.[method]('focus', onVisibility)
+  win?.[method]('pagehide', onPageHide)
+  win?.[method]('beforeunload', onBeforeUnload)
+}
+
+/** Try now — the status line's action after an error. Drops any waiting
+ *  retry: a person pressing the button is not to be told "in two minutes". */
+export async function retryAccountCloud(): Promise<void> {
+  if (!running) return
+  recovered()
+  return flushAccountCloud({ force: true })
 }
 
 /** Read the account again — another browser may have saved meanwhile. */
@@ -372,16 +448,31 @@ export async function refreshAccountCloud(): Promise<void> {
   if (answer.kind === 'ok' && answer.etag !== known) await decide(answer.etag, answer.record)
 }
 
-/** Save now if anything is waiting. Called before sign-out closes the files. */
-export async function flushAccountCloud(): Promise<void> {
+/**
+ * Save now if anything is waiting. `force` sends even when no save was
+ * scheduled yet and skips the write gap: Save brand is a decision, and the
+ * person who just made it must see "Saved to your account" without waiting
+ * 20 s for a metering window. When the first read never landed (the engine
+ * is not `ready`) it reads again instead — the files cannot be sent without
+ * the etag they must name.
+ */
+export async function flushAccountCloud(opts: { force?: boolean; keepalive?: boolean } = {}): Promise<void> {
   if (!running) return
+  if (!ready) {
+    const { status } = useAccountCloud.getState()
+    if (opts.force && (status === 'offline' || status === 'unavailable')) await pull()
+    return
+  }
   if (pushTimer) {
     clearTimeout(pushTimer)
     pushTimer = null
     lastWrite = 0
-    await push()
+    await push(opts.keepalive)
   } else if (inflight) {
     await inflight
+  } else if (opts.force) {
+    lastWrite = 0
+    await push(opts.keepalive)
   }
 }
 
@@ -445,23 +536,23 @@ export async function startAccountCloud(userId: string): Promise<void> {
   known = base?.etag ?? null
   lastWrite = 0
   lastRefresh = Date.now()
+  failures = 0
   const loginIntent = Boolean(peekLoginIntent())
   setUi({ status: 'loading', savedAt: null, localOnly: 0, conflict: null })
   unsubscribe = useDesignStore.subscribe(onStoreChange)
-  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility)
-  if (typeof window !== 'undefined') window.addEventListener('focus', onVisibility)
+  listen(true)
   await pull(loginIntent)
 }
 
 export function stopAccountCloud(): void {
   unsubscribe?.()
   unsubscribe = null
-  if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility)
-  if (typeof window !== 'undefined') window.removeEventListener('focus', onVisibility)
+  listen(false)
   if (pushTimer) clearTimeout(pushTimer)
   if (retryTimer) clearTimeout(retryTimer)
   pushTimer = null
   retryTimer = null
+  failures = 0
   running = null
   ready = false
   base = null
@@ -487,8 +578,11 @@ export async function resolveAccountCloudConflict(keep: 'cloud' | 'local'): Prom
 }
 
 /** Whether this browser knows what the account holds. Anything that judges
- *  "which systems exist" (the orphan sweep) waits for this. */
+ *  "which systems exist" (the orphan sweep) waits for this. `unavailable`
+ *  counts only once the first read landed (`ready`): before that, the
+ *  account's files may still be on their way. */
 export function accountCloudSettled(): boolean {
   const { status } = useAccountCloud.getState()
-  return status === 'saved' || status === 'pending' || status === 'saving' || status === 'unavailable' || status === 'too-large'
+  if (status === 'unavailable' || status === 'offline') return ready
+  return status === 'saved' || status === 'pending' || status === 'saving' || status === 'too-large'
 }
