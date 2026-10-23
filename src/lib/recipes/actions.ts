@@ -36,27 +36,31 @@ function buttonPaint(variant: string, state: string): SlotMap {
         fill: filled ? c('action.disabled.default') : NONE,
         stroke: variant === 'outline' ? c('action.disabled.default') : NONE,
         text: c('content.disabled'),
-        ring: NONE,
+        focus: NONE,
       },
     }
   }
   const hover = state === 'Hover'
   const pressed = state === 'Pressed'
   const focus = state === 'Focused'
-  const ring = (role: string) => (focus ? c(role) : NONE)
+  // Focus is ONE solid `border.focus` ring set off from the button, for every
+  // variant: the translucent halo alone disappeared next to an accent fill
+  // (Figma audit: 54 Focused variants identical to Default). Destructive too —
+  // focus wins over the error colour (see `border.focus`).
+  const ring = focus ? c('border.focus') : NONE
   switch (variant) {
     case 'default':
-      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), ring: ring('border.ring.default') } }
+      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: ring } }
     case 'secondary':
-      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
+      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: ring } }
     case 'outline':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), ring: ring('border.ring.default') } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: ring } }
     case 'ghost':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), ring: ring('border.ring.default') } }
+      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: ring } }
     case 'destructive':
-      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), ring: ring('status.critical.border') } }
+      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: ring } }
     default: // link
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), ring: ring('border.ring.default') } }
+      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: ring } }
   }
 }
 
@@ -130,7 +134,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
       },
       'root:hover': { fill: c('action.ghost.hover') },
       'root:active': { fill: c('action.ghost.pressed') },
-      'root:focus-visible': { ring: c('border.ring.default') },
+      'root:focus-visible': { focus: c('border.focus') },
     })),
     part({ Size: ['default', 'lg'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
   ],

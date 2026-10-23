@@ -3,9 +3,11 @@
 
 export type TokenRef = string
 
-/** Properties a slot can bind. Colour props hold `color.*`, the rest dimensions. */
+/** Properties a slot can bind. Colour props hold `color.*`, the rest dimensions.
+ *  `focus` is the contrast-bearing focus indicator (a solid ring set off from
+ *  the control); `ring` is the translucent halo a field adds around it. */
 export const RECIPE_PROPS = [
-  'fill', 'stroke', 'text', 'ring',
+  'fill', 'stroke', 'text', 'ring', 'focus',
   'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow',
 ] as const
 export type RecipeProp = (typeof RECIPE_PROPS)[number]

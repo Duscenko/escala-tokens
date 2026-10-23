@@ -66,7 +66,8 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   fill: 'Background',
   text: 'Text color',
   stroke: 'Border color',
-  ring: 'Focus ring',
+  ring: 'Focus halo',
+  focus: 'Focus ring',
   strokeTop: 'Top border',
   paint: 'Paint',
   radius: 'Radius',
@@ -88,7 +89,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'text', 'stroke', 'strokeTop', 'ring', 'paint',
+  'fill', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'paint',
   'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
   'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font',
 ]

@@ -1638,7 +1638,8 @@ export const SELECTOR_ROLES: LayoutRole[] = [
 export const STROKE_ROLES: LayoutRole[] = [
   { key: 'divider', label: 'Divider', description: 'Separator, table rules, layout splits.', group: 'line', primitive: 'sm' },
   { key: 'control', label: 'Control', description: 'Input, card, outline button border-width.', group: 'line', primitive: 'sm' },
-  { key: 'focus', label: 'Focus', description: 'Focus-ring spread. Paint stays border.focus.', group: 'line', primitive: 'md' },
+  { key: 'focus', label: 'Focus', description: 'Focus-ring width. Paint stays border.focus.', group: 'line', primitive: 'md' },
+  { key: 'focus-offset', label: 'Focus offset', description: 'Gap between a control and its focus ring, so the ring reads against an accent fill.', group: 'line', primitive: 'md' },
 ]
 
 export const BREAKPOINT_ROLES: LayoutRole[] = [

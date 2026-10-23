@@ -6,6 +6,7 @@ import { RECIPE_CSS, recipeCss, recipeCssVars, slotName } from '../recipeStyles'
 import { COMPONENTS } from '../componentCatalogue'
 import { buildArchitectureView } from '../semanticArchitectures'
 import { buildSystem } from '../color/audit'
+import { wcagRatio } from '../color/apca'
 import { buildCSS } from '../exporters'
 import { generateTokenJSON } from '../tokenGenerator'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -119,7 +120,7 @@ describe('the generated stylesheet', () => {
           for (const f of ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing']) expected.add(cssVarOf(ref, f))
         } else expected.add(cssVarOf(ref))
       }
-      const used = recipeCssVars(recipeCss(recipe)).filter((v) => v !== '--stroke-focus')
+      const used = recipeCssVars(recipeCss(recipe)).filter((v) => v !== '--stroke-focus' && v !== '--stroke-focus-offset')
       expect(new Set(used), recipe.key).toEqual(expected)
     }
   })
@@ -144,5 +145,46 @@ describe('the generated stylesheet', () => {
     const shipped = new Set(css.match(/--[a-z0-9_-]+(?=:)/g))
     const missing = recipeCssVars(RECIPE_CSS).filter((v) => !shipped.has(v))
     expect(missing).toEqual([])
+  })
+})
+
+// The Figma audit found 54 Focused variants painted exactly like Default: the
+// Button / Checkbox / Switch focus was the translucent `border.ring.default`
+// halo alone. Focus must CHANGE the paint, and on a non-field it is the solid,
+// contrast-solved `border.focus` ring.
+describe('focus', () => {
+  it('every Focused state paints something Default does not', () => {
+    for (const recipe of Object.values(COMPONENT_RECIPES)) {
+      const def = COMPONENTS.find((c) => c.key === recipe.key)!
+      const state = def.axes.find((a) => a.name === 'State')
+      if (!state?.values.includes('Focused')) continue
+      for (const v of combos(def.axes.filter((a) => a.name !== 'State'))) {
+        const rest = resolveRecipe(recipe, { ...v, State: 'Default' })
+        const focused = resolveRecipe(recipe, { ...v, State: 'Focused' })
+        expect(focused, `${recipe.key} ${JSON.stringify(v)}`).not.toEqual(rest)
+      }
+    }
+  })
+
+  it('Button, Checkbox and Switch focus with the solid border.focus ring', () => {
+    for (const key of ['Button', 'Checkbox', 'Switch']) {
+      const def = COMPONENTS.find((c) => c.key === key)!
+      for (const v of combos(def.axes.filter((a) => a.name !== 'State'))) {
+        expect(resolveRecipe(COMPONENT_RECIPES[key], { ...v, State: 'Focused' }).root.focus, `${key} ${JSON.stringify(v)}`)
+          .toBe('color.border.focus')
+      }
+    }
+  })
+
+  it('the ring clears WCAG 1.4.11 against the page it is set off onto, in both themes', () => {
+    for (const mode of ['light', 'dark']) {
+      expect(wcagRatio(roleHex['border.focus'][mode], roleHex['surface.page'][mode]), mode).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('renders as an offset outline, not a box-shadow', () => {
+    const css = recipeCss(COMPONENT_RECIPES.Button)
+    expect(css).toContain('outline: var(--stroke-focus, 2px) solid var(--color-border-focus)')
+    expect(css).toContain('outline-offset: var(--stroke-focus-offset, 2px)')
   })
 })

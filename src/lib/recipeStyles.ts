@@ -66,6 +66,13 @@ function declarations(props: SlotProps): string[] {
       case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
       case 'ring': out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 var(--stroke-focus, 2px) ${v(ref)}`); break
+      // An outline, not a box-shadow: it follows border-radius, takes no layout,
+      // leaves an elevation shadow alone and survives forced-colors. The offset
+      // keeps it readable against an accent fill.
+      case 'focus':
+        if (ref === 'none') out.push('outline: none')
+        else out.push(`outline: var(--stroke-focus, 2px) solid ${v(ref)}`, 'outline-offset: var(--stroke-focus-offset, 2px)')
+        break
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break

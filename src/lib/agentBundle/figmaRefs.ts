@@ -88,7 +88,7 @@ export function figmaRefsFor(ref: string, json: TokenJSON, roles = semanticRoleI
 /** Properties the plugin binds as a VARIABLE (`PAINT_PROPS` + `GEOMETRY_PROPS`
  *  in the plugin's recipes.ts), then the two it applies as a STYLE. */
 export const FIGMA_VARIABLE_PROPS = [
-  'fill', 'stroke', 'text', 'ring',
+  'fill', 'stroke', 'text', 'ring', 'focus',
   'paddingX', 'paddingY', 'paddingBottom', 'gap', 'radius', 'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'height', 'minHeight', 'width',
 ] as const
 export const FIGMA_STYLE_PROPS = ['font', 'shadow'] as const

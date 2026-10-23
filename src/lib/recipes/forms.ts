@@ -272,13 +272,13 @@ function checkPaint(checked: string, state: string): SlotMap {
   const on = checked === 'True'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
+  const focus = state === 'Focused' ? c('border.focus') : NONE
   let root: SlotProps
-  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), ring }
+  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus }
   else if (on) {
     const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
-    root = { fill, stroke: fill, ring }
-  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), ring }
+    root = { fill, stroke: fill, focus }
+  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), focus }
   return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
 }
 
@@ -310,7 +310,7 @@ export const RADIO_GROUP: ComponentRecipe = {
         radius: 'radius.pill', height: 'selector.control', width: 'selector.control',
       },
       'item:hover': { stroke: c('border.control-hover') },
-      'item:focus-visible': { ring: c('border.ring.default') },
+      'item:focus-visible': { focus: c('border.focus') },
       'item[data-state="checked"]': { fill: c('action.primary.default'), stroke: c('action.primary.default') },
       'item:disabled': { fill: c('action.disabled.default'), stroke: c('action.disabled.default') },
       indicator: { fill: c('content.on-action'), radius: 'radius.pill', height: 'spacing.2', width: 'spacing.2' },
@@ -332,12 +332,12 @@ function switchPaint(checked: string, state: string): SlotMap {
   const on = checked === 'True'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
+  const focus = state === 'Focused' ? c('border.focus') : NONE
   const track = disabled ? 'action.disabled.default'
     : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
     : (hover ? 'action.secondary.hover' : 'action.secondary.default')
   return {
-    root: { fill: c(track), ring },
+    root: { fill: c(track), focus },
     thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
   }
 }
@@ -376,7 +376,7 @@ export const SLIDER: ComponentRecipe = {
         fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
         height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm',
       },
-      'thumb:focus-visible': { ring: c('border.ring.default') },
+      'thumb:focus-visible': { focus: c('border.focus') },
     })),
   ],
 }
