@@ -5,10 +5,12 @@ export type TokenRef = string
 
 /** Properties a slot can bind. Colour props hold `color.*`, the rest dimensions.
  *  `focus` is the contrast-bearing focus indicator (a solid ring set off from
- *  the control); `ring` is the translucent halo a field adds around it. */
+ *  the control); `ring` is the translucent halo a field adds around it.
+ *  `hit` is a minimum TARGET size (`size.hit`, WCAG 2.5.8): a transparent area
+ *  centred on a glyph smaller than 24px — the glyph itself does not grow. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
-  'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow',
+  'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
 ] as const
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>

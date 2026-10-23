@@ -79,6 +79,8 @@ export const CHIP: ComponentRecipe = {
     part({}, () => ({
       root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' },
       'root:focus-visible': { focus: c('border.focus') },
+      // The × is ~10px: its pointer target is the 24px hit area around it.
+      remove: { hit: 'size.hit' },
       'remove:focus-visible': { focus: c('border.focus') },
     })),
     part({ Size: ['default', 'sm'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),

@@ -188,3 +188,19 @@ describe('focus', () => {
     expect(css).toContain('outline-offset: var(--stroke-focus-offset, 2px)')
   })
 })
+
+// WCAG 2.5.8: a selector glyph (18px) and a Chip's × (~10px) sit under the 24px
+// minimum target. The glyph keeps its size; a transparent `::before` of at
+// least `size.hit` is the pointer target (Figma audit, Phase 4).
+describe('target size', () => {
+  const hitSlots: [string, string][] = [['Checkbox', 'root'], ['Switch', 'root'], ['RadioGroup', 'item'], ['Slider', 'thumb'], ['Chip', 'remove']]
+  it.each(hitSlots)('%s %s carries a size.hit target', (key, slot) => {
+    expect(resolveRecipe(COMPONENT_RECIPES[key])[slot]?.hit).toBe('size.hit')
+  })
+  it('renders the target as a centred ::before at least size.hit square', () => {
+    const css = recipeCss(COMPONENT_RECIPES.Checkbox)
+    expect(css).toContain('[data-escala="Checkbox"]::before')
+    expect(css).toContain('width: max(100%, var(--size-hit))')
+    expect(css).toContain('position: relative')
+  })
+})

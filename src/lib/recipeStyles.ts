@@ -93,6 +93,8 @@ function declarations(props: SlotProps): string[] {
       case 'rowGap': out.push(`row-gap: ${dim(ref)}`); break
       case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
+      // The target itself is the `::before` (see `hitRule`); its host anchors it.
+      case 'hit': out.push('position: relative'); break
       case 'font':
         out.push(
           `font-family: ${v(ref, 'font-family')}`,
@@ -105,6 +107,21 @@ function declarations(props: SlotProps): string[] {
     }
   }
   return out
+}
+
+/** A glyph under 24px keeps its size; a transparent `::before` centred on it
+ *  is at least `size.hit` square, so the pointer target meets WCAG 2.5.8. */
+function hitRule(sel: string, ref: string): string {
+  const hit = `var(${cssVarOf(ref)})`
+  return `${sel.split(',\n').map((s) => `${s}::before`).join(',\n')} {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, ${hit});
+  height: max(100%, ${hit});
+  transform: translate(-50%, -50%);
+}`
 }
 
 function slotSelector(recipe: ComponentRecipe, root: string, slot: string): string {
@@ -147,6 +164,7 @@ export function recipeCss(recipe: ComponentRecipe): string {
         const [slot, suffix] = splitSlotKey(slotKey)
         const sel = roots.map((r) => slotSelector(recipe, r, slot) + suffix).join(',\n')
         rules.push(`${sel} {\n  ${decl.join(';\n  ')};\n}`)
+        if (props.hit && props.hit !== 'none') rules.push(hitRule(sel, props.hit))
       }
     }
   }

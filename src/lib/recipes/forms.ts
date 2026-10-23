@@ -288,7 +288,7 @@ export const CHECKBOX: ComponentRecipe = {
   defaults: { Checked: 'True', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.control', strokeWidth: 'stroke.control', height: 'selector.control', width: 'selector.control' },
+      root: { radius: 'radius.control', strokeWidth: 'stroke.control', height: 'selector.control', width: 'selector.control', hit: 'size.hit' },
     })),
     part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, checkPaint),
   ],
@@ -307,7 +307,7 @@ export const RADIO_GROUP: ComponentRecipe = {
       root: { gap: 'spacing.3' },
       item: {
         fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        radius: 'radius.pill', height: 'selector.control', width: 'selector.control',
+        radius: 'radius.pill', height: 'selector.control', width: 'selector.control', hit: 'size.hit',
       },
       'item:hover': { stroke: c('border.control-hover') },
       'item:focus-visible': { focus: c('border.focus') },
@@ -348,7 +348,7 @@ export const SWITCH: ComponentRecipe = {
   defaults: { Checked: 'True', Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.pill' },
+      root: { radius: 'radius.pill', hit: 'size.hit' },
       thumb: { radius: 'radius.pill', shadow: 'shadow.xs' },
     })),
     part({ Size: ['default', 'sm'] as const }, (size) => ({
@@ -374,7 +374,7 @@ export const SLIDER: ComponentRecipe = {
       range: { fill: c('action.primary.default'), radius: 'radius.pill' },
       thumb: {
         fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
-        height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm',
+        height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm', hit: 'size.hit',
       },
       'thumb:focus-visible': { focus: c('border.focus') },
     })),

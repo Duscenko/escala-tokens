@@ -6057,7 +6057,7 @@ var init_forms = __esm({
       defaults: { Checked: "True", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.control", strokeWidth: "stroke.control", height: "selector.control", width: "selector.control" }
+          root: { radius: "radius.control", strokeWidth: "stroke.control", height: "selector.control", width: "selector.control", hit: "size.hit" }
         })),
         part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, checkPaint)
       ]
@@ -6075,7 +6075,8 @@ var init_forms = __esm({
             strokeWidth: "stroke.control",
             radius: "radius.pill",
             height: "selector.control",
-            width: "selector.control"
+            width: "selector.control",
+            hit: "size.hit"
           },
           "item:hover": { stroke: c("border.control-hover") },
           "item:focus-visible": { focus: c("border.focus") },
@@ -6096,7 +6097,7 @@ var init_forms = __esm({
       defaults: { Checked: "True", Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.pill" },
+          root: { radius: "radius.pill", hit: "size.hit" },
           thumb: { radius: "radius.pill", shadow: "shadow.xs" }
         })),
         part({ Size: ["default", "sm"] }, (size) => ({
@@ -6124,7 +6125,8 @@ var init_forms = __esm({
             height: "selector.control",
             width: "selector.control",
             radius: "radius.pill",
-            shadow: "shadow.sm"
+            shadow: "shadow.sm",
+            hit: "size.hit"
           },
           "thumb:focus-visible": { focus: c("border.focus") }
         }))
@@ -7273,6 +7275,8 @@ var init_indicators = __esm({
         part({}, () => ({
           root: { radius: "radius.pill", strokeWidth: "stroke.control", font: "type.label" },
           "root:focus-visible": { focus: c("border.focus") },
+          // The × is ~10px: its pointer target is the 24px hit area around it.
+          remove: { hit: "size.hit" },
           "remove:focus-visible": { focus: c("border.focus") }
         })),
         part({ Size: ["default", "sm"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),

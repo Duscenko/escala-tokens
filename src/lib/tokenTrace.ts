@@ -85,13 +85,14 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   strokeBottomWidth: 'Bottom border width',
   font: 'Typography',
   shadow: 'Shadow',
+  hit: 'Target size',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
   'fill', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'paint',
   'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
-  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font',
+  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {
