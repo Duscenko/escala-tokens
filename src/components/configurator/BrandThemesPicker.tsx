@@ -1,10 +1,11 @@
-import type { KeyboardEvent } from 'react'
+import { useId, type KeyboardEvent } from 'react'
 import { useOneThemePlan } from '../../lib/access'
 import {
   BRAND_THEME_CHOICES, brandThemeChoiceFor, brandThemeLabel, plannedBrandThemes, type BrandThemeId,
 } from '../../lib/brandThemes'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_CARD } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, SELECT_CARD } from './themeWorkspaceLayout'
+import { SegmentHighlight } from '../ui/SegmentHighlight'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui'
 
@@ -35,6 +36,7 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
   field?: boolean
 }) {
   const { t } = useI18n()
+  const group = useId()
   const limited = useOneThemePlan()
   const current = brandThemeChoiceFor(plannedBrandThemes(value, lead, limited))
   const both = current.ids.length > 1
@@ -78,15 +80,15 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
               // Roving tab stop: only the checked segment is in the tab order;
               // the arrows move between them (`onRadioKeys`).
               tabIndex={on ? 0 : -1}
-              // The selected segment was a fg/8 wash at the same weight as the
-              // others, so "which one is on" rested on a faint fill alone. It
-              // now uses the segmented-control language (raised fill +
-              // semibold) shared with Desktop / Tablet / Mobile.
-              className={`flex h-full min-w-0 flex-1 items-center justify-center rounded-md px-2 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none ${FOCUS} ${
-                on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+              // The segmented-control language (raised fill + semibold) shared
+              // with Desktop / Tablet / Mobile — the fill is one
+              // `SegmentHighlight` that slides to the picked segment.
+              className={`relative flex h-full min-w-0 flex-1 items-center justify-center rounded-md px-2 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none ${FOCUS} ${
+                on ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
               }`}
             >
-              <span className="truncate">{name}</span>
+              {on && <SegmentHighlight group={group} />}
+              <span className="relative truncate">{name}</span>
             </button>
           )
         })

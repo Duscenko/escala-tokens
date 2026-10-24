@@ -16,6 +16,7 @@
 import { releaseInspectorPin } from '../preview/artefacts/TokenInspector'
 import { recordEdit } from '../../lib/editHistory'
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
@@ -47,6 +48,7 @@ import {
   insetSideKey,
   withInsetSide,
   type InsetSide,
+  type SpacingStep,
   SPACING_MODES,
   matchSpacingMode,
   type SpacingMode,
@@ -86,7 +88,8 @@ import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
@@ -136,9 +139,9 @@ export const RAIL_SURFACE_RADIUS = 'rounded-lg'
  * the class names suggest and why eyeballing a pixel value here goes wrong.
  *
  * `ROW_GAP_CONTROL` is deliberately smaller than the `mt-3` it replaced above
- * sliders: `.quick-settings-range` is a 20px box drawing a 4px track, so it
- * carries ~8px of its own air on each side and a 13.5px margin on top of that
- * read as ~21px of gap. Measured against the value it labels, not in isolation.
+ * sliders: the stepped sliders are `DotSlider` wells, filled edge to edge like
+ * the `PickerField` beside them, so they carry no air of their own and the
+ * label→control gap is the margin alone. Measured against the value it labels.
  */
 /**
  * ONE ink rule across the six cards, because compacting them removed the air
@@ -441,7 +444,7 @@ export function ThemeRailScrollRegion({
   return (
     <div className={`relative min-h-0 flex-1 ${className}`}>
       {fade('top', edges.top)}
-      <div ref={scrollRef} className={`h-full min-h-0 overflow-y-auto ${padClass}`}>
+      <div ref={scrollRef} className={`h-full min-h-0 overflow-y-auto overflow-x-hidden ${padClass}`}>
         {children}
       </div>
       {fade('bottom', edges.bottom)}
@@ -500,49 +503,96 @@ function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
  * is visible before it is made. The selection is READ from the tokens
  * (`matchSpacingMode`): edit a value elsewhere and no tile is lit.
  */
-/** Card padding, side by side: the inset in the middle sets all four at once,
- *  and each side can leave it (a card with a tighter bottom, a sheet with no
- *  top). A side left on "=" follows the middle value. Writes `inset-surface`
- *  and its `-top · -right · -bottom · -left` sides (Variables · Spacing). */
-function InsetSidesCard({ spacing, spacingRoles, onBase, onSide }: {
+/** Card padding as the box it is: a card drawn with its four padding bands at
+ *  their real proportions, each band naming its px. Click a band to edit that
+ *  side, the middle to edit all four, and drag the slider under it. A side left
+ *  following the middle reads faint; one set by hand reads in the accent, with
+ *  "Match all" to send it back. Writes `inset-surface` and its
+ *  `-top · -right · -bottom · -left` sides (Variables · Spacing). */
+function InsetSidesCard({ spacing, spacingRoles, onBase, onSide, onScrubStart, onScrubEnd }: {
   spacing: Record<string, string>
   spacingRoles: Record<string, string> | undefined
   onBase: (step: string) => void
   onSide: (side: InsetSide, step: string | undefined) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
 }) {
   const { t } = useI18n()
-  const px = (step: string) => spacing[step] ?? `${Number(step.replace('_', '.')) * 4}px`
+  const [target, setTarget] = useState<'all' | InsetSide>('all')
+  const isStep = (step: string | undefined): step is SpacingStep => !!step && SPACING_STEPS.includes(step as SpacingStep)
+  const pxOf = (step: string) => parseFloat(spacing[step] ?? '') || Number(step.replace('_', '.')) * 4
   const base = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
-  const baseStep = SPACING_STEPS.includes(base as (typeof SPACING_STEPS)[number]) ? base : ''
+  const baseStep: SpacingStep = isStep(base) ? base : PADDING_DEFAULT_STEP
+  const own = (side: InsetSide) => {
+    const step = spacingRoles?.[insetSideKey(INSET_SURFACE_ROLE, side)]
+    return isStep(step) ? step : undefined
+  }
+  const stepOf = (side: InsetSide) => own(side) ?? baseStep
   const label: Record<InsetSide, string> = { top: 'Top', right: 'Right', bottom: 'Bottom', left: 'Left' }
-  const select = (ariaLabel: string, value: string, onChange: (v: string) => void, follow: boolean) => (
-    <select
-      aria-label={ariaLabel}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      // A cell of the role-row family: same 30.5px height, radius and
-      // surface, the inset edge on hover.
-      className="h-8 w-full min-w-0 cursor-pointer appearance-none rounded-lg bg-surface px-1.5 text-center text-ui tabular-nums text-fg transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-    >
-      {follow && <option value="">= {baseStep ? px(baseStep) : '—'}</option>}
-      {!follow && !baseStep && <option value="">Custom</option>}
-      {SPACING_STEPS.map((step) => <option key={step} value={step}>{px(step)}</option>)}
-    </select>
-  )
-  const side = (s: InsetSide) => {
-    const own = spacingRoles?.[insetSideKey('inset-surface', s)]
-    return select(`Card padding ${label[s].toLowerCase()}`, own && SPACING_STEPS.includes(own as (typeof SPACING_STEPS)[number]) ? own : '', (v) => onSide(s, v || undefined), true)
+  // Drawn band = 18px floor (room for its label) + a quarter of the real px,
+  // capped at 64 — enough that 0 → 64 visibly grows without crushing the middle.
+  const band = (side: InsetSide) => 18 + Math.min(pxOf(stepOf(side)), 64) / 4
+  const editing = target === 'all' ? baseStep : stepOf(target)
+  const sideButton = (side: InsetSide) => {
+    const selected = target === side
+    const custom = own(side) !== undefined
+    const vertical = side === 'top' || side === 'bottom'
+    return (
+      <button
+        key={side}
+        type="button"
+        aria-pressed={selected}
+        aria-label={`${t('Edit')} ${t(label[side]).toLowerCase()} — ${pxOf(stepOf(side))}px${custom ? '' : `, ${t('follows all sides')}`}`}
+        onClick={() => setTarget(selected ? 'all' : side)}
+        className={`absolute flex items-center justify-center rounded-[5px] text-mini tabular-nums transition-[inset,width,height,background-color,color] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${selected ? 'bg-accent-solid/20 text-fg' : `hover:bg-fg/[0.06] ${custom ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted'}`}`}
+        style={vertical
+          ? { left: band('left'), right: band('right'), [side]: 0, height: band(side) }
+          : { top: band('top'), bottom: band('bottom'), [side]: 0, width: band(side) }}
+      >
+        {pxOf(stepOf(side))}
+      </button>
+    )
   }
   return (
-    <div className="grid grid-cols-3 items-center gap-1.5">
-      <span />{side('top')}<span />
-      {side('left')}
-      <div className="flex min-w-0 flex-col items-center gap-1 rounded-[10px] border border-dashed border-line-strong p-1">
-        <span className="truncate text-micro uppercase tracking-[0.12em] text-fg-faint">{t('All sides')}</span>
-        {select('Card padding, all sides', baseStep, (v) => v && onBase(v), false)}
+    <div>
+      <div className="relative h-28 rounded-[10px] border border-line-strong bg-surface">
+        {(['top', 'right', 'bottom', 'left'] as const).map(sideButton)}
+        <button
+          type="button"
+          aria-pressed={target === 'all'}
+          aria-label={`${t('Edit all sides')} — ${pxOf(baseStep)}px`}
+          onClick={() => setTarget('all')}
+          className={`absolute flex flex-col items-center justify-center gap-0.5 rounded-[6px] border transition-[inset,background-color,border-color] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${target === 'all' ? 'border-accent-ui/60 bg-accent-solid/15' : 'border-dashed border-line-strong bg-fg/[0.04] hover:bg-fg/[0.07]'}`}
+          style={{ top: band('top'), right: band('right'), bottom: band('bottom'), left: band('left') }}
+        >
+          <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{t('All sides')}</span>
+          <span className="text-ui tabular-nums text-fg">{pxOf(baseStep)}px</span>
+        </button>
       </div>
-      {side('right')}
-      <span />{side('bottom')}<span />
+      <div className={`${ROW_GAP_CONTROL} flex items-baseline justify-between gap-2`}>
+        <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">
+          {t('Editing')} {target === 'all' ? t('all sides') : t(label[target]).toLowerCase()}
+        </span>
+        {target !== 'all' && (own(target) !== undefined
+          ? <button type="button" onClick={() => onSide(target, undefined)} className="rounded text-micro text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">{t('Match all')}</button>
+          : <span className="text-micro text-fg-faint">{t('Follows all sides')}</span>)}
+      </div>
+      <DotSlider
+        ariaLabel={target === 'all' ? 'Card padding, all sides' : `Card padding ${label[target].toLowerCase()}`}
+        stops={SPACING_STEPS.map((_, i) => i)}
+        value={SPACING_STEPS.indexOf(editing)}
+        format={(i) => `${pxOf(SPACING_STEPS[i])}px`}
+        onScrubStart={onScrubStart}
+        onScrubEnd={onScrubEnd}
+        onChange={(i) => {
+          const step = SPACING_STEPS[i]
+          if (target === 'all') onBase(step)
+          // Landing a side on the middle value hands it back to the middle,
+          // so "set by hand" only ever means "different from all sides".
+          else onSide(target, step === baseStep ? undefined : step)
+        }}
+        className="mt-1"
+      />
     </div>
   )
 }
@@ -601,6 +651,7 @@ function ColorAppearanceSwitch({ value, onChange, lockedTo }: {
   lockedTo?: ThemeAppearance
 }) {
   const { t } = useI18n()
+  const group = useId()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   return (
     // Named, so it is not read as a second "which themes ship" control: this
@@ -625,12 +676,15 @@ function ColorAppearanceSwitch({ value, onChange, lockedTo }: {
           onClick={() => (locked ? setUpgradeOpen(true) : onChange(mode))}
           // Same pill as Desktop / Tablet / Mobile (`PlatformSwitch`): one
           // control language for every segmented switch in an edition header.
-          className={`flex h-7 items-center justify-center gap-1 rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-            locked ? 'text-fg-faint' : value === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+          className={`relative flex h-7 items-center justify-center rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            locked ? 'text-fg-faint' : value === mode ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
           }`}
         >
-          {locked && <LockGlyph size={12} />}
-          {t(mode === 'light' ? 'Light' : 'Dark')}
+          {!locked && value === mode && <SegmentHighlight group={group} />}
+          <span className="relative flex items-center gap-1">
+            {locked && <LockGlyph size={12} />}
+            {t(mode === 'light' ? 'Light' : 'Dark')}
+          </span>
         </button>
         )
       })}
@@ -983,6 +1037,30 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
   )
 }
 
+/** An edition's body, unfolding from its header: height + fade on the way
+ *  in, quicker on the way out. Its own component so every opening starts
+ *  CLIPPED (a body mounting at height 0 must not spill for a frame) and lets
+ *  go of the clip once it lands — popovers and focus rings inside are never
+ *  cut at rest. */
+function EditionBody({ id, children }: { id: string; children: React.ReactNode }) {
+  const reduce = useReducedMotion()
+  const [moving, setMoving] = useState(!reduce)
+  return (
+    <motion.div
+      id={id}
+      initial={reduce ? false : { height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }}
+      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      onAnimationStart={() => setMoving(true)}
+      onAnimationComplete={() => setMoving(false)}
+      style={{ overflow: moving ? 'hidden' : 'visible' }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 function EditionCard({ title, foundationKey, open = true, summary, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, children }: {
   title: string
   foundationKey: string
@@ -1011,8 +1089,11 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
       <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} />
+      {/* The body unfolds from its header and folds back into it: height +
+          fade (`EditionBody`). */}
+      <AnimatePresence initial={false}>
       {open && (
-      <div id={panelId}>
+      <EditionBody id={panelId} key="body">
       {trailing && (
         <div className="flex justify-end border-b border-line px-[var(--inspector-inset)] py-2">
           {trailing}
@@ -1035,8 +1116,9 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
             </button>
           </div>
         ) : null}
-      </div>
+      </EditionBody>
       )}
+      </AnimatePresence>
     </section>
   )
 }
@@ -1124,79 +1206,119 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
   )
 }
 
-function RangeInput({ min, max, step, value, onChange, onScrubStart, onScrubEnd, ariaLabel, className = '' }: {
-  min: number
-  max: number
-  step: number
+/** Thumb width — the pill has to hold the widest value (`None`, `1.5px`). */
+const DOT_THUMB = '3.75rem'
+
+/** The base units the Fields slider can land on: the accessibility floor, then
+ *  every half pixel above it (3.6 → 4, 4.5, 5 — the range's own grid). */
+const BASE_UNIT_STOPS = [
+  BASE_UNIT_RANGE.min,
+  ...Array.from(
+    { length: Math.floor((BASE_UNIT_RANGE.max - BASE_UNIT_RANGE.min) / BASE_UNIT_RANGE.step) + 1 },
+    (_, i) => Math.ceil(BASE_UNIT_RANGE.min / BASE_UNIT_RANGE.step + i) * BASE_UNIT_RANGE.step,
+  ).filter((value) => value > BASE_UNIT_RANGE.min && value <= BASE_UNIT_RANGE.max),
+]
+
+/**
+ * A stepped slider drawn as what it is: one dot per value the setting can
+ * take, and a raised pill riding the dots with the current value written on it.
+ * Same shell as `PickerField` (h-8 `bg-surface` well, 3px inset) so the rail's
+ * controls read as one family. The thumb moves by `transform` on a rail exactly
+ * the travel wide, so `translateX(r * 100%)` lands it on stop `r` with no layout.
+ * That carrier box sticks out past the track by up to the travel, so the track
+ * clips it (`overflow-hidden`) — otherwise it widens the rail and scrolls it
+ * sideways. The thumb never leaves the 3px inset, so nothing visible is cut.
+ */
+function DotSlider({ stops, value, onChange, onScrubStart, onScrubEnd, format, renderValue, ariaLabel, className = '' }: {
+  stops: readonly number[]
   value: number
   onChange: (value: number) => void
   onScrubStart?: () => void
   onScrubEnd?: () => void
+  /** The value as words — the thumb's text and what a screen reader hears. */
+  format: (value: number) => string
+  /** Richer thumb content than `format` (a glyph beside the text); aria still uses `format`. */
+  renderValue?: (value: number) => ReactNode
   ariaLabel: string
   className?: string
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const onChangeRef = useRef(onChange)
-  const onScrubEndRef = useRef(onScrubEnd)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const thumbRef = useRef<HTMLSpanElement>(null)
   const [dragging, setDragging] = useState(false)
-  useEffect(() => { onChangeRef.current = onChange }, [onChange])
-  useEffect(() => { onScrubEndRef.current = onScrubEnd }, [onScrubEnd])
-  const progress = max === min ? 0 : ((value - min) / (max - min)) * 100
-  const valueAt = useCallback((element: HTMLInputElement, clientX: number) => {
-    const rect = element.getBoundingClientRect()
-    if (!rect.width) return min
-    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    const raw = min + ratio * (max - min)
-    const snapped = min + Math.round((raw - min) / step) * step
-    return Math.max(min, Math.min(max, Number(snapped.toFixed(6))))
-  }, [max, min, step])
-  useEffect(() => {
-    if (!dragging) return
-    const update = (event: PointerEvent) => {
-      if (!inputRef.current) return
-      onChangeRef.current(valueAt(inputRef.current, event.clientX))
-    }
-    const finish = (event: PointerEvent) => {
-      update(event)
-      setDragging(false)
-      onScrubEndRef.current?.()
-    }
-    window.addEventListener('pointermove', update)
-    window.addEventListener('pointerup', finish)
-    window.addEventListener('pointercancel', finish)
-    return () => {
-      window.removeEventListener('pointermove', update)
-      window.removeEventListener('pointerup', finish)
-      window.removeEventListener('pointercancel', finish)
-    }
-  }, [dragging, valueAt])
+  const last = stops.length - 1
+  // Nearest stop, so a hand-edited value off the grid still seats the thumb.
+  const index = stops.reduce((best, stop, i) => Math.abs(stop - value) < Math.abs(stops[best] - value) ? i : best, 0)
+  const ratio = last > 0 ? index / last : 0
+  const indexAt = (clientX: number) => {
+    const track = trackRef.current
+    const thumb = thumbRef.current
+    if (!track || !thumb || last === 0) return 0
+    const rect = track.getBoundingClientRect()
+    const travel = rect.width - 6 - thumb.offsetWidth
+    const r = (clientX - rect.left - 3 - thumb.offsetWidth / 2) / travel
+    return Math.max(0, Math.min(last, Math.round(r * last)))
+  }
+  const select = (i: number) => { if (i !== index) onChange(stops[i]) }
+  const finish = () => { if (!dragging) return; setDragging(false); onScrubEnd?.() }
   return (
-    <input
-      ref={inputRef}
-      type="range"
+    <div
+      ref={trackRef}
+      role="slider"
+      tabIndex={0}
       aria-label={ariaLabel}
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
+      aria-valuemin={stops[0]}
+      aria-valuemax={stops[last]}
+      aria-valuenow={stops[index]}
+      aria-valuetext={format(stops[index])}
       onPointerDown={(event) => {
+        if (event.button !== 0) return
         event.preventDefault()
         event.currentTarget.focus()
+        event.currentTarget.setPointerCapture(event.pointerId)
         onScrubStart?.()
         setDragging(true)
-        onChange(valueAt(event.currentTarget, event.clientX))
+        select(indexAt(event.clientX))
       }}
+      onPointerMove={(event) => { if (dragging) select(indexAt(event.clientX)) }}
+      onPointerUp={finish}
+      onPointerCancel={finish}
       onKeyDown={(event) => {
-        const amount = event.shiftKey ? step * 10 : step
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') { event.preventDefault(); onChange(Math.max(min, value - amount)) }
-        if (event.key === 'ArrowRight' || event.key === 'ArrowUp') { event.preventDefault(); onChange(Math.min(max, value + amount)) }
-        if (event.key === 'Home') { event.preventDefault(); onChange(min) }
-        if (event.key === 'End') { event.preventDefault(); onChange(max) }
+        const next = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? index - 1
+          : event.key === 'ArrowRight' || event.key === 'ArrowUp' ? index + 1
+          : event.key === 'Home' ? 0
+          : event.key === 'End' ? last
+          : null
+        if (next === null) return
+        event.preventDefault()
+        select(Math.max(0, Math.min(last, next)))
       }}
-      className={`quick-settings-range ${className}`}
-      style={{ '--quick-range-progress': `${Math.max(0, Math.min(100, progress))}%` } as React.CSSProperties}
-    />
+      className={`group/dots relative h-8 cursor-ew-resize overflow-hidden touch-none select-none rounded-lg bg-surface transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${className}`}
+    >
+      <div aria-hidden className="absolute inset-y-0 left-[3px]" style={{ width: `calc(100% - 6px - ${DOT_THUMB})` }}>
+        {stops.map((stop, i) => (
+          <span
+            key={stop}
+            className="absolute top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg-faint/60"
+            style={{ left: `calc(${last > 0 ? (i / last) * 100 : 0}% + ${DOT_THUMB} / 2)` }}
+          />
+        ))}
+        <div
+          className={`absolute inset-y-[3px] left-0 w-full transition-transform ease-[var(--ease-out-quint)] motion-reduce:transition-none ${dragging ? 'duration-150' : 'duration-200'}`}
+          style={{ transform: `translateX(${ratio * 100}%)` }}
+        >
+          <span
+            ref={thumbRef}
+            className={`absolute inset-y-0 left-0 flex items-center justify-center rounded-[calc(0.5rem-3px)] bg-elevated text-ui font-medium tabular-nums text-fg transition-[box-shadow,scale] duration-150 motion-reduce:transition-none ${dragging ? 'scale-[0.97] shadow-[0_2px_8px_rgb(0_0_0/0.35),inset_0_0_0_1px_var(--line-strong)]' : 'shadow-[0_1px_3px_rgb(0_0_0/0.25),inset_0_0_0_1px_var(--line)]'}`}
+            style={{ width: DOT_THUMB }}
+          >
+            {/* Drag affordance: ◂ ▸ at the pill's edges on hover, focus and drag. */}
+            <svg width="4" height="6" viewBox="0 0 4 6" className={`absolute left-1 text-fg-faint transition-opacity duration-150 group-hover/dots:opacity-100 group-focus-visible/dots:opacity-100 ${dragging ? 'opacity-100' : 'opacity-0'}`}><path d="M4 0 0 3l4 3z" fill="currentColor" /></svg>
+            <span key={stops[index]} className="dot-slider-value flex items-center gap-1">{renderValue ? renderValue(stops[index]) : format(stops[index])}</span>
+            <svg width="4" height="6" viewBox="0 0 4 6" className={`absolute right-1 text-fg-faint transition-opacity duration-150 group-hover/dots:opacity-100 group-focus-visible/dots:opacity-100 ${dragging ? 'opacity-100' : 'opacity-0'}`}><path d="M0 0l4 3-4 3z" fill="currentColor" /></svg>
+          </span>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -1261,11 +1383,10 @@ function BaseUnitCard({
           <span key={step} className={`text-mini tabular-nums ${!usedStep || usedStep === step ? 'text-fg-muted' : 'text-fg-faint/50'}`}>{px[steps.indexOf(step)]}</span>
         ))}
       </div>
-      <RangeInput
-        min={BASE_UNIT_RANGE.min}
-        max={BASE_UNIT_RANGE.max}
-        step={BASE_UNIT_RANGE.step}
+      <DotSlider
+        stops={BASE_UNIT_STOPS}
         value={base ?? BASE_UNIT_RANGE.min}
+        format={(value) => value.toFixed(1)}
         onChange={onChange}
         onScrubStart={onScrubStart}
         onScrubEnd={onScrubEnd}
@@ -1328,16 +1449,6 @@ const PLATFORM_LABEL: Record<string, string> = { desktop: 'Desktop', tablet: 'Ta
  * a sample in the role's own family and weight, and size / line height /
  * letter spacing at the previewed platform.
  */
-/** The Text scale field's leading mark: an "A" over a rule. */
-function TextScaleGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 11.5L8 2.5L12 11.5M5.6 8h4.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2.5 14h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function TypeScaleCard({
   typography, platform,
 }: {
@@ -1403,9 +1514,9 @@ function TypeScaleCard({
  * quick edition is what the plugin executes: four ready-made presets in a 2×2
  * grid (corner sample · name · Boxes · Fields · Selectors px), and below them a
  * disclosure, "Fine-tune each corner", with one row per axis — the header
- * carries the resolved px ("Boxes · 16px"), the hint sits right, and five bare
- * corners (an L of top + left border at that step's radius) with the picked one
- * in the accent and a round px badge.
+ * carries the resolved px ("Boxes · 16px"), the hint sits right, and a
+ * `DotSlider` over the nine steps whose thumb draws the picked corner beside
+ * its step name.
  *
  * The MODEL is DaisyUI's (`--radius-box` / `--radius-field` /
  * `--radius-selector`) over the roles this system ships, so the token contract
@@ -1414,48 +1525,21 @@ function TypeScaleCard({
  */
 const CORNER_MAX = 26 // the plugin caps the drawn arc so `full` stays a corner
 
-/** One responsive token on an axis: its corner at the platform shown, and the
- *  token's name under it. Nine fit one row, so the picked one is the accent
- *  stroke alone — the px lives in the axis header. */
-function RadiusCorner({
-  px, step, value, groupLabel, selected, onClick,
-}: {
-  px: number
-  step: string
-  value: string
-  groupLabel: string
-  selected: boolean
-  onClick: () => void
-}) {
+/** The picked step's corner, drawn small on the slider thumb: an L of top +
+ *  left border at the step's radius, scaled from the plugin's capped arc into
+ *  a 10px box so `none` → `5xl` still read as square → round. */
+function RadiusThumbCorner({ px }: { px: number }) {
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      aria-label={`${groupLabel} radius ${step} (${value})`}
-      title={`radius-component-${step} — ${value}`}
-      onClick={onClick}
-      className="group flex min-w-0 flex-col items-center gap-1 rounded-md pt-1 transition-transform duration-150 ease-[var(--ease-out-quint)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-    >
-      <span className="relative block h-7 w-full max-w-[26px]">
-        <span
-          aria-hidden
-          className="absolute inset-0 border-l border-t transition-colors"
-          style={{
-            borderTopLeftRadius: Math.min(px, CORNER_MAX),
-            borderColor: selected ? 'var(--accent-solid)' : 'var(--line-strong)',
-            borderLeftWidth: selected ? 2 : 1,
-            borderTopWidth: selected ? 2 : 1,
-            background: selected ? 'color-mix(in srgb, var(--accent-solid) 10%, transparent)' : undefined,
-          }}
-        />
-      </span>
-      <span className={`text-nano font-mono tabular-nums ${selected ? 'text-accent-ui' : 'text-fg-faint group-hover:text-fg-muted'}`}>{step}</span>
-    </button>
+    <span
+      aria-hidden
+      className="block h-2.5 w-2.5 flex-shrink-0 border-l-[1.5px] border-t-[1.5px] border-accent-ui"
+      style={{ borderTopLeftRadius: (Math.min(px, CORNER_MAX) / CORNER_MAX) * 10 }}
+    />
   )
 }
 
 function RadiusCard({
-  radius, radiusRoles, radiusRoleViewports, platform, onRoles, onPreset,
+  radius, radiusRoles, radiusRoleViewports, platform, onRoles, onPreset, onScrubStart, onScrubEnd,
 }: {
   radius: Record<string, string>
   radiusRoles: Record<string, string> | undefined
@@ -1466,6 +1550,9 @@ function RadiusCard({
   onRoles: (next: Record<string, string>) => void
   /** Apply a preset — the three axis picks on the standard ramp. */
   onPreset: (label: string) => void
+  /** Bracket a drag across an axis so it lands as ONE undo step. */
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
 }) {
   const { t } = useI18n()
   const matched = matchRadiusRolePreset(radiusRoles)
@@ -1530,6 +1617,7 @@ function RadiusCard({
           const atStep = radiusRoleAt(radiusRoles, radiusRoleViewports, group.roles[0], platform)
           const px = Math.round(parseFloat(radius[atStep] ?? '') || 0)
           const overridden = platform !== 'desktop' && group.roles.some((role) => radiusRoleViewports?.[platform]?.[role] != null)
+          const stepPx = RADIUS_AXIS_STEPS.map((step) => Math.round(parseFloat(radius[radiusAtViewport(step, platform)] ?? '') || 0))
           return (
             <div key={group.key} className="min-w-0">
               <div className="mb-1 flex min-w-0 items-center justify-between gap-2 text-caption font-medium text-fg-muted">
@@ -1540,22 +1628,18 @@ function RadiusCard({
                   {overridden ? `Set by hand on ${platform}` : group.hint}
                 </small>
               </div>
-              <div className="grid grid-cols-9 gap-0.5" role="group" aria-label={`${group.label} radius`}>
-                {RADIUS_AXIS_STEPS.map((step) => {
-                  const value = radius[radiusAtViewport(step, platform)] ?? '0px'
-                  return (
-                    <RadiusCorner
-                      key={step}
-                      px={parseFloat(value) || 0}
-                      step={step}
-                      value={value}
-                      groupLabel={group.label}
-                      selected={current === step}
-                      onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
-                    />
-                  )
-                })}
-              </div>
+              <DotSlider
+                ariaLabel={`${group.label} radius`}
+                stops={RADIUS_AXIS_STEPS.map((_, i) => i)}
+                // A Custom axis (its roles disagree) seats the thumb on the
+                // step nearest what it resolves to, so a drag starts from there.
+                value={current ? RADIUS_AXIS_STEPS.indexOf(current) : stepPx.reduce((best, stepValue, i) => Math.abs(stepValue - px) < Math.abs(stepPx[best] - px) ? i : best, 0)}
+                format={(i) => `${RADIUS_AXIS_STEPS[i]} (${stepPx[i]}px)`}
+                renderValue={(i) => <><RadiusThumbCorner px={stepPx[i]} />{RADIUS_AXIS_STEPS[i]}</>}
+                onScrubStart={onScrubStart}
+                onScrubEnd={onScrubEnd}
+                onChange={(i) => onRoles(applyRadiusGroup(group, radiusRoles, RADIUS_AXIS_STEPS[i]))}
+              />
             </div>
           )
         })}
@@ -1590,7 +1674,7 @@ function ShadowCard({ shadows, shadowsDark, onChange, onChangeDark }: {
   // board, the export and Variables' Shadow table use) paints it in dark chrome.
   const chromeDark = useTheme() === 'dark'
   return (
-    <>
+    <div className="flex flex-col gap-2">
     <PickerField
       label="Light depth"
       ariaLabel="Light shadow depth"
@@ -1631,7 +1715,7 @@ function ShadowCard({ shadows, shadowsDark, onChange, onChangeDark }: {
         if (preset) onChangeDark(darkShadowMap(preset.values))
       }}
     />
-    </>
+    </div>
   )
 }
 
@@ -1663,7 +1747,7 @@ export function TintSlider({
     <div>
       <div
         className="relative h-5 rounded-full border border-line"
-        style={{ background: `linear-gradient(to right, ${stops})` }}
+        style={{ background: `linear-gradient(to right, ${stops}) border-box` }}
       >
         <input
           type="range"
@@ -1716,7 +1800,7 @@ export function ContrastSlider({
     <div>
       <div
         className="relative h-5 rounded-full border border-line"
-        style={{ background: `linear-gradient(to right, ${soft} 0%, ${hueHex} 50%, ${deep} 75%, ${bright} 100%)` }}
+        style={{ background: `linear-gradient(to right, ${soft} 0%, ${hueHex} 50%, ${deep} 75%, ${bright} 100%) border-box` }}
       >
         <input
           type="range"
@@ -1804,7 +1888,7 @@ export function AccentAxisSlider({ axis, label, value, onPreview, onCommit, acti
         <span className="tabular-nums">{Math.round(current * 100)}</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="relative h-5 min-w-0 flex-1 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops})` }}>
+        <div className="relative h-5 min-w-0 flex-1 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops}) border-box` }}>
           <input
             type="range"
             aria-label={label}
@@ -2541,6 +2625,10 @@ export default function ThemeQuickSettingsRail({
   }
   if (randomHandle) randomHandle.current = applyRandomTheme
 
+  const typeScaleMode = inferTypeScaleMode(typography.sizes)
+  const typeScaleBodyPx = TYPE_SCALE_MODES.map((mode) => parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 0)
+  const currentBodyPx = parseFloat(typography.sizes?.['text-md'] ?? '') || 0
+
   const parsedStrokeSm = parseFloat(stroke?.sm ?? '1px')
   const strokeSm = Number.isFinite(parsedStrokeSm) ? parsedStrokeSm : 1
   const strokeIndex = Math.max(0, STROKE_SM_STOPS.findIndex((stop) => stop === strokeSm))
@@ -2939,25 +3027,31 @@ export default function ThemeQuickSettingsRail({
               onClose={() => setAddFontFor(null)}
               onAdded={(family) => (addFontFor === 'display' ? setDisplay(family) : setBody(family))}
             />
-            <PickerField
-              label="Text scale"
-              ariaLabel="Type scale"
-              value={inferTypeScaleMode(typography.sizes) ?? ''}
-              valueLabel={t('Custom')}
-              leading={<TextScaleGlyph />}
-              options={TYPE_SCALE_MODES.map((mode) => ({
-                value: mode.key,
-                label: mode.label,
-                description: `×${mode.factor} · ${t('body')} ${parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 0}px`,
-              }))}
-              note="Grades every caption, label, body style and heading together."
-              onChange={(key) => commit('Type scale updated', (themeKey) => {
-                const mode = TYPE_SCALE_MODES.find((m) => m.key === key)
-                if (!mode) return
-                const { sizes: nextSizes, lineHeights } = buildTypeScale(mode.factor)
-                setTypography(themeKey, { ...typography, sizes: nextSizes, lineHeights })
-              })}
-            />
+            {/* A dot per scale step, the body size riding the thumb: the mode
+                names are too long for a thumb, so the name sits in the header
+                (as Border width's word does) and the thumb says what it does. */}
+            <div className="mt-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-ui text-fg-muted">{t('Text scale')}</span>
+                <span className="text-ui text-fg">{t(TYPE_SCALE_MODES.find((mode) => mode.key === typeScaleMode)?.label ?? 'Custom')}</span>
+              </div>
+              <DotSlider
+                ariaLabel="Type scale"
+                stops={TYPE_SCALE_MODES.map((_, i) => i)}
+                // Custom sizes seat the thumb on the mode whose body size is closest.
+                value={typeScaleMode
+                  ? TYPE_SCALE_MODES.findIndex((mode) => mode.key === typeScaleMode)
+                  : typeScaleBodyPx.reduce((best, px, i) => Math.abs(px - currentBodyPx) < Math.abs(typeScaleBodyPx[best] - currentBodyPx) ? i : best, 0)}
+                format={(i) => `${typeScaleBodyPx[i]}px`}
+                onScrubStart={() => beginScrub('Type scale updated')}
+                onScrubEnd={endScrub}
+                onChange={(i) => applyScrub('Type scale updated', (themeKey) => {
+                  const { sizes: nextSizes, lineHeights } = buildTypeScale(TYPE_SCALE_MODES[i].factor)
+                  setTypography(themeKey, { ...typography, sizes: nextSizes, lineHeights })
+                })}
+                className={ROW_GAP_CONTROL}
+              />
+            </div>
           </div>
           <div className={`flex flex-col ${RAIL_BLOCK}`}>
             <button
@@ -2991,6 +3085,8 @@ export default function ThemeQuickSettingsRail({
               radiusRoleViewports={foundations.radiusRoleViewports}
               platform={previewPlatform}
               onRoles={(next) => applyScrub('Radius updated', (themeKey) => setRadiusRoles(themeKey, next))}
+              onScrubStart={() => beginScrub('Radius updated')}
+              onScrubEnd={endScrub}
               onPreset={(label) => commit('Radius preset updated', (themeKey) => setRadiusPreset(themeKey, label))}
             />
           </SettingItem>
@@ -3034,12 +3130,14 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Card padding" hint="The inset of cards, modals and alerts (Spacing · Inset surface). The middle sets every side; change one side when the padding should not be symmetric.">
+          <SettingItem label="Card padding" hint="The inset of cards, modals and alerts (Spacing · Inset surface). Pick the middle to set every side, or one band to give that side its own value.">
             <InsetSidesCard
               spacing={spacing}
               spacingRoles={spacingRoles}
-              onBase={(step) => commit('Card padding updated', (themeKey) => setContainerInset(themeKey, SPACING_STEPS.indexOf(step as (typeof SPACING_STEPS)[number])))}
-              onSide={(side, step) => commit('Card padding updated', (themeKey) => setContainerInsetSide(themeKey, side, step))}
+              onBase={(step) => applyScrub('Card padding updated', (themeKey) => setContainerInset(themeKey, SPACING_STEPS.indexOf(step as (typeof SPACING_STEPS)[number])))}
+              onSide={(side, step) => applyScrub('Card padding updated', (themeKey) => setContainerInsetSide(themeKey, side, step))}
+              onScrubStart={() => beginScrub('Card padding updated')}
+              onScrubEnd={endScrub}
             />
           </SettingItem>
 
@@ -3065,27 +3163,19 @@ export default function ThemeQuickSettingsRail({
 
           <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
             <div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}</span>
-                <span className="text-ui font-semibold tabular-nums text-fg">{stroke?.sm ?? '1px'}</span>
-              </div>
-              <RangeInput
+              {/* The value rides the thumb now, so the header keeps only the
+                  word for it and the old stop-label row under the track is gone. */}
+              <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}</span>
+              <DotSlider
                 ariaLabel="Border width"
-                min={0}
-                max={STROKE_SM_STOPS.length - 1}
-                step={1}
-                value={strokeIndex}
+                stops={STROKE_SM_STOPS}
+                value={STROKE_SM_STOPS[strokeIndex]}
+                format={(stop) => stop === 0 ? t('None') : `${stop}px`}
                 onScrubStart={() => beginScrub('Border width updated')}
                 onScrubEnd={endScrub}
-                onChange={(index) => {
-                  const next = STROKE_SM_STOPS[index]
-                  applyScrub('Border width updated', (themeKey) => setStroke(themeKey, { ...stroke, sm: `${next}px` }))
-                }}
+                onChange={(next) => applyScrub('Border width updated', (themeKey) => setStroke(themeKey, { ...stroke, sm: `${next}px` }))}
                 className={ROW_GAP_CONTROL}
               />
-              <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
-                {STROKE_SM_STOPS.map((stop) => <span key={stop}>{stop === 0 ? 'None' : stop}</span>)}
-              </div>
             </div>
           </SettingItem>
         </EditionCard>

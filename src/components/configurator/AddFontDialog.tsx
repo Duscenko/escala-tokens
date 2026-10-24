@@ -19,7 +19,8 @@ import {
   ALLOWED_FONT_HOSTS, FONT_CATEGORIES, MAX_FONT_SOURCES, checkFontStylesheetUrl, familiesInGoogleUrl,
   familiesInStylesheet, GOOGLE_STANDARD_SPEC, googleFontUrl, normalizeFamilyName, type FontCategory, type FontSource,
 } from '../../lib/customFonts'
-import { SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+import { SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+import { SegmentHighlight } from '../ui/SegmentHighlight'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 const FIELD = `h-8 w-full rounded-lg border border-line-strong bg-app px-2.5 text-ui text-fg placeholder:text-fg-faint ${FOCUS}`
@@ -162,9 +163,10 @@ export function AddFontDialog({ open, onClose, onAdded }: {
               role="radio"
               aria-checked={kind === value}
               onClick={() => { if (value !== kind) { setKind(value); setFamily('') } }}
-              className={`h-7 rounded-md text-caption transition-colors ${FOCUS} ${kind === value ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
+              className={`relative h-7 rounded-md text-caption transition-colors ${FOCUS} ${kind === value ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE}`}
             >
-              {t(label)}
+              {kind === value && <SegmentHighlight group="add-font-source" />}
+              <span className="relative">{t(label)}</span>
             </button>
           ))}
         </div>

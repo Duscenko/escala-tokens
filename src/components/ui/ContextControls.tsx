@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   CONTEXT_APPEARANCES,
@@ -14,11 +14,12 @@ import { useI18n } from '../../lib/i18n'
 import {
   CHROME_CONTROL_HOVER,
   CHROME_CONTROL_SHELL,
-  SEGMENT_ACTIVE,
+  SEGMENT_ACTIVE_INK,
   SEGMENT_INACTIVE,
   SELECT_FOCUS,
 } from '../configurator/themeWorkspaceLayout'
 import { FIELD_NAME, FIELD_ROW } from './PickerField'
+import { SegmentHighlight } from './SegmentHighlight'
 
 // The filters every "context for agents" surface shares — Code's Agent
 // context, Variables' Copy context, a component page's Copy context. One set
@@ -92,6 +93,7 @@ function Segmented<K extends string>({
   disabledHint?: string
 }) {
   const { t } = useI18n()
+  const group = useId()
   return (
     <div className={rowClass}>
       <span className={labelClass}>{t(label)}</span>
@@ -111,9 +113,10 @@ function Segmented<K extends string>({
               disabled={disabled}
               title={disabled ? disabledHint : item.hint ? t(item.hint) : undefined}
               onClick={() => onChange(item.key)}
-              className={`inline-flex h-7 min-w-0 items-center justify-center rounded-md text-caption ${fill ? 'flex-1 px-1' : 'px-2.5'} transition-[color,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 ${selected ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
+              className={`relative inline-flex h-7 min-w-0 items-center justify-center rounded-md text-caption ${fill ? 'flex-1 px-1' : 'px-2.5'} transition-[color,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 ${selected ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE}`}
             >
-              {t(item.label)}
+              {selected && <SegmentHighlight group={group} />}
+              <span className="relative truncate">{t(item.label)}</span>
             </button>
           )
         })}

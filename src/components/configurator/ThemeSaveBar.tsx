@@ -250,17 +250,20 @@ export function RandomThemeButton({
   const { t } = useI18n()
   const text = label ?? t('Random tweak')
   const icon = variant === 'icon'
+  // Each press re-keys the glyph so its half-turn replays — the shuffle reads
+  // as a throw, not a dead click, even when the new palette looks alike.
+  const [throws, setThrows] = useState(0)
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => { setThrows((n) => n + 1); onClick() }}
       aria-label={text}
       title={text}
       className={`relative flex items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
         icon ? `h-8 w-8 flex-shrink-0 ${className}` : 'h-8 w-full text-mini font-normal'
       }`}
     >
-      <ShuffleGlyph />
+      <span key={throws} className={`relative z-[1] flex ${throws ? 'shuffle-throw' : ''}`}><ShuffleGlyph /></span>
       {!icon && <span className="relative z-[1] truncate">{text}</span>}
       <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
     </button>

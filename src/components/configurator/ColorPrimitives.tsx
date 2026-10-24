@@ -38,6 +38,7 @@ import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
+import { SegmentHighlight } from '../ui/SegmentHighlight'
 import {
   themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor,
   nextBrandExtraRank, brandExtraRankOf, familyDisplayLabel, BRAND_EXTRA_LABEL,
@@ -52,7 +53,7 @@ import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
 import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 import {
   CHROME_CONTROL_SHELL,
-  SEGMENT_ACTIVE,
+  SEGMENT_ACTIVE_INK,
   SEGMENT_INACTIVE,
   measureShellDrawerInsets,
   SHELL_DRAWER_BOTTOM_FALLBACK,
@@ -1544,11 +1545,12 @@ export default function ColorPrimitives({
                     type="button"
                     onClick={() => setEditAppearance(mode)}
                     aria-pressed={editAppearance === mode}
-                    className={`flex h-7 items-center justify-center gap-1 rounded-md px-2 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                      editAppearance === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+                    className={`relative flex h-7 items-center justify-center gap-1 rounded-md px-2 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                      editAppearance === mode ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
                     }`}
                   >
-                    {mode === 'light' ? 'Light' : 'Dark'}
+                    {editAppearance === mode && <SegmentHighlight group="edit-appearance" />}
+                    <span className="relative">{mode === 'light' ? 'Light' : 'Dark'}</span>
                   </button>
                 ))}
               </div>

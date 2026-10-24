@@ -539,10 +539,6 @@ body {
   cursor: pointer;
 }
 
-/* Theme quick-edit ranges share one compact, responsive interaction model.
-   The native input still owns pointer capture and keyboard behavior; only its
-   paint is replaced. Progress is a CSS variable so dragging changes the track
-   in the same frame as the value, without waiting for a transition. */
 /* The painted-bar sliders (Neutral tint, Contrast): a native range whose thumb is
    the SAME 1rem ring as the Accent hue bar's own thumb (`SpectrumSlider`). Pseudo-
    elements do not inherit Tailwind's `border-box` reset, so the thumb used to be
@@ -573,75 +569,13 @@ body {
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
 }
 
-.quick-settings-range {
-  --quick-range-progress: 0%;
-  display: block;
-  width: 100%;
-  height: 20px;
-  margin-inline: 0;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  cursor: ew-resize;
-  touch-action: none;
+/* DotSlider: the value on the thumb ticks in each time it lands on a new stop,
+   a 2px rise with a fade, so a drag across the dots reads as clicks. */
+.dot-slider-value {
+  animation: dot-slider-tick 160ms var(--ease-out-quint);
 }
-.quick-settings-range:focus-visible {
-  outline: none;
-}
-.quick-settings-range::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent-solid) 0 var(--quick-range-progress),
-    color-mix(in srgb, var(--fg) 16%, transparent) var(--quick-range-progress) 100%
-  );
-}
-.quick-settings-range::-webkit-slider-thumb {
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 2px solid var(--accent-solid);
-  border-radius: 999px;
-  background: var(--app);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
-  transition: transform 100ms var(--ease-out-quint), box-shadow 100ms ease-out;
-}
-.quick-settings-range:hover::-webkit-slider-thumb,
-.quick-settings-range:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-solid) 16%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
-}
-.quick-settings-range:active::-webkit-slider-thumb {
-  transform: scale(1.18);
-}
-.quick-settings-range::-moz-range-track {
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--fg) 16%, transparent);
-}
-.quick-settings-range::-moz-range-progress {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--accent-solid);
-}
-.quick-settings-range::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--accent-solid);
-  border-radius: 999px;
-  background: var(--app);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
-  transition: transform 100ms var(--ease-out-quint), box-shadow 100ms ease-out;
-}
-.quick-settings-range:hover::-moz-range-thumb,
-.quick-settings-range:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-solid) 16%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
-}
-.quick-settings-range:active::-moz-range-thumb {
-  transform: scale(1.18);
+@keyframes dot-slider-tick {
+  from { opacity: 0.35; transform: translateY(2px); }
 }
 
 /* Token Inspector selection — marching dash around the measured rect. */
@@ -684,6 +618,25 @@ body {
   animation: random-border-travel 5.5s linear infinite;
   transition: opacity 150ms var(--ease-out-quint);
 }
+/* Shuffle press: the arrows turn half a revolution and settle, decelerating
+   (ease-out-quint, no overshoot) — a throw, read in under half a second. */
+.shuffle-throw {
+  animation: shuffle-throw 420ms var(--ease-out-quint);
+}
+@keyframes shuffle-throw {
+  from { transform: rotate(-180deg) scale(0.8); }
+}
+
+/* A palette that changes all at once (Shuffle, Light ↔ Dark) lands swatch by
+   swatch: each one dips and fills back, delayed by its row (`--swatch-i`). */
+.swatch-land {
+  animation: swatch-land 320ms var(--ease-out-quint) backwards;
+  animation-delay: calc(var(--swatch-i, 0) * 35ms);
+}
+@keyframes swatch-land {
+  from { transform: scale(0.72); opacity: 0.4; }
+}
+
 button:hover > .random-theme-border,
 button:focus-visible > .random-theme-border,
 .random-border-host:hover > .random-theme-border,
@@ -834,9 +787,10 @@ button:focus-visible > .generator-cue-live {
   .color-hub-tab-bg {
     transition: none;
   }
-  .quick-settings-range::-webkit-slider-thumb,
-  .quick-settings-range::-moz-range-thumb {
-    transition: none;
+  .dot-slider-value,
+  .shuffle-throw,
+  .swatch-land {
+    animation: none;
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

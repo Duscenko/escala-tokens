@@ -62,7 +62,10 @@ export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
  * both appearances while still reading as the quieter state.
  */
 export const SEGMENT_SELECTED_FILL = 'bg-app shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-fg/[0.16] dark:shadow-none'
-export const SEGMENT_ACTIVE = `${SEGMENT_SELECTED_FILL} font-semibold text-fg`
+/** The selected segment's ink alone — for controls whose fill is the sliding
+ *  `SegmentHighlight` (`ui/SegmentHighlight.tsx`) rather than a static class. */
+export const SEGMENT_ACTIVE_INK = 'font-semibold text-fg'
+export const SEGMENT_ACTIVE = `${SEGMENT_SELECTED_FILL} ${SEGMENT_ACTIVE_INK}`
 export const SEGMENT_INACTIVE = 'font-medium text-fg/75 hover:bg-fg/[0.06] hover:text-fg'
 /** A selected row in any side-panel list (Variables collections, Home's menu,
  *  design systems, Account): a neutral lift of the ink, never a hardcoded

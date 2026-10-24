@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useId, useState, type ReactNode } from 'react'
 import type { GridFrameAlias, GridViewport } from '../../lib/layoutTokens'
 import { useI18n } from '../../lib/i18n'
 import { useNonProPlan } from '../../lib/access'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
-import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
+import { SegmentHighlight } from '../ui/SegmentHighlight'
 
 export type PreviewPlatformContextValue = {
   previewPlatform: GridViewport
@@ -87,6 +88,7 @@ export function PlatformSwitch({
   onLocked?: (id: GridViewport) => void
 }) {
   const { t } = useI18n()
+  const group = useId()
   const options: { id: GridViewport; label: string; Icon: typeof DesktopGlyph }[] = [
     { id: 'desktop', label: t('Desktop'), Icon: DesktopGlyph },
     { id: 'tablet', label: t('Tablet'), Icon: TabletGlyph },
@@ -111,13 +113,14 @@ export function PlatformSwitch({
             aria-label={locked ? `${label} — ${t('Upgrade to Pro')}` : label}
             title={locked ? t('Upgrade to Pro') : label}
             onClick={() => (locked ? onLocked?.(id) : onChange(id))}
-            className={`flex h-7 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            className={`relative flex h-7 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
               fill ? 'min-w-0 flex-1' : 'w-7'
             } ${
-              locked ? 'text-fg-faint' : on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+              locked ? 'text-fg-faint' : on ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
             }`}
           >
-            {locked ? <LockGlyph size={12} /> : <Icon />}
+            {!locked && on && <SegmentHighlight group={group} />}
+            <span className="relative flex">{locked ? <LockGlyph size={12} /> : <Icon />}</span>
           </button>
         )
       })}

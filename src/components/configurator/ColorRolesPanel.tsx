@@ -82,6 +82,19 @@ export function ColorRolesPanel({
   // reach for a colour. Opening a row also selects it, so the preview's
   // highlight and the open row never disagree.
   const [open, setOpen] = useState<ColorRoleId | null>(defaultOpen)
+  // A palette that changes in one go (Shuffle, Light ↔ Dark) bumps `landing`,
+  // and every swatch replays its landing, staggered by row. One role moving
+  // (a hue drag, a typed hex) does not: that swatch just cross-fades.
+  // Compared during render — React's "adjust state when a prop changes".
+  const palette = rows.map((row) => row.hex).join()
+  const [seenPalette, setSeenPalette] = useState(palette)
+  const [landing, setLanding] = useState(0)
+  if (palette !== seenPalette) {
+    const before = seenPalette.split(',')
+    const changed = rows.filter((row, i) => before[i] && before[i] !== row.hex).length
+    setSeenPalette(palette)
+    if (changed >= 2) setLanding((n) => n + 1)
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -89,10 +102,12 @@ export function ColorRolesPanel({
       {/* Every row is a FIELD_ROW ([name] [control 58%]), so the hex fields
           line up with Font, Radius and the extra palettes below. */}
       <div role="list" aria-label={t('Colour roles')} className="flex flex-col gap-2">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <RoleRow
             key={row.id}
             row={row}
+            index={index}
+            landing={landing}
             on={row.id === selected}
             open={open === row.id}
             appearance={appearance}
@@ -118,10 +133,14 @@ export function ColorRolesPanel({
 }
 
 function RoleRow({
-  row, on, open, appearance, page, neutralTint,
+  row, index, landing, on, open, appearance, page, neutralTint,
   onToggle, onFocusHex, onHex, onHuePreview, onHueCommit, solveAt, onNeutralTint, onToggleLink,
 }: {
   row: ColorRoleRow
+  /** Row position — the delay of its swatch's landing. */
+  index: number
+  /** Bumped when the whole palette changes at once; 0 = never, no landing. */
+  landing: number
   on: boolean
   open: boolean
   appearance: ThemeAppearance
@@ -184,9 +203,10 @@ function RoleRow({
           onClick={() => input.current?.focus()}
         >
           <span
+            key={landing}
             aria-hidden
-            className={`${FIELD_LEAD} block border border-fg/40`}
-            style={{ background: row.hex }}
+            className={`${FIELD_LEAD} block border border-fg/40 transition-[background-color] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${landing ? 'swatch-land' : ''}`}
+            style={{ background: row.hex, '--swatch-i': index } as React.CSSProperties}
           />
           <input
             ref={input}
