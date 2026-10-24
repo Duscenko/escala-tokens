@@ -3435,6 +3435,7 @@ var init_supabase = __esm({
 
 // src/lib/auth.ts
 import { useEffect, useRef, useState } from "react";
+import { create } from "zustand";
 function hasStoredSession() {
   if (!accountsEnabled || typeof window === "undefined") return false;
   try {
@@ -3453,10 +3454,12 @@ function hasStoredSession() {
   }
   return false;
 }
+var useSigningOut;
 var init_auth = __esm({
   "src/lib/auth.ts"() {
     init_supabase();
     init_legal();
+    useSigningOut = create(() => ({ signingOut: false }));
   }
 });
 
@@ -8461,7 +8464,7 @@ var init_pluginAccount = __esm({
 });
 
 // src/store/useDesignStore.ts
-import { create } from "zustand";
+import { create as create2 } from "zustand";
 import { persist } from "zustand/middleware";
 function moveBorderStrongToControl(state2) {
   const cat = state2?.architectureOverrides?.categorical;
@@ -8939,7 +8942,7 @@ var init_useDesignStore = __esm({
     STROKE_DEFAULT = { ...STROKE_STANDARD };
     PADDING_DEFAULT = { ...PADDING_STANDARD };
     SNAPSHOT_KEYS = Object.keys(makeDesignDefaults());
-    useDesignStore = create()(
+    useDesignStore = create2()(
       persist(
         // `get` is used by `ensurePublishId` — it must read the CURRENT id before
         // deciding to mint, and a stale closure over the initial state would mint
@@ -10847,12 +10850,12 @@ init_themeLibrary();
 import { useEffect as useEffect4, useMemo } from "react";
 
 // src/lib/themeSetup.ts
-import { create as create3 } from "zustand";
+import { create as create4 } from "zustand";
 
 // src/lib/editHistory.ts
 init_useDesignStore();
-import { create as create2 } from "zustand";
-var useEditHistory = create2(() => ({ past: [], future: [] }));
+import { create as create3 } from "zustand";
+var useEditHistory = create3(() => ({ past: [], future: [] }));
 
 // src/lib/themeSetup.ts
 var STORAGE_KEY2 = "sd-theme-setup";
@@ -10887,7 +10890,7 @@ function writeUnsaved(unsaved) {
   } catch {
   }
 }
-var useThemeSetup = create3(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }));
+var useThemeSetup = create4(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }));
 function forgetUnsavedBrand(key2) {
   const unsaved = { ...useThemeSetup.getState().unsaved };
   if (!(key2 in unsaved)) return;
