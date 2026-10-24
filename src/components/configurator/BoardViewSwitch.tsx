@@ -23,6 +23,11 @@ export function boardTabId(panelId: string, view: BoardView): string {
  * the arrows move between the two views and select them, Home / End jump to
  * the ends, and each tab points at the board it shows (`aria-controls`) —
  * the board region carries `role="tabpanel"` with `boardTabId` as its label.
+ *
+ * On a narrow board (the Generator's `boardhead` header under 560px — the
+ * width where Theme · Components beside Undo · Redo · Random · Inspector
+ * starts to clip) the words go and the icons stay. The words remain the tabs'
+ * accessible names (`sr-only`) and their tooltip.
  */
 export function BoardViewSwitch({ value, onChange, panelId }: {
   value: BoardView
@@ -88,12 +93,13 @@ export function BoardViewSwitch({ value, onChange, panelId }: {
             aria-controls={panelId}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(view)}
-            className={`flex h-7 items-center gap-1.5 rounded-lg px-3 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+            title={labels[view]}
+            className={`flex h-7 items-center gap-1.5 rounded-lg px-3 @max-[560px]/boardhead:px-2.5 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
               on ? 'bg-fg/[0.09] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
             }`}
           >
             {glyphs[view]}
-            {labels[view]}
+            <span className="@max-[560px]/boardhead:sr-only">{labels[view]}</span>
           </button>
         )
       })}

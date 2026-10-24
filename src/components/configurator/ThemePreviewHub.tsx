@@ -738,7 +738,9 @@ export default function ThemePreviewHub({
                   sits top-left; Inspect, Figma sync and Docs stay on the right.
                   Light/Dark lives on Color edition's header so the ramps and
                   the board cannot disagree. */}
-              <div className={`flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
+              {/* `boardhead` container: on a narrow board the view switch
+                  drops to icons (BoardViewSwitch) before anything clips. */}
+              <div className={`@container/boardhead flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
                 ) : docsOpen ? (
