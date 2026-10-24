@@ -106,3 +106,17 @@ describe('account files on sign-out', () => {
     expect(useDesignStore.getState().projectName).toBe('Nature')
   })
 })
+
+describe('signing out with the workspace open', () => {
+  it('the blank workspace gets its colour ramps back, so accent never renders transparent', async () => {
+    const { watchColorScales } = await import('../colorActions')
+    const stop = watchColorScales()
+    expect(Object.keys(useDesignStore.getState().primaryScale).length).toBeGreaterThan(0)
+    closeAccountFiles()
+    const s = useDesignStore.getState()
+    expect(Object.keys(s.primaryScale).length).toBeGreaterThan(0)
+    expect(Object.keys(s.primaryDarkScale).length).toBeGreaterThan(0)
+    expect(Object.keys(s.successScale).length).toBeGreaterThan(0)
+    stop()
+  })
+})

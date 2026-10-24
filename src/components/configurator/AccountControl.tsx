@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../lib/i18n'
 import { accountHref } from '../../lib/accountRoutes'
-import { displayNameOf, initialOf, signOut, useAuth } from '../../lib/auth'
+import { displayNameOf, initialOf, signOut, useAuth, useSigningOut } from '../../lib/auth'
 import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -64,6 +64,7 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
   const guestBrandCount = useSavedBrandKeys().length
   const { t } = useI18n()
   const { user, loading } = useAuth()
+  const signingOut = useSigningOut((s) => s.signingOut)
   // PRO on this chip is a bought licence only. Promo / launch entitlements
   // still unlock product features, but they are not a paid plan to badge.
   const { status: licenceStatus } = useLicence()
@@ -144,6 +145,21 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
   const planLabel = OPEN_BETA ? t('Beta') : licensed ? 'PRO' : t('Free')
   const initial = initialOf(user)
   const name = displayNameOf(user)
+
+  // Leaving saves to the account first: the chip says so the moment Sign out
+  // is pressed, instead of the header sitting still for seconds.
+  if (signingOut) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        className={`inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg px-2.5 text-caption font-medium text-fg-muted ${CHROME_CONTROL_SHELL}`}
+      >
+        <span aria-hidden className="h-3 w-3 flex-shrink-0 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />
+        {t('Saving and signing out…')}
+      </span>
+    )
+  }
 
   return (
     <div ref={rootRef} className="relative">

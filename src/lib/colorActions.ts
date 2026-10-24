@@ -389,8 +389,29 @@ export function ensureColorScales() {
   }
 }
 
+type RampState = ReturnType<typeof useDesignStore.getState>
+
+/** A derived ramp the store holds but is empty (`makeDesignDefaults()` ships
+ *  them `{}`). */
+function hasEmptyRamp(s: RampState): boolean {
+  const ramps = [
+    s.primaryScale, s.errorScale, s.warningScale, s.successScale, s.infoScale, s.grayLightScale,
+    s.primaryDarkScale, s.errorDarkScale, s.warningDarkScale, s.successDarkScale, s.infoDarkScale,
+  ]
+  return ramps.some((r) => !r || !Object.keys(r).length)
+}
+
+/** On mount, and again whenever a whole-store reset empties a ramp while the
+ *  shell is open — sign-out's blank workspace (`closeAccountFiles`), New
+ *  system, Delete, Reset. Mount-only left every `{accent.9}` transparent after
+ *  signing out until a reload. Only empty ramps are filled, so this settles. */
+export function watchColorScales(): () => void {
+  ensureColorScales()
+  return useDesignStore.subscribe((s) => { if (hasEmptyRamp(s)) ensureColorScales() })
+}
+
 export function useEnsureColorScales() {
-  useEffect(() => { ensureColorScales() }, [])
+  useEffect(() => watchColorScales(), [])
 }
 
 // Rebuilds EVERY ramp from its stored base colour when the contrast shift (or

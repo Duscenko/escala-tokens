@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { create } from 'zustand'
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import { accountsEnabled, supabase, type AuthProvider } from './supabase'
 import { LOGIN_PATH } from './legal'
@@ -242,7 +243,25 @@ export async function signInWithProvider(provider: AuthProvider): Promise<AuthRe
   return error ? fail(error) : ok(undefined)
 }
 
-export async function signOut(scope: 'global' | 'local' | 'others' = 'global'): Promise<void> {
+/** True from the Sign out click until the session is gone. Leaving waits on a
+ *  last save to the account (up to a few seconds); without this the header
+ *  looked frozen and people clicked again. */
+export const useSigningOut = create<{ signingOut: boolean }>(() => ({ signingOut: false }))
+
+let leaving: Promise<void> | null = null
+
+export function signOut(scope: 'global' | 'local' | 'others' = 'global'): Promise<void> {
+  // A second click while leaving joins the first, never starts another save.
+  if (leaving) return leaving
+  useSigningOut.setState({ signingOut: true })
+  leaving = signOutNow(scope).finally(() => {
+    leaving = null
+    useSigningOut.setState({ signingOut: false })
+  })
+  return leaving
+}
+
+async function signOutNow(scope: 'global' | 'local' | 'others'): Promise<void> {
   // Park first, while the session still names the account. Closing only
   // happens after that write succeeds — a failed park must not be the moment
   // the only copy disappears. No session means there is nothing of this
