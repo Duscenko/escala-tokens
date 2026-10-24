@@ -18,6 +18,8 @@ import { useDesignStore } from '../store/useDesignStore'
 import { daringHue, oppositeNeutralHue, randomHue } from './randomAccent'
 import {
   THEME_STYLE_PRESETS,
+  presetHarmony,
+  presetStates,
   type ThemeStylePreset,
   type ThemeStyleSemantics,
 } from './themePresets'
@@ -25,6 +27,7 @@ import type { ThemeFoundationOverride } from './themeFoundations'
 import {
   TYPE_SCALE_MODES,
   buildTypeScale,
+  inferTypeScaleMode,
   type TypeScaleMode,
 } from './typographyStandard'
 import type { ThemeAppearance } from './themeModes'
@@ -141,6 +144,12 @@ export interface RandomThemeRecipe {
   scaffoldId: string
   foundations: ThemeFoundationOverride
   semantics: ThemeStyleSemantics | undefined
+  /** Set when the dice dealt a System Style whole (see `nextShuffle`): the
+   *  theme becomes that style, origin and name included. */
+  styleId?: string
+  /** The page was turned to the far side of the wheel from the accent
+   *  (`withOppositePage`). */
+  oppositePage?: boolean
 }
 
 /** Scaffolds whose elevation or stroke IS their signature — a mood keeps
@@ -270,6 +279,85 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
   }
 }
 
+// ── The dice: System Styles first, then Random ──────────────────────────────
+//
+// Reported: the dice jumped straight to random looks while the styles the
+// system already ships (Core, Glass, Material…) never came up. So a session's
+// first spins DEAL the System Styles, in catalogue order, each one whole —
+// exactly what "Add to system" would mint. Once every style has been seen the
+// dice falls back to `randomTheme`, and a share of those spins turns the page
+// to the far side of the wheel from the accent, so boards stop reading as one
+// hue. Both are seeds: ramps, inks and contrast are still solved by the engine.
+
+/** Share of RANDOM spins (after the deck) whose page sits opposite the accent. */
+export const OPPOSITE_PAGE_SHARE = 0.35
+
+/** A System Style as a dice result — its own colours, geometry and type. */
+export function styleRecipe(preset: ThemeStylePreset): RandomThemeRecipe {
+  const type = preset.foundations.typography
+  const bodyFont = type?.fontFamily ?? 'Inter'
+  return {
+    accent: preset.accent,
+    neutral: presetHarmony(preset).neutral,
+    neutralTint: preset.neutralTint,
+    states: { ...presetStates(preset) },
+    appearance: preset.preferredAppearance,
+    moodId: `style:${preset.id}`,
+    bodyFont,
+    headingFont: type?.headingFontFamily ?? bodyFont,
+    typeScale: inferTypeScaleMode(type?.sizes ?? {}) ?? 'default',
+    scaffoldId: preset.id,
+    foundations: preset.foundations,
+    semantics: preset.semantics,
+    styleId: preset.id,
+  }
+}
+
+/**
+ * The same recipe with its page opposite the accent — complementary, split by
+ * up to ±25° (`oppositeNeutralHue`). The neutral is re-seeded through
+ * `neutralFromBrand`, so the page, its ramp and the inks solved against it
+ * all come from the engine. `pure` / `subtle` papers carry too little chroma
+ * for the opposition to show, so the tint is raised to at least `tinted`.
+ */
+export function withOppositePage(recipe: RandomThemeRecipe, rng: () => number = Math.random): RandomThemeRecipe {
+  const neutralTint: NeutralTint = recipe.neutralTint === 'vivid' ? 'vivid' : 'tinted'
+  return {
+    ...recipe,
+    neutral: oppositeNeutral(recipe.accent, neutralTint, rng),
+    neutralTint,
+    oppositePage: true,
+  }
+}
+
+/** Which System Styles this session's dice has already dealt. */
+export interface ShuffleDeck { shown: Set<string> }
+
+export function createShuffleDeck(): ShuffleDeck {
+  return { shown: new Set() }
+}
+
+const SESSION_DECK = createShuffleDeck()
+
+/**
+ * One press of the dice. `currentStyle` is the style the theme on screen came
+ * from: it counts as seen, so the first press never deals it back.
+ */
+export function nextShuffle(
+  input: RandomThemeInput & { currentStyle?: string; deck?: ShuffleDeck },
+): RandomThemeRecipe {
+  const deck = input.deck ?? SESSION_DECK
+  if (input.currentStyle) deck.shown.add(input.currentStyle)
+  const style = THEME_STYLE_PRESETS.find((preset) => !deck.shown.has(preset.id))
+  if (style) {
+    deck.shown.add(style.id)
+    return styleRecipe(style)
+  }
+  const rng = input.rng ?? Math.random
+  const recipe = randomTheme({ ...input, rng })
+  return rng() < OPPOSITE_PAGE_SHARE ? withOppositePage(recipe, rng) : recipe
+}
+
 /** A Random tweak on a try-on: the scaffold's geometry and severities, with
  *  the recipe's accent, tint, type and border recipe painted on top. The id
  *  stays the scaffold's, so adopting it files the theme under that style. */
@@ -320,6 +408,22 @@ export function randomLabelAfterTweak(
   const styleLabel = origin ? THEME_STYLE_PRESETS.find((preset) => preset.id === origin)?.label : undefined
   const untouched = !current || current === styleLabel
   return untouched ? nextRandomLabel(labels) : null
+}
+
+/** Label after the dice dealt `styleId`: the style's own name, unless the
+ *  designer typed one (same rule as `randomLabelAfterTweak`). */
+export function styleLabelAfterShuffle(
+  themeKey: string,
+  labels: Record<string, string>,
+  origin: string | undefined,
+  styleId: string,
+): string | null {
+  const preset = THEME_STYLE_PRESETS.find((p) => p.id === styleId)
+  if (!preset) return null
+  const current = labels[themeKey]?.trim()
+  const random = current === RANDOM_THEME_LABEL || current?.startsWith(`${RANDOM_THEME_LABEL} `)
+  const styleLabel = origin ? THEME_STYLE_PRESETS.find((p) => p.id === origin)?.label : undefined
+  return !current || random || current === styleLabel ? preset.label : null
 }
 
 /** Module count on the Theme Preview artefacts board — keep in sync with

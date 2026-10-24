@@ -13,7 +13,13 @@ import {
   randomTheme,
   moodSafeSemantics,
   stylePreviewFromRecipe,
+  createShuffleDeck,
+  nextShuffle,
+  styleLabelAfterShuffle,
+  withOppositePage,
+  OPPOSITE_PAGE_SHARE,
 } from '../randomTheme'
+import { backgroundFromBase, checkContrast, generateColorScale } from '../colorUtils'
 import { PROCEDURAL_MOOD_ID, curatedMood } from '../themeMoods'
 import { radiusRolesFromGroups } from '../layoutTokens'
 import { guestStarterPreview } from '../stylePreviewOverlay'
@@ -186,5 +192,74 @@ describe('random theme naming', () => {
     const style = THEME_STYLE_PRESETS[0]
     expect(randomLabelAfterTweak('t', { t: 'Acme brand' }, style.id)).toBeNull()
     expect(randomLabelAfterTweak('t', { t: 'Random 2' }, undefined)).toBeNull()
+  })
+})
+
+describe('the dice: System Styles first, then Random', () => {
+  it('deals every System Style once, in catalogue order, before any random look', () => {
+    const deck = createShuffleDeck()
+    const dealt: (string | undefined)[] = []
+    for (let i = 0; i < THEME_STYLE_PRESETS.length; i++) {
+      dealt.push(nextShuffle({ accent: VIVID, deck, rng: sequence(i + 1) }).styleId)
+    }
+    expect(dealt).toEqual(THEME_STYLE_PRESETS.map((preset) => preset.id))
+    const after = nextShuffle({ accent: VIVID, deck, rng: sequence(99) })
+    expect(after.styleId).toBeUndefined()
+  })
+
+  it('never deals the style already on screen', () => {
+    const deck = createShuffleDeck()
+    const first = nextShuffle({ accent: VIVID, deck, currentStyle: 'core-minimal' })
+    expect(first.styleId).toBe('cupertino-glass')
+    const seen = new Set([first.styleId])
+    for (let i = 0; i < THEME_STYLE_PRESETS.length; i++) {
+      const recipe = nextShuffle({ accent: VIVID, deck, rng: sequence(i + 5) })
+      expect(recipe.styleId).not.toBe('core-minimal')
+      if (recipe.styleId) {
+        expect(seen.has(recipe.styleId)).toBe(false)
+        seen.add(recipe.styleId)
+      }
+    }
+  })
+
+  it('deals a style whole: its own accent, type and geometry', () => {
+    const core = THEME_STYLE_PRESETS[0]
+    const recipe = nextShuffle({ accent: VIVID, deck: createShuffleDeck() })
+    expect(recipe.accent).toBe(core.accent)
+    expect(recipe.foundations).toEqual(core.foundations)
+    expect(recipe.appearance).toBe(core.preferredAppearance)
+  })
+
+  it('turns the page opposite the accent on a share of random spins only', () => {
+    const deck = createShuffleDeck()
+    THEME_STYLE_PRESETS.forEach((preset) => deck.shown.add(preset.id))
+    let opposite = 0
+    const N = 400
+    for (let i = 0; i < N; i++) {
+      if (nextShuffle({ accent: VIVID, deck, rng: sequence(i * 7 + 3) }).oppositePage) opposite++
+    }
+    expect(opposite / N).toBeGreaterThan(OPPOSITE_PAGE_SHARE - 0.1)
+    expect(opposite / N).toBeLessThan(OPPOSITE_PAGE_SHARE + 0.1)
+  })
+
+  it('an opposite page keeps its hue across the wheel and its text readable', () => {
+    for (let i = 0; i < 40; i++) {
+      const rng = sequence(i + 301)
+      const recipe = withOppositePage(randomTheme({ accent: VIVID, rng }), rng)
+      expect(['tinted', 'vivid']).toContain(recipe.neutralTint)
+      for (const appearance of ['light', 'dark'] as const) {
+        const page = backgroundFromBase(recipe.neutral, appearance, recipe.neutralTint)
+        expect(hueDelta(readHuePosition(recipe.accent).hue, readHuePosition(page).hue)).toBeGreaterThanOrEqual(130)
+        const ramp = generateColorScale(recipe.neutral, 'default', 0, page, appearance, recipe.neutralTint)
+        expect(checkContrast(ramp[12], page)).toBeGreaterThanOrEqual(4.5)
+        expect(checkContrast(ramp[11], page)).toBeGreaterThanOrEqual(3)
+      }
+    }
+  })
+
+  it('names a dealt style after itself unless the designer typed a name', () => {
+    expect(styleLabelAfterShuffle('t', { t: 'Random 2' }, undefined, 'cupertino-glass')).toBe('Cupertino / Glass')
+    expect(styleLabelAfterShuffle('t', { t: 'Core / Minimalist' }, 'core-minimal', 'cupertino-glass')).toBe('Cupertino / Glass')
+    expect(styleLabelAfterShuffle('t', { t: 'Acme' }, 'core-minimal', 'cupertino-glass')).toBeNull()
   })
 })

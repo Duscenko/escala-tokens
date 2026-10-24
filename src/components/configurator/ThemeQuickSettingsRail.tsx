@@ -76,7 +76,7 @@ import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
-import { randomTheme, randomLabelAfterTweak } from '../../lib/randomTheme'
+import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
@@ -2575,7 +2575,9 @@ export default function ThemeQuickSettingsRail({
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
     const rng = Math.random
-    const recipe = randomTheme({
+    // System Styles first (Core, Glass…), then random looks — see `nextShuffle`.
+    const recipe = nextShuffle({
+      currentStyle: useDesignStore.getState().themeOrigin?.[previewTheme],
       accent: liveAccent,
       bodyFont: typography.fontFamily,
       headingFont: headingFamily,
@@ -2618,8 +2620,13 @@ export default function ThemeQuickSettingsRail({
       if (Object.keys(next.themes).length === 1 && recipe.foundations.typography) {
         setTypography(themeKey, recipe.foundations.typography)
       }
-      // The look is random now, so the style's name would be wrong.
-      const label = randomLabelAfterTweak(themeKey, next.themeLabels, next.themeOrigin?.[themeKey])
+      // A dealt style IS that style now (Reset goes back to it, and it takes
+      // its name); a random look has no style's name to keep.
+      const origin = next.themeOrigin?.[themeKey]
+      const label = recipe.styleId
+        ? styleLabelAfterShuffle(themeKey, next.themeLabels, origin, recipe.styleId)
+        : randomLabelAfterTweak(themeKey, next.themeLabels, origin)
+      if (recipe.styleId) useDesignStore.getState().setThemeOrigin(themeKey, recipe.styleId)
       if (label) useDesignStore.getState().setThemeLabel(themeKey, label)
     })
   }
