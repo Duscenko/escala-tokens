@@ -103,7 +103,8 @@ describe('registry item (shadcn CLI format)', () => {
     const root = item.css![':root'] as Record<string, string>
     const dark = item.css!['.dark'] as Record<string, string>
     expect(root['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.light))
-    expect(dark['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.dark!))
+    // `.dark` carries only what differs from `:root` (the default blue is one hex in both).
+    expect(dark['--color-action-primary-default'] ?? root['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.dark!))
     expect(root['--radius-action']).toBe(Object.values(resolveToken(synced, 'radius.action').values)[0])
     expect(root['--size-control']).toMatch(/^\d+px$/)
     // A length is one value: dark carries only what changes.

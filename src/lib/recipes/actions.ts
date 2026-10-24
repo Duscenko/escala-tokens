@@ -10,7 +10,7 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCU
 // shadcn's variants and sizes, verbatim (`bases/radix/ui/button.tsx`). What
 // each one PAINTS is shadcn's `cn-button-variant-*` read through Escala's roles:
 //   default     bg-primary → action.primary.*         · ink on it
-//   secondary   bg-secondary → action.secondary.*     · page ink
+//   secondary   bg-secondary → action.secondary.*     · content.on-secondary
 //   outline     border, NO fill at rest, hover muted  · page ink
 //               (Escala's call: shadcn's bg-background is the PAGE colour, so
 //               on a raised surface — a Dialog's Cancel, a Card's footer — it
@@ -56,7 +56,7 @@ function buttonPaint(variant: string, state: string): SlotMap {
     case 'default':
       return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: gap, ring: halo('border.ring.default') } }
     case 'secondary':
-      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.primary'), focus: gap, ring: halo('border.control') } }
+      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.on-secondary'), focus: gap, ring: halo('border.control') } }
     case 'outline':
       return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: NONE, ring: halo('border.control') } }
     case 'ghost':

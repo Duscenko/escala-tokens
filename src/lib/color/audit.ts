@@ -179,9 +179,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // for the measurement that forced the distinction — auditing a button as
     // body copy is what pushed every dark-theme solid onto a near-white pastel.
     { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label' },
-    { fg: 'content.primary', bg: 'action.secondary.default', intent: 'action-label' },
-    { fg: 'content.primary', bg: 'action.secondary.hover',   intent: 'action-label' },
-    { fg: 'content.primary', bg: 'action.secondary.pressed', intent: 'action-label' },
+    { fg: 'content.on-secondary', bg: 'action.secondary.default', intent: 'action-label' },
+    { fg: 'content.on-secondary', bg: 'action.secondary.hover',   intent: 'action-label' },
+    { fg: 'content.on-secondary', bg: 'action.secondary.pressed', intent: 'action-label' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },

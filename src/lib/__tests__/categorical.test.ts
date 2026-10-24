@@ -62,7 +62,10 @@ describe('the categorical catalogue is complete', () => {
     //  design-plans/shadcn-component-skeleton.md) → 72.
     //  +1 (2026-10-18): `border.control` is its own role again — the field
     //  outline at WCAG 1.4.11's 3:1, apart from the emphasis `border.strong` → 73.
-    expect(roleIds).toHaveLength(73)
+    //  +3 (2026-10-24): `content.on-secondary` (secondary's own label ink) and
+    //  `surface.muted` / `-hover` (the control tracks that used to borrow
+    //  `action.secondary`), so a system can darken its secondary button → 76.
+    expect(roleIds).toHaveLength(76)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }

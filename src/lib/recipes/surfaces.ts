@@ -164,7 +164,7 @@ export const SCROLL_AREA: ComponentRecipe = {
       row: { text: c('content.primary'), font: 'type.body-sm', paddingX: 'spacing.2_5', paddingY: 'spacing.2', radius: 'radius.control' },
       'row:hover': { fill: c('action.ghost.hover') },
       scrollbar: { width: 'spacing.2' },
-      thumb: { fill: c('action.secondary.hover'), radius: 'radius.pill' },
+      thumb: { fill: c('surface.muted-hover'), radius: 'radius.pill' },
     })),
   ],
 }
@@ -423,7 +423,7 @@ export const MESSAGE: ComponentRecipe = {
 export const BUBBLE_VARIANTS = ['default', 'secondary', 'muted', 'tinted', 'outline', 'ghost', 'destructive'] as const
 const BUBBLE_PAINT: Record<string, SlotProps> = {
   default: { fill: c('action.primary.default'), stroke: NONE, text: c('content.on-action') },
-  secondary: { fill: c('action.secondary.default'), stroke: NONE, text: c('content.accent') },
+  secondary: { fill: c('surface.muted'), stroke: NONE, text: c('content.accent') },
   muted: { fill: c('surface.layer-2'), stroke: NONE, text: c('content.primary') },
   tinted: { fill: c('surface.accent'), stroke: NONE, text: c('content.accent') },
   outline: { fill: c('surface.page'), stroke: c('border.default'), text: c('content.primary') },

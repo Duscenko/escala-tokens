@@ -15,7 +15,7 @@ export const BADGE_VARIANTS = ['default', 'secondary', 'destructive', 'outline',
 function badgePaint(variant: string): SlotMap {
   switch (variant) {
     case 'default': return { root: { fill: c('action.primary.default'), stroke: NONE, text: c('content.on-action') } }
-    case 'secondary': return { root: { fill: c('action.secondary.default'), stroke: NONE, text: c('content.primary') } }
+    case 'secondary': return { root: { fill: c('action.secondary.default'), stroke: NONE, text: c('content.on-secondary') } }
     case 'destructive': return { root: { fill: c('status.critical.surface'), stroke: NONE, text: c('status.critical.content') } }
     case 'outline': return { root: { fill: NONE, stroke: c('border.default'), text: c('content.primary') } }
     case 'ghost': return { root: { fill: NONE, stroke: NONE, text: c('content.primary') } }
@@ -107,7 +107,7 @@ export const PROGRESS: ComponentRecipe = {
       root: { gap: 'spacing.gap-control' },
       label: { text: c('content.secondary'), font: 'type.caption' },
       value: { text: c('content.primary'), font: 'type.caption' },
-      track: { fill: c('action.secondary.default'), height: 'spacing.1_5', radius: 'radius.pill' },
+      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
       indicator: { fill: c('action.primary.default'), radius: 'radius.pill' },
     })),
   ],

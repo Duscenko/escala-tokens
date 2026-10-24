@@ -584,6 +584,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Sits on action.primary, so its ink is SOLVED against that fill per theme
   // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
   { group: 'content', key: 'on-action', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
+  // Label ink on `action.secondary.*`. The same tone as `content.primary` while
+  // secondary is the tone-4 wash; a system that makes secondary a dark fill
+  // (the default theme does) re-points this to the page tone with it.
+  { group: 'content', key: 'on-secondary', light: '{neutral.12}', dark: '{neutral-dark.12}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
   // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
   // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
@@ -687,6 +691,13 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
   { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
   { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.2}' },
+  // The neutral fill of a control's passive part — a Switch's off track, a
+  // Slider or Progress track, an OTP segment, a scrollbar thumb. Tone 4/5,
+  // what those parts read off `action.secondary` before it became the
+  // secondary CTA alone: a system may darken its secondary button without
+  // turning every track black.
+  { group: 'surface', key: 'muted',       light: '{neutral.4}', dark: '{neutral-dark.4}' },
+  { group: 'surface', key: 'muted-hover', light: '{neutral.5}', dark: '{neutral-dark.5}' },
   // Form background — same tone as the page, named separately so a form field
   // has its own token to point at rather than reusing "page" by coincidence.
   { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.1}' },
@@ -1070,21 +1081,24 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} — a muted inverse chip, not the dark ramp's near-white step.",
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
+  'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
+  'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
   'content.secondary': '[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.',
   'content.subtle': '[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.',
   'content.disabled': '[ROLE: Inactive Text] Disabled controls and copy. Exempt from strict WCAG rules — must communicate inactivity, not full legibility.',
   'content.inverse': "[ROLE: Inverted Text] Required when the background is surface.inverse or any dark/solid fill outside the accent.",
   'content.on-action': "[ROLE: Button Text] Label ink used ONLY on action.primary.default. Solved per theme against that fill — never assume white. Must exceed 4.5:1 against the button fill.",
+  'content.on-secondary': '[ROLE: Secondary Button Text] Label ink used ONLY on action.secondary.*. {neutral.12} in light — content.primary while secondary is a light wash; re-pointed with the fill when a system makes secondary a dark button. Must exceed 4.5:1 against the fill.',
   'content.accent': '[ROLE: Accent Text] Brand-tinted emphasis — active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).',
   'content.link.default': '[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.',
   'content.link.hover': '[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.',
   'action.primary.default': "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
   'action.primary.hover': '[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) — one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)',
   'action.primary.pressed': '[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) — two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)',
-  'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.primary, not content.on-action.',
-  'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.primary.',
-  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.primary.',
+  'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.',
+  'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.',
+  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.on-secondary.',
   'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.3} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
   'action.ghost.default': '[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.',
   'action.ghost.hover': '[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
