@@ -311,10 +311,12 @@ async function decide(etag: string | null, record: CloudRecord | null, loginInte
     ready = true
     return push()
   }
-  if (plan === 'conflict') {
-    ready = false
-    setUi({ status: 'conflict', conflict: { etag, record } })
-    return
+  if (plan === 'conflict' && record && etag) {
+    // Both sides changed: the account wins, so every computer opens the same
+    // work. This browser's copy is kept as a backup, as "Use your account's"
+    // did when the person was asked (`resolveAccountCloudConflict`).
+    backup(local)
+    return adopt(record, etag)
   }
   ready = true
   return push()

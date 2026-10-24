@@ -115,7 +115,7 @@ describe('account files across browsers', () => {
     again.stopAccountCloud()
   })
 
-  it('two browsers that both changed are asked, and nothing is overwritten', async () => {
+  it('two browsers that both changed: the account wins, this browser is kept as a backup', async () => {
     const a = await openBrowser()
     a.addBrand('aurora', 'Aurora')
     await a.startAccountCloud('user-1')
@@ -125,30 +125,13 @@ describe('account files across browsers', () => {
     const b = await openBrowser()
     b.addBrand('solo', 'Solo')
     await b.startAccountCloud('user-1')
-    expect(b.useAccountCloud.getState().status).toBe('conflict')
-    // Nothing was written while the person decides.
-    expect(cloud?.etag).toBe(savedEtag)
-
-    await b.resolveAccountCloudConflict('cloud')
-    expect(b.brands()).toEqual(['aurora'])
-    // The version left behind is kept in this browser.
-    expect(window.localStorage.getItem('sd-account-cloud-backup:user-1')).toContain('solo')
-    b.stopAccountCloud()
-  })
-
-  it('keeping this browser saves it over the account copy it was shown', async () => {
-    const a = await openBrowser()
-    a.addBrand('aurora', 'Aurora')
-    await a.startAccountCloud('user-1')
-    a.stopAccountCloud()
-
-    const b = await openBrowser()
-    b.addBrand('solo', 'Solo')
-    await b.startAccountCloud('user-1')
-    await b.resolveAccountCloudConflict('local')
     expect(b.useAccountCloud.getState().status).toBe('saved')
-    const stored = cloud?.record.files as { snapshot: { themeOrder: string[] } }
-    expect(stored.snapshot.themeOrder).toContain('solo')
+    expect(b.useAccountCloud.getState().conflict).toBeNull()
+    expect(b.brands()).toEqual(['aurora'])
+    // The account was not overwritten…
+    expect(cloud?.etag).toBe(savedEtag)
+    // …and the version left behind is kept in this browser.
+    expect(window.localStorage.getItem('sd-account-cloud-backup:user-1')).toContain('solo')
     b.stopAccountCloud()
   })
 
@@ -162,21 +145,6 @@ describe('account files across browsers', () => {
     const { myThemeKeys } = await import('../themeLibrary')
     const stored = cloud?.record.files as { snapshot: { themeOrder: string[]; themes: Record<string, unknown> } }
     expect(myThemeKeys(stored.snapshot.themeOrder, stored.snapshot.themes)).toEqual([])
-  })
-
-  it('sign-out finishes while the sync UI is in conflict', async () => {
-    const a = await openBrowser()
-    a.addBrand('aurora', 'Aurora')
-    await a.startAccountCloud('user-1')
-    a.stopAccountCloud()
-
-    const b = await openBrowser()
-    b.addBrand('solo', 'Solo')
-    await b.startAccountCloud('user-1')
-    expect(b.useAccountCloud.getState().status).toBe('conflict')
-
-    await b.flushAccountCloudForSignOut()
-    expect(b.useAccountCloud.getState().status).toBe('off')
   })
 
   it('stopping before sign-out closes the files means the blank workspace is never uploaded', async () => {

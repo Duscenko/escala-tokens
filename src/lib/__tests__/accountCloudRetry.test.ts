@@ -207,7 +207,7 @@ describe('account sync when the server fails', () => {
     a.stopAccountCloud()
   })
 
-  it('a conflict still blocks: no retry writes over the account while the person decides', async () => {
+  it('after a conflict the account wins, and no retry writes the browser copy over it', async () => {
     const a = await openBrowser()
     a.addBrand('aurora', 'Aurora')
     await a.startAccountCloud('user-1')
@@ -217,10 +217,10 @@ describe('account sync when the server fails', () => {
     const b = await openBrowser()
     b.addBrand('solo', 'Solo')
     await b.startAccountCloud('user-1')
-    expect(b.status()).toBe('conflict')
+    expect(b.status()).toBe('saved')
     await b.retryAccountCloud()
     await b.flushAccountCloud({ force: true })
-    expect(b.status()).toBe('conflict')
+    expect(b.status()).toBe('saved')
     expect(cloud?.etag).toBe(savedEtag)
     b.stopAccountCloud()
   })

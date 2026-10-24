@@ -81,7 +81,8 @@ describe('sync decision', () => {
   it('a browser that never synced and holds no work takes the account copy', () => {
     expect(planCloudSync({ localHash: 'blank', localHasWork: false, base: null, server: { etag: 'e2', hash: 'h9' } })).toBe('adopt')
   })
-  it('both sides changed: ask, never overwrite', () => {
+  // The engine resolves 'conflict' in the account's favour (`decide`).
+  it('both sides changed: a conflict, never a silent push', () => {
     expect(planCloudSync({ localHash: 'h3', localHasWork: true, base, server: { etag: 'e2', hash: 'h9' } })).toBe('conflict')
     expect(planCloudSync({ localHash: 'h3', localHasWork: true, base: null, server: { etag: 'e2', hash: 'h9' } })).toBe('conflict')
   })
