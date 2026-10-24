@@ -54,6 +54,33 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > This supersedes the "mobile accordion starts collapsed / drawer copy" description above for
 > the phone and `/about`; the drawer itself is unchanged.
 
+> **UPDATE (2026-10-24): the phone screen is also the SHUFFLE PLAYGROUND** (plan:
+> `design-plans/mobile-shuffle-playground.md`). The phone is where a visitor PLAYS with a system,
+> not where they edit one: `AboutInspectDemo` sits right under the hero (the hero CTA scrolls to it
+> on a phone, since the editor doesn't open there), and its Shuffle deals a whole system through
+> `nextShuffle` (System Styles first, then random looks: accent, fonts, type density, radius,
+> shadows, page tint), on a deck of its own so it never eats the desktop session's. Allowed there:
+> shuffle, lock an axis, pick a part, re-point a role to a primitive or a scale step. Never: free
+> inputs (hex, px, names), token tables, export. The "Optimized for desktop" note moved from the
+> top of the screen to under the playground, where it reads as "next step", not as an apology.
+>
+> F1 on top: **locks** (`lib/shuffleLocks.ts` — `FOUNDATION_AXIS` is a full Record over
+> `ThemeFoundationOverride`, so a new foundation must pick an axis to compile), a **receipt** of the
+> tokens a shuffle moved (`lib/playgroundReceipt.ts`, diffing the inspector's own `traceElement` rows,
+> pulsing the parts via `[data-pulse]` in `index.css`) and a **contrast line** that is the System
+> dashboard's audit (`auditResolvedRoles` + `contrastSummary`) in light and dark — never a second checker.
+>
+> F2: **`?remix=`** (`lib/remixLink.ts`) carries the playground's system to a laptop — base style id + a
+> deflated JSON merge patch, validated hard on decode (it is input from anyone). It is NOT the
+> `project`/`section` protocol and never touches `/api/tokens`. `takeIncomingRemix()` reads it once and
+> strips it; below `md` the playground takes it, from `md` up `Configurator` opens it as `stylePreview`
+> with `RemixBanner`. A changed look gets its own `remix-<hash>` id so `openStyleForEditing` never
+> reopens a style the visitor owns.
+> A guest's Add brand on a remix REPLACES their automatic Core (`ensureGuestBrand`) when it is their
+> only brand and untouched (`untouchedGuestSeed` / `adoptRemixOverGuestSeed`, keeping its name) —
+> otherwise the usual "second brand asks for an account" rule holds. `GUEST_START_STYLE` lives in
+> `adoptPreset.ts` now.
+
 ---
 
 > **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on

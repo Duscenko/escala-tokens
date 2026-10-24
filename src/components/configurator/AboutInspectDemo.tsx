@@ -1,5 +1,5 @@
-// The About page's "try the inspector" demo — the one piece of the workspace a
-// PHONE visitor can actually use. The editor needs a laptop (see
+// The About page's shuffle playground — the one piece of the workspace a
+// PHONE visitor can actually use (plan: `design-plans/mobile-shuffle-playground.md`). The editor needs a laptop (see
 // `DesktopOnlyNotice`), but pointing at a component and seeing the tokens it is
 // built from works on any screen, and it is the clearest way to show what
 // Escala is: a component is a list of tokens, and a token edit moves every
@@ -9,16 +9,20 @@
 // components, painted by the generated recipe sheet, and the panel is
 // `traceElement` — the same read the Generator's inspector does.
 //
-// THE SYSTEM ON SCREEN IS CORE, not the visitor's store: a phone visitor has
-// nothing of their own to show, and the demo should look like Escala at its
-// best. It is a try-on (`stylePreviewStore`), so nothing is ever written.
+// THE SYSTEM ON SCREEN STARTS AS CORE, not the visitor's store: a phone
+// visitor has nothing of their own to show, and the demo should look like
+// Escala at its best. It is a try-on (`stylePreviewStore`), so nothing is ever
+// written.
 //
 // EDITS GO THROUGH THE SYSTEM, the way they do in the Generator — never a hex
 // box or a free px field:
-//   - the ACCENT moves only through Shuffle (`randomAccent`), and every ramp
-//     and role re-derives from it;
+//   - the SYSTEM moves only through Shuffle (`nextShuffle`, the Generator's
+//     dice: System Styles first, then random looks), which deals accent,
+//     fonts, type density, radius, shadows and page tint at once — every ramp
+//     and role re-derives from it. Its deck is the demo's own, so playing here
+//     never uses up the styles the desktop session deals;
 //   - a colour row re-points the role to a primitive (`accent.9`, `white-a.2`),
-//     stored as that REFERENCE, so it keeps following the accent after a shuffle;
+//     stored as that REFERENCE, so it keeps following the system after a shuffle;
 //   - a length row picks a step of its own scale (radius, spacing, size, stroke).
 // Overrides are CSS variables on the stage and the preview only.
 //
@@ -40,7 +44,16 @@ import { stylePreviewStore } from '../../lib/stylePreviewOverlay'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { scaleLookup } from '../../lib/semanticArchitectures'
 import type { GlobalScales } from '../../lib/semanticRoles'
-import { randomAccent } from '../../lib/randomAccent'
+import { createShuffleDeck, nextShuffle, stylePreviewFromRecipe, RANDOM_THEME_LABEL } from '../../lib/randomTheme'
+import { inferTypeScaleMode } from '../../lib/typographyStandard'
+import { loadGoogleFont } from '../../lib/fonts'
+import { trackEvent } from '../../lib/analytics'
+import { INTENT_THRESHOLDS } from '../../lib/color/apca'
+import { decodeRemix, encodeRemix, remixPreset, remixUrl, takeIncomingRemix } from '../../lib/remixLink'
+import { showToast } from '../ui/Toast'
+import type { ThemeStylePreset } from '../../lib/themePresets'
+import { SHUFFLE_AXES, applyShuffleLocks, type ShuffleAxis } from '../../lib/shuffleLocks'
+import { diffReceipt, pickReceipt, playgroundContrast, type ReceiptChange, type ReceiptRow } from '../../lib/playgroundReceipt'
 import { readableInk } from '../../lib/colorUtils'
 import { displayHex } from '../../lib/tokenInspector'
 import { axesOf, recipeRootOf, traceElement, type TraceKind, type TraceRow } from '../../lib/tokenTrace'
@@ -68,6 +81,54 @@ type PartId = (typeof PARTS)[number]['id']
 
 /** Core / Minimalist — Escala's baseline style, the Core blue. */
 const CORE = THEME_STYLE_PRESETS.find((p) => p.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
+
+/** The system on the stage: a style whole, or a random look on a scaffold.
+ *  `styleId` is set when the dice dealt a System Style (it names the pill). */
+interface DemoSystem { preset: ThemeStylePreset; styleId?: string; scaffoldId?: string; moodId?: string }
+const CORE_SYSTEM: DemoSystem = { preset: CORE, styleId: CORE.id }
+
+const AXIS_LABEL: Record<ShuffleAxis, string> = { color: 'Color', type: 'Type', shape: 'Shape', density: 'Density' }
+
+/** Lines the receipt shows; the rest are counted. */
+const RECEIPT_LINES = 4
+/** Gap between two receipt lines lighting up their parts (ms). */
+const PULSE_STAGGER = 140
+
+/** Every resting token the card's parts read, keyed by CSS variable, with
+ *  the parts that read it — the same trace the inspector shows. */
+function collectRows(tokens: Parameters<typeof traceElement>[0], stage: HTMLElement | null): Map<string, ReceiptRow> {
+  const rows = new Map<string, ReceiptRow>()
+  for (const { id } of PARTS) {
+    const el = stage?.querySelector(`[data-demo="${id}"]`)
+    const trace = el ? traceElement(tokens, el) : null
+    for (const slot of trace?.slots ?? []) {
+      for (const row of slot.rows) {
+        if (row.state) continue
+        const known = rows.get(row.cssVar)
+        if (known) {
+          if (!known.parts.includes(id)) known.parts.push(id)
+          continue
+        }
+        rows.set(row.cssVar, {
+          cssVar: row.cssVar,
+          label: row.label,
+          kind: row.kind,
+          value: row.value,
+          family: row.facets?.find((f) => f.label === 'Family')?.value,
+          parts: [id],
+        })
+      }
+    }
+  }
+  return rows
+}
+
+/** The part a receipt line opens: the most specific one that reads it. */
+const partFor = (change: ReceiptChange): PartId =>
+  (change.parts.find((p) => p !== 'card') ?? change.parts[0] ?? 'card') as PartId
+
+/** Shuffle counts reported to analytics — a milestone each, not every press. */
+const SHUFFLE_MILESTONES = { 1: '1', 2: '2', 6: '6' } as const
 
 const LENGTH_SCALES = ['radius', 'spacing', 'size', 'stroke'] as const
 type LengthScale = (typeof LENGTH_SCALES)[number]
@@ -155,6 +216,69 @@ function PointerGlyph() {
       <path d="M6 8.5V3.25a1.25 1.25 0 0 1 2.5 0V7.5l3.2.7a1.6 1.6 0 0 1 1.25 1.8l-.5 3.2a1.6 1.6 0 0 1-1.6 1.3H7.6a1.6 1.6 0 0 1-1.25-.6L3.6 10.6a1.2 1.2 0 0 1 1.7-1.7Z" />
     </svg>
   )
+}
+
+function LockGlyph({ locked }: { locked: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="7" width="10" height="7" rx="1.5" />
+      <path d={locked ? 'M5.5 7V5a2.5 2.5 0 0 1 5 0v2' : 'M5.5 7V5a2.5 2.5 0 0 1 4.9-.7'} />
+    </svg>
+  )
+}
+
+function WarnGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 2.5 14 13H2Z" />
+      <path d="M8 6.5v3M8 11.5v.01" />
+    </svg>
+  )
+}
+
+/** One side of a receipt line: a swatch for a colour, the value otherwise. */
+function ChangeValue({ kind, value, muted = false }: { kind: ReceiptChange['kind']; value: string; muted?: boolean }) {
+  if (kind === 'color') {
+    return (
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="relative h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-black/10 dark:ring-white/15" style={/^#[0-9a-f]{8}$/i.test(value) ? CHECKER : undefined} aria-hidden>
+          <span className="absolute inset-0" style={{ background: value }} />
+        </span>
+        <span className={cn('truncate font-mono text-caption tabular-nums', muted ? 'text-fg-faint' : 'text-fg')}>{displayHex(value)}</span>
+      </span>
+    )
+  }
+  return <span className={cn('min-w-0 truncate font-mono text-caption tabular-nums', muted ? 'text-fg-faint' : 'text-fg')}>{value}</span>
+}
+
+function LaptopGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3.5" width="10" height="7" rx="1" />
+      <path d="M1.5 12.5h13" />
+    </svg>
+  )
+}
+
+/** The share sheet where there is one (AirDrop, Messages, mail to yourself),
+ *  the clipboard where there is not. A cancelled sheet is not a hand-off. */
+async function handOff(url: string, t: (s: string) => string = (s) => s) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Escala Tokens', text: t('A design system I shuffled on Escala Tokens'), url })
+      trackEvent({ name: 'mobile_handoff', props: { via: 'share' } })
+      return
+    } catch (error) {
+      if ((error as DOMException)?.name === 'AbortError') return
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url)
+    trackEvent({ name: 'mobile_handoff', props: { via: 'copy' } })
+    showToast(t('Link copied. Open it on your laptop.'))
+  } catch {
+    showToast(t('Could not copy the link.'), undefined, true)
+  }
 }
 
 function ResetGlyph() {
@@ -406,14 +530,16 @@ export function AboutInspectDemo() {
   const chrome = useTheme()
   const reduceMotion = useReducedMotion() ?? false
 
-  // ── The system: Core, with the accent the visitor shuffled to ──
-  const [accent, setAccent] = useState(CORE.accent)
+  // ── The system: Core, or whatever the visitor shuffled to ──
+  const [system, setSystem] = useState<DemoSystem>(CORE_SYSTEM)
+  const deck = useRef(createShuffleDeck())
+  const shuffles = useRef(0)
   const overlay = useMemo(
     () => ({
-      ...stylePreviewStore(useDesignStore.getState(), { preset: { ...CORE, accent }, appearance: chrome }, chrome),
+      ...stylePreviewStore(useDesignStore.getState(), { preset: system.preset, appearance: chrome }, chrome),
       semanticArchitecture: 'categorical' as const,
     }),
-    [accent, chrome],
+    [system, chrome],
   )
   const tokens = useMemo(() => resolvePreviewTokens(overlay, chrome, chrome, 'mobile'), [overlay, chrome])
   const look = useMemo(() => {
@@ -454,6 +580,89 @@ export function AboutInspectDemo() {
   const [filter, setFilter] = useState<Filter>('all')
   const [overrides, setOverrides] = useState<Record<string, Override>>({})
   const [element, setElement] = useState<Element | null>(null)
+
+  // ── Locks: the axes the next shuffle keeps ──
+  const [locks, setLocks] = useState<ReadonlySet<ShuffleAxis>>(new Set())
+  const toggleLock = (axis: ShuffleAxis) => setLocks((prev) => {
+    const next = new Set(prev)
+    if (next.has(axis)) next.delete(axis)
+    else next.add(axis)
+    return next
+  })
+
+  // ── Receipt: what the last shuffle moved. The rows BEFORE are read at the
+  // press; the rows AFTER once the new tokens have painted. ──
+  const [receipt, setReceipt] = useState<{ id: number; changes: ReceiptChange[] } | null>(null)
+  const before = useRef<Map<string, ReceiptRow> | null>(null)
+  useEffect(() => {
+    const prev = before.current
+    if (!prev) return
+    before.current = null
+    setReceipt({ id: shuffles.current, changes: diffReceipt(prev, collectRows(tokens, stageRef.current)) })
+  }, [tokens])
+
+  // Each line lights up the parts that read its token, one after the other —
+  // the "one variable, many components" beat, shown rather than said.
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!receipt || reduceMotion || !stage) return
+    const timers: number[] = []
+    pickReceipt(receipt.changes, RECEIPT_LINES).forEach((change, i) => {
+      timers.push(window.setTimeout(() => {
+        for (const id of change.parts) {
+          const el = stage.querySelector<HTMLElement>(`[data-demo="${id}"]`)
+          if (!el) continue
+          el.removeAttribute('data-pulse')
+          void el.offsetWidth // restart the animation on a part already pulsing
+          el.setAttribute('data-pulse', '')
+        }
+      }, i * PULSE_STAGGER))
+    })
+    return () => {
+      timers.forEach(clearTimeout)
+      stage.querySelectorAll('[data-pulse]').forEach((el) => el.removeAttribute('data-pulse'))
+    }
+  }, [receipt, reduceMotion])
+
+  // ── Contrast: the System dashboard's audit, in light AND dark ──
+  const contrast = useMemo(() => {
+    const store = useDesignStore.getState()
+    const rolesIn = (mode: 'light' | 'dark') => resolvePreviewTokens(
+      { ...stylePreviewStore(store, { preset: system.preset, appearance: mode }, mode), semanticArchitecture: 'categorical' as const },
+      mode, mode, 'mobile',
+    ).archTokens ?? {}
+    return playgroundContrast({ light: rolesIn('light'), dark: rolesIn('dark') })
+  }, [system])
+  const [contrastOpen, setContrastOpen] = useState(false)
+
+  // ── Hand-off: the system on stage as a `?remix=` link to open on a laptop.
+  // Encoded ahead of the tap (deflate is async), so the share sheet opens
+  // inside the tap itself — Safari refuses one that waits on a promise. ──
+  const [encoded, setEncoded] = useState<{ system: DemoSystem; url: string } | null>(null)
+  const link = encoded?.system === system ? encoded.url : null
+  useEffect(() => {
+    let live = true
+    encodeRemix(system.preset).then((code) => { if (live) setEncoded({ system, url: remixUrl(code) }) }, () => {})
+    return () => { live = false }
+  }, [system])
+
+  // A `?remix=` opened on a phone lands here: the playground starts on it.
+  useEffect(() => {
+    const code = takeIncomingRemix()
+    if (!code) return
+    let live = true
+    decodeRemix(code).then((decoded) => {
+      if (!live) return
+      if (!decoded) { showToast(t('This link could not be opened.'), undefined, true); return }
+      const preset = remixPreset(decoded, code, t(RANDOM_THEME_LABEL))
+      loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
+      loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
+      setSystem({ preset, styleId: decoded.whole ? preset.id : undefined })
+      stageRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    })
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Keep a handle on the picked element to trace it (the marker is what the
   // desktop inspector outlines; the phone shows the part in the sheet instead).
@@ -532,11 +741,56 @@ export function AboutInspectDemo() {
     return id && PARTS.some((p) => p.id === id) ? id : null
   }
 
-  const isCore = accent === CORE.accent
+  const isCore = system === CORE_SYSTEM
   const edited = Object.keys(overrides).length > 0
-  const resetAll = () => { setOverrides({}); setAccent(CORE.accent) }
+  const resetAll = () => { setOverrides({}); setSystem(CORE_SYSTEM); setReceipt(null) }
+  const systemName = system.styleId
+    ? THEME_STYLE_PRESETS.find((p) => p.id === system.styleId)?.label ?? system.preset.label
+    : t(RANDOM_THEME_LABEL)
+
+  // One press of the Generator's dice, painted as a try-on.
+  const shuffle = () => {
+    const type = system.preset.foundations.typography
+    const recipe = nextShuffle({
+      currentStyle: system.styleId,
+      accent: system.preset.accent,
+      bodyFont: type?.fontFamily,
+      headingFont: type?.headingFontFamily ?? type?.fontFamily,
+      typeScale: inferTypeScaleMode(type?.sizes),
+      avoidScaffold: system.scaffoldId,
+      avoidMood: system.moodId,
+      deck: deck.current,
+    })
+    loadGoogleFont(recipe.bodyFont)
+    loadGoogleFont(recipe.headingFont)
+    const style = recipe.styleId ? THEME_STYLE_PRESETS.find((p) => p.id === recipe.styleId) : undefined
+    const dealt = style ?? stylePreviewFromRecipe({ preset: system.preset, appearance: chrome }, recipe, chrome).preset
+    before.current = collectRows(tokens, stageRef.current)
+    setSystem({
+      // A locked axis keeps this system's own fields; a style dealt through a
+      // lock is no longer that style whole, so it takes no style's name.
+      preset: applyShuffleLocks(system.preset, dealt, locks),
+      styleId: locks.size ? undefined : style?.id,
+      scaffoldId: recipe.scaffoldId,
+      moodId: recipe.moodId,
+    })
+    setContrastOpen(false)
+    shuffles.current += 1
+    const reached = SHUFFLE_MILESTONES[shuffles.current as keyof typeof SHUFFLE_MILESTONES]
+    if (reached) trackEvent({ name: 'mobile_shuffle', props: { reached, locked: locks.size ? 'some' : 'none' } })
+  }
 
   const page = tokens.archTokens['surface.page'] ?? undefined
+  const lines = receipt ? pickReceipt(receipt.changes, RECEIPT_LINES) : []
+  const more = receipt ? receipt.changes.length - lines.length : 0
+  const contrastPasses = contrast.measured > 0 && contrast.failing.length === 0
+  // A receipt line opens the inspector right on its token.
+  const openAt = (change: ReceiptChange) => {
+    setPart(partFor(change))
+    setFilter(filterOf(change.kind))
+    setOpenRow(change.cssVar)
+    setOpen(true)
+  }
 
   return (
     <>
@@ -566,7 +820,7 @@ export function AboutInspectDemo() {
             </div>
           </RecipeScope>
 
-          {/* ── The accent: Core's blue, or a shuffle of it — never typed ── */}
+          {/* ── The system: Core, or a shuffle of it — never typed ── */}
           <div
             className="flex w-full max-w-[340px] items-center gap-1 rounded-2xl border border-line bg-app/85 p-1 pl-1.5 shadow-lg backdrop-blur-md"
           >
@@ -578,8 +832,8 @@ export function AboutInspectDemo() {
             {/* Same width as the card above (`max-w-[340px]`): the name takes
                 the slack, the actions stay at the right edge. */}
             <span className="flex min-w-0 flex-1 flex-col px-1.5 leading-tight">
-              <span className="text-mini text-fg-faint">{t('Accent')}</span>
-              <span className="text-body font-medium text-fg" aria-live="polite">{isCore ? 'Core' : t('Shuffled')}</span>
+              <span className="text-mini text-fg-faint">{t('System')}</span>
+              <span className="truncate text-body font-medium text-fg" aria-live="polite">{systemName}</span>
             </span>
             {(!isCore || edited) && (
               <button
@@ -594,11 +848,129 @@ export function AboutInspectDemo() {
             )}
             <RandomThemeButton
               variant="icon"
-              label={t('Shuffle accent')}
+              label={t('Shuffle system')}
               className="!h-11 !w-11 !rounded-xl"
-              onClick={() => setAccent((a) => randomAccent(a))}
+              onClick={shuffle}
             />
           </div>
+        </div>
+
+        {/* ── Locks: keep an axis, shuffle the rest. One always stays free, so
+            the dice always has something to move. ── */}
+        <div role="group" aria-label={t('Keep while shuffling')} className="flex flex-col gap-2">
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Keep while shuffling')}</span>
+          <div className="grid grid-cols-4 gap-1.5">
+            {SHUFFLE_AXES.map((axis) => {
+              const on = locks.has(axis)
+              const last = !on && locks.size === SHUFFLE_AXES.length - 1
+              return (
+                <button
+                  key={axis}
+                  type="button"
+                  aria-pressed={on}
+                  disabled={last}
+                  onClick={() => toggleLock(axis)}
+                  className={cn(
+                    'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 text-caption font-medium transition-[color,background-color,border-color,transform] active:scale-[0.97] disabled:opacity-40',
+                    FOCUS,
+                    on ? 'border-accent-ui bg-accent-ui/10 text-fg' : 'border-line text-fg-muted hover:text-fg',
+                  )}
+                >
+                  <LockGlyph locked={on} />
+                  {t(AXIS_LABEL[axis])}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── The receipt: contrast first (the promise), then what moved ── */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/40 p-3">
+          <button
+            type="button"
+            aria-expanded={contrastPasses ? undefined : contrastOpen}
+            onClick={() => !contrastPasses && setContrastOpen((o) => !o)}
+            className={cn(
+              'flex min-h-9 items-center gap-2 self-start rounded-xl px-3 py-1.5 text-left text-body font-medium',
+              FOCUS,
+              contrastPasses ? 'cursor-default bg-status-success/10 text-status-success' : 'bg-status-warning/10 text-status-warning',
+            )}
+          >
+            {contrastPasses ? <CheckGlyph /> : <WarnGlyph />}
+            <span aria-live="polite">
+              {contrastPasses
+                ? t('{count} contrast pairs pass in light and dark', { count: contrast.measured })
+                : t('{failing} of {count} contrast pairs fall short', { failing: contrast.failing.length, count: contrast.measured })}
+            </span>
+          </button>
+          {!contrastPasses && contrastOpen && (
+            <ul className="flex flex-col gap-1 px-1">
+              {contrast.failing.map((f) => (
+                <li key={`${f.theme}-${f.role}-${f.against}`} className="flex items-baseline justify-between gap-3 text-caption">
+                  <span className="min-w-0 truncate font-mono text-fg-muted">{f.role} / {f.against}</span>
+                  <span className="flex-shrink-0 font-mono tabular-nums text-fg-faint">
+                    {t(f.theme === 'dark' ? 'Dark' : 'Light')} · {f.wcag.toFixed(2)}:1 / {INTENT_THRESHOLDS[f.intent].wcag}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!receipt ? (
+            <p className="px-1 text-body text-fg-muted">{t('Shuffle to see which tokens change.')}</p>
+          ) : !lines.length ? (
+            <p className="px-1 text-body text-fg-muted">{t('Nothing the card reads changed.')}</p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <span className="px-1 text-mini font-semibold uppercase tracking-widest text-fg-faint">
+                {t('{count} tokens changed', { count: receipt.changes.length })}
+              </span>
+              {lines.map((change, i) => (
+                <motion.button
+                  key={`${receipt.id}-${change.cssVar}`}
+                  type="button"
+                  onClick={() => openAt(change)}
+                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.24, delay: (i * PULSE_STAGGER) / 1000, ease: [0.22, 1, 0.36, 1] }}
+                  className={cn('flex min-h-11 w-full flex-col gap-0.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-elevated/60', FOCUS)}
+                >
+                  <code className="w-full truncate font-mono text-caption text-accent-ui">{change.cssVar}</code>
+                  <span className="flex w-full items-center gap-1.5 text-body text-fg">
+                    <ChangeValue kind={change.kind} value={change.before} muted />
+                    <span className="text-fg-faint" aria-hidden>→</span>
+                    <ChangeValue kind={change.kind} value={change.after} />
+                    <span className="ml-auto flex-shrink-0 text-caption text-fg-faint">
+                      {t(change.parts.length === 1 ? '1 part' : '{count} parts', { count: change.parts.length })}
+                    </span>
+                  </span>
+                </motion.button>
+              ))}
+              {more > 0 && (
+                <span className="px-1 text-caption text-fg-faint">{t('+{count} more, tap any part to see them', { count: more })}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Hand-off: the playground's way out, to the editor on a laptop ── */}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={!link}
+            onClick={() => link && handOff(link, t)}
+            className={cn(
+              'flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-fg px-4 text-ui font-semibold text-app transition-[opacity,transform] active:scale-[0.98] disabled:opacity-60',
+              FOCUS,
+            )}
+          >
+            <LaptopGlyph />
+            {t('Continue on my laptop')}
+          </button>
+          <p className="px-1 text-caption leading-relaxed text-fg-muted">
+            {t('Sends this system as a link. It opens in the editor on a laptop, no account needed.')}
+            {edited && <> {t('Inspector edits stay on this phone.')}</>}
+          </p>
         </div>
 
         {/* Big targets for the small parts (a badge is hard to tap on a phone):

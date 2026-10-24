@@ -74,7 +74,7 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
-import { openStyleForEditing } from '../../lib/adoptPreset'
+import { adoptRemixOverGuestSeed, openStyleForEditing } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
 import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
@@ -2215,6 +2215,16 @@ export default function ThemeQuickSettingsRail({
   const editTryOn = () => {
     if (!tryOn) return
     const ownedCount = myThemeKeys(store.themeOrder, store.themes).length
+    // A phone remix replaces the guest's untouched automatic brand instead of
+    // asking for an account (`adoptRemixOverGuestSeed`); null = not that case.
+    const swapped = access.guest ? adoptRemixOverGuestSeed(tryOn.preset, tryOn.appearance) : null
+    if (swapped) {
+      if ('error' in swapped) { setAdoptError(t(swapped.error, { count: ownThemeCount })); return }
+      setAdoptError(null)
+      announceAdopted(swapped.name)
+      onAdoptStyle?.(swapped.key)
+      return
+    }
     if (access.guest && ownedCount > 0) { onNeedAccount?.(); return }
     const result = openStyleForEditing(tryOn.preset, tryOn.appearance)
     if ('error' in result) { setAdoptError(t(result.error, { count: ownThemeCount })); return }

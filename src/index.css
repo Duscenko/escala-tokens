@@ -1005,3 +1005,16 @@ button:focus-visible > .generator-cue-live {
 .theme-workspace-tab-indicator .color-hub-tab-bg {
   opacity: 1;
 }
+
+/* Phone playground (AboutInspectDemo): a receipt line lights up the parts that
+   read its token. An outline, not a shadow, so a part's own elevation stays. */
+@keyframes playground-pulse {
+  from { outline: 2px solid color-mix(in srgb, var(--accent-ui) 85%, transparent); outline-offset: 0; }
+  to { outline: 2px solid transparent; outline-offset: 8px; }
+}
+[data-pulse] {
+  animation: playground-pulse 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pulse] { animation: none; }
+}

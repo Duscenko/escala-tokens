@@ -824,7 +824,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
  *  never typed. */
 export function AboutHome({
   onStart, onOpenDocsPage, onOpenComponents,
-  foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
+  foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false, desktopNote,
 }: {
   onStart: () => void
   /** Docs' focused pages — the SAME mapping TopNav's Docs menu uses
@@ -841,12 +841,16 @@ export function AboutHome({
   scroll?: boolean
   /** The phone screen: no autoplay (see `DemoVideo`). */
   videoTapToPlay?: boolean
+  /** The phone screen's "the editor needs a laptop" note. It sits under the
+   *  playground, as the next step after playing, not above the page. */
+  desktopNote?: { heading: string; subheading: string }
 }) {
   const { t } = useI18n()
   // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
   const uid = useId()
   const faqId = `${uid}-faq`
   const contactId = `${uid}-contact`
+  const playgroundId = `${uid}-playground`
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
   const isPhone = useIsPhone()
@@ -881,18 +885,45 @@ export function AboutHome({
             </p>
           </motion.div>
           <motion.div variants={heroItem} className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            {/* A phone can't open the editor, so its CTA goes to the one thing
+                it can do: the playground just below. */}
             <RainbowButton
               type="button"
-              onClick={onStart}
+              onClick={isPhone
+                ? () => document.getElementById(playgroundId)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+                : onStart}
               className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
             >
-              {t('Start building')}
+              {t(isPhone ? 'Try it here' : 'Start building')}
               <ArrowGlyph />
             </RainbowButton>
           </motion.div>
         </motion.div>
 
-        <div className="px-6">
+        {/* ── The shuffle playground — PHONE ONLY, and first after the hero: on
+            a phone it is the one live piece of the workspace a visitor can use
+            (on a laptop the real workspace is one click away, so it would be a
+            detour). Mounted only below `md` (`useIsPhone`), not hidden. Shuffle
+            deals a whole system; tapping a part shows the tokens it reads. ── */}
+        {isPhone && (
+        <section id={playgroundId} className="flex scroll-mt-4 flex-col gap-10 border-y border-line px-6 py-12">
+          <SectionHeader
+            eyebrow={t('Try it')}
+            title={t('Shuffle a system. Every component follows.')}
+            lead={t('Each shuffle changes real tokens: colour, type, radius and spacing. Tap any part to see the tokens it is made of.')}
+          />
+          <AboutInspectDemo />
+          {desktopNote && (
+            <div className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
+              <h3 className="text-ui font-semibold text-fg">{desktopNote.heading}</h3>
+              <p className="text-body leading-relaxed text-fg-muted">{desktopNote.subheading}</p>
+              <DesktopHandoffHint />
+            </div>
+          )}
+        </section>
+        )}
+
+        <div className={cn('px-6', isPhone && 'pt-12')}>
           <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} />
         </div>
 
@@ -907,21 +938,6 @@ export function AboutHome({
           <Stat value={COMPONENT_KEYS.length} label={t('Components in the catalogue')} delay={0.08} />
           <Stat value={ALL_ROLES.length} label={t('Semantic roles')} delay={0.16} />
         </motion.div>
-
-        {/* ── Try the inspector — PHONE ONLY. On a laptop the real inspector is
-            one click away in the workspace, so a demo of it here is a detour;
-            on a phone it is the one live piece of the workspace a visitor can
-            use. Mounted only below `md` (`useIsPhone`), not hidden. ── */}
-        {isPhone && (
-        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
-          <SectionHeader
-            eyebrow={t('Try the inspector')}
-            title={t('Tap a component. See the tokens it is made of.')}
-            lead={t('Every component in Escala reads its colour, radius and spacing from tokens. Pick one, change a value, and watch the card follow.')}
-          />
-          <AboutInspectDemo />
-        </section>
-        )}
 
         {/* ── Start from a style — split: media left, copy right. Hidden with
             the styles themselves (SYSTEM_STYLES_VISIBLE): the page must not
@@ -1261,7 +1277,8 @@ export function AboutScaffold({
 }: {
   /** e.g. `md:hidden` for the mobile-only caller; omitted = always visible. */
   wrapperClassName?: string
-  /** The phone screen's lead: the app needs a laptop, everything else is here. */
+  /** The phone screen's note: the editor needs a laptop. Shown under the
+   *  playground (`AboutHome`'s `desktopNote`). */
   notice?: { heading: string; subheading: string }
   /** `/about` on desktop uses the same `TopNav` as other public reading pages. */
   headerMode?: 'minimal' | 'workspace'
@@ -1301,19 +1318,12 @@ export function AboutScaffold({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {notice && (
-          <div className="px-6 pt-6">
-            <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
-              <h2 className="text-ui font-semibold text-fg">{notice.heading}</h2>
-              <p className="text-body leading-relaxed text-fg-muted">{notice.subheading}</p>
-              <DesktopHandoffHint />
-            </div>
-          </div>
-        )}
-
+        {/* The notice is not the page's first word any more: `AboutHome` puts
+            it under the playground, as the step after playing. */}
         <AboutHome
           scroll={false}
           videoTapToPlay={Boolean(notice)}
+          desktopNote={notice}
           onStart={start}
           onOpenDocsPage={(page) => go(page === 'beta' ? PRICING_PATH : `/docs/${page}`)}
           onOpenComponents={() => go('/components')}

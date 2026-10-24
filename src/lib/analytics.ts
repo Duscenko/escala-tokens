@@ -22,6 +22,12 @@ export type AnalyticsEvent =
   | { name: 'plugin_open'; props: { update: 'yes' | 'no' } }
   | { name: 'style_adopt'; props: { style: string } }
   | { name: 'system_save'; props: { scope: 'system' | 'theme' } }
+  /** Phone playground: sent once when a visit reaches 1, 2 and 6 shuffles. */
+  | { name: 'mobile_shuffle'; props: { reached: '1' | '2' | '6'; locked: 'none' | 'some' } }
+  /** Phone playground → laptop link sent (a cancelled share sheet is not one). */
+  | { name: 'mobile_handoff'; props: { via: 'share' | 'copy' } }
+  /** A `?remix=` link opened on a laptop. */
+  | { name: 'remix_open'; props: { kind: 'style' | 'remix' } }
 
 /** Throttle window for events that can fire in bursts (auto-sync republishes
  *  ~1.5s after every edit). One per window per tab is plenty to count usage

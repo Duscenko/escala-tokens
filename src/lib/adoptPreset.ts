@@ -21,7 +21,8 @@ import { slugify } from './utils'
 import { trackEvent } from './analytics'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
 import { presetHarmony, presetStates, themeStylePreset, type ThemeStylePreset } from './themePresets'
-import type { ThemeAppearance } from './themeModes'
+import { themeModeKey, type ThemeAppearance } from './themeModes'
+import { REMIX_ID_PREFIX } from './remixLink'
 
 /**
  * Mints `preset` as a real theme in the given appearance and records where it
@@ -104,8 +105,11 @@ export function adoptPreset(
   next.setThemeOrigin(result.key, preset.id)
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
-  // `preset.id` is a curated constant (core, neo…), never user-typed text.
-  if (opts.track !== false) trackEvent({ name: 'style_adopt', props: { style: preset.id } })
+  // `preset.id` is a curated constant (core, neo…), never user-typed text. A
+  // phone remix carries a hashed id of its own; it is counted as one bucket.
+  if (opts.track !== false) {
+    trackEvent({ name: 'style_adopt', props: { style: preset.id.startsWith(REMIX_ID_PREFIX) ? 'remix' : preset.id } })
+  }
   return { key: result.key, name: label }
 }
 
@@ -190,4 +194,77 @@ export function resetThemeToOrigin(
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
   return { label: preset.label }
+}
+
+// ── A phone remix over the guest's automatic brand ───────────────────────────
+//
+// Every visitor without an account gets Core as their first brand, made for
+// them (`ensureGuestBrand` in Configurator), and a second brand asks for an
+// account. A `?remix=` from the phone playground would therefore ALWAYS hit
+// the sign-up modal on Add brand, though the only brand in the way is one the
+// visitor never chose. So when that automatic brand is the only one and nobody
+// has touched it, a remix takes its place instead. Anything they did make or
+// change stays theirs, and then a second brand asks for an account as usual.
+
+/** The style a visitor's first brand is made from. */
+export const GUEST_START_STYLE = 'core-minimal'
+
+type SeedState = ReturnType<typeof useDesignStore.getState>
+
+/** The automatic brand's key, when it is the visitor's only brand and still
+ *  exactly the style it was made from: foundations, accent and tint, the
+ *  style's own role recipe and nothing else, and the name it was given. */
+export function untouchedGuestSeed(state: SeedState = useDesignStore.getState()): string | null {
+  const mine = myThemeKeys(state.themeOrder, state.themes)
+  if (mine.length !== 1) return null
+  const key = mine[0]
+  if (state.themeOrigin?.[key] !== GUEST_START_STYLE) return null
+  const preset = themeStylePreset(GUEST_START_STYLE)
+  if (!preset || themeHasEdits(state, key)) return null
+  const label = state.themeLabels[key]?.trim()
+  if (label && label !== state.projectName.trim() && label !== preset.label) return null
+  // Semantic edits: the overrides on this theme's modes must be the ones the
+  // style itself writes on adopt, no more and no fewer.
+  const modes = new Set([themeModeKey(key, 'light'), themeModeKey(key, 'dark')])
+  const own = (overrides: SeedState['architectureOverrides']) => Object.fromEntries(
+    Object.entries(overrides).map(([arch, tokens]) => [arch, Object.fromEntries(
+      Object.entries(tokens)
+        .map(([token, byMode]) => [token, Object.fromEntries(Object.entries(byMode).filter(([mode]) => modes.has(mode)))] as const)
+        .filter(([, byMode]) => Object.keys(byMode).length),
+    )]).filter(([, tokens]) => Object.keys(tokens).length),
+  )
+  const expected = own(withStyleSemantics({}, preset.semantics, key))
+  return JSON.stringify(own(state.architectureOverrides)) === JSON.stringify(expected) ? key : null
+}
+
+/**
+ * Add brand for a phone remix when the guest's only brand is the untouched
+ * automatic one: the remix is adopted and the automatic brand removed, under
+ * the name the automatic one carried (the design system's). Null when the
+ * swap does not apply — the caller keeps its usual path.
+ */
+export function adoptRemixOverGuestSeed(
+  preset: ThemeStylePreset,
+  appearance: ThemeAppearance,
+): { key: string; name: string } | { error: string } | null {
+  if (!preset.id.startsWith(REMIX_ID_PREFIX)) return null
+  const seed = untouchedGuestSeed()
+  if (!seed) return null
+  const s = useDesignStore.getState()
+  const name = s.themeLabels[seed]?.trim() || preset.label
+  // Remove first: the guest plan holds one brand, so the remix has no room
+  // until the automatic one is gone. If the adopt still fails, Core comes back.
+  s.removeTheme(seed)
+  // Filed under that name from the start, so the theme's key (and the URL's
+  // `section`) reads like the brand, not "random".
+  const adopted = adoptPreset({ ...preset, label: name, shortLabel: name }, appearance)
+  if ('error' in adopted) {
+    const back = themeStylePreset(GUEST_START_STYLE)
+    if (back) {
+      const restored = adoptPreset(back, appearance, { track: false })
+      if ('key' in restored) useDesignStore.getState().setThemeLabel(restored.key, name)
+    }
+    return adopted
+  }
+  return adopted
 }

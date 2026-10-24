@@ -15,7 +15,7 @@ import { adoptBridgedProject } from '../lib/pluginBridgeOpen'
 import { applyDocumentHead } from '../lib/documentHead'
 import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
-import { useLoadActiveFonts } from '../lib/fonts'
+import { loadGoogleFont, useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import { FOUNDATION_ICON_RAIL_WIDTH, WorkspaceNavRail, type WorkspaceNavKey } from '../components/configurator/FoundationIconRail'
@@ -39,10 +39,13 @@ import { StartDesignModal, ThemeAppearanceControl } from '../components/configur
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
-import { startRandomTheme } from '../lib/randomTheme'
+import { RANDOM_THEME_LABEL, startRandomTheme } from '../lib/randomTheme'
+import { decodeRemix, remixPreset, takeIncomingRemix } from '../lib/remixLink'
+import { trackEvent } from '../lib/analytics'
+import { RemixBanner } from '../components/configurator/RemixBanner'
 import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
-import { adoptPreset, openStyleForEditing } from '../lib/adoptPreset'
+import { GUEST_START_STYLE, adoptPreset, openStyleForEditing } from '../lib/adoptPreset'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { SYSTEM_STYLES_VISIBLE } from '../lib/featureFlags'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
@@ -617,8 +620,6 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
   )
 }
 
-/** The style a visitor's first brand is made from. */
-const GUEST_START_STYLE = 'core-minimal'
 
 /**
  * A visitor with no account gets the SAME Board a signed-in person does — there
@@ -1927,6 +1928,30 @@ export default function Configurator() {
     setComponentFromSystem(false)
     openSystemPage()
   }
+  // `?remix=` — a system shuffled in the phone playground opens HERE as a
+  // try-on on the board, like a System Style from the library: nothing is
+  // written until Add brand, and no account is asked for to look. Below `md`
+  // the phone playground takes the link instead (this shell is hidden there).
+  const [remixId, setRemixId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 768px)').matches) return
+    const code = takeIncomingRemix()
+    if (!code) return
+    let live = true
+    decodeRemix(code).then((decoded) => {
+      if (!live) return
+      if (!decoded) { showToast(t('This link could not be opened.'), undefined, true); return }
+      const preset = remixPreset(decoded, code, t(RANDOM_THEME_LABEL), t('Shuffled on a phone, opened here as a try-on.'))
+      loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
+      loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
+      setStylePreview({ preset, appearance: preset.preferredAppearance })
+      openThemePreviewPage()
+      setRemixId(preset.id)
+      trackEvent({ name: 'remix_open', props: { kind: decoded.whole ? 'style' : 'remix' } })
+    })
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const returnToBrand = () => {
     setComponentFromSystem(false)
     openThemePreviewPage()
@@ -2591,6 +2616,8 @@ export default function Configurator() {
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
           (Theme workspace destinations, Color/Type/Layout hub, PreviewPanel). */}
       <ChromeTabDefs />
+      {/* A `?remix=` from the phone, while its try-on is still the one on the board. */}
+      {remixId && stylePreview?.preset.id === remixId && <RemixBanner onClose={() => setRemixId(null)} />}
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 

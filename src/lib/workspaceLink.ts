@@ -29,6 +29,10 @@
  *   docs
  *   docs/<docKey>
  *
+ * `remix` is NOT part of this protocol: it is a try-on carried from the phone
+ * playground (`remixLink.ts`), read once and taken off the address bar. It is
+ * not a project id and never reaches `/api/tokens`.
+ *
  * The plugin's "Edit on the web" opens this app URL. It GETs tokens from
  * `/api/tokens?project=<slug>` and reads additive `editor.section` so it
  * can send the designer back to the page that last published.
