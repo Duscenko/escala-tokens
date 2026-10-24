@@ -239,12 +239,17 @@ export function RandomThemeButton({
   label,
   variant = 'tweak',
   className = '',
+  visibleLabel,
 }: {
   onClick: () => void
+  /** Shorter on-screen text for the `labeled` variant; `label` stays the
+   *  accessible name. */
+  visibleLabel?: string
   /** Accessible name; also the visible text in the `tweak` variant. */
   label?: string
-  variant?: 'tweak' | 'icon'
-  /** Size override for the `icon` variant (default 32px square). */
+  /** `labeled`: glyph + visible text at the size `className` gives it. */
+  variant?: 'tweak' | 'icon' | 'labeled'
+  /** Size override for the `icon` and `labeled` variants. */
   className?: string
 }) {
   const { t } = useI18n()
@@ -260,11 +265,11 @@ export function RandomThemeButton({
       aria-label={text}
       title={text}
       className={`relative flex items-center justify-center gap-1.5 rounded-lg bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        icon ? `h-8 w-8 flex-shrink-0 ${className}` : 'h-8 w-full text-mini font-normal'
+        icon ? `h-8 w-8 flex-shrink-0 ${className}` : variant === 'labeled' ? `flex-shrink-0 ${className}` : 'h-8 w-full text-mini font-normal'
       }`}
     >
       <span key={throws} className={`relative z-[1] flex ${throws ? 'shuffle-throw' : ''}`}><ShuffleGlyph /></span>
-      {!icon && <span className="relative z-[1] truncate">{text}</span>}
+      {!icon && <span className="relative z-[1] truncate">{variant === 'labeled' && visibleLabel ? visibleLabel : text}</span>}
       <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
     </button>
   )

@@ -20,7 +20,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 import { SYSTEM_STYLES_VISIBLE } from '../../lib/featureFlags'
 import { FooterLinks } from './FooterLinks'
 import { PublicHeader } from '../public/PublicReadingPage'
-import { AboutInspectDemo } from './AboutInspectDemo'
+import { MobileGenerator } from './MobileThemeSheet'
 import { useIsPhone } from '../../lib/useIsPhone'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
@@ -900,19 +900,19 @@ export function AboutHome({
           </motion.div>
         </motion.div>
 
-        {/* ── The shuffle playground — PHONE ONLY, and first after the hero: on
+        {/* ── The phone generator — PHONE ONLY, and first after the hero: on
             a phone it is the one live piece of the workspace a visitor can use
             (on a laptop the real workspace is one click away, so it would be a
-            detour). Mounted only below `md` (`useIsPhone`), not hidden. Shuffle
-            deals a whole system; tapping a part shows the tokens it reads. ── */}
+            detour). Mounted only below `md` (`useIsPhone`), not hidden. A live
+            preview, and a Theme sheet docked under it (`MobileThemeSheet`). ── */}
         {isPhone && (
         <section id={playgroundId} className="flex scroll-mt-4 flex-col gap-10 border-y border-line px-6 py-12">
           <SectionHeader
             eyebrow={t('Try it')}
-            title={t('Shuffle a system. Every component follows.')}
-            lead={t('Each shuffle changes real tokens: colour, type, radius and spacing. Tap any part to see the tokens it is made of.')}
+            title={t('Pick a colour. Every component follows.')}
+            lead={t('Each pick changes real tokens: colour, type, radius and spacing. Open the Theme panel below to change them, or shuffle a whole system.')}
           />
-          <AboutInspectDemo />
+          <MobileGenerator />
           {desktopNote && (
             <div className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
               <h3 className="text-ui font-semibold text-fg">{desktopNote.heading}</h3>

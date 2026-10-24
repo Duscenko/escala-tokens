@@ -54,6 +54,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > This supersedes the "mobile accordion starts collapsed / drawer copy" description above for
 > the phone and `/about`; the drawer itself is unchanged.
 
+> **UPDATE (2026-10-24, later): the playground became the PHONE GENERATOR** (plan:
+> `design-plans/mobile-theme-sheet.md`). `MobileThemeSheet.tsx` replaces `AboutInspectDemo` on
+> the phone: a live preview (real `escala-ui` components) and a Theme sheet docked at the bottom
+> (`ThemeDock`, a framer-motion drag with two stops — NOT vaul, whose Radix Dialog locks the page:
+> folded = six brand colours + Shuffle; open = Color · Type · Shape · Export).
+> Every control is a pick from a list the desktop ships (`lib/mobileTheme.ts`); no hex box. Export
+> on a phone = copy CSS variables + the `?remix=` hand-off. `?sheet=<tab>` holds the open tab.
+> The note below describes the playground it replaced.
+>
 > **UPDATE (2026-10-24): the phone screen is also the SHUFFLE PLAYGROUND** (plan:
 > `design-plans/mobile-shuffle-playground.md`). The phone is where a visitor PLAYS with a system,
 > not where they edit one: `AboutInspectDemo` sits right under the hero (the hero CTA scrolls to it

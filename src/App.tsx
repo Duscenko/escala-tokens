@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n } from './lib/i18n'
 import { useIsPhone } from './lib/useIsPhone'
 import Configurator from './pages/Configurator'
@@ -87,6 +87,14 @@ function App() {
   // Public reading paths (`/components`, `/docs/mcp`, …) never mount the
   // configurator, so they cannot rewrite `/?project=&section=` or publish.
   const isPhone = useIsPhone()
+  // The desktop editor MOUNTS only once a desktop has been seen. It used to
+  // mount on phones too, hidden by `md:block` (`display: none` is not an
+  // unmount): the whole editor ran invisibly behind the phone screen, and its
+  // About tab mounted a second phone generator. Latched, not toggled: a
+  // laptop window narrowed below `md` keeps its editor (and its open panels)
+  // instead of tearing it down.
+  const [desktopSeen, setDesktopSeen] = useState(!isPhone)
+  if (!isPhone && !desktopSeen) setDesktopSeen(true)
   const path = window.location.pathname.replace(/\/$/, '') || '/'
   const publicPage = path === '/about' ? null : matchPublicPath(path)
 
@@ -167,9 +175,11 @@ function App() {
   return (
     <>
       {isPhone && <DesktopOnlyNotice />}
-      <main className="hidden md:block min-h-screen bg-app text-fg">
-        <Configurator />
-      </main>
+      {desktopSeen && (
+        <main className="hidden md:block min-h-screen bg-app text-fg">
+          <Configurator />
+        </main>
+      )}
       <ToastHost />
     </>
   )

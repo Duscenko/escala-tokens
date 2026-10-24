@@ -55,6 +55,7 @@ import type { ThemeStylePreset } from '../../lib/themePresets'
 import { SHUFFLE_AXES, applyShuffleLocks, type ShuffleAxis } from '../../lib/shuffleLocks'
 import { diffReceipt, pickReceipt, playgroundContrast, type ReceiptChange, type ReceiptRow } from '../../lib/playgroundReceipt'
 import { readableInk } from '../../lib/colorUtils'
+import { BRAND_SPECTRUM, type ColorPreset } from '../../lib/brandPalette'
 import { displayHex } from '../../lib/tokenInspector'
 import { axesOf, recipeRootOf, traceElement, type TraceKind, type TraceRow } from '../../lib/tokenTrace'
 import { CHECKER, ValueMark, slotLabel } from '../preview/artefacts/TokenTracePanel'
@@ -83,9 +84,20 @@ type PartId = (typeof PARTS)[number]['id']
 const CORE = THEME_STYLE_PRESETS.find((p) => p.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
 
 /** The system on the stage: a style whole, or a random look on a scaffold.
- *  `styleId` is set when the dice dealt a System Style (it names the pill). */
-interface DemoSystem { preset: ThemeStylePreset; styleId?: string; scaffoldId?: string; moodId?: string }
+ *  `styleId` is set when the dice dealt a System Style (it names the pill).
+ *  `baseName` keeps that name once the visitor re-colours it, and
+ *  `colorName` is the curated brand colour they picked (`BRAND_SPECTRUM`). */
+interface DemoSystem {
+  preset: ThemeStylePreset
+  styleId?: string
+  scaffoldId?: string
+  moodId?: string
+  baseName?: string
+  colorName?: string
+}
 const CORE_SYSTEM: DemoSystem = { preset: CORE, styleId: CORE.id }
+
+const sameHex = (a: string | undefined, b: string | undefined) => !!a && !!b && a.toLowerCase() === b.toLowerCase()
 
 const AXIS_LABEL: Record<ShuffleAxis, string> = { color: 'Color', type: 'Type', shape: 'Shape', density: 'Density' }
 
@@ -525,6 +537,71 @@ function StepPicker({
   )
 }
 
+/** The curated brand colours, one tap each, in hue order. Scrolls sideways
+ *  under the system name; the picked one is ringed and kept in view. A
+ *  dealt accent outside the run rides first, so the row always shows what
+ *  is on screen. */
+function ColorRow({
+  current, kept, onPick, label, keptLabel,
+}: {
+  current: string
+  kept: boolean
+  onPick: (color: ColorPreset) => void
+  label: string
+  keptLabel: string
+}) {
+  const stripRef = useRef<HTMLDivElement>(null)
+  const known = BRAND_SPECTRUM.some((c) => sameHex(c.hex, current))
+  const colors = known ? BRAND_SPECTRUM : [{ label: current, hex: current }, ...BRAND_SPECTRUM]
+  useEffect(() => centerInStrip(stripRef.current, '[aria-checked="true"]'), [current])
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-line/70 pb-2 pt-2">
+      <span className="flex items-center justify-between gap-2 px-3 text-mini text-fg-faint">
+        <span>{label}</span>
+        {kept && (
+          <span className="flex items-center gap-1 text-fg-muted">
+            <LockGlyph locked />
+            {keptLabel}
+          </span>
+        )}
+      </span>
+      <div
+        ref={stripRef}
+        role="radiogroup"
+        aria-label={label}
+        className="flex gap-1 overflow-x-auto px-2 py-1 [mask-image:linear-gradient(to_right,transparent,#000_10px,#000_calc(100%-10px),transparent)] [scrollbar-width:none]"
+      >
+        {colors.map((c) => {
+          const on = sameHex(c.hex, current)
+          return (
+            <button
+              key={c.hex}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={c.label}
+              title={c.label}
+              onClick={() => onPick(c)}
+              className={cn('flex h-11 w-9 flex-shrink-0 items-center justify-center rounded-full', FOCUS)}
+            >
+              <span
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-black/10 transition-transform duration-150 ease-[var(--ease-out-quint)] active:scale-90 dark:ring-white/15',
+                  on && 'ring-2 ring-fg ring-offset-2 ring-offset-app dark:ring-fg',
+                )}
+                style={{ background: c.hex, color: readableInk(c.hex) }}
+                aria-hidden
+              >
+                {on && <CheckGlyph />}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function AboutInspectDemo() {
   const { t } = useI18n()
   const chrome = useTheme()
@@ -594,11 +671,13 @@ export function AboutInspectDemo() {
   // press; the rows AFTER once the new tokens have painted. ──
   const [receipt, setReceipt] = useState<{ id: number; changes: ReceiptChange[] } | null>(null)
   const before = useRef<Map<string, ReceiptRow> | null>(null)
+  const receiptSeq = useRef(0)
   useEffect(() => {
     const prev = before.current
     if (!prev) return
     before.current = null
-    setReceipt({ id: shuffles.current, changes: diffReceipt(prev, collectRows(tokens, stageRef.current)) })
+    receiptSeq.current += 1
+    setReceipt({ id: receiptSeq.current, changes: diffReceipt(prev, collectRows(tokens, stageRef.current)) })
   }, [tokens])
 
   // Each line lights up the parts that read its token, one after the other —
@@ -744,9 +823,30 @@ export function AboutInspectDemo() {
   const isCore = system === CORE_SYSTEM
   const edited = Object.keys(overrides).length > 0
   const resetAll = () => { setOverrides({}); setSystem(CORE_SYSTEM); setReceipt(null) }
-  const systemName = system.styleId
+  const baseName = system.styleId
     ? THEME_STYLE_PRESETS.find((p) => p.id === system.styleId)?.label ?? system.preset.label
-    : t(RANDOM_THEME_LABEL)
+    : system.baseName ?? t(RANDOM_THEME_LABEL)
+  const systemName = system.colorName ? `${baseName} · ${system.colorName}` : baseName
+
+  // A brand colour, picked from the curated run (never a free hex): the
+  // accent changes and every ramp and role re-derives from it, like a
+  // shuffle does. The colour then stays locked, so the next shuffle moves
+  // type, shape and density around the colour the visitor chose.
+  const pickColor = (color: ColorPreset) => {
+    if (sameHex(color.hex, system.preset.accent)) return
+    before.current = collectRows(tokens, stageRef.current)
+    setSystem({
+      preset: { ...system.preset, accent: color.hex },
+      scaffoldId: system.scaffoldId,
+      moodId: system.moodId,
+      baseName,
+      colorName: color.label,
+    })
+    setContrastOpen(false)
+    if (!locks.has('color') && locks.size < SHUFFLE_AXES.length - 1) {
+      setLocks((prev) => new Set(prev).add('color'))
+    }
+  }
 
   // One press of the Generator's dice, painted as a try-on.
   const shuffle = () => {
@@ -773,6 +873,8 @@ export function AboutInspectDemo() {
       styleId: locks.size ? undefined : style?.id,
       scaffoldId: recipe.scaffoldId,
       moodId: recipe.moodId,
+      // A kept colour keeps its name; a dealt one is the dice's.
+      colorName: locks.has('color') ? system.colorName : undefined,
     })
     setContrastOpen(false)
     shuffles.current += 1
@@ -820,18 +922,14 @@ export function AboutInspectDemo() {
             </div>
           </RecipeScope>
 
-          {/* ── The system: Core, or a shuffle of it — never typed ── */}
-          <div
-            className="flex w-full max-w-[340px] items-center gap-1 rounded-2xl border border-line bg-app/85 p-1 pl-1.5 shadow-lg backdrop-blur-md"
-          >
-            <span
-              className="h-7 w-7 flex-shrink-0 rounded-full ring-1 ring-black/10 transition-colors duration-300 dark:ring-white/15"
-              style={{ background: tokens.archTokens['action.primary.default'] }}
-              aria-hidden
-            />
+          {/* ── The system: Core, or a shuffle of it — never typed. Two ways
+              to move it, both in reach of a thumb: Shuffle deals a whole new
+              look; a colour below re-paints this one. ── */}
+          <div className="flex w-full max-w-[340px] flex-col rounded-2xl border border-line bg-app/85 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-1 p-1 pl-3">
             {/* Same width as the card above (`max-w-[340px]`): the name takes
                 the slack, the actions stay at the right edge. */}
-            <span className="flex min-w-0 flex-1 flex-col px-1.5 leading-tight">
+            <span className="flex min-w-0 flex-1 flex-col leading-tight">
               <span className="text-mini text-fg-faint">{t('System')}</span>
               <span className="truncate text-body font-medium text-fg" aria-live="polite">{systemName}</span>
             </span>
@@ -847,11 +945,20 @@ export function AboutInspectDemo() {
               </button>
             )}
             <RandomThemeButton
-              variant="icon"
+              variant="labeled"
               label={t('Shuffle system')}
-              className="!h-11 !w-11 !rounded-xl"
+              visibleLabel={t('Shuffle')}
+              className="!h-11 !rounded-xl !bg-fg px-3.5 text-body font-semibold !text-app hover:!bg-fg/90"
               onClick={shuffle}
             />
+          </div>
+          <ColorRow
+            current={system.preset.accent}
+            kept={locks.has('color')}
+            onPick={pickColor}
+            label={t('Brand color')}
+            keptLabel={t('Kept while shuffling')}
+          />
           </div>
         </div>
 
