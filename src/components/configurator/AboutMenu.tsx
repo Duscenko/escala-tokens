@@ -824,7 +824,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
  *  never typed. */
 export function AboutHome({
   onStart, onOpenDocsPage, onOpenComponents,
-  foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false, desktopNote,
+  foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
 }: {
   onStart: () => void
   /** Docs' focused pages — the SAME mapping TopNav's Docs menu uses
@@ -841,9 +841,6 @@ export function AboutHome({
   scroll?: boolean
   /** The phone screen: no autoplay (see `DemoVideo`). */
   videoTapToPlay?: boolean
-  /** The phone screen's "the editor needs a laptop" note. It sits under the
-   *  playground, as the next step after playing, not above the page. */
-  desktopNote?: { heading: string; subheading: string }
 }) {
   const { t } = useI18n()
   // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
@@ -884,6 +881,13 @@ export function AboutHome({
               {t('Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius.')}
             </p>
           </motion.div>
+          {/* On a phone the demo sits in the hero, right above "Try it here":
+              the workspace first, then the door to the playground. */}
+          {isPhone && (
+            <motion.div variants={heroItem} className="mt-2 w-full">
+              <DemoVideo tapToPlay={videoTapToPlay} />
+            </motion.div>
+          )}
           <motion.div variants={heroItem} className="mt-2 flex flex-wrap items-center justify-center gap-3">
             {/* A phone can't open the editor, so its CTA goes to the one thing
                 it can do: the playground just below. */}
@@ -910,22 +914,19 @@ export function AboutHome({
           <SectionHeader
             eyebrow={t('Try it')}
             title={t('Pick a colour. Every component follows.')}
-            lead={t('Each pick changes real tokens: colour, type, radius and spacing. Open the Theme panel below to change them, or shuffle a whole system.')}
+            lead={t('Each pick changes real tokens: colour, type, radius and spacing. Shuffle a whole system, open Controls to pick, or copy it as a prompt for your agent.')}
           />
+          {/* No "Optimized for desktop" card here: the laptop step is said
+              where it matters, when a visitor reaches for it (Export). */}
           <MobileGenerator />
-          {desktopNote && (
-            <div className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
-              <h3 className="text-ui font-semibold text-fg">{desktopNote.heading}</h3>
-              <p className="text-body leading-relaxed text-fg-muted">{desktopNote.subheading}</p>
-              <DesktopHandoffHint />
-            </div>
-          )}
         </section>
         )}
 
-        <div className={cn('px-6', isPhone && 'pt-12')}>
-          <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} />
-        </div>
+        {!isPhone && (
+          <div className="px-6">
+            <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} />
+          </div>
+        )}
 
         {/* ── Proof — real counts, imported, never typed ── */}
         <motion.div
@@ -1186,85 +1187,6 @@ export function DemoVideo({ className, tapToPlay }: { className?: string; tapToP
   )
 }
 
-/**
- * "Open it on a laptop" said as a picture: a dim phone, a wave of chevrons
- * travelling right, a lit laptop. It exists because the two callers of
- * `AboutScaffold` are in opposite situations — `/about` HAS a workspace to
- * send you to and renders the `ctaHref` link, while the mobile notice has
- * nowhere to go (that's the whole point of the screen) and had nothing in
- * that slot at all. A dead button would be worse than the gap; a direction
- * is the honest thing to put there.
- *
- * No visible label, deliberately: the paragraph directly above already says
- * "Open it there to configure and export your system", and a caption under
- * the glyph would be that sentence a second time in smaller type. The words
- * live in `aria-label` instead, so the meaning still reaches a screen reader
- * that gets nothing from a moving chevron.
- *
- * The accent is spent on the DESTINATION only — the phone you're holding is
- * `fg-faint`, the laptop is `accent-ui` — so the colour itself points. Motion
- * is a fade wave rather than a slide: no layout to measure, nothing to
- * reflow, and it reads as direction at 14px where a travelling arrow just
- * reads as a flicker. Honours `useReducedMotion` (the chevrons settle at a
- * static ramp, which still reads left-to-right).
- */
-function DesktopHandoffHint() {
-  const { t } = useI18n()
-  const reduce = useReducedMotion()
-  const stroke = {
-    fill: 'none', stroke: 'currentColor', strokeWidth: 1.6,
-    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-  }
-
-  return (
-    <div
-      className="mt-1 flex items-center gap-2.5"
-      role="img"
-      aria-label={t('Open Escala Tokens on a laptop or desktop')}
-    >
-      {/* the device you're on */}
-      <svg width="15" height="15" viewBox="0 0 24 24" className="text-fg-faint" aria-hidden>
-        <rect x="7" y="2.5" width="10" height="19" rx="2.5" {...stroke} />
-        <path d="M10.75 18.25h2.5" {...stroke} />
-      </svg>
-
-      {/* the direction */}
-      <span className="flex items-center gap-[3px] text-accent-ui" aria-hidden>
-        {[0, 1, 2].map((i) => (
-          <motion.svg
-            key={i}
-            width="7" height="10" viewBox="0 0 7 10"
-            style={reduce ? { opacity: 0.35 + i * 0.25 } : undefined}
-            animate={reduce ? undefined : { opacity: [0.18, 1, 0.18] }}
-            transition={reduce ? undefined : {
-              duration: 1.5, repeat: Infinity, repeatDelay: 0.35,
-              delay: i * 0.16, ease: 'easeInOut',
-            }}
-          >
-            <path d="M1.6 1.4 5.1 5l-3.5 3.6" {...stroke} />
-          </motion.svg>
-        ))}
-      </span>
-
-      {/* where it opens */}
-      <span className="relative flex items-center justify-center text-accent-ui">
-        {!reduce && (
-          <motion.span
-            className="absolute h-7 w-7 rounded-full bg-accent-ui blur-md"
-            aria-hidden
-            animate={{ opacity: [0, 0.3, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.35, delay: 0.55, ease: 'easeInOut' }}
-          />
-        )}
-        <svg width="22" height="22" viewBox="0 0 24 24" className="relative" aria-hidden>
-          <rect x="3.25" y="4.5" width="17.5" height="12" rx="2" {...stroke} />
-          <path d="M1.75 19.5h20.5" {...stroke} />
-        </svg>
-      </span>
-    </div>
-  )
-}
-
 /** The About page OUTSIDE the shell — the phone screen (`DesktopOnlyNotice`)
  *  and the `/about` route. It renders the SAME `AboutHome` the in-app tab does,
  *  so phone and desktop read one page, not two versions of it; only the frame
@@ -1277,8 +1199,8 @@ export function AboutScaffold({
 }: {
   /** e.g. `md:hidden` for the mobile-only caller; omitted = always visible. */
   wrapperClassName?: string
-  /** The phone screen's note: the editor needs a laptop. Shown under the
-   *  playground (`AboutHome`'s `desktopNote`). */
+  /** Set on the phone screen (the editor needs a laptop): the demo video
+   *  then waits for a tap. */
   notice?: { heading: string; subheading: string }
   /** `/about` on desktop uses the same `TopNav` as other public reading pages. */
   headerMode?: 'minimal' | 'workspace'
@@ -1318,12 +1240,11 @@ export function AboutScaffold({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {/* The notice is not the page's first word any more: `AboutHome` puts
-            it under the playground, as the step after playing. */}
+        {/* The laptop note is not drawn on the page: a phone hears it when it
+            reaches for the editor (Start building's toast, Export's hand-off). */}
         <AboutHome
           scroll={false}
           videoTapToPlay={Boolean(notice)}
-          desktopNote={notice}
           onStart={start}
           onOpenDocsPage={(page) => go(page === 'beta' ? PRICING_PATH : `/docs/${page}`)}
           onOpenComponents={() => go('/components')}

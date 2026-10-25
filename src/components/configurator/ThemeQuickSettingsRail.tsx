@@ -1229,7 +1229,8 @@ const BASE_UNIT_STOPS = [
  * clips it (`overflow-hidden`) — otherwise it widens the rail and scrolls it
  * sideways. The thumb never leaves the 3px inset, so nothing visible is cut.
  */
-function DotSlider({ stops, value, onChange, onScrubStart, onScrubEnd, format, renderValue, ariaLabel, className = '' }: {
+/** Exported for the phone's Controls panel, so both speak one control. */
+export function DotSlider({ stops, value, onChange, onScrubStart, onScrubEnd, format, renderValue, ariaLabel, className = '' }: {
   stops: readonly number[]
   value: number
   onChange: (value: number) => void

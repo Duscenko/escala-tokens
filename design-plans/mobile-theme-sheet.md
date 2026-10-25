@@ -17,23 +17,39 @@ A live preview painted by a system, and a **Theme sheet** docked at the bottom t
 | Mount | `AboutHome` in `AboutMenu.tsx`, phone section |
 | Reduced motion | `useReducedMotion` in `ThemeDock` |
 
-## The preview: six views
+## The preview: one bento
 
-An icon bar (sticky under the page header) over a sideways swipe track. Each view is one group of
-the desktop bento board (`SystemCollage`), built from real `escala-ui` components painted by the
-system: **Account** · **Actions** (buttons, sizes, segmented, toggle group, credits) · **Status**
-(badges, presence, chips, alerts, progress) · **Forms** (OTP, switches, checkbox, radio, slider,
-select) · **Cards** (profile, metric, unsaved changes) · **Navigation** (tabs, stepper, pagination).
-File: `MobilePreviewViews.tsx`.
+> **Later the same day:** the icon bar is back. Six pages swiped sideways, each a two-column bento
+> of its tiles, `?view=` restored. See `mobile-bento-action-bar.md`, "Vuelta de la barra de iconos".
 
-- The bar is a WAI-ARIA tablist (arrows / Home / End); the swipe drives the bar, never the reverse.
-- `?view=<id>` holds the view (the first, `account`, is not written).
-- The track is as tall as the view on screen. Track and panels are `relative`: Radix and the OTP
-  field render hidden `absolute` inputs that otherwise escaped the scroller's clip and widened the
-  page until a phone zoomed out to 25%.
-- Views are `inert` pictures: no focus, no keyboard on a tap.
+**Replaced 2026-10-25** (plan `mobile-bento-action-bar.md`, phase 1). The six views under an icon bar
+and a sideways swipe are gone. The preview is ONE bento in two columns, read by scrolling
+(`MobileBento` in `MobilePreviewViews.tsx`), built from real `escala-ui` components painted by the
+system:
+
+1. **Identity** (wide): system name, accent and neutral ramps 1–12, the heading font ("Aa") and the
+   body font's weights.
+2. Buttons (wide) · Badges · Presence · Selection (wide) · Account card (wide) · Uptime · Settings ·
+   Profile (wide) · Verify (wide) · Filters (wide) · Alerts (wide) · Checklist (wide) · Tabs (wide) ·
+   Checkout (wide) · Plan form (wide).
+
+- The top four tiles paint at once; the rest render in runs as they near the screen and then stay.
+- `?view=` is gone. An old link that carries it is cleaned from the URL and lands on the preview.
+- The canvas is `relative` and clipped: Radix and the OTP field render hidden `absolute` inputs that
+  otherwise widened the page until a phone zoomed out to 25%.
+- The board is `inert`: no focus, no keyboard on a tap.
 
 ## The sheet
+
+> **Changed 2026-10-25** (plan `mobile-bento-action-bar.md`, phase 2): the folded stop is gone. A bar
+> of three buttons — **Shuffle** (painted by the system) · **Copy prompt** (`systemBrief`) ·
+> **Controls** — floats over the preview; Controls opens the sheet below, which is otherwise off
+> screen. What follows about the folded 164px stop is history.
+>
+> **Phase 3 (same day):** the four tabs are now ONE list of folding groups (Color · Type · Shape ·
+> Export), each with its own shuffle, and five locks (accent, font, base size, radius, spacing) in
+> `?lock=`. See `mobile-bento-action-bar.md`. The tab table below is history.
+
 
 **Folded (164px):** handle · "Theme" + system name · Reset (when changed) · Customize ·
 six quick brand colours (`QUICK_ACCENTS`) · Shuffle.
@@ -122,6 +138,7 @@ Product:
 - [x] Docked, the sheet never locks the page: every About section scrolls and takes taps behind it.
 - [x] Scrolled past the preview, the sheet slides away (and is `inert`); no padding gap under the preview.
 - [x] Each pick reaches the preview (button font and radius verified in the browser).
+- [x] Shuffle repaints the whole bento; no horizontal scroll at 375px.
 - [x] Tab and open state round-trip through `?sheet=`.
 - [x] Export copies real variable names (rule 7), Light on `:root`, Dark on `.dark`.
 - [x] `?remix=` still opens on the phone and the hand-off link still works.

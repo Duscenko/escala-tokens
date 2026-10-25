@@ -33,9 +33,9 @@ export interface ShipActions {
   agent: () => void
 }
 
-const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
-function CodeGlyph() {
+export function CodeGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
       <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
@@ -44,7 +44,7 @@ function CodeGlyph() {
   )
 }
 
-function AgentGlyph() {
+export function AgentGlyph() {
   // Same asset `FormatGlyph` paints on the Code rail (a mask, so it follows
   // the button's ink). Not imported from there: that rail imports this file.
   const mask = "url('/icons/settings/mcp.svg') center / contain no-repeat"
@@ -164,14 +164,48 @@ const DIE_FACES: [number, number][][] = [
 ]
 
 /** A die — "a whole new theme", distinct from Shuffle (colours only). */
-function DiceGlyph({ face }: { face: number }) {
+function DiceGlyph({ face, size = 15 }: { face: number; size?: number }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
       <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
       {DIE_FACES[face - 1].map(([cx, cy]) => (
         <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r=".9" fill="currentColor" stroke="none" />
       ))}
     </svg>
+  )
+}
+
+/** The die that ROLLS: each new `rolls` count hops it, turns it a full
+ *  circle and lands it on a new face mid-air. Hover tips it (the parent is a
+ *  `group`). Shared by the desktop's Random and the phone's Shuffle, so the
+ *  dice reads as chance the same way everywhere. */
+export function RollingDie({ rolls, size = 15 }: { rolls: number; size?: number }) {
+  const reduce = useReducedMotion()
+  const [face, setFace] = useState(5)
+  const swap = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(swap.current), [])
+  useEffect(() => {
+    if (!rolls) return
+    const next = (current: number) => {
+      const n = 1 + Math.floor(Math.random() * 5)
+      return n >= current ? n + 1 : n
+    }
+    window.clearTimeout(swap.current)
+    // Change faces at the top of the hop, while the die is mid-turn (at once
+    // when motion is reduced: there is no hop to wait for).
+    swap.current = window.setTimeout(() => setFace(next), reduce ? 0 : 170)
+  }, [rolls, reduce])
+  return (
+    <span className="flex transition-transform duration-200 ease-[var(--ease-out-quint)] motion-safe:group-hover:-translate-y-px motion-safe:group-hover:-rotate-12">
+      <motion.span
+        className="flex"
+        initial={false}
+        animate={reduce ? undefined : { rotate: rolls * 360, y: rolls ? [0, -5, 0] : 0, scale: rolls ? [1, 0.88, 1] : 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], y: { duration: 0.42, times: [0, 0.4, 1] }, scale: { duration: 0.42, times: [0, 0.4, 1] } }}
+      >
+        <DiceGlyph face={face} size={size} />
+      </motion.span>
+    </span>
   )
 }
 
@@ -188,23 +222,10 @@ export function RandomWholeThemeButton({ onClick, label, compact = false, bare =
   /** A segment of `BoardHistoryControls`: 28px, no edge of its own. */
   bare?: boolean
 }) {
-  const reduce = useReducedMotion()
-  const [face, setFace] = useState(5)
   const [rolls, setRolls] = useState(0)
-  const swap = useRef<number | undefined>(undefined)
-  useEffect(() => () => window.clearTimeout(swap.current), [])
-
   const roll = () => {
     onClick()
-    const next = (current: number) => {
-      const n = 1 + Math.floor(Math.random() * 5)
-      return n >= current ? n + 1 : n
-    }
-    window.clearTimeout(swap.current)
-    if (reduce) { setFace(next); return }
     setRolls((r) => r + 1)
-    // Change faces at the top of the hop, while the die is mid-turn.
-    swap.current = window.setTimeout(() => setFace(next), 170)
   }
 
   return (
@@ -217,16 +238,7 @@ export function RandomWholeThemeButton({ onClick, label, compact = false, bare =
         ? `group ${HISTORY_SEGMENT}`
         : `group flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
     >
-      <span className="flex transition-transform duration-200 ease-[var(--ease-out-quint)] motion-safe:group-hover:-translate-y-px motion-safe:group-hover:-rotate-12">
-        <motion.span
-          className="flex"
-          initial={false}
-          animate={reduce ? undefined : { rotate: rolls * 360, y: rolls ? [0, -5, 0] : 0, scale: rolls ? [1, 0.88, 1] : 1 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], y: { duration: 0.42, times: [0, 0.4, 1] }, scale: { duration: 0.42, times: [0, 0.4, 1] } }}
-        >
-          <DiceGlyph face={face} />
-        </motion.span>
-      </span>
+      <RollingDie rolls={rolls} />
     </button>
   )
 }
