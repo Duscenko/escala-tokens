@@ -122,6 +122,10 @@ export interface RandomThemeInput {
   avoidScaffold?: string
   /** The last spin's mood id — never drawn twice in a row. */
   avoidMood?: string
+  /** A System Style id to stay inside: the dice keeps that scaffold (its
+   *  geometry and its type voice) and varies colour and font pair only. The
+   *  phone's style picker sets it; omitted, any scaffold can come up. */
+  scaffold?: string
   rng?: () => number
 }
 
@@ -224,7 +228,7 @@ export function oppositeNeutral(
 
 export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
   const rng = input.rng ?? Math.random
-  const scaffold = pickOther(
+  const scaffold = THEME_STYLE_PRESETS.find((preset) => preset.id === input.scaffold) ?? pickOther(
     THEME_STYLE_PRESETS,
     THEME_STYLE_PRESETS.find((preset) => preset.id === input.avoidScaffold),
     rng,
@@ -348,7 +352,8 @@ export function nextShuffle(
 ): RandomThemeRecipe {
   const deck = input.deck ?? SESSION_DECK
   if (input.currentStyle) deck.shown.add(input.currentStyle)
-  const style = THEME_STYLE_PRESETS.find((preset) => !deck.shown.has(preset.id))
+  // Inside one style there is no deck to deal: every spin is a variation of it.
+  const style = input.scaffold ? undefined : THEME_STYLE_PRESETS.find((preset) => !deck.shown.has(preset.id))
   if (style) {
     deck.shown.add(style.id)
     return styleRecipe(style)

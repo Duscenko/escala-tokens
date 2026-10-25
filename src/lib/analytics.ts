@@ -26,6 +26,8 @@ export type AnalyticsEvent =
   | { name: 'mobile_shuffle'; props: { reached: '1' | '2' | '6'; locked: 'none' | 'some' } }
   /** Phone playground → laptop link sent (a cancelled share sheet is not one). */
   | { name: 'mobile_handoff'; props: { via: 'share' | 'copy' } }
+  /** Phone generator: Copy prompt pressed (the system brief for an agent). */
+  | { name: 'mobile_copy_prompt'; props: { ok: 'yes' | 'no' } }
   /** A `?remix=` link opened on a laptop. */
   | { name: 'remix_open'; props: { kind: 'style' | 'remix' } }
 

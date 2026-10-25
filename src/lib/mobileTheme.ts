@@ -15,6 +15,7 @@ import {
   buildSizesFromBase, insetSurfacePadding, matchRadiusRolePreset, matchSpacingMode, radiusPresetPatch,
   type SpacingMode,
 } from './layoutTokens'
+import { withAgentEnvelope } from './aiContext'
 import type { FoundationSource } from './themeFoundations'
 import type { ThemeStylePreset } from './themePresets'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode, type TypeScaleMode } from './typographyStandard'
@@ -26,7 +27,9 @@ import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode, type TypeScaleMod
 // (the address is REPLACED, never pushed).
 
 export const THEME_SHEET_PARAM = 'sheet'
-export const THEME_SHEET_TABS = ['color', 'type', 'shape', 'export'] as const
+/** The pages of the Controls panel: `edit` is the list (the desktop's "Edit
+ *  {name}"), the rest are the pages its rows open. */
+export const THEME_SHEET_TABS = ['edit', 'color', 'type', 'radius', 'spacing', 'style', 'export'] as const
 export type ThemeSheetTab = (typeof THEME_SHEET_TABS)[number]
 
 export interface ThemeSheetState {
@@ -34,13 +37,17 @@ export interface ThemeSheetState {
   tab: ThemeSheetTab
 }
 
-export const FOLDED: ThemeSheetState = { open: false, tab: 'color' }
+export const FOLDED: ThemeSheetState = { open: false, tab: 'edit' }
 
 const isTab = (v: string | null): v is ThemeSheetTab => !!v && (THEME_SHEET_TABS as readonly string[]).includes(v)
 
-/** The sheet a URL asks for. An unknown tab opens nothing. */
+/** Pages that were renamed: an old link still lands. */
+const OLD_TABS: Record<string, ThemeSheetTab> = { shape: 'radius' }
+
+/** The sheet a URL asks for. An unknown page opens nothing. */
 export function readThemeSheet(search: string): ThemeSheetState {
-  const tab = new URLSearchParams(search).get(THEME_SHEET_PARAM)
+  const raw = new URLSearchParams(search).get(THEME_SHEET_PARAM)
+  const tab = raw && OLD_TABS[raw] ? OLD_TABS[raw] : raw
   return isTab(tab) ? { open: true, tab } : FOLDED
 }
 
@@ -53,15 +60,11 @@ export function writeThemeSheet(search: string, state: ThemeSheetState): string 
   return out ? `?${out}` : ''
 }
 
-/** The tab an arrow key moves to (tabs wrap, as WAI-ARIA tabs do). */
-export function stepTab(tab: ThemeSheetTab, key: string): ThemeSheetTab | null {
-  return stepIn(THEME_SHEET_TABS, tab, key)
-}
 
-// ── Preview views ───────────────────────────────────────────────────────────
-// The preview above the sheet shows one group of components at a time — the
-// groups the desktop bento board (`SystemCollage`) is built from. `?view=`
-// holds the one on screen; the first view is the default and is not written.
+// ── Preview pages ───────────────────────────────────────────────────────────
+// The preview is six pages, swiped sideways under an icon bar; each page is a
+// small bento of the tiles in that group. `?view=` holds the page on screen;
+// the first page is the default and is not written.
 
 export const PREVIEW_VIEW_PARAM = 'view'
 export const PREVIEW_VIEWS = ['account', 'actions', 'status', 'forms', 'cards', 'navigation'] as const
@@ -76,11 +79,11 @@ export function writePreviewView(search: string, view: PreviewView): string {
   const params = new URLSearchParams(search)
   if (view === PREVIEW_VIEWS[0]) params.delete(PREVIEW_VIEW_PARAM)
   else params.set(PREVIEW_VIEW_PARAM, view)
-  const out = params.toString()
+  const out = params.toString().replace(/%2C/g, ',')
   return out ? `?${out}` : ''
 }
 
-/** Arrow keys over a list that wraps (tabs, the view bar). */
+/** Arrow keys over a list that wraps (the preview's icon bar). */
 export function stepIn<T>(list: readonly T[], at: T, key: string): T | null {
   const i = list.indexOf(at)
   const n = list.length
@@ -255,4 +258,227 @@ export function cssVariables(input: {
     '.dark {', ...colorLines(input.dark), '}',
     '',
   ].join('\n')
+}
+
+// ── Copy prompt: the system as a brief for an agent ────────────────────────
+// What the phone's "Copy prompt" button copies. The colour roles by their real
+// token names, the type and shape picked, the CSS variables, and the link
+// that opens this same system on a laptop — inside the `agent-context/v1`
+// envelope the desktop already ships (`withAgentEnvelope`), never a second
+// vocabulary. Always English: agents read it.
+
+/** The roles a brief names, in the order a person builds with them. */
+const BRIEF_ROLES: { label: string; token: string }[] = [
+  { label: 'Primary action', token: 'action.primary.default' },
+  { label: 'Label on primary', token: 'content.on-action' },
+  { label: 'Page', token: 'surface.page' },
+  { label: 'Text', token: 'content.primary' },
+  { label: 'Secondary text', token: 'content.secondary' },
+  { label: 'Control border', token: 'border.control' },
+  { label: 'Success', token: 'status.success.content' },
+  { label: 'Critical', token: 'status.critical.content' },
+  { label: 'Warning', token: 'status.warning.content' },
+  { label: 'Info', token: 'status.info.content' },
+]
+
+export interface SystemBriefInput {
+  name: string
+  light: Record<string, string>
+  dark: Record<string, string>
+  headingFont?: string
+  bodyFont?: string
+  /** `text-md` in px. */
+  basePx?: number
+  /** Radius preset label (`Rounded`), or null when the system matches none. */
+  radius?: string | null
+  /** Spacing mode label (`Quiet`), or null when the system matches none. */
+  spacing?: string | null
+  css: string
+  /** The `?remix=` link; left out while it is still being encoded. */
+  link?: string | null
+}
+
+export function systemBrief(input: SystemBriefInput): string {
+  const roleLines = BRIEF_ROLES.flatMap(({ label, token }) => {
+    const light = input.light[token]
+    if (!light) return []
+    const dark = input.dark[token]
+    const both = dark && !sameHex(dark, light) ? `${light} (dark ${dark})` : light
+    return [`- ${label}: \`var(${cssVarOf(token)})\` · ${both}`]
+  })
+  const type = [
+    input.headingFont && `- Headings: ${input.headingFont}`,
+    input.bodyFont && `- Body: ${input.bodyFont}`,
+    input.basePx && `- Base size: ${input.basePx}px`,
+  ].filter(Boolean)
+  const shape = [
+    input.radius && `- Radius: ${input.radius}`,
+    input.spacing && `- Spacing: ${input.spacing}`,
+  ].filter(Boolean)
+  const body = [
+    `Build UI in the "${input.name}" design system. Use only these colours and typefaces; do not introduce new ones. Reference colours through the CSS variables, not the hex.`,
+    '',
+    '## Colour roles',
+    ...roleLines,
+    ...(type.length ? ['', '## Type', ...type] : []),
+    ...(shape.length ? ['', '## Shape', ...shape] : []),
+    '',
+    '## CSS variables',
+    '```css',
+    input.css.trim(),
+    '```',
+    ...(input.link ? ['', `Open and edit this system in Escala Tokens: ${input.link}`] : []),
+  ].join('\n')
+  return withAgentEnvelope('global', input.name, body)
+}
+
+// ── Locks and section shuffles (Controls sheet, phase 3) ───────────────────
+// A lock says what survives a shuffle. The big Shuffle deals a whole system
+// (`nextShuffle`), then `applyLocks` puts the locked picks back with the same
+// fields the `with*` edits write. A section's own shuffle is narrower: it
+// re-picks only that section's choices, from the same curated lists the sheet
+// shows (rule 9), and leaves everything else — and every lock — alone.
+
+export const LOCK_KEYS = ['accent', 'font', 'scale', 'radius', 'spacing'] as const
+export type LockKey = (typeof LOCK_KEYS)[number]
+export type Locks = ReadonlySet<LockKey>
+
+export const SHEET_SECTIONS = ['color', 'type', 'radius', 'spacing'] as const
+export type SheetSection = (typeof SHEET_SECTIONS)[number]
+export const SECTION_LOCKS: Record<SheetSection, readonly LockKey[]> = {
+  color: ['accent'],
+  type: ['font', 'scale'],
+  radius: ['radius'],
+  spacing: ['spacing'],
+}
+
+export const LOCK_PARAM = 'lock'
+
+/** `?lock=accent,font` → the set; unknown names are dropped. */
+export function readLocks(search: string): Set<LockKey> {
+  const raw = new URLSearchParams(search).get(LOCK_PARAM) ?? ''
+  return new Set(raw.split(',').filter((k): k is LockKey => (LOCK_KEYS as readonly string[]).includes(k)))
+}
+
+/** Locks into the URL in a fixed order; none → no param. Other params stay. */
+export function writeLocks(search: string, locks: Locks): string {
+  const params = new URLSearchParams(search)
+  const list = LOCK_KEYS.filter((k) => locks.has(k))
+  if (list.length) params.set(LOCK_PARAM, list.join(','))
+  else params.delete(LOCK_PARAM)
+  // `,` reads better than `%2C` in a link a person shares.
+  const out = params.toString().replace(/%2C/g, ',')
+  return out ? `?${out}` : ''
+}
+
+/** `next` with every locked pick taken back from the system before it.
+ *  Both bases are RESOLVED foundations (what is on screen), so a field a
+ *  preset never set is still carried. */
+export function applyLocks(
+  next: ThemeStylePreset,
+  nextBase: FoundationSource,
+  prev: ThemeStylePreset,
+  prevBase: FoundationSource,
+  locks: Locks,
+): ThemeStylePreset {
+  if (!locks.size) return next
+  let out: ThemeStylePreset = locks.has('accent') ? withAccent(next, prev.accent) : next
+  const typography = () => out.foundations.typography ?? nextBase.typography
+  if (locks.has('font')) {
+    out = withFoundations(out, {
+      typography: {
+        ...typography(),
+        fontFamily: prevBase.typography.fontFamily,
+        headingFontFamily: prevBase.typography.headingFontFamily ?? prevBase.typography.fontFamily,
+      },
+    })
+  }
+  if (locks.has('scale')) {
+    out = withFoundations(out, {
+      typography: { ...typography(), sizes: prevBase.typography.sizes, lineHeights: prevBase.typography.lineHeights },
+    })
+  }
+  if (locks.has('radius')) {
+    out = withFoundations(out, { radius: prevBase.radius, radiusRoles: prevBase.radiusRoles, radiusRoleViewports: prevBase.radiusRoleViewports })
+  }
+  if (locks.has('spacing')) {
+    out = withFoundations(out, {
+      sizes: prevBase.sizes,
+      stroke: { ...(out.foundations.stroke ?? nextBase.stroke), sm: prevBase.stroke.sm },
+      spacingRoles: prevBase.spacingRoles,
+      padding: prevBase.padding,
+    })
+  }
+  return out
+}
+
+/** One of `list`, never `current` when there is another to pick. */
+function pickOther<T>(list: readonly T[], current: T | null | undefined, rng: () => number, same: (a: T, b: T) => boolean = (a, b) => a === b): T {
+  const pool = current == null ? list : list.filter((x) => !same(x, current))
+  const from = pool.length ? pool : list
+  return from[Math.min(from.length - 1, Math.floor(rng() * from.length))]
+}
+
+/** A section's own shuffle: new picks for its unlocked choices, from the
+ *  sheet's lists. Returns the preset unchanged when the whole section is locked. */
+export function shuffleSection(
+  section: SheetSection,
+  preset: ThemeStylePreset,
+  base: FoundationSource,
+  locks: Locks,
+  rng: () => number = Math.random,
+): ThemeStylePreset {
+  const now = sheetChoices(base)
+  let out = preset
+  if (section === 'color' && !locks.has('accent')) {
+    const color = pickOther(BRAND_SPECTRUM, BRAND_SPECTRUM.find((c) => sameHex(c.hex, preset.accent)), rng, (a, b) => sameHex(a.hex, b.hex))
+    out = withAccent(out, color.hex)
+  }
+  if (section === 'type') {
+    if (!locks.has('font')) out = withFont(out, base, pickOther(SHEET_FONTS.map((f) => f.family), now.font, rng))
+    if (!locks.has('scale')) out = withTypeScale(out, base, pickOther(SHEET_TYPE_SCALES, now.typeScale, rng))
+  }
+  if (section === 'radius' && !locks.has('radius')) {
+    out = withRadiusPreset(out, base, pickOther(RADIUS_ROLE_PRESETS.map((p) => p.label), now.radius, rng))
+  }
+  if (section === 'spacing' && !locks.has('spacing')) {
+    out = withSpacingMode(out, base, pickOther(SHEET_SPACING, now.spacing, rng))
+  }
+  return out
+}
+
+// ── The home in the shuffled system (phone) ─────────────────────────────────
+// After a visitor shuffles or picks, the WHOLE phone home takes the system on:
+// its page, surfaces, inks, lines, accent, the hero's CTA and the font. The
+// chrome's own variables (`index.css`, documented there with the role each one
+// reads) are overridden one for one, so nothing in the page has to know.
+
+/** Chrome variable ← system role. The pairs `index.css` documents. */
+const CHROME_FROM_ROLE: [string, string][] = [
+  ['--app', 'surface.page'],
+  ['--canvas', 'surface.page'],
+  ['--nav', 'surface.page'],
+  ['--surface', 'surface.layer-1'],
+  ['--elevated', 'surface.layer-2'],
+  ['--chrome-control', 'surface.layer-2'],
+  ['--chip-rest', 'surface.layer-1'],
+  ['--fg', 'content.primary'],
+  ['--fg-muted', 'content.secondary'],
+  ['--fg-faint', 'content.subtle'],
+  ['--line', 'border.subtle'],
+  ['--line-strong', 'border.default'],
+  ['--accent-ui', 'content.accent'],
+  ['--accent-solid', 'action.primary.default'],
+  ['--accent-ink', 'content.on-action'],
+  // The hero's "Try it here" (RainbowButton) fills with the system's primary.
+  ['--rainbow-fill-a', 'action.primary.default'],
+  ['--rainbow-ink', 'content.on-action'],
+]
+
+/** The chrome variables to set for a system: only roles it resolves. */
+export function chromeFromRoles(roles: Record<string, string>, fontFamily?: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [cssVar, role] of CHROME_FROM_ROLE) if (roles[role]) out[cssVar] = roles[role]
+  if (fontFamily) out['font-family'] = `'${fontFamily}', system-ui, sans-serif`
+  return out
 }
