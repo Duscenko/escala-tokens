@@ -309,7 +309,9 @@ const glassSemantics: ThemeStyleSemantics = {
   'border.subtle': { light: '{accent-a.3}', dark: '{accent-a.2}' },
   'border.rim-highlight': { light: '{white-a.9}', dark: '{white-a.4}' },
   'content.primary': { dark: '{accent-a.12}' },
-  'action.primary.default': { dark: '{accent.9}' },
+  // No `action.primary.default` pin. The adopted theme pinned dark to
+  // `{accent.9}` (#06aed4), but no label ink clears APCA Lc 60 on that cyan
+  // (4.80:1, Lc 46). `{accent.solid}` picks a step its label passes on.
   'status.critical.content': { dark: '{error.10}' },
   'status.critical.surface-solid': { light: '{error.9}', dark: '{error-a.10}' },
   'status.critical.border-strong': { light: '{error.9}' },
