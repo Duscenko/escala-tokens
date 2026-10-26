@@ -189,6 +189,7 @@ export type IntentClass =
   | 'action-label'
   | 'ui-component'
   | 'control-boundary'
+  | 'disabled-text'
   | 'decorative'
   | 'surface'
 
@@ -212,6 +213,11 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
   // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
   'control-boundary': { wcag: 1.4, apcaLc: null },
+  // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
+  // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
+  // (Lc 30). Full AA would make a disabled outline / ghost / link button —
+  // no fill to tell it apart — read exactly like an enabled one.
+  'disabled-text': { wcag: 3.0, apcaLc: 30 },
   decorative:     { wcag: null, apcaLc: null },
   surface:        { wcag: null, apcaLc: null },
 }

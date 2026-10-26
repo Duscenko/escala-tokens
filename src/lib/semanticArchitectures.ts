@@ -328,6 +328,43 @@ function linkTextTone(fam: string, start: number, kind: 'light' | 'dark', look: 
 const APCA_LINK_RAISED = INTENT_THRESHOLDS['action-label'].apcaLc ?? 60
 
 /**
+ * The tone of `fam` for a DISABLED label (`content.disabled`): the first tone
+ * from `start` clearing the `disabled-text` floor (WCAG 3:1, APCA Lc 30) on the
+ * page and on the disabled wash over it (`action.disabled.default` =
+ * {black-a.3} / {white-a.2}; keep the two in step).
+ *
+ * Capped BELOW tone 11, `content.secondary`'s step: a disabled label that
+ * reaches the secondary ink reads as enabled, which is worse than a dim one.
+ * When nothing under the cap clears, the closest tone wins. Measured: light
+ * tone 7 read 1.35–1.76:1 on the wash and now lands 2.5–4.1:1 (warm-tinted
+ * neutrals stop at ~2.5); dark has no tone between 10 and 11 (7.8:1), so dark
+ * keeps 10 — on the lighter dark wash (a.2) that reads ~3:1.
+ */
+function disabledTextTone(fam: string, start: number, kind: 'light' | 'dark', look: Look): number {
+  const nf = kind === 'dark' ? 'neutral-dark' : 'neutral'
+  const page = look(nf, 1)
+  const wash = kind === 'dark' ? look('white-a', 2) : look('black-a', 3)
+  if (!page || !OPAQUE6.test(page)) return start
+  const bgs = wash ? [page, compositeOver(wash, page)] : [page]
+  const ramp = rampOf(look, fam)
+  let fallback = start
+  let bestScore = -Infinity
+  for (let t = start; t < DISABLED_CAP; t++) {
+    const hex = ramp[t]
+    if (!hex) continue
+    let score = Infinity
+    for (const bg of bgs) score = Math.min(score, checkContrast(hex, bg) / WCAG_DISABLED, Math.abs(apcaLc(hex, bg)) / APCA_DISABLED)
+    if (score >= 1) return t
+    if (score > bestScore) { bestScore = score; fallback = t }
+  }
+  return fallback
+}
+const DISABLED_CAP = 11 // content.secondary's step
+const WCAG_DISABLED = INTENT_THRESHOLDS['disabled-text'].wcag ?? 3
+const APCA_DISABLED = INTENT_THRESHOLDS['disabled-text'].apcaLc ?? 30
+const OPAQUE6 = /^#[0-9a-f]{6}$/i
+
+/**
  * `uiBoundaryRef` for the FIXED alpha ladder (`black-a` / `white-a`). Same
  * job — walk up until WCAG 1.4.11 + APCA Lc 45 both clear against the page —
  * but the ladder's steps are translucent, so each is COMPOSITED over the page
@@ -561,6 +598,9 @@ function curatedRefs(
         uiBoundaryRef(fam, Number(start), kind, look))
       // `{link:<fam>.<start>}` — link ink solved against page, layer-1 and
       // layer-2 (see `linkTextTone`); `{link+:…}` is its hover, one step past.
+      // `{dis:<fam>.<start>}` — disabled label ink (see `disabledTextTone`).
+      .replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`)
       .replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`)
       .replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
@@ -638,7 +678,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
   // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
   // ≈2.8–3.0:1 — muted, still well below body text (≈9:1), still legible.
-  { group: 'content', key: 'disabled', light: '{neutral.7}', dark: '{neutral-dark.10}' },
+  // SOLVED from those starts (`{dis:…}`) to the `disabled-text` floor on the
+  // page and the disabled wash, never reaching content.secondary's step: light
+  // tone 7 measured 1.35–1.76:1 on the wash and walks up; dark stays at 10.
+  { group: 'content', key: 'disabled', light: '{dis:neutral.7}', dark: '{dis:neutral-dark.10}' },
   // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
   // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
   // solved for AA as text (same bug class as shadcn's `muted.foreground` fix
@@ -696,7 +739,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // and it composites over whatever's behind (page OR card) so it reads as
   // "muted, wherever it sits". Flips black/white per appearance like the ghost
   // washes. No contrast floor — it communicates inactivity, not legibility.
-  { group: 'action', key: 'disabled.default',  light: '{black-a.3}',    dark: '{white-a.3}' },
+  // Dark is ONE step lighter (a.2, not a.3): at a.3 the disabled label (tone
+  // 10) read 2.5:1 on it and the ramp has no tone between that and the
+  // secondary ink; a.2 lifts it to ~3:1 and still reads as a fill (1.28:1
+  // off the page).
+  { group: 'action', key: 'disabled.default',  light: '{black-a.3}',    dark: '{white-a.2}' },
   // Ghost / tertiary fill — a borderless button's hover/pressed wash. This is
   // the first role backed by a COLOURED alpha primitive (`{accent-a.N}`,
   // resolved by `scaleLookup` against the real page/dark background — see
@@ -1147,7 +1194,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.',
   'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.',
   'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.on-secondary.',
-  'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.3} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
+  'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.2} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
   'action.ghost.default': '[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.',
   'action.ghost.hover': '[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
   'action.ghost.pressed': '[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',

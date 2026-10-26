@@ -170,7 +170,11 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // De-emphasis tier — see the note on CATEGORICAL_ROLES content.subtle.
     { fg: 'content.subtle',    bg: 'surface.page',    intent: 'decorative' },
     { fg: 'content.accent',    bg: 'surface.page',    intent: 'body-text' },
+    // Disabled label: measured and reported, no shared threshold — dark has no
+    // ramp tone between 2.5:1 and the secondary ink. The light floor (3:1 on
+    // page and wash) is held by disabledInk.test.ts.
     { fg: 'content.disabled',  bg: 'surface.page',    intent: 'decorative' },
+    { fg: 'content.disabled',  bg: 'action.disabled.default', intent: 'decorative' },
     { fg: 'content.link.default', bg: 'surface.page', intent: 'body-text' },
     { fg: 'content.link.hover',   bg: 'surface.page', intent: 'body-text' },
     // A link (inline, or a link Button) also sits in a Card (layer-1) and in
