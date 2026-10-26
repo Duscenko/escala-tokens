@@ -3,6 +3,7 @@
 // component docs render from the exact same resolved values. Fallbacks cover
 // empty semantic tokens so previews never render with undefined colors.
 
+import { normalizeMotionSettings } from './motion'
 import { anatomyIconPx, controlMdOf, iconRoleForControlStep, iconRoleForHeight, iconSizesFor, type IconRole } from './iconSizing'
 import { darkShadowsOf } from './shadowTokens'
 import { useEffect, type CSSProperties } from 'react'
@@ -264,6 +265,7 @@ export function resolvePreviewTokens(
     typography,
     panelBackground,
     iconWeight,
+    motion: normalizeMotionSettings(store.motion),
     // The PREVIEWED THEME's page, in both appearances — this was
     // `kind === 'light' ? store.pageBackground : undefined`, i.e. the system's
     // global page in light and nothing at all in dark. Both halves were wrong

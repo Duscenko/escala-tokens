@@ -51,7 +51,7 @@ function Button({
       disabled={asChild ? undefined : disabled}
       className={cn(
         'group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap outline-none select-none',
-        'transition-[background-color,color,border-color,box-shadow] duration-150',
+        '',
         'aria-disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0',
         variant === 'link' && 'underline-offset-4 hover:underline',
         className,

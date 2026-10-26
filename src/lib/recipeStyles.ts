@@ -17,8 +17,11 @@
  *    playground). With it set, the real `:hover` / `:active` rules stand down.
  */
 import {
-  COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, type ComponentRecipe, type RecipeProp, type SlotProps,
+  COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, type ComponentRecipe, type RecipeChoreo, type RecipeProp, type SlotProps,
 } from './componentRecipes.js'
+import {
+  MOTION_PRESETS, choreographyVar, defaultMotionSettings, motionChoreographies, motionKeyframesCss, type Choreography,
+} from './motion.js'
 
 /** Axes the CSS reads from an attribute (everything except the State axis). */
 const STATE_AXIS = 'State'
@@ -186,10 +189,114 @@ export function recipeCss(recipe: ComponentRecipe): string {
   return rules.join('\n')
 }
 
-/** The whole sheet, every recipe. Static: computed once. */
-export const RECIPE_CSS: string = Object.values(COMPONENT_RECIPES).map(recipeCss).join('\n\n')
+// ── Motion ─────────────────────────────────────────────────────────────────
+//
+// Transitions read a motion ROLE (`var(--motion-use-hover)` = "<duration>
+// <easing>"); choreographies read one custom property per track that holds the
+// whole `animation` shorthand (`--motion-choreo-dialog-enter-content`). The
+// container supplies both (`variables.css`, or a preview scope from
+// `motionCssVars`), so the static sheet retimes with the preset. They are CSS
+// animations, not script: Radix keeps a closing layer mounted until its CSS
+// exit animation ends, which a Web Animations runtime would not get.
 
-/** Every custom property the sheet reads — what a container must provide. */
+/** What a transition falls back to with no motion tokens around it: the
+ *  150 ms ease the components used before motion was a foundation. */
+const TRANSITION_FALLBACK = '150ms cubic-bezier(0.4, 0, 0.2, 1)'
+
+/** Radix's open states (a Tooltip has two). `data-inline` is a preview drawn in
+ *  place, already open: it must not play its entrance on every board render. */
+const OPEN = ['[data-state="open"]', '[data-state="delayed-open"]', '[data-state="instant-open"]']
+const CLOSED = ['[data-state="closed"]']
+const LIVE = ':not([data-inline])'
+const SIDES = ['top', 'right', 'bottom', 'left'] as const
+
+/** The structure of every choreography (slots, keyframes). Identical for every
+ *  preset — only the values behind the custom properties change. */
+const CHOREOGRAPHIES = motionChoreographies(defaultMotionSettings())
+
+function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChoreo, states: string[]): string[] {
+  const def = CHOREOGRAPHIES[c.name]
+  if (!def) return []
+  const rules: string[] = []
+  const at = (el: string) => states.map((st) => `${el}${st}${LIVE}`).join(',\n')
+  if (def.pattern === 'disclosure') {
+    const el = slotSelector(recipe, root, c.slot ?? recipe.slots[0])
+    if (c.heightVar) rules.push(`${el} {\n  --escala-disclosure-height: var(${c.heightVar});\n  overflow: hidden;\n}`)
+    rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name)}, none);\n}`)
+    return rules
+  }
+  for (const t of def.tracks ?? []) {
+    const slot = t.slot ?? c.slot ?? recipe.slots[0]
+    const el = slotSelector(recipe, root, slot)
+    rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name, t.slot)}, none);\n}`)
+    // A panel that slides: the keyframes follow the edge it is attached to.
+    // Only with full motion — reduced motion swaps the slide for a fade.
+    const side = recipe.motion?.sideAttr
+    if (side && slot === recipe.slots[0] && /-right$/.test(t.keyframes)) {
+      const per = SIDES.map((edge) => `${states.map((st) => `${el}[data-${side}="${edge}"]${st}${LIVE}`).join(',\n')} {\n  animation-name: motion-${t.keyframes.replace(/-right$/, `-${edge}`)};\n}`)
+      rules.push(`@media (prefers-reduced-motion: no-preference) {\n${per.join('\n')}\n}`)
+    }
+  }
+  return rules
+}
+
+/** The transitions and choreographies of one recipe. */
+export function recipeMotionCss(recipe: ComponentRecipe): string {
+  const m = recipe.motion
+  if (!m) return ''
+  const root = recipe.dom?.root ?? `[data-escala="${recipe.key}"]`
+  const rules: string[] = []
+  for (const [slotKey, props] of Object.entries(m.transitions ?? {})) {
+    const [slot, suffix] = splitSlotKey(slotKey)
+    const sel = slotSelector(recipe, root, slot) + suffix
+    const list = Object.entries(props).map(([prop, role]) => `${prop} var(--motion-${role}, ${TRANSITION_FALLBACK})`)
+    rules.push(`${sel} {\n  transition: ${list.join(', ')};\n}`)
+  }
+  if (m.origin) rules.push(`${slotSelector(recipe, root, m.enter?.slot ?? recipe.slots[0])} {\n  transform-origin: ${m.origin};\n}`)
+  if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN))
+  if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED))
+  // A disclosure's enter and exit both declare its height: once is enough.
+  return [...new Set(rules)].join('\n')
+}
+
+/** The keyframes a component's choreography can name — under any preset, with
+ *  full or reduced motion, on any edge. The sheet carries those and no others
+ *  (a list's stagger, a switch's squash are data for a product's own runtime). */
+export function playedKeyframes(recipes: readonly ComponentRecipe[] = Object.values(COMPONENT_RECIPES)): string[] {
+  const names = new Set<string>()
+  const used = new Set(recipes.flatMap((r) => [r.motion?.enter?.name, r.motion?.exit?.name]).filter(Boolean))
+  const add = (body: Choreography | Choreography['reducedMotion']) => {
+    for (const t of body.tracks ?? []) {
+      names.add(t.keyframes)
+      if (/-right$/.test(t.keyframes)) SIDES.forEach((edge) => names.add(t.keyframes.replace(/-right$/, `-${edge}`)))
+    }
+    if (body.pattern === 'disclosure') names.add(body.direction === 'collapse' ? 'disclosure-collapse' : 'disclosure-expand')
+  }
+  for (const preset of Object.values(MOTION_PRESETS)) {
+    for (const [name, c] of Object.entries(motionChoreographies(preset.settings))) {
+      if (!used.has(name)) continue
+      add(c)
+      add(c.reducedMotion)
+    }
+  }
+  return [...names].sort()
+}
+
+/** The whole sheet, every recipe, and the keyframes the choreographies play.
+ *  Static: computed once. */
+export const RECIPE_CSS: string = [
+  ...Object.values(COMPONENT_RECIPES).map(recipeCss),
+  ...Object.values(COMPONENT_RECIPES).map(recipeMotionCss).filter(Boolean),
+  motionKeyframesCss(playedKeyframes()).join('\n'),
+].join('\n\n')
+
+/** Every custom property the sheet reads — what a container must provide.
+ *  Not counted: a property the sheet declares itself (a disclosure's height)
+ *  and one Radix publishes on its own element (`--radix-*`, a popper's origin
+ *  or a panel's measured height). Neither is a token. */
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
-  return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])].sort()
+  const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
+  return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-'))
+    .sort()
 }

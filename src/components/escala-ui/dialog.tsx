@@ -52,6 +52,7 @@ function DialogContent({
     <DialogPrimitive.Content
       data-slot="dialog-content"
       data-escala="Dialog"
+      data-inline={inline ? '' : undefined}
       className={cn(
         'relative flex flex-col outline-none',
         !inline && 'fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',

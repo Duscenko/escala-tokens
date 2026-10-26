@@ -8,6 +8,7 @@
 // render from, so they can never drift apart. The old standalone ButtonPreview
 // renderer was retired in favor of SPECIMENS.Button.
 
+import type { MotionSettings } from '../../lib/motion'
 import type { SemanticArchitecture } from '../../lib/semanticArchitectures'
 import type { PhosphorWeight } from '../../lib/phosphorIcons'
 import type { GridFrameModes, GridViewport } from '../../lib/layoutTokens'
@@ -68,6 +69,9 @@ export interface PreviewTokens {
   // Phosphor icon weight the previewed system renders glyphs at (thin…duotone).
   // The icon SET is always the recommended Phosphor library; only weight varies.
   iconWeight?: PhosphorWeight
+  // The system's motion (lib/motion.ts): durations, easings, roles, transforms.
+  // A preview scope turns it into the `--motion-*` variables the recipe sheet reads.
+  motion?: MotionSettings
   // Primitives page background — the fill panels use in 'page' mode. Only set
   // for light-kind themes (a light page anchor makes no sense on dark panels).
   pageBackground?: string

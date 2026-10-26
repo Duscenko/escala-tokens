@@ -1,3 +1,4 @@
+import { motionTokens, normalizeMotionSettings } from './motion'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
 import { darkShadowsOf } from './shadowTokens'
 import { letterSpacingsFor } from './typographyStandard'
@@ -795,6 +796,10 @@ export function generateTokenJSON(
       // The Phosphor weight the system renders (thin … duotone). Additive too.
       weight: store.iconWeight,
     },
+    // Motion foundation (lib/motion.ts): durations, easings, transforms, roles,
+    // choreographies with their reduced-motion versions, and the intent text
+    // agents read. Additive, no schemaVersion bump (the `shadowsDark` precedent).
+    motion: motionTokens(normalizeMotionSettings(store.motion)),
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,

@@ -58,6 +58,7 @@ function AlertDialogContent({
         data-escala="AlertDialog"
         data-size={size}
         data-state="open"
+        data-inline=""
         className={cn('group/alert-dialog-content flex flex-col outline-none', size === 'sm' ? 'max-w-xs' : 'max-w-lg', className)}
       >
         {children}
@@ -69,6 +70,7 @@ function AlertDialogContent({
       data-slot="alert-dialog-content"
       data-escala="AlertDialog"
       data-size={size}
+      data-inline={inline ? '' : undefined}
       className={cn(
         'group/alert-dialog-content flex flex-col outline-none',
         !inline && 'fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',

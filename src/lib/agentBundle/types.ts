@@ -133,6 +133,20 @@ export interface TokenJSON {
   /** Dark-appearance twin of `gradients`. Same slugs. */
   gradientsDark?: Record<string, string>
   gradientAssignments?: Record<string, string | null>
+  /** Motion foundation (`lib/motion.ts` → `motionTokens`). Optional: a payload
+   *  published before it carries none. */
+  motion?: {
+    preset?: string | null
+    durationFactor?: number
+    durations?: Record<string, string>
+    easings?: Record<string, string>
+    easingFallbacks?: Record<string, string>
+    transforms?: Record<string, string>
+    stagger?: string
+    roles?: Record<string, { duration: string; easing: string; value: string }>
+    choreography?: Record<string, { pattern: string; components?: string[]; intent?: { direction?: string } }>
+    intent?: { roles?: Record<string, { usage?: string[] }> }
+  }
   icons?: {
     library?: string
     aiSource?: { key?: string; label?: string; repo?: string; npm?: string }

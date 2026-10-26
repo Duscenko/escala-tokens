@@ -33,7 +33,7 @@ function SelectTrigger({ size = 'default', forceState, icon, className, children
       aria-invalid={forceState === 'Error' ? true : props['aria-invalid']}
       disabled={disabled}
       className={cn(
-        'flex w-full items-center justify-between text-left outline-none transition-[border-color,box-shadow] duration-150',
+        'flex w-full items-center justify-between text-left outline-none',
         'aria-disabled:cursor-not-allowed cursor-pointer',
         className,
       )}

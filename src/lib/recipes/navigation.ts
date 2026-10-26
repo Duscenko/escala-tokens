@@ -143,7 +143,7 @@ export const STEPPER: ComponentRecipe = {
       label: { text: c('content.secondary'), font: 'type.helper' },
       'label[data-state="done"]': { text: c('content.primary') },
       'label[data-state="current"]': { text: c('content.primary'), font: 'type.label' },
-      connector: { fill: c('action.secondary.default'), height: 'spacing.0_5', radius: 'radius.pill' },
+      connector: { fill: c('surface.muted'), height: 'spacing.0_5', radius: 'radius.pill' },
       'connector[data-state="done"]': { fill: c('action.primary.default') },
     })),
   ],

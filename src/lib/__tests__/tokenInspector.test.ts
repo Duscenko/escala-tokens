@@ -8,6 +8,7 @@ describe('resolveVariantRoles', () => {
     'action.primary.default': '#22c55e',
     'content.on-action': '#e1e7dc',
     'action.secondary.default': '#1a1a1f',
+    'content.on-secondary': '#f5f5f5',
     'surface.selected': '#14532d',
     'content.primary': '#f5f5f5',
     'content.inverse': '#e1e7dc',
@@ -43,14 +44,14 @@ describe('resolveVariantRoles', () => {
     ])
   })
 
-  it('a secondary badge names the neutral fill and the page ink', () => {
+  it('a secondary badge names the secondary fill and its own ink', () => {
     const paints = [
       { css: '#1a1a1f', where: 'fill' as const },
       { css: '#f5f5f5', where: 'ink' as const },
     ]
     expect(resolveVariantRoles(t, 'Badge', { Variant: 'secondary' }, paints)?.map((r) => r.id)).toEqual([
       'action.secondary.default',
-      'content.primary',
+      'content.on-secondary',
     ])
   })
 

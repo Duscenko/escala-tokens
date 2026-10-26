@@ -38,7 +38,7 @@ function ToggleGroupItem({ className, ...props }: React.ComponentProps<typeof To
       data-slot="toggle-group-item"
       data-part="ToggleGroup.item"
       className={cn(
-        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none transition-colors duration-150',
+        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none',
         'focus-visible:z-10 disabled:pointer-events-none disabled:opacity-50',
         className,
       )}

@@ -92,6 +92,26 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-25): MOTION is a foundation — phase 1 (model + exports, store v103).** Plan:
+> `design-plans/motion-foundation.md`, after motiondesignsystem.org. `lib/motion.ts` (pure) holds
+> three tiers: primitives (duration ladder quick 100 … cinematic 1200 + `instant`/`fade` for reduced
+> motion, eight easings incl. two `linear()` springs, transform values), 24 roles `use-*` / `base-*`
+> stored as duration + easing NAMES (never ms), and choreographies DERIVED from the settings (dialog,
+> sheet, drawer, switch, list, text, accordion, sonner), each with its own `reducedMotion`. Five
+> presets — Snappy ×0.75 · Standard ×1 (the source's values) · Expressive · Playful ×1.25 · Calm ×1.5
+> — are bundles of picks; the preset is MATCHED (`matchMotionPreset`), never stored. Ships in
+> tokens.json `motion` (additive), `variables.css` (`--motion-*`, `@keyframes motion-*`, a
+> `linear()` fallback, a `prefers-reduced-motion` block), the README and the agent context. **The
+> chrome keeps its own motion** (owner's call, like `ESCALA_CHROME_ACCENT`). **Phase 2 (2026-10-26): components
+> read it.** `lib/recipes/motion.ts` names, per recipe, the ROLE behind each transitioned property
+> and the CHOREOGRAPHY played on open/close; `recipeMotionCss` turns that into `transition: …
+> var(--motion-<role>, 150ms …)` and `animation: var(--motion-choreo-…, none)` on Radix's states
+> (CSS, not a script runtime: Radix waits for a CSS exit animation before unmounting).
+> `RecipeScope` supplies the values (`motionCssVars`, reduced from `useReducedMotion`); a
+> `data-inline` preview never animates; registry items ship the rules, keyframes and values. No
+> `duration-*` / `transition-*` utility may return to `escala-ui` (`recipeMotion.test.ts`). Not yet:
+> the editor row, System Style assignments, W3C + the plugin's `Motion` collection.
+
 > **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on
 > the page (3:1 + Lc 45) AND carries a label — no Light-only exception.** A first pass let Light pass on
 > the label alone (to keep `#ffd60a` from turning mustard); the plugin then graded `#5dff75` (1.3:1 on

@@ -19,7 +19,7 @@ function Badge({
       data-variant={variant}
       className={cn(
         'group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap',
-        'transition-colors [&>svg]:pointer-events-none',
+        ' [&>svg]:pointer-events-none',
         variant === 'link' && 'underline-offset-4 hover:underline',
         className,
       )}

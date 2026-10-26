@@ -81,7 +81,7 @@ function SidebarMenuButton({
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'peer/menu-button flex w-full cursor-pointer items-center overflow-hidden border-0 bg-transparent text-left outline-none',
-        'transition-[background-color,color] duration-150 disabled:cursor-not-allowed [&>span:last-child]:truncate [&_svg]:shrink-0',
+        ' disabled:cursor-not-allowed [&>span:last-child]:truncate [&_svg]:shrink-0',
         className,
       )}
       {...props}

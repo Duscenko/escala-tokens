@@ -32,7 +32,7 @@ function NativeSelect({ className, size = 'default', icon, forceState, disabled,
         disabled={disabled}
         // Room for the chevron on the trailing side.
         style={{ paddingInlineEnd: 'calc(var(--spacing-inset-control) + 1.25rem)', ...style }}
-        className="w-full min-w-0 cursor-pointer appearance-none outline-none transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed"
+        className="w-full min-w-0 cursor-pointer appearance-none outline-none disabled:cursor-not-allowed"
         {...props}
       />
       <span

@@ -8,6 +8,7 @@
  * different theme from the page it sits on.
  */
 import { useState, type ReactNode } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { PortalScopeContext } from '../../../escala-ui/portal-scope'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
 import { recipeVarStyle } from '../../../../lib/recipeVars'
@@ -30,6 +31,7 @@ if (typeof document !== 'undefined') {
 /** `display: contents` — a box-less wrapper, so it cannot disturb the layout. */
 export function RecipeScope({ t, children }: { t: PreviewTokens; children: ReactNode }) {
   const [el, setEl] = useState<HTMLElement | null>(null)
+  const reducedMotion = useReducedMotion() ?? false
   return (
     <PortalScopeContext.Provider value={el}>
     <div
@@ -40,7 +42,7 @@ export function RecipeScope({ t, children }: { t: PreviewTokens; children: React
         // reads in the system's ink and face.
         color: 'var(--color-content-primary)',
         fontFamily: 'var(--font-family-body)',
-        ...recipeVarStyle(t),
+        ...recipeVarStyle(t, { reducedMotion }),
       }}
     >
       {children}

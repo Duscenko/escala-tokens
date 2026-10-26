@@ -25,7 +25,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
 }
 
 function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
-  return <tr data-slot="table-row" data-part="Table.row" className={cn('transition-colors', className)} {...props} />
+  return <tr data-slot="table-row" data-part="Table.row" className={cn('', className)} {...props} />
 }
 
 function TableHead({ className, ...props }: React.ComponentProps<'th'>) {

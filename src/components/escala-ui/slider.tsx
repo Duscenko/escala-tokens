@@ -40,7 +40,7 @@ function Slider({
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb
           data-part="Slider.thumb"
-          className="block outline-none transition-[transform,box-shadow] duration-150 hover:scale-105 active:scale-110"
+          className="block outline-none hover:scale-105 active:scale-110"
         />
       </SliderPrimitive.Root>
     </div>

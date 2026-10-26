@@ -31,7 +31,7 @@ function InputTag({
       data-slot="input-tag"
       data-escala="InputTag"
       onClick={() => ref.current?.focus()}
-      className={cn('flex cursor-text flex-wrap items-center transition-[border-color,box-shadow] duration-150', className)}
+      className={cn('flex cursor-text flex-wrap items-center', className)}
       style={{ width }}
       {...props}
     >

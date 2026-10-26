@@ -18,7 +18,7 @@ function Pagination({ pages, page, onPageChange, prevIcon = '‹', nextIcon = '�
   const numbers = pages.filter((p): p is number => p !== '…')
   const at = numbers.indexOf(page)
   const go = (n: number) => onPageChange(numbers[Math.min(numbers.length - 1, Math.max(0, n))] ?? page)
-  const cell = 'relative inline-flex cursor-pointer items-center justify-center border-0 bg-transparent outline-none transition-colors duration-150 disabled:cursor-default'
+  const cell = 'relative inline-flex cursor-pointer items-center justify-center border-0 bg-transparent outline-none disabled:cursor-default'
   return (
     <nav ref={ref} aria-label="Pagination" data-slot="pagination" data-escala="Pagination" className={cn('relative flex items-center', className)} {...props}>
       <SlidingSelection trackRef={ref} selection={page} part="Pagination.pill" />

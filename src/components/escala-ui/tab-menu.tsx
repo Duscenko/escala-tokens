@@ -48,7 +48,7 @@ function TabMenu({ items, value, defaultValue, onValueChange, fill, className, .
                 e.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus()
               } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(item) }
             }}
-            className={cn('relative cursor-pointer outline-none transition-colors duration-150', fill && 'min-w-0 flex-1 text-center')}
+            className={cn('relative cursor-pointer outline-none', fill && 'min-w-0 flex-1 text-center')}
           >
             <span className="relative">{item}</span>
           </span>

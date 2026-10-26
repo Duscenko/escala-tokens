@@ -22,7 +22,7 @@ function InputGroup({
       data-disabled={forceState === 'Disabled' || undefined}
       aria-disabled={forceState === 'Disabled' || undefined}
       className={cn(
-        'flex min-w-0 items-stretch overflow-hidden transition-[border-color,box-shadow] duration-150',
+        'flex min-w-0 items-stretch overflow-hidden',
         'has-[[data-slot=input-group-control]:disabled]:cursor-not-allowed',
         // shadcn: the addon carries the inset toward the edge, the input keeps
         // only the gap toward the addon. `!` beats the unlayered recipe sheet.

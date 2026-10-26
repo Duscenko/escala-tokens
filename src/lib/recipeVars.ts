@@ -10,6 +10,7 @@
 import type { CSSProperties } from 'react'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { COMPONENT_RECIPES, recipeTokenRefs, splitRef, cssVarOf } from './componentRecipes'
+import { motionCssVars, normalizeMotionSettings } from './motion'
 import {
   iconRoleOf, radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
 } from './previewTokens'
@@ -61,7 +62,7 @@ export function previewDimension(t: PreviewTokens, ref: string): Record<string, 
  * reference. `undefined` when the architecture is not projected — the caller
  * keeps the legacy specimen then.
  */
-export function recipeVarStyle(t: PreviewTokens): CSSProperties | undefined {
+export function recipeVarStyle(t: PreviewTokens, opts: { reducedMotion?: boolean } = {}): CSSProperties | undefined {
   if (!t.archTokens) return undefined
   const vars: Record<string, string> = {}
   for (const [id, value] of Object.entries(t.archTokens)) vars[cssVarOf(`color.${id}`)] = value
@@ -70,6 +71,10 @@ export function recipeVarStyle(t: PreviewTokens): CSSProperties | undefined {
     Object.assign(vars, previewDimension(t, ref))
   }
   vars['--stroke-focus'] = strokeRoleOf(t, 'focus', '2px')
+  // The system's motion: durations, easings, roles and choreography tracks the
+  // sheet's transitions and animations read. Reduced motion is the viewer's
+  // preference, so the caller passes it (an inline style cannot media-query).
+  Object.assign(vars, motionCssVars(normalizeMotionSettings(t.motion), { reduced: opts.reducedMotion }))
   // The page's base ink and families, so text a specimen adds around a
   // component (a sentence, a label) reads like the system, not the chrome.
   const body = typeStyleOf(t, 'body-md', { leading: false })

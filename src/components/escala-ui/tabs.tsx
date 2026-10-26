@@ -31,7 +31,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
       data-part="Tabs.trigger"
       className={cn(
         'inline-flex flex-1 cursor-pointer items-center justify-center whitespace-nowrap bg-transparent outline-none',
-        'transition-[color,background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed',
+        ' disabled:cursor-not-allowed',
         className,
       )}
       {...props}

@@ -34,7 +34,7 @@ function InputOTPSlot({ index, className, ...props }: React.ComponentProps<'div'
       data-slot="input-otp-slot"
       data-part="InputOTP.slot"
       data-active={isActive ? 'true' : undefined}
-      className={cn('relative flex items-center justify-center transition-[border-color,box-shadow] duration-150 data-[active=true]:z-10', className)}
+      className={cn('relative flex items-center justify-center data-[active=true]:z-10', className)}
       {...props}
     >
       {char}

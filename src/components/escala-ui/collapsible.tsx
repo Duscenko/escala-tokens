@@ -24,7 +24,7 @@ function CollapsibleTrigger({
       {...props}
     >
       {children}
-      <span data-part="Collapsible.icon" className="inline-flex shrink-0 items-center justify-center transition-transform duration-200">{icon}</span>
+      <span data-part="Collapsible.icon" className="inline-flex shrink-0 items-center justify-center">{icon}</span>
     </CollapsiblePrimitive.CollapsibleTrigger>
   )
 }

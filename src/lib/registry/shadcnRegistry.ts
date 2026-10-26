@@ -18,7 +18,10 @@
 import type { TokenJSON } from '../agentBundle/types.js'
 import { COMPONENT_RECIPES } from '../componentRecipes.js'
 import { COMPONENTS } from '../componentCatalogue.js'
-import { recipeCss, recipeCssVars } from '../recipeStyles.js'
+import { playedKeyframes, recipeCss, recipeCssVars, recipeMotionCss } from '../recipeStyles.js'
+import {
+  MOTION_EASING_FALLBACK, easingCubic, motionCssVars, motionKeyframesCss, motionSettingsFromTokens, type MotionEasingKey,
+} from '../motion.js'
 import { shadcnTheme } from '../shadcnGlobals.js'
 import { ESCALA_UI_SOURCES } from './escalaUiSources.generated.js'
 import type { RegistrySource } from './escalaUiTransform.js'
@@ -36,7 +39,9 @@ export interface RegistryOptions {
   brand?: string | null
 }
 
-type CssRules = Record<string, Record<string, string>>
+/** A selector maps to declarations; an at-rule (`@media`, `@keyframes`) to
+ *  the rules nested in it. */
+interface CssRules { [selector: string]: Record<string, string> | CssRules }
 export interface RegistryItem {
   $schema: string
   name: string
@@ -89,12 +94,19 @@ function titleOf(src: RegistrySource): { title: string; description: string } {
  */
 export function cssRulesOf(css: string): CssRules {
   const rules: CssRules = {}
-  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    const parts = m[1].trim().split(/,\s*\n\s*/)
+  for (const { prelude, body } of cssBlocksOf(css)) {
+    if (prelude.startsWith('@')) {
+      // An at-rule nests rules; two blocks with one prelude (a recipe's enter
+      // and exit both slide) merge — the selectors inside differ.
+      const prev = rules[prelude]
+      rules[prelude] = { ...(prev && typeof prev === 'object' ? prev as CssRules : {}), ...cssRulesOf(body) }
+      continue
+    }
+    const parts = prelude.split(/,\s*\n\s*/)
     let selector = parts.join(', ')
     for (let n = 1; selector in rules; n++) selector = parts.map((p) => p + ':where(*)'.repeat(n)).join(', ')
     const decls: Record<string, string> = {}
-    for (const d of m[2].split(';')) {
+    for (const d of body.split(';')) {
       const i = d.indexOf(':')
       if (i < 0) continue
       const prop = d.slice(0, i).trim()
@@ -106,13 +118,78 @@ export function cssRulesOf(css: string): CssRules {
   return rules
 }
 
+/** Top-level `prelude { body }` blocks, nested braces kept inside the body. */
+function cssBlocksOf(css: string): { prelude: string; body: string }[] {
+  const out: { prelude: string; body: string }[] = []
+  let depth = 0
+  let start = 0
+  let open = 0
+  for (let i = 0; i < css.length; i++) {
+    const ch = css[i]
+    if (ch === '{') {
+      if (depth === 0) open = i
+      depth++
+    } else if (ch === '}') {
+      depth--
+      if (depth === 0) {
+        const prelude = css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, '').trim()
+        if (prelude) out.push({ prelude, body: css.slice(open + 1, i) })
+        start = i + 1
+      }
+    }
+  }
+  return out
+}
+
+/** Every custom property `seed` reaches through `var(...)` in `values`. */
+function varClosure(seed: readonly string[], values: Record<string, string>): string[] {
+  const seen = new Set<string>()
+  const queue = seed.filter((v) => v in values)
+  while (queue.length) {
+    const name = queue.pop()!
+    if (seen.has(name)) continue
+    seen.add(name)
+    for (const m of values[name].matchAll(/var\((--[a-z0-9_-]+)/g)) if (m[1] in values && !seen.has(m[1])) queue.push(m[1])
+  }
+  return [...seen].sort()
+}
+
+/** The system's `--motion-*` values a sheet needs: full motion in `:root`,
+ *  what changes under reduced motion, and the cubic stand-in for a spring
+ *  where `linear()` is unsupported — the same three blocks `variables.css` has. */
+function motionSheetOf(json: TokenJSON, vars: readonly string[]): CssRules {
+  const motionVars = vars.filter((v) => v.startsWith('--motion-'))
+  if (!motionVars.length) return {}
+  const settings = motionSettingsFromTokens((json as unknown as { motion?: unknown }).motion)
+  const full = motionCssVars(settings)
+  const reduced = motionCssVars(settings, { reduced: true })
+  // Both readings: a reduced choreography reads rungs (`fade`) the full one does not.
+  const names = [...new Set([...varClosure(motionVars, full), ...varClosure(motionVars, reduced)])].sort()
+  const pick = (src: Record<string, string>, keep: (k: string) => boolean) =>
+    Object.fromEntries(names.filter((k) => k in src && keep(k)).map((k) => [k, src[k]]))
+  const out: CssRules = { ':root': pick(full, () => true) }
+  const less = pick(reduced, (k) => reduced[k] !== full[k])
+  if (Object.keys(less).length) out['@media (prefers-reduced-motion: reduce)'] = { ':root': less }
+  const springs = (Object.keys(MOTION_EASING_FALLBACK) as MotionEasingKey[]).filter((k) => names.includes(`--motion-easing-${k}`))
+  if (springs.length) {
+    out['@supports not (transition-timing-function: linear(0, 1))'] = {
+      ':root': Object.fromEntries(springs.map((k) => [`--motion-easing-${k}`, easingCubic(k)])),
+    }
+  }
+  return out
+}
+
 /** The recipe sheet for these keys, and every variable it (or the file) reads. */
 function sheetFor(src: RegistrySource): { css: string; vars: string[] } {
-  const css = src.recipes
-    .map((k) => COMPONENT_RECIPES[k])
-    .filter((r) => !!r)
-    .map((r) => recipeCss(r))
-    .join('\n')
+  const recipes = src.recipes.map((k) => COMPONENT_RECIPES[k]).filter((r) => !!r)
+  // How the component moves travels with it: its transitions, its
+  // choreography rules and the keyframes those play (lib/recipes/motion.ts).
+  const keyframes = playedKeyframes(recipes)
+  const css = [
+    ...recipes.map((r) => recipeCss(r)),
+    ...recipes.map((r) => recipeMotionCss(r)).filter(Boolean),
+    ...(keyframes.length ? [motionKeyframesCss(keyframes).join('\n')] : []),
+  ].join('\n')
   const vars = [...new Set([...recipeCssVars(css), ...src.vars])].sort()
   return { css, vars }
 }
@@ -159,7 +236,9 @@ export function buildComponentItem(name: string, json: TokenJSON, o: RegistryOpt
   // shadow / radius scale onto ours. These names are `variables.css`'s, so a
   // project that already imports that file gets the same values twice.
   const sheet: Record<string, CssRules | Record<string, string>> = {}
-  if (Object.keys(light).length) sheet[':root'] = light
+  const motion = motionSheetOf(json, vars)
+  if (Object.keys(light).length || motion[':root']) sheet[':root'] = { ...light, ...(motion[':root'] as Record<string, string> | undefined) }
+  for (const [k, v] of Object.entries(motion)) if (k !== ':root') sheet[k] = v
   if (Object.keys(dark).length) sheet['.dark'] = dark
   if (css) sheet['@layer components'] = cssRulesOf(css)
   if (Object.keys(sheet).length) item.css = sheet

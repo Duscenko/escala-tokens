@@ -22,7 +22,7 @@ function Progress({ label, showValue = true, value = 0, className, ...props }: P
       <ProgressPrimitive.Root value={value} data-part="Progress.track" className="relative w-full overflow-hidden" {...props}>
         <ProgressPrimitive.Indicator
           data-part="Progress.indicator"
-          className="h-full transition-[width] duration-300"
+          className="h-full"
           style={{ width: `${value ?? 0}%` }}
         />
       </ProgressPrimitive.Root>

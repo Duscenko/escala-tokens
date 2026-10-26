@@ -5,7 +5,7 @@ import { generateTokenJSON } from '../tokenGenerator'
 import { makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import type { TokenJSON } from '../agentBundle/types'
 import { COMPONENT_RECIPES } from '../componentRecipes'
-import { recipeCss, recipeCssVars } from '../recipeStyles'
+import { recipeCss, recipeCssVars, recipeMotionCss } from '../recipeStyles'
 import { resolveToken } from '../agentAccess/resolveToken'
 import { ESCALA_UI_SOURCES } from '../registry/escalaUiSources.generated'
 import { readEscalaUiSources, renderGeneratedModule } from '../../../scripts/registrySources'
@@ -33,6 +33,24 @@ beforeAll(async () => {
     modes: [{ theme: brand, appearance: 'light' }, { theme: brand, appearance: 'dark' }],
   }) as unknown as TokenJSON
 })
+
+/** Top-level rules of a sheet that are not at-rules (an `@media` nests). */
+function topLevelRules(css: string): number {
+  let depth = 0
+  let n = 0
+  let prelude = ''
+  for (const ch of css) {
+    if (ch === '{') {
+      if (depth === 0 && !prelude.trim().startsWith('@')) n++
+      depth++
+      prelude = ''
+    } else if (ch === '}') {
+      depth--
+      prelude = ''
+    } else if (depth === 0) prelude += ch
+  }
+  return n
+}
 
 describe('registry sources', () => {
   it('the generated module is in sync with components/escala-ui (run `npm run gen:registry-sources`)', () => {
@@ -88,11 +106,16 @@ describe('registry item (shadcn CLI format)', () => {
       const item = buildRegistryItem(name, synced, OPTS)!
       const src = ESCALA_UI_SOURCES.find((s) => s.name === name)!
       const css = src.recipes.map((k) => recipeCss(COMPONENT_RECIPES[k])).join('\n')
-      const needed = [...recipeCssVars(css), ...src.vars].filter((v) => !/^--(escala|radix)-/.test(v))
+      const motion = src.recipes.map((k) => recipeMotionCss(COMPONENT_RECIPES[k])).join('\n')
+      const needed = [...recipeCssVars(css + '\n' + motion), ...src.vars].filter((v) => !/^--(escala|radix)-/.test(v))
       const root = (item.css?.[':root'] ?? {}) as Record<string, string>
       const unresolved = needed.filter((v) => !root[v])
       expect(unresolved, name).toEqual([])
-      if (css) expect(Object.keys(item.css!['@layer components']).length, name).toBe(css.match(/\{/g)!.length)
+      // Every plain rule of the recipe sheet survives as one selector; the
+      // motion part adds its own (at-rules nest, they are not counted here).
+      const layer = item.css?.['@layer components'] ?? {}
+      const plain = Object.keys(layer).filter((k) => !k.startsWith('@')).length
+      if (css) expect(plain, name).toBe(topLevelRules(css + '\n' + motion))
     }
   })
 
@@ -103,7 +126,8 @@ describe('registry item (shadcn CLI format)', () => {
     const root = item.css![':root'] as Record<string, string>
     const dark = item.css!['.dark'] as Record<string, string>
     expect(root['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.light))
-    expect(dark['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.dark!))
+    // `.dark` carries only what differs from `:root` (the default blue is one hex in both).
+    expect(dark['--color-action-primary-default'] ?? root['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.dark!))
     expect(root['--radius-action']).toBe(Object.values(resolveToken(synced, 'radius.action').values)[0])
     expect(root['--size-control']).toMatch(/^\d+px$/)
     // A length is one value: dark carries only what changes.

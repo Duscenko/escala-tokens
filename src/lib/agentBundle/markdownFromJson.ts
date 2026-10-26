@@ -371,5 +371,37 @@ export function buildFoundationsMd(json: TokenJSON, opts: { appearance?: 'light'
     )
   }
 
+  const motion = json.motion
+  if (motion?.roles && Object.keys(motion.roles).length) {
+    const intent = motion.intent?.roles ?? {}
+    const preset = motion.preset ? motion.preset.charAt(0).toUpperCase() + motion.preset.slice(1) : 'Custom'
+    parts.push(
+      '## Motion (CSS custom properties — not Figma variables yet)',
+      '',
+      `Preset: **${preset}**${motion.durationFactor ? ` · durations ×${motion.durationFactor}` : ''}. Use a role for every transition or animation, never a raw duration: \`transition: opacity var(--motion-use-disclosure-in)\`. An entrance is never shorter than its exit. \`prefers-reduced-motion\` is handled in \`variables.css\`: travel and scale go to 0 and entrances and exits become a short fade — do not add your own override.`,
+      '',
+      '### Roles',
+      '',
+      table(['CSS', 'Duration · easing', 'Value', 'Use'], Object.entries(motion.roles).map(([k, r]) => [`\`var(--motion-${k})\``, `${r.duration} · ${r.easing}`, `\`${r.value}\``, (intent[k]?.usage ?? []).join(', ')])),
+      '',
+    )
+    if (motion.durations) {
+      parts.push('### Durations', '', table(['CSS', 'Value'], Object.entries(motion.durations).map(([k, v]) => [`\`var(--motion-duration-${k})\``, `\`${v}\``])), '')
+    }
+    if (motion.transforms) {
+      parts.push('### Transforms', '', table(['CSS', 'Value'], Object.entries(motion.transforms).map(([k, v]) => [`\`var(--motion-transform-${k})\``, `\`${v}\``])), '')
+    }
+    if (motion.choreography) {
+      parts.push(
+        '### Choreography',
+        '',
+        'Multi-step sequences, with their reduced-motion version, are in `tokens.json` under `motion.choreography`. Play them as written; keyframes are `@keyframes motion-<name>` in `variables.css`.',
+        '',
+        table(['Name', 'Pattern', 'Components', 'What it does'], Object.entries(motion.choreography).map(([k, c]) => [`\`${k}\``, c.pattern, (c.components ?? []).join(', ') || '—', c.intent?.direction ?? ''])),
+        '',
+      )
+    }
+  }
+
   return parts.join('\n')
 }

@@ -54,7 +54,7 @@ function Dropzone({ forceState, icon, title, hint, onFiles, width, className, st
       data-escala="Dropzone"
       data-force-state={state !== 'Default' ? state : undefined}
       aria-invalid={state === 'Error' || undefined}
-      className={cn('flex cursor-pointer flex-col items-center text-center transition-[background-color,border-color] duration-150', className)}
+      className={cn('flex cursor-pointer flex-col items-center text-center', className)}
       // Dashed is the dropzone's shape, not a colour: inline so it wins over the recipe's solid.
       style={{ borderStyle: 'dashed', width, ...style }}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}

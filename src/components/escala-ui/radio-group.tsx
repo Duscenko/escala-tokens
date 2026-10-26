@@ -24,7 +24,7 @@ function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof Rad
       data-part="RadioGroup.item"
       className={cn(
         'group/radio-group-item peer relative inline-flex aspect-square shrink-0 items-center justify-center p-0 outline-none',
-        'transition-[background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed',
+        ' disabled:cursor-not-allowed',
         className,
       )}
       {...props}

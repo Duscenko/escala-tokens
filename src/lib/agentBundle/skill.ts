@@ -67,7 +67,7 @@ function catalogLines(iconKey?: string): string[] {
 
   lines.push('Pair fills with their contracted ink. Do not mix:')
   lines.push('- `Action/primary/default` → `Content/on-action`')
-  lines.push('- `Action/secondary/*` → `Content/primary`')
+  lines.push('- `Action/secondary/*` → `Content/on-secondary`')
   lines.push('- `Status/*/surface` → `Status/*/content`')
   lines.push('- `Status/*/surface-solid` (and its `-hover` / `-pressed`) → `Status/*/on-solid` of the same severity')
   lines.push('- `Surface/inverse` → `Content/inverse`')

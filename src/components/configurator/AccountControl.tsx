@@ -17,7 +17,9 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayo
  *  and this header control must not. */
 const AVATAR_TILE_RADIUS = 27 * (8 / 31)
 
-// TopNav's account entry: "Sign in" + "Sign up" when signed out, an initial
+// TopNav's account entry: "Sign in" + "Create account" when signed out — never
+// "Sign in" beside "Sign up", two labels one letter apart that people mix up —
+// and an initial
 // that opens a small menu (email · Sign out) when signed in. Renders NOTHING
 // while accounts are off (`accountsEnabled`), so the production header is
 // unchanged until ACCOUNTS_LIVE flips. The login itself is a page, not a dialog.
@@ -134,7 +136,7 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
               : 'transition-[filter] hover:brightness-110'
           }`}
         >
-          {t('Sign up')}
+          {t('Create account')}
         </a>
         {licenceDialog}
       </>

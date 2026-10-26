@@ -32,7 +32,7 @@ function Checkbox({
       onCheckedChange={(v) => { setInner(v); onCheckedChange?.(v) }}
       className={cn(
         'peer relative inline-flex shrink-0 items-center justify-center p-0 outline-none',
-        'transition-[background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed',
+        ' disabled:cursor-not-allowed',
         className,
       )}
       {...props}

@@ -1,6 +1,7 @@
 // Pure exporters — generate variables.css and README.md from store state.
 // Shared by ExportView (preview/download) and GitHubConnectView (repo push).
 
+import { motionMarkdown, motionRootCss, motionTrailingCss, normalizeMotionSettings } from './motion'
 import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
@@ -254,6 +255,10 @@ export function buildCSS(
     gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`))
   }
 
+  const motion = normalizeMotionSettings(store.motion)
+  lines.push('')
+  motionRootCss(motion).forEach((l) => lines.push(`  ${l}`))
+
   lines.push('}')
 
   // Hairline guard. A sub-pixel border is only a hairline at 2dppx or better;
@@ -388,6 +393,8 @@ export function buildCSS(
       lines.push('}')
     }
   }
+
+  lines.push(...motionTrailingCss(motion))
 
   const imports = fontImportLines(store.fontSources, usedFamilies)
   return [...(imports.length ? [...imports, ''] : []), ...lines].join('\n')
@@ -658,6 +665,10 @@ Assigned surfaces: ${[
     gradientSlugById(gradientAssignments.avatar) ? `avatars → \`--gradient-${gradientSlugById(gradientAssignments.avatar)}\`` : null,
   ].filter(Boolean).join(', ') || '_none_'}.`
   : '_No gradients defined._'}
+
+---
+
+${motionMarkdown(normalizeMotionSettings(store.motion))}
 
 ---
 

@@ -38,7 +38,7 @@ function SegmentedControl({ options, value, defaultValue, onValueChange, size = 
             data-part="SegmentedControl.item"
             data-sliding-active={on ? 'true' : undefined}
             onClick={() => { setInner(o); onValueChange?.(o) }}
-            className="relative cursor-pointer border-0 bg-transparent outline-none transition-colors duration-150"
+            className="relative cursor-pointer border-0 bg-transparent outline-none"
           >
             <span className="relative">{o}</span>
           </button>

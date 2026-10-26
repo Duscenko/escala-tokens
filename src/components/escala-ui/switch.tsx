@@ -34,7 +34,7 @@ function Switch({
       onCheckedChange={(v) => { setInner(v); onCheckedChange?.(v) }}
       className={cn(
         'peer group/switch relative inline-flex shrink-0 items-center border-0 p-[var(--spacing-0_5)] outline-none',
-        'transition-[background-color,box-shadow] duration-150 disabled:cursor-not-allowed',
+        ' disabled:cursor-not-allowed',
         className,
       )}
       {...props}
@@ -42,7 +42,7 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         data-part="Switch.thumb"
-        className="pointer-events-none block translate-x-0 transition-transform duration-150 data-[state=checked]:translate-x-[var(--escala-travel)]"
+        className="pointer-events-none block translate-x-0 data-[state=checked]:translate-x-[var(--escala-travel)]"
       />
     </SwitchPrimitive.Root>
   )

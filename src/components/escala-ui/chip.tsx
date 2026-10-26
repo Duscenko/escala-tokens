@@ -27,7 +27,7 @@ function Chip({
       data-selected={selected ? 'True' : 'False'}
       data-dismissible={showRemove ? 'True' : 'False'}
       data-size={size}
-      className={cn('inline-flex cursor-pointer items-center whitespace-nowrap transition-[background-color,border-color,color] duration-150', className)}
+      className={cn('inline-flex cursor-pointer items-center whitespace-nowrap', className)}
       {...props}
     >
       {/* Two sibling buttons: a button may not contain another interactive control. */}

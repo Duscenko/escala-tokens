@@ -193,12 +193,12 @@ export function LoginPage() {
 
   useEffect(() => {
     applyDocumentHead({
-      title: `${t('Sign in')} — Escala Tokens`,
+      title: `${mode === 'signup' ? t('Create account') : t('Sign in')} — Escala Tokens`,
       description: t('Free. An account keeps your brands on Escala so you can come back to them.'),
       canonicalPath: LOGIN_PATH,
       robots: 'noindex, nofollow',
     })
-  }, [t])
+  }, [t, mode])
 
   // Accounts off, or already signed in (and not mid-recovery): nothing to do here.
   useEffect(() => {
@@ -351,16 +351,19 @@ export function LoginPage() {
     message ? `${titleId}-err` : null,
   ].filter(Boolean).join(' ') || undefined
 
+  // Each view speaks to ONE person: Sign in to someone who already has an
+  // account, Create account to someone who does not. The other door is the
+  // line under the form, so nobody has to work out which page they are on.
   const heading =
-    view === 'signup' ? t('Create your account')
+    view === 'signup' ? t('Create your free account')
     : view === 'reset' ? t('Reset your password')
     : view === 'recovery' ? t('Choose a new password')
-    : t('Sign in to Escala')
+    : t('Welcome back')
   const sub =
     view === 'signup' ? t('Free. An account keeps your brands on Escala so you can come back to them.')
     : view === 'reset' ? t('Enter your email and we will send you a link to choose a new password.')
     : view === 'recovery' ? null
-    : t('Sign in or create a free account to keep your brands and sync them.')
+    : t('Sign in to pick up your saved brands where you left off.')
   const cta =
     view === 'signup' ? t('Create account')
     : view === 'reset' ? t('Send reset link')
@@ -540,10 +543,16 @@ export function LoginPage() {
 
                     <div className="flex flex-col items-center gap-3 text-ui">
                       {view === 'signin' && (
-                        <button type="button" onClick={() => go('signup')} className={LINK}>{t('No account yet? Create one')}</button>
+                        <p className="text-fg-faint">
+                          {t('New to Escala?')}{' '}
+                          <button type="button" onClick={() => go('signup')} className={`font-medium text-fg ${LINK}`}>{t('Create a free account')}</button>
+                        </p>
                       )}
                       {view === 'signup' && (
-                        <button type="button" onClick={() => go('signin')} className={LINK}>{t('Already have an account? Sign in')}</button>
+                        <p className="text-fg-faint">
+                          {t('Already have an account?')}{' '}
+                          <button type="button" onClick={() => go('signin')} className={`font-medium text-fg ${LINK}`}>{t('Sign in')}</button>
+                        </p>
                       )}
                       {view === 'reset' && (
                         <button type="button" onClick={() => go('signin')} className={LINK}>{t('Back to sign in')}</button>

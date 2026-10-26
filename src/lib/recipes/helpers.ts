@@ -23,6 +23,32 @@ export interface RecipePart {
   values: Record<string, SlotMap>
 }
 
+/** A choreography a component plays when it opens or closes (`lib/motion.ts`). */
+export interface RecipeChoreo {
+  /** Choreography name (`dialog-enter`, `accordion-expand`). */
+  name: string
+  /** Where a slot-less choreography or track plays (a disclosure's
+   *  `content`, a Select's portaled `content`). Tracks that name their own
+   *  slot keep it; `undefined` everywhere is the root. */
+  slot?: string
+  /** A disclosure: the variable its library publishes the content height in. */
+  heightVar?: string
+}
+
+/** How a component MOVES — motion roles and choreographies by NAME, never a
+ *  duration (lib/motion.ts holds the values; `lib/recipes/motion.ts` the table). */
+export interface RecipeMotion {
+  /** Slot key (a slot, or one with a state suffix) → CSS property → motion role. */
+  transitions?: Record<string, Record<string, string>>
+  enter?: RecipeChoreo
+  exit?: RecipeChoreo
+  /** Where a scale grows from (a Radix popper publishes it). Set on the slot
+   *  the entrance plays on. */
+  origin?: string
+  /** The root attribute naming the edge a panel slides from (`side` → `data-side`). */
+  sideAttr?: string
+}
+
 export interface ComponentRecipe {
   key: string
   /** Named parts of the component — the shadcn anatomy (`data-slot`) and, in
@@ -41,6 +67,8 @@ export interface ComponentRecipe {
    *  and parts cannot carry `data-escala` / `data-part`: `root` replaces
    *  `[data-escala="<key>"]`, `slots` replace `[data-part="<key>.<slot>"]`. */
   dom?: { root: string; slots?: Record<string, string> }
+  /** Transitions and choreographies (merged from `lib/recipes/motion.ts`). */
+  motion?: RecipeMotion
 }
 
 export type AxisValues = Record<string, string | undefined>

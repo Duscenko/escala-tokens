@@ -78,6 +78,518 @@ var init_customFonts = __esm({
   }
 });
 
+// src/lib/motion.ts
+function durationRange(key2) {
+  const base = MOTION_DURATIONS[key2];
+  if (FIXED_DURATION_KEYS.has(key2)) return { min: base, max: base };
+  return { min: Math.round(base * MOTION_FACTOR_MIN), max: Math.round(base * MOTION_FACTOR_MAX) };
+}
+function transformCss(role, value) {
+  return MOTION_DISTANCE_ROLES.has(role) ? `${value}px` : String(value);
+}
+function motionPresetPatch(key2) {
+  return structuredCloneSettings(MOTION_PRESETS[key2].settings);
+}
+function defaultMotionSettings() {
+  return motionPresetPatch(DEFAULT_MOTION_PRESET);
+}
+function structuredCloneSettings(s) {
+  return {
+    durationFactor: s.durationFactor,
+    roles: Object.fromEntries(MOTION_ROLES.map((r) => [r, { ...s.roles[r] }])),
+    transforms: { ...s.transforms },
+    stagger: s.stagger
+  };
+}
+function sameSettings(a2, b) {
+  if (a2.durationFactor !== b.durationFactor || a2.stagger !== b.stagger) return false;
+  for (const r of MOTION_ROLES) {
+    if (a2.roles[r]?.duration !== b.roles[r].duration || a2.roles[r]?.easing !== b.roles[r].easing) return false;
+  }
+  for (const t of MOTION_TRANSFORM_ROLES) if (a2.transforms[t] !== b.transforms[t]) return false;
+  return true;
+}
+function matchMotionPreset(settings) {
+  return MOTION_PRESET_KEYS.find((k) => sameSettings(settings, MOTION_PRESETS[k].settings)) ?? null;
+}
+function normalizeMotionSettings(input) {
+  const base = defaultMotionSettings();
+  if (!input || typeof input !== "object") return base;
+  const raw = input;
+  const factor = typeof raw.durationFactor === "number" && Number.isFinite(raw.durationFactor) ? Math.min(MOTION_FACTOR_MAX, Math.max(MOTION_FACTOR_MIN, raw.durationFactor)) : base.durationFactor;
+  const roles = { ...base.roles };
+  if (raw.roles && typeof raw.roles === "object") {
+    for (const r of MOTION_ROLES) {
+      const pick = raw.roles[r];
+      if (pick && typeof pick === "object" && pick.duration && pick.duration in MOTION_DURATIONS && pick.easing && pick.easing in MOTION_EASINGS) {
+        roles[r] = { duration: pick.duration, easing: pick.easing };
+      }
+    }
+  }
+  const transforms = { ...base.transforms };
+  if (raw.transforms && typeof raw.transforms === "object") {
+    for (const t of MOTION_TRANSFORM_ROLES) {
+      const v = raw.transforms[t];
+      if (typeof v === "number" && Number.isFinite(v)) transforms[t] = v;
+    }
+  }
+  const stagger = typeof raw.stagger === "number" && Number.isFinite(raw.stagger) && raw.stagger >= 0 ? raw.stagger : base.stagger;
+  return { durationFactor: factor, roles, transforms, stagger };
+}
+function durationMs(key2, settings) {
+  const base = MOTION_DURATIONS[key2];
+  if (FIXED_DURATION_KEYS.has(key2)) return base;
+  return Math.round(base * settings.durationFactor);
+}
+function motionDurations(settings) {
+  return Object.fromEntries(MOTION_DURATION_KEYS.map((k) => [k, durationMs(k, settings)]));
+}
+function resolveMotionRole(role, settings) {
+  const pick = settings.roles[role] ?? STANDARD_ROLES[role];
+  const ms = durationMs(pick.duration, settings);
+  return { ...pick, ms, value: `${ms}ms ${MOTION_EASINGS[pick.easing]}` };
+}
+function motionKeyframes(settings) {
+  const s = settings.transforms;
+  const amp = Math.min(0.15, Math.max(0, (s.overshoot - 1) * 1.67));
+  const squash = (n) => +n.toFixed(3);
+  const out = {
+    "fade-in": { opacity: ["0", "1"] },
+    "fade-out": { opacity: ["1", "0"] },
+    pop: { opacity: ["0", "1"], transform: ["scale(var(--motion-transform-pop))", "scale(1)"] },
+    shrink: { opacity: ["1", "0"], transform: ["scale(1)", "scale(var(--motion-transform-shrink))"] },
+    rise: { opacity: ["0", "1"], transform: ["translateY(var(--motion-transform-enter))", "translateY(0)"] },
+    sink: { opacity: ["1", "0"], transform: ["translateY(0)", "translateY(var(--motion-transform-enter))"] },
+    unmask: { transform: ["translateY(100%)", "translateY(0)"] },
+    "slide-in-right": { transform: ["translateX(100%)", "translateX(0)"] },
+    "slide-out-right": { transform: ["translateX(0)", "translateX(100%)"] },
+    "slide-in-left": { transform: ["translateX(-100%)", "translateX(0)"] },
+    "slide-out-left": { transform: ["translateX(0)", "translateX(-100%)"] },
+    "slide-in-bottom": { transform: ["translateY(100%)", "translateY(0)"] },
+    "slide-out-bottom": { transform: ["translateY(0)", "translateY(100%)"] },
+    "switch-move": { transform: ["translateX(var(--switch-from))", "translateX(var(--switch-to))"] }
+  };
+  if (amp > 0) {
+    out["switch-toggle"] = {
+      transform: [
+        "translateX(var(--switch-from)) scaleX(1) scaleY(1)",
+        `translateX(var(--switch-from)) scaleX(${squash(1 - amp)}) scaleY(${squash(1 + amp)})`,
+        `translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(${squash(1 + amp)}) scaleY(${squash(1 - amp)})`,
+        "translateX(var(--switch-to)) scaleX(1) scaleY(1)"
+      ],
+      offset: [0, 0.278, 0.722, 1],
+      easing: ["entrance", "gentle", "exit"]
+    };
+    out["spring-in"] = {
+      opacity: ["0", "1", "1", "1", "1"],
+      transform: [
+        "scale(var(--motion-transform-pop))",
+        "scale(var(--motion-transform-overshoot))",
+        "scale(var(--motion-transform-shrink))",
+        "scale(var(--motion-transform-settle))",
+        "scale(1)"
+      ],
+      offset: [0, 0.3, 0.52, 0.75, 1],
+      easing: ["entrance", "standard", "standard", "entrance"]
+    };
+  }
+  return out;
+}
+function motionChoreographies(settings) {
+  const s = settings.transforms;
+  const bounces = s.overshoot > 1;
+  const travels = s.enter > 0;
+  const r = (role) => ({ role });
+  const fadeTracks = (slots, pick) => slots.map((slot) => ({ slot, keyframes: pick === FADE_OUT ? "fade-out" : "fade-in", motion: pick, delay: 0 }));
+  const sheet = (side) => [
+    {
+      pattern: "coordinated",
+      components: side === "bottom" ? ["Drawer"] : ["Sheet"],
+      intent: { usage: [side === "bottom" ? "drawers" : "side panels"], direction: "The backdrop fades while the panel crosses into place from its edge." },
+      tracks: [
+        { slot: "overlay", keyframes: "fade-in", motion: r("use-overlay-in"), delay: 0 },
+        { slot: "content", keyframes: `slide-in-${side}`, motion: r("use-travel-in"), delay: 0 }
+      ],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: fadeTracks(["overlay", "content"], FADE_IN) }
+    },
+    {
+      pattern: "coordinated",
+      components: side === "bottom" ? ["Drawer"] : ["Sheet"],
+      intent: { usage: [side === "bottom" ? "drawers" : "side panels"], direction: "The panel leaves the way it came; the backdrop follows, shorter." },
+      tracks: [
+        { slot: "content", keyframes: `slide-out-${side}`, motion: r("use-travel-out"), delay: 0 },
+        { slot: "overlay", keyframes: "fade-out", motion: r("use-overlay-out"), delay: 0 }
+      ],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: fadeTracks(["content", "overlay"], FADE_OUT) }
+    }
+  ];
+  const [sheetEnter, sheetExit] = sheet("right");
+  const [drawerEnter, drawerExit] = sheet("bottom");
+  return {
+    "dialog-enter": {
+      pattern: "coordinated",
+      components: ["Dialog", "AlertDialog"],
+      intent: { usage: ["dialogs", "confirmations", "focal overlays"], direction: "The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay." },
+      tracks: [
+        { slot: "overlay", keyframes: "fade-in", motion: r("use-overlay-in"), delay: 0 },
+        { slot: "content", keyframes: "pop", motion: r("use-emphasis-in"), delay: "quick" }
+      ],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: fadeTracks(["overlay", "content"], FADE_IN) }
+    },
+    "dialog-exit": {
+      pattern: "coordinated",
+      components: ["Dialog", "AlertDialog"],
+      intent: { usage: ["dialogs", "confirmations"], direction: "Card and backdrop leave together, fast." },
+      tracks: [
+        { slot: "content", keyframes: "shrink", motion: r("use-overlay-out"), delay: 0 },
+        { slot: "overlay", keyframes: "fade-out", motion: r("use-overlay-out"), delay: 0 }
+      ],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: fadeTracks(["content", "overlay"], FADE_OUT) }
+    },
+    "sheet-enter": sheetEnter,
+    "sheet-exit": sheetExit,
+    "drawer-enter": drawerEnter,
+    "drawer-exit": drawerExit,
+    "switch-toggle": {
+      pattern: "coordinated",
+      components: ["Switch"],
+      intent: { usage: ["switch"], direction: bounces ? "The thumb squashes as it leaves and stretches as it lands." : "The thumb slides across; this preset carries no squash." },
+      tracks: [{ slot: "thumb", keyframes: bounces ? "switch-toggle" : "switch-move", motion: r("use-toggle"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ slot: "thumb", keyframes: "switch-move", motion: INSTANT, delay: 0 }] }
+    },
+    "list-reveal": {
+      pattern: "stagger",
+      components: [],
+      intent: { usage: ["lists", "card grids", "search results"], direction: "Rows rise into place one after another, capped so a long list is not slow." },
+      child: { keyframes: travels ? "rise" : "fade-in", motion: r("use-stagger-in") },
+      offset: settings.stagger,
+      direction: "forward",
+      maxElements: 8,
+      reducedMotion: { collapseTo: "parallel", pattern: "stagger", child: { keyframes: "fade-in", motion: FADE_IN }, offset: 0 }
+    },
+    "list-dismiss": {
+      pattern: "stagger",
+      components: [],
+      intent: { usage: ["clearing a list", "bulk delete"], direction: "Rows sink away from the last one up, faster than they arrived." },
+      child: { keyframes: travels ? "sink" : "fade-out", motion: r("use-stagger-out") },
+      offset: Math.round(settings.stagger * 0.6),
+      direction: "reverse",
+      maxElements: 8,
+      reducedMotion: { collapseTo: "parallel", pattern: "stagger", child: { keyframes: "fade-out", motion: FADE_OUT }, offset: 0 }
+    },
+    "text-reveal": {
+      pattern: "stagger",
+      components: [],
+      intent: { usage: ["hero headlines", "marketing text"], direction: "Each line rises out of its own mask. Storytelling only; never on product UI." },
+      child: { slot: "line", keyframes: travels ? "unmask" : "fade-in", motion: r("use-reveal") },
+      offset: Math.round(settings.stagger * 0.8),
+      direction: "forward",
+      maxElements: 8,
+      reducedMotion: { collapseTo: "parallel", pattern: "stagger", child: { slot: "line", keyframes: "fade-in", motion: FADE_IN }, offset: 0 }
+    },
+    "accordion-expand": {
+      pattern: "disclosure",
+      components: ["Accordion", "Collapsible"],
+      intent: { usage: ["accordion", "collapsible"], direction: "Height eases open; never a jump cut." },
+      direction: "expand",
+      motion: r("use-disclosure-in"),
+      reducedMotion: { collapseTo: "disclosure", pattern: "disclosure", direction: "expand", motion: INSTANT }
+    },
+    "accordion-collapse": {
+      pattern: "disclosure",
+      components: ["Accordion", "Collapsible"],
+      intent: { usage: ["accordion", "collapsible"], direction: "Height eases closed, faster than it opened." },
+      direction: "collapse",
+      motion: r("use-disclosure-out"),
+      reducedMotion: { collapseTo: "disclosure", pattern: "disclosure", direction: "collapse", motion: INSTANT }
+    },
+    "sonner-enter": {
+      pattern: "coordinated",
+      components: ["Sonner"],
+      intent: { usage: ["toasts", "notifications"], direction: bounces ? "The toast springs in: pop, overshoot, settle." : travels ? "The toast rises into place." : "The toast fades in." },
+      tracks: [bounces ? { keyframes: "spring-in", motion: { duration: "cinematic", easing: "standard" }, delay: 0 } : { keyframes: travels ? "rise" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
+    }
+  };
+}
+function motionTokens(settings) {
+  const durations = motionDurations(settings);
+  return {
+    preset: matchMotionPreset(settings),
+    durationFactor: settings.durationFactor,
+    durations: Object.fromEntries(MOTION_DURATION_KEYS.map((k) => [k, `${durations[k]}ms`])),
+    easings: { ...MOTION_EASINGS },
+    easingFallbacks: Object.fromEntries(Object.entries(MOTION_EASING_FALLBACK).map(([k, v]) => [k, MOTION_EASINGS[v]])),
+    easingAliases: { ...MOTION_EASING_ALIASES },
+    transforms: Object.fromEntries(MOTION_TRANSFORM_ROLES.map((t) => [t, transformCss(t, settings.transforms[t])])),
+    stagger: `${settings.stagger}ms`,
+    roles: Object.fromEntries(MOTION_ROLES.map((role) => {
+      const res = resolveMotionRole(role, settings);
+      return [role, { duration: res.duration, easing: res.easing, value: res.value }];
+    })),
+    choreography: motionChoreographies(settings),
+    keyframes: motionKeyframes(settings),
+    intent: {
+      durations: Object.fromEntries(MOTION_DURATION_KEYS.map((k) => [k, {
+        ...MOTION_DURATION_INTENT[k],
+        constraints: { range: { ...durationRange(k), unit: "ms" } }
+      }])),
+      roles: MOTION_ROLE_INTENT
+    }
+  };
+}
+var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT;
+var init_motion = __esm({
+  "src/lib/motion.ts"() {
+    MOTION_DURATIONS = {
+      instant: 0,
+      fade: 160,
+      quick: 100,
+      short: 160,
+      medium: 240,
+      long: 360,
+      "extra-long": 560,
+      "super-long": 800,
+      cinematic: 1200
+    };
+    MOTION_DURATION_KEYS = Object.keys(MOTION_DURATIONS);
+    FIXED_DURATION_KEYS = /* @__PURE__ */ new Set(["instant", "fade"]);
+    MOTION_FACTOR_MIN = 0.7;
+    MOTION_FACTOR_MAX = 1.5;
+    SPRING = "linear(0, 0.035, 0.127, 0.257, 0.408, 0.566, 0.717, 0.854, 0.97, 1.062, 1.129, 1.173, 1.195, 1.2, 1.189, 1.169, 1.141, 1.111, 1.079, 1.05, 1.023, 1.001, 0.984, 0.972, 0.964, 0.96, 0.96, 0.963, 0.967, 0.973, 0.979, 0.986, 0.991, 0.997, 1.001, 1.004, 1.006, 1.007, 1.008, 1.008, 1.007, 1.006, 1)";
+    SPRING_BOUNCY = "linear(0, 0.071, 0.256, 0.507, 0.776, 1.023, 1.217, 1.343, 1.397, 1.386, 1.323, 1.229, 1.122, 1.019, 0.934, 0.875, 0.845, 0.842, 0.861, 0.896, 0.938, 0.981, 1.017, 1.044, 1.06, 1.064, 1.059, 1.046, 1.03, 1.013, 0.997, 0.985, 0.977, 0.974, 0.976, 0.98, 0.986, 0.993, 0.999, 1.005, 1.008, 1.01, 1.01, 1.009, 1.006, 1.004, 1.001, 0.999, 1)";
+    MOTION_EASINGS = {
+      standard: "cubic-bezier(0.45, 0.05, 0.25, 0.95)",
+      entrance: "cubic-bezier(0, 0, 0.2, 1)",
+      exit: "cubic-bezier(0.5, 0, 1, 1)",
+      emphasized: "cubic-bezier(0.22, 1, 0.36, 1)",
+      gentle: "cubic-bezier(0.76, 0, 0.24, 1)",
+      linear: "cubic-bezier(0, 0, 1, 1)",
+      spring: SPRING,
+      "spring-bouncy": SPRING_BOUNCY
+    };
+    MOTION_EASING_KEYS = Object.keys(MOTION_EASINGS);
+    MOTION_EASING_ALIASES = {
+      decelerate: "entrance",
+      accelerate: "exit"
+    };
+    MOTION_EASING_FALLBACK = {
+      spring: "emphasized",
+      "spring-bouncy": "emphasized"
+    };
+    MOTION_TRANSFORM_ROLES = [
+      "enter",
+      "glide",
+      "far",
+      "pop",
+      "shrink",
+      "anticipate",
+      "overshoot",
+      "settle",
+      "zoom",
+      "clone",
+      "dolly"
+    ];
+    MOTION_DISTANCE_ROLES = /* @__PURE__ */ new Set(["enter", "glide", "far", "dolly"]);
+    MOTION_ROLES = [
+      "use-hover",
+      "use-focus",
+      "use-press",
+      "use-disclosure-in",
+      "use-disclosure-out",
+      "use-overlay-in",
+      "use-overlay-out",
+      "use-emphasis-in",
+      "use-travel-in",
+      "use-travel-out",
+      "use-toggle",
+      "use-stagger-in",
+      "use-stagger-out",
+      "use-reveal",
+      "use-page-transition",
+      "use-celebration",
+      "use-color",
+      "use-loop",
+      "base-functional-entrance",
+      "base-functional-exit",
+      "base-functional-standard",
+      "base-expressive-entrance",
+      "base-expressive-exit",
+      "base-expressive-standard"
+    ];
+    MOTION_ROLE_INTENT = {
+      "use-hover": { usage: ["hover"], direction: "Fast and responsive; the most frequent interaction on desktop." },
+      "use-focus": { usage: ["focus ring"], direction: "Same speed as hover; the entrance curve lets the ring settle as someone tabs through." },
+      "use-press": { usage: ["pressed state"], direction: "Immediate; the exit curve reads as a press going down." },
+      "use-disclosure-in": { usage: ["tooltip", "popover", "dropdown", "select"], direction: "Small content appearing next to its trigger; time to settle." },
+      "use-disclosure-out": { usage: ["tooltip", "popover", "dropdown", "select"], direction: "Gets out of the way quickly." },
+      "use-overlay-in": { usage: ["dialog backdrop", "sheet backdrop", "drawer backdrop"], direction: "The layer that covers the page arriving." },
+      "use-overlay-out": { usage: ["dialog", "sheet", "drawer"], direction: "An overlay leaving; shorter than its entrance." },
+      "use-emphasis-in": { usage: ["dialog card", "focal element"], direction: "The element the eye should land on; the expressive curve, a beat behind its backdrop." },
+      "use-travel-in": { usage: ["sheet panel", "drawer panel"], direction: "A panel crossing the screen into place." },
+      "use-travel-out": { usage: ["sheet panel", "drawer panel"], direction: "The panel leaving the way it came." },
+      "use-toggle": { usage: ["switch thumb"], direction: "A state change the thumb travels across." },
+      "use-stagger-in": { usage: ["list items", "grid cards"], direction: "One child of a staggered reveal." },
+      "use-stagger-out": { usage: ["list items being dismissed"], direction: "One child of a staggered dismissal." },
+      "use-reveal": { usage: ["hero text", "headline lines"], direction: "Storytelling: slow, deliberate, meant to be watched." },
+      "use-page-transition": { usage: ["route change", "view change"], direction: "The whole view changing." },
+      "use-celebration": { usage: ["success moments", "confetti"], direction: "Expressive and long; rare by design." },
+      "use-color": { usage: ["theme switch", "colour change"], direction: "Slow and symmetric so a colour shift does not flash." },
+      "use-loop": { usage: ["spinner", "indeterminate progress"], direction: "Continuous motion: linear, one full turn per cycle." },
+      "base-functional-entrance": { usage: ["any functional entrance with no role of its own"], direction: "Fallback for UI that appears." },
+      "base-functional-exit": { usage: ["any functional exit with no role of its own"], direction: "Fallback for UI that leaves." },
+      "base-functional-standard": { usage: ["any functional change in place"], direction: "Fallback for UI that changes without entering or leaving." },
+      "base-expressive-entrance": { usage: ["any expressive entrance"], direction: "Fallback for storytelling arrivals." },
+      "base-expressive-exit": { usage: ["any expressive exit"], direction: "Fallback for storytelling departures." },
+      "base-expressive-standard": { usage: ["any expressive change in place"], direction: "Fallback for storytelling changes." }
+    };
+    MOTION_DURATION_INTENT = {
+      instant: { usage: ["reduced motion"], direction: "No animation: the change happens at once." },
+      fade: { usage: ["reduced motion"], direction: "The cross-fade that replaces travel and scale when motion is reduced." },
+      quick: { usage: ["hover", "focus", "press", "toggles"], direction: "The fastest perceptible response; reads near-instant." },
+      short: { usage: ["small disclosures"], direction: "Small content entering; fast but visible." },
+      medium: { usage: ["overlays", "positional travel"], direction: "Functional motion that needs a little more time." },
+      long: { usage: ["choreography", "panels"], direction: "Coordinated motion between elements." },
+      "extra-long": { usage: ["celebration", "colour change"], direction: "Expressive, still part of using the product." },
+      "super-long": { usage: ["storytelling", "loops"], direction: "Meant to be noticed rather than used." },
+      cinematic: { usage: ["hero moments"], direction: "Storytelling only; never on a control." }
+    };
+    p = (duration, easing) => ({ duration, easing });
+    STANDARD_ROLES = {
+      "use-hover": p("quick", "standard"),
+      "use-focus": p("quick", "entrance"),
+      "use-press": p("quick", "exit"),
+      "use-disclosure-in": p("short", "entrance"),
+      "use-disclosure-out": p("quick", "exit"),
+      "use-overlay-in": p("medium", "entrance"),
+      "use-overlay-out": p("short", "exit"),
+      "use-emphasis-in": p("long", "emphasized"),
+      "use-travel-in": p("long", "entrance"),
+      "use-travel-out": p("medium", "exit"),
+      "use-toggle": p("long", "standard"),
+      "use-stagger-in": p("short", "entrance"),
+      "use-stagger-out": p("quick", "exit"),
+      "use-reveal": p("cinematic", "gentle"),
+      "use-page-transition": p("long", "emphasized"),
+      "use-celebration": p("extra-long", "emphasized"),
+      "use-color": p("extra-long", "gentle"),
+      "use-loop": p("super-long", "linear"),
+      "base-functional-entrance": p("short", "entrance"),
+      "base-functional-exit": p("quick", "exit"),
+      "base-functional-standard": p("short", "standard"),
+      "base-expressive-entrance": p("long", "emphasized"),
+      "base-expressive-exit": p("medium", "exit"),
+      "base-expressive-standard": p("long", "standard")
+    };
+    MOTION_PRESET_KEYS = ["snappy", "standard", "expressive", "playful", "calm"];
+    T = (enter, far, pop, shrink, anticipate, overshoot, settle, zoom, clone, dolly) => ({ enter, glide: enter, far, pop, shrink, anticipate, overshoot, settle, zoom, clone, dolly });
+    withRoles = (patch) => ({ ...STANDARD_ROLES, ...patch });
+    MOTION_PRESETS = {
+      snappy: {
+        key: "snappy",
+        label: "Snappy",
+        brief: "Fast and direct. Short travel, no bounce.",
+        settings: {
+          durationFactor: 0.75,
+          roles: withRoles({
+            "use-emphasis-in": p("medium", "entrance"),
+            "use-travel-in": p("medium", "entrance"),
+            "use-travel-out": p("short", "exit"),
+            "use-toggle": p("medium", "standard"),
+            "use-reveal": p("long", "entrance"),
+            "use-page-transition": p("medium", "entrance"),
+            "use-celebration": p("long", "entrance"),
+            "base-expressive-entrance": p("medium", "entrance"),
+            "base-expressive-standard": p("medium", "standard")
+          }),
+          transforms: T(4, 24, 0.97, 0.98, 0.95, 1, 1, 0.85, 0.75, -120),
+          stagger: 60
+        }
+      },
+      standard: {
+        key: "standard",
+        label: "Standard",
+        brief: "The reference values. Functional first, expressive where it helps.",
+        settings: {
+          durationFactor: 1,
+          roles: withRoles({}),
+          transforms: T(8, 40, 0.94, 0.96, 0.9, 1.06, 1.02, 0.7, 0.5, -240),
+          stagger: 100
+        }
+      },
+      expressive: {
+        key: "expressive",
+        label: "Expressive",
+        brief: "Generous arrivals on the emphasized curve and soft springs. Exits stay fast.",
+        settings: {
+          durationFactor: 1.25,
+          roles: withRoles({
+            "use-disclosure-in": p("short", "emphasized"),
+            "use-overlay-in": p("long", "emphasized"),
+            "use-emphasis-in": p("long", "spring"),
+            "use-travel-in": p("long", "emphasized"),
+            "use-stagger-in": p("short", "emphasized"),
+            "use-celebration": p("extra-long", "spring")
+          }),
+          transforms: T(12, 56, 0.92, 0.95, 0.88, 1.06, 1.02, 0.65, 0.5, -320),
+          stagger: 100
+        }
+      },
+      playful: {
+        key: "playful",
+        label: "Playful",
+        brief: "Bouncy springs and a bigger overshoot. Exits stay fast.",
+        settings: {
+          durationFactor: 1.25,
+          roles: withRoles({
+            "use-disclosure-in": p("short", "spring"),
+            "use-overlay-in": p("long", "emphasized"),
+            "use-emphasis-in": p("long", "spring-bouncy"),
+            "use-travel-in": p("long", "spring"),
+            "use-stagger-in": p("short", "spring"),
+            "use-page-transition": p("long", "spring"),
+            "use-celebration": p("extra-long", "spring-bouncy"),
+            "base-expressive-entrance": p("long", "spring")
+          }),
+          transforms: T(12, 56, 0.9, 0.94, 0.85, 1.1, 1.03, 0.6, 0.45, -320),
+          stagger: 120
+        }
+      },
+      calm: {
+        key: "calm",
+        label: "Calm",
+        brief: "Slow fades on the gentle curve. No travel, no scale. Not the reduced-motion mode.",
+        settings: {
+          durationFactor: 1.5,
+          roles: withRoles({
+            "use-hover": p("quick", "gentle"),
+            "use-focus": p("quick", "gentle"),
+            "use-press": p("quick", "gentle"),
+            "use-disclosure-in": p("medium", "gentle"),
+            "use-overlay-in": p("long", "gentle"),
+            "use-emphasis-in": p("long", "gentle"),
+            "use-travel-in": p("long", "gentle"),
+            "use-toggle": p("long", "gentle"),
+            "use-stagger-in": p("short", "gentle"),
+            "use-page-transition": p("extra-long", "gentle"),
+            "use-celebration": p("extra-long", "gentle"),
+            "base-functional-entrance": p("short", "gentle"),
+            "base-functional-standard": p("short", "gentle"),
+            "base-expressive-entrance": p("long", "gentle"),
+            "base-expressive-standard": p("long", "gentle")
+          }),
+          transforms: T(0, 0, 1, 1, 1, 1, 1, 1, 1, 0),
+          stagger: 140
+        }
+      }
+    };
+    DEFAULT_MOTION_PRESET = "standard";
+    FADE_IN = { duration: "fade", easing: "entrance" };
+    FADE_OUT = { duration: "fade", easing: "exit" };
+    INSTANT = { duration: "instant", easing: "standard" };
+  }
+});
+
 // src/lib/themeModes.ts
 function appearanceOrder(preferred = "light") {
   return preferred === "dark" ? ["dark", "light"] : ["light", "dark"];
@@ -2080,7 +2592,7 @@ function radiusRolesFromGroups(picks) {
   return roles;
 }
 function radiusRolesForPreset(label, roles) {
-  const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label);
+  const preset = RADIUS_ROLE_PRESETS.find((p2) => p2.label === label);
   if (!preset) return null;
   let next = mergeLayoutRoles("radius", roles);
   for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key]);
@@ -3429,7 +3941,7 @@ var init_supabase = __esm({
     supabase = accountsEnabled ? createClient(url, key, {
       auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     }) : null;
-    authProviders = (typeof env.VITE_AUTH_PROVIDERS === "string" ? env.VITE_AUTH_PROVIDERS : "").split(",").map((p) => p.trim()).filter((p) => p === "github" || p === "google");
+    authProviders = (typeof env.VITE_AUTH_PROVIDERS === "string" ? env.VITE_AUTH_PROVIDERS : "").split(",").map((p2) => p2.trim()).filter((p2) => p2 === "github" || p2 === "google");
   }
 });
 
@@ -4062,30 +4574,30 @@ var init_semanticRoles = __esm({
 });
 
 // src/lib/themeSources.ts
-function scaleForFamily(key2, kind, p) {
+function scaleForFamily(key2, kind, p2) {
   const pick = (light, dark) => kind === "dark" && dark && Object.keys(dark).length ? dark : light;
   switch (key2) {
     case "accent":
-      return pick(p.primaryScale, p.primaryDarkScale);
+      return pick(p2.primaryScale, p2.primaryDarkScale);
     case "neutral":
-      return pick(p.grayLightScale, p.grayDarkScale);
+      return pick(p2.grayLightScale, p2.grayDarkScale);
     case "error":
-      return pick(p.errorScale, p.errorDarkScale);
+      return pick(p2.errorScale, p2.errorDarkScale);
     case "warning":
-      return pick(p.warningScale, p.warningDarkScale);
+      return pick(p2.warningScale, p2.warningDarkScale);
     case "success":
-      return pick(p.successScale, p.successDarkScale);
+      return pick(p2.successScale, p2.successDarkScale);
     case "info":
-      return pick(p.infoScale, p.infoDarkScale);
+      return pick(p2.infoScale, p2.infoDarkScale);
     default: {
-      const fam = p.customColors.find((c2) => c2.key === key2);
+      const fam = p2.customColors.find((c2) => c2.key === key2);
       return fam ? pick(fam.scale, fam.darkScale) : void 0;
     }
   }
 }
-function resolveThemePalette(sources, kind, p) {
+function resolveThemePalette(sources, kind, p2) {
   if (!sources) return void 0;
-  const pick = (slot) => scaleForFamily(sources[slot], kind, p) ?? scaleForFamily(GLOBAL_FAMILY[slot], kind, p) ?? p.primaryScale;
+  const pick = (slot) => scaleForFamily(sources[slot], kind, p2) ?? scaleForFamily(GLOBAL_FAMILY[slot], kind, p2) ?? p2.primaryScale;
   const palette = {
     brand: pick("brand"),
     gray: pick("gray"),
@@ -4096,16 +4608,16 @@ function resolveThemePalette(sources, kind, p) {
   };
   for (const rank of BRAND_EXTRA_RANKS) {
     const key2 = sources[rank];
-    const scale = key2 ? scaleForFamily(key2, kind, p) : void 0;
+    const scale = key2 ? scaleForFamily(key2, kind, p2) : void 0;
     if (scale && Object.keys(scale).length) palette[rank] = scale;
   }
-  const alphaPages = alphaPagesFor(sources, p);
+  const alphaPages = alphaPagesFor(sources, p2);
   if (alphaPages) palette.alphaPages = alphaPages;
   return palette;
 }
-function alphaPagesFor(sources, p) {
-  if (!p.pageBackground || !p.darkBackground || !p.neutralTint || !p.themeSources) return void 0;
-  const src = p;
+function alphaPagesFor(sources, p2) {
+  if (!p2.pageBackground || !p2.darkBackground || !p2.neutralTint || !p2.themeSources) return void 0;
+  const src = p2;
   const out = {};
   for (const slot of FAMILY_SLOTS) {
     const key2 = sources[slot];
@@ -4115,10 +4627,10 @@ function alphaPagesFor(sources, p) {
   }
   return Object.keys(out).length ? out : void 0;
 }
-function themeBrandRamp(themeKey, themeSources, themeKinds, p, kindOverride) {
+function themeBrandRamp(themeKey, themeSources, themeKinds, p2, kindOverride) {
   const kind = kindOverride ?? themeKinds[themeKey] ?? "light";
   const brand = themeSources[themeKey]?.brand ?? GLOBAL_FAMILY.brand;
-  return scaleForFamily(brand, kind, p) ?? scaleForFamily(GLOBAL_FAMILY.brand, kind, p);
+  return scaleForFamily(brand, kind, p2) ?? scaleForFamily(GLOBAL_FAMILY.brand, kind, p2);
 }
 function themeDisplayName(key2, labels = {}) {
   if (labels[key2]?.trim()) return labels[key2].trim();
@@ -4966,6 +5478,10 @@ var init_semanticArchitectures = __esm({
       // Sits on action.primary, so its ink is SOLVED against that fill per theme
       // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
       { group: "content", key: "on-action", light: "{on:accent.solid}", dark: "{on:accent.solid}" },
+      // Label ink on `action.secondary.*`. The same tone as `content.primary` while
+      // secondary is the tone-4 wash; a system that makes secondary a dark fill
+      // (the default theme does) re-points this to the page tone with it.
+      { group: "content", key: "on-secondary", light: "{neutral.12}", dark: "{neutral-dark.12}" },
       { group: "content", key: "inverse", light: "{neutral.1}", dark: "{neutral-dark.1}" },
       // ink on surface.inverse
       // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
@@ -5070,6 +5586,13 @@ var init_semanticArchitectures = __esm({
       { group: "surface", key: "layer-1", light: "{neutral.2}", dark: "{neutral-dark.2}" },
       { group: "surface", key: "layer-2", light: "{neutral.3}", dark: "{neutral-dark.3}" },
       { group: "surface", key: "accent", light: "{accent.2}", dark: "{accent.2}" },
+      // The neutral fill of a control's passive part — a Switch's off track, a
+      // Slider or Progress track, an OTP segment, a scrollbar thumb. Tone 4/5,
+      // what those parts read off `action.secondary` before it became the
+      // secondary CTA alone: a system may darken its secondary button without
+      // turning every track black.
+      { group: "surface", key: "muted", light: "{neutral.4}", dark: "{neutral-dark.4}" },
+      { group: "surface", key: "muted-hover", light: "{neutral.5}", dark: "{neutral-dark.5}" },
       // Form background — same tone as the page, named separately so a form field
       // has its own token to point at rather than reusing "page" by coincidence.
       { group: "surface", key: "input", light: "{neutral.1}", dark: "{neutral-dark.1}" },
@@ -5423,21 +5946,24 @@ var init_semanticArchitectures = __esm({
       "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} \u2014 a muted inverse chip, not the dark ramp's near-white step.",
       "surface.overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill.",
+      "surface.muted": "[ROLE: Control Track] Neutral fill of a control's passive part \u2014 a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
+      "surface.muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light \u2014 one step past the track.",
       "content.primary": "[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.",
       "content.secondary": "[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.",
       "content.subtle": "[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only \u2014 not a third readable body tier. Minimum ~3:1; do not convey information.",
       "content.disabled": "[ROLE: Inactive Text] Disabled controls and copy. Exempt from strict WCAG rules \u2014 must communicate inactivity, not full legibility.",
       "content.inverse": "[ROLE: Inverted Text] Required when the background is surface.inverse or any dark/solid fill outside the accent.",
       "content.on-action": "[ROLE: Button Text] Label ink used ONLY on action.primary.default. Solved per theme against that fill \u2014 never assume white. Must exceed 4.5:1 against the button fill.",
+      "content.on-secondary": "[ROLE: Secondary Button Text] Label ink used ONLY on action.secondary.*. {neutral.12} in light \u2014 content.primary while secondary is a light wash; re-pointed with the fill when a system makes secondary a dark button. Must exceed 4.5:1 against the fill.",
       "content.accent": "[ROLE: Accent Text] Brand-tinted emphasis \u2014 active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).",
       "content.link.default": "[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.",
       "content.link.hover": "[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default \u2014 one ramp step for visible feedback while staying accessible.",
       "action.primary.default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme \u2014 not pinned to a fixed accent step.",
       "action.primary.hover": "[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) \u2014 one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)",
       "action.primary.pressed": "[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) \u2014 two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)",
-      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.primary, not content.on-action.",
-      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.primary.",
-      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark \u2014 so light pressed shares the hover tone. Label stays content.primary.",
+      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
+      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
+      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark \u2014 so light pressed shares the hover tone. Label stays content.on-secondary.",
       "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.3} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
       "action.ghost.default": "[ROLE: Ghost Default] Resting fill of a borderless button \u2014 fully transparent (`{neutral-a.1}` \u2014 alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "action.ghost.hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance \u2014 {black-a.1} in light, {white-a.1} in dark \u2014 because a neutral wash has to darken a light page and lighten a dark one.",
@@ -5641,7 +6167,7 @@ function buttonPaint(variant, state2) {
     case "default":
       return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: gap, ring: halo("border.ring.default") } };
     case "secondary":
-      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.primary"), focus: gap, ring: halo("border.control") } };
+      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.on-secondary"), focus: gap, ring: halo("border.control") } };
     case "outline":
       return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: NONE, ring: halo("border.control") } };
     case "ghost":
@@ -5820,7 +6346,7 @@ function switchPaint(checked, state2) {
   const hover = state2 === "Hover";
   const focus = state2 === "Focused" ? c("border.focus") : NONE;
   const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const track2 = disabled ? "action.disabled.default" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "action.secondary.hover" : "action.secondary.default";
+  const track2 = disabled ? "action.disabled.default" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "surface.muted-hover" : "surface.muted";
   return {
     root: { fill: c(track2), focus, ring },
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
@@ -6123,7 +6649,7 @@ var init_forms = __esm({
           root: { gap: "spacing.gap-control" },
           label: { text: c("content.secondary"), font: "type.caption" },
           value: { text: c("content.primary"), font: "type.caption" },
-          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
           range: { fill: c("action.primary.default"), radius: "radius.pill" },
           thumb: {
             fill: c("surface.page"),
@@ -6174,7 +6700,7 @@ var init_forms = __esm({
         part({}, () => ({
           root: { gap: "spacing.gap-control" },
           meter: { gap: "spacing.gap-tight" },
-          segment: { fill: c("action.secondary.default"), height: "spacing.1", radius: "radius.pill" },
+          segment: { fill: c("surface.muted"), height: "spacing.1", radius: "radius.pill" },
           segmentOn: { height: "spacing.1", radius: "radius.pill" },
           caption: { text: c("content.secondary"), font: "type.helper" }
         })),
@@ -6202,7 +6728,7 @@ var init_forms = __esm({
           badge: { fill: c("surface.selected"), text: c("content.accent"), font: "type.caption", radius: "radius.control", paddingX: "spacing.1_5" },
           name: { text: c("content.primary"), font: "type.caption" },
           meta: { text: c("content.secondary"), font: "type.caption" },
-          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
           progress: { fill: c("action.primary.default"), radius: "radius.pill" }
         }))
       ]
@@ -6456,7 +6982,7 @@ var init_surfaces = __esm({
           row: { text: c("content.primary"), font: "type.body-sm", paddingX: "spacing.2_5", paddingY: "spacing.2", radius: "radius.control" },
           "row:hover": { fill: c("action.ghost.hover") },
           scrollbar: { width: "spacing.2" },
-          thumb: { fill: c("action.secondary.hover"), radius: "radius.pill" }
+          thumb: { fill: c("surface.muted-hover"), radius: "radius.pill" }
         }))
       ]
     };
@@ -6682,7 +7208,7 @@ var init_surfaces = __esm({
     BUBBLE_VARIANTS = ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"];
     BUBBLE_PAINT = {
       default: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") },
-      secondary: { fill: c("action.secondary.default"), stroke: NONE, text: c("content.accent") },
+      secondary: { fill: c("surface.muted"), stroke: NONE, text: c("content.accent") },
       muted: { fill: c("surface.layer-2"), stroke: NONE, text: c("content.primary") },
       tinted: { fill: c("surface.accent"), stroke: NONE, text: c("content.accent") },
       outline: { fill: c("surface.page"), stroke: c("border.default"), text: c("content.primary") },
@@ -6924,7 +7450,7 @@ var init_navigation = __esm({
           label: { text: c("content.secondary"), font: "type.helper" },
           'label[data-state="done"]': { text: c("content.primary") },
           'label[data-state="current"]': { text: c("content.primary"), font: "type.label" },
-          connector: { fill: c("action.secondary.default"), height: "spacing.0_5", radius: "radius.pill" },
+          connector: { fill: c("surface.muted"), height: "spacing.0_5", radius: "radius.pill" },
           'connector[data-state="done"]': { fill: c("action.primary.default") }
         }))
       ]
@@ -7207,7 +7733,7 @@ function badgePaint(variant) {
     case "default":
       return { root: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") } };
     case "secondary":
-      return { root: { fill: c("action.secondary.default"), stroke: NONE, text: c("content.primary") } };
+      return { root: { fill: c("action.secondary.default"), stroke: NONE, text: c("content.on-secondary") } };
     case "destructive":
       return { root: { fill: c("status.critical.surface"), stroke: NONE, text: c("status.critical.content") } };
     case "outline":
@@ -7305,7 +7831,7 @@ var init_indicators = __esm({
           root: { gap: "spacing.gap-control" },
           label: { text: c("content.secondary"), font: "type.caption" },
           value: { text: c("content.primary"), font: "type.caption" },
-          track: { fill: c("action.secondary.default"), height: "spacing.1_5", radius: "radius.pill" },
+          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
           indicator: { fill: c("action.primary.default"), radius: "radius.pill" }
         }))
       ]
@@ -7576,8 +8102,8 @@ function buildThemeContext(store, scopeTheme, scopeThemes) {
   };
   const resolvedPalettes = {};
   for (const name of themeNames) {
-    const p = resolveThemePalette(store.themeSources[name], store.themeKinds[name] ?? "light", store);
-    if (p) resolvedPalettes[name] = p;
+    const p2 = resolveThemePalette(store.themeSources[name], store.themeKinds[name] ?? "light", store);
+    if (p2) resolvedPalettes[name] = p2;
   }
   const orderedThemes = {};
   const orderedThemeModes = {};
@@ -7989,6 +8515,10 @@ function generateTokenJSON(source, opts) {
       // The Phosphor weight the system renders (thin … duotone). Additive too.
       weight: store.iconWeight
     },
+    // Motion foundation (lib/motion.ts): durations, easings, transforms, roles,
+    // choreographies with their reduced-motion versions, and the intent text
+    // agents read. Additive, no schemaVersion bump (the `shadowsDark` precedent).
+    motion: motionTokens(normalizeMotionSettings(store.motion)),
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
@@ -8009,6 +8539,7 @@ function generateTokenJSON(source, opts) {
 var TOKEN_SCHEMA_VERSION, activeThemeHint;
 var init_tokenGenerator = __esm({
   "src/lib/tokenGenerator.ts"() {
+    init_motion();
     init_useDesignStore();
     init_shadowTokens();
     init_typographyStandard();
@@ -8496,30 +9027,27 @@ function makeDesignDefaults() {
     // Today's behaviour verbatim — `subtle`'s constants ARE the ones
     // backgroundFromBase used to hardcode, so a fresh system is unchanged.
     neutralTint: DEFAULT_NEUTRAL_TINT,
-    // A fresh system starts harmonized — its neutral has no history worth
-    // protecting, and an accent-tinted grey is the model the rest of the
-    // system documents (Radix/HeroUI).
-    linkNeutralToAccent: true,
-    // Same reasoning as linkNeutralToAccent: a fresh system's states have no
-    // hand-picked history worth protecting, so they start harmonized with the
-    // accent's chroma too.
-    linkStatesToAccent: true,
+    // Off for a fresh system: the default theme's grays are pure neutrals and
+    // its states are exact colours, not tinted toward the accent. Either link
+    // is one switch away in Color.
+    linkNeutralToAccent: false,
+    linkStatesToAccent: false,
     pageBackground: "#ffffff",
-    darkBackground: "#0c0e12",
+    darkBackground: DEFAULT_DARK_BACKGROUND,
     primaryColor: DEFAULT_ACCENT2,
     primaryDarkColor: "",
     primaryScale: {},
     primaryDarkScale: {},
-    grayBaseColor: "#6c737f",
-    grayLightScale: { ...GRAY_LIGHT_SCALE },
-    grayDarkScale: { ...DEFAULT_GRAY_DARK_SCALE },
-    errorColor: "#f04438",
+    grayBaseColor: NEUTRAL_BASE,
+    grayLightScale: { ...NEUTRAL_LIGHT_SCALE },
+    grayDarkScale: { ...NEUTRAL_DARK_SCALE },
+    errorColor: "#d90b09",
     errorScale: {},
     errorDarkScale: {},
-    warningColor: "#f79009",
+    warningColor: "#ea8f02",
     warningScale: {},
     warningDarkScale: {},
-    successColor: "#17b26a",
+    successColor: "#1a8038",
     successScale: {},
     successDarkScale: {},
     infoColor: "#2e90fa",
@@ -8570,11 +9098,12 @@ function makeDesignDefaults() {
     panelBackground: "solid",
     iconWeight: "regular",
     semanticArchitecture: "categorical",
-    architectureOverrides: {},
+    architectureOverrides: { categorical: structuredClone(DEFAULT_ROLE_OVERRIDES) },
     gradients: makeDefaultGradients(DEFAULT_ACCENT2, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
     fontSources: [],
+    motion: defaultMotionSettings(),
     // A brand-new system starts with the curated essentials, not all 58 — see
     // ESSENTIAL_COMPONENT_KEYS. Existing systems are untouched: this only runs
     // for a store with no persisted state at all (migrate() above handles
@@ -8650,10 +9179,11 @@ function buildSavedSystemEntry(state2, snapshot, nameOverride) {
     source: state2.githubRepo ? "github" : "local"
   };
 }
-var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE, DEFAULT_GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
+var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_DARK_SCALE, DEFAULT_GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_DARK_BACKGROUND, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, NEUTRAL_LIGHT_SCALE, NEUTRAL_BASE, NEUTRAL_DARK_SCALE, DEFAULT_ROLE_OVERRIDES, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
 var init_useDesignStore = __esm({
   "src/store/useDesignStore.ts"() {
     init_customFonts();
+    init_motion();
     init_figmaSyncModes();
     init_componentCatalogue();
     init_typographyStandard();
@@ -8699,20 +9229,6 @@ var init_useDesignStore = __esm({
       success: "success",
       info: "info"
     };
-    GRAY_LIGHT_SCALE = {
-      1: "#fdfdfd",
-      2: "#fafafa",
-      3: "#f5f5f5",
-      4: "#e9eaeb",
-      5: "#d5d7da",
-      6: "#a4a7ae",
-      7: "#717680",
-      8: "#535862",
-      9: "#414651",
-      10: "#252b37",
-      11: "#181d27",
-      12: "#0a0d12"
-    };
     GRAY_DARK_SCALE = {
       1: "#fafafa",
       2: "#f7f7f7",
@@ -8728,9 +9244,34 @@ var init_useDesignStore = __esm({
       12: "#0c0e12"
     };
     DEFAULT_GRAY_DARK_SCALE = generateDarkColorScale("#6c737f", "radix", 0, "#0c0e12");
-    DEFAULT_ACCENT2 = "#2970ff";
+    DEFAULT_ACCENT2 = "#015ef0";
+    DEFAULT_DARK_BACKGROUND = "#0a0a0a";
     DEFAULT_ACCENT_SCALE = generateColorScale(DEFAULT_ACCENT2, "radix", 0, "#ffffff");
-    DEFAULT_ACCENT_DARK_SCALE = generateFamilyDarkScale("#2970ff", "radix", 0, "#0c0e12");
+    DEFAULT_ACCENT_DARK_SCALE = generateFamilyDarkScale(DEFAULT_ACCENT2, "radix", 0, DEFAULT_DARK_BACKGROUND);
+    NEUTRAL_LIGHT_SCALE = {
+      1: "#fdfdfd",
+      2: "#fafafa",
+      3: "#f5f5f5",
+      4: "#e5e5e5",
+      5: "#d7d7d7",
+      6: "#a6a6a6",
+      7: "#767676",
+      8: "#585858",
+      9: "#464646",
+      10: "#2b2b2b",
+      11: "#1d1d1d",
+      12: "#0f0f0f"
+    };
+    NEUTRAL_BASE = "#737373";
+    NEUTRAL_DARK_SCALE = generateDarkColorScale(NEUTRAL_BASE, "radix", 0, DEFAULT_DARK_BACKGROUND);
+    DEFAULT_ROLE_OVERRIDES = {
+      "action.secondary.default": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+      "action.secondary.hover": { light: "{neutral.11}", dark: "{neutral-dark.11}" },
+      "action.secondary.pressed": { light: "{neutral.10}", dark: "{neutral-dark.11}" },
+      "content.on-secondary": { light: "{neutral.1}", dark: "{neutral-dark.1}" },
+      "action.disabled.default": { light: "{black-a.1}", dark: "{white-a.2}" },
+      "content.disabled": { light: "{neutral.6}", dark: "{neutral-dark.9}" }
+    };
     SEMANTIC_KEY_RENAME = {
       // ── Surface (was bg-* neutral surfaces + states) ──
       "bg-primary": "surface-0",
@@ -9340,7 +9881,7 @@ var init_useDesignStore = __esm({
           setRadius: (r) => set({ radius: r }),
           setOpacity: (o) => set({ opacity: o }),
           setShadows: (s) => set({ shadows: s }),
-          setPadding: (p) => set({ padding: p }),
+          setPadding: (p2) => set({ padding: p2 }),
           setGrid: (g) => set({ grid: g }),
           setSizes: (s) => set({ sizes: s }),
           setSelector: (s) => set({ selector: s }),
@@ -9360,6 +9901,7 @@ var init_useDesignStore = __esm({
           }),
           setPanelBackground: (v) => set({ panelBackground: v }),
           setIconWeight: (v) => set({ iconWeight: v }),
+          setMotion: (v) => set({ motion: normalizeMotionSettings(v) }),
           setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
           // `ref === null` clears the edit, so the token falls back to the
           // projection's own value — the schema stays the source of truth.
@@ -9585,7 +10127,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 102,
+          version: 103,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -10824,6 +11366,15 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) movePlaceholder(sys?.snapshot);
               }
             }
+            if (version < 103) {
+              const seedMotion = (state2) => {
+                if (state2 && typeof state2 === "object") state2.motion = normalizeMotionSettings(state2.motion);
+              };
+              seedMotion(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) seedMotion(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -11126,7 +11677,7 @@ var INDUSTRY_PACKS = [
 function collectIndustryAccents() {
   const byHex = /* @__PURE__ */ new Map();
   for (const group of INDUSTRY_GROUP_ORDER) {
-    for (const pack of INDUSTRY_PACKS.filter((p) => p.group === group)) {
+    for (const pack of INDUSTRY_PACKS.filter((p2) => p2.group === group)) {
       for (const accent2 of pack.accents) {
         const key2 = accent2.hex.toLowerCase();
         if (!byHex.has(key2)) byHex.set(key2, accent2);
@@ -11170,7 +11721,7 @@ function titleCaseKey(key2) {
 }
 function labelForAccent(hex) {
   const h = hex.slice(0, 7).toLowerCase();
-  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? "Brand";
+  return INDUSTRY_SPECTRUM.find((p2) => p2.hex.toLowerCase() === h)?.label ?? "Brand";
 }
 function slotsFromAccent(hex, tint, states) {
   const h = previewHarmony(hex, tint);
@@ -12382,6 +12933,13 @@ function withStyleSemantics(current, semantics, themeKey, architecture = "catego
 init_utils();
 init_analytics();
 init_themeLibrary();
+init_themeModes();
+
+// src/lib/remixLink.ts
+var FONTS = new Set(FONT_PRESETS.map((font) => font.value));
+var REMIX_ID_PREFIX = "remix-";
+
+// src/lib/adoptPreset.ts
 function adoptPreset(preset, appearance, opts = {}) {
   const store = useDesignStore.getState();
   const themes = store.themes;
@@ -12423,7 +12981,9 @@ function adoptPreset(preset, appearance, opts = {}) {
   next.setThemeOrigin(result.key, preset.id);
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? "");
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? "");
-  if (opts.track !== false) trackEvent({ name: "style_adopt", props: { style: preset.id } });
+  if (opts.track !== false) {
+    trackEvent({ name: "style_adopt", props: { style: preset.id.startsWith(REMIX_ID_PREFIX) ? "remix" : preset.id } });
+  }
   return { key: result.key, name: label };
 }
 
@@ -12434,11 +12994,11 @@ function studioOptions() {
   return {
     fonts: FONT_PRESETS.map((f) => ({ value: f.value, label: f.label, group: f.category })),
     typeScales: TYPE_SCALE_MODES.map((m, i) => ({ index: i, label: m.label, factor: m.factor })),
-    radiusPresets: RADIUS_ROLE_PRESETS.map((p) => ({
-      label: p.label,
-      description: p.description,
-      picks: p.picks,
-      px: radiusPresetPx(p)
+    radiusPresets: RADIUS_ROLE_PRESETS.map((p2) => ({
+      label: p2.label,
+      description: p2.description,
+      picks: p2.picks,
+      px: radiusPresetPx(p2)
     })),
     radiusGroups: RADIUS_GROUPS.map((g) => ({ key: g.key, label: g.label, hint: g.hint })),
     radiusSteps: RADIUS_GROUP_STEPS.map((step) => ({ step, px: parseFloat(radius[step] ?? "0") || 0 })),
@@ -12451,32 +13011,32 @@ function studioOptions() {
       border: m.border,
       ...spacingPaint(m)
     })),
-    shadows: SHADOW_PRESETS.map((p) => ({ label: p.label, description: p.description, md: p.values.md, mdDark: darkShadow(p.values.md) })),
+    shadows: SHADOW_PRESETS.map((p2) => ({ label: p2.label, description: p2.description, md: p2.values.md, mdDark: darkShadow(p2.values.md) })),
     insetSteps: SPACING_STEPS.map((step) => ({ step, px: Number(step.replace("_", ".")) * SPACING_DEFAULT_BASE })),
     borderStops: [...STROKE_SM_STOPS],
     iconWeights: [...PHOSPHOR_WEIGHTS],
     neutralTints: ["pure", "subtle", "tinted", "vivid"],
     contrast: { min: -1, max: 1, step: 0.05 },
-    styles: THEME_STYLE_PRESETS.map((p) => styleSummary(p, radius))
+    styles: THEME_STYLE_PRESETS.map((p2) => styleSummary(p2, radius))
   };
 }
-function styleSummary(p, standard) {
-  const f = p.foundations;
+function styleSummary(p2, standard) {
+  const f = p2.foundations;
   const ramp = f.radius ?? standard;
   const roles = mergeLayoutRoles("radius", f.radiusRoles);
   const px = (role) => parseFloat(ramp[roles[role]] ?? "0") || 0;
   const mode = SPACING_MODES.find((m) => m.id === matchSpacingMode(f.sizes, f.spacingRoles, f.stroke));
-  const states = presetStates(p);
+  const states = presetStates(p2);
   return {
-    id: p.id,
-    label: p.label,
-    shortLabel: p.shortLabel,
-    description: p.description,
-    detail: p.detail,
-    accent: p.accent,
-    neutral: presetHarmony(p).neutral,
+    id: p2.id,
+    label: p2.label,
+    shortLabel: p2.shortLabel,
+    description: p2.description,
+    detail: p2.detail,
+    accent: p2.accent,
+    neutral: presetHarmony(p2).neutral,
     states: [states.error, states.warning, states.success, states.info],
-    appearance: p.preferredAppearance,
+    appearance: p2.preferredAppearance,
     font: f.typography?.fontFamily ?? "Inter",
     heading: f.typography?.headingFontFamily ?? f.typography?.fontFamily ?? "Inter",
     radius: { boxes: px("container"), fields: px("action"), selectors: px("control") },
@@ -12551,8 +13111,8 @@ function buildStudioTokens(choices, tier) {
     patch({ typography: next });
   }
   if (choices.radiusPreset) {
-    const p = radiusPresetPatch(choices.radiusPreset, resolved().radiusRoles);
-    if (p) patch(p);
+    const p2 = radiusPresetPatch(choices.radiusPreset, resolved().radiusRoles);
+    if (p2) patch(p2);
   }
   if (choices.radiusAxes) {
     let roles = resolved().radiusRoles;
@@ -12587,9 +13147,9 @@ function buildStudioTokens(choices, tier) {
   if (typeof choices.borderWidth === "number" && STROKE_SM_STOPS.includes(choices.borderWidth)) {
     patch({ stroke: { ...resolved().stroke, sm: `${choices.borderWidth}px` } });
   }
-  const shadow = SHADOW_PRESETS.find((p) => p.label === choices.shadow);
+  const shadow = SHADOW_PRESETS.find((p2) => p2.label === choices.shadow);
   if (shadow) patch({ shadows: { ...shadow.values } });
-  const shadowDark = SHADOW_PRESETS.find((p) => p.label === choices.shadowDark);
+  const shadowDark = SHADOW_PRESETS.find((p2) => p2.label === choices.shadowDark);
   if (shadowDark) patch({ shadowsDark: darkShadowMap(shadowDark.values) });
   const weight = PHOSPHOR_WEIGHTS.includes(choices.iconWeight ?? "") ? choices.iconWeight : void 0;
   if (weight) patch({ iconWeight: weight });
@@ -12604,12 +13164,12 @@ var REM = 16;
 function presetForBaseRadius(px) {
   let best = RADIUS_ROLE_PRESETS[0];
   let gap = Infinity;
-  for (const p of RADIUS_ROLE_PRESETS) {
-    const fields = radiusPresetPx(p)[1];
+  for (const p2 of RADIUS_ROLE_PRESETS) {
+    const fields = radiusPresetPx(p2)[1];
     const d = Math.abs(fields - px);
     if (d < gap) {
       gap = d;
-      best = p;
+      best = p2;
     }
   }
   return best.label;
@@ -12721,7 +13281,7 @@ function studioLook(choices) {
     field = pxOf(c2.radiusAxes.fields, field);
     control = pxOf(c2.radiusAxes.selectors, control);
   } else if (c2.radiusPreset) {
-    const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c2.radiusPreset);
+    const hit = RADIUS_ROLE_PRESETS.find((p2) => p2.label === c2.radiusPreset);
     if (hit) {
       const px = radiusPresetPx(hit);
       box = px[0];
@@ -12737,11 +13297,11 @@ function studioLook(choices) {
   const modeId = c2.spacingMode || (preset ? matchSpacingMode(preset.foundations.sizes, preset.foundations.spacingRoles, preset.foundations.stroke) : null) || "quiet";
   const mode = SPACING_MODES.find((m) => m.id === modeId) ?? SPACING_MODES[1];
   const paint = spacingPaint(mode);
-  let shadowCss = SHADOW_PRESETS.find((p) => p.label === "Soft").values.md;
-  const named = c2.shadow ? SHADOW_PRESETS.find((p) => p.label === c2.shadow) : void 0;
+  let shadowCss = SHADOW_PRESETS.find((p2) => p2.label === "Soft").values.md;
+  const named = c2.shadow ? SHADOW_PRESETS.find((p2) => p2.label === c2.shadow) : void 0;
   if (named) shadowCss = named.values.md;
   else if (preset?.foundations.shadows?.md) shadowCss = preset.foundations.shadows.md;
-  const namedDark = c2.shadowDark ? SHADOW_PRESETS.find((p) => p.label === c2.shadowDark) : void 0;
+  const namedDark = c2.shadowDark ? SHADOW_PRESETS.find((p2) => p2.label === c2.shadowDark) : void 0;
   const darkCss = namedDark ? darkShadow(namedDark.values.md) : !named && preset?.foundations.shadowsDark?.md ? preset.foundations.shadowsDark.md : darkShadow(shadowCss);
   const scale = Number.isInteger(c2.typeScale) ? TYPE_SCALE_MODES[c2.typeScale] : void 0;
   const summaryFonts = preset ? styleSummary(preset, RADIUS_STANDARD) : null;

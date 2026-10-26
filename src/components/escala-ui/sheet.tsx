@@ -47,6 +47,7 @@ function SheetContent({
     <SheetPrimitive.Content
       data-slot="sheet-content"
       data-escala="Sheet"
+      data-inline={inline ? '' : undefined}
       data-side={side}
       className={cn('relative flex flex-col outline-none', !inline && cn('fixed z-50', SIDE[side]), className)}
       onOpenAutoFocus={inline ? (e) => e.preventDefault() : undefined}

@@ -30,7 +30,7 @@ function Item({
       data-escala="Item"
       data-variant={variant}
       data-size={size}
-      className={cn('flex w-full flex-wrap items-center outline-none transition-colors duration-100', className)}
+      className={cn('flex w-full flex-wrap items-center outline-none', className)}
       {...props}
     />
   )

@@ -41,7 +41,7 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}
-      <span aria-hidden className="ml-1 inline-flex transition-transform duration-300 group-data-[state=open]:rotate-180">{icon}</span>
+      <span aria-hidden className="ml-1 inline-flex [transition:transform_var(--motion-use-disclosure-in,150ms_cubic-bezier(0.4,0,0.2,1))] group-data-[state=open]:rotate-180">{icon}</span>
     </NavigationMenuPrimitive.Trigger>
   )
 }

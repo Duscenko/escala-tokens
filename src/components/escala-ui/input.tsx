@@ -23,7 +23,7 @@ function Input({ className, type, forceState, disabled, ...props }: InputProps) 
       aria-invalid={forceState === 'Error' ? true : props['aria-invalid']}
       disabled={isDisabled}
       className={cn(
-        'w-full min-w-0 outline-none transition-[border-color,box-shadow] duration-150',
+        'w-full min-w-0 outline-none',
         'file:inline-flex file:border-0 file:bg-transparent disabled:cursor-not-allowed',
         className,
       )}

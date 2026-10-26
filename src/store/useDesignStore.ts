@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { cleanFontSources, upsertFontSource, type FontSource } from '../lib/customFonts'
+import { defaultMotionSettings, normalizeMotionSettings, type MotionSettings } from '../lib/motion'
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
@@ -207,13 +208,38 @@ export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c73
 /** The platform's default accent — Core blue, matching the Core / Minimalist
  *  preset. Exported so "reset to defaults" and the new-system dialog derive
  *  their blue from the SAME constant `makeDesignDefaults` seeds. */
-export const DEFAULT_ACCENT = '#2970ff'
+export const DEFAULT_ACCENT = '#015ef0'
+/** A fresh system's dark page: pure neutral, like its grays. */
+export const DEFAULT_DARK_BACKGROUND = '#0a0a0a'
 export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale(DEFAULT_ACCENT, 'radix', 0, '#ffffff')
 // The same ramp's DARK twin, for the same reason: a linked gradient stop is one
 // `tone` reference resolved into BOTH appearances, so a brand-new system's
 // gradients carry a dark version from the first render rather than rendering
 // their light hexes on the dark page until the first accent edit.
-export const DEFAULT_ACCENT_DARK_SCALE: ColorScale = generateFamilyDarkScale('#2970ff', 'radix', 0, '#0c0e12')
+export const DEFAULT_ACCENT_DARK_SCALE: ColorScale = generateFamilyDarkScale(DEFAULT_ACCENT, 'radix', 0, DEFAULT_DARK_BACKGROUND)
+// A fresh system's grays: GRAY_LIGHT_SCALE's lightness ladder with no chroma
+// (each step is the neutral of the same WCAG luminance), pinned at 4 / 6 / 12 to
+// the default theme's border, disabled ink and secondary button. Its dark twin
+// comes from the same mid gray on the pure dark page.
+export const NEUTRAL_LIGHT_SCALE: ColorScale = {
+  1: '#fdfdfd', 2: '#fafafa', 3: '#f5f5f5', 4: '#e5e5e5',
+  5: '#d7d7d7', 6: '#a6a6a6', 7: '#767676', 8: '#585858',
+  9: '#464646', 10: '#2b2b2b', 11: '#1d1d1d', 12: '#0f0f0f',
+}
+const NEUTRAL_BASE = '#737373'
+export const NEUTRAL_DARK_SCALE: ColorScale = generateDarkColorScale(NEUTRAL_BASE, 'radix', 0, DEFAULT_DARK_BACKGROUND)
+// The default theme's own reading of the categorical roles (light / dark theme
+// columns). Secondary is the near-black button with page ink — in dark, its
+// mirror: the near-white button with the dark page as ink. Disabled is the
+// lightest wash with the mid-gray ink. Everything else stays solved.
+const DEFAULT_ROLE_OVERRIDES: Record<string, Record<string, string>> = {
+  'action.secondary.default': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  'action.secondary.hover':   { light: '{neutral.11}', dark: '{neutral-dark.11}' },
+  'action.secondary.pressed': { light: '{neutral.10}', dark: '{neutral-dark.11}' },
+  'content.on-secondary':     { light: '{neutral.1}',  dark: '{neutral-dark.1}' },
+  'action.disabled.default':  { light: '{black-a.1}',  dark: '{white-a.2}' },
+  'content.disabled':         { light: '{neutral.6}',  dark: '{neutral-dark.9}' },
+}
 // ──────────────────────────────────────────────────────────────────────────
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
@@ -526,6 +552,9 @@ export interface DesignSnapshot {
    *  loads from (lib/customFonts.ts). Only signed-in accounts with a saved
    *  system can add one; the token value stays the family name. */
   fontSources: FontSource[]
+  /** Motion foundation (lib/motion.ts): duration factor, role picks, transform
+   *  values, stagger. The preset on screen is matched from it, never stored. */
+  motion: MotionSettings
   selectedComponents: string[]
   completedFoundations: string[]
   iconLibrary: string
@@ -569,30 +598,27 @@ export function makeDesignDefaults(): DesignSnapshot {
     // Today's behaviour verbatim — `subtle`'s constants ARE the ones
     // backgroundFromBase used to hardcode, so a fresh system is unchanged.
     neutralTint: DEFAULT_NEUTRAL_TINT,
-    // A fresh system starts harmonized — its neutral has no history worth
-    // protecting, and an accent-tinted grey is the model the rest of the
-    // system documents (Radix/HeroUI).
-    linkNeutralToAccent: true,
-    // Same reasoning as linkNeutralToAccent: a fresh system's states have no
-    // hand-picked history worth protecting, so they start harmonized with the
-    // accent's chroma too.
-    linkStatesToAccent: true,
+    // Off for a fresh system: the default theme's grays are pure neutrals and
+    // its states are exact colours, not tinted toward the accent. Either link
+    // is one switch away in Color.
+    linkNeutralToAccent: false,
+    linkStatesToAccent: false,
     pageBackground: '#ffffff',
-    darkBackground: '#0c0e12',
+    darkBackground: DEFAULT_DARK_BACKGROUND,
     primaryColor: DEFAULT_ACCENT,
     primaryDarkColor: '',
     primaryScale: {},
     primaryDarkScale: {},
-    grayBaseColor: '#6c737f',
-    grayLightScale: { ...GRAY_LIGHT_SCALE },
-    grayDarkScale: { ...DEFAULT_GRAY_DARK_SCALE },
-    errorColor: '#f04438',
+    grayBaseColor: NEUTRAL_BASE,
+    grayLightScale: { ...NEUTRAL_LIGHT_SCALE },
+    grayDarkScale: { ...NEUTRAL_DARK_SCALE },
+    errorColor: '#d90b09',
     errorScale: {},
     errorDarkScale: {},
-    warningColor: '#f79009',
+    warningColor: '#ea8f02',
     warningScale: {},
     warningDarkScale: {},
-    successColor: '#17b26a',
+    successColor: '#1a8038',
     successScale: {},
     successDarkScale: {},
     infoColor: '#2e90fa',
@@ -643,11 +669,12 @@ export function makeDesignDefaults(): DesignSnapshot {
     panelBackground: 'solid',
     iconWeight: 'regular',
     semanticArchitecture: 'categorical',
-    architectureOverrides: {},
+    architectureOverrides: { categorical: structuredClone(DEFAULT_ROLE_OVERRIDES) },
     gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
     fontSources: [],
+    motion: defaultMotionSettings(),
     // A brand-new system starts with the curated essentials, not all 58 — see
     // ESSENTIAL_COMPONENT_KEYS. Existing systems are untouched: this only runs
     // for a store with no persisted state at all (migrate() above handles
@@ -1036,6 +1063,8 @@ interface DesignStore {
   panelBackground: 'solid' | 'translucent' | 'page'
   iconWeight: PhosphorWeight
   setIconWeight: (v: PhosphorWeight) => void
+  motion: MotionSettings
+  setMotion: (v: MotionSettings) => void
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
 
   // Semantic token architecture — which shape the export projects the flat
@@ -1686,6 +1715,7 @@ export const useDesignStore = create<DesignStore>()(
 
       setPanelBackground: (v) => set({ panelBackground: v }),
       setIconWeight: (v) => set({ iconWeight: v }),
+      setMotion: (v) => set({ motion: normalizeMotionSettings(v) }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
       // `ref === null` clears the edit, so the token falls back to the
       // projection's own value — the schema stays the source of truth.
@@ -1976,7 +2006,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 102,
+      version: 103,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3669,6 +3699,18 @@ export const useDesignStore = create<DesignStore>()(
           movePlaceholder(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) movePlaceholder(sys?.snapshot)
+          }
+        }
+        if (version < 103) {
+          // v102→v103: the motion foundation (lib/motion.ts). Every system,
+          // saved copies included, starts on the Standard preset. Nothing read
+          // motion before, so nothing on screen changes.
+          const seedMotion = (state: any) => {
+            if (state && typeof state === 'object') state.motion = normalizeMotionSettings(state.motion)
+          }
+          seedMotion(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedMotion(sys?.snapshot)
           }
         }
         return persisted

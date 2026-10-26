@@ -26,7 +26,7 @@ function Toggle({ className, variant = 'default', size = 'default', pressed, def
       pressed={on}
       onPressedChange={(next) => { setInner(next); onPressedChange?.(next) }}
       className={cn(
-        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none transition-colors duration-150',
+        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none',
         'disabled:pointer-events-none disabled:opacity-50',
         className,
       )}

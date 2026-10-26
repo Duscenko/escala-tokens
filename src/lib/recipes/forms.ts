@@ -337,7 +337,7 @@ function switchPaint(checked: string, state: string): SlotMap {
   const ring = state === 'Focused' ? c('border.ring.default') : NONE
   const track = disabled ? 'action.disabled.default'
     : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
-    : (hover ? 'action.secondary.hover' : 'action.secondary.default')
+    : (hover ? 'surface.muted-hover' : 'surface.muted')
   return {
     root: { fill: c(track), focus, ring },
     thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
@@ -372,7 +372,7 @@ export const SLIDER: ComponentRecipe = {
       root: { gap: 'spacing.gap-control' },
       label: { text: c('content.secondary'), font: 'type.caption' },
       value: { text: c('content.primary'), font: 'type.caption' },
-      track: { fill: c('action.secondary.default'), height: 'spacing.1_5', radius: 'radius.pill' },
+      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
       range: { fill: c('action.primary.default'), radius: 'radius.pill' },
       thumb: {
         fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
@@ -425,7 +425,7 @@ export const PASSWORD_STRENGTH: ComponentRecipe = {
     part({}, () => ({
       root: { gap: 'spacing.gap-control' },
       meter: { gap: 'spacing.gap-tight' },
-      segment: { fill: c('action.secondary.default'), height: 'spacing.1', radius: 'radius.pill' },
+      segment: { fill: c('surface.muted'), height: 'spacing.1', radius: 'radius.pill' },
       segmentOn: { height: 'spacing.1', radius: 'radius.pill' },
       caption: { text: c('content.secondary'), font: 'type.helper' },
     })),
@@ -451,7 +451,7 @@ export const FILE_UPLOAD: ComponentRecipe = {
       badge: { fill: c('surface.selected'), text: c('content.accent'), font: 'type.caption', radius: 'radius.control', paddingX: 'spacing.1_5' },
       name: { text: c('content.primary'), font: 'type.caption' },
       meta: { text: c('content.secondary'), font: 'type.caption' },
-      track: { fill: c('action.secondary.default'), height: 'spacing.1_5', radius: 'radius.pill' },
+      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
       progress: { fill: c('action.primary.default'), radius: 'radius.pill' },
     })),
   ],

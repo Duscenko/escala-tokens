@@ -45,8 +45,9 @@ import { ALERT, SONNER, SKELETON, EMPTY } from './recipes/feedback.js'
 import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR, KBD } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
-  type TokenRef, type RecipeProp, type SlotProps, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
+  type TokenRef, type RecipeProp, type SlotProps, type RecipeMotion, type RecipeChoreo, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
 } from './recipes/helpers.js'
+import { RECIPE_MOTION } from './recipes/motion.js'
 import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
@@ -123,6 +124,13 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Sidebar: SIDEBAR,
   Card: CARD,
   Dialog: DIALOG,
+}
+
+// How each component moves (lib/recipes/motion.ts) joins its recipe here, so
+// the stylesheet, tokens.json and the inspector read one object.
+for (const [key, motion] of Object.entries(RECIPE_MOTION)) {
+  const recipe = COMPONENT_RECIPES[key]
+  if (recipe) COMPONENT_RECIPES[key] = { ...recipe, motion }
 }
 
 // ── Reading a recipe ───────────────────────────────────────────────────────

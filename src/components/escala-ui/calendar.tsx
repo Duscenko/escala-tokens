@@ -67,7 +67,7 @@ function CalendarDayButton({ className, day, modifiers, ...props }: DayButtonPro
       data-range-middle={modifiers.range_middle ? 'true' : undefined}
       data-today={modifiers.today && !modifiers.selected ? 'true' : undefined}
       data-outside={modifiers.outside ? 'true' : undefined}
-      className={cn('inline-flex aspect-square w-full cursor-pointer items-center justify-center border-0 bg-transparent outline-none transition-colors', className)}
+      className={cn('inline-flex aspect-square w-full cursor-pointer items-center justify-center border-0 bg-transparent outline-none', className)}
       {...props}
     />
   )

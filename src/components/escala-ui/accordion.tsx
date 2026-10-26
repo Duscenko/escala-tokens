@@ -28,7 +28,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <span data-part="Accordion.icon" className="inline-flex shrink-0 transition-transform duration-200">{icon}</span>
+        <span data-part="Accordion.icon" className="inline-flex shrink-0">{icon}</span>
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   )
