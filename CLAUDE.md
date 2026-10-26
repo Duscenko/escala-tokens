@@ -123,6 +123,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > OUTSIDE `w3cTree.ts` on purpose: that file is byte-identical with the plugin's. **The plugin
 > half is not started** (Motion collection, ⬡ Motion page, studio row) — the plugin repo has other
 > work in flight; the web rail's Motion row has no plugin twin until then.
+> **Phase 5 (2026-10-26): Docs · Motion** (`docs/MotionDoc.tsx`, `MOTION_DOC`, last entry of
+> `FOUNDATION_DOCS`, so it is in System · Docs, `/docs/motion` and the sitemap). It reads the
+> brand on screen (`SystemDoc.motion`, normalized from `resolveThemeFoundations`): preset line,
+> duration ladder, the eight easings drawn from their own value (click plays a dot), the 24 roles
+> in `MOTION_ROLE_GROUPS`, transforms, and all 15 choreographies PLAYABLE, full beside reduced —
+> each stage sets `motionCssVars(…, { reduced })` and plays the static `@keyframes motion-*`
+> (`ensureMotionKeyframes`, exported from `MotionPreview`). Token count = Export's Motion count.
+> Copy context has a `motion` scope (`contextRequest.ts`, cuts `## Motion`). The Docs index card
+> is `MotionPreview`. Locked by `motionDocs.test.ts`.
 
 > **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on
 > the page (3:1 + Lc 45) AND carries a label — no Light-only exception.** A first pass let Light pass on

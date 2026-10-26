@@ -60,6 +60,8 @@ import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { GLOBAL_FAMILY, scaleForFamily, type FamilySlot } from '../../../lib/themeSources'
 import { resolveThemeFoundations } from '../../../lib/themeFoundations'
 import { stylePreviewStore, type StylePreview } from '../../../lib/stylePreviewOverlay'
+import { normalizeMotionSettings, type MotionSettings } from '../../../lib/motion'
+import { MOTION_DOC } from './MotionDoc'
 
 /** The Overview page — the whole-system reference sheet the old Design Rules
  *  view was. Not a foundation key, so it can never collide with one. Get
@@ -102,6 +104,8 @@ export interface SystemDoc {
   breakpointRoles: Record<string, string>
   iconLibrary: string
   customIcons: { name: string; svg: string }[]
+  /** How the brand on screen moves (normalized), or the root system's. */
+  motion: MotionSettings
   themeCount: number
 }
 
@@ -279,6 +283,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
         sizeRoles: store.sizeRoles,
         strokeRoles: store.strokeRoles,
         breakpointRoles: store.breakpointRoles,
+        motion: normalizeMotionSettings(store.motion),
       }
     }
     const resolved = resolveThemeFoundations(store, themeKey)
@@ -298,6 +303,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
       sizeRoles: resolved.sizeRoles,
       strokeRoles: resolved.strokeRoles,
       breakpointRoles: resolved.breakpointRoles,
+      motion: normalizeMotionSettings(resolved.motion),
     }
   }, [store, themeKey])
 
@@ -402,6 +408,7 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
     strokeRoles: foundations.strokeRoles,
     breakpointRoles: foundations.breakpointRoles,
     iconLibrary, customIcons,
+    motion: foundations.motion,
     themeCount: themeKey ? 1 : themeOrder.length,
   }
 }
@@ -1559,6 +1566,9 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
       },
     ],
   },
+
+  // ── Motion ─────────────────────────────────────────────────────────────────
+  MOTION_DOC,
 ]
 
 // Row selectors shared by the Color page's Border/Other sections. They mirror

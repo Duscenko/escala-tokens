@@ -28,7 +28,7 @@ export type ContextDetail = 'tokens' | 'full'
  *  which ships as its own section. */
 export type ContextFoundation =
   | 'color' | 'typography' | 'dimensions' | 'spacing' | 'radius' | 'stroke'
-  | 'sizes' | 'grid' | 'shadow' | 'gradients' | 'icons'
+  | 'sizes' | 'grid' | 'shadow' | 'gradients' | 'icons' | 'motion'
 
 export type ContextScope = 'all' | ContextFoundation
 
@@ -44,6 +44,7 @@ export const CONTEXT_FOUNDATIONS: { key: ContextFoundation; label: string }[] = 
   { key: 'shadow', label: 'Shadow' },
   { key: 'gradients', label: 'Gradients' },
   { key: 'icons', label: 'Icons' },
+  { key: 'motion', label: 'Motion' },
 ]
 
 export const CONTEXT_APPEARANCES: { key: ContextAppearance; label: string }[] = [
@@ -112,6 +113,7 @@ const FOUNDATION_SECTIONS: Record<ContextFoundation, RegExp[]> = {
   shadow: [/^## Shadows/],
   gradients: [/^## Gradients/],
   icons: [/^## Icons/, /^### Icon sizes/],
+  motion: [/^## Motion/],
 }
 
 function joinChunks(chunks: MdChunk[]): string {

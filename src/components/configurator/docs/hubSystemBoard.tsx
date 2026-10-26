@@ -11,6 +11,7 @@ import { TYPE_ROLES, typeStyleCss } from '../../../lib/typeRoles'
 import { FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
 import { useI18n } from '../../../lib/i18n'
 import { FOUNDATION_DOCS, type FoundationDoc, type SystemDoc } from './foundationDocs'
+import { MotionPreview } from '../MotionPreview'
 
 const RADIUS_PEEK = ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
 const SPACING_PEEK = ['1', '2', '4', '6', '8', '12', '16'] as const
@@ -126,6 +127,7 @@ function Specimen({
   if (foundation === 'sizes') return <SizesSheet system={system} appearance={appearance} />
   if (foundation === 'stroke') return <StrokeSheet system={system} appearance={appearance} />
   if (foundation === 'icons') return <IconsSheet system={system} appearance={appearance} />
+  if (foundation === 'motion') return <MotionPreview settings={system.motion} />
   return null
 }
 

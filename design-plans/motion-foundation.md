@@ -126,6 +126,29 @@ plugin repo has unrelated work in flight on `feat/full-catalogue-parity`; wait f
   row (web rail parity), moving the Motion group into `w3cTree.ts` (both copies) once the plugin
   writes the collection, and extending the Dimension ladder for off-ladder distances.
 
+**Phase 5 done (2026-10-26).** Docs · Motion.
+
+- `components/configurator/docs/MotionDoc.tsx` exports `MOTION_DOC`, the last entry of
+  `FOUNDATION_DOCS`: System · Docs menu, `/docs/motion` (public route + sitemap), the Docs index
+  card (plays `MotionPreview`), prev/next. Edit in Variables opens Variables · Motion.
+- Values are the brand on screen: `SystemDoc.motion` (`normalizeMotionSettings` of the root or
+  `resolveThemeFoundations(store, brand).motion`). Verified in the browser: editing a role in
+  Variables turns the page's preset line to Custom and its row to the new easing.
+- Sections: Preset (matched) · Duration ladder (accent bars scale with the factor, grey are the
+  fixed `instant` / `fade`, published range per rung) · Easings (each curve drawn from its own
+  `cubic-bezier` / `linear()` value; click plays a dot over `long`) · Roles (five groups) ·
+  Transforms (+ stagger) · Choreographies: all 15, each card with a Play button that remounts a
+  FULL and a REDUCED stage side by side. A stage sets `motionCssVars(settings, { reduced })` and
+  plays the static `@keyframes motion-*` with resolved ms + easing; the track lines under each
+  stage name slot · keyframes · role · ms · easing · delay. Stages are placeholder parts
+  (backdrop + card, side / bottom panel, menu, toast, switch, rows, masked lines, accordion),
+  never components — the board already shows the components.
+- Token count = Export's Motion collection (`motionTokenTotal`, 67 on Standard).
+- Copy context: `motion` is a `ContextFoundation` cutting `## Motion` of the agent context.
+- No "Use it" block: foundation pages have none (Get code is the one door); Copy context is the
+  page's paste, like every other foundation.
+- es/fr for every visible string, prose included. Tests: `motionDocs.test.ts`.
+
 ## Tier 1 — Primitives (fixed, not edited per system)
 
 Like `SPACING_STEPS` / `RADIUS_STANDARD`: the ladder is the vocabulary, presets pick from it.
@@ -385,7 +408,7 @@ tokens.json additions are new keys, no `schemaVersion` bump (the `shadowsDark` p
 4. **Plugin + W3C** — web half DONE (W3C group, export collection); plugin half pending: `Motion` collection, `Motion/role/*`, the ⬡ Motion documentation page, the
    plugin studio row, the W3C Motion group (same converter), transform distances aliased to the
    Dimension primitives.
-5. **Docs**: a Motion page in System · Docs with each choreography playable, full and reduced side by side.
+5. **Docs** — DONE: a Motion page in System · Docs with each choreography playable, full and reduced side by side.
 
 ## Implementation notes (phase 1)
 

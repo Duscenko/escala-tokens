@@ -17,13 +17,16 @@ import {
   motionKeyframesCss, resolveMotionRef, type MotionSettings,
 } from '../../lib/motion'
 
-// The keyframes are static, the same for every system: injected once.
-if (typeof document !== 'undefined' && !document.getElementById('escala-motion-keyframes')) {
+/** The keyframes are static, the same for every system: injected once into
+ *  the document. Anything that plays a choreography by name calls this. */
+export function ensureMotionKeyframes() {
+  if (typeof document === 'undefined' || document.getElementById('escala-motion-keyframes')) return
   const el = document.createElement('style')
   el.id = 'escala-motion-keyframes'
   el.textContent = motionKeyframesCss().join('\n')
   document.head.appendChild(el)
 }
+ensureMotionKeyframes()
 
 const ROWS = 4
 
