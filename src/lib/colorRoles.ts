@@ -4,7 +4,8 @@
 // Pure — the panel and its tests read the same table.
 
 import { colorAtHue, readHuePosition, type HuePosition } from './colorUtils'
-import { evaluate, INTENT_THRESHOLDS, wcagLuminance } from './color/apca'
+import { evaluate, INTENT_THRESHOLDS, wcagRatio } from './color/apca'
+import { hexToOklch } from './color/gamut'
 import type { ThemeAppearance } from './themeModes'
 
 export type ColorRoleId = 'accent' | 'neutral' | 'success' | 'error' | 'warning' | 'info'
@@ -34,9 +35,17 @@ export const COLOR_ROLE_BAND: Record<Exclude<ColorRoleId, 'neutral'>, [number, n
 /** Label inks a solid can carry — white, or the near-black end of a neutral. */
 export const ROLE_LABEL_INKS = ['#ffffff', '#111318'] as const
 
-/** Dark pages glare: a fully saturated fill on near-black vibrates. Dark holds
- *  at most this much of the hue's available chroma. */
-export const DARK_SATURATION_CAP = 0.8
+/** Dark is HIGH CHROMA, not pastel. A chromatic colour keeps its HSL hue,
+ *  its HSL saturation is lifted to at least this (never lowered), and only its
+ *  HSL lightness moves — up, and only as far as `DARK_PAGE_WCAG` needs. */
+export const DARK_MIN_SATURATION = 0.85
+
+/** What a Dark anchor must clear against the dark page (WCAG AA body text). */
+export const DARK_PAGE_WCAG = 4.5
+
+/** Below this OKLCH chroma a colour is a neutral (a grey, a stone): Dark keeps
+ *  its own saturation, so a grey does not turn into a blue. */
+const NEUTRAL_CHROMA = 0.04
 
 /** What a role's anchor (tone 9) must clear in a theme, with the same
  *  thresholds the audit uses:
@@ -74,15 +83,19 @@ export function checkRoleColor(hex: string, page: string): RoleCheck {
 
 /**
  * Whether a role's anchor is accessible in ONE theme — the rule the solver
- * picks with and the panels grade with. The SAME in Light and Dark: visible
- * on the page as a shape (3:1 + Lc 45) AND carrying a label.
+ * picks with and the panels grade with.
  *
- * A Light-only exception (label alone) was tried on 2026-10-22 and reverted
- * the same day: it graded `#5dff75` at 1.3:1 and `#ffb04a` at 1.8:1 on white
- * as "Good", i.e. buttons, ghost text and links nobody could see. A yellow or
- * a lime does get deeper in Light — that is what 3:1 on white costs.
+ * - LIGHT: visible on the page as a shape (3:1 + Lc 45) AND carrying a label.
+ *   A Light-only exception (label alone) was tried on 2026-10-22 and reverted
+ *   the same day: it graded `#5dff75` at 1.3:1 and `#ffb04a` at 1.8:1 on white
+ *   as "Good", i.e. buttons, ghost text and links nobody could see.
+ * - DARK (high chroma, 2026-10-26): WCAG 4.5:1 against the dark page AND a
+ *   label (white or near-black) at 4.5:1. APCA is still reported, not gated:
+ *   Lc 45 on near-black needs luminance ≈ 0.43, which is what made every dark
+ *   anchor pastel (HSL lightness 76–81% instead of 55–65%).
  */
-export function rolePasses(check: RoleCheck, _appearance?: ThemeAppearance): boolean {
+export function rolePasses(check: RoleCheck, appearance?: ThemeAppearance): boolean {
+  if (appearance === 'dark') return check.pageWcag >= DARK_PAGE_WCAG && check.labelWcag >= INTENT_THRESHOLDS['action-label'].wcag!
   return check.passes
 }
 
@@ -96,46 +109,91 @@ function shortfall(c: RoleCheck): number {
     + Math.max(0, 1 - c.labelLc / t['action-label'].apcaLc!)
 }
 
+/** HSL (h 0–360, s/l 0–1) ⇄ hex. HSL is a plain sRGB remap, so no gamut step. */
+function hexToHsl(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', '').slice(0, 6), 16)
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  const d = max - min
+  if (d === 0) return [0, 0, l]
+  const s = d / (1 - Math.abs(2 * l - 1))
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+  return [((h * 60) + 360) % 360, s, l]
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    const v = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))
+    return Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+
+function darkPasses(hex: string, page: string): boolean {
+  const label = Math.max(...ROLE_LABEL_INKS.map((ink) => wcagRatio(ink, hex)))
+  return wcagRatio(hex, page) >= DARK_PAGE_WCAG && label >= INTENT_THRESHOLDS['action-label'].wcag!
+}
+
+/**
+ * A colour's DARK version, high chroma. In HSL:
+ * - HUE is held exactly.
+ * - SATURATION is lifted to `DARK_MIN_SATURATION` (85%) or kept if higher —
+ *   never lowered. Neutrals (OKLCH chroma under 0.04) keep their own.
+ * - LIGHTNESS goes up only as far as needed for `DARK_PAGE_WCAG` (4.5:1) on
+ *   the dark page, measured on the emitted hex. Usually lands at 55–65%. A
+ *   colour that already passes keeps its lightness.
+ */
+export function highChromaDark(source: string, page: string): string {
+  const [h, s, l] = hexToHsl(source)
+  let chroma = 0
+  try { chroma = hexToOklch(source).c } catch { /* unparseable → treat as neutral */ }
+  const saturation = chroma >= NEUTRAL_CHROMA ? Math.min(1, Math.max(s, DARK_MIN_SATURATION)) : s
+  for (let lightness = l; lightness <= 1; lightness += 0.0025) {
+    const hex = hslToHex(h, saturation, lightness)
+    if (darkPasses(hex, page)) return hex
+  }
+  return hslToHex(h, saturation, 1)
+}
+
 const STEPS = 97
 const cache = new Map<string, string>()
 
 /**
  * The anchor for a role at `hue` in one theme, SOLVED rather than nudged.
- * Saturation is held (capped in dark); lightness is searched over the hue's
- * whole range and every candidate is measured against the theme's own page.
  *
  * - LIGHT keeps the tone that passes nearest to the colour you chose, so the
- *   brand moves as little as accessibility allows.
- * - DARK takes the DIMMEST tone that passes. On a near-black page a fill has
- *   to be fairly bright to be seen at all (measured: luminance ≥ ~0.43 for
- *   APCA Lc 45), so "less bright" cannot mean dark — it means the least glare
- *   that still clears every threshold, with chroma pulled down.
+ *   brand moves as little as accessibility allows. Saturation is held;
+ *   lightness is searched over the hue's whole range against the light page.
+ * - DARK is high chroma (`highChromaDark`): the same colour at that hue, HSL
+ *   saturation ≥ 85%, lightness raised only until 4.5:1 on the dark page.
  *
- * Nothing passes → the tone closest to passing, never a fixed step.
+ * Nothing passes in light → the tone closest to passing, never a fixed step.
  */
 export function solveRoleColor(position: HuePosition, hue: number, appearance: ThemeAppearance, page: string): string {
-  const saturation = appearance === 'dark' ? Math.min(position.saturation, DARK_SATURATION_CAP) : position.saturation
-  const key = `${appearance}|${page}|${Math.round(hue)}|${saturation.toFixed(3)}|${position.lightness.toFixed(3)}`
+  const key = `${appearance}|${page}|${Math.round(hue)}|${position.saturation.toFixed(3)}|${position.lightness.toFixed(3)}`
   const hit = cache.get(key)
   if (hit) return hit
 
-  const candidates = Array.from({ length: STEPS }, (_, i) => {
-    const lightness = (i + 1) / (STEPS + 1)
-    const hex = colorAtHue({ saturation, lightness }, hue)
-    return { lightness, hex, check: checkRoleColor(hex, page) }
-  })
-  const passing = candidates.filter((c) => rolePasses(c.check, appearance))
-  let pick
-  if (passing.length) {
-    pick = appearance === 'dark'
-      ? passing.reduce((a, b) => (wcagLuminance(b.hex) < wcagLuminance(a.hex) ? b : a))
-      : passing.reduce((a, b) => (Math.abs(b.lightness - position.lightness) < Math.abs(a.lightness - position.lightness) ? b : a))
+  let pick: string
+  if (appearance === 'dark') {
+    pick = highChromaDark(colorAtHue(position, hue), page)
   } else {
-    pick = candidates.reduce((a, b) => (shortfall(b.check) < shortfall(a.check) ? b : a))
+    const candidates = Array.from({ length: STEPS }, (_, i) => {
+      const lightness = (i + 1) / (STEPS + 1)
+      const hex = colorAtHue({ saturation: position.saturation, lightness }, hue)
+      return { lightness, hex, check: checkRoleColor(hex, page) }
+    })
+    const passing = candidates.filter((c) => rolePasses(c.check, appearance))
+    pick = (passing.length
+      ? passing.reduce((a, b) => (Math.abs(b.lightness - position.lightness) < Math.abs(a.lightness - position.lightness) ? b : a))
+      : candidates.reduce((a, b) => (shortfall(b.check) < shortfall(a.check) ? b : a))).hex
   }
   if (cache.size > 2000) cache.clear()
-  cache.set(key, pick.hex)
-  return pick.hex
+  cache.set(key, pick)
+  return pick
 }
 
 /** `hex` moved to `hue`, solved for one theme's page. */
@@ -143,12 +201,12 @@ export function roleColorAtHue(hex: string, hue: number, appearance: ThemeAppear
   return solveRoleColor(readHuePosition(hex).position, hue, appearance, page)
 }
 
-/** The dark anchor that belongs to a light colour: the SAME hue, solved for
- *  the dark page. Every light edit (slider, hex, picker) writes this beside
+/** The dark anchor that belongs to a light colour: the SAME HSL hue, high
+ *  chroma, lightness raised to 4.5:1 on the dark page. Every light edit (slider, hex, picker) writes this beside
  *  it, so the two ramps in Variables are always one colour read two ways —
  *  never the new light hue next to the previous dark one. */
 export function darkTwinOf(lightHex: string, darkPage: string): string {
-  return roleColorAtHue(lightHex, readHuePosition(lightHex).hue, 'dark', darkPage)
+  return highChromaDark(lightHex, darkPage)
 }
 
 /** The light anchor that belongs to a colour chosen in DARK: the same hue,
@@ -178,8 +236,10 @@ export type StateRoleId = 'success' | 'error' | 'warning' | 'info'
  * - SATURATION is the accent's, as a fraction of what each hue can reach — so
  *   a muted brand gets muted statuses and a vivid one vivid statuses, instead
  *   of a fixed fully-saturated red and blue beside whatever the brand is.
+ *   That holds in Light; Dark lifts every chromatic colour to ≥ 85% HSL
+ *   saturation (`highChromaDark`).
  * - LIGHTNESS is solved per theme by `solveRoleColor`, exactly like the
- *   accent: nearest passing tone in light, dimmest passing tone in dark.
+ *   accent: nearest passing tone in light, high chroma in dark.
  */
 export function harmonizedState(
   role: StateRoleId,

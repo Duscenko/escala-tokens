@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { COLOR_ROLE_BAND, DARK_SATURATION_CAP, checkRoleColor, rolePasses, clampToBand, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, solveRoleColor, type StateRoleId } from '../colorRoles'
-import { colorAtHue, readHuePosition } from '../colorUtils'
-import { wcagLuminance } from '../color/apca'
+import { COLOR_ROLE_BAND, DARK_MIN_SATURATION, DARK_PAGE_WCAG, checkRoleColor, rolePasses, clampToBand, darkTwinOf, harmonizedState, highChromaDark, lightTwinOf, roleColorAtHue, solveRoleColor, type StateRoleId } from '../colorRoles'
+import { readHuePosition } from '../colorUtils'
+import { wcagRatio } from '../color/apca'
+import chroma from 'chroma-js'
 
 const PAGES = { light: '#fcfcfd', dark: '#0c0e12' }
 const HUES = Array.from({ length: 24 }, (_, i) => i * 15)
@@ -34,21 +35,28 @@ describe('Color edition roles — the solver', () => {
     expect(misses).toEqual([])
   })
 
-  it('takes the DIMMEST passing tone in dark: one step dimmer fails', () => {
-    for (const hue of HUES) {
-      const position = readHuePosition('#ff8a00').position
-      const hex = solveRoleColor(position, hue, 'dark', PAGES.dark)
-      const { position: solved } = readHuePosition(hex)
-      const dimmer = colorAtHue({ saturation: Math.min(position.saturation, DARK_SATURATION_CAP), lightness: solved.lightness - 0.02 }, hue)
-      expect(wcagLuminance(dimmer)).toBeLessThan(wcagLuminance(hex))
-      expect(checkRoleColor(dimmer, PAGES.dark).passes).toBe(false)
+  it('is HIGH CHROMA in dark: HSL hue held, saturation ≥ 85%, lightness only as high as 4.5:1 needs', () => {
+    for (const page of ['#121212', '#1e1e1e', PAGES.dark]) {
+      for (const light of ['#2970ff', '#9522e9', '#f33f34', '#d92d20', '#0e8eff', '#7a5af8', '#008189']) {
+        const dark = highChromaDark(light, page)
+        const [h0] = chroma(light).hsl()
+        const [h1, s1, l1] = chroma(dark).hsl()
+        const dh = Math.abs(h1 - h0)
+        expect(Math.min(dh, 360 - dh)).toBeLessThanOrEqual(3)
+        expect(s1).toBeGreaterThanOrEqual(DARK_MIN_SATURATION - 0.01)
+        expect(wcagRatio(dark, page)).toBeGreaterThanOrEqual(DARK_PAGE_WCAG)
+        // Strictly necessary: a clearly dimmer tone at the same hue/saturation
+        // fails (4.5:1 on the page, or a 4.5:1 label on the fill).
+        const dimmer = chroma.hsl(h1, s1, l1 - 0.02).hex()
+        if (l1 - 0.02 > chroma(light).hsl()[2]) expect(rolePasses(checkRoleColor(dimmer, page), 'dark')).toBe(false)
+        expect(l1).toBeLessThan(0.75)
+      }
     }
   })
 
-  it('pulls chroma down in dark', () => {
-    const vivid = { saturation: 1, lightness: 0.5 }
-    const hex = solveRoleColor(vivid, 260, 'dark', PAGES.dark)
-    expect(readHuePosition(hex).position.saturation).toBeLessThanOrEqual(DARK_SATURATION_CAP + 0.02)
+  it('never lowers saturation in dark, and leaves a neutral grey grey', () => {
+    expect(chroma(highChromaDark('#2970ff', '#121212')).hsl()[1]).toBeGreaterThanOrEqual(0.99)
+    expect(chroma(highChromaDark('#6c727f', '#121212')).hsl()[1]).toBeLessThan(0.2)
   })
 
   it('leaves a light colour that already passes where it is', () => {
@@ -108,8 +116,8 @@ describe('Color edition roles — light and dark are one colour', () => {
     for (const light of ['#669f2a', '#9522e9', '#ff8a00', '#0e8eff', '#f33f34', '#06aed4']) {
       const dark = darkTwinOf(light, PAGES.dark)
       const d = Math.abs(readHuePosition(light).hue - readHuePosition(dark).hue)
-      expect(Math.min(d, 360 - d)).toBeLessThan(3)
-      expect(checkRoleColor(dark, PAGES.dark).passes).toBe(true)
+      expect(Math.min(d, 360 - d)).toBeLessThan(4)
+      expect(rolePasses(checkRoleColor(dark, PAGES.dark), 'dark')).toBe(true)
     }
   })
 })
