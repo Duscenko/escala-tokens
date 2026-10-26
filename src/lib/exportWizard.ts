@@ -16,6 +16,7 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
+import { motionSettingsFromTokens, motionW3CGroup } from './motion'
 import { figmaCollectionsW3C } from './figmaCollections'
 import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
@@ -34,12 +35,12 @@ import { LAYOUT_ROLES, INSET_SIDE_KEYS, mergeLayoutRoles, mergeGridFrame, extrac
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'gradients' | 'typography' | 'spacing'
-  | 'radius' | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
+  | 'radius' | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons' | 'motion'
 
 /** Every collection, in export order — also the "share the whole system" preset. */
 export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'primitives', 'semantics', 'gradients', 'typography', 'spacing',
-  'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons',
+  'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons', 'motion',
 ]
 
 export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill' | 'agent-bundle'
@@ -52,7 +53,7 @@ export type WizardStructure = 'single' | 'per-collection'
 const SECTION_OF: Record<WizardCollection, SectionKey> = {
   primitives: 'color', semantics: 'color', gradients: 'gradients', typography: 'typography',
   spacing: 'spacing', radius: 'radius',
-  shadow: 'shadow', grid: 'grid', sizes: 'sizes', stroke: 'stroke', icons: 'icons',
+  shadow: 'shadow', grid: 'grid', sizes: 'sizes', stroke: 'stroke', icons: 'icons', motion: 'motion',
 }
 
 export interface WizardSelection {
@@ -245,6 +246,7 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
     { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length + Object.keys(full.sizeRoles ?? {}).length + Object.keys(full.selector ?? {}).length + Object.keys(full.selectorRoles ?? {}).length },
     { key: 'stroke', label: 'Stroke', count: Object.keys(full.stroke ?? {}).length + Object.keys(full.strokeRoles ?? {}).length },
     { key: 'icons', label: 'Icons', count: 1 + (full.icons.custom?.length ?? 0) },
+    { key: 'motion', label: 'Motion', count: motionTokenCount(full) },
   ]
 }
 
@@ -315,6 +317,40 @@ function figmaCollectionsFor(ordered: WizardCollection[]): string[] {
 
 function dimensionGroupsFor(ordered: WizardCollection[]): string[] {
   return ordered.flatMap((k) => DIMENSION_GROUPS_OF[k] ?? [])
+}
+
+// ── Motion ───────────────────────────────────────────────────────────────────
+
+/** Roles + rungs + curves + transforms + choreographies — what the Motion
+ *  group carries, for Step 1's count. */
+function motionTokenCount(full: TokenJSON): number {
+  const m = (full as unknown as { motion?: Record<string, Record<string, unknown>> }).motion
+  if (!m) return 0
+  return ['durations', 'easings', 'transforms', 'roles', 'choreography'].reduce((n, k) => n + Object.keys(m[k] ?? {}).length, 0)
+}
+
+/** The W3C `Motion` group: one mode per brand when brands move differently,
+ *  one `Default` mode when they all move alike. A distance aliases the
+ *  Dimension primitive of its length when the document carries it. */
+function motionW3CForExport(full: TokenJSON, tree: Record<string, unknown>, aliases: boolean): Record<string, unknown> {
+  const doc = full as unknown as {
+    motion?: unknown
+    themeOrder?: string[]
+    colors: { themeOrder: string[]; themeLabels?: Record<string, string> }
+    foundationsByTheme?: Record<string, { motion?: unknown }>
+  }
+  const order = doc.colors.themeOrder ?? []
+  const label = (k: string) => doc.colors.themeLabels?.[k]?.trim() || k.charAt(0).toUpperCase() + k.slice(1)
+  const perBrand = order
+    .filter((k) => doc.foundationsByTheme?.[k]?.motion)
+    .map((k) => ({ name: label(k), settings: motionSettingsFromTokens(doc.foundationsByTheme![k].motion) }))
+  const distinct = new Set(perBrand.map((m) => JSON.stringify(m.settings)))
+  const modes = perBrand.length && distinct.size > 1
+    ? perBrand.filter((m, i, all) => all.findIndex((x) => x.name === m.name) === i)
+    : [{ name: 'Default', settings: perBrand[0]?.settings ?? motionSettingsFromTokens(doc.motion) }]
+  const dims = ((tree['Dimension Primitives'] as Record<string, Record<string, { $value?: unknown }>> | undefined)?.Default) ?? {}
+  const dimensionRef = (px: number) => (dims[String(px)]?.$value === `${px}px` ? `{Dimension Primitives.Default.${px}}` : undefined)
+  return motionW3CGroup(modes, { aliases, dimensionRef })
 }
 
 // ── Public entry ─────────────────────────────────────────────────────────────
@@ -408,9 +444,16 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
       aliases: sel.includeAliases,
       project,
     })
+    // Motion is not a Figma collection yet (the plugin's lands in phase 4 of
+    // design-plans/motion-foundation.md): its group is written beside the five.
+    const groups = [...include]
+    if (ordered.includes('motion')) {
+      tree.Motion = motionW3CForExport(full, tree, sel.includeAliases !== false)
+      groups.push('Motion')
+    }
     if (sel.structure === 'per-collection') {
       const { $description, $extensions } = tree
-      return include.map((name) => ({
+      return groups.map((name) => ({
         name: `${name.toLowerCase().replace(/\s+/g, '-')}.tokens.json`,
         content: JSON.stringify({ $description, $extensions, [name]: tree[name] }, null, 2),
         language: 'json' as const,

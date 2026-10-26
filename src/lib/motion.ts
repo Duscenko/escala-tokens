@@ -938,6 +938,137 @@ export function motionTrailingCss(settings: MotionSettings, themed: { selector: 
   return lines
 }
 
+// ── W3C (DTCG) ─────────────────────────────────────────────────────────────
+//
+// The `Motion` group of the W3C document (beside the five Figma collections),
+// one mode per brand: durations are `$type: duration`, cubic easings
+// `cubicBezier`, a spring a `string` with its cubic stand-in in
+// `$extensions`, a role a `transition` composite aliasing its rung and curve,
+// a choreography `$type: "choreography"` whose tracks alias roles. Every
+// primitive and role carries `ai.intent`. A distance aliases the Dimension
+// primitive of the same length when the document carries one, else it is px.
+
+export interface MotionW3COptions {
+  /** `Dimension Primitives.Default.<leaf>` for a px length, when that
+   *  primitive is in the document; otherwise the value is written. */
+  dimensionRef?: (px: number) => string | undefined
+  /** false: write values instead of references inside the group. */
+  aliases?: boolean
+}
+
+const MOTION_GROUP = 'Motion'
+
+function cubicPoints(css: string): number[] | null {
+  const m = /^cubic-bezier\(([^)]+)\)$/.exec(css)
+  return m ? m[1].split(',').map((n) => Number(n.trim())) : null
+}
+
+/** One mode of the `Motion` group. */
+export function motionW3CMode(settings: MotionSettings, mode: string, opts: MotionW3COptions = {}): Record<string, unknown> {
+  const aliases = opts.aliases !== false
+  const ref = (...path: string[]) => `{${[MOTION_GROUP, mode, ...path].join('.')}}`
+  const durations = motionDurations(settings)
+  const durationValue = (ms: number) => ({ value: ms, unit: 'ms' })
+
+  const duration: Record<string, unknown> = {}
+  for (const k of MOTION_DURATION_KEYS) {
+    duration[k] = {
+      $type: 'duration',
+      $value: durationValue(durations[k]),
+      $extensions: { 'ai.intent': { ...MOTION_DURATION_INTENT[k], constraints: { range: { ...durationRange(k), unit: 'ms' } } } },
+    }
+  }
+
+  const easing: Record<string, unknown> = {}
+  for (const k of MOTION_EASING_KEYS) {
+    const points = cubicPoints(MOTION_EASINGS[k])
+    const fallback = MOTION_EASING_FALLBACK[k]
+    easing[k] = points
+      ? { $type: 'cubicBezier', $value: points }
+      : {
+          $type: 'string',
+          $value: MOTION_EASINGS[k],
+          $extensions: { 'com.escala': { cubicFallback: aliases && fallback ? ref('easing', fallback) : cubicPoints(easingCubic(k)) } },
+        }
+  }
+  for (const [alias, key] of Object.entries(MOTION_EASING_ALIASES)) {
+    easing[alias] = aliases ? { $type: 'cubicBezier', $value: ref('easing', key) } : easing[key]
+  }
+
+  const transform: Record<string, unknown> = {}
+  for (const t of MOTION_TRANSFORM_ROLES) {
+    const v = settings.transforms[t]
+    if (MOTION_DISTANCE_ROLES.has(t)) {
+      const dim = aliases ? opts.dimensionRef?.(v) : undefined
+      transform[t] = { $type: 'dimension', $value: dim ?? `${v}px` }
+    } else {
+      transform[t] = { $type: 'number', $value: v }
+    }
+  }
+
+  // A role's curve: a spring cannot sit in a DTCG transition, so the
+  // composite points at its cubic stand-in and names the spring beside it.
+  const timing = (k: MotionEasingKey) => {
+    const cubic = MOTION_EASING_FALLBACK[k] ?? k
+    return aliases ? ref('easing', cubic) : cubicPoints(MOTION_EASINGS[cubic])
+  }
+  const role: Record<string, unknown> = {}
+  for (const r of MOTION_ROLES) {
+    const pick = settings.roles[r] ?? STANDARD_ROLES[r]
+    role[r] = {
+      $type: 'transition',
+      $value: {
+        duration: aliases ? ref('duration', pick.duration) : durationValue(durations[pick.duration]),
+        delay: durationValue(0),
+        timingFunction: timing(pick.easing),
+      },
+      $extensions: {
+        'ai.intent': MOTION_ROLE_INTENT[r],
+        ...(MOTION_EASING_FALLBACK[pick.easing] ? { 'com.escala': { timingFunction: MOTION_EASINGS[pick.easing] } } : {}),
+      },
+    }
+  }
+
+  // Choreographies: the same JSON tokens.json ships, with every motion and
+  // delay written as a reference into this group.
+  const motionRef = (m: MotionRef) => ('role' in m
+    ? (aliases ? ref('role', m.role) : resolveMotionRole(m.role, settings).value)
+    : { duration: aliases ? ref('duration', m.duration) : durationValue(durations[m.duration]), timingFunction: timing(m.easing) })
+  const delayRef = (d: MotionDurationKey | 0) => (d === 0 ? durationValue(0) : aliases ? ref('duration', d) : durationValue(durations[d]))
+  const body = (b: Omit<Choreography, 'components' | 'intent' | 'reducedMotion'> & { collapseTo?: string }) => ({
+    pattern: b.pattern,
+    ...(b.collapseTo ? { collapseTo: b.collapseTo } : {}),
+    ...(b.tracks ? { tracks: b.tracks.map((t) => ({ ...(t.slot ? { slot: t.slot } : {}), keyframes: t.keyframes, motion: motionRef(t.motion), delay: delayRef(t.delay) })) } : {}),
+    ...(b.child ? { child: { ...(b.child.slot ? { slot: b.child.slot } : {}), keyframes: b.child.keyframes, motion: motionRef(b.child.motion) } } : {}),
+    ...(b.offset !== undefined ? { offset: durationValue(b.offset) } : {}),
+    ...(b.direction ? { direction: b.direction } : {}),
+    ...(b.maxElements ? { maxElements: b.maxElements } : {}),
+    ...(b.motion ? { motion: motionRef(b.motion) } : {}),
+  })
+  const choreography: Record<string, unknown> = {}
+  for (const [name, c] of Object.entries(motionChoreographies(settings))) {
+    choreography[name] = {
+      $type: 'choreography',
+      $value: { ...body(c), reducedMotion: body(c.reducedMotion) },
+      $extensions: { 'ai.intent': c.intent, ...(c.components.length ? { 'com.escala': { components: c.components } } : {}) },
+    }
+  }
+
+  return {
+    duration,
+    easing,
+    transform,
+    stagger: { $type: 'duration', $value: durationValue(settings.stagger) },
+    role,
+    choreography,
+  }
+}
+
+/** The whole `Motion` group: `{ <mode>: … }`, one mode per brand. */
+export function motionW3CGroup(modes: { name: string; settings: MotionSettings }[], opts: MotionW3COptions = {}): Record<string, unknown> {
+  return Object.fromEntries(modes.map((m) => [m.name, motionW3CMode(m.settings, m.name, opts)]))
+}
+
 // ── Markdown ───────────────────────────────────────────────────────────────
 
 export function motionMarkdown(settings: MotionSettings): string {

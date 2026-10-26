@@ -100,6 +100,32 @@ tokens the page does not list: `instant`, `fade`, the springs, every transform).
 - **Not done, phase 4**: the plugin's `ST_ROWS` Motion row (the rule "when a web rail row
   changes, change its plugin row too" applies there), the `Motion` collection, W3C.
 
+**Phase 4, web half done (2026-10-26). The plugin half is NOT started** (owner's call: the
+plugin repo has unrelated work in flight on `feat/full-catalogue-parity`; wait for it).
+
+- **Motion is an export collection**: `WizardCollection` / `SectionKey` `motion` (Step 1 checkbox,
+  counted; CSS = `:root` + keyframes + reduced block; Tailwind = `transitionDuration` /
+  `transitionTimingFunction`; JSON = tokens.json `motion`; Markdown = `motionMarkdown`).
+- **W3C `Motion` group** (`motionW3CGroup` / `motionW3CMode` in `lib/motion.ts`), written beside
+  the five Figma collections by `exportWizard` (`motionW3CForExport`) — NOT through
+  `w3cTree.ts`, which is byte-identical with the plugin's copy (parity test) and would force a
+  plugin change. Shape: `Motion.<mode>.duration.*` (`$type: duration`, `{value, unit}`, ai.intent
+  with range), `easing.*` (`cubicBezier`; a spring is `string` with `com.escala.cubicFallback`;
+  `decelerate` / `accelerate` alias), `transform.*` (distances `dimension`, scales `number`),
+  `stagger`, `role.*` (`transition` composite: duration alias + 0ms delay + a CUBIC
+  timingFunction alias; a spring role names the spring in `com.escala.timingFunction`) and
+  `choreography.*` (`$type: "choreography"`, tracks alias roles / rungs, `reducedMotion` inside,
+  ai.intent). Modes: one per brand when brands move differently, else `Default`.
+- **Distances alias the Dimension primitive of their length when the document carries one**
+  (`enter` 8px → `{Dimension Primitives.Default.8}`), else px (`dolly` -240px). The ladder is NOT
+  extended — that changes `Dimension Primitives` in Figma and waits for the plugin half.
+- Tests: `motionW3C.test.ts` (types, ai.intent, every reference resolves in the document, cubic
+  timing functions, distance aliasing, no references without aliases, modes per brand).
+- **Plugin half, still to do**: the `Motion` collection (number ms / string easing, one mode or
+  one per brand), `Motion/role/*`, the ⬡ Motion documentation page, the studio `ST_ROWS` Motion
+  row (web rail parity), moving the Motion group into `w3cTree.ts` (both copies) once the plugin
+  writes the collection, and extending the Dimension ladder for off-ladder distances.
+
 ## Tier 1 — Primitives (fixed, not edited per system)
 
 Like `SPACING_STEPS` / `RADIUS_STANDARD`: the ladder is the vocabulary, presets pick from it.
@@ -356,7 +382,7 @@ tokens.json additions are new keys, no `schemaVersion` bump (the `shadowsDark` p
    (no script runtime, see State), registry items carry it. No hardcoded `duration-*` left.
 3. **Editor** — DONE: the Motion row in the accordion, the Variables collection, the inspector
    filter, System Style + mood assignments, motion per brand (store v104).
-4. **Plugin + W3C**: `Motion` collection, `Motion/role/*`, the ⬡ Motion documentation page, the
+4. **Plugin + W3C** — web half DONE (W3C group, export collection); plugin half pending: `Motion` collection, `Motion/role/*`, the ⬡ Motion documentation page, the
    plugin studio row, the W3C Motion group (same converter), transform distances aliased to the
    Dimension primitives.
 5. **Docs**: a Motion page in System · Docs with each choreography playable, full and reduced side by side.

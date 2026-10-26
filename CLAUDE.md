@@ -115,8 +115,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > brands, appended LAST so `themeHasEdits` still matches). Accordion row **Motion** (preview +
 > Preset), Variables foundation `motion` (`MotionSemantics`: duration + easing selects per role,
 > no free ms), inspector Motion filter. A brand's `variables.css` block overrides only differing
-> `--motion-*` and restates them in the reduced block (`motionThemeCssDiff`). Not yet: the
-> plugin's Motion row / collection and W3C (phase 4).
+> `--motion-*` and restates them in the reduced block (`motionThemeCssDiff`).
+> **Phase 4, web half (2026-10-26):** Motion is an Export collection (`motion` in
+> `WizardCollection` / `SectionKey`) and the W3C document carries a `Motion` group beside the five
+> Figma collections (`motionW3CGroup`; roles are DTCG `transition`, choreographies
+> `$type: "choreography"`, distances alias a Dimension primitive when present). It is built
+> OUTSIDE `w3cTree.ts` on purpose: that file is byte-identical with the plugin's. **The plugin
+> half is not started** (Motion collection, ⬡ Motion page, studio row) — the plugin repo has other
+> work in flight; the web rail's Motion row has no plugin twin until then.
 
 > **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on
 > the page (3:1 + Lc 45) AND carries a label — no Light-only exception.** A first pass let Light pass on

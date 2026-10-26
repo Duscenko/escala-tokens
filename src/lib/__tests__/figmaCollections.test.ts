@@ -118,14 +118,14 @@ describe('wizard W3C', () => {
     expect(Object.keys(JSON.parse(file.content)['Color Semantics'])).toEqual(['Dark'])
   })
 
-  it('every collection, per collection: five files', () => {
+  it('every collection, per collection: the five Figma collections, then Motion', () => {
     const files = buildWizardExport({
       collections: ALL_WIZARD_COLLECTIONS, modes: ['light', 'dark'], format: 'w3c', structure: 'per-collection',
       colorFormat: 'hex', includeAliases: true, includeComponents: false,
     })
     expect(files.map((f) => f.name)).toEqual([
       'color-primitives.tokens.json', 'color-semantics.tokens.json', 'dimension-primitives.tokens.json',
-      'dimension-semantics.tokens.json', 'typography.tokens.json',
+      'dimension-semantics.tokens.json', 'typography.tokens.json', 'motion.tokens.json',
     ])
   })
 

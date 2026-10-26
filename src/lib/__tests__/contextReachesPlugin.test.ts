@@ -2,7 +2,7 @@
 // `extractEscalaPayload` + `classifyPaste` evaluated straight out of
 // escala-figma-plugin/src/ui.html, not the web's mirror in figmaContext.ts.
 // The mirror being tested alone would stay green while the two drift apart.
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -16,10 +16,10 @@ import { COMPONENTS } from '../componentCatalogue'
 import { agentContextMarkdown } from '../agentContext'
 import { resolvePreviewTokens } from '../previewTokens'
 
-const uiHtml = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '../../../../escala-figma-plugin/src/ui.html'),
-  'utf8',
-)
+// The plugin is a sibling checkout; CI clones this repo alone, so the suite
+// skips there (like the other plugin-parity tests) instead of failing.
+const uiHtmlPath = join(dirname(fileURLToPath(import.meta.url)), '../../../../escala-figma-plugin/src/ui.html')
+const uiHtml = existsSync(uiHtmlPath) ? readFileSync(uiHtmlPath, 'utf8') : ''
 
 /** Slices one top-level `function name(…) { … }` out of ui.html. */
 function pluginFunction(name: string): string {
@@ -63,7 +63,7 @@ function expectOneBrandSystem(p: Paste, brand: string, columns: number) {
   }
 }
 
-describe('web contexts, read by the plugin', () => {
+describe.skipIf(!uiHtml)('web contexts, read by the plugin', () => {
   it('All foundations (Both / Light / Dark) imports as that one brand', () => {
     const store = useDesignStore.getState()
     for (const brand of brands) {

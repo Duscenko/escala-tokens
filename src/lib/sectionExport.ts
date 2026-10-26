@@ -2,6 +2,7 @@
 // Markdown so designers can copy a single slice into an AI prompt or codebase.
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
+import { motionMarkdown, motionRootCss, motionTokens, motionTrailingCss, normalizeMotionSettings } from './motion'
 import { findFontSource } from './customFonts'
 import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
@@ -44,14 +45,14 @@ type Store = ReturnType<typeof useDesignStore.getState>
 
 export type SectionKey =
   | 'color' | 'gradients' | 'typography' | 'radius' | 'spacing'
-  | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
+  | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons' | 'motion'
 
 // Order used when assembling the full-system ("all") export. Gradients sit
 // right after Color — they're built FROM the accent ramp (linked stops
 // reference `primaryScale`/`primaryDarkScale` by tone), so they read as a
 // continuation of the same foundation rather than an unrelated one dropped
 // in alphabetically.
-export const ALL_SECTIONS: SectionKey[] = ['color', 'gradients', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons']
+export const ALL_SECTIONS: SectionKey[] = ['color', 'gradients', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons', 'motion']
 
 export type ExportFormat = 'css' | 'tailwind' | 'tokens' | 'md'
 export type ColorFormat = 'hex' | 'rgba' | 'hsl' | 'oklch'
@@ -320,6 +321,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     typeRoleCssVars(t.roles, opts.desktopOnly ? ['desktop'] : undefined).forEach((l) => lines.push(`${l}`))
     return lines
   }
+  if (section === 'motion') return motionRootCss(normalizeMotionSettings(store.motion))
   if (section === 'icons') {
     const ai = getIconAiSource(store.iconAiSource)
     const lines = [
@@ -411,6 +413,8 @@ function withDimensions(lines: string[]): string[] {
 
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   const root = wrapRoot(withDimensions(cssLines(section, store, cf, opts)))
+  // Motion's keyframes, linear() fallback and reduced-motion block sit after :root.
+  if (section === 'motion') return [root, ...motionTrailingCss(normalizeMotionSettings(store.motion))].join('\n')
   if (opts.desktopOnly) return root
   if (section === 'spacing') {
     const media = spacingMediaCss(store.breakpointRoles, store.grid, store.spacingRoles, store.spacing)
@@ -461,6 +465,12 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     }
   }
   if (section === 'icons') return {}
+  if (section === 'motion') {
+    // Tailwind's own keys: `duration-quick`, `ease-standard`. Roles stay CSS
+    // variables (`var(--motion-use-hover)`): a shorthand has no theme key.
+    const m = motionTokens(normalizeMotionSettings(store.motion))
+    return { transitionDuration: m.durations, transitionTimingFunction: m.easings }
+  }
   if (section === 'gradients') {
     // `backgroundImage` is Tailwind's real theme key for named gradients —
     // this mints usable `bg-<slug>` utilities, not a placeholder comment.
@@ -521,6 +531,7 @@ function tokensFor(section: SectionKey): unknown {
     case 'sizes': return { ...dimensionSlice(full, ['sizes', 'selector']), sizes: full.sizes, sizeRoles: full.sizeRoles, selector: full.selector, selectorRoles: full.selectorRoles }
     case 'stroke': return { ...dimensionSlice(full, ['stroke']), stroke: full.stroke, strokeRoles: full.strokeRoles }
     case 'icons': return { icons: full.icons }
+    case 'motion': return { motion: full.motion }
   }
 }
 
@@ -727,6 +738,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
         : '\nDesktop CSS: `var(--text-label-font-size)`. Tablet: `var(--text-label-font-size-tablet)` in the tablet range (the same media query as the grid\'s tablet frame). Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. All three alias primitives (`var(--font-size-text-sm)`). Only Display and headings step; body and control text keep one size.',
     ].join('\n')
   }
+  if (section === 'motion') return motionMarkdown(normalizeMotionSettings(store.motion))
   if (section === 'icons') {
     const ctx = iconAiContext(store.iconAiSource)
     const extra = store.customIcons.length
@@ -909,7 +921,7 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      const root = wrapRoot(withDimensions(lines))
+      const root = [wrapRoot(withDimensions(lines)), ...motionTrailingCss(normalizeMotionSettings(store.motion))].join('\n')
       if (opts.desktopOnly) return root
       return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing, { roles: store.radiusRoles, radius: store.radius, viewports: store.radiusRoleViewports }, { roles: store.spacingRoles, spacing: store.spacing })}`
     }
