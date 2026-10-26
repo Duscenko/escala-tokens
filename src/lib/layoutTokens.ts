@@ -1038,9 +1038,10 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * contract is unchanged and only WHICH step each role aliases is now chosen per
  * axis instead of derived from a single `lg`.
  *
- * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder: at the standard ramp these are
- * 0 / 4 / 8 / 16 / 32px, i.e. 0, 0.25rem, 0.5rem, 1rem, 2rem exactly
- * (none · sm · lg · 2xl · 4xl since v77 renamed the ramp; same pixels).
+ * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder plus 3xl: at the standard ramp
+ * these are 0 / 4 / 8 / 16 / 24 / 32px (none · sm · lg · 2xl · 3xl · 4xl).
+ * 3xl is the Pill preset's box — rounder than Rounded's 16 without the 32
+ * that clipped a card's content.
  *
  * `pill` is deliberately NOT an axis. It means "this is a circle" (avatar,
  * progress, switch track) rather than "this is somewhat rounded", so it stays
@@ -1048,7 +1049,7 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * someone picked a tighter checkbox. That is the one place these groups diverge
  * from DaisyUI, whose selector axis also covers the badge.
  */
-export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', '2xl', '4xl'] as const
+export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', '2xl', '3xl', '4xl'] as const
 export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number]
 
 export interface RadiusGroup {
@@ -1145,10 +1146,10 @@ export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
   { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
   { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
   { label: 'Rounded', description: 'The standard — boxes 16, fields 8, selectors 4.', picks: { boxes: '2xl', fields: 'lg', selectors: 'sm' } },
-  // Boxes stay at 2xl (16): a card or alert holding tags and text keeps its
-  // shape, where 32 rounded the corners past the content and clipped it.
-  // The pill look is the fields'.
-  { label: 'Pill', description: 'Pill fields — boxes 16, fields 32, selectors 8.', picks: { boxes: '2xl', fields: '4xl', selectors: 'lg' } },
+  // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
+  // tags and text keeps its shape — 32 rounded the corners past the content
+  // and clipped it. The full pill look is the fields'.
+  { label: 'Pill', description: 'Pill fields — boxes 24, fields 32, selectors 8.', picks: { boxes: '3xl', fields: '4xl', selectors: 'lg' } },
 ]
 
 /** The role map a preset produces (the `pill` role and any role outside the

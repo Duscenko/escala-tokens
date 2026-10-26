@@ -1909,7 +1909,7 @@ var init_layoutTokens = __esm({
       { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
       { key: "pill", label: "Pill", description: "Badge, chip, avatar, switch, progress.", group: "selectors", primitive: "full" }
     ];
-    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "2xl", "4xl"];
+    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "2xl", "3xl", "4xl"];
     RADIUS_GROUPS = [
       { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"] },
       { key: "fields", label: "Fields", hint: "button, input, select, tab", roles: ["action"] },
@@ -1919,10 +1919,10 @@ var init_layoutTokens = __esm({
       { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
       { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
       { label: "Rounded", description: "The standard \u2014 boxes 16, fields 8, selectors 4.", picks: { boxes: "2xl", fields: "lg", selectors: "sm" } },
-      // Boxes stay at 2xl (16): a card or alert holding tags and text keeps its
-      // shape, where 32 rounded the corners past the content and clipped it.
-      // The pill look is the fields'.
-      { label: "Pill", description: "Pill fields \u2014 boxes 16, fields 32, selectors 8.", picks: { boxes: "2xl", fields: "4xl", selectors: "lg" } }
+      // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
+      // tags and text keeps its shape — 32 rounded the corners past the content
+      // and clipped it. The full pill look is the fields'.
+      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, selectors 8.", picks: { boxes: "3xl", fields: "4xl", selectors: "lg" } }
     ];
     LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
     LEGACY_RADIUS_LG_FACTOR = 2;
