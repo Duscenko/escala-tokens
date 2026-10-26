@@ -136,7 +136,7 @@ describe('plugin studio build', () => {
   })
   it('studioLook matches the web radius, spacing, solid and dark shadow', () => {
     const pill = studioLook({ radiusPreset: 'Pill', spacingMode: 'quiet', accent: '#9522e9', kind: 'light', shadow: 'Strong' })
-    expect(pill.box).toBe(32)
+    expect(pill.box).toBe(16) // boxes stay 2xl: a card with tags keeps its shape
     expect(pill.field).toBe(32)
     expect(pill.control).toBe(8)
     expect(pill.controlH).toBe(40)

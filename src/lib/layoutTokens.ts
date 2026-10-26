@@ -1145,7 +1145,10 @@ export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
   { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
   { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
   { label: 'Rounded', description: 'The standard — boxes 16, fields 8, selectors 4.', picks: { boxes: '2xl', fields: 'lg', selectors: 'sm' } },
-  { label: 'Pill', description: 'Generous — boxes 32, pill fields, selectors 8.', picks: { boxes: '4xl', fields: '4xl', selectors: 'lg' } },
+  // Boxes stay at 2xl (16): a card or alert holding tags and text keeps its
+  // shape, where 32 rounded the corners past the content and clipped it.
+  // The pill look is the fields'.
+  { label: 'Pill', description: 'Pill fields — boxes 16, fields 32, selectors 8.', picks: { boxes: '2xl', fields: '4xl', selectors: 'lg' } },
 ]
 
 /** The role map a preset produces (the `pill` role and any role outside the
