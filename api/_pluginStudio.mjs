@@ -13251,6 +13251,7 @@ function adoptPreset(preset, appearance, opts = {}) {
 }
 
 // src/lib/pluginStudio.ts
+init_motion();
 var STATE_SLOTS = ["error", "warning", "success", "info"];
 function studioOptions() {
   const radius = RADIUS_STANDARD;
@@ -13278,6 +13279,16 @@ function studioOptions() {
     insetSteps: SPACING_STEPS.map((step) => ({ step, px: Number(step.replace("_", ".")) * SPACING_DEFAULT_BASE })),
     borderStops: [...STROKE_SM_STOPS],
     iconWeights: [...PHOSPHOR_WEIGHTS],
+    // The Motion row: each preset with the two timings its tile plays (the
+    // dialog card's entrance and a list row's), read off the preset itself.
+    motionPresets: MOTION_PRESET_KEYS.map((key2) => {
+      const p2 = MOTION_PRESETS[key2];
+      const play = (role) => {
+        const r = resolveMotionRole(role, p2.settings);
+        return { ms: r.ms, easing: r.value.slice(`${r.ms}ms `.length) };
+      };
+      return { key: key2, label: p2.label, brief: p2.brief, factor: p2.settings.durationFactor, enter: p2.settings.transforms.enter, emphasis: play("use-emphasis-in"), stagger: play("use-stagger-in"), offset: p2.settings.stagger };
+    }),
     neutralTints: ["pure", "subtle", "tinted", "vivid"],
     contrast: { min: -1, max: 1, step: 0.05 },
     styles: THEME_STYLE_PRESETS.map((p2) => styleSummary(p2, radius))
@@ -13307,7 +13318,8 @@ function styleSummary(p2, standard) {
     shadow: (f.shadows && matchShadowPreset(f.shadows)) ?? "Custom",
     shadowMd: f.shadows?.md ?? "none",
     shadowMdDark: darkShadow(f.shadows?.md ?? "none"),
-    iconWeight: f.iconWeight ?? "regular"
+    iconWeight: f.iconWeight ?? "regular",
+    motionPreset: matchMotionPreset(normalizeMotionSettings(f.motion)) ?? "standard"
   };
 }
 var HEX = /^#[0-9a-f]{6}$/i;
@@ -13416,6 +13428,9 @@ function buildStudioTokens(choices, tier) {
   if (shadowDark) patch({ shadowsDark: darkShadowMap(shadowDark.values) });
   const weight = PHOSPHOR_WEIGHTS.includes(choices.iconWeight ?? "") ? choices.iconWeight : void 0;
   if (weight) patch({ iconWeight: weight });
+  if (MOTION_PRESET_KEYS.includes(choices.motionPreset ?? "")) {
+    patch({ motion: motionPresetPatch(choices.motionPreset) });
+  }
   applyRoleOverrides(key2, choices.roleOverrides);
   const s = useDesignStore.getState();
   const modes = defaultFigmaSyncModes([key2], s.themeKinds);

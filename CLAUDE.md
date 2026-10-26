@@ -120,9 +120,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `WizardCollection` / `SectionKey`) and the W3C document carries a `Motion` group beside the five
 > Figma collections (`motionW3CGroup`; roles are DTCG `transition`, choreographies
 > `$type: "choreography"`, distances alias a Dimension primitive when present). It is built
-> OUTSIDE `w3cTree.ts` on purpose: that file is byte-identical with the plugin's. **The plugin
-> half is not started** (Motion collection, ⬡ Motion page, studio row) — the plugin repo has other
-> work in flight; the web rail's Motion row has no plugin twin until then.
+> through `w3cTree.ts` (`SnapshotToW3COptions.motion`, see plugin half). **Phase 4, plugin half
+> (2026-10-26, plugin 0.30.0):** a `Motion` collection (`motionFigmaVariables` naming: `duration/*`
+> ms, `easing/*` CSS + `-fallback` for springs, `transform/*`, `stagger`, `role/<role>/{duration,
+> easing}` aliases; modes from `motionModesFromTokens`, the W3C rule), a **Motion** board on
+> ↳ Documentation (choreography timelines, full beside reduced), and the studio's seventh
+> `ST_ROWS` row, Motion (`StudioChoices.motionPreset`, `studioOptions().motionPresets`). Web and
+> plugin W3C both hand `motionW3CGroup` to `snapshotToW3C`; the plugin reads settings back from
+> its collection (`motionSettingsFromFigma`). Off-ladder distances (`dolly`) stay px: extending
+> `Dimension Primitives` waits for the owner.
 > **Phase 5 (2026-10-26): Docs · Motion** (`docs/MotionDoc.tsx`, `MOTION_DOC`, last entry of
 > `FOUNDATION_DOCS`, so it is in System · Docs, `/docs/motion` and the sitemap). It reads the
 > brand on screen (`SystemDoc.motion`, normalized from `resolveThemeFoundations`): preset line,

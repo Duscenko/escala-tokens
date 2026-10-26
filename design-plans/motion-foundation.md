@@ -100,8 +100,7 @@ tokens the page does not list: `instant`, `fade`, the springs, every transform).
 - **Not done, phase 4**: the plugin's `ST_ROWS` Motion row (the rule "when a web rail row
   changes, change its plugin row too" applies there), the `Motion` collection, W3C.
 
-**Phase 4, web half done (2026-10-26). The plugin half is NOT started** (owner's call: the
-plugin repo has unrelated work in flight on `feat/full-catalogue-parity`; wait for it).
+**Phase 4, web half done (2026-10-26).** (Plugin half: see "Phase 4, plugin half done" below.)
 
 - **Motion is an export collection**: `WizardCollection` / `SectionKey` `motion` (Step 1 checkbox,
   counted; CSS = `:root` + keyframes + reduced block; Tailwind = `transitionDuration` /
@@ -121,10 +120,41 @@ plugin repo has unrelated work in flight on `feat/full-catalogue-parity`; wait f
   extended — that changes `Dimension Primitives` in Figma and waits for the plugin half.
 - Tests: `motionW3C.test.ts` (types, ai.intent, every reference resolves in the document, cubic
   timing functions, distance aliasing, no references without aliases, modes per brand).
-- **Plugin half, still to do**: the `Motion` collection (number ms / string easing, one mode or
-  one per brand), `Motion/role/*`, the ⬡ Motion documentation page, the studio `ST_ROWS` Motion
-  row (web rail parity), moving the Motion group into `w3cTree.ts` (both copies) once the plugin
-  writes the collection, and extending the Dimension ladder for off-ladder distances.
+- (Superseded by the plugin half below: the W3C group now goes through `w3cTree.ts`.)
+
+**Phase 4, plugin half done (2026-10-26). Plugin 0.30.0.**
+
+- **`Motion` collection** (`code.ts` `importVariables`, after Copy). Naming and values come from
+  `lib/motion.ts` `motionFigmaVariables`: `duration/<rung>` NUMBER ms, `easing/<curve>` STRING
+  (CSS; a spring also gets `easing/<spring>-fallback`, an alias of its cubic stand-in),
+  `transform/<role>` NUMBER (a distance aliases the Dimension primitive of its length when the
+  file has one, else px), `stagger` ms, and per role `role/<role>/duration` + `role/<role>/easing`,
+  aliases into the same mode. No scopes. Modes: `motionModesFromTokens` — ONE rule shared with the
+  W3C group (one `Default`, or one column per brand when brands move differently); stale columns
+  go through `placeModes` / `pruneModes`, stale variables through `pruneVars`. Skipped when
+  `tokensHaveMotion` is false. In the single-collection picker as "Motion".
+- **Read back**: `motionSettingsFromFigma` (the inverse; the factor comes from `duration/long`).
+  `motionW3C.test.ts` holds the round trip for all five presets.
+- **W3C**: `w3cTree.ts` takes `SnapshotToW3COptions.motion` (a group builder handed
+  `{ aliases, dimensionRef }`) and writes the `Motion` group after the five collections; a
+  `Motion` collection in a snapshot is never written variable by variable. The web
+  (`exportWizard` → `figmaCollectionsW3C`) and the plugin (`exportCollectionsW3C`, settings read
+  from the file's own `Motion` collection) both pass `motionW3CGroup`, so the downloads share one
+  shape. `motionW3CForExport` is gone.
+- **Documentation**: a **Motion** board on ↳ Documentation (after Gradients), not a separate page —
+  every foundation is a board on that page, and a page would cost a Starter file one of its three
+  slots. Preset line, duration ladder, the 24 roles, then all 15 choreographies as timelines: a
+  lane per slot, a bar from delay to delay + duration naming keyframes · role · easing · ms, the
+  reduced version beside it on the same time scale. Derived from the doc brand's payload motion.
+- **Studio**: `ST_ROWS` has a seventh row, **Motion** (step 6): five preset tiles, each playing
+  its own emphasis + stagger timing; summary = preset label or Custom. `StudioChoices.motionPreset`
+  → `buildStudioTokens` patches `motion: motionPresetPatch(key)` on the brand; `studioOptions()`
+  ships `motionPresets` (label, brief, the two timings) and each style's `motionPreset`. The row
+  hides when the server offers no presets (an older deploy).
+- **Not done (owner's call pending)**: extending the Dimension ladder for off-ladder distances
+  (`dolly` -240px stays px). It changes `Dimension Primitives` in every synced file.
+- **Not checked inside Figma**: the collection, the board and the W3C export were built and typed,
+  not run in a Figma file.
 
 **Phase 5 done (2026-10-26).** Docs · Motion.
 

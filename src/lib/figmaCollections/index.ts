@@ -5,7 +5,7 @@
 
 import type { generateTokenJSON } from '../tokenGenerator'
 import { figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
-import { isSnapAlias, snapshotToW3C, type CollectionsSnapshot, type SnapScalar, type SnapValue } from './w3cTree'
+import { isSnapAlias, snapshotToW3C, type CollectionsSnapshot, type SnapScalar, type SnapValue, type SnapshotToW3COptions } from './w3cTree'
 
 export { figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
 export * from './w3cTree'
@@ -25,6 +25,8 @@ export interface FigmaW3COptions {
   /** false: aliases are written as their values. */
   aliases?: boolean
   project?: string
+  /** The `Motion` group's builder (written when `include` names `Motion`). */
+  motion?: SnapshotToW3COptions['motion']
 }
 
 /** Drops the variables `keep` rejects, writing every alias that pointed at one
@@ -99,5 +101,5 @@ export function figmaCollectionsW3C(tokens: TokenJSON, opts: FigmaW3COptions = {
       }),
     }
   }
-  return snapshotToW3C(snap, { source: 'escala-web', project: opts.project ?? tokens.project }, { aliases: opts.aliases, include: opts.include })
+  return snapshotToW3C(snap, { source: 'escala-web', project: opts.project ?? tokens.project }, { aliases: opts.aliases, include: opts.include, motion: opts.motion })
 }

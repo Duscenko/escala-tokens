@@ -8,7 +8,11 @@
 import { describe, expect, it } from 'vitest'
 import { useDesignStore } from '../../store/useDesignStore'
 import { buildWizardExport, ALL_WIZARD_COLLECTIONS } from '../exportWizard'
-import { MOTION_DURATION_KEYS, MOTION_PRESETS, MOTION_ROLES, motionPresetPatch, motionW3CMode } from '../motion'
+import {
+  MOTION_DURATION_KEYS, MOTION_PRESETS, MOTION_PRESET_KEYS, MOTION_ROLES, matchMotionPreset, motionFigmaVariables, motionModesFromTokens,
+  motionPresetPatch, motionSettingsFromFigma, motionW3CGroup, motionW3CMode, tokensHaveMotion, type MotionFigmaValue,
+} from '../motion'
+import { MOTION_COLLECTION, snapshotToW3C } from '../figmaCollections'
 
 type Leaf = { $type: string; $value: unknown; $extensions?: Record<string, unknown> }
 
@@ -98,5 +102,69 @@ describe('W3C Motion group', () => {
     } finally {
       useDesignStore.setState((st) => ({ themeFoundations: { ...st.themeFoundations, [key]: before as never } }))
     }
+  })
+})
+
+describe('Motion in the shared converter (w3cTree)', () => {
+  const snap = {
+    collections: [
+      { name: 'Dimension Primitives', modes: ['Mode 1'], variables: [{ name: '8', type: 'FLOAT' as const, values: { 'Mode 1': 8 } }] },
+      // What the plugin's file holds: never written variable by variable.
+      { name: MOTION_COLLECTION, modes: ['Default'], variables: [{ name: 'duration/quick', type: 'FLOAT' as const, values: { Default: 100 } }] },
+    ],
+  }
+  const motion = (modes = [{ name: 'Default', settings: motionPresetPatch('standard') }]) =>
+    ({ aliases, dimensionRef }: { aliases: boolean; dimensionRef: (px: number) => string | undefined }) => motionW3CGroup(modes, { aliases, dimensionRef })
+
+  it('writes the group from settings, after the collections, aliasing a Dimension primitive', () => {
+    const d = snapshotToW3C(snap, { source: 'escala-figma-plugin' }, { motion: motion() }) as Record<string, any>
+    expect(Object.keys(d).slice(-1)).toEqual([MOTION_COLLECTION])
+    expect(d.Motion.Default.transform.enter.$value).toBe('{Dimension Primitives.Default.8}')
+    expect(d.Motion.Default.choreography['dialog-enter'].$type).toBe('choreography')
+  })
+
+  it('never writes the Motion collection generically, and honours include / aliases', () => {
+    expect((snapshotToW3C(snap, { source: 'escala-figma-plugin' }) as Record<string, unknown>).Motion).toBeUndefined()
+    expect((snapshotToW3C(snap, { source: 'escala-web' }, { motion: motion(), include: ['Dimension Primitives'] }) as Record<string, unknown>).Motion).toBeUndefined()
+    const flat = snapshotToW3C(snap, { source: 'escala-web' }, { motion: motion(), aliases: false }) as Record<string, any>
+    expect(refsIn(flat.Motion)).toEqual([])
+  })
+})
+
+describe('Motion as Figma variables (the plugin collection)', () => {
+  it('round-trips every preset through the variables', () => {
+    for (const key of MOTION_PRESET_KEYS) {
+      const vars = motionFigmaVariables(motionPresetPatch(key))
+      const byName = new Map(vars.map((v) => [v.name, v.value] as const))
+      const back = motionSettingsFromFigma((n) => byName.get(n) as MotionFigmaValue | undefined)
+      expect(matchMotionPreset(back), key).toBe(key)
+    }
+  })
+
+  it('every alias names a variable of the collection; roles alias a rung and a curve', () => {
+    const vars = motionFigmaVariables(MOTION_PRESETS.playful.settings)
+    const names = new Set(vars.map((v) => v.name))
+    for (const v of vars) if (typeof v.value === 'object') expect(names.has(v.value.alias), v.name).toBe(true)
+    for (const r of MOTION_ROLES) {
+      expect(names.has(`role/${r}/duration`)).toBe(true)
+      expect(names.has(`role/${r}/easing`)).toBe(true)
+    }
+    expect(vars.find((v) => v.name === 'easing/spring-fallback')?.value).toEqual({ alias: 'easing/emphasized' })
+    expect(vars.find((v) => v.name === 'transform/dolly')?.px).toBe(-320)
+    expect(vars.find((v) => v.name === 'transform/pop')?.px).toBeUndefined()
+  })
+
+  it('modes: one Default when brands move alike, one per brand otherwise; none without motion', () => {
+    const std = { preset: 'standard' }
+    const doc = (a: unknown, b: unknown) => ({
+      motion: std,
+      colors: { themeOrder: ['light', 'kids'], themeLabels: { kids: 'Kids' } },
+      foundationsByTheme: { light: { motion: a }, kids: { motion: b } },
+    })
+    const calm = { durationFactor: 1.5, roles: MOTION_PRESETS.calm.settings.roles, transforms: { enter: '0px' }, stagger: '140ms' }
+    expect(motionModesFromTokens(doc(std, std)).map((m) => m.name)).toEqual(['Default'])
+    expect(motionModesFromTokens(doc(std, calm)).map((m) => [m.key, m.name])).toEqual([['light', 'Light'], ['kids', 'Kids']])
+    expect(tokensHaveMotion({})).toBe(false)
+    expect(tokensHaveMotion({ foundationsByTheme: { kids: { motion: std } } })).toBe(true)
   })
 })

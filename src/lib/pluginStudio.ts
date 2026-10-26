@@ -36,6 +36,7 @@ import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
 import { adoptPreset } from './adoptPreset'
+import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, resolveMotionRole, type MotionPresetKey } from './motion'
 
 export interface StudioChoices {
   /** A System Style id (`THEME_STYLE_PRESETS`). When set, the theme is that
@@ -86,6 +87,9 @@ export interface StudioChoices {
    *  the derived twin of `shadow` — what every system did before. */
   shadowDark?: string
   iconWeight?: string
+  /** A `MOTION_PRESET_KEYS` key — the web rail's Motion row (`snappy` …
+   *  `calm`). Absent = the style's motion, or Standard. */
+  motionPreset?: string
   /** Per-role picks made in the plugin's Token Details: role id → appearance →
    *  `{family.tone}` (`{error-a.3}`, `{neutral.12}`). Applied after everything
    *  else through `setArchitectureOverride`, the action the web's Variables
@@ -116,6 +120,16 @@ export function studioOptions() {
     insetSteps: SPACING_STEPS.map((step) => ({ step, px: Number(step.replace('_', '.')) * SPACING_DEFAULT_BASE })),
     borderStops: [...STROKE_SM_STOPS],
     iconWeights: [...PHOSPHOR_WEIGHTS],
+    // The Motion row: each preset with the two timings its tile plays (the
+    // dialog card's entrance and a list row's), read off the preset itself.
+    motionPresets: MOTION_PRESET_KEYS.map((key) => {
+      const p = MOTION_PRESETS[key]
+      const play = (role: 'use-emphasis-in' | 'use-stagger-in') => {
+        const r = resolveMotionRole(role, p.settings)
+        return { ms: r.ms, easing: r.value.slice(`${r.ms}ms `.length) }
+      }
+      return { key, label: p.label, brief: p.brief, factor: p.settings.durationFactor, enter: p.settings.transforms.enter, emphasis: play('use-emphasis-in'), stagger: play('use-stagger-in'), offset: p.settings.stagger }
+    }),
     neutralTints: ['pure', 'subtle', 'tinted', 'vivid'],
     contrast: { min: -1, max: 1, step: 0.05 },
     styles: THEME_STYLE_PRESETS.map((p) => styleSummary(p, radius)),
@@ -150,6 +164,7 @@ function styleSummary(p: ThemeStylePreset, standard: Record<string, string>) {
     shadowMd: f.shadows?.md ?? 'none',
     shadowMdDark: darkShadow(f.shadows?.md ?? 'none'),
     iconWeight: f.iconWeight ?? 'regular',
+    motionPreset: matchMotionPreset(normalizeMotionSettings(f.motion)) ?? 'standard',
   }
 }
 
@@ -301,6 +316,11 @@ export function buildStudioTokens(
 
   const weight = (PHOSPHOR_WEIGHTS as readonly string[]).includes(choices.iconWeight ?? '') ? (choices.iconWeight as PhosphorWeight) : undefined
   if (weight) patch({ iconWeight: weight })
+
+  // Motion — the rail's Motion row: a preset writes the brand's whole motion.
+  if ((MOTION_PRESET_KEYS as readonly string[]).includes(choices.motionPreset ?? '')) {
+    patch({ motion: motionPresetPatch(choices.motionPreset as MotionPresetKey) })
+  }
 
   applyRoleOverrides(key, choices.roleOverrides)
 

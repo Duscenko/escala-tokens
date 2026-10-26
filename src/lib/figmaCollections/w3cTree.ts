@@ -1,6 +1,7 @@
-// SHARED FILE — byte-identical copy in ../escala-figma-plugin/src/w3cTree.ts.
-// `figmaCollectionsParity.test.ts` fails the moment the two copies differ, so
-// change both or neither.
+// SHARED FILE — the Figma plugin bundles this very file (`code.ts` imports
+// `../../escala-tokens/src/lib/figmaCollections/w3cTree`), so web and plugin
+// write one shape. Keep it import-free: what it needs from elsewhere (the
+// Motion group) is handed in through the options.
 //
 // The W3C (DTCG) export is the Figma file, written down: ONE document whose
 // top-level groups are the five collections the plugin creates, each mode a
@@ -52,6 +53,13 @@ export const FIGMA_COLLECTION_ORDER = [
 ] as const
 
 export const SINGLE_MODE_NAME = 'Default'
+
+/** The collection the plugin writes from tokens.json `motion` (one mode, or
+ *  one per brand). Its group is NOT written from the snapshot's variables: a
+ *  Figma variable cannot hold a choreography, so the caller builds the group
+ *  from motion SETTINGS (`motionW3CGroup`, lib/motion.ts) and hands it in as
+ *  `SnapshotToW3COptions.motion`. Web and plugin both go through it. */
+export const MOTION_COLLECTION = 'Motion'
 
 export interface W3CMeta {
   project?: string
@@ -131,6 +139,10 @@ export interface SnapshotToW3COptions {
    *  is left out is written as its value — a reference must resolve inside
    *  the document that carries it. */
   include?: readonly string[]
+  /** Builds the `Motion` group, written after the five collections when
+   *  `include` lets it. `dimensionRef` answers the reference to the Dimension
+   *  primitive of a px length when THIS document carries it (aliases on). */
+  motion?: (ctx: { aliases: boolean; dimensionRef: (px: number) => string | undefined }) => Record<string, unknown>
 }
 
 /** One snapshot → one DTCG document with the five collections as its groups. */
@@ -162,7 +174,7 @@ export function snapshotToW3C(snap: CollectionsSnapshot, meta: W3CMeta, opts: Sn
   const ordered = [
     ...FIGMA_COLLECTION_ORDER.map((n) => byName.get(n)).filter((c): c is SnapCollection => !!c),
     ...snap.collections.filter((c) => !(FIGMA_COLLECTION_ORDER as readonly string[]).includes(c.name)),
-  ].filter((c) => written(c.name))
+  ].filter((c) => written(c.name) && c.name !== MOTION_COLLECTION)
   for (const col of ordered) {
     const colNode: W3CGroup = {}
     for (const mode of modeNamesOf(col)) {
@@ -190,6 +202,16 @@ export function snapshotToW3C(snap: CollectionsSnapshot, meta: W3CMeta, opts: Sn
       colNode[mode] = modeNode
     }
     out[col.name] = colNode
+  }
+  if (opts.motion && written(MOTION_COLLECTION)) {
+    const dimCol = out['Dimension Primitives'] as Record<string, Record<string, { $value?: unknown }>> | undefined
+    const dimMode = dimCol ? Object.keys(dimCol)[0] : undefined
+    const dimensionRef = (px: number): string | undefined => {
+      if (!aliases || !dimCol || !dimMode) return undefined
+      const key = String(Math.round(px * 1000) / 1000).replace('.', '_')
+      return dimCol[dimMode]?.[key]?.$value === `${Math.round(px * 1000) / 1000}px` ? `{Dimension Primitives.${dimMode}.${key}}` : undefined
+    }
+    out[MOTION_COLLECTION] = opts.motion({ aliases, dimensionRef })
   }
   return out
 }

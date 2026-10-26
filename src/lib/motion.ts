@@ -1069,6 +1069,131 @@ export function motionW3CGroup(modes: { name: string; settings: MotionSettings }
   return Object.fromEntries(modes.map((m) => [m.name, motionW3CMode(m.settings, m.name, opts)]))
 }
 
+// ── Modes (shared by the W3C group and the plugin's `Motion` collection) ───
+
+export interface MotionMode {
+  /** The brand (theme key) this mode is, or null for the single `Default`. */
+  key: string | null
+  name: string
+  settings: MotionSettings
+}
+
+/** The modes a tokens.json's motion takes: one per brand when brands move
+ *  differently, else one `Default` (the brands' shared settings, or the root
+ *  `motion`). ONE rule for the W3C group and the plugin's `Motion` collection.
+ *  `label` names a brand's mode (the plugin passes its own column labels). */
+export function motionModesFromTokens(doc: unknown, label?: (key: string) => string): MotionMode[] {
+  const d = (doc ?? {}) as {
+    motion?: unknown
+    colors?: { themeOrder?: string[]; themeLabels?: Record<string, string> }
+    foundationsByTheme?: Record<string, { motion?: unknown } | undefined>
+  }
+  const nameOf = label ?? ((k: string) => d.colors?.themeLabels?.[k]?.trim() || k.charAt(0).toUpperCase() + k.slice(1))
+  const perBrand = (d.colors?.themeOrder ?? [])
+    .filter((k) => d.foundationsByTheme?.[k]?.motion)
+    .map((k) => ({ key: k as string | null, name: nameOf(k), settings: motionSettingsFromTokens(d.foundationsByTheme![k]!.motion) }))
+  const distinct = new Set(perBrand.map((m) => JSON.stringify(m.settings)))
+  return perBrand.length && distinct.size > 1
+    ? perBrand.filter((m, i, all) => all.findIndex((x) => x.name === m.name) === i)
+    : [{ key: null, name: 'Default', settings: perBrand[0]?.settings ?? motionSettingsFromTokens(d.motion) }]
+}
+
+/** Does this tokens.json carry motion at all (root or any brand)? */
+export function tokensHaveMotion(doc: unknown): boolean {
+  const d = (doc ?? {}) as { motion?: unknown; foundationsByTheme?: Record<string, { motion?: unknown } | undefined> }
+  return !!d.motion || Object.values(d.foundationsByTheme ?? {}).some((f) => !!f?.motion)
+}
+
+// ── Figma (the plugin's `Motion` collection) ───────────────────────────────
+//
+// Durations are NUMBER variables in ms, easings STRING variables holding the
+// CSS value (a spring also gets `<name>-fallback`, an alias of its cubic
+// stand-in), transforms numbers (a distance in px, which the plugin aliases to
+// the Dimension primitive of that length when the file has one), the list
+// stagger in ms, and each role two aliases: `role/<role>/duration` →
+// `duration/<rung>`, `role/<role>/easing` → `easing/<curve>`. Figma variables
+// cannot hold a sequence, so choreographies are documentation only.
+// The naming lives here, next to its reader, so the plugin writes and reads one
+// shape and a test holds the round trip. The collection's name is
+// `MOTION_COLLECTION` (figmaCollections/w3cTree.ts).
+
+export type MotionFigmaValue = number | string | { alias: string }
+
+export interface MotionFigmaVariable {
+  name: string
+  type: 'FLOAT' | 'STRING'
+  value: MotionFigmaValue
+  description: string
+  /** Set on a distance transform: its length in px. */
+  px?: number
+}
+
+const springFallbackName = (k: MotionEasingKey) => `easing/${k}-fallback`
+
+/** Every variable of one mode of the `Motion` collection. `easings` takes the
+ *  curves a payload ships (`motion.easings`) over the built-in ones. */
+export function motionFigmaVariables(settings: MotionSettings, easings: Partial<Record<string, string>> = {}): MotionFigmaVariable[] {
+  const out: MotionFigmaVariable[] = []
+  const durations = motionDurations(settings)
+  for (const k of MOTION_DURATION_KEYS) {
+    const range = durationRange(k)
+    out.push({
+      name: `duration/${k}`, type: 'FLOAT', value: durations[k],
+      description: `${MOTION_DURATION_INTENT[k].direction} ms${range.min === range.max ? '' : ` · range ${range.min}–${range.max}`}.`,
+    })
+  }
+  for (const k of MOTION_EASING_KEYS) {
+    const css = typeof easings[k] === 'string' && easings[k] ? easings[k]! : MOTION_EASINGS[k]
+    const fallback = MOTION_EASING_FALLBACK[k]
+    out.push({
+      name: `easing/${k}`, type: 'STRING', value: css,
+      description: fallback ? `Spring, CSS linear(). Where linear() is not supported use ${springFallbackName(k).slice('easing/'.length)} (${fallback}).` : 'CSS easing.',
+    })
+    if (fallback) out.push({ name: springFallbackName(k), type: 'STRING', value: { alias: `easing/${fallback}` }, description: `The cubic stand-in for ${k}.` })
+  }
+  for (const t of MOTION_TRANSFORM_ROLES) {
+    const v = settings.transforms[t]
+    const distance = MOTION_DISTANCE_ROLES.has(t)
+    out.push({
+      name: `transform/${t}`, type: 'FLOAT', value: v,
+      description: distance ? 'Distance in px.' : 'Scale factor (1 = none).',
+      ...(distance ? { px: v } : {}),
+    })
+  }
+  out.push({ name: 'stagger', type: 'FLOAT', value: settings.stagger, description: 'Delay between children of a list reveal, ms.' })
+  for (const r of MOTION_ROLES) {
+    const pick = settings.roles[r] ?? STANDARD_ROLES[r]
+    const direction = MOTION_ROLE_INTENT[r].direction
+    out.push({ name: `role/${r}/duration`, type: 'FLOAT', value: { alias: `duration/${pick.duration}` }, description: direction })
+    out.push({ name: `role/${r}/easing`, type: 'STRING', value: { alias: `easing/${pick.easing}` }, description: direction })
+  }
+  return out
+}
+
+/** The settings one mode of a `Motion` collection was written from.
+ *  `read(name)` answers a variable of that mode: an alias INSIDE the
+ *  collection as `{ alias: name }`, anything else as its resolved value. */
+export function motionSettingsFromFigma(read: (name: string) => MotionFigmaValue | undefined): MotionSettings {
+  const num = (name: string) => { const v = read(name); return typeof v === 'number' ? v : undefined }
+  const target = (name: string, prefix: string) => {
+    const v = read(name)
+    return v && typeof v === 'object' && v.alias.startsWith(prefix) ? v.alias.slice(prefix.length) : undefined
+  }
+  const long = num('duration/long')
+  const roles: Record<string, Partial<MotionPick>> = {}
+  for (const r of MOTION_ROLES) {
+    roles[r] = { duration: target(`role/${r}/duration`, 'duration/') as MotionDurationKey, easing: target(`role/${r}/easing`, 'easing/') as MotionEasingKey }
+  }
+  const transforms: Record<string, number | undefined> = {}
+  for (const t of MOTION_TRANSFORM_ROLES) transforms[t] = num(`transform/${t}`)
+  return normalizeMotionSettings({
+    durationFactor: long !== undefined ? Math.round((long / MOTION_DURATIONS.long) * 100) / 100 : undefined,
+    roles,
+    transforms,
+    stagger: num('stagger'),
+  })
+}
+
 // ── Markdown ───────────────────────────────────────────────────────────────
 
 export function motionMarkdown(settings: MotionSettings): string {

@@ -16,8 +16,8 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
-import { motionSettingsFromTokens, motionW3CGroup } from './motion'
-import { figmaCollectionsW3C } from './figmaCollections'
+import { motionModesFromTokens, motionW3CGroup } from './motion'
+import { figmaCollectionsW3C, MOTION_COLLECTION, type SnapshotToW3COptions } from './figmaCollections'
 import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
@@ -330,27 +330,13 @@ function motionTokenCount(full: TokenJSON): number {
 }
 
 /** The W3C `Motion` group: one mode per brand when brands move differently,
- *  one `Default` mode when they all move alike. A distance aliases the
- *  Dimension primitive of its length when the document carries it. */
-function motionW3CForExport(full: TokenJSON, tree: Record<string, unknown>, aliases: boolean): Record<string, unknown> {
-  const doc = full as unknown as {
-    motion?: unknown
-    themeOrder?: string[]
-    colors: { themeOrder: string[]; themeLabels?: Record<string, string> }
-    foundationsByTheme?: Record<string, { motion?: unknown }>
-  }
-  const order = doc.colors.themeOrder ?? []
-  const label = (k: string) => doc.colors.themeLabels?.[k]?.trim() || k.charAt(0).toUpperCase() + k.slice(1)
-  const perBrand = order
-    .filter((k) => doc.foundationsByTheme?.[k]?.motion)
-    .map((k) => ({ name: label(k), settings: motionSettingsFromTokens(doc.foundationsByTheme![k].motion) }))
-  const distinct = new Set(perBrand.map((m) => JSON.stringify(m.settings)))
-  const modes = perBrand.length && distinct.size > 1
-    ? perBrand.filter((m, i, all) => all.findIndex((x) => x.name === m.name) === i)
-    : [{ name: 'Default', settings: perBrand[0]?.settings ?? motionSettingsFromTokens(doc.motion) }]
-  const dims = ((tree['Dimension Primitives'] as Record<string, Record<string, { $value?: unknown }>> | undefined)?.Default) ?? {}
-  const dimensionRef = (px: number) => (dims[String(px)]?.$value === `${px}px` ? `{Dimension Primitives.Default.${px}}` : undefined)
-  return motionW3CGroup(modes, { aliases, dimensionRef })
+ *  one `Default` mode when they all move alike (`motionModesFromTokens`, the
+ *  rule the plugin's `Motion` collection follows). Written by `snapshotToW3C`
+ *  after the five collections; a distance aliases the Dimension primitive of
+ *  its length when the document carries it. */
+function motionW3CFor(full: TokenJSON): NonNullable<SnapshotToW3COptions['motion']> {
+  const modes = motionModesFromTokens(full)
+  return ({ aliases, dimensionRef }) => motionW3CGroup(modes, { aliases, dimensionRef })
 }
 
 // ── Public entry ─────────────────────────────────────────────────────────────
@@ -436,21 +422,20 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
           return true
         }
       : undefined
+    // Motion is the plugin's sixth collection; its group comes from the
+    // motion settings (choreographies are not variables), through the same
+    // converter the plugin's W3C export uses.
+    const motion = ordered.includes('motion')
+    const groups = motion ? [...include, MOTION_COLLECTION] : [...include]
     const tree = figmaCollectionsW3C(full, {
-      include,
+      include: groups,
       dimensionGroups: dimensionGroupsFor(ordered),
       semanticModes: sel.figmaScope?.modes?.length ? undefined : sel.modes,
       keepPrimitive,
       aliases: sel.includeAliases,
       project,
+      ...(motion ? { motion: motionW3CFor(full) } : {}),
     })
-    // Motion is not a Figma collection yet (the plugin's lands in phase 4 of
-    // design-plans/motion-foundation.md): its group is written beside the five.
-    const groups = [...include]
-    if (ordered.includes('motion')) {
-      tree.Motion = motionW3CForExport(full, tree, sel.includeAliases !== false)
-      groups.push('Motion')
-    }
     if (sel.structure === 'per-collection') {
       const { $description, $extensions } = tree
       return groups.map((name) => ({

@@ -41,6 +41,21 @@ describe('plugin studio build', () => {
     expect(f.stroke?.sm ?? t.stroke?.sm).toBe('2px')
     expect(f.spacingRoles?.['inset-surface'] ?? t.spacingRoles?.['inset-surface']).toBe('8')
   })
+  it('applies the Motion row: a preset per brand, offered with its timings', () => {
+    const o = studioOptions()
+    expect(o.motionPresets.map((p) => p.key)).toEqual(['snappy', 'standard', 'expressive', 'playful', 'calm'])
+    expect(o.motionPresets.find((p) => p.key === 'standard')?.emphasis).toEqual({ ms: 360, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+    expect(o.styles.every((s) => typeof s.motionPreset === 'string')).toBe(true)
+    type M = { motion?: { preset: string | null }; colors: { themeOrder: string[] }; foundationsByTheme?: Record<string, { motion?: { preset: string | null } }> }
+    const presetsOf = (t: M) => t.colors.themeOrder.map((k) => t.foundationsByTheme?.[k]?.motion?.preset ?? t.motion?.preset)
+    const calm = buildStudioTokens({ accent: '#2970ff', name: 'A', motionPreset: 'calm' }, 'pro')
+    const plain = buildStudioTokens({ accent: '#2970ff', name: 'A' }, 'pro')
+    const junk = buildStudioTokens({ accent: '#2970ff', name: 'A', motionPreset: 'wobbly' }, 'pro')
+    if ('error' in calm || 'error' in plain || 'error' in junk) throw new Error('build failed')
+    expect(presetsOf(calm.tokens as M)).toEqual(['calm', 'calm'])
+    expect(presetsOf(plain.tokens as M)).toEqual(['standard', 'standard'])
+    expect(presetsOf(junk.tokens as M)).toEqual(['standard', 'standard'])
+  })
   it('adopts a System Style', () => {
     const o = studioOptions()
     expect(o.styles.length).toBeGreaterThan(3)
