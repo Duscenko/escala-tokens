@@ -36,6 +36,7 @@ import { RADIUS_GROUP_STEPS, type RadiusGroupStep } from './layoutTokens'
 import { NEUTRAL_TINTS, type NeutralTint } from './colorUtils'
 import { hexToOklch, oklchToHex } from './color/gamut'
 import { tailwindFamilyOklch } from './color/tailwind'
+import type { MotionPresetKey } from './motion'
 
 type Oklch = readonly [l: number, c: number, h: number]
 
@@ -59,6 +60,9 @@ export interface MoodSpec {
   border: number
   /** `--depth`. */
   depth: 0 | 1
+  /** Escala's addition: how the mood moves. Curated moods take theirs from
+   *  `CURATED_MOOD_MOTION`; a procedural draw carries its own. */
+  motion?: MotionPresetKey
 }
 
 export interface MoodStates {
@@ -81,6 +85,8 @@ export interface ThemeMood {
   /** `stroke.sm` in px — every control and divider. */
   border: number
   depth: 0 | 1
+  /** The motion preset (lib/motion.ts) the mood moves with. */
+  motion: MotionPresetKey
 }
 
 /** DaisyUI v5.0.43 built-in themes, verbatim. */
@@ -202,7 +208,27 @@ export function moodFromSpec(id: string, spec: MoodSpec): ThemeMood {
     radius: { ...spec.radius },
     border: spec.border,
     depth: spec.depth,
+    motion: spec.motion ?? CURATED_MOOD_MOTION[id] ?? 'standard',
   }
+}
+
+/** Each DaisyUI built-in's motion, by its character (the six that are also
+ *  System Styles match that style's pick). DaisyUI has no motion: Escala's call. */
+export const CURATED_MOOD_MOTION: Record<string, MotionPresetKey> = {
+  forest: 'calm', cyberpunk: 'snappy', cupcake: 'playful', fantasy: 'playful', cmyk: 'snappy',
+  emerald: 'standard', nord: 'standard', halloween: 'expressive', night: 'standard', coffee: 'calm',
+  winter: 'standard', light: 'standard', valentine: 'playful', lemonade: 'playful', retro: 'snappy',
+  aqua: 'expressive', dark: 'standard', dim: 'calm', dracula: 'expressive', corporate: 'snappy',
+  bumblebee: 'playful', business: 'snappy', acid: 'expressive', sunset: 'expressive', garden: 'calm',
+  autumn: 'calm', pastel: 'playful', synthwave: 'expressive', abyss: 'expressive',
+}
+
+/** Standard 40 %, each of the other four 15 % — the plan's procedural draw. */
+export function drawMotionPreset(rng: Rng = Math.random): MotionPresetKey {
+  const r = rng()
+  if (r < 0.4) return 'standard'
+  const others: MotionPresetKey[] = ['snappy', 'expressive', 'playful', 'calm']
+  return others[Math.min(3, Math.floor((r - 0.4) / 0.15))]
 }
 
 export const CURATED_MOODS: ThemeMood[] = Object.entries(DAISY_MOOD_SPECS)
@@ -271,6 +297,8 @@ export function proceduralMoodSpec(rng: Rng = Math.random): MoodSpec {
     },
     border: pick(BORDER_POOL, rng),
     depth: rng() < 0.5 ? 0 : 1,
+    // Drawn last, so every earlier draw lands where it always did.
+    motion: drawMotionPreset(rng),
   }
 }
 

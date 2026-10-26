@@ -53,6 +53,7 @@ export const FOUNDATION_SECTION_KEYS = [
   'stroke',
   'shadow',
   'icons',
+  'motion',
 ] as const
 
 export const COLLECTION_SECTION_KEYS = ['primitives', 'semantics', 'gradients', 'responsive'] as const

@@ -97,6 +97,7 @@ function bakeFoundations(snapshot: DesignSnapshot, themeKey: string): DesignSnap
     gridFrame: resolved.gridFrame,
     panelBackground: resolved.panelBackground,
     iconWeight: resolved.iconWeight,
+    motion: resolved.motion,
     themeFoundations: {},
   }
 }

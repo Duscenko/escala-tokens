@@ -20,9 +20,17 @@ import { previewDimension } from './recipeVars'
 import { typeStyleOf } from './previewTokens'
 import { SIZE_ROLES } from './layoutTokens'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
+import {
+  MOTION_EASINGS, MOTION_ROLES, choreographyVar, durationMs, motionChoreographies, normalizeMotionSettings,
+  resolveMotionRef, resolveMotionRole, type MotionRole, type MotionSettings,
+} from './motion'
 
 /** What a traced value IS — decides its swatch, and which drawer opens it. */
-export type TraceKind = 'color' | 'radius' | 'spacing' | 'size' | 'stroke' | 'type' | 'shadow'
+export type TraceKind = 'color' | 'radius' | 'spacing' | 'size' | 'stroke' | 'type' | 'shadow' | 'motion'
+
+/** A motion row's property: a transition (named by the CSS property it
+ *  times) or the choreography played on open / close. */
+export type MotionTraceProp = 'transition' | 'enter' | 'exit'
 
 export interface TraceFacet { label: string; cssVar: string; value: string }
 
@@ -33,7 +41,7 @@ export interface TraceRow {
   /** Interaction state the row belongs to (`hover`, `focus-visible`,
    *  `data-state="checked"`) — absent for the resting render. */
   state?: string
-  prop: RecipeProp
+  prop: RecipeProp | MotionTraceProp
   /** Human name of the property — `Background`, `Padding X`. */
   label: string
   kind: TraceKind
@@ -235,6 +243,13 @@ export function traceRecipe(t: PreviewTokens, recipeKey: string, axes: Record<st
     bySlot.set(slot, rows)
   }
 
+  // How it moves: transitions per slot, then the choreographies it plays (a
+  // slot that only moves, like a dialog's overlay, gets a section too).
+  for (const row of motionRows(t, recipeKey)) {
+    if (!order.includes(row.slot)) order.push(row.slot)
+    bySlot.set(row.slot, [...(bySlot.get(row.slot) ?? []), row])
+  }
+
   // Resting rows first, then each state's overrides, in recipe order.
   const slots: TraceSlot[] = order
     .map((slot) => {
@@ -245,6 +260,93 @@ export function traceRecipe(t: PreviewTokens, recipeKey: string, axes: Record<st
     .filter((s) => s.rows.length)
 
   return { component: recipeKey, axes: { ...recipe.defaults, ...axes }, slots }
+}
+
+// ── Motion ─────────────────────────────────────────────────────────────────
+// A recipe names motion ROLES and CHOREOGRAPHIES (lib/recipes/motion.ts); the
+// values come from the system's motion settings on screen (`t.motion`).
+
+/** `background-color` → `Background` — the words the colour rows already use. */
+const CSS_PROP_LABEL: Record<string, string> = {
+  'background-color': 'Background',
+  color: 'Text color',
+  'border-color': 'Border color',
+  'box-shadow': 'Focus halo',
+  transform: 'Transform',
+  width: 'Width',
+  opacity: 'Opacity',
+}
+
+const easingName = (value: string) =>
+  (Object.entries(MOTION_EASINGS).find(([, v]) => v === value)?.[0]) ?? value
+
+function roleRow(slotKey: string, cssProp: string, role: string, settings: MotionSettings): TraceRow | null {
+  if (!(MOTION_ROLES as readonly string[]).includes(role)) return null
+  const [slot, state] = splitSlotKey(slotKey)
+  const r = resolveMotionRole(role as MotionRole, settings)
+  return {
+    key: `${slotKey}|motion|${cssProp}`,
+    slot, state,
+    prop: 'transition',
+    label: `${CSS_PROP_LABEL[cssProp] ?? cssProp} transition`,
+    kind: 'motion',
+    ref: `motion.${role}`,
+    cssVar: `--motion-${role}`,
+    value: `${r.ms}ms ${r.easing}`,
+    facets: [
+      { label: 'Duration', cssVar: `--motion-duration-${r.duration}`, value: `${r.ms}ms` },
+      { label: 'Easing', cssVar: `--motion-easing-${r.easing}`, value: MOTION_EASINGS[r.easing] },
+    ],
+  }
+}
+
+/** Every motion row of one recipe: its transitions, then its choreographies. */
+export function motionRows(t: PreviewTokens, recipeKey: string): TraceRow[] {
+  const recipe = COMPONENT_RECIPES[recipeKey]
+  const m = recipe?.motion
+  if (!m) return []
+  const settings = normalizeMotionSettings(t.motion)
+  const rows: TraceRow[] = []
+  for (const [slotKey, props] of Object.entries(m.transitions ?? {})) {
+    for (const [cssProp, role] of Object.entries(props)) {
+      const row = roleRow(slotKey, cssProp, role, settings)
+      if (row) rows.push(row)
+    }
+  }
+  const choreographies = motionChoreographies(settings)
+  for (const [prop, c] of [['enter', m.enter], ['exit', m.exit]] as const) {
+    if (!c) continue
+    const def = choreographies[c.name]
+    if (!def) continue
+    const slot = c.slot ?? recipe.slots[0]
+    const timing = (ref: Parameters<typeof resolveMotionRef>[0], delay: string | number = 0) => {
+      const pick = resolveMotionRef(ref, settings)
+      const ms = durationMs(pick.duration, settings)
+      const wait = delay ? ` · after ${durationMs(delay as never, settings)}ms` : ''
+      return `${ms}ms ${easingName(MOTION_EASINGS[pick.easing])}${wait}`
+    }
+    const facets: TraceFacet[] = def.tracks?.length
+      ? def.tracks.map((track) => ({
+          label: track.slot ?? recipe.slots[0],
+          cssVar: choreographyVar(c.name, track.slot),
+          value: `${track.keyframes} · ${timing(track.motion, track.delay)}`,
+        }))
+      : def.motion
+        ? [{ label: def.direction === 'collapse' ? 'Collapse' : 'Expand', cssVar: choreographyVar(c.name), value: timing(def.motion) }]
+        : []
+    rows.push({
+      key: `${slot}|motion|${prop}`,
+      slot,
+      prop,
+      label: prop === 'enter' ? 'Enter' : 'Exit',
+      kind: 'motion',
+      ref: `motion.choreography.${c.name}`,
+      cssVar: facets[0]?.cssVar ?? choreographyVar(c.name),
+      value: c.name,
+      facets,
+    })
+  }
+  return rows
 }
 
 /** The trace for a rendered element, or null when it isn't a recipe component. */

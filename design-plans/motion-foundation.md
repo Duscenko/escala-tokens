@@ -66,6 +66,40 @@ tokens the page does not list: `instant`, `fade`, the springs, every transform).
   `data-inline` never animates, tokens.json round-trips, no `duration-*` / `ease-*` /
   `transition-*` utility left in `escala-ui`); `shadcnRegistry.test.ts` (motion vars resolve per item).
 
+**Phase 3 done (2026-10-26).** Each brand moves its own way, and it is edited like the rest.
+
+- **Motion is per brand**: `ThemeFoundationOverride.motion` (`resolveThemeFoundations` falls back
+  to the root `motion`). The preview, `codeScope` (Get code), tokens.json
+  (`foundationsByTheme[t].motion` = `motionThemeTokens`, read back by `motionSettingsFromTokens`)
+  and `variables.css` follow it: a brand block overrides only the `--motion-*` that differ
+  (`motionThemeCssDiff`) and the reduced-motion block RESTATES every property the brand
+  overrode — otherwise its full-motion value would beat `:root`'s reduced one.
+- **System Styles**: all 18 carry `motion: motionPresetPatch(…)` per the table above, written as
+  the LAST foundation key. **Store v104** gives a brand already adopted from a style
+  (`themeOrigin`) its style's motion, appended last, so `themeHasEdits` (a JSON compare against
+  the preset) still reads it as untouched.
+- **Moods**: `ThemeMood.motion`; curated by `CURATED_MOOD_MOTION` (the six that are styles agree),
+  procedural draws `drawMotionPreset` (Standard 40 %, others 15 %), appended LAST to the rng
+  sequence so every earlier draw is unchanged. `moodFoundations` (Random) applies it. Shuffle
+  locks: motion rides the `shape` axis.
+- **Editor**: a seventh accordion row, **Motion** (`EditionCard foundationKey="motion"`, glyph
+  `motion-variables.svg`): `MotionPreview` (a dialog entering + a list revealing, played from the
+  brand's own settings, reduced when the viewer asks; Replay remounts it) + the Preset picker.
+  Also in the create studio (`CREATE_STEPS`) and the Edit list. Variables gets the `motion`
+  foundation (`MotionSemantics`, one collection `Motion semantics`, route
+  `variables/<brand>/motion/semantics`): Preset in the rail, the 24 roles in five groups
+  (`MOTION_ROLE_GROUPS`), each a duration select + easing select + play swatch + reset. No free ms.
+  An edited role is compared with `nearestMotionPreset`; an entrance made faster than its exit is
+  flagged (`motionPairViolation`).
+- **Inspector**: a Motion filter (`tokenTrace.motionRows`): each transition (role, variable,
+  duration + easing) and each enter / exit choreography with its tracks' timing. Not clickable
+  (no Token Details drawer for motion). The filter row wraps.
+- Tests: `motionStyles.test.ts` (the 18 assignments, ≥ 3 styles per preset, moods, the 40/15
+  draw, per-brand resolution / tokens.json / CSS incl. reduced, groups, nearest preset, the pair
+  rule), `tokenTrace.test.ts` (motion rows).
+- **Not done, phase 4**: the plugin's `ST_ROWS` Motion row (the rule "when a web rail row
+  changes, change its plugin row too" applies there), the `Motion` collection, W3C.
+
 ## Tier 1 — Primitives (fixed, not edited per system)
 
 Like `SPACING_STEPS` / `RADIUS_STANDARD`: the ladder is the vocabulary, presets pick from it.
@@ -320,8 +354,8 @@ tokens.json additions are new keys, no `schemaVersion` bump (the `shadowsDark` p
    agent context, tests. Nothing on screen moves yet. (W3C moved to phase 4.)
 2. **Components** — DONE: recipe `motion` slot, `recipeStyles` transitions + CSS choreographies
    (no script runtime, see State), registry items carry it. No hardcoded `duration-*` left.
-3. **Editor**: the Motion row in the accordion, the Variables collection, the inspector filter,
-   System Style assignments.
+3. **Editor** — DONE: the Motion row in the accordion, the Variables collection, the inspector
+   filter, System Style + mood assignments, motion per brand (store v104).
 4. **Plugin + W3C**: `Motion` collection, `Motion/role/*`, the ⬡ Motion documentation page, the
    plugin studio row, the W3C Motion group (same converter), transform distances aliased to the
    Dimension primitives.

@@ -34,6 +34,7 @@ import type { ThemeAppearance } from './themeModes'
 import { RADIUS_STANDARD, STROKE_STANDARD, radiusRolesFromGroups } from './layoutTokens'
 import { SHADOW_PRESETS } from './shadowTokens'
 import { pickMood, type MoodStates, type ThemeMood } from './themeMoods'
+import { motionPresetPatch } from './motion'
 
 /** Relative positions — same contract as SpectrumSlider, so a voice stays
  *  vivid at every hue instead of ratcheting into mud. */
@@ -179,7 +180,7 @@ export function moodSafeSemantics(semantics: ThemeStyleSemantics | undefined): T
   return out
 }
 
-/** A mood's geometry painted over a scaffold: the three radius axes on the
+/** A mood's geometry and motion painted over a scaffold: the three radius axes on the
  *  standard ramp, the border width, and depth → Subtle / Soft elevation. */
 export function moodFoundations(scaffold: ThemeStylePreset, mood: ThemeMood): ThemeFoundationOverride {
   const signature = SIGNATURE_SHADOWS.has(scaffold.id)
@@ -193,6 +194,8 @@ export function moodFoundations(scaffold: ThemeStylePreset, mood: ThemeMood): Th
     shadows: signature
       ? scaffold.foundations.shadows
       : { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values },
+    // How the mood moves (its own preset, never the scaffold's).
+    motion: motionPresetPatch(mood.motion),
   }
 }
 

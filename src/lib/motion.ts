@@ -138,6 +138,51 @@ export const MOTION_ROLES = [
 
 export type MotionRole = typeof MOTION_ROLES[number]
 
+/** How the editor groups the roles (Variables · Motion semantics). Every role
+ *  sits in exactly one group — a test holds it. */
+export const MOTION_ROLE_GROUPS: readonly { label: string; roles: readonly MotionRole[] }[] = [
+  { label: 'Interaction', roles: ['use-hover', 'use-focus', 'use-press', 'use-toggle'] },
+  { label: 'Overlays', roles: ['use-disclosure-in', 'use-disclosure-out', 'use-overlay-in', 'use-overlay-out', 'use-emphasis-in', 'use-travel-in', 'use-travel-out'] },
+  { label: 'Sequences', roles: ['use-stagger-in', 'use-stagger-out', 'use-page-transition', 'use-reveal'] },
+  { label: 'Moments', roles: ['use-celebration', 'use-color', 'use-loop'] },
+  { label: 'Bases', roles: ['base-functional-entrance', 'base-functional-exit', 'base-functional-standard', 'base-expressive-entrance', 'base-expressive-exit', 'base-expressive-standard'] },
+]
+
+/** The preset these settings came from: the matching one, else the one that
+ *  shares the most role picks (duration factor first). What a hand-edited
+ *  role is compared and reset against. */
+export function nearestMotionPreset(settings: MotionSettings): MotionPresetKey {
+  const exact = matchMotionPreset(settings)
+  if (exact) return exact
+  let best: MotionPresetKey = DEFAULT_MOTION_PRESET
+  let score = -1
+  for (const key of MOTION_PRESET_KEYS) {
+    const p = MOTION_PRESETS[key].settings
+    const same = MOTION_ROLES.filter((r) => {
+      const a = settings.roles[r]
+      const b = p.roles[r]
+      return a?.duration === b.duration && a?.easing === b.easing
+    }).length + (p.durationFactor === settings.durationFactor ? MOTION_ROLES.length : 0)
+    if (same > score) { score = same; best = key }
+  }
+  return best
+}
+
+/** A role edited by hand: the settings with that one pick changed. The preset
+ *  is matched afterwards, so this reads Custom unless it lands on one. */
+export function withMotionRole(settings: MotionSettings, role: MotionRole, pick: MotionPick): MotionSettings {
+  return { ...settings, roles: { ...settings.roles, [role]: { ...pick } } }
+}
+
+/** The way in of a pair that is now FASTER than its way out (the rule every
+ *  preset keeps); `null` when the role is not an entrance or the pair holds. */
+export function motionPairViolation(settings: MotionSettings, role: MotionRole): MotionRole | null {
+  const pair = MOTION_ROLE_PAIRS.find(([inRole]) => inRole === role)
+  if (!pair) return null
+  const ms = (r: MotionRole) => durationMs((settings.roles[r] ?? STANDARD_ROLES[r]).duration, settings)
+  return ms(pair[0]) < ms(pair[1]) ? pair[1] : null
+}
+
 /** In/out role pairs: the way in is never shorter than the way out. */
 export const MOTION_ROLE_PAIRS: readonly [MotionRole, MotionRole][] = [
   ['use-disclosure-in', 'use-disclosure-out'],
@@ -735,6 +780,21 @@ export function motionTokens(settings: MotionSettings) {
   }
 }
 
+/** One brand's motion in `foundationsByTheme`: the picks and their resolved
+ *  values, without the shared vocabulary (easings, keyframes, intent) the
+ *  root `motion` block already carries. `motionSettingsFromTokens` reads it. */
+export function motionThemeTokens(settings: MotionSettings) {
+  const full = motionTokens(settings)
+  return {
+    preset: full.preset,
+    durationFactor: full.durationFactor,
+    durations: full.durations,
+    transforms: full.transforms,
+    stagger: full.stagger,
+    roles: full.roles,
+  }
+}
+
 // ── CSS ────────────────────────────────────────────────────────────────────
 
 /** Roles that keep their duration under reduced motion: interaction feedback
@@ -834,9 +894,28 @@ export function motionRootCss(settings: MotionSettings): string[] {
     ...Object.entries(motionCssVars(settings)).map(([k, v]) => `${k}: ${v};`)]
 }
 
+/** The motion declarations a brand block overrides: the ones whose value
+ *  differs from the root system's, full and reduced. Empty when the brand
+ *  moves like the root. */
+export function motionThemeCssDiff(root: MotionSettings, theme: MotionSettings): { full: string[]; reduced: string[] } {
+  const rootFull = motionCssVars(root)
+  const themeFull = motionCssVars(theme)
+  const rootReduced = motionCssVars(root, { reduced: true })
+  const themeReduced = motionCssVars(theme, { reduced: true })
+  const overridden = Object.keys(themeFull).filter((k) => rootFull[k] !== themeFull[k])
+  // Under reduced motion the brand block must restate every property it
+  // overrides (its full value would beat `:root`'s reduced one), plus any
+  // whose reduced value is its own.
+  const reducedKeys = [...new Set([...overridden, ...Object.keys(themeReduced).filter((k) => rootReduced[k] !== themeReduced[k])])]
+  return {
+    full: overridden.map((k) => `${k}: ${themeFull[k]};`),
+    reduced: reducedKeys.filter((k) => k in themeReduced).map((k) => `${k}: ${themeReduced[k]};`),
+  }
+}
+
 /** Top-level blocks after `:root`: keyframes, the `linear()` fallback, and
  *  the reduced-motion override (only the properties that change). */
-export function motionTrailingCss(settings: MotionSettings): string[] {
+export function motionTrailingCss(settings: MotionSettings, themed: { selector: string; reduced: string[] }[] = []): string[] {
   const lines: string[] = ['', '/* Motion — keyframes the choreographies play (tokens.json `motion.choreography`) */', ...motionKeyframesCss()]
 
   const springs = (Object.keys(MOTION_EASING_FALLBACK) as MotionEasingKey[])
@@ -848,7 +927,14 @@ export function motionTrailingCss(settings: MotionSettings): string[] {
   const reduced = motionCssVars(settings, { reduced: true })
   lines.push('', '/* Reduced motion: no travel, no scale; a short fade instead. */', '@media (prefers-reduced-motion: reduce) {', '  :root {')
   for (const [k, v] of Object.entries(reduced)) if (full[k] !== v) lines.push(`    ${k}: ${v};`)
-  lines.push('  }', '}')
+  lines.push('  }')
+  // A brand that moves its own way overrides the roles in its block, which
+  // beats `:root` — so its reduced values have to be restated there too.
+  for (const t of themed) {
+    if (!t.reduced.length) continue
+    lines.push(`  ${t.selector} {`, ...t.reduced.map((d) => `    ${d}`), '  }')
+  }
+  lines.push('}')
   return lines
 }
 

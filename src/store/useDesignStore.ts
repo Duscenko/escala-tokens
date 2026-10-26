@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { cleanFontSources, upsertFontSource, type FontSource } from '../lib/customFonts'
 import { defaultMotionSettings, normalizeMotionSettings, type MotionSettings } from '../lib/motion'
+import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
@@ -2006,7 +2007,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 103,
+      version: 104,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3711,6 +3712,27 @@ export const useDesignStore = create<DesignStore>()(
           seedMotion(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedMotion(sys?.snapshot)
+          }
+        }
+        if (version < 104) {
+          // v103→v104: each System Style moves its own way (its motion preset,
+          // themePresets.ts). A brand adopted from a style before then gets
+          // that style's motion, written LAST like the preset writes it — so
+          // `themeHasEdits` (a JSON compare against the preset) still reads an
+          // untouched brand as untouched. Anything else keeps the root motion.
+          const styleMotion = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const origins = state.themeOrigin ?? {}
+            for (const [key, presetId] of Object.entries(origins)) {
+              const preset = THEME_STYLE_PRESETS.find((p) => p.id === presetId)
+              const own = state.themeFoundations?.[key]
+              if (!preset?.foundations.motion || !own || typeof own !== 'object' || own.motion) continue
+              own.motion = structuredClone(preset.foundations.motion)
+            }
+          }
+          styleMotion(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) styleMotion(sys?.snapshot)
           }
         }
         return persisted

@@ -95,6 +95,7 @@ import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
+import MotionSemantics from '../components/configurator/MotionSemantics'
 import LayoutHub, { LayoutTabHeading } from '../components/configurator/LayoutHub'
 import DimensionPrimitives from '../components/configurator/DimensionPrimitives'
 import GridSemantics from '../components/configurator/GridSemantics'
@@ -257,6 +258,18 @@ const FOUNDATIONS: FoundationSection[] = [
     Component: IconLibrary,
     Icon: ic('M20.5 7.27783L12 12.0001M12 12.0001L3.49997 7.27783M12 12.0001L12 21.5001M21 16.0586V7.94153C21 7.59889 21 7.42757 20.9495 7.27477C20.9049 7.13959 20.8318 7.01551 20.7354 6.91082C20.6263 6.79248 20.4766 6.70928 20.177 6.54288L12.777 2.43177C12.4934 2.27421 12.3516 2.19543 12.2015 2.16454C12.0685 2.13721 11.9315 2.13721 11.7986 2.16454C11.6484 2.19543 11.5066 2.27421 11.223 2.43177L3.82297 6.54288C3.52345 6.70928 3.37369 6.79248 3.26463 6.91082C3.16816 7.01551 3.09515 7.13959 3.05048 7.27477C3 7.42757 3 7.59889 3 7.94153V16.0586C3 16.4013 3 16.5726 3.05048 16.7254C3.09515 16.8606 3.16816 16.9847 3.26463 17.0893C3.37369 17.2077 3.52345 17.2909 3.82297 17.4573L11.223 21.5684C11.5066 21.726 11.6484 21.8047 11.7986 21.8356C11.9315 21.863 12.0685 21.863 12.2015 21.8356C12.3516 21.8047 12.4934 21.726 12.777 21.5684L20.177 17.4573C20.4766 17.2909 20.6263 17.2077 20.7354 17.0893C20.8318 16.9847 20.9049 16.8606 20.9495 16.7254C21 16.5726 21 16.4013 21 16.0586Z'),
   },
+  {
+    key: 'motion',
+    label: 'Motion',
+    short: 'Motion',
+    hint: 'Durations, easings, choreographies',
+    title: 'Motion',
+    variablesLabel: 'Motion variables',
+    subtitle: 'How every component moves: a preset of picks over a fixed ladder of durations and easings, with reduced motion built in.',
+    Component: MotionSemantics,
+    // A ball with speed lines — the rail tile's FoundationGlyph twin.
+    Icon: ic('M15 16.25a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Z|M4.5 9.5h4|M3.5 12H9|M4.5 14.5h4', '1.8'),
+  },
 ]
 
 // The "Variables" half of the rail (Styles = icons/shadow) —
@@ -311,6 +324,7 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
   stroke: [{ key: 'semantics', label: 'Stroke semantics', icon: 'variables' }],
   shadow: [{ key: 'primitives', label: 'Shadow styles' }],
   icons: [{ key: 'primitives', label: 'Icons' }],
+  motion: [{ key: 'semantics', label: 'Motion semantics', icon: 'variables' }],
 }
 
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
@@ -2309,6 +2323,8 @@ export default function Configurator() {
         previewPlatform={previewPlatform}
         query={colorQuery}
       />
+    ) : section.key === 'motion' ? (
+      <MotionSemantics previewTheme={previewTheme} query={colorQuery} />
     ) : section.key === 'shadow' ? (
       // Shadow has no semantic layer, so it never goes through LayoutHub — but
       // its table is still the primitive list and takes the same heading and

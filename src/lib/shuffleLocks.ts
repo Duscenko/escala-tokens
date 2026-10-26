@@ -38,6 +38,8 @@ export const FOUNDATION_AXIS: Record<keyof ThemeFoundationOverride, ShuffleAxis>
   strokeRoles: 'shape',
   opacity: 'shape',
   iconWeight: 'shape',
+  // How a system moves is part of its character, like its corners and depth.
+  motion: 'shape',
   // A panel's fill is a surface decision — it travels with the colours.
   panelBackground: 'color',
 }

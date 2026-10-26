@@ -17,6 +17,7 @@ import {
   type GridFrameModes,
 } from './layoutTokens'
 import { SHADOW_PRESETS } from './shadowTokens'
+import { motionPresetPatch } from './motion'
 import { curatedMood } from './themeMoods'
 import type { ThemeFoundationOverride } from './themeFoundations'
 import { mergeTypeRoles } from './typeRoles'
@@ -507,6 +508,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('standard'),
     },
     semantics: coreSemantics,
   },
@@ -542,6 +544,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'translucent',
       iconWeight: 'light',
+      motion: motionPresetPatch('expressive'),
     },
     semantics: glassSemantics,
     accessibilityNote: 'Translucent surfaces still use semantic foreground roles; verify contrast over real content.',
@@ -582,6 +585,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
       iconWeight: 'fill',
+      motion: motionPresetPatch('expressive'),
     },
     // M3's filled text field: the fill carries the control so the edge can be a
     // whisper. It is the one style whose input sits TWO steps off the page.
@@ -622,6 +626,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
       panelBackground: 'page',
       iconWeight: 'duotone',
+      motion: motionPresetPatch('calm'),
     },
     semantics: natureSemantics,
   },
@@ -651,6 +656,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: retroShadows,
       panelBackground: 'page',
       iconWeight: 'bold',
+      motion: motionPresetPatch('snappy'),
     },
     semantics: retroSemantics,
   },
@@ -682,6 +688,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: hardShadows,
       panelBackground: 'solid',
       iconWeight: 'bold',
+      motion: motionPresetPatch('snappy'),
     },
     // THE deliberate exception to the soften-the-border rule: brutalism's
     // border IS the design, so it goes the other way — the ramp's text tone,
@@ -721,6 +728,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
       iconWeight: 'light',
+      motion: motionPresetPatch('calm'),
     },
     semantics: softBorders,
   },
@@ -745,6 +753,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: 'page',
       iconWeight: 'regular',
+      motion: motionPresetPatch('snappy'),
     },
     semantics: {
       ...DARK_DEPTH,
@@ -779,6 +788,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('snappy'),
     },
     semantics: filledBorders,
   },
@@ -806,6 +816,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[2].values },
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('playful'),
     },
     semantics: softBorders,
   },
@@ -830,6 +841,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
       iconWeight: 'thin',
+      motion: motionPresetPatch('calm'),
     },
     semantics: {
       ...DARK_DEPTH,
@@ -859,6 +871,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[0].values },
       panelBackground: 'page',
       iconWeight: 'light',
+      motion: motionPresetPatch('standard'),
     },
     semantics: {
       ...DARK_DEPTH,
@@ -887,6 +900,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3),
       panelBackground: 'solid',
       iconWeight: 'bold',
+      motion: motionPresetPatch('expressive'),
     },
     // A vivid teal dark ramp compresses its low steps even more than the
     // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
@@ -908,6 +922,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3),
       panelBackground: 'solid',
       iconWeight: 'duotone',
+      motion: motionPresetPatch('expressive'),
     },
     semantics: softBorders,
   },
@@ -928,6 +943,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3.5),
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('playful'),
     },
     semantics: softBorders,
   },
@@ -946,6 +962,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3),
       panelBackground: 'solid',
       iconWeight: 'light',
+      motion: motionPresetPatch('standard'),
     },
     semantics: softBorders,
   },
@@ -964,6 +981,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3),
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('expressive'),
     },
     semantics: softBorders,
   },
@@ -982,6 +1000,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       selector: buildSelectorsFromBase(3),
       panelBackground: 'solid',
       iconWeight: 'regular',
+      motion: motionPresetPatch('playful'),
     },
     semantics: softBorders,
   },

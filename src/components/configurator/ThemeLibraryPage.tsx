@@ -189,6 +189,7 @@ const CREATE_STEPS = [
   { key: 'sizes', label: 'Spacing' },
   { key: 'shadow', label: 'Shadow' },
   { key: 'icons', label: 'Icons' },
+  { key: 'motion', label: 'Motion' },
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
 

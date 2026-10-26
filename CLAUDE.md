@@ -109,8 +109,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > (CSS, not a script runtime: Radix waits for a CSS exit animation before unmounting).
 > `RecipeScope` supplies the values (`motionCssVars`, reduced from `useReducedMotion`); a
 > `data-inline` preview never animates; registry items ship the rules, keyframes and values. No
-> `duration-*` / `transition-*` utility may return to `escala-ui` (`recipeMotion.test.ts`). Not yet:
-> the editor row, System Style assignments, W3C + the plugin's `Motion` collection.
+> `duration-*` / `transition-*` utility may return to `escala-ui` (`recipeMotion.test.ts`).
+> **Phase 3 (2026-10-26): motion is PER BRAND and edited.** `ThemeFoundationOverride.motion`; all
+> 18 System Styles pick a preset (plan's table) and moods carry one (store v104 seeds adopted
+> brands, appended LAST so `themeHasEdits` still matches). Accordion row **Motion** (preview +
+> Preset), Variables foundation `motion` (`MotionSemantics`: duration + easing selects per role,
+> no free ms), inspector Motion filter. A brand's `variables.css` block overrides only differing
+> `--motion-*` and restates them in the reduced block (`motionThemeCssDiff`). Not yet: the
+> plugin's Motion row / collection and W3C (phase 4).
 
 > **UPDATE (2026-10-22, REVISED same day): a role passes in Light AND Dark only when it is visible on
 > the page (3:1 + Lc 45) AND carries a label — no Light-only exception.** A first pass let Light pass on

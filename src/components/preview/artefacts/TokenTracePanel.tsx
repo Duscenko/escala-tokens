@@ -9,7 +9,9 @@
 //
 // The data is `traceElement` (lib/tokenTrace) — a read of the component's
 // recipe, the same table the stylesheet and the Figma plugin paint from — so
-// a row can never name a token the component does not use. Rows whose kind has
+// a row can never name a token the component does not use. Motion rows (the
+// role behind each transition, the choreography an overlay plays) read the
+// system's motion settings and are plain rows: no drawer edits them yet. Rows whose kind has
 // a Token Details drawer (colour · radius · type · size roles) open it; the
 // variable chip copies the CSS custom property for every row.
 
@@ -24,18 +26,20 @@ export const CHECKER: React.CSSProperties = {
   backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
 }
 
-type Filter = 'all' | 'color' | 'layout' | 'type'
+type Filter = 'all' | 'color' | 'layout' | 'type' | 'motion'
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'color', label: 'Color' },
   { key: 'layout', label: 'Layout' },
   { key: 'type', label: 'Type' },
+  { key: 'motion', label: 'Motion' },
 ]
 
 function filterOf(kind: TraceKind): Exclude<Filter, 'all'> {
   if (kind === 'color') return 'color'
   if (kind === 'type') return 'type'
+  if (kind === 'motion') return 'motion'
   return 'layout'
 }
 
@@ -92,6 +96,17 @@ export function ValueMark({ row, size = 'sm' }: { row: TraceRow; size?: 'sm' | '
     return (
       <span className={box} aria-hidden>
         <span className={`${lg ? 'h-3.5 w-3.5' : 'h-3 w-3'} rounded-[3px] border-[1.5px] border-fg-muted`} />
+      </span>
+    )
+  }
+  if (row.kind === 'motion') {
+    // An ease-out curve: a transition or a choreography's timing.
+    return (
+      <span className={box} aria-hidden>
+        <svg viewBox="0 0 16 16" className={`${glyph} text-fg-muted`}>
+          <path d="M2 13C6 13 7 3 14 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <circle cx="14" cy="3" r="1.3" fill="currentColor" />
+        </svg>
       </span>
     )
   }
@@ -182,7 +197,8 @@ function Row({
     lit ? 'border-accent-ui/45 bg-accent-ui/[0.07]' : 'border-line/70 bg-app/40'
   } ${dim ? 'opacity-45' : ''}`
   if (!editable) {
-    return <div className={cls} title={`${row.ref} — edit it in Variables`}>{body}</div>
+    const hint = row.kind === 'motion' ? `${row.ref} — set by the system's motion` : `${row.ref} — edit it in Variables`
+    return <div className={cls} title={hint}>{body}</div>
   }
   return (
     <button
@@ -211,7 +227,7 @@ export function TokenTraceList({
 
   const all = useMemo(() => trace.slots.flatMap((s) => s.rows), [trace])
   const counts = useMemo(() => {
-    const c: Record<Filter, number> = { all: 0, color: 0, layout: 0, type: 0 }
+    const c: Record<Filter, number> = { all: 0, color: 0, layout: 0, type: 0, motion: 0 }
     for (const r of all) {
       if (r.state && !showStates) continue
       c.all++
@@ -230,8 +246,9 @@ export function TokenTraceList({
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center gap-1 border-b border-line/60 px-2 py-1.5">
-        <div role="tablist" aria-label="Token kind" className="flex items-center gap-1">
+      {/* Wraps rather than clips: five kinds and States do not fit the 288px panel on one line. */}
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-1 border-b border-line/60 px-2 py-1.5">
+        <div role="tablist" aria-label="Token kind" className="flex flex-wrap items-center gap-1">
           {FILTERS.filter((f) => f.key === 'all' || counts[f.key] > 0).map((f) => {
             const selected = f.key === filter
             return (

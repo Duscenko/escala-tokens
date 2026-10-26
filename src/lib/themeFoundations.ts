@@ -1,6 +1,7 @@
 import type { TypeRoleModes } from './typeRoles'
 import { completeRadiusScale, type GridFrameModes, type RadiusRoleViewports } from './layoutTokens'
 import type { PhosphorWeight } from './phosphorIcons'
+import type { MotionSettings } from './motion'
 
 export interface ThemeTypographyTokens {
   fontFamily: string
@@ -42,6 +43,9 @@ export interface ThemeFoundationOverride {
   panelBackground?: 'solid' | 'translucent' | 'page'
   /** Phosphor icon weight this style renders glyphs at — thin…duotone. */
   iconWeight?: PhosphorWeight
+  /** How this brand moves (lib/motion.ts): duration factor, role picks,
+   *  transforms, stagger. Picked as a whole (a preset, or one role edited). */
+  motion?: MotionSettings
 }
 
 export interface FoundationSource extends ThemeFoundationOverride {
@@ -65,6 +69,7 @@ export interface FoundationSource extends ThemeFoundationOverride {
   radiusRoleViewports?: RadiusRoleViewports
   panelBackground: 'solid' | 'translucent' | 'page'
   iconWeight: PhosphorWeight
+  motion: MotionSettings
   themeFoundations?: Record<string, ThemeFoundationOverride>
 }
 
@@ -111,6 +116,7 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     radiusRoleViewports: override.radiusRoleViewports ?? source.radiusRoleViewports,
     panelBackground: override.panelBackground ?? source.panelBackground,
     iconWeight: override.iconWeight ?? source.iconWeight,
+    motion: override.motion ?? source.motion,
   }
 }
 

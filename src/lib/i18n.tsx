@@ -11,6 +11,17 @@ export const LOCALES: { key: Locale; label: string; shortLabel: string }[] = [
 const STORAGE_KEY = 'escala-language'
 
 const es: Record<string, string> = {
+  // Motion foundation (phase 3)
+  'Motion': 'Movimiento',
+  'Replay': 'Repetir',
+  'reduced': 'reducido',
+  'Standard': 'Estándar',
+  'Snappy': 'Ágil',
+  'Expressive': 'Expresivo',
+  'Playful': 'Lúdico',
+  'Calm': 'Sereno',
+  'Motion preset': 'Preset de movimiento',
+  'How every component moves: hovers, overlays, lists. Reduced motion is built in on top of any preset.': 'Cómo se mueve cada componente: hover, superposiciones, listas. El movimiento reducido se aplica sobre cualquier preset.',
   'Unlock states from the accent': 'Desvincular los estados del acento',
   'Lock states to the accent': 'Vincular los estados al acento',
   'Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.': 'Success, Critical, Warning e Info siguen el croma del acento, resueltos por contraste. Haga clic para fijarlos a mano.',
@@ -1779,6 +1790,17 @@ const es: Record<string, string> = {
 }
 
 const fr: Record<string, string> = {
+  // Motion foundation (phase 3)
+  'Motion': 'Mouvement',
+  'Replay': 'Rejouer',
+  'reduced': 'réduit',
+  'Standard': 'Standard',
+  'Snappy': 'Vif',
+  'Expressive': 'Expressif',
+  'Playful': 'Ludique',
+  'Calm': 'Calme',
+  'Motion preset': 'Préréglage de mouvement',
+  'How every component moves: hovers, overlays, lists. Reduced motion is built in on top of any preset.': 'Comment chaque composant bouge : survols, superpositions, listes. Le mouvement réduit s’applique par-dessus tout préréglage.',
   'Unlock states from the accent': 'Détacher les états de l’accent',
   'Lock states to the accent': 'Lier les états à l’accent',
   'Success, Critical, Warning and Info follow the accent’s chroma, solved for contrast. Click to set them by hand.': 'Success, Critical, Warning et Info suivent la chroma de l’accent, résolus pour le contraste. Cliquez pour les régler à la main.',

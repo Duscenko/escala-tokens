@@ -1,7 +1,7 @@
 // Pure exporters — generate variables.css and README.md from store state.
 // Shared by ExportView (preview/download) and GitHubConnectView (repo push).
 
-import { motionMarkdown, motionRootCss, motionTrailingCss, normalizeMotionSettings } from './motion'
+import { motionMarkdown, motionRootCss, motionThemeCssDiff, motionTrailingCss, normalizeMotionSettings } from './motion'
 import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
@@ -284,6 +284,8 @@ export function buildCSS(
   if (!desktopOnly) {
     lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`)
   }
+  // Brands that move their own way (a System Style's motion preset).
+  const themedMotion: { selector: string; reduced: string[] }[] = []
   // Themes with their own foundations step their OWN radius roles down too.
   const themedRadius: { selector: string; roles?: Record<string, string>; radius: Record<string, string>; viewports?: RadiusRoleViewports; spacingRoles?: Record<string, string>; spacing: Record<string, string> }[] = []
 
@@ -365,6 +367,12 @@ export function buildCSS(
       gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`))
       themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing })
       lines.push(`  --panel-blur: ${foundations.panelBackground === 'translucent' ? 'blur(16px)' : 'none'};`)
+      const motionDiff = motionThemeCssDiff(motion, normalizeMotionSettings(foundations.motion))
+      if (motionDiff.full.length) {
+        lines.push(`  /* Motion — ${theme} */`)
+        motionDiff.full.forEach((d) => lines.push(`  ${d}`))
+        themedMotion.push({ selector: themeSelector, reduced: motionDiff.reduced })
+      }
     }
     if (darkGradients.length) {
       lines.push(`  /* Gradients — ${theme} */`)
@@ -394,7 +402,7 @@ export function buildCSS(
     }
   }
 
-  lines.push(...motionTrailingCss(motion))
+  lines.push(...motionTrailingCss(motion, themedMotion))
 
   const imports = fontImportLines(store.fontSources, usedFamilies)
   return [...(imports.length ? [...imports, ''] : []), ...lines].join('\n')

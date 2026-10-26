@@ -12,6 +12,7 @@ const VARIABLE_ICON_SOURCES: Record<string, string> = {
   sizes: '/icons/set-variables/size-variables.svg',
   stroke: '/icons/set-variables/stroke-variables.svg',
   icons: '/icons/set-variables/icon-library.svg',
+  motion: '/icons/set-variables/motion-variables.svg',
 }
 
 // The source SVGs all use a 24px canvas but their drawings occupy very
@@ -27,6 +28,7 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
   grid: '145%',
   sizes: '115%',
   stroke: '145%',
+  motion: '115%',
   icons: '135%',
 }
 

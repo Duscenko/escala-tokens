@@ -265,7 +265,7 @@ export function resolvePreviewTokens(
     typography,
     panelBackground,
     iconWeight,
-    motion: normalizeMotionSettings(store.motion),
+    motion: normalizeMotionSettings(foundations.motion),
     // The PREVIEWED THEME's page, in both appearances — this was
     // `kind === 'light' ? store.pageBackground : undefined`, i.e. the system's
     // global page in light and nothing at all in dark. Both halves were wrong

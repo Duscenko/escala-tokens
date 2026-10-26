@@ -5,5 +5,5 @@
 // step with `Configurator`'s `FOUNDATIONS` array.
 export const FOUNDATION_KEYS = [
   'color', 'typography', 'dimensions', 'radius', 'spacing',
-  'shadow', 'grid', 'sizes', 'stroke', 'icons',
+  'shadow', 'grid', 'sizes', 'stroke', 'icons', 'motion',
 ] as const

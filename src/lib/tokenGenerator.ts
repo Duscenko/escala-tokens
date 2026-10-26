@@ -1,4 +1,4 @@
-import { motionTokens, normalizeMotionSettings } from './motion'
+import { motionThemeTokens, motionTokens, normalizeMotionSettings } from './motion'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
 import { darkShadowsOf } from './shadowTokens'
 import { letterSpacingsFor } from './typographyStandard'
@@ -472,6 +472,9 @@ export function generateTokenJSON(
       // icons than an Airy one — the plugin binds `Icon/*` from these.
       iconWeight: resolved.iconWeight,
       iconSizes: iconSizeTokens(resolved.sizes),
+      // THIS theme's motion — a System Style picks its own preset. The shared
+      // vocabulary (easings, keyframes, choreographies) stays in root `motion`.
+      motion: motionThemeTokens(normalizeMotionSettings(resolved.motion)),
       // Which Dimension primitive each length of THIS theme aliases. Per theme
       // because a style's radius/spacing differ — the primitives themselves
       // (`dimensions`) never do.

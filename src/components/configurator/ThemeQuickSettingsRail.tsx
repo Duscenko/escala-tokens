@@ -93,6 +93,8 @@ import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
+import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
+import { MotionPreview, motionSummary } from './MotionPreview'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
@@ -801,7 +803,7 @@ function InfoHint({ children }: { children: string }) {
  * (icon weight + status action). Adding a panel means adding its key here
  * and a matching `EditionCard` below, nowhere else.
  */
-export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'shadow', 'icons'] as const
+export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'shadow', 'icons', 'motion'] as const
 export type QuickPanelFoundation = (typeof QUICK_PANEL_FOUNDATIONS)[number]
 
 export function isQuickPanelFoundation(key: string): key is QuickPanelFoundation {
@@ -912,6 +914,7 @@ const EDIT_LIST: { key: QuickPanelFoundation; title: string }[] = [
   { key: 'shadow', title: 'Shadow' },
   { key: 'sizes', title: 'Spacing' },
   { key: 'icons', title: 'Icons' },
+  { key: 'motion', title: 'Motion' },
 ]
 
 function EditList({ active, locked, onPick }: {
@@ -2077,6 +2080,8 @@ export default function ThemeQuickSettingsRail({
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
   const { typography, radius, shadows, shadowsDark, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
+  const motion = normalizeMotionSettings(foundations.motion)
+  const motionPreset = matchMotionPreset(motion)
   // ONE platform switch, in Spacing (where viewports matter most). Font,
   // Radius and the board still resolve against the platform it picks.
   const platformSwitch = onPreviewPlatformChange ? (
@@ -2087,6 +2092,8 @@ export default function ThemeQuickSettingsRail({
     : (foundations.sizeRoles?.control ?? 'md')
   const setIconWeight = (key: string, value: PhosphorWeight) =>
     patchThemeFoundations(key, { iconWeight: value })
+  const setMotionPreset = (key: string, value: MotionPresetKey) =>
+    patchThemeFoundations(key, { motion: motionPresetPatch(value) })
   // Font families this system added + which Font field opened "Add font".
   const fontSources = useDesignStore((s) => s.fontSources) ?? []
   const [addFontFor, setAddFontFor] = useState<'body' | 'display' | null>(null)
@@ -3222,6 +3229,29 @@ export default function ThemeQuickSettingsRail({
           <SettingItem label="Icon sizes" hint="Three sizes that follow your control height — larger buttons and fields get larger glyphs, smaller ones smaller. The same size on Desktop, Tablet and Mobile.">
             <IconSizeLadder weight={iconWeight ?? 'regular'} sizes={sizes} />
           </SettingItem>
+        </EditionCard>
+        )}
+
+        {(
+        <EditionCard title="Motion" foundationKey="motion" open={activePanel === 'motion'} summary={t(motionSummary(motion))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+          <div className={RAIL_BLOCK}>
+            <MotionPreview settings={motion} />
+          </div>
+          <div className={RAIL_BLOCK}>
+            <PickerField
+              label="Preset"
+              ariaLabel="Motion preset"
+              note="How every component moves: hovers, overlays, lists. Reduced motion is built in on top of any preset."
+              value={motionPreset ?? 'custom'}
+              valueLabel={motionPreset ? undefined : t('Custom')}
+              options={MOTION_PRESET_KEYS.map((key) => ({
+                value: key,
+                label: MOTION_PRESETS[key].label,
+                description: MOTION_PRESETS[key].brief,
+              }))}
+              onChange={(value) => commit('Motion updated', (themeKey) => setMotionPreset(themeKey, value))}
+            />
+          </div>
         </EditionCard>
         )}
 
