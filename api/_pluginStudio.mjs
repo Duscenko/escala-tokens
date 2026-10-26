@@ -149,52 +149,6 @@ function resolveMotionRole(role, settings) {
   const ms = durationMs(pick.duration, settings);
   return { ...pick, ms, value: `${ms}ms ${MOTION_EASINGS[pick.easing]}` };
 }
-function motionKeyframes(settings) {
-  const s = settings.transforms;
-  const amp = Math.min(0.15, Math.max(0, (s.overshoot - 1) * 1.67));
-  const squash = (n) => +n.toFixed(3);
-  const out = {
-    "fade-in": { opacity: ["0", "1"] },
-    "fade-out": { opacity: ["1", "0"] },
-    pop: { opacity: ["0", "1"], transform: ["scale(var(--motion-transform-pop))", "scale(1)"] },
-    shrink: { opacity: ["1", "0"], transform: ["scale(1)", "scale(var(--motion-transform-shrink))"] },
-    rise: { opacity: ["0", "1"], transform: ["translateY(var(--motion-transform-enter))", "translateY(0)"] },
-    sink: { opacity: ["1", "0"], transform: ["translateY(0)", "translateY(var(--motion-transform-enter))"] },
-    unmask: { transform: ["translateY(100%)", "translateY(0)"] },
-    "slide-in-right": { transform: ["translateX(100%)", "translateX(0)"] },
-    "slide-out-right": { transform: ["translateX(0)", "translateX(100%)"] },
-    "slide-in-left": { transform: ["translateX(-100%)", "translateX(0)"] },
-    "slide-out-left": { transform: ["translateX(0)", "translateX(-100%)"] },
-    "slide-in-bottom": { transform: ["translateY(100%)", "translateY(0)"] },
-    "slide-out-bottom": { transform: ["translateY(0)", "translateY(100%)"] },
-    "switch-move": { transform: ["translateX(var(--switch-from))", "translateX(var(--switch-to))"] }
-  };
-  if (amp > 0) {
-    out["switch-toggle"] = {
-      transform: [
-        "translateX(var(--switch-from)) scaleX(1) scaleY(1)",
-        `translateX(var(--switch-from)) scaleX(${squash(1 - amp)}) scaleY(${squash(1 + amp)})`,
-        `translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(${squash(1 + amp)}) scaleY(${squash(1 - amp)})`,
-        "translateX(var(--switch-to)) scaleX(1) scaleY(1)"
-      ],
-      offset: [0, 0.278, 0.722, 1],
-      easing: ["entrance", "gentle", "exit"]
-    };
-    out["spring-in"] = {
-      opacity: ["0", "1", "1", "1", "1"],
-      transform: [
-        "scale(var(--motion-transform-pop))",
-        "scale(var(--motion-transform-overshoot))",
-        "scale(var(--motion-transform-shrink))",
-        "scale(var(--motion-transform-settle))",
-        "scale(1)"
-      ],
-      offset: [0, 0.3, 0.52, 0.75, 1],
-      easing: ["entrance", "standard", "standard", "entrance"]
-    };
-  }
-  return out;
-}
 function motionChoreographies(settings) {
   const s = settings.transforms;
   const bounces = s.overshoot > 1;
@@ -303,6 +257,20 @@ function motionChoreographies(settings) {
       motion: r("use-disclosure-out"),
       reducedMotion: { collapseTo: "disclosure", pattern: "disclosure", direction: "collapse", motion: INSTANT }
     },
+    "popover-enter": {
+      pattern: "coordinated",
+      components: ["Popover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
+      tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
+    },
+    "popover-exit": {
+      pattern: "coordinated",
+      components: ["Popover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
+      tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
+    },
     "sonner-enter": {
       pattern: "coordinated",
       components: ["Sonner"],
@@ -328,7 +296,7 @@ function motionTokens(settings) {
       return [role, { duration: res.duration, easing: res.easing, value: res.value }];
     })),
     choreography: motionChoreographies(settings),
-    keyframes: motionKeyframes(settings),
+    keyframes: MOTION_KEYFRAMES,
     intent: {
       durations: Object.fromEntries(MOTION_DURATION_KEYS.map((k) => [k, {
         ...MOTION_DURATION_INTENT[k],
@@ -338,7 +306,18 @@ function motionTokens(settings) {
     }
   };
 }
-var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT;
+function motionThemeTokens(settings) {
+  const full = motionTokens(settings);
+  return {
+    preset: full.preset,
+    durationFactor: full.durationFactor,
+    durations: full.durations,
+    transforms: full.transforms,
+    stagger: full.stagger,
+    roles: full.roles
+  };
+}
+var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT, MOTION_KEYFRAMES;
 var init_motion = __esm({
   "src/lib/motion.ts"() {
     MOTION_DURATIONS = {
@@ -587,6 +566,2784 @@ var init_motion = __esm({
     FADE_IN = { duration: "fade", easing: "entrance" };
     FADE_OUT = { duration: "fade", easing: "exit" };
     INSTANT = { duration: "instant", easing: "standard" };
+    MOTION_KEYFRAMES = {
+      "fade-in": { opacity: ["0", "1"] },
+      "fade-out": { opacity: ["1", "0"] },
+      pop: { opacity: ["0", "1"], transform: ["scale(var(--motion-transform-pop))", "scale(1)"] },
+      shrink: { opacity: ["1", "0"], transform: ["scale(1)", "scale(var(--motion-transform-shrink))"] },
+      rise: { opacity: ["0", "1"], transform: ["translateY(var(--motion-transform-enter))", "translateY(0)"] },
+      sink: { opacity: ["1", "0"], transform: ["translateY(0)", "translateY(var(--motion-transform-enter))"] },
+      unmask: { transform: ["translateY(100%)", "translateY(0)"] },
+      "slide-in-right": { transform: ["translateX(100%)", "translateX(0)"] },
+      "slide-out-right": { transform: ["translateX(0)", "translateX(100%)"] },
+      "slide-in-left": { transform: ["translateX(-100%)", "translateX(0)"] },
+      "slide-out-left": { transform: ["translateX(0)", "translateX(-100%)"] },
+      "slide-in-top": { transform: ["translateY(-100%)", "translateY(0)"] },
+      "slide-out-top": { transform: ["translateY(0)", "translateY(-100%)"] },
+      "slide-in-bottom": { transform: ["translateY(100%)", "translateY(0)"] },
+      "slide-out-bottom": { transform: ["translateY(0)", "translateY(100%)"] },
+      // Height from 0 to the content's own (a Radix disclosure publishes it;
+      // the recipe points `--escala-disclosure-height` at that variable).
+      "disclosure-expand": { height: ["0", "var(--escala-disclosure-height)"] },
+      "disclosure-collapse": { height: ["var(--escala-disclosure-height)", "0"] },
+      "switch-move": { transform: ["translateX(var(--switch-from))", "translateX(var(--switch-to))"] },
+      "switch-toggle": {
+        transform: [
+          "translateX(var(--switch-from)) scaleX(1) scaleY(1)",
+          "translateX(var(--switch-from)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash)))",
+          "translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash)))",
+          "translateX(var(--switch-to)) scaleX(1) scaleY(1)"
+        ],
+        offset: [0, 0.278, 0.722, 1],
+        easing: ["entrance", "gentle", "exit"]
+      },
+      "spring-in": {
+        opacity: ["0", "1", "1", "1", "1"],
+        transform: [
+          "scale(var(--motion-transform-pop))",
+          "scale(var(--motion-transform-overshoot))",
+          "scale(var(--motion-transform-shrink))",
+          "scale(var(--motion-transform-settle))",
+          "scale(1)"
+        ],
+        offset: [0, 0.3, 0.52, 0.75, 1],
+        easing: ["entrance", "standard", "standard", "entrance"]
+      }
+    };
+  }
+});
+
+// src/lib/brandPalette.ts
+var PRESET_GROUPS, BRAND_PRESETS, BRAND_SPECTRUM;
+var init_brandPalette = __esm({
+  "src/lib/brandPalette.ts"() {
+    PRESET_GROUPS = [
+      {
+        label: "Greens",
+        colors: [
+          { label: "Moss", hex: "#669f2a" },
+          { label: "Forest", hex: "#15803d" },
+          { label: "Lime", hex: "#66c61c" },
+          { label: "Green", hex: "#16b364" },
+          { label: "Mint", hex: "#34d399" },
+          { label: "Teal", hex: "#15b79e" },
+          { label: "Emerald", hex: "#0d9488" },
+          { label: "Aqua", hex: "#2dd4bf" },
+          { label: "Cyan", hex: "#06aed4" },
+          { label: "Ice", hex: "#22d3ee" }
+        ]
+      },
+      {
+        label: "Blues",
+        colors: [
+          { label: "Sky", hex: "#0ba5ec" },
+          { label: "Blue", hex: "#2e90fa" },
+          { label: "Blue Dark", hex: "#2970ff" },
+          { label: "Cobalt", hex: "#1d4ed8" },
+          { label: "Electric", hex: "#4f46e5" },
+          { label: "Indigo", hex: "#6172f3" },
+          { label: "Periwinkle", hex: "#818cf8" },
+          { label: "Violet", hex: "#875bf7" },
+          { label: "Purple", hex: "#7a5af8" },
+          { label: "Grape", hex: "#a855f7" }
+        ]
+      },
+      {
+        label: "Pinks",
+        colors: [
+          { label: "Magenta", hex: "#c026d3" },
+          { label: "Fuchsia", hex: "#d444f1" },
+          { label: "Pink", hex: "#ee46bc" },
+          { label: "Ros\xE9", hex: "#f63d68" },
+          { label: "Coral", hex: "#fb542b" }
+        ]
+      },
+      {
+        label: "Warm",
+        colors: [
+          { label: "Flame", hex: "#ff4405" },
+          { label: "Orange", hex: "#ef6820" },
+          { label: "Amber", hex: "#f59e0b" },
+          { label: "Yellow", hex: "#eaaa08" }
+        ]
+      }
+    ];
+    BRAND_PRESETS = PRESET_GROUPS.flatMap((g) => g.colors.map((c2) => c2.hex));
+    BRAND_SPECTRUM = ["Blues", "Pinks", "Warm", "Greens"].flatMap(
+      (label) => PRESET_GROUPS.find((g) => g.label === label)?.colors ?? []
+    );
+  }
+});
+
+// src/lib/color/apca.ts
+function parseHex(hex) {
+  const stripped = hex.trim().replace(/^#/, "");
+  let h = stripped;
+  let alphaDigits = null;
+  if (h.length === 4) {
+    alphaDigits = h[3] + h[3];
+    h = h.slice(0, 3);
+  }
+  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
+  if (h.length === 8) {
+    alphaDigits = stripped.slice(6, 8);
+    h = h.slice(0, 6);
+  }
+  if (h.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(h)) {
+    throw new Error(`apca: not an sRGB hex color: "${hex}"`);
+  }
+  if (alphaDigits) {
+    const a2 = parseInt(alphaDigits, 16) / 255;
+    if (a2 < 0.999) {
+      throw new Error(
+        `apca: "${hex}" is translucent (alpha ${Math.round(a2 * 100)}%) \u2014 contrast requires an opaque color. Composite it over its real backdrop first (colorUtils.compositeOver), then measure the result.`
+      );
+    }
+  }
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16)
+  ];
+}
+function apcaY(hex) {
+  const [r, g, b] = parseHex(hex);
+  return R_CO * Math.pow(r / 255, MAIN_TRC) + G_CO * Math.pow(g / 255, MAIN_TRC) + B_CO * Math.pow(b / 255, MAIN_TRC);
+}
+function softClampBlack(y) {
+  return y > BLK_THRS ? y : y + Math.pow(BLK_THRS - y, BLK_CLMP);
+}
+function apcaLc(text, background) {
+  const yTxt = softClampBlack(apcaY(text));
+  const yBg = softClampBlack(apcaY(background));
+  if (Math.abs(yBg - yTxt) < DELTA_Y_MIN) return 0;
+  let sapc;
+  let output;
+  if (yBg > yTxt) {
+    sapc = (Math.pow(yBg, NORM_BG) - Math.pow(yTxt, NORM_TXT)) * SCALE_BOW;
+    output = sapc < LO_CLIP ? 0 : sapc - LO_BOW_OFFSET;
+  } else {
+    sapc = (Math.pow(yBg, REV_BG) - Math.pow(yTxt, REV_TXT)) * SCALE_WOB;
+    output = sapc > -LO_CLIP ? 0 : sapc + LO_WOB_OFFSET;
+  }
+  return output * 100;
+}
+function wcagLuminance(hex) {
+  const [r, g, b] = parseHex(hex);
+  const ch = (v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+}
+function wcagRatio(a2, b) {
+  const la = wcagLuminance(a2);
+  const lb = wcagLuminance(b);
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+var MAIN_TRC, R_CO, G_CO, B_CO, NORM_BG, NORM_TXT, REV_TXT, REV_BG, BLK_THRS, BLK_CLMP, SCALE_BOW, SCALE_WOB, LO_BOW_OFFSET, LO_WOB_OFFSET, DELTA_Y_MIN, LO_CLIP, INTENT_THRESHOLDS;
+var init_apca = __esm({
+  "src/lib/color/apca.ts"() {
+    MAIN_TRC = 2.4;
+    R_CO = 0.2126729;
+    G_CO = 0.7151522;
+    B_CO = 0.072175;
+    NORM_BG = 0.56;
+    NORM_TXT = 0.57;
+    REV_TXT = 0.62;
+    REV_BG = 0.65;
+    BLK_THRS = 0.022;
+    BLK_CLMP = 1.414;
+    SCALE_BOW = 1.14;
+    SCALE_WOB = 1.14;
+    LO_BOW_OFFSET = 0.027;
+    LO_WOB_OFFSET = 0.027;
+    DELTA_Y_MIN = 5e-4;
+    LO_CLIP = 0.1;
+    INTENT_THRESHOLDS = {
+      "body-text": { wcag: 4.5, apcaLc: 75 },
+      "large-text": { wcag: 3, apcaLc: 60 },
+      "action-label": { wcag: 4.5, apcaLc: 60 },
+      "ui-component": { wcag: 3, apcaLc: 45 },
+      // The resting outline of a field / select / checkbox / outline button — a
+      // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
+      // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
+      // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
+      // (3.81:1): reported twice as "los bordes de control están muy fuertes",
+      // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
+      // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
+      // 1.26, below it) — not an accessibility claim: a control identified by its
+      // stroke alone no longer clears 1.4.11, which is why a field that must
+      // clear it gives itself a FILL (`surface.input` a step off the page), the
+      // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
+      // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
+      "control-boundary": { wcag: 1.4, apcaLc: null },
+      // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
+      // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
+      // (Lc 30). Full AA would make a disabled outline / ghost / link button —
+      // no fill to tell it apart — read exactly like an enabled one.
+      "disabled-text": { wcag: 3, apcaLc: 30 },
+      decorative: { wcag: null, apcaLc: null },
+      surface: { wcag: null, apcaLc: null }
+    };
+  }
+});
+
+// src/lib/color/gamut.ts
+function xyzToOklab(xyz) {
+  const lms = apply(XYZ_TO_LMS, xyz);
+  const l_ = Math.cbrt(lms[0]);
+  const m_ = Math.cbrt(lms[1]);
+  const s_ = Math.cbrt(lms[2]);
+  return {
+    l: 0.210454268309314 * l_ + 0.7936177747023054 * m_ - 0.0040720430116193 * s_,
+    a: 1.9779985324311684 * l_ - 2.42859224204858 * m_ + 0.450593709617411 * s_,
+    b: 0.0259040424655478 * l_ + 0.7827717124575296 * m_ - 0.8086757549230774 * s_
+  };
+}
+function linearToOklab({ r, g, b }) {
+  return xyzToOklab(apply(LIN_SRGB_TO_XYZ, [r, g, b]));
+}
+function oklabToLinear({ l, a: a2, b }) {
+  const lms_ = apply(OKLAB_TO_LMS, [l, a2, b]);
+  const lms = [lms_[0] ** 3, lms_[1] ** 3, lms_[2] ** 3];
+  const xyz = apply(LMS_TO_XYZ, lms);
+  const [r, g, bb] = apply(XYZ_TO_LIN_SRGB, xyz);
+  return { r, g, b: bb };
+}
+function hexToLinearRgb(hex) {
+  const stripped = hex.trim().replace(/^#/, "");
+  let h = stripped;
+  let alphaDigits = null;
+  if (h.length === 4) {
+    alphaDigits = h[3] + h[3];
+    h = h.slice(0, 3);
+  }
+  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
+  if (h.length === 8) {
+    alphaDigits = stripped.slice(6, 8);
+    h = h.slice(0, 6);
+  }
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) throw new Error(`gamut: not an sRGB hex color: "${hex}"`);
+  if (alphaDigits) {
+    const a2 = parseInt(alphaDigits, 16) / 255;
+    if (a2 < 0.999) {
+      throw new Error(
+        `gamut: "${hex}" is translucent (alpha ${Math.round(a2 * 100)}%) \u2014 composite it over its real backdrop first (colorUtils.compositeOver), then convert the result.`
+      );
+    }
+  }
+  return {
+    r: toLinear(parseInt(h.slice(0, 2), 16) / 255),
+    g: toLinear(parseInt(h.slice(2, 4), 16) / 255),
+    b: toLinear(parseInt(h.slice(4, 6), 16) / 255)
+  };
+}
+function hexToOklch(hex) {
+  return oklabToOklch(linearToOklab(hexToLinearRgb(hex)));
+}
+function oklchToHexClipped(color) {
+  const { r, g, b } = oklabToLinear(oklchToOklab(color));
+  return `#${byte(toGamma(r))}${byte(toGamma(g))}${byte(toGamma(b))}`;
+}
+function inSrgbGamut(color) {
+  const { r, g, b } = oklabToLinear(oklchToOklab(color));
+  return r >= -GAMUT_EPS && r <= 1 + GAMUT_EPS && g >= -GAMUT_EPS && g <= 1 + GAMUT_EPS && b >= -GAMUT_EPS && b <= 1 + GAMUT_EPS;
+}
+function deltaEOK(a2, b) {
+  const dl = a2.l - b.l;
+  const da = a2.a - b.a;
+  const db = a2.b - b.b;
+  return Math.sqrt(dl * dl + da * da + db * db);
+}
+function clipToOklab(color) {
+  const { r, g, b } = oklabToLinear(oklchToOklab(color));
+  const cl = (v) => Math.max(0, Math.min(1, v));
+  return linearToOklab({ r: cl(r), g: cl(g), b: cl(b) });
+}
+function gamutMapSrgb(color) {
+  if (color.l >= 1) return { l: 1, c: 0, h: color.h };
+  if (color.l <= 0) return { l: 0, c: 0, h: color.h };
+  if (inSrgbGamut(color)) return color;
+  let min = 0;
+  let max = color.c;
+  let minInGamut = true;
+  let current = { ...color };
+  let clipped = clipToOklab(current);
+  if (deltaEOK(clipped, oklchToOklab(current)) < JND) return oklabToOklch(clipped);
+  while (max - min > SEARCH_EPS) {
+    const chroma6 = (min + max) / 2;
+    current = { l: color.l, c: chroma6, h: color.h };
+    if (minInGamut && inSrgbGamut(current)) {
+      min = chroma6;
+      continue;
+    }
+    clipped = clipToOklab(current);
+    const e = deltaEOK(clipped, oklchToOklab(current));
+    if (e < JND) {
+      if (JND - e < SEARCH_EPS) return oklabToOklch(clipped);
+      minInGamut = false;
+      min = chroma6;
+    } else {
+      max = chroma6;
+    }
+  }
+  return oklabToOklch(clipped);
+}
+function oklchToHex(l, c2, h) {
+  return oklchToHexClipped(gamutMapSrgb({ l, c: c2, h: Number.isNaN(h) ? 0 : h }));
+}
+var toLinear, toGamma, OKLAB_TO_LMS, LMS_TO_XYZ, XYZ_TO_LMS, XYZ_TO_LIN_SRGB, LIN_SRGB_TO_XYZ, apply, oklchToOklab, oklabToOklch, byte, GAMUT_EPS, JND, SEARCH_EPS;
+var init_gamut = __esm({
+  "src/lib/color/gamut.ts"() {
+    toLinear = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    toGamma = (v) => v <= 31308e-7 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    OKLAB_TO_LMS = [
+      [1, 0.3963377773761749, 0.2158037573099136],
+      [1, -0.1055613458156586, -0.0638541728258133],
+      [1, -0.0894841775298119, -1.2914855480194092]
+    ];
+    LMS_TO_XYZ = [
+      [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+      [-0.0405757452148008, 1.112286803280317, -0.0717110580655164],
+      [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816]
+    ];
+    XYZ_TO_LMS = [
+      [0.819022437996703, 0.3619062600528904, -0.1288737815209879],
+      [0.0329836539323885, 0.9292868615863434, 0.0361446663506424],
+      [0.0481771893596242, 0.2642395317527308, 0.6335478284694309]
+    ];
+    XYZ_TO_LIN_SRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    LIN_SRGB_TO_XYZ = [
+      [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
+      [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
+      [0.01933081871559182, 0.11919477979462598, 0.9505321522496607]
+    ];
+    apply = (m, v) => [
+      m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+      m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+      m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]
+    ];
+    oklchToOklab = ({ l, c: c2, h }) => {
+      const rad = h * Math.PI / 180;
+      return { l, a: c2 * Math.cos(rad), b: c2 * Math.sin(rad) };
+    };
+    oklabToOklch = ({ l, a: a2, b }) => {
+      const c2 = Math.sqrt(a2 * a2 + b * b);
+      const h = c2 < 1e-7 ? 0 : (Math.atan2(b, a2) * 180 / Math.PI + 360) % 360;
+      return { l, c: c2, h };
+    };
+    byte = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0");
+    GAMUT_EPS = 1e-6;
+    JND = 0.02;
+    SEARCH_EPS = 1e-4;
+  }
+});
+
+// src/lib/colorUtils.ts
+import chroma from "chroma-js";
+function clamp01(n) {
+  return Math.max(0, Math.min(1, n));
+}
+function lightnessForContrast(target, hue, chromaC, bg, towardDark) {
+  const meets = (hex) => wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc;
+  const bgL = chroma(bg).oklch()[0];
+  let lo = towardDark ? 0 : bgL;
+  let hi = towardDark ? bgL : 1;
+  let best = oklchToHex(towardDark ? 0 : 1, chromaC, hue);
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    const hex = oklchToHex(mid, chromaC, hue);
+    if (meets(hex)) {
+      best = hex;
+      if (towardDark) lo = mid;
+      else hi = mid;
+    } else if (towardDark) hi = mid;
+    else lo = mid;
+  }
+  return best;
+}
+function buildScale(baseHex, spec, shift, background, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
+  const [baseL, baseC, baseHraw] = chroma(baseHex).oklch();
+  const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw;
+  const chromaLink = neutralTintSpec(tint).chromaLink;
+  const fallbackBg = appearance === "dark" ? "#111111" : "#ffffff";
+  let page = fallbackBg;
+  if (background) {
+    try {
+      const bgL = chroma(background).oklch()[0];
+      if (appearance === "dark" ? bgL <= 0.5 : bgL > 0.5) page = chroma(background).hex();
+    } catch {
+    }
+  }
+  const pageL = chroma(page).oklch()[0];
+  const pageC = chroma(page).oklch()[1];
+  const towardDark = appearance === "light";
+  const dir = towardDark ? -1 : 1;
+  const gamma = 1 - shift * 0.35;
+  const out = [];
+  for (let i = 1; i <= TONES; i++) {
+    if (i === BASE_TONE) {
+      out.push(chroma(baseHex).hex());
+      continue;
+    }
+    if (i < BASE_TONE) {
+      if (i === 1) {
+        if (chromaLink > 0 || pageC < 0.01) {
+          out.push(page);
+          continue;
+        }
+        if (baseC < 0.01) {
+          out.push(page);
+          continue;
+        }
+        const rawPageH = chroma(page).oklch()[2];
+        const pH = Number.isNaN(rawPageH) ? baseH : rawPageH;
+        let dH = Math.abs(pH - baseH);
+        if (dH > 180) dH = 360 - dH;
+        if (dH <= 30) {
+          out.push(page);
+          continue;
+        }
+        out.push(oklchToHex(pageL, pageC, baseH));
+        continue;
+      }
+      const w = Math.pow(BG_WEIGHTS[i], gamma);
+      const L = pageL + (baseL - pageL) * w;
+      const shapedC = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15));
+      const linkedC = pageC + (baseC - pageC) * Math.pow(w, 1.15);
+      const C2 = shapedC + (linkedC - shapedC) * chromaLink;
+      const H2 = baseH + (spec.hueShift?.(-(1 - w)) ?? 0);
+      out.push(oklchToHex(clamp01(L), Math.max(0, C2), H2));
+      continue;
+    }
+    if (i === BASE_TONE + 1) {
+      const step = 0.045 * (1 + shift * 0.6);
+      const H2 = baseH + (spec.hueShift?.(0.2) ?? 0);
+      out.push(oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H2));
+      continue;
+    }
+    const isMaxTone = i === TONES;
+    const textGain = shift >= 0 ? isMaxTone ? 0.18 : 0.45 : isMaxTone ? 0.15 : 0.22;
+    const gain = 1 + shift * textGain;
+    const target = isMaxTone ? { wcag: 12 * gain, apcaLc: Math.max(75, 90 * gain) } : { wcag: 4.5 * gain, apcaLc: Math.max(60, 75 * gain) };
+    const C = baseC * (i === TONES ? 0.42 : 0.72);
+    const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0);
+    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark));
+  }
+  return out;
+}
+function toneLabel(naming, tone) {
+  const scheme = NAMING_SCHEMES.find((s) => s.key === naming) ?? NAMING_SCHEMES[0];
+  return scheme.labels[tone - 1] ?? String(tone);
+}
+function generateColorScale(baseHex, algorithm = "default", contrastShift = 0, background, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
+  const spec = SPECS[algorithm] ?? SPECS.default;
+  const colors = buildScale(baseHex, spec, contrastShift, background, appearance, tint);
+  const scale = {};
+  colors.forEach((color, i) => {
+    scale[i + 1] = color;
+  });
+  return scale;
+}
+function neutralTintSpec(tint = DEFAULT_NEUTRAL_TINT) {
+  return NEUTRAL_TINTS.find((t) => t.key === tint) ?? NEUTRAL_TINTS[1];
+}
+function neutralFromBrand(hex, tint = DEFAULT_NEUTRAL_TINT) {
+  try {
+    return chroma(hex).set("hsl.s", neutralTintSpec(tint).brandSat).set("hsl.l", 0.46).hex();
+  } catch {
+    return hex;
+  }
+}
+function backgroundFromBase(baseHex, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
+  try {
+    const [, c2, hRaw] = chroma(baseHex).oklch();
+    const h = Number.isNaN(hRaw) ? 0 : hRaw;
+    const spec = neutralTintSpec(tint)[appearance === "dark" ? "dark" : "light"];
+    return oklchToHex(spec.l, Math.min(c2 * spec.mul, spec.cap), h);
+  } catch {
+    return appearance === "dark" ? "#0c0e12" : "#ffffff";
+  }
+}
+function generateFamilyDarkScale(baseHex, algorithm = "default", contrastShift = 0, darkBackground) {
+  return generateColorScale(baseHex, algorithm, contrastShift, darkBackground, "dark");
+}
+function lightNeutralSolid(neutralHex, background = "#ffffff") {
+  try {
+    const page = chroma(background).hex();
+    const seed = chroma(neutralHex).hex();
+    const [seedL, c2, rawH] = chroma(seed).oklch();
+    const h = Number.isNaN(rawH) ? 0 : rawH;
+    const tone11 = lightnessForContrast({ wcag: 4.5, apcaLc: 75 }, h, Math.max(0, c2) * 0.72, page, true);
+    if (seedL > chroma(tone11).oklch()[0] + 0.02) return neutralHex;
+    return lightnessForContrast({ wcag: 3, apcaLc: 45 }, h, Math.max(0, c2), page, true);
+  } catch {
+    return neutralHex;
+  }
+}
+function generateLightNeutralScale(neutralHex, algorithm = "default", contrastShift = 0, background, tint = DEFAULT_NEUTRAL_TINT) {
+  return generateColorScale(lightNeutralSolid(neutralHex, background), algorithm, contrastShift, background, "light", tint);
+}
+function generateDarkColorScale(neutralHex, algorithm = "default", contrastShift = 0, darkBackground, tint = DEFAULT_NEUTRAL_TINT) {
+  let base = neutralHex;
+  try {
+    const [, nC, nHraw] = chroma(neutralHex).oklch();
+    const nH = Number.isNaN(nHraw) ? 0 : nHraw;
+    const baseL = 0.5;
+    const pageC = darkBackground ? chroma(darkBackground).oklch()[1] : 0;
+    const linked = neutralTintSpec(tint).chromaLink > 0;
+    const baseC = linked ? Math.max(nC * 0.5, pageC) : nC * 0.5;
+    base = oklchToHex(baseL, baseC, nH);
+  } catch {
+  }
+  return generateColorScale(base, algorithm, contrastShift, darkBackground, "dark", tint);
+}
+function alphaColorOver(targetHex, backgroundHex, appearance = "light") {
+  const [tr, tg, tb] = chroma(targetHex).rgb();
+  const [br, bg, bb] = chroma(backgroundHex).rgb();
+  const overlay = appearance === "dark" ? 255 : 0;
+  const alphaFor = (t, b) => overlay === b ? 0 : (t - b) / (overlay - b);
+  const raw = Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb));
+  let a2 = Math.min(1, Math.max(0, Math.ceil(raw * 100) / 100));
+  if (a2 <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex();
+  const exact = (t, b, alpha) => (t - (1 - alpha) * b) / alpha;
+  const channels = [[tr, br], [tg, bg], [tb, bb]];
+  while (a2 < 1 && channels.some(([c2, b]) => {
+    const v = exact(c2, b, a2);
+    return v < -0.5 || v > 255.5;
+  })) {
+    a2 = Math.min(1, Math.round((a2 + 0.01) * 100) / 100);
+  }
+  const solve = (c2, b) => Math.min(255, Math.max(0, Math.round(exact(c2, b, a2))));
+  return chroma.rgb(solve(tr, br), solve(tg, bg), solve(tb, bb)).alpha(a2).hex();
+}
+function compositeOver(overlayHex, backgroundHex) {
+  const c2 = chroma(overlayHex);
+  const a2 = c2.alpha();
+  const [orr, og, ob] = c2.rgb();
+  const [br, bg, bb] = chroma(backgroundHex).rgb();
+  const mix = (o, b) => Math.round(a2 * o + (1 - a2) * b);
+  return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex();
+}
+function generateAlphaScale(scale, backgroundHex, appearance = "light") {
+  const out = {};
+  for (const [k, hex] of Object.entries(scale)) {
+    if (!hex) continue;
+    try {
+      out[Number(k)] = alphaColorOver(hex, backgroundHex, appearance);
+    } catch {
+      out[Number(k)] = hex;
+    }
+  }
+  return out;
+}
+function recommendStateColors(brandHex) {
+  let brandC = 0.13;
+  try {
+    brandC = chroma(brandHex).oklch()[1];
+  } catch {
+  }
+  const out = {};
+  for (const [key2, hex] of Object.entries(STATE_CANONICAL)) {
+    const [l, c2, h] = chroma(hex).oklch();
+    const blended = (c2 + brandC) / 2;
+    out[key2] = oklchToHex(l, blended, Number.isNaN(h) ? 0 : h);
+  }
+  return out;
+}
+function previewHarmony(accentHex, tint = DEFAULT_NEUTRAL_TINT) {
+  const neutral = neutralFromBrand(accentHex, tint);
+  return {
+    accent: accentHex,
+    neutral,
+    pageLight: backgroundFromBase(neutral, "light", tint),
+    pageDark: backgroundFromBase(neutral, "dark", tint),
+    states: recommendStateColors(accentHex)
+  };
+}
+function checkContrast(fg, bg) {
+  return wcagRatio(fg, bg);
+}
+function accessibleSolidTone(scale, start = BASE_TONE) {
+  const ok = (t) => {
+    const hex = scale[t];
+    return !!hex && checkContrast("#ffffff", hex) >= WCAG_AA && Math.abs(apcaLc("#ffffff", hex)) >= 75;
+  };
+  if (ok(start)) return start;
+  for (let d = 1; d <= 11; d++) {
+    if (start + d <= 12 && ok(start + d)) return start + d;
+    if (start - d >= 1 && ok(start - d)) return start - d;
+  }
+  return start;
+}
+function solidInkPair(scale, inks, start = BASE_TONE, target = WCAG_AA) {
+  const t = typeof target === "number" ? { wcag: target, apcaLc: 75 } : target;
+  let best = { tone: start, ink: 0, contrast: -1 };
+  let bestScore = -Infinity;
+  for (let tone = start; tone <= 12; tone++) {
+    const fill = scale[tone];
+    if (!fill) continue;
+    for (let i = 0; i < inks.length; i++) {
+      let w;
+      let lc;
+      try {
+        w = checkContrast(inks[i], fill);
+        lc = Math.abs(apcaLc(inks[i], fill));
+      } catch {
+        continue;
+      }
+      const score = Math.min(w / t.wcag, lc / t.apcaLc);
+      if (score > bestScore) {
+        bestScore = score;
+        best = { tone, ink: i, contrast: w };
+      }
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
+    }
+  }
+  return best;
+}
+function brandSolidPair(scale, inks, anchor = BASE_TONE, target = ACTION_LABEL_TARGET) {
+  const t = typeof target === "number" ? { wcag: target, apcaLc: 75 } : target;
+  const tones = Object.keys(scale).map(Number).filter((n) => Number.isFinite(n) && scale[n]).sort((a2, b) => {
+    const d = Math.abs(a2 - anchor) - Math.abs(b - anchor);
+    if (d !== 0) return d;
+    return chromaOf(scale[b]) - chromaOf(scale[a2]);
+  });
+  for (const tone of tones) {
+    for (let i = 0; i < inks.length; i++) {
+      let w;
+      let lc;
+      try {
+        w = checkContrast(inks[i], scale[tone]);
+        lc = Math.abs(apcaLc(inks[i], scale[tone]));
+      } catch {
+        continue;
+      }
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
+    }
+  }
+  return solidInkPair(scale, inks, anchor, t);
+}
+function chromaOf(hex) {
+  try {
+    return hexToOklch(hex).c;
+  } catch {
+    return 0;
+  }
+}
+function darkShadow(css, opts = {}) {
+  const value = (css ?? "").trim();
+  if (!value || value === "none") return "none";
+  const withRim = opts.rim !== false;
+  let maxAlpha = 0;
+  const recolored = value.replace(SHADOW_COLOR_RE, (match) => {
+    let a2;
+    try {
+      a2 = chroma(match).alpha();
+    } catch {
+      return match;
+    }
+    maxAlpha = Math.max(maxAlpha, a2);
+    return `rgba(0,0,0,${round2(1 - Math.pow(1 - a2, DARK_ALPHA_GAIN))})`;
+  });
+  if (!withRim) return recolored;
+  const rimAlpha = round2(Math.min(0.12, Math.max(0.03, 0.03 + 0.35 * maxAlpha)));
+  return `0 0 0 1px rgba(255,255,255,${rimAlpha}), ${recolored}`;
+}
+function darkShadowMap(shadows) {
+  return Object.fromEntries(Object.entries(shadows).map(([k, v]) => [k, darkShadow(v)]));
+}
+var TONES, BASE_TONE, BG_WEIGHTS, SPECS, ALGORITHM_OPTIONS, NAMING_SCHEMES, NEUTRAL_TINTS, DEFAULT_NEUTRAL_TINT, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, STATE_CANONICAL, WCAG_AA, ACTION_LABEL_TARGET, DARK_ALPHA_GAIN, SHADOW_COLOR_RE, round2;
+var init_colorUtils = __esm({
+  "src/lib/colorUtils.ts"() {
+    init_apca();
+    init_gamut();
+    TONES = 12;
+    BASE_TONE = 9;
+    BG_WEIGHTS = [0, 0.03, 0.08, 0.16, 0.25, 0.35, 0.49, 0.63, 0.79];
+    SPECS = {
+      // Legacy / neutral lightness ramp — the default feel.
+      default: { label: "Lightness Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9 },
+      lightness: { label: "Lightness Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9 },
+      monochromatic: { label: "Monochromatic", lightL: 0.97, darkL: 0.2, lightCmul: 0.45, darkCmul: 0.95 },
+      // System-flavored ramps — distinct light/dark extremes + chroma feel.
+      tailwind: { label: "Tailwind CSS", lightL: 0.97, darkL: 0.18, lightCmul: 0.4, darkCmul: 1 },
+      // Radix's light steps 1–2 are near-white with almost no chroma (app/subtle
+      // backgrounds) — hence the very low light-end chroma multiplier.
+      radix: { label: "Radix UI", lightL: 0.995, darkL: 0.24, lightCmul: 0.04, darkCmul: 0.85 },
+      ant: { label: "Ant Design", lightL: 0.96, darkL: 0.2, lightCmul: 0.45, darkCmul: 0.95 },
+      // Chroma fans wide from pale tints to saturated shades.
+      saturation: { label: "Saturation Scale", lightL: 0.92, darkL: 0.3, lightCmul: 0.15, darkCmul: 1.45 },
+      // Hue-relationship variants.
+      hueShift: { label: "Hue Shift Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9, hueShift: (f) => f * 25 },
+      analogous: { label: "Analogous", lightL: 0.97, darkL: 0.2, lightCmul: 0.4, darkCmul: 0.95, hueShift: (f) => f * 30 },
+      // Tints rotate toward the complement; shades hold the base hue.
+      complementary: { label: "Complementary", lightL: 0.97, darkL: 0.2, lightCmul: 0.4, darkCmul: 0.95, hueShift: (f) => f < 0 ? -f * 180 : 0 }
+    };
+    ALGORITHM_OPTIONS = ["radix", "lightness", "tailwind", "ant", "saturation", "hueShift", "monochromatic", "analogous", "complementary"].map((key2) => ({ key: key2, label: SPECS[key2].label }));
+    NAMING_SCHEMES = [
+      { key: "numeric", label: "1, 2, 3\u2026", labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] },
+      // Canonical Untitled-UI / Tailwind ramp: 25 (lightest) … 950 (darkest). The
+      // semantic catalogue's tone→label mapping is built against this (tone 11 = 900,
+      // tone 12 = 950), so exported references read gray.900 / gray.950 etc.
+      { key: "hundreds", label: "25, 50, 100\u2026", labels: ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"] },
+      { key: "tens", label: "10, 20, 30\u2026", labels: ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100", "110", "120"] }
+    ];
+    NEUTRAL_TINTS = [
+      {
+        key: "pure",
+        label: "Pure",
+        hint: "Radix Gray \u2014 no hue at all",
+        light: { l: 0.995, mul: 0, cap: 0 },
+        dark: { l: 0.17, mul: 0, cap: 0 },
+        brandSat: 0,
+        chromaLink: 0
+      },
+      {
+        key: "subtle",
+        label: "Subtle",
+        hint: "Radix Mauve / Slate \u2014 a whisper of the hue",
+        light: { l: 0.995, mul: 0.12, cap: 6e-3 },
+        dark: { l: 0.17, mul: 0.35, cap: 0.022 },
+        brandSat: 0.08,
+        chromaLink: 0
+      },
+      {
+        key: "tinted",
+        label: "Tinted",
+        hint: "Radix Sage / Sand \u2014 visibly warm or cool",
+        light: { l: 0.985, mul: 0.35, cap: 0.018 },
+        dark: { l: 0.19, mul: 0.6, cap: 0.04 },
+        brandSat: 0.16,
+        chromaLink: 0.7
+      },
+      {
+        key: "vivid",
+        label: "Vivid",
+        hint: "Beyond Radix \u2014 a clearly coloured paper",
+        light: { l: 0.972, mul: 0.7, cap: 0.042 },
+        dark: { l: 0.215, mul: 1, cap: 0.075 },
+        brandSat: 0.28,
+        chromaLink: 1
+      }
+    ];
+    DEFAULT_NEUTRAL_TINT = "subtle";
+    BLACK_ALPHA_SCALE = {
+      1: "#0000000d",
+      2: "#0000001a",
+      3: "#00000026",
+      4: "#00000033",
+      5: "#0000004d",
+      6: "#00000066",
+      7: "#00000080",
+      8: "#00000099",
+      9: "#000000b3",
+      10: "#000000cc",
+      11: "#000000e6",
+      12: "#000000f2"
+    };
+    WHITE_ALPHA_SCALE = {
+      1: "#ffffff0d",
+      2: "#ffffff1a",
+      3: "#ffffff26",
+      4: "#ffffff33",
+      5: "#ffffff4d",
+      6: "#ffffff66",
+      7: "#ffffff80",
+      8: "#ffffff99",
+      9: "#ffffffb3",
+      10: "#ffffffcc",
+      11: "#ffffffe6",
+      12: "#fffffff2"
+    };
+    STATE_CANONICAL = {
+      error: "#f04438",
+      warning: "#f79009",
+      success: "#17b26a",
+      info: "#2e90fa"
+    };
+    WCAG_AA = 4.5;
+    ACTION_LABEL_TARGET = { wcag: WCAG_AA, apcaLc: 60 };
+    DARK_ALPHA_GAIN = 6;
+    SHADOW_COLOR_RE = /rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b/g;
+    round2 = (n) => Math.round(n * 1e3) / 1e3;
+  }
+});
+
+// src/lib/dimensionCore.ts
+function parseDimension(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? normalizeDimension(value) : null;
+  if (value == null) return null;
+  const m = DIMENSION_RE.exec(String(value));
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? normalizeDimension(n) : null;
+}
+function dimensionKey(n) {
+  return String(normalizeDimension(n)).replace(".", "_");
+}
+function dimensionFromKey(key2) {
+  return Number(key2.replace("_", "."));
+}
+var DIMENSION_RE, normalizeDimension;
+var init_dimensionCore = __esm({
+  "src/lib/dimensionCore.ts"() {
+    DIMENSION_RE = /^\s*(-?(?:\d+\.?\d*|\.\d+))\s*(px)?\s*$/i;
+    normalizeDimension = (n) => Math.round(n * 1e3) / 1e3;
+  }
+});
+
+// src/lib/layoutTokens.ts
+function roleDimensionPx(value, signed = false) {
+  if (typeof value !== "string" || !value.startsWith(ROLE_DIMENSION_PREFIX)) return null;
+  const key2 = value.slice(ROLE_DIMENSION_PREFIX.length);
+  const n = dimensionFromKey(key2);
+  return Number.isFinite(n) && (signed || n >= 0) && dimensionKey(n) === key2 ? n : null;
+}
+function dimensionRoleValue(px) {
+  return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}`;
+}
+function isSpacingResponsiveRef(value) {
+  return typeof value === "string" && value in SPACING_RESPONSIVE;
+}
+function spacingRefStep(value, viewport = "desktop") {
+  return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value;
+}
+function spacingRolesAtViewport(roles, viewport) {
+  const merged = withInsetSides(roles);
+  return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]));
+}
+function scaleRadiusFromLg(lg, current) {
+  const clamp = (n) => `${Math.max(0, Math.round(n))}px`;
+  const next = { ...current, none: "0px", full: "9999px" };
+  for (const step of RADIUS_WORKING_STEPS) next[step] = clamp(lg * RADIUS_SCALE_RATIOS[step]);
+  return next;
+}
+function radiusPreset(label, description, lg) {
+  return { label, description, values: scaleRadiusFromLg(lg) };
+}
+function completeRadiusScale(current) {
+  const parsed = parseFloat(current?.lg ?? "");
+  const lg = Number.isFinite(parsed) && parsed > 0 ? parsed : RADIUS_DEFAULT_LG;
+  const graded = scaleRadiusFromLg(lg);
+  const out = { ...graded };
+  if (!current) return out;
+  for (const step of RADIUS_WORKING_STEPS) {
+    const raw = current[step];
+    const n = parseFloat(raw ?? "");
+    if (Number.isFinite(n) && n > 0) out[step] = raw;
+  }
+  out.none = current.none ?? "0px";
+  out.full = current.full ?? "9999px";
+  return out;
+}
+function buildSpacingFromBase(base) {
+  const result = {};
+  for (const step of SPACING_STEPS) {
+    result[step] = `${Number(step.replace("_", ".")) * base}px`;
+  }
+  return result;
+}
+function insetSurfacePadding(px) {
+  return { top: px, right: px, bottom: px, left: px };
+}
+function clampFieldBase(base) {
+  return Math.min(BASE_UNIT_RANGE.max, Math.max(FIELD_BASE_MIN, base));
+}
+function buildSizesFromBase(base) {
+  const b = clampFieldBase(base);
+  const out = {};
+  for (const step of SIZE_STEPS) out[step] = `${Math.round(b * FIELD_MULTIPLIERS[step])}px`;
+  return out;
+}
+function buildSelectorsFromBase(base) {
+  const out = {};
+  for (const step of SELECTOR_STEPS) out[step] = `${Math.round(base * SELECTOR_MULTIPLIERS[step])}px`;
+  return out;
+}
+function inferBaseFromStep(map, multipliers, steps, anchorStep) {
+  if (!map) return null;
+  const anchor = parseFloat(map[anchorStep] ?? "");
+  if (!Number.isFinite(anchor)) return null;
+  const base = anchor / multipliers[anchorStep];
+  if (!(base > 0)) return null;
+  for (const step of steps) {
+    if (map[step] !== `${Math.round(base * multipliers[step])}px`) return null;
+  }
+  return base;
+}
+function breakpointKey(step) {
+  return `breakpoint-${step}`;
+}
+function extractBreakpoints(grid) {
+  const out = {};
+  for (const step of BREAKPOINT_STEPS) {
+    out[step] = grid?.[breakpointKey(step)] || BREAKPOINT_STANDARD[step];
+  }
+  return out;
+}
+function resolveGridStyles(frame, spacing, breakpoints) {
+  const merged = mergeGridFrame(frame);
+  const px = (v) => {
+    if (!v) return 0;
+    const pinned = roleDimensionPx(v);
+    if (pinned !== null) return pinned;
+    return parseFloat(spacing[v] || SPACING_STANDARD[v] || "0") || 0;
+  };
+  const bp = (v) => roleDimensionPx(v) ?? (parseFloat(breakpoints[v] || BREAKPOINT_STANDARD[v] || "0") || 0);
+  return GRID_STYLES.map((def) => {
+    const base = merged[def.viewport];
+    const columns = Math.max(1, parseInt(base.columns, 10) || 12);
+    const gutter = px(def.recipe?.gutter ?? base.gutter);
+    const margin = px(def.recipe?.margin ?? base.margin);
+    const sidebar = def.sidebar ? roleDimensionPx(def.sidebar) ?? 0 : 0;
+    const container = merged.desktop.container;
+    const width = def.width === "container" ? (container !== "none" ? bp(container) : 0) || bp("xl") : bp(def.width);
+    const column = Math.max(1, Math.round((width - sidebar - 2 * margin - (columns - 1) * gutter) / columns * 100) / 100);
+    return {
+      key: def.key,
+      label: def.label,
+      description: def.description,
+      viewport: def.viewport,
+      columns,
+      column,
+      gutter,
+      margin,
+      width,
+      ...sidebar ? { sidebar } : {}
+    };
+  });
+}
+function standardGridFrameFor(spacing) {
+  const out = {};
+  for (const vp of GRID_VIEWPORTS) {
+    const alias = GRID_FRAME_STANDARD[vp];
+    const keep = (step) => {
+      const want = parseFloat(SPACING_STANDARD[step]);
+      return parseFloat(spacing[step]) === want ? step : dimensionRoleValue(want);
+    };
+    out[vp] = { ...alias, gutter: keep(alias.gutter), margin: keep(alias.margin) };
+  }
+  return out;
+}
+function restandardGrid(slot, spacing) {
+  if (!slot || typeof slot !== "object") return;
+  if (slot.grid && typeof slot.grid === "object" && slot.grid["breakpoint-2xl"] === "1536px") {
+    slot.grid = { ...slot.grid, "breakpoint-2xl": BREAKPOINT_STANDARD["2xl"] };
+  }
+  if (!slot.gridFrame || typeof slot.gridFrame !== "object") return;
+  const same = (a2, b) => !!a2 && a2.columns === b.columns && a2.gutter === b.gutter && a2.margin === b.margin && a2.container === b.container;
+  const next = standardGridFrameFor(spacing ?? SPACING_STANDARD);
+  const stored = slot.gridFrame;
+  const frame = mergeGridFrame(stored);
+  for (const vp of GRID_VIEWPORTS) {
+    if (same(stored[vp], GRID_FRAME_LEGACY_STANDARD[vp])) frame[vp] = next[vp];
+  }
+  slot.gridFrame = frame;
+  if (slot.grid && typeof slot.grid === "object" && spacing) {
+    slot.grid = applyDesktopFrameToGrid(slot.grid, frame, spacing);
+  }
+}
+function mergeGridFrame(stored) {
+  const one = (hit, fallback) => {
+    const columns = hit?.columns && GRID_COLUMN_STEPS.includes(hit.columns) ? hit.columns : fallback.columns;
+    const gutter = hit?.gutter && (SPACING_STEPS.includes(hit.gutter) || roleDimensionPx(hit.gutter) !== null) ? hit.gutter : fallback.gutter;
+    const margin = hit?.margin && (SPACING_STEPS.includes(hit.margin) || roleDimensionPx(hit.margin) !== null) ? hit.margin : fallback.margin;
+    const container = hit?.container && (GRID_CONTAINER_STEPS.includes(hit.container) || roleDimensionPx(hit.container) !== null) ? hit.container : fallback.container;
+    return { columns, gutter, margin, container };
+  };
+  return {
+    desktop: one(stored?.desktop, GRID_FRAME_STANDARD.desktop),
+    tablet: one(stored?.tablet, GRID_FRAME_STANDARD.tablet),
+    mobile: one(stored?.mobile, GRID_FRAME_STANDARD.mobile)
+  };
+}
+function resolveGridFrame(viewport, frame, spacing, breakpoints) {
+  const alias = mergeGridFrame(frame)[viewport];
+  const pinned = (v) => {
+    const n = roleDimensionPx(v);
+    return n === null ? null : `${n}px`;
+  };
+  const container = alias.container === "none" ? "none" : pinned(alias.container) ?? breakpoints[alias.container] ?? BREAKPOINT_STANDARD[alias.container] ?? "none";
+  return {
+    columns: Math.max(1, parseInt(alias.columns, 10) || 12),
+    gutter: pinned(alias.gutter) ?? (spacing[alias.gutter] || SPACING_STANDARD[alias.gutter] || "24px"),
+    margin: pinned(alias.margin) ?? (spacing[alias.margin] || SPACING_STANDARD[alias.margin] || "32px"),
+    container
+  };
+}
+function buildGridStandard(spacing = SPACING_STANDARD, breakpoints = BREAKPOINT_STANDARD, frame = GRID_FRAME_STANDARD) {
+  const desktop = resolveGridFrame("desktop", frame, spacing, breakpoints);
+  const out = {
+    columns: String(desktop.columns),
+    gutter: desktop.gutter,
+    margin: desktop.margin,
+    container: desktop.container
+  };
+  for (const step of BREAKPOINT_STEPS) {
+    out[breakpointKey(step)] = breakpoints[step] || BREAKPOINT_STANDARD[step];
+  }
+  return out;
+}
+function applyDesktopFrameToGrid(grid, frame, spacing) {
+  const desktop = resolveGridFrame("desktop", frame, spacing, extractBreakpoints(grid));
+  return {
+    ...grid,
+    columns: String(desktop.columns),
+    gutter: desktop.gutter,
+    margin: desktop.margin,
+    container: desktop.container
+  };
+}
+function applyRadiusGroup(group, roles, step) {
+  const next = mergeLayoutRoles("radius", roles);
+  for (const role of group.roles) next[role] = step;
+  return next;
+}
+function radiusRolesFromGroups(picks) {
+  let roles = defaultLayoutRoles("radius");
+  for (const group of RADIUS_GROUPS) {
+    const step = picks[group.key];
+    if (step) roles = applyRadiusGroup(group, roles, step);
+  }
+  return roles;
+}
+function radiusRolesForPreset(label, roles) {
+  const preset = RADIUS_ROLE_PRESETS.find((p2) => p2.label === label);
+  if (!preset) return null;
+  let next = mergeLayoutRoles("radius", roles);
+  for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key]);
+  return next;
+}
+function radiusPresetPatch(label, roles) {
+  const radiusRoles = radiusRolesForPreset(label, roles);
+  if (!radiusRoles) return null;
+  return { radius: { ...RADIUS_STANDARD }, radiusRoles, radiusRoleViewports: {} };
+}
+function radiusPresetPx(preset) {
+  const px = (step) => parseFloat(RADIUS_STANDARD[step] ?? "0") || 0;
+  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.selectors)];
+}
+function isGradedRadiusRamp(radius) {
+  const lg = parseFloat(radius?.lg ?? "");
+  if (!radius || !Number.isFinite(lg) || lg <= 0) return false;
+  const graded = scaleRadiusFromLg(lg);
+  return LEGACY_RADIUS_WORKING_STEPS.every((step) => radius[step] === graded[step]);
+}
+function renameRadiusV77(slot, inheritedRadius) {
+  if (!slot || typeof slot !== "object") return;
+  const own = slot.radius && typeof slot.radius === "object" ? slot.radius : void 0;
+  const old = own ?? inheritedRadius;
+  if (own) {
+    const px = (k) => parseFloat(own[k] ?? "");
+    const next = { none: own.none ?? "0px", full: own.full ?? "9999px" };
+    for (const [from, to] of Object.entries(RADIUS_V77_RENAME)) {
+      if (from === "none" || from === "full" || own[from] === void 0) continue;
+      next[to] = own[from];
+    }
+    if (Number.isFinite(px("xs"))) next.xs = `${Math.round(px("xs") / 2)}px`;
+    if (Number.isFinite(px("xs")) && Number.isFinite(px("sm"))) next.md = `${Math.round((px("xs") + px("sm")) / 2)}px`;
+    slot.radius = next;
+  }
+  if (slot.radiusRoles && typeof slot.radiusRoles === "object") {
+    const roles = {};
+    for (const [role, step] of Object.entries(slot.radiusRoles)) {
+      if (typeof step !== "string") continue;
+      if (roleDimensionPx(step) !== null) roles[role] = step;
+      else if (RADIUS_V77_RENAME[step]) roles[role] = RADIUS_V77_RENAME[step];
+      else {
+        const n = parseFloat(old?.[step] ?? "");
+        roles[role] = Number.isFinite(n) ? dimensionRoleValue(n) : step;
+      }
+    }
+    slot.radiusRoles = roles;
+  }
+}
+function radiusRolesAreLegacyDefault(roles) {
+  if (!roles) return true;
+  return Object.entries(LEGACY_RADIUS_ROLE_RUNGS).every(([key2, rung]) => roles[key2] === void 0 || roles[key2] === rung);
+}
+function insetSideKey(role, side) {
+  return `${role}-${side}`;
+}
+function withInsetSides(roles) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  const out = { ...merged };
+  for (const { key: key2, role } of INSET_SIDE_KEYS) out[key2] = merged[key2] ?? merged[role];
+  return out;
+}
+function matchSpacingMode(sizes, spacingRoles, stroke) {
+  const base = inferSizeBase(sizes ?? {});
+  const inset = spacingRefStep(mergeLayoutRoles("spacing", spacingRoles)[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP);
+  const border = parseFloat(stroke?.sm ?? "1px");
+  return SPACING_MODES.find((m) => m.fieldBase === base && m.insetStep === inset && m.border === border)?.id ?? null;
+}
+function migrateSpacingV79(slot) {
+  if (!slot || typeof slot !== "object") return;
+  if (slot.spacing && typeof slot.spacing === "object") {
+    const base = parseFloat(slot.spacing["1"] ?? "") || SPACING_DEFAULT_BASE;
+    const graded = buildSpacingFromBase(base);
+    const next = { ...slot.spacing };
+    for (const step of SPACING_STEPS) if (next[step] === void 0) next[step] = graded[step];
+    slot.spacing = next;
+  }
+  if (slot.spacingRoles && typeof slot.spacingRoles === "object") {
+    const next = { ...slot.spacingRoles };
+    for (const role of SPACING_ROLES) {
+      const legacy = LEGACY_SPACING_ROLE_STEPS[role.key];
+      if (legacy && next[role.key] === legacy) next[role.key] = role.primitive;
+    }
+    slot.spacingRoles = next;
+  }
+}
+function defaultLayoutRoles(family) {
+  return Object.fromEntries(LAYOUT_ROLES[family].map((r) => [r.key, r.primitive]));
+}
+function mergeLayoutRoles(family, stored) {
+  const bag = stored ?? {};
+  const allowed = PRIMITIVE_SET[family];
+  const out = {};
+  for (const role of LAYOUT_ROLES[family]) {
+    const hit = bag[role.key];
+    const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, family === "spacing") !== null || family === "spacing" && isSpacingResponsiveRef(hit));
+    out[role.key] = ok ? hit : role.primitive;
+  }
+  if (family === "spacing") {
+    for (const { key: key2, role } of INSET_SIDE_KEYS) {
+      const hit = bag[key2];
+      const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, true) !== null || isSpacingResponsiveRef(hit));
+      if (ok && hit !== out[role]) out[key2] = hit;
+    }
+  }
+  return out;
+}
+function nearestSpacingStep(spacing, targetPx) {
+  const rows = SPACING_STEPS.map((key2) => ({ key: key2, n: parseFloat(spacing[key2] ?? "") })).filter((r) => Number.isFinite(r.n));
+  if (!rows.length) return null;
+  return rows.reduce((best, r) => {
+    const d = Math.abs(r.n - targetPx);
+    const bd = Math.abs(best.n - targetPx);
+    if (d < bd) return r;
+    if (d === bd && r.n > best.n) return r;
+    return best;
+  }).key;
+}
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var init_layoutTokens = __esm({
+  "src/lib/layoutTokens.ts"() {
+    init_dimensionCore();
+    ROLE_DIMENSION_PREFIX = "dimension-";
+    SPACING_RESPONSIVE_FAMILIES = ["component", "section", "layout"];
+    SPACING_RESPONSIVE_SIZES = ["xl", "lg", "md", "sm", "xs", "none"];
+    SR = (d, t, m) => ({ desktop: d, tablet: t, mobile: m });
+    SPACING_RESPONSIVE_TABLE = {
+      component: { xl: SR("6", "4", "3"), lg: SR("4", "4", "3"), md: SR("3", "3", "2"), sm: SR("2", "2", "2"), xs: SR("1", "1", "1"), none: SR("0", "0", "0") },
+      section: { xl: SR("12", "8", "5"), lg: SR("8", "5", "4"), md: SR("6", "4", "3"), sm: SR("4", "4", "3"), xs: SR("3", "3", "2"), none: SR("0", "0", "0") },
+      layout: { xl: SR("32", "16", "12"), lg: SR("24", "12", "8"), md: SR("16", "8", "4"), sm: SR("12", "6", "3"), xs: SR("8", "4", "2"), none: SR("0", "0", "0") }
+    };
+    SPACING_RESPONSIVE = Object.fromEntries(
+      SPACING_RESPONSIVE_FAMILIES.flatMap((family) => SPACING_RESPONSIVE_SIZES.map((size) => [`${family}-${size}`, SPACING_RESPONSIVE_TABLE[family][size]]))
+    );
+    SPACING_RESPONSIVE_KEYS = Object.keys(SPACING_RESPONSIVE);
+    RADIUS_WORKING_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
+    RADIUS_SCALE_RATIOS = {
+      xs: 0.25,
+      sm: 0.5,
+      md: 0.75,
+      lg: 1,
+      xl: 1.5,
+      "2xl": 2,
+      "3xl": 3,
+      "4xl": 4,
+      "5xl": 6
+    };
+    RADIUS_STEPS = ["none", ...RADIUS_WORKING_STEPS, "full"];
+    RADIUS_DEFAULT_LG = 8;
+    RADIUS_PRESETS = [
+      radiusPreset("Sharp", "lg 4px \u2014 tight, technical", 4),
+      radiusPreset("Soft", "lg 6px \u2014 slightly softer controls", 6),
+      radiusPreset("Rounded", "lg 8px \u2014 Tailwind / HeroUI default", 8),
+      radiusPreset("Pill", "lg 12px \u2014 generous, consumer apps", 12)
+    ];
+    RADIUS_STANDARD = RADIUS_PRESETS[2].values;
+    SPACING_STEPS = ["0", "0_5", "1", "1_5", "2", "2_5", "3", "4", "5", "6", "8", "10", "12", "16", "24", "32"];
+    SPACING_DEFAULT_BASE = 4;
+    SPACING_STANDARD = buildSpacingFromBase(SPACING_DEFAULT_BASE);
+    PADDING_DEFAULT_STEP = "5";
+    PADDING_STANDARD = {
+      top: SPACING_STANDARD[PADDING_DEFAULT_STEP],
+      right: SPACING_STANDARD[PADDING_DEFAULT_STEP],
+      bottom: SPACING_STANDARD[PADDING_DEFAULT_STEP],
+      left: SPACING_STANDARD[PADDING_DEFAULT_STEP]
+    };
+    INSET_SURFACE_ROLE = "inset-surface";
+    SIZE_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
+    SIZE_STANDARD = {
+      xs: "24px",
+      sm: "32px",
+      md: "40px",
+      lg: "48px",
+      xl: "56px",
+      "2xl": "64px"
+    };
+    FIELD_MULTIPLIERS = {
+      xs: 6,
+      sm: 8,
+      md: 10,
+      lg: 12,
+      xl: 14,
+      "2xl": 16
+    };
+    SIZE_DEFAULT_BASE = 4;
+    SIZE_CONTROL_MIN_PX = 36;
+    FIELD_BASE_MIN = SIZE_CONTROL_MIN_PX / FIELD_MULTIPLIERS.md;
+    BASE_UNIT_RANGE = { min: FIELD_BASE_MIN, max: 5, step: 0.5 };
+    SELECTOR_STEPS = ["xs", "sm", "md", "lg", "xl"];
+    SELECTOR_MULTIPLIERS = {
+      xs: 4,
+      sm: 5,
+      md: 6,
+      lg: 7,
+      xl: 8
+    };
+    SELECTOR_DEFAULT_BASE = 3;
+    SELECTOR_TO_SIZE_BASE = SELECTOR_DEFAULT_BASE / SIZE_DEFAULT_BASE;
+    SELECTOR_STANDARD = buildSelectorsFromBase(SELECTOR_DEFAULT_BASE);
+    inferSizeBase = (sizes) => inferBaseFromStep(sizes, FIELD_MULTIPLIERS, SIZE_STEPS, "md");
+    STROKE_STEPS = ["none", "sm", "md", "lg"];
+    STROKE_STANDARD = {
+      none: "0px",
+      sm: "1px",
+      md: "2px",
+      lg: "4px"
+    };
+    STROKE_SM_STOPS = [0, 0.5, 1, 1.5, 2];
+    BREAKPOINT_STEPS = ["sm", "md", "lg", "xl", "2xl"];
+    BREAKPOINT_STANDARD = {
+      // 2xl is 1440, not Tailwind's 1536: it is the widest of the six named grid
+      // styles (2XL Desktop and XL Desktop Sidebar both lay out on a 1440 frame).
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1440px"
+    };
+    GRID_VIEWPORTS = ["desktop", "tablet", "mobile"];
+    GRID_COLUMN_STEPS = ["2", "4", "8", "12"];
+    GRID_CONTAINER_STEPS = ["none", ...BREAKPOINT_STEPS];
+    GRID_FRAME_FIELDS = [
+      { key: "columns", label: "Columns", description: "Tracks in the layout grid." },
+      { key: "gutter", label: "Gutter", description: "Gap between columns \u2014 a spacing step." },
+      { key: "margin", label: "Margin", description: "Page inset below the container cap \u2014 a spacing step." },
+      { key: "container", label: "Container", description: "Max content width \u2014 a breakpoint step, or none." }
+    ];
+    GRID_FRAME_STANDARD = {
+      desktop: { columns: "12", gutter: "8", margin: "8", container: "xl" },
+      tablet: { columns: "8", gutter: "8", margin: "8", container: "none" },
+      mobile: { columns: "4", gutter: "4", margin: "4", container: "none" }
+    };
+    GRID_FRAME_LEGACY_STANDARD = {
+      desktop: { columns: "12", gutter: "6", margin: "8", container: "xl" },
+      tablet: { columns: "8", gutter: "6", margin: "6", container: "none" },
+      mobile: { columns: "4", gutter: "4", margin: "4", container: "none" }
+    };
+    GRID_STYLES = [
+      {
+        key: "2xl-desktop",
+        label: "2XL Desktop",
+        viewport: "desktop",
+        width: "2xl",
+        recipe: { margin: "dimension-64" },
+        description: "Full-width desktop without a sidebar. Wider columns let content scale on large screens."
+      },
+      {
+        key: "xl-desktop",
+        label: "XL Desktop",
+        viewport: "desktop",
+        width: "container",
+        description: "Standard desktop layouts, balancing content density and readability."
+      },
+      {
+        key: "xl-desktop-sidebar",
+        label: "XL Desktop Sidebar",
+        viewport: "desktop",
+        width: "2xl",
+        sidebar: "dimension-344",
+        recipe: { gutter: "dimension-24" },
+        description: "Desktop with a persistent left sidebar; the content area keeps its own 12 columns."
+      },
+      {
+        key: "lg-web",
+        label: "LG Web",
+        viewport: "desktop",
+        width: "lg",
+        recipe: { margin: "dimension-48" },
+        description: "Smaller desktop and large tablet web. Narrower columns keep focus on limited width."
+      },
+      {
+        key: "md-tablet",
+        label: "MD Tablet",
+        viewport: "tablet",
+        width: "md",
+        description: "Tablet, where touch and content clarity matter equally. Desktop structure, tablet spacing."
+      },
+      {
+        key: "sm-mobile",
+        label: "SM Mobile",
+        viewport: "mobile",
+        width: "dimension-320",
+        description: "Mobile-first, limited horizontal space: wide columns and tight gutters."
+      }
+    ];
+    GRID_STANDARD = buildGridStandard();
+    RADIUS_ROLES = [
+      { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "sm" },
+      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "lg" },
+      { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: "2xl" },
+      { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
+      { key: "pill", label: "Pill", description: "Badge, chip, avatar, switch, progress.", group: "selectors", primitive: "full" }
+    ];
+    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "2xl", "4xl"];
+    RADIUS_GROUPS = [
+      { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"] },
+      { key: "fields", label: "Fields", hint: "button, input, select, tab", roles: ["action"] },
+      { key: "selectors", label: "Selectors", hint: "checkbox, radio, toggle, menu", roles: ["control"] }
+    ];
+    RADIUS_ROLE_PRESETS = [
+      { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
+      { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
+      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 8, selectors 4.", picks: { boxes: "2xl", fields: "lg", selectors: "sm" } },
+      // Boxes stay at 2xl (16): a card or alert holding tags and text keeps its
+      // shape, where 32 rounded the corners past the content and clipped it.
+      // The pill look is the fields'.
+      { label: "Pill", description: "Pill fields \u2014 boxes 16, fields 32, selectors 8.", picks: { boxes: "2xl", fields: "4xl", selectors: "lg" } }
+    ];
+    LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
+    LEGACY_RADIUS_LG_FACTOR = 2;
+    LEGACY_RADIUS_WORKING_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
+    RADIUS_V77_RENAME = {
+      none: "none",
+      xs: "sm",
+      sm: "lg",
+      md: "xl",
+      lg: "2xl",
+      xl: "3xl",
+      "2xl": "4xl",
+      "3xl": "5xl",
+      full: "full"
+    };
+    RADIUS_RESPONSIVE = {
+      none: { desktop: "none", tablet: "none", mobile: "none" },
+      sm: { desktop: "sm", tablet: "xs", mobile: "xs" },
+      md: { desktop: "md", tablet: "sm", mobile: "sm" },
+      lg: { desktop: "lg", tablet: "md", mobile: "md" },
+      xl: { desktop: "xl", tablet: "lg", mobile: "lg" },
+      "2xl": { desktop: "2xl", tablet: "xl", mobile: "xl" },
+      "3xl": { desktop: "3xl", tablet: "2xl", mobile: "xl" },
+      "4xl": { desktop: "4xl", tablet: "3xl", mobile: "2xl" },
+      "5xl": { desktop: "5xl", tablet: "4xl", mobile: "3xl" },
+      full: { desktop: "full", tablet: "full", mobile: "full" }
+    };
+    SPACING_ROLES = [
+      { key: "none", label: "None", description: "Collapse a gap or inset.", group: "gap", primitive: "0" },
+      { key: "gap-tight", label: "Gap tight", description: "Icon + label, chip dismiss, inline meta.", group: "gap", primitive: "component-xs" },
+      { key: "gap-control", label: "Gap control", description: "Button groups, OTP cells, field + helper.", group: "gap", primitive: "component-sm" },
+      { key: "gap-group", label: "Gap group", description: "Stacked fields, nav item groups.", group: "gap", primitive: "section-sm" },
+      { key: "gap-section", label: "Gap section", description: "Between sections, modal header \u2192 body.", group: "gap", primitive: "section-md" },
+      { key: "inset-control", label: "Inset control", description: "Padding inside buttons, inputs, chips.", group: "inset", primitive: "component-md" },
+      { key: "inset-surface", label: "Inset surface", description: "Card / modal / alert padding.", group: "inset", primitive: "5" },
+      { key: "inset-page", label: "Inset page", description: "Page and sheet margins when Grid is unused.", group: "inset", primitive: "layout-xs" },
+      // Overlap — NEGATIVE space: how far a stacked item tucks under its neighbour
+      // (avatar stacks, overlapping badges). Pinned primitives, not steps: a spacing
+      // step is never negative, and the base-unit dial must not move an avatar stack.
+      { key: "overlap-xs", label: "Overlap xs", description: "Barely touching \u2014 dense avatar stacks.", group: "overlap", primitive: "dimension--2" },
+      { key: "overlap-sm", label: "Overlap sm", description: "A hairline tuck.", group: "overlap", primitive: "dimension--4" },
+      { key: "overlap-md", label: "Overlap md", description: "The default avatar-stack overlap.", group: "overlap", primitive: "dimension--8" },
+      { key: "overlap-lg", label: "Overlap lg", description: "A third of a 48px avatar.", group: "overlap", primitive: "dimension--16" },
+      { key: "overlap-xl", label: "Overlap xl", description: "Heavily stacked; only the edge shows.", group: "overlap", primitive: "dimension--24" },
+      { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
+    ];
+    INSET_ROLES = ["inset-control", "inset-surface", "inset-page"];
+    INSET_SIDES = ["top", "right", "bottom", "left"];
+    INSET_SIDE_KEYS = INSET_ROLES.flatMap((role) => INSET_SIDES.map((side) => ({ key: insetSideKey(role, side), role, side })));
+    INSET_SIDE_BY_KEY = new Map(INSET_SIDE_KEYS.map((entry) => [entry.key, entry]));
+    SPACING_MODES = [
+      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: FIELD_BASE_MIN, insetStep: "3", border: 1 },
+      { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
+      { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "5", border: 2 },
+      { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "6", border: 1 }
+    ];
+    LEGACY_SPACING_ROLE_STEPS = {
+      "gap-tight": "1",
+      "gap-control": "2",
+      "gap-group": "4",
+      "gap-section": "6",
+      "inset-control": "3",
+      "inset-page": "8"
+    };
+    SIZE_ROLES = [
+      { key: "compact", label: "Compact", description: "Toolbars, dense tables.", group: "control", primitive: "sm" },
+      { key: "control", label: "Control", description: "Default button, input, select height.", group: "control", primitive: "md" },
+      { key: "touch", label: "Touch", description: "Mobile CTA. 48px covers HIG 44.", group: "control", primitive: "lg" },
+      { key: "hit", label: "Hit", description: "Close button and icon-only hit area.", group: "special", primitive: "xs" },
+      { key: "fab", label: "FAB", description: "Floating action button.", group: "special", primitive: "xl" }
+    ];
+    SELECTOR_ROLES = [
+      { key: "control", label: "Control", description: "Checkbox, radio, switch track height.", group: "glyph", primitive: "md" },
+      { key: "compact", label: "Compact", description: "The same glyphs in a dense row or table.", group: "glyph", primitive: "sm" },
+      { key: "indicator", label: "Indicator", description: "Badge dot, status pip, unread marker.", group: "glyph", primitive: "xs" }
+    ];
+    STROKE_ROLES = [
+      { key: "divider", label: "Divider", description: "Separator, table rules, layout splits.", group: "line", primitive: "sm" },
+      { key: "control", label: "Control", description: "Input, card, outline button border-width.", group: "line", primitive: "sm" },
+      { key: "focus", label: "Focus", description: "Focus-ring width: the inner edge of a focused control (the halo adds one more hairline). Paint stays border.focus.", group: "line", primitive: "md" }
+    ];
+    BREAKPOINT_ROLES = [
+      { key: "desktop", label: "Desktop", description: "Min-width where the 12-col grid starts.", group: "viewport", primitive: "md" },
+      { key: "tablet", label: "Tablet", description: "Min-width where the 8-col grid starts.", group: "viewport", primitive: "sm" },
+      { key: "mobile", label: "Mobile", description: "Max-width of the 4-col grid (one step below Tablet).", group: "viewport", primitive: "sm" }
+    ];
+    LAYOUT_ROLES = {
+      radius: RADIUS_ROLES,
+      spacing: SPACING_ROLES,
+      size: SIZE_ROLES,
+      selector: SELECTOR_ROLES,
+      stroke: STROKE_ROLES,
+      breakpoint: BREAKPOINT_ROLES
+    };
+    PRIMITIVE_SET = {
+      radius: new Set(RADIUS_STEPS),
+      spacing: new Set(SPACING_STEPS),
+      size: new Set(SIZE_STEPS),
+      selector: new Set(SELECTOR_STEPS),
+      stroke: new Set(STROKE_STEPS),
+      breakpoint: new Set(BREAKPOINT_STEPS)
+    };
+  }
+});
+
+// src/lib/shadowTokens.ts
+function matchShadowPreset(shadows) {
+  const hit = SHADOW_PRESETS.find(
+    (preset) => SHADOW_STEPS.every((step) => (shadows[step] ?? "") === preset.values[step])
+  );
+  return hit?.label ?? null;
+}
+function darkShadowsOf(f) {
+  const derived = darkShadowMap(f.shadows);
+  return f.shadowsDark ? { ...derived, ...f.shadowsDark } : derived;
+}
+var SHADOW_PRESETS, SHADOW_STEPS;
+var init_shadowTokens = __esm({
+  "src/lib/shadowTokens.ts"() {
+    init_colorUtils();
+    SHADOW_PRESETS = [
+      {
+        label: "None",
+        description: "Flat \u2014 no elevation anywhere",
+        values: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" }
+      },
+      {
+        label: "Subtle",
+        description: "Barely-there depth \u2014 quiet, minimal",
+        values: {
+          xs: "0 1px 1px rgba(10,13,18,0.03)",
+          sm: "0 1px 2px rgba(10,13,18,0.05)",
+          md: "0 2px 4px -1px rgba(10,13,18,0.05)",
+          lg: "0 6px 8px -2px rgba(10,13,18,0.04)",
+          xl: "0 10px 12px -2px rgba(10,13,18,0.04)",
+          "2xl": "0 12px 24px -6px rgba(10,13,18,0.08)"
+        }
+      },
+      {
+        label: "Soft",
+        description: "Balanced depth \u2014 the default ramp",
+        values: {
+          xs: "0 1px 2px rgba(10,13,18,0.05)",
+          sm: "0 1px 3px rgba(10,13,18,0.10), 0 1px 2px -1px rgba(10,13,18,0.10)",
+          md: "0 4px 6px -1px rgba(10,13,18,0.10), 0 2px 4px -2px rgba(10,13,18,0.06)",
+          lg: "0 12px 16px -4px rgba(10,13,18,0.08), 0 4px 6px -2px rgba(10,13,18,0.03)",
+          xl: "0 20px 24px -4px rgba(10,13,18,0.08), 0 8px 8px -4px rgba(10,13,18,0.03)",
+          "2xl": "0 24px 48px -12px rgba(10,13,18,0.18)"
+        }
+      },
+      {
+        label: "Strong",
+        description: "Pronounced depth \u2014 bold, high-contrast surfaces",
+        values: {
+          xs: "0 2px 4px rgba(10,13,18,0.10)",
+          sm: "0 2px 6px rgba(10,13,18,0.18), 0 2px 4px -1px rgba(10,13,18,0.16)",
+          md: "0 8px 12px -2px rgba(10,13,18,0.18), 0 4px 6px -3px rgba(10,13,18,0.12)",
+          lg: "0 20px 26px -6px rgba(10,13,18,0.16), 0 8px 10px -4px rgba(10,13,18,0.08)",
+          xl: "0 32px 40px -6px rgba(10,13,18,0.18), 0 14px 14px -6px rgba(10,13,18,0.08)",
+          "2xl": "0 40px 72px -16px rgba(10,13,18,0.32)"
+        }
+      }
+    ];
+    SHADOW_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
+  }
+});
+
+// src/lib/color/tailwindReference.ts
+var init_tailwindReference = __esm({
+  "src/lib/color/tailwindReference.ts"() {
+  }
+});
+
+// src/lib/color/scaleMatch.ts
+var init_scaleMatch = __esm({
+  "src/lib/color/scaleMatch.ts"() {
+    init_gamut();
+  }
+});
+
+// src/lib/color/tailwind.ts
+var init_tailwind = __esm({
+  "src/lib/color/tailwind.ts"() {
+    init_tailwindReference();
+    init_scaleMatch();
+    init_gamut();
+  }
+});
+
+// src/lib/themeMoods.ts
+function stateOf(role, value) {
+  const hex = hexOf(value);
+  const { c: c2, h: raw } = hexToOklch(hex);
+  const h = (raw % 360 + 360) % 360;
+  const inBand = SEVERITY_HUES[role].some(([lo, hi]) => h >= lo && h <= hi);
+  return c2 > 0.02 && inBand ? hex : FALLBACK_STATES[role];
+}
+function tintFor(base, appearance) {
+  if (base[1] < 3e-3) return "pure";
+  for (const spec of NEUTRAL_TINTS) {
+    if (spec.key === "pure") continue;
+    if (spec[appearance].cap >= base[1]) return spec.key;
+  }
+  return "vivid";
+}
+function neutralSeedFor(spec, tint) {
+  const appearance = spec.scheme;
+  const { mul } = NEUTRAL_TINTS.find((t) => t.key === tint)[appearance];
+  const hue = spec.base[1] > 4e-3 ? spec.base[2] : spec.neutral[1] > 8e-3 ? spec.neutral[2] : spec.base[2];
+  const chroma6 = Math.min(0.14, Math.max(spec.neutral[1], mul ? spec.base[1] / mul : 0, 4e-3));
+  return oklchToHex(0.52, chroma6, hue);
+}
+function moodFromSpec(id, spec) {
+  const tint = tintFor(spec.base, spec.scheme);
+  return {
+    id,
+    appearance: spec.scheme,
+    accent: hexOf(spec.primary),
+    neutral: neutralSeedFor(spec, tint),
+    neutralTint: tint,
+    states: {
+      error: stateOf("error", spec.error),
+      warning: stateOf("warning", spec.warning),
+      success: stateOf("success", spec.success),
+      info: stateOf("info", spec.info)
+    },
+    radius: { ...spec.radius },
+    border: spec.border,
+    depth: spec.depth,
+    motion: spec.motion ?? CURATED_MOOD_MOTION[id] ?? "standard"
+  };
+}
+function curatedMood(id) {
+  return CURATED_MOODS.find((mood) => mood.id === id);
+}
+var DAISY_MOOD_SPECS, SEVERITY_HUES, FALLBACK_STATES, hexOf, CURATED_MOOD_MOTION, CURATED_MOODS, BRAND_WEIGHTS, BRAND_POOL;
+var init_themeMoods = __esm({
+  "src/lib/themeMoods.ts"() {
+    init_layoutTokens();
+    init_colorUtils();
+    init_gamut();
+    init_tailwind();
+    DAISY_MOOD_SPECS = {
+      forest: { scheme: "dark", base: [0.2084, 8e-3, 17.911], neutral: [0.307, 0.039, 171.364], primary: [0.6863, 0.185, 148.958], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
+      cyberpunk: { scheme: "light", base: [0.9451, 0.179, 104.32], neutral: [0.2304, 0.065, 269.31], primary: [0.7422, 0.209, 6.35], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "none", fields: "none", boxes: "none" }, border: 1, depth: 0 },
+      cupcake: { scheme: "light", base: [0.9779, 4e-3, 56.375], neutral: [0.27, 6e-3, 286.033], primary: [0.85, 0.138, 181.071], info: [0.68, 0.169, 237.323], success: [0.69, 0.17, 162.48], warning: [0.79, 0.184, 86.047], error: [0.64, 0.246, 16.439], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 1 },
+      fantasy: { scheme: "light", base: [1, 0, 0], neutral: [0.2781, 0.029, 256.847], primary: [0.3745, 0.189, 325.02], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+      cmyk: { scheme: "light", base: [1, 0, 0], neutral: [0.2178, 0, 0], primary: [0.7177, 0.133, 239.443], info: [0.6847, 0.094, 217.284], success: [0.4695, 0.162, 321.406], warning: [0.7124, 0.159, 52.023], error: [0.6201, 0.208, 28.717], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      emerald: { scheme: "light", base: [1, 0, 0], neutral: [0.3552, 0.032, 262.988], primary: [0.7666, 0.135, 153.45], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      nord: { scheme: "light", base: [0.9513, 7e-3, 260.731], neutral: [0.4523, 0.035, 264.131], primary: [0.5944, 0.077, 254.027], info: [0.6921, 0.062, 332.664], success: [0.7683, 0.074, 131.063], warning: [0.8549, 0.089, 84.093], error: [0.6061, 0.12, 15.341], radius: { selectors: "2xl", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
+      halloween: { scheme: "dark", base: [0.21, 6e-3, 56.043], neutral: [0.2437, 0.046, 65.681], primary: [0.7748, 0.204, 60.62], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.6572, 0.199, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+      night: { scheme: "dark", base: [0.2077, 0.039, 265.754], neutral: [0.2795, 0.036, 260.03], primary: [0.7535, 0.138, 232.661], info: [0.6845, 0.148, 237.251], success: [0.7845, 0.132, 181.911], warning: [0.8324, 0.139, 82.95], error: [0.7178, 0.17, 13.118], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      coffee: { scheme: "dark", base: [0.24, 0.023, 329.708], neutral: [0.1651, 0.015, 326.261], primary: [0.72, 0.123, 62.756], info: [0.7949, 0.063, 184.558], success: [0.7472, 0.072, 131.116], warning: [0.8815, 0.14, 87.722], error: [0.7732, 0.128, 31.871], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      winter: { scheme: "light", base: [1, 0, 0], neutral: [0.1962, 0.063, 257.651], primary: [0.5686, 0.255, 257.57], info: [0.8813, 0.085, 214.515], success: [0.8049, 0.077, 197.823], warning: [0.8917, 0.045, 71.47], error: [0.7309, 0.11, 20.076], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      light: { scheme: "light", base: [1, 0, 0], neutral: [0.14, 5e-3, 285.823], primary: [0.45, 0.24, 277.023], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
+      valentine: { scheme: "light", base: [0.97, 0.014, 343.198], neutral: [0.4, 0.153, 2.432], primary: [0.65, 0.241, 354.308], info: [0.86, 0.127, 207.078], success: [0.84, 0.143, 164.978], warning: [0.75, 0.183, 55.934], error: [0.63, 0.237, 25.331], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
+      lemonade: { scheme: "light", base: [0.9871, 0.02, 123.72], neutral: [0.3098, 0.075, 108.6], primary: [0.5892, 0.199, 134.6], info: [0.8619, 0.047, 224.14], success: [0.8619, 0.047, 157.85], warning: [0.8619, 0.047, 102.15], error: [0.8619, 0.047, 25.85], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      retro: { scheme: "light", base: [0.9164, 0.034, 90.515], neutral: [0.44, 0.011, 73.639], primary: [0.8, 0.114, 19.571], info: [0.58, 0.158, 241.966], success: [0.51, 0.096, 186.391], warning: [0.64, 0.222, 41.116], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
+      aqua: { scheme: "dark", base: [0.37, 0.146, 265.522], neutral: [0.27, 0.146, 265.522], primary: [0.8566, 0.144, 198.645], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.7395, 0.19, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+      dark: { scheme: "dark", base: [0.2533, 0.016, 252.42], neutral: [0.14, 5e-3, 285.823], primary: [0.58, 0.233, 277.117], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
+      dim: { scheme: "dark", base: [0.3086, 0.023, 264.149], neutral: [0.2473, 0.02, 264.094], primary: [0.8613, 0.141, 139.549], info: [0.8608, 0.142, 206.182], success: [0.8617, 0.142, 166.534], warning: [0.8616, 0.142, 94.818], error: [0.8242, 0.099, 33.756], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      dracula: { scheme: "dark", base: [0.2882, 0.022, 277.508], neutral: [0.3945, 0.032, 275.524], primary: [0.7546, 0.183, 346.812], info: [0.8826, 0.093, 212.846], success: [0.871, 0.219, 148.024], warning: [0.9553, 0.134, 112.757], error: [0.6822, 0.206, 24.43], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      corporate: { scheme: "light", base: [1, 0, 0], neutral: [0, 0, 0], primary: [0.58, 0.158, 241.966], info: [0.6, 0.126, 221.723], success: [0.62, 0.194, 149.214], warning: [0.85, 0.199, 91.936], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
+      bumblebee: { scheme: "light", base: [1, 0, 0], neutral: [0.37, 0.01, 67.558], primary: [0.85, 0.199, 91.936], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.7, 0.191, 22.216], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+      business: { scheme: "dark", base: [0.2435, 0, 0], neutral: [0.2744, 0.013, 253.041], primary: [0.417, 0.099, 251.473], info: [0.6262, 0.143, 240.033], success: [0.7023, 0.094, 156.596], warning: [0.7748, 0.115, 81.519], error: [0.5161, 0.146, 29.674], radius: { selectors: "none", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
+      acid: { scheme: "light", base: [0.98, 0, 0], neutral: [0.2131, 0.128, 278.68], primary: [0.719, 0.357, 330.759], info: [0.6072, 0.227, 252.05], success: [0.8572, 0.266, 158.53], warning: [0.9101, 0.212, 100.5], error: [0.6484, 0.293, 29.349], radius: { selectors: "2xl", fields: "2xl", boxes: "2xl" }, border: 1, depth: 1 },
+      sunset: { scheme: "dark", base: [0.22, 0.019, 237.69], neutral: [0.26, 0.019, 237.69], primary: [0.747, 0.158, 39.947], info: [0.8556, 0.085, 206.015], success: [0.8556, 0.085, 144.778], warning: [0.8557, 0.084, 74.427], error: [0.8551, 0.078, 16.886], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      garden: { scheme: "light", base: [0.9295, 2e-3, 17.197], neutral: [0.2416, 0.049, 89.07], primary: [0.6245, 0.278, 3.836], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      autumn: { scheme: "light", base: [0.9581, 0, 0], neutral: [0.5437, 0.037, 51.902], primary: [0.4072, 0.161, 17.53], info: [0.6922, 0.097, 207.284], success: [0.6099, 0.08, 174.616], warning: [0.7008, 0.164, 56.844], error: [0.5307, 0.241, 24.16], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
+      pastel: { scheme: "light", base: [1, 0, 0], neutral: [0.55, 0.046, 257.417], primary: [0.9, 0.063, 306.703], info: [0.86, 0.127, 207.078], success: [0.87, 0.15, 154.449], warning: [0.83, 0.128, 66.29], error: [0.8, 0.114, 19.571], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 0 },
+      synthwave: { scheme: "dark", base: [0.15, 0.09, 281.288], neutral: [0.45, 0.24, 277.023], primary: [0.71, 0.202, 349.761], info: [0.74, 0.16, 232.661], success: [0.77, 0.152, 181.912], warning: [0.9, 0.182, 98.111], error: [0.737, 0.121, 32.639], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
+      abyss: { scheme: "dark", base: [0.2, 0.08, 209], neutral: [0.3, 0.08, 209], primary: [0.92, 0.2653, 125], info: [0.74, 0.16, 232.661], success: [0.79, 0.209, 151.711], warning: [0.848, 0.1962, 84.62], error: [0.65, 0.1985, 24.22], radius: { selectors: "4xl", fields: "sm", boxes: "lg" }, border: 1, depth: 1 }
+    };
+    SEVERITY_HUES = {
+      error: [[0, 45], [340, 360]],
+      warning: [[40, 112]],
+      success: [[118, 200]],
+      info: [[195, 290]]
+    };
+    FALLBACK_STATES = {
+      error: "#d92d20",
+      warning: "#dc6803",
+      success: "#079455",
+      info: "#1570ef"
+    };
+    hexOf = ([l, c2, h]) => oklchToHex(l, c2, h);
+    CURATED_MOOD_MOTION = {
+      forest: "calm",
+      cyberpunk: "snappy",
+      cupcake: "playful",
+      fantasy: "playful",
+      cmyk: "snappy",
+      emerald: "standard",
+      nord: "standard",
+      halloween: "expressive",
+      night: "standard",
+      coffee: "calm",
+      winter: "standard",
+      light: "standard",
+      valentine: "playful",
+      lemonade: "playful",
+      retro: "snappy",
+      aqua: "expressive",
+      dark: "standard",
+      dim: "calm",
+      dracula: "expressive",
+      corporate: "snappy",
+      bumblebee: "playful",
+      business: "snappy",
+      acid: "expressive",
+      sunset: "expressive",
+      garden: "calm",
+      autumn: "calm",
+      pastel: "playful",
+      synthwave: "expressive",
+      abyss: "expressive"
+    };
+    CURATED_MOODS = Object.entries(DAISY_MOOD_SPECS).map(([id, spec]) => moodFromSpec(id, spec));
+    BRAND_WEIGHTS = {
+      amber: 3,
+      blue: 4,
+      cyan: 2,
+      emerald: 3,
+      fuchsia: 1,
+      green: 3,
+      indigo: 4,
+      lime: 3,
+      orange: 3,
+      pink: 3,
+      purple: 3,
+      red: 3,
+      rose: 1,
+      sky: 2,
+      teal: 3,
+      violet: 3,
+      yellow: 3
+    };
+    BRAND_POOL = Object.entries(BRAND_WEIGHTS).flatMap(([name, w]) => Array(w).fill(name));
+  }
+});
+
+// src/lib/typographyStandard.ts
+function letterSpacingFor(key2, size) {
+  const ratio = LETTER_SPACING_RATIO[key2] ?? 0;
+  const px = parseFloat(size ?? "") || 0;
+  const v = Math.round(px * ratio * 10) / 10;
+  return `${v === 0 ? 0 : v}px`;
+}
+function letterSpacingsFor(sizes) {
+  const out = {};
+  for (const [key2, size] of Object.entries(sizes ?? {})) out[key2] = letterSpacingFor(key2, size);
+  return out;
+}
+function buildTypeScale(factor) {
+  const sizes = {};
+  const lineHeights = {};
+  for (const key2 of TYPE_SCALE_KEYS) {
+    const size = parseFloat(FONT_SIZE_STANDARD[key2]) || 0;
+    const lh = parseFloat(LINE_HEIGHT_STANDARD[key2]) || 0;
+    sizes[key2] = `${Math.round(size * factor)}px`;
+    lineHeights[key2] = `${Math.round(lh * factor)}px`;
+  }
+  return { sizes, lineHeights };
+}
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
+var init_typographyStandard = __esm({
+  "src/lib/typographyStandard.ts"() {
+    TYPE_SCALE_KEYS = [
+      "text-xs",
+      "text-sm",
+      "text-md",
+      "text-lg",
+      "text-xl",
+      "display-xs",
+      "display-sm",
+      "display-md",
+      "display-lg",
+      "display-xl",
+      "display-2xl"
+    ];
+    FONT_SIZE_STANDARD = {
+      "text-xs": "12px",
+      "text-sm": "14px",
+      "text-md": "16px",
+      "text-lg": "18px",
+      "text-xl": "20px",
+      "display-xs": "24px",
+      "display-sm": "30px",
+      "display-md": "36px",
+      "display-lg": "48px",
+      "display-xl": "60px",
+      "display-2xl": "72px"
+    };
+    LINE_HEIGHT_STANDARD = {
+      "text-xs": "18px",
+      "text-sm": "20px",
+      "text-md": "24px",
+      "text-lg": "28px",
+      "text-xl": "30px",
+      "display-xs": "32px",
+      "display-sm": "38px",
+      "display-md": "44px",
+      "display-lg": "60px",
+      "display-xl": "72px",
+      "display-2xl": "90px"
+    };
+    LETTER_SPACING_RATIO = {
+      "text-xs": 0,
+      "text-sm": 0,
+      "text-md": 0,
+      "text-lg": 0,
+      "text-xl": -0.01,
+      "display-xs": -0.015,
+      "display-sm": -0.02,
+      "display-md": -0.02,
+      "display-lg": -0.02,
+      "display-xl": -0.02,
+      "display-2xl": -0.02
+    };
+    TYPE_SCALE_MODES = [
+      { key: "compact", label: "Compact", factor: 0.875 },
+      { key: "cozy", label: "Cozy", factor: 0.9375 },
+      { key: "default", label: "Default", factor: 1 },
+      { key: "comfortable", label: "Comfortable", factor: 1.0625 },
+      { key: "spacious", label: "Spacious", factor: 1.125 }
+    ];
+    FONT_WEIGHT_BASES = [
+      { key: "regular", label: "Regular", weight: 400 },
+      { key: "medium", label: "Medium", weight: 500 },
+      { key: "semibold", label: "Semibold", weight: 600 },
+      { key: "bold", label: "Bold", weight: 700 }
+    ];
+    FONT_WEIGHT_STANDARD = Object.fromEntries(
+      FONT_WEIGHT_BASES.map((b) => [b.key, b.weight])
+    );
+    FONT_WEIGHT_ROWS = FONT_WEIGHT_BASES.flatMap((b) => [
+      { name: b.key, base: b.key, italic: false },
+      { name: `${b.key}-italic`, base: b.key, italic: true }
+    ]);
+    FONT_FAMILY_ROWS = [
+      // CSS emits `--font-family-heading` (and type roles alias that var). The
+      // standard used to declare `font-family-display` — same slot, two names.
+      // The export name wins; `role: 'display'` is the type-role family slot.
+      { key: "font-family-heading", role: "display", label: "font-family-heading" },
+      { key: "font-family-body", role: "body", label: "font-family-body" }
+    ];
+    TYPO_GROUP_COUNT = FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3;
+    TYPO_CATEGORIES = [
+      { key: "all", label: "All", count: TYPO_GROUP_COUNT },
+      { key: "family", label: "Font family", count: FONT_FAMILY_ROWS.length },
+      { key: "weight", label: "Font weight", count: FONT_WEIGHT_ROWS.length },
+      { key: "size", label: "Font size", count: TYPE_SCALE_KEYS.length },
+      { key: "lineHeight", label: "Line height", count: TYPE_SCALE_KEYS.length },
+      // Derived from each size (letterSpacingFor) — listed so the collection
+      // shows every primitive that ships, read-only in the table.
+      { key: "letterSpacing", label: "Letter spacing", count: TYPE_SCALE_KEYS.length }
+    ];
+  }
+});
+
+// src/lib/typeRoles.ts
+function isAlias(v) {
+  if (!v || typeof v !== "object") return false;
+  const a2 = v;
+  return (a2.family === "display" || a2.family === "body") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
+}
+function withLockedFamily(role, alias) {
+  if (role.group !== "heading") return alias;
+  return alias.family === "body" ? alias : { ...alias, family: "body" };
+}
+function isModes(v) {
+  if (!v || typeof v !== "object") return false;
+  const m = v;
+  return isAlias(m.desktop) && isAlias(m.mobile);
+}
+function mergeTypeRoles(stored) {
+  const bag = stored ?? {};
+  const out = {};
+  for (const role of TYPE_ROLES) {
+    const hit = bag[role.key];
+    if (isModes(hit)) {
+      const tablet = isAlias(hit.tablet) ? hit.tablet : aliasesEqual(hit.desktop, role.desktop) ? role.tablet : hit.desktop;
+      out[role.key] = {
+        desktop: withLockedFamily(role, { ...hit.desktop }),
+        tablet: withLockedFamily(role, { ...tablet }),
+        mobile: withLockedFamily(role, { ...hit.mobile })
+      };
+    } else {
+      out[role.key] = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } };
+    }
+  }
+  return out;
+}
+function aliasesEqual(a2, b) {
+  return a2.family === b.family && a2.size === b.size && a2.weight === b.weight;
+}
+function migrateHeadingFamilyToBody(stored) {
+  return mergeTypeRoles(stored);
+}
+function stepLargeTypeOnMobile(stored) {
+  const map = mergeTypeRoles(stored);
+  for (const role of TYPE_ROLES) {
+    const legacy = LEGACY_LARGE_MOBILE[role.key];
+    if (!legacy) continue;
+    const hit = map[role.key];
+    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
+      map[role.key] = { ...hit, mobile: { ...role.mobile } };
+    }
+  }
+  return map;
+}
+function placeholderFollowsField(stored) {
+  const map = mergeTypeRoles(stored);
+  const role = TYPE_ROLES.find((r) => r.key === "placeholder");
+  const hit = map.placeholder;
+  if (!role || !hit) return map;
+  if (aliasesEqual(hit.desktop, LEGACY_PLACEHOLDER.desktop) && aliasesEqual(hit.tablet, LEGACY_PLACEHOLDER.tablet) && aliasesEqual(hit.mobile, LEGACY_PLACEHOLDER.mobile)) {
+    map.placeholder = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } };
+  }
+  return map;
+}
+function stepHeadingsPerCut(stored) {
+  const map = mergeTypeRoles(stored);
+  for (const role of TYPE_ROLES) {
+    const legacy = LEGACY_HEADING_CUTS[role.key];
+    if (!legacy) continue;
+    const hit = map[role.key];
+    if (!aliasesEqual(hit.desktop, role.desktop)) continue;
+    map[role.key] = {
+      ...hit,
+      tablet: aliasesEqual(hit.tablet, legacy.tablet) ? { ...role.tablet } : hit.tablet,
+      mobile: aliasesEqual(hit.mobile, legacy.mobile) ? { ...role.mobile } : hit.mobile
+    };
+  }
+  return map;
+}
+function promoteReadingTypeIdentity(stored) {
+  const map = mergeTypeRoles(stored);
+  for (const role of TYPE_ROLES) {
+    if (role.group !== "body" && role.group !== "control") continue;
+    const legacy = LEGACY_READING_MOBILE[role.key];
+    if (!legacy) continue;
+    const hit = map[role.key];
+    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
+      map[role.key] = { ...hit, mobile: { ...hit.desktop } };
+    }
+  }
+  return map;
+}
+var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_PLACEHOLDER, LEGACY_READING_MOBILE;
+var init_typeRoles = __esm({
+  "src/lib/typeRoles.ts"() {
+    init_typographyStandard();
+    a = (family, size, weight) => ({ family, size, weight });
+    TYPE_ROLES = [
+      {
+        key: "display",
+        label: "Display",
+        description: "Hero and page titles.",
+        group: "display",
+        desktop: a("display", "display-xl", "bold"),
+        tablet: a("display", "display-lg", "bold"),
+        mobile: a("display", "display-md", "bold")
+      },
+      {
+        key: "heading-xl",
+        label: "Heading XL",
+        description: "Largest section title.",
+        group: "heading",
+        desktop: a("body", "display-lg", "semibold"),
+        tablet: a("body", "display-md", "semibold"),
+        mobile: a("body", "display-sm", "semibold")
+      },
+      {
+        key: "heading-lg",
+        label: "Heading LG",
+        description: "Primary section heading.",
+        group: "heading",
+        desktop: a("body", "display-md", "semibold"),
+        tablet: a("body", "display-sm", "semibold"),
+        mobile: a("body", "display-xs", "semibold")
+      },
+      {
+        key: "heading-md",
+        label: "Heading MD",
+        description: "Card and panel titles.",
+        group: "heading",
+        desktop: a("body", "display-sm", "semibold"),
+        tablet: a("body", "display-xs", "semibold"),
+        mobile: a("body", "text-xl", "semibold")
+      },
+      {
+        key: "heading-sm",
+        label: "Heading SM",
+        description: "Nested headings and list titles.",
+        group: "heading",
+        desktop: a("body", "display-xs", "semibold"),
+        tablet: a("body", "text-xl", "semibold"),
+        mobile: a("body", "text-lg", "semibold")
+      },
+      {
+        key: "heading-xs",
+        label: "Heading XS",
+        description: "Overline-scale titles still read as headings.",
+        group: "heading",
+        desktop: a("body", "text-xl", "semibold"),
+        tablet: a("body", "text-lg", "semibold"),
+        mobile: a("body", "text-md", "semibold")
+      },
+      {
+        key: "heading-2xs",
+        label: "Heading 2XS",
+        description: "Smallest heading (h6). Sits one rung above body.",
+        group: "heading",
+        // Floors at text-md, the body size: a heading never reads smaller than
+        // the copy under it. On mobile that makes it equal to Heading XS — the
+        // ladder has six rungs from 36 down to 16 and there are seven headings.
+        // Weight (semibold over regular body) still separates it from the text.
+        desktop: a("body", "text-lg", "semibold"),
+        tablet: a("body", "text-md", "semibold"),
+        mobile: a("body", "text-md", "semibold")
+      },
+      {
+        key: "body-lg",
+        label: "Body LG",
+        description: "Lead paragraphs.",
+        group: "body",
+        desktop: a("body", "text-lg", "regular"),
+        tablet: a("body", "text-lg", "regular"),
+        mobile: a("body", "text-lg", "regular")
+      },
+      {
+        key: "body-md",
+        label: "Body MD",
+        description: "Default reading size.",
+        group: "body",
+        desktop: a("body", "text-md", "regular"),
+        tablet: a("body", "text-md", "regular"),
+        mobile: a("body", "text-md", "regular")
+      },
+      {
+        key: "body-sm",
+        label: "Body SM",
+        description: "Dense supporting copy.",
+        group: "body",
+        desktop: a("body", "text-sm", "regular"),
+        tablet: a("body", "text-sm", "regular"),
+        mobile: a("body", "text-sm", "regular")
+      },
+      {
+        key: "label",
+        label: "Label",
+        description: "Form labels and field names.",
+        group: "control",
+        desktop: a("body", "text-sm", "medium"),
+        tablet: a("body", "text-sm", "medium"),
+        mobile: a("body", "text-sm", "medium")
+      },
+      {
+        key: "placeholder",
+        label: "Placeholder",
+        description: "Input placeholder and empty-field hint.",
+        group: "control",
+        // The size of the text typed INTO a field (shadcn Input: `md:text-sm`), so
+        // placeholder, value, label and button sit on one tier — on every cut,
+        // like every other body/control role.
+        desktop: a("body", "text-sm", "regular"),
+        tablet: a("body", "text-sm", "regular"),
+        mobile: a("body", "text-sm", "regular")
+      },
+      {
+        key: "caption",
+        label: "Caption",
+        description: "Image captions and metadata.",
+        group: "control",
+        desktop: a("body", "text-xs", "regular"),
+        tablet: a("body", "text-xs", "regular"),
+        mobile: a("body", "text-xs", "regular")
+      },
+      {
+        key: "button",
+        label: "Button",
+        description: "Control labels \u2014 buttons, tabs, chips.",
+        group: "control",
+        // `text-sm`, matching `label` — a button label and a field label are the
+        // same TIER of text; the button is just heavier. It was `text-md`, a full
+        // step above `label` and above body copy, which made the button the
+        // LARGEST text on screen: measured 17px against 15px body on the three
+        // styles that use the `comfortable` type scale (×1.0625), because the scale
+        // multiplies every step and `text-md` is the body size. Now 12–15px across
+        // the six styles, under the 16px ceiling a control label should respect.
+        //
+        // Capping the resolved px instead was considered and rejected: the CSS
+        // export emits `var(--font-size-text-md)` for this role, so a numeric clamp
+        // would show 16px in the preview and ship 17px, which is exactly the kind
+        // of preview/export drift this file's aliases exist to prevent. Moving the
+        // ALIAS keeps one value in both. Body and control stay the same size on
+        // mobile — only display/heading step.
+        desktop: a("body", "text-sm", "semibold"),
+        tablet: a("body", "text-sm", "semibold"),
+        mobile: a("body", "text-sm", "semibold")
+      },
+      {
+        key: "helper",
+        label: "Helper",
+        description: "Field help, validation, footnotes.",
+        group: "control",
+        desktop: a("body", "text-xs", "regular"),
+        tablet: a("body", "text-xs", "regular"),
+        mobile: a("body", "text-xs", "regular")
+      }
+    ];
+    TYPE_ROLE_BY_KEY = Object.fromEntries(
+      TYPE_ROLES.map((r) => [r.key, r])
+    );
+    WEIGHT_KEYS = new Set(FONT_WEIGHT_BASES.map((b) => b.key));
+    SIZE_KEYS = new Set(TYPE_SCALE_KEYS);
+    LEGACY_LARGE_MOBILE = {
+      display: a("display", "display-lg", "bold"),
+      "heading-xl": a("display", "display-md", "semibold")
+    };
+    LEGACY_HEADING_CUTS = {
+      "heading-lg": { tablet: a("body", "display-md", "semibold"), mobile: a("body", "display-sm", "semibold") },
+      "heading-md": { tablet: a("body", "display-sm", "semibold"), mobile: a("body", "display-xs", "semibold") },
+      "heading-sm": { tablet: a("body", "display-xs", "semibold"), mobile: a("body", "text-xl", "semibold") },
+      "heading-xs": { tablet: a("body", "text-xl", "semibold"), mobile: a("body", "text-lg", "semibold") }
+    };
+    LEGACY_PLACEHOLDER = {
+      desktop: a("body", "text-md", "regular"),
+      tablet: a("body", "text-md", "regular"),
+      mobile: a("body", "text-md", "regular")
+    };
+    LEGACY_READING_MOBILE = {
+      "body-lg": a("body", "text-md", "regular"),
+      "body-md": a("body", "text-sm", "regular"),
+      "body-sm": a("body", "text-xs", "regular"),
+      label: a("body", "text-xs", "medium"),
+      placeholder: a("body", "text-sm", "regular")
+    };
+  }
+});
+
+// src/lib/themePresets.ts
+function presetStates(preset) {
+  return preset.states ?? previewHarmony(preset.accent, preset.neutralTint).states;
+}
+function presetHarmony(preset) {
+  const h = previewHarmony(preset.accent, preset.neutralTint);
+  if (!preset.neutral) return h;
+  return {
+    ...h,
+    neutral: preset.neutral,
+    pageLight: backgroundFromBase(preset.neutral, "light", preset.neutralTint),
+    pageDark: backgroundFromBase(preset.neutral, "dark", preset.neutralTint)
+  };
+}
+function accent(label) {
+  return BRAND_SPECTRUM.find((preset) => preset.label === label)?.hex ?? BRAND_SPECTRUM[0].hex;
+}
+function moodColours(id) {
+  const mood = curatedMood(id);
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
+  return {
+    accent: mood.accent,
+    neutral: mood.neutral,
+    neutralTint: mood.neutralTint,
+    states: { ...mood.states },
+    preferredAppearance: mood.appearance
+  };
+}
+function moodShape(id) {
+  const mood = curatedMood(id);
+  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
+  return {
+    radius: { ...RADIUS_STANDARD },
+    radiusRoles: styleRadiusRoles(mood.radius),
+    stroke: { ...STROKE_STANDARD, sm: `${mood.border}px` },
+    shadows: { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values }
+  };
+}
+function typography(body, heading) {
+  return {
+    fontFamily: body,
+    headingFontFamily: heading,
+    sizes: { ...FONT_SIZE_STANDARD },
+    lineHeights: { ...LINE_HEIGHT_STANDARD },
+    weights: { ...FONT_WEIGHT_STANDARD },
+    roles: mergeTypeRoles()
+  };
+}
+function styleRadiusRoles(picks) {
+  return radiusRolesFromGroups(picks);
+}
+function themeStylePreset(id) {
+  return THEME_STYLE_PRESETS.find((preset) => preset.id === id);
+}
+var DARK_DEPTH, A_DEFAULT_L, A_DEFAULT_D, A_STRONG_L, A_STRONG_D, softBorders, natureSemantics, coreSemantics, glassSemantics, filledBorders, retroSemantics, inkBorders, hardShadows, retroShadows, THEME_STYLE_PRESETS;
+var init_themePresets = __esm({
+  "src/lib/themePresets.ts"() {
+    init_brandPalette();
+    init_colorUtils();
+    init_layoutTokens();
+    init_shadowTokens();
+    init_motion();
+    init_themeMoods();
+    init_typeRoles();
+    init_typographyStandard();
+    DARK_DEPTH = {
+      "surface.layer-1": { dark: "{neutral-dark.3}" },
+      "surface.layer-2": { dark: "{neutral-dark.4}" },
+      "content.subtle": { dark: "{neutral-dark.10}" }
+    };
+    A_DEFAULT_L = "{black-a.3}";
+    A_DEFAULT_D = "{white-a.3}";
+    A_STRONG_L = "{black-a.4}";
+    A_STRONG_D = "{white-a.4}";
+    softBorders = {
+      ...DARK_DEPTH,
+      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D },
+      "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
+    };
+    natureSemantics = {
+      "border.control": { light: "{neutral-a.5}", dark: "{accent-a.4}" },
+      "border.subtle": { dark: "{accent-a.2}" },
+      "content.primary": { light: "{accent.12}" },
+      "surface.input": { light: "{white-a.6}" },
+      // Not from `superb` — its tinted dark ramp compresses the low steps, so the
+      // schema's `{neutral.9}` subtle ink falls to ~3.1:1 in dark. One tone up
+      // clears the codebase's dark-legibility floor without touching the light
+      // appearance the designer personalised.
+      "content.subtle": { dark: "{neutral-dark.10}" }
+    };
+    coreSemantics = {
+      ...DARK_DEPTH,
+      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+      "border.control": { light: "{neutral.5}", dark: "{white-a.3}" },
+      "border.control-hover": { light: "{neutral.7}", dark: "{white-a.5}" },
+      "border.subtle": { light: "{black-a.3}", dark: "{white-a.1}" },
+      "content.primary": { dark: "{accent.12}" },
+      "content.secondary": { dark: "{neutral-dark.11}" }
+    };
+    glassSemantics = {
+      ...DARK_DEPTH,
+      "surface.input": { light: "{neutral.2}", dark: "{black-a.2}" },
+      "border.control": { light: "{accent-a.4}", dark: "{accent-a.3}" },
+      "border.control-hover": { light: "{black-a.9}", dark: "{white-a.8}" },
+      "border.subtle": { light: "{accent-a.3}", dark: "{accent-a.2}" },
+      "border.rim-highlight": { light: "{white-a.9}", dark: "{white-a.4}" },
+      "content.primary": { dark: "{accent-a.12}" },
+      "action.primary.default": { dark: "{accent.9}" },
+      "status.critical.content": { dark: "{error.10}" },
+      "status.critical.surface-solid": { light: "{error.9}", dark: "{error-a.10}" },
+      "status.critical.border-strong": { light: "{error.9}" },
+      "status.success.surface-solid": { light: "{success.10}" }
+    };
+    filledBorders = {
+      ...DARK_DEPTH,
+      // Dark input goes to 4, not 3: `DARK_DEPTH` just moved the card to 3, and a
+      // filled field that matches its own card is not a filled field.
+      "surface.input": { light: "{neutral.3}", dark: "{neutral-dark.4}" },
+      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
+      // `border.subtle` follows the schema (black-a.2 / white-a.2). No override.
+    };
+    retroSemantics = {
+      ...DARK_DEPTH,
+      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+      "border.control": { light: "{neutral.9}", dark: "{accent.4}" },
+      "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
+      "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
+    };
+    inkBorders = {
+      ...DARK_DEPTH,
+      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+      "border.control": { light: "{accent.10}", dark: "{accent.8}" },
+      "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
+      "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
+    };
+    hardShadows = {
+      xs: "1px 1px 0 rgba(10,13,18,0.92)",
+      sm: "2px 2px 0 rgba(10,13,18,0.92)",
+      md: "3px 3px 0 rgba(10,13,18,0.92)",
+      lg: "4px 4px 0 rgba(10,13,18,0.92)",
+      xl: "6px 6px 0 rgba(10,13,18,0.92)",
+      "2xl": "8px 8px 0 rgba(10,13,18,0.92)"
+    };
+    retroShadows = {
+      xs: "1px 1px 0 rgba(74,44,26,0.20)",
+      sm: "0 0 0 1px rgba(74,44,26,0.10), 2px 2px 0 rgba(74,44,26,0.24)",
+      md: "0 0 0 1px rgba(74,44,26,0.10), 3px 3px 0 rgba(74,44,26,0.28)",
+      lg: "0 0 0 1px rgba(74,44,26,0.10), 4px 4px 0 rgba(74,44,26,0.32)",
+      xl: "0 0 0 1px rgba(74,44,26,0.10), 6px 6px 0 rgba(74,44,26,0.36)",
+      "2xl": "0 0 0 1px rgba(74,44,26,0.10), 9px 9px 0 rgba(74,44,26,0.42)"
+    };
+    THEME_STYLE_PRESETS = [
+      {
+        id: "core-minimal",
+        label: "Core / Minimalist",
+        shortLabel: "Core",
+        description: "Quiet, precise, content-first.",
+        detail: "A dependable baseline for SaaS, dashboards, and corporate tools.",
+        accent: accent("Blue Dark"),
+        // Matches the adopted Core theme the designer iterated (dark-first).
+        preferredAppearance: "dark",
+        neutralTint: "subtle",
+        // Crisp, conventional product severities — the register a dashboard reads
+        // as "correct" rather than expressive. Deliberately the least opinionated
+        // set here: Core is the baseline the other five are variations from.
+        states: { error: "#d92d20", warning: "#dc6803", success: "#079455", info: "#1570ef" },
+        foundations: {
+          typography: typography("Inter", "Inter"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          // Selectors bumped xs → sm — from the adopted theme's radiusRoles.control.
+          radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "lg", selectors: "lg" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          // Subtle elevation — the adopted Core theme's shadow ramp. Softer than
+          // Soft (the previous Core pick); still a six-step ladder, just quieter.
+          shadows: { ...SHADOW_PRESETS[1].values },
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("standard")
+        },
+        semantics: coreSemantics
+      },
+      {
+        id: "cupertino-glass",
+        label: "Cupertino / Glass",
+        shortLabel: "Glass",
+        description: "Fluid, translucent, and spacious.",
+        detail: "Soft depth and generous geometry, using Escala\u2019s existing panel treatment.",
+        // Lived-in accent from the adopted Cupertino / Glass theme (#06aed4), not
+        // spectrum Ice (#22d3ee). Same cyan family; the darker seed is what the
+        // designer actually shipped after iterating in-app.
+        accent: "#06aed4",
+        preferredAppearance: "dark",
+        neutralTint: "tinted",
+        // Apple's own system colours (systemRed / systemOrange / systemGreen /
+        // systemBlue), verbatim. A Cupertino style borrowing Cupertino's severities
+        // is the same kind of faithfulness as the translucent panel treatment.
+        states: { error: "#ff3b30", warning: "#ff9500", success: "#34c759", info: "#007aff" },
+        foundations: {
+          typography: typography("Roboto", "Inter"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          // Selectors at `lg` (not `sm`) — matches the adopted theme's control
+          // radius so checkboxes don't sit square next to pill fields.
+          radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "4xl", selectors: "2xl" }),
+          sizes: buildSizesFromBase(4.5),
+          selector: buildSelectorsFromBase(3.5),
+          // Hairline stroke — the glass chrome the adopted theme uses.
+          stroke: { ...STROKE_STANDARD, sm: "0.5px" },
+          // Subtle (not the old hairline-penumbra glassShadows) — matches the
+          // adopted Cupertino / Glass theme after the latest iteration.
+          shadows: { ...SHADOW_PRESETS[1].values },
+          panelBackground: "translucent",
+          iconWeight: "light",
+          motion: motionPresetPatch("expressive")
+        },
+        semantics: glassSemantics,
+        accessibilityNote: "Translucent surfaces still use semantic foreground roles; verify contrast over real content."
+      },
+      {
+        id: "material-elevation",
+        label: "Material / Elevation",
+        shortLabel: "Material",
+        description: "Layered, responsive, and explicit.",
+        detail: "Maps Material-like elevation onto Escala\u2019s existing six-step shadow ramp.",
+        // Grape, not Indigo — same reason as Glass: Indigo's H 274 was 12° from
+        // Core. Grape (H 304, chroma 0.233, the most saturated hex in the spectrum)
+        // is also the closest thing here to Material 3's own purple baseline seed.
+        accent: accent("Grape"),
+        preferredAppearance: "light",
+        // M3's baseline error (#b3261e) with Material palette 800s for the rest —
+        // deeper and less neon than Glass, which is what Material's own elevation
+        // model expects to sit under.
+        states: { error: "#b3261e", warning: "#f9a825", success: "#2e7d32", info: "#1565c0" },
+        // `tinted`, not `subtle`. Material 3's whole surface model is seed-tinted
+        // paper, so this is the faithful reading — and at `subtle` its page
+        // resolved to `#fdfdff` / `#0f0f13`, within a hair of Core's `#fdfdff` /
+        // `#0e0f13`. Two of six styles on indistinguishable paper is a wasted slot.
+        neutralTint: "tinted",
+        foundations: {
+          typography: typography("Roboto", "Roboto"),
+          spacing: buildSpacingFromBase(4),
+          // Rounded (lg 16), not Pill (lg 24). M3's own shape scale puts a card at
+          // 12px and its largest container at 28px; Pill resolves this style's
+          // `container` to 36px, rounder than anything in the spec it is named
+          // after. Glass and Nature keep Pill — "generous" and "organic" are their
+          // briefs, and at the corrected role rungs that is 36px, not 72px.
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "4xl", selectors: "sm" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[3].values },
+          panelBackground: "solid",
+          iconWeight: "fill",
+          motion: motionPresetPatch("expressive")
+        },
+        // M3's filled text field: the fill carries the control so the edge can be a
+        // whisper. It is the one style whose input sits TWO steps off the page.
+        semantics: filledBorders
+      },
+      {
+        id: "nature-organic",
+        label: "Nature / Organic",
+        shortLabel: "Nature",
+        description: "Grounded, calm, and approachable.",
+        detail: "Fresh green accent, tinted paper, an editorial heading voice, and no elevation at all.",
+        // Ported verbatim from the designer's own "superb" theme — they kept the
+        // customization and asked for it under the Nature name.
+        accent: "#6bbd2b",
+        preferredAppearance: "light",
+        // error stays the system default (`superb` referenced the global `error`
+        // family); warning / success / info are the designer's own seeds.
+        states: { error: "#f04438", warning: "#ff8b00", success: "#00b662", info: "#1c8fff" },
+        // Green-grey neutral, pinned so the try-on can't swap in a link-derived one.
+        neutral: "#738863",
+        neutralTint: "tinted",
+        foundations: {
+          // Inter body over a Fraunces heading. Standard type ramp — density is the
+          // Text-scale slider's job (see the `typography()` note).
+          typography: typography("Inter", "Fraunces"),
+          spacing: buildSpacingFromBase(4),
+          // Generous boxes, moderate fields, soft selectors — Nature's documented
+          // 32 · 16 · 8 ladder on `RADIUS_STANDARD`.
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "2xl", selectors: "lg" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          // FLAT — no shadow on any surface. This is the style's signature.
+          shadows: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" },
+          // Container inset one step deeper than the system default (step 5 → 6).
+          spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+          padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+          panelBackground: "page",
+          iconWeight: "duotone",
+          motion: motionPresetPatch("calm")
+        },
+        semantics: natureSemantics
+      },
+      {
+        id: "retro-vintage",
+        label: "Retro / Vintage",
+        shortLabel: "Retro",
+        description: "Tactile, nostalgic, and structured.",
+        detail: "Monospace typography, compact rhythm, firm borders, and offset depth.",
+        // Flame (#ff4405) — matches the adopted Retro / Vintage accent byte-for-byte.
+        accent: accent("Flame"),
+        preferredAppearance: "dark",
+        // Muted press inks on aged stock: brick, mustard, moss, faded slate.
+        states: { error: "#b03a2e", warning: "#cc8b1f", success: "#5f8d4e", info: "#4a7a96" },
+        // `vivid` — the adopted theme's gray `#966554` is exactly
+        // `previewHarmony(Flame, vivid).neutral`. Store tint may read `pure` after
+        // later edits; the paper that ships with this recipe is the vivid sepia.
+        neutralTint: "vivid",
+        foundations: {
+          typography: typography("Courier Prime", "Courier Prime"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "sm", fields: "sm", selectors: "none" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: retroShadows,
+          panelBackground: "page",
+          iconWeight: "bold",
+          motion: motionPresetPatch("snappy")
+        },
+        semantics: retroSemantics
+      },
+      {
+        id: "neo-brutalism",
+        label: "Neo-Brutalism",
+        shortLabel: "Neo",
+        description: "Saturated, graphic, and direct.",
+        detail: "Heavy boundaries and hard elevation create a deliberately raw system.",
+        accent: accent("Yellow"),
+        preferredAppearance: "light",
+        neutralTint: "pure",
+        // Near-primary and maximally saturated, matching the pure neutral and the
+        // hard black offset. Brutalism does not do muted.
+        states: { error: "#e5252c", warning: "#ffb302", success: "#00c853", info: "#2962ff" },
+        foundations: {
+          typography: typography("Space Grotesk", "Space Grotesk"),
+          // 4px base (spacing stays on the 4/8 grid); the roomier feel is the
+          // card inset one step deeper instead.
+          spacing: buildSpacingFromBase(4),
+          gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+          spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+          padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
+          sizes: buildSizesFromBase(4.5),
+          selector: buildSelectorsFromBase(3.5),
+          stroke: { ...STROKE_STANDARD, sm: "2px" },
+          shadows: hardShadows,
+          panelBackground: "solid",
+          iconWeight: "bold",
+          motion: motionPresetPatch("snappy")
+        },
+        // THE deliberate exception to the soften-the-border rule: brutalism's
+        // border IS the design, so it goes the other way — the ramp's text tone,
+        // full strength, matching the hard offset it sits under. No fill step
+        // either: a flat field inside a heavy outline is the whole look.
+        semantics: {
+          ...DARK_DEPTH,
+          // Neo is the ONE style that overrides both halves of the split. Every
+          // other style softens the control boundary and leaves the decorative
+          // ladder on the schema; here the decorative ladder is the point, so all
+          // five rungs go to the ramp's text tone.
+          "border.control-hover": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+          "border.default": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+          "border.control": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+          "border.strong": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
+          "border.subtle": { light: "{neutral.11}", dark: "{neutral-dark.11}" }
+        }
+      },
+      {
+        id: "editorial-serif",
+        label: "Editorial / Serif",
+        shortLabel: "Editorial",
+        description: "Literary, paced, and ink-led.",
+        detail: "A magazine voice: serif display, quiet paper, and a wine accent that reads as print rather than product.",
+        accent: "#7f1d5a",
+        preferredAppearance: "light",
+        neutralTint: "tinted",
+        states: { error: "#9f1239", warning: "#b45309", success: "#3f6212", info: "#1e3a5f" },
+        foundations: {
+          typography: typography("Newsreader", "Playfair Display"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "sm", selectors: "sm" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[1].values },
+          panelBackground: "solid",
+          iconWeight: "light",
+          motion: motionPresetPatch("calm")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "terminal-mono",
+        label: "Terminal / Mono",
+        shortLabel: "Terminal",
+        description: "Monospace, sharp, and dark-first.",
+        detail: "A console system: one family for everything, no radius, no elevation, a matrix green that only exists on a black page.",
+        accent: "#12b981",
+        preferredAppearance: "dark",
+        neutralTint: "pure",
+        states: { error: "#f87171", warning: "#fbbf24", success: "#34d399", info: "#22d3ee" },
+        foundations: {
+          typography: typography("JetBrains Mono", "JetBrains Mono"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[0].values },
+          panelBackground: "page",
+          iconWeight: "regular",
+          motion: motionPresetPatch("snappy")
+        },
+        semantics: {
+          ...DARK_DEPTH,
+          "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+          "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+          "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
+        }
+      },
+      {
+        id: "enterprise-dense",
+        label: "Enterprise / Dense",
+        shortLabel: "Enterprise",
+        description: "Compact, tabular, and explicit.",
+        detail: "A data-dense workplace: IBM Plex, tighter fields, filled inputs, and a teal that is not Core\u2019s blue.",
+        accent: "#0f766e",
+        preferredAppearance: "light",
+        neutralTint: "subtle",
+        states: { error: "#b91c1c", warning: "#c2410c", success: "#047857", info: "#1d4ed8" },
+        foundations: {
+          typography: typography("IBM Plex Sans", "IBM Plex Sans"),
+          // 4px base, not 3.5 — a 3.5 base put every step off the pixel grid
+          // (1.75 · 5.25 · 8.75px). Density comes from a tighter card inset.
+          spacing: buildSpacingFromBase(4),
+          gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+          spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "4" },
+          padding: { top: "16px", right: "16px", bottom: "16px", left: "16px" },
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "lg", fields: "sm", selectors: "sm" }),
+          sizes: buildSizesFromBase(3.5),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[1].values },
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("snappy")
+        },
+        semantics: filledBorders
+      },
+      {
+        id: "playful-candy",
+        label: "Playful / Candy",
+        shortLabel: "Playful",
+        description: "Rounded, saturated, and light-hearted.",
+        detail: "A consumer voice: generous pills, vivid paper, and a magenta that the other eleven hues leave room for.",
+        accent: "#d946ef",
+        preferredAppearance: "light",
+        neutralTint: "vivid",
+        states: { error: "#e11d48", warning: "#f59e0b", success: "#22c55e", info: "#6366f1" },
+        foundations: {
+          typography: typography("Plus Jakarta Sans", "Plus Jakarta Sans"),
+          spacing: buildSpacingFromBase(4),
+          gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
+          spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+          padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "4xl", selectors: "2xl" }),
+          sizes: buildSizesFromBase(4.5),
+          selector: buildSelectorsFromBase(3.5),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[2].values },
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("playful")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "luxury-noir",
+        label: "Luxury / Noir",
+        shortLabel: "Luxury",
+        description: "Dark, gold, and restrained.",
+        detail: "A night-time brand: serif display on near-black paper, a champagne accent, and elevation instead of a loud edge.",
+        accent: "#c56b23",
+        preferredAppearance: "dark",
+        neutralTint: "subtle",
+        states: { error: "#9f1239", warning: "#ca8a04", success: "#4d7c0f", info: "#1e3a5f" },
+        foundations: {
+          typography: typography("Inter", "Cormorant Garamond"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "lg", selectors: "sm" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[3].values },
+          panelBackground: "solid",
+          iconWeight: "thin",
+          motion: motionPresetPatch("calm")
+        },
+        semantics: {
+          ...DARK_DEPTH,
+          "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.3}" },
+          "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+          "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
+        }
+      },
+      {
+        id: "swiss-grid",
+        label: "Swiss / Grid",
+        shortLabel: "Swiss",
+        description: "Orthogonal, red, and unadorned.",
+        detail: "International Typographic Style: Inter, square corners, no shadow, a poster red that is the only colour on the page.",
+        accent: "#d2004e",
+        preferredAppearance: "light",
+        neutralTint: "pure",
+        states: { error: "#e11d48", warning: "#ca8a04", success: "#15803d", info: "#1d4ed8" },
+        foundations: {
+          typography: typography("Inter", "Inter"),
+          spacing: buildSpacingFromBase(4),
+          radius: { ...RADIUS_STANDARD },
+          radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          stroke: { ...STROKE_STANDARD },
+          shadows: { ...SHADOW_PRESETS[0].values },
+          panelBackground: "page",
+          iconWeight: "light",
+          motion: motionPresetPatch("standard")
+        },
+        semantics: {
+          ...DARK_DEPTH,
+          "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
+          "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+          "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
+        }
+      },
+      // ── Moods: six styles after DaisyUI v5's built-in themes (MIT) ──────────
+      // What the twelve above never did: a PAGE with a hue of its own. Colour
+      // and geometry come from `themeMoods` (DaisyUI's values to the digit, mapped
+      // onto Escala's inputs); every ramp and ink is still solved here.
+      {
+        id: "abyss-neon",
+        label: "Abyss / Neon",
+        shortLabel: "Abyss",
+        description: "Deep, electric, and nocturnal.",
+        detail: "A deep-sea teal page under a neon lime accent, pill selectors beside sharp fields. After DaisyUI\u2019s Abyss.",
+        ...moodColours("abyss"),
+        foundations: {
+          typography: typography("Sora", "Sora"),
+          spacing: buildSpacingFromBase(4),
+          ...moodShape("abyss"),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          panelBackground: "solid",
+          iconWeight: "bold",
+          motion: motionPresetPatch("expressive")
+        },
+        // A vivid teal dark ramp compresses its low steps even more than the
+        // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
+        // ΔL 0.070 against light's 0.072. One more step restores it.
+        semantics: { ...softBorders, "surface.layer-2": { dark: "{neutral-dark.5}" } }
+      },
+      {
+        id: "synthwave-night",
+        label: "Synthwave / Night",
+        shortLabel: "Synthwave",
+        description: "Neon, nocturnal, and loud.",
+        detail: "An ink-indigo page with a hot-pink accent and arcade severities. After DaisyUI\u2019s Synthwave.",
+        ...moodColours("synthwave"),
+        foundations: {
+          typography: typography("Outfit", "Outfit"),
+          spacing: buildSpacingFromBase(4),
+          ...moodShape("synthwave"),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          panelBackground: "solid",
+          iconWeight: "duotone",
+          motion: motionPresetPatch("expressive")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "cupcake-pastel",
+        label: "Cupcake / Pastel",
+        shortLabel: "Cupcake",
+        description: "Soft, sweet, and friendly.",
+        detail: "Cream paper, a mint accent, pill fields and a 2px edge. After DaisyUI\u2019s Cupcake.",
+        ...moodColours("cupcake"),
+        foundations: {
+          typography: typography("Figtree", "Figtree"),
+          spacing: buildSpacingFromBase(4),
+          spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
+          padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+          ...moodShape("cupcake"),
+          sizes: buildSizesFromBase(4.5),
+          selector: buildSelectorsFromBase(3.5),
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("playful")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "arctic-frost",
+        label: "Arctic / Frost",
+        shortLabel: "Arctic",
+        description: "Cool, muted, and calm.",
+        detail: "Frosted blue-grey paper, a slate-blue accent and quiet severities. After DaisyUI\u2019s Nord.",
+        ...moodColours("nord"),
+        foundations: {
+          typography: typography("Manrope", "Manrope"),
+          spacing: buildSpacingFromBase(4),
+          ...moodShape("nord"),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          panelBackground: "solid",
+          iconWeight: "light",
+          motion: motionPresetPatch("standard")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "sunset-dusk",
+        label: "Sunset / Dusk",
+        shortLabel: "Sunset",
+        description: "Warm light on a cool night.",
+        detail: "A blue-slate page under a coral accent, with pastel severities. After DaisyUI\u2019s Sunset.",
+        ...moodColours("sunset"),
+        foundations: {
+          typography: typography("DM Sans", "Fraunces"),
+          spacing: buildSpacingFromBase(4),
+          ...moodShape("sunset"),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("expressive")
+        },
+        semantics: softBorders
+      },
+      {
+        id: "valentine-blush",
+        label: "Blush / Valentine",
+        shortLabel: "Blush",
+        description: "Romantic, warm, and rounded.",
+        detail: "Rose-tinted paper, a hot-pink accent and pill fields. After DaisyUI\u2019s Valentine.",
+        ...moodColours("valentine"),
+        foundations: {
+          typography: typography("Plus Jakarta Sans", "Playfair Display"),
+          spacing: buildSpacingFromBase(4),
+          ...moodShape("valentine"),
+          sizes: buildSizesFromBase(4),
+          selector: buildSelectorsFromBase(3),
+          panelBackground: "solid",
+          iconWeight: "regular",
+          motion: motionPresetPatch("playful")
+        },
+        semantics: softBorders
+      }
+    ];
   }
 });
 
@@ -1952,1752 +4709,6 @@ var init_componentCatalogue = __esm({
   }
 });
 
-// src/lib/typographyStandard.ts
-function letterSpacingFor(key2, size) {
-  const ratio = LETTER_SPACING_RATIO[key2] ?? 0;
-  const px = parseFloat(size ?? "") || 0;
-  const v = Math.round(px * ratio * 10) / 10;
-  return `${v === 0 ? 0 : v}px`;
-}
-function letterSpacingsFor(sizes) {
-  const out = {};
-  for (const [key2, size] of Object.entries(sizes ?? {})) out[key2] = letterSpacingFor(key2, size);
-  return out;
-}
-function buildTypeScale(factor) {
-  const sizes = {};
-  const lineHeights = {};
-  for (const key2 of TYPE_SCALE_KEYS) {
-    const size = parseFloat(FONT_SIZE_STANDARD[key2]) || 0;
-    const lh = parseFloat(LINE_HEIGHT_STANDARD[key2]) || 0;
-    sizes[key2] = `${Math.round(size * factor)}px`;
-    lineHeights[key2] = `${Math.round(lh * factor)}px`;
-  }
-  return { sizes, lineHeights };
-}
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
-var init_typographyStandard = __esm({
-  "src/lib/typographyStandard.ts"() {
-    TYPE_SCALE_KEYS = [
-      "text-xs",
-      "text-sm",
-      "text-md",
-      "text-lg",
-      "text-xl",
-      "display-xs",
-      "display-sm",
-      "display-md",
-      "display-lg",
-      "display-xl",
-      "display-2xl"
-    ];
-    FONT_SIZE_STANDARD = {
-      "text-xs": "12px",
-      "text-sm": "14px",
-      "text-md": "16px",
-      "text-lg": "18px",
-      "text-xl": "20px",
-      "display-xs": "24px",
-      "display-sm": "30px",
-      "display-md": "36px",
-      "display-lg": "48px",
-      "display-xl": "60px",
-      "display-2xl": "72px"
-    };
-    LINE_HEIGHT_STANDARD = {
-      "text-xs": "18px",
-      "text-sm": "20px",
-      "text-md": "24px",
-      "text-lg": "28px",
-      "text-xl": "30px",
-      "display-xs": "32px",
-      "display-sm": "38px",
-      "display-md": "44px",
-      "display-lg": "60px",
-      "display-xl": "72px",
-      "display-2xl": "90px"
-    };
-    LETTER_SPACING_RATIO = {
-      "text-xs": 0,
-      "text-sm": 0,
-      "text-md": 0,
-      "text-lg": 0,
-      "text-xl": -0.01,
-      "display-xs": -0.015,
-      "display-sm": -0.02,
-      "display-md": -0.02,
-      "display-lg": -0.02,
-      "display-xl": -0.02,
-      "display-2xl": -0.02
-    };
-    TYPE_SCALE_MODES = [
-      { key: "compact", label: "Compact", factor: 0.875 },
-      { key: "cozy", label: "Cozy", factor: 0.9375 },
-      { key: "default", label: "Default", factor: 1 },
-      { key: "comfortable", label: "Comfortable", factor: 1.0625 },
-      { key: "spacious", label: "Spacious", factor: 1.125 }
-    ];
-    FONT_WEIGHT_BASES = [
-      { key: "regular", label: "Regular", weight: 400 },
-      { key: "medium", label: "Medium", weight: 500 },
-      { key: "semibold", label: "Semibold", weight: 600 },
-      { key: "bold", label: "Bold", weight: 700 }
-    ];
-    FONT_WEIGHT_STANDARD = Object.fromEntries(
-      FONT_WEIGHT_BASES.map((b) => [b.key, b.weight])
-    );
-    FONT_WEIGHT_ROWS = FONT_WEIGHT_BASES.flatMap((b) => [
-      { name: b.key, base: b.key, italic: false },
-      { name: `${b.key}-italic`, base: b.key, italic: true }
-    ]);
-    FONT_FAMILY_ROWS = [
-      // CSS emits `--font-family-heading` (and type roles alias that var). The
-      // standard used to declare `font-family-display` — same slot, two names.
-      // The export name wins; `role: 'display'` is the type-role family slot.
-      { key: "font-family-heading", role: "display", label: "font-family-heading" },
-      { key: "font-family-body", role: "body", label: "font-family-body" }
-    ];
-    TYPO_GROUP_COUNT = FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3;
-    TYPO_CATEGORIES = [
-      { key: "all", label: "All", count: TYPO_GROUP_COUNT },
-      { key: "family", label: "Font family", count: FONT_FAMILY_ROWS.length },
-      { key: "weight", label: "Font weight", count: FONT_WEIGHT_ROWS.length },
-      { key: "size", label: "Font size", count: TYPE_SCALE_KEYS.length },
-      { key: "lineHeight", label: "Line height", count: TYPE_SCALE_KEYS.length },
-      // Derived from each size (letterSpacingFor) — listed so the collection
-      // shows every primitive that ships, read-only in the table.
-      { key: "letterSpacing", label: "Letter spacing", count: TYPE_SCALE_KEYS.length }
-    ];
-  }
-});
-
-// src/lib/typeRoles.ts
-function isAlias(v) {
-  if (!v || typeof v !== "object") return false;
-  const a2 = v;
-  return (a2.family === "display" || a2.family === "body") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
-}
-function withLockedFamily(role, alias) {
-  if (role.group !== "heading") return alias;
-  return alias.family === "body" ? alias : { ...alias, family: "body" };
-}
-function isModes(v) {
-  if (!v || typeof v !== "object") return false;
-  const m = v;
-  return isAlias(m.desktop) && isAlias(m.mobile);
-}
-function mergeTypeRoles(stored) {
-  const bag = stored ?? {};
-  const out = {};
-  for (const role of TYPE_ROLES) {
-    const hit = bag[role.key];
-    if (isModes(hit)) {
-      const tablet = isAlias(hit.tablet) ? hit.tablet : aliasesEqual(hit.desktop, role.desktop) ? role.tablet : hit.desktop;
-      out[role.key] = {
-        desktop: withLockedFamily(role, { ...hit.desktop }),
-        tablet: withLockedFamily(role, { ...tablet }),
-        mobile: withLockedFamily(role, { ...hit.mobile })
-      };
-    } else {
-      out[role.key] = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } };
-    }
-  }
-  return out;
-}
-function aliasesEqual(a2, b) {
-  return a2.family === b.family && a2.size === b.size && a2.weight === b.weight;
-}
-function migrateHeadingFamilyToBody(stored) {
-  return mergeTypeRoles(stored);
-}
-function stepLargeTypeOnMobile(stored) {
-  const map = mergeTypeRoles(stored);
-  for (const role of TYPE_ROLES) {
-    const legacy = LEGACY_LARGE_MOBILE[role.key];
-    if (!legacy) continue;
-    const hit = map[role.key];
-    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
-      map[role.key] = { ...hit, mobile: { ...role.mobile } };
-    }
-  }
-  return map;
-}
-function placeholderFollowsField(stored) {
-  const map = mergeTypeRoles(stored);
-  const role = TYPE_ROLES.find((r) => r.key === "placeholder");
-  const hit = map.placeholder;
-  if (!role || !hit) return map;
-  if (aliasesEqual(hit.desktop, LEGACY_PLACEHOLDER.desktop) && aliasesEqual(hit.tablet, LEGACY_PLACEHOLDER.tablet) && aliasesEqual(hit.mobile, LEGACY_PLACEHOLDER.mobile)) {
-    map.placeholder = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } };
-  }
-  return map;
-}
-function stepHeadingsPerCut(stored) {
-  const map = mergeTypeRoles(stored);
-  for (const role of TYPE_ROLES) {
-    const legacy = LEGACY_HEADING_CUTS[role.key];
-    if (!legacy) continue;
-    const hit = map[role.key];
-    if (!aliasesEqual(hit.desktop, role.desktop)) continue;
-    map[role.key] = {
-      ...hit,
-      tablet: aliasesEqual(hit.tablet, legacy.tablet) ? { ...role.tablet } : hit.tablet,
-      mobile: aliasesEqual(hit.mobile, legacy.mobile) ? { ...role.mobile } : hit.mobile
-    };
-  }
-  return map;
-}
-function promoteReadingTypeIdentity(stored) {
-  const map = mergeTypeRoles(stored);
-  for (const role of TYPE_ROLES) {
-    if (role.group !== "body" && role.group !== "control") continue;
-    const legacy = LEGACY_READING_MOBILE[role.key];
-    if (!legacy) continue;
-    const hit = map[role.key];
-    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
-      map[role.key] = { ...hit, mobile: { ...hit.desktop } };
-    }
-  }
-  return map;
-}
-var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_PLACEHOLDER, LEGACY_READING_MOBILE;
-var init_typeRoles = __esm({
-  "src/lib/typeRoles.ts"() {
-    init_typographyStandard();
-    a = (family, size, weight) => ({ family, size, weight });
-    TYPE_ROLES = [
-      {
-        key: "display",
-        label: "Display",
-        description: "Hero and page titles.",
-        group: "display",
-        desktop: a("display", "display-xl", "bold"),
-        tablet: a("display", "display-lg", "bold"),
-        mobile: a("display", "display-md", "bold")
-      },
-      {
-        key: "heading-xl",
-        label: "Heading XL",
-        description: "Largest section title.",
-        group: "heading",
-        desktop: a("body", "display-lg", "semibold"),
-        tablet: a("body", "display-md", "semibold"),
-        mobile: a("body", "display-sm", "semibold")
-      },
-      {
-        key: "heading-lg",
-        label: "Heading LG",
-        description: "Primary section heading.",
-        group: "heading",
-        desktop: a("body", "display-md", "semibold"),
-        tablet: a("body", "display-sm", "semibold"),
-        mobile: a("body", "display-xs", "semibold")
-      },
-      {
-        key: "heading-md",
-        label: "Heading MD",
-        description: "Card and panel titles.",
-        group: "heading",
-        desktop: a("body", "display-sm", "semibold"),
-        tablet: a("body", "display-xs", "semibold"),
-        mobile: a("body", "text-xl", "semibold")
-      },
-      {
-        key: "heading-sm",
-        label: "Heading SM",
-        description: "Nested headings and list titles.",
-        group: "heading",
-        desktop: a("body", "display-xs", "semibold"),
-        tablet: a("body", "text-xl", "semibold"),
-        mobile: a("body", "text-lg", "semibold")
-      },
-      {
-        key: "heading-xs",
-        label: "Heading XS",
-        description: "Overline-scale titles still read as headings.",
-        group: "heading",
-        desktop: a("body", "text-xl", "semibold"),
-        tablet: a("body", "text-lg", "semibold"),
-        mobile: a("body", "text-md", "semibold")
-      },
-      {
-        key: "heading-2xs",
-        label: "Heading 2XS",
-        description: "Smallest heading (h6). Sits one rung above body.",
-        group: "heading",
-        // Floors at text-md, the body size: a heading never reads smaller than
-        // the copy under it. On mobile that makes it equal to Heading XS — the
-        // ladder has six rungs from 36 down to 16 and there are seven headings.
-        // Weight (semibold over regular body) still separates it from the text.
-        desktop: a("body", "text-lg", "semibold"),
-        tablet: a("body", "text-md", "semibold"),
-        mobile: a("body", "text-md", "semibold")
-      },
-      {
-        key: "body-lg",
-        label: "Body LG",
-        description: "Lead paragraphs.",
-        group: "body",
-        desktop: a("body", "text-lg", "regular"),
-        tablet: a("body", "text-lg", "regular"),
-        mobile: a("body", "text-lg", "regular")
-      },
-      {
-        key: "body-md",
-        label: "Body MD",
-        description: "Default reading size.",
-        group: "body",
-        desktop: a("body", "text-md", "regular"),
-        tablet: a("body", "text-md", "regular"),
-        mobile: a("body", "text-md", "regular")
-      },
-      {
-        key: "body-sm",
-        label: "Body SM",
-        description: "Dense supporting copy.",
-        group: "body",
-        desktop: a("body", "text-sm", "regular"),
-        tablet: a("body", "text-sm", "regular"),
-        mobile: a("body", "text-sm", "regular")
-      },
-      {
-        key: "label",
-        label: "Label",
-        description: "Form labels and field names.",
-        group: "control",
-        desktop: a("body", "text-sm", "medium"),
-        tablet: a("body", "text-sm", "medium"),
-        mobile: a("body", "text-sm", "medium")
-      },
-      {
-        key: "placeholder",
-        label: "Placeholder",
-        description: "Input placeholder and empty-field hint.",
-        group: "control",
-        // The size of the text typed INTO a field (shadcn Input: `md:text-sm`), so
-        // placeholder, value, label and button sit on one tier — on every cut,
-        // like every other body/control role.
-        desktop: a("body", "text-sm", "regular"),
-        tablet: a("body", "text-sm", "regular"),
-        mobile: a("body", "text-sm", "regular")
-      },
-      {
-        key: "caption",
-        label: "Caption",
-        description: "Image captions and metadata.",
-        group: "control",
-        desktop: a("body", "text-xs", "regular"),
-        tablet: a("body", "text-xs", "regular"),
-        mobile: a("body", "text-xs", "regular")
-      },
-      {
-        key: "button",
-        label: "Button",
-        description: "Control labels \u2014 buttons, tabs, chips.",
-        group: "control",
-        // `text-sm`, matching `label` — a button label and a field label are the
-        // same TIER of text; the button is just heavier. It was `text-md`, a full
-        // step above `label` and above body copy, which made the button the
-        // LARGEST text on screen: measured 17px against 15px body on the three
-        // styles that use the `comfortable` type scale (×1.0625), because the scale
-        // multiplies every step and `text-md` is the body size. Now 12–15px across
-        // the six styles, under the 16px ceiling a control label should respect.
-        //
-        // Capping the resolved px instead was considered and rejected: the CSS
-        // export emits `var(--font-size-text-md)` for this role, so a numeric clamp
-        // would show 16px in the preview and ship 17px, which is exactly the kind
-        // of preview/export drift this file's aliases exist to prevent. Moving the
-        // ALIAS keeps one value in both. Body and control stay the same size on
-        // mobile — only display/heading step.
-        desktop: a("body", "text-sm", "semibold"),
-        tablet: a("body", "text-sm", "semibold"),
-        mobile: a("body", "text-sm", "semibold")
-      },
-      {
-        key: "helper",
-        label: "Helper",
-        description: "Field help, validation, footnotes.",
-        group: "control",
-        desktop: a("body", "text-xs", "regular"),
-        tablet: a("body", "text-xs", "regular"),
-        mobile: a("body", "text-xs", "regular")
-      }
-    ];
-    TYPE_ROLE_BY_KEY = Object.fromEntries(
-      TYPE_ROLES.map((r) => [r.key, r])
-    );
-    WEIGHT_KEYS = new Set(FONT_WEIGHT_BASES.map((b) => b.key));
-    SIZE_KEYS = new Set(TYPE_SCALE_KEYS);
-    LEGACY_LARGE_MOBILE = {
-      display: a("display", "display-lg", "bold"),
-      "heading-xl": a("display", "display-md", "semibold")
-    };
-    LEGACY_HEADING_CUTS = {
-      "heading-lg": { tablet: a("body", "display-md", "semibold"), mobile: a("body", "display-sm", "semibold") },
-      "heading-md": { tablet: a("body", "display-sm", "semibold"), mobile: a("body", "display-xs", "semibold") },
-      "heading-sm": { tablet: a("body", "display-xs", "semibold"), mobile: a("body", "text-xl", "semibold") },
-      "heading-xs": { tablet: a("body", "text-xl", "semibold"), mobile: a("body", "text-lg", "semibold") }
-    };
-    LEGACY_PLACEHOLDER = {
-      desktop: a("body", "text-md", "regular"),
-      tablet: a("body", "text-md", "regular"),
-      mobile: a("body", "text-md", "regular")
-    };
-    LEGACY_READING_MOBILE = {
-      "body-lg": a("body", "text-md", "regular"),
-      "body-md": a("body", "text-sm", "regular"),
-      "body-sm": a("body", "text-xs", "regular"),
-      label: a("body", "text-xs", "medium"),
-      placeholder: a("body", "text-sm", "regular")
-    };
-  }
-});
-
-// src/lib/dimensionCore.ts
-function parseDimension(value) {
-  if (typeof value === "number") return Number.isFinite(value) ? normalizeDimension(value) : null;
-  if (value == null) return null;
-  const m = DIMENSION_RE.exec(String(value));
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isFinite(n) ? normalizeDimension(n) : null;
-}
-function dimensionKey(n) {
-  return String(normalizeDimension(n)).replace(".", "_");
-}
-function dimensionFromKey(key2) {
-  return Number(key2.replace("_", "."));
-}
-var DIMENSION_RE, normalizeDimension;
-var init_dimensionCore = __esm({
-  "src/lib/dimensionCore.ts"() {
-    DIMENSION_RE = /^\s*(-?(?:\d+\.?\d*|\.\d+))\s*(px)?\s*$/i;
-    normalizeDimension = (n) => Math.round(n * 1e3) / 1e3;
-  }
-});
-
-// src/lib/layoutTokens.ts
-function roleDimensionPx(value, signed = false) {
-  if (typeof value !== "string" || !value.startsWith(ROLE_DIMENSION_PREFIX)) return null;
-  const key2 = value.slice(ROLE_DIMENSION_PREFIX.length);
-  const n = dimensionFromKey(key2);
-  return Number.isFinite(n) && (signed || n >= 0) && dimensionKey(n) === key2 ? n : null;
-}
-function dimensionRoleValue(px) {
-  return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}`;
-}
-function isSpacingResponsiveRef(value) {
-  return typeof value === "string" && value in SPACING_RESPONSIVE;
-}
-function spacingRefStep(value, viewport = "desktop") {
-  return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value;
-}
-function spacingRolesAtViewport(roles, viewport) {
-  const merged = withInsetSides(roles);
-  return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]));
-}
-function scaleRadiusFromLg(lg, current) {
-  const clamp = (n) => `${Math.max(0, Math.round(n))}px`;
-  const next = { ...current, none: "0px", full: "9999px" };
-  for (const step of RADIUS_WORKING_STEPS) next[step] = clamp(lg * RADIUS_SCALE_RATIOS[step]);
-  return next;
-}
-function radiusPreset(label, description, lg) {
-  return { label, description, values: scaleRadiusFromLg(lg) };
-}
-function completeRadiusScale(current) {
-  const parsed = parseFloat(current?.lg ?? "");
-  const lg = Number.isFinite(parsed) && parsed > 0 ? parsed : RADIUS_DEFAULT_LG;
-  const graded = scaleRadiusFromLg(lg);
-  const out = { ...graded };
-  if (!current) return out;
-  for (const step of RADIUS_WORKING_STEPS) {
-    const raw = current[step];
-    const n = parseFloat(raw ?? "");
-    if (Number.isFinite(n) && n > 0) out[step] = raw;
-  }
-  out.none = current.none ?? "0px";
-  out.full = current.full ?? "9999px";
-  return out;
-}
-function buildSpacingFromBase(base) {
-  const result = {};
-  for (const step of SPACING_STEPS) {
-    result[step] = `${Number(step.replace("_", ".")) * base}px`;
-  }
-  return result;
-}
-function insetSurfacePadding(px) {
-  return { top: px, right: px, bottom: px, left: px };
-}
-function clampFieldBase(base) {
-  return Math.min(BASE_UNIT_RANGE.max, Math.max(FIELD_BASE_MIN, base));
-}
-function buildSizesFromBase(base) {
-  const b = clampFieldBase(base);
-  const out = {};
-  for (const step of SIZE_STEPS) out[step] = `${Math.round(b * FIELD_MULTIPLIERS[step])}px`;
-  return out;
-}
-function buildSelectorsFromBase(base) {
-  const out = {};
-  for (const step of SELECTOR_STEPS) out[step] = `${Math.round(base * SELECTOR_MULTIPLIERS[step])}px`;
-  return out;
-}
-function inferBaseFromStep(map, multipliers, steps, anchorStep) {
-  if (!map) return null;
-  const anchor = parseFloat(map[anchorStep] ?? "");
-  if (!Number.isFinite(anchor)) return null;
-  const base = anchor / multipliers[anchorStep];
-  if (!(base > 0)) return null;
-  for (const step of steps) {
-    if (map[step] !== `${Math.round(base * multipliers[step])}px`) return null;
-  }
-  return base;
-}
-function breakpointKey(step) {
-  return `breakpoint-${step}`;
-}
-function extractBreakpoints(grid) {
-  const out = {};
-  for (const step of BREAKPOINT_STEPS) {
-    out[step] = grid?.[breakpointKey(step)] || BREAKPOINT_STANDARD[step];
-  }
-  return out;
-}
-function resolveGridStyles(frame, spacing, breakpoints) {
-  const merged = mergeGridFrame(frame);
-  const px = (v) => {
-    if (!v) return 0;
-    const pinned = roleDimensionPx(v);
-    if (pinned !== null) return pinned;
-    return parseFloat(spacing[v] || SPACING_STANDARD[v] || "0") || 0;
-  };
-  const bp = (v) => roleDimensionPx(v) ?? (parseFloat(breakpoints[v] || BREAKPOINT_STANDARD[v] || "0") || 0);
-  return GRID_STYLES.map((def) => {
-    const base = merged[def.viewport];
-    const columns = Math.max(1, parseInt(base.columns, 10) || 12);
-    const gutter = px(def.recipe?.gutter ?? base.gutter);
-    const margin = px(def.recipe?.margin ?? base.margin);
-    const sidebar = def.sidebar ? roleDimensionPx(def.sidebar) ?? 0 : 0;
-    const container = merged.desktop.container;
-    const width = def.width === "container" ? (container !== "none" ? bp(container) : 0) || bp("xl") : bp(def.width);
-    const column = Math.max(1, Math.round((width - sidebar - 2 * margin - (columns - 1) * gutter) / columns * 100) / 100);
-    return {
-      key: def.key,
-      label: def.label,
-      description: def.description,
-      viewport: def.viewport,
-      columns,
-      column,
-      gutter,
-      margin,
-      width,
-      ...sidebar ? { sidebar } : {}
-    };
-  });
-}
-function standardGridFrameFor(spacing) {
-  const out = {};
-  for (const vp of GRID_VIEWPORTS) {
-    const alias = GRID_FRAME_STANDARD[vp];
-    const keep = (step) => {
-      const want = parseFloat(SPACING_STANDARD[step]);
-      return parseFloat(spacing[step]) === want ? step : dimensionRoleValue(want);
-    };
-    out[vp] = { ...alias, gutter: keep(alias.gutter), margin: keep(alias.margin) };
-  }
-  return out;
-}
-function restandardGrid(slot, spacing) {
-  if (!slot || typeof slot !== "object") return;
-  if (slot.grid && typeof slot.grid === "object" && slot.grid["breakpoint-2xl"] === "1536px") {
-    slot.grid = { ...slot.grid, "breakpoint-2xl": BREAKPOINT_STANDARD["2xl"] };
-  }
-  if (!slot.gridFrame || typeof slot.gridFrame !== "object") return;
-  const same = (a2, b) => !!a2 && a2.columns === b.columns && a2.gutter === b.gutter && a2.margin === b.margin && a2.container === b.container;
-  const next = standardGridFrameFor(spacing ?? SPACING_STANDARD);
-  const stored = slot.gridFrame;
-  const frame = mergeGridFrame(stored);
-  for (const vp of GRID_VIEWPORTS) {
-    if (same(stored[vp], GRID_FRAME_LEGACY_STANDARD[vp])) frame[vp] = next[vp];
-  }
-  slot.gridFrame = frame;
-  if (slot.grid && typeof slot.grid === "object" && spacing) {
-    slot.grid = applyDesktopFrameToGrid(slot.grid, frame, spacing);
-  }
-}
-function mergeGridFrame(stored) {
-  const one = (hit, fallback) => {
-    const columns = hit?.columns && GRID_COLUMN_STEPS.includes(hit.columns) ? hit.columns : fallback.columns;
-    const gutter = hit?.gutter && (SPACING_STEPS.includes(hit.gutter) || roleDimensionPx(hit.gutter) !== null) ? hit.gutter : fallback.gutter;
-    const margin = hit?.margin && (SPACING_STEPS.includes(hit.margin) || roleDimensionPx(hit.margin) !== null) ? hit.margin : fallback.margin;
-    const container = hit?.container && (GRID_CONTAINER_STEPS.includes(hit.container) || roleDimensionPx(hit.container) !== null) ? hit.container : fallback.container;
-    return { columns, gutter, margin, container };
-  };
-  return {
-    desktop: one(stored?.desktop, GRID_FRAME_STANDARD.desktop),
-    tablet: one(stored?.tablet, GRID_FRAME_STANDARD.tablet),
-    mobile: one(stored?.mobile, GRID_FRAME_STANDARD.mobile)
-  };
-}
-function resolveGridFrame(viewport, frame, spacing, breakpoints) {
-  const alias = mergeGridFrame(frame)[viewport];
-  const pinned = (v) => {
-    const n = roleDimensionPx(v);
-    return n === null ? null : `${n}px`;
-  };
-  const container = alias.container === "none" ? "none" : pinned(alias.container) ?? breakpoints[alias.container] ?? BREAKPOINT_STANDARD[alias.container] ?? "none";
-  return {
-    columns: Math.max(1, parseInt(alias.columns, 10) || 12),
-    gutter: pinned(alias.gutter) ?? (spacing[alias.gutter] || SPACING_STANDARD[alias.gutter] || "24px"),
-    margin: pinned(alias.margin) ?? (spacing[alias.margin] || SPACING_STANDARD[alias.margin] || "32px"),
-    container
-  };
-}
-function buildGridStandard(spacing = SPACING_STANDARD, breakpoints = BREAKPOINT_STANDARD, frame = GRID_FRAME_STANDARD) {
-  const desktop = resolveGridFrame("desktop", frame, spacing, breakpoints);
-  const out = {
-    columns: String(desktop.columns),
-    gutter: desktop.gutter,
-    margin: desktop.margin,
-    container: desktop.container
-  };
-  for (const step of BREAKPOINT_STEPS) {
-    out[breakpointKey(step)] = breakpoints[step] || BREAKPOINT_STANDARD[step];
-  }
-  return out;
-}
-function applyDesktopFrameToGrid(grid, frame, spacing) {
-  const desktop = resolveGridFrame("desktop", frame, spacing, extractBreakpoints(grid));
-  return {
-    ...grid,
-    columns: String(desktop.columns),
-    gutter: desktop.gutter,
-    margin: desktop.margin,
-    container: desktop.container
-  };
-}
-function applyRadiusGroup(group, roles, step) {
-  const next = mergeLayoutRoles("radius", roles);
-  for (const role of group.roles) next[role] = step;
-  return next;
-}
-function radiusRolesFromGroups(picks) {
-  let roles = defaultLayoutRoles("radius");
-  for (const group of RADIUS_GROUPS) {
-    const step = picks[group.key];
-    if (step) roles = applyRadiusGroup(group, roles, step);
-  }
-  return roles;
-}
-function radiusRolesForPreset(label, roles) {
-  const preset = RADIUS_ROLE_PRESETS.find((p2) => p2.label === label);
-  if (!preset) return null;
-  let next = mergeLayoutRoles("radius", roles);
-  for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key]);
-  return next;
-}
-function radiusPresetPatch(label, roles) {
-  const radiusRoles = radiusRolesForPreset(label, roles);
-  if (!radiusRoles) return null;
-  return { radius: { ...RADIUS_STANDARD }, radiusRoles, radiusRoleViewports: {} };
-}
-function radiusPresetPx(preset) {
-  const px = (step) => parseFloat(RADIUS_STANDARD[step] ?? "0") || 0;
-  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.selectors)];
-}
-function isGradedRadiusRamp(radius) {
-  const lg = parseFloat(radius?.lg ?? "");
-  if (!radius || !Number.isFinite(lg) || lg <= 0) return false;
-  const graded = scaleRadiusFromLg(lg);
-  return LEGACY_RADIUS_WORKING_STEPS.every((step) => radius[step] === graded[step]);
-}
-function renameRadiusV77(slot, inheritedRadius) {
-  if (!slot || typeof slot !== "object") return;
-  const own = slot.radius && typeof slot.radius === "object" ? slot.radius : void 0;
-  const old = own ?? inheritedRadius;
-  if (own) {
-    const px = (k) => parseFloat(own[k] ?? "");
-    const next = { none: own.none ?? "0px", full: own.full ?? "9999px" };
-    for (const [from, to] of Object.entries(RADIUS_V77_RENAME)) {
-      if (from === "none" || from === "full" || own[from] === void 0) continue;
-      next[to] = own[from];
-    }
-    if (Number.isFinite(px("xs"))) next.xs = `${Math.round(px("xs") / 2)}px`;
-    if (Number.isFinite(px("xs")) && Number.isFinite(px("sm"))) next.md = `${Math.round((px("xs") + px("sm")) / 2)}px`;
-    slot.radius = next;
-  }
-  if (slot.radiusRoles && typeof slot.radiusRoles === "object") {
-    const roles = {};
-    for (const [role, step] of Object.entries(slot.radiusRoles)) {
-      if (typeof step !== "string") continue;
-      if (roleDimensionPx(step) !== null) roles[role] = step;
-      else if (RADIUS_V77_RENAME[step]) roles[role] = RADIUS_V77_RENAME[step];
-      else {
-        const n = parseFloat(old?.[step] ?? "");
-        roles[role] = Number.isFinite(n) ? dimensionRoleValue(n) : step;
-      }
-    }
-    slot.radiusRoles = roles;
-  }
-}
-function radiusRolesAreLegacyDefault(roles) {
-  if (!roles) return true;
-  return Object.entries(LEGACY_RADIUS_ROLE_RUNGS).every(([key2, rung]) => roles[key2] === void 0 || roles[key2] === rung);
-}
-function insetSideKey(role, side) {
-  return `${role}-${side}`;
-}
-function withInsetSides(roles) {
-  const merged = mergeLayoutRoles("spacing", roles);
-  const out = { ...merged };
-  for (const { key: key2, role } of INSET_SIDE_KEYS) out[key2] = merged[key2] ?? merged[role];
-  return out;
-}
-function matchSpacingMode(sizes, spacingRoles, stroke) {
-  const base = inferSizeBase(sizes ?? {});
-  const inset = spacingRefStep(mergeLayoutRoles("spacing", spacingRoles)[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP);
-  const border = parseFloat(stroke?.sm ?? "1px");
-  return SPACING_MODES.find((m) => m.fieldBase === base && m.insetStep === inset && m.border === border)?.id ?? null;
-}
-function migrateSpacingV79(slot) {
-  if (!slot || typeof slot !== "object") return;
-  if (slot.spacing && typeof slot.spacing === "object") {
-    const base = parseFloat(slot.spacing["1"] ?? "") || SPACING_DEFAULT_BASE;
-    const graded = buildSpacingFromBase(base);
-    const next = { ...slot.spacing };
-    for (const step of SPACING_STEPS) if (next[step] === void 0) next[step] = graded[step];
-    slot.spacing = next;
-  }
-  if (slot.spacingRoles && typeof slot.spacingRoles === "object") {
-    const next = { ...slot.spacingRoles };
-    for (const role of SPACING_ROLES) {
-      const legacy = LEGACY_SPACING_ROLE_STEPS[role.key];
-      if (legacy && next[role.key] === legacy) next[role.key] = role.primitive;
-    }
-    slot.spacingRoles = next;
-  }
-}
-function defaultLayoutRoles(family) {
-  return Object.fromEntries(LAYOUT_ROLES[family].map((r) => [r.key, r.primitive]));
-}
-function mergeLayoutRoles(family, stored) {
-  const bag = stored ?? {};
-  const allowed = PRIMITIVE_SET[family];
-  const out = {};
-  for (const role of LAYOUT_ROLES[family]) {
-    const hit = bag[role.key];
-    const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, family === "spacing") !== null || family === "spacing" && isSpacingResponsiveRef(hit));
-    out[role.key] = ok ? hit : role.primitive;
-  }
-  if (family === "spacing") {
-    for (const { key: key2, role } of INSET_SIDE_KEYS) {
-      const hit = bag[key2];
-      const ok = typeof hit === "string" && (allowed.has(hit) || roleDimensionPx(hit, true) !== null || isSpacingResponsiveRef(hit));
-      if (ok && hit !== out[role]) out[key2] = hit;
-    }
-  }
-  return out;
-}
-function nearestSpacingStep(spacing, targetPx) {
-  const rows = SPACING_STEPS.map((key2) => ({ key: key2, n: parseFloat(spacing[key2] ?? "") })).filter((r) => Number.isFinite(r.n));
-  if (!rows.length) return null;
-  return rows.reduce((best, r) => {
-    const d = Math.abs(r.n - targetPx);
-    const bd = Math.abs(best.n - targetPx);
-    if (d < bd) return r;
-    if (d === bd && r.n > best.n) return r;
-    return best;
-  }).key;
-}
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
-var init_layoutTokens = __esm({
-  "src/lib/layoutTokens.ts"() {
-    init_dimensionCore();
-    ROLE_DIMENSION_PREFIX = "dimension-";
-    SPACING_RESPONSIVE_FAMILIES = ["component", "section", "layout"];
-    SPACING_RESPONSIVE_SIZES = ["xl", "lg", "md", "sm", "xs", "none"];
-    SR = (d, t, m) => ({ desktop: d, tablet: t, mobile: m });
-    SPACING_RESPONSIVE_TABLE = {
-      component: { xl: SR("6", "4", "3"), lg: SR("4", "4", "3"), md: SR("3", "3", "2"), sm: SR("2", "2", "2"), xs: SR("1", "1", "1"), none: SR("0", "0", "0") },
-      section: { xl: SR("12", "8", "5"), lg: SR("8", "5", "4"), md: SR("6", "4", "3"), sm: SR("4", "4", "3"), xs: SR("3", "3", "2"), none: SR("0", "0", "0") },
-      layout: { xl: SR("32", "16", "12"), lg: SR("24", "12", "8"), md: SR("16", "8", "4"), sm: SR("12", "6", "3"), xs: SR("8", "4", "2"), none: SR("0", "0", "0") }
-    };
-    SPACING_RESPONSIVE = Object.fromEntries(
-      SPACING_RESPONSIVE_FAMILIES.flatMap((family) => SPACING_RESPONSIVE_SIZES.map((size) => [`${family}-${size}`, SPACING_RESPONSIVE_TABLE[family][size]]))
-    );
-    SPACING_RESPONSIVE_KEYS = Object.keys(SPACING_RESPONSIVE);
-    RADIUS_WORKING_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
-    RADIUS_SCALE_RATIOS = {
-      xs: 0.25,
-      sm: 0.5,
-      md: 0.75,
-      lg: 1,
-      xl: 1.5,
-      "2xl": 2,
-      "3xl": 3,
-      "4xl": 4,
-      "5xl": 6
-    };
-    RADIUS_STEPS = ["none", ...RADIUS_WORKING_STEPS, "full"];
-    RADIUS_DEFAULT_LG = 8;
-    RADIUS_PRESETS = [
-      radiusPreset("Sharp", "lg 4px \u2014 tight, technical", 4),
-      radiusPreset("Soft", "lg 6px \u2014 slightly softer controls", 6),
-      radiusPreset("Rounded", "lg 8px \u2014 Tailwind / HeroUI default", 8),
-      radiusPreset("Pill", "lg 12px \u2014 generous, consumer apps", 12)
-    ];
-    RADIUS_STANDARD = RADIUS_PRESETS[2].values;
-    SPACING_STEPS = ["0", "0_5", "1", "1_5", "2", "2_5", "3", "4", "5", "6", "8", "10", "12", "16", "24", "32"];
-    SPACING_DEFAULT_BASE = 4;
-    SPACING_STANDARD = buildSpacingFromBase(SPACING_DEFAULT_BASE);
-    PADDING_DEFAULT_STEP = "5";
-    PADDING_STANDARD = {
-      top: SPACING_STANDARD[PADDING_DEFAULT_STEP],
-      right: SPACING_STANDARD[PADDING_DEFAULT_STEP],
-      bottom: SPACING_STANDARD[PADDING_DEFAULT_STEP],
-      left: SPACING_STANDARD[PADDING_DEFAULT_STEP]
-    };
-    INSET_SURFACE_ROLE = "inset-surface";
-    SIZE_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
-    SIZE_STANDARD = {
-      xs: "24px",
-      sm: "32px",
-      md: "40px",
-      lg: "48px",
-      xl: "56px",
-      "2xl": "64px"
-    };
-    FIELD_MULTIPLIERS = {
-      xs: 6,
-      sm: 8,
-      md: 10,
-      lg: 12,
-      xl: 14,
-      "2xl": 16
-    };
-    SIZE_DEFAULT_BASE = 4;
-    SIZE_CONTROL_MIN_PX = 36;
-    FIELD_BASE_MIN = SIZE_CONTROL_MIN_PX / FIELD_MULTIPLIERS.md;
-    BASE_UNIT_RANGE = { min: FIELD_BASE_MIN, max: 5, step: 0.5 };
-    SELECTOR_STEPS = ["xs", "sm", "md", "lg", "xl"];
-    SELECTOR_MULTIPLIERS = {
-      xs: 4,
-      sm: 5,
-      md: 6,
-      lg: 7,
-      xl: 8
-    };
-    SELECTOR_DEFAULT_BASE = 3;
-    SELECTOR_TO_SIZE_BASE = SELECTOR_DEFAULT_BASE / SIZE_DEFAULT_BASE;
-    SELECTOR_STANDARD = buildSelectorsFromBase(SELECTOR_DEFAULT_BASE);
-    inferSizeBase = (sizes) => inferBaseFromStep(sizes, FIELD_MULTIPLIERS, SIZE_STEPS, "md");
-    STROKE_STEPS = ["none", "sm", "md", "lg"];
-    STROKE_STANDARD = {
-      none: "0px",
-      sm: "1px",
-      md: "2px",
-      lg: "4px"
-    };
-    STROKE_SM_STOPS = [0, 0.5, 1, 1.5, 2];
-    BREAKPOINT_STEPS = ["sm", "md", "lg", "xl", "2xl"];
-    BREAKPOINT_STANDARD = {
-      // 2xl is 1440, not Tailwind's 1536: it is the widest of the six named grid
-      // styles (2XL Desktop and XL Desktop Sidebar both lay out on a 1440 frame).
-      sm: "640px",
-      md: "768px",
-      lg: "1024px",
-      xl: "1280px",
-      "2xl": "1440px"
-    };
-    GRID_VIEWPORTS = ["desktop", "tablet", "mobile"];
-    GRID_COLUMN_STEPS = ["2", "4", "8", "12"];
-    GRID_CONTAINER_STEPS = ["none", ...BREAKPOINT_STEPS];
-    GRID_FRAME_FIELDS = [
-      { key: "columns", label: "Columns", description: "Tracks in the layout grid." },
-      { key: "gutter", label: "Gutter", description: "Gap between columns \u2014 a spacing step." },
-      { key: "margin", label: "Margin", description: "Page inset below the container cap \u2014 a spacing step." },
-      { key: "container", label: "Container", description: "Max content width \u2014 a breakpoint step, or none." }
-    ];
-    GRID_FRAME_STANDARD = {
-      desktop: { columns: "12", gutter: "8", margin: "8", container: "xl" },
-      tablet: { columns: "8", gutter: "8", margin: "8", container: "none" },
-      mobile: { columns: "4", gutter: "4", margin: "4", container: "none" }
-    };
-    GRID_FRAME_LEGACY_STANDARD = {
-      desktop: { columns: "12", gutter: "6", margin: "8", container: "xl" },
-      tablet: { columns: "8", gutter: "6", margin: "6", container: "none" },
-      mobile: { columns: "4", gutter: "4", margin: "4", container: "none" }
-    };
-    GRID_STYLES = [
-      {
-        key: "2xl-desktop",
-        label: "2XL Desktop",
-        viewport: "desktop",
-        width: "2xl",
-        recipe: { margin: "dimension-64" },
-        description: "Full-width desktop without a sidebar. Wider columns let content scale on large screens."
-      },
-      {
-        key: "xl-desktop",
-        label: "XL Desktop",
-        viewport: "desktop",
-        width: "container",
-        description: "Standard desktop layouts, balancing content density and readability."
-      },
-      {
-        key: "xl-desktop-sidebar",
-        label: "XL Desktop Sidebar",
-        viewport: "desktop",
-        width: "2xl",
-        sidebar: "dimension-344",
-        recipe: { gutter: "dimension-24" },
-        description: "Desktop with a persistent left sidebar; the content area keeps its own 12 columns."
-      },
-      {
-        key: "lg-web",
-        label: "LG Web",
-        viewport: "desktop",
-        width: "lg",
-        recipe: { margin: "dimension-48" },
-        description: "Smaller desktop and large tablet web. Narrower columns keep focus on limited width."
-      },
-      {
-        key: "md-tablet",
-        label: "MD Tablet",
-        viewport: "tablet",
-        width: "md",
-        description: "Tablet, where touch and content clarity matter equally. Desktop structure, tablet spacing."
-      },
-      {
-        key: "sm-mobile",
-        label: "SM Mobile",
-        viewport: "mobile",
-        width: "dimension-320",
-        description: "Mobile-first, limited horizontal space: wide columns and tight gutters."
-      }
-    ];
-    GRID_STANDARD = buildGridStandard();
-    RADIUS_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "sm" },
-      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "lg" },
-      { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: "2xl" },
-      { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
-      { key: "pill", label: "Pill", description: "Badge, chip, avatar, switch, progress.", group: "selectors", primitive: "full" }
-    ];
-    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "2xl", "4xl"];
-    RADIUS_GROUPS = [
-      { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"] },
-      { key: "fields", label: "Fields", hint: "button, input, select, tab", roles: ["action"] },
-      { key: "selectors", label: "Selectors", hint: "checkbox, radio, toggle, menu", roles: ["control"] }
-    ];
-    RADIUS_ROLE_PRESETS = [
-      { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
-      { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
-      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 8, selectors 4.", picks: { boxes: "2xl", fields: "lg", selectors: "sm" } },
-      { label: "Pill", description: "Generous \u2014 boxes 32, pill fields, selectors 8.", picks: { boxes: "4xl", fields: "4xl", selectors: "lg" } }
-    ];
-    LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
-    LEGACY_RADIUS_LG_FACTOR = 2;
-    LEGACY_RADIUS_WORKING_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
-    RADIUS_V77_RENAME = {
-      none: "none",
-      xs: "sm",
-      sm: "lg",
-      md: "xl",
-      lg: "2xl",
-      xl: "3xl",
-      "2xl": "4xl",
-      "3xl": "5xl",
-      full: "full"
-    };
-    RADIUS_RESPONSIVE = {
-      none: { desktop: "none", tablet: "none", mobile: "none" },
-      sm: { desktop: "sm", tablet: "xs", mobile: "xs" },
-      md: { desktop: "md", tablet: "sm", mobile: "sm" },
-      lg: { desktop: "lg", tablet: "md", mobile: "md" },
-      xl: { desktop: "xl", tablet: "lg", mobile: "lg" },
-      "2xl": { desktop: "2xl", tablet: "xl", mobile: "xl" },
-      "3xl": { desktop: "3xl", tablet: "2xl", mobile: "xl" },
-      "4xl": { desktop: "4xl", tablet: "3xl", mobile: "2xl" },
-      "5xl": { desktop: "5xl", tablet: "4xl", mobile: "3xl" },
-      full: { desktop: "full", tablet: "full", mobile: "full" }
-    };
-    SPACING_ROLES = [
-      { key: "none", label: "None", description: "Collapse a gap or inset.", group: "gap", primitive: "0" },
-      { key: "gap-tight", label: "Gap tight", description: "Icon + label, chip dismiss, inline meta.", group: "gap", primitive: "component-xs" },
-      { key: "gap-control", label: "Gap control", description: "Button groups, OTP cells, field + helper.", group: "gap", primitive: "component-sm" },
-      { key: "gap-group", label: "Gap group", description: "Stacked fields, nav item groups.", group: "gap", primitive: "section-sm" },
-      { key: "gap-section", label: "Gap section", description: "Between sections, modal header \u2192 body.", group: "gap", primitive: "section-md" },
-      { key: "inset-control", label: "Inset control", description: "Padding inside buttons, inputs, chips.", group: "inset", primitive: "component-md" },
-      { key: "inset-surface", label: "Inset surface", description: "Card / modal / alert padding.", group: "inset", primitive: "5" },
-      { key: "inset-page", label: "Inset page", description: "Page and sheet margins when Grid is unused.", group: "inset", primitive: "layout-xs" },
-      // Overlap — NEGATIVE space: how far a stacked item tucks under its neighbour
-      // (avatar stacks, overlapping badges). Pinned primitives, not steps: a spacing
-      // step is never negative, and the base-unit dial must not move an avatar stack.
-      { key: "overlap-xs", label: "Overlap xs", description: "Barely touching \u2014 dense avatar stacks.", group: "overlap", primitive: "dimension--2" },
-      { key: "overlap-sm", label: "Overlap sm", description: "A hairline tuck.", group: "overlap", primitive: "dimension--4" },
-      { key: "overlap-md", label: "Overlap md", description: "The default avatar-stack overlap.", group: "overlap", primitive: "dimension--8" },
-      { key: "overlap-lg", label: "Overlap lg", description: "A third of a 48px avatar.", group: "overlap", primitive: "dimension--16" },
-      { key: "overlap-xl", label: "Overlap xl", description: "Heavily stacked; only the edge shows.", group: "overlap", primitive: "dimension--24" },
-      { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
-    ];
-    INSET_ROLES = ["inset-control", "inset-surface", "inset-page"];
-    INSET_SIDES = ["top", "right", "bottom", "left"];
-    INSET_SIDE_KEYS = INSET_ROLES.flatMap((role) => INSET_SIDES.map((side) => ({ key: insetSideKey(role, side), role, side })));
-    INSET_SIDE_BY_KEY = new Map(INSET_SIDE_KEYS.map((entry) => [entry.key, entry]));
-    SPACING_MODES = [
-      { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: FIELD_BASE_MIN, insetStep: "3", border: 1 },
-      { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
-      { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "5", border: 2 },
-      { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "6", border: 1 }
-    ];
-    LEGACY_SPACING_ROLE_STEPS = {
-      "gap-tight": "1",
-      "gap-control": "2",
-      "gap-group": "4",
-      "gap-section": "6",
-      "inset-control": "3",
-      "inset-page": "8"
-    };
-    SIZE_ROLES = [
-      { key: "compact", label: "Compact", description: "Toolbars, dense tables.", group: "control", primitive: "sm" },
-      { key: "control", label: "Control", description: "Default button, input, select height.", group: "control", primitive: "md" },
-      { key: "touch", label: "Touch", description: "Mobile CTA. 48px covers HIG 44.", group: "control", primitive: "lg" },
-      { key: "hit", label: "Hit", description: "Close button and icon-only hit area.", group: "special", primitive: "xs" },
-      { key: "fab", label: "FAB", description: "Floating action button.", group: "special", primitive: "xl" }
-    ];
-    SELECTOR_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, radio, switch track height.", group: "glyph", primitive: "md" },
-      { key: "compact", label: "Compact", description: "The same glyphs in a dense row or table.", group: "glyph", primitive: "sm" },
-      { key: "indicator", label: "Indicator", description: "Badge dot, status pip, unread marker.", group: "glyph", primitive: "xs" }
-    ];
-    STROKE_ROLES = [
-      { key: "divider", label: "Divider", description: "Separator, table rules, layout splits.", group: "line", primitive: "sm" },
-      { key: "control", label: "Control", description: "Input, card, outline button border-width.", group: "line", primitive: "sm" },
-      { key: "focus", label: "Focus", description: "Focus-ring width: the inner edge of a focused control (the halo adds one more hairline). Paint stays border.focus.", group: "line", primitive: "md" }
-    ];
-    BREAKPOINT_ROLES = [
-      { key: "desktop", label: "Desktop", description: "Min-width where the 12-col grid starts.", group: "viewport", primitive: "md" },
-      { key: "tablet", label: "Tablet", description: "Min-width where the 8-col grid starts.", group: "viewport", primitive: "sm" },
-      { key: "mobile", label: "Mobile", description: "Max-width of the 4-col grid (one step below Tablet).", group: "viewport", primitive: "sm" }
-    ];
-    LAYOUT_ROLES = {
-      radius: RADIUS_ROLES,
-      spacing: SPACING_ROLES,
-      size: SIZE_ROLES,
-      selector: SELECTOR_ROLES,
-      stroke: STROKE_ROLES,
-      breakpoint: BREAKPOINT_ROLES
-    };
-    PRIMITIVE_SET = {
-      radius: new Set(RADIUS_STEPS),
-      spacing: new Set(SPACING_STEPS),
-      size: new Set(SIZE_STEPS),
-      selector: new Set(SELECTOR_STEPS),
-      stroke: new Set(STROKE_STEPS),
-      breakpoint: new Set(BREAKPOINT_STEPS)
-    };
-  }
-});
-
-// src/lib/color/apca.ts
-function parseHex(hex) {
-  const stripped = hex.trim().replace(/^#/, "");
-  let h = stripped;
-  let alphaDigits = null;
-  if (h.length === 4) {
-    alphaDigits = h[3] + h[3];
-    h = h.slice(0, 3);
-  }
-  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
-  if (h.length === 8) {
-    alphaDigits = stripped.slice(6, 8);
-    h = h.slice(0, 6);
-  }
-  if (h.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(h)) {
-    throw new Error(`apca: not an sRGB hex color: "${hex}"`);
-  }
-  if (alphaDigits) {
-    const a2 = parseInt(alphaDigits, 16) / 255;
-    if (a2 < 0.999) {
-      throw new Error(
-        `apca: "${hex}" is translucent (alpha ${Math.round(a2 * 100)}%) \u2014 contrast requires an opaque color. Composite it over its real backdrop first (colorUtils.compositeOver), then measure the result.`
-      );
-    }
-  }
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16)
-  ];
-}
-function apcaY(hex) {
-  const [r, g, b] = parseHex(hex);
-  return R_CO * Math.pow(r / 255, MAIN_TRC) + G_CO * Math.pow(g / 255, MAIN_TRC) + B_CO * Math.pow(b / 255, MAIN_TRC);
-}
-function softClampBlack(y) {
-  return y > BLK_THRS ? y : y + Math.pow(BLK_THRS - y, BLK_CLMP);
-}
-function apcaLc(text, background) {
-  const yTxt = softClampBlack(apcaY(text));
-  const yBg = softClampBlack(apcaY(background));
-  if (Math.abs(yBg - yTxt) < DELTA_Y_MIN) return 0;
-  let sapc;
-  let output;
-  if (yBg > yTxt) {
-    sapc = (Math.pow(yBg, NORM_BG) - Math.pow(yTxt, NORM_TXT)) * SCALE_BOW;
-    output = sapc < LO_CLIP ? 0 : sapc - LO_BOW_OFFSET;
-  } else {
-    sapc = (Math.pow(yBg, REV_BG) - Math.pow(yTxt, REV_TXT)) * SCALE_WOB;
-    output = sapc > -LO_CLIP ? 0 : sapc + LO_WOB_OFFSET;
-  }
-  return output * 100;
-}
-function wcagLuminance(hex) {
-  const [r, g, b] = parseHex(hex);
-  const ch = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
-}
-function wcagRatio(a2, b) {
-  const la = wcagLuminance(a2);
-  const lb = wcagLuminance(b);
-  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
-  return (hi + 0.05) / (lo + 0.05);
-}
-var MAIN_TRC, R_CO, G_CO, B_CO, NORM_BG, NORM_TXT, REV_TXT, REV_BG, BLK_THRS, BLK_CLMP, SCALE_BOW, SCALE_WOB, LO_BOW_OFFSET, LO_WOB_OFFSET, DELTA_Y_MIN, LO_CLIP, INTENT_THRESHOLDS;
-var init_apca = __esm({
-  "src/lib/color/apca.ts"() {
-    MAIN_TRC = 2.4;
-    R_CO = 0.2126729;
-    G_CO = 0.7151522;
-    B_CO = 0.072175;
-    NORM_BG = 0.56;
-    NORM_TXT = 0.57;
-    REV_TXT = 0.62;
-    REV_BG = 0.65;
-    BLK_THRS = 0.022;
-    BLK_CLMP = 1.414;
-    SCALE_BOW = 1.14;
-    SCALE_WOB = 1.14;
-    LO_BOW_OFFSET = 0.027;
-    LO_WOB_OFFSET = 0.027;
-    DELTA_Y_MIN = 5e-4;
-    LO_CLIP = 0.1;
-    INTENT_THRESHOLDS = {
-      "body-text": { wcag: 4.5, apcaLc: 75 },
-      "large-text": { wcag: 3, apcaLc: 60 },
-      "action-label": { wcag: 4.5, apcaLc: 60 },
-      "ui-component": { wcag: 3, apcaLc: 45 },
-      // The resting outline of a field / select / checkbox / outline button — a
-      // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
-      // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
-      // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
-      // (3.81:1): reported twice as "los bordes de control están muy fuertes",
-      // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
-      // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
-      // 1.26, below it) — not an accessibility claim: a control identified by its
-      // stroke alone no longer clears 1.4.11, which is why a field that must
-      // clear it gives itself a FILL (`surface.input` a step off the page), the
-      // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
-      // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
-      "control-boundary": { wcag: 1.4, apcaLc: null },
-      decorative: { wcag: null, apcaLc: null },
-      surface: { wcag: null, apcaLc: null }
-    };
-  }
-});
-
-// src/lib/color/gamut.ts
-function xyzToOklab(xyz) {
-  const lms = apply(XYZ_TO_LMS, xyz);
-  const l_ = Math.cbrt(lms[0]);
-  const m_ = Math.cbrt(lms[1]);
-  const s_ = Math.cbrt(lms[2]);
-  return {
-    l: 0.210454268309314 * l_ + 0.7936177747023054 * m_ - 0.0040720430116193 * s_,
-    a: 1.9779985324311684 * l_ - 2.42859224204858 * m_ + 0.450593709617411 * s_,
-    b: 0.0259040424655478 * l_ + 0.7827717124575296 * m_ - 0.8086757549230774 * s_
-  };
-}
-function linearToOklab({ r, g, b }) {
-  return xyzToOklab(apply(LIN_SRGB_TO_XYZ, [r, g, b]));
-}
-function oklabToLinear({ l, a: a2, b }) {
-  const lms_ = apply(OKLAB_TO_LMS, [l, a2, b]);
-  const lms = [lms_[0] ** 3, lms_[1] ** 3, lms_[2] ** 3];
-  const xyz = apply(LMS_TO_XYZ, lms);
-  const [r, g, bb] = apply(XYZ_TO_LIN_SRGB, xyz);
-  return { r, g, b: bb };
-}
-function hexToLinearRgb(hex) {
-  const stripped = hex.trim().replace(/^#/, "");
-  let h = stripped;
-  let alphaDigits = null;
-  if (h.length === 4) {
-    alphaDigits = h[3] + h[3];
-    h = h.slice(0, 3);
-  }
-  if (h.length === 3) h = h.split("").map((c2) => c2 + c2).join("");
-  if (h.length === 8) {
-    alphaDigits = stripped.slice(6, 8);
-    h = h.slice(0, 6);
-  }
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) throw new Error(`gamut: not an sRGB hex color: "${hex}"`);
-  if (alphaDigits) {
-    const a2 = parseInt(alphaDigits, 16) / 255;
-    if (a2 < 0.999) {
-      throw new Error(
-        `gamut: "${hex}" is translucent (alpha ${Math.round(a2 * 100)}%) \u2014 composite it over its real backdrop first (colorUtils.compositeOver), then convert the result.`
-      );
-    }
-  }
-  return {
-    r: toLinear(parseInt(h.slice(0, 2), 16) / 255),
-    g: toLinear(parseInt(h.slice(2, 4), 16) / 255),
-    b: toLinear(parseInt(h.slice(4, 6), 16) / 255)
-  };
-}
-function hexToOklch(hex) {
-  return oklabToOklch(linearToOklab(hexToLinearRgb(hex)));
-}
-function oklchToHexClipped(color) {
-  const { r, g, b } = oklabToLinear(oklchToOklab(color));
-  return `#${byte(toGamma(r))}${byte(toGamma(g))}${byte(toGamma(b))}`;
-}
-function inSrgbGamut(color) {
-  const { r, g, b } = oklabToLinear(oklchToOklab(color));
-  return r >= -GAMUT_EPS && r <= 1 + GAMUT_EPS && g >= -GAMUT_EPS && g <= 1 + GAMUT_EPS && b >= -GAMUT_EPS && b <= 1 + GAMUT_EPS;
-}
-function deltaEOK(a2, b) {
-  const dl = a2.l - b.l;
-  const da = a2.a - b.a;
-  const db = a2.b - b.b;
-  return Math.sqrt(dl * dl + da * da + db * db);
-}
-function clipToOklab(color) {
-  const { r, g, b } = oklabToLinear(oklchToOklab(color));
-  const cl = (v) => Math.max(0, Math.min(1, v));
-  return linearToOklab({ r: cl(r), g: cl(g), b: cl(b) });
-}
-function gamutMapSrgb(color) {
-  if (color.l >= 1) return { l: 1, c: 0, h: color.h };
-  if (color.l <= 0) return { l: 0, c: 0, h: color.h };
-  if (inSrgbGamut(color)) return color;
-  let min = 0;
-  let max = color.c;
-  let minInGamut = true;
-  let current = { ...color };
-  let clipped = clipToOklab(current);
-  if (deltaEOK(clipped, oklchToOklab(current)) < JND) return oklabToOklch(clipped);
-  while (max - min > SEARCH_EPS) {
-    const chroma6 = (min + max) / 2;
-    current = { l: color.l, c: chroma6, h: color.h };
-    if (minInGamut && inSrgbGamut(current)) {
-      min = chroma6;
-      continue;
-    }
-    clipped = clipToOklab(current);
-    const e = deltaEOK(clipped, oklchToOklab(current));
-    if (e < JND) {
-      if (JND - e < SEARCH_EPS) return oklabToOklch(clipped);
-      minInGamut = false;
-      min = chroma6;
-    } else {
-      max = chroma6;
-    }
-  }
-  return oklabToOklch(clipped);
-}
-function oklchToHex(l, c2, h) {
-  return oklchToHexClipped(gamutMapSrgb({ l, c: c2, h: Number.isNaN(h) ? 0 : h }));
-}
-var toLinear, toGamma, OKLAB_TO_LMS, LMS_TO_XYZ, XYZ_TO_LMS, XYZ_TO_LIN_SRGB, LIN_SRGB_TO_XYZ, apply, oklchToOklab, oklabToOklch, byte, GAMUT_EPS, JND, SEARCH_EPS;
-var init_gamut = __esm({
-  "src/lib/color/gamut.ts"() {
-    toLinear = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    toGamma = (v) => v <= 31308e-7 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
-    OKLAB_TO_LMS = [
-      [1, 0.3963377773761749, 0.2158037573099136],
-      [1, -0.1055613458156586, -0.0638541728258133],
-      [1, -0.0894841775298119, -1.2914855480194092]
-    ];
-    LMS_TO_XYZ = [
-      [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
-      [-0.0405757452148008, 1.112286803280317, -0.0717110580655164],
-      [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816]
-    ];
-    XYZ_TO_LMS = [
-      [0.819022437996703, 0.3619062600528904, -0.1288737815209879],
-      [0.0329836539323885, 0.9292868615863434, 0.0361446663506424],
-      [0.0481771893596242, 0.2642395317527308, 0.6335478284694309]
-    ];
-    XYZ_TO_LIN_SRGB = [
-      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
-      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
-      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
-    ];
-    LIN_SRGB_TO_XYZ = [
-      [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
-      [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
-      [0.01933081871559182, 0.11919477979462598, 0.9505321522496607]
-    ];
-    apply = (m, v) => [
-      m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
-      m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
-      m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]
-    ];
-    oklchToOklab = ({ l, c: c2, h }) => {
-      const rad = h * Math.PI / 180;
-      return { l, a: c2 * Math.cos(rad), b: c2 * Math.sin(rad) };
-    };
-    oklabToOklch = ({ l, a: a2, b }) => {
-      const c2 = Math.sqrt(a2 * a2 + b * b);
-      const h = c2 < 1e-7 ? 0 : (Math.atan2(b, a2) * 180 / Math.PI + 360) % 360;
-      return { l, c: c2, h };
-    };
-    byte = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0");
-    GAMUT_EPS = 1e-6;
-    JND = 0.02;
-    SEARCH_EPS = 1e-4;
-  }
-});
-
-// src/lib/colorUtils.ts
-import chroma from "chroma-js";
-function clamp01(n) {
-  return Math.max(0, Math.min(1, n));
-}
-function lightnessForContrast(target, hue, chromaC, bg, towardDark) {
-  const meets = (hex) => wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc;
-  const bgL = chroma(bg).oklch()[0];
-  let lo = towardDark ? 0 : bgL;
-  let hi = towardDark ? bgL : 1;
-  let best = oklchToHex(towardDark ? 0 : 1, chromaC, hue);
-  for (let i = 0; i < 24; i++) {
-    const mid = (lo + hi) / 2;
-    const hex = oklchToHex(mid, chromaC, hue);
-    if (meets(hex)) {
-      best = hex;
-      if (towardDark) lo = mid;
-      else hi = mid;
-    } else if (towardDark) hi = mid;
-    else lo = mid;
-  }
-  return best;
-}
-function buildScale(baseHex, spec, shift, background, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
-  const [baseL, baseC, baseHraw] = chroma(baseHex).oklch();
-  const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw;
-  const chromaLink = neutralTintSpec(tint).chromaLink;
-  const fallbackBg = appearance === "dark" ? "#111111" : "#ffffff";
-  let page = fallbackBg;
-  if (background) {
-    try {
-      const bgL = chroma(background).oklch()[0];
-      if (appearance === "dark" ? bgL <= 0.5 : bgL > 0.5) page = chroma(background).hex();
-    } catch {
-    }
-  }
-  const pageL = chroma(page).oklch()[0];
-  const pageC = chroma(page).oklch()[1];
-  const towardDark = appearance === "light";
-  const dir = towardDark ? -1 : 1;
-  const gamma = 1 - shift * 0.35;
-  const out = [];
-  for (let i = 1; i <= TONES; i++) {
-    if (i === BASE_TONE) {
-      out.push(chroma(baseHex).hex());
-      continue;
-    }
-    if (i < BASE_TONE) {
-      if (i === 1) {
-        if (chromaLink > 0 || pageC < 0.01) {
-          out.push(page);
-          continue;
-        }
-        if (baseC < 0.01) {
-          out.push(page);
-          continue;
-        }
-        const rawPageH = chroma(page).oklch()[2];
-        const pH = Number.isNaN(rawPageH) ? baseH : rawPageH;
-        let dH = Math.abs(pH - baseH);
-        if (dH > 180) dH = 360 - dH;
-        if (dH <= 30) {
-          out.push(page);
-          continue;
-        }
-        out.push(oklchToHex(pageL, pageC, baseH));
-        continue;
-      }
-      const w = Math.pow(BG_WEIGHTS[i], gamma);
-      const L = pageL + (baseL - pageL) * w;
-      const shapedC = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15));
-      const linkedC = pageC + (baseC - pageC) * Math.pow(w, 1.15);
-      const C2 = shapedC + (linkedC - shapedC) * chromaLink;
-      const H2 = baseH + (spec.hueShift?.(-(1 - w)) ?? 0);
-      out.push(oklchToHex(clamp01(L), Math.max(0, C2), H2));
-      continue;
-    }
-    if (i === BASE_TONE + 1) {
-      const step = 0.045 * (1 + shift * 0.6);
-      const H2 = baseH + (spec.hueShift?.(0.2) ?? 0);
-      out.push(oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H2));
-      continue;
-    }
-    const isMaxTone = i === TONES;
-    const textGain = shift >= 0 ? isMaxTone ? 0.18 : 0.45 : isMaxTone ? 0.15 : 0.22;
-    const gain = 1 + shift * textGain;
-    const target = isMaxTone ? { wcag: 12 * gain, apcaLc: Math.max(75, 90 * gain) } : { wcag: 4.5 * gain, apcaLc: Math.max(60, 75 * gain) };
-    const C = baseC * (i === TONES ? 0.42 : 0.72);
-    const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0);
-    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark));
-  }
-  return out;
-}
-function toneLabel(naming, tone) {
-  const scheme = NAMING_SCHEMES.find((s) => s.key === naming) ?? NAMING_SCHEMES[0];
-  return scheme.labels[tone - 1] ?? String(tone);
-}
-function generateColorScale(baseHex, algorithm = "default", contrastShift = 0, background, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
-  const spec = SPECS[algorithm] ?? SPECS.default;
-  const colors = buildScale(baseHex, spec, contrastShift, background, appearance, tint);
-  const scale = {};
-  colors.forEach((color, i) => {
-    scale[i + 1] = color;
-  });
-  return scale;
-}
-function neutralTintSpec(tint = DEFAULT_NEUTRAL_TINT) {
-  return NEUTRAL_TINTS.find((t) => t.key === tint) ?? NEUTRAL_TINTS[1];
-}
-function neutralFromBrand(hex, tint = DEFAULT_NEUTRAL_TINT) {
-  try {
-    return chroma(hex).set("hsl.s", neutralTintSpec(tint).brandSat).set("hsl.l", 0.46).hex();
-  } catch {
-    return hex;
-  }
-}
-function backgroundFromBase(baseHex, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
-  try {
-    const [, c2, hRaw] = chroma(baseHex).oklch();
-    const h = Number.isNaN(hRaw) ? 0 : hRaw;
-    const spec = neutralTintSpec(tint)[appearance === "dark" ? "dark" : "light"];
-    return oklchToHex(spec.l, Math.min(c2 * spec.mul, spec.cap), h);
-  } catch {
-    return appearance === "dark" ? "#0c0e12" : "#ffffff";
-  }
-}
-function generateFamilyDarkScale(baseHex, algorithm = "default", contrastShift = 0, darkBackground) {
-  return generateColorScale(baseHex, algorithm, contrastShift, darkBackground, "dark");
-}
-function lightNeutralSolid(neutralHex, background = "#ffffff") {
-  try {
-    const page = chroma(background).hex();
-    const seed = chroma(neutralHex).hex();
-    const [seedL, c2, rawH] = chroma(seed).oklch();
-    const h = Number.isNaN(rawH) ? 0 : rawH;
-    const tone11 = lightnessForContrast({ wcag: 4.5, apcaLc: 75 }, h, Math.max(0, c2) * 0.72, page, true);
-    if (seedL > chroma(tone11).oklch()[0] + 0.02) return neutralHex;
-    return lightnessForContrast({ wcag: 3, apcaLc: 45 }, h, Math.max(0, c2), page, true);
-  } catch {
-    return neutralHex;
-  }
-}
-function generateLightNeutralScale(neutralHex, algorithm = "default", contrastShift = 0, background, tint = DEFAULT_NEUTRAL_TINT) {
-  return generateColorScale(lightNeutralSolid(neutralHex, background), algorithm, contrastShift, background, "light", tint);
-}
-function generateDarkColorScale(neutralHex, algorithm = "default", contrastShift = 0, darkBackground, tint = DEFAULT_NEUTRAL_TINT) {
-  let base = neutralHex;
-  try {
-    const [, nC, nHraw] = chroma(neutralHex).oklch();
-    const nH = Number.isNaN(nHraw) ? 0 : nHraw;
-    const baseL = 0.5;
-    const pageC = darkBackground ? chroma(darkBackground).oklch()[1] : 0;
-    const linked = neutralTintSpec(tint).chromaLink > 0;
-    const baseC = linked ? Math.max(nC * 0.5, pageC) : nC * 0.5;
-    base = oklchToHex(baseL, baseC, nH);
-  } catch {
-  }
-  return generateColorScale(base, algorithm, contrastShift, darkBackground, "dark", tint);
-}
-function alphaColorOver(targetHex, backgroundHex, appearance = "light") {
-  const [tr, tg, tb] = chroma(targetHex).rgb();
-  const [br, bg, bb] = chroma(backgroundHex).rgb();
-  const overlay = appearance === "dark" ? 255 : 0;
-  const alphaFor = (t, b) => overlay === b ? 0 : (t - b) / (overlay - b);
-  const raw = Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb));
-  let a2 = Math.min(1, Math.max(0, Math.ceil(raw * 100) / 100));
-  if (a2 <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex();
-  const exact = (t, b, alpha) => (t - (1 - alpha) * b) / alpha;
-  const channels = [[tr, br], [tg, bg], [tb, bb]];
-  while (a2 < 1 && channels.some(([c2, b]) => {
-    const v = exact(c2, b, a2);
-    return v < -0.5 || v > 255.5;
-  })) {
-    a2 = Math.min(1, Math.round((a2 + 0.01) * 100) / 100);
-  }
-  const solve = (c2, b) => Math.min(255, Math.max(0, Math.round(exact(c2, b, a2))));
-  return chroma.rgb(solve(tr, br), solve(tg, bg), solve(tb, bb)).alpha(a2).hex();
-}
-function compositeOver(overlayHex, backgroundHex) {
-  const c2 = chroma(overlayHex);
-  const a2 = c2.alpha();
-  const [orr, og, ob] = c2.rgb();
-  const [br, bg, bb] = chroma(backgroundHex).rgb();
-  const mix = (o, b) => Math.round(a2 * o + (1 - a2) * b);
-  return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex();
-}
-function generateAlphaScale(scale, backgroundHex, appearance = "light") {
-  const out = {};
-  for (const [k, hex] of Object.entries(scale)) {
-    if (!hex) continue;
-    try {
-      out[Number(k)] = alphaColorOver(hex, backgroundHex, appearance);
-    } catch {
-      out[Number(k)] = hex;
-    }
-  }
-  return out;
-}
-function recommendStateColors(brandHex) {
-  let brandC = 0.13;
-  try {
-    brandC = chroma(brandHex).oklch()[1];
-  } catch {
-  }
-  const out = {};
-  for (const [key2, hex] of Object.entries(STATE_CANONICAL)) {
-    const [l, c2, h] = chroma(hex).oklch();
-    const blended = (c2 + brandC) / 2;
-    out[key2] = oklchToHex(l, blended, Number.isNaN(h) ? 0 : h);
-  }
-  return out;
-}
-function previewHarmony(accentHex, tint = DEFAULT_NEUTRAL_TINT) {
-  const neutral = neutralFromBrand(accentHex, tint);
-  return {
-    accent: accentHex,
-    neutral,
-    pageLight: backgroundFromBase(neutral, "light", tint),
-    pageDark: backgroundFromBase(neutral, "dark", tint),
-    states: recommendStateColors(accentHex)
-  };
-}
-function checkContrast(fg, bg) {
-  return wcagRatio(fg, bg);
-}
-function accessibleSolidTone(scale, start = BASE_TONE) {
-  const ok = (t) => {
-    const hex = scale[t];
-    return !!hex && checkContrast("#ffffff", hex) >= WCAG_AA && Math.abs(apcaLc("#ffffff", hex)) >= 75;
-  };
-  if (ok(start)) return start;
-  for (let d = 1; d <= 11; d++) {
-    if (start + d <= 12 && ok(start + d)) return start + d;
-    if (start - d >= 1 && ok(start - d)) return start - d;
-  }
-  return start;
-}
-function solidInkPair(scale, inks, start = BASE_TONE, target = WCAG_AA) {
-  const t = typeof target === "number" ? { wcag: target, apcaLc: 75 } : target;
-  let best = { tone: start, ink: 0, contrast: -1 };
-  let bestScore = -Infinity;
-  for (let tone = start; tone <= 12; tone++) {
-    const fill = scale[tone];
-    if (!fill) continue;
-    for (let i = 0; i < inks.length; i++) {
-      let w;
-      let lc;
-      try {
-        w = checkContrast(inks[i], fill);
-        lc = Math.abs(apcaLc(inks[i], fill));
-      } catch {
-        continue;
-      }
-      const score = Math.min(w / t.wcag, lc / t.apcaLc);
-      if (score > bestScore) {
-        bestScore = score;
-        best = { tone, ink: i, contrast: w };
-      }
-      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
-    }
-  }
-  return best;
-}
-function brandSolidPair(scale, inks, anchor = BASE_TONE, target = ACTION_LABEL_TARGET) {
-  const t = typeof target === "number" ? { wcag: target, apcaLc: 75 } : target;
-  const tones = Object.keys(scale).map(Number).filter((n) => Number.isFinite(n) && scale[n]).sort((a2, b) => {
-    const d = Math.abs(a2 - anchor) - Math.abs(b - anchor);
-    if (d !== 0) return d;
-    return chromaOf(scale[b]) - chromaOf(scale[a2]);
-  });
-  for (const tone of tones) {
-    for (let i = 0; i < inks.length; i++) {
-      let w;
-      let lc;
-      try {
-        w = checkContrast(inks[i], scale[tone]);
-        lc = Math.abs(apcaLc(inks[i], scale[tone]));
-      } catch {
-        continue;
-      }
-      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
-    }
-  }
-  return solidInkPair(scale, inks, anchor, t);
-}
-function chromaOf(hex) {
-  try {
-    return hexToOklch(hex).c;
-  } catch {
-    return 0;
-  }
-}
-function darkShadow(css, opts = {}) {
-  const value = (css ?? "").trim();
-  if (!value || value === "none") return "none";
-  const withRim = opts.rim !== false;
-  let maxAlpha = 0;
-  const recolored = value.replace(SHADOW_COLOR_RE, (match) => {
-    let a2;
-    try {
-      a2 = chroma(match).alpha();
-    } catch {
-      return match;
-    }
-    maxAlpha = Math.max(maxAlpha, a2);
-    return `rgba(0,0,0,${round2(1 - Math.pow(1 - a2, DARK_ALPHA_GAIN))})`;
-  });
-  if (!withRim) return recolored;
-  const rimAlpha = round2(Math.min(0.12, Math.max(0.03, 0.03 + 0.35 * maxAlpha)));
-  return `0 0 0 1px rgba(255,255,255,${rimAlpha}), ${recolored}`;
-}
-function darkShadowMap(shadows) {
-  return Object.fromEntries(Object.entries(shadows).map(([k, v]) => [k, darkShadow(v)]));
-}
-var TONES, BASE_TONE, BG_WEIGHTS, SPECS, ALGORITHM_OPTIONS, NAMING_SCHEMES, NEUTRAL_TINTS, DEFAULT_NEUTRAL_TINT, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, STATE_CANONICAL, WCAG_AA, ACTION_LABEL_TARGET, DARK_ALPHA_GAIN, SHADOW_COLOR_RE, round2;
-var init_colorUtils = __esm({
-  "src/lib/colorUtils.ts"() {
-    init_apca();
-    init_gamut();
-    TONES = 12;
-    BASE_TONE = 9;
-    BG_WEIGHTS = [0, 0.03, 0.08, 0.16, 0.25, 0.35, 0.49, 0.63, 0.79];
-    SPECS = {
-      // Legacy / neutral lightness ramp — the default feel.
-      default: { label: "Lightness Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9 },
-      lightness: { label: "Lightness Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9 },
-      monochromatic: { label: "Monochromatic", lightL: 0.97, darkL: 0.2, lightCmul: 0.45, darkCmul: 0.95 },
-      // System-flavored ramps — distinct light/dark extremes + chroma feel.
-      tailwind: { label: "Tailwind CSS", lightL: 0.97, darkL: 0.18, lightCmul: 0.4, darkCmul: 1 },
-      // Radix's light steps 1–2 are near-white with almost no chroma (app/subtle
-      // backgrounds) — hence the very low light-end chroma multiplier.
-      radix: { label: "Radix UI", lightL: 0.995, darkL: 0.24, lightCmul: 0.04, darkCmul: 0.85 },
-      ant: { label: "Ant Design", lightL: 0.96, darkL: 0.2, lightCmul: 0.45, darkCmul: 0.95 },
-      // Chroma fans wide from pale tints to saturated shades.
-      saturation: { label: "Saturation Scale", lightL: 0.92, darkL: 0.3, lightCmul: 0.15, darkCmul: 1.45 },
-      // Hue-relationship variants.
-      hueShift: { label: "Hue Shift Scale", lightL: 0.97, darkL: 0.2, lightCmul: 0.35, darkCmul: 0.9, hueShift: (f) => f * 25 },
-      analogous: { label: "Analogous", lightL: 0.97, darkL: 0.2, lightCmul: 0.4, darkCmul: 0.95, hueShift: (f) => f * 30 },
-      // Tints rotate toward the complement; shades hold the base hue.
-      complementary: { label: "Complementary", lightL: 0.97, darkL: 0.2, lightCmul: 0.4, darkCmul: 0.95, hueShift: (f) => f < 0 ? -f * 180 : 0 }
-    };
-    ALGORITHM_OPTIONS = ["radix", "lightness", "tailwind", "ant", "saturation", "hueShift", "monochromatic", "analogous", "complementary"].map((key2) => ({ key: key2, label: SPECS[key2].label }));
-    NAMING_SCHEMES = [
-      { key: "numeric", label: "1, 2, 3\u2026", labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] },
-      // Canonical Untitled-UI / Tailwind ramp: 25 (lightest) … 950 (darkest). The
-      // semantic catalogue's tone→label mapping is built against this (tone 11 = 900,
-      // tone 12 = 950), so exported references read gray.900 / gray.950 etc.
-      { key: "hundreds", label: "25, 50, 100\u2026", labels: ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"] },
-      { key: "tens", label: "10, 20, 30\u2026", labels: ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100", "110", "120"] }
-    ];
-    NEUTRAL_TINTS = [
-      {
-        key: "pure",
-        label: "Pure",
-        hint: "Radix Gray \u2014 no hue at all",
-        light: { l: 0.995, mul: 0, cap: 0 },
-        dark: { l: 0.17, mul: 0, cap: 0 },
-        brandSat: 0,
-        chromaLink: 0
-      },
-      {
-        key: "subtle",
-        label: "Subtle",
-        hint: "Radix Mauve / Slate \u2014 a whisper of the hue",
-        light: { l: 0.995, mul: 0.12, cap: 6e-3 },
-        dark: { l: 0.17, mul: 0.35, cap: 0.022 },
-        brandSat: 0.08,
-        chromaLink: 0
-      },
-      {
-        key: "tinted",
-        label: "Tinted",
-        hint: "Radix Sage / Sand \u2014 visibly warm or cool",
-        light: { l: 0.985, mul: 0.35, cap: 0.018 },
-        dark: { l: 0.19, mul: 0.6, cap: 0.04 },
-        brandSat: 0.16,
-        chromaLink: 0.7
-      },
-      {
-        key: "vivid",
-        label: "Vivid",
-        hint: "Beyond Radix \u2014 a clearly coloured paper",
-        light: { l: 0.972, mul: 0.7, cap: 0.042 },
-        dark: { l: 0.215, mul: 1, cap: 0.075 },
-        brandSat: 0.28,
-        chromaLink: 1
-      }
-    ];
-    DEFAULT_NEUTRAL_TINT = "subtle";
-    BLACK_ALPHA_SCALE = {
-      1: "#0000000d",
-      2: "#0000001a",
-      3: "#00000026",
-      4: "#00000033",
-      5: "#0000004d",
-      6: "#00000066",
-      7: "#00000080",
-      8: "#00000099",
-      9: "#000000b3",
-      10: "#000000cc",
-      11: "#000000e6",
-      12: "#000000f2"
-    };
-    WHITE_ALPHA_SCALE = {
-      1: "#ffffff0d",
-      2: "#ffffff1a",
-      3: "#ffffff26",
-      4: "#ffffff33",
-      5: "#ffffff4d",
-      6: "#ffffff66",
-      7: "#ffffff80",
-      8: "#ffffff99",
-      9: "#ffffffb3",
-      10: "#ffffffcc",
-      11: "#ffffffe6",
-      12: "#fffffff2"
-    };
-    STATE_CANONICAL = {
-      error: "#f04438",
-      warning: "#f79009",
-      success: "#17b26a",
-      info: "#2e90fa"
-    };
-    WCAG_AA = 4.5;
-    ACTION_LABEL_TARGET = { wcag: WCAG_AA, apcaLc: 60 };
-    DARK_ALPHA_GAIN = 6;
-    SHADOW_COLOR_RE = /rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b/g;
-    round2 = (n) => Math.round(n * 1e3) / 1e3;
-  }
-});
-
 // src/lib/utils.ts
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -4306,68 +5317,6 @@ var HOSTED_LIVE_SYNC;
 var init_hostedSync = __esm({
   "src/lib/hostedSync.ts"() {
     HOSTED_LIVE_SYNC = false;
-  }
-});
-
-// src/lib/shadowTokens.ts
-function matchShadowPreset(shadows) {
-  const hit = SHADOW_PRESETS.find(
-    (preset) => SHADOW_STEPS.every((step) => (shadows[step] ?? "") === preset.values[step])
-  );
-  return hit?.label ?? null;
-}
-function darkShadowsOf(f) {
-  const derived = darkShadowMap(f.shadows);
-  return f.shadowsDark ? { ...derived, ...f.shadowsDark } : derived;
-}
-var SHADOW_PRESETS, SHADOW_STEPS;
-var init_shadowTokens = __esm({
-  "src/lib/shadowTokens.ts"() {
-    init_colorUtils();
-    SHADOW_PRESETS = [
-      {
-        label: "None",
-        description: "Flat \u2014 no elevation anywhere",
-        values: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" }
-      },
-      {
-        label: "Subtle",
-        description: "Barely-there depth \u2014 quiet, minimal",
-        values: {
-          xs: "0 1px 1px rgba(10,13,18,0.03)",
-          sm: "0 1px 2px rgba(10,13,18,0.05)",
-          md: "0 2px 4px -1px rgba(10,13,18,0.05)",
-          lg: "0 6px 8px -2px rgba(10,13,18,0.04)",
-          xl: "0 10px 12px -2px rgba(10,13,18,0.04)",
-          "2xl": "0 12px 24px -6px rgba(10,13,18,0.08)"
-        }
-      },
-      {
-        label: "Soft",
-        description: "Balanced depth \u2014 the default ramp",
-        values: {
-          xs: "0 1px 2px rgba(10,13,18,0.05)",
-          sm: "0 1px 3px rgba(10,13,18,0.10), 0 1px 2px -1px rgba(10,13,18,0.10)",
-          md: "0 4px 6px -1px rgba(10,13,18,0.10), 0 2px 4px -2px rgba(10,13,18,0.06)",
-          lg: "0 12px 16px -4px rgba(10,13,18,0.08), 0 4px 6px -2px rgba(10,13,18,0.03)",
-          xl: "0 20px 24px -4px rgba(10,13,18,0.08), 0 8px 8px -4px rgba(10,13,18,0.03)",
-          "2xl": "0 24px 48px -12px rgba(10,13,18,0.18)"
-        }
-      },
-      {
-        label: "Strong",
-        description: "Pronounced depth \u2014 bold, high-contrast surfaces",
-        values: {
-          xs: "0 2px 4px rgba(10,13,18,0.10)",
-          sm: "0 2px 6px rgba(10,13,18,0.18), 0 2px 4px -1px rgba(10,13,18,0.16)",
-          md: "0 8px 12px -2px rgba(10,13,18,0.18), 0 4px 6px -3px rgba(10,13,18,0.12)",
-          lg: "0 20px 26px -6px rgba(10,13,18,0.16), 0 8px 10px -4px rgba(10,13,18,0.08)",
-          xl: "0 32px 40px -6px rgba(10,13,18,0.18), 0 14px 14px -6px rgba(10,13,18,0.08)",
-          "2xl": "0 40px 72px -16px rgba(10,13,18,0.32)"
-        }
-      }
-    ];
-    SHADOW_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
   }
 });
 
@@ -5043,7 +5992,8 @@ function resolveThemeFoundations(source, themeKey) {
     gridFrame: override.gridFrame ?? source.gridFrame,
     radiusRoleViewports: override.radiusRoleViewports ?? source.radiusRoleViewports,
     panelBackground: override.panelBackground ?? source.panelBackground,
-    iconWeight: override.iconWeight ?? source.iconWeight
+    iconWeight: override.iconWeight ?? source.iconWeight,
+    motion: override.motion ?? source.motion
   };
 }
 var init_themeFoundations = __esm({
@@ -5265,6 +6215,51 @@ function uiBoundaryRef(fam, start, kind, look) {
 function uiBoundaryTone(fam, start, kind, look) {
   return Number(REF_RE.exec(uiBoundaryRef(fam, start, kind, look))?.[2] ?? start);
 }
+function linkTextTone(fam, start, kind, look) {
+  const nf = kind === "dark" ? "neutral-dark" : "neutral";
+  const page = look(nf, 1);
+  const raised = [look(nf, 2), look(nf, 3)].filter((h) => !!h);
+  if (!page) return start;
+  const ramp = rampOf(look, fam);
+  let fallback = start;
+  let bestScore = -Infinity;
+  for (let t = start; t <= 12; t++) {
+    const hex = ramp[t];
+    if (!hex) continue;
+    let score = Math.min(checkContrast(hex, page) / WCAG_AA, Math.abs(apcaLc(hex, page)) / APCA_BODY_TEXT);
+    for (const bg of raised) {
+      score = Math.min(score, checkContrast(hex, bg) / WCAG_AA, Math.abs(apcaLc(hex, bg)) / APCA_LINK_RAISED);
+    }
+    if (score >= 1) return t;
+    if (score > bestScore) {
+      bestScore = score;
+      fallback = t;
+    }
+  }
+  return fallback;
+}
+function disabledTextTone(fam, start, kind, look) {
+  const nf = kind === "dark" ? "neutral-dark" : "neutral";
+  const page = look(nf, 1);
+  const wash = kind === "dark" ? look("white-a", 2) : look("black-a", 3);
+  if (!page || !OPAQUE6.test(page)) return start;
+  const bgs = wash ? [page, compositeOver(wash, page)] : [page];
+  const ramp = rampOf(look, fam);
+  let fallback = start;
+  let bestScore = -Infinity;
+  for (let t = start; t < DISABLED_CAP; t++) {
+    const hex = ramp[t];
+    if (!hex) continue;
+    let score = Infinity;
+    for (const bg of bgs) score = Math.min(score, checkContrast(hex, bg) / WCAG_DISABLED, Math.abs(apcaLc(hex, bg)) / APCA_DISABLED);
+    if (score >= 1) return t;
+    if (score > bestScore) {
+      bestScore = score;
+      fallback = t;
+    }
+  }
+  return fallback;
+}
 function uiAlphaBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI, wcagMin = WCAG_UI) {
   const page = look(kind === "dark" ? "neutral-dark" : "neutral", 1);
   if (!page) return `{${fam}.${start}}`;
@@ -5336,7 +6331,7 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
   };
   const solidToneFor = (fam) => solidFor(fam).tone;
   return roles.map((r) => {
-    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`).replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`).replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
       const s = solidFor(fam);
       return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used);
     }).replace(/\{chart\.(\d)\}/g, (_m, n) => chartSlots[Number(n) - 1] ?? "");
@@ -5450,7 +6445,7 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
@@ -5465,6 +6460,11 @@ var init_semanticArchitectures = __esm({
     INK_REFS = ["{neutral.1}", "{neutral.12}"];
     REF_RE = /^\{([a-z-]+)\.(\d+)\}$/;
     TEXT_END_TONE = 12;
+    APCA_LINK_RAISED = INTENT_THRESHOLDS["action-label"].apcaLc ?? 60;
+    DISABLED_CAP = 11;
+    WCAG_DISABLED = INTENT_THRESHOLDS["disabled-text"].wcag ?? 3;
+    APCA_DISABLED = INTENT_THRESHOLDS["disabled-text"].apcaLc ?? 30;
+    OPAQUE6 = /^#[0-9a-f]{6}$/i;
     CATEGORICAL_ROLES = [
       // Content — text & icon ink
       { group: "content", key: "primary", light: "{neutral.12}", dark: "{neutral-dark.12}" },
@@ -5488,13 +6488,19 @@ var init_semanticArchitectures = __esm({
       // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
       // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
       // ≈2.8–3.0:1 — muted, still well below body text (≈9:1), still legible.
-      { group: "content", key: "disabled", light: "{neutral.7}", dark: "{neutral-dark.10}" },
+      // SOLVED from those starts (`{dis:…}`) to the `disabled-text` floor on the
+      // page and the disabled wash, never reaching content.secondary's step: light
+      // tone 7 measured 1.35–1.76:1 on the wash and walks up; dark stays at 10.
+      { group: "content", key: "disabled", light: "{dis:neutral.7}", dark: "{dis:neutral-dark.10}" },
       // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
       // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
       // solved for AA as text (same bug class as shadcn's `muted.foreground` fix
       // below). 11/12 are the ramp's two genuine text steps, same as `content.accent`.
-      { group: "content", key: "link.default", light: "{accent.11}", dark: "{accent.11}" },
-      { group: "content", key: "link.hover", light: "{accent.12}", dark: "{accent.12}" },
+      // SOLVED from 11 against page, layer-1 and layer-2 (`linkTextTone`): a link
+      // Button in a Dialog sits on layer-2, where a pinned 11 fell under AA. When
+      // the default has to take 12, hover shares it and the underline is the cue.
+      { group: "content", key: "link.default", light: "{link:accent.11}", dark: "{link:accent.11}" },
+      { group: "content", key: "link.hover", light: "{link+:accent.11}", dark: "{link+:accent.11}" },
       // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
       { group: "action", key: "primary.default", light: "{accent.solid}", dark: "{accent.solid}" },
       // Hover/pressed on the primary fill — SOLVED `n` steps past the RESOLVED
@@ -5543,7 +6549,11 @@ var init_semanticArchitectures = __esm({
       // and it composites over whatever's behind (page OR card) so it reads as
       // "muted, wherever it sits". Flips black/white per appearance like the ghost
       // washes. No contrast floor — it communicates inactivity, not legibility.
-      { group: "action", key: "disabled.default", light: "{black-a.3}", dark: "{white-a.3}" },
+      // Dark is ONE step lighter (a.2, not a.3): at a.3 the disabled label (tone
+      // 10) read 2.5:1 on it and the ramp has no tone between that and the
+      // secondary ink; a.2 lifts it to ~3:1 and still reads as a fill (1.28:1
+      // off the page).
+      { group: "action", key: "disabled.default", light: "{black-a.3}", dark: "{white-a.2}" },
       // Ghost / tertiary fill — a borderless button's hover/pressed wash. This is
       // the first role backed by a COLOURED alpha primitive (`{accent-a.N}`,
       // resolved by `scaleLookup` against the real page/dark background — see
@@ -5964,7 +6974,7 @@ var init_semanticArchitectures = __esm({
       "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
       "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
       "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark \u2014 so light pressed shares the hover tone. Label stays content.on-secondary.",
-      "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.3} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
+      "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.2} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
       "action.ghost.default": "[ROLE: Ghost Default] Resting fill of a borderless button \u2014 fully transparent (`{neutral-a.1}` \u2014 alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "action.ghost.hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance \u2014 {black-a.1} in light, {white-a.1} in dark \u2014 because a neutral wash has to darken a light page and lighten a dark one.",
       "action.ghost.pressed": "[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.",
@@ -6759,7 +7769,7 @@ var init_forms = __esm({
               stroke: c(error ? "status.critical.border-strong" : state2 === "Dragging" ? "border.accent" : "border.control")
             },
             icon: { fill: c(error ? "status.critical.surface" : "surface.selected"), text: c(error ? "status.critical.content" : "content.accent") },
-            link: { text: c("content.accent") },
+            link: { text: c("content.link.default") },
             hint: { text: c(error ? "status.critical.content" : "content.secondary") }
           };
         })
@@ -7932,6 +8942,67 @@ var init_indicators = __esm({
   }
 });
 
+// src/lib/recipes/motion.ts
+function states(...props) {
+  return Object.fromEntries(props.map((p2) => [p2, p2 === "box-shadow" ? "use-focus" : "use-hover"]));
+}
+var FIELD2, FILL, popover, disclosure, RECIPE_MOTION;
+var init_motion2 = __esm({
+  "src/lib/recipes/motion.ts"() {
+    FIELD2 = states("border-color", "box-shadow");
+    FILL = states("background-color", "color");
+    popover = (origin, slot) => ({
+      enter: { name: "popover-enter", slot },
+      exit: { name: "popover-exit", slot },
+      origin: `var(${origin}, center)`
+    });
+    disclosure = (heightVar) => ({
+      transitions: { icon: { transform: "use-disclosure-in" } },
+      enter: { name: "accordion-expand", slot: "content", heightVar },
+      exit: { name: "accordion-collapse", slot: "content", heightVar }
+    });
+    RECIPE_MOTION = {
+      Button: { transitions: { root: states("background-color", "color", "border-color", "box-shadow") } },
+      Badge: { transitions: { root: states("background-color", "color", "border-color") } },
+      Chip: { transitions: { root: states("background-color", "border-color", "color") } },
+      Toggle: { transitions: { root: FILL } },
+      ToggleGroup: { transitions: { item: FILL } },
+      Item: { transitions: { root: FILL } },
+      Calendar: { transitions: { day: FILL } },
+      Pagination: { transitions: { cell: FILL } },
+      TabMenu: { transitions: { item: FILL } },
+      SegmentedControl: { transitions: { item: FILL } },
+      Sidebar: { transitions: { button: FILL } },
+      Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
+      Table: { transitions: { row: states("background-color") } },
+      ScrollArea: { transitions: { scrollbar: states("background-color") } },
+      Dropzone: { transitions: { root: states("background-color", "border-color") } },
+      Input: { transitions: { root: FIELD2 } },
+      InputGroup: { transitions: { root: FIELD2 } },
+      InputTag: { transitions: { root: FIELD2 } },
+      InputOTP: { transitions: { slot: FIELD2 } },
+      Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
+      NativeSelect: { transitions: { select: FIELD2 } },
+      Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
+      RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
+      Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
+      Slider: { transitions: { thumb: { transform: "use-hover", "box-shadow": "use-focus" } } },
+      Progress: { transitions: { indicator: { width: "base-functional-standard" } } },
+      Accordion: disclosure("--radix-accordion-content-height"),
+      Collapsible: disclosure("--radix-collapsible-content-height"),
+      Dialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
+      AlertDialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
+      Sheet: { enter: { name: "sheet-enter" }, exit: { name: "sheet-exit" }, sideAttr: "side" },
+      Popover: popover("--radix-popover-content-transform-origin"),
+      Tooltip: popover("--radix-tooltip-content-transform-origin"),
+      HoverCard: popover("--radix-hover-card-content-transform-origin"),
+      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin"),
+      ContextMenu: popover("--radix-context-menu-content-transform-origin"),
+      Menubar: popover("--radix-menubar-content-transform-origin", "content")
+    };
+  }
+});
+
 // src/lib/componentRecipes.ts
 function serializeRecipes() {
   return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
@@ -7946,6 +9017,7 @@ var init_componentRecipes = __esm({
     init_feedback();
     init_indicators();
     init_helpers();
+    init_motion2();
     init_helpers();
     COMPONENT_RECIPES = {
       Button: BUTTON,
@@ -8022,6 +9094,10 @@ var init_componentRecipes = __esm({
       Card: CARD,
       Dialog: DIALOG
     };
+    for (const [key2, motion] of Object.entries(RECIPE_MOTION)) {
+      const recipe = COMPONENT_RECIPES[key2];
+      if (recipe) COMPONENT_RECIPES[key2] = { ...recipe, motion };
+    }
   }
 });
 
@@ -8241,6 +9317,9 @@ function generateTokenJSON(source, opts) {
       // icons than an Airy one — the plugin binds `Icon/*` from these.
       iconWeight: resolved.iconWeight,
       iconSizes: iconSizeTokens(resolved.sizes),
+      // THIS theme's motion — a System Style picks its own preset. The shared
+      // vocabulary (easings, keyframes, choreographies) stays in root `motion`.
+      motion: motionThemeTokens(normalizeMotionSettings(resolved.motion)),
       // Which Dimension primitive each length of THIS theme aliases. Per theme
       // because a style's radius/spacing differ — the primitives themselves
       // (`dimensions`) never do.
@@ -9184,6 +10263,7 @@ var init_useDesignStore = __esm({
   "src/store/useDesignStore.ts"() {
     init_customFonts();
     init_motion();
+    init_themePresets();
     init_figmaSyncModes();
     init_componentCatalogue();
     init_typographyStandard();
@@ -10127,7 +11207,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 103,
+          version: 104,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -11375,6 +12455,22 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) seedMotion(sys?.snapshot);
               }
             }
+            if (version < 104) {
+              const styleMotion = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                const origins = state2.themeOrigin ?? {};
+                for (const [key2, presetId] of Object.entries(origins)) {
+                  const preset = THEME_STYLE_PRESETS.find((p2) => p2.id === presetId);
+                  const own = state2.themeFoundations?.[key2];
+                  if (!preset?.foundations.motion || !own || typeof own !== "object" || own.motion) continue;
+                  own.motion = structuredClone(preset.foundations.motion);
+                }
+              };
+              styleMotion(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) styleMotion(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -11467,66 +12563,8 @@ function savedBrandKeysFrom(state2, unsaved = useThemeSetup.getState().unsaved) 
 }
 
 // src/lib/industryPacks.ts
+init_brandPalette();
 import chroma3 from "chroma-js";
-
-// src/lib/brandPalette.ts
-var PRESET_GROUPS = [
-  {
-    label: "Greens",
-    colors: [
-      { label: "Moss", hex: "#669f2a" },
-      { label: "Forest", hex: "#15803d" },
-      { label: "Lime", hex: "#66c61c" },
-      { label: "Green", hex: "#16b364" },
-      { label: "Mint", hex: "#34d399" },
-      { label: "Teal", hex: "#15b79e" },
-      { label: "Emerald", hex: "#0d9488" },
-      { label: "Aqua", hex: "#2dd4bf" },
-      { label: "Cyan", hex: "#06aed4" },
-      { label: "Ice", hex: "#22d3ee" }
-    ]
-  },
-  {
-    label: "Blues",
-    colors: [
-      { label: "Sky", hex: "#0ba5ec" },
-      { label: "Blue", hex: "#2e90fa" },
-      { label: "Blue Dark", hex: "#2970ff" },
-      { label: "Cobalt", hex: "#1d4ed8" },
-      { label: "Electric", hex: "#4f46e5" },
-      { label: "Indigo", hex: "#6172f3" },
-      { label: "Periwinkle", hex: "#818cf8" },
-      { label: "Violet", hex: "#875bf7" },
-      { label: "Purple", hex: "#7a5af8" },
-      { label: "Grape", hex: "#a855f7" }
-    ]
-  },
-  {
-    label: "Pinks",
-    colors: [
-      { label: "Magenta", hex: "#c026d3" },
-      { label: "Fuchsia", hex: "#d444f1" },
-      { label: "Pink", hex: "#ee46bc" },
-      { label: "Ros\xE9", hex: "#f63d68" },
-      { label: "Coral", hex: "#fb542b" }
-    ]
-  },
-  {
-    label: "Warm",
-    colors: [
-      { label: "Flame", hex: "#ff4405" },
-      { label: "Orange", hex: "#ef6820" },
-      { label: "Amber", hex: "#f59e0b" },
-      { label: "Yellow", hex: "#eaaa08" }
-    ]
-  }
-];
-var BRAND_PRESETS = PRESET_GROUPS.flatMap((g) => g.colors.map((c2) => c2.hex));
-var BRAND_SPECTRUM = ["Blues", "Pinks", "Warm", "Greens"].flatMap(
-  (label) => PRESET_GROUPS.find((g) => g.label === label)?.colors ?? []
-);
-
-// src/lib/industryPacks.ts
 var INDUSTRY_GROUP_ORDER = ["market", "work", "life"];
 var INDUSTRY_PACKS = [
   {
@@ -11723,9 +12761,9 @@ function labelForAccent(hex) {
   const h = hex.slice(0, 7).toLowerCase();
   return INDUSTRY_SPECTRUM.find((p2) => p2.hex.toLowerCase() === h)?.label ?? "Brand";
 }
-function slotsFromAccent(hex, tint, states) {
+function slotsFromAccent(hex, tint, states2) {
   const h = previewHarmony(hex, tint);
-  const st = states ?? h.states;
+  const st = states2 ?? h.states;
   return {
     brand: hex,
     gray: h.neutral,
@@ -12104,787 +13142,8 @@ function approximateSource(text, name = "From code") {
   return { ok: true, json, colors: colorCount, seeds };
 }
 
-// src/lib/themePresets.ts
-init_colorUtils();
-init_layoutTokens();
-init_shadowTokens();
-
-// src/lib/themeMoods.ts
-init_layoutTokens();
-init_colorUtils();
-init_gamut();
-
-// src/lib/color/scaleMatch.ts
-init_gamut();
-
-// src/lib/color/tailwind.ts
-init_gamut();
-
-// src/lib/themeMoods.ts
-var DAISY_MOOD_SPECS = {
-  forest: { scheme: "dark", base: [0.2084, 8e-3, 17.911], neutral: [0.307, 0.039, 171.364], primary: [0.6863, 0.185, 148.958], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
-  cyberpunk: { scheme: "light", base: [0.9451, 0.179, 104.32], neutral: [0.2304, 0.065, 269.31], primary: [0.7422, 0.209, 6.35], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "none", fields: "none", boxes: "none" }, border: 1, depth: 0 },
-  cupcake: { scheme: "light", base: [0.9779, 4e-3, 56.375], neutral: [0.27, 6e-3, 286.033], primary: [0.85, 0.138, 181.071], info: [0.68, 0.169, 237.323], success: [0.69, 0.17, 162.48], warning: [0.79, 0.184, 86.047], error: [0.64, 0.246, 16.439], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 1 },
-  fantasy: { scheme: "light", base: [1, 0, 0], neutral: [0.2781, 0.029, 256.847], primary: [0.3745, 0.189, 325.02], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
-  cmyk: { scheme: "light", base: [1, 0, 0], neutral: [0.2178, 0, 0], primary: [0.7177, 0.133, 239.443], info: [0.6847, 0.094, 217.284], success: [0.4695, 0.162, 321.406], warning: [0.7124, 0.159, 52.023], error: [0.6201, 0.208, 28.717], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  emerald: { scheme: "light", base: [1, 0, 0], neutral: [0.3552, 0.032, 262.988], primary: [0.7666, 0.135, 153.45], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  nord: { scheme: "light", base: [0.9513, 7e-3, 260.731], neutral: [0.4523, 0.035, 264.131], primary: [0.5944, 0.077, 254.027], info: [0.6921, 0.062, 332.664], success: [0.7683, 0.074, 131.063], warning: [0.8549, 0.089, 84.093], error: [0.6061, 0.12, 15.341], radius: { selectors: "2xl", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
-  halloween: { scheme: "dark", base: [0.21, 6e-3, 56.043], neutral: [0.2437, 0.046, 65.681], primary: [0.7748, 0.204, 60.62], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.6572, 0.199, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
-  night: { scheme: "dark", base: [0.2077, 0.039, 265.754], neutral: [0.2795, 0.036, 260.03], primary: [0.7535, 0.138, 232.661], info: [0.6845, 0.148, 237.251], success: [0.7845, 0.132, 181.911], warning: [0.8324, 0.139, 82.95], error: [0.7178, 0.17, 13.118], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  coffee: { scheme: "dark", base: [0.24, 0.023, 329.708], neutral: [0.1651, 0.015, 326.261], primary: [0.72, 0.123, 62.756], info: [0.7949, 0.063, 184.558], success: [0.7472, 0.072, 131.116], warning: [0.8815, 0.14, 87.722], error: [0.7732, 0.128, 31.871], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  winter: { scheme: "light", base: [1, 0, 0], neutral: [0.1962, 0.063, 257.651], primary: [0.5686, 0.255, 257.57], info: [0.8813, 0.085, 214.515], success: [0.8049, 0.077, 197.823], warning: [0.8917, 0.045, 71.47], error: [0.7309, 0.11, 20.076], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  light: { scheme: "light", base: [1, 0, 0], neutral: [0.14, 5e-3, 285.823], primary: [0.45, 0.24, 277.023], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
-  valentine: { scheme: "light", base: [0.97, 0.014, 343.198], neutral: [0.4, 0.153, 2.432], primary: [0.65, 0.241, 354.308], info: [0.86, 0.127, 207.078], success: [0.84, 0.143, 164.978], warning: [0.75, 0.183, 55.934], error: [0.63, 0.237, 25.331], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 1, depth: 0 },
-  lemonade: { scheme: "light", base: [0.9871, 0.02, 123.72], neutral: [0.3098, 0.075, 108.6], primary: [0.5892, 0.199, 134.6], info: [0.8619, 0.047, 224.14], success: [0.8619, 0.047, 157.85], warning: [0.8619, 0.047, 102.15], error: [0.8619, 0.047, 25.85], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  retro: { scheme: "light", base: [0.9164, 0.034, 90.515], neutral: [0.44, 0.011, 73.639], primary: [0.8, 0.114, 19.571], info: [0.58, 0.158, 241.966], success: [0.51, 0.096, 186.391], warning: [0.64, 0.222, 41.116], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "lg" }, border: 1, depth: 0 },
-  aqua: { scheme: "dark", base: [0.37, 0.146, 265.522], neutral: [0.27, 0.146, 265.522], primary: [0.8566, 0.144, 198.645], info: [0.5462, 0.215, 262.88], success: [0.627, 0.169, 149.213], warning: [0.6658, 0.157, 58.318], error: [0.7395, 0.19, 27.33], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
-  dark: { scheme: "dark", base: [0.2533, 0.016, 252.42], neutral: [0.14, 5e-3, 285.823], primary: [0.58, 0.233, 277.117], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.71, 0.194, 13.428], radius: { selectors: "lg", fields: "sm", boxes: "lg" }, border: 1, depth: 1 },
-  dim: { scheme: "dark", base: [0.3086, 0.023, 264.149], neutral: [0.2473, 0.02, 264.094], primary: [0.8613, 0.141, 139.549], info: [0.8608, 0.142, 206.182], success: [0.8617, 0.142, 166.534], warning: [0.8616, 0.142, 94.818], error: [0.8242, 0.099, 33.756], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  dracula: { scheme: "dark", base: [0.2882, 0.022, 277.508], neutral: [0.3945, 0.032, 275.524], primary: [0.7546, 0.183, 346.812], info: [0.8826, 0.093, 212.846], success: [0.871, 0.219, 148.024], warning: [0.9553, 0.134, 112.757], error: [0.6822, 0.206, 24.43], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  corporate: { scheme: "light", base: [1, 0, 0], neutral: [0, 0, 0], primary: [0.58, 0.158, 241.966], info: [0.6, 0.126, 221.723], success: [0.62, 0.194, 149.214], warning: [0.85, 0.199, 91.936], error: [0.7, 0.191, 22.216], radius: { selectors: "sm", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
-  bumblebee: { scheme: "light", base: [1, 0, 0], neutral: [0.37, 0.01, 67.558], primary: [0.85, 0.199, 91.936], info: [0.74, 0.16, 232.661], success: [0.76, 0.177, 163.223], warning: [0.82, 0.189, 84.429], error: [0.7, 0.191, 22.216], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
-  business: { scheme: "dark", base: [0.2435, 0, 0], neutral: [0.2744, 0.013, 253.041], primary: [0.417, 0.099, 251.473], info: [0.6262, 0.143, 240.033], success: [0.7023, 0.094, 156.596], warning: [0.7748, 0.115, 81.519], error: [0.5161, 0.146, 29.674], radius: { selectors: "none", fields: "sm", boxes: "sm" }, border: 1, depth: 0 },
-  acid: { scheme: "light", base: [0.98, 0, 0], neutral: [0.2131, 0.128, 278.68], primary: [0.719, 0.357, 330.759], info: [0.6072, 0.227, 252.05], success: [0.8572, 0.266, 158.53], warning: [0.9101, 0.212, 100.5], error: [0.6484, 0.293, 29.349], radius: { selectors: "2xl", fields: "2xl", boxes: "2xl" }, border: 1, depth: 1 },
-  sunset: { scheme: "dark", base: [0.22, 0.019, 237.69], neutral: [0.26, 0.019, 237.69], primary: [0.747, 0.158, 39.947], info: [0.8556, 0.085, 206.015], success: [0.8556, 0.085, 144.778], warning: [0.8557, 0.084, 74.427], error: [0.8551, 0.078, 16.886], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  garden: { scheme: "light", base: [0.9295, 2e-3, 17.197], neutral: [0.2416, 0.049, 89.07], primary: [0.6245, 0.278, 3.836], info: [0.7206, 0.191, 231.6], success: [0.648, 0.15, 160], warning: [0.8471, 0.199, 83.87], error: [0.7176, 0.221, 22.18], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  autumn: { scheme: "light", base: [0.9581, 0, 0], neutral: [0.5437, 0.037, 51.902], primary: [0.4072, 0.161, 17.53], info: [0.6922, 0.097, 207.284], success: [0.6099, 0.08, 174.616], warning: [0.7008, 0.164, 56.844], error: [0.5307, 0.241, 24.16], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 1 },
-  pastel: { scheme: "light", base: [1, 0, 0], neutral: [0.55, 0.046, 257.417], primary: [0.9, 0.063, 306.703], info: [0.86, 0.127, 207.078], success: [0.87, 0.15, 154.449], warning: [0.83, 0.128, 66.29], error: [0.8, 0.114, 19.571], radius: { selectors: "2xl", fields: "4xl", boxes: "2xl" }, border: 2, depth: 0 },
-  synthwave: { scheme: "dark", base: [0.15, 0.09, 281.288], neutral: [0.45, 0.24, 277.023], primary: [0.71, 0.202, 349.761], info: [0.74, 0.16, 232.661], success: [0.77, 0.152, 181.912], warning: [0.9, 0.182, 98.111], error: [0.737, 0.121, 32.639], radius: { selectors: "2xl", fields: "lg", boxes: "2xl" }, border: 1, depth: 0 },
-  abyss: { scheme: "dark", base: [0.2, 0.08, 209], neutral: [0.3, 0.08, 209], primary: [0.92, 0.2653, 125], info: [0.74, 0.16, 232.661], success: [0.79, 0.209, 151.711], warning: [0.848, 0.1962, 84.62], error: [0.65, 0.1985, 24.22], radius: { selectors: "4xl", fields: "sm", boxes: "lg" }, border: 1, depth: 1 }
-};
-var SEVERITY_HUES = {
-  error: [[0, 45], [340, 360]],
-  warning: [[40, 112]],
-  success: [[118, 200]],
-  info: [[195, 290]]
-};
-var FALLBACK_STATES = {
-  error: "#d92d20",
-  warning: "#dc6803",
-  success: "#079455",
-  info: "#1570ef"
-};
-var hexOf = ([l, c2, h]) => oklchToHex(l, c2, h);
-function stateOf(role, value) {
-  const hex = hexOf(value);
-  const { c: c2, h: raw } = hexToOklch(hex);
-  const h = (raw % 360 + 360) % 360;
-  const inBand = SEVERITY_HUES[role].some(([lo, hi]) => h >= lo && h <= hi);
-  return c2 > 0.02 && inBand ? hex : FALLBACK_STATES[role];
-}
-function tintFor(base, appearance) {
-  if (base[1] < 3e-3) return "pure";
-  for (const spec of NEUTRAL_TINTS) {
-    if (spec.key === "pure") continue;
-    if (spec[appearance].cap >= base[1]) return spec.key;
-  }
-  return "vivid";
-}
-function neutralSeedFor(spec, tint) {
-  const appearance = spec.scheme;
-  const { mul } = NEUTRAL_TINTS.find((t) => t.key === tint)[appearance];
-  const hue = spec.base[1] > 4e-3 ? spec.base[2] : spec.neutral[1] > 8e-3 ? spec.neutral[2] : spec.base[2];
-  const chroma6 = Math.min(0.14, Math.max(spec.neutral[1], mul ? spec.base[1] / mul : 0, 4e-3));
-  return oklchToHex(0.52, chroma6, hue);
-}
-function moodFromSpec(id, spec) {
-  const tint = tintFor(spec.base, spec.scheme);
-  return {
-    id,
-    appearance: spec.scheme,
-    accent: hexOf(spec.primary),
-    neutral: neutralSeedFor(spec, tint),
-    neutralTint: tint,
-    states: {
-      error: stateOf("error", spec.error),
-      warning: stateOf("warning", spec.warning),
-      success: stateOf("success", spec.success),
-      info: stateOf("info", spec.info)
-    },
-    radius: { ...spec.radius },
-    border: spec.border,
-    depth: spec.depth
-  };
-}
-var CURATED_MOODS = Object.entries(DAISY_MOOD_SPECS).map(([id, spec]) => moodFromSpec(id, spec));
-function curatedMood(id) {
-  return CURATED_MOODS.find((mood) => mood.id === id);
-}
-var BRAND_WEIGHTS = {
-  amber: 3,
-  blue: 4,
-  cyan: 2,
-  emerald: 3,
-  fuchsia: 1,
-  green: 3,
-  indigo: 4,
-  lime: 3,
-  orange: 3,
-  pink: 3,
-  purple: 3,
-  red: 3,
-  rose: 1,
-  sky: 2,
-  teal: 3,
-  violet: 3,
-  yellow: 3
-};
-var BRAND_POOL = Object.entries(BRAND_WEIGHTS).flatMap(([name, w]) => Array(w).fill(name));
-
-// src/lib/themePresets.ts
-init_typeRoles();
-init_typographyStandard();
-function presetStates(preset) {
-  return preset.states ?? previewHarmony(preset.accent, preset.neutralTint).states;
-}
-function presetHarmony(preset) {
-  const h = previewHarmony(preset.accent, preset.neutralTint);
-  if (!preset.neutral) return h;
-  return {
-    ...h,
-    neutral: preset.neutral,
-    pageLight: backgroundFromBase(preset.neutral, "light", preset.neutralTint),
-    pageDark: backgroundFromBase(preset.neutral, "dark", preset.neutralTint)
-  };
-}
-function accent(label) {
-  return BRAND_SPECTRUM.find((preset) => preset.label === label)?.hex ?? BRAND_SPECTRUM[0].hex;
-}
-function moodColours(id) {
-  const mood = curatedMood(id);
-  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
-  return {
-    accent: mood.accent,
-    neutral: mood.neutral,
-    neutralTint: mood.neutralTint,
-    states: { ...mood.states },
-    preferredAppearance: mood.appearance
-  };
-}
-function moodShape(id) {
-  const mood = curatedMood(id);
-  if (!mood) throw new Error(`themePresets: unknown mood "${id}"`);
-  return {
-    radius: { ...RADIUS_STANDARD },
-    radiusRoles: styleRadiusRoles(mood.radius),
-    stroke: { ...STROKE_STANDARD, sm: `${mood.border}px` },
-    shadows: { ...SHADOW_PRESETS[mood.depth ? 2 : 1].values }
-  };
-}
-var DARK_DEPTH = {
-  "surface.layer-1": { dark: "{neutral-dark.3}" },
-  "surface.layer-2": { dark: "{neutral-dark.4}" },
-  "content.subtle": { dark: "{neutral-dark.10}" }
-};
-var A_DEFAULT_L = "{black-a.3}";
-var A_DEFAULT_D = "{white-a.3}";
-var A_STRONG_L = "{black-a.4}";
-var A_STRONG_D = "{white-a.4}";
-var softBorders = {
-  ...DARK_DEPTH,
-  "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D },
-  "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
-};
-var natureSemantics = {
-  "border.control": { light: "{neutral-a.5}", dark: "{accent-a.4}" },
-  "border.subtle": { dark: "{accent-a.2}" },
-  "content.primary": { light: "{accent.12}" },
-  "surface.input": { light: "{white-a.6}" },
-  // Not from `superb` — its tinted dark ramp compresses the low steps, so the
-  // schema's `{neutral.9}` subtle ink falls to ~3.1:1 in dark. One tone up
-  // clears the codebase's dark-legibility floor without touching the light
-  // appearance the designer personalised.
-  "content.subtle": { dark: "{neutral-dark.10}" }
-};
-var coreSemantics = {
-  ...DARK_DEPTH,
-  "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.control": { light: "{neutral.5}", dark: "{white-a.3}" },
-  "border.control-hover": { light: "{neutral.7}", dark: "{white-a.5}" },
-  "border.subtle": { light: "{black-a.3}", dark: "{white-a.1}" },
-  "content.primary": { dark: "{accent.12}" },
-  "content.secondary": { dark: "{neutral-dark.11}" }
-};
-var glassSemantics = {
-  ...DARK_DEPTH,
-  "surface.input": { light: "{neutral.2}", dark: "{black-a.2}" },
-  "border.control": { light: "{accent-a.4}", dark: "{accent-a.3}" },
-  "border.control-hover": { light: "{black-a.9}", dark: "{white-a.8}" },
-  "border.subtle": { light: "{accent-a.3}", dark: "{accent-a.2}" },
-  "border.rim-highlight": { light: "{white-a.9}", dark: "{white-a.4}" },
-  "content.primary": { dark: "{accent-a.12}" },
-  "action.primary.default": { dark: "{accent.9}" },
-  "status.critical.content": { dark: "{error.10}" },
-  "status.critical.surface-solid": { light: "{error.9}", dark: "{error-a.10}" },
-  "status.critical.border-strong": { light: "{error.9}" },
-  "status.success.surface-solid": { light: "{success.10}" }
-};
-var filledBorders = {
-  ...DARK_DEPTH,
-  // Dark input goes to 4, not 3: `DARK_DEPTH` just moved the card to 3, and a
-  // filled field that matches its own card is not a filled field.
-  "surface.input": { light: "{neutral.3}", dark: "{neutral-dark.4}" },
-  "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
-  // `border.subtle` follows the schema (black-a.2 / white-a.2). No override.
-};
-var retroSemantics = {
-  ...DARK_DEPTH,
-  "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.control": { light: "{neutral.9}", dark: "{accent.4}" },
-  "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
-  "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
-};
-var inkBorders = {
-  ...DARK_DEPTH,
-  "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-  "border.control": { light: "{accent.10}", dark: "{accent.8}" },
-  "border.control-hover": { light: "{accent.12}", dark: "{accent.11}" },
-  "border.subtle": { light: "{black-a.3}", dark: "{white-a.3}" }
-};
-function typography(body, heading) {
-  return {
-    fontFamily: body,
-    headingFontFamily: heading,
-    sizes: { ...FONT_SIZE_STANDARD },
-    lineHeights: { ...LINE_HEIGHT_STANDARD },
-    weights: { ...FONT_WEIGHT_STANDARD },
-    roles: mergeTypeRoles()
-  };
-}
-function styleRadiusRoles(picks) {
-  return radiusRolesFromGroups(picks);
-}
-var hardShadows = {
-  xs: "1px 1px 0 rgba(10,13,18,0.92)",
-  sm: "2px 2px 0 rgba(10,13,18,0.92)",
-  md: "3px 3px 0 rgba(10,13,18,0.92)",
-  lg: "4px 4px 0 rgba(10,13,18,0.92)",
-  xl: "6px 6px 0 rgba(10,13,18,0.92)",
-  "2xl": "8px 8px 0 rgba(10,13,18,0.92)"
-};
-var retroShadows = {
-  xs: "1px 1px 0 rgba(74,44,26,0.20)",
-  sm: "0 0 0 1px rgba(74,44,26,0.10), 2px 2px 0 rgba(74,44,26,0.24)",
-  md: "0 0 0 1px rgba(74,44,26,0.10), 3px 3px 0 rgba(74,44,26,0.28)",
-  lg: "0 0 0 1px rgba(74,44,26,0.10), 4px 4px 0 rgba(74,44,26,0.32)",
-  xl: "0 0 0 1px rgba(74,44,26,0.10), 6px 6px 0 rgba(74,44,26,0.36)",
-  "2xl": "0 0 0 1px rgba(74,44,26,0.10), 9px 9px 0 rgba(74,44,26,0.42)"
-};
-var THEME_STYLE_PRESETS = [
-  {
-    id: "core-minimal",
-    label: "Core / Minimalist",
-    shortLabel: "Core",
-    description: "Quiet, precise, content-first.",
-    detail: "A dependable baseline for SaaS, dashboards, and corporate tools.",
-    accent: accent("Blue Dark"),
-    // Matches the adopted Core theme the designer iterated (dark-first).
-    preferredAppearance: "dark",
-    neutralTint: "subtle",
-    // Crisp, conventional product severities — the register a dashboard reads
-    // as "correct" rather than expressive. Deliberately the least opinionated
-    // set here: Core is the baseline the other five are variations from.
-    states: { error: "#d92d20", warning: "#dc6803", success: "#079455", info: "#1570ef" },
-    foundations: {
-      typography: typography("Inter", "Inter"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      // Selectors bumped xs → sm — from the adopted theme's radiusRoles.control.
-      radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "lg", selectors: "lg" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      // Subtle elevation — the adopted Core theme's shadow ramp. Softer than
-      // Soft (the previous Core pick); still a six-step ladder, just quieter.
-      shadows: { ...SHADOW_PRESETS[1].values },
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: coreSemantics
-  },
-  {
-    id: "cupertino-glass",
-    label: "Cupertino / Glass",
-    shortLabel: "Glass",
-    description: "Fluid, translucent, and spacious.",
-    detail: "Soft depth and generous geometry, using Escala\u2019s existing panel treatment.",
-    // Lived-in accent from the adopted Cupertino / Glass theme (#06aed4), not
-    // spectrum Ice (#22d3ee). Same cyan family; the darker seed is what the
-    // designer actually shipped after iterating in-app.
-    accent: "#06aed4",
-    preferredAppearance: "dark",
-    neutralTint: "tinted",
-    // Apple's own system colours (systemRed / systemOrange / systemGreen /
-    // systemBlue), verbatim. A Cupertino style borrowing Cupertino's severities
-    // is the same kind of faithfulness as the translucent panel treatment.
-    states: { error: "#ff3b30", warning: "#ff9500", success: "#34c759", info: "#007aff" },
-    foundations: {
-      typography: typography("Roboto", "Inter"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      // Selectors at `lg` (not `sm`) — matches the adopted theme's control
-      // radius so checkboxes don't sit square next to pill fields.
-      radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "4xl", selectors: "2xl" }),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      // Hairline stroke — the glass chrome the adopted theme uses.
-      stroke: { ...STROKE_STANDARD, sm: "0.5px" },
-      // Subtle (not the old hairline-penumbra glassShadows) — matches the
-      // adopted Cupertino / Glass theme after the latest iteration.
-      shadows: { ...SHADOW_PRESETS[1].values },
-      panelBackground: "translucent",
-      iconWeight: "light"
-    },
-    semantics: glassSemantics,
-    accessibilityNote: "Translucent surfaces still use semantic foreground roles; verify contrast over real content."
-  },
-  {
-    id: "material-elevation",
-    label: "Material / Elevation",
-    shortLabel: "Material",
-    description: "Layered, responsive, and explicit.",
-    detail: "Maps Material-like elevation onto Escala\u2019s existing six-step shadow ramp.",
-    // Grape, not Indigo — same reason as Glass: Indigo's H 274 was 12° from
-    // Core. Grape (H 304, chroma 0.233, the most saturated hex in the spectrum)
-    // is also the closest thing here to Material 3's own purple baseline seed.
-    accent: accent("Grape"),
-    preferredAppearance: "light",
-    // M3's baseline error (#b3261e) with Material palette 800s for the rest —
-    // deeper and less neon than Glass, which is what Material's own elevation
-    // model expects to sit under.
-    states: { error: "#b3261e", warning: "#f9a825", success: "#2e7d32", info: "#1565c0" },
-    // `tinted`, not `subtle`. Material 3's whole surface model is seed-tinted
-    // paper, so this is the faithful reading — and at `subtle` its page
-    // resolved to `#fdfdff` / `#0f0f13`, within a hair of Core's `#fdfdff` /
-    // `#0e0f13`. Two of six styles on indistinguishable paper is a wasted slot.
-    neutralTint: "tinted",
-    foundations: {
-      typography: typography("Roboto", "Roboto"),
-      spacing: buildSpacingFromBase(4),
-      // Rounded (lg 16), not Pill (lg 24). M3's own shape scale puts a card at
-      // 12px and its largest container at 28px; Pill resolves this style's
-      // `container` to 36px, rounder than anything in the spec it is named
-      // after. Glass and Nature keep Pill — "generous" and "organic" are their
-      // briefs, and at the corrected role rungs that is 36px, not 72px.
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "4xl", selectors: "sm" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[3].values },
-      panelBackground: "solid",
-      iconWeight: "fill"
-    },
-    // M3's filled text field: the fill carries the control so the edge can be a
-    // whisper. It is the one style whose input sits TWO steps off the page.
-    semantics: filledBorders
-  },
-  {
-    id: "nature-organic",
-    label: "Nature / Organic",
-    shortLabel: "Nature",
-    description: "Grounded, calm, and approachable.",
-    detail: "Fresh green accent, tinted paper, an editorial heading voice, and no elevation at all.",
-    // Ported verbatim from the designer's own "superb" theme — they kept the
-    // customization and asked for it under the Nature name.
-    accent: "#6bbd2b",
-    preferredAppearance: "light",
-    // error stays the system default (`superb` referenced the global `error`
-    // family); warning / success / info are the designer's own seeds.
-    states: { error: "#f04438", warning: "#ff8b00", success: "#00b662", info: "#1c8fff" },
-    // Green-grey neutral, pinned so the try-on can't swap in a link-derived one.
-    neutral: "#738863",
-    neutralTint: "tinted",
-    foundations: {
-      // Inter body over a Fraunces heading. Standard type ramp — density is the
-      // Text-scale slider's job (see the `typography()` note).
-      typography: typography("Inter", "Fraunces"),
-      spacing: buildSpacingFromBase(4),
-      // Generous boxes, moderate fields, soft selectors — Nature's documented
-      // 32 · 16 · 8 ladder on `RADIUS_STANDARD`.
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "2xl", selectors: "lg" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      // FLAT — no shadow on any surface. This is the style's signature.
-      shadows: { xs: "none", sm: "none", md: "none", lg: "none", xl: "none", "2xl": "none" },
-      // Container inset one step deeper than the system default (step 5 → 6).
-      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
-      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
-      panelBackground: "page",
-      iconWeight: "duotone"
-    },
-    semantics: natureSemantics
-  },
-  {
-    id: "retro-vintage",
-    label: "Retro / Vintage",
-    shortLabel: "Retro",
-    description: "Tactile, nostalgic, and structured.",
-    detail: "Monospace typography, compact rhythm, firm borders, and offset depth.",
-    // Flame (#ff4405) — matches the adopted Retro / Vintage accent byte-for-byte.
-    accent: accent("Flame"),
-    preferredAppearance: "dark",
-    // Muted press inks on aged stock: brick, mustard, moss, faded slate.
-    states: { error: "#b03a2e", warning: "#cc8b1f", success: "#5f8d4e", info: "#4a7a96" },
-    // `vivid` — the adopted theme's gray `#966554` is exactly
-    // `previewHarmony(Flame, vivid).neutral`. Store tint may read `pure` after
-    // later edits; the paper that ships with this recipe is the vivid sepia.
-    neutralTint: "vivid",
-    foundations: {
-      typography: typography("Courier Prime", "Courier Prime"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "sm", fields: "sm", selectors: "none" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: retroShadows,
-      panelBackground: "page",
-      iconWeight: "bold"
-    },
-    semantics: retroSemantics
-  },
-  {
-    id: "neo-brutalism",
-    label: "Neo-Brutalism",
-    shortLabel: "Neo",
-    description: "Saturated, graphic, and direct.",
-    detail: "Heavy boundaries and hard elevation create a deliberately raw system.",
-    accent: accent("Yellow"),
-    preferredAppearance: "light",
-    neutralTint: "pure",
-    // Near-primary and maximally saturated, matching the pure neutral and the
-    // hard black offset. Brutalism does not do muted.
-    states: { error: "#e5252c", warning: "#ffb302", success: "#00c853", info: "#2962ff" },
-    foundations: {
-      typography: typography("Space Grotesk", "Space Grotesk"),
-      // 4px base (spacing stays on the 4/8 grid); the roomier feel is the
-      // card inset one step deeper instead.
-      spacing: buildSpacingFromBase(4),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
-      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
-      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD, sm: "2px" },
-      shadows: hardShadows,
-      panelBackground: "solid",
-      iconWeight: "bold"
-    },
-    // THE deliberate exception to the soften-the-border rule: brutalism's
-    // border IS the design, so it goes the other way — the ramp's text tone,
-    // full strength, matching the hard offset it sits under. No fill step
-    // either: a flat field inside a heavy outline is the whole look.
-    semantics: {
-      ...DARK_DEPTH,
-      // Neo is the ONE style that overrides both halves of the split. Every
-      // other style softens the control boundary and leaves the decorative
-      // ladder on the schema; here the decorative ladder is the point, so all
-      // five rungs go to the ramp's text tone.
-      "border.control-hover": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
-      "border.default": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
-      "border.control": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
-      "border.strong": { light: "{neutral.12}", dark: "{neutral-dark.12}" },
-      "border.subtle": { light: "{neutral.11}", dark: "{neutral-dark.11}" }
-    }
-  },
-  {
-    id: "editorial-serif",
-    label: "Editorial / Serif",
-    shortLabel: "Editorial",
-    description: "Literary, paced, and ink-led.",
-    detail: "A magazine voice: serif display, quiet paper, and a wine accent that reads as print rather than product.",
-    accent: "#7f1d5a",
-    preferredAppearance: "light",
-    neutralTint: "tinted",
-    states: { error: "#9f1239", warning: "#b45309", success: "#3f6212", info: "#1e3a5f" },
-    foundations: {
-      typography: typography("Newsreader", "Playfair Display"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "sm", selectors: "sm" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[1].values },
-      panelBackground: "solid",
-      iconWeight: "light"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "terminal-mono",
-    label: "Terminal / Mono",
-    shortLabel: "Terminal",
-    description: "Monospace, sharp, and dark-first.",
-    detail: "A console system: one family for everything, no radius, no elevation, a matrix green that only exists on a black page.",
-    accent: "#12b981",
-    preferredAppearance: "dark",
-    neutralTint: "pure",
-    states: { error: "#f87171", warning: "#fbbf24", success: "#34d399", info: "#22d3ee" },
-    foundations: {
-      typography: typography("JetBrains Mono", "JetBrains Mono"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[0].values },
-      panelBackground: "page",
-      iconWeight: "regular"
-    },
-    semantics: {
-      ...DARK_DEPTH,
-      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-      "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
-    }
-  },
-  {
-    id: "enterprise-dense",
-    label: "Enterprise / Dense",
-    shortLabel: "Enterprise",
-    description: "Compact, tabular, and explicit.",
-    detail: "A data-dense workplace: IBM Plex, tighter fields, filled inputs, and a teal that is not Core\u2019s blue.",
-    accent: "#0f766e",
-    preferredAppearance: "light",
-    neutralTint: "subtle",
-    states: { error: "#b91c1c", warning: "#c2410c", success: "#047857", info: "#1d4ed8" },
-    foundations: {
-      typography: typography("IBM Plex Sans", "IBM Plex Sans"),
-      // 4px base, not 3.5 — a 3.5 base put every step off the pixel grid
-      // (1.75 · 5.25 · 8.75px). Density comes from a tighter card inset.
-      spacing: buildSpacingFromBase(4),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
-      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "4" },
-      padding: { top: "16px", right: "16px", bottom: "16px", left: "16px" },
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "lg", fields: "sm", selectors: "sm" }),
-      sizes: buildSizesFromBase(3.5),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[1].values },
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: filledBorders
-  },
-  {
-    id: "playful-candy",
-    label: "Playful / Candy",
-    shortLabel: "Playful",
-    description: "Rounded, saturated, and light-hearted.",
-    detail: "A consumer voice: generous pills, vivid paper, and a magenta that the other eleven hues leave room for.",
-    accent: "#d946ef",
-    preferredAppearance: "light",
-    neutralTint: "vivid",
-    states: { error: "#e11d48", warning: "#f59e0b", success: "#22c55e", info: "#6366f1" },
-    foundations: {
-      typography: typography("Plus Jakarta Sans", "Plus Jakarta Sans"),
-      spacing: buildSpacingFromBase(4),
-      gridFrame: standardGridFrameFor(buildSpacingFromBase(4)),
-      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
-      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "4xl", fields: "4xl", selectors: "2xl" }),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[2].values },
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "luxury-noir",
-    label: "Luxury / Noir",
-    shortLabel: "Luxury",
-    description: "Dark, gold, and restrained.",
-    detail: "A night-time brand: serif display on near-black paper, a champagne accent, and elevation instead of a loud edge.",
-    accent: "#c56b23",
-    preferredAppearance: "dark",
-    neutralTint: "subtle",
-    states: { error: "#9f1239", warning: "#ca8a04", success: "#4d7c0f", info: "#1e3a5f" },
-    foundations: {
-      typography: typography("Inter", "Cormorant Garamond"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "2xl", fields: "lg", selectors: "sm" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[3].values },
-      panelBackground: "solid",
-      iconWeight: "thin"
-    },
-    semantics: {
-      ...DARK_DEPTH,
-      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.3}" },
-      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-      "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
-    }
-  },
-  {
-    id: "swiss-grid",
-    label: "Swiss / Grid",
-    shortLabel: "Swiss",
-    description: "Orthogonal, red, and unadorned.",
-    detail: "International Typographic Style: Inter, square corners, no shadow, a poster red that is the only colour on the page.",
-    accent: "#d2004e",
-    preferredAppearance: "light",
-    neutralTint: "pure",
-    states: { error: "#e11d48", warning: "#ca8a04", success: "#15803d", info: "#1d4ed8" },
-    foundations: {
-      typography: typography("Inter", "Inter"),
-      spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: "none", fields: "none", selectors: "none" }),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD },
-      shadows: { ...SHADOW_PRESETS[0].values },
-      panelBackground: "page",
-      iconWeight: "light"
-    },
-    semantics: {
-      ...DARK_DEPTH,
-      "surface.input": { light: "{neutral.2}", dark: "{neutral-dark.2}" },
-      "border.control": { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-      "border.control-hover": { light: A_STRONG_L, dark: A_STRONG_D }
-    }
-  },
-  // ── Moods: six styles after DaisyUI v5's built-in themes (MIT) ──────────
-  // What the twelve above never did: a PAGE with a hue of its own. Colour
-  // and geometry come from `themeMoods` (DaisyUI's values to the digit, mapped
-  // onto Escala's inputs); every ramp and ink is still solved here.
-  {
-    id: "abyss-neon",
-    label: "Abyss / Neon",
-    shortLabel: "Abyss",
-    description: "Deep, electric, and nocturnal.",
-    detail: "A deep-sea teal page under a neon lime accent, pill selectors beside sharp fields. After DaisyUI\u2019s Abyss.",
-    ...moodColours("abyss"),
-    foundations: {
-      typography: typography("Sora", "Sora"),
-      spacing: buildSpacingFromBase(4),
-      ...moodShape("abyss"),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      panelBackground: "solid",
-      iconWeight: "bold"
-    },
-    // A vivid teal dark ramp compresses its low steps even more than the
-    // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
-    // ΔL 0.070 against light's 0.072. One more step restores it.
-    semantics: { ...softBorders, "surface.layer-2": { dark: "{neutral-dark.5}" } }
-  },
-  {
-    id: "synthwave-night",
-    label: "Synthwave / Night",
-    shortLabel: "Synthwave",
-    description: "Neon, nocturnal, and loud.",
-    detail: "An ink-indigo page with a hot-pink accent and arcade severities. After DaisyUI\u2019s Synthwave.",
-    ...moodColours("synthwave"),
-    foundations: {
-      typography: typography("Outfit", "Outfit"),
-      spacing: buildSpacingFromBase(4),
-      ...moodShape("synthwave"),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      panelBackground: "solid",
-      iconWeight: "duotone"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "cupcake-pastel",
-    label: "Cupcake / Pastel",
-    shortLabel: "Cupcake",
-    description: "Soft, sweet, and friendly.",
-    detail: "Cream paper, a mint accent, pill fields and a 2px edge. After DaisyUI\u2019s Cupcake.",
-    ...moodColours("cupcake"),
-    foundations: {
-      typography: typography("Figtree", "Figtree"),
-      spacing: buildSpacingFromBase(4),
-      spacingRoles: { ...defaultLayoutRoles("spacing"), "inset-surface": "6" },
-      padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
-      ...moodShape("cupcake"),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "arctic-frost",
-    label: "Arctic / Frost",
-    shortLabel: "Arctic",
-    description: "Cool, muted, and calm.",
-    detail: "Frosted blue-grey paper, a slate-blue accent and quiet severities. After DaisyUI\u2019s Nord.",
-    ...moodColours("nord"),
-    foundations: {
-      typography: typography("Manrope", "Manrope"),
-      spacing: buildSpacingFromBase(4),
-      ...moodShape("nord"),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      panelBackground: "solid",
-      iconWeight: "light"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "sunset-dusk",
-    label: "Sunset / Dusk",
-    shortLabel: "Sunset",
-    description: "Warm light on a cool night.",
-    detail: "A blue-slate page under a coral accent, with pastel severities. After DaisyUI\u2019s Sunset.",
-    ...moodColours("sunset"),
-    foundations: {
-      typography: typography("DM Sans", "Fraunces"),
-      spacing: buildSpacingFromBase(4),
-      ...moodShape("sunset"),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: softBorders
-  },
-  {
-    id: "valentine-blush",
-    label: "Blush / Valentine",
-    shortLabel: "Blush",
-    description: "Romantic, warm, and rounded.",
-    detail: "Rose-tinted paper, a hot-pink accent and pill fields. After DaisyUI\u2019s Valentine.",
-    ...moodColours("valentine"),
-    foundations: {
-      typography: typography("Plus Jakarta Sans", "Playfair Display"),
-      spacing: buildSpacingFromBase(4),
-      ...moodShape("valentine"),
-      sizes: buildSizesFromBase(4),
-      selector: buildSelectorsFromBase(3),
-      panelBackground: "solid",
-      iconWeight: "regular"
-    },
-    semantics: softBorders
-  }
-];
-function themeStylePreset(id) {
-  return THEME_STYLE_PRESETS.find((preset) => preset.id === id);
-}
-
 // src/lib/pluginStudio.ts
+init_themePresets();
 init_shadowTokens();
 
 // src/lib/adoptPreset.ts
@@ -12894,6 +13153,7 @@ init_useDesignStore();
 init_colorUtils();
 
 // src/lib/previewTokens.ts
+init_motion();
 init_iconSizing();
 init_shadowTokens();
 init_useDesignStore();
@@ -12911,6 +13171,7 @@ init_themeFoundations();
 var ROLE_BY_KEY = Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]));
 
 // src/lib/stylePreviewOverlay.ts
+init_themePresets();
 init_themeModes();
 function withStyleSemantics(current, semantics, themeKey, architecture = "categorical") {
   if (!semantics) return current;
@@ -12933,9 +13194,11 @@ function withStyleSemantics(current, semantics, themeKey, architecture = "catego
 init_utils();
 init_analytics();
 init_themeLibrary();
+init_themePresets();
 init_themeModes();
 
 // src/lib/remixLink.ts
+init_themePresets();
 var FONTS = new Set(FONT_PRESETS.map((font) => font.value));
 var REMIX_ID_PREFIX = "remix-";
 
@@ -13026,7 +13289,7 @@ function styleSummary(p2, standard) {
   const roles = mergeLayoutRoles("radius", f.radiusRoles);
   const px = (role) => parseFloat(ramp[roles[role]] ?? "0") || 0;
   const mode = SPACING_MODES.find((m) => m.id === matchSpacingMode(f.sizes, f.spacingRoles, f.stroke));
-  const states = presetStates(p2);
+  const states2 = presetStates(p2);
   return {
     id: p2.id,
     label: p2.label,
@@ -13035,7 +13298,7 @@ function styleSummary(p2, standard) {
     detail: p2.detail,
     accent: p2.accent,
     neutral: presetHarmony(p2).neutral,
-    states: [states.error, states.warning, states.success, states.info],
+    states: [states2.error, states2.warning, states2.success, states2.info],
     appearance: p2.preferredAppearance,
     font: f.typography?.fontFamily ?? "Inter",
     heading: f.typography?.headingFontFamily ?? f.typography?.fontFamily ?? "Inter",
@@ -13078,8 +13341,8 @@ function buildStudioTokens(choices, tier) {
     if (!tint && preset) store.setNeutralTint(useTint);
     const accent2 = typeof choices.accent === "string" && HEX.test(choices.accent) ? choices.accent : preset?.accent;
     const baseStates = preset ? presetStates(preset) : void 0;
-    const states = Object.keys(pickedStates).length ? { ...baseStates ?? slotsFromAccentStates(accent2, useTint), ...pickedStates } : baseStates;
-    const slots = { ...slotsFromAccent(accent2, useTint, states), ...pickedNeutral ? { gray: pickedNeutral } : {} };
+    const states2 = Object.keys(pickedStates).length ? { ...baseStates ?? slotsFromAccentStates(accent2, useTint), ...pickedStates } : baseStates;
+    const slots = { ...slotsFromAccent(accent2, useTint, states2), ...pickedNeutral ? { gray: pickedNeutral } : {} };
     const pages = { light: backgroundFromBase(slots.gray, "light", useTint), dark: backgroundFromBase(slots.gray, "dark", useTint) };
     minted = mintTheme(slots, choices.kind ? kind : preset?.preferredAppearance ?? kind, name || preset?.label || "", null, useTint, pages);
     if (!("error" in minted) && preset) useDesignStore.getState().patchThemeFoundations(minted.key, preset.foundations);
@@ -13264,11 +13527,11 @@ function studioLook(choices) {
     return typeof hex === "string" && HEX.test(hex) ? hex.toLowerCase() : null;
   };
   const brandSolid = solidOf(brand);
-  const states = {};
+  const states2 = {};
   const stateInk = {};
   for (const slot of ["error", "warning", "success", "info"]) {
     const solid = solidOf(family(kind === "dark" && darkSeed(slot) || seeds[slot]));
-    states[slot] = solid.fill;
+    states2[slot] = solid.fill;
     stateInk[slot] = solid.ink;
   }
   let box = 16, field = 8, control = 4;
@@ -13315,7 +13578,7 @@ function studioLook(choices) {
     ink: brandSolid.ink,
     accentRamp: rampList(brand),
     neutralRamp: rampList(neutral),
-    states,
+    states: states2,
     stateInk,
     box,
     field,
