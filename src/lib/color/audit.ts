@@ -173,6 +173,15 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.disabled',  bg: 'surface.page',    intent: 'decorative' },
     { fg: 'content.link.default', bg: 'surface.page', intent: 'body-text' },
     { fg: 'content.link.hover',   bg: 'surface.page', intent: 'body-text' },
+    // A link (inline, or a link Button) also sits in a Card (layer-1) and in
+    // a popover / Dialog (layer-2). Scored as a button label: AA 4.5 + Lc 60.
+    { fg: 'content.link.default', bg: 'surface.layer-1', intent: 'action-label' },
+    { fg: 'content.link.default', bg: 'surface.layer-2', intent: 'action-label' },
+    { fg: 'content.link.hover',   bg: 'surface.layer-1', intent: 'action-label' },
+    { fg: 'content.link.hover',   bg: 'surface.layer-2', intent: 'action-label' },
+    // Outline and ghost Buttons: their page ink on their own hover / pressed fill.
+    { fg: 'content.primary', bg: 'action.ghost.hover',   intent: 'action-label' },
+    { fg: 'content.primary', bg: 'action.ghost.pressed', intent: 'action-label' },
     // `action-label`, not `body-text`: these two are a LABEL ON A SOLID FILL,
     // which keeps the full WCAG AA 4.5 but is scored on APCA's large/bold row
     // (Lc 60) rather than the 400-weight running-copy row. See `IntentClass`

@@ -480,7 +480,7 @@ export const DROPZONE: ComponentRecipe = {
           stroke: c(error ? 'status.critical.border-strong' : state === 'Dragging' ? 'border.accent' : 'border.control'),
         },
         icon: { fill: c(error ? 'status.critical.surface' : 'surface.selected'), text: c(error ? 'status.critical.content' : 'content.accent') },
-        link: { text: c('content.accent') },
+        link: { text: c('content.link.default') },
         hint: { text: c(error ? 'status.critical.content' : 'content.secondary') },
       }
     }),

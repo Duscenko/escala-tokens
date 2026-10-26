@@ -289,6 +289,45 @@ function uiBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look
 }
 
 /**
+ * The tone of `fam` that reads as LINK text on every surface a link can sit
+ * on: the page, a card (`surface.layer-1`) and a popover / dialog
+ * (`surface.layer-2`). A link Button cannot know which one it lands on, so
+ * one role has to clear all three. One role per surface would not help: the
+ * component would still have to pick between them.
+ *
+ * Floors: WCAG AA 4.5 on all three; APCA body-text (Lc 75) on the page, where
+ * links run inside prose; APCA Lc 60 on the raised surfaces, the button-label
+ * row (`action-label`), which is what a link sits as in a card footer or a
+ * dialog. Measured before this existed (pinned `{accent.11}`): light
+ * `layer-2` read 4.25–4.48:1 for 7 of the 10 audit seeds, under AA.
+ *
+ * Walks UP from `start` and takes the first tone that clears every floor, so
+ * a system that already passed keeps its tone 11 byte-for-byte. Falls back to
+ * the closest-to-passing tone, like `uiBoundaryRef`.
+ */
+function linkTextTone(fam: string, start: number, kind: 'light' | 'dark', look: Look): number {
+  const nf = kind === 'dark' ? 'neutral-dark' : 'neutral'
+  const page = look(nf, 1)
+  const raised = [look(nf, 2), look(nf, 3)].filter((h): h is string => !!h)
+  if (!page) return start
+  const ramp = rampOf(look, fam)
+  let fallback = start
+  let bestScore = -Infinity
+  for (let t = start; t <= 12; t++) {
+    const hex = ramp[t]
+    if (!hex) continue
+    let score = Math.min(checkContrast(hex, page) / WCAG_AA, Math.abs(apcaLc(hex, page)) / APCA_BODY_TEXT)
+    for (const bg of raised) {
+      score = Math.min(score, checkContrast(hex, bg) / WCAG_AA, Math.abs(apcaLc(hex, bg)) / APCA_LINK_RAISED)
+    }
+    if (score >= 1) return t
+    if (score > bestScore) { bestScore = score; fallback = t }
+  }
+  return fallback
+}
+const APCA_LINK_RAISED = INTENT_THRESHOLDS['action-label'].apcaLc ?? 60
+
+/**
  * `uiBoundaryRef` for the FIXED alpha ladder (`black-a` / `white-a`). Same
  * job — walk up until WCAG 1.4.11 + APCA Lc 45 both clear against the page —
  * but the ladder's steps are translucent, so each is COMPOSITED over the page
@@ -520,6 +559,12 @@ function curatedRefs(
         uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
       .replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         uiBoundaryRef(fam, Number(start), kind, look))
+      // `{link:<fam>.<start>}` — link ink solved against page, layer-1 and
+      // layer-2 (see `linkTextTone`); `{link+:…}` is its hover, one step past.
+      .replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`)
+      .replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`)
       .replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam: string, n: string) => {
         const s = solidFor(fam)
         return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used)
@@ -598,8 +643,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
   // solved for AA as text (same bug class as shadcn's `muted.foreground` fix
   // below). 11/12 are the ramp's two genuine text steps, same as `content.accent`.
-  { group: 'content', key: 'link.default', light: '{accent.11}', dark: '{accent.11}' },
-  { group: 'content', key: 'link.hover',   light: '{accent.12}', dark: '{accent.12}' },
+  // SOLVED from 11 against page, layer-1 and layer-2 (`linkTextTone`): a link
+  // Button in a Dialog sits on layer-2, where a pinned 11 fell under AA. When
+  // the default has to take 12, hover shares it and the underline is the cue.
+  { group: 'content', key: 'link.default', light: '{link:accent.11}', dark: '{link:accent.11}' },
+  { group: 'content', key: 'link.hover',   light: '{link+:accent.11}', dark: '{link+:accent.11}' },
   // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
   { group: 'action', key: 'primary.default', light: '{accent.solid}', dark: '{accent.solid}' },
   // Hover/pressed on the primary fill — SOLVED `n` steps past the RESOLVED
