@@ -137,7 +137,7 @@ describe('sources', () => {
 describe('overview facts', () => {
   it('reads the default system: three ascending radius axes, the standard spacing and a named shadow', () => {
     const facts = foundationFacts(state(), 'light')
-    expect(facts.radius).toEqual({ boxes: 16, fields: 8, selectors: 4 })
+    expect(facts.radius).toEqual({ boxes: 16, fields: 12, selectors: 4 })
     expect(facts.spacing).toBe('Quiet')
     expect(facts.shadow).not.toBeNull()
     expect(facts.fonts.body).toBe(state().typography.fontFamily)

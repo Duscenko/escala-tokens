@@ -1014,10 +1014,14 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * on screen by a factor of four. `overlay` collapses onto `container` because
  * DaisyUI has ONE `--radius-box` for card and modal alike; the role is kept so
  * the export contract does not change.
+ *
+ * Fields then moved from 8 to 12 (`action` xl, store v105): at 8 next to a
+ * 16px card the Rounded buttons read as Soft. The ladder is now **selectors 4 ·
+ * fields 12 · boxes 16**.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
   { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'sm' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'lg' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'xl' },
   { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: '2xl' },
   { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '2xl' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'selectors', primitive: 'full' },
@@ -1038,8 +1042,10 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * contract is unchanged and only WHICH step each role aliases is now chosen per
  * axis instead of derived from a single `lg`.
  *
- * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder plus 3xl: at the standard ramp
- * these are 0 / 4 / 8 / 16 / 24 / 32px (none · sm · lg · 2xl · 3xl · 4xl).
+ * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder plus xl and 3xl: at the standard
+ * ramp these are 0 / 4 / 8 / 12 / 16 / 24 / 32px (none · sm · lg · xl · 2xl ·
+ * 3xl · 4xl). xl is Rounded's field: a 12px button reads rounded next to a
+ * 16px card, where 8 read as Soft.
  * 3xl is the Pill preset's box — rounder than Rounded's 16 without the 32
  * that clipped a card's content.
  *
@@ -1049,7 +1055,7 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * someone picked a tighter checkbox. That is the one place these groups diverge
  * from DaisyUI, whose selector axis also covers the badge.
  */
-export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', '2xl', '3xl', '4xl'] as const
+export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
 export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number]
 
 export interface RadiusGroup {
@@ -1145,7 +1151,7 @@ export interface RadiusRolePreset {
 export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
   { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
   { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
-  { label: 'Rounded', description: 'The standard — boxes 16, fields 8, selectors 4.', picks: { boxes: '2xl', fields: 'lg', selectors: 'sm' } },
+  { label: 'Rounded', description: 'The standard — boxes 16, fields 12, selectors 4.', picks: { boxes: '2xl', fields: 'xl', selectors: 'sm' } },
   // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
   // tags and text keeps its shape — 32 rounded the corners past the content
   // and clipped it. The full pill look is the fields'.

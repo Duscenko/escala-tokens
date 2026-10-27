@@ -26,8 +26,8 @@ describe('theme foundation overrides', () => {
   it('nestedRadiusOf steps a default alert down to Fields inside a default card', () => {
     const t = resolvePreviewTokens(useDesignStore.getState(), 'light')
     expect(radiusRoleOf(t, 'container')).toBe('16px')
-    expect(radiusRoleOf(t, 'action')).toBe('8px')
-    expect(nestedRadiusOf(t, 'container')).toBe('8px')
+    expect(radiusRoleOf(t, 'action')).toBe('12px')
+    expect(nestedRadiusOf(t, 'container')).toBe('12px')
   })
 
   it('nestedRadiusOf tightens a 2xl alert inside a 2xl card', () => {

@@ -2007,7 +2007,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 104,
+      version: 105,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3733,6 +3733,33 @@ export const useDesignStore = create<DesignStore>()(
           styleMotion(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) styleMotion(sys?.snapshot)
+          }
+        }
+        if (version < 105) {
+          // v104→v105: Rounded's fields went from lg (8) to xl (12). A system
+          // still on the old Rounded (boxes 2xl · fields lg · selectors sm)
+          // moves with it, so it keeps reading as Rounded. A brand adopted
+          // from a System Style keeps the style's own fields.
+          const OLD_ROUNDED: Record<string, string> = { container: '2xl', overlay: '2xl', action: 'lg', control: 'sm' }
+          const wasRounded = (roles: Record<string, string>) =>
+            Object.entries(OLD_ROUNDED).every(([k, v]) => (roles[k] ?? v) === v)
+          const roundedFields = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const root = state.radiusRoles && typeof state.radiusRoles === 'object' ? state.radiusRoles : {}
+            const rootWas = wasRounded(root)
+            if (rootWas) state.radiusRoles = { ...root, action: 'xl' }
+            const origins = state.themeOrigin ?? {}
+            for (const [key, own] of Object.entries<any>(state.themeFoundations ?? {})) {
+              const roles = own?.radiusRoles
+              if (!roles || typeof roles !== 'object' || origins[key]) continue
+              if (wasRounded({ ...(rootWas ? OLD_ROUNDED : root), ...roles }) && 'action' in roles) {
+                own.radiusRoles = { ...roles, action: 'xl' }
+              }
+            }
+          }
+          roundedFields(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) roundedFields(sys?.snapshot)
           }
         }
         return persisted

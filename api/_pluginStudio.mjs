@@ -1904,12 +1904,12 @@ var init_layoutTokens = __esm({
     GRID_STANDARD = buildGridStandard();
     RADIUS_ROLES = [
       { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "sm" },
-      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "lg" },
+      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "xl" },
       { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: "2xl" },
       { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
       { key: "pill", label: "Pill", description: "Badge, chip, avatar, switch, progress.", group: "selectors", primitive: "full" }
     ];
-    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "2xl", "3xl", "4xl"];
+    RADIUS_GROUP_STEPS = ["none", "sm", "lg", "xl", "2xl", "3xl", "4xl"];
     RADIUS_GROUPS = [
       { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"] },
       { key: "fields", label: "Fields", hint: "button, input, select, tab", roles: ["action"] },
@@ -1918,7 +1918,7 @@ var init_layoutTokens = __esm({
     RADIUS_ROLE_PRESETS = [
       { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
       { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
-      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 8, selectors 4.", picks: { boxes: "2xl", fields: "lg", selectors: "sm" } },
+      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 12, selectors 4.", picks: { boxes: "2xl", fields: "xl", selectors: "sm" } },
       // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
       // tags and text keeps its shape — 32 rounded the corners past the content
       // and clipped it. The full pill look is the fields'.
@@ -11207,7 +11207,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 104,
+          version: 105,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -12469,6 +12469,28 @@ var init_useDesignStore = __esm({
               styleMotion(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) styleMotion(sys?.snapshot);
+              }
+            }
+            if (version < 105) {
+              const OLD_ROUNDED = { container: "2xl", overlay: "2xl", action: "lg", control: "sm" };
+              const wasRounded = (roles) => Object.entries(OLD_ROUNDED).every(([k, v]) => (roles[k] ?? v) === v);
+              const roundedFields = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                const root = state2.radiusRoles && typeof state2.radiusRoles === "object" ? state2.radiusRoles : {};
+                const rootWas = wasRounded(root);
+                if (rootWas) state2.radiusRoles = { ...root, action: "xl" };
+                const origins = state2.themeOrigin ?? {};
+                for (const [key2, own] of Object.entries(state2.themeFoundations ?? {})) {
+                  const roles = own?.radiusRoles;
+                  if (!roles || typeof roles !== "object" || origins[key2]) continue;
+                  if (wasRounded({ ...rootWas ? OLD_ROUNDED : root, ...roles }) && "action" in roles) {
+                    own.radiusRoles = { ...roles, action: "xl" };
+                  }
+                }
+              };
+              roundedFields(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) roundedFields(sys?.snapshot);
               }
             }
             return persisted;

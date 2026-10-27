@@ -161,7 +161,7 @@ describe('layout primitives', () => {
     const roles = defaultLayoutRoles('radius')
     const px = (role: string) => resolveLayoutRole('radius', roles, RADIUS_STANDARD, role)
     expect(px('control')).toBe('4px')
-    expect(px('action')).toBe('8px')
+    expect(px('action')).toBe('12px')
     expect(px('container')).toBe('16px')
     expect(px('overlay')).toBe('16px')
     for (const group of RADIUS_GROUPS) {
@@ -253,7 +253,7 @@ describe('layout primitives', () => {
 describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
-    expect(radius.action).toBe('lg')
+    expect(radius.action).toBe('xl')
     expect(radius.control).toBe('sm')
     expect(radius.container).toBe('2xl')
     expect(radius.overlay).toBe('2xl')
@@ -297,7 +297,7 @@ describe('layout semantics', () => {
   it('resolves through the primitive map, never inventing px', () => {
     const roles = mergeLayoutRoles('spacing', { 'inset-surface': '6' })
     expect(resolveLayoutRole('spacing', roles, SPACING_STANDARD, 'inset-surface')).toBe('24px')
-    expect(resolveLayoutRole('radius', defaultLayoutRoles('radius'), RADIUS_STANDARD, 'action')).toBe('8px')
+    expect(resolveLayoutRole('radius', defaultLayoutRoles('radius'), RADIUS_STANDARD, 'action')).toBe('12px')
     expect(resolveLayoutRole('stroke', defaultLayoutRoles('stroke'), STROKE_STANDARD, 'focus')).toBe('2px')
   })
 
@@ -311,7 +311,7 @@ describe('layout semantics', () => {
       stroke: defaultLayoutRoles('stroke'),
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
-    expect(css).toContain('--radius-action: var(--radius-lg);')
+    expect(css).toContain('--radius-action: var(--radius-xl);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')

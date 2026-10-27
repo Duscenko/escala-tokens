@@ -58,12 +58,12 @@ describe('Corner radius', () => {
     }
   })
 
-  it('roles follow it: a card is 16 / 12 / 12, a button 8 / 6 / 6', () => {
+  it('roles follow it: a card is 16 / 12 / 12, a button 12 / 8 / 8', () => {
     const roles = defaultLayoutRoles('radius')
     const at = (role: string, vp: GridViewport) =>
       px(resolveLayoutRole('radius', { ...roles, [role]: radiusAtViewport(roles[role], vp) }, RADIUS_STANDARD, role))
     expect(VPS.map((vp) => at('container', vp))).toEqual([16, 12, 12])
-    expect(VPS.map((vp) => at('action', vp))).toEqual([8, 6, 6])
+    expect(VPS.map((vp) => at('action', vp))).toEqual([12, 8, 8])
     expect(VPS.map((vp) => at('control', vp))).toEqual([4, 2, 2])
     // A pinned primitive and the xs floor hold one value everywhere.
     expect(radiusAtViewport('dimension-10', 'mobile')).toBe('dimension-10')
@@ -76,7 +76,7 @@ describe('Corner radius', () => {
     })
     const [tablet, mobile] = css.split('@media').slice(1)
     expect(tablet).toContain('--radius-container: var(--dimension-12);')
-    expect(tablet).toContain('--radius-action: var(--dimension-6);')
+    expect(tablet).toContain('--radius-action: var(--dimension-8);')
     expect(mobile).toContain('--radius-container: var(--dimension-12);')
     expect(css).not.toContain('--radius-pill')
   })
@@ -120,7 +120,7 @@ describe('role ↔ responsive token links (the two editor collections)', () => {
   it('names the roles behind each token', () => {
     const roles = defaultLayoutRoles('radius')
     expect(rolesUsingRadiusToken(roles, '2xl')).toEqual(['container', 'overlay'])
-    expect(rolesUsingRadiusToken(roles, 'lg')).toEqual(['action'])
+    expect(rolesUsingRadiusToken(roles, 'xl')).toEqual(['action'])
     expect(rolesUsingRadiusToken(roles, '5xl')).toEqual([])
     expect(rolesUsingRadiusToken({ ...roles, container: 'dimension-20' }, '2xl')).toEqual(['overlay'])
   })
@@ -128,9 +128,9 @@ describe('role ↔ responsive token links (the two editor collections)', () => {
   it('groups tokens by the role group that uses them; the rest are unassigned', () => {
     const byGroup = radiusTokensByRoleGroup(defaultLayoutRoles('radius'))
     expect(byGroup.boxes).toEqual(['2xl'])
-    expect(byGroup.fields).toEqual(['lg'])
+    expect(byGroup.fields).toEqual(['xl'])
     expect(byGroup.selectors).toEqual(['sm', 'full'])
-    expect(byGroup.unassigned).toEqual(['none', 'md', 'xl', '3xl', '4xl', '5xl'])
+    expect(byGroup.unassigned).toEqual(['none', 'md', 'lg', '3xl', '4xl', '5xl'])
   })
 })
 
@@ -148,7 +148,7 @@ describe('per-viewport radius overrides', () => {
 
   it('picking the followed value, or reset, clears the override', () => {
     const set = setRadiusRoleViewport({}, roles, 'action', 'mobile', 'sm')
-    expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', 'md')).toEqual({})
+    expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', 'lg')).toEqual({})
     expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', null)).toEqual({})
   })
 
@@ -169,7 +169,7 @@ describe('radius presets are role bundles on the standard ramp', () => {
     }
     expect(sharp.radiusRoles.pill).toBe('full') // a circle is not an axis
     expect(sharp.radius).toEqual(RADIUS_STANDARD) // the ramp is the table, never regraded
-    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0], [8, 4, 4], [16, 8, 4], [24, 32, 8]])
+    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0], [8, 4, 4], [16, 12, 4], [24, 32, 8]])
     for (const p of RADIUS_ROLE_PRESETS) expect(matchRadiusRolePreset(radiusPresetPatch(p.label)!.radiusRoles)).toBe(p.label)
   })
 
