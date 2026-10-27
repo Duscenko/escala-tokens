@@ -5,19 +5,24 @@ import * as React from 'react'
 import { cn } from '../../lib/utils'
 
 export type InputState = 'Default' | 'Hover' | 'Focused' | 'Error' | 'Disabled'
+/** Escala's Size roles: compact 32 · control 40 · touch 48 (Button's ladder). */
+export type InputSize = 'sm' | 'default' | 'lg'
 
-export interface InputProps extends React.ComponentProps<'input'> {
+// The native `size` attribute (a character count) gives way to the Size axis.
+export interface InputProps extends Omit<React.ComponentProps<'input'>, 'size'> {
+  size?: InputSize
   /** Escala: pin a state without a pointer (docs playground, Figma parity). */
   forceState?: InputState
 }
 
-function Input({ className, type, forceState, disabled, ...props }: InputProps) {
+function Input({ className, type, size = 'default', forceState, disabled, ...props }: InputProps) {
   const isDisabled = disabled || forceState === 'Disabled'
   return (
     <input
       type={type}
       data-slot="input"
       data-escala="Input"
+      data-size={size}
       data-force-state={forceState && forceState !== 'Default' ? forceState : undefined}
       aria-disabled={isDisabled || undefined}
       aria-invalid={forceState === 'Error' ? true : props['aria-invalid']}

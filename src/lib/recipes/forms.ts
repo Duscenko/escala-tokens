@@ -29,20 +29,23 @@ const FIELD_FIXED: SlotProps = {
 const FIELD_FOCUS: SlotProps = { stroke: c('border.focus'), ring: c('border.ring.default') }
 
 // ── Input ──────────────────────────────────────────────────────────────────
-// shadcn's Input: the box IS the <input>. No sizes, no types — a label and a
-// hint are Field's, icons and add-ons are InputGroup's. State is Figma's axis.
+// shadcn's Input: the box IS the <input>. A label and a hint are Field's,
+// icons and add-ons are InputGroup's. State is Figma's axis; Size uses the
+// same Size roles as Button (compact 32 · control 40 · touch 48).
 
 const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const
+const INPUT_GEOMETRY: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
 
 export const INPUT: ComponentRecipe = {
   key: 'Input',
   slots: ['root', 'placeholder'],
   pseudoSlots: { placeholder: { of: 'root', pseudo: '::placeholder' } },
-  defaults: { State: 'Default' },
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { ...FIELD_FIXED, height: 'size.control', font: 'type.placeholder' },
+      root: { ...FIELD_FIXED, font: 'type.placeholder' },
     })),
+    part({ Size: ['default', 'sm', 'lg'] as const }, (size) => ({ root: { height: INPUT_GEOMETRY[size] } })),
     part({ State: INPUT_STATES }, (state) => {
       const disabled = state === 'Disabled'
       return {

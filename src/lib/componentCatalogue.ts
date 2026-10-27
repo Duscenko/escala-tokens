@@ -158,12 +158,17 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Input',
     label: 'Input',
     category: 'Form Controls',
-    description: 'shadcn/ui Input: the bare text control — the box is the <input>. No sizes or types: a label and a hint come from Field, icons and add-ons from Input Group.',
+    description: 'shadcn/ui Input: the bare text control — the box is the <input>. Three sizes on the Size roles (sm 32 · default 40 · lg 48); a label and a hint come from Field, icons and add-ons from Input Group.',
     usage: 'Wrap it in a Field with a FieldLabel. For a prefix, an icon or a button inside the box, use Input Group. Set the type (email, password, search) on the element.',
-    // No variant axis, as in shadcn. State is a Figma axis only (pseudo-classes in code).
-    axes: [{ name: 'State', values: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] }],
+    // Size is Escala's (shadcn ships one height). State is a Figma axis only
+    // (pseudo-classes in code); Value (Placeholder · Filled) is Figma-only too.
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] },
+    ],
     figmaSets: ['Input'],
     props: [
+      { name: 'size', type: "'sm' | 'default' | 'lg'", description: 'Height on the Size roles: compact 32 · control 40 · touch 48.' },
       { name: 'type', type: 'string', description: 'The HTML input type (text, email, password, search…).' },
       { name: 'aria-invalid', type: 'boolean', description: 'Paints the error state.' },
       { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled tokens.' },
