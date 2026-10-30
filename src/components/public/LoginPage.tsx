@@ -93,68 +93,6 @@ function ArrowLeft() {
   )
 }
 
-/** Decorative right panel: the product in miniature — a ramp, a synced file and
- *  the appearance switch — over a soft accent glow. Chrome tokens only, so it
- *  follows the platform accent and the light/dark chrome like everything else. */
-function ShowcasePanel() {
-  const { t } = useI18n()
-  // Twelve tones of the platform accent: 1–8 grow out of the page, 9 is the
-  // accent itself, 10–12 run toward the ink — the same shape a real ramp has.
-  const ramp = Array.from({ length: 12 }, (_, i) => {
-    const n = i + 1
-    if (n < 9) return `color-mix(in oklab, var(--accent-ui) ${Math.round(16 + (n - 1) * 10)}%, var(--app))`
-    if (n === 9) return 'var(--accent-ui)'
-    return `color-mix(in oklab, var(--accent-ui) ${100 - (n - 9) * 22}%, var(--fg))`
-  })
-  return (
-    <aside aria-hidden className="relative hidden overflow-hidden rounded-[32px] border border-line bg-surface lg:block">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 32% 30%, color-mix(in srgb, var(--accent-ui) 22%, transparent), transparent 70%),' +
-            'radial-gradient(ellipse 45% 40% at 82% 78%, color-mix(in srgb, var(--status-warning) 12%, transparent), transparent 70%)',
-        }}
-      />
-      <div className="relative flex h-full flex-col justify-between p-12">
-        <div />
-        <div className="flex flex-col items-center gap-14">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2.5 text-ui font-medium text-fg">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="text-fg-muted">
-                <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h4" />
-              </svg>
-              tokens.json
-            </span>
-            <span className="flex h-10 items-center gap-2 rounded-full border border-status-success/50 px-4 text-ui font-medium text-status-success">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              Figma
-            </span>
-          </div>
-          <div className="flex w-full max-w-[360px] gap-1">
-            {ramp.map((c, i) => (
-              <span key={i} className={`h-10 flex-1 rounded-md ${i === 8 ? 'ring-2 ring-fg/70 ring-offset-2 ring-offset-surface' : ''}`} style={{ background: c }} />
-            ))}
-          </div>
-          <div className="flex rounded-full border border-line bg-app/60 p-1 text-ui font-medium">
-            <span className="rounded-full px-4 py-1.5 text-fg-muted">{t('Light')}</span>
-            <span className="rounded-full bg-elevated px-4 py-1.5 text-fg shadow-sm">{t('Dark')}</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-baseline gap-3">
-            <span className="text-strong font-medium text-fg">{t('Hosted Figma sync')}</span>
-            <span className="text-ui text-fg-faint">{t('Agent skill for your AI tools')}</span>
-          </div>
-          <div className="h-[3px] w-full rounded-full bg-fg/10">
-            <div className="h-full w-2/3 rounded-full bg-fg/70" />
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
 export function LoginPage() {
   const { t, locale } = useI18n()
   const { user, loading, event } = useAuth()
@@ -373,8 +311,8 @@ export function LoginPage() {
   const showSocial = authProviders.length > 0 && (view === 'signin' || view === 'signup') && !done
 
   return (
-    <div className="grid min-h-screen bg-app text-fg lg:grid-cols-2 lg:gap-3 lg:p-3">
-      <div className="flex min-h-full flex-col">
+    <div className="flex min-h-screen flex-col bg-app text-fg">
+      <div className="flex flex-1 flex-col">
         <header className="flex h-[72px] flex-shrink-0 items-center justify-between px-6 lg:px-10">
           <a href="/" className={`flex items-center gap-2.5 rounded-md ${FOCUS}`}>
             <BrandMark size={28} />
@@ -575,8 +513,6 @@ export function LoginPage() {
           © 2026 Escala Tokens
         </footer>
       </div>
-
-      <ShowcasePanel />
     </div>
   )
 }

@@ -17,10 +17,10 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayo
  *  and this header control must not. */
 const AVATAR_TILE_RADIUS = 27 * (8 / 31)
 
-// TopNav's account entry: "Sign in" + "Create account" when signed out — never
-// "Sign in" beside "Sign up", two labels one letter apart that people mix up —
-// and an initial
-// that opens a small menu (email · Sign out) when signed in. Renders NOTHING
+// TopNav's account entry: ONE door when signed out — "Sign in" with the full nav,
+// "Get started free" in the ☰ header, both landing on /login, which switches between
+// Sign in and Create account — and an initial that opens a small menu
+// (email · Sign out) when signed in. Renders NOTHING
 // while accounts are off (`accountsEnabled`), so the production header is
 // unchanged until ACCOUNTS_LIVE flips. The login itself is a page, not a dialog.
 
@@ -116,27 +116,34 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
 
   if (!user) {
     const keepsWork = guestBrandCount > 0
+    const next = keepsWork ? 'workspace' : 'library'
+    const remember = () => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))
     return (
       <>
+        {/* ≥1080px (full nav): one quiet "Sign in" — the login page itself links across to
+            Create account, so the bar keeps a single solid action (Export). */}
         <a
-          href={loginHref({ next: 'library' })}
-          onClick={() => rememberReturn('library')}
-          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-2.5 text-body font-medium text-fg-muted transition-colors hover:text-fg ${FOCUS_RING}`}
+          href={loginHref({ next })}
+          onClick={remember}
+          title={keepsWork ? t('Save your work with a free account') : undefined}
+          className={`hidden h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-medium text-fg transition-[color,box-shadow] min-[1080px]:inline-flex ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${FOCUS_RING}`}
         >
           {t('Sign in')}
         </a>
+        {/* Below 1080px (☰ header): one filled entry instead of two crowded links. It opens on
+            Create account (the likelier first visit); the page links back to
+            Sign in for anyone returning. */}
         <a
-          href={loginHref({ next: keepsWork ? 'workspace' : 'library', mode: 'signup' })}
-          onClick={() => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))}
-          title={keepsWork ? t('Save your work with a free account') : undefined}
+          href={loginHref({ next, mode: 'signup' })}
+          onClick={remember}
           style={quiet ? undefined : { backgroundColor: 'var(--rainbow-fill-a)', color: 'var(--rainbow-ink)' }}
-          className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-semibold ${FOCUS_RING} ${
+          className={`inline-flex h-8 flex-shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-body font-semibold min-[1080px]:hidden ${FOCUS_RING} ${
             quiet
               ? 'border border-line-strong text-fg transition-colors hover:bg-elevated'
-              : 'transition-[filter] hover:brightness-110'
+              : 'transition-[filter] hover:brightness-110 active:brightness-95'
           }`}
         >
-          {t('Create account')}
+          {t('Get started free')}
         </a>
         {licenceDialog}
       </>
