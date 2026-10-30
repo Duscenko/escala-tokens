@@ -35,6 +35,7 @@ import { useAccess } from '../../lib/access'
 import { BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
+import { HintTip } from '../ui/HintTip'
 import { FigmaGlyph } from './TopNav'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
@@ -157,7 +158,9 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       aria-disabled={disabled || undefined}
       aria-label={label}
       aria-keyshortcuts={active ? 'Escape' : undefined}
-      title={hint}
+      // The toolbar segment gets the dark hint (name, no paragraph); the
+      // standalone pill keeps the native tooltip with the longer explanation.
+      title={bare && !(disabled && disabledTitle) ? undefined : hint}
       className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
         active && !disabled
           ? (accent ? '' : 'bg-accent-solid text-accent-ink')
@@ -169,7 +172,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       <RevealLabel open={active}>{label}</RevealLabel>
     </button>
   )
-  if (bare) return button
+  if (bare) return disabled && disabledTitle ? button : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{button}</HintTip>
   return (
     // Same pill as Theme · Components beside it: the frame colour (`bg-nav`),
     // a solid hairline, h-9 / rounded-xl, no shadow. The dashed edge it used
@@ -348,7 +351,9 @@ function ArtefactsView({
       id={BOARD_PANEL_ID}
       role="tabpanel"
       aria-labelledby={boardTabId(BOARD_PANEL_ID, view)}
-      className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} py-5 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
+      // `pb-20`: the board toolbar floats over the foot of this scrollport, so
+      // the last row scrolls clear of it instead of ending underneath.
+      className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} pt-5 pb-20 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
       <div className="mx-auto w-full">
@@ -740,6 +745,8 @@ export default function ThemePreviewHub({
                   the board cannot disagree. */}
               {/* `boardhead` container: on a narrow board the view switch
                   drops to icons (BoardViewSwitch) before anything clips. */}
+              {/* The plain board has no band: its tools float at its foot. */}
+              {(needsMyTheme || contrastOpen || docsOpen || stylePreview) && (
               <div className={`@container/boardhead flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
@@ -778,16 +785,10 @@ export default function ThemePreviewHub({
                   // like tabs. Inspect stays on the right, beside the panel
                   // its readings open in.
                   <span className="flex min-w-0 items-center gap-2">
-                    {!needsMyTheme && (
+                    {/* With the board toolbar on screen the switch is its last
+                        group (see below); otherwise it stands here alone. */}
+                    {!needsMyTheme && (contrastOpen || docsOpen || stylePreview) && (
                       <BoardViewSwitch value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
-                    )}
-                    {/* A first-run board is a set of mock screens, one of them
-                        a login card. Without this line it read as the
-                        product's own wall (design-plans/entry-flow-set-see-ship.md). */}
-                    {!needsMyTheme && !stylePreview && guest && (
-                      <span className="hidden min-w-0 truncate text-caption text-fg-faint min-[1280px]:inline">
-                        {t('Sample screens drawn from your tokens')}
-                      </span>
                     )}
                     {(needsMyTheme || stylePreview) && (
                       <span className={`min-w-0 ${needsMyTheme ? '-ml-2' : ''}`}>
@@ -802,29 +803,9 @@ export default function ThemePreviewHub({
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
-                  {/* History (Undo · Redo · Random) acts on the board, so it
-                      sits on the board's header, for every visitor. Reset stays
-                      beside it for an account. */}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && !guest && (
-                    <EditHistoryControls previewTheme={previewTheme} />
-                  )}
-                  {/* Undo · Redo · Random · Inspector are ONE pill: all four act on
-                      the board. With no history (a style try-on) Inspector keeps
-                      its own pill. */}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview ? (
-                    <BoardHistoryControls onRandom={canRandom ? () => randomHandle.current?.() : undefined}>
-                      <InspectorToggle
-                        bare
-                        active={inspecting}
-                        pinned={Boolean(inspectedSelection)}
-                        onChange={setInspecting}
-                        accent={boardCanvasTokens.brandSolid}
-                        ink={boardCanvasTokens.onBrand}
-                        disabled={randomDraft}
-                        disabledTitle={headerActionsLockedHint}
-                      />
-                    </BoardHistoryControls>
-                  ) : !needsMyTheme && !contrastOpen && !docsOpen ? (
+                  {/* The board toolbar floats over the board (below); with no
+                      history (a style try-on) Inspector keeps its own pill here. */}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && stylePreview ? (
                     <InspectorToggle
                       active={inspecting}
                       pinned={Boolean(inspectedSelection)}
@@ -837,8 +818,42 @@ export default function ThemePreviewHub({
                   ) : null}
                 </div>
               </div>
+              )}
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
-              <div className="flex min-h-0 flex-1 flex-col">
+              {/* Also a `boardhead` container (same width as the header), so the
+                  floating switch still drops to icons on a narrow board. */}
+              <div className="@container/boardhead relative flex min-h-0 flex-1 flex-col">
+                {/* Undo · Redo · Random · Inspector ‖ Theme · Components: ONE
+                    toolbar floating at the board's foot, Figma's bottom bar —
+                    the tools that act on the board, then what it shows. The
+                    wrapper lets clicks through to the board beside the pill. */}
+                {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4">
+                    {/* Reset rides beside the bar for an account. */}
+                    {!guest && (
+                      <div className="pointer-events-auto rounded-lg bg-nav shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)] empty:hidden">
+                        <EditHistoryControls previewTheme={previewTheme} />
+                      </div>
+                    )}
+                    <div className="pointer-events-auto rounded-xl shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]">
+                      <BoardHistoryControls
+                        onRandom={canRandom ? () => randomHandle.current?.() : undefined}
+                        trailing={<BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
+                      >
+                        <InspectorToggle
+                          bare
+                          active={inspecting}
+                          pinned={Boolean(inspectedSelection)}
+                          onChange={setInspecting}
+                          accent={boardCanvasTokens.brandSolid}
+                          ink={boardCanvasTokens.onBrand}
+                          disabled={randomDraft}
+                          disabledTitle={headerActionsLockedHint}
+                        />
+                      </BoardHistoryControls>
+                    </div>
+                  </div>
+                )}
                 {needsMyTheme ? (
                   <NeedMyThemeEmpty onCreateTheme={onCreateTheme} />
                 ) : (

@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { useI18n } from '../../lib/i18n'
+import { HintTip } from '../ui/HintTip'
 
 /** What the board shows: the bento board of the brand, or every catalogue
  *  component as a cover painted in its tokens. */
@@ -29,11 +30,15 @@ export function boardTabId(panelId: string, view: BoardView): string {
  * starts to clip) the words go and the icons stay. The words remain the tabs'
  * accessible names (`sr-only`) and their tooltip.
  */
-export function BoardViewSwitch({ value, onChange, panelId }: {
+export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
   value: BoardView
   onChange: (view: BoardView) => void
   /** The board region this switch drives. */
   panelId: string
+  /** Inside the board toolbar (`BoardHistoryControls`' trailing group), like
+   *  Figma's mode switch: no shell of its own, a recessed well, and the
+   *  selected view cut back to the toolbar's colour. */
+  inset?: boolean
 }) {
   const { t } = useI18n()
   const listRef = useRef<HTMLDivElement>(null)
@@ -79,11 +84,17 @@ export function BoardViewSwitch({ value, onChange, panelId }: {
       // painted with) over the board, with a hairline edge and no shadow.
       // `bg-nav` reads the card's own `.light` / `.dark` class, so it stays
       // the frame's colour for the appearance on screen.
-      className="flex h-9 flex-shrink-0 items-center gap-0.5 rounded-xl border border-line bg-nav p-1"
+      className={inset
+        ? 'flex h-7 flex-shrink-0 items-center gap-0.5 rounded-lg bg-fg/[0.06] p-0.5'
+        : 'flex h-9 flex-shrink-0 items-center gap-0.5 rounded-xl border border-line bg-nav p-1'}
     >
       {VIEWS.map((view) => {
         const on = value === view
-        return (
+        const shape = inset ? 'h-6 rounded-md px-2.5 @max-[560px]/boardhead:px-2' : 'h-7 rounded-lg px-3 @max-[560px]/boardhead:px-2.5'
+        const state = on
+          ? inset ? 'bg-nav font-semibold text-fg shadow-sm' : 'bg-fg/[0.09] font-semibold text-fg'
+          : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+        const tab = (
           <button
             key={view}
             id={boardTabId(panelId, view)}
@@ -93,15 +104,14 @@ export function BoardViewSwitch({ value, onChange, panelId }: {
             aria-controls={panelId}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(view)}
-            title={labels[view]}
-            className={`flex h-7 items-center gap-1.5 rounded-lg px-3 @max-[560px]/boardhead:px-2.5 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
-              on ? 'bg-fg/[0.09] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
-            }`}
+            title={inset ? undefined : labels[view]}
+            className={`flex items-center gap-1.5 ${shape} text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${state}`}
           >
             {glyphs[view]}
             <span className="@max-[560px]/boardhead:sr-only">{labels[view]}</span>
           </button>
         )
+        return inset ? <HintTip key={view} label={labels[view]}>{tab}</HintTip> : tab
       })}
     </div>
   )

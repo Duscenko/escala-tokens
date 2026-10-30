@@ -16,6 +16,7 @@ import { requestOpenGithub } from '../../lib/guestSave'
 import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { FigmaGlyph } from '../ui/icons'
+import { HintTip } from '../ui/HintTip'
 
 /**
  * The three places a system ships to — the whole product's promise, in the
@@ -86,11 +87,14 @@ const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center 
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, children }: {
+export function BoardHistoryControls({ onRandom, children, trailing }: {
   /** A whole new theme — only while the brand is a draft (see callers). */
   onRandom?: () => void
   /** Board tools that join the pill after a divider (the Inspector). */
   children?: ReactNode
+  /** A group of its own at the pill's end (the Theme · Components switch),
+   *  set off by a full-height rule — Figma's tools | modes split. */
+  trailing?: ReactNode
 }) {
   const { t } = useI18n()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
@@ -99,18 +103,22 @@ export function BoardHistoryControls({ onRandom, children }: {
   const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
   return (
     <div role="group" aria-label={t('History')} className="flex h-9 items-center gap-0.5 rounded-xl border border-line bg-nav p-1">
-      <button type="button" onClick={() => undoEdit()} disabled={!lastUndo} aria-label={undoLabel} title={`${undoLabel} (⌘Z)`} className={HISTORY_SEGMENT}>
+      <HintTip label={undoLabel} shortcut="⌘Z">
+      <button type="button" onClick={() => undoEdit()} disabled={!lastUndo} aria-label={undoLabel} className={HISTORY_SEGMENT}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M5.5 3.5 2.5 6.5l3 3" />
           <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
         </svg>
       </button>
-      <button type="button" onClick={() => redoEdit()} disabled={!lastRedo} aria-label={redoLabel} title={`${redoLabel} (⇧⌘Z)`} className={HISTORY_SEGMENT}>
+      </HintTip>
+      <HintTip label={redoLabel} shortcut="⇧⌘Z">
+      <button type="button" onClick={() => redoEdit()} disabled={!lastRedo} aria-label={redoLabel} className={HISTORY_SEGMENT}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M10.5 3.5l3 3-3 3" />
           <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
         </svg>
       </button>
+      </HintTip>
       {onRandom && (
         <>
           <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
@@ -121,6 +129,12 @@ export function BoardHistoryControls({ onRandom, children }: {
         <>
           <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
           {children}
+        </>
+      )}
+      {trailing && (
+        <>
+          <span aria-hidden className="-my-1 mx-1 w-px self-stretch bg-line" />
+          {trailing}
         </>
       )}
     </div>
@@ -228,12 +242,13 @@ export function RandomWholeThemeButton({ onClick, label, compact = false, bare =
     setRolls((r) => r + 1)
   }
 
-  return (
+  const button = (
     <button
       type="button"
       onClick={roll}
       aria-label={label}
-      title={label}
+      // The toolbar's segment gets the dark hint; the footers keep the native one.
+      title={bare ? undefined : label}
       className={bare
         ? `group ${HISTORY_SEGMENT}`
         : `group flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} flex-shrink-0 items-center justify-center rounded-lg border border-line text-fg-muted transition-[color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
@@ -241,6 +256,7 @@ export function RandomWholeThemeButton({ onClick, label, compact = false, bare =
       <RollingDie rolls={rolls} />
     </button>
   )
+  return bare ? <HintTip label={label}>{button}</HintTip> : button
 }
 
 /** Random, in one shape everywhere: the shuffle mark inside the animated
