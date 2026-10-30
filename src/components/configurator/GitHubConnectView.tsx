@@ -17,6 +17,7 @@ import {
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
 import { GitHubGlyph } from '../ui/icons'
 import { trackEvent } from '../../lib/analytics'
+import CodeHowTo from './CodeHowTo'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -490,6 +491,16 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
             </a>
           </div>
         )}
+      </section>
+
+      {/* ── Step 4: Use it ── what the pushed files are for, readable before
+          the first push too, so the steps above have a reason. */}
+      <section className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
+          <h3 className="text-sm font-semibold text-fg">4 · Use it in your project</h3>
+        </div>
+        <CodeHowTo kind="github" skillFolders={repoSkillFolders(projectName)} />
       </section>
     </motion.div>
   )

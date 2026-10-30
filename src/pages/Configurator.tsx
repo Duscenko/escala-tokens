@@ -494,6 +494,7 @@ function ExportPill({
   onCss,
   onFigma,
   onAgent,
+  onGithub,
   onMore,
 }: {
   /** The Code tab on CSS. */
@@ -502,14 +503,16 @@ function ExportPill({
   onFigma: () => void
   /** The Code tab on Agent context. */
   onAgent: () => void
-  /** The wizard: W3C, Escala JSON, per-collection files, GitHub. */
+  /** The GitHub page: connect, pick a repo, push. */
+  onGithub: () => void
+  /** The wizard: W3C, Escala JSON, per-collection files. */
   onMore: () => void
 }) {
   const { t } = useI18n()
   const rootRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
-  const place = usePopoverPlacement(rootRef, open, { prefer: 200, min: 160, max: 280 })
+  const place = usePopoverPlacement(rootRef, open, { prefer: 200, min: 160, max: 360 })
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
 
   useEffect(() => {
@@ -546,14 +549,15 @@ function ExportPill({
   }
 
   // The same three doors as the inspector footer and Home's brand menu —
-  // CSS · Figma · Agent — then the wizard as "More formats…". One vocabulary
-  // for every way out (design-plans/entry-flow-set-see-ship.md). GitHub is a
-  // destination of the wizard and a row of Integrations, not a fifth door.
+  // CSS · Figma · Agent — then GitHub (the repo the product reads, owner's
+  // call: it was buried under "More formats…") and the wizard as "More
+  // formats…" (design-plans/entry-flow-set-see-ship.md).
   const items: { key: string; label: string; hint: string; glyph: ReactNode; go: () => void }[] = [
     { key: 'css', label: t('CSS'), hint: t('Copy or download variables.css'), glyph: <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />, go: onCss },
     { key: 'figma', label: t('Figma'), hint: t('Copy the context and paste it in the plugin.'), glyph: <FigmaGlyph size={14} />, go: onFigma },
     { key: 'agent', label: t('Agent'), hint: t('One message your AI agent reads as the source of truth.'), glyph: <ExportMenuGlyph src="/icons/settings/mcp.svg" />, go: onAgent },
-    { key: 'more', label: t('More formats…'), hint: t('W3C, Escala JSON, per-collection files, GitHub.'), glyph: <ExportIcon />, go: onMore },
+    { key: 'github', label: t('GitHub'), hint: t('Push tokens, CSS and Design skills to a repo.'), glyph: <GitHubGlyph size={14} />, go: onGithub },
+    { key: 'more', label: t('More formats…'), hint: t('W3C, Escala JSON, per-collection files.'), glyph: <ExportIcon />, go: onMore },
   ]
   const itemClass = `flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`
 
@@ -2666,6 +2670,7 @@ export default function Configurator() {
             onCss={() => shipCurrent('css')}
             onFigma={() => shipCurrent('figma')}
             onAgent={() => shipCurrent('agent')}
+            onGithub={openGithubPage}
             onMore={openSectionExport}
           />
         ) : undefined}
