@@ -23,6 +23,7 @@ import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
 import { presetHarmony, presetStates, themeStylePreset, type ThemeStylePreset } from './themePresets'
 import { themeModeKey, type ThemeAppearance } from './themeModes'
 import { REMIX_ID_PREFIX } from './remixLink'
+import type { ThemeFoundationOverride } from './themeFoundations'
 
 /**
  * Mints `preset` as a real theme in the given appearance and records where it
@@ -182,6 +183,74 @@ export function resetThemeToOrigin(
     return { label: 'System defaults' }
   }
   s.setThemeFoundations(themeKey, preset.foundations)
+  resetThemeColorToOrigin(themeKey, applyAccent)
+  loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
+  loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
+  return { label: preset.label }
+}
+
+// ── One row of the quick-settings panel at a time ────────────────────────────
+//
+// The panel's rows each own a slice of the brand. Resetting a row restores
+// ONLY that slice — the same target the whole-brand Reset uses (the origin
+// System Style, or no override at all for a hand-made brand), so a row reset
+// and the brand reset can never disagree about what "back" means.
+
+/** The foundation keys each quick-settings row writes. */
+export const FOUNDATION_ROW_KEYS = {
+  typography: ['typography'],
+  radius: ['radius', 'radiusRoles', 'radiusRoleViewports'],
+  shadow: ['shadows', 'shadowsDark'],
+  sizes: ['sizes', 'selector', 'stroke', 'spacingRoles', 'padding'],
+  icons: ['iconWeight'],
+  motion: ['motion'],
+} as const satisfies Record<string, readonly (keyof ThemeFoundationOverride)[]>
+
+export type FoundationRow = keyof typeof FOUNDATION_ROW_KEYS
+
+/** Whether the row's slice differs from what Reset restores. */
+export function foundationRowHasEdits(state: ThemeEditState, themeKey: string, row: FoundationRow): boolean {
+  const origin = themeStylePreset(state.themeOrigin?.[themeKey] ?? '')
+  const own = (state.themeFoundations[themeKey] ?? {}) as Record<string, unknown>
+  const target = (origin?.foundations ?? {}) as Record<string, unknown>
+  return FOUNDATION_ROW_KEYS[row].some((key) => JSON.stringify(own[key]) !== JSON.stringify(target[key]))
+}
+
+/** Put the row's slice back: the origin's values, or no override at all. */
+export function resetFoundationRow(themeKey: string, row: FoundationRow): void {
+  const s = useDesignStore.getState()
+  const origin = themeStylePreset(s.themeOrigin?.[themeKey] ?? '')
+  const next: Record<string, unknown> = { ...(s.themeFoundations[themeKey] ?? {}) }
+  for (const key of FOUNDATION_ROW_KEYS[row]) {
+    const value = (origin?.foundations as Record<string, unknown> | undefined)?.[key]
+    if (value === undefined) delete next[key]
+    else next[key] = structuredClone(value)
+  }
+  s.setThemeFoundations(themeKey, Object.keys(next).length ? next as ThemeFoundationOverride : null)
+  if (row === 'typography') {
+    loadGoogleFont(origin?.foundations.typography?.fontFamily ?? '')
+    loadGoogleFont(origin?.foundations.typography?.headingFontFamily ?? '')
+  }
+}
+
+/** Whether the Colour row (accent and neutral tint) moved off its origin. A
+ *  hand-made brand has no colour to go back to, so it never reads edited. */
+export function colorRowHasEdits(state: ThemeEditState, themeKey: string): boolean {
+  const origin = themeStylePreset(state.themeOrigin?.[themeKey] ?? '')
+  if (!origin) return false
+  if (state.neutralTint !== origin.neutralTint) return true
+  return themeAccentHex(state, themeKey).toLowerCase() !== origin.accent.toLowerCase()
+}
+
+/** The Colour half of `resetThemeToOrigin`: tint, the style's role recipe,
+ *  then the accent through the adopt's own applier. */
+export function resetThemeColorToOrigin(
+  themeKey: string,
+  applyAccent: (hex: string, fromLink: boolean, themeKey: string) => void,
+): void {
+  const s = useDesignStore.getState()
+  const preset = themeStylePreset(s.themeOrigin?.[themeKey] ?? '')
+  if (!preset) return
   s.setNeutralTint(preset.neutralTint)
   useDesignStore.setState({
     architectureOverrides: resetThemeSemantics(
@@ -191,9 +260,6 @@ export function resetThemeToOrigin(
     ),
   })
   applyAccent(preset.accent, true, themeKey)
-  loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
-  loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
-  return { label: preset.label }
 }
 
 // ── A phone remix over the guest's automatic brand ───────────────────────────

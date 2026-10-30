@@ -233,28 +233,11 @@ function CssShip({ themeKey, previewAppearance, onOpenFull }: {
 }) {
   const { t } = useI18n()
   const artifacts = useCodeArtifacts(themeKey, previewAppearance)
-  const [file, setFile] = useState<'css' | 'shadcn'>('css')
-  const text = file === 'css' ? artifacts.css : artifacts.shadcn
-  const fileName = file === 'css' ? 'variables.css' : 'globals.css'
+  const text = artifacts.css
+  const fileName = 'variables.css'
   const lines = text ? text.split('\n').length : 0
   return (
     <div className="flex flex-col gap-3">
-      <div role="radiogroup" aria-label={t('File')} className="flex items-center gap-1">
-        {(['css', 'shadcn'] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="radio"
-            aria-checked={file === key}
-            onClick={() => setFile(key)}
-            className={`h-7 rounded-md px-2.5 font-mono text-mini transition-colors ${FOCUS} ${
-              file === key ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg'
-            }`}
-          >
-            {key === 'css' ? 'variables.css' : 'shadcn · globals.css'}
-          </button>
-        ))}
-      </div>
       <Meta>
         {t('{n} lines', { n: String(lines) })} · {formatBytes(new Blob([text]).size)}
       </Meta>

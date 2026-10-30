@@ -125,6 +125,96 @@ function Segmented<K extends string>({
   )
 }
 
+/** All foundations · one foundation. Shared by the agent paste and the CSS
+ *  file, so a scope means the same collection in both. */
+function ScopeSelect({ value, scopes, onChange, labelClass, rowClass, fill }: {
+  value: ContextScope
+  scopes: ContextScope[]
+  onChange: (scope: ContextScope) => void
+  labelClass: string
+  rowClass: string
+  fill: boolean
+}) {
+  const { t } = useI18n()
+  return (
+    <label className={rowClass}>
+      <span className={labelClass}>{t('Scope')}</span>
+      {/* The workspace dropdown shell, not the bare native control: its
+          arrow sat on the field's own padding, flush against the border.
+          `appearance-none` + a drawn chevron at `right-2.5` mirrors the
+          text's `pl-2.5`, the same build `VariableSelect` uses. Still a
+          native <select>, so keyboard and type-to-jump stay free. */}
+      <span className={`relative inline-flex min-w-0 ${fill ? 'w-full' : ''}`}>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value as ContextScope)}
+          className={`h-8 min-w-0 ${fill ? 'w-full' : ''} cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${SELECT_FOCUS}`}
+        >
+          {scopes.map((s) => (
+            <option key={s} value={s}>
+              {s === 'all' ? t('All foundations') : t(CONTEXT_FOUNDATIONS.find((f) => f.key === s)?.label ?? s)}
+            </option>
+          ))}
+        </select>
+        <svg
+          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden
+          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-faint"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </span>
+    </label>
+  )
+}
+
+export type CssBrandMode = 'one' | 'all'
+
+/** The CSS file's two filters: which collection, and — with more than one
+ *  brand — this brand or every brand in one file (`data-brand`). Stacked as
+ *  inspector field rows, the same shape as `ContextFilters`. */
+export function CssFilters({ scope, onScope, scopes, appearance, onAppearance, brands, onBrands, brandCount }: {
+  scope: ContextScope
+  onScope: (scope: ContextScope) => void
+  scopes: ContextScope[]
+  /** Light or Dark alone puts that theme on `:root`; Both is `:root` + `.dark`. */
+  appearance: ContextAppearance
+  onAppearance: (appearance: ContextAppearance) => void
+  brands: CssBrandMode
+  onBrands: (mode: CssBrandMode) => void
+  brandCount: number
+}) {
+  const labelClass = `${FIELD_NAME} text-fg-muted`
+  return (
+    <div className="flex flex-col gap-2">
+      <ScopeSelect value={scope} scopes={scopes} onChange={onScope} labelClass={labelClass} rowClass={FIELD_ROW} fill />
+      <Segmented
+        labelClass={labelClass}
+        rowClass={FIELD_ROW}
+        fill
+        label="Theme"
+        items={CONTEXT_APPEARANCES}
+        value={appearance}
+        onChange={onAppearance}
+      />
+      {brandCount > 1 ? (
+        <Segmented
+          labelClass={labelClass}
+          rowClass={FIELD_ROW}
+          fill
+          label="Brands"
+          items={[
+            { key: 'one', label: 'This one' },
+            { key: 'all', label: `All ${brandCount}`, hint: 'One file: <html data-brand="…"> picks the brand' },
+          ]}
+          value={brands}
+          onChange={onBrands}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 /** The three filters. `scopes` lists the scopes this surface can offer
  *  (omit it and the scope row is not drawn — a component page has only one).
  *  `lockedAppearance`, when set, disables every other theme with
@@ -155,34 +245,14 @@ export function ContextFilters({
   return (
     <div className={layout === 'row' ? 'flex min-w-0 flex-wrap items-center gap-2' : 'flex flex-col gap-2'}>
       {scopes && scopes.length > 1 ? (
-        <label className={rowClass}>
-          <span className={labelClass}>{t('Scope')}</span>
-          {/* The workspace dropdown shell, not the bare native control: its
-              arrow sat on the field's own padding, flush against the border.
-              `appearance-none` + a drawn chevron at `right-2.5` mirrors the
-              text's `pl-2.5`, the same build `VariableSelect` uses. Still a
-              native <select>, so keyboard and type-to-jump stay free. */}
-          <span className={`relative inline-flex min-w-0 ${stack ? 'w-full' : ''}`}>
-            <select
-              value={opts.scope}
-              onChange={(e) => onChange({ scope: e.target.value as ContextScope })}
-              className={`h-8 min-w-0 ${stack ? 'w-full' : ''} cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${SELECT_FOCUS}`}
-            >
-              {scopes.map((s) => (
-                <option key={s} value={s}>
-                  {s === 'all' ? t('All foundations') : t(CONTEXT_FOUNDATIONS.find((f) => f.key === s)?.label ?? s)}
-                </option>
-              ))}
-            </select>
-            <svg
-              width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-              strokeLinecap="round" strokeLinejoin="round" aria-hidden
-              className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-faint"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </span>
-        </label>
+        <ScopeSelect
+          value={opts.scope}
+          scopes={scopes}
+          onChange={(scope) => onChange({ scope })}
+          labelClass={labelClass}
+          rowClass={rowClass}
+          fill={stack}
+        />
       ) : null}
       {showAppearance ? (
       <Segmented

@@ -183,6 +183,13 @@ export function mintTheme(
     info:    { key: 'info',    hex: s.infoColor },
   }
   const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
+  const sameRamp = (a: Record<number, string> | undefined, b: Record<number, string>) =>
+    !!a && Object.keys(b).length > 0 && Object.keys(a).length === Object.keys(b).length
+    && Object.entries(b).every(([tone, hex]) => eq(a[Number(tone)] ?? '', hex))
+  // The globals' ramps grow out of the SYSTEM's pages. A theme that brings its
+  // own paper (a System Style) cannot read them: tone 1 would be another page,
+  // and the alpha twins would be solved against it.
+  const onSystemPages = !pages || (eq(pages.light, s.pageBackground) && eq(pages.dark, s.darkBackground))
 
   try {
     const taken = new Set(s.customColors.map((c) => c.key))
@@ -194,8 +201,15 @@ export function mintTheme(
       // global when the hex matches it, an existing family that already
       // carries it, else a new family minted so the colour is editable in
       // Primitives where colour is edited.
-      if (eq(slotHex, g.hex)) { refs[slot] = g.key; continue }
-      const existing = s.customColors.find((c) => eq(c.base, slotHex))
+      if (eq(slotHex, g.hex) && onSystemPages) { refs[slot] = g.key; continue }
+      const ramps = scalesForSlot(slot, slotHex, s, neutralTint, pages, rampShift)
+      // Reuse another family only when it IS this ramp: same seed and the same
+      // paper. Two brands with one error hex on different pages are two
+      // families — sharing one gave the second brand the first one's tone 1
+      // and alpha twins (measured: Swiss's critical surface in Figma read
+      // orange, solved against Playful's paper).
+      const existing = s.customColors.find((c) => eq(c.base, slotHex)
+        && sameRamp(c.scale, ramps.scale) && sameRamp(c.darkScale, ramps.darkScale))
       if (existing) { refs[slot] = existing.key; continue }
       const familyKey = uniqueKey(slot === 'brand' ? key : `${key}-${slot}`, taken)
       taken.add(familyKey)
@@ -203,7 +217,7 @@ export function mintTheme(
         key: familyKey,
         label: titleCaseKey(familyKey),
         base: slotHex,
-        ...scalesForSlot(slot, slotHex, s, neutralTint, pages, rampShift),
+        ...ramps,
       })
       refs[slot] = familyKey
     }

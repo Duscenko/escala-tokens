@@ -84,7 +84,7 @@ export function buildCSS(
   const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   // First theme in order that actually has tokens. Whole-system exports stay
   // light-first; Get code remaps a dark-created theme so `:root` is dark.
-  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? 'light'
+  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? themeOrder[0] ?? 'light'
   const rootKind: ThemeAppearance = themeKinds?.[rootKey] ?? (rootKey === 'dark' ? 'dark' : 'light')
   const semanticTokens = themes[rootKey] ?? themes.light ?? {}
   const translucent = panelBackground === 'translucent'
@@ -162,12 +162,20 @@ export function buildCSS(
     .sort(([a], [b]) => Number(a) - Number(b))
     .forEach(([k, v]) => lines.push(`  --color-white-a-${toneLabel(colorNaming, Number(k))}: ${v};`))
 
+  // The flat catalogue and the Categorical roles share a namespace, and four
+  // names exist in both (content-primary, content-inverse, content-disabled,
+  // border-strong). The Categorical line always came later and won, so the
+  // flat one only made the file contradict itself — and a cut or an agent
+  // reading the first match saw a value no component renders. Roles own it.
+  const roleLines = categoricalRoleLines(store)
+  const roleNames = new Set(Object.values(roleLines).flat().map((line) => line.trim().split(':')[0]))
+  const flatVar = (k: string) => `--color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`
+
   lines.push(`\n  /* Semantic tokens — ${rootKind} */`)
   Object.entries(semanticTokens).forEach(([k, v]) => {
-    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, rootKind)};`)
+    if (v && !roleNames.has(flatVar(k))) lines.push(`  ${flatVar(k)}: ${panelValue(k, v, rootKind)};`)
   })
 
-  const roleLines = categoricalRoleLines(store)
   if (roleLines[rootKey]?.length) {
     lines.push(`\n  /* Semantic roles (Categorical) — ${rootKind}. Components bind these. */`)
     lines.push(...roleLines[rootKey])
@@ -234,7 +242,12 @@ export function buildCSS(
   }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Shadow */')
-  const rootShadows = desktopOnly && rootKind === 'dark' ? darkShadowMap(shadows) : shadows
+  // :root carries the FIRST theme. When that theme is dark (a brand created in
+  // Dark, or a dark-only file) its shadows and gradients are the dark twins —
+  // the light ramp's near-black shadow is the dark page itself and renders as
+  // nothing. `.light` then re-points them (below).
+  const rootIsDark = rootKind === 'dark'
+  const rootShadows = rootIsDark ? darkShadowMap(shadows) : shadows
   Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
   lines.push('\n  /* Breakpoints — primitive min-widths */')
@@ -251,7 +264,7 @@ export function buildCSS(
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
-    const gradientAppearance = desktopOnly && rootKind === 'dark' ? 'dark' : 'light'
+    const gradientAppearance = rootIsDark ? 'dark' : 'light'
     gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`))
   }
 
@@ -294,7 +307,7 @@ export function buildCSS(
   themeOrder.forEach((theme) => {
     const hasFoundationOverride = Boolean(store.themeFoundations?.[theme])
     if (theme === rootKey && !hasFoundationOverride) return
-    const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
+    const entries = Object.entries(themes[theme] ?? {}).filter(([k, v]) => v && !roleNames.has(flatVar(k)))
     const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
     const foundations = resolveThemeFoundations(store, theme)
     // A dark-kind theme also re-points the gradients that carry a dark
@@ -312,8 +325,16 @@ export function buildCSS(
     const darkShadows = kind === 'dark'
       ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
       : []
+    // The mirror case: :root is dark, so a light theme block restores the
+    // light shadows and the light face of every gradient that has a dark one.
+    const lightGradients = kind === 'light' && rootIsDark
+      ? gradients.filter((g) => g.stops.some((s) => s.darkColor))
+      : []
+    const lightShadows = kind === 'light' && rootIsDark && !hasFoundationOverride
+      ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
+      : []
     const themeRoles = roleLines[theme] ?? []
-    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
+    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !lightGradients.length && !lightShadows.length && !hasFoundationOverride) return
     const themeSelector = theme === 'light'
       ? (rootKind === 'dark' ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]')
       : theme === 'dark'
@@ -328,7 +349,7 @@ export function buildCSS(
           if (foundations.panelBackground === 'translucent') next = withAlpha(v, 0.7)
           else if (foundations.panelBackground === 'page' && kind === 'light') next = pageBackground
         }
-        lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${next};`)
+        lines.push(`  ${flatVar(k)}: ${next};`)
       })
     }
     if (themeRoles.length) {
@@ -381,6 +402,14 @@ export function buildCSS(
     if (darkShadows.length) {
       lines.push(`  /* Shadows — ${theme} */`)
       darkShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${darkShadow(v)};`))
+    }
+    if (lightGradients.length) {
+      lines.push(`  /* Gradients — ${theme} */`)
+      lightGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, 'light')};`))
+    }
+    if (lightShadows.length) {
+      lines.push(`  /* Shadows — ${theme} */`)
+      lightShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
     }
     lines.push('}')
   })

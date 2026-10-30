@@ -563,7 +563,7 @@ const SHOTS = {
   spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing semantics table with the Mobile platform selected' },
   components: { file: 'components', size: [1360, 850], alt: 'The Button page in Components: a live playground with colour, style, size and state controls' },
   docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page with its variable map, built from the system\'s own ramps and roles' },
-  code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the brand\'s agent context, with its CSS and shadcn files beside it' },
+  code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the brand\'s agent context, with its CSS file beside it' },
   figma: { file: 'figma', size: [1360, 850], alt: 'The Figma page: the agent context to copy, and the brands, themes and viewports it carries' },
 } satisfies Record<string, AboutShotSpec>
 

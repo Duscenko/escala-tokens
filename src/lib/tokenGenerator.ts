@@ -400,13 +400,25 @@ function themeModesForSync(
 }
 
 /** Copy a theme-keyed override onto each selected `theme::appearance` so
- *  `applyArchTokenOverrides` can see the slot it already projected. */
-function remapOverridesForSyncModes(overrides: ArchOverrides, modes: FigmaSyncMode[]): ArchOverrides {
+ *  `applyArchTokenOverrides` can see the slot it already projected.
+ *
+ *  The `theme::appearance` key is the edit for that column and always wins. A
+ *  bare `theme` key is older data, from when a theme had ONE appearance (its
+ *  kind): it applies to that appearance only — the same reading Get code makes
+ *  (`overridesForCode`). It used to win over the specific key and land on both
+ *  columns, so Figma and Code disagreed on a dark column the person never
+ *  edited. */
+function remapOverridesForSyncModes(
+  overrides: ArchOverrides,
+  modes: FigmaSyncMode[],
+  kinds: Record<string, string | undefined> = {},
+): ArchOverrides {
   const next: ArchOverrides = {}
   for (const [id, byMode] of Object.entries(overrides)) {
     const mapped = { ...byMode }
     for (const mode of modes) {
-      const src = byMode[mode.theme] ?? byMode[figmaSyncModeId(mode)]
+      const own = (kinds[mode.theme] ?? 'light') === mode.appearance
+      const src = byMode[figmaSyncModeId(mode)] ?? (own ? byMode[mode.theme] : undefined)
       if (src) mapped[figmaSyncModeId(mode)] = src
     }
     next[id] = mapped
@@ -619,7 +631,7 @@ export function generateTokenJSON(
     // Was missing entirely — table edits (setArchitectureOverride) never
     // reached the actual export, only the live Alias/Semantics preview.
     syncModes
-      ? remapOverridesForSyncModes(store.architectureOverrides[store.semanticArchitecture] ?? {}, syncModes)
+      ? remapOverridesForSyncModes(store.architectureOverrides[store.semanticArchitecture] ?? {}, syncModes, store.themeKinds ?? {})
       : (store.architectureOverrides[store.semanticArchitecture] ?? {}),
     // Sync modes flatten to `theme::appearance` so Categorical columns match
     // the Light/Dark Figma modes. Whole-system export still uses themeNames.

@@ -2,14 +2,13 @@ import { useMemo } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS } from '../../lib/exporters'
-import { buildShadcnGlobalsCss } from '../../lib/shadcnGlobals'
-import type { TokenJSON } from '../../lib/agentBundle/types'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import { useFreeTier } from '../../lib/access'
 import { shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { CONTEXT_FOUNDATIONS, type ContextScope } from '../../lib/contextRequest'
+import { CONTEXT_FOUNDATIONS, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
+import { freeDownloadStore } from '../../lib/freeFigmaScope'
 
 // ─── One brand's code files, built ONCE for every surface that shows them ───
 // The Code tab and the inspector's Ship panel both render these. They used to
@@ -23,12 +22,11 @@ export type ExportFacts = { primitives: number; tokens: number; modes: number; c
 
 export interface CodeArtifacts {
   css: string
-  shadcn: string
   skillMd: string
   facts: ExportFacts | null
 }
 
-const EMPTY: CodeArtifacts = { css: '', shadcn: '', skillMd: '', facts: null }
+const EMPTY: CodeArtifacts = { css: '', skillMd: '', facts: null }
 
 function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): ExportFacts {
   const colors = (json as { colors?: Record<string, unknown> }).colors ?? {}
@@ -46,7 +44,20 @@ function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): E
   return { primitives, tokens, modes: modeKeys.size, cssBytes: new Blob([css]).size }
 }
 
-/** variables.css, shadcn's globals.css and SKILL.md for one brand (both of
+type Store = ReturnType<typeof useDesignStore.getState>
+
+/** The free cut of a brand's code snapshot (one appearance, Desktop), or
+ *  null when the whole brand ships. */
+function freeCut(source: Store, appearance: ThemeAppearance) {
+  return shippedBundle(source, {
+    themes: [appearance],
+    modes: [{ theme: appearance, appearance }],
+    viewports: ['desktop'],
+    gridStyles: ['xl-desktop'],
+  }, true)
+}
+
+/** variables.css and SKILL.md for one brand (both of
  *  its appearances). `null` brand → empty files. */
 export function useCodeArtifacts(themeKey: string | null, previewAppearance?: ThemeAppearance): CodeArtifacts {
   const store = useDesignStore()
@@ -58,30 +69,41 @@ export function useCodeArtifacts(themeKey: string | null, previewAppearance?: Th
   ), [store, themeKey])
   return useMemo(() => {
     if (!source) return EMPTY
-    const asStore = source as ReturnType<typeof useDesignStore.getState>
+    const asStore = source as Store
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
       projectFallback: source.projectName,
       iconKey: source.iconAiSource,
     })
     const appearance = previewAppearance ?? source.themeKinds[themeKey ?? ''] ?? 'light'
-    const cut = free
-      ? shippedBundle(asStore, {
-          themes: [appearance],
-          modes: [{ theme: appearance, appearance }],
-          viewports: ['desktop'],
-          gridStyles: ['xl-desktop'],
-        }, true)
-      : null
+    const cut = free ? freeCut(asStore, appearance) : null
     const css = cut?.css ?? buildCSS(asStore)
     const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
     return {
       css,
-      shadcn: buildShadcnGlobalsCss(shipped as unknown as TokenJSON, { project: source.projectName }),
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
       facts: exportFacts(shipped, css),
     }
   }, [source, free, previewAppearance, themeKey])
+}
+
+/** variables.css of each listed brand, in order, for the theme(s) asked for:
+ *  `both` is the file as it always shipped (`:root` + `.dark`); one theme
+ *  narrows the snapshot to that column, so `:root` carries it alone — the
+ *  same narrowing a Free download uses, with every viewport kept. */
+export function useBrandCssList(themeKeys: string[], themes: ContextAppearance, previewAppearance?: ThemeAppearance): { key: string; css: string }[] {
+  const store = useDesignStore()
+  const free = useFreeTier()
+  const keys = themeKeys.join('|')
+  return useMemo(() => keys.split('|').filter(Boolean).map((key) => {
+    const source = captureCodeSnapshot(store, key) as Store
+    if (free) {
+      const appearance = themes === 'both' ? previewAppearance ?? source.themeKinds[key] ?? 'light' : themes
+      return { key, css: freeCut(source, appearance)?.css ?? buildCSS(source) }
+    }
+    if (themes === 'both') return { key, css: buildCSS(source) }
+    return { key, css: buildCSS(freeDownloadStore(source, { modes: [{ theme: themes, appearance: themes }] }) as Store) }
+  }), [store, free, keys, themes, previewAppearance])
 }
 
 export async function writeClipboard(text: string): Promise<boolean> {

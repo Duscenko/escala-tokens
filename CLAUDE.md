@@ -681,6 +681,24 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > + a token linter — **there is no design.md**; copy that claimed one was fixed. Every MCP note
 > below is history. Next: `design-plans/design-skills-package.md`.
 
+> **UPDATE (2026-10-30): the EXPORT WATCHDOG — `npm run audit:exports`** (plan:
+> `design-plans/export-watchdog.md`). `lib/exportAudit.ts` measures that every way a
+> brand leaves Escala agrees with tokens.json, value for value: `variables.css` (Both,
+> Light, Dark, each collection cut, All brands), the agent context (every scope ×
+> theme × detail), the plugin payload (`brand::appearance` columns and
+> `foundationsByTheme`), the section CSS and the W3C file. `lib/exportAuditMatrix.ts`
+> runs it over 15 systems (every System Style, seeded moods, shared seeds, created in
+> Dark, one-theme brands, hand edits, five brands); `__tests__/exportAudit.test.ts`
+> fails on any finding and pins four golden files for Core. **Touching an exporter
+> means running it** — a red row names the brand, output, token, expected and got.
+> Rules it locked: a family is reused across brands only when its ramps are the ones
+> the new brand would generate (same paper — `mintTheme`); a flat semantic name that a
+> Categorical role also declares is written once, by the role; `:root` carries the
+> FIRST theme's shadows and gradients (dark twins for a brand created in Dark, `.light`
+> restores them); a bare-`<theme>` override is that theme's own appearance only, and
+> `<theme>::<appearance>` always wins. Runtime vars a component sets
+> (`--switch-from`…) are listed in `RUNTIME_VARS` — a new one is a decision.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**

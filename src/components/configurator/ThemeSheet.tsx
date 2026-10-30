@@ -24,7 +24,7 @@ const ICON = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-m
 
 const MENU_ITEM = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
-function EmptySystemAvatar({ size = 18 }: { size?: number }) {
+function EmptySystemAvatar({ size = 18 }: { size?: number | '100%' }) {
   return (
     <svg
       width={size}
@@ -372,13 +372,15 @@ export function ThemeAppearanceControl({
         title={themeLabel}
         className={`${themeOpen || menuOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''} flex h-8 max-w-[13.5rem] flex-shrink-0 items-center gap-1.5 rounded-lg pl-1 pr-1 text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`}
       >
-        {/* The same tile as the account avatar beside it: `h-6 w-6` is 1.5rem,
-            which is 27px at this app's 18px root. The cover was drawn at 18px
-            inside that box, so it read as a smaller sibling of "D". */}
+        {/* The same tile as the account avatar beside it: `h-6 w-6` is 1.5rem
+            (27px at the 18px root, 24px below it). The avatar FILLS the tile
+            rather than guessing its px, so the inset is the same on all four
+            sides at any root size — a fixed 27 overflowed it and sat 1px from
+            the bottom edge. */}
         <span className="grid h-6 w-6 flex-shrink-0 place-items-center">
           {empty
-            ? <EmptySystemAvatar size={27} />
-            : <ThemeAvatar size={27} ramp={ramp} appearance={kind} fallback={tryOn?.preset.accent ?? store.primaryColor} />}
+            ? <EmptySystemAvatar size="100%" />
+            : <ThemeAvatar fluid size={27} ramp={ramp} appearance={kind} fallback={tryOn?.preset.accent ?? store.primaryColor} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col items-start leading-none">
           <span className="w-full truncate text-left text-caption font-semibold text-fg">{name}</span>

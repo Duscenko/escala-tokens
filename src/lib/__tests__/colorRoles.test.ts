@@ -111,6 +111,47 @@ describe('Color edition roles — a dark anchor survives other edits', () => {
   })
 })
 
+describe('Color edition roles — Dark matches the plugin after an edit', () => {
+  // The plugin reads every colour without a Dark pick of its own as the
+  // `darkTwinOf` of its light anchor once the brand is edited (`accentFor` /
+  // `stateFor`). The web stored the LIGHT hex in the dark ramp for every colour
+  // you never touched, so Dark showed a different, dimmer palette.
+  it('re-solves untouched colours as dark twins and keeps a Dark pick', async () => {
+    const { DEFAULT_THEME_SOURCES, makeDesignDefaults, useDesignStore } = await import('../../store/useDesignStore')
+    const { applyScopedAccentColor, followingDarkAnchors, retwinFollowingDarkAnchors, resolveThemePages, stateColorAnchor } = await import('../colorActions')
+    const { generateColorScale, generateFamilyDarkScale } = await import('../colorUtils')
+    useDesignStore.setState({ ...makeDesignDefaults() })
+    const s = useDesignStore.getState()
+    // A System Style's curated families: the dark anchor IS the light hex.
+    const fam = (key: string, base: string, darkBase?: string) => s.addCustomColor({
+      key, label: key, base, darkBase: darkBase ?? base,
+      scale: generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground),
+      darkScale: generateFamilyDarkScale(darkBase ?? base, s.colorAlgorithm, s.contrastShift, s.darkBackground),
+    })
+    fam('t-brand', '#2970ff')
+    fam('t-error', '#d92d20')
+    fam('t-info', '#1570ef')
+    fam('t-warning', '#966e00', '#daab4a') // chosen in Dark
+    s.addTheme('t', 'dark', { ...DEFAULT_THEME_SOURCES, brand: 't-brand', error: 't-error', info: 't-info', warning: 't-warning' })
+
+    const before = followingDarkAnchors(useDesignStore.getState(), 't')
+    expect([...before.keys()].sort()).toEqual(['t-brand', 't-error', 't-info'])
+    // The edit: a new accent, Light anchor + its dark twin, as `setRoleHex` writes it.
+    const page = resolveThemePages(useDesignStore.getState(), 't')
+    applyScopedAccentColor('#7c3aed', false, 't', darkTwinOf('#7c3aed', page.dark))
+    retwinFollowingDarkAnchors('t', before)
+
+    const after = useDesignStore.getState()
+    const dark = resolveThemePages(after, 't').dark
+    expect(stateColorAnchor(after, 'error', 'dark', 't')).toBe(darkTwinOf('#d92d20', dark))
+    expect(stateColorAnchor(after, 'info', 'dark', 't')).toBe(darkTwinOf('#1570ef', dark))
+    expect(stateColorAnchor(after, 'error', 'light', 't')).toBe('#d92d20')
+    expect(after.customColors.find((c) => c.key === 't-brand')?.darkScale?.[9]).toBe(darkTwinOf('#7c3aed', dark))
+    // A colour chosen in Dark is the person's, never re-solved.
+    expect(stateColorAnchor(after, 'warning', 'dark', 't')).toBe('#daab4a')
+  })
+})
+
 describe('Color edition roles — light and dark are one colour', () => {
   it('gives a light colour a dark twin of the SAME hue, solved for the dark page', () => {
     for (const light of ['#669f2a', '#9522e9', '#ff8a00', '#0e8eff', '#f33f34', '#06aed4']) {

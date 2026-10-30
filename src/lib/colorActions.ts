@@ -21,6 +21,7 @@ import {
   nextBrandExtraRank, resolveThemePages, resolveFamilyPages, type ThemePageSource, type BrandExtraRank,
 } from './themeSources'
 import type { ThemeAppearance } from './themeModes'
+import { darkTwinOf } from './colorRoles'
 
 /** The hex the accent's DARK ramp grows from: the designer's dark reference when
  *  one is set, else the accent itself (the pre-override behaviour). */
@@ -681,6 +682,69 @@ function setGlobalStateRole(
     if (patch.color !== undefined) s.setInfoColor(patch.color)
     if (patch.scale !== undefined) s.setInfoScale(patch.scale)
     if (patch.darkScale !== undefined) s.setInfoDarkScale(patch.darkScale)
+  }
+}
+
+/** The slots whose dark anchor can FOLLOW the light one: the brand and the
+ *  four states. The neutral is excluded — its dark ramp is always derived. */
+const TWIN_SLOTS = ['brand', 'error', 'warning', 'success', 'info'] as const
+
+/** A theme's private brand/state families whose dark anchor still FOLLOWS the
+ *  light one, with the dark anchor they hold now. "Follows" = no dark anchor of
+ *  its own (none, the light hex itself — a System Style's curated pair — or the
+ *  light hex's `darkTwinOf` on the current dark page). A dark anchor chosen in
+ *  Dark is none of those, so it is never re-solved.
+ *
+ *  The plugin reads the same rule live (`accentFor` / `stateFor` in ui.html):
+ *  once a colour is edited, every colour without a Dark pick of its own shows
+ *  its `darkTwinOf` in Dark. The web stores ramps, so it has to re-solve them
+ *  on each colour edit — see `retwinFollowingDarkAnchors`. */
+export function followingDarkAnchors(
+  s: ReturnType<typeof useDesignStore.getState>,
+  themeKey: string,
+): Map<string, string> {
+  const out = new Map<string, string>()
+  const refs = s.themeSources[themeKey]
+  if (!refs) return out
+  const pages = resolveThemePages(s, themeKey)
+  for (const slot of TWIN_SLOTS) {
+    const key = refs[slot]
+    if (!key || key === GLOBAL_FAMILY[slot]) continue
+    const fam = s.customColors.find((c) => c.key === key)
+    if (!fam?.base) continue
+    const base = fam.base.toLowerCase()
+    const dark = (fam.darkBase || '').toLowerCase()
+    let twin = ''
+    try { twin = darkTwinOf(fam.base, pages.dark).toLowerCase() } catch { continue }
+    if (!dark || dark === base || dark === twin) out.set(key, dark)
+  }
+  return out
+}
+
+/** After a colour edit: every family that FOLLOWED its light anchor before the
+ *  edit, and whose dark anchor the edit did not write itself, gets the dark
+ *  twin of its light anchor on the (possibly moved) dark page. Without this a
+ *  colour you never touched kept its LIGHT hex in Dark — a dimmer, lower-chroma
+ *  colour than the plugin shows — and a twin solved on an old dark page stayed
+ *  there after the page moved. */
+export function retwinFollowingDarkAnchors(themeKey: string, before: Map<string, string>): void {
+  if (!before.size) return
+  const s = useDesignStore.getState()
+  const pages = resolveThemePages(s, themeKey)
+  for (const [key, darkBefore] of before) {
+    const fam = s.customColors.find((c) => c.key === key)
+    if (!fam?.base) continue
+    // The edit wrote this one's dark anchor (a Dark pick, a linked re-solve).
+    if ((fam.darkBase || '').toLowerCase() !== darkBefore) continue
+    try {
+      const twin = darkTwinOf(fam.base, pages.dark).toLowerCase()
+      const darkScale = generateFamilyDarkScale(twin, s.colorAlgorithm, s.contrastShift, pages.dark)
+      if (twin === darkBefore && fam.darkScale?.[BASE_TONE]?.toLowerCase() === darkScale[BASE_TONE]?.toLowerCase()
+        && fam.darkScale?.[1]?.toLowerCase() === darkScale[1]?.toLowerCase()) continue
+      s.updateCustomColor(key, { darkBase: twin, darkScale })
+    } catch {
+      /* invalid hex — leave it */
+    }
   }
 }
 
