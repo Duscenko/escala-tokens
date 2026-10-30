@@ -809,11 +809,15 @@ export function SystemCollage({
         </ScaledModule>
     ),
     sidebar: (
-        <ScaledModule key="sidebar" t={tile(18)} appearance={appearanceAt(18)} chrome={false} elev="sm">
-          {/* A tile is a panel, so the sidebar is shadcn's `floating` variant
-              (radius.container). The flush `sidebar` variant has square
-              corners and drew them inside the tile's rounded frame. */}
-          <Sidebar t={tile(18)} v={{ Variant: 'floating' }} w="100%" />
+        <ScaledModule key="sidebar" t={tile(18)} appearance={appearanceAt(18)}>
+          {/* The tile's card is the panel — same border as every other tile —
+              so the sidebar is shadcn's `inset` variant, with no stroke of its
+              own. `floating` drew a second, stronger `border.default` frame.
+              Its opaque layer-1 fill is dropped too, or a translucent card
+              shows it as a square patch. */}
+          <div className="[&_[data-slot=sidebar]]:!bg-transparent">
+            <Sidebar t={tile(18)} v={{ Variant: 'inset' }} w="100%" />
+          </div>
         </ScaledModule>
     ),
     inputTag: (

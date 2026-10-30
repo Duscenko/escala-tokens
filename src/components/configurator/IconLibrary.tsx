@@ -37,11 +37,11 @@ function CustomIcons() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
+    <section aria-labelledby="icons-yours-heading" className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-fg">Your icons</h3>
-          <span className="text-caption font-mono tabular-nums text-fg-faint">{customIcons.length}</span>
+          <h2 id="icons-yours-heading" className="text-ui font-semibold text-fg">Your icons</h2>
+          <span className="text-mini font-mono tabular-nums text-fg-faint">{customIcons.length}</span>
         </div>
         <input
           ref={fileRef}
@@ -54,7 +54,7 @@ function CustomIcons() {
         />
         <button
           onClick={() => fileRef.current?.click()}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-colors"
+          className="h-7 rounded-lg px-2.5 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           Upload SVGs
         </button>
@@ -63,15 +63,15 @@ function CustomIcons() {
       {customIcons.length === 0 ? (
         <button
           onClick={() => fileRef.current?.click()}
-          className="rounded-xl border border-dashed border-line-strong bg-surface/30 hover:bg-surface/60 transition-colors p-8 text-center"
+          className="rounded-lg border border-dashed border-line-strong bg-surface/30 hover:bg-surface/60 transition-colors px-3 py-5 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          <p className="text-xs text-fg-faint">
+          <p className="text-caption leading-relaxed text-fg-faint">
             Drop your brand glyphs, logos or one-off icons here — they're exported with your
             tokens and imported into Figma as components.
           </p>
         </button>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-1 rounded-xl border border-line bg-surface/40 p-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1 rounded-lg border border-line bg-surface/40 p-2">
           {customIcons.map((icon) => (
             <div key={icon.name} className="group relative flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-elevated/60 transition-colors">
               <span
@@ -90,8 +90,8 @@ function CustomIcons() {
           ))}
         </div>
       )}
-      {error && <p className="text-xs text-status-warning">{error}</p>}
-    </div>
+      {error && <p className="px-1 text-caption text-status-warning">{error}</p>}
+    </section>
   )
 }
 
@@ -101,7 +101,7 @@ function AiSourceRow({ source, selected, onSelect }: { source: IconAiSource; sel
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`text-left rounded-xl border p-3.5 flex flex-col gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+      className={`text-left rounded-lg border px-3 py-2.5 flex flex-col gap-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
         selected
           ? 'border-fg bg-fg/5 shadow-sm'
           : 'border-line bg-surface/40 hover:border-line-strong hover:bg-surface'
@@ -110,12 +110,12 @@ function AiSourceRow({ source, selected, onSelect }: { source: IconAiSource; sel
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-fg">{source.label}</h3>
+            <h3 className="text-body font-semibold text-fg">{source.label}</h3>
             {source.default ? (
               <span className="text-mini uppercase tracking-wider text-fg-faint">Default</span>
             ) : null}
           </div>
-          <p className="text-caption text-fg-muted leading-snug mt-0.5">{source.description}</p>
+          <p className="text-caption text-fg-muted leading-snug mt-0.5 line-clamp-2">{source.description}</p>
         </div>
         <span
           className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
@@ -176,9 +176,6 @@ function ComponentIconSet() {
 }
 
 export default function IconLibrary() {
-  const { iconAiSource, setIconAiSource } = useDesignStore()
-  const selectedSource = iconAiSource ?? DEFAULT_ICON_AI_SOURCE
-
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-xl border border-line bg-surface/40 p-4 flex flex-col gap-1.5">
@@ -203,15 +200,29 @@ export default function IconLibrary() {
       <div className="border-t border-line pt-6">
         <PhosphorIconBrowser />
       </div>
+    </div>
+  )
+}
 
-      <div className="border-t border-line pt-6 flex flex-col gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-fg">For AI-generated UI</h3>
-          <p className="text-body text-fg-muted leading-relaxed mt-1">
-            Escala previews Phosphor above. Pick the icon family a model should install when it generates screens — the choice is written into your Skill and README.
+/**
+ * The Icons page's settings, in the inspector beside it (where every other
+ * foundation lists its groups): which family a model installs, and the user's
+ * own SVGs. The page keeps what is browsed — Phosphor and the component set.
+ */
+export function IconLibraryPanel() {
+  const { iconAiSource, setIconAiSource } = useDesignStore()
+  const selectedSource = iconAiSource ?? DEFAULT_ICON_AI_SOURCE
+
+  return (
+    <div className="flex flex-col">
+      <section aria-labelledby="icons-ai-heading" className="flex flex-col gap-2">
+        <div className="px-1">
+          <h2 id="icons-ai-heading" className="text-ui font-semibold text-fg">For AI-generated UI</h2>
+          <p className="mt-1 text-caption leading-relaxed text-fg-faint">
+            The icon family a model installs when it generates screens. Written into your Skill and README.
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5" role="group" aria-label="Icon family for AI-generated UI">
           {ICON_AI_SOURCES.map((source) => (
             <AiSourceRow
               key={source.key}
@@ -221,11 +232,9 @@ export default function IconLibrary() {
             />
           ))}
         </div>
-      </div>
-
-      <div className="border-t border-line pt-6">
-        <CustomIcons />
-      </div>
+      </section>
+      <div className="my-3 h-px bg-line" aria-hidden />
+      <CustomIcons />
     </div>
   )
 }

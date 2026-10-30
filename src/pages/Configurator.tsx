@@ -78,7 +78,7 @@ import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
 import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
-import IconLibrary from '../components/configurator/IconLibrary'
+import IconLibrary, { IconLibraryPanel } from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
@@ -3045,6 +3045,7 @@ export default function Configurator() {
                   platformGuide={
                     activeFoundation === 'grid' ? 'grid'
                     : activeFoundation === 'typography' ? 'type'
+                  railBody={activeFoundation === 'icons' ? <IconLibraryPanel /> : undefined}
                     : undefined
                   }
                 >

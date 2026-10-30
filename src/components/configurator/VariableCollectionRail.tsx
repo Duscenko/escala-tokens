@@ -207,11 +207,15 @@ export default function VariableCollectionRail({
   collapsed: collapsedProp = false,
   ariaLabel = 'Variable collections and groups',
   navRef,
+  groupsLabel = 'Groups',
 }: {
   children: ReactNode
   collapsed?: boolean
   ariaLabel?: string
   navRef?: Ref<HTMLElement>
+  /** Heading over `children`. `null` when the children are not groups and
+   *  bring their own headings (Icons' settings). */
+  groupsLabel?: string | null
 }) {
   const context = useContext(CollectionContext)
   // In the inspector the column owns width and collapse.
@@ -274,10 +278,12 @@ export default function VariableCollectionRail({
 
       <div className={`${collapsed ? 'my-2' : 'my-3'} h-px bg-line`} aria-hidden />
 
-      <section aria-labelledby="variable-groups-heading">
-        {!collapsed && <h2 id="variable-groups-heading" className="px-1 pb-2 text-ui font-semibold text-fg">Groups</h2>}
-        {children}
-      </section>
+      {groupsLabel === null ? children : (
+        <section aria-labelledby="variable-groups-heading">
+          {!collapsed && <h2 id="variable-groups-heading" className="px-1 pb-2 text-ui font-semibold text-fg">{groupsLabel}</h2>}
+          {children}
+        </section>
+      )}
       </div>
     </nav>
     {/* Variables is an editing tab too: same pinned bar as Theme, greyed out: saving and the guest sign-up hook live in Theme. */}

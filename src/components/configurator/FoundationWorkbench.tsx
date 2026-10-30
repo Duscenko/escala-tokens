@@ -20,6 +20,7 @@ export default function FoundationWorkbench({
   onCollectionChange,
   showPlatform = false,
   platformGuide,
+  railBody,
   children,
 }: {
   railCollapsed?: boolean
@@ -35,6 +36,9 @@ export default function FoundationWorkbench({
   onCollectionChange: (collection: VariableCollectionKey) => void
   showPlatform?: boolean
   platformGuide?: 'type' | 'grid' | 'spacing'
+  /** Replaces "no groups" under the collections, with its own headings — a
+   *  page whose settings belong beside it (Icons). Gutter pages only. */
+  railBody?: ReactNode
   children: ReactNode
 }) {
   const embeddedRailHeader = (
@@ -54,8 +58,8 @@ export default function FoundationWorkbench({
       {gutter ? (
         <VariableCollectionProvider active={activeCollection} collections={collections} onChange={onCollectionChange} header={embeddedRailHeader} showPlatform={showPlatform} platformGuide={platformGuide}>
           <div className="flex flex-1 min-h-0 items-stretch">
-            <VariableCollectionRail collapsed={railCollapsed}>
-              {!railCollapsed && <RailNoGroups />}
+            <VariableCollectionRail collapsed={railCollapsed} groupsLabel={railBody ? null : undefined}>
+              {!railCollapsed && (railBody ?? <RailNoGroups />)}
             </VariableCollectionRail>
             <div className="flex-1 min-w-0 bg-app border-l border-line min-h-0 overflow-hidden">
               {children}
