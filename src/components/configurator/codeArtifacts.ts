@@ -2,8 +2,6 @@ import { useMemo } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS } from '../../lib/exporters'
-import { buildShadcnGlobalsCss } from '../../lib/shadcnGlobals'
-import type { TokenJSON } from '../../lib/agentBundle/types'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import { useFreeTier } from '../../lib/access'
@@ -23,12 +21,11 @@ export type ExportFacts = { primitives: number; tokens: number; modes: number; c
 
 export interface CodeArtifacts {
   css: string
-  shadcn: string
   skillMd: string
   facts: ExportFacts | null
 }
 
-const EMPTY: CodeArtifacts = { css: '', shadcn: '', skillMd: '', facts: null }
+const EMPTY: CodeArtifacts = { css: '', skillMd: '', facts: null }
 
 function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): ExportFacts {
   const colors = (json as { colors?: Record<string, unknown> }).colors ?? {}
@@ -46,7 +43,7 @@ function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): E
   return { primitives, tokens, modes: modeKeys.size, cssBytes: new Blob([css]).size }
 }
 
-/** variables.css, shadcn's globals.css and SKILL.md for one brand (both of
+/** variables.css and SKILL.md for one brand (both of
  *  its appearances). `null` brand → empty files. */
 export function useCodeArtifacts(themeKey: string | null, previewAppearance?: ThemeAppearance): CodeArtifacts {
   const store = useDesignStore()
@@ -77,7 +74,6 @@ export function useCodeArtifacts(themeKey: string | null, previewAppearance?: Th
     const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
     return {
       css,
-      shadcn: buildShadcnGlobalsCss(shipped as unknown as TokenJSON, { project: source.projectName }),
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
       facts: exportFacts(shipped, css),
     }

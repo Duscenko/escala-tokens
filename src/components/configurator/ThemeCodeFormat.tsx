@@ -23,10 +23,10 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
   // which is the Agent door's job (design-plans/entry-flow-set-see-ship.md).
   // The shell picks the format for the door that was pressed (`format`).
   { key: 'css', label: 'CSS', file: 'variables.css' },
-  // shadcn/ui's own variables, each answered by a Categorical role (E4). An
-  // output format, not an architecture: a stock shadcn project pastes it over
-  // its globals.css. Components come from the registry (`/r/<name>.json`).
-  { key: 'shadcn', label: 'shadcn', file: 'globals.css' },
+  // A shadcn globals.css used to be a format here. It read as a second CSS
+  // file beside variables.css and said less (no hover/pressed, no warning /
+  // success / info, no alpha). shadcn projects get it from the registry
+  // (`npx shadcn add`, `api/registry.ts`), which still builds it.
   { key: 'agent', label: 'Agent context', file: 'references/*.md' },
   // README.md used to be a third format here. It said what Agent context says
   // in a different shape, and two markdown tabs read as "which one do I
@@ -319,7 +319,7 @@ export default function ThemeCodeFormat({
     if (!effectiveScope) return ''
     return brandContext(store, effectiveScope, { scope: ctx.scope, detail: ctx.detail, appearance: ctxAppearance }, store.projectName)
   }, [store, effectiveScope, ctxAppearance, ctx.scope, ctx.detail])
-  const content = format === 'css' ? artifacts.css : format === 'shadcn' ? artifacts.shadcn : agentMd
+  const content = format === 'css' ? artifacts.css : agentMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope

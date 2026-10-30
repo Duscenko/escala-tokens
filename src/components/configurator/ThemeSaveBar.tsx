@@ -26,7 +26,7 @@ import { HintTip } from '../ui/HintTip'
  * people came for.
  */
 export interface ShipActions {
-  /** The Code tab on CSS (variables.css, shadcn beside it). */
+  /** The Code tab on CSS (variables.css). */
   css: () => void
   /** The Figma page: copy the context, paste it in the plugin. */
   figma: () => void
