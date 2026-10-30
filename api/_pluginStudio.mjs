@@ -9386,12 +9386,13 @@ function themeModesForSync(orderedThemeModes, modes) {
   }
   return out;
 }
-function remapOverridesForSyncModes(overrides, modes) {
+function remapOverridesForSyncModes(overrides, modes, kinds = {}) {
   const next = {};
   for (const [id, byMode] of Object.entries(overrides)) {
     const mapped = { ...byMode };
     for (const mode of modes) {
-      const src = byMode[mode.theme] ?? byMode[figmaSyncModeId(mode)];
+      const own = (kinds[mode.theme] ?? "light") === mode.appearance;
+      const src = byMode[figmaSyncModeId(mode)] ?? (own ? byMode[mode.theme] : void 0);
       if (src) mapped[figmaSyncModeId(mode)] = src;
     }
     next[id] = mapped;
@@ -9552,7 +9553,7 @@ function generateTokenJSON(source, opts) {
     store.errorColor,
     // Was missing entirely — table edits (setArchitectureOverride) never
     // reached the actual export, only the live Alias/Semantics preview.
-    syncModes ? remapOverridesForSyncModes(store.architectureOverrides[store.semanticArchitecture] ?? {}, syncModes) : store.architectureOverrides[store.semanticArchitecture] ?? {},
+    syncModes ? remapOverridesForSyncModes(store.architectureOverrides[store.semanticArchitecture] ?? {}, syncModes, store.themeKinds ?? {}) : store.architectureOverrides[store.semanticArchitecture] ?? {},
     // Sync modes flatten to `theme::appearance` so Categorical columns match
     // the Light/Dark Figma modes. Whole-system export still uses themeNames.
     exportOrder

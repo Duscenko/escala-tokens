@@ -242,10 +242,12 @@ export function buildCSS(
   }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Shadow */')
-  // A file that ships ONE appearance has no theme block to re-point shadows
-  // and gradients in, so a dark-only file carries the dark twins at :root.
-  const oneAppearance = desktopOnly || themeOrder.length === 1
-  const rootShadows = oneAppearance && rootKind === 'dark' ? darkShadowMap(shadows) : shadows
+  // :root carries the FIRST theme. When that theme is dark (a brand created in
+  // Dark, or a dark-only file) its shadows and gradients are the dark twins —
+  // the light ramp's near-black shadow is the dark page itself and renders as
+  // nothing. `.light` then re-points them (below).
+  const rootIsDark = rootKind === 'dark'
+  const rootShadows = rootIsDark ? darkShadowMap(shadows) : shadows
   Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
   lines.push('\n  /* Breakpoints — primitive min-widths */')
@@ -262,7 +264,7 @@ export function buildCSS(
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
-    const gradientAppearance = oneAppearance && rootKind === 'dark' ? 'dark' : 'light'
+    const gradientAppearance = rootIsDark ? 'dark' : 'light'
     gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`))
   }
 
@@ -323,8 +325,16 @@ export function buildCSS(
     const darkShadows = kind === 'dark'
       ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
       : []
+    // The mirror case: :root is dark, so a light theme block restores the
+    // light shadows and the light face of every gradient that has a dark one.
+    const lightGradients = kind === 'light' && rootIsDark
+      ? gradients.filter((g) => g.stops.some((s) => s.darkColor))
+      : []
+    const lightShadows = kind === 'light' && rootIsDark && !hasFoundationOverride
+      ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
+      : []
     const themeRoles = roleLines[theme] ?? []
-    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
+    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !lightGradients.length && !lightShadows.length && !hasFoundationOverride) return
     const themeSelector = theme === 'light'
       ? (rootKind === 'dark' ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]')
       : theme === 'dark'
@@ -392,6 +402,14 @@ export function buildCSS(
     if (darkShadows.length) {
       lines.push(`  /* Shadows — ${theme} */`)
       darkShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${darkShadow(v)};`))
+    }
+    if (lightGradients.length) {
+      lines.push(`  /* Gradients — ${theme} */`)
+      lightGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, 'light')};`))
+    }
+    if (lightShadows.length) {
+      lines.push(`  /* Shadows — ${theme} */`)
+      lightShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
     }
     lines.push('}')
   })

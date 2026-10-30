@@ -7,7 +7,7 @@ import { findFontSource } from './customFonts'
 import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
 import chroma from 'chroma-js'
-import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { toneLabel, withAlpha, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
@@ -271,7 +271,16 @@ const sortedEntries = (o: Record<string, string>) =>
  *  Four names exist in both (content-primary, content-inverse,
  *  content-disabled, border-strong); the role owns them, as in variables.css. */
 function semanticColorEntries(store: Store, column: string): [string, string][] {
-  const flat = Object.entries(store.themes[column] ?? {}).filter(([, v]) => v) as [string, string][]
+  const kind = store.themeKinds?.[column] ?? (column === 'dark' ? 'dark' : 'light')
+  // The panel surface is treated as variables.css treats it (PANEL_KEYS there).
+  const panel = (k: string, v: string) => {
+    if (k !== 'background-secondary') return v
+    if (store.panelBackground === 'translucent') return withAlpha(v, 0.7)
+    if (store.panelBackground === 'page' && kind === 'light') return store.pageBackground
+    return v
+  }
+  const flat = (Object.entries(store.themes[column] ?? {}).filter(([, v]) => v) as [string, string][])
+    .map(([k, v]) => [k, panel(k, v)] as [string, string])
   if (store.semanticArchitecture !== 'categorical') return flat
   let tokens: Record<string, Record<string, Record<string, string>>> | undefined
   try {
