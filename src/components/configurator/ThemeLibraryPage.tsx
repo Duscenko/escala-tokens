@@ -812,7 +812,7 @@ export default function ThemeLibraryPage({
                     activePanel={createStep}
                     onSelectPanel={setCreateStep}
                     onOpenAdvanced={openAdvanced}
-                    previewPlatform={studioPlatform}
+                    previewViewport={studioPlatform}
                     onPreviewPlatformChange={setStudioPlatform}
                     // Read off the brand (`themeOrigin`), not local state: the
                     // studio can remount around a re-mint and must still name

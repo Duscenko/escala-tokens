@@ -1,10 +1,16 @@
 // Markdown an agent can paste as the full brief for one catalogue page.
-// Copy context is this string: identity, live foundation tokens (color,
-// radius, spacing, padding, size, type, shadow), Figma bindings, and a CSS
-// recipe. Input OTP is the first page with a full reconstruction spec; other
-// keys get the shared token tables plus a shorter characteristics block.
+// Copy context is this string. A component with a recipe (all of them today)
+// carries only what IS that component: what it is, when to use it, every part
+// × property → token (CSS, Figma, live value), its Figma sets and its React
+// parts — the same content as the Design skills package's
+// `component-build` files, so a component copied alone is self-contained and
+// never disagrees with the package. A key with no recipe falls back to the
+// whole foundation tables.
 
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
+import { figmaRefsFor, isFigmaProp, semanticRoleIds } from './agentBundle/figmaRefs'
+import { componentReactFile } from './agentBundle/productDesignSkills'
+import type { TokenJSON } from './agentBundle/types'
 import { mdCell } from './utils'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
@@ -47,26 +53,8 @@ const RADIUS_ORDER = [...RADIUS_STEPS]
 const SIZE_ORDER = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
 const PADDING_ORDER = ['top', 'right', 'bottom', 'left']
 
-/** Keys that live in a sibling's file (shadcn groups them that way). */
-const FILE_OF: Record<string, string> = { Dropzone: 'file-upload', StatusBadge: 'badge' }
-
-/** The escala-ui / shadcn file a catalogue key lives in: kebab case
- *  (`InputOTP` → `input-otp`, `ButtonGroup` → `button-group`) — the same name
- *  the registry serves (`registryItemFor`, asserted in agentContextAudit.test;
- *  the generated sources are too large to import into the app for this). */
-export function componentFileName(key: string): string {
-  if (FILE_OF[key]) return FILE_OF[key]
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-}
-
-/** `import { X } from "@/components/ui/<file>"` for a catalogue key. */
-export function componentImportLine(key: string): string {
-  return `import { ${key.replace(/\s+/g, '')} } from "@/components/ui/${componentFileName(key)}"`
-}
+export { componentFileName, componentImportLine } from './componentFiles'
+import { componentFileName, componentImportLine } from './componentFiles'
 
 function fileNameFor(def: ComponentDef): string {
   return `${componentFileName(def.key)}.tsx`
@@ -223,8 +211,9 @@ function liveDimension(ref: string, t: AgentFoundationTokens): string {
  *  `buildSectionExport('color', 'css')` — the same renderer Export and the
  *  foundation pages' "Use it" pane use, truncated the same way
  *  (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables below it. */
-function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
+function colorSection(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJSON): string[] {
   const recipe = COMPONENT_RECIPES[def.key]
+  const roles = json ? semanticRoleIds(json) : undefined
   if (recipe) {
     const lines = [
       '### Tokens by part (the component recipe)',
@@ -244,7 +233,14 @@ function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
         : row.ref.includes('+')
           ? row.ref.split('+').map((r) => `\`${cssVarOf(r)}\``).join(' + ')
           : `\`${cssVarOf(row.ref)}\``
-      const figma = isColor ? `\`${figmaVar(id)}\`` : '—'
+      // With the payload, every row names what the plugin binds (the package's
+      // own resolver); without it only colours have a name to give.
+      const inFigma = !json || isFigmaProp(row.prop)
+      const refs = json && inFigma ? figmaRefsFor(row.ref, json, roles) : undefined
+      const figma = json && !inFigma ? '—'
+        : refs ? refs.map((r) => `\`${r.name}\``).join(' + ')
+        : refs === null ? 'not published'
+        : isColor ? `\`${figmaVar(id)}\`` : '—'
       const liveValue = isColor ? (t.archTokens?.[id] ?? '—') : liveDimension(row.ref, t)
       const live = liveValue === '—' ? '—' : `\`${liveValue}\``
       lines.push(`| ${mdCell(row.slot)} | ${row.prop} | ${mdCell(row.when)} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
@@ -264,13 +260,19 @@ function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
   ]
 }
 
-function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
-  const lines = [
+function tokenTables(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJSON): string[] {
+  const head = [
     '## Design tokens (live)',
     '',
     'Resolved values from **this** system. Use the CSS custom property in code and the Figma variable in the file. **Never hardcode px, rem, or hex when a token exists. Never invent a parallel name.**',
     '',
-    ...colorSection(def, t),
+    ...colorSection(def, t, json),
+  ]
+  // A recipe names every token the component reads: the whole ramps would only
+  // be noise (a Button has no use for the selector scale).
+  if (COMPONENT_RECIPES[def.key]) return head
+  const lines = [
+    ...head,
     '### Dimension primitives (`Dimension Primitives` collection)',
     '',
     'Every length below aliases one variable here, named by its value (`16`, `-4`, `9999`, `3_5` = 3.5px). One mode — a theme changes which primitive a step points at, never a primitive. The steps and roles live in `Dimension Semantics`, grouped `Spacing/`, `Radius/`, `Stroke/`, `Size/`, `Selector/`, `Grid/`.',
@@ -455,8 +457,31 @@ function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
   return lines
 }
 
-/** Portable agent brief for one component article. `snippet` is the default-variant usage from `snippetFor`. */
-export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?: AgentFoundationTokens): string {
+/** The React half of the package's `component-build` file (attributes and
+ *  parts), headings demoted under `## React`. The stylesheet itself is NOT
+ *  inlined: it restates the parts table in CSS (3.6k tokens for Button alone)
+ *  and ships whole as `recipes.css` in Design skills. */
+function reactSection(def: ComponentDef): string[] {
+  if (!COMPONENT_RECIPES[def.key]) return []
+  const file = componentReactFile(def.key)
+  const from = file.indexOf('## Attributes')
+  const to = file.indexOf('## Variables it reads')
+  const body = file.slice(from, to < 0 ? undefined : to).trim().replace(/^## /gm, '### ')
+  return [
+    '## React',
+    '',
+    'Each part is the element with that `data-part`. Style it from the **Tokens by part** table (the CSS column), or load `recipes.css` from Design skills after `variables.css`.',
+    '',
+    body,
+    '',
+  ]
+}
+
+/** Portable agent brief for one component article. `snippet` is the
+ *  default-variant usage from `snippetFor`; `json` (the brand's tokens.json)
+ *  lets the parts table name the Figma variable of every length, not only of
+ *  colours. */
+export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?: AgentFoundationTokens, json?: TokenJSON): string {
   const importLine = componentImportLine(def.key)
   const related = relatedLabels(def)
 
@@ -485,10 +510,12 @@ export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?
     '',
   ]
 
-  if (tokens) lines.push(...tokenTables(def, tokens))
+  if (tokens) lines.push(...tokenTables(def, tokens, json))
 
   lines.push(...figmaSection(def))
-  if (tokens) lines.push(...sizeAxisMap(def, tokens))
+  // The parts table already gives each Size its height.
+  if (tokens && !COMPONENT_RECIPES[def.key]) lines.push(...sizeAxisMap(def, tokens))
+  lines.push(...reactSection(def))
 
   if (def.props.length) {
     lines.push('## API', '', '| Prop | Type | Description |', '|---|---|---|')

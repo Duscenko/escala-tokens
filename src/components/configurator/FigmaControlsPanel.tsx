@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef, useState } from 'react'
+import { PLATFORMS, PLATFORM_LABELS } from '../../lib/platformAxis'
 import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -83,7 +84,7 @@ export default function FigmaControlsPanel({
   syncModes, onSyncModesChange, viewports, onViewportsChange, onOpenGithub,
 }: FigmaControlsProps) {
   const store = useDesignStore()
-  const { themeOrder, themes, themeLabels, themeKinds, themeSources, pluginBuildSeen, githubRepo } = store
+  const { themeOrder, themes, themeLabels, themeKinds, themeSources, pluginBuildSeen, githubRepo, platformAxis, setPlatformAxis } = store
   const { t, locale } = useI18n()
   const entitlement = useEntitlement()
   const free = useFreeTier()
@@ -263,6 +264,37 @@ export default function FigmaControlsPanel({
                 })}
                 <p className="px-1 pt-1 text-caption leading-snug text-fg-faint">
                   {t('Spacing, radius, size, stroke and grid get one Figma mode per viewport.')}
+                </p>
+              </div>
+            </RailCard>
+
+            <RailCard
+              title="Platforms"
+              trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(platformAxis.shipped.length), max: String(PLATFORMS.length) })}</span>}
+            >
+              <div className="flex flex-col gap-1 px-2 pb-2.5 pt-1" role="group" aria-label={t('Platforms to include')}>
+                {PLATFORMS.map((platform) => {
+                  const on = platformAxis.shipped.includes(platform)
+                  const web = platform === 'web'
+                  return (
+                    <button
+                      key={platform}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={web}
+                      title={web ? t('Web always ships') : undefined}
+                      onClick={() => setPlatformAxis({ shipped: on ? platformAxis.shipped.filter((p) => p !== platform) : [...platformAxis.shipped, platform] })}
+                      className={`flex h-9 items-center gap-2 rounded-lg border border-line px-2.5 text-left text-caption transition-colors ${FOCUS} ${
+                        on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
+                      } ${web ? 'cursor-not-allowed' : ''}`}
+                    >
+                      <CheckMark selected={on} />
+                      {PLATFORM_LABELS[platform]}
+                    </button>
+                  )
+                })}
+                <p className="px-1 pt-1 text-caption leading-snug text-fg-faint">
+                  {t('Body family, body and control type, touch target and control radii get one Figma mode per platform. Display, headings and layout follow viewports.')}
                 </p>
               </div>
             </RailCard>

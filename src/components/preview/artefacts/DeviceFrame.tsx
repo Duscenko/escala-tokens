@@ -27,7 +27,7 @@ function platformCaption(platform: GridViewport): string {
 /** CSS px the artefact lays out at BEFORE any photograph-scale. Mobile is the
  *  phone source; tablet is iPad portrait; desktop is the grid container. */
 export function artefactSourceWidth(t: PreviewTokens): number {
-  const platform: GridViewport = t.previewPlatform ?? 'desktop'
+  const platform: GridViewport = t.previewViewport ?? 'desktop'
   if (platform === 'mobile') return MOBILE_ARTEFACT_SOURCE
   if (platform === 'tablet') return TABLET_ARTEFACT_SOURCE
   const bps = extractBreakpoints(t.grid)
@@ -50,7 +50,7 @@ export function ScaledPlatformBoard({
   const [naturalH, setNaturalH] = useState<number | null>(null)
   const sourceWidth = artefactSourceWidth(t)
   const scale = hostW > 0 ? Math.min(1, hostW / sourceWidth) : 0
-  const platform: GridViewport = t.previewPlatform ?? 'desktop'
+  const platform: GridViewport = t.previewViewport ?? 'desktop'
   const bps = extractBreakpoints(t.grid)
   const frame = resolveGridFrame(platform, t.gridFrame, t.spacing, bps)
 
@@ -189,7 +189,7 @@ export function DeviceFrame({
   children: ReactNode
   compact?: boolean
 }) {
-  const platform: GridViewport = t.previewPlatform ?? 'desktop'
+  const platform: GridViewport = t.previewViewport ?? 'desktop'
   const bps = extractBreakpoints(t.grid)
   const frame = resolveGridFrame(platform, t.gridFrame, t.spacing, bps)
   const sourceWidth = artefactSourceWidth(t)

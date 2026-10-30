@@ -14,7 +14,7 @@ export default function TypeHub({
   railCollapsed = false,
   previewTheme,
   previewAppearance,
-  previewPlatform,
+  previewViewport,
   query,
 }: {
   mode: TypeTab
@@ -23,7 +23,7 @@ export default function TypeHub({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   query?: string
 }) {
   const heading = <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{mode === 'semantics' ? 'Font semantics' : 'Font primitives'}</span>
@@ -36,7 +36,7 @@ export default function TypeHub({
         </div>
       ) : (
         <div className="flex-1 min-h-0">
-          <TypeSemantics tabBar={heading} query={query} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
+          <TypeSemantics tabBar={heading} query={query} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewViewport={previewViewport} />
         </div>
       )}
     </div>

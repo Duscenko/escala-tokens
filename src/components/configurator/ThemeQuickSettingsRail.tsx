@@ -81,7 +81,7 @@ import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/them
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, typeRolesInGroup, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
-import { PlatformSwitch, usePlanViewportLock } from './PlatformRail'
+import { ViewportSwitch, usePlanViewportLock } from './ViewportRail'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../lib/shadowTokens'
@@ -477,7 +477,7 @@ function PlatformCutSwitch({ value, onChange, layout = 'compact' }: {
   const { lockedIds, onLocked, dialog } = usePlanViewportLock(value, onChange)
   return (
     <>
-      <PlatformSwitch value={value} onChange={onChange} layout={layout} lockedIds={lockedIds} onLocked={onLocked} />
+      <ViewportSwitch value={value} onChange={onChange} layout={layout} lockedIds={lockedIds} onLocked={onLocked} />
       {dialog}
     </>
   )
@@ -676,7 +676,7 @@ function ColorAppearanceSwitch({ value, onChange, lockedTo }: {
           aria-label={locked ? `${t(mode === 'light' ? 'Light' : 'Dark')} — ${t('Upgrade to Pro')}` : undefined}
           title={locked ? t('Upgrade to Pro') : undefined}
           onClick={() => (locked ? setUpgradeOpen(true) : onChange(mode))}
-          // Same pill as Desktop / Tablet / Mobile (`PlatformSwitch`): one
+          // Same pill as Desktop / Tablet / Mobile (`ViewportSwitch`): one
           // control language for every segmented switch in an edition header.
           className={`relative flex h-7 items-center justify-center rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
             locked ? 'text-fg-faint' : value === mode ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
@@ -799,7 +799,7 @@ function InfoHint({ children }: { children: string }) {
 /**
  * Foundations that have a Theme Preview widget. `spacing` stays Variables-only.
  * Grid is the frame cut (columns / gutter / margin) — Desktop vs Mobile, same
- * session `previewPlatform` Type and Size read. `icons` is Style edition
+ * session `previewViewport` Type and Size read. `icons` is Style edition
  * (icon weight + status action). Adding a panel means adding its key here
  * and a matching `EditionCard` below, nowhere else.
  */
@@ -1340,7 +1340,7 @@ function BaseUnitCard({
   onScrubStart?: () => void
   onScrubEnd?: () => void
   ariaLabel: string
-  /** Primitive this platform cut actually aliases (`md` Control / `lg` Touch). */
+  /** Primitive this viewport cut actually aliases (`md` Control / `lg` Touch). */
   usedStep?: string
 }) {
   const { t } = useI18n()
@@ -1931,7 +1931,7 @@ export default function ThemeQuickSettingsRail({
   onRandomBoardAppearance,
   contrastOpen = false,
   onContrastOpenChange,
-  previewPlatform = 'desktop',
+  previewViewport = 'desktop',
   onPreviewPlatformChange,
   embed = false,
   randomHandle,
@@ -1982,7 +1982,7 @@ export default function ThemeQuickSettingsRail({
   contrastOpen?: boolean
   onContrastOpenChange?: (open: boolean) => void
   /** Session desktop / mobile cut — Type and Spacing edition resolve against this. */
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   onPreviewPlatformChange?: (platform: GridViewport) => void
   /** Render in the page column instead of the inspector. The create studio
    *  uses the inspector for the step list, so the edition sits in the card. */
@@ -2085,9 +2085,9 @@ export default function ThemeQuickSettingsRail({
   // ONE platform switch, in Spacing (where viewports matter most). Font,
   // Radius and the board still resolve against the platform it picks.
   const platformSwitch = onPreviewPlatformChange ? (
-    <PlatformCutSwitch value={previewPlatform} onChange={onPreviewPlatformChange} layout="fill" />
+    <PlatformCutSwitch value={previewViewport} onChange={onPreviewPlatformChange} layout="fill" />
   ) : undefined
-  const sizeUsedStep = previewPlatform === 'mobile'
+  const sizeUsedStep = previewViewport === 'mobile'
     ? (foundations.sizeRoles?.touch ?? 'lg')
     : (foundations.sizeRoles?.control ?? 'md')
   const setIconWeight = (key: string, value: PhosphorWeight) =>
@@ -3093,7 +3093,7 @@ export default function ThemeQuickSettingsRail({
             </button>
             {typeRolesOpen && (
               <div className="mt-3 border-t border-line pt-3">
-                <TypeScaleCard typography={typography} platform={previewPlatform} />
+                <TypeScaleCard typography={typography} platform={previewViewport} />
               </div>
             )}
           </div>
@@ -3108,7 +3108,7 @@ export default function ThemeQuickSettingsRail({
               radius={radius}
               radiusRoles={foundations.radiusRoles}
               radiusRoleViewports={foundations.radiusRoleViewports}
-              platform={previewPlatform}
+              platform={previewViewport}
               onRoles={(next) => applyScrub('Radius updated', (themeKey) => setRadiusRoles(themeKey, next))}
               onScrubStart={() => beginScrub('Radius updated')}
               onScrubEnd={endScrub}
@@ -3138,7 +3138,7 @@ export default function ThemeQuickSettingsRail({
           {platformSwitch && <div className={RAIL_BLOCK}>{platformSwitch}</div>}
           <SettingItem>
             <CutFacts rows={[
-              { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
+              { label: previewViewport === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
             ]} />
           </SettingItem>
           <SettingItem>

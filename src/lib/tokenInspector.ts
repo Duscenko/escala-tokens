@@ -684,7 +684,7 @@ export function geometryRoles(t: PreviewTokens, samples: GeometrySamples): Inspe
     }
   }
 
-  const viewport = t.previewPlatform ?? 'desktop'
+  const viewport = t.previewViewport ?? 'desktop'
   const primitives = t.typography
   const type = primitives
     ? TYPE_ROLES.flatMap((role) => {

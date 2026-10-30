@@ -15,7 +15,7 @@
 // is the snippet for the variant on screen — which neither half could claim.
 
 import { createPortal } from 'react-dom'
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -23,6 +23,7 @@ import {
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown, componentImportLine } from '../../../lib/agentContext'
 import { cutComponentContext } from '../../../lib/contextRequest'
+import { contextTokenJson } from '../../../lib/contextSource'
 import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
 import type { ContextOptions } from '../../ui/ContextControls'
@@ -623,8 +624,11 @@ function componentContext(
     a === current ? currentTokens : resolvePreviewTokens(useDesignStore.getState(), theme, a)
   )
   const first: ThemeAppearance = opts.appearance === 'both' ? 'light' : opts.appearance
-  const primary = agentContextMarkdown(def, snippet, tokensFor(first))
-  const dark = opts.appearance === 'both' ? agentContextMarkdown(def, snippet, tokensFor('dark')) : undefined
+  // The brand's own payload names the Figma variable of every part; built
+  // only when something is copied.
+  const json = contextTokenJson(useDesignStore.getState(), theme, opts.appearance)
+  const primary = agentContextMarkdown(def, snippet, tokensFor(first), json)
+  const dark = opts.appearance === 'both' ? agentContextMarkdown(def, snippet, tokensFor('dark'), json) : undefined
   return cutComponentContext(primary, opts, dark)
 }
 
@@ -667,7 +671,13 @@ export function ComponentArticle({
   // the Use it block's third tab, so the two can't disagree. Built here rather
   // than inside `useIt` because `agentContextMarkdown` lives in `lib/` and must
   // not import this module.
-  const agentBrief = agentContextMarkdown(def, heroCode, tokens)
+  const briefJson = useMemo(
+    () => contextTokenJson(useDesignStore.getState(), previewTheme, appearance ?? 'light'),
+    // `tokens` changes whenever the store does: the payload follows it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tokens, previewTheme, appearance],
+  )
+  const agentBrief = agentContextMarkdown(def, heroCode, tokens, briefJson)
   const useIt = useItForComponent(def, heroCode, agentBrief)
   const idx = COMPONENTS.findIndex((c) => c.key === def.key)
   const prev = COMPONENTS[idx - 1]

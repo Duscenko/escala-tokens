@@ -4,7 +4,8 @@
 // kind. Shared by the Semantic editor (Step3_SemanticTokens) and the token
 // export (tokenGenerator), so exported values ALWAYS resolve to a tone of
 // their source ramp — the Figma plugin aliases them to primitives by hex.
-import { DEFAULT_GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
+import type { ThemePalette } from '../store/useDesignStore'
+import { DEFAULT_GRAY_DARK_SCALE } from './defaultScales'
 import { accessibleSolidTone } from './colorUtils'
 import type { IntentClass } from './color/apca'
 

@@ -399,7 +399,7 @@ describe('geometryRoles', () => {
       sizes: { 'text-xs': '12px', 'text-sm': '14px', 'text-md': '16px' },
       weights: { regular: 400, medium: 500, semibold: 600, bold: 700 },
     },
-    previewPlatform: 'desktop',
+    previewViewport: 'desktop',
   } as unknown as PreviewTokens
 
   it('names a button corner, its label and its height', () => {

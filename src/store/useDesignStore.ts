@@ -55,6 +55,7 @@ import {
   type RadiusRoleViewports,
 } from '../lib/layoutTokens'
 import type { PhosphorWeight } from '../lib/phosphorIcons'
+import { defaultPlatformAxis, mergePlatformAxis, type PlatformAxis } from '../lib/platformAxis'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale, generateLightNeutralScale, lightNeutralSolid } from '../lib/colorUtils'
 import {
@@ -197,7 +198,7 @@ export const GRAY_DARK_SCALE: ColorScale = {
 // now, which is why a brand-new system's dark mode could render backwards
 // (tone 1 near-white) for anyone who reached Alias/Semantics or previewed dark
 // before ever editing a color primitive.
-export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c737f', 'radix', 0, '#0c0e12')
+export { DEFAULT_GRAY_DARK_SCALE } from '../lib/defaultScales'
 // The default accent's ramp, computed by the real generator at module load for
 // the same reason DEFAULT_GRAY_DARK_SCALE is: it seeds the built-in gradients'
 // tone-backed stops (see makeDefaultGradients), so a brand-new system's
@@ -509,6 +510,10 @@ export interface DesignSnapshot {
   /** Hand-set radius role values on Tablet / Mobile; absent ⇒ follow Desktop
    *  one (or two) rungs down (RADIUS_RESPONSIVE). */
   radiusRoleViewports: RadiusRoleViewports
+  /** The optional Platform axis (web · ios · android). Per SYSTEM, not a
+   *  preference: which OSes a product targets travels with the kit and with
+   *  `.escala/system.json`. `shipped: ['web']` = no axis (lib/platformAxis). */
+  platformAxis: PlatformAxis
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
   selectorRoles: Record<string, string>
@@ -667,6 +672,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     breakpointRoles: defaultLayoutRoles('breakpoint'),
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     radiusRoleViewports: {},
+    platformAxis: defaultPlatformAxis(),
     panelBackground: 'solid',
     iconWeight: 'regular',
     semanticArchitecture: 'categorical',
@@ -1045,6 +1051,8 @@ interface DesignStore {
 
   radiusRoles: Record<string, string>
   radiusRoleViewports: RadiusRoleViewports
+  platformAxis: PlatformAxis
+  setPlatformAxis: (patch: Partial<PlatformAxis>) => void
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
   selectorRoles: Record<string, string>
@@ -1689,6 +1697,7 @@ export const useDesignStore = create<DesignStore>()(
         }),
 
       setTypography: (t) => set({ typography: { ...t, roles: mergeTypeRoles(t.roles) } }),
+      setPlatformAxis: (patch) => set((st) => ({ platformAxis: mergePlatformAxis({ ...st.platformAxis, ...patch }) })),
 
       setSpacing: (s) => set({ spacing: s }),
       setRadius: (r) => set({ radius: r }),
@@ -2007,7 +2016,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 105,
+      version: 106,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3467,7 +3476,7 @@ export const useDesignStore = create<DesignStore>()(
           }
         }
         if (version < 89) {
-          // v88→v89: every heading steps one rung per platform cut (Tablet was
+          // v88→v89: every heading steps one rung per viewport cut (Tablet was
           // a copy of Desktop for Heading LG…XS) and Heading 2XS joins. A cut
           // moves only while it still holds the pre-v89 default; a hand-picked
           // size stays. Root map, theme overlays and saved systems alike.
@@ -3760,6 +3769,19 @@ export const useDesignStore = create<DesignStore>()(
           roundedFields(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) roundedFields(sys?.snapshot)
+          }
+        }
+        if (version < 106) {
+          // v105→v106: the Platform axis (web · ios · android). Every system
+          // so far is web-only, so the seed is the empty axis — `shipped:
+          // ['web']` — which emits nothing new. A snapshot that somehow
+          // carries one already is repaired, not replaced.
+          const seed = (state: any) => {
+            if (state && typeof state === 'object') state.platformAxis = mergePlatformAxis(state.platformAxis)
+          }
+          seed(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seed(sys?.snapshot)
           }
         }
         return persisted

@@ -2,6 +2,7 @@
 // and the export (variables.css / README) so the family stack is consistent.
 
 import { useEffect } from 'react'
+import { isSystemFontFamily } from './platformAxis'
 import { useDesignStore } from '../store/useDesignStore'
 
 // The catalogue and `fontStack` live in `fontStack.ts` (no React, no store),
@@ -16,7 +17,7 @@ import { findFontSource, fontSourceUrl, googleFontUrl } from './customFonts'
 // the link then falls back to the plain family request (its default weights)
 // instead of silently never loading.
 export function loadGoogleFont(family: string) {
-  if (!family || typeof document === 'undefined') return
+  if (!family || typeof document === 'undefined' || isSystemFontFamily(family)) return
   const id = `gfont-${family.replace(/\s+/g, '-')}`
   const source = findFontSource(useDesignStore.getState().fontSources, family)
   const css = source?.kind === 'css' && source.url ? source.url : null

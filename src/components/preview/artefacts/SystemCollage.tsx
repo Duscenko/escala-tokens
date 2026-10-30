@@ -558,10 +558,10 @@ export function SystemCollage({
   })
   const phones = layout === 'phones'
   const board = frameTokens ?? tokensByAppearance.light
-  const collageCut: GridViewport = board.previewPlatform ?? 'desktop'
+  const collageCut: GridViewport = board.previewViewport ?? 'desktop'
   const liveGrid = resolveGridFrame(collageCut, board.gridFrame, board.spacing, extractBreakpoints(board.grid))
   const marginPx = parseFloat(liveGrid.margin) || 16
-  const sourceW = artefactSourceWidth({ ...board, previewPlatform: collageCut })
+  const sourceW = artefactSourceWidth({ ...board, previewViewport: collageCut })
   const phoneInner = Math.max(160, sourceW - marginPx * 2)
   // The board is a squared bento of BOARD_COLUMNS columns that fills the
   // canvas width: the photo scale follows the measured width (never above

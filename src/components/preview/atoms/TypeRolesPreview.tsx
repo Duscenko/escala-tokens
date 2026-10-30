@@ -28,7 +28,7 @@ export function TypeRolesPreview({
   /** Jump the Variables table to this role's row. */
   onEditRole?: (key: string) => void
 }) {
-  const viewport = tokens.previewPlatform ?? 'desktop'
+  const viewport = tokens.previewViewport ?? 'desktop'
   const ty = tokens.typography
   const roles = mergeTypeRoles(ty.roles)
   const groups = focus === 'all' ? TYPE_ROLE_GROUPS : TYPE_ROLE_GROUPS.filter((g) => g.id === focus)

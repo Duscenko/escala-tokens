@@ -11,7 +11,7 @@
 import { Fragment, useState, type ReactNode } from 'react'
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import VariableSelect from '../ui/VariableSelect'
-import { usePreviewPlatform } from './PlatformRail'
+import { usePreviewViewport } from './ViewportRail'
 import {
   SPACING_RESPONSIVE,
   SPACING_RESPONSIVE_FAMILIES,
@@ -132,8 +132,8 @@ export default function SpacingSemanticsTable({
     if (!shown) next.add(inset)
     return next
   })
-  const platformCtx = usePreviewPlatform()
-  const platform: GridViewport = platformCtx?.previewPlatform ?? 'desktop'
+  const platformCtx = usePreviewViewport()
+  const platform: GridViewport = platformCtx?.previewViewport ?? 'desktop'
   const pxOf = (step: string): number | null => {
     const pinned = roleDimensionPx(step, true)
     if (pinned !== null) return pinned

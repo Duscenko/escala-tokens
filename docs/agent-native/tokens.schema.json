@@ -138,6 +138,28 @@
       "minItems": 1,
       "description": "Which viewports Dimension Semantics gets as Figma modes (Desktop · Tablet · Mobile), canonical order, at least one. Chosen in File & modes; additive."
     },
+    "platforms": {
+      "type": "array",
+      "items": { "enum": ["web", "ios", "android"] },
+      "minItems": 2,
+      "description": "Additive, ABSENT on a web-only system. The Platform axis: which OSes the plugin's Platform collection gets as modes, canonical order (web first = default mode). Independent of viewports — the two never combine into one mode set."
+    },
+    "platform": {
+      "type": "object",
+      "description": "Additive, present only with platforms. Per-OS values of the foundations an OS owns; every web entry mirrors the root field. Roles in the display/heading groups never appear here (they follow viewports); body/control roles may.",
+      "required": ["fontFamily", "headingFontFamily", "typeRoles", "touchTarget", "radiusRoles"],
+      "properties": {
+        "fontFamily": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Body family per platform (web = typography.fontFamily; ios/android default SF Pro / Roboto)." },
+        "headingFontFamily": { "type": "object", "additionalProperties": { "type": "string" } },
+        "typeRoles": {
+          "type": "object",
+          "additionalProperties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/typeAlias" } },
+          "description": "Role → platform → alias, only for body/control roles with a native cut. web = typography.roles[key].desktop. A role or platform absent follows typography.roles at the viewport."
+        },
+        "touchTarget": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Size step or pinned dimension-N per platform (web = sizeRoles.touch; ios dimension-44; android lg)." },
+        "radiusRoles": { "type": "object", "additionalProperties": { "type": "object", "additionalProperties": { "type": "string" } }, "description": "Platform → radius role → step / dimension-N. Only platforms with overrides; a role absent follows radiusRoles." }
+      }
+    },
     "dimensions": {
       "type": "object",
       "description": "Dimension primitives: ONE global collection of lengths, named by value ('16', '-4', '9999', '3_5' = 3.5px), single mode. Standard ladder plus every length a shipped theme uses. Key order is not numeric; sort by value.",

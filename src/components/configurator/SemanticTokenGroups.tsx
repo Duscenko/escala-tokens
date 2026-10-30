@@ -73,7 +73,7 @@ function GeometryTokenDetails({
   kind,
   tokenId,
   previewTheme,
-  previewPlatform,
+  previewViewport,
   stylePreview,
   onClose,
   onOpenInVariables,
@@ -82,7 +82,7 @@ function GeometryTokenDetails({
   kind: GeometryKind
   tokenId: string
   previewTheme: string
-  previewPlatform: GridViewport
+  previewViewport: GridViewport
   stylePreview?: StylePreview | null
   onClose: () => void
   onOpenInVariables?: (tokenId: string) => void
@@ -98,7 +98,7 @@ function GeometryTokenDetails({
   )
   const foundations = overlay ? resolveThemeFoundations(overlay, previewTheme) : liveFoundations
   const { scale: dimensionScale } = useDimensions(previewTheme)
-  const viewport = previewPlatform
+  const viewport = previewViewport
   const typeCut = asTypeViewport(viewport)
 
   const spec = kind === 'text'
@@ -285,7 +285,7 @@ function GeometryTokenDetails({
 export default function SemanticTokenDrawer({
   previewTheme,
   previewAppearance,
-  previewPlatform = 'desktop',
+  previewViewport = 'desktop',
   tokenId,
   onClose,
   onOpenPrimitiveFamily,
@@ -298,7 +298,7 @@ export default function SemanticTokenDrawer({
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** The board's viewport. Radius and text roles step down on Tablet and Mobile. */
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   tokenId: string | null
   onClose: () => void
   onOpenPrimitiveFamily?: (family: string) => void
@@ -336,7 +336,7 @@ export default function SemanticTokenDrawer({
         kind={layoutKind}
         tokenId={tokenId}
         previewTheme={previewTheme}
-        previewPlatform={previewPlatform}
+        previewViewport={previewViewport}
         stylePreview={stylePreview}
         onClose={onClose}
         onOpenInVariables={onOpenInVariables}
@@ -352,7 +352,7 @@ export default function SemanticTokenDrawer({
         kind={geometry}
         tokenId={tokenId}
         previewTheme={previewTheme}
-        previewPlatform={previewPlatform}
+        previewViewport={previewViewport}
         stylePreview={stylePreview}
         onClose={onClose}
         onOpenInVariables={onOpenInVariables}

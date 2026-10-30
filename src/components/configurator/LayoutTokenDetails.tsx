@@ -77,7 +77,7 @@ export default function LayoutTokenDetails({
   kind,
   tokenId,
   previewTheme,
-  previewPlatform,
+  previewViewport,
   stylePreview,
   onClose,
   onOpenInVariables,
@@ -86,7 +86,7 @@ export default function LayoutTokenDetails({
   kind: LayoutTokenKind
   tokenId: string
   previewTheme: string
-  previewPlatform: GridViewport
+  previewViewport: GridViewport
   stylePreview?: StylePreview | null
   onClose: () => void
   onOpenInVariables?: (tokenId: string) => void
@@ -101,7 +101,7 @@ export default function LayoutTokenDetails({
     [stylePreview, live, previewTheme],
   )
   const foundations = overlay ? resolveThemeFoundations(overlay, previewTheme) : liveFoundations
-  const viewport = previewPlatform
+  const viewport = previewViewport
   const locked = !!stylePreview
 
   const write = (partial: ThemeFoundationOverride, label: string) => {

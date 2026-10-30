@@ -98,7 +98,7 @@ describe('type roles', () => {
     expect(moved['heading-2xs'].desktop.size).toBe('text-lg')
   })
 
-  it('lists the primitive size steps each platform cut actually aliases', () => {
+  it('lists the primitive size steps each viewport cut actually aliases', () => {
     const desktop = typePrimitivesForViewport(undefined, 'desktop')
     const mobile = typePrimitivesForViewport(undefined, 'mobile')
     expect(desktop.sizes.has('display-xl')).toBe(true)
@@ -254,7 +254,7 @@ describe('type-scale modes', () => {
   })
 })
 
-describe('three platform cuts (v75)', () => {
+describe('three viewport cuts (v75)', () => {
   const rank = (size: string) => TYPE_SCALE_KEYS.indexOf(size as (typeof TYPE_SCALE_KEYS)[number])
 
   it('Display and Heading XL give three distinct sizes: tablet one rung down, mobile two', () => {

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import type { Platform } from '../../lib/platformAxis'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
@@ -292,7 +293,8 @@ export default function PreviewPanel({
   categoryKey = null,
   previewTheme = 'light',
   previewAppearance,
-  previewPlatform = 'desktop',
+  previewViewport = 'desktop',
+  previewPlatform = 'web',
   iconLibraryKey = null,
   onCollapse,
   onEditTypeRole,
@@ -312,7 +314,8 @@ export default function PreviewPanel({
   /** Light/Dark appearance inside the selected library theme. */
   previewAppearance?: ThemeAppearance
   /** Workspace desktop / mobile cut — Type roles and Grid frames follow this. */
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
+  previewPlatform?: Platform
   /** When set (Icons foundation), the panel previews that library's glyphs. */
   iconLibraryKey?: string | null
   /** When set, shows a header button to collapse the panel. */
@@ -328,7 +331,7 @@ export default function PreviewPanel({
   /** Promotes the existing artefacts/specimens into the central Themes canvas. */
   workspace?: boolean
 }) {
-  const tokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
+  const tokens = usePreviewTokens(previewTheme, previewAppearance, previewViewport, previewPlatform)
   const specimen = focus && focus !== 'all' ? focus : null
 
   // Tab state is LOCAL, deliberately: nothing outside this panel reads it (the

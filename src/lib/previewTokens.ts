@@ -4,6 +4,7 @@
 // empty semantic tokens so previews never render with undefined colors.
 
 import { normalizeMotionSettings } from './motion'
+import { layoutForPlatform, typographyForPlatform, type Platform } from './platformAxis'
 import { anatomyIconPx, controlMdOf, iconRoleForControlStep, iconRoleForHeight, iconSizesFor, type IconRole } from './iconSizing'
 import { darkShadowsOf } from './shadowTokens'
 import { useEffect, type CSSProperties } from 'react'
@@ -133,9 +134,21 @@ export function resolvePreviewTokens(
   store: StoreState,
   themeKey = 'light',
   appearance: ThemeAppearance = store.themeKinds?.[themeKey] ?? 'light',
-  previewPlatform: GridViewport = 'desktop',
+  previewViewport: GridViewport = 'desktop',
+  previewPlatform: Platform = 'web',
 ): PreviewTokens {
-  const foundations = resolveThemeFoundations(store, themeKey)
+  // The platform view of the theme's foundations: the OS family, the native
+  // body/control cuts, touch target and control radii. Web is the input as
+  // is, so a web-only system resolves exactly as before this axis existed.
+  const foundations = (() => {
+    const base = resolveThemeFoundations(store, themeKey)
+    if (previewPlatform === 'web') return base
+    return {
+      ...base,
+      typography: typographyForPlatform(base.typography, store.platformAxis, previewPlatform),
+      ...layoutForPlatform(store.platformAxis, previewPlatform, { sizeRoles: base.sizeRoles, radiusRoles: base.radiusRoles }),
+    }
+  })()
   const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor } = store
   const { radius, spacing, typography, panelBackground, iconWeight } = foundations
   // Render the requested theme (driven by the Semantic table's eye toggle).
@@ -287,12 +300,12 @@ export function resolvePreviewTokens(
     // Responsive spacing refs resolved for the previewed platform, so a
     // Mobile preview tightens exactly like the CSS media query and the Figma
     // viewport mode do.
-    spacingRoles: spacingRolesAtViewport(foundations.spacingRoles, previewPlatform),
+    spacingRoles: spacingRolesAtViewport(foundations.spacingRoles, previewViewport),
     sizeRoles: foundations.sizeRoles,
     selectorRoles: foundations.selectorRoles,
     strokeRoles: foundations.strokeRoles,
     breakpointRoles: foundations.breakpointRoles,
-    previewPlatform,
+    previewViewport,
     gridFrame: foundations.gridFrame,
     // Shadows are the one foundation that can't ship a single value for both
     // appearances: the ramp's near-black shadow colour IS the dark page, so in
@@ -384,13 +397,15 @@ export function resolvePreviewTokens(
 export function usePreviewTokens(
   themeKey = 'light',
   appearance?: ThemeAppearance,
-  previewPlatform: GridViewport = 'desktop',
+  previewViewport: GridViewport = 'desktop',
+  previewPlatform: Platform = 'web',
 ): PreviewTokens {
   const store = useDesignStore()
   const tokens = resolvePreviewTokens(
     store,
     themeKey,
     appearance ?? store.themeKinds?.[themeKey] ?? 'light',
+    previewViewport,
     previewPlatform,
   )
   useEffect(() => {
@@ -457,7 +472,7 @@ export function radiusRoleOf(t: PreviewTokens, role: string, fallback = ''): str
   // Responsive: on a Tablet or Mobile preview the role reads its stepped-down
   // static step (RADIUS_RESPONSIVE), exactly what the CSS media query and the
   // Figma viewport mode ship.
-  const roles = radiusRolesAtViewport(t.radiusRoles, t.previewPlatform ?? 'desktop', t.radiusRoleViewports)
+  const roles = radiusRolesAtViewport(t.radiusRoles, t.previewViewport ?? 'desktop', t.radiusRoleViewports)
   return resolveLayoutRole('radius', roles, t.radius ?? {}, role, fallback || radiusOf(t, 'md', '16px'))
 }
 
@@ -623,7 +638,7 @@ export function typeStyleOf(
   role: string,
   opts: { viewport?: string; leading?: boolean } = {},
 ): CSSProperties {
-  const viewport = opts.viewport ?? t.previewPlatform ?? 'desktop'
+  const viewport = opts.viewport ?? t.previewViewport ?? 'desktop'
   const s = typeStyleCss(
     {
       fontFamily: t.typography?.fontFamily ?? 'Inter',

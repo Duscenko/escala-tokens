@@ -36,7 +36,8 @@ import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorPortal, Ins
 import ShipPanel, { type ShipKind } from '../components/configurator/ShipPanel'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
-import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
+import { PreviewViewportProvider } from '../components/configurator/ViewportRail'
+import type { Platform } from '../lib/platformAxis'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../lib/themeLibrary'
 import { RANDOM_THEME_LABEL, startRandomTheme } from '../lib/randomTheme'
@@ -951,8 +952,8 @@ export default function Configurator() {
   // Components' directory panel docks a pinned component's tokens the same way.
   const [componentsSlot, setComponentsSlot] = useState<HTMLElement | null>(null)
   const [inspectorHeaderSlot, setInspectorHeaderSlot] = useState<HTMLElement | null>(null)
-  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
   const [inspectorSideSlot, setInspectorSideSlot] = useState<HTMLElement | null>(null)
+  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
     return surface
@@ -1133,7 +1134,12 @@ export default function Configurator() {
     theme: string
     appearance: ThemeAppearance
   }>(() => ({ theme: initialTheme, appearance: themeKinds[initialTheme] ?? theme }))
-  const [previewPlatform, setPreviewPlatform] = useState<GridViewport>('desktop')
+  const [previewViewport, setPreviewViewport] = useState<GridViewport>('desktop')
+  // The Platform cut (web · ios · android). Session-only like the viewport;
+  // snaps back to web whenever the system stops shipping that platform.
+  const platformShipped = useDesignStore((st) => st.platformAxis.shipped)
+  const [previewPlatformRaw, setPreviewPlatform] = useState<Platform>('web')
+  const previewPlatform: Platform = platformShipped.includes(previewPlatformRaw) ? previewPlatformRaw : 'web'
   const openPlatformTypeRole = (key: string) => {
     setThemeWorkspaceTab('primitives')
     setActiveFoundation('typography')
@@ -2294,7 +2300,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
-        previewPlatform={previewPlatform}
+        previewViewport={previewViewport}
         query={colorQuery}
       />
     ) : section.key === 'dimensions' ? (
@@ -2310,7 +2316,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
-        previewPlatform={previewPlatform}
+        previewViewport={previewViewport}
         query={colorQuery}
       />
     ) : section.key === 'grid' ? (
@@ -2321,7 +2327,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
-        previewPlatform={previewPlatform}
+        previewViewport={previewViewport}
         query={colorQuery}
       />
     ) : section.key === 'motion' ? (
@@ -2733,13 +2739,13 @@ export default function Configurator() {
           {foundationCanvas && (
             <InspectorSidePortal>
               <FoundationSwitchStrip
+                variant="rail"
                 ariaLabel="Variable foundations"
                 items={[...VARIABLE_FOUNDATIONS, ...FOUNDATIONS.filter((foundation) => ['shadow', 'icons'].includes(foundation.key))].map((foundation) => ({
                   key: foundation.key,
                   label: t(foundation.short),
                   icon: foundation.key === 'dimensions' ? <foundation.Icon /> : undefined,
                 }))}
-                variant="rail"
                 current={activeFoundation}
                 onSelect={selectWorkspaceFoundation}
               />
@@ -2864,8 +2870,8 @@ export default function Configurator() {
                     onDiscardRandom={randomDraftKey === previewTheme ? discardRandomTheme : undefined}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
-                    previewPlatform={previewPlatform}
-                    onPreviewPlatformChange={setPreviewPlatform}
+                    previewViewport={previewViewport}
+                    onPreviewPlatformChange={setPreviewViewport}
                     stylePreview={stylePreview}
                     onNeedAccount={() => setRegisterOpen(true)}
                     onAdoptStyle={changePreviewTheme}
@@ -3023,10 +3029,12 @@ export default function Configurator() {
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
-                <PreviewPlatformProvider
+                <PreviewViewportProvider
                   value={{
-                    previewPlatform,
+                    previewViewport,
                     previewTheme,
+                    setPreviewViewport,
+                    previewPlatform,
                     setPreviewPlatform,
                     onOpenTypeRole: openPlatformTypeRole,
                     onOpenGridField: openPlatformGridField,
@@ -3037,15 +3045,18 @@ export default function Configurator() {
                   onToggleRail={() => setGroupsRailCollapsed((collapsed) => !collapsed)}
                   label={section.variablesLabel}
                   gutter={activeFoundation === 'icons'}
+                  railBody={activeFoundation === 'icons' ? <IconLibraryPanel /> : undefined}
                   activeCollection={activeCollection}
                   collections={activeFoundationCollections}
                   onCollectionChange={(collection) => setFoundationCollection(activeFoundation, collection)}
                   // Only foundations whose VALUES change per viewport.
-                  showPlatform={activeFoundation === 'typography' || activeFoundation === 'grid' || activeFoundation === 'radius' || activeFoundation === 'spacing'}
+                  showPlatform={activeFoundation === 'typography' || activeFoundation === 'grid' || activeFoundation === 'radius' || activeFoundation === 'spacing'
+                    // Sizes only changes per PLATFORM (the touch target), so its
+                    // rail appears once the system ships a native one.
+                    || (activeFoundation === 'sizes' && platformShipped.length > 1)}
                   platformGuide={
                     activeFoundation === 'grid' ? 'grid'
                     : activeFoundation === 'typography' ? 'type'
-                  railBody={activeFoundation === 'icons' ? <IconLibraryPanel /> : undefined}
                     : undefined
                   }
                 >
@@ -3059,7 +3070,7 @@ export default function Configurator() {
                     {body}
                   </motion.div>
                 </FoundationWorkbench>
-                </PreviewPlatformProvider>
+                </PreviewViewportProvider>
                 </div>
                 </div>
               ) : (
@@ -3110,6 +3121,7 @@ export default function Configurator() {
             <WorkspaceInspector
               onSlot={setInspectorSlot}
               onHeaderSlot={setInspectorHeaderSlot}
+              onSideSlot={setInspectorSideSlot}
               slotStyle={canvasAccentStyle}
               home={themeWorkspaceTab === 'library'}
             />
@@ -3122,7 +3134,6 @@ export default function Configurator() {
               The threshold is an EXPLICIT `min-[1180px]:`, not `xl:`. Tailwind's
               breakpoints are rem-based and `:root` sets `font: 18px/…`, so `xl`
               resolves to 80rem = **1440px** here, not the 1280 the utility name
-              onSideSlot={setInspectorSideSlot}
               implies. That hid the panel on every window below 1440 — including a
               16" MacBook Pro on any scaled resolution under 1512, or full-screen
               with the window not maximised — and the live specimen is half the
@@ -3162,6 +3173,7 @@ export default function Configurator() {
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   previewTheme={previewTheme}
                   previewAppearance={previewAppearance}
+                  previewViewport={previewViewport}
                   previewPlatform={previewPlatform}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}

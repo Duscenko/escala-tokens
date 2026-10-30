@@ -52,7 +52,7 @@ export default function GridSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
-  previewPlatform = 'desktop',
+  previewViewport = 'desktop',
 }: {
   family?: unknown
   tabBar?: ReactNode
@@ -63,7 +63,7 @@ export default function GridSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
 } = {}) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
   // Every cut and frame field is a semantic token: it points at a Dimension primitive.
@@ -78,7 +78,7 @@ export default function GridSemantics({
   const [flashKey, setFlashKey] = useState<string | null>(null)
   const { t } = useI18n()
   const platformLabel =
-    previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
+    previewViewport === 'mobile' ? t('Mobile') : previewViewport === 'tablet' ? t('Tablet') : t('Desktop')
 
   const mobileMax = breakpointMobileMax(cuts, bps)
   const tabletMin = `${breakpointRolePx(cuts, bps, 'tablet')}px`
@@ -144,7 +144,7 @@ export default function GridSemantics({
   // One platform at a time — the switch picks which viewport cut and frame
   // recipe the table edits. Showing all three at once made the choice feel
   // like three parallel systems instead of one focused cut.
-  const viewportRoles = BREAKPOINT_ROLES.filter((role) => role.key === previewPlatform)
+  const viewportRoles = BREAKPOINT_ROLES.filter((role) => role.key === previewViewport)
   const showViewport = group === 'all' || group === 'viewport'
   const showFrame = group === 'all' || group === 'frame'
 
@@ -243,8 +243,8 @@ export default function GridSemantics({
                     <span aria-hidden />
                   </div>
                   {GRID_FRAME_FIELDS.map((field, i) => {
-                    const value = frame[previewPlatform][field.key]
-                    const modified = fieldModified(previewPlatform, field.key)
+                    const value = frame[previewViewport][field.key]
+                    const modified = fieldModified(previewViewport, field.key)
                     return (
                       <div
                         key={field.key}
@@ -261,36 +261,36 @@ export default function GridSemantics({
                         <div className="flex flex-col justify-center gap-0.5 px-3 py-2 border-r border-line min-w-0">
                           {field.key === 'columns' ? (
                             <VariableSelect
-                              ariaLabel={`${previewPlatform} ${field.key}`}
+                              ariaLabel={`${previewViewport} ${field.key}`}
                               value={value}
-                              onChange={(v) => patchFrame(previewPlatform, field.key, v)}
+                              onChange={(v) => patchFrame(previewViewport, field.key, v)}
                             >
                               {colOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </VariableSelect>
                           ) : (
                             <DimensionSelect
-                              ariaLabel={`${previewPlatform} ${field.key}`}
+                              ariaLabel={`${previewViewport} ${field.key}`}
                               value={value === 'none' ? 'none' : `${fieldPx(field.key, value) ?? 0}px`}
                               scale={dimensionScale}
                               allowNone={field.key === 'container'}
                               onChange={(px) => {
-                                if (px === 'none') return patchFrame(previewPlatform, field.key, 'none')
+                                if (px === 'none') return patchFrame(previewViewport, field.key, 'none')
                                 const n = parseDimension(px)
-                                if (n !== null) patchFrame(previewPlatform, field.key, dimensionRoleValue(n))
+                                if (n !== null) patchFrame(previewViewport, field.key, dimensionRoleValue(n))
                               }}
                             />
                           )}
                         </div>
                         <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
-                          <span className="text-caption font-mono text-fg-faint tabular-nums truncate">{live(previewPlatform, field.key)}</span>
+                          <span className="text-caption font-mono text-fg-faint tabular-nums truncate">{live(previewViewport, field.key)}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setGridFrame({
                             ...frame,
-                            [previewPlatform]: {
-                              ...frame[previewPlatform],
-                              [field.key]: GRID_FRAME_STANDARD[previewPlatform][field.key],
+                            [previewViewport]: {
+                              ...frame[previewViewport],
+                              [field.key]: GRID_FRAME_STANDARD[previewViewport][field.key],
                             },
                           })}
                           disabled={!modified}

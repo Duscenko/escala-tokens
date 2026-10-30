@@ -3615,12 +3615,17 @@ var init_componentCatalogue = __esm({
         key: "Input",
         label: "Input",
         category: "Form Controls",
-        description: "shadcn/ui Input: the bare text control \u2014 the box is the <input>. No sizes or types: a label and a hint come from Field, icons and add-ons from Input Group.",
+        description: "shadcn/ui Input: the bare text control \u2014 the box is the <input>. Three sizes on the Size roles (sm 32 \xB7 default 40 \xB7 lg 48); a label and a hint come from Field, icons and add-ons from Input Group.",
         usage: "Wrap it in a Field with a FieldLabel. For a prefix, an icon or a button inside the box, use Input Group. Set the type (email, password, search) on the element.",
-        // No variant axis, as in shadcn. State is a Figma axis only (pseudo-classes in code).
-        axes: [{ name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }],
+        // Size is Escala's (shadcn ships one height). State is a Figma axis only
+        // (pseudo-classes in code); Value (Placeholder · Filled) is Figma-only too.
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }
+        ],
         figmaSets: ["Input"],
         props: [
+          { name: "size", type: "'sm' | 'default' | 'lg'", description: "Height on the Size roles: compact 32 \xB7 control 40 \xB7 touch 48." },
           { name: "type", type: "string", description: "The HTML input type (text, email, password, search\u2026)." },
           { name: "aria-invalid", type: "boolean", description: "Paints the error state." },
           { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." }
@@ -4709,6 +4714,123 @@ var init_componentCatalogue = __esm({
   }
 });
 
+// src/lib/platformAxis.ts
+function defaultPlatformAxis() {
+  return { shipped: ["web"], fontFamily: {}, headingFontFamily: {}, typeRoles: {}, touchTarget: {}, radiusRoles: {} };
+}
+function isPlatform(v) {
+  return typeof v === "string" && PLATFORMS.includes(v);
+}
+function normalizePlatforms(list) {
+  const set = /* @__PURE__ */ new Set(["web"]);
+  for (const p2 of list ?? []) if (isPlatform(p2)) set.add(p2);
+  return PLATFORMS.filter((p2) => set.has(p2));
+}
+function roleFollowsPlatform(key2) {
+  const spec = TYPE_ROLE_BY_KEY[key2];
+  return !!spec && PLATFORM_ROLE_GROUPS.includes(spec.group);
+}
+function isAlias2(v) {
+  if (!v || typeof v !== "object") return false;
+  const a2 = v;
+  return (a2.family === "display" || a2.family === "body") && typeof a2.size === "string" && typeof a2.weight === "string";
+}
+function isSizeStepOrPin(v) {
+  return typeof v === "string" && (SIZE_STEPS.includes(v) || roleDimensionPx(v) !== null);
+}
+function nativeMap(bag, keep) {
+  const out = {};
+  if (!bag || typeof bag !== "object") return out;
+  for (const p2 of NATIVE_PLATFORMS) {
+    const hit = bag[p2];
+    if (keep(hit)) out[p2] = hit;
+  }
+  return out;
+}
+function mergePlatformAxis(stored) {
+  const bag = stored && typeof stored === "object" ? stored : {};
+  const typeRoles = {};
+  if (bag.typeRoles && typeof bag.typeRoles === "object") {
+    for (const [key2, cuts] of Object.entries(bag.typeRoles)) {
+      if (!roleFollowsPlatform(key2)) continue;
+      const m = nativeMap(cuts, isAlias2);
+      if (Object.keys(m).length) typeRoles[key2] = m;
+    }
+  }
+  return {
+    shipped: normalizePlatforms(Array.isArray(bag.shipped) ? bag.shipped : null),
+    fontFamily: nativeMap(bag.fontFamily, isString),
+    headingFontFamily: nativeMap(bag.headingFontFamily, isString),
+    typeRoles,
+    touchTarget: nativeMap(bag.touchTarget, isSizeStepOrPin),
+    radiusRoles: nativeMap(bag.radiusRoles, isStringMap)
+  };
+}
+function shipsNative(axis) {
+  return axis.shipped.some((p2) => p2 !== "web");
+}
+function fontFamilyFor(axis, platform, rootFamily) {
+  if (platform === "web") return rootFamily;
+  return axis.fontFamily[platform] ?? PLATFORM_FONT_DEFAULTS[platform];
+}
+function headingFontFamilyFor(axis, platform, rootHeading, rootFamily) {
+  if (platform === "web") return rootHeading;
+  return axis.headingFontFamily[platform] ?? fontFamilyFor(axis, platform, rootFamily);
+}
+function touchTargetFor(axis, platform, rootTouch) {
+  if (platform === "web") return rootTouch;
+  return axis.touchTarget[platform] ?? PLATFORM_TOUCH_DEFAULTS[platform];
+}
+function platformPayload(axis, root) {
+  if (!axis || !shipsNative(axis)) return {};
+  const shipped = axis.shipped;
+  const rootFamily = root.typography.fontFamily;
+  const rootHeading = root.typography.headingFontFamily ?? rootFamily;
+  const rootTouch = root.sizeRoles.touch ?? "lg";
+  const per = (f) => Object.fromEntries(shipped.map((p2) => [p2, f(p2)]));
+  const typeRoles = {};
+  for (const [key2, cuts] of Object.entries(axis.typeRoles)) {
+    const modes = root.typography.roles[key2];
+    if (!modes) continue;
+    const entry = { web: { ...modes.desktop } };
+    for (const p2 of shipped) if (p2 !== "web" && cuts[p2]) entry[p2] = { ...cuts[p2] };
+    if (Object.keys(entry).length > 1) typeRoles[key2] = entry;
+  }
+  const radiusRoles = {};
+  for (const p2 of shipped) {
+    if (p2 === "web") continue;
+    const own = axis.radiusRoles[p2];
+    if (own && Object.keys(own).length) radiusRoles[p2] = { ...own };
+  }
+  return {
+    platforms: [...shipped],
+    platform: {
+      fontFamily: per((p2) => fontFamilyFor(axis, p2, rootFamily)),
+      headingFontFamily: per((p2) => headingFontFamilyFor(axis, p2, rootHeading, rootFamily)),
+      typeRoles,
+      touchTarget: per((p2) => touchTargetFor(axis, p2, rootTouch)),
+      radiusRoles
+    }
+  };
+}
+function isSystemFontFamily(family) {
+  return /^(sf pro|san francisco|-apple-system|system-ui)/i.test(family.trim());
+}
+var PLATFORMS, NATIVE_PLATFORMS, PLATFORM_FONT_DEFAULTS, PLATFORM_TOUCH_DEFAULTS, PLATFORM_ROLE_GROUPS, isString, isStringMap;
+var init_platformAxis = __esm({
+  "src/lib/platformAxis.ts"() {
+    init_typeRoles();
+    init_layoutTokens();
+    PLATFORMS = ["web", "ios", "android"];
+    NATIVE_PLATFORMS = ["ios", "android"];
+    PLATFORM_FONT_DEFAULTS = { ios: "SF Pro", android: "Roboto" };
+    PLATFORM_TOUCH_DEFAULTS = { ios: "dimension-44", android: "lg" };
+    PLATFORM_ROLE_GROUPS = ["body", "control"];
+    isString = (v) => typeof v === "string" && v.trim().length > 0;
+    isStringMap = (v) => !!v && typeof v === "object" && Object.values(v).every((x) => typeof x === "string");
+  }
+});
+
 // src/lib/utils.ts
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -5232,6 +5354,15 @@ var init_iconLibraries = __esm({
   }
 });
 
+// src/lib/defaultScales.ts
+var DEFAULT_GRAY_DARK_SCALE;
+var init_defaultScales = __esm({
+  "src/lib/defaultScales.ts"() {
+    init_colorUtils();
+    DEFAULT_GRAY_DARK_SCALE = generateDarkColorScale("#6c737f", "radix", 0, "#0c0e12");
+  }
+});
+
 // src/lib/publishTrust.ts
 function claimStorageKey(slug) {
   return `${CLAIM_STORAGE_PREFIX}${slug}`;
@@ -5411,7 +5542,7 @@ function normalizeThemeValue(role, kind, scale, current) {
 var BASE_SCALE, ROLE_GROUPS, ALL_ROLES, BRAND_TOKEN_TONES;
 var init_semanticRoles = __esm({
   "src/lib/semanticRoles.ts"() {
-    init_useDesignStore();
+    init_defaultScales();
     init_colorUtils();
     BASE_SCALE = {
       1: "#ffffff",
@@ -7362,7 +7493,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_GEOMETRY, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -7374,15 +7505,17 @@ var init_forms = __esm({
     };
     FIELD_FOCUS = { stroke: c("border.focus"), ring: c("border.ring.default") };
     INPUT_STATES = ["Default", "Hover", "Focused", "Error", "Disabled"];
+    INPUT_GEOMETRY = { sm: "size.compact", default: "size.control", lg: "size.touch" };
     INPUT = {
       key: "Input",
       slots: ["root", "placeholder"],
       pseudoSlots: { placeholder: { of: "root", pseudo: "::placeholder" } },
-      defaults: { State: "Default" },
+      defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { ...FIELD_FIXED, height: "size.control", font: "type.placeholder" }
+          root: { ...FIELD_FIXED, font: "type.placeholder" }
         })),
+        part({ Size: ["default", "sm", "lg"] }, (size) => ({ root: { height: INPUT_GEOMETRY[size] } })),
         part({ State: INPUT_STATES }, (state2) => {
           const disabled = state2 === "Disabled";
           return {
@@ -9285,6 +9418,9 @@ function generateTokenJSON(source, opts) {
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles)
       },
+      // Same axis, THIS theme's root values behind `web` (a theme can carry
+      // its own typeface; the native overrides are system-wide).
+      ...platformPayload(store.platformAxis, { typography: { ...resolved.typography, roles: mergeTypeRoles(resolved.typography.roles) }, sizeRoles: mergeLayoutRoles("size", resolved.sizeRoles) }),
       spacing: resolved.spacing,
       // THIS theme's spacing roles: a System Style pins its own (Neo's
       // `inset-surface` is step 6). Without them the plugin fell back to the
@@ -9430,6 +9566,14 @@ function generateTokenJSON(source, opts) {
     // The viewports that become Dimension Semantics' Figma modes (canonical order,
     // never empty). Additive: an older plugin ignores it.
     viewports: normalizeFigmaViewports(opts?.viewports),
+    // The Platform axis (web · ios · android), ADDITIVE and ABSENT for a
+    // web-only system, so that payload is byte-identical to before (the
+    // `shadowsDark` precedent, no schemaVersion bump). `platforms` is the
+    // canonical mode order of the plugin's Platform collection; `platform.*`
+    // holds the per-OS value of the few foundations an OS owns — body family,
+    // the body/control type cuts, touch target, control radii — with `web`
+    // always mirroring the root. See lib/platformAxis.
+    ...platformPayload(store.platformAxis, { typography: { ...typography2, roles: mergeTypeRoles(typography2.roles) }, sizeRoles: mergeLayoutRoles("size", store.sizeRoles) }),
     project: opts?.project?.trim() || store.projectName,
     colors: {
       // The page background every ramp is generated against and every alpha
@@ -9633,6 +9777,7 @@ var init_tokenGenerator = __esm({
     init_semanticRoles();
     init_semanticArchitectures();
     init_typeRoles();
+    init_platformAxis();
     init_customFonts();
     init_layoutTokens();
     init_gradients();
@@ -10174,6 +10319,7 @@ function makeDesignDefaults() {
     breakpointRoles: defaultLayoutRoles("breakpoint"),
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     radiusRoleViewports: {},
+    platformAxis: defaultPlatformAxis(),
     panelBackground: "solid",
     iconWeight: "regular",
     semanticArchitecture: "categorical",
@@ -10258,7 +10404,7 @@ function buildSavedSystemEntry(state2, snapshot, nameOverride) {
     source: state2.githubRepo ? "github" : "local"
   };
 }
-var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_DARK_SCALE, DEFAULT_GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_DARK_BACKGROUND, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, NEUTRAL_LIGHT_SCALE, NEUTRAL_BASE, NEUTRAL_DARK_SCALE, DEFAULT_ROLE_OVERRIDES, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
+var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_DARK_BACKGROUND, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, NEUTRAL_LIGHT_SCALE, NEUTRAL_BASE, NEUTRAL_DARK_SCALE, DEFAULT_ROLE_OVERRIDES, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
 var init_useDesignStore = __esm({
   "src/store/useDesignStore.ts"() {
     init_customFonts();
@@ -10269,6 +10415,7 @@ var init_useDesignStore = __esm({
     init_typographyStandard();
     init_typeRoles();
     init_layoutTokens();
+    init_platformAxis();
     init_colorUtils();
     init_colorUtils();
     init_gradients();
@@ -10282,6 +10429,7 @@ var init_useDesignStore = __esm({
     init_iconLibraries();
     init_themeModes();
     init_brandThemes();
+    init_defaultScales();
     COMPONENTS_V97 = ["ToggleGroup", "NativeSelect", "Kbd", "Collapsible", "Table", "Skeleton", "Empty"];
     COMPONENTS_V98 = [
       "Toggle",
@@ -10323,7 +10471,6 @@ var init_useDesignStore = __esm({
       11: "#13161b",
       12: "#0c0e12"
     };
-    DEFAULT_GRAY_DARK_SCALE = generateDarkColorScale("#6c737f", "radix", 0, "#0c0e12");
     DEFAULT_ACCENT2 = "#015ef0";
     DEFAULT_DARK_BACKGROUND = "#0a0a0a";
     DEFAULT_ACCENT_SCALE = generateColorScale(DEFAULT_ACCENT2, "radix", 0, "#ffffff");
@@ -10957,6 +11104,7 @@ var init_useDesignStore = __esm({
             };
           }),
           setTypography: (t) => set({ typography: { ...t, roles: mergeTypeRoles(t.roles) } }),
+          setPlatformAxis: (patch) => set((st) => ({ platformAxis: mergePlatformAxis({ ...st.platformAxis, ...patch }) })),
           setSpacing: (s) => set({ spacing: s }),
           setRadius: (r) => set({ radius: r }),
           setOpacity: (o) => set({ opacity: o }),
@@ -11207,7 +11355,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 105,
+          version: 106,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -12493,6 +12641,15 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) roundedFields(sys?.snapshot);
               }
             }
+            if (version < 106) {
+              const seed = (state2) => {
+                if (state2 && typeof state2 === "object") state2.platformAxis = mergePlatformAxis(state2.platformAxis);
+              };
+              seed(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) seed(sys?.snapshot);
+              }
+            }
             return persisted;
           }
         }
@@ -12902,6 +13059,7 @@ init_figmaSyncModes();
 init_themeSources();
 
 // src/lib/fonts.ts
+init_platformAxis();
 init_useDesignStore();
 import { useEffect as useEffect5 } from "react";
 
@@ -12980,7 +13138,7 @@ var FONT_PRESETS = [
 // src/lib/fonts.ts
 init_customFonts();
 function loadGoogleFont(family) {
-  if (!family || typeof document === "undefined") return;
+  if (!family || typeof document === "undefined" || isSystemFontFamily(family)) return;
   const id = `gfont-${family.replace(/\s+/g, "-")}`;
   const source = findFontSource(useDesignStore.getState().fontSources, family);
   const css = source?.kind === "css" && source.url ? source.url : null;
@@ -13176,6 +13334,7 @@ init_colorUtils();
 
 // src/lib/previewTokens.ts
 init_motion();
+init_platformAxis();
 init_iconSizing();
 init_shadowTokens();
 init_useDesignStore();

@@ -256,7 +256,7 @@ export function resolveStylePreviewTokens(
   store: StoreState,
   preview: StylePreview,
   themeKey: string,
-  previewPlatform?: GridViewport,
+  previewViewport?: GridViewport,
 ): PreviewTokens {
-  return resolvePreviewTokens(stylePreviewStore(store, preview, themeKey), themeKey, preview.appearance, previewPlatform)
+  return resolvePreviewTokens(stylePreviewStore(store, preview, themeKey), themeKey, preview.appearance, previewViewport)
 }

@@ -310,7 +310,7 @@ export function asTypeViewport(viewport?: string): TypeViewport {
   return viewport === 'mobile' ? 'mobile' : viewport === 'tablet' ? 'tablet' : 'desktop'
 }
 
-/** Primitive family / size / weight steps a platform cut actually aliases.
+/** Primitive family / size / weight steps a viewport cut actually aliases.
  *  Font primitives stay one ramp; this is which rungs each cut uses. */
 export function typePrimitivesForViewport(
   stored: object | null | undefined,

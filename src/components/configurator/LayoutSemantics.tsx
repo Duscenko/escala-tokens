@@ -1,4 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useDesignStore } from '../../store/useDesignStore'
+import { usePreviewViewport } from './ViewportRail'
+import { PLATFORM_LABELS, touchTargetFor } from '../../lib/platformAxis'
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
@@ -130,7 +133,7 @@ export default function LayoutSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
 }) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
   // A role is a semantic token: it points at a Dimension primitive, picked by name.
@@ -168,6 +171,14 @@ export default function LayoutSemantics({
   // so selectorRoles exported with no editor. Combined here so one tab edits
   // both maps.
   const viewFamilies: LayoutFamily[] = family === 'size' ? ['size', 'selector'] : [family]
+
+  // The one size role an OS owns: `touch` (HIG 44 · Material 48). On a native
+  // platform its row edits lib/platformAxis.touchTarget instead of sizeRoles.
+  const previewPlatform = usePreviewViewport()?.previewPlatform ?? 'web'
+  const platformAxis = useDesignStore((st) => st.platformAxis)
+  const setPlatformAxis = useDesignStore((st) => st.setPlatformAxis)
+  const touchOnPlatform = previewPlatform !== 'web'
+  const isTouchRow = (fam: LayoutFamily, key: string) => touchOnPlatform && fam === 'size' && key === 'touch'
 
   const primitivesOf = (fam: LayoutFamily) =>
     fam === 'radius' ? radius
@@ -353,11 +364,27 @@ export default function LayoutSemantics({
                 {rows.length === 0 ? (
                   <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{activeQuery}”.</div>
                 ) : rows.map(({ family: rowFamily, role }, i) => {
-                  const roles = rolesOf(rowFamily)
+                  const baseRoles = rolesOf(rowFamily)
                   const primitives = primitivesOf(rowFamily)
+                  const touchRow = isTouchRow(rowFamily, role.key)
+                  const roles = touchRow && previewPlatform !== 'web'
+                    ? { ...baseRoles, touch: touchTargetFor(platformAxis, previewPlatform, baseRoles.touch) }
+                    : baseRoles
                   const step = roles[role.key]
-                  const modified = !layoutRoleIsDefault(rowFamily, role.key, step, primitives)
+                  const modified = touchRow && previewPlatform !== 'web'
+                    ? platformAxis.touchTarget[previewPlatform] !== undefined
+                    : !layoutRoleIsDefault(rowFamily, role.key, step, primitives)
                   const resolved = resolveLayoutRole(rowFamily, roles, primitives, role.key, '')
+                  const setRow = (value: string | null) => {
+                    if (touchRow && previewPlatform !== 'web') {
+                      const next = { ...platformAxis.touchTarget }
+                      if (value === null) delete next[previewPlatform]
+                      else next[previewPlatform] = value
+                      setPlatformAxis({ touchTarget: next })
+                    } else {
+                      setRolesOf(rowFamily, { ...baseRoles, [role.key]: value ?? role.primitive })
+                    }
+                  }
                   return (
                     <div
                       key={`${rowFamily}-${role.key}`}
@@ -369,7 +396,9 @@ export default function LayoutSemantics({
                           <code className="font-mono text-body text-fg-muted truncate">{rowFamily}-{role.key}</code>
                           {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
                         </span>
-                        <span className="text-caption text-fg-faint truncate">{role.description}</span>
+                        <span className="text-caption text-fg-faint truncate">
+                          {touchRow && previewPlatform !== 'web' ? `${PLATFORM_LABELS[previewPlatform]} — ${modified ? 'set here' : 'OS default'}; Web is ${baseRoles.touch}` : role.description}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
                         <DimensionSelect
@@ -378,7 +407,7 @@ export default function LayoutSemantics({
                           scale={dimensionScale}
                           onChange={(px) => {
                             const n = parseDimension(px)
-                            if (n !== null) setRolesOf(rowFamily, { ...roles, [role.key]: dimensionRoleValue(n) })
+                            if (n !== null) setRow(dimensionRoleValue(n))
                           }}
                         />
                       </div>
@@ -388,9 +417,9 @@ export default function LayoutSemantics({
                       </div>
                       <button
                         type="button"
-                        onClick={() => setRolesOf(rowFamily, { ...roles, [role.key]: role.primitive })}
+                        onClick={() => setRow(null)}
                         disabled={!modified}
-                        title="Reset to standard"
+                        title={touchRow && previewPlatform !== 'web' ? `Back to the ${PLATFORM_LABELS[previewPlatform]} default` : 'Reset to standard'}
                         aria-label={`Reset ${role.label}`}
                         className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
                       >

@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
-import { PlatformRail } from './PlatformRail'
+import { ViewportRail } from './ViewportRail'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 import ThemeSaveBar from './ThemeSaveBar'
 
@@ -237,7 +237,7 @@ export default function VariableCollectionRail({
       <div className={collapsed ? 'px-[8px] py-2' : 'px-3 py-3'}>
       {context.showPlatform && (
         <>
-          <PlatformRail collapsed={collapsed} guide={context.platformGuide} />
+          <ViewportRail collapsed={collapsed} guide={context.platformGuide} />
           <div className={collapsed ? 'mb-2 h-px bg-line' : 'mb-3 h-px bg-line'} aria-hidden />
         </>
       )}

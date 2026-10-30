@@ -13,6 +13,7 @@ import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
+import { platformPayload } from './platformAxis'
 import { fontSourceUrl } from './customFonts'
 import { mergeLayoutRoles, withInsetSides, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
@@ -440,6 +441,9 @@ export function generateTokenJSON(
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles),
       },
+      // Same axis, THIS theme's root values behind `web` (a theme can carry
+      // its own typeface; the native overrides are system-wide).
+      ...platformPayload(store.platformAxis, { typography: { ...resolved.typography, roles: mergeTypeRoles(resolved.typography.roles) }, sizeRoles: mergeLayoutRoles('size', resolved.sizeRoles) }),
       spacing: resolved.spacing,
       // THIS theme's spacing roles: a System Style pins its own (Neo's
       // `inset-surface` is step 6). Without them the plugin fell back to the
@@ -635,6 +639,14 @@ export function generateTokenJSON(
     // The viewports that become Dimension Semantics' Figma modes (canonical order,
     // never empty). Additive: an older plugin ignores it.
     viewports: normalizeFigmaViewports(opts?.viewports),
+    // The Platform axis (web · ios · android), ADDITIVE and ABSENT for a
+    // web-only system, so that payload is byte-identical to before (the
+    // `shadowsDark` precedent, no schemaVersion bump). `platforms` is the
+    // canonical mode order of the plugin's Platform collection; `platform.*`
+    // holds the per-OS value of the few foundations an OS owns — body family,
+    // the body/control type cuts, touch target, control radii — with `web`
+    // always mirroring the root. See lib/platformAxis.
+    ...platformPayload(store.platformAxis, { typography: { ...typography, roles: mergeTypeRoles(typography.roles) }, sizeRoles: mergeLayoutRoles('size', store.sizeRoles) }),
     project: opts?.project?.trim() || store.projectName,
     colors: {
       // The page background every ramp is generated against and every alpha

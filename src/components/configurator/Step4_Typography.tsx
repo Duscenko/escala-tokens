@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { PLATFORM_FONT_DEFAULTS, fontFamilyFor, headingFontFamilyFor } from '../../lib/platformAxis'
 import ScrubInput from '../ui/ScrubInput'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
@@ -21,7 +22,7 @@ import {
   type TypoCategory,
 } from '../../lib/typographyStandard'
 import { typePrimitivesForViewport, type TypeWeightKey } from '../../lib/typeRoles'
-import { usePreviewPlatform } from './PlatformRail'
+import { usePreviewViewport } from './ViewportRail'
 
 const GRID = 'grid grid-cols-[minmax(10rem,1fr)_8rem_minmax(8rem,1.6fr)_3rem]'
 
@@ -242,8 +243,14 @@ export default function Step4_Typography({
   const [addFontFor, setAddFontFor] = useState<'display' | 'body' | null>(null)
   const query = externalQuery ?? ''
 
-  const bodyFont = typography.fontFamily
-  const displayFont = typography.headingFontFamily ?? typography.fontFamily
+  // On a native platform the two family rows edit THAT OS's family
+  // (system-wide, lib/platformAxis); the root rows are the web family.
+  const previewPlatform = usePreviewViewport()?.previewPlatform ?? 'web'
+  const platformAxis = useDesignStore((st) => st.platformAxis)
+  const setPlatformAxis = useDesignStore((st) => st.setPlatformAxis)
+  const onNative = previewPlatform !== 'web'
+  const bodyFont = fontFamilyFor(platformAxis, previewPlatform, typography.fontFamily)
+  const displayFont = headingFontFamilyFor(platformAxis, previewPlatform, typography.headingFontFamily ?? typography.fontFamily, typography.fontFamily)
   const sizes = typography.sizes ?? FONT_SIZE_STANDARD
   const lineHeights = typography.lineHeights ?? LINE_HEIGHT_STANDARD
   const weights = typography.weights ?? FONT_WEIGHT_STANDARD
@@ -251,19 +258,36 @@ export default function Step4_Typography({
   // (mounted in Configurator.tsx) — no local effect needed here.
 
   // ── setters ──
-  const setFamily = (role: 'display' | 'body', family: string) =>
+  const setFamily = (role: 'display' | 'body', family: string) => {
+    if (onNative) {
+      const field = role === 'display' ? 'headingFontFamily' : 'fontFamily'
+      setPlatformAxis({ [field]: { ...platformAxis[field], [previewPlatform]: family } })
+      return
+    }
     setTypography(
       role === 'display'
         ? { ...typography, headingFontFamily: family }
         : { ...typography, fontFamily: family },
     )
+  }
+  /** Drop the native override, so the row reads the OS default again. */
+  const resetFamily = (role: 'display' | 'body') => {
+    if (!onNative) { setFamily(role, 'Inter'); return }
+    const field = role === 'display' ? 'headingFontFamily' : 'fontFamily'
+    const { [previewPlatform]: _dropped, ...rest } = platformAxis[field]
+    setPlatformAxis({ [field]: rest })
+  }
+  const familyDefault = (role: 'display' | 'body') =>
+    !onNative ? 'Inter'
+    : role === 'display' ? fontFamilyFor(platformAxis, previewPlatform, typography.fontFamily)
+    : PLATFORM_FONT_DEFAULTS[previewPlatform]
   const setSize = (key: string, v: string) => setTypography({ ...typography, sizes: { ...sizes, [key]: v } })
   const setLineHeight = (key: string, v: string) => setTypography({ ...typography, lineHeights: { ...lineHeights, [key]: v } })
   const setWeight = (base: string, n: number) => setTypography({ ...typography, weights: { ...weights, [base]: n } })
 
-  const platform = usePreviewPlatform()
+  const platform = usePreviewViewport()
   const used = useMemo(
-    () => (platform ? typePrimitivesForViewport(typography.roles, platform.previewPlatform) : null),
+    () => (platform ? typePrimitivesForViewport(typography.roles, platform.previewViewport) : null),
     [platform, typography.roles],
   )
   const q = query.trim().toLowerCase()
@@ -284,7 +308,9 @@ export default function Step4_Typography({
         <TableHeader valueLabel="Family" stacked={activeCategory === 'all' && !lead} />
         {rows.map((r, i) => {
           const family = r.role === 'display' ? displayFont : bodyFont
-          const modified = family !== 'Inter'
+          const modified = onNative
+            ? platformAxis[r.role === 'display' ? 'headingFontFamily' : 'fontFamily'][previewPlatform] !== undefined
+            : family !== 'Inter'
           return (
             <div key={r.key} className={rowClass(i, hit(used ? used.families.has(r.role) : false))}>
               <div className={nameCell}>
@@ -318,7 +344,7 @@ export default function Step4_Typography({
               <div className={previewCell}>
                 <span className="text-fg whitespace-nowrap text-[18px]" style={{ fontFamily: fontStack(family) }}>Ag</span>
               </div>
-              <ResetButton modified={modified} onReset={() => setFamily(r.role, 'Inter')} title="Reset to Inter" />
+              <ResetButton modified={modified} onReset={() => resetFamily(r.role)} title={`Reset to ${familyDefault(r.role)}`} />
             </div>
           )
         })}

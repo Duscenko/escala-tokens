@@ -170,7 +170,7 @@ function Ranges({
 }: {
   t: PreviewTokens
   bps: Breakpoint[]
-  /** Min-width of the platform cut currently selected — accent-filled bar. */
+  /** Min-width of the viewport cut currently selected — accent-filled bar. */
   activeMin: number
 }) {
   const accent = t.brandSolid
@@ -297,7 +297,7 @@ export function GridPreview({
   const found = breakpointsOf(grid)
   const desktopMin = breakpointRolePx(t.breakpointRoles, bpsMap, 'desktop')
   const mobileMax = num(breakpointMobileMax(t.breakpointRoles, bpsMap), desktopMin - 1)
-  const platform = t.previewPlatform ?? 'desktop'
+  const platform = t.previewViewport ?? 'desktop'
   const tabletMin = breakpointRolePx(t.breakpointRoles, bpsMap, 'tablet')
   const liveFrame = frameOf(t, platform)
   const viewportPx = platform === 'mobile'

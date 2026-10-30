@@ -6,29 +6,35 @@ import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
+import { useDesignStore } from '../../store/useDesignStore'
+import { PLATFORM_LABELS, shipsNative, type Platform } from '../../lib/platformAxis'
 
-export type PreviewPlatformContextValue = {
-  previewPlatform: GridViewport
+export type PreviewViewportContextValue = {
+  previewViewport: GridViewport
   previewTheme: string
-  setPreviewPlatform: (platform: GridViewport) => void
+  setPreviewViewport: (viewport: GridViewport) => void
+  /** The second axis — web · ios · android. Only meaningful when the system
+   *  ships a native target; everything resolves as `web` otherwise. */
+  previewPlatform: Platform
+  setPreviewPlatform: (platform: Platform) => void
   onOpenTypeRole: (key: string) => void
   onOpenGridField: (key: keyof GridFrameAlias) => void
 }
 
-const PreviewPlatformContext = createContext<PreviewPlatformContextValue | null>(null)
+const PreviewViewportContext = createContext<PreviewViewportContextValue | null>(null)
 
-export function PreviewPlatformProvider({
+export function PreviewViewportProvider({
   value,
   children,
 }: {
-  value: PreviewPlatformContextValue
+  value: PreviewViewportContextValue
   children: ReactNode
 }) {
-  return <PreviewPlatformContext.Provider value={value}>{children}</PreviewPlatformContext.Provider>
+  return <PreviewViewportContext.Provider value={value}>{children}</PreviewViewportContext.Provider>
 }
 
-export function usePreviewPlatform() {
-  return useContext(PreviewPlatformContext)
+export function usePreviewViewport() {
+  return useContext(PreviewViewportContext)
 }
 
 function DesktopGlyph() {
@@ -61,7 +67,7 @@ function TabletGlyph() {
 /** Workspace platform — desktop / tablet / mobile. Session-only, same job as Light/Dark
  *  for appearance: Type, Grid and the live preview resolve against this cut. */
 /** Every viewport is open on every plan: Free ships Desktop, Tablet and Mobile
- *  too. The lock props stay on `PlatformSwitch` for a plan that ever limits one. */
+ *  too. The lock props stay on `ViewportSwitch` for a plan that ever limits one. */
 export function usePlanViewportLock(
   _value: GridViewport,
   _onChange: (platform: GridViewport) => void,
@@ -74,7 +80,7 @@ export function usePlanViewportLock(
   }
 }
 
-export function PlatformSwitch({
+export function ViewportSwitch({
   value,
   onChange,
   layout = 'compact',
@@ -99,7 +105,7 @@ export function PlatformSwitch({
     <div
       className={`flex h-8 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL} ${fill ? 'w-full' : 'flex-shrink-0'}`}
       role="group"
-      aria-label={t('Platform')}
+      aria-label={t('Viewport')}
       title={t('Choose which platform Type, Grid and the preview resolve against.')}
     >
       {options.map(({ id, label, Icon }) => {
@@ -128,20 +134,71 @@ export function PlatformSwitch({
   )
 }
 
-/** Platform cut only — the table and preview already show that recipe's values. */
-export function PlatformRail({
+/** Web · iOS · Android. Text segments, not glyphs: three OS names read
+ *  faster than three logos. Rendered only when the system ships a native
+ *  target (File & modes → Platforms), so a web system never sees it. */
+export function PlatformSwitch({
+  value,
+  onChange,
+  shipped,
+  layout = 'compact',
+}: {
+  value: Platform
+  onChange: (platform: Platform) => void
+  shipped: readonly Platform[]
+  layout?: 'compact' | 'fill'
+}) {
+  const { t } = useI18n()
+  const group = useId()
+  const fill = layout === 'fill'
+  return (
+    <div
+      className={`flex h-8 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL} ${fill ? 'w-full' : 'flex-shrink-0'}`}
+      role="group"
+      aria-label={t('Platform')}
+      title={t('Choose which platform body type, touch target and control radii resolve against.')}
+    >
+      {shipped.map((id) => {
+        const on = value === id
+        const label = PLATFORM_LABELS[id]
+        return (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={on}
+            aria-label={label}
+            title={label}
+            onClick={() => onChange(id)}
+            className={`relative flex h-7 items-center justify-center rounded-md px-1.5 text-caption font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              fill ? 'min-w-0 flex-1' : 'min-w-7'
+            } ${on ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE}`}
+          >
+            {on && <SegmentHighlight group={group} />}
+            <span className="relative">{fill ? label : label.slice(0, 1)}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Viewport cut, plus the platform cut when the system ships one — the
+ *  table and preview already show that recipe's values. */
+export function ViewportRail({
   collapsed,
 }: {
   collapsed: boolean
   /** @deprecated Ignored — guides were noise beside the live table. */
   guide?: 'type' | 'grid' | 'spacing'
 }) {
-  const ctx = usePreviewPlatform()
+  const ctx = usePreviewViewport()
   const { t } = useI18n()
   if (!ctx) return null
 
-  const { previewPlatform, setPreviewPlatform } = ctx
-  const { lockedIds, onLocked, dialog } = usePlanViewportLock(previewPlatform, setPreviewPlatform)
+  const { previewViewport, setPreviewViewport, previewPlatform, setPreviewPlatform } = ctx
+  const { lockedIds, onLocked, dialog } = usePlanViewportLock(previewViewport, setPreviewViewport)
+  const platformAxis = useDesignStore((st) => st.platformAxis)
+  const native = shipsNative(platformAxis)
 
   return (
     <section
@@ -150,18 +207,33 @@ export function PlatformRail({
     >
       {!collapsed && (
         <h2 id="variable-platform-heading" className="px-1 pb-2 text-ui font-semibold text-fg">
-          {t('Platform')}
+          {t('Viewport')}
         </h2>
       )}
       <div className={collapsed ? 'flex justify-center' : undefined}>
-        <PlatformSwitch
-          value={previewPlatform}
-          onChange={setPreviewPlatform}
+        <ViewportSwitch
+          value={previewViewport}
+          onChange={setPreviewViewport}
           layout={collapsed ? 'compact' : 'fill'}
           lockedIds={lockedIds}
           onLocked={onLocked}
         />
       </div>
+      {native && (
+        <>
+          {!collapsed && (
+            <h2 className="px-1 pb-2 pt-3 text-ui font-semibold text-fg">{t('Platform')}</h2>
+          )}
+          <div className={collapsed ? 'flex justify-center pt-2' : undefined}>
+            <PlatformSwitch
+              value={previewPlatform}
+              onChange={setPreviewPlatform}
+              shipped={platformAxis.shipped}
+              layout={collapsed ? 'compact' : 'fill'}
+            />
+          </div>
+        </>
+      )}
       {dialog}
     </section>
   )

@@ -208,7 +208,17 @@ describe('component briefs', () => {
     expect(darkPart).toContain('### Tokens by part')
     expect(darkPart).not.toContain('### Radius')
     expect(darkPart).not.toContain('### Dimension primitives')
-    expect(md.match(/### Radius \(/g)?.length).toBe(1)
+    expect(md).not.toContain('### Radius (')
+  })
+
+  it('with the brand payload, every part row names the Figma variable the plugin binds', () => {
+    const store = useDesignStore.getState()
+    const button = COMPONENTS.find((c) => c.key === 'Button')!
+    const json = generateTokenJSON() as unknown as TokenJSON
+    const md = agentContextMarkdown(button, '<Button />', resolvePreviewTokens(store, brand, 'light') as never, json)
+    expect(md).toContain('`Radius/role/action`')
+    expect(md).toContain('`Size/role/control`')
+    expect(md).not.toContain('not published')
   })
 })
 
@@ -455,6 +465,18 @@ describe('component-build ↔ recipes', () => {
         const layer = row.length === 6 ? row[1] : row[0]
         if (layer === '—') continue
         expect(layerNames.has(layer), `${key}: ${layer}`).toBe(true)
+      }
+    }
+  })
+
+  it('both component files carry the catalogue\'s own "when to use", word for word', async () => {
+    const { buildDesignSkillFiles, componentBuildPath, componentReactPath } = await import('../agentBundle/productDesignSkills')
+    const files = buildDesignSkillFiles(productJson([...COMPONENT_KEYS]))
+    for (const def of COMPONENTS) {
+      for (const path of [componentBuildPath(def.key), componentReactPath(def.key)]) {
+        const md = files.find((f) => f.path === path)?.text
+        if (!md) continue
+        expect(md, path).toContain(`## When to use\n\n${def.usage.trim()}\n`)
       }
     }
   })

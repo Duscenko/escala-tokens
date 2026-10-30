@@ -34,7 +34,7 @@ export interface VariableRow {
   onChange: (v: string) => void
   onReset: () => void
   preview?: ReactNode
-  /** When set, the row is in (true) or out (false) of the previewed platform cut. */
+  /** When set, the row is in (true) or out (false) of the previewed viewport cut. */
   match?: boolean
 }
 

@@ -11,7 +11,7 @@ import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
 import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
 import { RADIUS_GROUPS } from '../layoutTokens'
 import { recipeCss, recipeCssVars } from '../recipeStyles'
-import { componentFileName, componentImportLine } from '../agentContext'
+import { componentFileName, componentImportLine } from '../componentFiles'
 import { SCREEN_PATTERNS } from './screenPatterns'
 import { mdCell } from '../utils.js'
 import {
@@ -146,6 +146,12 @@ ${index.join('\n')}
 `
 }
 
+/** The catalogue's own "when to use / when not" line, so an agent picks the
+ *  right component (Dialog or Sheet, Badge or Chip) before it builds one. */
+function whenToUse(def: { usage?: string } | undefined): string[] {
+  return def?.usage?.trim() ? ['## When to use', '', def.usage.trim(), ''] : []
+}
+
 export function componentBuildFile(json: TokenJSON, key: string): string {
   const recipe = COMPONENT_RECIPES[key]
   const def = COMPONENTS.find((c) => c.key === key)
@@ -180,6 +186,7 @@ export function componentBuildFile(json: TokenJSON, key: string): string {
     '',
     def?.description ?? '',
     '',
+    ...whenToUse(def),
     def?.figmaSets.length ? `Component sets: ${def.figmaSets.map((s) => `\`${s}\``).join(', ')}.` : 'Not in the Figma library yet: build it from this spec.',
     '',
     '## Variant properties',
@@ -423,6 +430,7 @@ export function componentReactFile(key: string): string {
     '',
     def?.description ?? '',
     '',
+    ...whenToUse(def),
     `File: \`components/ui/${componentFileName(key)}.tsx\` (shadcn skeleton).`,
     '',
     '```tsx',

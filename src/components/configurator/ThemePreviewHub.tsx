@@ -264,7 +264,7 @@ const DRAWER_GUTTER = 24
 const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
-  view, previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
+  view, previewTheme, previewViewport, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange, onOpenComponent,
 }: {
   /** Components view: a cover's ↗ opens that component's page. */
@@ -272,7 +272,7 @@ function ArtefactsView({
   /** Theme (the bento board) or Components (every component as a cover). */
   view: BoardView
   previewTheme: string
-  previewPlatform: GridViewport
+  previewViewport: GridViewport
   accentPreview: string | null
   stylePreview: StylePreview | null
   /** One appearance for every tile — the whole board is light or dark. */
@@ -304,7 +304,7 @@ function ArtefactsView({
   )
   // Artefacts follow the platform switch: desktop = masonry board at the
   // 12-col recipe; tablet/mobile = phone photographs at their frame.
-  const collagePlatform = previewPlatform
+  const collagePlatform = previewViewport
   const tokensByAppearance = useMemo(() => ({
     light: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'light', collagePlatform), accentPreview),
     dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark', collagePlatform), accentPreview),
@@ -361,7 +361,7 @@ function ArtefactsView({
           <InspectorModeProvider active={inspecting}>
             {view === 'theme' ? (
               <SystemCollage
-                layout={previewPlatform === 'desktop' ? 'board' : 'phones'}
+                layout={previewViewport === 'desktop' ? 'board' : 'phones'}
                 frameTokens={stageTokens}
                 tokensByAppearance={tokensByAppearance}
                 tileAppearances={tileAppearances}
@@ -433,7 +433,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewViewport = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, ship, onCreateTheme,
@@ -450,7 +450,7 @@ export default function ThemePreviewHub({
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** Workspace desktop / mobile cut — Type roles and Grid frames follow this. */
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   onPreviewPlatformChange?: (platform: GridViewport) => void
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
   stylePreview: StylePreview | null
@@ -581,7 +581,7 @@ export default function ThemePreviewHub({
   }, [activeFoundation])
   // The platform switch heads the whole quick-settings panel now, so the board
   // follows it on every row (radius and spacing step down per viewport too).
-  const boardPlatform: GridViewport = previewPlatform
+  const boardPlatform: GridViewport = previewViewport
   // Docs is the system, not the foundation the icon rail last lit. Closing
   // the tab clears the pick so the next open is the theme reference again.
   useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
@@ -705,7 +705,7 @@ export default function ThemePreviewHub({
           onRandomBoardAppearance={setRandomBoardAppearance}
           contrastOpen={contrastOpen}
           onContrastOpenChange={setContrastOpen}
-          previewPlatform={previewPlatform}
+          previewViewport={previewViewport}
           onPreviewPlatformChange={onPreviewPlatformChange}
           exploringRandom={exploringRandom}
           onExploringRandomEnd={onExploringRandomEnd}
@@ -877,7 +877,7 @@ export default function ThemePreviewHub({
                   <ArtefactsView
                     view={boardView}
                     previewTheme={previewTheme}
-                    previewPlatform={boardPlatform}
+                    previewViewport={boardPlatform}
                     accentPreview={accentPreview}
                     stylePreview={paintedPreview}
                     drawerOpen={quickEditOpen}
@@ -912,7 +912,7 @@ export default function ThemePreviewHub({
     <SemanticTokenDrawer
       previewTheme={previewTheme}
       previewAppearance={inspectedAppearance ?? effectiveBoardAppearance}
-      previewPlatform={boardPlatform}
+      previewViewport={boardPlatform}
       tokenId={surface === 'artefacts' ? editingToken : null}
       inspectedCss={inspectedCss}
       stylePreview={paintedPreview}

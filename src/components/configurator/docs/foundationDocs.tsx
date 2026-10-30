@@ -1037,7 +1037,7 @@ line-height: var(--text-label-line-height);
                   <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
                   {typeRolesInGroup(g.id).map((role) => {
                     const style = resolveTypeStyle(roles[role.key].desktop, c.typography)
-                    // One readout per platform cut; a role that never steps
+                    // One readout per viewport cut; a role that never steps
                     // reads as one line, the way the token behaves.
                     const cuts = TYPE_VIEWPORTS.map((vp) => {
                       const s = resolveTypeStyle(roles[role.key][vp], c.typography)

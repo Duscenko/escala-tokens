@@ -92,7 +92,7 @@ export interface PreviewTokens {
   strokeRoles?: Record<string, string>
   breakpointRoles?: Record<string, string>
   /** Workspace platform the preview is resolving Type / Grid recipes against. */
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   gridFrame?: GridFrameModes
   // Elevation ramp from Foundations · Shadow (xs–2xl CSS box-shadows).
   shadows?: Record<string, string>

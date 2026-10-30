@@ -17,9 +17,11 @@
 // is picked. Docs → Radius compares all three.
 
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
+import { useDesignStore } from '../../store/useDesignStore'
+import { PLATFORM_LABELS } from '../../lib/platformAxis'
 import DimensionSelect from '../ui/DimensionSelect'
 import VariableSelect from '../ui/VariableSelect'
-import { usePreviewPlatform } from './PlatformRail'
+import { usePreviewViewport } from './ViewportRail'
 import {
   RADIUS_RESPONSIVE,
   RADIUS_RESPONSIVE_STEPS,
@@ -139,9 +141,25 @@ export default function RadiusSemanticsTable({
   flashKey: string | null
   query: string
 }) {
-  const platformCtx = usePreviewPlatform()
-  const platform: GridViewport = platformCtx?.previewPlatform ?? 'desktop'
+  const platformCtx = usePreviewViewport()
+  const platform: GridViewport = platformCtx?.previewViewport ?? 'desktop'
   const onDesktop = platform === 'desktop'
+  // The OS cut: on iOS / Android a role reads its platform override at every
+  // viewport (the Figma alias points at the Platform collection), so the
+  // column becomes that OS and edits lib/platformAxis.radiusRoles.
+  const previewPlatform = platformCtx?.previewPlatform ?? 'web'
+  const platformAxis = useDesignStore((st) => st.platformAxis)
+  const setPlatformAxis = useDesignStore((st) => st.setPlatformAxis)
+  const onNative = previewPlatform !== 'web'
+  const nativeRoles = onNative ? (platformAxis.radiusRoles[previewPlatform] ?? {}) : {}
+  const setNative = (key: string, value: string | null) => {
+    if (!onNative) return
+    const next = { ...nativeRoles }
+    if (value === null) delete next[key]
+    else next[key] = value
+    setPlatformAxis({ radiusRoles: { ...platformAxis.radiusRoles, [previewPlatform]: next } })
+  }
+  const columnLabel = onNative ? PLATFORM_LABELS[previewPlatform] : VP_LABEL[platform]
   const pxOf = (step: string) => resolveLayoutRole('radius', { probe: step }, radius, 'probe', '')
 
   if (collection === 'responsive') {
@@ -154,7 +172,7 @@ export default function RadiusSemanticsTable({
         <div className={tableHeaderClass(TOKEN_GRID)}>
           <span className={`${TABLE_HEAD_CELL} pl-4`}>Token</span>
           <span className={`${TABLE_HEAD_CELL} px-3`}>Used by</span>
-          <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{VP_LABEL[platform]}</span>
+          <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{columnLabel}</span>
           <span aria-hidden />
         </div>
         {tokens.length === 0 ? (
@@ -200,19 +218,22 @@ export default function RadiusSemanticsTable({
       <div className={tableHeaderClass(ROLE_GRID)}>
         <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
         <span className={`${TABLE_HEAD_CELL} px-3`}>Token</span>
-        <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{VP_LABEL[platform]}</span>
+        <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{columnLabel}</span>
         <span aria-hidden />
       </div>
       {rows.length === 0 ? (
         <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{query}”.</div>
       ) : rows.map((role, i) => {
         const step = roles[role.key]
-        const at = radiusRoleAt(roles, viewports, role.key, platform)
-        const vp = platform === 'desktop' ? null : platform
-        const overridden = vp ? viewports?.[vp]?.[role.key] !== undefined : false
-        const modified = vp ? overridden : !layoutRoleIsDefault('radius', role.key, step, radius)
+        const nativeStep = onNative ? nativeRoles[role.key] : undefined
+        const at = nativeStep ?? radiusRoleAt(roles, viewports, role.key, platform)
+        const vp = onNative ? null : platform === 'desktop' ? null : platform
+        const overridden = onNative ? nativeStep !== undefined : vp ? viewports?.[vp]?.[role.key] !== undefined : false
+        const modified = onNative ? overridden : vp ? overridden : !layoutRoleIsDefault('radius', role.key, step, radius)
         const follows = (RADIUS_RESPONSIVE_STEPS as readonly string[]).includes(step)
-        const note = vp
+        const note = onNative
+          ? (overridden ? `Set for ${columnLabel} — Web is ${step}` : `Follows Web: ${step}`)
+          : vp
           ? (overridden ? `Set for ${VP_LABEL[platform]} — Desktop is ${step}` : at === step ? 'Follows Desktop' : `Follows Desktop: ${step} ↓ ${rungsDown(step, at)}`)
           : (follows ? 'Steps down on smaller screens' : 'Pinned — same on every viewport unless set per viewport')
         return (
@@ -231,12 +252,16 @@ export default function RadiusSemanticsTable({
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
               <RadiusTokenSelect
                 ariaLabel={`${role.key} token (${VP_LABEL[platform]})`}
-                platform={platform}
+                platform={onNative ? 'desktop' : platform}
                 desktopStep={step}
                 at={at}
                 pxOf={pxOf}
                 onPick={(token) => {
-                  if (vp) {
+                  if (onNative) {
+                    // Web's own token clears the override; anything else is
+                    // this OS's value at every viewport.
+                    setNative(role.key, token === step ? null : token)
+                  } else if (vp) {
                     // The followed token clears the override; any other stores
                     // that token's step on this viewport.
                     const value = token === step ? null : RADIUS_RESPONSIVE[token][vp]
@@ -250,11 +275,13 @@ export default function RadiusSemanticsTable({
             <Cell step={at} px={pxOf(at)} accent={accent} from={vp && !overridden ? step : undefined} />
             <button
               type="button"
-              onClick={() => vp
+              onClick={() => onNative
+                ? setNative(role.key, null)
+                : vp
                 ? onViewports(setRadiusRoleViewport(viewports, roles, role.key, vp, null))
                 : onRoles({ ...roles, [role.key]: role.primitive })}
               disabled={!modified}
-              title={vp ? `Follow Desktop on ${VP_LABEL[platform]}` : 'Reset to standard'}
+              title={onNative ? `Follow Web on ${columnLabel}` : vp ? `Follow Desktop on ${VP_LABEL[platform]}` : 'Reset to standard'}
               aria-label={vp ? `Reset ${role.label} on ${VP_LABEL[platform]}` : `Reset ${role.label}`}
               className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
             >

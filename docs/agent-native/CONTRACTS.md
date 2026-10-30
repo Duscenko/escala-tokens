@@ -36,6 +36,7 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 | 5 | `opacity` **removed** (alpha lives in `colors.primitiveAlpha`) | Older plugin already guards `if (tokens.opacity)` |
 | 6 | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame`. Configurator also emits `borders.width` as a copy of `stroke` so a v5 plugin still creates the Border collection. Plugin v6 imports the role maps as `role/*` aliases (and one text style per type role). | Plugin v5 warns, imports colors/primitives, ignores role maps |
 | 7 | Semantic architecture colors may contain 8-digit alpha hex. Additive `foundationsByTheme` resolves the existing foundation collections for every library theme; root foundation fields remain the compatibility fallback. | Plugin imports `foundationsByTheme` as modes on Typography / Spacing / Radius / Size / Selector / Border / Grid whenever a theme's resolved map **differs from the root** (or themes differ from each other). A Theme Preview typeface edit that only patches `themeFoundations` must still reach Figma — comparing themes only to each other silently dropped same-override / single-theme kits. |
+| 7 (additive) | `platforms` + `platform` — the Platform axis (web · ios · android), only emitted when a system ships a native target. `platform.*.web` always mirrors the root field; body/control type roles, body family, touch target and control radii may differ per OS. Viewports stay as they are; the two axes never combine. | Plugin ≤ 0.30 ignores both keys and imports a web file. A plugin that understands them adds a `Platform` collection with one mode per platform; `role/*` in Typography aliases it for body/control roles. |
 
 Rules:
 
@@ -102,6 +103,7 @@ Always emit when present in the store:
 - `dimensions` (the Dimension primitives, named by value) and `dimensionRefs` (category → step → `{dimension.N}`), also per theme in `foundationsByTheme.<theme>.dimensionRefs` — additive, no bump
 - `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `selector`, `selectorRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
 - `foundationsByTheme` — per-library-theme copies of the foundation maps above; the plugin materializes differing themes as modes on those collections
+- `platforms`, `platform` — only when `platformAxis.shipped` has a native target (also per theme under `foundationsByTheme.<theme>`). Never emit them for a web-only system: that payload must stay byte-identical.
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection
 - `icons` (library + `aiSource` + `custom`)
 - `atoms` (component selection/spec payload; the plugin's default Overview is fixed at 9 types, while its explicit Full catalogue mode renders all 58 catalogue types)

@@ -44,6 +44,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 ```
 src/store/useDesignStore.ts     state + persist
 src/lib/tokenGenerator.ts       store → Escala JSON
+src/lib/platformAxis.ts         optional web · ios · android axis (pure; web mirrors root)
 src/lib/exportWizard.ts         destinations: escala | w3c | agent-bundle (skill nested)
 src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store)
 src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)

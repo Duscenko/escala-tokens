@@ -45,6 +45,17 @@ export interface RadiusRoleViewportsJSON {
 }
 
 export interface TokenJSON {
+  /** Platform axis (web · ios · android), additive — absent on a web-only
+   *  system. Canonical order; the first is the plugin's default mode. */
+  platforms?: ('web' | 'ios' | 'android')[]
+  /** Per-OS values of the foundations an OS owns. `web` mirrors the root. */
+  platform?: {
+    fontFamily: Record<string, string>
+    headingFontFamily: Record<string, string>
+    typeRoles: Record<string, Record<string, TypeRoleAlias>>
+    touchTarget: Record<string, string>
+    radiusRoles: Record<string, Record<string, string>>
+  }
   schemaVersion?: number
   project: string
   colors: {

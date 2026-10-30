@@ -30,16 +30,16 @@ export default function LayoutHub({
   railCollapsed = false,
   previewTheme,
   previewAppearance,
-  previewPlatform,
+  previewViewport,
   query,
 }: {
   family: LayoutFamily
-  Semantics?: ComponentType<{ family?: LayoutFamily; tabBar?: ReactNode; query?: string; revealRole?: { key: string; seq: number } | null; railCollapsed?: boolean; previewTheme?: string; previewAppearance?: ThemeAppearance; previewPlatform?: GridViewport }>
+  Semantics?: ComponentType<{ family?: LayoutFamily; tabBar?: ReactNode; query?: string; revealRole?: { key: string; seq: number } | null; railCollapsed?: boolean; previewTheme?: string; previewAppearance?: ThemeAppearance; previewViewport?: GridViewport }>
   revealRole?: { key: string; seq: number } | null
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
   /** Workspace "Search tokens" string — threaded down so the semantic list
    *  drops its own search + heading bar. */
   query?: string
@@ -48,7 +48,7 @@ export default function LayoutHub({
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-1 min-h-0">
-        <Sem family={family} tabBar={<LayoutTabHeading mode="semantics" />} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
+        <Sem family={family} tabBar={<LayoutTabHeading mode="semantics" />} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewViewport={previewViewport} />
       </div>
     </div>
   )

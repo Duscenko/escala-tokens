@@ -77,9 +77,16 @@ export function createRepo(token: string, name: string, description: string): Pr
   })
 }
 
-// Base64 for unicode content (btoa alone throws on non-Latin-1).
+// Base64 for unicode content (btoa alone throws on non-Latin-1). The bytes go
+// through fromCharCode in chunks: spreading a whole large file as arguments
+// overflows the call stack.
 function toBase64(str: string): string {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(str)))
+  const bytes = new TextEncoder().encode(str)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000) as unknown as number[])
+  }
+  return btoa(bin)
 }
 
 /** Creates or updates one file via the Contents API (fetches the sha first). */
@@ -127,6 +134,9 @@ function isEmptyRepoError(e: unknown): boolean {
  * does not carry are deleted in the same commit — those folders mirror the
  * package. An empty repo (no branch yet) falls back to `pushFiles`, which
  * creates it.
+ *
+ * Resolves to the new commit's sha, or null when nothing changed (or the
+ * empty-repo fallback wrote the files one by one).
  */
 export async function commitFiles(
   token: string,
@@ -134,14 +144,15 @@ export async function commitFiles(
   files: RepoFile[],
   message: string,
   prune: string[] = [],
-): Promise<void> {
+): Promise<string | null> {
   const { default_branch: branch } = await gh<GitHubRepo>(token, `/repos/${repo}`)
   let head: string
   try {
     head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${branch}`)).object.sha
   } catch (e) {
     if (!isEmptyRepoError(e)) throw e
-    return pushFiles(token, repo, files, message)
+    await pushFiles(token, repo, files, message)
+    return null
   }
   const base = (await gh<{ tree: { sha: string } }>(token, `/repos/${repo}/git/commits/${head}`)).tree.sha
   const keep = new Set(files.map((f) => f.path))
@@ -160,7 +171,7 @@ export async function commitFiles(
     method: 'POST',
     body: JSON.stringify({ base_tree: base, tree: entries }),
   })
-  if (tree.sha === base) return // nothing changed: no empty commit
+  if (tree.sha === base) return null // nothing changed: no empty commit
   const commit = await gh<{ sha: string }>(token, `/repos/${repo}/git/commits`, {
     method: 'POST',
     body: JSON.stringify({ message, tree: tree.sha, parents: [head] }),
@@ -169,6 +180,23 @@ export async function commitFiles(
     method: 'PATCH',
     body: JSON.stringify({ sha: commit.sha }),
   })
+  return commit.sha
+}
+
+/**
+ * Every file path on the default branch, or null when the repo has no commit
+ * yet. One request (recursive tree) — what a review screen needs to say which
+ * files a save adds and which it updates.
+ */
+export async function listRepoPaths(token: string, repo: string): Promise<Set<string> | null> {
+  const { default_branch: branch } = await gh<GitHubRepo>(token, `/repos/${repo}`)
+  try {
+    const tree = await gh<{ tree: { path: string; type: string }[] }>(token, `/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`)
+    return new Set(tree.tree.filter((t) => t.type === 'blob').map((t) => t.path))
+  } catch (e) {
+    if (isEmptyRepoError(e)) return null
+    throw e
+  }
 }
 
 /**

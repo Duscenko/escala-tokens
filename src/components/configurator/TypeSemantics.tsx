@@ -1,4 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { usePreviewViewport } from './ViewportRail'
+import { useDesignStore } from '../../store/useDesignStore'
+import { PLATFORM_LABELS, roleFollowsPlatform, typographyForPlatform } from '../../lib/platformAxis'
 import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack } from '../../lib/fonts'
@@ -107,13 +110,18 @@ function ViewportCell({
   viewport,
   alias,
   onChange,
+  disabled = false,
+  disabledTitle,
 }: {
   roleKey: string
-  viewport: TypeViewport
+  viewport: string
   alias: TypeAlias
   onChange: (next: TypeAlias) => void
+  /** A display/heading row on a native platform: it follows Viewport. */
+  disabled?: boolean
+  disabledTitle?: string
 }) {
-  const familyLocked = roleKey !== 'display'
+  const familyLocked = roleKey !== 'display' || disabled
   return (
     <div className="flex items-center gap-1 px-2.5 py-2 border-r border-line min-w-0">
       <AliasSelect
@@ -121,6 +129,8 @@ function ViewportCell({
         minWidth="7.75rem"
         value={alias.size}
         options={SIZE_OPTIONS}
+        disabled={disabled}
+        title={disabled ? disabledTitle : undefined}
         onChange={(size) => onChange({ ...alias, size })}
         ariaLabel={`${roleKey} ${viewport} size`}
       />
@@ -129,6 +139,8 @@ function ViewportCell({
         minWidth="6.5rem"
         value={alias.weight}
         options={WEIGHT_OPTIONS}
+        disabled={disabled}
+        title={disabled ? disabledTitle : undefined}
         onChange={(weight) => onChange({ ...alias, weight })}
         ariaLabel={`${roleKey} ${viewport} weight`}
       />
@@ -137,7 +149,7 @@ function ViewportCell({
         value={alias.family}
         options={FAMILY_OPTIONS}
         disabled={familyLocked}
-        title={familyLocked ? 'Family is set on Display. Headings, body and controls follow the body stack.' : undefined}
+        title={disabled ? disabledTitle : familyLocked ? 'Family is set on Display. Headings, body and controls follow the body stack.' : undefined}
         onChange={(family) => onChange({ ...alias, family })}
         ariaLabel={`${roleKey} ${viewport} family`}
       />
@@ -160,7 +172,7 @@ export default function TypeSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
-  previewPlatform = 'desktop',
+  previewViewport = 'desktop',
 }: {
   tabBar?: ReactNode
   /** Workspace search. When passed, the inner 52px bar (heading + search)
@@ -172,7 +184,7 @@ export default function TypeSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
-  previewPlatform?: GridViewport
+  previewViewport?: GridViewport
 }) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
   const typography = foundations.typography
@@ -182,9 +194,18 @@ export default function TypeSemantics({
   const [localQuery, setLocalQuery] = useState('')
   const [flashKey, setFlashKey] = useState<string | null>(null)
   const { t } = useI18n()
-  const typeViewport = asTypeViewport(previewPlatform)
-  const platformLabel =
-    previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
+  const typeViewport = asTypeViewport(previewViewport)
+  // The Platform cut from the rail. On a native platform the body/control
+  // rows edit that OS's cut (system-wide, lib/platformAxis) while display and
+  // heading rows keep following the viewport — one owner per value.
+  const previewPlatform = usePreviewViewport()?.previewPlatform ?? 'web'
+  const platformAxis = useDesignStore((st) => st.platformAxis)
+  const setPlatformAxis = useDesignStore((st) => st.setPlatformAxis)
+  const onNative = previewPlatform !== 'web'
+  const viewportLabel =
+    previewViewport === 'mobile' ? t('Mobile') : previewViewport === 'tablet' ? t('Tablet') : t('Desktop')
+  const platformLabel = onNative ? PLATFORM_LABELS[previewPlatform] : viewportLabel
+  const followsViewportTitle = `${t('Follows Viewport')} — ${viewportLabel}`
   const controlled = externalQuery !== undefined
   const query = controlled ? externalQuery : localQuery
 
@@ -212,12 +233,24 @@ export default function TypeSemantics({
   }, [revealRole?.key, revealRole?.seq, controlled])
 
   function patchRole(key: string, viewport: TypeViewport, alias: TypeAlias) {
+    if (onNative && roleFollowsPlatform(key)) {
+      setPlatformAxis({ typeRoles: { ...platformAxis.typeRoles, [key]: { ...platformAxis.typeRoles[key], [previewPlatform]: alias } } })
+      return
+    }
     const current = roles[key]
     const next: TypeRoleModes = { ...current, [viewport]: alias }
     setTypography({ ...typography, roles: { ...roles, [key]: next } })
   }
 
   function resetRole(key: string) {
+    if (onNative && roleFollowsPlatform(key)) {
+      const { [previewPlatform]: _dropped, ...rest } = platformAxis.typeRoles[key] ?? {}
+      const typeRoles = { ...platformAxis.typeRoles }
+      if (Object.keys(rest).length) typeRoles[key] = rest
+      else delete typeRoles[key]
+      setPlatformAxis({ typeRoles })
+      return
+    }
     const spec = TYPE_ROLES.find((r) => r.key === key)
     if (!spec) return
     const current = roles[key]
@@ -292,9 +325,14 @@ export default function TypeSemantics({
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{query}”.</div>
               ) : rows.map((role, i) => {
                 const modes = roles[role.key]
-                const alias = modes[typeViewport]
-                const modified = !aliasesEqual(alias, role[typeViewport])
-                const style = resolveTypeStyle(alias, typography)
+                // On a native platform a body/control role shows its OS cut
+                // (or the viewport cut it falls back to); display and heading
+                // rows show the viewport cut, read-only, with the reason.
+                const platformOwned = onNative && roleFollowsPlatform(role.key)
+                const native = platformOwned ? platformAxis.typeRoles[role.key]?.[previewPlatform] : undefined
+                const alias = native ?? modes[typeViewport]
+                const modified = platformOwned ? !!native : !onNative && !aliasesEqual(alias, role[typeViewport])
+                const style = resolveTypeStyle(alias, typographyForPlatform(typography, platformAxis, previewPlatform))
                 return (
                   <div
                     key={role.key}
@@ -306,12 +344,16 @@ export default function TypeSemantics({
                         <code className="font-mono text-body text-fg-muted truncate">text-{role.key}</code>
                         {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
                       </span>
-                      <span className="text-caption text-fg-faint truncate">{role.description}</span>
+                      <span className="text-caption text-fg-faint truncate">
+                        {onNative ? (platformOwned ? (native ? `${t('Set for')} ${PLATFORM_LABELS[previewPlatform]}` : `${t('Follows')} ${viewportLabel}`) : followsViewportTitle) : role.description}
+                      </span>
                     </div>
                     <ViewportCell
                       roleKey={role.key}
-                      viewport={typeViewport}
+                      viewport={onNative ? previewPlatform : typeViewport}
                       alias={alias}
+                      disabled={onNative && !platformOwned}
+                      disabledTitle={followsViewportTitle}
                       onChange={(next) => patchRole(role.key, typeViewport, next)}
                     />
                     <div className="flex flex-col justify-center gap-1 px-3 py-2 border-r border-line min-w-0 overflow-hidden">
@@ -339,7 +381,7 @@ export default function TypeSemantics({
                       type="button"
                       onClick={() => resetRole(role.key)}
                       disabled={!modified}
-                      title="Reset to standard"
+                      title={platformOwned ? `${t('Follow')} ${viewportLabel} ${t('on')} ${PLATFORM_LABELS[previewPlatform]}` : 'Reset to standard'}
                       aria-label={`Reset ${role.label}`}
                       className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
                     >

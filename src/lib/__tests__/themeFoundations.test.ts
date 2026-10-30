@@ -17,10 +17,10 @@ describe('theme foundation overrides', () => {
     expect(resolvePreviewTokens(state, 'dark').typography.fontFamily).toBe(state.typography.fontFamily)
   })
 
-  it('stamps the session previewPlatform onto resolved tokens', () => {
+  it('stamps the session previewViewport onto resolved tokens', () => {
     const state = useDesignStore.getState()
-    expect(resolvePreviewTokens(state, 'light').previewPlatform).toBe('desktop')
-    expect(resolvePreviewTokens(state, 'light', 'light', 'mobile').previewPlatform).toBe('mobile')
+    expect(resolvePreviewTokens(state, 'light').previewViewport).toBe('desktop')
+    expect(resolvePreviewTokens(state, 'light', 'light', 'mobile').previewViewport).toBe('mobile')
   })
 
   it('nestedRadiusOf steps a default alert down to Fields inside a default card', () => {
