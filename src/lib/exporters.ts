@@ -162,12 +162,20 @@ export function buildCSS(
     .sort(([a], [b]) => Number(a) - Number(b))
     .forEach(([k, v]) => lines.push(`  --color-white-a-${toneLabel(colorNaming, Number(k))}: ${v};`))
 
+  // The flat catalogue and the Categorical roles share a namespace, and four
+  // names exist in both (content-primary, content-inverse, content-disabled,
+  // border-strong). The Categorical line always came later and won, so the
+  // flat one only made the file contradict itself — and a cut or an agent
+  // reading the first match saw a value no component renders. Roles own it.
+  const roleLines = categoricalRoleLines(store)
+  const roleNames = new Set(Object.values(roleLines).flat().map((line) => line.trim().split(':')[0]))
+  const flatVar = (k: string) => `--color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`
+
   lines.push(`\n  /* Semantic tokens — ${rootKind} */`)
   Object.entries(semanticTokens).forEach(([k, v]) => {
-    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, rootKind)};`)
+    if (v && !roleNames.has(flatVar(k))) lines.push(`  ${flatVar(k)}: ${panelValue(k, v, rootKind)};`)
   })
 
-  const roleLines = categoricalRoleLines(store)
   if (roleLines[rootKey]?.length) {
     lines.push(`\n  /* Semantic roles (Categorical) — ${rootKind}. Components bind these. */`)
     lines.push(...roleLines[rootKey])
@@ -297,7 +305,7 @@ export function buildCSS(
   themeOrder.forEach((theme) => {
     const hasFoundationOverride = Boolean(store.themeFoundations?.[theme])
     if (theme === rootKey && !hasFoundationOverride) return
-    const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
+    const entries = Object.entries(themes[theme] ?? {}).filter(([k, v]) => v && !roleNames.has(flatVar(k)))
     const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
     const foundations = resolveThemeFoundations(store, theme)
     // A dark-kind theme also re-points the gradients that carry a dark
@@ -331,7 +339,7 @@ export function buildCSS(
           if (foundations.panelBackground === 'translucent') next = withAlpha(v, 0.7)
           else if (foundations.panelBackground === 'page' && kind === 'light') next = pageBackground
         }
-        lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${next};`)
+        lines.push(`  ${flatVar(k)}: ${next};`)
       })
     }
     if (themeRoles.length) {

@@ -265,6 +265,31 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
 const sortedEntries = (o: Record<string, string>) =>
   Object.entries(o).sort(([a], [b]) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b))
 
+/** The semantic colours one theme column ships, by CSS name: the flat
+ *  catalogue, then the Categorical roles components bind — the same pair, in
+ *  the same order, `buildCSS` writes, read off the same `generateTokenJSON`.
+ *  Four names exist in both (content-primary, content-inverse,
+ *  content-disabled, border-strong); the role owns them, as in variables.css. */
+function semanticColorEntries(store: Store, column: string): [string, string][] {
+  const flat = Object.entries(store.themes[column] ?? {}).filter(([, v]) => v) as [string, string][]
+  if (store.semanticArchitecture !== 'categorical') return flat
+  let tokens: Record<string, Record<string, Record<string, string>>> | undefined
+  try {
+    tokens = (generateTokenJSON(store).colors as { architecture?: { tokens?: typeof tokens } }).architecture?.tokens
+  } catch {
+    return flat
+  }
+  const roles: [string, string][] = []
+  for (const [group, byRole] of Object.entries(tokens ?? {})) {
+    for (const [role, byTheme] of Object.entries(byRole)) {
+      const value = byTheme[column]
+      if (value && !value.startsWith('{')) roles.push([`${group}-${role.replace(/\./g, '-')}`, value])
+    }
+  }
+  const owned = new Set(roles.map(([name]) => name))
+  return [...flat.filter(([name]) => !owned.has(name)), ...roles]
+}
+
 // Simple key→value sections share one code path.
 //
 // `extra` is a SECOND primitive ramp shipping under the same section. Sizes
@@ -304,7 +329,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     })
     if (opts.includeSemantics !== false) {
       lines.push('/* Semantic — light */')
-      Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) lines.push(`--color-${k}: ${formatColor(v, cf)};`) })
+      semanticColorEntries(store, 'light').forEach(([k, v]) => lines.push(`--color-${k}: ${formatColor(v, cf)};`))
     }
     return lines
   }
@@ -448,8 +473,8 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     })
     if (opts.includeSemantics !== false) {
       const themeKey = opts.modes?.[0]
-      const theme = (themeKey ? store.themes[themeKey] : null) ?? store.themes.light ?? {}
-      Object.entries(theme).forEach(([k, v]) => { if (v) colors[k] = formatColor(v, cf) })
+      const column = themeKey && store.themes[themeKey] ? themeKey : 'light'
+      semanticColorEntries(store, column).forEach(([k, v]) => { colors[k] = formatColor(v, cf) })
     }
     return { colors }
   }

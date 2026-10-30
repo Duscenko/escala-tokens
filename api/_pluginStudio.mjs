@@ -13008,17 +13008,20 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
     info: { key: "info", hex: s.infoColor }
   };
   const eq = (a2, b) => a2.toLowerCase() === b.toLowerCase();
+  const sameRamp = (a2, b) => !!a2 && Object.keys(b).length > 0 && Object.keys(a2).length === Object.keys(b).length && Object.entries(b).every(([tone, hex]) => eq(a2[Number(tone)] ?? "", hex));
+  const onSystemPages = !pages || eq(pages.light, s.pageBackground) && eq(pages.dark, s.darkBackground);
   try {
     const taken = new Set(s.customColors.map((c2) => c2.key));
     const refs = {};
     for (const slot of FAMILY_SLOTS) {
       const slotHex = chosen[slot];
       const g = globals[slot];
-      if (eq(slotHex, g.hex)) {
+      if (eq(slotHex, g.hex) && onSystemPages) {
         refs[slot] = g.key;
         continue;
       }
-      const existing = s.customColors.find((c2) => eq(c2.base, slotHex));
+      const ramps = scalesForSlot(slot, slotHex, s, neutralTint, pages, rampShift);
+      const existing = s.customColors.find((c2) => eq(c2.base, slotHex) && sameRamp(c2.scale, ramps.scale) && sameRamp(c2.darkScale, ramps.darkScale));
       if (existing) {
         refs[slot] = existing.key;
         continue;
@@ -13029,7 +13032,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
         key: familyKey,
         label: titleCaseKey(familyKey),
         base: slotHex,
-        ...scalesForSlot(slot, slotHex, s, neutralTint, pages, rampShift)
+        ...ramps
       });
       refs[slot] = familyKey;
     }
