@@ -32,7 +32,7 @@ import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, us
 import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
-import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorHeaderPortal, InspectorPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
+import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorPortal, InspectorSidePortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
 import ShipPanel, { type ShipKind } from '../components/configurator/ShipPanel'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
@@ -952,6 +952,7 @@ export default function Configurator() {
   const [componentsSlot, setComponentsSlot] = useState<HTMLElement | null>(null)
   const [inspectorHeaderSlot, setInspectorHeaderSlot] = useState<HTMLElement | null>(null)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
+  const [inspectorSideSlot, setInspectorSideSlot] = useState<HTMLElement | null>(null)
     const surface = incomingPlace?.surface ?? 'artefacts'
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
     return surface
@@ -2713,7 +2714,7 @@ export default function Configurator() {
         <div
           className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
-          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : componentsCanvas ? componentsSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null}>
+          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : componentsCanvas ? componentsSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null} sideSlot={themesCanvas && !homePage ? inspectorSideSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {/* Home has no rail: the foundations belong to a theme being edited, and the
               way HOME itself is reached is the theme avatar in the top bar. */}
@@ -2726,10 +2727,11 @@ export default function Configurator() {
           )}
           <div className="contents" style={canvasAccentStyle}>
           {themesCanvas && navRail}
-          {/* Variables: which TABLE is open. Same strip, same band as the
-              Overview's editions, which the quick panel portals in itself. */}
+          {/* Variables: which TABLE is open. Eleven foundations did not fit the
+              inspector's top band, so they run down its left edge, one icon per
+              row, beside the Collections and Groups they switch. */}
           {foundationCanvas && (
-            <InspectorHeaderPortal>
+            <InspectorSidePortal>
               <FoundationSwitchStrip
                 ariaLabel="Variable foundations"
                 items={[...VARIABLE_FOUNDATIONS, ...FOUNDATIONS.filter((foundation) => ['shadow', 'icons'].includes(foundation.key))].map((foundation) => ({
@@ -2737,10 +2739,11 @@ export default function Configurator() {
                   label: t(foundation.short),
                   icon: foundation.key === 'dimensions' ? <foundation.Icon /> : undefined,
                 }))}
+                variant="rail"
                 current={activeFoundation}
                 onSelect={selectWorkspaceFoundation}
               />
-            </InspectorHeaderPortal>
+            </InspectorSidePortal>
           )}
           {/* Center editor */}
           {/* On the Generator the centre is a CARD: your system, painted in the
@@ -3118,6 +3121,7 @@ export default function Configurator() {
               The threshold is an EXPLICIT `min-[1180px]:`, not `xl:`. Tailwind's
               breakpoints are rem-based and `:root` sets `font: 18px/…`, so `xl`
               resolves to 80rem = **1440px** here, not the 1280 the utility name
+              onSideSlot={setInspectorSideSlot}
               implies. That hid the panel on every window below 1440 — including a
               16" MacBook Pro on any scaled resolution under 1512, or full-screen
               with the window not maximised — and the live specimen is half the

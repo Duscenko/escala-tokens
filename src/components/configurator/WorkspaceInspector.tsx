@@ -18,22 +18,30 @@ import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 // chrome's.
 
 export const INSPECTOR_WIDTH = 288
+/** The left-edge column (`InspectorSidePortal`). The inspector grows by it
+ *  while it is filled, so the panel beside it keeps its full 288px. */
+const INSPECTOR_SIDE_WIDTH = 48
 /** Stable hook for things docked against the column (ThemePanel). */
 export const INSPECTOR_ID = 'workspace-inspector'
 
 const SlotContext = createContext<HTMLElement | null>(null)
 const HeaderSlotContext = createContext<HTMLElement | null>(null)
+const SideSlotContext = createContext<HTMLElement | null>(null)
 
-export function InspectorSlotProvider({ slot, headerSlot = null, children }: {
+export function InspectorSlotProvider({ slot, headerSlot = null, sideSlot = null, children }: {
   slot: HTMLElement | null
   /** The band above the panel slot. A panel embedded outside the inspector
    *  (the create studio) passes null and keeps its header inline. */
   headerSlot?: HTMLElement | null
+  /** The column down the inspector's left edge (Variables' foundations). */
+  sideSlot?: HTMLElement | null
   children: ReactNode
 }) {
   return (
     <SlotContext.Provider value={slot}>
-      <HeaderSlotContext.Provider value={headerSlot}>{children}</HeaderSlotContext.Provider>
+      <HeaderSlotContext.Provider value={headerSlot}>
+        <SideSlotContext.Provider value={sideSlot}>{children}</SideSlotContext.Provider>
+      </HeaderSlotContext.Provider>
     </SlotContext.Provider>
   )
 }
@@ -56,6 +64,15 @@ export function InspectorHeaderPortal({ children }: { children: ReactNode }) {
   return createPortal(children, slot)
 }
 
+/** Renders `children` down the inspector's left edge — a vertical switch
+ *  beside the panel it drives (Blender's Properties tabs). Inline when there
+ *  is no inspector. */
+export function InspectorSidePortal({ children }: { children: ReactNode }) {
+  const slot = useContext(SideSlotContext)
+  if (!slot) return <>{children}</>
+  return createPortal(children, slot)
+}
+
 /** True when an inspector is mounted, i.e. an `InspectorPortal` rendered by
  *  the caller lands in it. A panel then fills the column's width and drops its
  *  own collapse and border — the column owns both. */
@@ -74,11 +91,13 @@ export function InspectorPortal({ children }: { children: ReactNode }) {
 export default function WorkspaceInspector({
   onSlot,
   onHeaderSlot,
+  onSideSlot,
   home = false,
   slotStyle,
 }: {
   onSlot: (el: HTMLElement | null) => void
   onHeaderSlot: (el: HTMLElement | null) => void
+  onSideSlot?: (el: HTMLElement | null) => void
   /** Custom properties for the panel slot only (the Generator passes the edited
    *  theme's accent here). The band above stays on the platform's accent. */
   slotStyle?: CSSProperties
@@ -92,7 +111,9 @@ export default function WorkspaceInspector({
       aria-label={home ? t('Home') : t('Inspector')}
       // A RAISED panel on the frame, like the canvas card beside it (white on
       // #f5f5f5 in light, +.050 ΔL in dark — see `--side-panel` in index.css).
-      className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
+      // `336px` = INSPECTOR_WIDTH + INSPECTOR_SIDE_WIDTH, while the side column
+      // holds something (Variables); `!` beats the inline width.
+      className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel [&:has([data-inspector-side]:not(:empty))]:!w-[336px]"
       // Panels portaled in here were built as WORKSPACE_CHROME columns
       // (`bg-tab-bar`, incl. their sticky headers). Inside the inspector the
       // whole column is one surface, so `--tab-bar` resolves to the panel's.
@@ -111,15 +132,28 @@ export default function WorkspaceInspector({
           style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
         />
       )}
-      <div
-        // A callback ref feeding STATE in the shell (not a plain ref), so the
-        // portals re-render once the target exists.
-        ref={onSlot}
-        style={slotStyle}
-        // Each panel was sized as a fixed-width left column (inline width,
-        // border-r). `!` beats the inline style: here the column owns both.
-        className={`relative flex min-h-0 flex-1 flex-col overflow-hidden [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
-      />
+      <div className="flex min-h-0 flex-1">
+        {/* Variables' foundations, one icon per row down the left edge: which
+            set the panel beside it lists. Empty everywhere else, so it takes
+            no room. */}
+        {!home && onSideSlot && (
+          <div
+            ref={onSideSlot}
+            data-inspector-side=""
+            className="flex flex-shrink-0 flex-col border-r border-line empty:hidden"
+            style={{ width: INSPECTOR_SIDE_WIDTH }}
+          />
+        )}
+        <div
+          // A callback ref feeding STATE in the shell (not a plain ref), so the
+          // portals re-render once the target exists.
+          ref={onSlot}
+          style={slotStyle}
+          // Each panel was sized as a fixed-width left column (inline width,
+          // border-r). `!` beats the inline style: here the column owns both.
+          className={`relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
+        />
+      </div>
     </aside>
   )
 }
