@@ -7,7 +7,8 @@ import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import { useFreeTier } from '../../lib/access'
 import { shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { CONTEXT_FOUNDATIONS, type ContextScope } from '../../lib/contextRequest'
+import { CONTEXT_FOUNDATIONS, type ContextAppearance, type ContextScope } from '../../lib/contextRequest'
+import { freeDownloadStore } from '../../lib/freeFigmaScope'
 
 // ─── One brand's code files, built ONCE for every surface that shows them ───
 // The Code tab and the inspector's Ship panel both render these. They used to
@@ -86,21 +87,23 @@ export function useCodeArtifacts(themeKey: string | null, previewAppearance?: Th
   }, [source, free, previewAppearance, themeKey])
 }
 
-/** variables.css of EVERY listed brand, in order — the input of the
- *  all-brands file. Built only while `enabled`, so a one-brand view never
- *  pays for the others. */
-export function useBrandCssList(themeKeys: string[], enabled: boolean, previewAppearance?: ThemeAppearance): { key: string; css: string }[] {
+/** variables.css of each listed brand, in order, for the theme(s) asked for:
+ *  `both` is the file as it always shipped (`:root` + `.dark`); one theme
+ *  narrows the snapshot to that column, so `:root` carries it alone — the
+ *  same narrowing a Free download uses, with every viewport kept. */
+export function useBrandCssList(themeKeys: string[], themes: ContextAppearance, previewAppearance?: ThemeAppearance): { key: string; css: string }[] {
   const store = useDesignStore()
   const free = useFreeTier()
   const keys = themeKeys.join('|')
-  return useMemo(() => {
-    if (!enabled) return []
-    return keys.split('|').filter(Boolean).map((key) => {
-      const source = captureCodeSnapshot(store, key) as Store
-      const appearance = previewAppearance ?? source.themeKinds[key] ?? 'light'
-      return { key, css: (free ? freeCut(source, appearance)?.css : null) ?? buildCSS(source) }
-    })
-  }, [store, free, keys, enabled, previewAppearance])
+  return useMemo(() => keys.split('|').filter(Boolean).map((key) => {
+    const source = captureCodeSnapshot(store, key) as Store
+    if (free) {
+      const appearance = themes === 'both' ? previewAppearance ?? source.themeKinds[key] ?? 'light' : themes
+      return { key, css: freeCut(source, appearance)?.css ?? buildCSS(source) }
+    }
+    if (themes === 'both') return { key, css: buildCSS(source) }
+    return { key, css: buildCSS(freeDownloadStore(source, { modes: [{ theme: themes, appearance: themes }] }) as Store) }
+  }), [store, free, keys, themes, previewAppearance])
 }
 
 export async function writeClipboard(text: string): Promise<boolean> {

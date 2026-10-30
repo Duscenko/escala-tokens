@@ -171,26 +171,41 @@ function ScopeSelect({ value, scopes, onChange, labelClass, rowClass, fill }: {
 export type CssBrandMode = 'one' | 'all'
 
 /** The CSS file's two filters: which collection, and — with more than one
- *  brand — this brand or every brand in one file (`data-brand`). */
-export function CssFilters({ scope, onScope, scopes, brands, onBrands, brandCount }: {
+ *  brand — this brand or every brand in one file (`data-brand`). Stacked as
+ *  inspector field rows, the same shape as `ContextFilters`. */
+export function CssFilters({ scope, onScope, scopes, appearance, onAppearance, brands, onBrands, brandCount }: {
   scope: ContextScope
   onScope: (scope: ContextScope) => void
   scopes: ContextScope[]
+  /** Light or Dark alone puts that theme on `:root`; Both is `:root` + `.dark`. */
+  appearance: ContextAppearance
+  onAppearance: (appearance: ContextAppearance) => void
   brands: CssBrandMode
   onBrands: (mode: CssBrandMode) => void
   brandCount: number
 }) {
+  const labelClass = `${FIELD_NAME} text-fg-muted`
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <ScopeSelect value={scope} scopes={scopes} onChange={onScope} labelClass="sr-only" rowClass="flex items-center gap-2" fill={false} />
+    <div className="flex flex-col gap-2">
+      <ScopeSelect value={scope} scopes={scopes} onChange={onScope} labelClass={labelClass} rowClass={FIELD_ROW} fill />
+      <Segmented
+        labelClass={labelClass}
+        rowClass={FIELD_ROW}
+        fill
+        label="Theme"
+        items={CONTEXT_APPEARANCES}
+        value={appearance}
+        onChange={onAppearance}
+      />
       {brandCount > 1 ? (
         <Segmented
-          labelClass="sr-only"
-          rowClass="flex items-center gap-2"
+          labelClass={labelClass}
+          rowClass={FIELD_ROW}
+          fill
           label="Brands"
           items={[
-            { key: 'one', label: 'This brand' },
-            { key: 'all', label: `All brands (${brandCount})`, hint: 'One file; <html data-brand="…"> picks the brand' },
+            { key: 'one', label: 'This one' },
+            { key: 'all', label: `All ${brandCount}`, hint: 'One file: <html data-brand="…"> picks the brand' },
           ]}
           value={brands}
           onChange={onBrands}

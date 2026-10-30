@@ -1,4 +1,6 @@
-import type { KeyboardEvent } from 'react'
+import type { ReactNode } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { Chevron, EditionBody } from './ThemeQuickSettingsRail'
 import { useDesignStore } from '../../store/useDesignStore'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
@@ -51,7 +53,15 @@ export default function ThemeCodeScopeRail({
   formats,
   format,
   onFormat,
+  settings,
+  summaries,
 }: {
+  /** The open format's settings (scope, theme, brands / detail), unfolded
+   *  under its row — so the file header above the code holds only the file
+   *  and Copy. */
+  settings?: ReactNode
+  /** What each closed row carries now ("Radius · Dark"), like a Board row. */
+  summaries?: Partial<Record<CodeFormatKey, ReactNode>>
   scope: CodeThemeScope
   previewTheme: string
   formats: { key: CodeFormatKey; label: string }[]
@@ -69,19 +79,6 @@ export default function ThemeCodeScopeRail({
   const selected = resolveCodeTheme(listed, scope, previewTheme)
   const name = selected ? themeDisplayName(selected, store.themeLabels) : ''
 
-  const onTabListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const vertical = event.key === 'ArrowUp' || event.key === 'ArrowDown'
-    const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
-    if (!vertical && !horizontal) return
-    event.preventDefault()
-    const current = Math.max(0, formats.findIndex((item) => item.key === format))
-    const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight'
-    const next = (current + (forward ? 1 : formats.length - 1)) % formats.length
-    onFormat(formats[next].key)
-    const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
-    requestAnimationFrame(() => tabs[next]?.focus())
-  }
-
   return (
     <InspectorPortal>
     <aside
@@ -89,7 +86,7 @@ export default function ThemeCodeScopeRail({
       style={{ width: COLOR_RAIL_WIDTH }}
       aria-label={t('Get code')}
     >
-      <div className={`sticky top-0 z-20 flex h-[52px] flex-shrink-0 items-center border-b border-line px-3 ${WORKSPACE_CHROME}`}>
+      <div className={`sticky top-0 z-20 flex h-[52px] flex-shrink-0 items-center border-b border-line px-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
         {name ? (
           <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-caption">
             <span className="flex-shrink-0 text-fg-muted">{t('Brand')}</span>
@@ -101,35 +98,47 @@ export default function ThemeCodeScopeRail({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 px-3 py-3">
-        <div
-          className="flex flex-col gap-0.5"
-          role="tablist"
-          aria-orientation="vertical"
-          aria-label="Code format"
-          onKeyDown={onTabListKeyDown}
-        >
-          {formats.map((item) => {
-            const selectedFormat = item.key === format
-            return (
-              <button
-                key={item.key}
-                type="button"
-                role="tab"
-                aria-selected={selectedFormat}
-                tabIndex={selectedFormat ? 0 : -1}
-                onClick={() => onFormat(item.key)}
-                className={`flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                  selectedFormat ? 'bg-fg/[0.09] font-semibold text-fg' : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
-                }`}
-              >
-                <FormatGlyph format={item.key} />
-                {item.label}
-              </button>
-            )
-          })}
-        </div>
-
+      {/* The Board's edition accordion, one row per file: name · what it
+          carries now · chevron. The open row IS the format on screen, and its
+          settings unfold under it — never under the other row. */}
+      <div role="group" aria-label="Code format">
+        {formats.map((item) => {
+          const open = item.key === format
+          const panelId = `code-format-${item.key}`
+          return (
+            <section key={item.key} aria-label={item.label} className="min-w-0 overflow-visible border-b border-line">
+              {open ? (
+                <div className="flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]" aria-expanded aria-controls={panelId}>
+                  <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{item.label}</span>
+                  <Chevron open />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  aria-expanded={false}
+                  aria-controls={panelId}
+                  onClick={() => onFormat(item.key)}
+                  className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+                >
+                  <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted transition-colors group-hover/row:text-fg">{item.label}</span>
+                  {summaries?.[item.key] != null && (
+                    <span className="min-w-0 max-w-[55%] flex-shrink-0 truncate text-caption text-fg-faint">{summaries[item.key]}</span>
+                  )}
+                  <Chevron open={false} />
+                </button>
+              )}
+              <AnimatePresence initial={false}>
+                {open && settings ? (
+                  <EditionBody id={panelId} key="body">
+                    <div className="flex flex-col gap-2 px-[var(--inspector-inset)] pb-[var(--inspector-inset)]">
+                      {settings}
+                    </div>
+                  </EditionBody>
+                ) : null}
+              </AnimatePresence>
+            </section>
+          )
+        })}
       </div>
       {/* Code is where a guest takes the system away: say it is not saved,
           pinned at the foot like the save bar on the editing tabs. */}

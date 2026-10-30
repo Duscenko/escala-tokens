@@ -3,6 +3,8 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { buildCSS } from '../exporters'
 import { CONTEXT_FOUNDATIONS } from '../contextRequest'
 import { brandSlug, combineBrandCss, cssCollectionOf, cutCssCollection } from '../cssCut'
+import { freeDownloadStore } from '../freeFigmaScope'
+import { darkShadow } from '../colorUtils'
 
 const full = buildCSS(useDesignStore.getState())
 const declared = (css: string) => new Set([...css.matchAll(/^\s*(--[\w-]+)\s*:/gm)].map((m) => m[1]))
@@ -74,6 +76,23 @@ describe('combineBrandCss', () => {
     const fadeIn = combined.match(/@keyframes motion-fade-in /g) ?? []
     expect(fadeIn).toHaveLength(1)
     expect(braces(combined)).toBe(0)
+  })
+})
+
+describe('one-theme CSS', () => {
+  const store = useDesignStore.getState()
+  const dark = buildCSS(freeDownloadStore(store, { modes: [{ theme: 'dark', appearance: 'dark' }] }) as typeof store)
+  const light = buildCSS(freeDownloadStore(store, { modes: [{ theme: 'light', appearance: 'light' }] }) as typeof store)
+
+  it('ships no second theme block', () => {
+    expect(dark).not.toMatch(/^\.dark|^\.light/m)
+    expect(light).not.toMatch(/^\.dark|^\.light/m)
+  })
+
+  it('a dark-only file carries the dark shadows at :root', () => {
+    const shadow = (css: string) => css.match(/--shadow-md: ([^;]+);/)?.[1]
+    expect(shadow(dark)).toBe(darkShadow(store.shadows.md))
+    expect(shadow(light)).toBe(store.shadows.md)
   })
 })
 

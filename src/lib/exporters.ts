@@ -84,7 +84,7 @@ export function buildCSS(
   const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   // First theme in order that actually has tokens. Whole-system exports stay
   // light-first; Get code remaps a dark-created theme so `:root` is dark.
-  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? 'light'
+  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? themeOrder[0] ?? 'light'
   const rootKind: ThemeAppearance = themeKinds?.[rootKey] ?? (rootKey === 'dark' ? 'dark' : 'light')
   const semanticTokens = themes[rootKey] ?? themes.light ?? {}
   const translucent = panelBackground === 'translucent'
@@ -234,7 +234,10 @@ export function buildCSS(
   }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Shadow */')
-  const rootShadows = desktopOnly && rootKind === 'dark' ? darkShadowMap(shadows) : shadows
+  // A file that ships ONE appearance has no theme block to re-point shadows
+  // and gradients in, so a dark-only file carries the dark twins at :root.
+  const oneAppearance = desktopOnly || themeOrder.length === 1
+  const rootShadows = oneAppearance && rootKind === 'dark' ? darkShadowMap(shadows) : shadows
   Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
   lines.push('\n  /* Breakpoints — primitive min-widths */')
@@ -251,7 +254,7 @@ export function buildCSS(
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
-    const gradientAppearance = desktopOnly && rootKind === 'dark' ? 'dark' : 'light'
+    const gradientAppearance = oneAppearance && rootKind === 'dark' ? 'dark' : 'light'
     gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`))
   }
 

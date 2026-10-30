@@ -454,7 +454,7 @@ export function ThemeRailScrollRegion({
   )
 }
 
-function Chevron({ open }: { open: boolean }) {
+export function Chevron({ open }: { open: boolean }) {
   return <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint transition-[transform,color] group-hover/row:text-fg ${open ? 'rotate-180' : ''}`} aria-hidden><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
@@ -1077,7 +1077,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
  *  CLIPPED (a body mounting at height 0 must not spill for a frame) and lets
  *  go of the clip once it lands — popovers and focus rings inside are never
  *  cut at rest. */
-function EditionBody({ id, children }: { id: string; children: React.ReactNode }) {
+export function EditionBody({ id, children }: { id: string; children: React.ReactNode }) {
   const reduce = useReducedMotion()
   const [moving, setMoving] = useState(!reduce)
   return (

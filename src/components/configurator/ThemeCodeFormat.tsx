@@ -2,12 +2,12 @@ import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState
 import { useDesignStore } from '../../store/useDesignStore'
 import { CONTEXT_SCOPES, useBrandCssList, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
 import { brandSlug, combineBrandCss, cutCssCollection } from '../../lib/cssCut'
-import type { ContextScope } from '../../lib/contextRequest'
+import { CONTEXT_FOUNDATIONS, type ContextScope } from '../../lib/contextRequest'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { CONTEXT_APPEARANCES, type ContextAppearance } from '../../lib/contextRequest'
 import { brandContext } from '../../lib/contextSource'
-import { ContextFilters, CssFilters, useContextOptions, type CssBrandMode } from '../ui/ContextControls'
+import { ContextFilters, ContextSizeNote, CssFilters, useContextOptions, type CssBrandMode } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { showToast } from '../ui/Toast'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
@@ -326,11 +326,13 @@ export default function ThemeCodeFormat({
   // cuts of the same variables.css (lib/cssCut), so the file can't disagree
   // with the full one.
   const [cssScope, setCssScope] = useState<ContextScope>('all')
+  const [cssTheme, setCssTheme] = useState<ContextAppearance>('both')
   const [cssBrands, setCssBrands] = useState<CssBrandMode>('one')
   const allBrands = cssBrands === 'all' && listed.length > 1
-  const brandCss = useBrandCssList(listed, format === 'css' && allBrands, previewAppearance)
+  const cssKeys = format !== 'css' || !effectiveScope ? [] : allBrands ? listed : [effectiveScope]
+  const brandCss = useBrandCssList(cssKeys, cssTheme, previewAppearance)
   const cssFile = useMemo(() => {
-    if (!allBrands) return cutCssCollection(artifacts.css, cssScope)
+    if (!allBrands) return cutCssCollection(brandCss[0]?.css ?? '', cssScope)
     const taken = new Set<string>()
     // The brand on screen leads, so it is also the default without data-brand.
     const ordered = [...brandCss].sort((a, b) => Number(b.key === effectiveScope) - Number(a.key === effectiveScope))
@@ -338,8 +340,20 @@ export default function ThemeCodeFormat({
       const name = themeDisplayName(key, store.themeLabels)
       return { slug: brandSlug(name, taken), name, css: cutCssCollection(css, cssScope) }
     }))
-  }, [allBrands, artifacts.css, cssScope, brandCss, effectiveScope, store.projectName, store.themeLabels])
+  }, [allBrands, cssScope, brandCss, effectiveScope, store.projectName, store.themeLabels])
   const content = format === 'css' ? cssFile : agentMd
+  // The header names what is on screen: the cut, not just the format.
+  const scopeLabel = (scope: ContextScope) => (scope === 'all' ? t('All') : t(CONTEXT_FOUNDATIONS.find((f) => f.key === scope)?.label ?? scope))
+  const themeLabel = (appearance: ContextAppearance) => t(CONTEXT_APPEARANCES.find((a) => a.key === appearance)?.label ?? appearance)
+  const scopeName = (scope: ContextScope) => (scope === 'all' ? '' : ` · ${scopeLabel(scope)}`)
+  const fileLabel = format === 'css'
+    ? `${allBrands ? 'brands.css' : 'variables.css'}${scopeName(cssScope)}`
+    : `${active.file}${scopeName(ctx.scope)}`
+  // A closed row says what its file carries now, like a Board row's value.
+  const summaries = {
+    css: [scopeLabel(cssScope), themeLabel(cssTheme), ...(allBrands ? [t('All brands')] : [])].join(' · '),
+    agent: [scopeLabel(ctx.scope), themeLabel(ctx.appearance)].join(' · '),
+  }
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
@@ -370,6 +384,26 @@ export default function ThemeCodeFormat({
           formats={FORMATS}
           format={format}
           onFormat={selectFormat}
+          summaries={effectiveScope ? summaries : undefined}
+          settings={!effectiveScope ? null : format === 'agent' ? (
+            <ContextFilters
+              opts={ctx}
+              onChange={(patch) => { setCtx(patch); setExpanded(false) }}
+              scopes={CONTEXT_SCOPES}
+              lockedAppearance={null}
+            />
+          ) : (
+            <CssFilters
+              scope={cssScope}
+              onScope={(scope) => { setCssScope(scope); setExpanded(false) }}
+              scopes={CONTEXT_SCOPES}
+              appearance={cssTheme}
+              onAppearance={(appearance) => { setCssTheme(appearance); setExpanded(false) }}
+              brands={cssBrands}
+              onBrands={(mode) => { setCssBrands(mode); setExpanded(false) }}
+              brandCount={listed.length}
+            />
+          )}
           onScopeChange={onScopeChange}
           onPreviewThemeChange={onPreviewThemeChange}
           onBack={onBack}
@@ -395,36 +429,14 @@ export default function ThemeCodeFormat({
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
             {showScopeRail ? (
               <header className="flex min-h-11 flex-shrink-0 items-center gap-3 border-b border-line px-3 py-1.5">
-                {/* On Agent context the bar IS the request: what to send, then
-                    what it costs. The file name says nothing a reader acts on. */}
-                {format === 'agent' && effectiveScope ? (
-                  <div className="min-w-0 flex-1">
-                    <ContextFilters
-                      layout="row"
-                      opts={{ ...ctx, appearance: ctxAppearance }}
-                      onChange={(patch) => { setCtx(patch); setExpanded(false) }}
-                      scopes={CONTEXT_SCOPES}
-                      lockedAppearance={null}
-                      // Theme is picked on Copy context's chevron, not here.
-                      showAppearance={false}
-                    />
-                  </div>
-                ) : format === 'css' && effectiveScope ? (
-                  <div className="min-w-0 flex-1">
-                    <CssFilters
-                      scope={cssScope}
-                      onScope={(scope) => { setCssScope(scope); setExpanded(false) }}
-                      scopes={CONTEXT_SCOPES}
-                      brands={cssBrands}
-                      onBrands={(mode) => { setCssBrands(mode); setExpanded(false) }}
-                      brandCount={listed.length}
-                    />
-                  </div>
-                ) : (
-                  <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{active.file}</p>
-                )}
-                {format !== 'agent' && lines.length > 0 ? (
-                  <span className="flex-shrink-0 text-caption text-fg-muted">{lines.length} lines</span>
+                {/* The file and what it weighs. What goes INTO it is set in
+                    the inspector, under the format, like the Board's quick
+                    settings: the bar over the code stays the file and Copy. */}
+                <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{fileLabel}</p>
+                {format === 'agent' && content ? (
+                  <ContextSizeNote markdown={content} className="flex-shrink-0" />
+                ) : lines.length > 0 ? (
+                  <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{t('{n} lines', { n: String(lines.length) })}</span>
                 ) : null}
                 {expanded ? (
                   <button
@@ -439,14 +451,6 @@ export default function ThemeCodeFormat({
                   disabled={!effectiveScope}
                   pageContent={content}
                   agentContext={format === 'agent'}
-                  appearanceMenu={format === 'agent' && effectiveScope ? {
-                    value: ctx.appearance,
-                    locked: null,
-                    onPick: (appearance) => { setCtx({ appearance }); setExpanded(false) },
-                    buildFor: (appearance) => brandContext(
-                      store, effectiveScope, { scope: ctx.scope, detail: ctx.detail, appearance }, store.projectName,
-                    ),
-                  } : undefined}
                 />
               </header>
             ) : (
