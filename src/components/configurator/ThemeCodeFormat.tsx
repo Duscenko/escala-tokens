@@ -1,11 +1,13 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { CONTEXT_SCOPES, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
+import { CONTEXT_SCOPES, useBrandCssList, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
+import { brandSlug, combineBrandCss, cutCssCollection } from '../../lib/cssCut'
+import type { ContextScope } from '../../lib/contextRequest'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { CONTEXT_APPEARANCES, type ContextAppearance } from '../../lib/contextRequest'
 import { brandContext } from '../../lib/contextSource'
-import { ContextFilters, useContextOptions } from '../ui/ContextControls'
+import { ContextFilters, CssFilters, useContextOptions, type CssBrandMode } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { showToast } from '../ui/Toast'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
@@ -319,7 +321,25 @@ export default function ThemeCodeFormat({
     if (!effectiveScope) return ''
     return brandContext(store, effectiveScope, { scope: ctx.scope, detail: ctx.detail, appearance: ctxAppearance }, store.projectName)
   }, [store, effectiveScope, ctxAppearance, ctx.scope, ctx.detail])
-  const content = format === 'css' ? artifacts.css : agentMd
+  // CSS is cut the same way: one collection (plus the primitives it aliases)
+  // and, with several brands, this brand or every brand in one file. Both are
+  // cuts of the same variables.css (lib/cssCut), so the file can't disagree
+  // with the full one.
+  const [cssScope, setCssScope] = useState<ContextScope>('all')
+  const [cssBrands, setCssBrands] = useState<CssBrandMode>('one')
+  const allBrands = cssBrands === 'all' && listed.length > 1
+  const brandCss = useBrandCssList(listed, format === 'css' && allBrands, previewAppearance)
+  const cssFile = useMemo(() => {
+    if (!allBrands) return cutCssCollection(artifacts.css, cssScope)
+    const taken = new Set<string>()
+    // The brand on screen leads, so it is also the default without data-brand.
+    const ordered = [...brandCss].sort((a, b) => Number(b.key === effectiveScope) - Number(a.key === effectiveScope))
+    return combineBrandCss(store.projectName, ordered.map(({ key, css }) => {
+      const name = themeDisplayName(key, store.themeLabels)
+      return { slug: brandSlug(name, taken), name, css: cutCssCollection(css, cssScope) }
+    }))
+  }, [allBrands, artifacts.css, cssScope, brandCss, effectiveScope, store.projectName, store.themeLabels])
+  const content = format === 'css' ? cssFile : agentMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
@@ -387,6 +407,17 @@ export default function ThemeCodeFormat({
                       lockedAppearance={null}
                       // Theme is picked on Copy context's chevron, not here.
                       showAppearance={false}
+                    />
+                  </div>
+                ) : format === 'css' && effectiveScope ? (
+                  <div className="min-w-0 flex-1">
+                    <CssFilters
+                      scope={cssScope}
+                      onScope={(scope) => { setCssScope(scope); setExpanded(false) }}
+                      scopes={CONTEXT_SCOPES}
+                      brands={cssBrands}
+                      onBrands={(mode) => { setCssBrands(mode); setExpanded(false) }}
+                      brandCount={listed.length}
                     />
                   </div>
                 ) : (

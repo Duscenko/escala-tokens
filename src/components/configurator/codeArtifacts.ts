@@ -43,6 +43,19 @@ function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): E
   return { primitives, tokens, modes: modeKeys.size, cssBytes: new Blob([css]).size }
 }
 
+type Store = ReturnType<typeof useDesignStore.getState>
+
+/** The free cut of a brand's code snapshot (one appearance, Desktop), or
+ *  null when the whole brand ships. */
+function freeCut(source: Store, appearance: ThemeAppearance) {
+  return shippedBundle(source, {
+    themes: [appearance],
+    modes: [{ theme: appearance, appearance }],
+    viewports: ['desktop'],
+    gridStyles: ['xl-desktop'],
+  }, true)
+}
+
 /** variables.css and SKILL.md for one brand (both of
  *  its appearances). `null` brand → empty files. */
 export function useCodeArtifacts(themeKey: string | null, previewAppearance?: ThemeAppearance): CodeArtifacts {
@@ -55,21 +68,14 @@ export function useCodeArtifacts(themeKey: string | null, previewAppearance?: Th
   ), [store, themeKey])
   return useMemo(() => {
     if (!source) return EMPTY
-    const asStore = source as ReturnType<typeof useDesignStore.getState>
+    const asStore = source as Store
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
       projectFallback: source.projectName,
       iconKey: source.iconAiSource,
     })
     const appearance = previewAppearance ?? source.themeKinds[themeKey ?? ''] ?? 'light'
-    const cut = free
-      ? shippedBundle(asStore, {
-          themes: [appearance],
-          modes: [{ theme: appearance, appearance }],
-          viewports: ['desktop'],
-          gridStyles: ['xl-desktop'],
-        }, true)
-      : null
+    const cut = free ? freeCut(asStore, appearance) : null
     const css = cut?.css ?? buildCSS(asStore)
     const shipped = cut ? JSON.parse(cut.tokens) as typeof json : json
     return {
@@ -78,6 +84,23 @@ export function useCodeArtifacts(themeKey: string | null, previewAppearance?: Th
       facts: exportFacts(shipped, css),
     }
   }, [source, free, previewAppearance, themeKey])
+}
+
+/** variables.css of EVERY listed brand, in order — the input of the
+ *  all-brands file. Built only while `enabled`, so a one-brand view never
+ *  pays for the others. */
+export function useBrandCssList(themeKeys: string[], enabled: boolean, previewAppearance?: ThemeAppearance): { key: string; css: string }[] {
+  const store = useDesignStore()
+  const free = useFreeTier()
+  const keys = themeKeys.join('|')
+  return useMemo(() => {
+    if (!enabled) return []
+    return keys.split('|').filter(Boolean).map((key) => {
+      const source = captureCodeSnapshot(store, key) as Store
+      const appearance = previewAppearance ?? source.themeKinds[key] ?? 'light'
+      return { key, css: (free ? freeCut(source, appearance)?.css : null) ?? buildCSS(source) }
+    })
+  }, [store, free, keys, enabled, previewAppearance])
 }
 
 export async function writeClipboard(text: string): Promise<boolean> {
