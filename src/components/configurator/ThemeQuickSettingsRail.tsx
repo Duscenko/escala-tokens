@@ -22,6 +22,7 @@ import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type Desig
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
+  followingDarkAnchors, retwinFollowingDarkAnchors,
 } from '../../lib/colorActions'
 import { backgroundFromBase, colorAtHue, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
@@ -2336,6 +2337,17 @@ export default function ThemeQuickSettingsRail({
     showUndo(snapshot, label)
   }
 
+  /** A Color-edition edit. Every colour without a Dark pick of its own is
+   *  re-solved as the dark twin of its light anchor afterwards — the plugin's
+   *  rule (`accentFor` / `stateFor`), so Dark shows the same colours on both. */
+  const colorCommit = (label: string, action: (themeKey: string) => void) => {
+    commit(label, (themeKey) => {
+      const following = followingDarkAnchors(useDesignStore.getState(), themeKey)
+      action(themeKey)
+      retwinFollowingDarkAnchors(themeKey, following)
+    })
+  }
+
   // Per-row Reset, beside the open row's chevron. Present only while the row
   // differs from what the brand Reset restores (its origin System Style, or no
   // override for a hand-made brand) — one Undo step, like any edit.
@@ -2627,16 +2639,16 @@ export default function ThemeQuickSettingsRail({
     setRolePreview(null)
     const { light, dark } = roleAtHue(id, hue)
     if (id === 'neutral') {
-      commit('Neutral updated', (themeKey) => applyNeutral(light, themeKey))
+      colorCommit('Neutral updated', (themeKey) => applyNeutral(light, themeKey))
       return
     }
     if (id === 'accent') {
-      commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
+      colorCommit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
       setAccentPreview(null)
       onAccentPreview?.(null)
       return
     }
-    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
+    colorCommit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
       writeState(themeKey, id, light, 'light')
       writeState(themeKey, id, dark, 'dark')
     })
@@ -2664,7 +2676,7 @@ export default function ThemeQuickSettingsRail({
       commit('States unlinked', () => useDesignStore.getState().setLinkStatesToAccent(false))
       return
     }
-    commit('States linked', (themeKey) => {
+    colorCommit('States linked', (themeKey) => {
       useDesignStore.getState().setLinkStatesToAccent(true)
       harmonizeStates(themeKey, accentAnchor('light'))
     })
@@ -2676,16 +2688,16 @@ export default function ThemeQuickSettingsRail({
    *  Dark came back as a different colour in Light. */
   const setRoleHex = (id: ColorRoleId, hex: string) => {
     if (id === 'neutral') {
-      commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
+      colorCommit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
       return
     }
     const dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)
     if (id === 'accent') {
       const light = rampAppearance === 'dark' ? lightTwinOf(hex, themePage.light) : hex
-      commit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
+      colorCommit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
       return
     }
-    commit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
+    colorCommit(`${SLOT_DISPLAY_LABEL[id]} updated`, (themeKey) => {
       writeState(themeKey, id, rampAppearance === 'light' ? hex : lightTwinOf(hex, themePage.light), 'light')
       writeState(themeKey, id, dark, 'dark')
     })
@@ -2695,7 +2707,7 @@ export default function ThemeQuickSettingsRail({
       commit('Neutral unlinked', () => useDesignStore.getState().setLinkNeutralToAccent(false))
       return
     }
-    commit('Neutral linked', (themeKey) => {
+    colorCommit('Neutral linked', (themeKey) => {
       useDesignStore.getState().setLinkNeutralToAccent(true)
       applyNeutral(neutralFromBrand(accentAnchor('light'), activeTint), themeKey, true)
     })
@@ -2706,7 +2718,7 @@ export default function ThemeQuickSettingsRail({
     const hue = Math.round(from + 60 + Math.random() * 240) % 360
     const { light, dark } = roleAtHue('accent', hue)
     setColorRole('accent')
-    commit('Colours shuffled', (themeKey) => writeAccentAndStates(themeKey, light, dark))
+    colorCommit('Colours shuffled', (themeKey) => writeAccentAndStates(themeKey, light, dark))
   }
 
   const applyRandomTheme = () => {
@@ -2954,7 +2966,7 @@ export default function ThemeQuickSettingsRail({
                 onHueCommit={commitRoleHue}
                 solveAt={(id, hue) => roleAtHue(id, hue)[rampAppearance]}
                 neutralTint={activeTint}
-                onNeutralTint={(tint) => commit('Neutral tint updated', (themeKey) => {
+                onNeutralTint={(tint) => colorCommit('Neutral tint updated', (themeKey) => {
                   setNeutralTint(tint)
                   applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
                 })}
