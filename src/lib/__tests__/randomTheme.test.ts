@@ -17,8 +17,8 @@ import {
   nextShuffle,
   styleLabelAfterShuffle,
   withOppositePage,
-  OPPOSITE_PAGE_SHARE,
 } from '../randomTheme'
+import { RADIX_ACCENTS, radixSolid } from '../radixPalettes'
 import { backgroundFromBase, checkContrast, generateColorScale } from '../colorUtils'
 import { PROCEDURAL_MOOD_ID, curatedMood } from '../themeMoods'
 import { radiusRolesFromGroups } from '../layoutTokens'
@@ -78,15 +78,13 @@ describe('randomTheme', () => {
     if (mood) expect(recipe.foundations.radiusRoles).toEqual(radiusRolesFromGroups(mood.radius))
   })
 
-  it('takes colour from a mood: own page hue, own severities, own appearance', () => {
-    for (let i = 0; i < 40; i++) {
-      const recipe = randomTheme({ accent: VIVID, rng: sequence(i + 101) })
-      if (recipe.moodId === PROCEDURAL_MOOD_ID) continue
-      const mood = curatedMood(recipe.moodId)!
-      expect(recipe.accent).toBe(mood.accent)
-      expect(recipe.neutral).toBe(mood.neutral)
-      expect(recipe.states).toEqual(mood.states)
-      expect(recipe.appearance).toBe(mood.appearance)
+  it('takes colour from a Radix palette at the chosen level, geometry from a mood', () => {
+    for (const level of ['conservative', 'liberal', 'bold'] as const) {
+      for (let i = 0; i < 20; i++) {
+        const recipe = randomTheme({ accent: VIVID, level, rng: sequence(i + 101) })
+        expect(RADIX_ACCENTS.map(radixSolid)).toContain(recipe.accent)
+        expect(Boolean(recipe.oppositePage)).toBe(level === 'bold')
+      }
     }
   })
 
@@ -230,16 +228,15 @@ describe('the dice: System Styles first, then Random', () => {
     expect(recipe.appearance).toBe(core.preferredAppearance)
   })
 
-  it('turns the page opposite the accent on a share of random spins only', () => {
-    const deck = createShuffleDeck()
-    THEME_STYLE_PRESETS.forEach((preset) => deck.shown.add(preset.id))
-    let opposite = 0
-    const N = 400
-    for (let i = 0; i < N; i++) {
-      if (nextShuffle({ accent: VIVID, deck, rng: sequence(i * 7 + 3) }).oppositePage) opposite++
+  it('turns the page opposite the accent on Bold spins, never on the safer levels', () => {
+    for (const level of ['conservative', 'liberal', 'bold'] as const) {
+      const deck = createShuffleDeck()
+      THEME_STYLE_PRESETS.forEach((preset) => deck.shown.add(preset.id))
+      for (let i = 0; i < 40; i++) {
+        const recipe = nextShuffle({ accent: VIVID, deck, level, rng: sequence(i * 7 + 3) })
+        expect(Boolean(recipe.oppositePage), `${level} #${i}`).toBe(level === 'bold')
+      }
     }
-    expect(opposite / N).toBeGreaterThan(OPPOSITE_PAGE_SHARE - 0.1)
-    expect(opposite / N).toBeLessThan(OPPOSITE_PAGE_SHARE + 0.1)
   })
 
   it('an opposite page keeps its hue across the wheel and its text readable', () => {

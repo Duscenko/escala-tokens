@@ -35,6 +35,7 @@ import { RADIUS_STANDARD, STROKE_STANDARD, radiusRolesFromGroups } from './layou
 import { SHADOW_PRESETS } from './shadowTokens'
 import { pickMood, type MoodStates, type ThemeMood } from './themeMoods'
 import { motionPresetPatch } from './motion'
+import { getPaletteLevel, radixFamilyOf, radixPalette, type PaletteLevel } from './radixPalettes'
 
 /** Relative positions — same contract as SpectrumSlider, so a voice stays
  *  vivid at every hue instead of ratcheting into mud. */
@@ -127,6 +128,9 @@ export interface RandomThemeInput {
    *  geometry and its type voice) and varies colour and font pair only. The
    *  phone's style picker sets it; omitted, any scaffold can come up. */
   scaffold?: string
+  /** How daring the colours are (`radixPalettes`). Omitted, the level the
+   *  person last chose in this browser. */
+  level?: PaletteLevel
   rng?: () => number
 }
 
@@ -260,13 +264,17 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
   // randomiser) — see `themeMoods`. The scaffold keeps type, sizes, spacing,
   // icon weight and its border recipe.
   const mood = pickMood(rng, input.avoidMood)
+  // The COLOURS come from Radix's curated families at the chosen level; the
+  // mood keeps the geometry (radius axes, border, depth, motion).
+  const palette = radixPalette(input.level ?? getPaletteLevel(), rng, radixFamilyOf(input.accent))
   return {
-    accent: mood.accent,
-    neutral: mood.neutral,
-    neutralTint: mood.neutralTint,
-    states: { ...mood.states },
-    appearance: mood.appearance,
+    accent: palette.accent,
+    neutral: palette.neutral,
+    neutralTint: palette.neutralTint,
+    states: { ...palette.states },
+    appearance: palette.appearance,
     moodId: mood.id,
+    oppositePage: palette.oppositePage || undefined,
     bodyFont,
     headingFont,
     typeScale,
@@ -296,8 +304,6 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
 // to the far side of the wheel from the accent, so boards stop reading as one
 // hue. Both are seeds: ramps, inks and contrast are still solved by the engine.
 
-/** Share of RANDOM spins (after the deck) whose page sits opposite the accent. */
-export const OPPOSITE_PAGE_SHARE = 0.35
 
 /** A System Style as a dice result — its own colours, geometry and type. */
 export function styleRecipe(preset: ThemeStylePreset): RandomThemeRecipe {
@@ -362,8 +368,9 @@ export function nextShuffle(
     return styleRecipe(style)
   }
   const rng = input.rng ?? Math.random
-  const recipe = randomTheme({ ...input, rng })
-  return rng() < OPPOSITE_PAGE_SHARE ? withOppositePage(recipe, rng) : recipe
+  // The level decides the page now: Bold always opposes the accent, the
+  // other two never do (`radixPalettes`).
+  return randomTheme({ ...input, rng })
 }
 
 /** A Random tweak on a try-on: the scaffold's geometry and severities, with

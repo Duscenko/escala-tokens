@@ -22,7 +22,7 @@ import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type Desig
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
-  followingDarkAnchors, retwinFollowingDarkAnchors,
+  followingDarkAnchors, retwinFollowingDarkAnchors, applyAccentDarkColor,
 } from '../../lib/colorActions'
 import { backgroundFromBase, colorAtHue, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
@@ -98,7 +98,8 @@ import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatc
 import { MotionPreview, motionSummary } from './MotionPreview'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
-import ThemeSaveBar, { RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
+import ThemeSaveBar, { RandomLevelPicker, RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
+import { getPaletteLevel, radixFamilyOf, radixPalette } from '../../lib/radixPalettes'
 import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
@@ -2712,13 +2713,27 @@ export default function ThemeQuickSettingsRail({
       applyNeutral(neutralFromBrand(accentAnchor('light'), activeTint), themeKey, true)
     })
   }
-  /** A new accent hue, well away from the current one; the rest follows. */
+  /** A whole palette from Radix's curated families, at the level picked
+   *  beside the button (`radixPalettes`): accent, page and the four states.
+   *  Every ramp and ink is still solved by the engine. */
   const shuffleColors = () => {
-    const from = readHuePosition(accentAnchor('light')).hue
-    const hue = Math.round(from + 60 + Math.random() * 240) % 360
-    const { light, dark } = roleAtHue('accent', hue)
+    const palette = radixPalette(getPaletteLevel(), Math.random, radixFamilyOf(accentAnchor('light')))
     setColorRole('accent')
-    colorCommit('Colours shuffled', (themeKey) => writeAccentAndStates(themeKey, light, dark))
+    colorCommit('Colours shuffled', (themeKey) => {
+      setNeutralTint(palette.neutralTint)
+      writeAccent(themeKey, palette.accent)
+      // The page gets its own hue (opposite the accent on Bold), so the
+      // neutral is written by hand — which unlinks it, as Random's does.
+      applyNeutral(palette.neutral, themeKey)
+      // Dark anchors are solved on the page the neutral just produced.
+      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
+      applyAccentDarkColor(darkTwinOf(palette.accent, pages.dark), themeKey)
+      for (const role of STATE_IDS) {
+        const hex = palette.states[role]
+        writeState(themeKey, role, hex, 'light')
+        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
+      }
+    })
   }
 
   const applyRandomTheme = () => {
@@ -2955,6 +2970,7 @@ export default function ThemeQuickSettingsRail({
                         }}
                       />
                     </div>
+                    <RandomLevelPicker />
                     <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} />
                   </div>
                 )}

@@ -58,6 +58,14 @@ const es: Record<string, string> = {
   'Derived from the neutral base. Edit it in Light.': 'Se deriva de la base del neutro. Edítelo en Light.',
   'Critical': 'Crítico',
   'Shuffle colours': 'Mezclar colores',
+  'Safe (random level)': 'Seguro',
+  'Free (random level)': 'Libre',
+  'Bold (random level)': 'Atrevido',
+  'Product accents, natural grey, classic states': 'Acentos de producto, gris natural, estados clásicos',
+  'Any Radix family, any grey, light or dark': 'Cualquier familia Radix, cualquier gris, claro u oscuro',
+  'Page in the colour opposite the accent': 'Fondo en el color opuesto al acento',
+  'Random colours': 'Colores aleatorios',
+  'How daring Random is': 'Qué tan atrevido es el aleatorio',
   'Tap any part': 'Toca cualquier parte',
   'Token kind': 'Tipo de token',
   'Layout': 'Diseño',
@@ -1866,6 +1874,14 @@ const fr: Record<string, string> = {
   'Derived from the neutral base. Edit it in Light.': 'Dérivé de la base du neutre. Modifiez-le en Light.',
   'Critical': 'Critique',
   'Shuffle colours': 'Mélanger les couleurs',
+  'Safe (random level)': 'Sûr',
+  'Free (random level)': 'Libre',
+  'Bold (random level)': 'Audacieux',
+  'Product accents, natural grey, classic states': 'Accents produit, gris naturel, états classiques',
+  'Any Radix family, any grey, light or dark': 'Toute famille Radix, tout gris, clair ou sombre',
+  'Page in the colour opposite the accent': 'Fond dans la couleur opposée à l’accent',
+  'Random colours': 'Couleurs aléatoires',
+  'How daring Random is': 'Audace de l’aléatoire',
   'Tap any part': 'Touchez un élément',
   'Token kind': 'Type de token',
   'Layout': 'Mise en page',
@@ -3573,6 +3589,9 @@ const fr: Record<string, string> = {
  *  Copier/Copie). The parenthetical makes the key unique, and this entry is
  *  what stops that parenthetical from reaching the screen in English. */
 const en: Record<string, string> = {
+  'Safe (random level)': 'Safe',
+  'Free (random level)': 'Free',
+  'Bold (random level)': 'Bold',
   'Copy (duplicated theme suffix)': 'Copy',
 }
 

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
@@ -6,7 +7,8 @@ import { myThemeKeys } from '../../lib/themeLibrary'
 import { redoEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
-import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_SHELL, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLevel, type PaletteLevel } from '../../lib/radixPalettes'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
@@ -262,6 +264,160 @@ export function RandomWholeThemeButton({ onClick, label, compact = false, bare =
 /** Random, in one shape everywhere: the shuffle mark inside the animated
  *  conic border. `icon` is the icon-only square (next to a Style select or in
  *  the save bar); `tweak` keeps its label for the guest previewer card. */
+const LEVEL_COPY: Record<PaletteLevel, { label: string; hint: string }> = {
+  conservative: { label: 'Safe (random level)', hint: 'Product accents, natural grey, classic states' },
+  liberal: { label: 'Free (random level)', hint: 'Any Radix family, any grey, light or dark' },
+  bold: { label: 'Bold (random level)', hint: 'Page in the colour opposite the accent' },
+}
+
+/** The level Random draws its colours at (`radixPalettes`), shared by every
+ *  Random in this browser. */
+function usePaletteLevel(): PaletteLevel {
+  return useSyncExternalStore(subscribePaletteLevel, getPaletteLevel, getPaletteLevel)
+}
+
+/** Menu width, px: wide enough that no level's one-line hint wraps. */
+const LEVEL_MENU_W = 300
+/** Gap between the trigger and the menu, and the menu and the window edge. */
+const LEVEL_MENU_GAP = 6
+
+/** How daring Random's colours are: Safe · Free · Bold. One choice, remembered
+ *  per browser; the Color edition shuffle and the board's Random both read it.
+ *
+ *  The menu is PORTALED to <body> and positioned `fixed` off the trigger: the
+ *  trigger sits in the inspector's scroll column, which clipped an absolute
+ *  menu (its left half was cut off). Right edges align, clamped to the window,
+ *  and it opens upward when there is no room below. */
+export function RandomLevelPicker() {
+  const { t } = useI18n()
+  const level = usePaletteLevel()
+  const reduce = useReducedMotion()
+  const [open, setOpen] = useState(false)
+  const [place, setPlace] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
+  const options = useRef<(HTMLButtonElement | null)[]>([])
+
+  const close = (refocus = true) => {
+    setOpen(false)
+    if (refocus) trigger.current?.focus()
+  }
+
+  // Measure on open and keep in step with resize and scroll (the inspector
+  // column scrolls under it).
+  useLayoutEffect(() => {
+    if (!open) return
+    const measure = () => {
+      const r = trigger.current?.getBoundingClientRect()
+      if (!r) return
+      const height = menu.current?.offsetHeight ?? 180
+      const left = Math.max(LEVEL_MENU_GAP, Math.min(r.right - LEVEL_MENU_W, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
+      const below = window.innerHeight - r.bottom - LEVEL_MENU_GAP
+      setPlace(below >= height || below >= r.top
+        ? { top: r.bottom + LEVEL_MENU_GAP, left }
+        : { bottom: window.innerHeight - r.top + LEVEL_MENU_GAP, left })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+  }, [open])
+
+  // Focus the selected level when the menu opens; outside click closes it.
+  useEffect(() => {
+    if (!open) return
+    options.current[PALETTE_LEVELS.indexOf(level)]?.focus()
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (menu.current?.contains(target) || trigger.current?.contains(target)) return
+      close(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+    // `level` is read once, on open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const onMenuKey = (event: React.KeyboardEvent) => {
+    const i = options.current.findIndex((el) => el === document.activeElement)
+    const n = PALETTE_LEVELS.length
+    const go = (to: number) => { event.preventDefault(); options.current[(to + n) % n]?.focus() }
+    if (event.key === 'ArrowDown') go(i + 1)
+    else if (event.key === 'ArrowUp') go(i - 1)
+    else if (event.key === 'Home') go(0)
+    else if (event.key === 'End') go(n - 1)
+    else if (event.key === 'Escape' || event.key === 'Tab') { event.preventDefault(); close() }
+  }
+
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(event) => { if (event.key === 'ArrowDown' && !open) { event.preventDefault(); setOpen(true) } }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t('Random colours')}: ${t(LEVEL_COPY[level].label)}`}
+        title={t('How daring Random is')}
+        className={`flex h-8 flex-shrink-0 items-center gap-1 px-2 text-caption ${open ? 'text-fg' : 'text-fg-muted hover:text-fg'} ${SELECT_SHELL} ${SELECT_FOCUS}`}
+      >
+        {t(LEVEL_COPY[level].label)}
+        <svg
+          width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+          className={`transition-transform duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && createPortal(
+        <motion.div
+          ref={menu}
+          role="listbox"
+          aria-label={t('Random colours')}
+          onKeyDown={onMenuKey}
+          initial={reduce ? false : { opacity: 0, y: place?.bottom != null ? 4 : -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            position: 'fixed',
+            width: LEVEL_MENU_W,
+            left: place?.left ?? -9999,
+            top: place?.top,
+            bottom: place?.bottom,
+            visibility: place ? 'visible' : 'hidden',
+          }}
+          className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST}`}
+        >
+          {PALETTE_LEVELS.map((id, i) => {
+            const on = id === level
+            return (
+              <button
+                key={id}
+                ref={(el) => { options.current[i] = el }}
+                type="button"
+                role="option"
+                aria-selected={on}
+                onClick={() => { writePaletteLevel(id); close() }}
+                className={`${SELECT_OPTION} grid grid-cols-[1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-ui">{t(LEVEL_COPY[id].label)}</span>
+                  <span className="truncate text-caption font-normal text-fg-faint">{t(LEVEL_COPY[id].hint)}</span>
+                </span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                  <path d="M3.5 8.5l3 3 6-7" />
+                </svg>
+              </button>
+            )
+          })}
+        </motion.div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 export function RandomThemeButton({
   onClick,
   label,
