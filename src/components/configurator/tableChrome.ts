@@ -62,8 +62,22 @@ export const TABLE_HEADER_DIVIDER = `border-b ${TABLE_DIVIDER}`
 /** Zebra + hover. Split out because Semantics paints the zebra on a WRAPPER
  *  (its rows can expand into an editor) while every other table paints it on
  *  the grid row itself. */
-export const TABLE_ZEBRA = 'bg-black/[0.018] dark:bg-white/[0.02]'
-export const TABLE_HOVER = 'transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]'
+export const TABLE_ZEBRA = 'bg-black/[0.018] dark:bg-white/[0.02] [--row-tint:rgb(0_0_0/0.018)] dark:[--row-tint:rgb(255_255_255/0.02)]'
+export const TABLE_HOVER = 'transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:[--row-tint:rgb(0_0_0/0.025)] dark:hover:[--row-tint:rgb(255_255_255/0.04)]'
+
+/**
+ * The NAME column stays put while the value columns scroll sideways (a narrow
+ * window, or a wide table). Applied by `tableRowClass` and `tableHeaderClass`
+ * to the row's first cell, so every table gets it without touching its JSX.
+ *
+ * A pinned cell needs an OPAQUE fill or the columns slide visibly under it,
+ * yet it must still look like its row. So it paints the page (`--app`) with
+ * the row's own tint on top: `--row-tint` is set by `TABLE_ZEBRA` and
+ * `TABLE_HOVER` beside the row's translucent fill, and inherits — Semantics
+ * puts the zebra on a wrapper and it still reaches the cell. Unset, it falls
+ * back to transparent, i.e. plain page.
+ */
+const PIN_FIRST_CELL = '[&>:first-child]:sticky [&>:first-child]:left-0 [&>:first-child]:z-[1] [&>:first-child]:[background:linear-gradient(var(--row-tint,transparent),var(--row-tint,transparent)),var(--color-app)]'
 
 /**
  * A token row.
@@ -83,6 +97,7 @@ export function tableRowClass(index: number, grid: string, opts: { zebra?: boole
   return [
     grid,
     'items-stretch group',
+    PIN_FIRST_CELL,
     index === 0 ? '' : TABLE_ROW_DIVIDER,
     TABLE_HOVER,
     zebra && index % 2 === 1 ? TABLE_ZEBRA : '',
@@ -113,7 +128,9 @@ export function tableRowClass(index: number, grid: string, opts: { zebra?: boole
  */
 export function tableMatchClass(match: boolean | null | undefined) {
   if (match === false) {
-    return '[&>*]:opacity-55 [&>*]:transition-opacity hover:[&>*]:opacity-100 focus-within:[&>*]:opacity-100'
+    // The pinned name cell must stay opaque (columns scroll under it), so it
+    // recedes through its CONTENT; every other cell recedes as a whole.
+    return '[&>*:not(:first-child)]:opacity-55 [&>:first-child>*]:opacity-55 [&>*]:transition-opacity [&>:first-child>*]:transition-opacity hover:[&>*:not(:first-child)]:opacity-100 hover:[&>:first-child>*]:opacity-100 focus-within:[&>*:not(:first-child)]:opacity-100 focus-within:[&>:first-child>*]:opacity-100'
   }
   return ''
 }
@@ -144,6 +161,7 @@ export function tableHeaderClass(
     grid,
     TABLE_HEADER_H,
     'items-stretch',
+    PIN_FIRST_CELL,
     TABLE_HEADER_DIVIDER,
     'bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10',
     stacked ? 'top-[34px]' : 'top-0',
@@ -174,5 +192,9 @@ export const TABLE_HEAD_CELL = `flex items-center ${TABLE_CELL_DIVIDER}`
  */
 export const TABLE_LAST_ROW = `last:border-b ${TABLE_DIVIDER}`
 
-/** The sticky group label above a header in the "All" view. */
-export const TABLE_GROUP_LABEL = `flex items-center gap-2 px-4 py-2.5 bg-app ${TABLE_HEADER_DIVIDER} sticky top-0 z-20`
+/** The sticky group label above a header in the "All" view. Pinned on BOTH
+ *  axes and exactly as wide as the visible table (`100cqw`), so the band covers
+ *  what you see and its title stays readable while the columns scroll
+ *  sideways. Needs its scroll area to be `@container/tablescroll` — without a
+ *  container, `cqw` falls back to the viewport. */
+export const TABLE_GROUP_LABEL = `flex items-center gap-2 px-4 py-2.5 bg-app ${TABLE_HEADER_DIVIDER} sticky top-0 left-0 z-20 w-[100cqw]`

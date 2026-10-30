@@ -167,7 +167,7 @@ export default function SpacingSemanticsTable({
       .filter((key) => group === 'all' || key.startsWith(`${group}-`))
       .filter((key) => !q || `spacing-${key}`.includes(q))
     return (
-      <div className="min-w-[34rem]">
+      <div className="w-fit min-w-[max(100%,34rem)]">
         <div className={tableHeaderClass(TOKEN_GRID)}>
           <span className={`${TABLE_HEAD_CELL} pl-4`}>Token</span>
           <span className={`${TABLE_HEAD_CELL} px-3`}>Used by</span>
@@ -214,7 +214,7 @@ export default function SpacingSemanticsTable({
   }
 
   return (
-    <div className="min-w-[36rem]">
+    <div className="w-fit min-w-[max(100%,36rem)]">
       <div className={tableHeaderClass(ROLE_GRID)}>
         <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
         <span className={`${TABLE_HEAD_CELL} px-3`}>Token</span>

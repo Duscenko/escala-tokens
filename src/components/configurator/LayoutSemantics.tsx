@@ -343,7 +343,7 @@ export default function LayoutSemantics({
                 query={activeQuery}
               />
             ) : (
-            <div className="min-w-[36rem]">
+            <div className="w-fit min-w-[max(100%,36rem)]">
                 <div className={tableHeaderClass(GRID)}>
                   <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
                   <span className={`${TABLE_HEAD_CELL} px-3`}>Primitive</span>

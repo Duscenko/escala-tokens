@@ -447,7 +447,7 @@ export default function StepGradients({
       <div className="flex-1 min-h-0 flex items-stretch">
         <div className="flex-1 min-w-0 overflow-auto bg-app">
           {selected ? (
-            <div className="min-w-0 w-full">
+            <div className="w-fit min-w-full">
               <div
                 className={`${GRID_CLASS} items-stretch min-h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10`}
               >

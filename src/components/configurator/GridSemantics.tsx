@@ -171,8 +171,8 @@ export default function GridSemantics({
           )}
 
           <div className="flex flex-1 min-w-0 min-h-0">
-          <div className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[28rem]">
+          <div className="@container/tablescroll flex-1 min-w-0 overflow-auto">
+            <div className="w-fit min-w-[max(100%,28rem)]">
               {showViewport && (
                 <section aria-label="Viewport">
                   {group === 'all' && <div className={TABLE_GROUP_LABEL}><GroupTitle>{t('Viewport')}</GroupTitle></div>}

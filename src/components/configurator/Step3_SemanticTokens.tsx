@@ -1366,7 +1366,7 @@ export default function Step3_SemanticTokens({
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
-            <div className="min-w-[28rem]">
+            <div className="w-fit min-w-[max(100%,28rem)]">
               <div
                 className="grid items-stretch h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
                 style={archGridStyle}
@@ -1533,7 +1533,7 @@ export default function Step3_SemanticTokens({
               )}
             </div>
           ) : (
-          <div className="min-w-[26rem]">
+          <div className="w-fit min-w-[max(100%,26rem)]">
             {/* Column header — one column per theme; custom themes are removable */}
             <div className="grid items-stretch h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
               {/* Pinned — see the arch header's matching cell. `sticky` is a

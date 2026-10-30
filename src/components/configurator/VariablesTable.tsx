@@ -258,8 +258,10 @@ export default function VariablesTable({
         </VariableCollectionRail>
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {topBar}
-          <div className="flex-1 min-w-0 overflow-auto">
-            {rows}
+          <div className="@container/tablescroll flex-1 min-w-0 overflow-auto">
+            {/* Grows with the columns when they outgrow the panel, so headers
+                and row bands reach the last column (see ColorPrimitives). */}
+            <div className="w-fit min-w-full">{rows}</div>
             {footer && <div className="px-4 py-6">{footer}</div>}
           </div>
         </div>

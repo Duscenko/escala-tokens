@@ -36,7 +36,7 @@ export type TypeFocus = TypeRoleGroupId | 'all'
 // three selects can show `display-2xl` · `Semibold` · `Display` with a
 // chevron that isn't sitting on the border.
 const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(22rem,1.9fr)_minmax(9.5rem,1fr)_2.5rem]'
-const GRID_MIN = 'min-w-[44rem]'
+const GRID_MIN = 'w-fit min-w-[max(100%,44rem)]'
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -314,7 +314,7 @@ export default function TypeSemantics({
                       alias={alias}
                       onChange={(next) => patchRole(role.key, typeViewport, next)}
                     />
-                    <div className="flex flex-col justify-center gap-1 px-3 py-2 border-r border-line min-w-0">
+                    <div className="flex flex-col justify-center gap-1 px-3 py-2 border-r border-line min-w-0 overflow-hidden">
                       <span
                         className="text-fg whitespace-nowrap"
                         title={`${role.label} · ${style.size} / ${style.lineHeight} · ${style.weight} · tracking ${style.letterSpacing}`}

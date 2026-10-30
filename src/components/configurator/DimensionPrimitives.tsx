@@ -67,7 +67,7 @@ export default function DimensionPrimitives({
           ]}
         />
         <div className="flex-1 min-w-0 overflow-auto">
-          <div className="min-w-[38rem]">
+          <div className="w-fit min-w-[max(100%,38rem)]">
             <div className={tableHeaderClass(GRID)}>
               <span className={`${TABLE_HEAD_CELL} pl-4`}>Primitive</span>
               <span className={`${TABLE_HEAD_CELL} px-3`}>Value</span>

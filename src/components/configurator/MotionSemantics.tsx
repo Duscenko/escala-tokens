@@ -99,7 +99,8 @@ export default function MotionSemantics({ previewTheme, query }: { previewTheme?
           </div>
         </VariableCollectionRail>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="min-w-0 flex-1 overflow-auto">
+          <div className="@container/tablescroll min-w-0 flex-1 overflow-auto">
+            <div className="w-fit min-w-full">
             {groups.length === 0 ? (
               <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
             ) : groups.map((g) => (
@@ -169,6 +170,7 @@ export default function MotionSemantics({ previewTheme, query }: { previewTheme?
                 })}
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>

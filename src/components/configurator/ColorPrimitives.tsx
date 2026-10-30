@@ -2052,7 +2052,11 @@ export default function ColorPrimitives({
           <div className="flex-1 min-h-0 min-w-0 flex flex-col">{gradientEditor}</div>
         ) : (
         <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[24rem]">
+            {/* `w-fit`: when the columns' minimums outgrow the panel, this box
+                grows WITH them, so the sticky header, the ramp strip and every
+                row's band reach the last column instead of stopping at the
+                visible edge (rows used to show through under the header). */}
+            <div className="w-fit min-w-[max(100%,24rem)]">
               {/* Column header first — this 52px band is the one that lines
                   up with “Color variables” in the rail, same as Radius's
                   TOKEN NAME row. Sticky at top-0 so scrolling the tones
@@ -2107,8 +2111,12 @@ export default function ColorPrimitives({
                 className="sticky z-20 flex items-center gap-2.5 pl-4 pr-3 border-b border-line bg-app isolate"
                 style={{ height: QUICK_EDIT_STRIP_HEIGHT, top: TABLE_HEADER_PX, paddingTop: QUICK_EDIT_STRIP_PAD, paddingBottom: QUICK_EDIT_STRIP_PAD }}
               >
+          {/* The hex box sits over the pinned name column, so it pins with it
+              (`-ml-4 pl-4` carries the strip's inset into its opaque backing)
+              and the ramp scrolls under it. */}
           {!railCollapsed && (
             family.isAlpha ? (
+              <div className="sticky left-0 z-[1] -ml-4 flex-shrink-0 self-stretch flex items-center bg-app pl-4">
               <div className="flex-shrink-0 h-9 px-1.5 rounded-[10px] border border-line bg-surface flex items-center">
                 <AlphaHexCell
                   compact
@@ -2118,8 +2126,9 @@ export default function ColorPrimitives({
                   appearance={darkPreview ? 'dark' : 'light'}
                 />
               </div>
+              </div>
             ) : (
-              <div className="relative flex-shrink-0">
+              <div className="sticky left-0 z-[1] -ml-4 flex-shrink-0 self-stretch flex items-center bg-app pl-4">
                 <div className="h-9 flex items-stretch rounded-[10px] border border-line bg-surface overflow-hidden">
                   <div className="flex items-center pl-1.5 pr-0.5">
                     <HexCell
@@ -2185,8 +2194,9 @@ export default function ColorPrimitives({
                       style={gridStyle}
                     >
                         <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
-                          <PaletteIcon size={14} />
-                          <code className="font-mono text-body text-fg-muted truncate">{name}</code>
+                          {/* Its own box: on the ANCHOR row the badge squeezed the glyph. */}
+                          <span className="flex flex-shrink-0"><PaletteIcon size={14} /></span>
+                          <code className="min-w-0 font-mono text-body text-fg-muted truncate">{name}</code>
                           {tone === BASE_TONE && (
                             <span className="text-nano font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">anchor</span>
                           )}

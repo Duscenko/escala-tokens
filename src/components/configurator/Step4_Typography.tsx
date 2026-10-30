@@ -218,7 +218,9 @@ const rowClass = (index: number, match: boolean | null = null) =>
 
 const nameCell = `flex items-center py-2.5 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
 const valueCell = `flex items-center px-2.5 py-1.5 ${TABLE_CELL_DIVIDER}`
-const previewCell = `flex items-center px-3 py-1.5 min-w-0 ${TABLE_CELL_DIVIDER}`
+// `overflow-hidden`: a 48px “Design” sample spilled out of its cell and widened
+// the whole table's scroll.
+const previewCell = `flex items-center px-3 py-1.5 min-w-0 overflow-hidden ${TABLE_CELL_DIVIDER}`
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
@@ -564,8 +566,8 @@ export default function Step4_Typography({
               <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
             </div>
           )}
-          <div className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[30rem]">
+          <div className="@container/tablescroll flex-1 min-w-0 overflow-auto">
+            <div className="w-fit min-w-[max(100%,30rem)]">
               {!anyVisible ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
               ) : (
