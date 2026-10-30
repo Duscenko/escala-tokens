@@ -77,7 +77,7 @@ export const TABLE_HOVER = 'transition-colors hover:bg-black/[0.025] dark:hover:
  * puts the zebra on a wrapper and it still reaches the cell. Unset, it falls
  * back to transparent, i.e. plain page.
  */
-const PIN_FIRST_CELL = '[&>:first-child]:sticky [&>:first-child]:left-0 [&>:first-child]:z-[1] [&>:first-child]:[background:linear-gradient(var(--row-tint,transparent),var(--row-tint,transparent)),var(--color-app)]'
+const PIN_FIRST_CELL = '[&>:first-child]:sticky [&>:first-child]:left-0 [&>:first-child]:z-[1] [&>:first-child]:[background:linear-gradient(var(--row-tint,transparent),var(--row-tint,transparent)),var(--app)]'
 
 /**
  * A token row.

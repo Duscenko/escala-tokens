@@ -31,14 +31,11 @@ import {
   BASE_UNIT_RANGE,
   FIELD_BASE_MIN,
   SIZE_CONTROL_MIN_PX,
-  SELECTOR_DEFAULT_BASE,
   SIZE_DEFAULT_BASE,
   SIZE_STEPS,
   SPACING_STEPS,
   STROKE_SM_STOPS,
-  buildSelectorsFromBase,
   buildSizesFromBase,
-  inferSelectorBase,
   inferSizeBase,
   INSET_SURFACE_ROLE,
   PADDING_DEFAULT_STEP,
@@ -74,11 +71,14 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
 import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
-import { adoptRemixOverGuestSeed, openStyleForEditing } from '../../lib/adoptPreset'
+import {
+  adoptRemixOverGuestSeed, colorRowHasEdits, foundationRowHasEdits, openStyleForEditing, resetFoundationRow, resetThemeColorToOrigin,
+  type FoundationRow,
+} from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
 import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
-import { presetHarmony } from '../../lib/themePresets'
+import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, typeRolesInGroup, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { ViewportSwitch, usePlanViewportLock } from './ViewportRail'
@@ -633,15 +633,12 @@ function SpacingModeGrid({ value, spacing, sizes, stroke, onChange }: {
           const mode = SPACING_MODES.find((m) => m.id === id)!
           return <SpacingModeGlyph fieldBase={mode.fieldBase} insetPx={insetPx(mode.insetStep)} border={mode.border} selected={selected} />
         }}
-        note="Four ready-made densities. Each sets field size, card padding and border width together — ordinary tokens, still editable in Variables."
+        info={<InfoHint>{t("Four ready-made densities. Each sets field size, card padding and border width together; Custom means they were set by hand. Ordinary tokens, still editable in Variables.")}</InfoHint>}
         onChange={(id) => {
           const mode = SPACING_MODES.find((m) => m.id === id)
           if (mode) onChange(mode)
         }}
       />
-      {value === null && (
-        <p className="mt-1.5 text-micro text-fg-faint">{t('Custom — values set by hand. Pick a mode to reset all three.')}</p>
-      )}
     </div>
   )
 }
@@ -977,12 +974,25 @@ const EditionSwitchContext = createContext<{
  * always open — it is `activePanel`, the same key the icon rail and the board
  * already follow, so the accordion cannot disagree with them.
  */
-function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
+function ResetRowGlyph() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2.5 8a5.5 5.5 0 1 0 1.7-3.97" />
+      <path d="M2.2 3.2v3.1h3.1" />
+    </svg>
+  )
+}
+
+function EditionRowHeader({ title, foundationKey, summary, open, panelId, onReset, resetTarget }: {
   title: string
   foundationKey: string
   summary?: React.ReactNode
   open: boolean
   panelId: string
+  /** Set only while this row differs from what Reset restores. */
+  onReset?: () => void
+  /** What the row goes back to ("Core", "System defaults"). */
+  resetTarget?: string
 }) {
   const { t } = useI18n()
   const ctx = useContext(EditionSwitchContext)
@@ -993,31 +1003,53 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId }: {
   // clicking it folds the accordion.
   if (open) {
     const title_ = <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
+    // Per-row Reset: shown only while the row moved off its origin, so its
+    // presence alone says "edited". It sits beside the chevron, outside the
+    // fold button (a button cannot hold a button). The title row reserves its
+    // width so the title never runs under it.
+    const reset = onReset ? (
+      <button
+        type="button"
+        onClick={onReset}
+        aria-label={`${t('Reset')} ${t(title)} — ${t(resetTarget ?? 'System defaults')}`}
+        title={`${t('Reset')} ${t(title)} — ${t(resetTarget ?? 'System defaults')}`}
+        className="absolute right-[calc(var(--inspector-inset)+1.5rem)] top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+      >
+        <ResetRowGlyph />
+      </button>
+    ) : null
+    const pad = onReset ? 'pr-[calc(var(--inspector-inset)+2rem)]' : ''
     if (!ctx?.setCollapsed) {
       return (
-        <div className="flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
-          {title_}
-          <Chevron open />
+        <div className="relative">
+          <div className={`flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] ${pad}`} aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+            {title_}
+            <Chevron open />
+          </div>
+          {reset}
         </div>
       )
     }
     return (
-      <button
-        type="button"
-        aria-expanded
-        aria-controls={panelId}
-        onClick={() => ctx.setCollapsed?.(true)}
-        className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-      >
-        {title_}
-        <Chevron open />
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded
+          aria-controls={panelId}
+          onClick={() => ctx.setCollapsed?.(true)}
+          className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        >
+          {title_}
+          <Chevron open />
+        </button>
+        {reset}
+      </div>
     )
   }
   const inner = (
     <>
       <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted transition-colors group-hover/row:text-fg group-disabled/row:text-fg-muted">{t(title)}</span>
-      {summary != null && <span className="flex min-w-0 max-w-[45%] flex-shrink-0 items-center justify-end gap-1.5 truncate font-mono text-mini tabular-nums text-fg-faint">{summary}</span>}
+      {summary != null && <span className="flex min-w-0 max-w-[50%] flex-shrink-0 items-center justify-end gap-1.5 truncate text-caption tabular-nums text-fg-faint">{summary}</span>}
       {locked ? <LockGlyph /> : <Chevron open={open} />}
     </>
   )
@@ -1064,7 +1096,7 @@ function EditionBody({ id, children }: { id: string; children: React.ReactNode }
   )
 }
 
-function EditionCard({ title, foundationKey, open = true, summary, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, children }: {
+function EditionCard({ title, foundationKey, open = true, summary, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, onReset, resetTarget, children }: {
   title: string
   foundationKey: string
   /** Accordion state. A closed row shows only its header. */
@@ -1083,6 +1115,9 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   advancedDisabled?: boolean
   /** Hides the door to the advanced edition (Variables). */
   showAdvancedEdition?: boolean
+  /** Row Reset, passed only while the row differs from its origin. */
+  onReset?: () => void
+  resetTarget?: string
   children: React.ReactNode
 }) {
   const { t } = useI18n()
@@ -1091,7 +1126,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   open = open && !ctx?.collapsed
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
-      <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} />
+      <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} onReset={onReset} resetTarget={resetTarget} />
       {/* The body unfolds from its header and folds back into it: height +
           fade (`EditionBody`). */}
       <AnimatePresence initial={false}>
@@ -1106,16 +1141,19 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
       {footer !== undefined
         ? footer
         : showAdvancedEdition ? (
-          <div className="border-t border-line p-[var(--inspector-inset)]">
+          // A way OUT of the row, so it reads as a link, not as one more
+          // control: no box, faint ink, under the row's last setting.
+          <div className="px-[var(--inspector-inset)] pb-[var(--inspector-inset)]">
             <button
               type="button"
               onClick={() => onOpenAdvanced(foundationKey)}
               disabled={advancedDisabled}
               title={advancedDisabled ? t('Available once the brand is finished') : undefined}
-              className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-input-bg disabled:hover:text-fg-muted ${RAIL_SURFACE_RADIUS}`}
+              className="-ml-1.5 inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-mini font-medium text-fg-faint transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
             >
               <AdvancedIcon />
               {t('Go to advanced edition')}
+              <span aria-hidden>→</span>
             </button>
           </div>
         ) : null}
@@ -1149,8 +1187,47 @@ function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
   )
 }
 
-function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
+/** The ONE way a row hides something: optional refinements under "Fine-tune",
+ *  closed until asked for, its contents named on the line under the title.
+ *  What a row is FOR never goes in here (Radius' three axes stay on screen). */
+function FineTune({ open, onToggle, contents, children }: {
+  open: boolean
+  onToggle: () => void
+  /** What opening it reveals, e.g. "Saturation · Brightness · Ramp contrast". */
+  contents: string
+  children: React.ReactNode
+}) {
+  const { t } = useI18n()
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="group flex w-full min-w-0 items-center gap-2 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
+          <span className="block truncate text-mini text-fg-faint">{contents}</span>
+        </span>
+        <span className={discloseChip(open)}>{open ? t('Hide') : t('Show')}</span>
+      </button>
+      {open && <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">{children}</div>}
+    </>
+  )
+}
+
+/** The ONE label line over a wide control (a slider, a diagram): the name in
+ *  muted ink on the left, the current value in full ink on the right. Every
+ *  stepped control in the panel heads itself with this, so "Text scale",
+ *  "Border width", "Saturation" and Radius' axes read as one family. */
+const SLIDER_LABEL = 'min-w-0 truncate text-caption font-medium text-fg-muted'
+const SLIDER_VALUE = 'flex-shrink-0 text-caption tabular-nums text-fg'
+
+function SettingItem({ label, value, hint, advancedLabel, onAdvanced, children }: {
   label?: string
+  /** The current value, read out on the label line (right-aligned). */
+  value?: React.ReactNode
   hint?: string
   advancedLabel?: string
   onAdvanced?: () => void
@@ -1200,8 +1277,14 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
               Measured 6.2:1 on `--rail-section` (AA for small text; `fg-faint`
               would be 3.79 and is why the house eyebrow treatment is not the
               answer here). */}
-          {label ? <span className="min-w-0 truncate text-caption font-medium text-fg-muted">{t(label)}</span> : null}
-          {trailing}
+          {label ? (
+            <span className="flex min-w-0 items-center gap-0.5">
+              <span className={SLIDER_LABEL}>{t(label)}</span>
+              {/* The ⓘ follows the NAME, as it does on a picker row. */}
+              {trailing}
+            </span>
+          ) : trailing}
+          {label && value != null ? <span className={SLIDER_VALUE}>{value}</span> : null}
         </div>
       )}
       {children}
@@ -1560,7 +1643,6 @@ function RadiusCard({
 }) {
   const { t } = useI18n()
   const matched = matchRadiusRolePreset(radiusRoles)
-  const [fineOpen, setFineOpen] = useState(matched === null)
   // What each axis resolves to now, for the closed field's mark when no preset matches.
   const radiusPx = (key: string) => {
     const group = RADIUS_GROUPS.find((g) => g.key === key)
@@ -1587,33 +1669,14 @@ function RadiusCard({
           const [boxes, fields, selectors] = radiusPresetPx(preset)
           return <RadiusPresetGlyph boxes={boxes} fields={fields} selectors={selectors} selected={selected} />
         }}
-        note="A preset sets boxes, fields and selectors together. Fine-tune rounds each one on its own."
+        info={<InfoHint>{t("A preset sets boxes, fields and selectors together. The three sliders below round each one on its own.")}</InfoHint>}
         onChange={onPreset}
       />
-      {matched === null && (
-        <p className="-mt-1.5 text-mini text-fg-faint">{t('Custom — corners were set by hand below.')}</p>
-      )}
-      {/* Same disclosure as Colour's Fine-tune: a title, what is inside it, and
-          a chevron (no Show / Hide word — aria-expanded carries the state).
-          Opens by itself when the corners were set by hand, since that is the
-          state the presets cannot describe. */}
-      <div className="flex min-w-0 flex-col border-t border-line pt-3">
-        <button
-          type="button"
-          onClick={() => setFineOpen((open) => !open)}
-          aria-expanded={fineOpen}
-          className="group/row flex w-full min-w-0 items-center gap-2 text-left"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
-            <span className="block truncate text-mini text-fg-faint">
-              {RADIUS_GROUPS.map((group) => group.label).join(' · ')}
-            </span>
-          </span>
-          <Chevron open={fineOpen} />
-        </button>
-        {fineOpen && (
-          <div className="mt-3 flex flex-col gap-3.5 border-t border-line pt-3">
+      {/* The three axes ARE the radius: always on screen, never behind a
+          Fine-tune. The preset above is a shortcut to three positions; when no
+          preset matches, the field and the row header both read Custom, so no
+          extra line is needed to say so. */}
+      <div className="flex flex-col gap-3.5 border-t border-line pt-3">
         {RADIUS_GROUPS.map((group) => {
           const current = radiusAxisStep(group, radiusRoles)
           // What the axis resolves to on the platform shown — a per-viewport
@@ -1624,13 +1687,14 @@ function RadiusCard({
           const stepPx = RADIUS_AXIS_STEPS.map((step) => Math.round(parseFloat(radius[radiusAtViewport(step, platform)] ?? '') || 0))
           return (
             <div key={group.key} className="min-w-0">
-              <div className="mb-1 flex min-w-0 items-center justify-between gap-2 text-caption font-medium text-fg-muted">
-                <span className="flex-shrink-0">
-                  {group.label} · {current ?? t('Custom')} · <span className="tabular-nums">{px}px</span>
+              <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-0.5">
+                  <span className={SLIDER_LABEL}>{t(group.label)}</span>
+                  <InfoHint>{overridden ? `${t(group.hint)}. ${t('Set by hand on')} ${t(platform)}.` : `${t('Used by')} ${t(group.hint)}.`}</InfoHint>
                 </span>
-                <small className="min-w-0 truncate text-mini font-normal text-fg-faint">
-                  {overridden ? `Set by hand on ${platform}` : group.hint}
-                </small>
+                {/* A per-viewport value set by hand is a STATE, so it stays on
+                    screen: the value turns accent, the ⓘ says why. */}
+                <span className={`${SLIDER_VALUE} ${overridden ? '!text-accent-ui' : ''}`}>{current ?? t('Custom')} · {px}px</span>
               </div>
               <DotSlider
                 ariaLabel={`${group.label} radius`}
@@ -1647,8 +1711,6 @@ function RadiusCard({
             </div>
           )
         })}
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1690,7 +1752,7 @@ function ShadowCard({ shadows, shadowsDark, onChange, onChangeDark }: {
         const preset = SHADOW_PRESETS.find((p) => p.label === label)!
         return <ShadowPresetGlyph values={preset.values} dark={chromeDark} selected={selected} />
       }}
-      note="Grades the complete elevation ramp used by cards, menus, modals, and toasts."
+      info={<InfoHint>{t("Grades the complete elevation ramp used by cards, menus, modals, and toasts.")}</InfoHint>}
       onChange={(label) => {
         const preset = SHADOW_PRESETS.find((p) => p.label === label)
         if (preset) onChange({ ...preset.values })
@@ -1712,7 +1774,7 @@ function ShadowCard({ shadows, shadowsDark, onChange, onChangeDark }: {
         const values = label === SAME_AS_LIGHT ? shadows : SHADOW_PRESETS.find((p) => p.label === label)!.values
         return <ShadowPresetGlyph values={values} dark selected={selected} />
       }}
-      note="The dark appearance's own elevation ramp. Same as Light derives it from the light depth."
+      info={<InfoHint>{t("The dark appearance's own elevation ramp. Same as Light derives it from the light depth.")}</InfoHint>}
       onChange={(label) => {
         if (label === SAME_AS_LIGHT) { onChangeDark(undefined); return }
         const preset = SHADOW_PRESETS.find((p) => p.label === label)
@@ -1887,9 +1949,9 @@ export function AccentAxisSlider({ axis, label, value, onPreview, onCommit, acti
   const commit = () => { frozen.current = null; if (pending.current) { onCommit(pending.current); pending.current = null } }
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
-        <span>{label}</span>
-        <span className="tabular-nums">{Math.round(current * 100)}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className={SLIDER_LABEL}>{label}</span>
+        <span className={SLIDER_VALUE}>{Math.round(current * 100)}</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="relative h-5 min-w-0 flex-1 rounded-full border border-line" style={{ background: `linear-gradient(to right, ${stops}) border-box` }}>
@@ -2013,6 +2075,29 @@ export default function ThemeQuickSettingsRail({
   const inBand = useInspectorHeader()
   // Header → Edit swaps the accordion for the list of editions, in place.
   const [editList, setEditList] = useState(false)
+  // The row the Edit list just sent us to. Once the accordion is back, that
+  // row is pinned to the top of the scroll region while the bodies above it
+  // fold and its own unfolds (~260ms), so the person lands ON what they picked
+  // instead of hunting for it below the previous row.
+  const [landOn, setLandOn] = useState<QuickPanelFoundation | null>(null)
+  useEffect(() => {
+    if (!landOn || editList) return
+    const started = performance.now()
+    let frame = 0
+    const pin = () => {
+      const section = document.getElementById(`quick-edition-${landOn}`)?.closest('section')
+      const scroller = section?.closest<HTMLElement>('.overflow-y-auto')
+      if (section && scroller) {
+        scroller.scrollTop += section.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+      }
+      if (performance.now() - started < 400) frame = requestAnimationFrame(pin)
+    }
+    frame = requestAnimationFrame(pin)
+    // One last pin once every fold has landed: frames can be throttled (a
+    // background pane), and the row must still end at the top.
+    const settle = setTimeout(() => { pin(); setLandOn(null) }, 450)
+    return () => { cancelAnimationFrame(frame); clearTimeout(settle) }
+  }, [landOn, editList])
   // The open row's header folds the accordion; picking a foundation anywhere
   // (a row, the icon rail, the board) opens it again.
   const [railCollapsed, setRailCollapsed] = useState(false)
@@ -2079,11 +2164,12 @@ export default function ThemeQuickSettingsRail({
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
-  const { typography, radius, shadows, shadowsDark, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
+  const { typography, radius, shadows, shadowsDark, sizes, stroke, spacing, spacingRoles, iconWeight } = foundations
   const motion = normalizeMotionSettings(foundations.motion)
   const motionPreset = matchMotionPreset(motion)
-  // ONE platform switch, in Spacing (where viewports matter most). Font,
-  // Radius and the board still resolve against the platform it picks.
+  // ONE platform switch, at the head of the panel (above the accordion): it
+  // sets what Font's type roles, Radius, Spacing and the board all read, so
+  // it cannot live inside one of those rows.
   const platformSwitch = onPreviewPlatformChange ? (
     <PlatformCutSwitch value={previewViewport} onChange={onPreviewPlatformChange} layout="fill" />
   ) : undefined
@@ -2148,7 +2234,6 @@ export default function ThemeQuickSettingsRail({
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
   const setShadowsDark = (key: string, value: Record<string, string> | undefined) => patchThemeFoundations(key, { shadowsDark: value })
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
-  const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
   const setStroke = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { stroke: value })
   // Container inset writes BOTH: the `inset-surface` spacing role (the token the
   // preview actually reads) and the four-sided `padding` mirror (the export's
@@ -2250,6 +2335,40 @@ export default function ThemeQuickSettingsRail({
     // adopted a style also un-adopts it — one gesture, one reversal.
     showUndo(snapshot, label)
   }
+
+  // Per-row Reset, beside the open row's chevron. Present only while the row
+  // differs from what the brand Reset restores (its origin System Style, or no
+  // override for a hand-made brand) — one Undo step, like any edit.
+  const rowResetTarget = themeStylePreset(store.themeOrigin?.[previewTheme] ?? '')?.label ?? 'System defaults'
+  const rowReset = (row: FoundationRow, title: string) => {
+    if (tryOn || setupStep != null || !foundationRowHasEdits(store, previewTheme, row)) return undefined
+    return () => commit(`${title} reset`, (themeKey) => {
+      resetFoundationRow(themeKey, row)
+      // A one-brand system mirrors type and radius roles at the root (see
+      // setTypography / setRadiusRoles): bring the root back with it.
+      const s = useDesignStore.getState()
+      if (Object.keys(s.themes).length !== 1) return
+      const resolved = resolveThemeFoundations(s, themeKey)
+      if (row === 'typography') {
+        s.setTypography({
+          ...s.typography,
+          fontFamily: resolved.typography.fontFamily,
+          headingFontFamily: resolved.typography.headingFontFamily ?? resolved.typography.fontFamily,
+          sizes: resolved.typography.sizes ?? s.typography.sizes,
+          lineHeights: resolved.typography.lineHeights ?? s.typography.lineHeights,
+          weights: resolved.typography.weights ?? s.typography.weights,
+        })
+      }
+      if (row === 'radius') {
+        s.setRadius(resolved.radius)
+        s.setRadiusRoles(resolved.radiusRoles)
+        useDesignStore.setState({ radiusRoleViewports: resolved.radiusRoleViewports ?? {} })
+      }
+    })
+  }
+  const colorReset = !tryOn && setupStep == null && colorRowHasEdits(store, previewTheme)
+    ? () => commit('Colour reset', (themeKey) => resetThemeColorToOrigin(themeKey, applyAccent))
+    : undefined
 
   const beginScrub = (label: string) => {
     if (scrub.current) return
@@ -2735,12 +2854,24 @@ export default function ThemeQuickSettingsRail({
       {/* Under a header band (the inspector's, or the create studio's Name
           band) the accordion starts flush: its rows carry their own height and
           dividers, so top padding only left a strip above Color. */}
+      {platformSwitch && !editList && !tryOn && (
+        <div className="flex-shrink-0 border-b border-line px-[var(--inspector-inset)] py-2.5">
+          {platformSwitch}
+        </div>
+      )}
       <ThemeRailScrollRegion padClass={inBand || startStyle ? 'pb-3' : 'py-3'}>
       {editList && onSelectPanel && !tryOn ? (
         <EditList
           active={activePanel}
           locked={setupStep != null}
-          onPick={(key) => { onSelectPanel(key); setEditList(false) }}
+          onPick={(key) => {
+            onSelectPanel(key)
+            setEditList(false)
+            // Picking a row is "take me there": it opens even if it was the
+            // folded current row, and lands at the top of the panel.
+            setRailCollapsed(false)
+            setLandOn(key)
+          }}
         />
       ) : tryOn ? (
         // A previewed style isn't yours yet, so there is nothing to edit — show
@@ -2767,6 +2898,8 @@ export default function ThemeQuickSettingsRail({
           open={activePanel === 'color'}
           summary={<><span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full border border-line" style={{ background: liveAccent }} />{liveAccent.toUpperCase()}</>}
           flush
+          onReset={colorReset}
+          resetTarget={rowResetTarget}
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
           advancedDisabled={editionLocked}
@@ -2913,22 +3046,7 @@ export default function ThemeQuickSettingsRail({
                 states. Show opens Saturation, Brightness and Ramp contrast at
                 one height. The Contrast grid only opens the board overlay. */}
             <div className={`flex flex-col ${RAIL_BLOCK}`}>
-              <button
-                type="button"
-                onClick={() => setFineOpen((open) => !open)}
-                aria-expanded={fineOpen}
-                className="group flex w-full min-w-0 items-center gap-2 text-left"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
-                  <span className="block truncate text-mini text-fg-faint">{t('Saturation · Brightness · Ramp contrast')}</span>
-                </span>
-                <span className={discloseChip(fineOpen)}>
-                  {fineOpen ? t('Hide') : t('Show')}
-                </span>
-              </button>
-              {fineOpen && (
-                <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+              <FineTune open={fineOpen} onToggle={() => setFineOpen((open) => !open)} contents={t('Saturation · Brightness · Ramp contrast')}>
                   <AccentAxisSlider
                     axis="saturation"
                     label={t('Saturation')}
@@ -2946,9 +3064,12 @@ export default function ThemeQuickSettingsRail({
                     action={<FineResetButton label={t('Reset brightness')} disabled={brightnessIsIdeal} onClick={() => resetAxis('lightness')} />}
                   />
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-micro font-medium uppercase tracking-wide text-fg-faint">
-                      <span title={t('How far apart the twelve tones of every ramp sit.')}>{t('Ramp contrast')}</span>
-                      <span className="tabular-nums">{formatShift(contrastShift)}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-0.5">
+                        <span className={SLIDER_LABEL}>{t('Ramp contrast')}</span>
+                        <InfoHint>{t('How far apart the twelve tones of every ramp sit.')}</InfoHint>
+                      </span>
+                      <span className={SLIDER_VALUE}>{formatShift(contrastShift)}</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
@@ -2967,8 +3088,7 @@ export default function ThemeQuickSettingsRail({
                       />
                     </div>
                   </div>
-                </div>
-              )}
+              </FineTune>
               <button
                 type="button"
                 onClick={() => onContrastOpenChange?.(!contrastOpen)}
@@ -3012,7 +3132,7 @@ export default function ThemeQuickSettingsRail({
           )
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font" foundationKey="typography" open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Font" foundationKey="typography" onReset={rowReset('typography', 'Font')} resetTarget={rowResetTarget} open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           {/* One stack of labelled fields (name | control, like Colour's role
               rows), then the roles they grade. The
               notes that used to be hover hints now open with the list, where
@@ -3027,7 +3147,7 @@ export default function ThemeQuickSettingsRail({
               options={familyOptions(typography.fontFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
-              note="Headings, body text and controls."
+              info={<InfoHint>{t("Headings, body text and controls.")}</InfoHint>}
               onChange={setBody}
               footer={addFontFooter('body')}
             />
@@ -3043,7 +3163,7 @@ export default function ThemeQuickSettingsRail({
               options={familyOptions(headingFamily)}
               searchPlaceholder="Search fonts"
               emptyLabel="No fonts match"
-              note="Display titles only. Headings, body and controls use the body font."
+              info={<InfoHint>{t("Display titles only. Headings, body and controls use the body font.")}</InfoHint>}
               onChange={setDisplay}
               footer={addFontFooter('display')}
             />
@@ -3056,9 +3176,9 @@ export default function ThemeQuickSettingsRail({
                 names are too long for a thumb, so the name sits in the header
                 (as Border width's word does) and the thumb says what it does. */}
             <div className="mt-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-ui text-fg-muted">{t('Text scale')}</span>
-                <span className="text-ui text-fg">{t(TYPE_SCALE_MODES.find((mode) => mode.key === typeScaleMode)?.label ?? 'Custom')}</span>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className={SLIDER_LABEL}>{t('Text scale')}</span>
+                <span className={SLIDER_VALUE}>{t(TYPE_SCALE_MODES.find((mode) => mode.key === typeScaleMode)?.label ?? 'Custom')}</span>
               </div>
               <DotSlider
                 ariaLabel="Type scale"
@@ -3074,35 +3194,24 @@ export default function ThemeQuickSettingsRail({
                   const { sizes: nextSizes, lineHeights } = buildTypeScale(TYPE_SCALE_MODES[i].factor)
                   setTypography(themeKey, { ...typography, sizes: nextSizes, lineHeights })
                 })}
-                className={ROW_GAP_CONTROL}
               />
             </div>
           </div>
           <div className={`flex flex-col ${RAIL_BLOCK}`}>
-            <button
-              type="button"
-              onClick={() => setTypeRolesOpen((open) => !open)}
-              aria-expanded={typeRolesOpen}
-              className="group flex w-full min-w-0 items-center gap-2 text-left"
+            <FineTune
+              open={typeRolesOpen}
+              onToggle={() => setTypeRolesOpen((open) => !open)}
+              contents={`${t('Type roles')} · ${t(previewViewport.charAt(0).toUpperCase() + previewViewport.slice(1))}`}
             >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-caption font-medium text-fg">{t('Type roles')}</span>
-                <span className="block truncate text-mini text-fg-faint">{t('Size / line height / letter spacing in px at the platform picked in Spacing, as in Variables · Font semantics.')}</span>
-              </span>
-              <span className={discloseChip(typeRolesOpen)}>{typeRolesOpen ? t('Hide') : t('Show')}</span>
-            </button>
-            {typeRolesOpen && (
-              <div className="mt-3 border-t border-line pt-3">
-                <TypeScaleCard typography={typography} platform={previewViewport} />
-              </div>
-            )}
+              <TypeScaleCard typography={typography} platform={previewViewport} />
+            </FineTune>
           </div>
         </EditionCard>
           )
         })()}
 
         {(
-        <EditionCard title="Radius" foundationKey="radius" open={activePanel === 'radius'} summary={t(matchRadiusRolePreset(foundations.radiusRoles) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Radius" foundationKey="radius" onReset={rowReset('radius', 'Radius')} resetTarget={rowResetTarget} open={activePanel === 'radius'} summary={t(matchRadiusRolePreset(foundations.radiusRoles) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem>
             <RadiusCard
               radius={radius}
@@ -3119,8 +3228,8 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Shadow" foundationKey="shadow" open={activePanel === 'shadow'} summary={shadowsDark
-          ? `${t(matchShadowPreset(shadows) ?? 'Custom')} · ${t('Dark')} ${t(matchDarkShadowPreset(shadowsDark) ?? 'Custom')}`
+        <EditionCard title="Shadow" foundationKey="shadow" onReset={rowReset('shadow', 'Shadow')} resetTarget={rowResetTarget} open={activePanel === 'shadow'} summary={shadowsDark
+          ? `${t(matchShadowPreset(shadows) ?? 'Custom')} / ${t(matchDarkShadowPreset(shadowsDark) ?? 'Custom')}`
           : t(matchShadowPreset(shadows) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem>
             <ShadowCard
@@ -3134,8 +3243,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Spacing" foundationKey="sizes" open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          {platformSwitch && <div className={RAIL_BLOCK}>{platformSwitch}</div>}
+        <EditionCard title="Spacing" foundationKey="sizes" onReset={rowReset('sizes', 'Spacing')} resetTarget={rowResetTarget} open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem>
             <CutFacts rows={[
               { label: previewViewport === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
@@ -3186,11 +3294,12 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
+          <SettingItem
+            label="Border width"
+            value={t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}
+            hint="Controls dividers and component borders. The 2px focus ring remains unchanged."
+          >
             <div>
-              {/* The value rides the thumb now, so the header keeps only the
-                  word for it and the old stop-label row under the track is gone. */}
-              <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}</span>
               <DotSlider
                 ariaLabel="Border width"
                 stops={STROKE_SM_STOPS}
@@ -3199,7 +3308,6 @@ export default function ThemeQuickSettingsRail({
                 onScrubStart={() => beginScrub('Border width updated')}
                 onScrubEnd={endScrub}
                 onChange={(next) => applyScrub('Border width updated', (themeKey) => setStroke(themeKey, { ...stroke, sm: `${next}px` }))}
-                className={ROW_GAP_CONTROL}
               />
             </div>
           </SettingItem>
@@ -3207,7 +3315,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Icons" foundationKey="icons" open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Icons" foundationKey="icons" onReset={rowReset('icons', 'Icons')} resetTarget={rowResetTarget} open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <div className={RAIL_BLOCK}>
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
             <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
@@ -3216,7 +3324,7 @@ export default function ThemeQuickSettingsRail({
             <PickerField
               label="Weight"
               ariaLabel="Icon weight"
-              note="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision."
+              info={<InfoHint>{t("Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision.")}</InfoHint>}
               value={iconWeight ?? 'regular'}
               leading={<PhosphorWeightProvider weight={iconWeight ?? 'regular'}><PreviewIcon concept="home" size={14} /></PhosphorWeightProvider>}
               options={PHOSPHOR_WEIGHTS.map((weight) => ({
@@ -3233,7 +3341,7 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Motion" foundationKey="motion" open={activePanel === 'motion'} summary={t(motionSummary(motion))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Motion" foundationKey="motion" onReset={rowReset('motion', 'Motion')} resetTarget={rowResetTarget} open={activePanel === 'motion'} summary={t(motionSummary(motion))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <div className={RAIL_BLOCK}>
             <MotionPreview settings={motion} />
           </div>
@@ -3241,7 +3349,7 @@ export default function ThemeQuickSettingsRail({
             <PickerField
               label="Preset"
               ariaLabel="Motion preset"
-              note="How every component moves: hovers, overlays, lists. Reduced motion is built in on top of any preset."
+              info={<InfoHint>{t("How every component moves: hovers, overlays, lists. Reduced motion is built in on top of any preset.")}</InfoHint>}
               value={motionPreset ?? 'custom'}
               valueLabel={motionPreset ? undefined : t('Custom')}
               options={MOTION_PRESET_KEYS.map((key) => ({
@@ -3255,24 +3363,6 @@ export default function ThemeQuickSettingsRail({
         </EditionCard>
         )}
 
-        {activePanel === 'sizes' && (
-          inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
-          inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
-          (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP ||
-          INSET_SIDES.some((side) => spacingRoles?.[insetSideKey('inset-surface', side)] !== undefined)
-        ) && (
-          <button
-            type="button"
-            onClick={() => commit('Sizes reset', (themeKey) => {
-              setSizes(themeKey, buildSizesFromBase(SIZE_DEFAULT_BASE))
-              setSelector(themeKey, buildSelectorsFromBase(SELECTOR_DEFAULT_BASE))
-              setContainerInset(themeKey, SPACING_STEPS.indexOf(PADDING_DEFAULT_STEP))
-            })}
-            className="mx-2 mt-2 self-start rounded-md px-1 py-0.5 text-mini text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            Reset sizes to the standard ramp
-          </button>
-        )}
         {themeReset.show && (
           <div className="px-[var(--inspector-inset)] pt-3">
             <ThemeResetButton wide mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />

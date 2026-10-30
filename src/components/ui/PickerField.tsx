@@ -68,7 +68,7 @@ function SearchGlyph() {
 }
 
 export function PickerField<T extends string>({
-  label, value, valueLabel, options, onChange, ariaLabel, leading, render, note, optionVisual,
+  label, value, valueLabel, options, onChange, ariaLabel, leading, render, info, optionVisual,
   searchPlaceholder = 'Search', emptyLabel = 'No matches', searchable, footer,
 }: {
   label: string
@@ -85,8 +85,10 @@ export function PickerField<T extends string>({
   /** A drawing per option (a corner, a lifted tile, a density frame) shown
    *  beside its name, so a preset is chosen by what it looks like. */
   optionVisual?: (value: T, selected: boolean) => React.ReactNode
-  /** One line at the top of the list saying what this choice reaches. */
-  note?: string
+  /** What this choice reaches, as the inspector's ⓘ hint beside the name.
+   *  Not a line inside the list: the panel explains a setting in ONE way, and
+   *  a note you only meet after opening the list is a second, hidden one. */
+  info?: React.ReactNode
   searchPlaceholder?: string
   emptyLabel?: string
   /** Defaults to on for lists of `SEARCH_FROM` options or more. */
@@ -193,27 +195,38 @@ export function PickerField<T extends string>({
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => (open ? close(false) : openList())}
-        onKeyDown={(event) => {
-          if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); openList() }
-        }}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listId : undefined}
-        aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
-        className={`group ${FIELD_ROW} rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-      >
-        <span className={`${FIELD_NAME} ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(label)}</span>
-        {/* No leading item: the text keeps the same inset as the chevron side. */}
-        <span className={`${FIELD_CONTROL} ${leading ? '' : '!pl-2.5'} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
+      {/* The CONTROL is the button; the name beside it opens it too, and keeps
+          room for the ⓘ hint (a button inside a button is not allowed). */}
+      <div className={`group ${FIELD_ROW}`}>
+        <span className="flex min-w-0 items-center gap-0.5">
+          <span
+            aria-hidden
+            onClick={() => (open ? close(false) : openList())}
+            className={`${FIELD_NAME} cursor-pointer ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
+          >
+            {t(label)}
+          </span>
+          {info}
+        </span>
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => (open ? close(false) : openList())}
+          onKeyDown={(event) => {
+            if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); openList() }
+          }}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? listId : undefined}
+          aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
+          // No leading item: the text keeps the same inset as the chevron side.
+          className={`${FIELD_CONTROL} ${leading ? '' : '!pl-2.5'} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+        >
           {leading ?<span aria-hidden className={`${FIELD_LEAD} flex items-center justify-center text-fg-muted`}>{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />
-        </span>
-      </button>
+        </button>
+      </div>
 
       {createPortal(
         <AnimatePresence>
@@ -250,7 +263,6 @@ export function PickerField<T extends string>({
                   )}
                 </label>
               )}
-              {note && <p className="flex-shrink-0 border-b border-line px-3 py-2 text-mini leading-snug text-fg-faint">{t(note)}</p>}
               <div
                 ref={listRef}
                 id={listId}

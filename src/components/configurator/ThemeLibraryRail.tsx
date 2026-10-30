@@ -217,7 +217,7 @@ export function DeleteThemeConfirmation({
  *  around one can derive its own radius instead of guessing. */
 export const AVATAR_RADIUS = 8 / 31
 
-export function ThemeAvatar({ ramp, appearance, fallback, size = 24 }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string; size?: number }) {
+export function ThemeAvatar({ ramp, appearance, fallback, size = 24, fluid = false }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string; size?: number; fluid?: boolean }) {
   const base = ramp?.[5] ?? fallback
   const middle = ramp?.[7] ?? base
   const highlight = ramp?.[9] ?? middle
@@ -226,13 +226,15 @@ export function ThemeAvatar({ ramp, appearance, fallback, size = 24 }: { ramp?: 
   return (
     <svg
       viewBox="0 0 31 31"
-      width={size}
-      height={size}
+      width={fluid ? '100%' : size}
+      height={fluid ? '100%' : size}
       // Corner = the inner rect's own `rx` (8/31 of the box), so the clip and the
       // drawn edge agree at every size. A fixed `rounded-md` was 6.75px against
       // a 10px drawn corner at 40px, and anything wrapping the avatar (a
       // selection ring) had no true radius to be concentric with.
-      style={{ borderRadius: size * AVATAR_RADIUS }}
+      // `fluid` fills a rem-sized tile (`h-6 w-6`) instead of a px guess at it:
+      // 27px only equals 1.5rem at the 18px root, and overflowed the pill below.
+      style={{ borderRadius: fluid ? `${AVATAR_RADIUS * 100}%` : size * AVATAR_RADIUS }}
       className="flex-shrink-0 overflow-hidden"
       aria-hidden
     >
