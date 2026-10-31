@@ -779,9 +779,9 @@
   --grid-container: var(--dimension-1280);
 
   /* Gradients */
-  --gradient-brand-cover: linear-gradient(135deg, #015ef0 0%, #183568 100%);
-  --gradient-aurora: linear-gradient(120deg, #6fa0f6 0%, #015ef0 50%, #3269ce 100%);
-  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #6fa0f6 0%, #3269ce 100%);
+  --gradient-brand-cover: linear-gradient(135deg, #2970ff 0%, #1a3366 100%);
+  --gradient-aurora: linear-gradient(120deg, #7ca9fe 0%, #2970ff 50%, #3667c9 100%);
+  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #7ca9fe 0%, #3667c9 100%);
 
   /* Motion — lib/motion.ts. Roles: `transition: background-color var(--motion-use-hover)` */
   --motion-duration-instant: 0ms;
@@ -909,6 +909,165 @@
 }
 
 .dark, [data-theme="dark"] {
+  /* Primitive scales — dark */
+
+  /* Accent */
+  --color-accent-1: #0e0f13;
+  --color-accent-2: #13171d;
+  --color-accent-3: #171e2c;
+  --color-accent-4: #1a273f;
+  --color-accent-5: #1e3154;
+  --color-accent-6: #223e75;
+  --color-accent-7: #254c98;
+  --color-accent-8: #285cc3;
+  --color-accent-9: #2970ff;
+  --color-accent-10: #4683fc;
+  --color-accent-11: #abceff;
+  --color-accent-12: #d1e7ff;
+
+  /* Neutral */
+  --color-neutral-1: #0e0f13;
+  --color-neutral-2: #151515;
+  --color-neutral-3: #1b1b1c;
+  --color-neutral-4: #212223;
+  --color-neutral-5: #292a2c;
+  --color-neutral-6: #343638;
+  --color-neutral-7: #404245;
+  --color-neutral-8: #4e5055;
+  --color-neutral-9: #60636a;
+  --color-neutral-10: #6d7076;
+  --color-neutral-11: #c9ccd1;
+  --color-neutral-12: #e3e4e7;
+
+  /* Error */
+  --color-error-1: #0e0f13;
+  --color-error-2: #1c1413;
+  --color-error-3: #291916;
+  --color-error-4: #391e1a;
+  --color-error-5: #4c231d;
+  --color-error-6: #682820;
+  --color-error-7: #852c23;
+  --color-error-8: #a82f23;
+  --color-error-9: #d92d20;
+  --color-error-10: #dd5141;
+  --color-error-11: #ffbcae;
+  --color-error-12: #ffddd4;
+
+  /* Warning */
+  --color-warning-1: #0e0f13;
+  --color-warning-2: #1c1613;
+  --color-warning-3: #291e17;
+  --color-warning-4: #39261b;
+  --color-warning-5: #4c2f1e;
+  --color-warning-6: #693b20;
+  --color-warning-7: #864820;
+  --color-warning-8: #aa561c;
+  --color-warning-9: #dc6803;
+  --color-warning-10: #e17e40;
+  --color-warning-11: #ffbe92;
+  --color-warning-12: #ffdec5;
+
+  /* Success */
+  --color-success-1: #0e0f13;
+  --color-success-2: #131815;
+  --color-success-3: #17211a;
+  --color-success-4: #1b2c21;
+  --color-success-5: #1e3828;
+  --color-success-6: #214b32;
+  --color-success-7: #225e3b;
+  --color-success-8: #1e7546;
+  --color-success-9: #079455;
+  --color-success-10: #419f69;
+  --color-success-11: #8fdcaa;
+  --color-success-12: #c3efd1;
+
+  /* Info */
+  --color-info-1: #0e0f13;
+  --color-info-2: #13171c;
+  --color-info-3: #161e2b;
+  --color-info-4: #19273c;
+  --color-info-5: #1c3050;
+  --color-info-6: #1e3e6f;
+  --color-info-7: #1f4c90;
+  --color-info-8: #1e5bb7;
+  --color-info-9: #1570ef;
+  --color-info-10: #3c82ed;
+  --color-info-11: #a7cfff;
+  --color-info-12: #cfe7ff;
+
+  /* Alpha twins — reproduce a solid tone over the page, for translucent fills */
+  --color-accent-a-1: #ffffff00;
+  --color-accent-a-2: #72afdb0d;
+  --color-accent-a-3: #6097f61c;
+  --color-accent-a-4: #4d8dfb30;
+  --color-accent-a-5: #4788fb47;
+  --color-accent-a-6: #3e7ffc6b;
+  --color-accent-a-7: #367afc91;
+  --color-accent-a-8: #3176febf;
+  --color-accent-a-9: #2970ff;
+  --color-accent-a-10: #4784fefc;
+  --color-accent-a-11: #abceff;
+  --color-accent-a-12: #d1e7ff;
+  --color-neutral-a-1: #ffffff00;
+  --color-neutral-a-2: #f7d75608;
+  --color-neutral-a-3: #e7d7a90f;
+  --color-neutral-a-4: #fbfddb14;
+  --color-neutral-a-5: #eff0e31f;
+  --color-neutral-a-6: #eef4ed2b;
+  --color-neutral-a-7: #f1f7f638;
+  --color-neutral-a-8: #f3f7ff47;
+  --color-neutral-a-9: #ecf2fe5e;
+  --color-neutral-a-10: #f0f6ff6b;
+  --color-neutral-a-11: #f5f8fecf;
+  --color-neutral-a-12: #fbfcffe6;
+  --color-error-a-1: #ffffff00;
+  --color-error-a-2: #f762130f;
+  --color-error-a-3: #ef622c1f;
+  --color-error-a-4: #fd623a2e;
+  --color-error-a-5: #fc5c3942;
+  --color-error-a-6: #fb513561;
+  --color-error-a-7: #fc493380;
+  --color-error-a-8: #ff412ca3;
+  --color-error-a-9: #fd3222d9;
+  --color-error-a-10: #ff5c48db;
+  --color-error-a-11: #ffbcae;
+  --color-error-a-12: #ffddd4;
+  --color-warning-a-1: #ffffff00;
+  --color-warning-a-2: #f784130f;
+  --color-warning-a-3: #ef8c341f;
+  --color-warning-a-4: #fd8f3f2e;
+  --color-warning-a-5: #fc8a3d42;
+  --color-warning-a-6: #fd833561;
+  --color-warning-a-7: #fe812d80;
+  --color-warning-a-8: #fe7c21a6;
+  --color-warning-a-9: #fe7600db;
+  --color-warning-a-10: #fe8d46e0;
+  --color-warning-a-11: #ffbe92;
+  --color-warning-a-12: #ffdec5;
+  --color-success-a-1: #ffffff00;
+  --color-success-a-2: #8bf0450a;
+  --color-success-a-3: #7ef06a14;
+  --color-success-a-4: #72ee7f21;
+  --color-success-a-5: #67f3882e;
+  --color-success-a-6: #5aff8f40;
+  --color-success-a-7: #4bfe8c54;
+  --color-success-a-8: #33fc8a6e;
+  --color-success-a-9: #02fd898f;
+  --color-success-a-10: #63ffa299;
+  --color-success-a-11: #a4fdc3db;
+  --color-success-a-12: #cffdddf0;
+  --color-info-a-1: #ffffff00;
+  --color-info-a-2: #8bd7f40a;
+  --color-info-a-3: #5797ed1c;
+  --color-info-a-4: #4b94f72e;
+  --color-info-a-5: #448efe42;
+  --color-info-a-6: #3788ff63;
+  --color-info-a-7: #2e82ff87;
+  --color-info-a-8: #257cfdb3;
+  --color-info-a-9: #1576fdf0;
+  --color-info-a-10: #3f8bfded;
+  --color-info-a-11: #a7cfff;
+  --color-info-a-12: #cfe7ff;
   /* Semantic tokens — dark */
   --color-content-tertiary: #6d7076;
   --color-content-quaternary: #60636a;
@@ -1023,9 +1182,9 @@
   --color-border-ring-default: #3e7ffc6b;
   --color-border-rim-highlight: #ffffff0d;
   /* Gradients — dark */
-  --gradient-brand-cover: linear-gradient(135deg, #015ef0 0%, #d0e7ff 100%);
-  --gradient-aurora: linear-gradient(120deg, #15408d 0%, #015ef0 50%, #a9ceff 100%);
-  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #15408d 0%, #a9ceff 100%);
+  --gradient-brand-cover: linear-gradient(135deg, #2970ff 0%, #d1e7ff 100%);
+  --gradient-aurora: linear-gradient(120deg, #254c98 0%, #2970ff 50%, #abceff 100%);
+  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #254c98 0%, #abceff 100%);
   /* Shadows — dark */
   --shadow-xs: 0 0 0 1px rgba(255,255,255,0.04), 0 1px 1px rgba(0,0,0,0.167);
   --shadow-sm: 0 0 0 1px rgba(255,255,255,0.048), 0 1px 2px rgba(0,0,0,0.265);

@@ -1,4 +1,5 @@
 import type { ColorScale } from '../types/tokens'
+import { linkedStopsFor } from './gradients'
 import {
   captureSnapshot,
   scopeSnapshotToTheme,
@@ -70,6 +71,15 @@ function promoteThemeFamilies(snapshot: DesignSnapshot, themeKey: string): Desig
     infoDarkScale: info?.darkScale ?? snapshot.infoDarkScale,
     customColors: [],
     themeSources: { [themeKey]: promotedSources },
+    // A linked gradient REFERENCES accent tones; its cached hexes are the
+    // system accent's (the default blue). Re-resolve against the brand's
+    // ramps, or Get code / GitHub ship `--gradient-*` in another colour than
+    // the brand (tokens.json's gradientsByTheme was already right).
+    gradients: brand?.scale && Object.keys(brand.scale).length
+      ? snapshot.gradients.map((g) => (g.linked
+        ? { ...g, stops: linkedStopsFor(g.id, brand.scale, g.stops, brand.darkScale && Object.keys(brand.darkScale).length ? brand.darkScale : undefined) ?? g.stops }
+        : g))
+      : snapshot.gradients,
   }
 }
 

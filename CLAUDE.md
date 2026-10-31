@@ -274,6 +274,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > found". Locked by `githubCommit.test.ts`; `agentContextAudit`'s GitHub mock now serves the
 > read-back too (a new mock must).
 
+> **UPDATE (2026-10-31, audit of a real push): BOTH appearances, everywhere a brand ships.**
+> Audited `Duscenko/ds-test-31-oct` (a brand made in Dark) against the editor:
+> - **`variables.css` carries each appearance's OWN primitive ramps.** It used to write the
+>   light ramp only (`primitiveRampLines`, `exporters.ts`): `:root` is the root appearance's
+>   ramp + alpha twins (solved over that appearance's page), and the other scaffold block
+>   (`.dark` or `.light`) re-points the same `--color-<family>-N` names to its ramp — the
+>   Radix model (step N = the same role in both). Named-brand `data-theme` blocks are
+>   untouched. A dark-first brand's `:root` used to sit light primitives beside dark roles.
+> - **Linked gradients follow the brand** in the code snapshot (`promoteThemeFamilies`
+>   re-resolves `linkedStopsFor` on the brand's ramps). They shipped the SYSTEM accent's
+>   cached hexes in Get code, the CSS door and GitHub (the Core golden itself had
+>   `#015ef0` for a `#2970ff` brand); tokens.json `gradientsByTheme` was already right.
+> - **README:** primitive scales and shadows have a column per appearance, in the brand's
+>   order (`Dark | Light` for a dark-first brand; one column for a Free cut), and a new
+>   "Semantic roles (Categorical)" table lists what components bind
+>   (`--color-action-primary-default`…) — before, only the flat catalogue was listed.
+> Goldens moved for exactly those three reasons. Locked by `githubPushFiles.test.ts`
+> ("a brand made in Dark").
+
 > **UPDATE (2026-10-31, later): "Push to GitHub" ships the BRAND, not the system root.**
 > Reported from a real repo: README "Primary color #2970ff · Themes: Light, Dark, Core--minimalist
 > · Inter", `variables.css` `--color-accent-9: #2970ff`, skills saying Inter — for a purple,

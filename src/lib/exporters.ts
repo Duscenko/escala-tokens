@@ -10,7 +10,6 @@ import { findFontSource, fontImportLines } from './customFonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { toneLabel, withAlpha, darkShadow, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
-import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
@@ -48,6 +47,44 @@ export type ShippedFileOptions = {
   desktopOnly?: boolean
 }
 
+/** Every primitive ramp and its alpha twin for ONE appearance, as CSS lines
+ *  (same names in both — the block they sit in says which appearance). A
+ *  family with no dark twin falls back to its light ramp, as before. */
+function primitiveRampLines(store: ReturnType<typeof useDesignStore.getState>, kind: ThemeAppearance): string[] {
+  const { colorNaming, customColors, pageBackground } = store
+  const dark = kind === 'dark'
+  const out: string[] = []
+  const pick = (light: Record<number, string>, darkScale?: Record<number, string>) =>
+    dark && darkScale && Object.keys(darkScale).length ? darkScale : light
+  const fams: [string, Record<number, string>, string][] = [
+    ['accent', pick(store.primaryScale, store.primaryDarkScale), dark ? store.darkBackground : pageBackground],
+    ['neutral', pick(store.grayLightScale, store.grayDarkScale), dark ? store.darkBackground : pageBackground],
+    ['error', pick(store.errorScale, store.errorDarkScale), dark ? store.darkBackground : pageBackground],
+    ['warning', pick(store.warningScale, store.warningDarkScale), dark ? store.darkBackground : pageBackground],
+    ['success', pick(store.successScale, store.successDarkScale), dark ? store.darkBackground : pageBackground],
+    ['info', pick(store.infoScale, store.infoDarkScale), dark ? store.darkBackground : pageBackground],
+    ...customColors.map((c): [string, Record<number, string>, string] => {
+      const pages = resolveFamilyPages(store, c.key)
+      return [c.key, pick(c.scale, c.darkScale), dark ? pages.dark : pages.light]
+    }),
+  ]
+  const sorted = (scale: Record<number, string>) => Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
+  for (const [name, scale] of fams) {
+    if (!Object.keys(scale).length) continue
+    out.push(`\n  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`)
+    sorted(scale).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  // Alpha twins — reproduce each solid tone when composited over THIS
+  // appearance's page (tokens.json `colors.primitiveAlpha`). CSS is a flat
+  // namespace, so the `-a-` infix disambiguates from the solid var.
+  out.push('\n  /* Alpha twins — reproduce a solid tone over the page, for translucent fills */')
+  for (const [name, scale, page] of fams) {
+    if (!Object.keys(scale).length) continue
+    sorted(generateAlphaScale(scale, page, kind)).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  return out
+}
+
 /**
  * Categorical role variables (`--color-action-primary-default`) per theme key.
  * These are the names components and agents bind (`componentRecipes`,
@@ -81,7 +118,7 @@ export function buildCSS(
   opts?: ShippedFileOptions,
 ): string {
   const desktopOnly = opts?.desktopOnly === true
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
+  const { themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   // First theme in order that actually has tokens. Whole-system exports stay
   // light-first; Get code remaps a dark-created theme so `:root` is dark.
   const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? themeOrder[0] ?? 'light'
@@ -105,51 +142,12 @@ export function buildCSS(
 
   // Primitive families — names match tokens.json (`accent`/`neutral`, the
   // Figma-plugin contract) so variables.css and tokens.json stay in lockstep.
-  const family = (name: string, scale: Record<number, string>) => {
-    if (!Object.keys(scale).length) return
-    lines.push(`\n  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`)
-    Object.entries(scale)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([k, v]) => { if (v) lines.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`) })
-  }
+  // Radix two-scale model: step N means the same ROLE in both appearances, so
+  // the block of each appearance carries ITS ramp under the same name — a
+  // dark-first brand's `:root` holds the dark ramp and `.light` restores the
+  // light one (it used to ship the light ramp only, beside dark semantics).
   lines.push('  /* Primitive scales */')
-  family('accent', primaryScale)
-  family('neutral', grayLightScale)
-  family('error', errorScale)
-  family('warning', warningScale)
-  family('success', successScale)
-  family('info', infoScale)
-  customColors.forEach((c) => family(c.key, c.scale))
-
-  // Alpha twins — reproduces each solid tone when composited over the page
-  // (see tokens.json's `colors.primitiveAlpha`). CSS is a flat namespace, so
-  // the `-a-` infix disambiguates from the solid var above it, matching the
-  // per-family export's own `tokenPrefix` (`accent-a`, `<custom>-a`, …).
-  // Light only, same as the solid families above — this file doesn't emit a
-  // dark primitive variant for those either; dark themes get their own
-  // resolved values through the semantic layer.
-  lines.push('\n  /* Alpha twins — reproduce a solid tone over the page, for translucent fills */')
-  const alphaFamily = (name: string, scale: Record<number, string>) => {
-    if (!Object.keys(scale).length) return
-    const alpha = generateAlphaScale(scale, pageBackground, 'light')
-    Object.entries(alpha)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([k, v]) => { if (v) lines.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
-  }
-  alphaFamily('accent', primaryScale)
-  alphaFamily('neutral', grayLightScale)
-  alphaFamily('error', errorScale)
-  alphaFamily('warning', warningScale)
-  alphaFamily('success', successScale)
-  alphaFamily('info', infoScale)
-  customColors.forEach((c) => {
-    const page = resolveFamilyPages(store, c.key).light
-    if (!Object.keys(c.scale).length) return
-    const alpha = generateAlphaScale(c.scale, page, 'light')
-    Object.entries(alpha)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([k, v]) => { if (v) lines.push(`  --color-${c.key}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
-  })
+  lines.push(...primitiveRampLines(store, rootKind))
 
   // Neutral alpha primitives — a fixed opacity ladder, not derived from any
   // family (see colorUtils' BLACK_ALPHA_SCALE/WHITE_ALPHA_SCALE). For scrims,
@@ -334,13 +332,23 @@ export function buildCSS(
       ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
       : []
     const themeRoles = roleLines[theme] ?? []
-    if (!entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !lightGradients.length && !lightShadows.length && !hasFoundationOverride) return
+    // The other appearance of the scaffold pair re-points every primitive to
+    // its own ramp (see primitiveRampLines). Named brands (data-theme) read
+    // their own families, already in :root under their own names.
+    const themePrims = (theme === 'light' || theme === 'dark') && kind !== rootKind
+      ? primitiveRampLines(store, kind)
+      : []
+    if (!themePrims.length && !entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !lightGradients.length && !lightShadows.length && !hasFoundationOverride) return
     const themeSelector = theme === 'light'
       ? (rootKind === 'dark' ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]')
       : theme === 'dark'
         ? '.dark, [data-theme="dark"]'
         : `[data-theme="${theme}"]`
     lines.push(`\n${themeSelector} {`)
+    if (themePrims.length) {
+      lines.push(`  /* Primitive scales — ${theme} */`)
+      lines.push(...themePrims)
+    }
     if (entries.length) {
       lines.push(`  /* Semantic tokens — ${theme} */`)
       entries.forEach(([k, v]) => {
@@ -471,10 +479,22 @@ export function buildMarkdown(
   // variables.css and tokens.json both include. Someone reading the README
   // for "what primitives does this system have" would see one ramp and
   // conclude the other five didn't exist.
-  const primitiveTable = (name: string, scale: Record<number, string>) =>
-    Object.keys(scale).length
-      ? `\n### Primitive Scale — ${cap(name)}\n\n| Token | Value |\n|-------|-------|\n${Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b)).map(([k, v]) => `| \`--color-${name}-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}\n`
-      : ''
+  // The appearances this file documents, in the brand's own order (a brand
+  // made in Dark reads Dark first, like its variables.css `:root`). A Free cut
+  // names one. Primitives used to show the light ramp only.
+  const kindsInOrder = [...new Set(themeCols.map((t) => store.themeKinds?.[t] ?? (t === 'dark' ? 'dark' : 'light')))]
+    .filter((k): k is 'light' | 'dark' => k === 'light' || k === 'dark')
+  const appearances: ('light' | 'dark')[] = appearance
+    ? [appearance]
+    : kindsInOrder.length === 2 ? kindsInOrder : kindsInOrder[0] === 'dark' ? ['dark', 'light'] : ['light', 'dark']
+  const colHead = `| Token |${appearances.map((a) => ` ${cap(a)} |`).join('')}\n|-------|${appearances.map(() => '-------|').join('')}`
+  const primitiveTable = (name: string, scale: Record<number, string>, darkScale?: Record<number, string>, label = cap(name)) => {
+    if (!Object.keys(scale).length) return ''
+    const of = (a: 'light' | 'dark') => (a === 'dark' && darkScale && Object.keys(darkScale).length ? darkScale : scale)
+    const rows = Object.keys(scale).map(Number).sort((a, b) => a - b)
+      .map((k) => `| \`--color-${name}-${toneLabel(colorNaming, k)}\` |${appearances.map((a) => ` \`${of(a)[k] ?? '—'}\` |`).join('')}`)
+    return `\n### Primitive Scale — ${label}\n\n${colHead}\n${rows.join('\n')}\n`
+  }
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const ai = getIconAiSource(iconAiSource)
@@ -494,7 +514,20 @@ export function buildMarkdown(
     ? `| Token | Dark |\n|-------|------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}`
     : appearance === 'light'
       ? `| Token | Light |\n|-------|-------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | \`${v}\` |`).join('\n')}`
-      : `| Token | Light | Dark |\n|-------|-------|------|\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` | \`${v}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}`
+      : `${colHead}\n${Object.entries(shadows).map(([k, v]) => `| \`--shadow-${k}\` |${appearances.map((a) => ` ${a === 'dark' ? (v === 'none' ? '—' : `\`${darkShadow(v)}\``) : `\`${v}\``} |`).join('')}`).join('\n')}`
+  // The Categorical roles components bind (`--color-action-primary-default`…),
+  // per theme column — the same values variables.css writes. The table above
+  // is the flat catalogue; without this one the README never named a role.
+  const roleByTheme = categoricalRoleLines(store)
+  const roleCols = themeCols.filter((t) => roleByTheme[t]?.length)
+  const roleValues = Object.fromEntries(roleCols.map((t) => [t, Object.fromEntries(roleByTheme[t].map((line) => {
+    const m = /^\s*(--[\w-]+):\s*(.+);$/.exec(line)
+    return m ? [m[1], m[2]] : ['', '']
+  }))]))
+  const roleNames = [...new Set(roleCols.flatMap((t) => Object.keys(roleValues[t]).filter(Boolean)))]
+  const roleTable = roleNames.length
+    ? `\n### Semantic roles (Categorical)\n\nWhat components bind. Same names in every theme; the theme's block in \`variables.css\` sets the value.\n\n| Role |${roleCols.map((t) => ` ${cap(t)} |`).join('')}\n|------|${roleCols.map(() => '-------|').join('')}\n${roleNames.map((n) => `| \`${n}\` |${roleCols.map((t) => ` \`${roleValues[t][n] ?? '—'}\` |`).join('')}`).join('\n')}\n`
+    : ''
   const frame = mergeGridFrame(gridFrame)
   const bps = extractBreakpoints(grid)
   const frameFmt = (k: 'columns' | 'gutter' | 'margin' | 'container', step: string) =>
@@ -521,12 +554,7 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 ---
 
 ## Color Tokens
-${primitiveTable('accent', primaryScale)}${primitiveTable('neutral', grayLightScale)}${primitiveTable('error', errorScale)}${primitiveTable('warning', warningScale)}${primitiveTable('success', successScale)}${primitiveTable('info', infoScale)}${customColors.map((c)=>`
-### Custom — ${c.label}
-
-| Token | Value |
-|-------|-------|
-${Object.entries(c.scale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${c.key}-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}`).join('\n')}
+${primitiveTable('accent', primaryScale, store.primaryDarkScale)}${primitiveTable('neutral', grayLightScale, store.grayDarkScale)}${primitiveTable('error', errorScale, store.errorDarkScale)}${primitiveTable('warning', warningScale, store.warningDarkScale)}${primitiveTable('success', successScale, store.successDarkScale)}${primitiveTable('info', infoScale, store.infoDarkScale)}${customColors.map((c) => primitiveTable(c.key, c.scale, c.darkScale, `Custom — ${c.label}`)).join('')}
 
 ### Alpha (translucent) primitives
 
@@ -552,7 +580,7 @@ for which. Values there may therefore be 8-digit \`#rrggbbaa\`.
 | Token |${themeCols.map((t)=>` ${cap(t)} |`).join('')}
 |-------|${themeCols.map(()=>`-------|`).join('')}
 ${Object.entries(semanticTokens).filter(([,v])=>v).map(([k])=>`| \`--color-${k.replace(/([A-Z])/g,'-$1').toLowerCase()}\` |${themeCols.map((t)=>` \`${themes[t]?.[k] || '—'}\` |`).join('')}`).join('\n')}
-
+${roleTable}
 ---
 
 ## Typography

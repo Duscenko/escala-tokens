@@ -613,9 +613,9 @@ A gradient whose dark stops differ also ships `Gradient/<slug> (Dark)`; in CSS `
 
 | Figma style | CSS | Light | Dark | Assigned to |
 |---|---|---|---|---|
-| `Gradient/brand-cover` | `var(--gradient-brand-cover)` | `linear-gradient(135deg, #015ef0 0%, #183568 100%)` | `linear-gradient(135deg, #015ef0 0%, #d0e7ff 100%)` | cover |
-| `Gradient/aurora` | `var(--gradient-aurora)` | `linear-gradient(120deg, #6fa0f6 0%, #015ef0 50%, #3269ce 100%)` | `linear-gradient(120deg, #15408d 0%, #015ef0 50%, #a9ceff 100%)` | avatar |
-| `Gradient/moss-glow` | `var(--gradient-moss-glow)` | `radial-gradient(circle at 30% 30%, #6fa0f6 0%, #3269ce 100%)` | `radial-gradient(circle at 30% 30%, #15408d 0%, #a9ceff 100%)` | — |
+| `Gradient/brand-cover` | `var(--gradient-brand-cover)` | `linear-gradient(135deg, #2970ff 0%, #1a3366 100%)` | `linear-gradient(135deg, #2970ff 0%, #d1e7ff 100%)` | cover |
+| `Gradient/aurora` | `var(--gradient-aurora)` | `linear-gradient(120deg, #7ca9fe 0%, #2970ff 50%, #3667c9 100%)` | `linear-gradient(120deg, #254c98 0%, #2970ff 50%, #abceff 100%)` | avatar |
+| `Gradient/moss-glow` | `var(--gradient-moss-glow)` | `radial-gradient(circle at 30% 30%, #7ca9fe 0%, #3667c9 100%)` | `radial-gradient(circle at 30% 30%, #254c98 0%, #abceff 100%)` | — |
 
 ## Icons
 

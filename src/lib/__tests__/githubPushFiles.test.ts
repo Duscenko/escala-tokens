@@ -105,3 +105,30 @@ describe('leadBrandJson (the plugin push)', () => {
     expect(foundations).toContain(`\`font-family-body\` = \`${brandFont}\``)
   })
 })
+
+describe('a brand made in Dark', () => {
+  it('ships both ramps, dark first, and gradients in the brand colour', () => {
+    const key = adopt('retro-vintage', 'dark')
+    const s = store()
+    const r = buildGithubPushFiles({ store: s, publishSlug: 'x' })
+    const css = file(r, 'variables.css')
+    const snap = captureCodeSnapshot(s, key)
+    const dark1 = snap.primaryDarkScale[1]
+    const light1 = snap.primaryScale[1]
+    // :root carries the dark ramp, `.light` restores the light one
+    const rootBlock = css.slice(0, css.indexOf('\n}'))
+    expect(rootBlock).toContain(`--color-accent-1: ${dark1};`)
+    const lightBlock = css.slice(css.indexOf('.light, [data-theme="light"] {'))
+    expect(lightBlock).toContain(`--color-accent-1: ${light1};`)
+    // README: both appearances, the brand's first
+    expect(r.readme).toContain('| Token | Dark | Light |')
+    expect(r.readme).toContain(`| \`--color-accent-1\` | \`${dark1}\` | \`${light1}\` |`)
+    expect(r.readme).toContain('### Semantic roles (Categorical)')
+    expect(r.readme).toMatch(/\| `--color-action-primary-default` \| `#[0-9a-f]{6,8}` \| `#[0-9a-f]{6,8}` \|/)
+    // linked gradients follow the brand, not the system accent
+    expect(css).toContain(snap.primaryScale[9])
+    const cover = /--gradient-brand-cover:\s*([^;]+);/.exec(css)![1]
+    expect(cover).toContain(snap.primaryScale[9])
+    expect(cover).not.toContain(s.primaryColor)
+  })
+})
