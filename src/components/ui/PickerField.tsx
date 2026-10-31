@@ -32,19 +32,21 @@ export type PickerOption<T extends string> = {
 
 /** Name | control: the control takes a fixed share of the row so every field's
  *  value starts on one line, and the name gets what is left. */
-export const FIELD_ROW = 'grid h-8 w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] items-center gap-x-2'
+export const FIELD_ROW = 'grid h-7 w-full min-w-0 grid-cols-[minmax(0,1fr)_58%] items-center gap-x-2'
 /** The name: bare text, muted at rest, full ink while the row is hot. */
 export const FIELD_NAME = 'min-w-0 truncate text-left text-ui transition-colors'
 /** The control: the one surface on the row. Pass `FIELD_CONTROL_ON` while it
  *  is open or selected; the rest state picks up `group-hover` from the row. */
-export const FIELD_CONTROL = 'flex h-8 min-w-0 items-center gap-2 rounded-lg bg-surface pl-[3px] pr-2.5 transition-shadow duration-150'
+export const FIELD_CONTROL = 'flex h-7 min-w-0 items-center gap-2 rounded-lg bg-surface pl-[5px] pr-2.5 transition-shadow duration-150'
 export const FIELD_CONTROL_ON = 'shadow-[inset_0_0_0_1px_var(--line-selected)]'
 export const FIELD_CONTROL_REST = 'group-hover:shadow-[inset_0_0_0_1px_var(--line-strong)]'
 /** What leads the control — a colour swatch, an icon. Square, the field's
- *  height less a 3px inset, so it sits the SAME 3px from top, bottom and left
- *  (`pl-[3px]` above), and its radius is the field's less that inset:
- *  concentric with the field at either root size (h-8 / rounded-lg are rem). */
-export const FIELD_LEAD = 'h-[calc(100%-6px)] aspect-square flex-shrink-0 rounded-[calc(0.5rem-3px)]'
+ *  height less a 5px inset, so it sits the SAME 5px from top, bottom and left
+ *  (`pl-[5px]` above), and its radius is the field's less that inset:
+ *  concentric with the field at either root size (h-7 / rounded-lg are rem).
+ *  Rows were h-8 with a 3px inset — a swatch nearly the field's height, which
+ *  read heavy next to Figma-sized property rows. */
+export const FIELD_LEAD = 'h-[calc(100%-10px)] aspect-square flex-shrink-0 rounded-[calc(0.5rem-5px)]'
 
 const SEARCH_FROM = 9
 const LIST_GAP = 6

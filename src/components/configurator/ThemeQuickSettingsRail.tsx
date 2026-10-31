@@ -92,6 +92,7 @@ import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorContr
 import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
+import { HintTip } from '../ui/HintTip'
 import { useI18n } from '../../lib/i18n'
 import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
 import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
@@ -985,7 +986,41 @@ function ResetRowGlyph() {
   )
 }
 
-function EditionRowHeader({ title, foundationKey, summary, open, panelId, onReset, resetTarget }: {
+/** Figma's "show styles" mark on the Color row: Accent alone, or every
+ *  colour role. Pressed = all shown. */
+function ShowAllColorsToggle({ on, onChange, controls }: {
+  on: boolean
+  onChange: (on: boolean) => void
+  controls: string
+}) {
+  const { t } = useI18n()
+  const label = on ? t('Show accent only') : t('Show all colours')
+  return (
+    <HintTip label={label}>
+      <button
+        type="button"
+        onClick={() => onChange(!on)}
+        aria-pressed={on}
+        aria-controls={controls}
+        aria-label={t('Show all colours')}
+        className={`grid h-6 w-6 place-items-center rounded-md transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+          on ? 'bg-fg/[0.1] text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
+        }`}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+          <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+          <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+          <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+          <circle cx="11.25" cy="11.25" r="2.25" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+    </HintTip>
+  )
+}
+
+function EditionRowHeader({ title, foundationKey, summary, open, panelId, onReset, resetTarget, action }: {
+  /** A tool for the open row (Color: show all colours), beside Reset. */
+  action?: React.ReactNode
   title: string
   foundationKey: string
   summary?: React.ReactNode
@@ -1004,7 +1039,6 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
   // list (header → Edit). The open row is the section title over its controls;
   // clicking it folds the accordion.
   if (open) {
-    const title_ = <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{t(title)}</span>
     // Per-row Reset: shown only while the row moved off its origin, so its
     // presence alone says "edited". It sits beside the chevron, outside the
     // fold button (a button cannot hold a button). The title row reserves its
@@ -1020,14 +1054,22 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
         <ResetRowGlyph />
       </button>
     ) : null
-    const pad = onReset ? 'pr-[calc(var(--inspector-inset)+2rem)]' : ''
+    // The row's own tool sits left of Reset (or where Reset would be).
+    const tool = action ? (
+      <span className={`absolute top-1/2 -translate-y-1/2 ${onReset ? 'right-[calc(var(--inspector-inset)+3.25rem)]' : 'right-[calc(var(--inspector-inset)+1.5rem)]'}`}>{action}</span>
+    ) : null
+    // The tools float over the header (a button cannot hold a button); the
+    // title keeps clear of them so it never runs underneath.
+    const clear = onReset && action ? 'mr-[3.25rem]' : onReset || action ? 'mr-[1.75rem]' : ''
+    const title_ = <span className={`min-w-0 flex-1 truncate text-left text-strong font-medium text-fg ${clear}`}>{t(title)}</span>
     if (!ctx?.setCollapsed) {
       return (
         <div className="relative">
-          <div className={`flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] ${pad}`} aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
+          <div className="flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]" aria-expanded={ctx ? open : undefined} aria-controls={ctx ? panelId : undefined}>
             {title_}
             <Chevron open />
           </div>
+          {tool}
           {reset}
         </div>
       )
@@ -1039,11 +1081,12 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
           aria-expanded
           aria-controls={panelId}
           onClick={() => ctx.setCollapsed?.(true)}
-          className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+          className={`group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50`}
         >
           {title_}
           <Chevron open />
         </button>
+        {tool}
         {reset}
       </div>
     )
@@ -1098,7 +1141,9 @@ export function EditionBody({ id, children }: { id: string; children: React.Reac
   )
 }
 
-function EditionCard({ title, foundationKey, open = true, summary, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, onReset, resetTarget, children }: {
+function EditionCard({ title, foundationKey, open = true, summary, trailing, footer, flush, onOpenAdvanced, advancedDisabled = false, showAdvancedEdition = true, onReset, resetTarget, action, children }: {
+  /** A tool on the open row's header, beside Reset. */
+  action?: React.ReactNode
   title: string
   foundationKey: string
   /** Accordion state. A closed row shows only its header. */
@@ -1128,7 +1173,7 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   open = open && !ctx?.collapsed
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
-      <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} onReset={onReset} resetTarget={resetTarget} />
+      <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} onReset={onReset} resetTarget={resetTarget} action={action} />
       {/* The body unfolds from its header and folds back into it: height +
           fade (`EditionBody`). */}
       <AnimatePresence initial={false}>
@@ -2077,6 +2122,9 @@ export default function ThemeQuickSettingsRail({
   const inBand = useInspectorHeader()
   // Header → Edit swaps the accordion for the list of editions, in place.
   const [editList, setEditList] = useState(false)
+  // Color shows Accent alone until asked (Figma's folded style list): the
+  // other five roles were most of the panel's height on every open.
+  const [allColors, setAllColors] = useState(false)
   // The row the Edit list just sent us to. Once the accordion is back, that
   // row is pinned to the top of the scroll region while the bodies above it
   // fold and its own unfolds (~260ms), so the person lands ON what they picked
@@ -2927,6 +2975,7 @@ export default function ThemeQuickSettingsRail({
           flush
           onReset={colorReset}
           resetTarget={rowResetTarget}
+          action={<ShowAllColorsToggle on={allColors} onChange={setAllColors} controls="color-role-list" />}
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
           advancedDisabled={editionLocked}
@@ -2953,6 +3002,8 @@ export default function ThemeQuickSettingsRail({
             <div className={RAIL_BLOCK}>
               <ColorRolesPanel
                 appearance={rampAppearance}
+                showAll={allColors}
+                listId="color-role-list"
                 header={(
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">

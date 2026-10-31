@@ -79,7 +79,12 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
 }
 
 /** One segment of the history pill: a 28px square inside the 36px shell. */
-const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+// 32px squares (WCAG 2.5.8 asks 24): the bar is the board's main tool row.
+// An unavailable Undo / Redo stays focusable (`aria-disabled`, not
+// `disabled`) so its tooltip still says what it would do; it reads in the
+// faint ink, never at 35% opacity, where it all but vanished. The focus ring
+// is full strength: at 50% it measured under 3:1 on the bar.
+const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 motion-reduce:active:scale-100 aria-disabled:cursor-not-allowed aria-disabled:text-fg-faint aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui'
 
 /**
  * Undo · Redo · Random, on the BOARD's header — the surface they act on.
@@ -103,33 +108,43 @@ export function BoardHistoryControls({ onRandom, children, trailing }: {
   const lastRedo = useEditHistory((h) => h.future[h.future.length - 1]?.label)
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
-  return (
-    <div role="group" aria-label={t('History')} className="flex h-9 items-center gap-0.5 rounded-xl border border-line bg-nav p-1">
-      <HintTip label={undoLabel} shortcut="⌘Z">
-      <button type="button" onClick={() => undoEdit()} disabled={!lastUndo} aria-label={undoLabel} className={HISTORY_SEGMENT}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M5.5 3.5 2.5 6.5l3 3" />
-          <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-        </svg>
-      </button>
-      </HintTip>
-      <HintTip label={redoLabel} shortcut="⇧⌘Z">
-      <button type="button" onClick={() => redoEdit()} disabled={!lastRedo} aria-label={redoLabel} className={HISTORY_SEGMENT}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M10.5 3.5l3 3-3 3" />
-          <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
-        </svg>
-      </button>
-      </HintTip>
+  const toolbar = (
+    // The whole bar is one named group of three: history, the board tools
+    // (Random, Inspector) and the view tabs. It used to be ONE group named
+    // "History" around all of it, so a screen reader announced Inspector and
+    // the Theme · Components tabs as history.
+    // A dark island with its own near-black, whatever the board beneath is
+    // painted in: the bar floats over a busy board and has to separate from it
+    // (Mesurer's "inverse" bar). `dark` re-points the chrome tokens inside, so
+    // the buttons, hints and tabs keep their contrast on the black.
+    <div role="group" aria-label={t('Board tools')} className="dark flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1">
+      <div role="group" aria-label={t('History')} className="flex items-center gap-0.5">
+        <HintTip label={undoLabel} shortcut="⌘Z">
+        <button type="button" onClick={() => { if (lastUndo) undoEdit() }} aria-disabled={!lastUndo || undefined} aria-label={undoLabel} aria-keyshortcuts="Meta+Z" className={HISTORY_SEGMENT}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5.5 3.5 2.5 6.5l3 3" />
+            <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+          </svg>
+        </button>
+        </HintTip>
+        <HintTip label={redoLabel} shortcut="⇧⌘Z">
+        <button type="button" onClick={() => { if (lastRedo) redoEdit() }} aria-disabled={!lastRedo || undefined} aria-label={redoLabel} aria-keyshortcuts="Shift+Meta+Z" className={HISTORY_SEGMENT}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M10.5 3.5l3 3-3 3" />
+            <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
+          </svg>
+        </button>
+        </HintTip>
+      </div>
       {onRandom && (
         <>
-          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
+          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
           <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
         </>
       )}
       {children && (
         <>
-          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
+          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
           {children}
         </>
       )}
@@ -141,6 +156,7 @@ export function BoardHistoryControls({ onRandom, children, trailing }: {
       )}
     </div>
   )
+  return toolbar
 }
 
 /** The footer's last line: where the work lives. Status reads after the

@@ -1,4 +1,5 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { HintTip } from '../ui/HintTip'
 
@@ -42,6 +43,9 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
 }) {
   const { t } = useI18n()
   const listRef = useRef<HTMLDivElement>(null)
+  // One pill per instance, so two switches never slide a pill between them.
+  const pillId = useId()
+  const reduceMotion = useReducedMotion()
   const glyphs: Record<BoardView, ReactNode> = {
     theme: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
@@ -85,15 +89,21 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
       // `bg-nav` reads the card's own `.light` / `.dark` class, so it stays
       // the frame's colour for the appearance on screen.
       className={inset
-        ? 'flex h-7 flex-shrink-0 items-center gap-0.5 rounded-lg bg-fg/[0.06] p-0.5'
+        ? 'flex h-8 flex-shrink-0 items-center gap-0.5 rounded-lg bg-fg/[0.04] p-0.5'
         : 'flex h-9 flex-shrink-0 items-center gap-0.5 rounded-xl border border-line bg-nav p-1'}
     >
       {VIEWS.map((view) => {
         const on = value === view
-        const shape = inset ? 'h-6 rounded-md px-2.5 @max-[560px]/boardhead:px-2' : 'h-7 rounded-lg px-3 @max-[560px]/boardhead:px-2.5'
-        const state = on
-          ? inset ? 'bg-nav font-semibold text-fg shadow-sm' : 'bg-fg/[0.09] font-semibold text-fg'
-          : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+        // Inset (the board toolbar): icon only, a 28px square — the name is
+        // the tab's accessible name and its tooltip.
+        const shape = inset ? 'h-7 w-7 justify-center rounded-md' : 'h-7 rounded-lg px-3 @max-[560px]/boardhead:px-2.5'
+        // Inset (the board toolbar): the selected view is a LIGHTER grey pill
+        // sliding between the two, its label full white; the other label is
+        // faint. The old pill was the well's own grey (#131416 on ~#121314)
+        // and both labels near-white, so nothing said which view was on.
+        const state = inset
+          ? on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+          : on ? 'bg-fg/[0.09] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
         const tab = (
           <button
             key={view}
@@ -105,10 +115,20 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(view)}
             title={inset ? undefined : labels[view]}
-            className={`flex items-center gap-1.5 ${shape} text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${state}`}
+            className={`relative flex items-center gap-1.5 ${shape} text-caption transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${state}`}
           >
-            {glyphs[view]}
-            <span className="@max-[560px]/boardhead:sr-only">{labels[view]}</span>
+            {inset && on && (
+              <motion.span
+                layoutId={pillId}
+                aria-hidden
+                className="absolute inset-0 rounded-md bg-fg/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_2px_rgba(0,0,0,0.4)]"
+                transition={reduceMotion ? { duration: 0 } : { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              />
+            )}
+            <span className="relative flex items-center gap-1.5">
+              {glyphs[view]}
+              <span className={inset ? 'sr-only' : '@max-[560px]/boardhead:sr-only'}>{labels[view]}</span>
+            </span>
           </button>
         )
         return inset ? <HintTip key={view} label={labels[view]}>{tab}</HintTip> : tab

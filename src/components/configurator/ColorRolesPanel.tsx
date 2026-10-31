@@ -49,7 +49,7 @@ export function ColorRolesPanel({
   appearance, header, rows, selected, onSelect,
   onHex, onHuePreview, onHueCommit, solveAt,
   neutralTint, onNeutralTint, onToggleLink,
-  page, after, defaultOpen = null,
+  page, after, defaultOpen = null, showAll = true, listId,
 }: {
   appearance: ThemeAppearance
   /** Light / Dark and Random, drawn above the rows. */
@@ -76,8 +76,14 @@ export function ColorRolesPanel({
   after?: ReactNode
   /** A row open on mount — the create form opens Accent, its one decision. */
   defaultOpen?: ColorRoleId | null
+  /** false: Accent alone (Figma's folded style list). The header's "show all
+   *  colours" toggle reveals the other roles. */
+  showAll?: boolean
+  /** The list's id, for the toggle's `aria-controls`. */
+  listId?: string
 }) {
   const { t } = useI18n()
+  const reduce = useReducedMotion()
   // Which row is open. Closed by default: the slider only shows once you
   // reach for a colour. Opening a row also selects it, so the preview's
   // highlight and the open row never disagree.
@@ -101,10 +107,21 @@ export function ColorRolesPanel({
       {header}
       {/* Every row is a FIELD_ROW ([name] [control 58%]), so the hex fields
           line up with Font, Radius and the extra palettes below. */}
-      <div role="list" aria-label={t('Colour roles')} className="flex flex-col gap-2">
-        {rows.map((row, index) => (
-          <RoleRow
+      <div id={listId} role="list" aria-label={t('Colour roles')} className="flex flex-col">
+        <AnimatePresence initial={false}>
+        {rows.filter((row) => showAll || row.id === 'accent').map((row, index) => (
+          // Each row unfolds from the one above it: height + fade, so the
+          // list grows downward instead of popping in.
+          <motion.div
             key={row.id}
+            initial={reduce ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1], delay: reduce ? 0 : index * 0.02 }}
+            className={index === 0 ? '' : 'overflow-hidden'}
+          >
+          <div className={index === 0 ? '' : 'pt-1.5'}>
+          <RoleRow
             row={row}
             index={index}
             landing={landing}
@@ -125,7 +142,10 @@ export function ColorRolesPanel({
             onNeutralTint={onNeutralTint}
             onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
           />
+          </div>
+          </motion.div>
         ))}
+        </AnimatePresence>
       </div>
       {after}
     </div>

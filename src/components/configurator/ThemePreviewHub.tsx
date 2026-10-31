@@ -161,18 +161,32 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       // The toolbar segment gets the dark hint (name, no paragraph); the
       // standalone pill keeps the native tooltip with the longer explanation.
       title={bare && !(disabled && disabledTitle) ? undefined : hint}
-      className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
-        active && !disabled
-          ? (accent ? '' : 'bg-accent-solid text-accent-ink')
-          : `text-fg ${disabled ? (bare ? HEADER_CONTROL_DISABLED : '') : CHROME_CONTROL_HOVER}`
-      }`}
+      // In the toolbar it is drawn exactly like the Theme · Components tabs
+      // beside it: a 28px pill in a recessed track, faint when off, and when
+      // on the same raised pill (light top edge, soft drop) — only filled with
+      // the theme's accent instead of grey.
+      className={bare
+        ? `${HEADER_CONTROL_BTN.replace('focus-visible:ring-offset-1 focus-visible:ring-offset-app', '').replace('transition-[color,box-shadow,transform]', 'transition-[color,background-color,box-shadow,transform]')} ${
+          active && !disabled
+            ? `font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)] ${accent ? '' : 'bg-accent-solid text-accent-ink'}`
+            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+        }`
+        : `${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
+          active && !disabled
+            ? (accent ? '' : 'bg-accent-solid text-accent-ink')
+            : `text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`
+        }`}
       style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
     >
       <InspectGlyph size={16} hint={!active} />
       <RevealLabel open={active}>{label}</RevealLabel>
     </button>
   )
-  if (bare) return disabled && disabledTitle ? button : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{button}</HintTip>
+  if (bare) {
+    // The same recessed track the view tabs sit in.
+    const track = <span className="flex h-8 flex-shrink-0 items-center rounded-lg bg-fg/[0.04] p-0.5">{button}</span>
+    return disabled && disabledTitle ? track : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{track}</HintTip>
+  }
   return (
     // Same pill as Theme · Components beside it: the frame colour (`bg-nav`),
     // a solid hairline, h-9 / rounded-xl, no shadow. The dashed edge it used
