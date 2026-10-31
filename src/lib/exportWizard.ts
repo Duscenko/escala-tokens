@@ -323,7 +323,7 @@ function dimensionGroupsFor(ordered: WizardCollection[]): string[] {
 
 /** Roles + rungs + curves + transforms + choreographies — what the Motion
  *  group carries, for Step 1's count. */
-function motionTokenCount(full: TokenJSON): number {
+export function motionTokenCount(full: TokenJSON): number {
   const m = (full as unknown as { motion?: Record<string, Record<string, unknown>> }).motion
   if (!m) return 0
   return ['durations', 'easings', 'transforms', 'roles', 'choreography'].reduce((n, k) => n + Object.keys(m[k] ?? {}).length, 0)

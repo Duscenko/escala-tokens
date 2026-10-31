@@ -3003,11 +3003,6 @@ export default function Configurator() {
                       setActiveFoundation('color')
                       openThemePreviewPage()
                     }}
-                    onOpenColorTheme={(key, appearance) => {
-                      setStylePreview(null)
-                      setPreviewSelection({ theme: key, appearance })
-                      selectFoundation('color')
-                    }}
                     onEditFoundation={selectFoundation}
                     onCreatingChange={setHomeCreating}
                     onOpenComponent={(key) => {

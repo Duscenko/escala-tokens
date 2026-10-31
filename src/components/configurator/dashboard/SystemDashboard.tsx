@@ -307,7 +307,7 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, overviewFooter, onBack, navExtra, timeAgo,
-  onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onDeleteBrand, onOpenColorTheme,
+  onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onDeleteBrand,
   onEditRole, onOpenComponent, docsExits, onExportBrand, brandExport, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   page: DashPage
@@ -338,8 +338,6 @@ export default function SystemDashboard({
   onEditBrand: (key: string) => void
   /** Overview column header: remove that brand (shown with 2+ brands). */
   onDeleteBrand?: (key: string) => void
-  /** Brands' theme chips: open Variables · Color for that brand and appearance. */
-  onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** Gate before the role editor opens in the inspector. Return `false` to keep it closed. */
   onEditRole?: (roleId: string) => boolean | void
   onOpenComponent?: (key: string) => void
@@ -409,7 +407,6 @@ export default function SystemDashboard({
           onSelectBrand={onSelectBrand}
           onEditBrand={onEditBrand}
           onDeleteBrand={onDeleteBrand}
-          onOpenColorTheme={onOpenColorTheme}
           onExportBrand={onExportBrand}
           brandExport={brandExport}
           onAddBrand={onAddBrand}

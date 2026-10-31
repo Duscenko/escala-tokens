@@ -9,21 +9,21 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { goToLogin, useAccess } from '../../../lib/access'
 import { generateTokenJSON } from '../../../lib/tokenGenerator'
+import { motionTokenCount } from '../../../lib/exportWizard'
 import { THEME_STYLE_PRESETS } from '../../../lib/themePresets'
 import { readBrandPayload, type BrandSource } from '../../../lib/importBrand'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import { wcagRatio } from '../../../lib/color/apca'
-import { BRAND_THEME_DEFS, brandThemesSummary, shippedThemes } from '../../../lib/brandThemes'
+import { shippedThemes } from '../../../lib/brandThemes'
 import { fontStack } from '../../../lib/fonts'
 import { foundationFacts } from '../../../lib/systemDashboard'
 import { useTheme } from '../../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../../lib/themeSources'
-import { AppearanceGlyph } from '../colorControls'
 import { ThemeAvatar } from '../ThemeLibraryRail'
 import { ChromeAnchoredDropdown } from '../TopNav'
 import { GitHubGlyph } from '../../ui/icons'
 import { Tag, TEXT_LINK } from './parts'
-import { DASH_DOCS, DEFAULT_DOC_KEY, type Dashboard } from './dashboardData'
+import { DEFAULT_DOC_KEY, type Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
 
 /** Chrome page the rule and Edit sit on. Same hexes as `--app`. */
@@ -54,13 +54,14 @@ function brandMark(ramp: ColorScale | undefined, fallback: string, page: string)
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
-type CollectionKey = 'colorPrimitives' | 'colorSemantics' | 'dimensionPrimitives' | 'dimensionSemantics' | 'typography'
-const COLLECTIONS: { key: CollectionKey; label: string; foundation: string }[] = [
+type CollectionKey = 'colorPrimitives' | 'colorSemantics' | 'dimensionPrimitives' | 'dimensionSemantics' | 'typography' | 'motion'
+/** Counted in the variables total but not listed as rows. */
+type HiddenCollection = 'colorSemantics' | 'dimensionSemantics'
+const COLLECTIONS: { key: Exclude<CollectionKey, HiddenCollection>; label: string; foundation: string }[] = [
   { key: 'colorPrimitives', label: 'Color Primitives', foundation: 'color' },
-  { key: 'colorSemantics', label: 'Color Semantics', foundation: 'color' },
   { key: 'dimensionPrimitives', label: 'Dimension Primitives', foundation: 'spacing' },
-  { key: 'dimensionSemantics', label: 'Dimension Semantics', foundation: 'spacing' },
   { key: 'typography', label: 'Typography', foundation: 'typography' },
+  { key: 'motion', label: 'Motion', foundation: 'motion' },
 ]
 
 const size = (value: unknown) => (value && typeof value === 'object' ? Object.keys(value).length : 0)
@@ -93,6 +94,8 @@ function brandCounts(store: Parameters<typeof generateTokenJSON>[0], key: string
     dimensionPrimitives: size(json.dimensions),
     dimensionSemantics,
     typography,
+    // The Export wizard's own Motion count, so the two cannot disagree.
+    motion: motionTokenCount(json as unknown as Parameters<typeof motionTokenCount>[0]),
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0)
   const platforms = Array.isArray(json.viewports) && json.viewports.length ? json.viewports.length : 1
@@ -125,24 +128,25 @@ function ChevronGlyph() {
 }
 
 /** One glyph per collection, drawn from the brand itself where it can be. */
-function CollectionGlyph({ which, ramp, heading }: { which: CollectionKey; ramp: ColorScale | undefined; heading: string }) {
+function CollectionGlyph({ which, ramp, heading }: { which: Exclude<CollectionKey, HiddenCollection>; ramp: ColorScale | undefined; heading: string }) {
   if (which === 'colorPrimitives') {
     return <span aria-hidden className="block h-4 w-4 flex-shrink-0 rounded-[4px]" style={{ background: ramp?.[9] }} />
   }
-  if (which === 'colorSemantics') {
-    return (
-      <span aria-hidden className="flex flex-shrink-0 gap-1">
-        {[1, 4, 9, 11].map((tone) => <span key={tone} className="block h-4 w-4 rounded-[4px] border border-fg/10" style={{ background: ramp?.[tone] }} />)}
-      </span>
-    )
-  }
   if (which === 'dimensionPrimitives') {
-    return <span aria-hidden className="block h-4 w-4 flex-shrink-0 rounded-tl-[10px] border-l-[1.5px] border-t-[1.5px] border-fg-muted" />
-  }
-  if (which === 'dimensionSemantics') {
+    // A measured span: lengths, not one corner (the curve is Motion's).
     return (
       <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 text-fg-muted">
         <path d="M2 3v10M14 3v10M5 8h6M6.5 6.5 5 8l1.5 1.5M9.5 6.5 11 8 9.5 9.5" />
+      </svg>
+    )
+  }
+  if (which === 'motion') {
+    // An ease-out curve: what a motion token describes.
+    return (
+      <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 text-fg-muted">
+        <path d="M2 14C4 4 8 2.5 14 2" />
+        <circle cx="2" cy="14" r="1" fill="currentColor" stroke="none" />
+        <circle cx="14" cy="2" r="1" fill="currentColor" stroke="none" />
       </svg>
     )
   }
@@ -328,7 +332,7 @@ export function AddBrandChoices({ onBlank, onImportMode, firstRef, itemClassName
 }
 
 export default function OverviewPage({
-  dash, header, footer, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport, onOpenColorTheme,
+  dash, header, footer, onOpenFoundation, onOpenBrand, onOpenStatus, onSelectBrand, onEditBrand, onExportBrand, brandExport,
   onAddBrand, onImportBrand, addBrandBlocked, maxBrands, onDeleteBrand,
 }: {
   dash: Dashboard
@@ -349,8 +353,6 @@ export default function OverviewPage({
   onExportBrand?: (key: string) => void
   /** The rest of a brand column's Export menu (Home). */
   brandExport?: BrandExportActions
-  /** A theme chip opens Variables · Color for that brand in that appearance. */
-  onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** The empty slot's + → Start from blank. */
   onAddBrand?: () => void
   /** The + → Import agent context / Import JSON: mint the payload as a brand. */
@@ -445,53 +447,26 @@ export default function OverviewPage({
                   )}
                 </header>
 
-                <div className="border-b border-line px-4 py-3">
-                  <p className="text-caption font-semibold text-fg">{card.origin ?? t('Custom')}</p>
-                  <p className="truncate text-mini text-fg-faint" title={t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}>
-                    {t('{n} variables · {m} theme modes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
-                  </p>
-                </div>
-
-                {/* The brand's reference, right under what it is: the rows
-                    below open one foundation each, this opens the whole Docs. */}
+                {/* What the brand is (its style + what it ships) and its
+                    reference, as ONE row: the rows below open one foundation
+                    each, this opens the whole Docs. */}
                 <button
                   type="button"
                   onClick={() => { onSelectBrand(card.key); onOpenFoundation(DEFAULT_DOC_KEY) }}
                   title={t('Open {name} docs', { name: card.name })}
-                  className={`group flex h-12 w-full items-center gap-3 border-b border-line px-4 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
+                  className={`group flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left transition-colors hover:bg-fg/[0.04] ${FOCUS}`}
                 >
                   <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-fg"><DocsGlyph /></span>
-                  <span className="min-w-0 flex-1 truncate text-ui text-fg">{t('Docs')}</span>
-                  <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{t('{n} pages', { n: DASH_DOCS.length })}</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-ui font-semibold text-fg">{card.origin ?? t('Custom')}</span>
+                    <span className="truncate text-mini text-fg-faint">
+                      {t('{n} variables · {m} themes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
+                    </span>
+                  </span>
                   <span aria-hidden className="flex-shrink-0 text-fg-faint transition-transform duration-150 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
                     <ChevronGlyph />
                   </span>
                 </button>
-
-                <div role="group" aria-label={t(brandThemesSummary(card.themeIds))} className="border-b border-line px-3 py-2.5">
-                  <div className="flex gap-1 rounded-xl border border-line bg-app p-1">
-                    {BRAND_THEME_DEFS.map((def) => {
-                      const on = card.themeIds.includes(def.id)
-                      const lead = on && def.base === card.appearance
-                      const label = t(def.label)
-                      return (
-                        <button
-                          key={def.id}
-                          type="button"
-                          disabled={!on || !onOpenColorTheme}
-                          onClick={() => onOpenColorTheme?.(card.key, def.base)}
-                          title={on ? t('Open {theme} colors', { theme: label }) : t('{theme} is not shipped', { theme: label })}
-                          className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-caption transition-colors disabled:cursor-default ${FOCUS} ${
-                            lead ? 'bg-elevated font-semibold text-fg' : on ? 'text-fg-muted hover:text-fg' : 'text-fg-faint opacity-50'
-                          }`}
-                        >
-                          <AppearanceGlyph kind={def.base} size={13} />
-                          {label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
 
                 <ul className="flex flex-col">
                   {COLLECTIONS.map((collection) => (

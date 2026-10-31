@@ -395,7 +395,6 @@ export default function ThemeLibraryPage({
   onNewSystem,
   onEditFoundation,
   onOpenBrand,
-  onOpenColorTheme,
   onCreatingChange,
   studioOnly = false,
   onOpenComponent,
@@ -441,8 +440,6 @@ export default function ThemeLibraryPage({
   onEditFoundation?: (foundationKey: string) => void
   /** Overview's Color card opens the brand preview. */
   onOpenBrand?: () => void
-  /** A theme chip on Brands opens Variables · Color for that brand in that appearance. */
-  onOpenColorTheme?: (brand: string, appearance: 'light' | 'dark') => void
   /** Create studio uses the right inspector; Home's left file menu must yield. */
   onCreatingChange?: (creating: boolean) => void
   /** A visitor with no account and no theme: only the create studio is shown,
@@ -574,7 +571,6 @@ export default function ThemeLibraryPage({
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenBrand={onOpenBrand}
-        onOpenColorTheme={onOpenColorTheme}
         onSelectBrand={onSelectTheme}
         onEditBrand={onOpenPreview}
         onDeleteBrand={(key) => {
