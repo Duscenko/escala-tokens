@@ -7,6 +7,7 @@ import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardThemeSwitch } from './BrandThemesPicker'
 
 /** The Generator board — the region Theme · Components switches. */
 const BOARD_PANEL_ID = 'generator-board'
@@ -853,6 +854,7 @@ export default function ThemePreviewHub({
                       <BoardHistoryControls
                         onRandom={canRandom ? () => randomHandle.current?.() : undefined}
                         trailing={<BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
+                        appearance={<BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />}
                       >
                         <InspectorToggle
                           bare

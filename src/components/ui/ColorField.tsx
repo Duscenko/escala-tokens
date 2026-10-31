@@ -51,13 +51,13 @@ function thumbPx() {
   return THUMB_REM * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
 }
 /** `left`/`top` for a thumb whose value is `ratio` (0–1) along its axis. */
-const along = (ratio: number) => `calc(${THUMB_REM / 2}rem + ${ratio} * (100% - ${THUMB_REM}rem))`
-const THUMB_CLASS = 'absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow pointer-events-none'
+export const along = (ratio: number) => `calc(${THUMB_REM / 2}rem + ${ratio} * (100% - ${THUMB_REM}rem))`
+export const THUMB_CLASS = 'absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow pointer-events-none'
 // Exact centring (translate, not `-ml-1.5`): the old negative margin was 6.75px
 // against a 7.875px half-thumb, so the ball sat ~1px right/low of its bar.
-const THUMB_CENTER = 'translate(-50%, -50%)'
+export const THUMB_CENTER = 'translate(-50%, -50%)'
 
-function ratioIn(el: HTMLElement, clientX: number, clientY: number) {
+export function ratioIn(el: HTMLElement, clientX: number, clientY: number) {
   const r = el.getBoundingClientRect()
   const t = thumbPx()
   const axis = (pos: number, size: number) =>

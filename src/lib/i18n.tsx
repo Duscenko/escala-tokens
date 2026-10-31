@@ -258,8 +258,6 @@ const es: Record<string, string> = {
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Llevar a',
   'History': 'Historial',
-  'Show all colours': 'Mostrar todos los colores',
-  'Show accent only': 'Mostrar solo el acento',
   'Board tools': 'Herramientas del tablero',
   'Set your foundations': 'Define tus fundaciones',
   'Not saved. Your tokens live only in this browser.': 'No está guardado. Tus tokens solo viven en este navegador.',
@@ -2101,8 +2099,6 @@ const fr: Record<string, string> = {
   // The three doors out (Ship row, Export pill, Home's brand menu).
   'Ship to': 'Envoyer vers',
   'History': 'Historique',
-  'Show all colours': 'Afficher toutes les couleurs',
-  'Show accent only': 'Afficher l’accent seul',
   'Board tools': 'Outils du tableau',
   'Set your foundations': 'Définissez vos fondations',
   'Not saved. Your tokens live only in this browser.': 'Non enregistré. Vos tokens vivent uniquement dans ce navigateur.',

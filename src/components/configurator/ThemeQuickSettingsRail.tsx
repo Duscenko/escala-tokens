@@ -3,7 +3,7 @@
 // the integration-rail card (Connection / Protocol), not this column.
 //
 // The 64px `FoundationIconRail` beside this column picks the widget: Color
-// (accent hue + neutral tint + state chips + Add secondary + Contrast grid),
+// (accent hue + neutral tint + state chips + Contrast grid),
 // Text, Radius, Shadow, Size, Stroke, Icons (status action + weight). Stacking every card at once made the
 // artefacts board compete with a scroll of controls; the icon rail is the
 // same switcher Variables already uses, so Color / Font / Radius mean the
@@ -20,9 +20,9 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
+  useApplyAccentColor, useApplyGrayColor, useApplyStateColor,
   resolveThemePages, stateColorAnchor, type StateRole,
-  followingDarkAnchors, retwinFollowingDarkAnchors, applyAccentDarkColor,
+  followingDarkAnchors, retwinFollowingDarkAnchors,
 } from '../../lib/colorActions'
 import { backgroundFromBase, colorAtHue, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
@@ -65,12 +65,11 @@ import {
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import {
-  BRAND_EXTRA_LABEL, GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, nextBrandExtraRank, scaleForFamily,
+  GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, scaleForFamily,
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
-import { BrandThemesPicker } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import {
   adoptRemixOverGuestSeed, colorRowHasEdits, foundationRowHasEdits, openStyleForEditing, resetFoundationRow, resetThemeColorToOrigin,
@@ -82,25 +81,22 @@ import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/them
 import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, typeRolesInGroup, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
-import { ViewportSwitch, usePlanViewportLock } from './ViewportRail'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
-import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
+import { COLOR_RAIL_WIDTH, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
-import { HintTip } from '../ui/HintTip'
 import { useI18n } from '../../lib/i18n'
-import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD, FIELD_NAME, FIELD_ROW, PickerField } from '../ui/PickerField'
+import { PickerField } from '../ui/PickerField'
 import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
 import { MotionPreview, motionSummary } from './MotionPreview'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
-import ThemeSaveBar, { RandomLevelPicker, RandomThemeButton, ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
-import { getPaletteLevel, radixFamilyOf, radixPalette } from '../../lib/radixPalettes'
+import ThemeSaveBar, { ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
 import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
@@ -469,23 +465,6 @@ function AdvancedIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden><path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1" /><circle cx="10" cy="4" r="1.4" /><circle cx="6" cy="8" r="1.4" /><circle cx="11" cy="12" r="1.4" /></svg>
 }
 
-/** Desktop / Mobile for Type, Size and Grid edition — same session cut
- *  Variables' Platform rail writes. Compact fill so it fits the card header
- *  the way Color's Light/Dark does. */
-function PlatformCutSwitch({ value, onChange, layout = 'compact' }: {
-  value: GridViewport
-  onChange: (platform: GridViewport) => void
-  layout?: 'compact' | 'fill'
-}) {
-  const { lockedIds, onLocked, dialog } = usePlanViewportLock(value, onChange)
-  return (
-    <>
-      <ViewportSwitch value={value} onChange={onChange} layout={layout} lockedIds={lockedIds} onLocked={onLocked} />
-      {dialog}
-    </>
-  )
-}
-
 function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
   const { t } = useI18n()
   return (
@@ -816,15 +795,6 @@ export function previewWidgetKey(key: string): QuickPanelFoundation {
 }
 
 
-function extraSeedHex(brandHex: string, rank: BrandExtraRank): string {
-  try {
-    const { hue, position } = readHuePosition(brandHex)
-    return colorAtHue(position, hue + (rank === 'secondary' ? 42 : 84))
-  } catch {
-    return brandHex
-  }
-}
-
 type ColorChipId = 'accent' | 'neutral' | StateRole | BrandExtraRank
 
 /**
@@ -983,38 +953,6 @@ function ResetRowGlyph() {
       <path d="M2.5 8a5.5 5.5 0 1 0 1.7-3.97" />
       <path d="M2.2 3.2v3.1h3.1" />
     </svg>
-  )
-}
-
-/** Figma's "show styles" mark on the Color row: Accent alone, or every
- *  colour role. Pressed = all shown. */
-function ShowAllColorsToggle({ on, onChange, controls }: {
-  on: boolean
-  onChange: (on: boolean) => void
-  controls: string
-}) {
-  const { t } = useI18n()
-  const label = on ? t('Show accent only') : t('Show all colours')
-  return (
-    <HintTip label={label}>
-      <button
-        type="button"
-        onClick={() => onChange(!on)}
-        aria-pressed={on}
-        aria-controls={controls}
-        aria-label={t('Show all colours')}
-        className={`grid h-6 w-6 place-items-center rounded-md transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
-          on ? 'bg-fg/[0.1] text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
-        }`}
-      >
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-          <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
-          <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
-          <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
-          <circle cx="11.25" cy="11.25" r="2.25" fill="currentColor" stroke="none" />
-        </svg>
-      </button>
-    </HintTip>
   )
 }
 
@@ -2036,12 +1974,10 @@ export default function ThemeQuickSettingsRail({
   onNeedAccount,
   onAdoptStyle,
   onQuickEditOpenChange,
-  containedDrawerRootRef,
   onRandomBoardAppearance,
   contrastOpen = false,
   onContrastOpenChange,
   previewViewport = 'desktop',
-  onPreviewPlatformChange,
   embed = false,
   randomHandle,
   lockAdvanced = false,
@@ -2122,9 +2058,6 @@ export default function ThemeQuickSettingsRail({
   const inBand = useInspectorHeader()
   // Header → Edit swaps the accordion for the list of editions, in place.
   const [editList, setEditList] = useState(false)
-  // Color shows Accent alone until asked (Figma's folded style list): the
-  // other five roles were most of the panel's height on every open.
-  const [allColors, setAllColors] = useState(false)
   // The row the Edit list just sent us to. Once the accordion is back, that
   // row is pinned to the top of the scroll region while the bodies above it
   // fold and its own unfolds (~260ms), so the person lands ON what they picked
@@ -2159,7 +2092,6 @@ export default function ThemeQuickSettingsRail({
   const applyNeutral = useApplyGrayColor()
   const applyState = useApplyStateColor()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
-  const [fineOpen, setFineOpen] = useState(false)
   // Font's role table is the heaviest thing in the rail: closed until asked,
   // like Colour's Fine-tune, so a row opens to its quick controls only.
   const [typeRolesOpen, setTypeRolesOpen] = useState(false)
@@ -2176,18 +2108,11 @@ export default function ThemeQuickSettingsRail({
   const leadTheme: ThemeAppearance = store.themeKinds[previewTheme] === 'dark' ? 'dark' : 'light'
   const plannedShips = plannedBrandThemes(shippedThemes(store.brandThemes, previewTheme), leadTheme, free)
   const shipsOne: ThemeAppearance | undefined = plannedShips.length === 1 ? brandThemeDef(plannedShips[0])?.base : undefined
-  /** Make `appearance` the brand's default theme and show it. */
-  const leadWith = (appearance: ThemeAppearance) => {
-    const live = useDesignStore.getState()
-    const sources = live.themeSources[previewTheme]
-    if (sources && live.themeKinds[previewTheme] !== appearance) live.updateTheme(previewTheme, appearance, sources)
-    onColorAppearanceChange?.(appearance)
-  }
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
   const [adoptError, setAdoptError] = useState<string | null>(null)
-  const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
+
   const lastRandomScaffold = useRef<string | undefined>(undefined)
   const lastRandomMood = useRef<string | undefined>(undefined)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
@@ -2217,12 +2142,6 @@ export default function ThemeQuickSettingsRail({
   const { typography, radius, shadows, shadowsDark, sizes, stroke, spacing, spacingRoles, iconWeight } = foundations
   const motion = normalizeMotionSettings(foundations.motion)
   const motionPreset = matchMotionPreset(motion)
-  // ONE platform switch, at the head of the panel (above the accordion): it
-  // sets what Font's type roles, Radius, Spacing and the board all read, so
-  // it cannot live inside one of those rows.
-  const platformSwitch = onPreviewPlatformChange ? (
-    <PlatformCutSwitch value={previewViewport} onChange={onPreviewPlatformChange} layout="fill" />
-  ) : undefined
   const sizeUsedStep = previewViewport === 'mobile'
     ? (foundations.sizeRoles?.touch ?? 'lg')
     : (foundations.sizeRoles?.control ?? 'md')
@@ -2561,30 +2480,7 @@ export default function ThemeQuickSettingsRail({
     })
   }
 
-  const writeExtra = (themeKey: string, rank: BrandExtraRank, hex: string) => {
-    const s = useDesignStore.getState()
-    const key = s.themeSources[themeKey]?.[rank]
-    if (!key) return
-    const pages = resolveThemePages(s, themeKey)
-    s.updateCustomColor(key, {
-      base: hex,
-      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
-      darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
-    })
-  }
 
-  const applyAccentScoped = (value: string) => {
-    commit('Accent updated', (themeKey) => writeAccent(themeKey, value))
-  }
-
-  // ONE commit path for the accent, whichever control produced the hex — the
-  // hue slider's release and the picker's every change. Two paths would be two
-  // chances to skip `applyAccentScoped`'s forking rule.
-  const commitAccent = (hex: string) => {
-    applyAccentScoped(hex)
-    setAccentPreview(null)
-    onAccentPreview?.(null)
-  }
 
   // Accent drags preview before they commit their full ramp regeneration. The
   // linked neutral has to read that SAME live accent; reading `neutral` here
@@ -2594,16 +2490,6 @@ export default function ThemeQuickSettingsRail({
   const liveNeutral = linkNeutralToAccent
     ? neutralFromBrand(liveAccent, activeTint)
     : neutral
-  // Fine-tune resets: one circular icon beside each slider (same as the
-  // create/edit form). Saturation and Brightness go back to the ideal point of
-  // THIS hue, so the hue is never touched; Ramp contrast goes back to 0.
-  const accentReading = readHuePosition(liveAccent)
-  const saturationIsIdeal = Math.abs(accentReading.position.saturation - FINE_TUNE_IDEAL.saturation) < 0.015
-  const brightnessIsIdeal = Math.abs(accentReading.position.lightness - FINE_TUNE_IDEAL.lightness) < 0.015
-  const resetAxis = (axis: 'saturation' | 'lightness') => {
-    commitAccent(colorAtHue({ ...accentReading.position, [axis]: FINE_TUNE_IDEAL[axis] }, accentReading.hue))
-  }
-  const themeRefs = themeSources[previewTheme]
   const colorReadStore = tryOn ? stylePreviewStore(store, tryOn, previewTheme) : store
   const brandScale = scaleForFamily(
     colorReadStore.themeSources[previewTheme]?.brand ?? GLOBAL_FAMILY.brand,
@@ -2622,24 +2508,7 @@ export default function ThemeQuickSettingsRail({
       ]
   const stateHex = (role: StateRole, appearance: ThemeAppearance) =>
     stateColorAnchor(colorReadStore, role, appearance, tryOn ? undefined : previewTheme)
-  const extraHex = (rank: BrandExtraRank) => {
-    const key = themeRefs?.[rank]
-    if (!key) return null
-    return customColors.find((color) => color.key === key)?.base ?? null
-  }
-  const nextExtra = nextBrandExtraRank(themeRefs)
-  const lastExtra: BrandExtraRank | null = themeRefs?.tertiary
-    ? 'tertiary'
-    : themeRefs?.secondary
-      ? 'secondary'
-      : null
-  const toggleChip = (id: ColorChipId) => {
-    setOpenChip((current) => current === id ? null : id)
-  }
   useEffect(() => { setOpenChip(null) }, [rampAppearance])
-  const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
-    current: chipRefs.current[id] ?? null,
-  })
 
   // ── Color edition: one list of roles, each shown in the theme on screen ──
   const roleBrandFamily = colorReadStore.themeSources[previewTheme]?.brand ?? GLOBAL_FAMILY.brand
@@ -2735,6 +2604,15 @@ export default function ThemeQuickSettingsRail({
    *  In Dark it sets the dark anchor as typed and re-solves the light one
    *  (`lightTwinOf`): keeping the old light anchor meant a colour chosen in
    *  Dark came back as a different colour in Light. */
+  /** The picker canvas mid-drag: paints the row (and, for Accent, the board)
+   *  the way `setRoleHex` will land it, without an Undo step per frame. */
+  const previewRoleHex = (id: ColorRoleId, hex: string | null) => {
+    setRolePreview(hex ? { id, hex } : null)
+    if (id !== 'accent') return
+    const light = hex && rampAppearance === 'dark' ? lightTwinOf(hex, themePage.light) : hex
+    setAccentPreview(light)
+    onAccentPreview?.(light && rampAppearance === 'dark' ? hex : light)
+  }
   const setRoleHex = (id: ColorRoleId, hex: string) => {
     if (id === 'neutral') {
       colorCommit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
@@ -2759,28 +2637,6 @@ export default function ThemeQuickSettingsRail({
     colorCommit('Neutral linked', (themeKey) => {
       useDesignStore.getState().setLinkNeutralToAccent(true)
       applyNeutral(neutralFromBrand(accentAnchor('light'), activeTint), themeKey, true)
-    })
-  }
-  /** A whole palette from Radix's curated families, at the level picked
-   *  beside the button (`radixPalettes`): accent, page and the four states.
-   *  Every ramp and ink is still solved by the engine. */
-  const shuffleColors = () => {
-    const palette = radixPalette(getPaletteLevel(), Math.random, radixFamilyOf(accentAnchor('light')))
-    setColorRole('accent')
-    colorCommit('Colours shuffled', (themeKey) => {
-      setNeutralTint(palette.neutralTint)
-      writeAccent(themeKey, palette.accent)
-      // The page gets its own hue (opposite the accent on Bold), so the
-      // neutral is written by hand — which unlinks it, as Random's does.
-      applyNeutral(palette.neutral, themeKey)
-      // Dark anchors are solved on the page the neutral just produced.
-      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
-      applyAccentDarkColor(darkTwinOf(palette.accent, pages.dark), themeKey)
-      for (const role of STATE_IDS) {
-        const hex = palette.states[role]
-        writeState(themeKey, role, hex, 'light')
-        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
-      }
     })
   }
 
@@ -2864,7 +2720,6 @@ export default function ThemeQuickSettingsRail({
   // ready the whole time — the CSS was the only obstacle. Editing a try-on now
   // does exactly what editing anything else does, and the adopt announces
   // itself (`announceAdopted`) so the new row in My themes isn't a surprise.
-  const drawerContained = Boolean(containedDrawerRootRef)
   const colorPickerOpen = openChip != null
   const quickEditOpen = colorPickerOpen
 
@@ -2929,11 +2784,6 @@ export default function ThemeQuickSettingsRail({
       {/* Under a header band (the inspector's, or the create studio's Name
           band) the accordion starts flush: its rows carry their own height and
           dividers, so top padding only left a strip above Color. */}
-      {platformSwitch && !editList && !tryOn && (
-        <div className="flex-shrink-0 border-b border-line px-[var(--inspector-inset)] py-2.5">
-          {platformSwitch}
-        </div>
-      )}
       <ThemeRailScrollRegion padClass={inBand || startStyle ? 'pb-3' : 'py-3'}>
       {editList && onSelectPanel && !tryOn ? (
         <EditList
@@ -2975,7 +2825,6 @@ export default function ThemeQuickSettingsRail({
           flush
           onReset={colorReset}
           resetTarget={rowResetTarget}
-          action={<ShowAllColorsToggle on={allColors} onChange={setAllColors} controls="color-role-list" />}
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
           advancedDisabled={editionLocked}
@@ -3002,146 +2851,7 @@ export default function ThemeQuickSettingsRail({
             <div className={RAIL_BLOCK}>
               <ColorRolesPanel
                 appearance={rampAppearance}
-                showAll={allColors}
-                listId="color-role-list"
-                header={(
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <BrandThemesPicker
-                        label={false}
-                        value={shippedThemes(store.brandThemes, previewTheme)}
-                        lead={leadTheme}
-                        onLead={(id) => leadWith(brandThemeDef(id)?.base ?? 'light')}
-                        onChange={(ids) => {
-                          store.setBrandThemes(previewTheme, ids)
-                          // A brand that ships one theme leads with it, and the
-                          // editor shows it.
-                          const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
-                          if (only) leadWith(only)
-                        }}
-                      />
-                    </div>
-                    <RandomLevelPicker />
-                    <RandomThemeButton variant="icon" label={t('Shuffle colours')} onClick={shuffleColors} />
-                  </div>
-                )}
-                rows={colorRows}
-                selected={colorRole}
-                onSelect={setColorRole}
-                onHex={setRoleHex}
-                onHuePreview={previewRoleHue}
-                onHueCommit={commitRoleHue}
-                solveAt={(id, hue) => roleAtHue(id, hue)[rampAppearance]}
-                neutralTint={activeTint}
-                onNeutralTint={(tint) => colorCommit('Neutral tint updated', (themeKey) => {
-                  setNeutralTint(tint)
-                  applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
-                })}
-                onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
-                page={themePage[rampAppearance]}
-                after={(
-              <div className="flex flex-col gap-2">
-                {(['secondary', 'tertiary'] as const).map((rank) => {
-                  const hex = extraHex(rank)
-                  if (!hex) return null
-                  return (
-                    <div key={rank} className="min-w-0">
-                      {/* Same row as Accent · Neutral · the states
-                          (ColorRolesPanel's RoleRow): name left, swatch + hex
-                          right. An extra palette is not a slider role, so the
-                          whole row opens its picker instead. */}
-                      <div ref={(node) => { chipRefs.current[rank] = node }}>
-                        <button
-                          type="button"
-                          onClick={() => toggleChip(rank)}
-                          aria-haspopup="dialog"
-                          aria-expanded={openChip === rank}
-                          aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
-                          className={`group ${FIELD_ROW} rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-                        >
-                          <span className={`${FIELD_NAME} ${openChip === rank ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>{t(BRAND_EXTRA_LABEL[rank])}</span>
-                          <span className={`${FIELD_CONTROL} ${openChip === rank ? FIELD_CONTROL_ON : FIELD_CONTROL_REST}`}>
-                            <span
-                              aria-hidden
-                              className={`${FIELD_LEAD} block border border-fg/40`}
-                              style={{ background: hex }}
-                            />
-                            <span className="min-w-0 flex-1 text-ui tabular-nums text-fg">{hex.toUpperCase()}</span>
-                          </span>
-                        </button>
-                      </div>
-                      <ColorPickerPopover
-                        open={openChip === rank}
-                        onClose={() => setOpenChip(null)}
-                        anchor={chipAnchor(rank)}
-                        label={BRAND_EXTRA_LABEL[rank]}
-                        value={hex}
-                        onChange={(next) => commit(`${BRAND_EXTRA_LABEL[rank]} updated`, (themeKey) => writeExtra(themeKey, rank, next))}
-                        dynamicAccentPalette
-                        accentHueFrom={hex}
-                        appearance={rampAppearance}
-                        contained={drawerContained}
-                        containedRootRef={containedDrawerRootRef}
-                        containedDockLeft={COLOR_RAIL_WIDTH}
-                      />
-                    </div>
-                  )
-                })}
-                {nextExtra && (
-                  <button
-                    type="button"
-                    onClick={() => commit(`${BRAND_EXTRA_LABEL[nextExtra]} added`, (themeKey) => {
-                      const s = useDesignStore.getState()
-                      const brandFamily = s.themeSources[themeKey]?.brand ?? 'accent'
-                      const brandHex = brandFamily === 'accent'
-                        ? s.primaryColor
-                        : s.customColors.find((color) => color.key === brandFamily)?.base ?? s.primaryColor
-                      addBrandExtra(themeKey, extraSeedHex(brandHex, nextExtra))
-                    })}
-                    title={t('Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics.')}
-                    className={`flex h-8 w-full items-center justify-center gap-1 border border-line text-caption text-fg-faint transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${RAIL_SURFACE_RADIUS}`}
-                  >
-                    <span aria-hidden className="text-ui leading-none">+</span>
-                    {t('Add {rank}', { rank: t(BRAND_EXTRA_LABEL[nextExtra]).toLowerCase() })}
-                  </button>
-                )}
-                {lastExtra && (
-                  <button
-                    type="button"
-                    onClick={() => commit(`${BRAND_EXTRA_LABEL[lastExtra]} removed`, (themeKey) => {
-                      removeBrandExtra(themeKey, lastExtra)
-                    })}
-                    className="text-caption font-medium text-fg-faint transition-colors hover:text-status-danger"
-                  >
-                    {t('Remove')}
-                  </button>
-                )}
-              </div>
-                )}
-              />
-            </div>
-
-            {/* Fine-tune stays closed so Colour reads as accent, neutral and
-                states. Show opens Saturation, Brightness and Ramp contrast at
-                one height. The Contrast grid only opens the board overlay. */}
-            <div className={`flex flex-col ${RAIL_BLOCK}`}>
-              <FineTune open={fineOpen} onToggle={() => setFineOpen((open) => !open)} contents={t('Saturation · Brightness · Ramp contrast')}>
-                  <AccentAxisSlider
-                    axis="saturation"
-                    label={t('Saturation')}
-                    value={liveAccent}
-                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
-                    onCommit={commitAccent}
-                    action={<FineResetButton label={t('Reset saturation')} disabled={saturationIsIdeal} onClick={() => resetAxis('saturation')} />}
-                  />
-                  <AccentAxisSlider
-                    axis="lightness"
-                    label={t('Brightness')}
-                    value={liveAccent}
-                    onPreview={(hex) => { setAccentPreview(hex); onAccentPreview?.(hex) }}
-                    onCommit={commitAccent}
-                    action={<FineResetButton label={t('Reset brightness')} disabled={brightnessIsIdeal} onClick={() => resetAxis('lightness')} />}
-                  />
+                rampContrast={(
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex min-w-0 items-center gap-0.5">
@@ -3167,13 +2877,37 @@ export default function ThemeQuickSettingsRail({
                       />
                     </div>
                   </div>
-              </FineTune>
+                )}
+                // Light · Dark and Random (with how daring it is) live on
+                // the board toolbar, so the rail starts at the colours.
+                rows={colorRows}
+                selected={colorRole}
+                onSelect={setColorRole}
+                onHex={setRoleHex}
+                onHexPreview={previewRoleHex}
+                onHuePreview={previewRoleHue}
+                onHueCommit={commitRoleHue}
+                solveAt={(id, hue) => roleAtHue(id, hue)[rampAppearance]}
+                neutralTint={activeTint}
+                onNeutralTint={(tint) => colorCommit('Neutral tint updated', (themeKey) => {
+                  setNeutralTint(tint)
+                  applyNeutral(linkNeutralToAccent ? neutralFromBrand(liveAccent, tint) : neutral, themeKey, true)
+                })}
+                onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
+                page={themePage[rampAppearance]}
+              />
+            </div>
+
+            {/* Fine-tune moved into each colour's picker (icons: Saturation ·
+                Brightness · Ramp contrast). The Contrast grid stays here: it
+                opens the board overlay, not a colour. */}
+            <div className={`flex flex-col ${RAIL_BLOCK}`}>
               <button
                 type="button"
                 onClick={() => onContrastOpenChange?.(!contrastOpen)}
                 aria-pressed={contrastOpen}
                 aria-expanded={contrastOpen}
-                className="group mt-3 flex w-full min-w-0 items-center gap-2 border-t border-line pt-3 text-left"
+                className="group flex w-full min-w-0 items-center gap-2 text-left"
               >
                 <ContrastGridThumb tones={contrastThumbTones} />
                 <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>

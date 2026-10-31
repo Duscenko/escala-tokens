@@ -94,14 +94,17 @@ const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center 
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, children, trailing }: {
-  /** A whole new theme — only while the brand is a draft (see callers). */
+export function BoardHistoryControls({ onRandom, children, trailing, appearance }: {
+  /** A whole new theme — only while the brand is a draft (see callers). The
+   *  die carries a chevron for how daring it is (Safe · Free · Bold). */
   onRandom?: () => void
   /** Board tools that join the pill after a divider (the Inspector). */
   children?: ReactNode
   /** A group of its own at the pill's end (the Theme · Components switch),
    *  set off by a full-height rule — Figma's tools | modes split. */
   trailing?: ReactNode
+  /** Light · Dark, last, after its own rule. */
+  appearance?: ReactNode
 }) {
   const { t } = useI18n()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
@@ -139,7 +142,11 @@ export function BoardHistoryControls({ onRandom, children, trailing }: {
       {onRandom && (
         <>
           <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
-          <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+          {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
+          <div className="flex items-center">
+            <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+            <RandomLevelPicker chevron />
+          </div>
         </>
       )}
       {children && (
@@ -152,6 +159,12 @@ export function BoardHistoryControls({ onRandom, children, trailing }: {
         <>
           <span aria-hidden className="-my-1 mx-1 w-px self-stretch bg-line" />
           {trailing}
+        </>
+      )}
+      {appearance && (
+        <>
+          <span aria-hidden className="-my-1 mx-1 w-px self-stretch bg-line" />
+          {appearance}
         </>
       )}
     </div>
@@ -304,7 +317,11 @@ const LEVEL_MENU_GAP = 6
  *  trigger sits in the inspector's scroll column, which clipped an absolute
  *  menu (its left half was cut off). Right edges align, clamped to the window,
  *  and it opens upward when there is no room below. */
-export function RandomLevelPicker() {
+export function RandomLevelPicker({ chevron = false }: {
+  /** Beside the board toolbar's die, Figma-style: a bare chevron, and the
+   *  menu opens ABOVE it, dark like the bar, with the check on the left. */
+  chevron?: boolean
+} = {}) {
   const { t } = useI18n()
   const level = usePaletteLevel()
   const reduce = useReducedMotion()
@@ -327,6 +344,12 @@ export function RandomLevelPicker() {
       const r = trigger.current?.getBoundingClientRect()
       if (!r) return
       const height = menu.current?.offsetHeight ?? 180
+      if (chevron) {
+        // Above the toolbar, starting at the die (one 32px segment left).
+        const left = Math.max(LEVEL_MENU_GAP, Math.min(r.left - 32, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
+        setPlace({ bottom: window.innerHeight - r.top + LEVEL_MENU_GAP + 4, left })
+        return
+      }
       const left = Math.max(LEVEL_MENU_GAP, Math.min(r.right - LEVEL_MENU_W, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
       const below = window.innerHeight - r.bottom - LEVEL_MENU_GAP
       setPlace(below >= height || below >= r.top
@@ -337,7 +360,7 @@ export function RandomLevelPicker() {
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
     return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
-  }, [open])
+  }, [open, chevron])
 
   // Focus the selected level when the menu opens; outside click closes it.
   useEffect(() => {
@@ -365,8 +388,31 @@ export function RandomLevelPicker() {
     else if (event.key === 'Escape' || event.key === 'Tab') { event.preventDefault(); close() }
   }
 
+  const chevronTrigger = (
+    <button
+      ref={trigger}
+      type="button"
+      onClick={() => setOpen((v) => !v)}
+      onKeyDown={(event) => { if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !open) { event.preventDefault(); setOpen(true) } }}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-label={`${t('Random colours')}: ${t(LEVEL_COPY[level].label)}`}
+      className={`flex h-8 w-4 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+        open ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
+      }`}
+    >
+      <svg
+        width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        className={`transition-transform duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+      >
+        <path d="M4 6l4 4 4-4" />
+      </svg>
+    </button>
+  )
+
   return (
     <>
+      {chevron ? (open ? chevronTrigger : <HintTip label={t('How daring Random is')}>{chevronTrigger}</HintTip>) : (
       <button
         ref={trigger}
         type="button"
@@ -386,6 +432,7 @@ export function RandomLevelPicker() {
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
+      )}
       {open && createPortal(
         <motion.div
           ref={menu}
@@ -403,7 +450,7 @@ export function RandomLevelPicker() {
             bottom: place?.bottom,
             visibility: place ? 'visible' : 'hidden',
           }}
-          className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST}`}
+          className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST} ${chevron ? 'dark' : ''}`}
         >
           {PALETTE_LEVELS.map((id, i) => {
             const on = id === level
@@ -415,15 +462,22 @@ export function RandomLevelPicker() {
                 role="option"
                 aria-selected={on}
                 onClick={() => { writePaletteLevel(id); close() }}
-                className={`${SELECT_OPTION} grid grid-cols-[1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                className={`${SELECT_OPTION} grid ${chevron ? 'grid-cols-[auto_1fr]' : 'grid-cols-[1fr_auto]'} items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
+                {chevron && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                )}
                 <span className="flex min-w-0 flex-col">
                   <span className="text-ui">{t(LEVEL_COPY[id].label)}</span>
                   <span className="truncate text-caption font-normal text-fg-faint">{t(LEVEL_COPY[id].hint)}</span>
                 </span>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
-                  <path d="M3.5 8.5l3 3 6-7" />
-                </svg>
+                {!chevron && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                )}
               </button>
             )
           })}
