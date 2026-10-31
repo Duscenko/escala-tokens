@@ -30,6 +30,63 @@ itself) is read by NO role — `brandSolidPair` lands the primary button on 8.
 Next: phase 5 (in-place on the real board — motion skill first, reference
 https://token-galaxy.vercel.app/).
 
+## Phase 5 — on the board (BUILT 2026-10-31)
+
+Built as designed below, with two corrections found in the browser:
+- **A mask, not an even-odd clip-path.** Two lit parts that overlap without
+  one containing the other (a card and the component filling it) refilled
+  each other's hole in an even-odd path, so lit tiles showed blurred. The
+  scrim is now a luminance `mask-image` (`holesMask`): holes union.
+- **It waits for the board to settle** (`SETTLE_MS`, 280ms): the board's
+  scaled tiles measure themselves after mount, and spotlighting earlier drew
+  outlines where parts were a frame before.
+- A focus that lights nothing (a ramp step only a pressed state reads) says
+  so in a pill — a bare scrim read as broken.
+Files: `lib/colorSpotlight.ts` (pure: `litSlots`, `outermostRects`,
+`holesMask`, tested), `ColorSpotlight.tsx` (overlay, sibling of the board),
+`MapViewSwitch` in `ColorRoleMapView.tsx`, `mapView` + `spotlight` in the hub.
+
+### The design, as written before building
+
+**Studied:** token-galaxy ("DS Universe"). Its Component level picks a zone
+and does a FOCUS PULL: the rest of the component blurs and recedes, the zone
+keeps a thin selection outline with corner handles (Figma's), and a leader
+line runs out to a callout card (token, CSS var, alias chain). Its Usage level
+is a wired graph — which our map already is. Motion skill loaded:
+emil-design-eng (Emil Kowalski): ease-out for entering, exits faster than
+entries, nothing from scale(0), transitions over keyframes for anything
+retargeted by hover, under 300ms, opacity/transform only, reduced motion =
+fades kept, movement dropped.
+
+**What it is:** a second view of the same map — `Map · On the board` in the
+map's header. "On the board" draws the real bento board and spotlights every
+element that paints with the colour; everything else recedes behind a
+blurred, dimmed scrim. Same focus as the map: hovering a step of the rail's
+ramp narrows the spotlight to the roles on that tone.
+
+**Finding the elements — no new data.** Every component on the board carries
+`data-escala` (its recipe) and `data-part="Key.slot"` on its slots;
+`traceElement` turns one into its colour roles per slot, the inspector's own
+source. An element lights when a slot reads a role of the colour (any state —
+a hover role is still where the colour lands). The slot's own node is lit when
+it has one (a Badge's label), else the root. Tiles that are not recipe
+components (the ramp swatches, the type specimen) are not traced.
+
+**Drawing it — one scrim with holes.** An absolute layer over the board
+content: `clip-path: path(evenodd, …)` = the board minus a rounded hole per lit
+element (radius = the element's own, scaled), with `backdrop-filter: blur()`
+and a page-tinted veil. One layer, so nesting needs no per-element filters; a
+hole inside another hole is dropped (evenodd would re-fill it). Over each hole,
+a selection outline with four corner handles. Pointing at a lit element draws
+a leader line to a callout: the component, then each role it reads from this
+colour with its primitive (`action.primary.default · accent.8`).
+
+**Motion:** scrim fades in (240ms, ease-out `cubic-bezier(.23,1,.32,1)`);
+outlines enter from scale .98 + opacity, staggered 25ms, capped at 300ms
+total; exits 120ms. Hover changes (ramp step, callout) are transitions, not
+keyframes, and the callout fades 150ms — instant when moving between lit
+elements. Reduced motion: no blur, no scale, fades only.
+
 ## The ask
 
 The Color card's rows (Accent · Neutral · Success · Critical · Warning · Info)

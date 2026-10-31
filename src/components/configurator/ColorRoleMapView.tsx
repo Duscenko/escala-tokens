@@ -391,3 +391,48 @@ function RoleRow({ role, dim, lit, litComponent, onFocusRole, onFocusComponent, 
 function Tag({ title, children }: { title: string; children: React.ReactNode }) {
   return <span title={title} className="rounded px-1 py-px text-nano font-medium uppercase tracking-wide text-fg-faint ring-1 ring-inset ring-line">{children}</span>
 }
+
+/** Map · On the board — the two views of one colour map, in the board's
+ *  header. A real tab pair (one tab stop, arrows move), like Theme ·
+ *  Components; same recessed well as the board's other switches. */
+export function MapViewSwitch({ value, onChange }: {
+  value: 'graph' | 'board'
+  onChange: (view: 'graph' | 'board') => void
+}) {
+  const { t } = useI18n()
+  const views = [
+    { id: 'graph' as const, label: t('Map') },
+    { id: 'board' as const, label: t('On the board') },
+  ]
+  return (
+    <div
+      role="tablist"
+      aria-label={t('Colour map view')}
+      className="inline-flex h-8 items-center rounded-lg bg-fg/[0.06] p-0.5"
+      onKeyDown={(event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+        event.preventDefault()
+        onChange(value === 'graph' ? 'board' : 'graph')
+      }}
+    >
+      {views.map((view) => {
+        const on = view.id === value
+        return (
+          <button
+            key={view.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            tabIndex={on ? 0 : -1}
+            onClick={() => onChange(view.id)}
+            className={`h-7 rounded-md px-2.5 text-caption font-medium transition-[background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
+              on ? 'bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.25)]' : 'text-fg-muted hover:text-fg'
+            }`}
+          >
+            {view.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

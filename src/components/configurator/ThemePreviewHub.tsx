@@ -51,7 +51,8 @@ import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
-import ColorRoleMapView from './ColorRoleMapView'
+import ColorRoleMapView, { MapViewSwitch } from './ColorRoleMapView'
+import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
 import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
 import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus } from '../../lib/colorRoleMap'
 import { useColorRoleMap } from './useColorRoleMap'
@@ -294,7 +295,11 @@ const CANVAS_INSET = 'px-5'
 function ArtefactsView({
   view, previewTheme, previewViewport, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange, onOpenComponent,
+  spotlight,
 }: {
+  /** The colour map shown ON the board: the roles to light, and what the
+   *  callout names for each. */
+  spotlight?: { roleIds: ReadonlySet<string>; roleInfo: ReadonlyMap<string, SpotlightRole> }
   /** Components view: a cover's ↗ opens that component's page. */
   onOpenComponent?: (def: ComponentDef) => void
   /** Theme (the bento board) or Components (every component as a cover). */
@@ -338,6 +343,7 @@ function ArtefactsView({
     dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark', collagePlatform), accentPreview),
   }), [overlayStore, previewTheme, accentPreview, collagePlatform])
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const boardRef = useRef<HTMLDivElement | null>(null)
   const stageTokens = tokensByAppearance[boardAppearance]
   // Token Details sits ON Color edition, not beside Themes library. The
   // canvas only needs to cede whatever of the 360px drawer actually crosses
@@ -384,8 +390,8 @@ function ArtefactsView({
       className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} pt-5 pb-20 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
-      <div className="mx-auto w-full">
-        <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
+      <div className="relative mx-auto w-full">
+        <div ref={boardRef} style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
             {view === 'theme' ? (
               <SystemCollage
@@ -402,6 +408,17 @@ function ArtefactsView({
             )}
           </InspectorModeProvider>
         </div>
+        {/* The colour map, on the board: a sibling of the board, so it
+            measures the board and never mutates it. */}
+        {spotlight && (
+          <ColorSpotlight
+            rootRef={boardRef}
+            tokens={tokensByAppearance[boardAppearance]}
+            roleIds={spotlight.roleIds}
+            roleInfo={spotlight.roleInfo}
+            veil={stageTokens.archTokens?.['surface.page'] ?? stageTokens.surface}
+          />
+        )}
       </div>
       <InspectorOverlay
         active={inspecting}
@@ -742,6 +759,19 @@ export default function ThemePreviewHub({
       onHover: (tone) => setMapFocus(tone == null ? null : { kind: 'tone', id: String(tone) }),
     }
   }, [mapData, mapGroup, mapFocus])
+  // Map · On the board: the same map drawn as a graph, or lit on the real
+  // board. Kept across colours — it is how you like to read the map.
+  const [mapView, setMapView] = useState<'graph' | 'board'>('graph')
+  const spotlight = useMemo(() => {
+    if (!mapData || mapView !== 'board') return undefined
+    const shown = visibleGroups(mapData.map, mapGroup)
+    const all = shown.flatMap((g) => g.roles)
+    const focused = focusedRoleIds(shown, mapFocus)
+    return {
+      roleIds: focused && focused.size ? focused : new Set(all.map((r) => r.id)),
+      roleInfo: new Map(all.map((r) => [r.id, { label: r.label, css: r.css }])),
+    }
+  }, [mapData, mapView, mapGroup, mapFocus])
   const effectiveTileAppearances = useMemo(
     () => Array.from({ length: COLLAGE_TILE_COUNT }, () => effectiveBoardAppearance),
     [effectiveBoardAppearance],
@@ -906,6 +936,7 @@ export default function ThemePreviewHub({
                   {docsOpen && hubDocActions}
                   {/* The map reads one theme: its switch rides in the band,
                       since the board toolbar (where it lives) steps aside. */}
+                  {mapOpen && <MapViewSwitch value={mapView} onChange={setMapView} />}
                   {mapOpen && !stylePreview && (
                     <BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />
                   )}
@@ -987,7 +1018,7 @@ export default function ThemePreviewHub({
                   >
                     <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
                   </motion.div>
-                ) : mapOpen && mappedColour ? (
+                ) : mapOpen && mappedColour && mapView === 'graph' ? (
                   <motion.div
                     key="colour-map"
                     className="flex min-h-0 flex-1 flex-col"
@@ -1042,8 +1073,9 @@ export default function ThemePreviewHub({
                     stylePreview={paintedPreview}
                     drawerOpen={quickEditOpen}
                     editingRole={editingToken != null}
-                    inspecting={inspecting}
+                    inspecting={mapOpen ? false : inspecting}
                     onInspectingChange={setInspecting}
+                    spotlight={mapOpen ? spotlight : undefined}
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
                     onPickRole={pickRole}
