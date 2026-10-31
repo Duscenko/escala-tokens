@@ -30,9 +30,13 @@ function pluginFunction(name: string): string {
 }
 
 type Paste = { kind: string; raw?: { colors: { themeOrder?: string[]; architecture?: unknown; activeTheme?: string }; project?: string; foundationsByTheme?: Record<string, unknown> }; foundation?: string | null }
-const classifyPaste = new Function(
-  `${pluginFunction('extractEscalaPayload')}\n${pluginFunction('classifyPaste')}\nreturn classifyPaste`,
-)() as (text: string) => Paste
+// Built only when ui.html is there: slicing it at module load threw before
+// `describe.skipIf` below could skip, so CI (no plugin checkout) went red.
+const classifyPaste = uiHtml
+  ? new Function(
+    `${pluginFunction('extractEscalaPayload')}\n${pluginFunction('classifyPaste')}\nreturn classifyPaste`,
+  )() as (text: string) => Paste
+  : () => { throw new Error('ui.html not available') }
 
 const brands: string[] = []
 
