@@ -137,16 +137,27 @@ function fromBase64(b64: string): string {
 }
 
 /**
- * Reads a file from the repo. Returns null on 404.
+ * Reads a file from the repo. Returns null ONLY when GitHub says it is not
+ * there (404). Any other failure (offline, 403, rate limit, 5xx) throws: a
+ * caller that read "absent" from a failed request would overwrite a file it
+ * never saw (a user's README) or report "no snapshot" for a repo that has one.
+ * Files over 1 MB come back from the Contents API without a body; those are
+ * read through the blob API by their sha.
  */
 export async function getFile(token: string, repo: string, path: string): Promise<string | null> {
+  let data: { content?: string; encoding?: string; sha?: string; size?: number }
   try {
-    const data = await gh<{ content?: string }>(token, `/repos/${repo}/contents/${encodePath(path)}`)
-    if (!data.content) return null
-    return fromBase64(data.content)
-  } catch {
-    return null
+    data = await gh(token, `/repos/${repo}/contents/${encodePath(path)}`)
+  } catch (e) {
+    if (e instanceof GitHubError && e.status === 404) return null
+    throw e
   }
+  if (data.content && data.encoding !== 'none') return fromBase64(data.content)
+  if (data.sha && (data.size ?? 0) > 0) {
+    const blob = await gh<{ content: string }>(token, `/repos/${repo}/git/blobs/${data.sha}`)
+    return fromBase64(blob.content)
+  }
+  return data.size === 0 ? '' : null
 }
 
 /** A repo with no commit yet: the Git Data API has no branch to build on. */

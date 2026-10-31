@@ -171,3 +171,26 @@ describe('commitFiles', () => {
     expect((tree.body!.tree as { path: string }[]).map((t) => t.path)).not.toContain('src/keep.ts')
   })
 })
+
+describe('getFile', () => {
+  it('is null only on a 404, and throws on any other failure', async () => {
+    const { getFile } = await import('../github')
+    script(() => json({ message: 'Not Found' }, 404))
+    expect(await getFile('t', 'o/r', 'README.md')).toBeNull()
+    script(() => json({ message: 'API rate limit exceeded' }, 403))
+    await expect(getFile('t', 'o/r', 'README.md')).rejects.toThrow(/rate limit/)
+    script(() => json({ message: 'Server Error' }, 502))
+    await expect(getFile('t', 'o/r', 'README.md')).rejects.toThrow()
+  })
+
+  it('decodes unicode and reads a file over 1 MB through its blob', async () => {
+    const { getFile } = await import('../github')
+    const b64 = (str: string) => btoa(String.fromCharCode(...new TextEncoder().encode(str)))
+    script(() => json({ content: b64('# Café ✓\n'), encoding: 'base64', size: 12, sha: 's' }))
+    expect(await getFile('t', 'o/r', 'README.md')).toBe('# Café ✓\n')
+    script((c) => c.path.includes('/git/blobs/big')
+      ? json({ content: b64('{"big":true}') })
+      : json({ content: '', encoding: 'none', size: 2_000_000, sha: 'big' }))
+    expect(await getFile('t', 'o/r', '.escala/system.json')).toBe('{"big":true}')
+  })
+})

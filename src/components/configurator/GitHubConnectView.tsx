@@ -18,6 +18,7 @@ import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth
 import { GitHubGlyph } from '../ui/icons'
 import { trackEvent } from '../../lib/analytics'
 import CodeHowTo from './CodeHowTo'
+import { README_MARKER, shouldWriteReadme } from '../../lib/repoExport'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -258,7 +259,6 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     const files = [
       { path: 'tokens.json', content: shipped.tokens },
       { path: 'variables.css', content: shipped.css },
-      { path: 'README.md', content: shipped.markdown },
       {
         path: ESCALA_SYSTEM_PATH,
         content: serializeEscalaSystem({
@@ -278,6 +278,14 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     const perFolder = skills.files.length / skills.prefixes.length
     setPushLog([...files.map((f) => f.path), ...skills.prefixes.map((p) => `${p} (${perFolder} files)`)])
     try {
+      // Same rule as the Figma plugin (repoExport.shouldWriteReadme): README.md
+      // is written only when there is none, Escala wrote it (the marker), or it
+      // is GitHub's auto-init stub. A README someone wrote is never replaced.
+      const existingReadme = await getFile(token, githubRepo, 'README.md')
+      if (shouldWriteReadme(existingReadme)) {
+        files.splice(2, 0, { path: 'README.md', content: `${README_MARKER}\n${shipped.markdown}` })
+        setPushLog((log) => ['README.md', ...log])
+      }
       const result = await commitFiles(token, githubRepo, [...files, ...skills.files], `chore(tokens): update ${projectName} design tokens and Design skills`, skills.prefixes)
       setPushResult(result)
       setGithubLastPushAt(new Date().toISOString())

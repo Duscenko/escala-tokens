@@ -274,6 +274,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > found". Locked by `githubCommit.test.ts`; `agentContextAudit`'s GitHub mock now serves the
 > read-back too (a new mock must).
 
+> **UPDATE (2026-10-31, same day): web and plugin push to GitHub under ONE protocol.** The
+> plugin no longer goes through the web (route A below is history): it commits from its
+> iframe with the web's own `lib/github.ts` + `lib/repoExport`, bundled as `EscalaRepo`
+> (`escala-figma-plugin/src/repoExport.entry.ts`), so both get the no-store reads and the
+> read-back verification. Shared rules, both sides: the token stays on the device (web
+> `localStorage` `sd-github-token`, plugin `figma.clientStorage`), never in the store, the
+> file or a server; it is saved only after GitHub accepts it and deleted ONLY on a 401
+> (`isRejectedTokenError`) — offline / rate limit / 5xx keep it and offer a retry; a repo
+> list that fails after a good `/user` keeps the account connected. `README.md` is written
+> only when `shouldWriteReadme` allows (none, Escala's `README_MARKER`, or GitHub's
+> auto-init stub) — the web push now follows it too and stamps the marker. `getFile` is
+> null ONLY on 404 and throws on any other failure (an "absent" read from a failed request
+> would overwrite a README nobody saw); files over 1 MB are read through the blob API.
+> `commitFiles` returns `CommitResult` — the plugin reads `.sha` / `.verified`.
+
 > **UPDATE (2026-10-21): the PLUGIN saves to GitHub THROUGH THE WEB (route A).** The GitHub
 > token lives only in the browser (`sd-github-token`), so the plugin never pushes. Plugin →
 > Export → "Save to GitHub" (`saveToGithub`, `ui.html`): a file that follows a system opens it,
