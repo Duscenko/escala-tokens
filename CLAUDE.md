@@ -92,6 +92,23 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-31): the COLOUR MAP — where one colour lands.** Plan + state:
+> `design-plans/color-role-map.md`. Each Color-card row has a ramp toggle; opening it shows the
+> row's 12 tones AND replaces the board with that colour's map (`mappedColour` in
+> `ThemePreviewHub`, exclusive with the Contrast grid, Esc folds both). Two views,
+> `MapViewSwitch`: **Map** (`ColorRoleMapView`: Primitive → Groups → Roles → Application, wired
+> by `MapWires`, four columns at EVERY width — a narrow board scrolls sideways, never stacks:
+> owner's call after seeing the stacked version) and **On the board** (`ColorSpotlight`: the real board, lit
+> parts sharp with a selection outline, the rest behind a blurred scrim cut by a luminance mask;
+> hover = leader line + callout). Rules: a role belongs to a colour when its primitive IN THE
+> THEME ON SCREEN is one of the colour's families (`lib/colorRoleMap.ts`; refs name the slot
+> family, so brand-private families map for free; `black-a`/`white-a` ride under Neutral) — a
+> test holds the partition for every System Style. Data, focus and group filter live in the hub
+> (`useColorRoleMap`, `MapFocus`) so the board and the rail's ramp legend (a dot per step a role
+> reads) light the same roles both ways. In-place lighting reads the recipe trace
+> (`traceElement` → `litSlots`), never a second map. Don't add a second "where is this colour
+> used" surface; extend this one.
+
 > **UPDATE (2026-10-25): MOTION is a foundation — phase 1 (model + exports, store v103).** Plan:
 > `design-plans/motion-foundation.md`, after motiondesignsystem.org. `lib/motion.ts` (pure) holds
 > three tiers: primitives (duration ladder quick 100 … cinematic 1200 + `instant`/`fade` for reduced

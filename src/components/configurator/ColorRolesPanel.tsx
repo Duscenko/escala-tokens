@@ -14,14 +14,17 @@
 // own saturation and brightness, and the dark one is kept a little dimmer —
 // the same colour, tuned for the page it sits on.
 
-import { useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, rolePasses, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import type { ColorScale } from '../../types/tokens'
+import type { ToneUse } from '../../lib/colorRoleMap'
 import { useI18n } from '../../lib/i18n'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { AccentAxisSlider, FINE_TUNE_IDEAL, FineResetButton, TintSlider } from './ThemeQuickSettingsRail'
 import { ColorBlock, FloatingColorPicker } from './ColorBlock'
-import { colorAtHue, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { BASE_TONE, colorAtHue, readHuePosition, toneLabel, type ColorNaming, type NeutralTint } from '../../lib/colorUtils'
 import { HintTip } from '../ui/HintTip'
 
 /** The family a status hue band reads as, named in the open row's rule. */
@@ -30,6 +33,15 @@ const BAND_FAMILY: Partial<Record<ColorRoleId, string>> = {
   error: 'red',
   warning: 'amber',
   info: 'blue',
+}
+
+/** The open ramp as the colour map's legend: which steps any role reads, and
+ *  which the map's focus lights. Pointing at a step lights its roles on the
+ *  board. Given only while the board shows the map. */
+export interface RampLegend {
+  tones: Record<number, ToneUse>
+  lit: ReadonlySet<number>
+  onHover: (tone: number | null) => void
 }
 
 export interface ColorRoleRow {
@@ -47,9 +59,20 @@ export function ColorRolesPanel({
   appearance, header, rows, selected, onSelect,
   onHex, onHexPreview, onHuePreview, onHueCommit, solveAt,
   neutralTint, onNeutralTint, onToggleLink,
-  page, after, rampContrast,
+  page, after, rampContrast, ramps, naming = 'numeric', rampOpen: rampOpenProp, onRampOpenChange, rampLegend,
 }: {
+  /** The open ramp's legend, while the board maps that colour. */
+  rampLegend?: RampLegend
+  /** Whose ramp is open, when the caller owns it — the Generator does, since
+   *  the open ramp is also the colour the board maps. Omit to keep it local. */
+  rampOpen?: ColorRoleId | null
+  onRampOpenChange?: (id: ColorRoleId | null) => void
   appearance: ThemeAppearance
+  /** Each role's twelve tones in the theme on screen — what the row's ramp
+   *  toggle reveals under it. A role with no ramp gets no toggle. */
+  ramps?: Partial<Record<ColorRoleId, ColorScale>>
+  /** The system's naming scheme, so the ramp's steps read as they export. */
+  naming?: ColorNaming
   /** Light / Dark and Random, drawn above the rows. */
   header?: ReactNode
   rows: ColorRoleRow[]
@@ -82,6 +105,15 @@ export function ColorRolesPanel({
   // Whose picker is open. Opening one also selects the row, so the preview's
   // highlight and the open picker never disagree.
   const [open, setOpen] = useState<ColorRoleId | null>(null)
+  // Whose ramp is shown under its row. One at a time keeps the card short —
+  // opening Critical's folds Accent's.
+  const [rampOpenLocal, setRampOpenLocal] = useState<ColorRoleId | null>(null)
+  const rampOpen = rampOpenProp !== undefined ? rampOpenProp : rampOpenLocal
+  const setRampOpen = (next: (current: ColorRoleId | null) => ColorRoleId | null) => {
+    const value = next(rampOpen)
+    if (onRampOpenChange) onRampOpenChange(value)
+    else setRampOpenLocal(value)
+  }
   // Clicks in the list keep the picker: another row's swatch switches it.
   const list = useRef<HTMLDivElement>(null)
   // A palette that changes in one go (Shuffle, Light ↔ Dark) bumps `landing`,
@@ -129,6 +161,11 @@ export function ColorRolesPanel({
             onNeutralTint={onNeutralTint}
             onToggleLink={row.linked === undefined ? undefined : () => onToggleLink(row.id)}
             rampContrast={rampContrast}
+            ramp={ramps?.[row.id]}
+            naming={naming}
+            rampOpen={rampOpen === row.id}
+            legend={rampOpen === row.id ? rampLegend : undefined}
+            onToggleRamp={() => setRampOpen((current) => (current === row.id ? null : row.id))}
           />
           </div>
         ))}
@@ -141,9 +178,14 @@ export function ColorRolesPanel({
 function RoleRow({
   row, index, landing, on, open, appearance, page, neutralTint, list,
   onToggle, onClose, onFocusHex, onHex, onHexPreview, onHuePreview, onHueCommit, solveAt, onNeutralTint, onToggleLink,
-  rampContrast,
+  rampContrast, ramp, naming, rampOpen, onToggleRamp, legend,
 }: {
+  legend?: RampLegend
   rampContrast?: ReactNode
+  ramp?: ColorScale
+  naming: ColorNaming
+  rampOpen: boolean
+  onToggleRamp: () => void
   row: ColorRoleRow
   /** Row position — the delay of its swatch's landing. */
   index: number
@@ -168,7 +210,9 @@ function RoleRow({
 }) {
   const { t } = useI18n()
   const block = useRef<HTMLDivElement>(null)
+  const rampId = useId()
   const label = t(COLOR_ROLE_LABEL[row.id])
+  const hasRamp = Boolean(ramp && Object.keys(ramp).length)
   const readOnlyTitle = t('Derived from the neutral base. Edit it in Light.')
 
   // The constraint, in words. Accent has none — it sweeps the whole wheel.
@@ -213,20 +257,45 @@ function RoleRow({
 
   return (
     <div role="listitem" className="group">
-      <ColorBlock
-        anchorRef={block}
-        label={label}
-        hex={row.hex}
-        active={on}
-        open={open}
-        readOnly={row.readOnly}
-        readOnlyTitle={readOnlyTitle}
-        landing={landing}
-        index={index}
-        onSwatch={onToggle}
-        onFocusHex={onFocusHex}
-        onHex={onHex}
-      />
+      {/* The field, then the ramp toggle beside it — outside the field, so a
+          click on it never lands in the hex. */}
+      <div className="flex min-w-0 items-center gap-1">
+        <div className="min-w-0 flex-1">
+          <ColorBlock
+            anchorRef={block}
+            label={label}
+            hex={row.hex}
+            active={on}
+            open={open}
+            readOnly={row.readOnly}
+            readOnlyTitle={readOnlyTitle}
+            landing={landing}
+            index={index}
+            onSwatch={onToggle}
+            onFocusHex={onFocusHex}
+            onHex={onHex}
+          />
+        </div>
+        {hasRamp && (
+          <HintTip label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}>
+            <button
+              type="button"
+              onClick={onToggleRamp}
+              aria-expanded={rampOpen}
+              aria-controls={rampId}
+              aria-label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}
+              className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg transition-[background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
+                rampOpen ? 'bg-fg/[0.12] text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
+              }`}
+            >
+              <RampToggleGlyph />
+            </button>
+          </HintTip>
+        )}
+      </div>
+      {hasRamp && ramp && (
+        <RoleRamp id={rampId} open={rampOpen} label={label} ramp={ramp} naming={naming} legend={legend} />
+      )}
       {open && (
         <FloatingColorPicker
           anchor={block}
@@ -282,6 +351,122 @@ function RoleRow({
         </FloatingColorPicker>
       )}
     </div>
+  )
+}
+
+const RAMP_TONES = Array.from({ length: 12 }, (_, i) => i + 1)
+
+/** The role's twelve tones under its row, in the theme on screen — the same
+ *  ramp Variables and the export read (`scaleForFamily`), never a second
+ *  render of it. Step names follow the system's naming scheme; the anchor
+ *  (tone 9, the hex in the row above) is the one label in full ink. Read-only:
+ *  the row's field and picker are where the colour is set. */
+function RoleRamp({ id, open, label, ramp, naming, legend }: {
+  id: string
+  open: boolean
+  label: string
+  ramp: ColorScale
+  naming: ColorNaming
+  /** While the board maps this colour: which steps the system reads. */
+  legend?: RampLegend
+}) {
+  const { t } = useI18n()
+  const reduce = useReducedMotion()
+  const usage = (tone: number) => legend?.tones[tone]
+  const lit = (tone: number) => legend?.lit.has(tone) ?? false
+  const title = (tone: number) => {
+    const base = `${label} ${toneLabel(naming, tone)} · ${(ramp[tone] ?? '').toUpperCase()}`
+    if (!legend) return base
+    const n = usage(tone)?.roles.length ?? 0
+    return n === 0
+      ? `${base} · ${t('No role reads it')}`
+      : `${base} · ${t(n === 1 ? '{n} role' : '{n} roles', { n: String(n) })}${usage(tone)?.alphaOnly ? ` (${t('alpha twin')})` : ''}`
+  }
+  return (
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div
+          id={id}
+          role="group"
+          aria-label={t('{name} ramp', { name: label })}
+          initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+          animate={reduce ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+          exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+          transition={{ duration: reduce ? 0.12 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="overflow-hidden"
+        >
+          <div className="pt-1.5 pb-1">
+            {/* The hairline sits OVER the swatches (an inset ring on a layer
+                above), so the end tones keep an edge on a page of their own
+                colour without a border shrinking the cells. */}
+            <div className="relative flex h-6 overflow-hidden rounded-md" onMouseLeave={() => legend?.onHover(null)}>
+              <span aria-hidden className="pointer-events-none absolute inset-0 z-10 rounded-md ring-1 ring-inset ring-fg/10" />
+              {RAMP_TONES.map((tone) => (
+                <span
+                  key={tone}
+                  title={title(tone)}
+                  onMouseEnter={legend ? () => legend.onHover(usage(tone) ? tone : null) : undefined}
+                  // A lit step: a two-tone ring (ink over the page colour),
+                  // which reads on the ramp's pale end and its dark end alike.
+                  className={`h-full flex-1 transition-[background-color,box-shadow] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${
+                    lit(tone) ? 'relative z-20 shadow-[inset_0_0_0_2px_var(--fg),inset_0_0_0_3px_var(--app)]' : ''
+                  }`}
+                  style={{ background: ramp[tone] }}
+                />
+              ))}
+            </div>
+            {/* The legend: a dot under each step a role reads — filled for
+                the solid, a ring when only its alpha twin is read. */}
+            {legend && (
+              <div aria-hidden className="mt-1 flex h-1.5">
+                {RAMP_TONES.map((tone) => (
+                  <span key={tone} className="flex flex-1 justify-center">
+                    {usage(tone) && (
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-150 ${
+                        usage(tone)!.alphaOnly
+                          ? `ring-1 ring-inset ${lit(tone) ? 'ring-accent-ui' : 'ring-fg-muted'}`
+                          : lit(tone) ? 'bg-accent-ui' : 'bg-fg-muted'
+                      }`} />
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div aria-hidden className="mt-1 flex">
+              {RAMP_TONES.map((tone) => (
+                <span
+                  key={tone}
+                  className={`flex-1 text-center text-micro leading-none tabular-nums transition-colors duration-150 ${
+                    lit(tone) || tone === BASE_TONE ? 'font-medium text-fg' : legend && !usage(tone) ? 'text-fg-faint/50' : 'text-fg-faint'
+                  }`}
+                >
+                  {toneLabel(naming, tone)}
+                </span>
+              ))}
+            </div>
+            {legend && (
+              <p className="mt-2 flex items-center gap-3 text-micro text-fg-faint">
+                <span className="flex items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 rounded-full bg-fg-muted" />{t('Read by a role')}</span>
+                <span className="flex items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 rounded-full ring-1 ring-inset ring-fg-muted" />{t('Alpha twin only')}</span>
+              </p>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+/** Three sliders — "tune this colour". Drawn without a filled knob, so it
+ *  reads on any surface the inspector paints (SlidersIcon fills with --app). */
+function RampToggleGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden>
+      <path d="M3.5 2v2.6M3.5 7.9V14M8 2v6.1M8 11.4V14M12.5 2v1.1M12.5 6.4V14" />
+      <circle cx="3.5" cy="6.25" r="1.65" />
+      <circle cx="8" cy="9.75" r="1.65" />
+      <circle cx="12.5" cy="4.75" r="1.65" />
+    </svg>
   )
 }
 

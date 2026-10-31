@@ -51,6 +51,12 @@ import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
+import ColorRoleMapView, { MapViewSwitch } from './ColorRoleMapView'
+import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
+import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
+import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus } from '../../lib/colorRoleMap'
+import { useColorRoleMap } from './useColorRoleMap'
+import type { RampLegend } from './ColorRolesPanel'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -289,7 +295,11 @@ const CANVAS_INSET = 'px-5'
 function ArtefactsView({
   view, previewTheme, previewViewport, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange, onOpenComponent,
+  spotlight,
 }: {
+  /** The colour map shown ON the board: the roles to light, and what the
+   *  callout names for each. */
+  spotlight?: { roleIds: ReadonlySet<string>; roleInfo: ReadonlyMap<string, SpotlightRole> }
   /** Components view: a cover's ↗ opens that component's page. */
   onOpenComponent?: (def: ComponentDef) => void
   /** Theme (the bento board) or Components (every component as a cover). */
@@ -333,6 +343,7 @@ function ArtefactsView({
     dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark', collagePlatform), accentPreview),
   }), [overlayStore, previewTheme, accentPreview, collagePlatform])
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const boardRef = useRef<HTMLDivElement | null>(null)
   const stageTokens = tokensByAppearance[boardAppearance]
   // Token Details sits ON Color edition, not beside Themes library. The
   // canvas only needs to cede whatever of the 360px drawer actually crosses
@@ -379,8 +390,8 @@ function ArtefactsView({
       className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} pt-5 pb-20 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
-      <div className="mx-auto w-full">
-        <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
+      <div className="relative mx-auto w-full">
+        <div ref={boardRef} style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
             {view === 'theme' ? (
               <SystemCollage
@@ -397,6 +408,17 @@ function ArtefactsView({
             )}
           </InspectorModeProvider>
         </div>
+        {/* The colour map, on the board: a sibling of the board, so it
+            measures the board and never mutates it. */}
+        {spotlight && (
+          <ColorSpotlight
+            rootRef={boardRef}
+            tokens={tokensByAppearance[boardAppearance]}
+            roleIds={spotlight.roleIds}
+            roleInfo={spotlight.roleInfo}
+            veil={stageTokens.archTokens?.['surface.page'] ?? stageTokens.surface}
+          />
+        )}
       </div>
       <InspectorOverlay
         active={inspecting}
@@ -559,7 +581,20 @@ export default function ThemePreviewHub({
   useEffect(() => {
     if (randomDraft) setInspecting(false)
   }, [randomDraft])
-  const [contrastOpen, setContrastOpen] = useState(false)
+  const [contrastOpenState, setContrastOpenState] = useState(false)
+  // The colour whose ramp is open in the Color card — the board shows its map
+  // (ColorRoleMapView) instead of the bento. It and the Contrast grid claim the
+  // same canvas, so opening one closes the other.
+  const [mappedColour, setMappedColourState] = useState<ColorRoleId | null>(null)
+  const contrastOpen = contrastOpenState
+  const setContrastOpen = (open: boolean) => {
+    if (open) setMappedColourState(null)
+    setContrastOpenState(open)
+  }
+  const setMappedColour = (id: ColorRoleId | null) => {
+    if (id) setContrastOpenState(false)
+    setMappedColourState(id)
+  }
   const reduceMotion = useReducedMotion()
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedSelection, setInspectedSelection] = useState<string | null>(null)
@@ -609,7 +644,7 @@ export default function ThemePreviewHub({
   // Docs is the system, not the foundation the icon rail last lit. Closing
   // the tab clears the pick so the next open is the theme reference again.
   useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
-  useEffect(() => { if (docsOpen) setContrastOpen(false) }, [docsOpen])
+  useEffect(() => { if (docsOpen) { setContrastOpen(false); setMappedColour(null) } }, [docsOpen])
   const activeDocKey = docsOpen ? (docPageOverride ?? OVERVIEW_KEY) : contextDocKey
   const handleDocNavigate = (key: string) => {
     setDocPageOverride(key)
@@ -663,8 +698,25 @@ export default function ThemePreviewHub({
   }, [historyKeysActive])
   useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
   useEffect(() => {
-    if (activeFoundation !== 'color' || surface !== 'artefacts') setContrastOpen(false)
+    if (activeFoundation !== 'color' || surface !== 'artefacts') {
+      setContrastOpen(false)
+      setMappedColour(null)
+    }
   }, [activeFoundation, surface])
+  const mapOpen = mappedColour != null && surface === 'artefacts' && !docsOpen && !needsMyTheme
+  // The canvas shows a tool (Contrast grid or a colour map), not the board.
+  const canvasTool = contrastOpen || mapOpen
+  // Esc folds the map, unless Token Details (opened from a role) is on top.
+  useEffect(() => {
+    if (!mapOpen || editingToken) return
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+      if (event.key !== 'Escape' || target?.closest('input, textarea, [role="dialog"]')) return
+      setMappedColour(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mapOpen, editingToken])
   // Random paints a view-only light/dark on the board. Reset restores the
   // theme's tokens but used to leave that overlay on, so the canvas stayed
   // on the random appearance while everything else snapped back.
@@ -683,6 +735,43 @@ export default function ThemePreviewHub({
   // switch reads and writes this, so it works for both.
   const boardAppearance: ThemeAppearance = stylePreview?.appearance ?? previewAppearance
   const effectiveBoardAppearance: ThemeAppearance = randomBoardAppearance ?? boardAppearance
+  // ── The colour map: resolved once here, read by the board's map AND the
+  // rail's ramp legend. Its focus and group filter live here too, so pointing
+  // at a step of the ramp lights the map and pointing in the map lights the
+  // ramp. A new colour, theme or filter starts with nothing lit.
+  const mapData = useColorRoleMap(previewTheme, effectiveBoardAppearance, paintedPreview, mapOpen ? mappedColour : null)
+  const [mapFocus, setMapFocus] = useState<MapFocus>(null)
+  const [mapGroup, setMapGroupState] = useState<string | null>(null)
+  const mapKey = `${mappedColour}-${effectiveBoardAppearance}-${previewTheme}`
+  const [seenMapKey, setSeenMapKey] = useState(mapKey)
+  if (seenMapKey !== mapKey) {
+    setSeenMapKey(mapKey)
+    setMapFocus(null)
+    setMapGroupState(null)
+  }
+  const setMapGroup = (next: string | null) => { setMapFocus(null); setMapGroupState(next) }
+  const rampLegend = useMemo<RampLegend | undefined>(() => {
+    if (!mapData) return undefined
+    const shown = visibleGroups(mapData.map, mapGroup)
+    return {
+      tones: toneLegend(shown),
+      lit: tonesOfRoles(shown, focusedRoleIds(shown, mapFocus)),
+      onHover: (tone) => setMapFocus(tone == null ? null : { kind: 'tone', id: String(tone) }),
+    }
+  }, [mapData, mapGroup, mapFocus])
+  // Map · On the board: the same map drawn as a graph, or lit on the real
+  // board. Kept across colours — it is how you like to read the map.
+  const [mapView, setMapView] = useState<'graph' | 'board'>('graph')
+  const spotlight = useMemo(() => {
+    if (!mapData || mapView !== 'board') return undefined
+    const shown = visibleGroups(mapData.map, mapGroup)
+    const all = shown.flatMap((g) => g.roles)
+    const focused = focusedRoleIds(shown, mapFocus)
+    return {
+      roleIds: focused && focused.size ? focused : new Set(all.map((r) => r.id)),
+      roleInfo: new Map(all.map((r) => [r.id, { label: r.label, css: r.css }])),
+    }
+  }, [mapData, mapView, mapGroup, mapFocus])
   const effectiveTileAppearances = useMemo(
     () => Array.from({ length: COLLAGE_TILE_COUNT }, () => effectiveBoardAppearance),
     [effectiveBoardAppearance],
@@ -729,6 +818,9 @@ export default function ThemePreviewHub({
           onRandomBoardAppearance={setRandomBoardAppearance}
           contrastOpen={contrastOpen}
           onContrastOpenChange={setContrastOpen}
+          mappedColour={mappedColour}
+          onMappedColourChange={setMappedColour}
+          rampLegend={rampLegend}
           previewViewport={previewViewport}
           onPreviewPlatformChange={onPreviewPlatformChange}
           exploringRandom={exploringRandom}
@@ -773,7 +865,7 @@ export default function ThemePreviewHub({
               {/* The band opens and folds (height) instead of shoving the board
                   down a whole row in one frame. */}
               <AnimatePresence initial={false}>
-              {(needsMyTheme || contrastOpen || docsOpen || stylePreview) && (
+              {(needsMyTheme || canvasTool || docsOpen || stylePreview) && (
               <motion.div
                 key="boardhead"
                 initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
@@ -784,6 +876,11 @@ export default function ThemePreviewHub({
               >
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
+                ) : mapOpen && mappedColour ? (
+                  <HubBreadcrumb
+                    section={t('{name} · where it’s used', { name: t(COLOR_ROLE_LABEL[mappedColour]) })}
+                    onBack={() => setMappedColour(null)}
+                  />
                 ) : docsOpen ? (
                   <HubBreadcrumb
                     section={activeDocKey === OVERVIEW_KEY ? hubViewLabel : t(hubViewLabel)}
@@ -821,7 +918,7 @@ export default function ThemePreviewHub({
                   <span className="flex min-w-0 items-center gap-2">
                     {/* With the board toolbar on screen the switch is its last
                         group (see below); otherwise it stands here alone. */}
-                    {!needsMyTheme && (contrastOpen || docsOpen || stylePreview) && (
+                    {!needsMyTheme && !mapOpen && (contrastOpen || docsOpen || stylePreview) && (
                       <BoardViewSwitch value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
                     )}
                     {(needsMyTheme || stylePreview) && (
@@ -837,9 +934,15 @@ export default function ThemePreviewHub({
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
+                  {/* The map reads one theme: its switch rides in the band,
+                      since the board toolbar (where it lives) steps aside. */}
+                  {mapOpen && <MapViewSwitch value={mapView} onChange={setMapView} />}
+                  {mapOpen && !stylePreview && (
+                    <BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />
+                  )}
                   {/* The board toolbar floats over the board (below); with no
                       history (a style try-on) Inspector keeps its own pill here. */}
-                  {!needsMyTheme && !contrastOpen && !docsOpen && stylePreview ? (
+                  {!needsMyTheme && !canvasTool && !docsOpen && stylePreview ? (
                     <InspectorToggle
                       active={inspecting}
                       pinned={Boolean(inspectedSelection)}
@@ -863,7 +966,7 @@ export default function ThemePreviewHub({
                     the tools that act on the board, then what it shows. The
                     wrapper lets clicks through to the board beside the pill. */}
                 <AnimatePresence initial={false}>
-                {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
+                {!needsMyTheme && !canvasTool && !docsOpen && !stylePreview && (
                   <motion.div
                     key="board-toolbar"
                     // Sinks out of the way with the board, rises back with it.
@@ -915,6 +1018,30 @@ export default function ThemePreviewHub({
                   >
                     <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
                   </motion.div>
+                ) : mapOpen && mappedColour && mapView === 'graph' ? (
+                  <motion.div
+                    key="colour-map"
+                    className="flex min-h-0 flex-1 flex-col"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0, transition: VIEW_IN }}
+                    exit={reduceMotion ? { opacity: 0, transition: { duration: 0.1 } } : { opacity: 0, x: 16, transition: VIEW_OUT }}
+                  >
+                    {mapData && (
+                      <ColorRoleMapView
+                        data={mapData}
+                        previewTheme={previewTheme}
+                        appearance={effectiveBoardAppearance}
+                        colour={mappedColour}
+                        onColourChange={setMappedColour}
+                        focus={mapFocus}
+                        onFocusChange={setMapFocus}
+                        group={mapGroup}
+                        onGroupChange={setMapGroup}
+                        onPickRole={pickRole}
+                        onOpenComponent={onOpenComponent}
+                      />
+                    )}
+                  </motion.div>
                 ) : (
                   <motion.div
                     key="board"
@@ -946,8 +1073,9 @@ export default function ThemePreviewHub({
                     stylePreview={paintedPreview}
                     drawerOpen={quickEditOpen}
                     editingRole={editingToken != null}
-                    inspecting={inspecting}
+                    inspecting={mapOpen ? false : inspecting}
                     onInspectingChange={setInspecting}
+                    spotlight={mapOpen ? spotlight : undefined}
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
                     onPickRole={pickRole}

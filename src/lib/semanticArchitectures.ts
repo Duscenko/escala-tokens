@@ -75,6 +75,18 @@ export function categoricalRoleCount(): number {
   return CATEGORICAL_ROLES.length
 }
 
+/** Whether a role's tone is SOLVED (a marker such as `{accent.solid}`,
+ *  `{ui:…}`, `{step:…}`) rather than pinned to a step, per appearance, keyed
+ *  `"group.key"`. A solved tone moves with the hue; a pinned one does not.
+ *  The colour map (`colorRoleMap.ts`) says which is which. */
+export function categoricalSolvedRoles(): Record<string, { light: boolean; dark: boolean }> {
+  const solved = (ref: string) => !/^\{[a-z-]+\.\d+\}$/.test(ref)
+  return Object.fromEntries(CATEGORICAL_ROLES.map((r) => [
+    `${r.group}.${r.key}`,
+    { light: solved(r.light), dark: solved(r.dark) },
+  ]))
+}
+
 export function architectureLabel(kind: SemanticArchitecture): string {
   return ARCHITECTURE_OPTIONS.find((o) => o.key === kind)?.label ?? kind
 }
