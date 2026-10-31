@@ -8,6 +8,7 @@
 // skimming the role list never replays the draw. Pointing at a node lights
 // its wire and lets the others recede.
 
+import { wireKey } from './mapWireKey'
 import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from 'react'
 
 export interface Wire {
@@ -42,11 +43,15 @@ function path(a: DOMRect, b: DOMRect, origin: DOMRect): string {
   return `M${x1},${y1} C${x1},${y1 + dy} ${x2},${y2 - dy} ${x2},${y2}`
 }
 
-export default function MapWires({ containerRef, wires, lit, mode }: {
+export default function MapWires({ containerRef, wires, lit, litPairs, mode }: {
   containerRef: RefObject<HTMLElement | null>
   wires: readonly Wire[]
   /** The `data-wire` id of the node under the pointer, if any. */
   lit: string | null
+  /** The exact wires to light (`wireKey`), when one node is not enough — the
+   *  colour map lights a whole path, colour → group → role → component.
+   *  Takes over from `lit` while it holds any wire. */
+  litPairs?: ReadonlySet<string>
   /** `draw` on a pin, `fade` on a hover preview. */
   mode: 'draw' | 'fade'
 }) {
@@ -82,7 +87,9 @@ export default function MapWires({ containerRef, wires, lit, mode }: {
   }, [containerRef, measure])
 
   if (!drawn.length) return null
-  const anyLit = lit != null && drawn.some((w) => w.from === lit || w.to === lit)
+  const byPairs = litPairs != null && litPairs.size > 0
+  const isOn = (w: Wire) => byPairs ? litPairs.has(wireKey(w.from, w.to)) : lit != null && (w.from === lit || w.to === lit)
+  const anyLit = drawn.some(isOn)
   return (
     <svg
       aria-hidden
@@ -92,7 +99,7 @@ export default function MapWires({ containerRef, wires, lit, mode }: {
       viewBox={`0 0 ${size.w} ${size.h}`}
     >
       {drawn.map((wire) => {
-        const on = lit != null && (wire.from === lit || wire.to === lit)
+        const on = isOn(wire)
         const delay = wire.stage === 'primitive' ? wire.index * 60 : 200 + wire.index * 40
         return (
           <path

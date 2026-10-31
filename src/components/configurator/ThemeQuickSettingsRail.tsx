@@ -98,8 +98,9 @@ import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
 import ThemeSaveBar, { ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
 import { StylePicker } from './ThemePanel'
-import { ColorRolesPanel, type ColorRoleRow } from './ColorRolesPanel'
+import { ColorRolesPanel, type ColorRoleRow, type RampLegend } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
+import type { ColorScale } from '../../types/tokens'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
 import { useSetupStep } from '../../lib/themeSetup'
@@ -1882,7 +1883,16 @@ export default function ThemeQuickSettingsRail({
   ship,
   onDiscardRandom,
   startStyle,
+  mappedColour,
+  onMappedColourChange,
+  rampLegend,
 }: {
+  /** The open ramp as the board map's legend (ThemePreviewHub owns it). */
+  rampLegend?: RampLegend
+  /** The colour whose ramp is open — the board maps it (ColorRoleMapView).
+   *  Omitted (create studio): the ramp toggle stays local and maps nothing. */
+  mappedColour?: ColorRoleId | null
+  onMappedColourChange?: (id: ColorRoleId | null) => void
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** Light/Dark currently on the artefacts board — Color edition reads and writes this ramp. */
@@ -2417,6 +2427,13 @@ export default function ThemeQuickSettingsRail({
       : id === 'neutral' ? neutralAnchor(appearance)
         : stateHex(id, appearance)
   const themePage = resolveThemePages(store, previewTheme)
+  // Each role's ramp in the theme on screen, from the family this theme
+  // reads for that slot — what the row's ramp toggle shows.
+  const roleRamps = Object.fromEntries(COLOR_ROLE_ORDER.map((id) => {
+    const slot = id === 'accent' ? 'brand' : id === 'neutral' ? 'gray' : id
+    const family = colorReadStore.themeSources[previewTheme]?.[slot] ?? GLOBAL_FAMILY[slot]
+    return [id, scaleForFamily(family, rampAppearance, colorReadStore)]
+  })) as Partial<Record<ColorRoleId, ColorScale>>
   const colorRows: ColorRoleRow[] = COLOR_ROLE_ORDER.map((id) => ({
     id,
     hex: rolePreview?.id === id ? rolePreview.hex : roleHex(id, rampAppearance),
@@ -2806,6 +2823,11 @@ export default function ThemeQuickSettingsRail({
                 })}
                 onToggleLink={(id) => (id === 'neutral' ? toggleNeutralLink() : toggleStatesLink())}
                 page={themePage[rampAppearance]}
+                ramps={roleRamps}
+                naming={colorReadStore.colorNaming}
+                rampOpen={mappedColour}
+                onRampOpenChange={onMappedColourChange}
+                rampLegend={rampLegend}
               />
             </div>
 
