@@ -12,7 +12,9 @@ import { skillName } from '../agentBundle/names'
 import type { TokenJSON } from '../agentBundle/types'
 import { buildComponentContracts, contractKeys, CONTRACTS_DIR } from './componentContracts'
 import type { RepoBuild, RepoBuildOptions, RepoFile } from './types'
-import { leadBrandJson } from './leadBrandJson'
+import { leadBrandCss, leadBrandJson, leadBrandKey } from './leadBrandJson'
+import { componentDocsSection } from './componentDocs'
+import { brandSlug } from '../cssCut'
 
 export const README_MARKER = '<!-- escala:readme -->'
 export const SCHEMA_URL = 'https://www.escalatokens.com/docs/agent-native/tokens.schema.json'
@@ -89,7 +91,7 @@ function buildContractsReadme(project: string, count: number): string {
     '',
     '| File | What it says |',
     '|---|---|',
-    `| [components.json](components.json) | The ${count} components this system ships, and whether each is built in Figma |`,
+    `| [components.json](components.json) | The whole catalogue (${count} components): \`selected\` = chosen in this system, \`inFigma\` = built in the Figma file |`,
     '| `components/<Component>.json` | Variant axes, props, accessibility, and which token paints each part (`recipe`) |',
     '| [naming.md](naming.md) | How one token is spelled in JSON, CSS and Figma |',
     `| [tokens.schema.json](${SCHEMA_URL}) | The shape of \`tokens.json\` |`,
@@ -97,13 +99,21 @@ function buildContractsReadme(project: string, count: number): string {
   ].join('\n')
 }
 
-function buildReadme(json: TokenJSON, project: string, opts: RepoBuildOptions, skillDirs: string[]): string {
+function buildReadme(
+  json: TokenJSON,
+  project: string,
+  opts: RepoBuildOptions,
+  skillDirs: string[],
+  leadName: string | null = null,
+  brands: { name: string; slug: string }[] = [],
+): string {
   const role = sampleRole(json)
   const from = opts.source === 'figma-plugin' ? 'the Escala Figma plugin' : 'Escala'
   const rows: string[] = [
     '| `tokens.json` | The whole system (Escala JSON). Source for everything else |',
   ]
-  if (opts.css) rows.push('| `variables.css` | CSS custom properties — import once, use `var(--…)` |')
+  if (opts.css) rows.push(`| \`variables.css\` | CSS custom properties${leadName ? ` of **${leadName}**` : ''}, both themes — import once, use \`var(--…)\` |`)
+  for (const b of brands) rows.push(`| \`brands/${b.slug}/variables.css\` | The **${b.name}** brand |`)
   rows.push('| `contracts/` | Component contracts and naming rules |')
   if (opts.figma) rows.push('| `figma/manifest.json` | Which components are built in the Figma file, with node IDs |')
   rows.push(`| ${skillDirs.map((d) => `\`${d}\``).join(' · ')} | Skills for Claude Code and Cursor, so agents use these tokens instead of guessing |`)
@@ -112,6 +122,7 @@ function buildReadme(json: TokenJSON, project: string, opts: RepoBuildOptions, s
     `# ${project}`,
     '',
     `Design system generated with ${from} · [escalatokens.com](https://www.escalatokens.com).`,
+    ...(leadName ? ['', `> Brand: **${leadName}**${brands.length > 1 ? ` (root files) · every brand under \`brands/\`` : ''}`] : []),
     '',
     '## What is here',
     '',
@@ -128,6 +139,9 @@ function buildReadme(json: TokenJSON, project: string, opts: RepoBuildOptions, s
     '```',
     '',
     'Agents: start at the `AGENTS.md` inside the skills folder.',
+    '',
+    componentDocsSection(skillDirs[0] ?? '', json.atoms),
+    '---',
     '',
     '## Change it',
     '',
@@ -150,8 +164,18 @@ export function buildRepoFiles(input: TokenJSON, opts: RepoBuildOptions = {}): R
     generatedAt: opts.generatedAt,
   })
   const files: RepoFile[] = [{ path: 'tokens.json', content: stringify(json) }]
-  if (opts.css) files.push({ path: 'variables.css', content: opts.css.endsWith('\n') ? opts.css : `${opts.css}\n` })
-  if (opts.readme !== false) files.push({ path: 'README.md', content: buildReadme(json, project, opts, skills.prefixes) })
+  // The brand's own variables.css when the payload carries it (the web's
+  // buildCSS, identical to its CSS door); else what the caller rendered.
+  const css = leadBrandCss(input) ?? opts.css
+  if (css) files.push({ path: 'variables.css', content: css.endsWith('\n') ? css : `${css}\n` })
+  // 2+ brands: each gets its own file, like the web push (`brands/` mirrors them).
+  const brands = input.brandCss ?? []
+  const taken = new Set<string>()
+  const perBrand = brands.length > 1 ? brands.map((b) => ({ ...b, slug: brandSlug(b.name, taken) })) : []
+  for (const b of perBrand) files.push({ path: `brands/${b.slug}/variables.css`, content: b.css.endsWith('\n') ? b.css : `${b.css}\n` })
+  const lead = leadBrandKey(input)?.split('::')[0]
+  const leadName = brands.find((b) => b.key === lead)?.name ?? null
+  if (opts.readme !== false) files.push({ path: 'README.md', content: buildReadme(json, project, { ...opts, css }, skills.prefixes, leadName, perBrand) })
 
   files.push({ path: 'contracts/README.md', content: buildContractsReadme(project, contractKeys().length) })
   files.push({ path: 'contracts/naming.md', content: buildNamingMd(json, project) })
@@ -162,7 +186,7 @@ export function buildRepoFiles(input: TokenJSON, opts: RepoBuildOptions = {}): R
   // Escala owns these folders outright, so a component dropped from the system
   // loses its contract. `figma/` is NOT pruned: a team may keep its own
   // Code Connect files there.
-  return { files, prefixes: [...skills.prefixes, CONTRACTS_DIR] }
+  return { files, prefixes: [...skills.prefixes, CONTRACTS_DIR, 'brands/'] }
 }
 
 /** Commit message for a save. */

@@ -167,6 +167,8 @@ export interface TokenJSON {
     sizes?: IconSizeBlock
   }
   atoms?: string[]
+  /** Each brand's own variables.css (lib/brandCss), for the plugin's GitHub save. Never written into a repo's tokens.json. */
+  brandCss?: { key: string; name: string; css: string }[]
 }
 
 export interface AgentBundleOptions {

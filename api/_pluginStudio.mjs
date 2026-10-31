@@ -62,6 +62,16 @@ function cleanFontSources(raw) {
   }
   return out.slice(-MAX_FONT_SOURCES);
 }
+function fontImportLines(sources, usedFamilies) {
+  const urls = [];
+  for (const family of usedFamilies) {
+    const source = findFontSource(sources, family);
+    if (!source) continue;
+    const url2 = fontSourceUrl(source);
+    if (!urls.includes(url2)) urls.push(url2);
+  }
+  return urls.map((url2) => `@import url("${url2}");`);
+}
 var FONT_CATEGORIES, ALLOWED_FONT_HOSTS, MAX_FONT_SOURCES, FAMILY_RE, SPEC_RE;
 var init_customFonts = __esm({
   "src/lib/customFonts.ts"() {
@@ -83,6 +93,9 @@ function durationRange(key2) {
   const base = MOTION_DURATIONS[key2];
   if (FIXED_DURATION_KEYS.has(key2)) return { min: base, max: base };
   return { min: Math.round(base * MOTION_FACTOR_MIN), max: Math.round(base * MOTION_FACTOR_MAX) };
+}
+function easingCubic(key2) {
+  return MOTION_EASINGS[MOTION_EASING_FALLBACK[key2] ?? key2];
 }
 function transformCss(role, value) {
   return MOTION_DISTANCE_ROLES.has(role) ? `${value}px` : String(value);
@@ -148,6 +161,9 @@ function resolveMotionRole(role, settings) {
   const pick = settings.roles[role] ?? STANDARD_ROLES[role];
   const ms = durationMs(pick.duration, settings);
   return { ...pick, ms, value: `${ms}ms ${MOTION_EASINGS[pick.easing]}` };
+}
+function motionSquash(settings) {
+  return +Math.min(0.15, Math.max(0, (settings.transforms.overshoot - 1) * 1.67)).toFixed(3);
 }
 function motionChoreographies(settings) {
   const s = settings.transforms;
@@ -317,7 +333,114 @@ function motionThemeTokens(settings) {
     roles: full.roles
   };
 }
-var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT, MOTION_KEYFRAMES;
+function choreographyVar(name, slot) {
+  return `--motion-choreo-${name}${slot ? `-${slot}` : ""}`;
+}
+function refCss(ref) {
+  if ("role" in ref) return `var(--motion-${ref.role})`;
+  return `var(--motion-duration-${ref.duration}) var(--motion-easing-${ref.easing})`;
+}
+function animationCss(keyframes, ref, delay) {
+  const d = delay === 0 ? "0ms" : `var(--motion-duration-${delay})`;
+  return `motion-${keyframes} ${refCss(ref)} ${d} both`;
+}
+function choreographyVarsOf(name, body) {
+  const out = {};
+  for (const t of body.tracks ?? []) out[choreographyVar(name, t.slot)] = animationCss(t.keyframes, t.motion, t.delay);
+  if (body.pattern === "disclosure" && body.motion) {
+    out[choreographyVar(name)] = animationCss(body.direction === "collapse" ? "disclosure-collapse" : "disclosure-expand", body.motion, 0);
+  }
+  return out;
+}
+function motionCssVars(settings, opts = {}) {
+  const vars = {};
+  const durations = motionDurations(settings);
+  MOTION_DURATION_KEYS.forEach((k) => {
+    vars[`--motion-duration-${k}`] = `${durations[k]}ms`;
+  });
+  MOTION_EASING_KEYS.forEach((k) => {
+    vars[`--motion-easing-${k}`] = MOTION_EASINGS[k];
+  });
+  Object.entries(MOTION_EASING_ALIASES).forEach(([alias, key2]) => {
+    vars[`--motion-easing-${alias}`] = `var(--motion-easing-${key2})`;
+  });
+  MOTION_TRANSFORM_ROLES.forEach((t) => {
+    vars[`--motion-transform-${t}`] = transformCss(t, opts.reduced ? neutralTransform(t) : settings.transforms[t]);
+  });
+  vars["--motion-squash"] = String(opts.reduced ? 0 : motionSquash(settings));
+  vars["--motion-stagger"] = `${opts.reduced ? 0 : settings.stagger}ms`;
+  MOTION_ROLES.forEach((role) => {
+    const pick = settings.roles[role] ?? STANDARD_ROLES[role];
+    if (opts.reduced && !KEEP_UNDER_REDUCED.has(role)) {
+      const exits = /-(out|exit)$/.test(role);
+      vars[`--motion-${role}`] = `var(--motion-duration-fade) var(--motion-easing-${exits ? "exit" : "entrance"})`;
+    } else {
+      vars[`--motion-${role}`] = `var(--motion-duration-${pick.duration}) var(--motion-easing-${pick.easing})`;
+    }
+  });
+  for (const [name, c2] of Object.entries(motionChoreographies(settings))) {
+    if (!c2.components.length) continue;
+    Object.assign(vars, choreographyVarsOf(name, opts.reduced ? c2.reducedMotion : c2));
+  }
+  return vars;
+}
+function keyframesCss(name, kf) {
+  const count = Math.max(kf.opacity?.length ?? 0, kf.transform?.length ?? 0, kf.height?.length ?? 0);
+  if (!count) return [];
+  const offsets = kf.offset ?? Array.from({ length: count }, (_, i) => count === 1 ? 0 : i / (count - 1));
+  const lines = [`@keyframes motion-${name} {`];
+  for (let i = 0; i < count; i++) {
+    const decls = [];
+    if (kf.opacity?.[i] !== void 0) decls.push(`opacity: ${kf.opacity[i]};`);
+    if (kf.transform?.[i] !== void 0) decls.push(`transform: ${kf.transform[i]};`);
+    if (kf.height?.[i] !== void 0) decls.push(`height: ${kf.height[i]};`);
+    const ease = kf.easing?.[i];
+    if (ease) decls.push(`animation-timing-function: var(--motion-easing-${ease});`);
+    lines.push(`  ${pct(offsets[i])} { ${decls.join(" ")} }`);
+  }
+  lines.push("}");
+  return lines;
+}
+function motionKeyframesCss(only) {
+  return Object.entries(MOTION_KEYFRAMES).filter(([name]) => !only || only.includes(name)).flatMap(([name, kf]) => keyframesCss(name, kf));
+}
+function motionRootCss(settings) {
+  return [
+    "/* Motion \u2014 lib/motion.ts. Roles: `transition: background-color var(--motion-use-hover)` */",
+    ...Object.entries(motionCssVars(settings)).map(([k, v]) => `${k}: ${v};`)
+  ];
+}
+function motionThemeCssDiff(root, theme) {
+  const rootFull = motionCssVars(root);
+  const themeFull = motionCssVars(theme);
+  const rootReduced = motionCssVars(root, { reduced: true });
+  const themeReduced = motionCssVars(theme, { reduced: true });
+  const overridden = Object.keys(themeFull).filter((k) => rootFull[k] !== themeFull[k]);
+  const reducedKeys = [.../* @__PURE__ */ new Set([...overridden, ...Object.keys(themeReduced).filter((k) => rootReduced[k] !== themeReduced[k])])];
+  return {
+    full: overridden.map((k) => `${k}: ${themeFull[k]};`),
+    reduced: reducedKeys.filter((k) => k in themeReduced).map((k) => `${k}: ${themeReduced[k]};`)
+  };
+}
+function motionTrailingCss(settings, themed = []) {
+  const lines = ["", "/* Motion \u2014 keyframes the choreographies play (tokens.json `motion.choreography`) */", ...motionKeyframesCss()];
+  const springs = Object.keys(MOTION_EASING_FALLBACK);
+  lines.push("", "@supports not (transition-timing-function: linear(0, 1)) {", "  :root {");
+  springs.forEach((k) => lines.push(`    --motion-easing-${k}: ${easingCubic(k)};`));
+  lines.push("  }", "}");
+  const full = motionCssVars(settings);
+  const reduced = motionCssVars(settings, { reduced: true });
+  lines.push("", "/* Reduced motion: no travel, no scale; a short fade instead. */", "@media (prefers-reduced-motion: reduce) {", "  :root {");
+  for (const [k, v] of Object.entries(reduced)) if (full[k] !== v) lines.push(`    ${k}: ${v};`);
+  lines.push("  }");
+  for (const t of themed) {
+    if (!t.reduced.length) continue;
+    lines.push(`  ${t.selector} {`, ...t.reduced.map((d) => `    ${d}`), "  }");
+  }
+  lines.push("}");
+  return lines;
+}
+var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, neutralTransform, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT, MOTION_KEYFRAMES, KEEP_UNDER_REDUCED, pct;
 var init_motion = __esm({
   "src/lib/motion.ts"() {
     MOTION_DURATIONS = {
@@ -370,6 +493,7 @@ var init_motion = __esm({
       "dolly"
     ];
     MOTION_DISTANCE_ROLES = /* @__PURE__ */ new Set(["enter", "glide", "far", "dolly"]);
+    neutralTransform = (role) => MOTION_DISTANCE_ROLES.has(role) ? 0 : 1;
     MOTION_ROLES = [
       "use-hover",
       "use-focus",
@@ -610,6 +734,8 @@ var init_motion = __esm({
         easing: ["entrance", "standard", "standard", "entrance"]
       }
     };
+    KEEP_UNDER_REDUCED = /* @__PURE__ */ new Set(["use-hover", "use-focus", "use-press", "use-loop"]);
+    pct = (n) => `${+(n * 100).toFixed(1)}%`;
   }
 });
 
@@ -1038,9 +1164,9 @@ function buildScale(baseHex, spec, shift, background, appearance = "light", tint
   }
   return out;
 }
-function toneLabel(naming, tone) {
+function toneLabel(naming, tone2) {
   const scheme = NAMING_SCHEMES.find((s) => s.key === naming) ?? NAMING_SCHEMES[0];
-  return scheme.labels[tone - 1] ?? String(tone);
+  return scheme.labels[tone2 - 1] ?? String(tone2);
 }
 function generateColorScale(baseHex, algorithm = "default", contrastShift = 0, background, appearance = "light", tint = DEFAULT_NEUTRAL_TINT) {
   const spec = SPECS[algorithm] ?? SPECS.default;
@@ -1186,8 +1312,8 @@ function solidInkPair(scale, inks, start = BASE_TONE, target = WCAG_AA) {
   const t = typeof target === "number" ? { wcag: target, apcaLc: 75 } : target;
   let best = { tone: start, ink: 0, contrast: -1 };
   let bestScore = -Infinity;
-  for (let tone = start; tone <= 12; tone++) {
-    const fill = scale[tone];
+  for (let tone2 = start; tone2 <= 12; tone2++) {
+    const fill = scale[tone2];
     if (!fill) continue;
     for (let i = 0; i < inks.length; i++) {
       let w;
@@ -1201,9 +1327,9 @@ function solidInkPair(scale, inks, start = BASE_TONE, target = WCAG_AA) {
       const score = Math.min(w / t.wcag, lc / t.apcaLc);
       if (score > bestScore) {
         bestScore = score;
-        best = { tone, ink: i, contrast: w };
+        best = { tone: tone2, ink: i, contrast: w };
       }
-      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone: tone2, ink: i, contrast: w };
     }
   }
   return best;
@@ -1215,17 +1341,17 @@ function brandSolidPair(scale, inks, anchor = BASE_TONE, target = ACTION_LABEL_T
     if (d !== 0) return d;
     return chromaOf(scale[b]) - chromaOf(scale[a2]);
   });
-  for (const tone of tones) {
+  for (const tone2 of tones) {
     for (let i = 0; i < inks.length; i++) {
       let w;
       let lc;
       try {
-        w = checkContrast(inks[i], scale[tone]);
-        lc = Math.abs(apcaLc(inks[i], scale[tone]));
+        w = checkContrast(inks[i], scale[tone2]);
+        lc = Math.abs(apcaLc(inks[i], scale[tone2]));
       } catch {
         continue;
       }
-      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w };
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone: tone2, ink: i, contrast: w };
     }
   }
   return solidInkPair(scale, inks, anchor, t);
@@ -1235,6 +1361,13 @@ function chromaOf(hex) {
     return hexToOklch(hex).c;
   } catch {
     return 0;
+  }
+}
+function withAlpha(hex, alpha) {
+  try {
+    return chroma(hex).alpha(alpha).css();
+  } catch {
+    return hex;
   }
 }
 function darkShadow(css, opts = {}) {
@@ -1409,6 +1542,11 @@ function roleDimensionPx(value, signed = false) {
 function dimensionRoleValue(px) {
   return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}`;
 }
+function roleValuePx(value, steps) {
+  if (value === void 0) return null;
+  const step = spacingRefStep(value);
+  return roleDimensionPx(step, true) ?? parseDimension(steps?.[step]);
+}
 function isSpacingResponsiveRef(value) {
   return typeof value === "string" && value in SPACING_RESPONSIVE;
 }
@@ -1418,6 +1556,25 @@ function spacingRefStep(value, viewport = "desktop") {
 function spacingRolesAtViewport(roles, viewport) {
   const merged = withInsetSides(roles);
   return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]));
+}
+function spacingRolesViewportCss(viewport, roles, spacing) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  const out = [];
+  for (const role of LAYOUT_ROLES.spacing) {
+    const value = merged[role.key];
+    if (!isSpacingResponsiveRef(value)) continue;
+    const step = spacingRefStep(value, viewport);
+    if (step === spacingRefStep(value)) continue;
+    out.push(`--spacing-${role.key}: ${layoutValueCss("spacing", step, spacing)};`);
+  }
+  for (const { key: key2 } of INSET_SIDE_KEYS) {
+    const value = merged[key2];
+    if (!isSpacingResponsiveRef(value)) continue;
+    const step = spacingRefStep(value, viewport);
+    if (step === spacingRefStep(value)) continue;
+    out.push(`--spacing-${key2}: ${layoutValueCss("spacing", step, spacing)};`);
+  }
+  return out;
 }
 function scaleRadiusFromLg(lg, current) {
   const clamp = (n) => `${Math.max(0, Math.round(n))}px`;
@@ -1665,6 +1822,29 @@ function renameRadiusV77(slot, inheritedRadius) {
     slot.radiusRoles = roles;
   }
 }
+function radiusRoleAt(roles, viewports, role, viewport) {
+  const desktop = mergeLayoutRoles("radius", roles)[role];
+  if (viewport === "desktop") return desktop;
+  return viewports?.[viewport]?.[role] ?? radiusAtViewport(desktop, viewport);
+}
+function radiusAtViewport(value, viewport) {
+  const row = RADIUS_RESPONSIVE[value];
+  return row ? row[viewport] : value;
+}
+function radiusComponentCss(viewport = "desktop") {
+  return RADIUS_RESPONSIVE_STEPS.filter((step) => viewport === "desktop" || RADIUS_RESPONSIVE[step][viewport] !== step).map((step) => `--radius-component-${step}: var(--radius-${RADIUS_RESPONSIVE[step][viewport]});`);
+}
+function radiusRolesViewportCss(viewport, roles, radius, viewports) {
+  const merged = mergeLayoutRoles("radius", roles);
+  const out = [];
+  for (const role of LAYOUT_ROLES.radius) {
+    const value = merged[role.key];
+    const step = radiusRoleAt(merged, viewports, role.key, viewport);
+    if (step === value) continue;
+    out.push(`--radius-${role.key}: ${layoutValueCss("radius", step, radius)};`);
+  }
+  return out;
+}
 function radiusRolesAreLegacyDefault(roles) {
   if (!roles) return true;
   return Object.entries(LEGACY_RADIUS_ROLE_RUNGS).every(([key2, rung]) => roles[key2] === void 0 || roles[key2] === rung);
@@ -1677,6 +1857,13 @@ function withInsetSides(roles) {
   const out = { ...merged };
   for (const { key: key2, role } of INSET_SIDE_KEYS) out[key2] = merged[key2] ?? merged[role];
   return out;
+}
+function insetSideCssVars(roles, steps) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  return INSET_SIDE_KEYS.map(({ key: key2, role }) => {
+    const own = merged[key2];
+    return `--spacing-${key2}: ${own === void 0 ? `var(--spacing-${role})` : layoutValueCss("spacing", own, steps)};`;
+  });
 }
 function matchSpacingMode(sizes, spacingRoles, stroke) {
   const base = inferSizeBase(sizes ?? {});
@@ -1723,6 +1910,100 @@ function mergeLayoutRoles(family, stored) {
   }
   return out;
 }
+function resolveLayoutRole(family, roles, primitives, key2, fallback = "") {
+  const spec = LAYOUT_ROLES[family].find((r) => r.key === key2);
+  const raw = roles?.[key2] ?? spec?.primitive;
+  if (!raw) return fallback;
+  const step = family === "spacing" ? spacingRefStep(raw) : raw;
+  const pinned = roleDimensionPx(step, family === "spacing");
+  if (pinned !== null) return `${pinned}px`;
+  return primitives[step] || fallback;
+}
+function layoutRoleVar(family, key2) {
+  return `--${family}-${key2}`;
+}
+function layoutPrimitiveVar(family, step) {
+  return `var(--${family}-${step})`;
+}
+function layoutValueCss(family, value, steps) {
+  const px = roleValuePx(value, steps);
+  return px !== null ? `var(--dimension-${dimensionKey(px)})` : layoutPrimitiveVar(family, value);
+}
+function layoutRoleCssVars(family, roles, steps) {
+  const map = mergeLayoutRoles(family, roles);
+  return LAYOUT_ROLES[family].map((role) => {
+    const target = layoutValueCss(family, map[role.key], steps);
+    if (family === "breakpoint" && role.key === "mobile") return `--breakpoint-mobile: calc(${target} - 1px);`;
+    if (family === "breakpoint" && role.key === "tablet") return `--breakpoint-tablet: ${target};`;
+    if (family === "breakpoint" && role.key === "desktop") return `--breakpoint-desktop: ${target};`;
+    return `${layoutRoleVar(family, role.key)}: ${target};`;
+  }).concat(family === "spacing" ? insetSideCssVars(map, steps) : []);
+}
+function allLayoutRoleCssVars(roles, scales = {}) {
+  return [
+    ...layoutRoleCssVars("radius", roles.radius, scales.radius),
+    ...layoutRoleCssVars("spacing", roles.spacing, scales.spacing),
+    ...layoutRoleCssVars("size", roles.size, scales.size),
+    ...layoutRoleCssVars("selector", roles.selector, scales.selector),
+    ...layoutRoleCssVars("stroke", roles.stroke, scales.stroke),
+    ...layoutRoleCssVars("breakpoint", roles.breakpoint, scales.breakpoint)
+  ];
+}
+function breakpointStepPx(roles, breakpoints, key2, fallback) {
+  const map = mergeLayoutRoles("breakpoint", roles);
+  const step = map[key2] ?? fallback;
+  const pinned = roleDimensionPx(step);
+  if (pinned !== null) return pinned;
+  return parseFloat(breakpoints[step] || BREAKPOINT_STANDARD[step] || "768");
+}
+function breakpointTabletMax(roles, breakpoints) {
+  const min = breakpointStepPx(roles, breakpoints, "desktop", "md");
+  return `${Math.max(0, Math.round(min) - 1)}px`;
+}
+function breakpointMobileMax(roles, breakpoints) {
+  const min = breakpointStepPx(roles, breakpoints, "mobile", "sm");
+  return `${Math.max(0, Math.round(min) - 1)}px`;
+}
+function gridFrameAliasCss(alias, scales = {}) {
+  const container = alias.container === "none" ? "none" : layoutValueCss("breakpoint", alias.container, scales.breakpoints);
+  return [
+    `--grid-columns: ${alias.columns};`,
+    `--grid-gutter: ${layoutValueCss("spacing", alias.gutter, scales.spacing)};`,
+    `--grid-margin: ${layoutValueCss("spacing", alias.margin, scales.spacing)};`,
+    `--grid-container: ${container};`
+  ];
+}
+function gridFrameRootCss(frame, scales) {
+  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales);
+}
+function gridFrameTabletCss(frame, scales) {
+  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales);
+}
+function gridFrameMobileCss(frame, scales) {
+  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales);
+}
+function gridFrameMediaCss(roles, grid, frame, spacing, radiusOpts, spacingOpts) {
+  const bps = extractBreakpoints(grid);
+  const scales = { spacing, breakpoints: bps };
+  const indent = (lines) => lines.map((l) => `    ${l}`).join("\n");
+  const radiusFor = (vp) => [
+    ...radiusOpts ? [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports)] : [],
+    ...spacingOpts ? spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing) : []
+  ];
+  return [
+    `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
+    "  :root {",
+    indent([...gridFrameTabletCss(frame, scales), ...radiusFor("tablet")]),
+    "  }",
+    "}",
+    "",
+    `@media (max-width: ${breakpointMobileMax(roles, bps)}) {`,
+    "  :root {",
+    indent([...gridFrameMobileCss(frame, scales), ...radiusFor("mobile")]),
+    "  }",
+    "}"
+  ].join("\n");
+}
 function nearestSpacingStep(spacing, targetPx) {
   const rows = SPACING_STEPS.map((key2) => ({ key: key2, n: parseFloat(spacing[key2] ?? "") })).filter((r) => Number.isFinite(r.n));
   if (!rows.length) return null;
@@ -1734,7 +2015,7 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -1938,6 +2219,7 @@ var init_layoutTokens = __esm({
       "3xl": "5xl",
       full: "full"
     };
+    RADIUS_RESPONSIVE_STEPS = ["none", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "full"];
     RADIUS_RESPONSIVE = {
       none: { desktop: "none", tablet: "none", mobile: "none" },
       sm: { desktop: "sm", tablet: "xs", mobile: "xs" },
@@ -2472,7 +2754,32 @@ function promoteReadingTypeIdentity(stored) {
   }
   return map;
 }
-var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_PLACEHOLDER, LEGACY_READING_MOBILE;
+function typeRoleVar(key2, facet, viewport = "desktop") {
+  const suffix = facet === "family" ? "font-family" : facet === "size" ? "font-size" : facet === "weight" ? "font-weight" : facet === "tracking" ? "letter-spacing" : "line-height";
+  const base = `--text-${key2}-${suffix}`;
+  return viewport === "desktop" ? base : `${base}-${viewport}`;
+}
+function primitiveVar(alias, facet) {
+  if (facet === "family") return `var(--font-family-${alias.family === "display" ? "heading" : "body"})`;
+  if (facet === "size") return `var(--font-size-${alias.size})`;
+  if (facet === "weight") return `var(--font-weight-${alias.weight})`;
+  if (facet === "tracking") return `var(--letter-spacing-${alias.size})`;
+  return `var(--line-height-${alias.size})`;
+}
+function typeRoleCssVars(roles, viewports = ["desktop", "tablet", "mobile"]) {
+  const map = mergeTypeRoles(roles);
+  const lines = [];
+  for (const role of TYPE_ROLES) {
+    const m = map[role.key];
+    for (const facet of FACETS) {
+      if (viewports.includes("desktop")) lines.push(`${typeRoleVar(role.key, facet)}: ${primitiveVar(m.desktop, facet)};`);
+      if (viewports.includes("tablet")) lines.push(`${typeRoleVar(role.key, facet, "tablet")}: ${primitiveVar(m.tablet, facet)};`);
+      if (viewports.includes("mobile")) lines.push(`${typeRoleVar(role.key, facet, "mobile")}: ${primitiveVar(m.mobile, facet)};`);
+    }
+  }
+  return lines;
+}
+var a, TYPE_ROLES, TYPE_ROLE_BY_KEY, WEIGHT_KEYS, SIZE_KEYS, LEGACY_LARGE_MOBILE, LEGACY_HEADING_CUTS, LEGACY_PLACEHOLDER, LEGACY_READING_MOBILE, FACETS;
 var init_typeRoles = __esm({
   "src/lib/typeRoles.ts"() {
     init_typographyStandard();
@@ -2662,6 +2969,7 @@ var init_typeRoles = __esm({
       label: a("body", "text-xs", "medium"),
       placeholder: a("body", "text-sm", "regular")
     };
+    FACETS = ["family", "size", "weight", "leading", "tracking"];
   }
 });
 
@@ -4897,8 +5205,8 @@ function derivedStopsFor(id, accent2) {
   if (id === "aurora") return brandAvatarStops(accent2);
   return null;
 }
-function toneColor(scale, tone, fallback) {
-  return scale?.[tone] ?? fallback;
+function toneColor(scale, tone2, fallback) {
+  return scale?.[tone2] ?? fallback;
 }
 function linkedStopsFor(id, scale, prev, darkScale) {
   const signature = LINKED_GRADIENT_TONES[id];
@@ -4906,11 +5214,11 @@ function linkedStopsFor(id, scale, prev, darkScale) {
   const fallback = scale?.[9] ?? DEFAULT_ACCENT;
   const kept = prev?.filter((s) => typeof s.tone === "number");
   const source = kept && kept.length >= 2 ? kept.map((s) => ({ tone: s.tone, pos: s.pos })) : signature;
-  return source.map(({ tone, pos }) => ({
-    tone,
+  return source.map(({ tone: tone2, pos }) => ({
+    tone: tone2,
     pos: clampPos(pos),
-    color: toneColor(scale, tone, fallback),
-    ...darkScale ? { darkColor: toneColor(darkScale, tone, fallback) } : null
+    color: toneColor(scale, tone2, fallback),
+    ...darkScale ? { darkColor: toneColor(darkScale, tone2, fallback) } : null
   }));
 }
 function makeDefaultGradients(accent2 = DEFAULT_ACCENT, scale, darkScale) {
@@ -5463,6 +5771,10 @@ function iconSizesFor(controlMd = ICON_REFERENCE_CONTROL_PX) {
   for (const role of ICON_ROLES) out[role] = Math.max(12, Math.round(ICON_SIZE_PX[role] * k / 2) * 2);
   return out;
 }
+function iconSizeCssVars(controlMd) {
+  const px = iconSizesFor(controlMd);
+  return ICON_ROLES.map((role) => `  --icon-${role}: var(--dimension-${px[role]});`);
+}
 function iconSizeTokens(controlMd) {
   const sizes = iconSizesFor(controlMd);
   const px = (role, _viewport) => `${sizes[role]}px`;
@@ -5787,6 +6099,15 @@ var init_themeSources = __esm({
   }
 });
 
+// src/lib/colorRoles.ts
+var init_colorRoles = __esm({
+  "src/lib/colorRoles.ts"() {
+    init_colorUtils();
+    init_apca();
+    init_gamut();
+  }
+});
+
 // src/lib/colorActions.ts
 import { useCallback, useEffect as useEffect2, useRef as useRef2 } from "react";
 function brandTokenUpdates(scale, targetTokens, kind = "light") {
@@ -6078,6 +6399,7 @@ var init_colorActions = __esm({
     init_semanticRoles();
     init_gradients();
     init_themeSources();
+    init_colorRoles();
     init_themeSources();
     accentDarkBase = (s) => s.primaryDarkColor || s.primaryColor;
     BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === "brand");
@@ -6134,6 +6456,10 @@ var init_themeFoundations = __esm({
 });
 
 // src/lib/dimensions.ts
+function dimensionVar(value) {
+  const n = parseDimension(value);
+  return n === null ? value : `var(${dimensionCssVar(n)})`;
+}
 function isDimensionEntry(category, key2, value) {
   if (NON_DIMENSION_KEYS[category]?.has(key2)) return false;
   return parseDimension(value) !== null;
@@ -6192,7 +6518,7 @@ function dimensionScaleForStore(store, themeKeys) {
   }
   return buildDimensionScale(values);
 }
-var DIMENSION_STANDARD, DIMENSION_CATEGORIES, NON_DIMENSION_KEYS, dimensionRef, ROLE_MAPS;
+var DIMENSION_STANDARD, DIMENSION_CATEGORIES, NON_DIMENSION_KEYS, dimensionRef, dimensionCssVar, ROLE_MAPS;
 var init_dimensions = __esm({
   "src/lib/dimensions.ts"() {
     init_themeFoundations();
@@ -6261,6 +6587,7 @@ var init_dimensions = __esm({
       grid: /* @__PURE__ */ new Set(["columns"])
     };
     dimensionRef = (n) => `{dimension.${dimensionKey(n)}}`;
+    dimensionCssVar = (n) => `--dimension-${dimensionKey(n)}`;
     ROLE_MAPS = ["radiusRoles", "spacingRoles", "sizeRoles", "selectorRoles", "strokeRoles", "breakpointRoles"];
   }
 });
@@ -6462,7 +6789,7 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
   };
   const solidToneFor = (fam) => solidFor(fam).tone;
   return roles.map((r) => {
-    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => inkRefFor(look(fam, Number(tone)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone) => tintInkRef(fam, Number(tone), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`).replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`).replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => inkRefFor(look(fam, Number(tone2)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => tintInkRef(fam, Number(tone2), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`).replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`).replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
       const s = solidFor(fam);
       return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used);
     }).replace(/\{chart\.(\d)\}/g, (_m, n) => chartSlots[Number(n) - 1] ?? "");
@@ -6520,7 +6847,7 @@ function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackgr
       if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, pageOf(fam), kind);
     }
   }
-  return (fam, tone) => fams[fam]?.[tone];
+  return (fam, tone2) => fams[fam]?.[tone2];
 }
 function normalizeCategoricalOverrides(overrides) {
   if (!Object.keys(overrides).length) return overrides;
@@ -9336,6 +9663,9 @@ function buildThemeContext(store, scopeTheme, scopeThemes) {
   }
   return { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes };
 }
+function themeContextFromStore(store) {
+  return buildThemeContext(store);
+}
 function flattenThemesForSyncModes(store, modes, orderedThemeModes, foundationsByTheme) {
   const themeOrder = [];
   const themes = {};
@@ -9792,6 +10122,618 @@ var init_tokenGenerator = __esm({
   }
 });
 
+// src/lib/codeScope.ts
+function familyOf(snapshot, key2) {
+  if (key2 === "accent") return { base: snapshot.primaryColor, scale: snapshot.primaryScale, darkScale: snapshot.primaryDarkScale };
+  if (key2 === "neutral") return { base: snapshot.grayBaseColor, scale: snapshot.grayLightScale, darkScale: snapshot.grayDarkScale };
+  if (key2 === "error") return { base: snapshot.errorColor, scale: snapshot.errorScale, darkScale: snapshot.errorDarkScale };
+  if (key2 === "warning") return { base: snapshot.warningColor, scale: snapshot.warningScale, darkScale: snapshot.warningDarkScale };
+  if (key2 === "success") return { base: snapshot.successColor, scale: snapshot.successScale, darkScale: snapshot.successDarkScale };
+  if (key2 === "info") return { base: snapshot.infoColor, scale: snapshot.infoScale, darkScale: snapshot.infoDarkScale };
+  const custom = snapshot.customColors.find((item) => item.key === key2);
+  return custom ? { base: custom.base, scale: custom.scale, darkScale: custom.darkScale } : null;
+}
+function tone(scale, step) {
+  if (!scale) return void 0;
+  return scale[step] ?? scale[String(step)];
+}
+function promoteThemeFamilies(snapshot, themeKey) {
+  const sources = snapshot.themeSources[themeKey];
+  const brand = familyOf(snapshot, sources?.brand || GLOBAL_FAMILY.brand);
+  const gray = familyOf(snapshot, sources?.gray || GLOBAL_FAMILY.gray);
+  const error = familyOf(snapshot, sources?.error || GLOBAL_FAMILY.error);
+  const warning = familyOf(snapshot, sources?.warning || GLOBAL_FAMILY.warning);
+  const success = familyOf(snapshot, sources?.success || GLOBAL_FAMILY.success);
+  const info = familyOf(snapshot, sources?.info || GLOBAL_FAMILY.info);
+  const promotedSources = {
+    brand: GLOBAL_FAMILY.brand,
+    gray: GLOBAL_FAMILY.gray,
+    error: GLOBAL_FAMILY.error,
+    warning: GLOBAL_FAMILY.warning,
+    success: GLOBAL_FAMILY.success,
+    info: GLOBAL_FAMILY.info
+  };
+  return {
+    ...snapshot,
+    primaryColor: brand?.base ?? snapshot.primaryColor,
+    primaryScale: brand?.scale ?? snapshot.primaryScale,
+    primaryDarkScale: brand?.darkScale ?? snapshot.primaryDarkScale,
+    grayBaseColor: gray?.base ?? snapshot.grayBaseColor,
+    grayLightScale: gray?.scale ?? snapshot.grayLightScale,
+    grayDarkScale: gray?.darkScale ?? snapshot.grayDarkScale,
+    pageBackground: tone(gray?.scale, 1) ?? snapshot.pageBackground,
+    darkBackground: tone(gray?.darkScale, 1) ?? snapshot.darkBackground,
+    errorColor: error?.base ?? snapshot.errorColor,
+    errorScale: error?.scale ?? snapshot.errorScale,
+    errorDarkScale: error?.darkScale ?? snapshot.errorDarkScale,
+    warningColor: warning?.base ?? snapshot.warningColor,
+    warningScale: warning?.scale ?? snapshot.warningScale,
+    warningDarkScale: warning?.darkScale ?? snapshot.warningDarkScale,
+    successColor: success?.base ?? snapshot.successColor,
+    successScale: success?.scale ?? snapshot.successScale,
+    successDarkScale: success?.darkScale ?? snapshot.successDarkScale,
+    infoColor: info?.base ?? snapshot.infoColor,
+    infoScale: info?.scale ?? snapshot.infoScale,
+    infoDarkScale: info?.darkScale ?? snapshot.infoDarkScale,
+    customColors: [],
+    themeSources: { [themeKey]: promotedSources },
+    // A linked gradient REFERENCES accent tones; its cached hexes are the
+    // system accent's (the default blue). Re-resolve against the brand's
+    // ramps, or Get code / GitHub ship `--gradient-*` in another colour than
+    // the brand (tokens.json's gradientsByTheme was already right).
+    gradients: brand?.scale && Object.keys(brand.scale).length ? snapshot.gradients.map((g) => g.linked ? { ...g, stops: linkedStopsFor(g.id, brand.scale, g.stops, brand.darkScale && Object.keys(brand.darkScale).length ? brand.darkScale : void 0) ?? g.stops } : g) : snapshot.gradients
+  };
+}
+function bakeFoundations(snapshot, themeKey) {
+  if (!snapshot.themeFoundations[themeKey]) return { ...snapshot, themeFoundations: {} };
+  const resolved = resolveThemeFoundations(snapshot, themeKey);
+  return {
+    ...snapshot,
+    typography: resolved.typography,
+    spacing: resolved.spacing,
+    padding: resolved.padding,
+    radius: resolved.radius,
+    opacity: resolved.opacity,
+    shadows: resolved.shadows,
+    grid: resolved.grid,
+    sizes: resolved.sizes,
+    selector: resolved.selector,
+    stroke: resolved.stroke,
+    radiusRoles: resolved.radiusRoles,
+    spacingRoles: resolved.spacingRoles,
+    sizeRoles: resolved.sizeRoles,
+    selectorRoles: resolved.selectorRoles,
+    strokeRoles: resolved.strokeRoles,
+    breakpointRoles: resolved.breakpointRoles,
+    gridFrame: resolved.gridFrame,
+    panelBackground: resolved.panelBackground,
+    iconWeight: resolved.iconWeight,
+    motion: resolved.motion,
+    themeFoundations: {}
+  };
+}
+function scopeSnapshotForCode(snapshot, themeKey) {
+  if (!snapshot.themeOrder.includes(themeKey)) return snapshot;
+  const preferred = snapshot.themeKinds[themeKey] ?? "light";
+  const narrowed = bakeFoundations(promoteThemeFamilies(scopeSnapshotToTheme(snapshot, themeKey), themeKey), themeKey);
+  const { orderedThemeModes } = themeContextFromStore(narrowed);
+  const modes = orderedThemeModes[themeKey] ?? {
+    light: narrowed.themeSemantics[themeKey]?.light ?? narrowed.themes[themeKey] ?? {},
+    dark: narrowed.themeSemantics[themeKey]?.dark ?? {}
+  };
+  const order = appearanceOrder(preferred);
+  const sources = narrowed.themeSources[themeKey];
+  return {
+    ...narrowed,
+    themeOrder: [...order],
+    themes: { light: modes.light, dark: modes.dark },
+    themeSemantics: { light: modes, dark: modes },
+    themeKinds: { light: "light", dark: "dark" },
+    themeLabels: {},
+    themeSources: sources ? { light: sources, dark: sources } : {},
+    themeOrigin: {},
+    // From the ORIGINAL snapshot: `scopeSnapshotToTheme` keeps only bare
+    // `<theme>` keys and drops the `<theme>::<appearance>` ones styles write.
+    architectureOverrides: overridesForCode(snapshot.architectureOverrides, themeKey, preferred)
+  };
+}
+function overridesForCode(all, themeKey, preferred) {
+  const out = {};
+  for (const [arch, roles] of Object.entries(all ?? {})) {
+    const kept = {};
+    for (const [role, byMode] of Object.entries(roles ?? {})) {
+      const entry = {};
+      if (byMode[themeKey]) entry[preferred] = byMode[themeKey];
+      for (const appearance of ["light", "dark"]) {
+        const ref = byMode[themeModeKey(themeKey, appearance)];
+        if (ref) entry[appearance] = ref;
+      }
+      if (Object.keys(entry).length) kept[role] = entry;
+    }
+    if (Object.keys(kept).length) out[arch] = kept;
+  }
+  return out;
+}
+function captureCodeSnapshot(store, themeKey) {
+  return scopeSnapshotForCode(captureSnapshot(store), themeKey);
+}
+var init_codeScope = __esm({
+  "src/lib/codeScope.ts"() {
+    init_gradients();
+    init_useDesignStore();
+    init_themeSources();
+    init_themeFoundations();
+    init_themeModes();
+    init_tokenGenerator();
+  }
+});
+
+// src/lib/fontStack.ts
+function fontStack(family, category) {
+  const preset = FONT_PRESETS.find((f) => f.value === family);
+  if (preset) return `'${family}', ${FALLBACK[preset.category]}`;
+  if (category) return `'${family}', ${FALLBACK[category]}`;
+  const lower = family.toLowerCase();
+  const generic = MONO_HINTS.some((h) => lower.includes(h)) ? "monospace" : SERIF_HINTS.some((h) => lower.includes(h)) ? "serif" : "sans-serif";
+  return `'${family}', ${generic}`;
+}
+var FONT_PRESETS, FALLBACK, SERIF_HINTS, MONO_HINTS;
+var init_fontStack = __esm({
+  "src/lib/fontStack.ts"() {
+    FONT_PRESETS = [
+      // Sans-serif
+      { label: "Inter", value: "Inter", category: "Sans-serif" },
+      { label: "Geist", value: "Geist", category: "Sans-serif" },
+      { label: "DM Sans", value: "DM Sans", category: "Sans-serif" },
+      { label: "Plus Jakarta", value: "Plus Jakarta Sans", category: "Sans-serif" },
+      { label: "Sora", value: "Sora", category: "Sans-serif" },
+      { label: "Outfit", value: "Outfit", category: "Sans-serif" },
+      { label: "Roboto", value: "Roboto", category: "Sans-serif" },
+      { label: "Open Sans", value: "Open Sans", category: "Sans-serif" },
+      { label: "Montserrat", value: "Montserrat", category: "Sans-serif" },
+      { label: "Poppins", value: "Poppins", category: "Sans-serif" },
+      { label: "Lato", value: "Lato", category: "Sans-serif" },
+      { label: "Work Sans", value: "Work Sans", category: "Sans-serif" },
+      { label: "Manrope", value: "Manrope", category: "Sans-serif" },
+      { label: "Figtree", value: "Figtree", category: "Sans-serif" },
+      { label: "Space Grotesk", value: "Space Grotesk", category: "Sans-serif" },
+      { label: "Urbanist", value: "Urbanist", category: "Sans-serif" },
+      { label: "Rubik", value: "Rubik", category: "Sans-serif" },
+      { label: "Nunito Sans", value: "Nunito Sans", category: "Sans-serif" },
+      { label: "Source Sans 3", value: "Source Sans 3", category: "Sans-serif" },
+      { label: "Lexend", value: "Lexend", category: "Sans-serif" },
+      { label: "Archivo", value: "Archivo", category: "Sans-serif" },
+      { label: "Public Sans", value: "Public Sans", category: "Sans-serif" },
+      { label: "Albert Sans", value: "Albert Sans", category: "Sans-serif" },
+      { label: "Onest", value: "Onest", category: "Sans-serif" },
+      { label: "Instrument Sans", value: "Instrument Sans", category: "Sans-serif" },
+      { label: "Epilogue", value: "Epilogue", category: "Sans-serif" },
+      { label: "Karla", value: "Karla", category: "Sans-serif" },
+      { label: "Mulish", value: "Mulish", category: "Sans-serif" },
+      { label: "Jost", value: "Jost", category: "Sans-serif" },
+      { label: "Raleway", value: "Raleway", category: "Sans-serif" },
+      { label: "Barlow", value: "Barlow", category: "Sans-serif" },
+      { label: "IBM Plex Sans", value: "IBM Plex Sans", category: "Sans-serif" },
+      { label: "Schibsted", value: "Schibsted Grotesk", category: "Sans-serif" },
+      { label: "Bricolage", value: "Bricolage Grotesque", category: "Sans-serif" },
+      { label: "Hanken Grotesk", value: "Hanken Grotesk", category: "Sans-serif" },
+      { label: "Red Hat Display", value: "Red Hat Display", category: "Sans-serif" },
+      { label: "Be Vietnam Pro", value: "Be Vietnam Pro", category: "Sans-serif" },
+      // Serif
+      { label: "Fraunces", value: "Fraunces", category: "Serif" },
+      { label: "Playfair", value: "Playfair Display", category: "Serif" },
+      { label: "Libre Bask.", value: "Libre Baskerville", category: "Serif" },
+      { label: "Lora", value: "Lora", category: "Serif" },
+      { label: "Merriweather", value: "Merriweather", category: "Serif" },
+      { label: "Source Serif 4", value: "Source Serif 4", category: "Serif" },
+      { label: "EB Garamond", value: "EB Garamond", category: "Serif" },
+      { label: "Cormorant", value: "Cormorant Garamond", category: "Serif" },
+      { label: "Crimson Pro", value: "Crimson Pro", category: "Serif" },
+      { label: "Spectral", value: "Spectral", category: "Serif" },
+      { label: "Bitter", value: "Bitter", category: "Serif" },
+      { label: "PT Serif", value: "PT Serif", category: "Serif" },
+      { label: "Noto Serif", value: "Noto Serif", category: "Serif" },
+      { label: "Zilla Slab", value: "Zilla Slab", category: "Serif" },
+      { label: "Instrument", value: "Instrument Serif", category: "Serif" },
+      { label: "Newsreader", value: "Newsreader", category: "Serif" },
+      { label: "Literata", value: "Literata", category: "Serif" },
+      { label: "IBM Plex Serif", value: "IBM Plex Serif", category: "Serif" },
+      // Mono
+      { label: "JetBrains", value: "JetBrains Mono", category: "Mono" },
+      { label: "Fira Code", value: "Fira Code", category: "Mono" },
+      { label: "IBM Plex Mono", value: "IBM Plex Mono", category: "Mono" },
+      { label: "Space Mono", value: "Space Mono", category: "Mono" },
+      { label: "Source Code Pro", value: "Source Code Pro", category: "Mono" },
+      { label: "Roboto Mono", value: "Roboto Mono", category: "Mono" },
+      { label: "Courier Prime", value: "Courier Prime", category: "Mono" },
+      { label: "Geist Mono", value: "Geist Mono", category: "Mono" },
+      { label: "DM Mono", value: "DM Mono", category: "Mono" },
+      { label: "Inconsolata", value: "Inconsolata", category: "Mono" }
+    ];
+    FALLBACK = {
+      "Sans-serif": "sans-serif",
+      Serif: "serif",
+      Mono: "monospace"
+    };
+    SERIF_HINTS = ["serif", "playfair", "lora", "merriweather", "georgia", "garamond", "slab", "bask", "fraunces", "cormorant", "crimson", "spectral", "bitter", "tinos", "pt serif", "noto serif", "source serif", "libre caslon", "eb garamond", "zilla"];
+    MONO_HINTS = ["mono", "code", "consol", "courier"];
+  }
+});
+
+// src/lib/fonts.ts
+import { useEffect as useEffect3 } from "react";
+function loadGoogleFont(family) {
+  if (!family || typeof document === "undefined" || isSystemFontFamily(family)) return;
+  const id = `gfont-${family.replace(/\s+/g, "-")}`;
+  const source = findFontSource(useDesignStore.getState().fontSources, family);
+  const css = source?.kind === "css" && source.url ? source.url : null;
+  const want = css ?? (source ? fontSourceUrl(source) : googleFontUrl(family, "ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700"));
+  const existing = document.getElementById(id);
+  if (existing?.dataset.src === want) return;
+  existing?.remove();
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.dataset.src = want;
+  link.href = want;
+  if (!css && !source) {
+    link.onerror = () => {
+      link.onerror = null;
+      link.href = googleFontUrl(family);
+    };
+  }
+  document.head.appendChild(link);
+}
+var init_fonts = __esm({
+  "src/lib/fonts.ts"() {
+    init_platformAxis();
+    init_useDesignStore();
+    init_fontStack();
+    init_customFonts();
+  }
+});
+
+// src/lib/exporters.ts
+function paddingCssEntries(padding, spacing, spacingRoles) {
+  const sides = withInsetSides(spacingRoles);
+  return Object.entries(padding).map(([side, value]) => {
+    const key2 = `inset-surface-${side}`;
+    const resolved = key2 in sides ? resolveLayoutRole("spacing", sides, spacing, key2) : "";
+    return [side, resolved && value === resolved ? `var(--spacing-${key2})` : dimensionVar(value)];
+  });
+}
+function primitiveRampLines(store, kind) {
+  const { colorNaming, customColors, pageBackground } = store;
+  const dark = kind === "dark";
+  const out = [];
+  const pick = (light, darkScale) => dark && darkScale && Object.keys(darkScale).length ? darkScale : light;
+  const fams = [
+    ["accent", pick(store.primaryScale, store.primaryDarkScale), dark ? store.darkBackground : pageBackground],
+    ["neutral", pick(store.grayLightScale, store.grayDarkScale), dark ? store.darkBackground : pageBackground],
+    ["error", pick(store.errorScale, store.errorDarkScale), dark ? store.darkBackground : pageBackground],
+    ["warning", pick(store.warningScale, store.warningDarkScale), dark ? store.darkBackground : pageBackground],
+    ["success", pick(store.successScale, store.successDarkScale), dark ? store.darkBackground : pageBackground],
+    ["info", pick(store.infoScale, store.infoDarkScale), dark ? store.darkBackground : pageBackground],
+    ...customColors.map((c2) => {
+      const pages = resolveFamilyPages(store, c2.key);
+      return [c2.key, pick(c2.scale, c2.darkScale), dark ? pages.dark : pages.light];
+    })
+  ];
+  const sorted = (scale) => Object.entries(scale).sort(([a2], [b]) => Number(a2) - Number(b));
+  for (const [name, scale] of fams) {
+    if (!Object.keys(scale).length) continue;
+    out.push(`
+  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`);
+    sorted(scale).forEach(([k, v]) => {
+      if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`);
+    });
+  }
+  out.push("\n  /* Alpha twins \u2014 reproduce a solid tone over the page, for translucent fills */");
+  for (const [name, scale, page] of fams) {
+    if (!Object.keys(scale).length) continue;
+    sorted(generateAlphaScale(scale, page, kind)).forEach(([k, v]) => {
+      if (v) out.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`);
+    });
+  }
+  return out;
+}
+function categoricalRoleLines(store) {
+  if (store.semanticArchitecture !== "categorical") return {};
+  let arch;
+  try {
+    arch = generateTokenJSON(store).colors.architecture;
+  } catch {
+    return {};
+  }
+  const out = {};
+  for (const [group, roles] of Object.entries(arch?.tokens ?? {})) {
+    for (const [key2, byTheme] of Object.entries(roles)) {
+      for (const [theme, value] of Object.entries(byTheme)) {
+        if (!value || value.startsWith("{")) continue;
+        (out[theme] ??= []).push(`  --color-${group}-${key2.replace(/\./g, "-")}: ${value};`);
+      }
+    }
+  }
+  return out;
+}
+function buildCSS(store, opts) {
+  const desktopOnly = opts?.desktopOnly === true;
+  const { themes, themeOrder, themeKinds, typography: typography2, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store;
+  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? themeOrder[0] ?? "light";
+  const rootKind = themeKinds?.[rootKey] ?? (rootKey === "dark" ? "dark" : "light");
+  const semanticTokens = themes[rootKey] ?? themes.light ?? {};
+  const translucent = panelBackground === "translucent";
+  const panelValue = (key2, hex, kind = "light") => {
+    if (!PANEL_KEYS.includes(key2)) return hex;
+    if (translucent) return withAlpha(hex, 0.7);
+    if (panelBackground === "page" && kind === "light") return pageBackground;
+    return hex;
+  };
+  const lines = [":root {"];
+  const usedFamilies = /* @__PURE__ */ new Set();
+  const stackFor = (family) => {
+    usedFamilies.add(family);
+    return fontStack(family, findFontSource(store.fontSources, family)?.category);
+  };
+  lines.push("  /* Primitive scales */");
+  lines.push(...primitiveRampLines(store, rootKind));
+  lines.push("\n  /* Neutral alpha \u2014 fixed opacity ladder for scrims, washes, rims */");
+  Object.entries(BLACK_ALPHA_SCALE).sort(([a2], [b]) => Number(a2) - Number(b)).forEach(([k, v]) => lines.push(`  --color-black-a-${toneLabel(colorNaming, Number(k))}: ${v};`));
+  Object.entries(WHITE_ALPHA_SCALE).sort(([a2], [b]) => Number(a2) - Number(b)).forEach(([k, v]) => lines.push(`  --color-white-a-${toneLabel(colorNaming, Number(k))}: ${v};`));
+  const roleLines = categoricalRoleLines(store);
+  const roleNames = new Set(Object.values(roleLines).flat().map((line) => line.trim().split(":")[0]));
+  const flatVar = (k) => `--color-${k.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+  lines.push(`
+  /* Semantic tokens \u2014 ${rootKind} */`);
+  Object.entries(semanticTokens).forEach(([k, v]) => {
+    if (v && !roleNames.has(flatVar(k))) lines.push(`  ${flatVar(k)}: ${panelValue(k, v, rootKind)};`);
+  });
+  if (roleLines[rootKey]?.length) {
+    lines.push(`
+  /* Semantic roles (Categorical) \u2014 ${rootKind}. Components bind these. */`);
+    lines.push(...roleLines[rootKey]);
+  }
+  lines.push("\n  /* Panel background \u2014 apply to surface-1: backdrop-filter: var(--panel-blur) */");
+  lines.push(`  --panel-blur: ${translucent ? "blur(16px)" : "none"};`);
+  lines.push("\n  /* Dimension primitives \u2014 one value each; every length below aliases these */");
+  Object.entries(dimensionScaleForStore(store, themeOrder)).sort(([, a2], [, b]) => parseFloat(a2) - parseFloat(b)).forEach(([k, v]) => lines.push(`  --dimension-${k}: ${v};`));
+  lines.push("\n  /* Typography */");
+  lines.push(`  --font-family-heading: ${stackFor(typography2.headingFontFamily ?? typography2.fontFamily)};`);
+  lines.push(`  --font-family-body: ${stackFor(typography2.fontFamily)};`);
+  Object.entries(typography2.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`));
+  Object.entries(typography2.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`));
+  Object.entries(letterSpacingsFor(typography2.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`));
+  Object.entries(typography2.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`));
+  lines.push(desktopOnly ? "\n  /* Text roles \u2014 alias the primitive scale. Desktop. */" : "\n  /* Text roles \u2014 alias the primitive scale. Desktop, plus `-tablet` and `-mobile`. */");
+  typeRoleCssVars(typography2.roles, desktopOnly ? ["desktop"] : void 0).forEach((l) => lines.push(`  ${l}`));
+  lines.push("\n  /* Spacing */");
+  Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Padding \u2014 per-side surface inset (alias of spacing-inset-surface) */");
+  paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`));
+  lines.push("\n  /* Radius */");
+  Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Radius \u2014 responsive tokens (Tablet / Mobile step down in the media blocks) */");
+  radiusComponentCss("desktop").forEach((l) => lines.push(`  ${l}`));
+  lines.push("\n  /* Sizes */");
+  Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Selectors \u2014 checkbox / radio / switch glyph, a square not a height */");
+  Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Icon sizes \u2014 scaled to the md control height, the same in every viewport */");
+  iconSizeCssVars(sizes).forEach((l) => lines.push(l));
+  lines.push("\n  /* Stroke \u2014 border-width / ring spread, not paint */");
+  Object.entries(stroke ?? {}).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Layout roles \u2014 alias the primitive scale. Never raw px. */");
+  allLayoutRoleCssVars({
+    radius: mergeLayoutRoles("radius", radiusRoles),
+    spacing: mergeLayoutRoles("spacing", spacingRoles),
+    size: mergeLayoutRoles("size", sizeRoles),
+    selector: mergeLayoutRoles("selector", selectorRoles),
+    stroke: mergeLayoutRoles("stroke", strokeRoles),
+    breakpoint: mergeLayoutRoles("breakpoint", breakpointRoles)
+  }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`));
+  lines.push("\n  /* Shadow */");
+  const rootIsDark = rootKind === "dark";
+  const rootShadows = rootIsDark ? darkShadowMap(shadows) : shadows;
+  Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`));
+  lines.push("\n  /* Breakpoints \u2014 primitive min-widths */");
+  const bps = extractBreakpoints(grid);
+  BREAKPOINT_STEPS.forEach((step) => {
+    lines.push(`  --breakpoint-${step}: ${dimensionVar(bps[step])};`);
+    lines.push(`  --grid-${breakpointKey(step)}: var(--breakpoint-${step});`);
+  });
+  lines.push(desktopOnly ? "\n  /* Grid frame \u2014 desktop. */" : "\n  /* Grid frame \u2014 desktop aliases. Tablet / mobile override below. */");
+  gridFrameRootCss(gridFrame, { spacing, breakpoints: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`));
+  if (gradients.length) {
+    lines.push("\n  /* Gradients */");
+    const gradientAppearance = rootIsDark ? "dark" : "light";
+    gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, gradientAppearance)};`));
+  }
+  const motion = normalizeMotionSettings(store.motion);
+  lines.push("");
+  motionRootCss(motion).forEach((l) => lines.push(`  ${l}`));
+  lines.push("}");
+  const hairlines = Object.entries(stroke ?? {}).filter(([, v]) => {
+    const px = parseFloat(v);
+    return Number.isFinite(px) && px > 0 && px < 1;
+  });
+  if (hairlines.length) {
+    lines.push("\n@media (max-resolution: 1.99dppx) {");
+    lines.push("  :root {");
+    hairlines.forEach(([k]) => lines.push(`    --stroke-${k}: 1px;`));
+    lines.push("  }");
+    lines.push("}");
+  }
+  if (!desktopOnly) {
+    lines.push(`
+${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`);
+  }
+  const themedMotion = [];
+  const themedRadius = [];
+  themeOrder.forEach((theme) => {
+    const hasFoundationOverride = Boolean(store.themeFoundations?.[theme]);
+    if (theme === rootKey && !hasFoundationOverride) return;
+    const entries = Object.entries(themes[theme] ?? {}).filter(([k, v]) => v && !roleNames.has(flatVar(k)));
+    const kind = themeKinds?.[theme] ?? (theme === "dark" ? "dark" : "light");
+    const foundations = resolveThemeFoundations(store, theme);
+    const darkGradients = kind === "dark" ? gradients.filter((g) => g.stops.some((s) => s.darkColor)) : [];
+    const darkShadows = kind === "dark" ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== "none") : [];
+    const lightGradients = kind === "light" && rootIsDark ? gradients.filter((g) => g.stops.some((s) => s.darkColor)) : [];
+    const lightShadows = kind === "light" && rootIsDark && !hasFoundationOverride ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== "none") : [];
+    const themeRoles = roleLines[theme] ?? [];
+    const themePrims = (theme === "light" || theme === "dark") && kind !== rootKind ? primitiveRampLines(store, kind) : [];
+    if (!themePrims.length && !entries.length && !themeRoles.length && !darkGradients.length && !darkShadows.length && !lightGradients.length && !lightShadows.length && !hasFoundationOverride) return;
+    const themeSelector = theme === "light" ? rootKind === "dark" ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]' : theme === "dark" ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`;
+    lines.push(`
+${themeSelector} {`);
+    if (themePrims.length) {
+      lines.push(`  /* Primitive scales \u2014 ${theme} */`);
+      lines.push(...themePrims);
+    }
+    if (entries.length) {
+      lines.push(`  /* Semantic tokens \u2014 ${theme} */`);
+      entries.forEach(([k, v]) => {
+        let next = v;
+        if (PANEL_KEYS.includes(k)) {
+          if (foundations.panelBackground === "translucent") next = withAlpha(v, 0.7);
+          else if (foundations.panelBackground === "page" && kind === "light") next = pageBackground;
+        }
+        lines.push(`  ${flatVar(k)}: ${next};`);
+      });
+    }
+    if (themeRoles.length) {
+      lines.push(`  /* Semantic roles (Categorical) \u2014 ${theme} */`);
+      lines.push(...themeRoles);
+    }
+    if (hasFoundationOverride) {
+      lines.push(`  /* Foundations \u2014 ${theme} */`);
+      lines.push(`  --font-family-heading: ${stackFor(foundations.typography.headingFontFamily ?? foundations.typography.fontFamily)};`);
+      lines.push(`  --font-family-body: ${stackFor(foundations.typography.fontFamily)};`);
+      Object.entries(foundations.typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`));
+      Object.entries(foundations.typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`));
+      Object.entries(letterSpacingsFor(foundations.typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`));
+      Object.entries(foundations.typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`));
+      typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`));
+      Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`));
+      paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`));
+      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
+      radiusComponentCss("desktop").forEach((l) => lines.push(`  ${l}`));
+      Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`));
+      Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`));
+      Object.entries(foundations.stroke).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${dimensionVar(v)};`));
+      allLayoutRoleCssVars({
+        radius: mergeLayoutRoles("radius", foundations.radiusRoles),
+        spacing: mergeLayoutRoles("spacing", foundations.spacingRoles),
+        size: mergeLayoutRoles("size", foundations.sizeRoles),
+        selector: mergeLayoutRoles("selector", foundations.selectorRoles),
+        stroke: mergeLayoutRoles("stroke", foundations.strokeRoles),
+        breakpoint: mergeLayoutRoles("breakpoint", foundations.breakpointRoles)
+      }, {
+        radius: foundations.radius,
+        spacing: foundations.spacing,
+        size: foundations.sizes,
+        selector: foundations.selector,
+        stroke: foundations.stroke,
+        breakpoint: extractBreakpoints(foundations.grid)
+      }).forEach((line) => lines.push(`  ${line}`));
+      if (kind !== "dark") Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`));
+      gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`));
+      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing });
+      lines.push(`  --panel-blur: ${foundations.panelBackground === "translucent" ? "blur(16px)" : "none"};`);
+      const motionDiff = motionThemeCssDiff(motion, normalizeMotionSettings(foundations.motion));
+      if (motionDiff.full.length) {
+        lines.push(`  /* Motion \u2014 ${theme} */`);
+        motionDiff.full.forEach((d) => lines.push(`  ${d}`));
+        themedMotion.push({ selector: themeSelector, reduced: motionDiff.reduced });
+      }
+    }
+    if (darkGradients.length) {
+      lines.push(`  /* Gradients \u2014 ${theme} */`);
+      darkGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, "dark")};`));
+    }
+    if (darkShadows.length) {
+      lines.push(`  /* Shadows \u2014 ${theme} */`);
+      darkShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${darkShadow(v)};`));
+    }
+    if (lightGradients.length) {
+      lines.push(`  /* Gradients \u2014 ${theme} */`);
+      lightGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, "light")};`));
+    }
+    if (lightShadows.length) {
+      lines.push(`  /* Shadows \u2014 ${theme} */`);
+      lightShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`));
+    }
+    lines.push("}");
+  });
+  if (!desktopOnly && themedRadius.length) {
+    const bps2 = extractBreakpoints(grid);
+    for (const [vp, max] of [["tablet", breakpointTabletMax(breakpointRoles, bps2)], ["mobile", breakpointMobileMax(breakpointRoles, bps2)]]) {
+      const blocks = themedRadius.map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] })).filter((b) => b.decls.length);
+      if (!blocks.length) continue;
+      lines.push(`
+@media (max-width: ${max}) {`);
+      for (const b of blocks) {
+        lines.push(`  ${b.selector} {`);
+        b.decls.forEach((d) => lines.push(`    ${d}`));
+        lines.push("  }");
+      }
+      lines.push("}");
+    }
+  }
+  lines.push(...motionTrailingCss(motion, themedMotion));
+  const imports = fontImportLines(store.fontSources, usedFamilies);
+  return [...imports.length ? [...imports, ""] : [], ...lines].join("\n");
+}
+var PANEL_KEYS;
+var init_exporters = __esm({
+  "src/lib/exporters.ts"() {
+    init_motion();
+    init_typographyStandard();
+    init_iconSizing();
+    init_fonts();
+    init_customFonts();
+    init_iconLibraries();
+    init_colorUtils();
+    init_colorActions();
+    init_semanticArchitectures();
+    init_typeRoles();
+    init_layoutTokens();
+    init_gradients();
+    init_themeFoundations();
+    init_tokenGenerator();
+    init_dimensions();
+    PANEL_KEYS = ["background-secondary"];
+  }
+});
+
+// src/lib/brandCss.ts
+function payloadBrandKeys(json) {
+  const order = Array.isArray(json.colors?.themeOrder) ? json.colors.themeOrder.map(String) : [];
+  return [...new Set(order.map((id) => id.split("::")[0]))];
+}
+function brandCssFor(store, keys) {
+  const labels = store.themeLabels ?? {};
+  return keys.filter((key2) => store.themeOrder.includes(key2)).map((key2) => ({
+    key: key2,
+    name: themeDisplayName(key2, labels),
+    css: buildCSS(captureCodeSnapshot(store, key2))
+  }));
+}
+function withBrandCss(json, store) {
+  const brandCss = brandCssFor(store, payloadBrandKeys(json));
+  if (!brandCss.length) return json;
+  const out = { ...json, brandCss };
+  return JSON.stringify(out).length > ROOM ? json : out;
+}
+var ROOM;
+var init_brandCss = __esm({
+  "src/lib/brandCss.ts"() {
+    init_codeScope();
+    init_exporters();
+    init_themeSources();
+    ROOM = 18e5;
+  }
+});
+
 // src/lib/featureFlags.ts
 var init_featureFlags = __esm({
   "src/lib/featureFlags.ts"() {
@@ -9858,7 +10800,7 @@ __export(figmaSync_exports, {
   syncUrl: () => syncUrl,
   useAutoFigmaSync: () => useAutoFigmaSync
 });
-import { useEffect as useEffect3 } from "react";
+import { useEffect as useEffect4 } from "react";
 function isLiveEnvironment() {
   if (typeof window === "undefined") return false;
   const o = window.location.origin;
@@ -9919,14 +10861,14 @@ async function publishTokens(themeOrOpts, section) {
 async function postPublishedTokens(opts) {
   if (opts.theme) setActiveThemeHint(opts.theme);
   const slug = useDesignStore.getState().ensurePublishId();
-  const body = JSON.stringify(generateTokenJSON(void 0, {
+  const body = JSON.stringify(withBrandCss(generateTokenJSON(void 0, {
     ...opts.theme ? { theme: opts.theme } : {},
     ...opts.themes?.length ? { themes: opts.themes } : {},
     ...opts.modes?.length ? { modes: opts.modes } : {},
     ...opts.viewports?.length ? { viewports: opts.viewports } : {},
     ...opts.project?.trim() ? { project: opts.project.trim() } : {},
     ...opts.section ? { section: opts.section } : {}
-  }));
+  }), useDesignStore.getState()));
   const session = (await supabase?.auth.getSession().catch(() => null))?.data.session?.access_token ?? "";
   async function postTo(key2) {
     const headers = { "Content-Type": "application/json" };
@@ -9997,7 +10939,7 @@ function useAutoFigmaSync(onStateChange, activeThemeOrOpts, section) {
     project: opts.project ?? null,
     section: opts.section ?? section ?? null
   });
-  useEffect3(() => {
+  useEffect4(() => {
     if (activeTheme) setActiveThemeHint(activeTheme);
     if (!HOSTED_LIVE_SYNC) {
       if (useDesignStore.getState().autoSyncFigma) useDesignStore.getState().setAutoSyncFigma(false);
@@ -10055,6 +10997,7 @@ var init_figmaSync = __esm({
     init_hostedSync();
     init_useDesignStore();
     init_tokenGenerator();
+    init_brandCss();
     init_agentInstall();
     init_publishTrust();
     init_utils();
@@ -11555,8 +12498,8 @@ var init_useDesignStore = __esm({
                     if (!cur || ltHex && cur.toLowerCase() === ltHex.toLowerCase()) tokens[e.key] = dtHex;
                   }
                   const solid = accessibleSolidTone(ramp);
-                  const seedAction = (key2, baseTone, tone) => {
-                    const hex = ramp[tone];
+                  const seedAction = (key2, baseTone, tone2) => {
+                    const hex = ramp[tone2];
                     const baseHex = ramp[baseTone];
                     if (!hex) return;
                     const cur = tokens[key2];
@@ -12674,7 +13617,7 @@ init_entitlement();
 
 // src/lib/libraryStatus.ts
 init_themeLibrary();
-import { useEffect as useEffect4, useMemo } from "react";
+import { useEffect as useEffect5, useMemo } from "react";
 
 // src/lib/themeSetup.ts
 import { create as create4 } from "zustand";
@@ -13009,7 +13952,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
     info: { key: "info", hex: s.infoColor }
   };
   const eq = (a2, b) => a2.toLowerCase() === b.toLowerCase();
-  const sameRamp = (a2, b) => !!a2 && Object.keys(b).length > 0 && Object.keys(a2).length === Object.keys(b).length && Object.entries(b).every(([tone, hex]) => eq(a2[Number(tone)] ?? "", hex));
+  const sameRamp = (a2, b) => !!a2 && Object.keys(b).length > 0 && Object.keys(a2).length === Object.keys(b).length && Object.entries(b).every(([tone2, hex]) => eq(a2[Number(tone2)] ?? "", hex));
   const onSystemPages = !pages || eq(pages.light, s.pageBackground) && eq(pages.dark, s.darkBackground);
   try {
     const taken = new Set(s.customColors.map((c2) => c2.key));
@@ -13059,112 +14002,10 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
 init_themeFoundations();
 init_themeModes();
 init_tokenGenerator();
+init_brandCss();
 init_figmaSyncModes();
 init_themeSources();
-
-// src/lib/fonts.ts
-init_platformAxis();
-init_useDesignStore();
-import { useEffect as useEffect5 } from "react";
-
-// src/lib/fontStack.ts
-var FONT_PRESETS = [
-  // Sans-serif
-  { label: "Inter", value: "Inter", category: "Sans-serif" },
-  { label: "Geist", value: "Geist", category: "Sans-serif" },
-  { label: "DM Sans", value: "DM Sans", category: "Sans-serif" },
-  { label: "Plus Jakarta", value: "Plus Jakarta Sans", category: "Sans-serif" },
-  { label: "Sora", value: "Sora", category: "Sans-serif" },
-  { label: "Outfit", value: "Outfit", category: "Sans-serif" },
-  { label: "Roboto", value: "Roboto", category: "Sans-serif" },
-  { label: "Open Sans", value: "Open Sans", category: "Sans-serif" },
-  { label: "Montserrat", value: "Montserrat", category: "Sans-serif" },
-  { label: "Poppins", value: "Poppins", category: "Sans-serif" },
-  { label: "Lato", value: "Lato", category: "Sans-serif" },
-  { label: "Work Sans", value: "Work Sans", category: "Sans-serif" },
-  { label: "Manrope", value: "Manrope", category: "Sans-serif" },
-  { label: "Figtree", value: "Figtree", category: "Sans-serif" },
-  { label: "Space Grotesk", value: "Space Grotesk", category: "Sans-serif" },
-  { label: "Urbanist", value: "Urbanist", category: "Sans-serif" },
-  { label: "Rubik", value: "Rubik", category: "Sans-serif" },
-  { label: "Nunito Sans", value: "Nunito Sans", category: "Sans-serif" },
-  { label: "Source Sans 3", value: "Source Sans 3", category: "Sans-serif" },
-  { label: "Lexend", value: "Lexend", category: "Sans-serif" },
-  { label: "Archivo", value: "Archivo", category: "Sans-serif" },
-  { label: "Public Sans", value: "Public Sans", category: "Sans-serif" },
-  { label: "Albert Sans", value: "Albert Sans", category: "Sans-serif" },
-  { label: "Onest", value: "Onest", category: "Sans-serif" },
-  { label: "Instrument Sans", value: "Instrument Sans", category: "Sans-serif" },
-  { label: "Epilogue", value: "Epilogue", category: "Sans-serif" },
-  { label: "Karla", value: "Karla", category: "Sans-serif" },
-  { label: "Mulish", value: "Mulish", category: "Sans-serif" },
-  { label: "Jost", value: "Jost", category: "Sans-serif" },
-  { label: "Raleway", value: "Raleway", category: "Sans-serif" },
-  { label: "Barlow", value: "Barlow", category: "Sans-serif" },
-  { label: "IBM Plex Sans", value: "IBM Plex Sans", category: "Sans-serif" },
-  { label: "Schibsted", value: "Schibsted Grotesk", category: "Sans-serif" },
-  { label: "Bricolage", value: "Bricolage Grotesque", category: "Sans-serif" },
-  { label: "Hanken Grotesk", value: "Hanken Grotesk", category: "Sans-serif" },
-  { label: "Red Hat Display", value: "Red Hat Display", category: "Sans-serif" },
-  { label: "Be Vietnam Pro", value: "Be Vietnam Pro", category: "Sans-serif" },
-  // Serif
-  { label: "Fraunces", value: "Fraunces", category: "Serif" },
-  { label: "Playfair", value: "Playfair Display", category: "Serif" },
-  { label: "Libre Bask.", value: "Libre Baskerville", category: "Serif" },
-  { label: "Lora", value: "Lora", category: "Serif" },
-  { label: "Merriweather", value: "Merriweather", category: "Serif" },
-  { label: "Source Serif 4", value: "Source Serif 4", category: "Serif" },
-  { label: "EB Garamond", value: "EB Garamond", category: "Serif" },
-  { label: "Cormorant", value: "Cormorant Garamond", category: "Serif" },
-  { label: "Crimson Pro", value: "Crimson Pro", category: "Serif" },
-  { label: "Spectral", value: "Spectral", category: "Serif" },
-  { label: "Bitter", value: "Bitter", category: "Serif" },
-  { label: "PT Serif", value: "PT Serif", category: "Serif" },
-  { label: "Noto Serif", value: "Noto Serif", category: "Serif" },
-  { label: "Zilla Slab", value: "Zilla Slab", category: "Serif" },
-  { label: "Instrument", value: "Instrument Serif", category: "Serif" },
-  { label: "Newsreader", value: "Newsreader", category: "Serif" },
-  { label: "Literata", value: "Literata", category: "Serif" },
-  { label: "IBM Plex Serif", value: "IBM Plex Serif", category: "Serif" },
-  // Mono
-  { label: "JetBrains", value: "JetBrains Mono", category: "Mono" },
-  { label: "Fira Code", value: "Fira Code", category: "Mono" },
-  { label: "IBM Plex Mono", value: "IBM Plex Mono", category: "Mono" },
-  { label: "Space Mono", value: "Space Mono", category: "Mono" },
-  { label: "Source Code Pro", value: "Source Code Pro", category: "Mono" },
-  { label: "Roboto Mono", value: "Roboto Mono", category: "Mono" },
-  { label: "Courier Prime", value: "Courier Prime", category: "Mono" },
-  { label: "Geist Mono", value: "Geist Mono", category: "Mono" },
-  { label: "DM Mono", value: "DM Mono", category: "Mono" },
-  { label: "Inconsolata", value: "Inconsolata", category: "Mono" }
-];
-
-// src/lib/fonts.ts
-init_customFonts();
-function loadGoogleFont(family) {
-  if (!family || typeof document === "undefined" || isSystemFontFamily(family)) return;
-  const id = `gfont-${family.replace(/\s+/g, "-")}`;
-  const source = findFontSource(useDesignStore.getState().fontSources, family);
-  const css = source?.kind === "css" && source.url ? source.url : null;
-  const want = css ?? (source ? fontSourceUrl(source) : googleFontUrl(family, "ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700"));
-  const existing = document.getElementById(id);
-  if (existing?.dataset.src === want) return;
-  existing?.remove();
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.dataset.src = want;
-  link.href = want;
-  if (!css && !source) {
-    link.onerror = () => {
-      link.onerror = null;
-      link.href = googleFontUrl(family);
-    };
-  }
-  document.head.appendChild(link);
-}
-
-// src/lib/pluginStudio.ts
+init_fonts();
 init_typographyStandard();
 init_shadowTokens();
 
@@ -13332,6 +14173,7 @@ init_shadowTokens();
 
 // src/lib/adoptPreset.ts
 init_useDesignStore();
+init_fonts();
 
 // src/lib/stylePreviewOverlay.ts
 init_colorUtils();
@@ -13347,12 +14189,13 @@ init_gradients();
 init_themeSources();
 init_semanticRoles();
 init_semanticArchitectures();
-import { useEffect as useEffect6 } from "react";
+init_fonts();
 init_iconLibraries();
 init_typeRoles();
 init_layoutTokens();
 init_themeModes();
 init_themeFoundations();
+import { useEffect as useEffect6 } from "react";
 var ROLE_BY_KEY = Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]));
 
 // src/lib/stylePreviewOverlay.ts
@@ -13383,6 +14226,7 @@ init_themePresets();
 init_themeModes();
 
 // src/lib/remixLink.ts
+init_fontStack();
 init_themePresets();
 var FONTS = new Set(FONT_PRESETS.map((font) => font.value));
 var REMIX_ID_PREFIX = "remix-";
@@ -13621,7 +14465,7 @@ function buildStudioTokens(choices, tier) {
   const modes = defaultFigmaSyncModes([key2], s.themeKinds);
   const scope = tier === "free" ? { themes: [key2], modes, viewports: ["desktop"], gridStyles: ["xl-desktop"] } : { themes: [key2], modes };
   const label = themeDisplayName(key2, s.themeLabels) || key2;
-  return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) };
+  return { project: slugify(label), tokens: withBrandCss(generateTokenJSON(s, { ...scope, project: label }), s) };
 }
 var REM = 16;
 function presetForBaseRadius(px) {

@@ -274,6 +274,26 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > found". Locked by `githubCommit.test.ts`; `agentContextAudit`'s GitHub mock now serves the
 > read-back too (a new mock must).
 
+> **UPDATE (2026-10-31): the PLUGIN's GitHub save writes the web's files (`brandCss`).**
+> Audit of the plugin push found it worse than the web's: its `variables.css` was hand-built
+> in `ui.html` (`cssFromTokens`) from the payload's root — no role variables at all
+> (`--radius-action`, `--size-control`, `--spacing-gap-control`, `--text-button-*`, the ones
+> `recipes.css` reads, so every documented component was unstyled), light primitives only, the
+> system accent's gradients, and no brand name. A tokens.json cannot be turned back into the
+> editor's CSS (roles and gradients are resolved from overrides the JSON does not carry), so
+> the producers attach it: **`withBrandCss` (`lib/brandCss.ts`) adds `brandCss: [{ key, name,
+> css }]` — `buildCSS(captureCodeSnapshot(store, brand))`, the CSS door's file — to every
+> plugin payload**, in `publishTokens` and in `pluginStudio`'s studio build (skipped if the
+> body would pass 1.8 MB; `/api/tokens` refuses 2 MB — five brands measured well under).
+> `buildRepoFiles` prefers `leadBrandCss(json)` over the caller's CSS, writes
+> `brands/<slug>/variables.css` with 2+ brands (pruned), names the brand in the README, and
+> never writes `brandCss` into the repo's tokens.json. The README Components table is shared
+> (`repoExport/componentDocs.ts`) by web and plugin. Plugin side (`ui.html`): `mergeTheme` /
+> `stripTheme` keep `brandCss` in step, and the review says when an older payload has none
+> (Sync from Escala first). After changing `pluginStudio.ts` run
+> `node scripts/build-plugin-studio.mjs` — `api/_pluginStudio.mjs` is a committed bundle.
+> Locked by `pluginGithubPush.test.ts`.
+
 > **UPDATE (2026-10-31): the package documents the WHOLE component catalogue (owner's call).**
 > Design skills (`component-build/components|react/*.md`, `recipes.css`), the `.tsx` templates
 > and the contracts (`contracts/components/*.json` + `components.json`) cover all catalogue

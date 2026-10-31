@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { HOSTED_LIVE_SYNC } from './hostedSync'
-import { useDesignStore } from '../store/useDesignStore'
+import { useDesignStore, type DesignSnapshot } from '../store/useDesignStore'
 import { generateTokenJSON, setActiveThemeHint, type GenerateTokenOptions } from './tokenGenerator'
+import { withBrandCss } from './brandCss'
 import { DEFAULT_PUBLISH_ORIGIN, canonicalOrigin } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
@@ -177,14 +178,16 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
   // module load and on every reset, and minting there would burn a fresh
   // identity on a browser that has published nothing.
   const slug = useDesignStore.getState().ensurePublishId()
-  const body = JSON.stringify(generateTokenJSON(undefined, {
+  // `brandCss`: each brand's own variables.css, for the plugin's GitHub save
+  // (lib/brandCss). Not part of the auto-sync change signal.
+  const body = JSON.stringify(withBrandCss(generateTokenJSON(undefined, {
     ...(opts.theme ? { theme: opts.theme } : {}),
     ...(opts.themes?.length ? { themes: opts.themes } : {}),
     ...(opts.modes?.length ? { modes: opts.modes } : {}),
     ...(opts.viewports?.length ? { viewports: opts.viewports } : {}),
     ...(opts.project?.trim() ? { project: opts.project.trim() } : {}),
     ...(opts.section ? { section: opts.section } : {}),
-  }))
+  }), useDesignStore.getState() as unknown as DesignSnapshot))
 
   const session = (await supabase?.auth.getSession().catch(() => null))?.data.session?.access_token ?? ''
 

@@ -11,7 +11,7 @@
 // end, because it borrows the process-wide store — never add an `await` between
 // `startNewSystem()` and the final `generateTokenJSON`.
 
-import { useDesignStore } from '../store/useDesignStore'
+import { useDesignStore, type DesignSnapshot } from '../store/useDesignStore'
 import { ensureColorScales, applyAccentColor, applyAccentDarkColor, applyStateColorForAppearance } from './colorActions'
 
 const STATE_SLOTS = ['error', 'warning', 'success', 'info'] as const
@@ -19,6 +19,7 @@ import { mintTheme, slotsFromAccent } from './themeMint'
 import { resolveThemeFoundations } from './themeFoundations'
 import { themeModeKey } from './themeModes'
 import { generateTokenJSON } from './tokenGenerator'
+import { withBrandCss } from './brandCss'
 import { defaultFigmaSyncModes } from './figmaSyncModes'
 import { themeDisplayName } from './themeSources'
 import { FONT_PRESETS } from './fonts'
@@ -334,7 +335,8 @@ export function buildStudioTokens(
     ? { themes: [key], modes, viewports: ['desktop' as const], gridStyles: ['xl-desktop' as const] }
     : { themes: [key], modes }
   const label = themeDisplayName(key, s.themeLabels) || key
-  return { project: slugify(label), tokens: generateTokenJSON(s, { ...scope, project: label }) }
+  // `brandCss`: the brand's own variables.css for the plugin's GitHub save.
+  return { project: slugify(label), tokens: withBrandCss(generateTokenJSON(s, { ...scope, project: label }), s as unknown as DesignSnapshot) }
 }
 
 /** What the plugin's "From code" step shows after reading pasted CSS — and the

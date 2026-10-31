@@ -26,8 +26,15 @@ export function leadBrandKey(json: TokenJSON): string | null {
 
 export function leadBrandJson(json: TokenJSON, brand: string | null = leadBrandKey(json)): TokenJSON {
   const f = brand ? json.foundationsByTheme?.[brand] : undefined
-  if (!f) return json
+  if (!f) {
+    if (!json.brandCss) return json
+    const rest: Record<string, unknown> = { ...json }
+    delete rest.brandCss
+    return rest as unknown as TokenJSON
+  }
   const out: Record<string, unknown> = { ...json }
+  // CSS strings for the plugin's save; a repo's tokens.json never carries them.
+  delete out.brandCss
   for (const [key, value] of Object.entries(f as Foundations & Record<string, unknown>)) {
     if (value == null) continue
     if (key === 'iconWeight') {
@@ -43,4 +50,14 @@ export function leadBrandJson(json: TokenJSON, brand: string | null = leadBrandK
     }
   }
   return out as unknown as TokenJSON
+}
+
+/** The lead brand's own variables.css from the payload (`brandCss`, attached by
+ *  the web publish and the plugin studio), or null when the payload has none
+ *  (an older file) — the caller then builds its own. */
+export function leadBrandCss(json: TokenJSON): string | null {
+  const list = json.brandCss ?? []
+  if (!list.length) return null
+  const lead = leadBrandKey(json)?.split('::')[0]
+  return (list.find((b) => b.key === lead) ?? list[0]).css
 }
