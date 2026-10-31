@@ -12,6 +12,7 @@ import { extractEscalaPayload } from '../figmaContext'
 import { CONTEXT_FOUNDATIONS, cutComponentContext } from '../contextRequest'
 import { buildCSS } from '../exporters'
 import { buildAgentSkillFiles } from '../agentBundle'
+import { gitBlobSha } from '../github'
 import { buildTemplateFiles } from '../agentBundle/productTemplates'
 import { agentContextMarkdown, componentFileName } from '../agentContext'
 import { COMPONENTS, COMPONENT_KEYS } from '../componentCatalogue'
@@ -627,22 +628,44 @@ describe('package freshness (Fase 3)', () => {
 
 describe('GitHub push: one commit', () => {
   type Call = { method: string; path: string; body?: Record<string, unknown> }
+  // A scripted GitHub that also answers the read-back `commitFiles` does after
+  // the push: once the ref moved (or the Contents PUTs landed), the branch
+  // tree lists every pushed file with its real blob id.
   function mockGitHub(opts: { empty?: boolean; existing?: string[] } = {}) {
     const calls: Call[] = []
+    const written = new Map<string, string>() // path → blob sha of what was pushed
+    let moved = false
     const fetchMock = async (url: string, init?: RequestInit) => {
       const path = url.replace('https://api.github.com', '')
       const method = init?.method ?? 'GET'
       const body = init?.body ? JSON.parse(String(init.body)) : undefined
       calls.push({ method, path, body })
       const json = (status: number, data: unknown) => new Response(JSON.stringify(data), { status })
+      const pushedTree = () => [...written].map(([p, sha]) => ({ path: p, type: 'blob', sha }))
       if (path === '/repos/o/r') return json(200, { default_branch: 'main' })
-      if (path === '/repos/o/r/git/ref/heads/main') return opts.empty ? json(409, { message: 'Git Repository is empty.' }) : json(200, { object: { sha: 'head' } })
+      if (path === '/repos/o/r/git/ref/heads/main') {
+        if (moved) return json(200, { object: { sha: 'commit2' } })
+        return opts.empty ? json(409, { message: 'Git Repository is empty.' }) : json(200, { object: { sha: 'head' } })
+      }
       if (path === '/repos/o/r/git/commits/head') return json(200, { tree: { sha: 'base' } })
-      if (path.startsWith('/repos/o/r/git/trees/base')) return json(200, { tree: (opts.existing ?? []).map((p) => ({ path: p, type: 'blob' })) })
-      if (path === '/repos/o/r/git/trees') return json(201, { sha: 'tree2' })
+      if (path.startsWith('/repos/o/r/git/trees/head')) return json(200, { tree: (opts.existing ?? []).map((p) => ({ path: p, type: 'blob', sha: 'old' })) })
+      if (path.startsWith('/repos/o/r/git/trees/commit2')) return json(200, { tree: pushedTree() })
+      if (path === '/repos/o/r/git/trees') {
+        for (const e of body.tree as { path: string; content?: string; sha?: null }[]) {
+          if (e.sha === null) written.delete(e.path)
+          else written.set(e.path, await gitBlobSha(e.content ?? ''))
+        }
+        return json(201, { sha: 'tree2' })
+      }
       if (path === '/repos/o/r/git/commits') return json(201, { sha: 'commit2' })
-      if (path === '/repos/o/r/git/refs/heads/main') return json(200, {})
-      if (path.startsWith('/repos/o/r/contents/')) return method === 'GET' ? json(404, { message: 'Not Found' }) : json(201, {})
+      if (path === '/repos/o/r/git/refs/heads/main') { moved = true; return json(200, {}) }
+      if (path.startsWith('/repos/o/r/contents/')) {
+        if (method === 'GET') return json(404, { message: 'Not Found' })
+        const file = decodeURIComponent(path.slice('/repos/o/r/contents/'.length))
+        written.set(file, await gitBlobSha(new TextDecoder().decode(Uint8Array.from(atob(body.content as string), (c) => c.charCodeAt(0)))))
+        moved = true
+        return json(201, {})
+      }
       return json(404, { message: `unexpected ${method} ${path}` })
     }
     return { calls, fetchMock }

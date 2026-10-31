@@ -255,6 +255,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > **Glyph** (`setNestedGlyph`) — `'Icon leading icon'` no longer exists, so the Dialog's × kept a
 > placeholder glyph.
 
+> **UPDATE (2026-10-31): a GitHub push is DONE only when the branch is read back and holds
+> every file (`commitFiles` → `verifyBranch`, `lib/github.ts`).** Reported as pushes GitHub
+> "did not read / did not update". Two causes, both in the client: (1) every GitHub GET went
+> through `fetch` with the browser's default cache, and GitHub answers `Cache-Control: private,
+> max-age=60` — so for a minute after a push the branch head, a file's sha and a file's body
+> could come back as they were BEFORE it (a second push refused as "not a fast forward", a
+> Contents PUT 409 on a stale sha, a repo picked right after a push restoring the PREVIOUS
+> save). Every request is `cache: 'no-store'` now. (2) nothing checked the result: "GitHub said
+> 200" was the bar. After the ref moves, `verifyBranch` re-reads the branch (recursive tree;
+> a truncated tree is completed per path) and compares each file's blob id with
+> `gitBlobSha(content)` (sha1 of `blob <bytes>\0` + bytes, computed locally — no download),
+> and asserts pruned paths are gone; a mismatch throws `GitHubVerifyError` naming the path. A
+> not-fast-forward ref update is rebuilt ONCE on the new head. `commitFiles` returns
+> `CommitResult { sha | null, branch, verified }` — `sha: null` = the repo already held every
+> byte (no empty commit, still verified) and the view says so instead of a bare "Pushed".
+> `isEmptyRepoError` is a 409/404 `GitHubError` only, never any Error whose text says "not
+> found". Locked by `githubCommit.test.ts`; `agentContextAudit`'s GitHub mock now serves the
+> read-back too (a new mock must).
+
 > **UPDATE (2026-10-21): the PLUGIN saves to GitHub THROUGH THE WEB (route A).** The GitHub
 > token lives only in the browser (`sd-github-token`), so the plugin never pushes. Plugin →
 > Export → "Save to GitHub" (`saveToGithub`, `ui.html`): a file that follows a system opens it,

@@ -71,8 +71,14 @@ export function isRejectedTokenError(e: unknown): boolean {
   return e instanceof GitHubError && e.status === 401
 }
 
+// Every request bypasses the browser's HTTP cache. GitHub answers GETs with
+// `Cache-Control: private, max-age=60`, which a browser honours for `fetch`:
+// for a minute after a push, the branch head, a file's sha and a file's body
+// could all come back as they were BEFORE it. That made a second push fail as
+// "not a fast forward", a Contents PUT 409 on a stale sha, and a repo picked
+// right after a push restore the editor from the previous save.
 async function gh<T>(token: string, path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, { ...init, headers: headers(token) })
+  const res = await fetch(`${API}${path}`, { ...init, cache: 'no-store', headers: headers(token) })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new GitHubError(body.message || `GitHub API error (${res.status})`, res.status)
@@ -114,12 +120,12 @@ function toBase64(str: string): string {
 async function putFile(token: string, repo: string, file: RepoFile, message: string): Promise<void> {
   let sha: string | undefined
   try {
-    const existing = await gh<{ sha: string }>(token, `/repos/${repo}/contents/${file.path}`)
+    const existing = await gh<{ sha: string }>(token, `/repos/${repo}/contents/${encodePath(file.path)}`)
     sha = existing.sha
   } catch {
     // 404 — new file
   }
-  await gh(token, `/repos/${repo}/contents/${file.path}`, {
+  await gh(token, `/repos/${repo}/contents/${encodePath(file.path)}`, {
     method: 'PUT',
     body: JSON.stringify({ message, content: toBase64(file.content), ...(sha ? { sha } : {}) }),
   })
@@ -135,7 +141,7 @@ function fromBase64(b64: string): string {
  */
 export async function getFile(token: string, repo: string, path: string): Promise<string | null> {
   try {
-    const data = await gh<{ content?: string }>(token, `/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`)
+    const data = await gh<{ content?: string }>(token, `/repos/${repo}/contents/${encodePath(path)}`)
     if (!data.content) return null
     return fromBase64(data.content)
   } catch {
@@ -145,7 +151,100 @@ export async function getFile(token: string, repo: string, path: string): Promis
 
 /** A repo with no commit yet: the Git Data API has no branch to build on. */
 function isEmptyRepoError(e: unknown): boolean {
-  return e instanceof Error && /empty|not found/i.test(e.message)
+  return e instanceof GitHubError && (e.status === 409 || e.status === 404) && /empty|not found/i.test(e.message)
+}
+
+/** Git's own id for a file's content — sha1("blob <bytes>\0" + bytes). Computed
+ *  locally so a pushed file can be checked against the commit's tree without
+ *  downloading it back. */
+export async function gitBlobSha(content: string): Promise<string> {
+  const body = new TextEncoder().encode(content)
+  const head = new TextEncoder().encode(`blob ${body.length}\0`)
+  const buf = new Uint8Array(head.length + body.length)
+  buf.set(head, 0)
+  buf.set(body, head.length)
+  const digest = await crypto.subtle.digest('SHA-1', buf)
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** What a push that reached GitHub looks like. `sha` is null when the repo
+ *  already held every file byte for byte (no commit was made). `verified` is
+ *  the number of files whose blob id in the branch's tree equals the content
+ *  that was sent — always every file, or `commitFiles` threw. */
+export interface CommitResult {
+  sha: string | null
+  branch: string
+  verified: number
+}
+
+/** GitHub accepted the commit but the branch does not show what was sent. */
+export class GitHubVerifyError extends GitHubError {
+  constructor(message: string) {
+    super(message, 0)
+    this.name = 'GitHubVerifyError'
+  }
+}
+
+type TreeEntry = { path: string; type: string; sha: string }
+type TreeResponse = { sha: string; tree: TreeEntry[]; truncated?: boolean }
+
+/** Blob ids on a branch, keyed by path. A truncated recursive tree (GitHub stops
+ *  at ~100k entries) is completed path by path through the Contents API, so a
+ *  file is never reported missing because the listing was cut short. */
+async function branchBlobs(token: string, repo: string, ref: string, wanted: string[]): Promise<Map<string, string>> {
+  const tree = await gh<TreeResponse>(token, `/repos/${repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`)
+  const blobs = new Map(tree.tree.filter((t) => t.type === 'blob').map((t) => [t.path, t.sha]))
+  if (tree.truncated) {
+    for (const path of wanted) {
+      if (blobs.has(path)) continue
+      try {
+        const file = await gh<{ sha: string }>(token, `/repos/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(ref)}`)
+        blobs.set(path, file.sha)
+      } catch {
+        // 404: genuinely absent
+      }
+    }
+  }
+  return blobs
+}
+
+function encodePath(path: string): string {
+  return encodeURIComponent(path).replace(/%2F/g, '/')
+}
+
+/**
+ * Reads the branch back and proves it carries exactly what was pushed: the
+ * head is `expectHead` (when known), every file's blob id equals the sha of
+ * the content sent, and no pruned path survived. Throws `GitHubVerifyError`
+ * naming the first path that disagrees.
+ */
+export async function verifyBranch(
+  token: string,
+  repo: string,
+  branch: string,
+  files: RepoFile[],
+  pruned: string[] = [],
+  expectHead?: string,
+): Promise<number> {
+  const head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
+  if (expectHead && head !== expectHead) {
+    throw new GitHubVerifyError(`GitHub recorded the commit, but ${branch} now points at ${head.slice(0, 7)}, not ${expectHead.slice(0, 7)}. Something else pushed at the same time — push again.`)
+  }
+  const blobs = await branchBlobs(token, repo, head, files.map((f) => f.path))
+  for (const file of files) {
+    const got = blobs.get(file.path)
+    if (!got) throw new GitHubVerifyError(`${file.path} is not on ${branch} after the push.`)
+    const want = await gitBlobSha(file.content)
+    if (got !== want) throw new GitHubVerifyError(`${file.path} on ${branch} does not match what was pushed.`)
+  }
+  for (const path of pruned) {
+    if (blobs.has(path)) throw new GitHubVerifyError(`${path} should have been removed from ${branch} but is still there.`)
+  }
+  return files.length
+}
+
+function isNotFastForward(e: unknown): boolean {
+  return e instanceof GitHubError && (e.status === 422 || e.status === 409) && /fast.forward|conflict|reference/i.test(e.message)
 }
 
 /**
@@ -156,8 +255,13 @@ function isEmptyRepoError(e: unknown): boolean {
  * package. An empty repo (no branch yet) falls back to `pushFiles`, which
  * creates it.
  *
- * Resolves to the new commit's sha, or null when nothing changed (or the
- * empty-repo fallback wrote the files one by one).
+ * Then it READS THE BRANCH BACK (`verifyBranch`) and resolves only when every
+ * file is there with the content that was sent. A push that resolves is a push
+ * that happened; "GitHub said 200" is not the bar.
+ *
+ * A ref update refused as not-a-fast-forward (another push landed between
+ * reading the head and moving it, or a stale head) is rebuilt once on the new
+ * head before giving up.
  */
 export async function commitFiles(
   token: string,
@@ -165,24 +269,42 @@ export async function commitFiles(
   files: RepoFile[],
   message: string,
   prune: string[] = [],
-): Promise<string | null> {
+): Promise<CommitResult> {
   const { default_branch: branch } = await gh<GitHubRepo>(token, `/repos/${repo}`)
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await commitOnce(token, repo, branch, files, message, prune)
+    } catch (e) {
+      if (attempt === 0 && isNotFastForward(e)) continue
+      throw e
+    }
+  }
+}
+
+async function commitOnce(
+  token: string,
+  repo: string,
+  branch: string,
+  files: RepoFile[],
+  message: string,
+  prune: string[],
+): Promise<CommitResult> {
   let head: string
   try {
-    head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${branch}`)).object.sha
+    head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
   } catch (e) {
     if (!isEmptyRepoError(e)) throw e
     await pushFiles(token, repo, files, message)
-    return null
+    const verified = await verifyBranch(token, repo, branch, files)
+    const newHead = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
+    return { sha: newHead, branch, verified }
   }
   const base = (await gh<{ tree: { sha: string } }>(token, `/repos/${repo}/git/commits/${head}`)).tree.sha
   const keep = new Set(files.map((f) => f.path))
   let stale: string[] = []
   if (prune.length) {
-    const tree = await gh<{ tree: { path: string; type: string }[] }>(token, `/repos/${repo}/git/trees/${base}?recursive=1`)
-    stale = tree.tree
-      .filter((t) => t.type === 'blob' && prune.some((p) => t.path.startsWith(p)) && !keep.has(t.path))
-      .map((t) => t.path)
+    const blobs = await branchBlobs(token, repo, head, [])
+    stale = [...blobs.keys()].filter((path) => prune.some((p) => path.startsWith(p)) && !keep.has(path))
   }
   const entries = [
     ...files.map((f) => ({ path: f.path, mode: '100644', type: 'blob', content: f.content })),
@@ -192,16 +314,21 @@ export async function commitFiles(
     method: 'POST',
     body: JSON.stringify({ base_tree: base, tree: entries }),
   })
-  if (tree.sha === base) return null // nothing changed: no empty commit
+  if (tree.sha === base) {
+    // Nothing changed: no empty commit — but still prove the branch holds it.
+    const verified = await verifyBranch(token, repo, branch, files, stale, head)
+    return { sha: null, branch, verified }
+  }
   const commit = await gh<{ sha: string }>(token, `/repos/${repo}/git/commits`, {
     method: 'POST',
     body: JSON.stringify({ message, tree: tree.sha, parents: [head] }),
   })
-  await gh(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+  await gh(token, `/repos/${repo}/git/refs/heads/${encodeURIComponent(branch)}`, {
     method: 'PATCH',
     body: JSON.stringify({ sha: commit.sha }),
   })
-  return commit.sha
+  const verified = await verifyBranch(token, repo, branch, files, stale, commit.sha)
+  return { sha: commit.sha, branch, verified }
 }
 
 /**

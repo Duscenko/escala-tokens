@@ -11,7 +11,7 @@ import type { TokenJSON } from '../../lib/agentBundle/types'
 import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
 import {
   getStoredToken, setStoredToken, clearStoredToken, isRejectedTokenError,
-  validateToken, listRepos, createRepo, commitFiles, getFile,
+  validateToken, listRepos, createRepo, commitFiles, getFile, type CommitResult,
   type GitHubUser, type GitHubRepo, type GitHubPushState,
 } from '../../lib/github'
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
@@ -81,6 +81,8 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
   const [pushState, setPushState] = useState<GitHubPushState>('idle')
   const [pushLog, setPushLog] = useState<string[]>([])
   const [pushError, setPushError] = useState<string | null>(null)
+  // What GitHub showed AFTER the push — read back, not assumed.
+  const [pushResult, setPushResult] = useState<CommitResult | null>(null)
 
   const [restoreState, setRestoreState] = useState<'idle' | 'loading' | 'restored' | 'empty' | 'error'>('idle')
 
@@ -249,6 +251,7 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     setPushState('pushing')
     onPushStateChange?.('pushing')
     setPushError(null)
+    setPushResult(null)
     setPushLog([])
     const live = useDesignStore.getState()
     const shipped = shippedBundle(live, free ? freeScopeFor(live, theme, appearance) : undefined)
@@ -275,7 +278,8 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     const perFolder = skills.files.length / skills.prefixes.length
     setPushLog([...files.map((f) => f.path), ...skills.prefixes.map((p) => `${p} (${perFolder} files)`)])
     try {
-      await commitFiles(token, githubRepo, [...files, ...skills.files], `chore(tokens): update ${projectName} design tokens and Design skills`, skills.prefixes)
+      const result = await commitFiles(token, githubRepo, [...files, ...skills.files], `chore(tokens): update ${projectName} design tokens and Design skills`, skills.prefixes)
+      setPushResult(result)
       setGithubLastPushAt(new Date().toISOString())
       // A successful push is what "saves" a design system — upsert it into the
       // local registry (id = repo full_name, so re-pushes update the entry).
@@ -511,10 +515,12 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
 
         {pushLog.length > 0 && (
           <ul className="flex flex-col gap-1">
-            {pushLog.map((p, i) => (
+            {pushLog.map((p) => (
               <li key={p} className="text-caption font-mono text-fg-faint flex items-center gap-1.5">
-                {pushState === 'pushing' && i === pushLog.length - 1 ? (
+                {pushState === 'pushing' ? (
                   <span className="w-2.5 h-2.5 rounded-full border border-fg-faint border-t-transparent animate-spin" />
+                ) : pushState === 'error' ? (
+                  <span className="text-status-danger">✗</span>
                 ) : (
                   <span className="text-status-success">✓</span>
                 )}
@@ -524,16 +530,20 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
           </ul>
         )}
         {pushError && <p className="text-xs text-status-danger">{pushError}</p>}
-        {pushState === 'done' && githubRepo && (
+        {pushState === 'done' && githubRepo && pushResult && (
           <div className="flex flex-col gap-1">
-            <p className="text-xs text-status-success">✓ Saved to My design systems</p>
+            <p className="text-xs text-status-success">
+              {pushResult.sha
+                ? `✓ Verified on GitHub: ${pushResult.verified} files on ${pushResult.branch}, commit ${pushResult.sha.slice(0, 7)}. Saved to My design systems.`
+                : `✓ ${githubRepo} already holds these ${pushResult.verified} files — nothing to commit. Saved to My design systems.`}
+            </p>
             <a
-              href={`https://github.com/${githubRepo}`}
+              href={pushResult.sha ? `https://github.com/${githubRepo}/commit/${pushResult.sha}` : `https://github.com/${githubRepo}`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-[#5AADFF] hover:underline self-start"
             >
-              Open {githubRepo} →
+              {pushResult.sha ? `Open commit ${pushResult.sha.slice(0, 7)} →` : `Open ${githubRepo} →`}
             </a>
           </div>
         )}
