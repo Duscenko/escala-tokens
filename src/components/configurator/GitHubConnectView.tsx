@@ -10,13 +10,14 @@ import { repoSkillFiles, repoSkillFolders } from '../../lib/agentBundle/repoSkil
 import type { TokenJSON } from '../../lib/agentBundle/types'
 import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
 import {
-  getStoredToken, setStoredToken, clearStoredToken,
+  getStoredToken, setStoredToken, clearStoredToken, isRejectedTokenError,
   validateToken, listRepos, createRepo, commitFiles, getFile,
   type GitHubUser, type GitHubRepo, type GitHubPushState,
 } from '../../lib/github'
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
 import { GitHubGlyph } from '../ui/icons'
 import { trackEvent } from '../../lib/analytics'
+import CodeHowTo from './CodeHowTo'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -59,7 +60,10 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
   const [tokenInput, setTokenInput] = useState('')
   const [user, setUser] = useState<GitHubUser | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
-  const [authBusy, setAuthBusy] = useState(false)
+  // The stored token could not be checked (offline, rate limit): offer a retry.
+  const [restoreFailed, setRestoreFailed] = useState(false)
+  // Busy from the first paint when a token is stored: the mount check runs.
+  const [authBusy, setAuthBusy] = useState(() => Boolean(getStoredToken()))
   // Whether to offer OAuth at all — `null` while unknown, so the button never
   // flashes in then out. Defaults to hidden (not `true`) precisely because
   // this deployment may not have `GITHUB_OAUTH_CLIENT_ID`/`_SECRET` set yet —
@@ -114,18 +118,40 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     }
   }
 
-  // Reconnect silently with the stored token on mount.
-  useEffect(() => {
-    const stored = getStoredToken()
-    if (!stored) return
-    setAuthBusy(true)
+  // Reconnect silently with the stored token. The token is deleted ONLY when
+  // GitHub answers 401 (expired or revoked). It used to be deleted on any
+  // failure — a network blip, a rate limit, even the repo list failing after
+  // a good /user — which logged people out of GitHub for no reason.
+  function checkStoredToken(stored: string) {
     validateToken(stored)
       .then((u) => {
         setUser(u)
-        return listRepos(stored).then(setRepos)
+        return listRepos(stored)
+          .then(setRepos)
+          .catch(() => setAuthError('Connected, but could not load your repositories. Try again in a moment.'))
       })
-      .catch(() => clearStoredToken())
+      .catch((e) => {
+        if (isRejectedTokenError(e)) {
+          clearStoredToken()
+          setAuthError('Your GitHub token expired or was revoked. Connect again to keep pushing.')
+        } else {
+          setRestoreFailed(true)
+          setAuthError('Could not reach GitHub. Your token is still saved in this browser.')
+        }
+      })
       .finally(() => setAuthBusy(false))
+  }
+  function restoreSession() {
+    const stored = getStoredToken()
+    if (!stored) return
+    setAuthBusy(true)
+    setAuthError(null)
+    setRestoreFailed(false)
+    checkStoredToken(stored)
+  }
+  useEffect(() => {
+    const stored = getStoredToken()
+    if (stored) checkStoredToken(stored)
   }, [])
 
   async function connect() {
@@ -368,9 +394,30 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
                 {authBusy ? 'Connecting…' : 'Connect'}
               </button>
             </div>
-            {authError && <p className="text-xs text-status-danger">{authError}</p>}
+            {authError ? (
+              <div className="flex items-center gap-3">
+                <p className="flex-1 text-xs text-status-danger">{authError}</p>
+                {restoreFailed && (
+                  <button
+                    onClick={restoreSession}
+                    disabled={authBusy}
+                    className="flex-shrink-0 text-xs font-medium text-fg px-2 py-1 rounded border border-line hover:bg-fg/[0.05] disabled:opacity-40 transition-colors"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
+            ) : githubRepo && !authBusy && (
+              // The repo link is kept in the system; the token is not. Say so,
+              // or a linked repo next to "Not connected" reads as a bug.
+              <p className="text-xs text-fg-faint">
+                Still linked to <span className="font-mono text-fg-muted">{githubRepo}</span>, but this browser has no
+                token for it. Connect again to push.
+              </p>
+            )}
           </>
         )}
+        {user && authError && <p className="text-xs text-status-danger">{authError}</p>}
       </section>
 
       {/* ── Step 2: Pick a repository ── */}
@@ -490,6 +537,16 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
             </a>
           </div>
         )}
+      </section>
+
+      {/* ── Step 4: Use it ── what the pushed files are for, readable before
+          the first push too, so the steps above have a reason. */}
+      <section className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
+          <h3 className="text-sm font-semibold text-fg">4 · Use it in your project</h3>
+        </div>
+        <CodeHowTo kind="github" skillFolders={repoSkillFolders(projectName)} />
       </section>
     </motion.div>
   )

@@ -828,7 +828,6 @@ export function ThemeForm({
               }))}
               selected={colorRole}
               onSelect={setColorRole}
-              defaultOpen="accent"
               onHex={(id, hex) => setSlot(ROLE_SLOT[id], hex)}
               onHueCommit={(id, hue) => {
                 if (id === 'neutral') setSlot('gray', neutralFromBrand(colorAtHue({ saturation: 1, lightness: 0.5 }, hue), tint))

@@ -411,7 +411,6 @@ export default function OverviewPage({
                 key={card.key}
                 aria-label={card.name}
                 className={`flex w-[18rem] flex-shrink-0 flex-col border-r border-line ${selected ? 'bg-surface' : 'bg-app'}`}
-                style={{ boxShadow: selected ? `inset 0 2px 0 0 ${card.mark}` : undefined }}
               >
                 <header className="flex items-center gap-3 border-b border-line px-4 py-4">
                   <button
@@ -528,7 +527,10 @@ export default function OverviewPage({
                             <span className="truncate">{store.githubRepo.split('/').pop()}</span>
                           </span>
                         ) : (
-                          <span className="flex-shrink-0 text-caption font-medium text-accent-ui">{t('Connect')}</span>
+                          <span className="flex flex-shrink-0 items-center gap-1.5 text-caption text-fg-faint">
+                            <span aria-hidden className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
+                            {t('Not connected')}
+                          </span>
                         )}
                       </button>
                     </li>

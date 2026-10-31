@@ -31,8 +31,26 @@ const FAMILY_ORDER: FamilyId[] = [
   'brand', 'secondary', 'tertiary', 'gray', 'success', 'warning', 'error', 'info',
 ]
 
-const APCA_FILTERS = [15, 30, 45, 60, 75] as const
-const WCAG_FILTERS = [3, 4.5, 7] as const
+/** Each threshold named by what it is for, so the grid answers "can I set
+ *  body text on this?" instead of asking people to know what Lc 60 means.
+ *  APCA levels follow its bronze use cases. */
+const FILTERS: Record<Metric, { value: number; label: string }[]> = {
+  wcag: [
+    { value: 3, label: 'Large text · UI' },
+    { value: 4.5, label: 'Body text' },
+    { value: 7, label: 'Body text, enhanced' },
+  ],
+  apca: [
+    { value: 15, label: 'Non-text' },
+    { value: 30, label: 'Placeholders' },
+    { value: 45, label: 'Headings · UI' },
+    { value: 60, label: 'Content text' },
+    { value: 75, label: 'Body text' },
+  ],
+}
+
+/** Opens on body text: the check most people come for. */
+const BODY_FILTER: Record<Metric, number> = { wcag: 4.5, apca: 75 }
 
 function primitivesFromStore(s: {
   primaryScale: PrimitiveScales['primaryScale']
@@ -109,10 +127,19 @@ function passesFilter(score: number, metric: Metric, filter: number | null): boo
   return mag >= filter
 }
 
-function formatScore(score: number, metric: Metric): string {
-  if (metric === 'wcag') return score >= 10 ? score.toFixed(0) : score.toFixed(1)
-  const rounded = Math.round(score)
-  return rounded > 0 ? `+${rounded}` : String(rounded)
+/** APCA's sign only says which side is lighter, and every threshold reads
+ *  the magnitude, so cells show |Lc| like WCAG shows its ratio. `unit` adds
+ *  the ":1" / "Lc" the tooltip and labels need. */
+function formatScore(score: number, metric: Metric, unit = false): string {
+  const value = metric === 'wcag'
+    ? (score >= 10 ? score.toFixed(0) : score.toFixed(1))
+    : String(Math.round(Math.abs(score)))
+  if (!unit) return value
+  return metric === 'wcag' ? `${value}:1` : `Lc ${value}`
+}
+
+function thresholdLabel(value: number, metric: Metric): string {
+  return metric === 'wcag' ? `${value}:1` : `Lc ${value}`
 }
 
 type HoverCell = { fg: number; bg: number; x: number; y: number }
@@ -126,8 +153,9 @@ export default function ThemeContrastGrid({
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
-  const [metric, setMetric] = useState<Metric>('apca')
-  const [filter, setFilter] = useState<number | null>(null)
+  // WCAG 2 is the ratio most teams already know; APCA stays one click away.
+  const [metric, setMetric] = useState<Metric>('wcag')
+  const [filter, setFilter] = useState<number | null>(BODY_FILTER.wcag)
   const [activeFamily, setActiveFamily] = useState<FamilyId>('brand')
   const [hover, setHover] = useState<HoverCell | null>(null)
   const hoverRef = useRef<HTMLDivElement>(null)
@@ -170,11 +198,13 @@ export default function ThemeContrastGrid({
   }, [families, activeFamily])
 
   const selected = families.find((f) => f.id === activeFamily) ?? families[0]
-  const filters = metric === 'apca' ? APCA_FILTERS : WCAG_FILTERS
-
-  useEffect(() => {
-    if (filter != null && !(filters as readonly number[]).includes(filter)) setFilter(null)
-  }, [metric, filter, filters])
+  const filters = FILTERS[metric]
+  // Switching standard keeps the question: body text stays body text.
+  const switchMetric = (next: Metric) => {
+    if (next === metric) return
+    setMetric(next)
+    setFilter((current) => (current == null ? null : BODY_FILTER[next]))
+  }
 
   useEffect(() => {
     if (!hover) return
@@ -188,9 +218,10 @@ export default function ThemeContrastGrid({
   const hoverFg = hover ? selected.tones[hover.fg] : null
   const hoverBg = hover ? selected.tones[hover.bg] : null
   const hoverChecks = hoverFg && hoverBg ? pairChecks(hoverFg, hoverBg, metric) : null
+  const hoverScore = hoverFg && hoverBg ? cellScore(hoverFg, hoverBg, metric) : null
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="@container/cg flex h-full min-h-0 flex-col">
       <div className="flex flex-shrink-0 flex-wrap items-center gap-1.5 px-4 py-3">
         {families.map((family) => {
           const on = family.id === selected.id
@@ -213,44 +244,47 @@ export default function ThemeContrastGrid({
         })}
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="flex w-[11.5rem] flex-shrink-0 flex-col gap-4 overflow-y-auto border-r border-line px-4 py-3">
-          <div>
-            <p className="text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Guidelines')}</p>
-            <p className="mt-2 text-caption text-fg-muted">WCAG 2</p>
-            <p className="text-caption text-fg-muted">APCA Lc</p>
-          </div>
+      {/* The controls sit beside the grid on a wide board and above it on a
+          narrow one, so the twelve-by-twelve grid always gets the full width
+          and never needs a horizontal scroll. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden @[44rem]/cg:flex-row">
+        <aside className="flex flex-shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-y border-line px-4 py-2 @[44rem]/cg:w-[11.5rem] @[44rem]/cg:flex-col @[44rem]/cg:flex-nowrap @[44rem]/cg:items-stretch @[44rem]/cg:gap-4 @[44rem]/cg:overflow-y-auto @[44rem]/cg:border-y-0 @[44rem]/cg:border-r @[44rem]/cg:py-3">
+          <div className="flex flex-col gap-2">
+            <p className="hidden text-micro font-semibold uppercase tracking-widest text-fg-faint @[44rem]/cg:block">{t('Guidelines')}</p>
           <div className="flex rounded-lg border border-line p-0.5">
             <button
               type="button"
-              onClick={() => setMetric('wcag')}
+              onClick={() => switchMetric('wcag')}
               aria-pressed={metric === 'wcag'}
-              className={`flex-1 rounded-md px-2 py-1 text-mini font-medium ${metric === 'wcag' ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
+              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1 text-mini font-medium ${metric === 'wcag' ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
             >
               WCAG 2
             </button>
             <button
               type="button"
-              onClick={() => setMetric('apca')}
+              onClick={() => switchMetric('apca')}
               aria-pressed={metric === 'apca'}
-              className={`flex-1 rounded-md px-2 py-1 text-mini font-medium ${metric === 'apca' ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
+              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1 text-mini font-medium ${metric === 'apca' ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
             >
               APCA Lc
             </button>
           </div>
-          <div className="flex flex-col gap-0.5">
-            {filters.map((value) => {
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="hidden text-micro font-semibold uppercase tracking-widest text-fg-faint @[44rem]/cg:block">{t('Check for')}</p>
+          <div className="flex flex-wrap gap-0.5 @[44rem]/cg:flex-col">
+            {filters.map(({ value, label }) => {
               const on = filter === value
-              const label = metric === 'apca' ? `${value}+` : `${value}:1`
               return (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setFilter(on ? null : value)}
                   aria-pressed={on}
-                  className={`rounded-md px-2 py-1 text-left text-caption ${on ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
+                  className={`flex items-baseline justify-between gap-2 rounded-md px-2 py-1 text-left text-caption ${on ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
                 >
-                  {label}
+                  <span>{t(label)}</span>
+                  <span className="flex-shrink-0 whitespace-nowrap text-mini tabular-nums text-fg-faint">{thresholdLabel(value, metric)}</span>
                 </button>
               )
             })}
@@ -260,26 +294,34 @@ export default function ThemeContrastGrid({
               aria-pressed={filter == null}
               className={`rounded-md px-2 py-1 text-left text-caption ${filter == null ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
             >
-              {t('All')}
+              {t('Every value')}
             </button>
+          </div>
           </div>
         </aside>
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto p-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-auto p-2 @[44rem]/cg:gap-3 @[44rem]/cg:p-4">
+          {/* What a square means, said once where the eye lands first. */}
+          <p className="mx-auto w-full max-w-[56rem] flex-shrink-0 text-caption text-fg-muted">
+            {filter == null
+              ? t('Each square: the row tone as text on the column tone.')
+              : t('Each square: the row tone as text on the column tone. Faded squares don\'t pass.')}
+          </p>
+          {/* Columns share the width (minmax 0) and rows share the height, so
+              the whole grid fits its panel; a row never drops below 1.25rem. */}
           <div
-            className="grid w-full min-w-[40rem]"
-            style={{ gridTemplateColumns: `2.75rem repeat(${TONES.length}, minmax(2.25rem, 1fr))` }}
+            className="mx-auto grid w-full max-w-[56rem] flex-1 grid-cols-[1.25rem_repeat(12,minmax(0,1fr))] grid-rows-[auto_repeat(12,minmax(1.25rem,1fr))] @[44rem]/cg:grid-cols-[2rem_repeat(12,minmax(0,1fr))]"
             onMouseLeave={() => setHover(null)}
           >
             <div />
             {TONES.map((tone) => (
-              <div key={`h-${tone}`} className="pb-1.5 text-center text-micro tabular-nums text-fg-faint">{tone}</div>
+              <div key={`h-${tone}`} className="pb-1 text-center text-[9px] tabular-nums text-fg-faint @[40rem]/cg:pb-1.5 @[40rem]/cg:text-micro">{tone}</div>
             ))}
             {TONES.map((fgTone) => {
               const fg = selected.tones[fgTone]
               return (
                 <div key={`r-${fgTone}`} className="contents">
-                  <div className="pr-2 text-right text-micro tabular-nums text-fg-faint" style={{ lineHeight: '2.25rem' }}>{fgTone}</div>
+                  <div className="flex items-center justify-end pr-1 text-[9px] tabular-nums text-fg-faint @[40rem]/cg:pr-2 @[40rem]/cg:text-micro">{fgTone}</div>
                   {TONES.map((bgTone) => {
                     const bg = selected.tones[bgTone]
                     if (!fg || !bg) return <div key={bgTone} />
@@ -300,11 +342,13 @@ export default function ThemeContrastGrid({
                           const rect = event.currentTarget.getBoundingClientRect()
                           setHover({ fg: fgTone, bg: bgTone, x: rect.right + 8, y: rect.top })
                         }}
-                        aria-label={same ? `${fgTone} on ${bgTone}` : `${fgTone} on ${bgTone} — ${score == null ? '—' : formatScore(score, metric)}`}
-                        className={`relative h-9 overflow-hidden rounded-sm text-micro tabular-nums ${hovered ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app' : ''}`}
+                        aria-label={same ? `${fgTone} on ${bgTone}` : `${fgTone} on ${bgTone} — ${score == null ? '—' : formatScore(score, metric, true)}`}
+                        className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-sm text-[9px] tabular-nums tracking-tighter @[40rem]/cg:text-micro @[40rem]/cg:tracking-normal ${hovered ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app' : ''}`}
                         style={{
-                          background: pass || same ? bg : `color-mix(in srgb, ${bg} 28%, var(--app))`,
-                          color: pass || same ? ink : 'var(--fg-faint)',
+                          // A tone on itself has no contrast: faded like a
+                          // fail, so only real passes stand out.
+                          background: pass ? bg : `color-mix(in srgb, ${bg} 28%, var(--app))`,
+                          color: pass ? ink : 'var(--fg-faint)',
                         }}
                       >
                         {same || score == null ? '—' : formatScore(score, metric)}
@@ -330,7 +374,7 @@ export default function ThemeContrastGrid({
         >
           <div className="flex items-center justify-between px-3 py-2 text-caption text-fg-muted">
             <span className="tabular-nums text-fg">{hover.fg} on {hover.bg}</span>
-            <span className="tabular-nums">{metric === 'apca' ? 'Lc' : 'WCAG'}</span>
+            <span className="tabular-nums">{hoverScore == null ? '—' : formatScore(hoverScore, metric, true)}</span>
           </div>
           <div className="px-3 pb-3">
             <div

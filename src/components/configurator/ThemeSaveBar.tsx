@@ -79,7 +79,12 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
 }
 
 /** One segment of the history pill: a 28px square inside the 36px shell. */
-const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+// 32px squares (WCAG 2.5.8 asks 24): the bar is the board's main tool row.
+// An unavailable Undo / Redo stays focusable (`aria-disabled`, not
+// `disabled`) so its tooltip still says what it would do; it reads in the
+// faint ink, never at 35% opacity, where it all but vanished. The focus ring
+// is full strength: at 50% it measured under 3:1 on the bar.
+const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 motion-reduce:active:scale-100 aria-disabled:cursor-not-allowed aria-disabled:text-fg-faint aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui'
 
 /**
  * Undo · Redo · Random, on the BOARD's header — the surface they act on.
@@ -89,47 +94,64 @@ const HISTORY_SEGMENT = 'flex h-7 w-7 flex-shrink-0 items-center justify-center 
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, children, trailing }: {
-  /** A whole new theme — only while the brand is a draft (see callers). */
+export function BoardHistoryControls({ onRandom, children, trailing, appearance }: {
+  /** A whole new theme — only while the brand is a draft (see callers). The
+   *  die carries a chevron for how daring it is (Safe · Free · Bold). */
   onRandom?: () => void
   /** Board tools that join the pill after a divider (the Inspector). */
   children?: ReactNode
   /** A group of its own at the pill's end (the Theme · Components switch),
    *  set off by a full-height rule — Figma's tools | modes split. */
   trailing?: ReactNode
+  /** Light · Dark, last, after its own rule. */
+  appearance?: ReactNode
 }) {
   const { t } = useI18n()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
   const lastRedo = useEditHistory((h) => h.future[h.future.length - 1]?.label)
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
-  return (
-    <div role="group" aria-label={t('History')} className="flex h-9 items-center gap-0.5 rounded-xl border border-line bg-nav p-1">
-      <HintTip label={undoLabel} shortcut="⌘Z">
-      <button type="button" onClick={() => undoEdit()} disabled={!lastUndo} aria-label={undoLabel} className={HISTORY_SEGMENT}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M5.5 3.5 2.5 6.5l3 3" />
-          <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-        </svg>
-      </button>
-      </HintTip>
-      <HintTip label={redoLabel} shortcut="⇧⌘Z">
-      <button type="button" onClick={() => redoEdit()} disabled={!lastRedo} aria-label={redoLabel} className={HISTORY_SEGMENT}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M10.5 3.5l3 3-3 3" />
-          <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
-        </svg>
-      </button>
-      </HintTip>
+  const toolbar = (
+    // The whole bar is one named group of three: history, the board tools
+    // (Random, Inspector) and the view tabs. It used to be ONE group named
+    // "History" around all of it, so a screen reader announced Inspector and
+    // the Theme · Components tabs as history.
+    // A dark island with its own near-black, whatever the board beneath is
+    // painted in: the bar floats over a busy board and has to separate from it
+    // (Mesurer's "inverse" bar). `dark` re-points the chrome tokens inside, so
+    // the buttons, hints and tabs keep their contrast on the black.
+    <div role="group" aria-label={t('Board tools')} className="dark flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1">
+      <div role="group" aria-label={t('History')} className="flex items-center gap-0.5">
+        <HintTip label={undoLabel} shortcut="⌘Z">
+        <button type="button" onClick={() => { if (lastUndo) undoEdit() }} aria-disabled={!lastUndo || undefined} aria-label={undoLabel} aria-keyshortcuts="Meta+Z" className={HISTORY_SEGMENT}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5.5 3.5 2.5 6.5l3 3" />
+            <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+          </svg>
+        </button>
+        </HintTip>
+        <HintTip label={redoLabel} shortcut="⇧⌘Z">
+        <button type="button" onClick={() => { if (lastRedo) redoEdit() }} aria-disabled={!lastRedo || undefined} aria-label={redoLabel} aria-keyshortcuts="Shift+Meta+Z" className={HISTORY_SEGMENT}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M10.5 3.5l3 3-3 3" />
+            <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
+          </svg>
+        </button>
+        </HintTip>
+      </div>
       {onRandom && (
         <>
-          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
-          <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
+          {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
+          <div className="flex items-center">
+            <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+            <RandomLevelPicker chevron />
+          </div>
         </>
       )}
       {children && (
         <>
-          <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
+          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
           {children}
         </>
       )}
@@ -139,8 +161,15 @@ export function BoardHistoryControls({ onRandom, children, trailing }: {
           {trailing}
         </>
       )}
+      {appearance && (
+        <>
+          <span aria-hidden className="-my-1 mx-1 w-px self-stretch bg-line" />
+          {appearance}
+        </>
+      )}
     </div>
   )
+  return toolbar
 }
 
 /** The footer's last line: where the work lives. Status reads after the
@@ -276,8 +305,21 @@ function usePaletteLevel(): PaletteLevel {
   return useSyncExternalStore(subscribePaletteLevel, getPaletteLevel, getPaletteLevel)
 }
 
-/** Menu width, px: wide enough that no level's one-line hint wraps. */
-const LEVEL_MENU_W = 300
+/** Menu width, px: the names and their meter; the hint reads at the foot. */
+const LEVEL_MENU_W = 220
+
+/** How daring a level is, drawn: one, two or three rising bars. The three
+ *  options read as one scale before their names are read. */
+function LevelMeter({ level }: { level: PaletteLevel }) {
+  const on = PALETTE_LEVELS.indexOf(level) + 1
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden className="flex-shrink-0">
+      {[5, 8, 11].map((h, i) => (
+        <rect key={h} x={1 + i * 4.5} y={12.5 - h} width="3" height={h} rx="1" fill="currentColor" opacity={i < on ? 1 : 0.22} />
+      ))}
+    </svg>
+  )
+}
 /** Gap between the trigger and the menu, and the menu and the window edge. */
 const LEVEL_MENU_GAP = 6
 
@@ -288,7 +330,11 @@ const LEVEL_MENU_GAP = 6
  *  trigger sits in the inspector's scroll column, which clipped an absolute
  *  menu (its left half was cut off). Right edges align, clamped to the window,
  *  and it opens upward when there is no room below. */
-export function RandomLevelPicker() {
+export function RandomLevelPicker({ chevron = false }: {
+  /** Beside the board toolbar's die, Figma-style: a bare chevron, and the
+   *  menu opens ABOVE it, dark like the bar, with the check on the left. */
+  chevron?: boolean
+} = {}) {
   const { t } = useI18n()
   const level = usePaletteLevel()
   const reduce = useReducedMotion()
@@ -297,9 +343,13 @@ export function RandomLevelPicker() {
   const trigger = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
   const options = useRef<(HTMLButtonElement | null)[]>([])
+  // The level under the pointer or focus; the foot reads out its hint (the
+  // chosen level's when neither is on a row).
+  const [active, setActive] = useState<PaletteLevel | null>(null)
 
   const close = (refocus = true) => {
     setOpen(false)
+    setActive(null)
     if (refocus) trigger.current?.focus()
   }
 
@@ -311,6 +361,12 @@ export function RandomLevelPicker() {
       const r = trigger.current?.getBoundingClientRect()
       if (!r) return
       const height = menu.current?.offsetHeight ?? 180
+      if (chevron) {
+        // Above the toolbar, starting at the die (one 32px segment left).
+        const left = Math.max(LEVEL_MENU_GAP, Math.min(r.left - 32, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
+        setPlace({ bottom: window.innerHeight - r.top + LEVEL_MENU_GAP + 4, left })
+        return
+      }
       const left = Math.max(LEVEL_MENU_GAP, Math.min(r.right - LEVEL_MENU_W, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
       const below = window.innerHeight - r.bottom - LEVEL_MENU_GAP
       setPlace(below >= height || below >= r.top
@@ -321,7 +377,7 @@ export function RandomLevelPicker() {
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
     return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
-  }, [open])
+  }, [open, chevron])
 
   // Focus the selected level when the menu opens; outside click closes it.
   useEffect(() => {
@@ -349,8 +405,31 @@ export function RandomLevelPicker() {
     else if (event.key === 'Escape' || event.key === 'Tab') { event.preventDefault(); close() }
   }
 
+  const chevronTrigger = (
+    <button
+      ref={trigger}
+      type="button"
+      onClick={() => setOpen((v) => !v)}
+      onKeyDown={(event) => { if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !open) { event.preventDefault(); setOpen(true) } }}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-label={`${t('Random colours')}: ${t(LEVEL_COPY[level].label)}`}
+      className={`flex h-8 w-4 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+        open ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
+      }`}
+    >
+      <svg
+        width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        className={`transition-transform duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+      >
+        <path d="M4 6l4 4 4-4" />
+      </svg>
+    </button>
+  )
+
   return (
     <>
+      {chevron ? (open ? chevronTrigger : <HintTip label={t('How daring Random is')}>{chevronTrigger}</HintTip>) : (
       <button
         ref={trigger}
         type="button"
@@ -370,6 +449,7 @@ export function RandomLevelPicker() {
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
+      )}
       {open && createPortal(
         <motion.div
           ref={menu}
@@ -387,7 +467,8 @@ export function RandomLevelPicker() {
             bottom: place?.bottom,
             visibility: place ? 'visible' : 'hidden',
           }}
-          className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST}`}
+          onPointerLeave={() => setActive(null)}
+          className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST} ${chevron ? 'dark' : ''}`}
         >
           {PALETTE_LEVELS.map((id, i) => {
             const on = id === level
@@ -398,19 +479,34 @@ export function RandomLevelPicker() {
                 type="button"
                 role="option"
                 aria-selected={on}
+                aria-describedby={`random-level-hint-${id}`}
                 onClick={() => { writePaletteLevel(id); close() }}
-                className={`${SELECT_OPTION} grid grid-cols-[1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                onPointerEnter={() => setActive(id)}
+                onFocus={() => setActive(id)}
+                className={`${SELECT_OPTION} grid ${chevron ? 'grid-cols-[auto_auto_1fr]' : 'grid-cols-[auto_1fr_auto]'} items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-ui">{t(LEVEL_COPY[id].label)}</span>
-                  <span className="truncate text-caption font-normal text-fg-faint">{t(LEVEL_COPY[id].hint)}</span>
-                </span>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
-                  <path d="M3.5 8.5l3 3 6-7" />
-                </svg>
+                {chevron && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                )}
+                <span className={on ? 'text-accent-ui' : 'text-fg-faint'}><LevelMeter level={id} /></span>
+                <span className="min-w-0 truncate text-ui">{t(LEVEL_COPY[id].label)}</span>
+                <span id={`random-level-hint-${id}`} className="sr-only">{t(LEVEL_COPY[id].hint)}</span>
+                {!chevron && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                )}
               </button>
             )
           })}
+          {/* One line of WHAT a level does, for the row in reach — the list
+              itself stays three words long. Fixed at two lines' height so the
+              menu never resizes under the pointer. */}
+          <p aria-hidden className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
+            {t(LEVEL_COPY[active ?? level].hint)}
+          </p>
         </motion.div>,
         document.body,
       )}

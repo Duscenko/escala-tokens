@@ -35,6 +35,9 @@ export function getStoredToken(): string | null {
 }
 export function setStoredToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token)
+  // Ask the browser not to evict this site's storage (Safari drops sites
+  // unvisited for 7 days). Best effort: a refusal changes nothing.
+  navigator.storage?.persist?.().catch(() => {})
 }
 export function clearStoredToken() {
   localStorage.removeItem(TOKEN_KEY)
@@ -50,11 +53,29 @@ function headers(token: string): Record<string, string> {
   }
 }
 
+/** A GitHub answer that was not OK. `status` is what decides whether the
+ *  token is dead (401) or GitHub was only unreachable / rate-limited. */
+export class GitHubError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'GitHubError'
+    this.status = status
+  }
+}
+
+/** True only when GitHub itself refused the token (expired or revoked).
+ *  A network failure, a 403 rate limit or a 5xx is NOT this: the token may be
+ *  fine, so it must never be deleted on those. */
+export function isRejectedTokenError(e: unknown): boolean {
+  return e instanceof GitHubError && e.status === 401
+}
+
 async function gh<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, { ...init, headers: headers(token) })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || `GitHub API error (${res.status})`)
+    throw new GitHubError(body.message || `GitHub API error (${res.status})`, res.status)
   }
   return res.json() as Promise<T>
 }

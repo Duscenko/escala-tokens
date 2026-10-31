@@ -10,6 +10,7 @@ import { myThemeKeys } from './ThemeLibraryRail'
 import { InspectorPortal } from './WorkspaceInspector'
 import { UnsavedNotice } from './ThemeSaveBar'
 import { useAccess } from '../../lib/access'
+import { CodeHowToButton } from './CodeHowTo'
 
 export type CodeFormatKey = 'agent' | 'css'
 
@@ -107,25 +108,42 @@ export default function ThemeCodeScopeRail({
           const panelId = `code-format-${item.key}`
           return (
             <section key={item.key} aria-label={item.label} className="min-w-0 overflow-visible border-b border-line">
+              {/* Each format's title carries a ? that opens how to use that
+                  file. It sits beside the title, outside the row's own button
+                  (a button can't hold another), so a closed row is two parts:
+                  the title, then the rest of the row; both open the format. */}
               {open ? (
-                <div className="flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)]" aria-expanded aria-controls={panelId}>
-                  <span className="min-w-0 flex-1 truncate text-left text-strong font-medium text-fg">{item.label}</span>
+                <div className="flex h-12 w-full items-center gap-1.5 px-[var(--inspector-inset)]" aria-expanded aria-controls={panelId}>
+                  <span className="min-w-0 truncate text-left text-strong font-medium text-fg">{item.label}</span>
+                  {selected ? <CodeHowToButton kind={item.key} iconOnly /> : null}
+                  <span className="flex-1" />
                   <Chevron open />
                 </div>
               ) : (
-                <button
-                  type="button"
-                  aria-expanded={false}
-                  aria-controls={panelId}
-                  onClick={() => onFormat(item.key)}
-                  className="group/row flex h-12 w-full items-center gap-3 px-[var(--inspector-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-                >
-                  <span className="min-w-0 flex-1 truncate text-left text-ui text-fg-muted transition-colors group-hover/row:text-fg">{item.label}</span>
-                  {summaries?.[item.key] != null && (
-                    <span className="min-w-0 max-w-[55%] flex-shrink-0 truncate text-caption text-fg-faint">{summaries[item.key]}</span>
-                  )}
-                  <Chevron open={false} />
-                </button>
+                <div className="group/row flex h-12 w-full items-center gap-1.5 px-[var(--inspector-inset)]">
+                  <button
+                    type="button"
+                    aria-expanded={false}
+                    aria-controls={panelId}
+                    onClick={() => onFormat(item.key)}
+                    className="min-w-0 truncate text-left text-ui text-fg-muted transition-colors group-hover/row:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded-sm"
+                  >
+                    {item.label}
+                  </button>
+                  {selected ? <CodeHowToButton kind={item.key} iconOnly /> : null}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-hidden
+                    onClick={() => onFormat(item.key)}
+                    className="flex h-full min-w-0 flex-1 items-center justify-end gap-3"
+                  >
+                    {summaries?.[item.key] != null && (
+                      <span className="min-w-0 max-w-[80%] truncate text-caption text-fg-faint">{summaries[item.key]}</span>
+                    )}
+                    <Chevron open={false} />
+                  </button>
+                </div>
               )}
               <AnimatePresence initial={false}>
                 {open && settings ? (

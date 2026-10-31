@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -7,6 +8,7 @@ import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardThemeSwitch } from './BrandThemesPicker'
 
 /** The Generator board — the region Theme · Components switches. */
 const BOARD_PANEL_ID = 'generator-board'
@@ -16,6 +18,13 @@ import type { PreviewTokens } from '../preview/ButtonPreview'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
+
+/** Board ⇄ Contrast grid: one quiet hand-off. The board fades out, the band
+ *  over it opens, and the grid slides in from the right — the side its toggle
+ *  lives on (Color's header). Leaving runs the same path back, faster. */
+const VIEW_EASE = [0.22, 1, 0.36, 1] as const
+const VIEW_IN = { duration: 0.24, ease: VIEW_EASE }
+const VIEW_OUT = { duration: 0.15, ease: VIEW_EASE }
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
 import FigmaSyncView from './FigmaSyncView'
@@ -161,18 +170,32 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       // The toolbar segment gets the dark hint (name, no paragraph); the
       // standalone pill keeps the native tooltip with the longer explanation.
       title={bare && !(disabled && disabledTitle) ? undefined : hint}
-      className={`${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
-        active && !disabled
-          ? (accent ? '' : 'bg-accent-solid text-accent-ink')
-          : `text-fg ${disabled ? (bare ? HEADER_CONTROL_DISABLED : '') : CHROME_CONTROL_HOVER}`
-      }`}
+      // In the toolbar it is drawn exactly like the Theme · Components tabs
+      // beside it: a 28px pill in a recessed track, faint when off, and when
+      // on the same raised pill (light top edge, soft drop) — only filled with
+      // the theme's accent instead of grey.
+      className={bare
+        ? `${HEADER_CONTROL_BTN.replace('focus-visible:ring-offset-1 focus-visible:ring-offset-app', '').replace('transition-[color,box-shadow,transform]', 'transition-[color,background-color,box-shadow,transform]')} ${
+          active && !disabled
+            ? `font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)] ${accent ? '' : 'bg-accent-solid text-accent-ink'}`
+            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+        }`
+        : `${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
+          active && !disabled
+            ? (accent ? '' : 'bg-accent-solid text-accent-ink')
+            : `text-fg ${disabled ? '' : CHROME_CONTROL_HOVER}`
+        }`}
       style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
     >
       <InspectGlyph size={16} hint={!active} />
       <RevealLabel open={active}>{label}</RevealLabel>
     </button>
   )
-  if (bare) return disabled && disabledTitle ? button : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{button}</HintTip>
+  if (bare) {
+    // The same recessed track the view tabs sit in.
+    const track = <span className="flex h-8 flex-shrink-0 items-center rounded-lg bg-fg/[0.04] p-0.5">{button}</span>
+    return disabled && disabledTitle ? track : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{track}</HintTip>
+  }
   return (
     // Same pill as Theme · Components beside it: the frame colour (`bg-nav`),
     // a solid hairline, h-9 / rounded-xl, no shadow. The dashed edge it used
@@ -537,6 +560,7 @@ export default function ThemePreviewHub({
     if (randomDraft) setInspecting(false)
   }, [randomDraft])
   const [contrastOpen, setContrastOpen] = useState(false)
+  const reduceMotion = useReducedMotion()
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedSelection, setInspectedSelection] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
@@ -746,8 +770,18 @@ export default function ThemePreviewHub({
               {/* `boardhead` container: on a narrow board the view switch
                   drops to icons (BoardViewSwitch) before anything clips. */}
               {/* The plain board has no band: its tools float at its foot. */}
+              {/* The band opens and folds (height) instead of shoving the board
+                  down a whole row in one frame. */}
+              <AnimatePresence initial={false}>
               {(needsMyTheme || contrastOpen || docsOpen || stylePreview) && (
-              <div className={`@container/boardhead flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
+              <motion.div
+                key="boardhead"
+                initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                animate={{ height: INSPECTOR_TABS_H, opacity: 1, transition: VIEW_IN }}
+                exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0, transition: VIEW_OUT }}
+                className={`@container/boardhead flex flex-shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-line ${CANVAS_INSET}`}
+                style={{ height: INSPECTOR_TABS_H }}
+              >
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
                 ) : docsOpen ? (
@@ -817,8 +851,9 @@ export default function ThemePreviewHub({
                     />
                   ) : null}
                 </div>
-              </div>
+              </motion.div>
               )}
+              </AnimatePresence>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               {/* Also a `boardhead` container (same width as the header), so the
                   floating switch still drops to icons on a narrow board. */}
@@ -827,8 +862,16 @@ export default function ThemePreviewHub({
                     toolbar floating at the board's foot, Figma's bottom bar —
                     the tools that act on the board, then what it shows. The
                     wrapper lets clicks through to the board beside the pill. */}
+                <AnimatePresence initial={false}>
                 {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
-                  <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4">
+                  <motion.div
+                    key="board-toolbar"
+                    // Sinks out of the way with the board, rises back with it.
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { ...VIEW_IN, delay: 0.12 } }}
+                    exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 12, transition: VIEW_OUT }}
+                    className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4"
+                  >
                     {/* Reset rides beside the bar for an account. */}
                     {!guest && (
                       <div className="pointer-events-auto rounded-lg bg-nav shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)] empty:hidden">
@@ -839,6 +882,7 @@ export default function ThemePreviewHub({
                       <BoardHistoryControls
                         onRandom={canRandom ? () => randomHandle.current?.() : undefined}
                         trailing={<BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
+                        appearance={<BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />}
                       >
                         <InspectorToggle
                           bare
@@ -852,15 +896,35 @@ export default function ThemePreviewHub({
                         />
                       </BoardHistoryControls>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
                 {needsMyTheme ? (
                   <NeedMyThemeEmpty onCreateTheme={onCreateTheme} />
                 ) : (
-                  <>
+                  // `wait`: the leaving view clears before the next one comes
+                  // in, so the board and the grid never stack mid-swap.
+                  <AnimatePresence mode="wait" initial={false}>
                 {contrastOpen ? (
-                  <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
-                ) : null}
+                  <motion.div
+                    key="contrast"
+                    className="flex min-h-0 flex-1 flex-col"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0, transition: VIEW_IN }}
+                    exit={reduceMotion ? { opacity: 0, transition: { duration: 0.1 } } : { opacity: 0, x: 16, transition: VIEW_OUT }}
+                  >
+                    <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="board"
+                    className="flex min-h-0 flex-1 flex-col"
+                    // Opacity only: a transform here would re-anchor the
+                    // board's fixed overlays (Inspector) while it runs.
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, transition: VIEW_IN }}
+                    exit={{ opacity: 0, transition: reduceMotion ? { duration: 0.1 } : VIEW_OUT }}
+                  >
                 {!contrastOpen && docsOpen ? (
                   <DocumentationView
                     active={activeDocKey}
@@ -892,7 +956,9 @@ export default function ThemePreviewHub({
                     onOpenComponent={onOpenComponent}
                   />
                 ) : null}
-                  </>
+                  </motion.div>
+                )}
+                  </AnimatePresence>
                 )}
               </div>
               </ThemeHubHeaderActionsProvider>
