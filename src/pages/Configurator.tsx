@@ -1771,6 +1771,7 @@ export default function Configurator() {
     css: () => openShip(key, 'css'),
     figma: () => openShip(key, 'figma'),
     agent: () => openShip(key, 'agent'),
+    github: () => { changePreviewTheme(key); openGithubPage() },
   })
   /** The Export pill ships the brand the Code tab would show. */
   const shipCurrent = (kind: ShipKind) => openShip(resolveCodeTheme(myThemeKeys(themeOrder, themes), '', previewTheme) || null, kind)
