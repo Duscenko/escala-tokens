@@ -343,6 +343,27 @@ async function commitOnce(
 }
 
 /**
+ * Blob ids on the default branch keyed by path, or null when the repo has no
+ * commit yet. Same request as `listRepoPaths`, with the ids a change review
+ * compares against `gitBlobSha(content)`.
+ */
+export async function listRepoBlobs(token: string, repo: string): Promise<Map<string, string> | null> {
+  const { default_branch: branch } = await gh<GitHubRepo>(token, `/repos/${repo}`)
+  try {
+    return await branchBlobs(token, repo, branch, [])
+  } catch (e) {
+    if (isEmptyRepoError(e)) return null
+    throw e
+  }
+}
+
+/** One file's text by its blob id (what `getFile` falls back to for big files). */
+export async function readBlob(token: string, repo: string, sha: string): Promise<string> {
+  const blob = await gh<{ content: string }>(token, `/repos/${repo}/git/blobs/${sha}`)
+  return fromBase64(blob.content)
+}
+
+/**
  * Every file path on the default branch, or null when the repo has no commit
  * yet. One request (recursive tree) — what a review screen needs to say which
  * files a save adds and which it updates.

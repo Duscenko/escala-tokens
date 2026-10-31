@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore, captureSnapshot } from '../../store/useDesignStore'
 import { useFreeTier } from '../../lib/access'
@@ -20,6 +20,7 @@ import CodeHowTo from './CodeHowTo'
 import { README_MARKER, shouldWriteReadme } from '../../lib/repoExport'
 import { BRANDS_DIR, buildGithubPushFiles } from '../../lib/githubPushFiles'
 import { CONTRACTS_DIR } from '../../lib/repoExport'
+import { planPush, groupPushChanges, describeCounts, type PushPlan, type ChangeKind } from '../../lib/githubPlan'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -88,7 +89,22 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
 
   const [restoreState, setRestoreState] = useState<'idle' | 'loading' | 'restored' | 'empty' | 'error'>('idle')
 
+  // ── Changes since the last push (the "suggestions") ──
+  const [review, setReview] = useState<{ plan: PushPlan; prefixes: string[] } | null>(null)
+  const [reviewBusy, setReviewBusy] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const reviewRun = useRef(0)
+  const pushingRef = useRef(false)
+  // Step 4 is reference copy: it starts closed so the page is not a wall of text.
+  const [useOpen, setUseOpen] = useState(false)
+
   const slug = slugify(projectName) || 'design-system'
+  const changeRows = review ? groupPushChanges(review.plan.changes, review.prefixes) : []
+  const totals = changeRows.reduce<Record<ChangeKind, number>>(
+    (t, r) => ({ new: t.new + r.counts.new, modified: t.modified + r.counts.modified, removed: t.removed + r.counts.removed }),
+    { new: 0, modified: 0, removed: 0 },
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -247,24 +263,69 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     }
   }
 
-  async function push() {
-    const token = getStoredToken()
-    if (!token || !githubRepo) return
-    setPushState('pushing')
-    onPushStateChange?.('pushing')
-    setPushError(null)
-    setPushResult(null)
-    setPushLog([])
+  // The brand's own files — the same snapshot the CSS / Agent doors and the
+  // Code tab ship (lib/githubPushFiles). The raw store's root is the system
+  // default (blue accent, Inter), not the brand. Push and the change review
+  // both start here, so what is reviewed is what is pushed.
+  function assemble() {
     const live = useDesignStore.getState()
-    // The brand's own files — the same snapshot the CSS / Agent doors and the
-    // Code tab ship (lib/githubPushFiles). The raw store's root is the system
-    // default (blue accent, Inter), not the brand.
-    const build = buildGithubPushFiles({
+    return buildGithubPushFiles({
       store: live,
       publishSlug: syncProjectId(),
       publishClaim: getStoredClaim(syncProjectId()) ?? undefined,
       shipped: free ? shippedBundle(live, freeScopeFor(live, theme, appearance)) : undefined,
     })
+  }
+
+  // Reads the repo and says what a push would change. Silent: a failed check
+  // never blocks the push button, it only leaves the review empty.
+  async function checkChanges() {
+    const token = getStoredToken()
+    if (!token || !githubRepo || !user || pushingRef.current) return
+    const run = ++reviewRun.current
+    setReviewBusy(true)
+    setReviewError(null)
+    try {
+      const build = assemble()
+      const files = [...build.files]
+      if (shouldWriteReadme(await getFile(token, githubRepo, 'README.md'))) {
+        files.splice(2, 0, { path: 'README.md', content: `${README_MARKER}\n${build.readme}` })
+      }
+      const plan = await planPush(token, githubRepo, [...files, ...build.skills], build.prune)
+      if (run === reviewRun.current) setReview({ plan, prefixes: build.prune })
+    } catch (e) {
+      if (run === reviewRun.current) setReviewError(e instanceof Error ? e.message : 'Could not compare with the repository.')
+    } finally {
+      if (run === reviewRun.current) setReviewBusy(false)
+    }
+  }
+  const checkRef = useRef(checkChanges)
+  checkRef.current = checkChanges
+
+  // Check when the repo is chosen, then again ~1.5s after edits stop.
+  useEffect(() => {
+    if (!user || !githubRepo) { setReview(null); return }
+    let timer: number | undefined
+    const schedule = (ms: number) => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => { void checkRef.current() }, ms)
+    }
+    schedule(0)
+    const unsubscribe = useDesignStore.subscribe(() => schedule(1500))
+    return () => { window.clearTimeout(timer); unsubscribe(); reviewRun.current++ }
+  }, [user, githubRepo])
+
+  async function push() {
+    const token = getStoredToken()
+    if (!token || !githubRepo) return
+    pushingRef.current = true
+    reviewRun.current++
+    setPushState('pushing')
+    onPushStateChange?.('pushing')
+    setPushError(null)
+    setPushResult(null)
+    setPushLog([])
+    const build = assemble()
     const files = [...build.files]
     const brandDirs = build.brands.length > 1 ? [`${BRANDS_DIR} (${build.brands.length} brands)`] : []
     const skillDirs = build.prune.filter((p) => p !== BRANDS_DIR && p !== CONTRACTS_DIR)
@@ -300,12 +361,14 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
         snapshot: captureSnapshot(s),
         source: 'github',
       })
+      pushingRef.current = false
       setPushState('done')
       onPushStateChange?.('done')
       trackEvent({ name: 'github_push', props: { result: 'ok' } })
     } catch (e) {
       trackEvent({ name: 'github_push', props: { result: 'error' } })
       setPushError(e instanceof Error ? e.message : 'Push failed.')
+      pushingRef.current = false
       setPushState('error')
       onPushStateChange?.('error')
     }
@@ -508,6 +571,17 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
           <h3 className="text-sm font-semibold text-fg">3 · Push your design system</h3>
+          {changeRows.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setReviewOpen((v) => !v)}
+              aria-label={`${changeRows.length} suggested ${changeRows.length === 1 ? 'change' : 'changes'} since the last push`}
+              title={`${changeRows.length} suggested ${changeRows.length === 1 ? 'change' : 'changes'} (${review?.plan.changes.length} files)`}
+              className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-solid px-1.5 text-mini font-semibold tabular-nums text-accent-ink transition-opacity hover:opacity-90"
+            >
+              {changeRows.length}
+            </button>
+          )}
         </div>
         <p className="text-xs text-fg-faint leading-relaxed">
           Commits <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>,{' '}
@@ -524,12 +598,69 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
             <span> Last push: {new Date(githubLastPushAt).toLocaleString()}.</span>
           )}
         </p>
+        {review ? (
+          <div className="rounded-lg border border-line bg-app/40">
+            <button
+              type="button"
+              onClick={() => setReviewOpen((v) => !v)}
+              aria-expanded={reviewOpen}
+              disabled={changeRows.length === 0}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left disabled:cursor-default"
+            >
+              <Chevron open={reviewOpen} dim={changeRows.length === 0} />
+              <span className="text-xs font-medium text-fg">
+                {changeRows.length === 0
+                  ? `Up to date with ${githubRepo}`
+                  : `${changeRows.length} ${changeRows.length === 1 ? 'change' : 'changes'} to review`}
+              </span>
+              {changeRows.length > 0 && (
+                <span className="text-caption text-fg-faint">{describeCounts(totals)}</span>
+              )}
+              {reviewBusy && <span className="ml-auto w-2.5 h-2.5 rounded-full border border-fg-faint border-t-transparent animate-spin" />}
+            </button>
+            {reviewOpen && changeRows.length > 0 && (
+              <ul className="flex flex-col border-t border-line">
+                {changeRows.map((r) => (
+                  <li key={r.label} className="border-b border-line last:border-b-0">
+                    {r.changes.length === 1 ? (
+                      <div className="flex items-center justify-between gap-3 px-3 py-1.5">
+                        <code className="min-w-0 truncate font-mono text-caption text-fg">{r.label}</code>
+                        <KindTag kind={r.changes[0].kind} />
+                      </div>
+                    ) : (
+                      <details className="group">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-1.5 [&::-webkit-details-marker]:hidden">
+                          <code className="min-w-0 truncate font-mono text-caption text-fg">{r.label}</code>
+                          <span className="flex-shrink-0 text-caption text-fg-faint">
+                            {r.changes.length} files · {describeCounts(r.counts)}
+                          </span>
+                        </summary>
+                        <ul className="flex flex-col gap-0.5 px-3 pb-2 pl-6">
+                          {r.changes.map((c) => (
+                            <li key={c.path} className="flex items-center justify-between gap-3">
+                              <code className="min-w-0 truncate font-mono text-caption text-fg-muted">{c.path.slice(r.label.length)}</code>
+                              <KindTag kind={c.kind} />
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : reviewBusy ? (
+          <p className="text-xs text-fg-faint">Checking {githubRepo} for changes…</p>
+        ) : reviewError ? (
+          <p className="text-xs text-fg-faint">Could not compare with {githubRepo}. You can still push.</p>
+        ) : null}
         <button
           onClick={push}
           disabled={pushState === 'pushing'}
           className="self-start px-4 py-2 rounded-lg text-sm font-medium bg-fg text-app hover:opacity-90 disabled:opacity-40 transition-colors"
         >
-          {pushState === 'pushing' ? 'Pushing…' : pushState === 'done' ? '✓ Pushed — push again' : 'Push to GitHub'}
+          {pushState === 'pushing' ? 'Pushing…' : pushState === 'done' ? '✓ Pushed — push again' : changeRows.length > 0 ? 'Push changes' : 'Push to GitHub'}
         </button>
 
         {pushLog.length > 0 && (
@@ -571,12 +702,46 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
       {/* ── Step 4: Use it ── what the pushed files are for, readable before
           the first push too, so the steps above have a reason. */}
       <section className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setUseOpen((v) => !v)}
+          aria-expanded={useOpen}
+          aria-controls="github-use-it"
+          className="flex w-full items-center gap-2 text-left"
+        >
           <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
           <h3 className="text-sm font-semibold text-fg">4 · Use it in your project</h3>
-        </div>
-        <CodeHowTo kind="github" skillFolders={repoSkillFolders(projectName)} />
+          <span className="ml-auto"><Chevron open={useOpen} /></span>
+        </button>
+        {useOpen && (
+          <div id="github-use-it">
+            <CodeHowTo kind="github" skillFolders={repoSkillFolders(projectName)} />
+          </div>
+        )}
       </section>
     </motion.div>
   )
+}
+
+function Chevron({ open, dim = false }: { open: boolean; dim?: boolean }) {
+  return (
+    <svg
+      width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={`flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${dim ? 'text-fg-faint/40' : 'text-fg-muted'}`}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
+const KIND_STYLE: Record<ChangeKind, { label: string; cls: string }> = {
+  new: { label: 'New', cls: 'text-status-success' },
+  modified: { label: 'Modified', cls: 'text-status-warning' },
+  removed: { label: 'Removed', cls: 'text-status-danger' },
+}
+
+function KindTag({ kind }: { kind: ChangeKind }) {
+  const { label, cls } = KIND_STYLE[kind]
+  return <span className={`flex-shrink-0 text-caption ${cls}`}>{label}</span>
 }
