@@ -170,6 +170,36 @@ describe('commitFiles', () => {
     expect(tree.body!.tree).toContainEqual({ path: '.claude/skills/x/old.md', mode: '100644', type: 'blob', sha: null })
     expect((tree.body!.tree as { path: string }[]).map((t) => t.path)).not.toContain('src/keep.ts')
   })
+
+  it('starts an empty repo with one file, then commits everything at once', async () => {
+    // A repo made on GitHub without a README: no branch until the first write.
+    // A save is ~500 files, and one Contents PUT per file trips GitHub's limit
+    // of ~80 content writes a minute.
+    const many = Array.from({ length: 120 }, (_, i) => ({ path: `f/${i}.txt`, content: `${i}\n` }))
+    const files = [...many, ...FILES]
+    const good = await blobsOf(files)
+    let head: string | null = null
+    script((c) => {
+      if (c.path === '/repos/o/r') return json({ default_branch: 'main' })
+      if (c.path === '/repos/o/r/git/ref/heads/main') return head ? json({ object: { sha: head } }) : json({ message: 'Git Repository is empty.' }, 409)
+      if (c.path === '/repos/o/r/contents/README.md' && c.method === 'GET') return json({ message: 'This repository is empty.' }, 404)
+      if (c.path === '/repos/o/r/contents/README.md' && c.method === 'PUT') { head = 'seed'; return json({ commit: { sha: 'seed' } }, 201) }
+      if (c.path === '/repos/o/r/git/commits/seed') return json({ tree: { sha: 'tree0' } })
+      if (c.path === '/repos/o/r/git/trees' && c.method === 'POST') return json({ sha: 'tree1' })
+      if (c.path === '/repos/o/r/git/commits' && c.method === 'POST') return json({ sha: 'commit1' })
+      if (c.path === '/repos/o/r/git/refs/heads/main' && c.method === 'PATCH') { head = 'commit1'; return json({}) }
+      if (c.path === '/repos/o/r/git/trees/commit1?recursive=1') return json({ sha: 'tree1', tree: good })
+      return json({ message: `unexpected ${c.method} ${c.path}` }, 500)
+    })
+    const result = await commitFiles('t', 'o/r', files, 'msg')
+    expect(result).toEqual({ sha: 'commit1', branch: 'main', verified: files.length })
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/repos/o/r/contents/README.md'])
+    const tree = calls.find((c) => c.path === '/repos/o/r/git/trees' && c.method === 'POST')!
+    expect(tree.body).toMatchObject({ base_tree: 'tree0' })
+    expect((tree.body!.tree as unknown[]).length).toBe(files.length)
+    const commit = calls.find((c) => c.path === '/repos/o/r/git/commits' && c.method === 'POST')!
+    expect(commit.body).toMatchObject({ parents: ['seed'] })
+  })
 })
 
 describe('getFile', () => {

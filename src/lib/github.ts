@@ -263,8 +263,8 @@ function isNotFastForward(e: unknown): boolean {
  * push of the agent package (~80 files) is a handful of requests and one
  * commit, not one commit per file. Files under `prune` prefixes that this push
  * does not carry are deleted in the same commit — those folders mirror the
- * package. An empty repo (no branch yet) falls back to `pushFiles`, which
- * creates it.
+ * package. An empty repo (no branch yet) gets ONE file through the Contents
+ * API, which creates the branch, and then the same single commit as any repo.
  *
  * Then it READS THE BRANCH BACK (`verifyBranch`) and resolves only when every
  * file is there with the content that was sent. A push that resolves is a push
@@ -300,15 +300,21 @@ async function commitOnce(
   message: string,
   prune: string[],
 ): Promise<CommitResult> {
+  const readHead = async () => (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
   let head: string
+  let seeded = false
   try {
-    head = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
+    head = await readHead()
   } catch (e) {
-    if (!isEmptyRepoError(e)) throw e
-    await pushFiles(token, repo, files, message)
-    const verified = await verifyBranch(token, repo, branch, files)
-    const newHead = (await gh<{ object: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`)).object.sha
-    return { sha: newHead, branch, verified }
+    if (!isEmptyRepoError(e) || !files.length) throw e
+    // An empty repo (made on GitHub without a README) has no branch, and the
+    // Git Data API cannot build on nothing. One file through the Contents API
+    // creates the branch; everything goes in the one commit below. Writing
+    // every file that way was a commit per file — a save is ~500 files, and
+    // GitHub refuses more than ~80 content writes a minute.
+    await putFile(token, repo, files.find((f) => f.path === 'README.md') ?? files[0], message)
+    head = await readHead()
+    seeded = true
   }
   const base = (await gh<{ tree: { sha: string } }>(token, `/repos/${repo}/git/commits/${head}`)).tree.sha
   const keep = new Set(files.map((f) => f.path))
@@ -328,7 +334,7 @@ async function commitOnce(
   if (tree.sha === base) {
     // Nothing changed: no empty commit — but still prove the branch holds it.
     const verified = await verifyBranch(token, repo, branch, files, stale, head)
-    return { sha: null, branch, verified }
+    return { sha: seeded ? head : null, branch, verified }
   }
   const commit = await gh<{ sha: string }>(token, `/repos/${repo}/git/commits`, {
     method: 'POST',
