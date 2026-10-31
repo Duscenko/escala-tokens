@@ -97,7 +97,8 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > row's 12 tones AND replaces the board with that colour's map (`mappedColour` in
 > `ThemePreviewHub`, exclusive with the Contrast grid, Esc folds both). Two views,
 > `MapViewSwitch`: **Map** (`ColorRoleMapView`: Primitive → Groups → Roles → Application, wired
-> by `MapWires` from a 56rem board) and **On the board** (`ColorSpotlight`: the real board, lit
+> by `MapWires`, four columns at EVERY width — a narrow board scrolls sideways, never stacks:
+> owner's call after seeing the stacked version) and **On the board** (`ColorSpotlight`: the real board, lit
 > parts sharp with a selection outline, the rest behind a blurred scrim cut by a luminance mask;
 > hover = leader line + callout). Rules: a role belongs to a colour when its primitive IN THE
 > THEME ON SCREEN is one of the colour's families (`lib/colorRoleMap.ts`; refs name the slot

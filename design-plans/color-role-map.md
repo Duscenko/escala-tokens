@@ -30,6 +30,13 @@ itself) is read by NO role — `brandSolidPair` lands the primary button on 8.
 Next: phase 5 (in-place on the real board — motion skill first, reference
 https://token-galaxy.vercel.app/).
 
+## Layout revision (2026-10-31, owner)
+
+The narrow-board layout (Primitive and Groups as chip rows over stacked
+roles) is GONE: the owner did not want the map vertical. The graph keeps its
+four columns at every width (`min-w-[56rem]`) and a narrower board scrolls
+sideways; wires draw at every width. Container queries removed.
+
 ## Phase 5 — on the board (BUILT 2026-10-31)
 
 Built as designed below, with two corrections found in the browser:
