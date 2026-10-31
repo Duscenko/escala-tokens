@@ -80,14 +80,13 @@ import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../.
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, TYPE_ROLE_GROUPS, typeRolesInGroup, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { LockGlyph } from '../ui/icons'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME, discloseChip } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -1109,8 +1108,34 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   const panelId = `quick-edition-${foundationKey}`
   const ctx = useContext(EditionSwitchContext)
   open = open && !ctx?.collapsed
+  const sectionRef = useRef<HTMLElement>(null)
+  const wasOpen = useRef(open)
+  const reduce = useReducedMotion()
+  // A row opened from its header lands in view: once the row above has folded
+  // and this one has unfolded (EditionBody, 0.26s), the rail scrolls just
+  // enough to show the whole row, never past its header. Without it a row
+  // low in the list (Radius, Motion) opened under the panel's footer.
+  useEffect(() => {
+    const opened = open && !wasOpen.current
+    wasOpen.current = open
+    if (!opened) return
+    const timer = window.setTimeout(() => {
+      const section = sectionRef.current
+      if (!section) return
+      let scroller = section.parentElement
+      while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
+      if (!scroller) return
+      const view = scroller.getBoundingClientRect()
+      const row = section.getBoundingClientRect()
+      const below = row.bottom - view.bottom
+      const above = row.top - view.top
+      const delta = above < 0 ? above : below > 0 ? Math.min(below, above) : 0
+      if (delta) scroller.scrollBy({ top: delta, behavior: reduce ? 'auto' : 'smooth' })
+    }, reduce ? 0 : 280)
+    return () => window.clearTimeout(timer)
+  }, [open, reduce])
   return (
-    <section aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
+    <section ref={sectionRef} aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">
       <EditionRowHeader title={title} foundationKey={foundationKey} summary={summary} open={open} panelId={panelId} onReset={onReset} resetTarget={resetTarget} action={action} />
       {/* The body unfolds from its header and folds back into it: height +
           fade (`EditionBody`). */}
@@ -1151,11 +1176,11 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
 
 const CONTRAST_THUMB_STEPS = [3, 9, 12] as const
 
-function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
+function ContrastGridThumb({ tones, className = 'size-7 rounded-[5px]' }: { tones: readonly string[]; className?: string }) {
   return (
     <span
       aria-hidden
-      className="grid size-7 flex-shrink-0 grid-cols-3 gap-px overflow-hidden rounded-[5px] bg-line"
+      className={`grid flex-shrink-0 grid-cols-3 gap-px overflow-hidden bg-line ${className}`}
     >
       {tones.flatMap((bg, col) =>
         tones.map((fg, row) => (
@@ -1169,36 +1194,6 @@ function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
         )),
       )}
     </span>
-  )
-}
-
-/** The ONE way a row hides something: optional refinements under "Fine-tune",
- *  closed until asked for, its contents named on the line under the title.
- *  What a row is FOR never goes in here (Radius' three axes stay on screen). */
-function FineTune({ open, onToggle, contents, children }: {
-  open: boolean
-  onToggle: () => void
-  /** What opening it reveals, e.g. "Saturation · Brightness · Ramp contrast". */
-  contents: string
-  children: React.ReactNode
-}) {
-  const { t } = useI18n()
-  return (
-    <>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="group flex w-full min-w-0 items-center gap-2 text-left"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-caption font-medium text-fg">{t('Fine-tune')}</span>
-          <span className="block truncate text-mini text-fg-faint">{contents}</span>
-        </span>
-        <span className={discloseChip(open)}>{open ? t('Hide') : t('Show')}</span>
-      </button>
-      {open && <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">{children}</div>}
-    </>
   )
 }
 
@@ -1476,105 +1471,6 @@ function BaseUnitCard({
             : t('SM {sm}px · Control {md}px (base × 8 and × 10).', { sm: smPx, md: mdPx })}
         </p>
       )}
-    </div>
-  )
-}
-
-// The readout speaks ROLES, not scale steps: what a designer reads on screen is
-// a caption, a label, body copy, a heading and a display title — each one an
-// alias of some `text-*` / `display-*` step that can differ per platform and be
-// re-pointed in Variables · Font semantics. Each row resolves through the SAME
-// `resolveTypeStyle` the semantics table, Docs and the export use, at the
-// platform picked above the panel, so the three can never disagree.
-// Grouped exactly like Variables · Font semantics (Display · Heading · Body ·
-// Control, `TYPE_ROLE_GROUPS`), every catalogue role in catalogue order, so the
-// quick edit and the table list the same 15 roles under the same four names.
-/** A type role at a platform, through the theme's own role map. */
-function typeRoleStyle(typography: TypePrimitives & { roles?: object }, key: string, platform: string) {
-  const cut = asTypeViewport(platform)
-  const alias = mergeTypeRoles(typography.roles)[key]?.[cut] ?? TYPE_ROLE_BY_KEY[key]?.[cut]
-  return alias ? resolveTypeStyle(alias, typography) : null
-}
-
-// The sample is a picture of the RELATIONSHIP between roles, not their size —
-// a 60px display can't sit in a 287px rail. Log-mapped onto 11–26px so the ratio
-// between neighbours survives (12 → 14 → 16 still read as steps, 36 → 60 as a
-// jump) where a linear clamp flattened every heading to the same cap.
-function readoutGlyphPx(px: number): number {
-  if (!px) return 11
-  const t = (Math.log(px) - Math.log(12)) / (Math.log(72) - Math.log(12))
-  return Math.round((11 + 15 * Math.min(1, Math.max(0, t))) * 10) / 10
-}
-
-const PLATFORM_LABEL: Record<string, string> = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' }
-
-/**
- * Type scale as ONE control — the same "move the whole ramp together" idea as
- * Sizes' base unit, so editing a label size is a scrub, not a trip to Advanced
- * type. Five curated density modes (`TYPE_SCALE_MODES`); dragging regenerates
- * every `text-*`/`display-*` size AND its line-height at the mode's factor, so
- * the vertical rhythm follows, and letter spacing with it (it is derived from
- * the size). Hand-editing a single size in Advanced makes the mode read
- * "Custom" — the slider still snaps you back onto a curated scale.
- *
- * Below the slider, the four role groups of Font semantics, one row per role:
- * a sample in the role's own family and weight, and size / line height /
- * letter spacing at the previewed platform.
- */
-function TypeScaleCard({
-  typography, platform,
-}: {
-  typography: TypePrimitives & { roles?: object }
-  platform: string
-}) {
-  const { t } = useI18n()
-  const groups = TYPE_ROLE_GROUPS.map((group) => ({
-    ...group,
-    rows: typeRolesInGroup(group.id).map((role) => ({ key: role.key, label: role.label, style: typeRoleStyle(typography, role.key, platform) })),
-  }))
-  return (
-    <div>
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-mini text-fg-faint">{t(PLATFORM_LABEL[asTypeViewport(platform)])}</span>
-      </div>
-      <div className="mt-1.5 flex flex-col gap-2">
-        {groups.map((group) => (
-          <section key={group.id} aria-label={t(group.label)} className="rounded-lg border border-line">
-            <div className="flex items-center justify-between px-2.5 pt-2 pb-1">
-              <span className="text-micro font-semibold uppercase tracking-wide text-fg-faint">{t(group.label)}</span>
-              <span className="font-mono text-micro tabular-nums text-fg-faint">{group.rows.length}</span>
-            </div>
-            <ul className="flex flex-col">
-              {group.rows.map(({ key, label, style }) => (
-                <li key={key} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0" title={style ? `text-${key} · ${style.family} ${style.weight}` : undefined}>
-                  <span
-                    aria-hidden
-                    className="w-9 flex-shrink-0 leading-none text-fg"
-                    style={style ? {
-                      fontFamily: fontStack(style.family),
-                      fontWeight: style.weight,
-                      fontSize: readoutGlyphPx(parseFloat(style.size) || 0),
-                      letterSpacing: style.letterSpacing,
-                    } : undefined}
-                  >
-                    Aa
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-mini text-fg-muted">{t(label)}</span>
-                  <span className="flex-shrink-0 font-mono text-micro tabular-nums text-fg-faint">
-                    {style ? (
-                      <>
-                        <span className="text-fg-muted">{parseFloat(style.size) || 0}</span>
-                        {' / '}{parseFloat(style.lineHeight) || 0}
-                        {' / '}{parseFloat(style.letterSpacing) || 0}
-                      </>
-                    ) : '—'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2094,7 +1990,6 @@ export default function ThemeQuickSettingsRail({
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Font's role table is the heaviest thing in the rail: closed until asked,
   // like Colour's Fine-tune, so a row opens to its quick controls only.
-  const [typeRolesOpen, setTypeRolesOpen] = useState(false)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   // Which colour role the Color edition's slider is pointed at.
   const [colorRole, setColorRole] = useState<ColorRoleId>('accent')
@@ -2821,13 +2716,30 @@ export default function ThemeQuickSettingsRail({
           title="Color"
           foundationKey="color"
           open={activePanel === 'color'}
-          summary={<><span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-full border border-line" style={{ background: liveAccent }} />{liveAccent.toUpperCase()}</>}
+          summary={<><span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-[3px] border border-line" style={{ background: liveAccent }} />{liveAccent.toUpperCase()}</>}
           flush
           onReset={colorReset}
           resetTarget={rowResetTarget}
           onOpenAdvanced={onOpenAdvanced}
           showAdvancedEdition={showAdvancedEdition}
           advancedDisabled={editionLocked}
+          // The Contrast grid is a check, not a setting: a small toggle on the
+          // header (beside Reset and the chevron) instead of a row in the body,
+          // so the colours stay short and Font · Radius sit closer below.
+          action={(
+            <button
+              type="button"
+              onClick={() => onContrastOpenChange?.(!contrastOpen)}
+              aria-pressed={contrastOpen}
+              aria-label={contrastOpen ? `${t('Hide')} ${t('Contrast grid')}` : `${t('Show')} ${t('Contrast grid')}`}
+              title={t('Contrast grid')}
+              className={`grid h-6 w-6 place-items-center rounded-md transition-[background-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55 ${
+                contrastOpen ? 'bg-elevated ring-1 ring-accent-ui' : 'opacity-80 hover:bg-elevated hover:opacity-100'
+              }`}
+            >
+              <ContrastGridThumb tones={contrastThumbTones} className="size-4 rounded-[3px]" />
+            </button>
+          )}
           // ONE row on every plan: "Themes this brand ships" below. A brand
           // that ships one theme is edited in it. A brand that ships both is
           // shown in the theme it opens on, and the "Opens on ⇄" line under
@@ -2899,23 +2811,8 @@ export default function ThemeQuickSettingsRail({
             </div>
 
             {/* Fine-tune moved into each colour's picker (icons: Saturation ·
-                Brightness · Ramp contrast). The Contrast grid stays here: it
-                opens the board overlay, not a colour. */}
-            <div className={`flex flex-col ${RAIL_BLOCK}`}>
-              <button
-                type="button"
-                onClick={() => onContrastOpenChange?.(!contrastOpen)}
-                aria-pressed={contrastOpen}
-                aria-expanded={contrastOpen}
-                className="group flex w-full min-w-0 items-center gap-2 text-left"
-              >
-                <ContrastGridThumb tones={contrastThumbTones} />
-                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
-                <span className={discloseChip(contrastOpen)}>
-                  {contrastOpen ? t('Hide') : t('Show')}
-                </span>
-              </button>
-            </div>
+                Brightness · Ramp contrast). The Contrast grid opens from the
+                card header (`action`). */}
           </div>
         </EditionCard>}
 
@@ -3009,15 +2906,6 @@ export default function ThemeQuickSettingsRail({
                 })}
               />
             </div>
-          </div>
-          <div className={`flex flex-col ${RAIL_BLOCK}`}>
-            <FineTune
-              open={typeRolesOpen}
-              onToggle={() => setTypeRolesOpen((open) => !open)}
-              contents={`${t('Type roles')} · ${t(previewViewport.charAt(0).toUpperCase() + previewViewport.slice(1))}`}
-            >
-              <TypeScaleCard typography={typography} platform={previewViewport} />
-            </FineTune>
           </div>
         </EditionCard>
           )

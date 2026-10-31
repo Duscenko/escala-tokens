@@ -185,7 +185,10 @@ const FOUNDATIONS: FoundationSection[] = [
     subtitle: 'The global primitive scale. Radius, spacing, sizes, stroke and grid all alias these numbers — nothing else holds a px.',
     Component: DimensionPrimitives,
     // A ruler: the one collection every length is measured against.
-    Icon: ic('M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4Z|M7.5 10.5 9 9|M10.5 13.5 12 12|M13.5 16.5 15 15', '1.8'),
+    // Drawn level, like `set-variables/dimension-variables.svg` (the rail's
+    // glyph): a diagonal ruler spanned the whole box and read larger and
+    // heavier than its neighbours.
+    Icon: ic('M4 7h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z|M6 7v3|M9 7v3|M12 7v5|M15 7v3|M18 7v3', '1.8'),
   },
   {
     key: 'radius',
@@ -514,6 +517,9 @@ function ExportPill({
   const [open, setOpen] = useState(false)
   const place = usePopoverPlacement(rootRef, open, { prefer: 200, min: 160, max: 360 })
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  // The row under the pointer or the keyboard: its description is the one the
+  // menu's foot reads out.
+  const [active, setActive] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -559,7 +565,8 @@ function ExportPill({
     { key: 'github', label: t('GitHub'), hint: t('Push tokens, CSS and Design skills to a repo.'), glyph: <GitHubGlyph size={14} />, go: onGithub },
     { key: 'more', label: t('More formats…'), hint: t('W3C, Escala JSON, per-collection files.'), glyph: <ExportIcon />, go: onMore },
   ]
-  const itemClass = `flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`
+  const itemClass = `flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-left transition-colors hover:bg-fg/8 focus-visible:bg-fg/8 ${EXPORT_FOCUS}`
+  const activeHint = items.find((item) => item.key === active)?.hint
 
   // Arrow keys move between rows; the first row takes focus on open.
   useEffect(() => {
@@ -607,15 +614,28 @@ function ExportPill({
             maxHeight: place.max,
           }}
         >
+          {/* Names only: the list scans at a glance. What a row does is read
+              in ONE line at the foot, for the row under the pointer or focus —
+              rows never grow under the cursor, so nothing shifts as it moves. */}
           {items.map((item) => (
-            <button key={item.key} type="button" role="menuitem" className={itemClass} onClick={() => pick(item.go)}>
-              <span className="mt-px grid h-4 w-4 flex-shrink-0 place-items-center text-fg">{item.glyph}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-caption font-medium text-fg">{item.label}</span>
-                <span className="block text-mini leading-snug text-fg-muted">{item.hint}</span>
-              </span>
+            <button
+              key={item.key}
+              type="button"
+              role="menuitem"
+              aria-describedby={`export-hint-${item.key}`}
+              className={itemClass}
+              onClick={() => pick(item.go)}
+              onPointerEnter={() => setActive(item.key)}
+              onFocus={() => setActive(item.key)}
+            >
+              <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">{item.glyph}</span>
+              <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{item.label}</span>
+              <span id={`export-hint-${item.key}`} className="sr-only">{item.hint}</span>
             </button>
           ))}
+          <p aria-hidden className="mt-1 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-mini leading-snug text-fg-muted">
+            {activeHint}
+          </p>
         </div>,
         document.body,
       )}
@@ -2749,7 +2769,6 @@ export default function Configurator() {
                 items={[...VARIABLE_FOUNDATIONS, ...FOUNDATIONS.filter((foundation) => ['shadow', 'icons'].includes(foundation.key))].map((foundation) => ({
                   key: foundation.key,
                   label: t(foundation.short),
-                  icon: foundation.key === 'dimensions' ? <foundation.Icon /> : undefined,
                 }))}
                 current={activeFoundation}
                 onSelect={selectWorkspaceFoundation}

@@ -305,8 +305,21 @@ function usePaletteLevel(): PaletteLevel {
   return useSyncExternalStore(subscribePaletteLevel, getPaletteLevel, getPaletteLevel)
 }
 
-/** Menu width, px: wide enough that no level's one-line hint wraps. */
-const LEVEL_MENU_W = 300
+/** Menu width, px: the names and their meter; the hint reads at the foot. */
+const LEVEL_MENU_W = 220
+
+/** How daring a level is, drawn: one, two or three rising bars. The three
+ *  options read as one scale before their names are read. */
+function LevelMeter({ level }: { level: PaletteLevel }) {
+  const on = PALETTE_LEVELS.indexOf(level) + 1
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden className="flex-shrink-0">
+      {[5, 8, 11].map((h, i) => (
+        <rect key={h} x={1 + i * 4.5} y={12.5 - h} width="3" height={h} rx="1" fill="currentColor" opacity={i < on ? 1 : 0.22} />
+      ))}
+    </svg>
+  )
+}
 /** Gap between the trigger and the menu, and the menu and the window edge. */
 const LEVEL_MENU_GAP = 6
 
@@ -330,9 +343,13 @@ export function RandomLevelPicker({ chevron = false }: {
   const trigger = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
   const options = useRef<(HTMLButtonElement | null)[]>([])
+  // The level under the pointer or focus; the foot reads out its hint (the
+  // chosen level's when neither is on a row).
+  const [active, setActive] = useState<PaletteLevel | null>(null)
 
   const close = (refocus = true) => {
     setOpen(false)
+    setActive(null)
     if (refocus) trigger.current?.focus()
   }
 
@@ -450,6 +467,7 @@ export function RandomLevelPicker({ chevron = false }: {
             bottom: place?.bottom,
             visibility: place ? 'visible' : 'hidden',
           }}
+          onPointerLeave={() => setActive(null)}
           className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST} ${chevron ? 'dark' : ''}`}
         >
           {PALETTE_LEVELS.map((id, i) => {
@@ -461,18 +479,20 @@ export function RandomLevelPicker({ chevron = false }: {
                 type="button"
                 role="option"
                 aria-selected={on}
+                aria-describedby={`random-level-hint-${id}`}
                 onClick={() => { writePaletteLevel(id); close() }}
-                className={`${SELECT_OPTION} grid ${chevron ? 'grid-cols-[auto_1fr]' : 'grid-cols-[1fr_auto]'} items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                onPointerEnter={() => setActive(id)}
+                onFocus={() => setActive(id)}
+                className={`${SELECT_OPTION} grid ${chevron ? 'grid-cols-[auto_auto_1fr]' : 'grid-cols-[auto_1fr_auto]'} items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
                 {chevron && (
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
                     <path d="M3.5 8.5l3 3 6-7" />
                   </svg>
                 )}
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-ui">{t(LEVEL_COPY[id].label)}</span>
-                  <span className="truncate text-caption font-normal text-fg-faint">{t(LEVEL_COPY[id].hint)}</span>
-                </span>
+                <span className={on ? 'text-accent-ui' : 'text-fg-faint'}><LevelMeter level={id} /></span>
+                <span className="min-w-0 truncate text-ui">{t(LEVEL_COPY[id].label)}</span>
+                <span id={`random-level-hint-${id}`} className="sr-only">{t(LEVEL_COPY[id].hint)}</span>
                 {!chevron && (
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
                     <path d="M3.5 8.5l3 3 6-7" />
@@ -481,6 +501,12 @@ export function RandomLevelPicker({ chevron = false }: {
               </button>
             )
           })}
+          {/* One line of WHAT a level does, for the row in reach — the list
+              itself stays three words long. Fixed at two lines' height so the
+              menu never resizes under the pointer. */}
+          <p aria-hidden className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
+            {t(LEVEL_COPY[active ?? level].hint)}
+          </p>
         </motion.div>,
         document.body,
       )}

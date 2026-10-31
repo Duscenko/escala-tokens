@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON } from './themeWorkspaceLayout'
 import { PLATFORM_FONT_DEFAULTS, fontFamilyFor, headingFontFamilyFor } from '../../lib/platformAxis'
 import ScrubInput from '../ui/ScrubInput'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
@@ -61,12 +63,24 @@ function ValueInput({ value, onChange, mono = true }: { value: string; onChange:
 
 // ── Google Font picker popover ──────────────────────────────────────────────
 
+const FONT_MENU_W = 288
+const FONT_MENU_GAP = 6
+/** List inset (p-1) + option inset (px-2.5): the menu shifts left by this so
+ *  the family names line up with the trigger's text. */
+const FONT_MENU_INSET = 14
+
+/** Portaled to <body> and placed `fixed` off its trigger: inside the table
+ *  cell it was clipped by the scroll column and spilled over the name column.
+ *  Opens below, or above when there is more room there, clamped to the window. */
 function FontPickerPopover({
+  anchor,
   value,
   onSelect,
   onClose,
   onAddFont,
 }: {
+  /** The family button it drops from. */
+  anchor: RefObject<HTMLElement | null>
   value: string
   onSelect: (family: string) => void
   onClose: () => void
@@ -78,6 +92,36 @@ function FontPickerPopover({
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const [place, setPlace] = useState<{ left: number; top?: number; bottom?: number; maxList: number } | null>(null)
+  const [cursor, setCursor] = useState(-1)
+  const searchRef = useRef<HTMLInputElement>(null)
+  // Focus the search once the menu is placed: it mounts hidden while it
+  // measures, and a hidden field cannot take focus (autoFocus missed it).
+  const placed = place != null
+  useEffect(() => { if (placed) searchRef.current?.focus() }, [placed])
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const r = anchor.current?.getBoundingClientRect()
+      if (!r) return
+      const left = Math.max(FONT_MENU_GAP, Math.min(r.left - FONT_MENU_INSET, window.innerWidth - FONT_MENU_W - FONT_MENU_GAP))
+      const below = window.innerHeight - r.bottom - FONT_MENU_GAP * 2
+      const above = r.top - FONT_MENU_GAP * 2
+      // Search (40px) and the add-font foot (44px) ride outside the list.
+      const chrome = 84
+      const down = below >= 320 || below >= above
+      const room = (down ? below : above) - chrome
+      setPlace({
+        left,
+        ...(down ? { top: r.bottom + FONT_MENU_GAP } : { bottom: window.innerHeight - r.top + FONT_MENU_GAP }),
+        maxList: Math.max(120, Math.min(288, room)),
+      })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+  }, [anchor])
 
   const q = query.trim().toLowerCase()
   // Families this system added come first, then the Google list.
@@ -106,7 +150,10 @@ function FontPickerPopover({
   // Close on outside click / Escape.
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as Node
+      // The trigger toggles itself; closing here too would reopen it.
+      if (rootRef.current?.contains(target) || anchor.current?.contains(target)) return
+      onClose()
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -117,51 +164,90 @@ function FontPickerPopover({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [onClose])
+  }, [onClose, anchor])
 
-  return (
+  // ↑ ↓ walk the list from the search field, Enter picks; the field keeps
+  // focus so typing never stops.
+  const options = q && !exact ? [query.trim(), ...matches] : matches
+  const onSearchKey = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const n = options.length
+      if (!n) return
+      setCursor((at) => {
+        const next = e.key === 'ArrowDown' ? (at + 1) % n : (at - 1 + n) % n
+        listRef.current?.querySelectorAll('[data-option]')[next]?.scrollIntoView({ block: 'nearest' })
+        return next
+      })
+    } else if (e.key === 'Enter' && cursor >= 0 && options[cursor]) {
+      e.preventDefault()
+      onSelect(options[cursor])
+    }
+  }
+
+  return createPortal(
     <div
       ref={rootRef}
-      className="absolute right-2 top-full mt-1 z-30 w-72 rounded-xl border border-line bg-app shadow-xl overflow-hidden"
+      role="dialog"
+      aria-label="Choose a font family"
+      className={`fixed z-[70] flex flex-col overflow-hidden ${SELECT_LIST} !p-0`}
+      style={{
+        width: FONT_MENU_W,
+        left: place?.left ?? -9999,
+        top: place?.top,
+        bottom: place?.bottom,
+        visibility: place ? 'visible' : 'hidden',
+      }}
     >
-      <div className="flex items-center gap-2 px-3 h-10 border-b border-line">
+      <div className="flex items-center gap-2 px-3 h-10 flex-shrink-0 border-b border-line">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
           <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
           <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
         <input
-          autoFocus
+          ref={searchRef}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setCursor(-1) }}
+          onKeyDown={onSearchKey}
           placeholder="Search Google Fonts…"
+          aria-label="Search Google Fonts"
           className="flex-1 min-w-0 bg-transparent text-ui text-fg placeholder:text-fg-faint outline-none"
         />
       </div>
-      <div ref={listRef} className="max-h-72 overflow-y-auto py-1">
+      <div ref={listRef} role="listbox" aria-label="Font families" className="flex flex-col gap-0.5 overflow-y-auto overscroll-contain p-1" style={{ maxHeight: place?.maxList ?? 288 }}>
         {q && !exact && (
           <button
+            type="button"
+            data-option
             onClick={() => onSelect(query.trim())}
-            className="w-full flex items-center gap-2 px-3 py-2 text-left text-ui text-fg-muted hover:bg-elevated/60 transition-colors"
+            onPointerEnter={() => setCursor(0)}
+            className={`${SELECT_OPTION} flex items-center gap-2 text-ui ${cursor === 0 ? 'bg-surface text-fg' : SELECT_OPTION_OFF}`}
           >
             <span className="text-fg-faint">Use</span>
             <span className="font-medium text-fg" style={{ fontFamily: fontStack(query.trim()) }}>“{query.trim()}”</span>
           </button>
         )}
-        {matches.map((f) => {
+        {matches.map((f, i) => {
           const active = f === value
+          const at = (q && !exact ? 1 : 0) + i
           return (
             <button
               key={f}
+              type="button"
+              role="option"
+              aria-selected={active}
+              data-option
               data-family={f}
               onClick={() => onSelect(f)}
+              onPointerEnter={() => setCursor(at)}
               style={{ fontFamily: stackOf(f) }}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[15px] transition-colors ${
-                active ? 'bg-fg/10 text-fg' : 'text-fg hover:bg-elevated/60'
+              className={`${SELECT_OPTION} flex items-center justify-between gap-2 text-ui ${
+                active ? SELECT_OPTION_ON : cursor === at ? 'bg-surface text-fg' : SELECT_OPTION_OFF
               }`}
             >
               <span className="truncate">{f}</span>
               {active && (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-accent-ui" aria-hidden>
                   <path d="M2.5 7.5l3 3 6-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
@@ -172,10 +258,11 @@ function FontPickerPopover({
           <p className="px-3 py-6 text-center text-ui text-fg-faint">No fonts</p>
         )}
       </div>
-      <div className="border-t border-line p-1">
+      <div className="flex-shrink-0 border-t border-line p-1">
         <AddFontButton onOpen={() => { onClose(); onAddFont() }} />
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -240,6 +327,7 @@ export default function Step4_Typography({
 
   const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
   const [pickerRole, setPickerRole] = useState<'display' | 'body' | null>(null)
+  const pickerAnchor = useRef<HTMLButtonElement>(null)
   const [addFontFor, setAddFontFor] = useState<'display' | 'body' | null>(null)
   const query = externalQuery ?? ''
 
@@ -319,6 +407,10 @@ export default function Step4_Typography({
               </div>
               <div className={`${valueCell} relative`}>
                 <button
+                  ref={pickerRole === r.role ? pickerAnchor : undefined}
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded={pickerRole === r.role}
                   onClick={() => setPickerRole(pickerRole === r.role ? null : r.role)}
                   className="flex items-center gap-1.5 w-full text-left text-ui text-fg hover:text-fg transition-colors"
                 >
@@ -329,6 +421,7 @@ export default function Step4_Typography({
                 </button>
                 {pickerRole === r.role && (
                   <FontPickerPopover
+                    anchor={pickerAnchor}
                     value={family}
                     onClose={() => setPickerRole(null)}
                     onSelect={(f) => { setFamily(r.role, f); loadGoogleFont(f); setPickerRole(null) }}
