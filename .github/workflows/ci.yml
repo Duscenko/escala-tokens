@@ -26,6 +26,27 @@ jobs:
       - run: npm test
       - run: npm run eval
 
+  # The export watchdog (design-plans/export-watchdog.md): CSS, agent context,
+  # tokens.json and the plugin payload must agree, value for value. Its own
+  # check so a red export is named as such, and the report is kept either way.
+  export-audit:
+    name: export audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:exports
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-audit
+          path: reports/export-audit.*
+          if-no-files-found: ignore
+
   build:
     name: build
     runs-on: ubuntu-latest
