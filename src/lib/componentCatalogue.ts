@@ -1291,3 +1291,13 @@ export const ESSENTIAL_COMPONENT_KEYS = [
   'Sonner',
   'Tabs',
 ] as const
+
+/** The components a system SELECTED (`atoms` / `selectedComponents`), known to
+ *  the catalogue; none selected = the essentials. Documentation (Design skills,
+ *  templates, contracts) covers the WHOLE catalogue and uses this only to mark
+ *  "in this system": shipping 13 of 73 left people asking where the rest were. */
+export function selectedComponentKeys(atoms: readonly string[] | undefined): string[] {
+  const known = new Set(COMPONENT_KEYS)
+  const picked = (atoms ?? []).filter((k) => known.has(k))
+  return picked.length ? picked : [...ESSENTIAL_COMPONENT_KEYS]
+}

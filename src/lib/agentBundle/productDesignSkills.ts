@@ -7,7 +7,7 @@
 // agentContextAudit.test.ts fail the moment a skill cites a name that does not
 // exist.
 
-import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
+import { COMPONENTS, COMPONENT_KEYS, selectedComponentKeys } from '../componentCatalogue'
 import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
 import { RADIUS_GROUPS } from '../layoutTokens'
 import { recipeCss, recipeCssVars } from '../recipeStyles'
@@ -31,10 +31,10 @@ function slugOf(project: string): string {
   return project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'design-system'
 }
 
-/** Same rule as the code templates: the selected components, else the essentials. */
-export function designSkillComponents(json: TokenJSON): string[] {
-  const atoms = (json.atoms ?? []).filter((k) => COMPONENT_RECIPES[k])
-  return atoms.length ? atoms : ESSENTIAL_COMPONENT_KEYS.filter((k) => COMPONENT_RECIPES[k])
+/** Every catalogue component with a recipe — the whole catalogue. Which ones
+ *  the system selected is marked, not filtered (`selectedComponentKeys`). */
+export function designSkillComponents(): string[] {
+  return COMPONENT_KEYS.filter((k) => COMPONENT_RECIPES[k])
 }
 
 export function componentBuildPath(key: string): string {
@@ -50,9 +50,10 @@ export const RECIPES_CSS_PATH = 'skills/component-build/react/recipes.css'
 export function buildDesignSkillFiles(json: TokenJSON): AgentBundleFile[] {
   const project = projectOf(json)
   const slug = slugOf(project)
-  const keys = designSkillComponents(json)
+  const keys = designSkillComponents()
+  const selected = new Set(selectedComponentKeys(json.atoms))
   return [
-    { path: 'skills/component-build/SKILL.md', text: componentBuildSkill(project, slug, keys) },
+    { path: 'skills/component-build/SKILL.md', text: componentBuildSkill(project, slug, keys, selected) },
     ...keys.map((key) => ({ path: componentBuildPath(key), text: componentBuildFile(json, key) })),
     ...keys.map((key) => ({ path: componentReactPath(key), text: componentReactFile(key) })),
     { path: RECIPES_CSS_PATH, text: recipesCss(keys) },
@@ -102,13 +103,13 @@ function bindingRows(sm: SlotMap, json: TokenJSON, roles: Set<string>, when?: st
 
 // ── component-build ────────────────────────────────────────────────────────
 
-function componentBuildSkill(project: string, slug: string, keys: string[]): string {
+function componentBuildSkill(project: string, slug: string, keys: string[], selected: Set<string>): string {
   const index = keys.map((key) => {
     const def = COMPONENTS.find((c) => c.key === key)
     const recipe = COMPONENT_RECIPES[key]
     const layers = figmaSlotsOf(recipe).map((s) => `\`${figmaLayerName(s)}\``).join(' · ')
     const rel = (p: string) => p.replace('skills/component-build/', '')
-    return `| ${mdCell(def?.label ?? key)} | ${def?.figmaSets.length ? def.figmaSets.map((s) => `\`${s}\``).join(', ') : '—'} | ${layers} | [Figma](${rel(componentBuildPath(key))}) · [React](${rel(componentReactPath(key))}) |`
+    return `| ${mdCell(def?.label ?? key)} | ${selected.has(key) ? 'Yes' : '—'} | ${def?.figmaSets.length ? def.figmaSets.map((s) => `\`${s}\``).join(', ') : '—'} | ${layers} | [Figma](${rel(componentBuildPath(key))}) · [React](${rel(componentReactPath(key))}) |`
   })
   return `---
 name: ${slug}-component-build
@@ -140,8 +141,10 @@ Every component is ONE recipe: the same table paints the Figma component set and
 
 ## Components
 
-| Component | Figma sets | Layers | Spec |
-|---|---|---|---|
+The whole catalogue (${keys.length}). **In this system** = selected in Escala, so the Figma library builds it; every other one is fully specified here and can be added in Escala.
+
+| Component | In this system | Figma sets | Layers | Spec |
+|---|---|---|---|---|
 ${index.join('\n')}
 `
 }
@@ -509,9 +512,10 @@ function screenComposeSkill(json: TokenJSON, project: string, slug: string, keys
     `| \`Grid/${g.label ?? g.key}\` | ${g.viewport ?? '—'} | ${g.width ?? '—'} | ${g.columns ?? '—'} | ${g.column ?? '—'} | ${g.gutter ?? '—'} | ${g.margin ?? '—'}${g.sidebar ? ` (sidebar ${g.sidebar})` : ''} |`)
   const typeRoles = [...new Set(SCREEN_PATTERNS.flatMap((p) => p.type.map((t) => t.role)))]
     .filter((r) => json.typography?.roles?.[r])
-  const link = (key: string) => keys.includes(key)
-    ? `[${key}](../component-build/components/${key.replace(/[^A-Za-z0-9]+/g, '')}.md)`
-    : `${key} (not in this system's selection: add it in Escala)`
+  const selected = new Set(selectedComponentKeys(json.atoms))
+  const link = (key: string) => !keys.includes(key)
+    ? key
+    : `[${key}](../component-build/components/${key.replace(/[^A-Za-z0-9]+/g, '')}.md)${selected.has(key) ? '' : ' (documented; not in this system\'s Figma selection — add it in Escala)'}`
   const axes = (a?: Record<string, string>) => (a ? ` · ${Object.entries(a).map(([k, v]) => `${k}=${v}`).join(', ')}` : '')
 
   const patterns = SCREEN_PATTERNS.map((p) => [

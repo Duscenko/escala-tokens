@@ -132,3 +132,27 @@ describe('a brand made in Dark', () => {
     expect(cover).not.toContain(s.primaryColor)
   })
 })
+
+describe('the whole component catalogue', () => {
+  it('documents every component, marks the selection, and links it from the README', async () => {
+    const { COMPONENTS } = await import('../componentCatalogue')
+    adopt('core-minimal')
+    useDesignStore.setState({ selectedComponents: ['Button', 'Input'] })
+    const r = buildGithubPushFiles({ store: store(), publishSlug: 'x' })
+    const contracts = r.files.filter((f) => f.path.startsWith('contracts/components/'))
+    expect(contracts).toHaveLength(COMPONENTS.length)
+    const specs = r.skills.filter((f) => f.path.startsWith('.claude/') && f.path.includes('/component-build/components/'))
+    expect(specs).toHaveLength(COMPONENTS.length)
+    const index = JSON.parse(file(r, 'contracts/components.json'))
+    expect(index.components.filter((c: { selected: boolean }) => c.selected).map((c: { key: string }) => c.key).sort()).toEqual(['Button', 'Input'])
+    expect(r.prune).toContain('contracts/components/')
+    // README: one row per component, every link pointing at a file the push writes
+    const rows = r.readme.split('\n').filter((l) => /\| \[Contract\]\(/.test(l))
+    expect(rows).toHaveLength(COMPONENTS.length)
+    const written = new Set([...r.files, ...r.skills].map((f) => f.path))
+    for (const row of rows) {
+      for (const [, href] of row.matchAll(/\]\(([^)]+)\)/g)) expect(written.has(href.replace(/%20/g, ' ')), href).toBe(true)
+    }
+    expect(rows.find((l) => l.startsWith('| Button |'))).toContain('| Yes |')
+  })
+})

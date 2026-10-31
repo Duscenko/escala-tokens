@@ -274,6 +274,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > found". Locked by `githubCommit.test.ts`; `agentContextAudit`'s GitHub mock now serves the
 > read-back too (a new mock must).
 
+> **UPDATE (2026-10-31): the package documents the WHOLE component catalogue (owner's call).**
+> Design skills (`component-build/components|react/*.md`, `recipes.css`), the `.tsx` templates
+> and the contracts (`contracts/components/*.json` + `components.json`) cover all catalogue
+> components (73), not the system's `atoms`. Shipping only the 13 selected read as "where are
+> the others?". The selection is a FLAG, not a filter: `selectedComponentKeys(atoms)`
+> (`componentCatalogue.ts`, none selected = the essentials) marks "In this system" in
+> component-build's index, `selected` in every contract and the index, and the README.
+> The web push now writes the contracts too (from `buildRepoFiles`, so web and plugin ship
+> the same files; `contracts/components/` is pruned), and its README "Components" section is
+> a table of every component linking its Figma spec, React guide and contract. A push is
+> ~550 files (~2 MB) in ONE commit. `designSkillComponents()` / `contractKeys()` /
+> `buildTemplateFiles()` take no argument any more: the catalogue does not depend on the brand.
+
 > **UPDATE (2026-10-31, audit of a real push): BOTH appearances, everywhere a brand ships.**
 > Audited `Duscenko/ds-test-31-oct` (a brand made in Dark) against the editor:
 > - **`variables.css` carries each appearance's OWN primitive ramps.** It used to write the

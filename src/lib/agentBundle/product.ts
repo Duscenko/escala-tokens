@@ -31,7 +31,7 @@ export function buildAgentProductFiles(json: TokenJSON, opts: AgentBundleOptions
     ...skill.files,
     ...buildTaskSkillFiles(json),
     ...buildDesignSkillFiles(json),
-    ...buildTemplateFiles(json),
+    ...buildTemplateFiles(),
     buildCheckerFile(json, stamp),
   ]
   return { name: skillName(project), files }

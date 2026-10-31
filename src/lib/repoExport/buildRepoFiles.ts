@@ -153,7 +153,7 @@ export function buildRepoFiles(input: TokenJSON, opts: RepoBuildOptions = {}): R
   if (opts.css) files.push({ path: 'variables.css', content: opts.css.endsWith('\n') ? opts.css : `${opts.css}\n` })
   if (opts.readme !== false) files.push({ path: 'README.md', content: buildReadme(json, project, opts, skills.prefixes) })
 
-  files.push({ path: 'contracts/README.md', content: buildContractsReadme(project, contractKeys(json).length) })
+  files.push({ path: 'contracts/README.md', content: buildContractsReadme(project, contractKeys().length) })
   files.push({ path: 'contracts/naming.md', content: buildNamingMd(json, project) })
   files.push(...buildComponentContracts(json, opts.figma))
   if (opts.figma) files.push({ path: 'figma/manifest.json', content: stringify(opts.figma) })

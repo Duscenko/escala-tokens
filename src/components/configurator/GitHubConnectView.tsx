@@ -19,6 +19,7 @@ import { trackEvent } from '../../lib/analytics'
 import CodeHowTo from './CodeHowTo'
 import { README_MARKER, shouldWriteReadme } from '../../lib/repoExport'
 import { BRANDS_DIR, buildGithubPushFiles } from '../../lib/githubPushFiles'
+import { CONTRACTS_DIR } from '../../lib/repoExport'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -266,11 +267,14 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     })
     const files = [...build.files]
     const brandDirs = build.brands.length > 1 ? [`${BRANDS_DIR} (${build.brands.length} brands)`] : []
-    const perFolder = build.skills.length / Math.max(1, build.prune.length - 1)
+    const skillDirs = build.prune.filter((p) => p !== BRANDS_DIR && p !== CONTRACTS_DIR)
+    const perFolder = build.skills.length / Math.max(1, skillDirs.length)
+    const contracts = files.filter((f) => f.path.startsWith(CONTRACTS_DIR)).length
     setPushLog([
-      ...files.filter((f) => !f.path.startsWith(BRANDS_DIR)).map((f) => f.path),
+      ...files.filter((f) => !f.path.startsWith(BRANDS_DIR) && !f.path.startsWith('contracts/')).map((f) => f.path),
       ...brandDirs,
-      ...build.prune.filter((p) => p !== BRANDS_DIR).map((p) => `${p} (${perFolder} files)`),
+      `contracts/ (${contracts} components)`,
+      ...skillDirs.map((p) => `${p} (${perFolder} files)`),
     ])
     try {
       // Same rule as the Figma plugin (repoExport.shouldWriteReadme): README.md

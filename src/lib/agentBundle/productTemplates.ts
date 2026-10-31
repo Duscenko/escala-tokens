@@ -1,11 +1,10 @@
-import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS } from '../componentCatalogue'
+import { COMPONENTS, COMPONENT_KEYS } from '../componentCatalogue'
 import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, resolveRecipe, type SlotProps } from '../componentRecipes'
-import type { AgentBundleFile, TokenJSON } from './types'
+import type { AgentBundleFile } from './types'
 
-function keysToScaffold(json: TokenJSON): string[] {
-  const atoms = (json.atoms ?? []).filter(Boolean)
-  if (atoms.length) return atoms
-  return [...ESSENTIAL_COMPONENT_KEYS]
+/** The whole catalogue: a scaffold per component, selected or not. */
+function keysToScaffold(): string[] {
+  return [...COMPONENT_KEYS]
 }
 
 function fileName(key: string): string {
@@ -141,8 +140,10 @@ ${style}
 `
 }
 
-export function buildTemplateFiles(json: TokenJSON): AgentBundleFile[] {
-  return keysToScaffold(json).map((key) => ({
+/** One scaffold per catalogue component. The system's tokens don't change a
+ *  scaffold (it names variables only), so it takes none. */
+export function buildTemplateFiles(): AgentBundleFile[] {
+  return keysToScaffold().map((key) => ({
     path: `templates/component/${fileName(key)}`,
     text: templateFor(key),
   }))

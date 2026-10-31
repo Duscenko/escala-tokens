@@ -1,3 +1,4 @@
+import { COMPONENTS } from '../componentCatalogue'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -101,9 +102,12 @@ describe('buildRepoFiles', () => {
     const button = JSON.parse(map.get('contracts/components/Button.json')!)
     expect(button.figma.inFile).toEqual([{ name: 'Button', key: 'k1', nodeId: '1:2', page: '❖ Components · Button & Actions' }])
     expect(button.axes.length).toBeGreaterThan(0)
+    expect(button.selected).toBe(true)
+    // The WHOLE catalogue gets a contract; the system's pick is a flag, not a filter.
     const index = JSON.parse(map.get('contracts/components.json')!)
-    expect(index.components).toHaveLength(1)
-    expect(index.components[0].inFigma).toBe(true)
+    expect(index.components).toHaveLength(COMPONENTS.length)
+    expect(index.components.find((c: { key: string }) => c.key === 'Button')).toMatchObject({ selected: true, inFigma: true })
+    expect(index.components.find((c: { key: string }) => c.key === 'Slider')).toMatchObject({ selected: false, inFigma: false })
     expect(index.unknown).toEqual(['NotAComponent'])
     expect(JSON.parse(map.get('figma/manifest.json')!)).toEqual(MANIFEST)
   })

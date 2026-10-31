@@ -225,7 +225,7 @@ describe('component briefs', () => {
 
 describe('agent bundle templates', () => {
   it('every catalogue component scaffolds to TSX that parses, with no invented variable', () => {
-    const files = buildTemplateFiles({ atoms: COMPONENT_KEYS } as unknown as TokenJSON)
+    const files = buildTemplateFiles()
     expect(files.length).toBe(COMPONENT_KEYS.length)
     for (const f of files) {
       const out = ts.transpileModule(f.text, {
