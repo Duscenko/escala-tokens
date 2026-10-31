@@ -12,6 +12,7 @@ import { THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 import { InspectorPortal } from './WorkspaceInspector'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import {
   MY_THEME_FULL_ERROR,
   MY_THEME_HARD_CAP,
@@ -312,12 +313,9 @@ export function ThemeOptionsMenu({
     }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => {
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure, true)
-    }
+    return () => window.removeEventListener('resize', measure)
   }, [open, anchorRef])
+  useCloseOnAnchorScroll(open, anchorRef, onClose)
 
   useEffect(() => {
     if (!open) return

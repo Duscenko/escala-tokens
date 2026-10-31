@@ -21,6 +21,7 @@ import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState 
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
+import { useCloseOnAnchorScroll } from './useCloseOnAnchorScroll'
 
 export type PickerOption<T extends string> = {
   value: T
@@ -126,7 +127,8 @@ export function PickerField<T extends string>({
     if (refocus) triggerRef.current?.focus()
   }
 
-  // Measure on open, resize and any scroll (the inspector scrolls under it).
+  // Measure on open and resize. Scrolling the inspector under it closes it.
+  useCloseOnAnchorScroll(open, triggerRef, () => close(false))
   useLayoutEffect(() => {
     if (!open) return
     const measure = () => {
@@ -143,11 +145,7 @@ export function PickerField<T extends string>({
     }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => {
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure, true)
-    }
+    return () => window.removeEventListener('resize', measure)
   }, [open])
 
   useEffect(() => {

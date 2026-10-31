@@ -12,6 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { useI18n } from '../../../lib/i18n'
+import { useCloseOnAnchorScroll } from '../../ui/useCloseOnAnchorScroll'
 import { goToLogin, useAccess } from '../../../lib/access'
 import { useSavedBrandKeys } from '../../../lib/libraryStatus'
 import type { ThemeAppearance } from '../../../lib/themeModes'
@@ -88,12 +89,9 @@ export function BrandSelect({ brand, onSelect, appearance = 'inline' }: {
     }
     place()
     window.addEventListener('resize', place)
-    window.addEventListener('scroll', place, true)
-    return () => {
-      window.removeEventListener('resize', place)
-      window.removeEventListener('scroll', place, true)
-    }
+    return () => window.removeEventListener('resize', place)
   }, [open])
+  useCloseOnAnchorScroll(open, triggerRef, () => setOpen(false))
 
   useEffect(() => {
     if (!open) return

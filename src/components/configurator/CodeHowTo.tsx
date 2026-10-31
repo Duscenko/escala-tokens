@@ -5,6 +5,7 @@ import { useI18n } from '../../lib/i18n'
 import type { CodeFormatKey } from './ThemeCodeScopeRail'
 import { CHROME_CONTROL_ACTIVE } from './themeWorkspaceLayout'
 import { INSPECTOR_ID } from './WorkspaceInspector'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
 // "How to use it": the few steps between a file on screen and a product that
 // reads it. One list per destination (CSS file, agent context, GitHub repo),
@@ -159,12 +160,9 @@ export function CodeHowToButton({ kind, className = '', iconOnly = false }: { ki
     }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => {
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure, true)
-    }
+    return () => window.removeEventListener('resize', measure)
   }, [open])
+  useCloseOnAnchorScroll(open, anchorRef, () => setOpen(false))
 
   useEffect(() => {
     if (!open) return

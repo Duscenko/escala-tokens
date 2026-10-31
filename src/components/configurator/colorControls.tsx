@@ -11,6 +11,7 @@ import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralCuratedPalette, neutralTintSpec
 import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
@@ -759,9 +760,11 @@ export function ColorPickerPopover({
     const measure = () => { const r = anchor.current?.getBoundingClientRect(); if (r) setRect(r) }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+    return () => window.removeEventListener('resize', measure)
   }, [open, anchor, contained])
+  // A floating picker closes when the column holding its trigger scrolls; a
+  // docked one is not attached to the trigger and stays.
+  useCloseOnAnchorScroll(open && !contained, anchor, onClose)
 
   useEffect(() => {
     if (!open || contained) return

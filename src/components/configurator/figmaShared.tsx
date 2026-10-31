@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
 // ── Shared between FigmaSyncView and FigmaDownloadView ──────────────────────
 
@@ -108,16 +109,15 @@ function ClickInfo({ label, children }: { label: string; children: ReactNode }) 
       if (event.key === 'Escape') setOpen(false)
     }
     window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
       window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [open, updatePosition])
+  useCloseOnAnchorScroll(open, anchor, () => setOpen(false))
 
   return (
     <>

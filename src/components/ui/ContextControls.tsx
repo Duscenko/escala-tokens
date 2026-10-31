@@ -20,6 +20,7 @@ import {
 } from '../configurator/themeWorkspaceLayout'
 import { FIELD_NAME, FIELD_ROW } from './PickerField'
 import { SegmentHighlight } from './SegmentHighlight'
+import { useCloseOnAnchorScroll } from './useCloseOnAnchorScroll'
 
 // The filters every "context for agents" surface shares — Code's Agent
 // context, Variables' Copy context, a component page's Copy context. One set
@@ -295,8 +296,8 @@ export function ContextSizeNote({ markdown, className = '', showLines = true }: 
 const POPOVER_W = 340
 
 /** A popover anchored under `anchor`, right-aligned to it, portaled to <body>
- *  so a clipping card or scroll column can't cut it. Closes on outside click
- *  and Escape. */
+ *  so a clipping card or scroll column can't cut it. Closes on outside click,
+ *  Escape, and a scroll of whatever holds the anchor. */
 export function AnchoredPopover({
   anchor, open, onClose, children, label,
 }: {
@@ -320,12 +321,9 @@ export function AnchoredPopover({
     }
     place()
     window.addEventListener('resize', place)
-    window.addEventListener('scroll', place, true)
-    return () => {
-      window.removeEventListener('resize', place)
-      window.removeEventListener('scroll', place, true)
-    }
+    return () => window.removeEventListener('resize', place)
   }, [open, anchor])
+  useCloseOnAnchorScroll(open, anchor, onClose)
 
   useEffect(() => {
     if (!open) return

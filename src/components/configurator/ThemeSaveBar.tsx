@@ -19,6 +19,7 @@ import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { FigmaGlyph } from '../ui/icons'
 import { HintTip } from '../ui/HintTip'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
 /**
  * The three places a system ships to — the whole product's promise, in the
@@ -353,8 +354,9 @@ export function RandomLevelPicker({ chevron = false }: {
     if (refocus) trigger.current?.focus()
   }
 
-  // Measure on open and keep in step with resize and scroll (the inspector
-  // column scrolls under it).
+  // Measure on open and keep in step with resize. Scrolling the column under
+  // the trigger closes it.
+  useCloseOnAnchorScroll(open, trigger, () => close(false))
   useLayoutEffect(() => {
     if (!open) return
     const measure = () => {
@@ -375,8 +377,7 @@ export function RandomLevelPicker({ chevron = false }: {
     }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+    return () => window.removeEventListener('resize', measure)
   }, [open, chevron])
 
   // Focus the selected level when the menu opens; outside click closes it.

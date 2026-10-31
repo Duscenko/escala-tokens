@@ -39,6 +39,7 @@ import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import {
   themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor,
   nextBrandExtraRank, brandExtraRankOf, familyDisplayLabel, BRAND_EXTRA_LABEL,
@@ -328,17 +329,17 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
   // absolutely-positioned panel is CLIPPED at that container's bottom edge
   // (measured: a ~340px menu overflows on any normal window height). Same
   // problem — and same fix — as the family picker below: portal it to <body>
-  // and position `fixed` off the button's measured rect, re-measured on scroll
-  // (capture, so the table's own scroll counts) and resize.
+  // and position `fixed` off the button's measured rect, re-measured on
+  // resize. Scrolling the table closes it rather than dragging it along.
   const [rect, setRect] = useState<DOMRect | null>(null)
   useEffect(() => {
     if (!open) { setRect(null); return }
     const measure = () => { const r = ref.current?.getBoundingClientRect(); if (r) setRect(r) }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+    return () => window.removeEventListener('resize', measure)
   }, [open])
+  useCloseOnAnchorScroll(open, ref, () => setOpen(false))
 
   useEffect(() => {
     if (!open) return

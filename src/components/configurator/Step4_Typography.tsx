@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON } from './themeWorkspaceLayout'
 import { PLATFORM_FONT_DEFAULTS, fontFamilyFor, headingFontFamilyFor } from '../../lib/platformAxis'
 import ScrubInput from '../ui/ScrubInput'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
@@ -71,7 +72,9 @@ const FONT_MENU_INSET = 14
 
 /** Portaled to <body> and placed `fixed` off its trigger: inside the table
  *  cell it was clipped by the scroll column and spilled over the name column.
- *  Opens below, or above when there is more room there, clamped to the window. */
+ *  Opens below, or above when there is more room there, clamped to the window.
+ *  Scrolling the table closes it (`useCloseOnAnchorScroll`): following the
+ *  trigger slid the menu over the sticky headers. */
 function FontPickerPopover({
   anchor,
   value,
@@ -119,9 +122,9 @@ function FontPickerPopover({
     }
     measure()
     window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+    return () => window.removeEventListener('resize', measure)
   }, [anchor])
+  useCloseOnAnchorScroll(true, anchor, onClose)
 
   const q = query.trim().toLowerCase()
   // Families this system added come first, then the Google list.

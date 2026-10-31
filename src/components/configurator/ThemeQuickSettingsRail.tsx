@@ -91,6 +91,7 @@ import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 import { PickerField } from '../ui/PickerField'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
 import { MotionPreview, motionSummary } from './MotionPreview'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
@@ -693,12 +694,10 @@ function RailTooltip({ children, label, tooltipId, clickOnly = false }: { childr
   useEffect(() => {
     if (!position) return
     window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
+    return () => window.removeEventListener('resize', updatePosition)
   }, [position, updatePosition])
+  // Like HintTip: scrolling the rail hides the hint instead of dragging it.
+  useCloseOnAnchorScroll(position != null, anchor, hide)
 
   useEffect(() => {
     if (!clickOnly || !position) return
