@@ -2,3 +2,4 @@ export { buildRepoFiles, repoCommitMessage, shouldWriteReadme, README_MARKER, SC
 export { buildComponentContracts, contractKeys, contractFileName, COMPONENT_CONTRACT_FORMAT, CONTRACTS_DIR } from './componentContracts'
 export { FIGMA_MANIFEST_FORMAT } from './types'
 export type { RepoFile, RepoBuild, RepoBuildOptions, FigmaManifest, FigmaComponentEntry } from './types'
+export { leadBrandJson, leadBrandKey } from './leadBrandJson'

@@ -5,9 +5,8 @@ import { useFreeTier } from '../../lib/access'
 import { freeScopeFor, shippedBundle } from '../../lib/freeExport'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { slugify } from '../../lib/utils'
-import { ESCALA_SYSTEM_PATH, parseEscalaSystem, serializeEscalaSystem } from '../../lib/escalaSystem'
-import { repoSkillFiles, repoSkillFolders } from '../../lib/agentBundle/repoSkills'
-import type { TokenJSON } from '../../lib/agentBundle/types'
+import { ESCALA_SYSTEM_PATH, parseEscalaSystem } from '../../lib/escalaSystem'
+import { repoSkillFolders } from '../../lib/agentBundle/repoSkills'
 import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
 import {
   getStoredToken, setStoredToken, clearStoredToken, isRejectedTokenError,
@@ -19,6 +18,7 @@ import { GitHubGlyph } from '../ui/icons'
 import { trackEvent } from '../../lib/analytics'
 import CodeHowTo from './CodeHowTo'
 import { README_MARKER, shouldWriteReadme } from '../../lib/repoExport'
+import { BRANDS_DIR, buildGithubPushFiles } from '../../lib/githubPushFiles'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -255,38 +255,33 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
     setPushResult(null)
     setPushLog([])
     const live = useDesignStore.getState()
-    const shipped = shippedBundle(live, free ? freeScopeFor(live, theme, appearance) : undefined)
-    const files = [
-      { path: 'tokens.json', content: shipped.tokens },
-      { path: 'variables.css', content: shipped.css },
-      {
-        path: ESCALA_SYSTEM_PATH,
-        content: serializeEscalaSystem({
-          snapshot: captureSnapshot(useDesignStore.getState()),
-          publishSlug: syncProjectId(),
-          publishClaim: getStoredClaim(syncProjectId()) ?? undefined,
-        }),
-      },
-    ]
-    // Design skills: the agent package, written where an agent reads it
-    // (`.claude/skills/<system>/`, `.cursor/skills/<system>/`), generated from
-    // the tokens.json pushed beside it. Both folders mirror the package.
-    const skills = repoSkillFiles(JSON.parse(shipped.tokens) as TokenJSON, {
-      projectFallback: live.projectName,
-      iconKey: live.iconAiSource,
+    // The brand's own files — the same snapshot the CSS / Agent doors and the
+    // Code tab ship (lib/githubPushFiles). The raw store's root is the system
+    // default (blue accent, Inter), not the brand.
+    const build = buildGithubPushFiles({
+      store: live,
+      publishSlug: syncProjectId(),
+      publishClaim: getStoredClaim(syncProjectId()) ?? undefined,
+      shipped: free ? shippedBundle(live, freeScopeFor(live, theme, appearance)) : undefined,
     })
-    const perFolder = skills.files.length / skills.prefixes.length
-    setPushLog([...files.map((f) => f.path), ...skills.prefixes.map((p) => `${p} (${perFolder} files)`)])
+    const files = [...build.files]
+    const brandDirs = build.brands.length > 1 ? [`${BRANDS_DIR} (${build.brands.length} brands)`] : []
+    const perFolder = build.skills.length / Math.max(1, build.prune.length - 1)
+    setPushLog([
+      ...files.filter((f) => !f.path.startsWith(BRANDS_DIR)).map((f) => f.path),
+      ...brandDirs,
+      ...build.prune.filter((p) => p !== BRANDS_DIR).map((p) => `${p} (${perFolder} files)`),
+    ])
     try {
       // Same rule as the Figma plugin (repoExport.shouldWriteReadme): README.md
       // is written only when there is none, Escala wrote it (the marker), or it
       // is GitHub's auto-init stub. A README someone wrote is never replaced.
       const existingReadme = await getFile(token, githubRepo, 'README.md')
       if (shouldWriteReadme(existingReadme)) {
-        files.splice(2, 0, { path: 'README.md', content: `${README_MARKER}\n${shipped.markdown}` })
+        files.splice(2, 0, { path: 'README.md', content: `${README_MARKER}\n${build.readme}` })
         setPushLog((log) => ['README.md', ...log])
       }
-      const result = await commitFiles(token, githubRepo, [...files, ...skills.files], `chore(tokens): update ${projectName} design tokens and Design skills`, skills.prefixes)
+      const result = await commitFiles(token, githubRepo, [...files, ...build.skills], `chore(tokens): update ${build.lead?.name ?? projectName} design tokens and Design skills`, build.prune)
       setPushResult(result)
       setGithubLastPushAt(new Date().toISOString())
       // A successful push is what "saves" a design system — upsert it into the
