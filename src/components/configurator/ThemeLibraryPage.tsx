@@ -43,7 +43,8 @@ import { AddBrandMenu } from './dashboard/OverviewPage'
 import { DEFAULT_DOC_KEY } from './dashboard/dashboardData'
 import type { DocsExits } from './docs/getStarted'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
+import { DASH_DOCS, DASH_PAGE_LABEL, type DashPage } from './dashboard/dashboardData'
+import { requestColourMap } from '../../lib/colourMapRequest'
 import { NavGroup, NavRow } from './dashboard/parts'
 import { otherDesignSystems } from '../../lib/savedSystemList'
 
@@ -162,13 +163,46 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes, onDeleteSyste
 
 /** Pins to the top of the Home card — same band as Theme preview's canvas
  *  header. Transparent fill; the file list scrolls under it. */
-function HomeStickyBar({ trail, action }: { trail: string; action?: ReactNode }) {
+function HomeStickyBar({ trail, crumbs, action }: {
+  trail: string
+  /** Below Brands: a way back. `back` returns to the first level; the last
+   *  crumb is the page on screen (reported: Docs had no way back). */
+  crumbs?: { back: { label: string; onClick: () => void }; trail: string[] }
+  action?: ReactNode
+}) {
+  const { t } = useI18n()
   return (
     <div
       className="flex flex-shrink-0 items-center gap-3 border-b border-line bg-transparent px-8 dark:border-white/[0.08]"
       style={{ height: INSPECTOR_TABS_H }}
     >
-      <h1 className="min-w-0 flex-1 truncate text-left text-title font-semibold text-fg">{trail}</h1>
+      {crumbs ? (
+        <nav aria-label={t('Breadcrumb')} className="flex min-w-0 flex-1 items-center gap-1.5 text-ui text-fg-faint">
+          <button
+            type="button"
+            onClick={crumbs.back.onClick}
+            className="-ml-1.5 inline-flex flex-shrink-0 items-center gap-1 rounded-md px-1.5 py-1 font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M7.5 2.5 4 6l3.5 3.5" />
+            </svg>
+            {crumbs.back.label}
+          </button>
+          {crumbs.trail.map((crumb, i) => {
+            const last = i === crumbs.trail.length - 1
+            return (
+              <span key={`${crumb}-${i}`} className="flex min-w-0 items-center gap-1.5">
+                <span aria-hidden>/</span>
+                {last
+                  ? <h1 aria-current="page" className="min-w-0 truncate text-title font-semibold text-fg">{crumb}</h1>
+                  : <span className="truncate">{crumb}</span>}
+              </span>
+            )
+          })}
+        </nav>
+      ) : (
+        <h1 className="min-w-0 flex-1 truncate text-left text-title font-semibold text-fg">{trail}</h1>
+      )}
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   )
@@ -553,6 +587,12 @@ export default function ThemeLibraryPage({
   }
 
   const homeTrail = `${store.projectName} · ${t(DASH_PAGE_LABEL[dashPage])}`
+  // Off Brands, the bar is a breadcrumb back to it: Escala / Docs / Color.
+  const docLabel = dashPage === 'docs' ? DASH_DOCS.find((doc) => doc.key === place.doc)?.label : undefined
+  const homeCrumbs = dashPage === 'overview' ? undefined : {
+    back: { label: store.projectName, onClick: () => setPlace({ ...place, page: 'overview' }) },
+    trail: [t(DASH_PAGE_LABEL[dashPage]), ...(docLabel ? [t(docLabel)] : [])],
+  }
 
   // Home is the design system on screen, as its dashboard: each brand is a
   // column on Overview, Add brand is the last one, and the right panel lists
@@ -571,6 +611,7 @@ export default function ThemeLibraryPage({
         onOpenGithub={() => onShareGithub(previewTheme)}
         onEditFoundation={onEditFoundation}
         onOpenBrand={onOpenBrand}
+        onOpenColourMap={onOpenBrand ? () => { requestColourMap('accent'); onOpenBrand() } : undefined}
         onSelectBrand={onSelectTheme}
         onEditBrand={onOpenPreview}
         onDeleteBrand={(key) => {
@@ -851,6 +892,7 @@ export default function ThemeLibraryPage({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <HomeStickyBar
           trail={homeTrail}
+          crumbs={homeCrumbs}
           action={(
             <div className="flex items-center gap-2">
               {dashPage === 'overview' && (

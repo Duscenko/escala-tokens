@@ -95,7 +95,7 @@ const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center 
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, children, trailing, appearance }: {
+export function BoardHistoryControls({ onRandom, children, trailing, appearance, leading, history = true }: {
   /** A whole new theme — only while the brand is a draft (see callers). The
    *  die carries a chevron for how daring it is (Safe · Free · Bold). */
   onRandom?: () => void
@@ -106,6 +106,10 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance 
   trailing?: ReactNode
   /** Light · Dark, last, after its own rule. */
   appearance?: ReactNode
+  /** First group, before Undo · Redo (the colour map's Map · Board switch). */
+  leading?: ReactNode
+  /** Undo · Redo. Off on the colour map's graph, which edits nothing. */
+  history?: boolean
 }) {
   const { t } = useI18n()
   const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
@@ -122,6 +126,9 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance 
     // (Mesurer's "inverse" bar). `dark` re-points the chrome tokens inside, so
     // the buttons, hints and tabs keep their contrast on the black.
     <div role="group" aria-label={t('Board tools')} className="dark flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1">
+      {leading}
+      {leading && history && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
+      {history && (
       <div role="group" aria-label={t('History')} className="flex items-center gap-0.5">
         <HintTip label={undoLabel} shortcut="⌘Z">
         <button type="button" onClick={() => { if (lastUndo) undoEdit() }} aria-disabled={!lastUndo || undefined} aria-label={undoLabel} aria-keyshortcuts="Meta+Z" className={HISTORY_SEGMENT}>
@@ -140,6 +147,7 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance 
         </button>
         </HintTip>
       </div>
+      )}
       {onRandom && (
         <>
           <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />

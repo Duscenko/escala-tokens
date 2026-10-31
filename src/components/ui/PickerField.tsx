@@ -49,6 +49,24 @@ export const FIELD_CONTROL_REST = 'group-hover:shadow-[inset_0_0_0_1px_var(--lin
  *  read heavy next to Figma-sized property rows. */
 export const FIELD_LEAD = 'h-[calc(100%-10px)] aspect-square flex-shrink-0 rounded-[calc(0.5rem-5px)]'
 
+/** TEST STYLE (owner's call, 2026-10-31): ONE bordered field holding a
+ *  filled label chip on the left and the value on the right — the name sits
+ *  INSIDE the field again, but as its own chip, so where the control begins
+ *  still reads. Same 28px row as before. Used by the colour rows
+ *  (`ColorBlock`) and every `PickerField`; to go back, restore `FIELD_ROW` +
+ *  `FIELD_CONTROL` in those two places. */
+// The edge is the quiet `line`: the filled chip is the anchor, so a heavier
+// border only doubled the weight. It firms up on hover and while open.
+export const FIELD_SHELL = 'flex h-7 w-full min-w-0 items-center gap-2 rounded-lg border border-line p-[2px] pr-2.5 transition-[border-color,box-shadow] duration-150'
+export const FIELD_SHELL_REST = 'hover:border-line-strong'
+export const FIELD_SHELL_ON = 'border-fg/40 shadow-[0_0_0_1px_var(--line-selected)]'
+/** The label chip: a filled pill the field's height less its 2px inset,
+ *  concentric with it, a fixed share of the row so every value starts on one
+ *  line. */
+// `--field-chip-w`: a list can size every chip to its longest name (the colour
+// rows do), so a short name leaves no empty pill and the values still align.
+export const FIELD_CHIP = 'flex h-full w-[var(--field-chip-w,42%)] max-w-[60%] flex-shrink-0 min-w-0 items-center gap-1.5 rounded-[calc(0.5rem-3px)] bg-fg/[0.08] px-2 text-ui transition-colors'
+
 const SEARCH_FROM = 9
 const LIST_GAP = 6
 const VIEWPORT_PAD = 12
@@ -105,6 +123,8 @@ export function PickerField<T extends string>({
   const [active, setActive] = useState(0)
   const [place, setPlace] = useState<{ left: number; width: number; top?: number; bottom?: number; max: number } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  // The whole field: the list opens at its width, under the chip too.
+  const fieldRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -132,7 +152,7 @@ export function PickerField<T extends string>({
   useLayoutEffect(() => {
     if (!open) return
     const measure = () => {
-      const el = triggerRef.current
+      const el = fieldRef.current ?? triggerRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
       const below = window.innerHeight - r.bottom - VIEWPORT_PAD - LIST_GAP
@@ -152,7 +172,7 @@ export function PickerField<T extends string>({
     if (!open) return
     const onDown = (event: MouseEvent) => {
       const target = event.target as Node
-      if (panelRef.current?.contains(target) || triggerRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target) || fieldRef.current?.contains(target)) return
       close(false)
     }
     document.addEventListener('mousedown', onDown)
@@ -197,12 +217,12 @@ export function PickerField<T extends string>({
     <>
       {/* The CONTROL is the button; the name beside it opens it too, and keeps
           room for the ⓘ hint (a button inside a button is not allowed). */}
-      <div className={`group ${FIELD_ROW}`}>
-        <span className="flex min-w-0 items-center gap-0.5">
+      <div ref={fieldRef} className={`group ${FIELD_SHELL} !pr-0 ${open ? FIELD_SHELL_ON : FIELD_SHELL_REST}`}>
+        <span className={`${FIELD_CHIP} gap-0.5`}>
           <span
             aria-hidden
             onClick={() => (open ? close(false) : openList())}
-            className={`${FIELD_NAME} cursor-pointer ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
+            className={`min-w-0 cursor-pointer truncate ${open ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
           >
             {t(label)}
           </span>
@@ -220,9 +240,9 @@ export function PickerField<T extends string>({
           aria-controls={open ? listId : undefined}
           aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
           // No leading item: the text keeps the same inset as the chevron side.
-          className={`${FIELD_CONTROL} ${leading ? '' : '!pl-2.5'} ${open ? FIELD_CONTROL_ON : FIELD_CONTROL_REST} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+          className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md pr-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          {leading ?<span aria-hidden className={`${FIELD_LEAD} flex items-center justify-center text-fg-muted`}>{leading}</span> : null}
+          {leading ? <span aria-hidden className="flex flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>
           <Chevron open={open} />
         </button>

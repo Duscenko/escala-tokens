@@ -212,12 +212,15 @@ function ThemeNameFieldShell({
   }
 
   const borderClass = nameError ? 'border-status-danger/70' : 'border-line'
-  const shellClass = `flex w-full min-w-0 items-center gap-2 border bg-transparent pl-3 pr-2 transition-[border-color,box-shadow] ${RAIL_SURFACE_RADIUS} ${heightClass} ${borderClass}`
+  // Same shell as the inspector's fields: quiet edge, the label as a filled
+  // chip, the value after it.
+  const shellClass = `flex w-full min-w-0 items-center gap-2.5 border bg-transparent p-[3px] pr-2 transition-[border-color,box-shadow] ${RAIL_SURFACE_RADIUS} ${heightClass} ${borderClass}`
+  const nameChip = `flex h-full flex-shrink-0 items-center rounded-[calc(0.5rem-4px)] bg-fg/[0.08] px-2.5 font-medium text-fg-muted ${textSizeClass}`
 
   if (readOnlyDisplay) {
     return (
       <div className={shellClass}>
-        <span className={`flex-shrink-0 font-medium text-fg-faint ${textSizeClass}`}>{t('Name')}:</span>
+        <span className={nameChip}>{t('Name')}</span>
         <span className={`min-w-0 flex-1 truncate font-semibold text-fg ${textSizeClass}`}>{readOnlyDisplay}</span>
       </div>
     )
@@ -233,7 +236,7 @@ function ThemeNameFieldShell({
         if (!editing) setEditing(true)
       }}
     >
-      <span className={`flex-shrink-0 font-medium text-fg-faint ${textSizeClass}`}>{t('Name')}:</span>
+      <span className={nameChip}>{t('Name')}</span>
       {editing ? (
         <input
           ref={inputRef}
@@ -1359,9 +1362,11 @@ export function DotSlider({ stops, value, onChange, onScrubStart, onScrubEnd, fo
         event.preventDefault()
         select(Math.max(0, Math.min(last, next)))
       }}
-      className={`group/dots relative h-8 cursor-ew-resize overflow-hidden touch-none select-none rounded-lg bg-surface transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_var(--line-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${className}`}
+      // The inspector's field shell (PickerField `FIELD_SHELL`): a quiet edge,
+      // no fill, the thumb a filled chip like the fields' labels.
+      className={`group/dots relative h-7 cursor-ew-resize overflow-hidden touch-none select-none rounded-lg border border-line transition-[border-color] duration-150 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${className}`}
     >
-      <div aria-hidden className="absolute inset-y-0 left-[3px]" style={{ width: `calc(100% - 6px - ${DOT_THUMB})` }}>
+      <div aria-hidden className="absolute inset-y-0 left-[2px]" style={{ width: `calc(100% - 4px - ${DOT_THUMB})` }}>
         {stops.map((stop, i) => (
           <span
             key={stop}
@@ -1370,12 +1375,12 @@ export function DotSlider({ stops, value, onChange, onScrubStart, onScrubEnd, fo
           />
         ))}
         <div
-          className={`absolute inset-y-[3px] left-0 w-full transition-transform ease-[var(--ease-out-quint)] motion-reduce:transition-none ${dragging ? 'duration-150' : 'duration-200'}`}
+          className={`absolute inset-y-[2px] left-0 w-full transition-transform ease-[var(--ease-out-quint)] motion-reduce:transition-none ${dragging ? 'duration-150' : 'duration-200'}`}
           style={{ transform: `translateX(${ratio * 100}%)` }}
         >
           <span
             ref={thumbRef}
-            className={`absolute inset-y-0 left-0 flex items-center justify-center rounded-[calc(0.5rem-3px)] bg-elevated text-ui font-medium tabular-nums text-fg transition-[box-shadow,scale] duration-150 motion-reduce:transition-none ${dragging ? 'scale-[0.97] shadow-[0_2px_8px_rgb(0_0_0/0.35),inset_0_0_0_1px_var(--line-strong)]' : 'shadow-[0_1px_3px_rgb(0_0_0/0.25),inset_0_0_0_1px_var(--line)]'}`}
+            className={`absolute inset-y-0 left-0 flex items-center justify-center rounded-[calc(0.5rem-3px)] bg-fg/[0.1] text-ui font-medium tabular-nums text-fg transition-[box-shadow,scale] duration-150 motion-reduce:transition-none ${dragging ? 'scale-[0.97] shadow-[0_2px_8px_rgb(0_0_0/0.35),inset_0_0_0_1px_var(--line-strong)]' : 'shadow-[0_1px_3px_rgb(0_0_0/0.25),inset_0_0_0_1px_var(--line)]'}`}
             style={{ width: DOT_THUMB }}
           >
             {/* Drag affordance: ◂ ▸ at the pill's edges on hover, focus and drag. */}

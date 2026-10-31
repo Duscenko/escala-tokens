@@ -10,7 +10,7 @@ import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useI18n } from '../../lib/i18n'
-import { FIELD_CONTROL, FIELD_CONTROL_ON, FIELD_CONTROL_REST, FIELD_LEAD } from '../ui/PickerField'
+import { FIELD_CHIP, FIELD_SHELL, FIELD_SHELL_ON, FIELD_SHELL_REST } from '../ui/PickerField'
 import { THUMB_CENTER, THUMB_CLASS, along, ratioIn } from '../ui/ColorField'
 import { INSPECTOR_ID } from './WorkspaceInspector'
 
@@ -64,8 +64,11 @@ function HexInput({ hex, label, readOnly, readOnlyTitle, onHex, onFocus, inputRe
 
 export function ColorBlock({
   label, hex, active = false, open = false, readOnly, readOnlyTitle,
-  landing = 0, index = 0, anchorRef, onSwatch, onFocusHex, onHex,
+  landing = 0, index = 0, anchorRef, onSwatch, onFocusHex, onHex, trailing,
 }: {
+  /** At the field's end (the ramp toggle), like a select's chevron. Its
+   *  clicks never reach the hex. */
+  trailing?: ReactNode
   label: string
   hex: string
   /** The row the preview highlights. */
@@ -94,11 +97,12 @@ export function ColorBlock({
     <div
       ref={anchorRef}
       onClick={() => input.current?.focus()}
-      // The panel's own field (`FIELD_CONTROL`): same height, inset and
-      // swatch as Font or Radius. The ring is for an open picker or a hex
-      // being typed — not for "the selected role", which Accent always is.
-      className={`${FIELD_CONTROL} w-full cursor-text ${open ? FIELD_CONTROL_ON : `${FIELD_CONTROL_REST} focus-within:shadow-[inset_0_0_0_1px_var(--line-selected)]`}`}
+      // The panel's own field (`FIELD_SHELL`): the same bordered row as Font,
+      // the name + swatch in its label chip, the hex after it. The ring is for
+      // an open picker or a hex being typed — not for "the selected role".
+      className={`group ${FIELD_SHELL} cursor-text ${open ? FIELD_SHELL_ON : `${FIELD_SHELL_REST} focus-within:border-fg/40 focus-within:shadow-[0_0_0_1px_var(--line-selected)]`}`}
     >
+      <span className={FIELD_CHIP}>
       <button
         key={landing}
         type="button"
@@ -107,13 +111,12 @@ export function ColorBlock({
         aria-expanded={open}
         aria-label={t('{name} — open colour picker', { name: label })}
         title={t('Open colour picker')}
-        className={`${FIELD_LEAD} cursor-pointer border border-fg/10 transition-[background-color] duration-200 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${landing ? 'swatch-land' : ''}`}
+        className={`h-3.5 w-3.5 flex-shrink-0 rounded-[3px] cursor-pointer border border-fg/10 transition-[background-color] duration-200 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${landing ? 'swatch-land' : ''}`}
         style={{ background: hex, '--swatch-i': index } as CSSProperties}
       />
-      {/* One line: the name, then the hex pushed right, so every row's hex
-          lines up in one column. */}
-      <span className={`min-w-0 truncate text-ui transition-colors ${lit ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
+      <span className={`min-w-0 truncate transition-colors ${lit ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
         {label}
+      </span>
       </span>
       <HexInput
         inputRef={input}
@@ -123,8 +126,9 @@ export function ColorBlock({
         readOnlyTitle={readOnlyTitle}
         onHex={onHex}
         onFocus={onFocusHex}
-        className="w-0 min-w-[4.5rem] flex-1 bg-transparent text-right text-ui tabular-nums text-fg outline-none"
+        className="w-0 min-w-[4.5rem] flex-1 bg-transparent text-left text-ui tabular-nums text-fg outline-none"
       />
+      {trailing ? <span className="-mr-2 flex flex-shrink-0" onClick={(event) => event.stopPropagation()}>{trailing}</span> : null}
     </div>
   )
 }
@@ -132,10 +136,10 @@ export function ColorBlock({
 // ── The floating picker ─────────────────────────────────────────────────────
 
 const PICKER_W = 256
-/** Where the role pickers sit. ONE spot for every colour: switching from
- *  Accent to Neutral or a state opens the next picker exactly where the last
- *  one was, instead of jumping to its own row. A drag moves the spot. Kept
- *  for the session; `clamp` fits it back into a resized window. */
+/** Where you DRAGGED the role picker, if you did. Without one, every colour
+ *  docks at the same spot — left of the inspector, level with the colour
+ *  list — so switching colour never makes the picker jump. A remembered spot
+ *  that would cover the inspector is dropped. Kept for the session. */
 let sharedPickerPos: { left: number; top: number } | null = null
 const EDGE = 8
 
@@ -301,38 +305,47 @@ export function FloatingColorPicker({
   }
 
   // Placed before paint: docked flush against the inspector's left edge,
-  // level with the row — where Figma puts its fill picker. After that it stays
-  // put while the rail scrolls, until you drag it. No room on the left: under
+  // level with the colour list — where Figma puts its fill picker. Only a spot
+  // you DRAGGED it to is remembered, and only while it stays clear of the
+  // inspector: remembering every clamp let a window resize park the next
+  // picker on top of the Edit panel (reported). No room on the left: under
   // the row.
+  const dock = () => {
+    const inspector = document.getElementById(INSPECTOR_ID)?.getBoundingClientRect()
+    if (sharedPickerPos) {
+      const p = clamp(sharedPickerPos.left, sharedPickerPos.top)
+      const overInspector = inspector && p.left + PICKER_W > inspector.left && p.left < inspector.right
+      if (!overInspector) return p
+      sharedPickerPos = null
+    }
+    const block = anchor.current
+    if (!block) return null
+    const row = (keepOpenWithin?.current ?? block).getBoundingClientRect()
+    const column = inspector && document.getElementById(INSPECTOR_ID)?.contains(block) ? inspector : null
+    const left = column ? column.left - PICKER_W : row.left - PICKER_W - EDGE
+    return left >= EDGE ? clamp(left, row.top) : clamp(row.left, row.bottom + EDGE)
+  }
   useLayoutEffect(() => {
     const place = () => {
-      if (sharedPickerPos) {
-        setPos(clamp(sharedPickerPos.left, sharedPickerPos.top))
-        return
-      }
-      const block = anchor.current
-      if (!block) return
-      // Level with the top of the colour list (Accent), not the row clicked,
-      // so the first spot is the same whichever colour opened it.
-      const row = (keepOpenWithin?.current ?? block).getBoundingClientRect()
-      const inspector = document.getElementById(INSPECTOR_ID)
-      const column = inspector?.contains(block) ? inspector.getBoundingClientRect() : null
-      const left = column ? column.left - PICKER_W : row.left - PICKER_W - EDGE
-      setPos(left >= EDGE ? clamp(left, row.top) : clamp(row.left, row.bottom + EDGE))
+      const next = dock()
+      if (next) setPos(next)
     }
     place()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Every placement, drag and fit is the next picker's starting spot.
-  useEffect(() => { if (pos) sharedPickerPos = pos }, [pos])
 
   // Keep the whole picker on screen. It grows after it is placed (a Fine-tune
   // slider opening, a rule wrapping), and placing it once let that growth run
   // off the bottom of the window — read as a bug. Any change in its height or
   // in the window moves it back up; past the window's height it scrolls inside.
   useEffect(() => {
-    const keep = () => setPos((current) => (current ? clamp(current.left, current.top) : current))
+    // Docked (not dragged): the window moved the inspector, so dock again.
+    const keep = () => setPos((current) => {
+      if (!current) return current
+      if (sharedPickerPos) return clamp(current.left, current.top)
+      return dock() ?? clamp(current.left, current.top)
+    })
     window.addEventListener('resize', keep)
     const observer = new ResizeObserver(keep)
     if (panel.current) observer.observe(panel.current)
@@ -340,6 +353,8 @@ export function FloatingColorPicker({
       window.removeEventListener('resize', keep)
       observer.disconnect()
     }
+    // Mount-only: `dock` reads refs and the DOM at call time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -369,7 +384,9 @@ export function FloatingColorPicker({
     const dx = event.clientX - pos.left
     const dy = event.clientY - pos.top
     const move = (e: PointerEvent) => setPos(clamp(e.clientX - dx, e.clientY - dy))
-    const up = () => {
+    const up = (e: PointerEvent) => {
+      // Only a drag sets the spot the next picker opens at.
+      sharedPickerPos = clamp(e.clientX - dx, e.clientY - dy)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
     }

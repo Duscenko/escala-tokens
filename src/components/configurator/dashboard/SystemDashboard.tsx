@@ -28,7 +28,6 @@ import { DASH_DOCS, DASH_PAGE_LABEL, DEFAULT_DOC_KEY, ROLE_TABLE_KEYS, useDashbo
 import OverviewPage from './OverviewPage'
 import type { BrandExportActions } from './OverviewPage'
 import StatusBoardPage, { type StatusFilter, type StatusKind } from './StatusBoardPage'
-import ColorVariableMap from './ColorVariableMap'
 import FoundationRolesTable from './FoundationRolesTable'
 const glyph = (d: string) => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -307,8 +306,9 @@ function IntegrationsPage({ dash, timeAgo, onOpenGithub }: {
 
 export default function SystemDashboard({
   page, onPage, docKey, onDocKey, brand, appearance, overviewHeader, overviewFooter, onBack, navExtra, timeAgo,
-  onOpenGithub, onEditFoundation, onOpenBrand, onSelectBrand, onEditBrand, onDeleteBrand,
-  onEditRole, onOpenComponent, docsExits, onExportBrand, brandExport, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
+  onOpenGithub, onEditFoundation, onOpenBrand,
+  onOpenColourMap, onSelectBrand, onEditBrand, onDeleteBrand,
+  docsExits, onExportBrand, brandExport, onAddBrand, onImportBrand, addBrandBlocked, maxBrands,
 }: {
   page: DashPage
   onPage: (next: DashPage) => void
@@ -332,6 +332,8 @@ export default function SystemDashboard({
   onEditFoundation?: (key: string) => void
   /** Overview's Color card: open the brand preview on the Color edition. */
   onOpenBrand?: () => void
+  /** Docs · Color: open the Board on the colour map (ColorRoleMapView). */
+  onOpenColourMap?: () => void
   /** Overview column header: that brand becomes the one on screen. */
   onSelectBrand: (key: string) => void
   /** Overview column header: open that brand in the editor. */
@@ -433,8 +435,10 @@ export default function SystemDashboard({
           rail={false}
           appearance={appearance}
           docScope={{ themeKey: brand }}
+          // Color's role explorer lives on the Board now (the colour map):
+          // one place to read where a colour lands, not a second copy here.
           lead={doc === 'color'
-            ? <ColorVariableMap dash={dash} onOpenComponent={onOpenComponent} onEditRole={onEditRole ? (roleId) => { if (onEditRole(roleId) !== false) setEditingRole(roleId) } : undefined} onOpenStatus={STATUS_BOARD_ON ? (id) => openStatus(id) : undefined} />
+            ? onOpenColourMap ? <ColourMapLink onOpen={onOpenColourMap} /> : undefined
             : ROLE_TABLE_KEYS.has(doc)
               ? <FoundationRolesTable dash={dash} foundation={doc} onEdit={onEditFoundation} />
               : onEditFoundation
@@ -462,5 +466,35 @@ export default function SystemDashboard({
         />
       )}
     </>
+  )
+}
+
+/** Docs · Color: the role explorer is the Board's colour map. One card that
+ *  says what it shows and takes you there. */
+function ColourMapLink({ onOpen }: { onOpen: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full items-center gap-4 rounded-xl border border-line bg-surface px-4 py-3.5 text-left transition-colors duration-150 hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+    >
+      <span aria-hidden className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-fg/[0.06] text-fg-muted group-hover:text-fg">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+          <circle cx="3.5" cy="8" r="1.75" />
+          <circle cx="12.5" cy="3.5" r="1.5" />
+          <circle cx="12.5" cy="8" r="1.5" />
+          <circle cx="12.5" cy="12.5" r="1.5" />
+          <path d="M5.2 7.4C8 7 8.5 3.6 11 3.5M5.25 8H11M5.2 8.6C8 9 8.5 12.4 11 12.5" />
+        </svg>
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-ui font-medium text-fg">{t('See the colour map')}</span>
+        <span className="text-caption text-fg-muted">{t('Where each colour lands: its roles, and the components that paint with them.')}</span>
+      </span>
+      <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-fg-faint transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-fg motion-reduce:transition-none">
+        <path d="M3 8h10M9 4l4 4-4 4" />
+      </svg>
+    </button>
   )
 }

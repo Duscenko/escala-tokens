@@ -14,7 +14,7 @@
 // own saturation and brightness, and the dark one is kept a little dimmer —
 // the same colour, tuned for the page it sits on.
 
-import { useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, rolePasses, type ColorRoleId } from '../../lib/colorRoles'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -134,7 +134,15 @@ export function ColorRolesPanel({
     <div className="flex flex-col gap-3">
       {header}
       {/* Every row is a ColorBlock, like the extra palettes below. */}
-      <div ref={list} role="list" aria-label={t('Colour roles')} className="flex flex-col gap-1.5">
+      <div
+        ref={list}
+        role="list"
+        aria-label={t('Colour roles')}
+        className="flex flex-col gap-1.5"
+        // Every chip as wide as the longest name: values align, short names
+        // leave no empty pill. ch of the name + swatch, gap and padding.
+        style={{ '--field-chip-w': `calc(${Math.max(...rows.map((row) => t(COLOR_ROLE_LABEL[row.id]).length))}ch + 2.4rem)` } as CSSProperties}
+      >
         {rows.map((row, index) => (
           <div key={row.id}>
           <RoleRow
@@ -257,10 +265,10 @@ function RoleRow({
 
   return (
     <div role="listitem" className="group">
-      {/* The field, then the ramp toggle beside it — outside the field, so a
-          click on it never lands in the hex. */}
-      <div className="flex min-w-0 items-center gap-1">
-        <div className="min-w-0 flex-1">
+      {/* One field: chip (swatch + name), hex, and the ramp toggle at its end
+          — faint at rest, full on hover or while its ramp is open. Six toggles
+          beside six fields read as a second column competing with the hexes. */}
+      <div className="min-w-0">
           <ColorBlock
             anchorRef={block}
             label={label}
@@ -274,24 +282,23 @@ function RoleRow({
             onSwatch={onToggle}
             onFocusHex={onFocusHex}
             onHex={onHex}
+            trailing={hasRamp ? (
+              <HintTip label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}>
+                <button
+                  type="button"
+                  onClick={onToggleRamp}
+                  aria-expanded={rampOpen}
+                  aria-controls={rampId}
+                  aria-label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}
+                  className={`grid h-[22px] w-[22px] flex-shrink-0 place-items-center rounded-[calc(0.5rem-3px)] transition-[background-color,color,opacity,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
+                    rampOpen ? 'bg-fg/[0.12] text-fg' : 'text-fg-faint opacity-60 hover:bg-fg/[0.08] hover:text-fg group-hover:opacity-100 focus-visible:opacity-100'
+                  }`}
+                >
+                  <RampToggleGlyph />
+                </button>
+              </HintTip>
+            ) : undefined}
           />
-        </div>
-        {hasRamp && (
-          <HintTip label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}>
-            <button
-              type="button"
-              onClick={onToggleRamp}
-              aria-expanded={rampOpen}
-              aria-controls={rampId}
-              aria-label={rampOpen ? t('Hide the {name} ramp', { name: label }) : t('Show the {name} ramp', { name: label })}
-              className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg transition-[background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
-                rampOpen ? 'bg-fg/[0.12] text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
-              }`}
-            >
-              <RampToggleGlyph />
-            </button>
-          </HintTip>
-        )}
       </div>
       {hasRamp && ramp && (
         <RoleRamp id={rampId} open={rampOpen} label={label} ramp={ramp} naming={naming} legend={legend} />

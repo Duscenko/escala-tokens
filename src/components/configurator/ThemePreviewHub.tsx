@@ -53,10 +53,14 @@ import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
 import ColorRoleMapView, { MapViewSwitch } from './ColorRoleMapView'
 import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
+import { OPEN_COLOUR_MAP_EVENT, takeColourMapRequest } from '../../lib/colourMapRequest'
 import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
 import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus } from '../../lib/colorRoleMap'
 import { useColorRoleMap } from './useColorRoleMap'
 import type { RampLegend } from './ColorRolesPanel'
+
+// The lit-board spotlight (ColorSpotlight) is off for now.
+const SPOTLIGHT_ON = false
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -595,6 +599,20 @@ export default function ThemePreviewHub({
     if (id) setContrastOpenState(false)
     setMappedColourState(id)
   }
+  // "See the colour map" from System · Docs: open that colour's map, as the
+  // Map view, whether the board was already here or mounts for it.
+  useEffect(() => {
+    const take = () => {
+      const colour = takeColourMapRequest()
+      if (!colour) return
+      setContrastOpenState(false)
+      setMappedColourState(colour)
+      setMapView('graph')
+    }
+    take()
+    window.addEventListener(OPEN_COLOUR_MAP_EVENT, take)
+    return () => window.removeEventListener(OPEN_COLOUR_MAP_EVENT, take)
+  }, [])
   const reduceMotion = useReducedMotion()
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedSelection, setInspectedSelection] = useState<string | null>(null)
@@ -762,8 +780,10 @@ export default function ThemePreviewHub({
   // Map · On the board: the same map drawn as a graph, or lit on the real
   // board. Kept across colours — it is how you like to read the map.
   const [mapView, setMapView] = useState<'graph' | 'board'>('graph')
+  // The lit-board spotlight is off for now (owner's call): "Board" shows the
+  // plain board. Flip SPOTLIGHT_ON to bring `ColorSpotlight` back.
   const spotlight = useMemo(() => {
-    if (!mapData || mapView !== 'board') return undefined
+    if (!SPOTLIGHT_ON || !mapData || mapView !== 'board') return undefined
     const shown = visibleGroups(mapData.map, mapGroup)
     const all = shown.flatMap((g) => g.roles)
     const focused = focusedRoleIds(shown, mapFocus)
@@ -936,10 +956,9 @@ export default function ThemePreviewHub({
                   {docsOpen && hubDocActions}
                   {/* The map reads one theme: its switch rides in the band,
                       since the board toolbar (where it lives) steps aside. */}
-                  {mapOpen && <MapViewSwitch value={mapView} onChange={setMapView} />}
-                  {mapOpen && !stylePreview && (
-                    <BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />
-                  )}
+                  {/* Map · Board and Light · Dark ride in the board toolbar
+                      while the map is open (below), not in this band. */}
+                  {mapOpen && stylePreview && <MapViewSwitch value={mapView} onChange={setMapView} />}
                   {/* The board toolbar floats over the board (below); with no
                       history (a style try-on) Inspector keeps its own pill here. */}
                   {!needsMyTheme && !canvasTool && !docsOpen && stylePreview ? (
@@ -966,7 +985,7 @@ export default function ThemePreviewHub({
                     the tools that act on the board, then what it shows. The
                     wrapper lets clicks through to the board beside the pill. */}
                 <AnimatePresence initial={false}>
-                {!needsMyTheme && !canvasTool && !docsOpen && !stylePreview && (
+                {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
                   <motion.div
                     key="board-toolbar"
                     // Sinks out of the way with the board, rises back with it.
@@ -976,18 +995,25 @@ export default function ThemePreviewHub({
                     className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4"
                   >
                     {/* Reset rides beside the bar for an account. */}
-                    {!guest && (
+                    {!guest && !mapOpen && (
                       <div className="pointer-events-auto rounded-lg bg-nav shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)] empty:hidden">
                         <EditHistoryControls previewTheme={previewTheme} />
                       </div>
                     )}
                     <div className="pointer-events-auto rounded-xl shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]">
+                      {/* With the colour map open the bar leads with Map ·
+                          Board. On the map's graph that is all it edits with
+                          (no history, Random or Inspector: nothing there to act
+                          on); on its Board the board tools come back. Theme ·
+                          Components steps out (the map reads the theme board). */}
                       <BoardHistoryControls
-                        onRandom={canRandom ? () => randomHandle.current?.() : undefined}
-                        trailing={<BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
+                        leading={mapOpen ? <MapViewSwitch inset value={mapView} onChange={setMapView} /> : undefined}
+                        history={!mapOpen || mapView === 'board'}
+                        onRandom={canRandom && (!mapOpen || mapView === 'board') ? () => randomHandle.current?.() : undefined}
+                        trailing={mapOpen ? undefined : <BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
                         appearance={<BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />}
                       >
-                        <InspectorToggle
+                        {(!mapOpen || mapView === 'board') && <InspectorToggle
                           bare
                           active={inspecting}
                           pinned={Boolean(inspectedSelection)}
@@ -996,7 +1022,7 @@ export default function ThemePreviewHub({
                           ink={boardCanvasTokens.onBrand}
                           disabled={randomDraft}
                           disabledTitle={headerActionsLockedHint}
-                        />
+                        />}
                       </BoardHistoryControls>
                     </div>
                   </motion.div>

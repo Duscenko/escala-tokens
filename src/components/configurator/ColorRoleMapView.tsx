@@ -17,6 +17,27 @@ import { CHECKER } from './checker'
 import MapWires, { type Wire } from './dashboard/MapWires'
 import { wireKey } from './dashboard/mapWireKey'
 import type { ColorRoleMapData } from './useColorRoleMap'
+import { HintTip } from '../ui/HintTip'
+
+/** Map: a colour wired out to its roles. Board: the bento of screens. */
+const MAP_VIEW_GLYPH: Record<'graph' | 'board', React.ReactNode> = {
+  graph: (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
+      <circle cx="3.5" cy="8" r="1.75" />
+      <circle cx="12.5" cy="3.5" r="1.5" />
+      <circle cx="12.5" cy="8" r="1.5" />
+      <circle cx="12.5" cy="12.5" r="1.5" />
+      <path d="M5.2 7.4C8 7 8.5 3.6 11 3.5M5.25 8H11M5.2 8.6C8 9 8.5 12.4 11 12.5" />
+    </svg>
+  ),
+  board: (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
+      <rect x="2.5" y="2.5" width="5" height="11" rx="1.2" />
+      <rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2" />
+      <rect x="9" y="9" width="4.5" height="4.5" rx="1.2" />
+    </svg>
+  ),
+}
 
 /** The map is a graph at EVERY board width: its four stages always sit side
  *  by side, wired, and a board narrower than this scrolls sideways. A
@@ -45,9 +66,10 @@ function GroupGlyph({ group }: { group: string }) {
 const STAGE_LIST = 'flex flex-col gap-1'
 const STAGE_ITEM = 'flex h-8 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-ui transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
-/** Role | Application: two columns, always (the map's minimum width leaves
- *  the roles stage room for both). */
-const ROLE_GRID = 'grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
+/** Role | Application: two SEPARATE columns, always. The role is a card of
+ *  its own; the components it paints sit beside it, outside the card, joined
+ *  by a connector — one long box holding both read as one thing (reported). */
+const ROLE_GRID = 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-x-8'
 
 /** A column's heading — the mockup's four labels. */
 function ColumnHead({ children }: { children: React.ReactNode }) {
@@ -140,7 +162,6 @@ export default function ColorRoleMapView({
   }, [focusRoles, shown, colour])
   const groupLit = (key: string) => focusRoles != null && shown.some((g) => g.key === key && g.roles.some((r) => focusRoles.has(r.id)))
   const roleCount = map.groups.reduce((n, g) => n + g.roles.length, 0)
-  const usedTones = Object.keys(map.tones).map(Number).sort((a, b) => a - b)
   const label = t(COLOR_ROLE_LABEL[colour])
   const appearanceWord = t(appearance === 'dark' ? 'Dark' : 'Light')
 
@@ -153,16 +174,6 @@ export default function ColorRoleMapView({
     // their width instead of stacking (owner's call).
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-auto px-5 pt-5 pb-20">
-        {/* One line saying what the map shows, in the theme on screen. */}
-        <p className="mb-5 text-ui text-fg-muted">
-          {t('{name} feeds {roles} roles and {components} components in {theme}.', {
-            name: label, roles: String(roleCount), components: String(map.componentCount), theme: appearanceWord,
-          })}
-          {usedTones.length > 0 && (
-            <span className="text-fg-faint"> {t('Tones in use: {tones}.', { tones: usedTones.join(' · ') })}</span>
-          )}
-        </p>
-
         <div
           ref={flowRef}
           onMouseLeave={() => setFocus(null)}
@@ -186,13 +197,25 @@ export default function ColorRoleMapView({
                       data-wire={on ? `p:${id}` : undefined}
                       onClick={() => { setGroup(null); onColourChange(id) }}
                       aria-pressed={on}
-                      className={`${STAGE_ITEM} ${
-                        on ? 'bg-elevated text-fg shadow-[inset_0_0_0_1px_var(--line-strong)]' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'
+                      // Only the colour on the map reads as selected. The others
+                      // are quiet choices: faint ink, a muted swatch and count,
+                      // brought back to full on hover/focus — so one row, not
+                      // six, says "this is the one you're reading".
+                      className={`group/prim ${STAGE_ITEM} ${
+                        on
+                          ? 'bg-elevated font-medium text-fg shadow-[inset_0_0_0_1px_var(--line-strong)]'
+                          : 'text-fg-faint hover:bg-elevated/50 hover:text-fg focus-visible:text-fg'
                       }`}
                     >
-                      <Chip css={swatch(id)} size="h-4 w-4" />
+                      <span className={`flex transition-[opacity,filter] duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${
+                        on ? '' : 'opacity-45 saturate-[.6] group-hover/prim:opacity-100 group-hover/prim:saturate-100 group-focus-visible/prim:opacity-100 group-focus-visible/prim:saturate-100'
+                      }`}>
+                        <Chip css={swatch(id)} size="h-4 w-4" />
+                      </span>
                       <span className="min-w-0 flex-1 truncate">{t(COLOR_ROLE_LABEL[id])}</span>
-                      <span className="text-micro tabular-nums text-fg-faint">{counts[id]}</span>
+                      <span className={`text-micro tabular-nums transition-opacity duration-150 motion-reduce:transition-none ${
+                        on ? 'text-fg-muted' : 'text-fg-faint opacity-0 group-hover/prim:opacity-100 group-focus-visible/prim:opacity-100'
+                      }`}>{counts[id]}</span>
                     </button>
                     {/* Neutral carries the fixed alpha ladders. */}
                     {id === 'neutral' && on && map.fixed.length > 0 && (
@@ -242,9 +265,12 @@ export default function ColorRoleMapView({
           {/* 3 + 4 · Semantic roles → Application, one row per role, so a
               role and the components it paints read on one line. */}
           <section aria-label={t('Semantic roles')} className="relative min-w-0">
-            <div className={`${ROLE_GRID} gap-x-4`}>
+            <div className={ROLE_GRID}>
               <ColumnHead>{t('Semantic roles')}</ColumnHead>
-              <ColumnHead>{t('Application')}</ColumnHead>
+              <div className="mb-2">
+                <h3 className="text-caption font-medium text-fg-muted">{t('Application')}</h3>
+                <p className="text-micro text-fg-faint">{t('Components that paint with each role')}</p>
+              </div>
             </div>
             {roleCount === 0 ? (
               <p className="rounded-lg border border-dashed border-line px-3 py-4 text-ui text-fg-faint">
@@ -305,21 +331,24 @@ function RoleRow({ role, dim, lit, litComponent, onFocusRole, onFocusComponent, 
   onOpenComponent?: (def: ComponentDef) => void
 }) {
   const { t } = useI18n()
-  // The component being pointed at leads, so a row that reads it never hides
-  // it behind "+N".
-  const ordered = litComponent && role.components.some((c) => c.key === litComponent)
-    ? [...role.components.filter((c) => c.key === litComponent), ...role.components.filter((c) => c.key !== litComponent)]
-    : role.components
-  const shown = ordered.slice(0, 4)
-  const more = ordered.length - shown.length
+  // The order never changes under the pointer: moving the pointed-at chip to
+  // the front slid another chip beneath the cursor, which took the focus and
+  // reshuffled again (reported as a bug on Button). A lit component hidden
+  // behind "+N" takes the last visible slot instead.
+  const LIMIT = 4
+  let shown = role.components.slice(0, LIMIT)
+  const hidden = litComponent ? role.components.slice(LIMIT).find((c) => c.key === litComponent) : undefined
+  if (hidden) shown = [...shown.slice(0, LIMIT - 1), hidden]
+  const more = role.components.length - shown.length
   return (
     <div
-      data-wire={`r:${role.id}`}
       onMouseEnter={onFocusRole}
-      className={`${ROLE_GRID} items-start gap-x-4 gap-y-1.5 rounded-lg border bg-surface px-2 py-1.5 transition-[opacity,border-color] duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${
-        lit ? 'border-accent-ui/60' : 'border-line'
-      } ${dim ? 'opacity-45' : ''}`}
+      className={`${ROLE_GRID} items-center transition-opacity duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${dim ? 'opacity-45' : ''}`}
     >
+      <div
+        data-wire={`r:${role.id}`}
+        className={`min-w-0 rounded-lg border bg-surface px-2 py-1.5 transition-[border-color] duration-150 ${lit ? 'border-accent-ui/60' : 'border-line'}`}
+      >
       <button
         type="button"
         onClick={onPick}
@@ -343,9 +372,10 @@ function RoleRow({ role, dim, lit, litComponent, onFocusRole, onFocusComponent, 
             ))}
         </span>
       </button>
-      {/* Role → Application: a connector across the gap, drawn by the row
-          (an SVG wire would sit under the row’s own fill). */}
-      <div className={`relative flex min-w-0 flex-wrap gap-1 before:absolute before:-left-4 before:top-[0.6875rem] before:h-px before:w-4 before:transition-colors ${
+      </div>
+      {/* Role → Application: a connector across the gap between the role's
+          card and its components, drawn by the row. */}
+      <div className={`relative flex min-w-0 flex-wrap gap-1 before:absolute before:-left-8 before:top-1/2 before:h-px before:w-7 before:transition-colors ${
         role.components.length ? (lit ? 'before:bg-accent-ui' : 'before:bg-line-strong') : 'before:hidden'
       }`}>
         {role.components.length === 0 ? (
@@ -372,7 +402,7 @@ function RoleRow({ role, dim, lit, litComponent, onFocusRole, onFocusComponent, 
               )
             })}
             {more > 0 && (
-              <span title={role.components.slice(4).map((c) => c.label).join(' · ')} className="px-1 py-0.5 text-micro text-fg-faint">+{more}</span>
+              <span title={role.components.filter((c) => !shown.includes(c)).map((c) => c.label).join(' · ')} className="px-1 py-0.5 text-micro text-fg-faint">+{more}</span>
             )}
           </>
         )}
@@ -388,20 +418,27 @@ function Tag({ title, children }: { title: string; children: React.ReactNode }) 
 /** Map · On the board — the two views of one colour map, in the board's
  *  header. A real tab pair (one tab stop, arrows move), like Theme ·
  *  Components; same recessed well as the board's other switches. */
-export function MapViewSwitch({ value, onChange }: {
+export function MapViewSwitch({ value, onChange, inset = false }: {
   value: 'graph' | 'board'
   onChange: (view: 'graph' | 'board') => void
+  /** Inside the board toolbar, in place of Undo · Redo: icons only (the
+   *  words stay the tabs' names and tooltips), like Theme · Components. */
+  inset?: boolean
 }) {
   const { t } = useI18n()
+  const reduce = useReducedMotion()
   const views = [
     { id: 'graph' as const, label: t('Map') },
-    { id: 'board' as const, label: t('On the board') },
+    { id: 'board' as const, label: t('Board') },
   ]
+  // Same shell and selected pill as the Light · Dark switch beside it
+  // (BrandThemesPicker `inset`), so the two read the same way: the pick is a
+  // raised, filled pill in full ink; the other is faint text on the well.
   return (
     <div
       role="tablist"
       aria-label={t('Colour map view')}
-      className="inline-flex h-8 items-center rounded-lg bg-fg/[0.06] p-0.5"
+      className="flex h-8 flex-shrink-0 select-none items-center gap-0.5 rounded-lg bg-fg/[0.04] p-0.5"
       onKeyDown={(event) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
         event.preventDefault()
@@ -410,7 +447,7 @@ export function MapViewSwitch({ value, onChange }: {
     >
       {views.map((view) => {
         const on = view.id === value
-        return (
+        const tab = (
           <button
             key={view.id}
             type="button"
@@ -418,13 +455,23 @@ export function MapViewSwitch({ value, onChange }: {
             aria-selected={on}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(view.id)}
-            className={`h-7 rounded-md px-2.5 text-caption font-medium transition-[background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
-              on ? 'bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.25)]' : 'text-fg-muted hover:text-fg'
+            aria-label={inset ? view.label : undefined}
+            className={`relative flex items-center justify-center ${inset ? 'h-7 w-7' : 'h-7 px-2.5'} rounded-md text-caption font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${
+              on ? 'text-fg' : 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
             }`}
           >
-            {view.label}
+            {on && (
+              <motion.span
+                layoutId={inset ? 'map-view-pill-bar' : 'map-view-pill'}
+                aria-hidden
+                className="absolute inset-0 rounded-md bg-fg/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_2px_rgba(0,0,0,0.4)]"
+                transition={reduce ? { duration: 0 } : { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              />
+            )}
+            <span className="relative flex">{inset ? MAP_VIEW_GLYPH[view.id] : view.label}</span>
           </button>
         )
+        return inset ? <HintTip key={view.id} label={view.label}>{tab}</HintTip> : tab
       })}
     </div>
   )
