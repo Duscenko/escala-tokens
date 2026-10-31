@@ -438,19 +438,31 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
           <h3 className="text-sm font-semibold text-fg">2 · Pick a repository</h3>
         </div>
 
-        <select
-          value={githubRepo ?? ''}
-          onChange={(e) => { void handlePickRepo(e.target.value) }}
-          aria-label="Target repository"
-          className="bg-app border border-line rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-fg transition-colors"
-        >
-          <option value="">Choose a repository…</option>
-          {repos.map((r) => (
-            <option key={r.full_name} value={r.full_name}>
-              {r.full_name}{r.private ? ' (private)' : ''}
-            </option>
-          ))}
-        </select>
+        {/* The native arrow sits on the field's own padding, against the
+            border. Turned off and drawn instead, it gets the same inset as
+            the text on the left (VariableSelect's pattern). */}
+        <div className="relative">
+          <select
+            value={githubRepo ?? ''}
+            onChange={(e) => { void handlePickRepo(e.target.value) }}
+            aria-label="Target repository"
+            className="w-full appearance-none bg-app border border-line rounded-lg pl-3 pr-9 py-2 text-sm text-fg text-ellipsis cursor-pointer outline-none hover:border-line-strong focus:border-fg transition-colors"
+          >
+            <option value="">Choose a repository…</option>
+            {repos.map((r) => (
+              <option key={r.full_name} value={r.full_name}>
+                {r.full_name}{r.private ? ' (private)' : ''}
+              </option>
+            ))}
+          </select>
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
 
         <div className="flex items-center gap-2">
           <input
