@@ -24,7 +24,7 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
 import type { CodeFormatKey } from '../components/configurator/ThemeCodeScopeRail'
-import type { ShipActions } from '../components/configurator/ThemeSaveBar'
+import { WorkspaceFooterContext, type ShipActions } from '../components/configurator/ThemeSaveBar'
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
@@ -2666,7 +2666,19 @@ export default function Configurator() {
     />
   ) : null
 
+  // One footer for every inspector of a brand (Board, Variables, Code,
+  // Components): the doors out + Save. None while there is no brand of the
+  // user's on screen, or on Home / the create studio, which have their own.
+  const ownBrandOnScreen = myThemeKeys(themeOrder, themes).includes(previewTheme)
+  const workspaceFooter = ownBrandOnScreen && !homePage && (tab === 'foundations' || tab === 'components')
+    ? { ship: shipFor(previewTheme), themeKey: previewTheme, onGetCode: () => openCodeForTheme(previewTheme) }
+    : null
+  // The brand on screen is not kept yet: the footer's Save is the primary, so
+  // the bar's white Export pill would compete with it for the same click.
+  const brandUnsaved = access.guest || brandIsDraft(previewTheme)
+
   return (
+    <WorkspaceFooterContext.Provider value={workspaceFooter}>
     <div data-home={homePage ? '' : undefined} className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
           (Theme workspace destinations, Color/Type/Layout hub, PreviewPanel). */}
@@ -2693,7 +2705,11 @@ export default function Configurator() {
           <GoToGeneratorButton onClick={() => handleNav('variables')} />
         // Home exports from each brand column (its menu holds every way out),
         // so the bar's Export pill would be a second door to the same wizard.
-        ) : ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
+        // While the brand on screen is not saved, every inspector footer
+        // (Board, Variables, Code, Components) holds CSS · Figma · Agent AND
+        // Save — a white Export pill in the bar would be a second primary
+        // competing with Save for the same click.
+        ) : !(workspaceFooter && brandUnsaved) && ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
           <ExportPill
             onCss={() => shipCurrent('css')}
             onFigma={() => shipCurrent('figma')}
@@ -3358,5 +3374,6 @@ export default function Configurator() {
         )}
       </AnimatePresence>
     </div>
+    </WorkspaceFooterContext.Provider>
   )
 }

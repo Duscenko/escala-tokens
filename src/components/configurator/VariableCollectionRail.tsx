@@ -3,7 +3,7 @@ import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } fro
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { ViewportRail } from './ViewportRail'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
-import ThemeSaveBar from './ThemeSaveBar'
+import ThemeSaveBar, { WorkspaceFooterContext } from './ThemeSaveBar'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients' | 'responsive'
 
@@ -220,6 +220,7 @@ export default function VariableCollectionRail({
   const context = useContext(CollectionContext)
   // In the inspector the column owns width and collapse.
   const inInspector = useInInspector()
+  const shellFooter = useContext(WorkspaceFooterContext)
   const collapsed = inInspector ? false : collapsedProp
   if (!context) return <>{children}</>
 
@@ -286,8 +287,10 @@ export default function VariableCollectionRail({
       )}
       </div>
     </nav>
-    {/* Variables is an editing tab too: same pinned bar as Theme, greyed out: saving and the guest sign-up hook live in Theme. */}
-    {inInspector && <ThemeSaveBar inactive />}
+    {/* Variables is an editing tab too: the Board's footer, live — the doors
+        out and Save, so the top bar needs no Export pill of its own. Outside
+        the Generator (no shell footer) it stays the greyed bar. */}
+    {inInspector && (shellFooter ? <ThemeSaveBar /> : <ThemeSaveBar inactive />)}
     </InspectorPortal>
   )
 }

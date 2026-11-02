@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useContext, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Chevron, EditionBody } from './ThemeQuickSettingsRail'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -8,7 +8,7 @@ import { COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { myThemeKeys } from './ThemeLibraryRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { UnsavedNotice } from './ThemeSaveBar'
+import ThemeSaveBar, { ShipRow, UnsavedNotice, WorkspaceFooterContext } from './ThemeSaveBar'
 import { useAccess } from '../../lib/access'
 import { CodeHowToButton } from './CodeHowTo'
 
@@ -75,6 +75,7 @@ export default function ThemeCodeScopeRail({
 }) {
   const { t } = useI18n()
   const { guest } = useAccess()
+  const shellFooter = useContext(WorkspaceFooterContext)
   const store = useDesignStore()
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const selected = resolveCodeTheme(listed, scope, previewTheme)
@@ -98,6 +99,15 @@ export default function ThemeCodeScopeRail({
           <span className="min-w-0 truncate text-caption text-fg-faint">{t('Add a brand to get its code.')}</span>
         )}
       </div>
+
+      {/* The ways out, at the head of the panel — the same row of four the
+          Board's footer shows, so the doors keep one shape everywhere. The
+          footer below carries only the save status, never a second row. */}
+      {shellFooter && selected ? (
+        <div className="flex-shrink-0 border-b border-line p-[var(--inspector-inset)]">
+          <ShipRow ship={shellFooter.ship} />
+        </div>
+      ) : null}
 
       {/* The Board's edition accordion, one row per file: name · what it
           carries now · chevron. The open row IS the format on screen, and its
@@ -158,9 +168,14 @@ export default function ThemeCodeScopeRail({
           )
         })}
       </div>
-      {/* Code is where a guest takes the system away: say it is not saved,
-          pinned at the foot like the save bar on the editing tabs. */}
-      {guest && name ? (
+      {/* Where the work lives + Save, pinned at the foot like every Generator
+          inspector (the doors sit at the top here). Without the shell's footer,
+          the guest notice. */}
+      {shellFooter ? (
+        <div className="mt-auto flex-shrink-0">
+          <ThemeSaveBar statusOnly />
+        </div>
+      ) : guest && name ? (
         <div className="mt-auto flex-shrink-0 px-3 pb-3">
           <UnsavedNotice />
         </div>

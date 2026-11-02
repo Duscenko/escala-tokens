@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
 import { useI18n } from '../../lib/i18n'
 import FoundationSwitchStrip from './FoundationSwitchStrip'
+import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 
@@ -246,6 +247,11 @@ export default function ComponentsRail({
           )
         })}
       </nav>
+      {/* The Generator's status line — "Not saved" + Save — like every
+          inspector of a brand. No CSS · Figma · Agent: this page browses the
+          catalogue, it is not where a brand ships from. Nothing when there is
+          no brand (no shell footer). */}
+      <WorkspaceSaveBar statusOnly />
       {/* Where a pinned component's token list docks (InspectorPortal). It
           covers the directory; leaving the inspector brings the list back.
           `contents`: the panel positions itself against the aside. */}

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -594,18 +594,44 @@ export function RandomThemeButton({
  * Home → Random lands here in explore mode: Random is the primary action
  * (spin another look on this theme) and Save theme is how you keep one.
  */
+/** The brand on screen and its ways out, supplied once by the shell so every
+ *  inspector of the Generator (Board, Variables, Code, Components) ends on the
+ *  SAME footer: Ship row + "Not saved · Save". Without it each tab had its own
+ *  idea (greyed Save, a bare notice, nothing) and the top bar's Export pill had
+ *  to stand in — a second primary beside Save. */
+export interface WorkspaceFooterValue {
+  ship: ShipActions
+  themeKey: string
+  onGetCode?: () => void
+}
+export const WorkspaceFooterContext = createContext<WorkspaceFooterValue | null>(null)
+
+/** The shell's footer for a tab that is not the Board: nothing outside the
+ *  Generator (no provider), the shared bar inside it. */
+export function WorkspaceSaveBar({ statusOnly = false }: {
+  /** Only the "Not saved · Save" line — for a page that is not about shipping
+   *  this brand (Components), where CSS · Figma · Agent would be noise. */
+  statusOnly?: boolean
+} = {}) {
+  const ctx = useContext(WorkspaceFooterContext)
+  return ctx ? <ThemeSaveBar statusOnly={statusOnly} /> : null
+}
+
 export default function ThemeSaveBar({
   inactive = false,
+  statusOnly = false,
   exploringRandom = false,
   onSaved,
   onDiscard,
-  onGetCode,
-  ship,
-  themeKey,
+  onGetCode: onGetCodeProp,
+  ship: shipProp,
+  themeKey: themeKeyProp,
 }: {
   /** The three doors out (CSS · Figma · Agent). When given they replace the
    *  Get code primary: a kept brand (or a guest's) ships from here. */
   ship?: ShipActions
+  /** No doors and no Get code: only where the work lives and how to keep it. */
+  statusOnly?: boolean
   /** Variables: greyed out, both controls. Theme keeps Save live — it is also
    *  the door that leads a guest to create an account. */
   inactive?: boolean
@@ -623,6 +649,10 @@ export default function ThemeSaveBar({
    *  says Save brand. */
   themeKey?: string
 }) {
+  const footer = useContext(WorkspaceFooterContext)
+  const ship = shipProp ?? footer?.ship
+  const themeKey = themeKeyProp ?? footer?.themeKey
+  const onGetCode = onGetCodeProp ?? footer?.onGetCode
   const { t } = useI18n()
   const access = useAccess()
   const status = useLibraryStatus()
@@ -693,6 +723,13 @@ export default function ThemeSaveBar({
     // stretches a portaled panel): as a direct slot child (Variables) the bar
     // must stay its own height, pinned under the scrolling nav.
     <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
+      {statusOnly ? (
+        // A signed-in draft keeps its Save on the line; otherwise the usual
+        // status (a guest's "Not saved · Save with an account", or the account's).
+        draft && !access.guest
+          ? <UnsavedNotice onSave={saveBrand} />
+          : <FooterStatus guest={access.guest} divided={false} />
+      ) : (<>
       {exploringRandom && onDiscard && (
         // The way out of a draft: Random mints a real theme the moment it is
         // pressed, and Save is the only other door. Discard removes it and
@@ -765,6 +802,7 @@ export default function ThemeSaveBar({
           <UnsavedNotice onSave={saveBrand} />
         </div>
       ) : (guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
+      </>)}
     </div>
   )
 }
