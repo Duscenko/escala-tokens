@@ -22,11 +22,11 @@ import {
   type CloudFiles,
   type CloudRecord,
 } from './accountCloud'
-import { shelveSavedSystems } from './accountFiles'
+import { onlyAutomaticBrand, shelveAccountFiles } from './accountFiles'
 import { FIGMA_VIEWPORTS } from './figmaSyncModes'
-import { peekLoginIntent } from './loginReturn'
+import { forgetLoginIntent, peekLoginIntent } from './loginReturn'
 import { supabase } from './supabase'
-import { captureSnapshot, useDesignStore, type SavedSystem } from '../store/useDesignStore'
+import { captureSnapshot, useDesignStore, type DesignSnapshot, type SavedSystem } from '../store/useDesignStore'
 
 export type AccountCloudStatus =
   | 'off'
@@ -264,6 +264,9 @@ async function adopt(record: CloudRecord, etag: string): Promise<void> {
   const trimmed = new Set(record.trimmedIds)
   const keptHere = state.savedSystems.filter((s) => trimmed.has(s.id) && !stored.has(s.id))
   const selection = files.figmaSyncSelection as { viewports?: unknown } | null
+  // A "save my work" recorded over the automatic Core has nothing to save:
+  // the account's files are what comes on screen.
+  if (onlyAutomaticBrand()) forgetLoginIntent('save-library')
   ready = false
   useDesignStore.setState({
     ...(files.snapshot as object),
@@ -288,11 +291,14 @@ async function decide(etag: string | null, record: CloudRecord | null, loginInte
   known = etag
   const local = localCloudFiles()
   const localHash = hashOf(local)
+  // The Core a visitor gets is not work: it never goes over the account.
+  const automatic = onlyAutomaticBrand()
   const plan = planCloudSync({
     localHash,
-    localHasWork: filesHaveWork(local),
+    localHasWork: !automatic && filesHaveWork(local),
+    localIsAutomatic: automatic,
     base,
-    server: record && etag ? { etag, hash: hashOf(record.files) } : null,
+    server: record && etag ? { etag, hash: hashOf(record.files), hasWork: filesHaveWork(record.files) } : null,
   })
   if (plan === 'same') {
     if (etag) writeBase({ etag, hash: localHash })
@@ -304,10 +310,14 @@ async function decide(etag: string | null, record: CloudRecord | null, loginInte
   if (plan === 'adopt' && record && etag) return adopt(record, etag)
   if (plan === 'conflict' && record && loginIntent && !base) {
     // Came back to finish a save or an export: the work on screen stays and
-    // the account's saved systems are filed beside it — the same rule
-    // `reopenAccountFiles` follows for a parked copy.
+    // the account's files are filed beside it — its saved systems AND the
+    // system it had on screen, which this push would otherwise erase. The
+    // same rule `reopenAccountFiles` follows for a parked copy.
     const files = await migrated(record)
-    shelveSavedSystems(files.savedSystems as unknown as SavedSystem[])
+    shelveAccountFiles(
+      files.snapshot as unknown as DesignSnapshot,
+      files.savedSystems as unknown as SavedSystem[],
+    )
     ready = true
     return push()
   }

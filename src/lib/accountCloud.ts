@@ -173,16 +173,26 @@ export type CloudSyncPlan = 'same' | 'push' | 'adopt' | 'conflict'
  * - Same content on both sides: nothing (record the new base).
  * - We have not changed since our base: take the record.
  * - This browser never synced and holds no work: take the record.
+ * - This browser holds only the automatic Core made for a visitor and the
+ *   account holds work: take the record. Never send that Core over it —
+ *   whatever the base says (after a sign-out the base still names the
+ *   account's last save, so "we changed since" would read true).
  * - Anything else changed on both sides: ask the person.
+ *
+ * `localHasWork` is false for the automatic Core; `localIsAutomatic` says
+ * that is why.
  */
 export function planCloudSync(input: {
   localHash: string
   localHasWork: boolean
+  localIsAutomatic?: boolean
   base: CloudBase | null
-  server: { etag: string; hash: string } | null
+  server: { etag: string; hash: string; hasWork?: boolean } | null
 }): CloudSyncPlan {
   const { localHash, localHasWork, base, server } = input
-  if (!server) return localHasWork || base ? 'push' : 'same'
+  const automatic = Boolean(input.localIsAutomatic)
+  if (!server) return localHasWork || (base && !automatic) ? 'push' : 'same'
+  if (automatic && server.hasWork && localHash !== server.hash) return 'adopt'
   if (base && server.etag === base.etag) return localHash === base.hash ? 'same' : 'push'
   if (localHash === server.hash) return 'same'
   if (base && localHash === base.hash) return 'adopt'

@@ -1,8 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { closeAccountFiles, parkAccountFiles, reopenAccountFiles } from '../accountFiles'
-import { rememberReturn } from '../loginReturn'
+import {
+  closeAccountFiles,
+  onlyAutomaticBrand,
+  parkAccountFiles,
+  reopenAccountFiles,
+  shelveAccountFiles,
+  shelveSavedSystems,
+} from '../accountFiles'
+import { GUEST_START_STYLE, adoptPreset } from '../adoptPreset'
+import { peekLoginIntent, rememberReturn } from '../loginReturn'
 import { myThemeKeys } from '../themeLibrary'
-import { DEFAULT_THEME_SOURCES, makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
+import { THEME_STYLE_PRESETS } from '../themePresets'
+import { DEFAULT_THEME_SOURCES, captureSnapshot, makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>()
@@ -93,7 +102,12 @@ describe('account files on sign-out', () => {
     expect(useDesignStore.getState().savedSystems).toEqual([])
   })
 
-  it('does not file a parked draft as a design system', () => {
+  // Reversed 2026-11-02. It used to assert the parked system was DROPPED when
+  // it had never been Saved ("a parked draft is not a folder"). Since the
+  // account keeps the system on screen in the cloud, that system IS the
+  // account's work: dropping it here and pushing over the record erased it
+  // from every browser.
+  it('files the parked system on screen beside the work, even if it was never Saved', () => {
     const store = useDesignStore.getState()
     store.setProjectName('Draft')
     store.addTheme('plio', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
@@ -102,8 +116,98 @@ describe('account files on sign-out', () => {
     useDesignStore.getState().setProjectName('Nature')
     rememberReturn('library', 'save-library')
     reopenAccountFiles('user-1')
-    expect(useDesignStore.getState().savedSystems).toEqual([])
-    expect(useDesignStore.getState().projectName).toBe('Nature')
+    const next = useDesignStore.getState()
+    expect(next.projectName).toBe('Nature')
+    const filed = next.savedSystems.find((s) => s.name === 'Draft')
+    expect(myThemeKeys(filed?.snapshot.themeOrder ?? [], filed?.snapshot.themes ?? {})).toEqual(['plio'])
+  })
+})
+
+describe('signing in over the automatic Core a visitor gets', () => {
+  function seedGuestBrand(): string {
+    const core = THEME_STYLE_PRESETS.find((p) => p.id === GUEST_START_STYLE)!
+    const res = adoptPreset(core, 'dark', { track: false })
+    if (!('key' in res)) throw new Error(res.error)
+    useDesignStore.getState().setThemeLabel(res.key, useDesignStore.getState().projectName)
+    return res.key
+  }
+
+  it('is not work: the parked files come back, and the save intent is dropped', () => {
+    saveAurora()
+    expect(parkAccountFiles('user-1')).toBe(true)
+    closeAccountFiles()
+    seedGuestBrand()
+    expect(onlyAutomaticBrand()).toBe(true)
+
+    rememberReturn('workspace', 'save-library')
+    reopenAccountFiles('user-1')
+    const next = useDesignStore.getState()
+    expect(myThemeKeys(next.themeOrder, next.themes)).toEqual(['aurora'])
+    expect(next.projectName).toBe('My files')
+    expect(peekLoginIntent()).toBeNull()
+  })
+
+  it('a Core that was changed is work, and stays', () => {
+    saveAurora()
+    expect(parkAccountFiles('user-1')).toBe(true)
+    closeAccountFiles()
+    const key = seedGuestBrand()
+    const s = useDesignStore.getState()
+    s.setThemeFoundations(key, { ...s.themeFoundations[key], radiusRoles: { ...s.themeFoundations[key]?.radiusRoles, action: '24px' } })
+    expect(onlyAutomaticBrand()).toBe(false)
+
+    rememberReturn('workspace', 'save-library')
+    reopenAccountFiles('user-1')
+    const next = useDesignStore.getState()
+    expect(myThemeKeys(next.themeOrder, next.themes)).toEqual([key])
+    expect(next.savedSystems.map((sys) => sys.name)).toContain('My files')
+  })
+})
+
+describe('filing the account\'s systems beside other work', () => {
+  it('a filed system never takes the id the system on screen saves under', () => {
+    // Both are called "Escala" — the default name a visitor's system has too.
+    const store = useDesignStore.getState()
+    store.addTheme('aurora', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    store.saveCurrentSystem()
+    const account = useDesignStore.getState().savedSystems[0]
+    expect(account.id).toBe('local:escala')
+
+    useDesignStore.setState({ ...makeDesignDefaults(), savedSystems: [] })
+    useDesignStore.getState().addTheme('solo', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    shelveSavedSystems([account])
+    const filed = useDesignStore.getState().savedSystems[0]
+    expect(filed.id).toBe('local:escala-2')
+    // The name moves with the id, so a later load-and-save files it under the same id.
+    expect(filed.name).toBe('Escala 2')
+    expect(filed.snapshot.projectName).toBe('Escala 2')
+
+    // Saving the work on screen does not write over it.
+    useDesignStore.getState().saveCurrentSystem()
+    const all = useDesignStore.getState().savedSystems
+    const brandsOf = (id: string) => {
+      const sys = all.find((x) => x.id === id)
+      return myThemeKeys(sys?.snapshot.themeOrder ?? [], sys?.snapshot.themes ?? {})
+    }
+    expect(brandsOf('local:escala')).toEqual(['solo'])
+    expect(brandsOf('local:escala-2')).toEqual(['aurora'])
+  })
+
+  it('a filed system with the same brand keys as the screen is not folded into it', () => {
+    // The visitor's Core and an account system started from Core share the key.
+    const store = useDesignStore.getState()
+    store.setProjectName('Acme')
+    store.addTheme('core--minimalist', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    const accountSnapshot = captureSnapshot(useDesignStore.getState())
+
+    useDesignStore.setState({ ...makeDesignDefaults(), savedSystems: [] })
+    useDesignStore.getState().addTheme('core--minimalist', 'light', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    shelveAccountFiles(accountSnapshot, [])
+    expect(useDesignStore.getState().savedSystems.map((s) => s.name)).toEqual(['Acme'])
+
+    useDesignStore.getState().saveCurrentSystem()
+    const names = useDesignStore.getState().savedSystems.map((s) => s.name).sort()
+    expect(names).toEqual(['Acme', 'Escala'])
   })
 })
 

@@ -54,6 +54,12 @@ function isThisSystem<T extends SavedSystemRecord>(
 ): boolean {
   if (sys.id === currentId) return true
   if (live.publishId && sys.snapshot.publishId === live.publishId) return true
+  // The brand set is only a fallback for a renamed copy that never had a
+  // publish id. A saved system with an id of its own that is not the
+  // screen's is another system, whatever brand keys the two share — the
+  // visitor's Core and an account system started from Core are both
+  // `core--minimalist`, and the next save used to fold one into the other.
+  if (sys.snapshot.publishId && sys.snapshot.publishId !== live.publishId) return false
   return sameBrandSet(savedSystemBrandKeys(sys), liveBrands)
 }
 

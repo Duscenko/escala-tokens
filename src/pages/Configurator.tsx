@@ -108,7 +108,7 @@ import { UpgradeToProDialog } from '../components/configurator/UpgradeToProNotic
 import { useProAsk } from '../lib/freeEditBudget'
 import { hasStoredSession, useAuth } from '../lib/auth'
 import { accountsEnabled } from '../lib/supabase'
-import { reopenAccountFiles } from '../lib/accountFiles'
+import { onlyAutomaticBrand, reopenAccountFiles } from '../lib/accountFiles'
 import { accountCloudSettled, startAccountCloud, stopAccountCloud } from '../lib/accountCloudSync'
 import { AccountCloudConflict } from '../components/configurator/AccountCloudStatus'
 import { isPublishId } from '../lib/publishId'
@@ -1498,6 +1498,10 @@ export default function Configurator() {
       setExportRun((n) => n + 1)
       setSectionExportOpen(true)
     } else if (intent === 'save-library') {
+      // Nothing of theirs to save: the automatic Core a visitor gets. The
+      // account's files are on their way (`reopenAccountFiles`, the cloud
+      // read); filing Core now would only put it beside them as "saved".
+      if (onlyAutomaticBrand()) return
       useDesignStore.getState().saveCurrentSystem()
       announceBrandSaved(t, previewTheme)
     }

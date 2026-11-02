@@ -718,6 +718,25 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > (Blob writes are metered). Sign-out flushes then stops the engine BEFORE parking, so the blank
 > workspace is never uploaded; the orphan-publish sweep waits for `accountCloudSettled()`.
 
+> **UPDATE (2026-11-02): the visitor's automatic Core is NOT work, and signing in never drops the
+> account's system.** Reported as "I saved, closed, opened again: Core blue, my brands gone". Every
+> visitor gets Core (`ensureGuestBrand`); it counted as work, so the header's plain Sign in recorded
+> `save-library`, `reopenAccountFiles` kept Core on screen, and the cloud engine PUSHED Core over the
+> account (filing only its OTHER saved systems — the system on screen was erased everywhere).
+> - **`onlyAutomaticBrand()` (`accountFiles.ts`) is the one test**: the only brand is the untouched
+>   Core (`untouchedGuestSeed`) and no other system is saved. It is not work in AccountControl (no
+>   intent), `reopenAccountFiles` (parked files come back), `planCloudSync` (`localIsAutomatic`:
+>   never pushed over a record with work, not uploaded on its own) or the post-login save handler.
+>   A Core that was changed IS work and keeps the save flow.
+> - **Keeping guest work on sign-in files the account's files beside it — saved systems AND the
+>   system on screen** (`shelveAccountFiles` / `liveAsSavedSystem`). Filed ids never take the id
+>   the screen saves under (a local id renames with its name: "Escala 2"), and a filed system gets a
+>   publish id of its own.
+> - **`isThisSystem` (`savedSystemList.ts`): a saved system whose publish id is its own and not the
+>   screen's is another system**, whatever brand keys they share. The brand-set fallback used to fold
+>   an account system started from Core (`core--minimalist`) into the visitor's Core on the next save.
+> Locked by `signInOverGuestSeed.test.ts`, `accountFiles.test.ts`, `accountCloud.test.ts`.
+
 > **UPDATE (2026-10-14): ONE "context for agents" — Scope · Theme · Detail.** There were four
 > markdown surfaces over the same tokens (Code's Agent context, Code's README Markdown, the
 > preview panel's `.MD`, Docs' Copy context) and none let the person say what they wanted.

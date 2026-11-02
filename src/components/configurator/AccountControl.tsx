@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../lib/i18n'
 import { accountHref } from '../../lib/accountRoutes'
 import { displayNameOf, initialOf, signOut, useAuth, useSigningOut } from '../../lib/auth'
-import { loginHref, rememberReturn } from '../../lib/loginReturn'
+import { forgetLoginIntent, loginHref, rememberReturn } from '../../lib/loginReturn'
+import { onlyAutomaticBrand } from '../../lib/accountFiles'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useSavedBrandKeys } from '../../lib/libraryStatus'
@@ -117,7 +118,14 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
   if (!user) {
     const keepsWork = guestBrandCount > 0
     const next = keepsWork ? 'workspace' : 'library'
-    const remember = () => (keepsWork ? rememberReturn('workspace', 'save-library') : rememberReturn('library'))
+    // The automatic Core every visitor gets is not work to save: signing in
+    // over it must bring the account's files back, not keep Core on screen.
+    const remember = () => {
+      if (!keepsWork) return rememberReturn('library')
+      if (!onlyAutomaticBrand()) return rememberReturn('workspace', 'save-library')
+      rememberReturn('workspace')
+      forgetLoginIntent('save-library')
+    }
     return (
       <>
         {/* ≥1080px (full nav): one quiet "Sign in" — the login page itself links across to

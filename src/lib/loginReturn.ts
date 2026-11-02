@@ -214,6 +214,19 @@ export function takeLoginIntent(next: LoginNext): LoginIntent | null {
   return pending.intent
 }
 
+/** Drop the pending action when there turned out to be nothing to finish —
+ *  a `save-library` recorded over the automatic Core a visitor never touched.
+ *  The destination stays; only the intent goes. */
+export function forgetLoginIntent(intent: LoginIntent): void {
+  const pending = readPending()
+  if (!pending || pending.intent !== intent) return
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...pending, intent: null }))
+  } catch {
+    // ignore
+  }
+}
+
 export function forgetLoginReturn(): void {
   try {
     window.sessionStorage.removeItem(STORAGE_KEY)

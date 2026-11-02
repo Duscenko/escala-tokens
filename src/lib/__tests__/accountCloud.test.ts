@@ -86,6 +86,24 @@ describe('sync decision', () => {
     expect(planCloudSync({ localHash: 'h3', localHasWork: true, base, server: { etag: 'e2', hash: 'h9' } })).toBe('conflict')
     expect(planCloudSync({ localHash: 'h3', localHasWork: true, base: null, server: { etag: 'e2', hash: 'h9' } })).toBe('conflict')
   })
+  // The visitor's automatic Core (2026-11-02): after a sign-out the base still
+  // names the account's last save, so "this browser changed since" read true
+  // and Core was pushed over the account's brands.
+  it('the automatic Core is never sent over an account that holds work', () => {
+    const auto = { localHasWork: false, localIsAutomatic: true }
+    const work = { etag: 'e1', hash: 'h0', hasWork: true }
+    expect(planCloudSync({ localHash: 'core', ...auto, base, server: work })).toBe('adopt')
+    expect(planCloudSync({ localHash: 'core', ...auto, base: null, server: work })).toBe('adopt')
+    expect(planCloudSync({ localHash: 'core', ...auto, base, server: { ...work, etag: 'e2' } })).toBe('adopt')
+  })
+  it('the automatic Core is not uploaded on its own', () => {
+    const auto = { localHasWork: false, localIsAutomatic: true }
+    expect(planCloudSync({ localHash: 'core', ...auto, base: null, server: null })).toBe('same')
+    expect(planCloudSync({ localHash: 'core', ...auto, base, server: null })).toBe('same')
+  })
+  it('an empty browser after deleting everything still sends the deletion', () => {
+    expect(planCloudSync({ localHash: 'empty', localHasWork: false, base, server: { etag: 'e1', hash: 'h0', hasWork: true } })).toBe('push')
+  })
   it('identical content is never a conflict', () => {
     expect(planCloudSync({ localHash: 'h9', localHasWork: true, base: null, server: { etag: 'e2', hash: 'h9' } })).toBe('same')
   })
