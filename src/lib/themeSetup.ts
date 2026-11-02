@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useEditHistory } from './editHistory'
+import { setDraftBrandSource } from '../store/useDesignStore'
 
 // GUIDED THEME SETUP — the onboarding a theme gets when it is created from
 // Home's first step (name + accent). One edition at a time, in rail order:
@@ -79,6 +80,9 @@ type SetupState = {
 }
 
 export const useThemeSetup = create<SetupState>(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }))
+// Every save reads the drafts from here, so a brand still marked unsaved is
+// never filed with the system (`snapshotForFiling`).
+setDraftBrandSource(() => Object.keys(useThemeSetup.getState().unsaved))
 
 function historyLength() {
   return useEditHistory.getState().past.length

@@ -653,8 +653,9 @@ export default function ThemeSaveBar({
   const showAction = !(guestPrimary && inactive)
   const saveBrand = (anchor: HTMLElement | null) => {
     const s = useDesignStore.getState()
-    s.saveCurrentSystem()
+    // Kept first, then filed: a save leaves every draft out of the saved copy.
     if (themeKey) forgetUnsavedBrand(themeKey)
+    s.saveCurrentSystem()
     // To the account now, not after the metering gap: the person just chose
     // to keep it, and the status line under the button says when it landed.
     void flushAccountCloud({ force: true })

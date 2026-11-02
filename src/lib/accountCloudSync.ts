@@ -26,7 +26,7 @@ import { onlyAutomaticBrand, shelveAccountFiles } from './accountFiles'
 import { FIGMA_VIEWPORTS } from './figmaSyncModes'
 import { forgetLoginIntent, peekLoginIntent } from './loginReturn'
 import { supabase } from './supabase'
-import { captureSnapshot, useDesignStore, type DesignSnapshot, type SavedSystem } from '../store/useDesignStore'
+import { snapshotForFiling, useDesignStore, type DesignSnapshot, type SavedSystem } from '../store/useDesignStore'
 
 export type AccountCloudStatus =
   | 'off'
@@ -129,7 +129,9 @@ function storeVersion(): number {
 export function localCloudFiles(): CloudFiles {
   const state = useDesignStore.getState()
   return {
-    snapshot: captureSnapshot(state) as unknown as CloudFiles['snapshot'],
+    // Drafts stay in this browser: another one would read them as kept
+    // brands and list them on Home.
+    snapshot: snapshotForFiling(state as never) as unknown as CloudFiles['snapshot'],
     savedSystems: state.savedSystems as unknown as CloudFiles['savedSystems'],
     // Pinned was removed (design-plans/home-into-system.md). The record keeps
     // the field, always empty, so a browser on an older build still reads it.

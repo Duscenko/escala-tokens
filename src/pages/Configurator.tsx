@@ -1502,6 +1502,9 @@ export default function Configurator() {
       // account's files are on their way (`reopenAccountFiles`, the cloud
       // read); filing Core now would only put it beside them as "saved".
       if (onlyAutomaticBrand()) return
+      // The brand they asked to save is kept; any other draft stays out.
+      finishThemeSetup(previewTheme)
+      forgetUnsavedBrand(previewTheme)
       useDesignStore.getState().saveCurrentSystem()
       announceBrandSaved(t, previewTheme)
     }

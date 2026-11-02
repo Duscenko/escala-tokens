@@ -742,6 +742,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   an account system started from Core (`core--minimalist`) into the visitor's Core on the next save.
 > Locked by `signInOverGuestSeed.test.ts`, `accountFiles.test.ts`, `accountCloud.test.ts`.
 
+> **UPDATE (2026-11-02, same day): a save files only KEPT brands — drafts stay on the board.**
+> Reported as Home listing two "Core" brands nobody saved. The create studio mints its brand
+> the moment it opens (a draft, `markBrandUnsaved`); leaving the studio by any door but Cancel
+> left it on the board, and every save captured the WHOLE screen, so the next save of any brand
+> (Board's Save brand, a kept import, Export's snapshot, the login `save-library`) filed the draft
+> too, and Home read it as saved. **`snapshotForFiling` (`useDesignStore.ts`) is what
+> `saveCurrentSystem` and the account-cloud upload (`localCloudFiles`) send**: the screen minus
+> the drafts the saved copy does not already hold (a stale marker never deletes a kept brand).
+> The drafts come from `lib/themeSetup` through `setDraftBrandSource` (the store cannot import
+> it: themeSetup → editHistory → store). **Keep a brand by clearing its marker BEFORE saving**
+> (`forgetUnsavedBrand(key)` then `saveCurrentSystem()`), or the save leaves it out — Board's
+> Save brand had the order reversed. Removal is ONE pure function, `brandRemovalPatch`, used by
+> `removeTheme` and by the filing. Brands already filed by the old leak cannot be told apart from
+> kept ones; they are removed by hand (Home's trash). Locked by `draftBrandFiling.test.ts`.
+
 > **UPDATE (2026-10-14): ONE "context for agents" — Scope · Theme · Detail.** There were four
 > markdown surfaces over the same tokens (Code's Agent context, Code's README Markdown, the
 > preview panel's `.MD`, Docs' Copy context) and none let the person say what they wanted.

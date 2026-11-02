@@ -760,6 +760,91 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
   }
 }
 
+type BrandLayer = Pick<DesignSnapshot,
+  'themes' | 'themeSemantics' | 'themeKinds' | 'themeLabels' | 'themeSources' | 'themeFoundations'
+  | 'themeOrigin' | 'brandThemes' | 'architectureOverrides' | 'themeOrder' | 'customColors'>
+
+/** The brand layer without `keys` — what `removeTheme` writes, as a pure
+ *  function so a save can leave drafts out without touching the screen.
+ *  Families a removed brand minted for itself go with it once no remaining
+ *  brand reads them; overrides keyed by a removed brand are pruned. */
+export function brandRemovalPatch(state: BrandLayer, keys: string[]): BrandLayer {
+  const gone = new Set(keys.filter((key) => state.themes[key]))
+  if (gone.size === 0) return state
+  const keep = <T,>(map: Record<string, T> | undefined): Record<string, T> =>
+    Object.fromEntries(Object.entries(map ?? {}).filter(([key]) => !gone.has(key)))
+  const themeSources = keep(state.themeSources)
+  const deletedSlots = new Set(
+    [...gone].flatMap((key) => Object.values(state.themeSources[key] ?? {}).filter(Boolean) as string[]),
+  )
+  const stillUsed = (famKey: string) =>
+    Object.values(themeSources).some((refs) =>
+      (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey)
+      || refs.secondary === famKey
+      || refs.tertiary === famKey,
+    )
+  const customColors = deletedSlots.size
+    ? state.customColors.filter((c) => !deletedSlots.has(c.key) || stillUsed(c.key))
+    : state.customColors
+  const architectureOverrides = Object.fromEntries(
+    Object.entries(state.architectureOverrides).map(([arch, tokens]) => [
+      arch,
+      Object.fromEntries(
+        Object.entries(tokens)
+          .map(([token, modes]) => [
+            token,
+            Object.fromEntries(Object.entries(modes).filter(([mode]) => !gone.has(mode))),
+          ] as const)
+          .filter(([, modes]) => Object.keys(modes).length > 0),
+      ),
+    ]),
+  ) as DesignSnapshot['architectureOverrides']
+  return {
+    themes: keep(state.themes),
+    themeSemantics: keep(state.themeSemantics),
+    themeKinds: keep(state.themeKinds),
+    themeLabels: keep(state.themeLabels),
+    themeSources,
+    themeFoundations: keep(state.themeFoundations),
+    themeOrigin: keep(state.themeOrigin),
+    brandThemes: keep(state.brandThemes),
+    architectureOverrides,
+    themeOrder: state.themeOrder.filter((key) => !gone.has(key)),
+    customColors,
+  }
+}
+
+/** Brand keys that are still drafts (made here, not kept yet). Set once by
+ *  `lib/themeSetup`, which owns the marker — the store cannot import it
+ *  (themeSetup → editHistory → this store). */
+let draftBrandSource: () => string[] = () => []
+export function setDraftBrandSource(source: () => string[]): void {
+  draftBrandSource = source
+}
+
+/**
+ * What a save files: the system on screen WITHOUT the brands that are still
+ * drafts. A brand the create studio minted (or Random rolled) is on the board,
+ * but it is not part of the design system until the person keeps it — Save
+ * brand, a Ship door, an import. Every save used to capture the whole screen,
+ * so a draft left on the board rode into the saved copy (and the account)
+ * with the next save of ANY brand, and Home then listed it as saved: two
+ * "Core" brands nobody chose. A draft the saved copy already holds stays (a
+ * stale marker must never delete a kept brand).
+ */
+export function snapshotForFiling(
+  state: DesignSnapshot & { savedSystems: SavedSystem[]; githubRepo: string | null; projectName: string },
+  drafts: string[] = draftBrandSource(),
+): DesignSnapshot {
+  const snapshot = captureSnapshot(state)
+  if (drafts.length === 0) return snapshot
+  const entry = state.savedSystems.find((item) => item.id === activeLibraryId(state))
+  const held = new Set(entry?.snapshot.themeOrder ?? [])
+  const leave = drafts.filter((key) => !held.has(key) && snapshot.themes[key])
+  if (leave.length === 0) return snapshot
+  return { ...snapshot, ...brandRemovalPatch(snapshot, leave) }
+}
+
 /** The id `saveCurrentSystem` files the system on screen under — the repo when
  *  GitHub-connected, else a slug of the project name. One expression, so a
  *  "Save library" button's saved/unsaved readout can't look up a different
@@ -1524,68 +1609,12 @@ export const useDesignStore = create<DesignStore>()(
           // Empty My themes is allowed — the library falls back to System
           // styles / "Create your theme". Guarding the last theme hid the
           // trash and made a one-theme system undeletable.
-          const { [key]: _, ...themes } = state.themes
-          const { [key]: __, ...themeSemantics } = state.themeSemantics
-          const { [key]: ___, ...themeKinds } = state.themeKinds
-          const { [key]: ____, ...themeLabels } = state.themeLabels
-          const { [key]: _____, ...themeSources } = state.themeSources
-          const { [key]: ______, ...themeFoundations } = state.themeFoundations
-          const { [key]: _______, ...themeOrigin } = state.themeOrigin ?? {}
-          const { [key]: ________, ...brandThemes } = state.brandThemes ?? {}
-          // Sweep the families THIS theme minted for itself (Add-to-system /
-          // "+Theme" both mint one per slot it doesn't share with a global —
-          // see familySlotFor) once nothing references them any more. Deleting
-          // the theme used to only "free" them into the Custom folder
-          // (removeCustomColor's own in-use lock would then let a person
-          // delete them by hand) — reported as primitive clutter piling up
-          // across repeated style try-ons ("Blue-marin", "Core--minimalist", …)
-          // that nobody was ever going to click through six delete
-          // confirmations for. A family a person is still actually using
-          // elsewhere is untouched: `stillUsed` re-checks the SAME "any theme's
-          // themeSources references it" condition `removeCustomColor` already
-          // enforces, against the POST-removal `themeSources` — a family two
-          // themes shared survives losing one of them.
-          const deletedSlots = new Set(Object.values(state.themeSources[key] ?? {}).filter(Boolean))
-          const stillUsed = (famKey: string) =>
-            Object.values(themeSources).some((refs) =>
-              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey)
-              || refs.secondary === famKey
-              || refs.tertiary === famKey,
-            )
-          const customColors = deletedSlots.size
-            ? state.customColors.filter((c) => !deletedSlots.has(c.key) || stillUsed(c.key))
-            : state.customColors
-          // `architectureOverrides` is keyed `arch → token → THEME KEY` (a
-          // PLAIN theme key — verified against `scopeSnapshotToTheme` right
-          // above in this file, which the "saving a kit scoped to one theme"
-          // flow already exercises and which this comment used to describe
-          // incorrectly). So a deleted theme leaves a `"gone"`-keyed entry
-          // behind — ref data pointing at a theme that no longer exists. This
-          // used to filter for `themeModeKey(key, 'light'|'dark')` — a
-          // `"gone::light"`-shaped key that `setArchitectureOverride` never
-          // actually writes — so the filter below matched nothing and this
-          // pruning was silently a no-op since it was added: every Style
-          // try-on adopted and then deleted left its overrides in storage
-          // forever (`applyArchTokenOverrides`'s own `hasOwnProperty` guard,
-          // added alongside this fix, keeps a stale entry like this out of
-          // the EXPORT regardless — but it should not go on accumulating in
-          // the store either). It matters more now that a System Style
-          // writes overrides on adopt, so trying styles on and deleting them
-          // used to accumulate orphans forever.
-          const architectureOverrides = Object.fromEntries(
-            Object.entries(state.architectureOverrides).map(([arch, tokens]) => [
-              arch,
-              Object.fromEntries(
-                Object.entries(tokens)
-                  .map(([token, modes]) => [
-                    token,
-                    Object.fromEntries(Object.entries(modes).filter(([mode]) => mode !== key)),
-                  ] as const)
-                  .filter(([, modes]) => Object.keys(modes).length > 0),
-              ),
-            ]),
-          )
-          const themeOrder = state.themeOrder.filter((t) => t !== key)
+          // The brand layer without this one — one pure function, shared with
+          // `snapshotForFiling` (a save leaves drafts out the same way). It
+          // also sweeps the families this brand minted for itself once no
+          // other brand reads them, and prunes overrides keyed by it.
+          const patch = brandRemovalPatch(state, [key])
+          const { themes, themeOrder } = patch
           // The last brand left. The saved folder was this system; keeping it
           // would list it under Other design systems the moment the name changes.
           const saved = myThemeKeys(themeOrder, themes).length === 0
@@ -1602,17 +1631,7 @@ export const useDesignStore = create<DesignStore>()(
             setTimeout(requestRepublish, 0)
           }
           return {
-            themes,
-            themeSemantics,
-            themeKinds,
-            themeLabels,
-            themeSources,
-            themeFoundations,
-            themeOrigin,
-            brandThemes,
-            architectureOverrides,
-            themeOrder,
-            customColors,
+            ...patch,
             ...(saved
               ? {
                   savedSystems: saved.savedSystems,
@@ -1972,7 +1991,7 @@ export const useDesignStore = create<DesignStore>()(
         }),
       saveCurrentSystem: () =>
         set((state) => {
-          const snapshot = captureSnapshot(state as unknown as DesignSnapshot)
+          const snapshot = snapshotForFiling(state as unknown as Parameters<typeof snapshotForFiling>[0])
           const entry = buildSavedSystemEntry(state, snapshot)
           const upserted = state.savedSystems.some((s) => s.id === entry.id)
             ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
