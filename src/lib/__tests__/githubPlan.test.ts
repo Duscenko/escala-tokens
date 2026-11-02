@@ -42,6 +42,18 @@ describe('push change review', () => {
     expect(changed.changes).toEqual([{ path: '.escala/system.json', kind: 'modified' }])
   })
 
+  // Seen live 2026-11-02: right after a first push the review said "1 change"
+  // — the pushed snapshot had no last-push date, the screen then had one.
+  it('a first push\'s own "last push" date is not a change', async () => {
+    const pushed = '{\n  "savedAt": "2026-11-02T09:19:49.000Z",\n  "snapshot": {\n    "githubLastPushAt": null,\n    "a": 1\n  }\n}\n'
+    const remote = await remoteOf({ '.escala/system.json': pushed })
+    const after = await diffPush(
+      [{ path: '.escala/system.json', content: pushed.replace('null', '"2026-11-02T09:19:50.456Z"').replace('09:19:49', '09:20:10') }],
+      remote, [], async () => pushed,
+    )
+    expect(after.changes).toEqual([])
+  })
+
   it('groups into a few lines: root files one by one, owned folders as one row', () => {
     const rows = groupPushChanges([
       { path: 'tokens.json', kind: 'modified' },

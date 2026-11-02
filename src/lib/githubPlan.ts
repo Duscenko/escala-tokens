@@ -27,7 +27,10 @@ export interface PushPlan {
 
 // A calendar date, optionally with a time — the only thing masked.
 const DATE = /\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?/g
-const maskDates = (s: string) => s.replace(DATE, '·')
+// The snapshot's own "last push" is null in the file a FIRST push writes and a
+// date right after it, so that file read as modified after every first push.
+const NEVER_PUSHED = /("githubLastPushAt":\s*)null/g
+const maskDates = (s: string) => s.replace(DATE, '·').replace(NEVER_PUSHED, '$1"·"')
 /** More dated files than this and the rest count as modified: never hang a review on downloads. */
 const MAX_DATE_CHECKS = 40
 

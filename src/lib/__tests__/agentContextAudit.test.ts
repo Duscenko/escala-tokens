@@ -648,6 +648,8 @@ describe('GitHub push: one commit', () => {
         return opts.empty ? json(409, { message: 'Git Repository is empty.' }) : json(200, { object: { sha: 'head' } })
       }
       if (path === '/repos/o/r/git/commits/head') return json(200, { tree: { sha: 'base' } })
+      // An empty repo after its first Contents PUT: the branch now exists.
+      if (path === '/repos/o/r/git/commits/commit2') return json(200, { tree: { sha: 'seeded' } })
       if (path.startsWith('/repos/o/r/git/trees/head')) return json(200, { tree: (opts.existing ?? []).map((p) => ({ path: p, type: 'blob', sha: 'old' })) })
       if (path.startsWith('/repos/o/r/git/trees/commit2')) return json(200, { tree: pushedTree() })
       if (path === '/repos/o/r/git/trees') {
@@ -691,16 +693,22 @@ describe('GitHub push: one commit', () => {
     expect(calls.find((c) => c.method === 'PATCH')!.body).toEqual({ sha: 'commit2' })
   })
 
-  it('an empty repo falls back to the Contents API', async () => {
+  // Since faee516: ONE file through the Contents API creates the branch, and
+  // everything goes in one Git commit. A Contents PUT per file was a commit
+  // per file, and GitHub refuses more than ~80 content writes a minute.
+  it('an empty repo gets one Contents PUT to create the branch, then one commit', async () => {
     const { commitFiles } = await import('../github')
     const { calls, fetchMock } = mockGitHub({ empty: true })
     const real = globalThis.fetch
     globalThis.fetch = fetchMock as typeof fetch
     try {
-      await commitFiles('t', 'o/r', [{ path: 'tokens.json', content: '{}' }], 'msg')
+      await commitFiles('t', 'o/r', [{ path: 'README.md', content: '# r' }, { path: 'tokens.json', content: '{}' }], 'msg')
     } finally {
       globalThis.fetch = real
     }
-    expect(calls.some((c) => c.method === 'PUT' && c.path === '/repos/o/r/contents/tokens.json')).toBe(true)
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/repos/o/r/contents/README.md'])
+    expect(calls.filter((c) => c.path === '/repos/o/r/git/commits' && c.method === 'POST')).toHaveLength(1)
+    const tree = calls.find((c) => c.method === 'POST' && c.path === '/repos/o/r/git/trees')!.body!
+    expect((tree.tree as { path: string }[]).map((e) => e.path).sort()).toEqual(['README.md', 'tokens.json'])
   })
 })
