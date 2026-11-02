@@ -17,7 +17,7 @@ import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
 import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { AccountCloudStatus } from './AccountCloudStatus'
-import { FigmaGlyph } from '../ui/icons'
+import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { HintTip } from '../ui/HintTip'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
@@ -35,6 +35,9 @@ export interface ShipActions {
   figma: () => void
   /** The Code tab on Agent context. */
   agent: () => void
+  /** Push to a GitHub repository — an icon at the row's end, not a fourth
+   *  named door (owner's call, 2026-10-31): the three stay the promise. */
+  github?: () => void
 }
 
 export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
@@ -64,7 +67,9 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
     // the caption only added a line between Save and them. The group keeps the
     // name for screen readers.
     <div className="flex flex-col gap-2">
-      <div role="group" aria-label={t('Ship to')} className="flex items-center gap-1.5">
+      {/* With the GitHub icon in the row, the three named doors tighten a
+          little (padding, gaps) so "Agent" still fits whole at 287px. */}
+      <div role="group" aria-label={t('Ship to')} className={`flex items-center ${ship.github ? 'gap-1 [&>button]:!gap-1 [&>button]:!px-1.5' : 'gap-1.5'}`}>
         <button type="button" onClick={ship.css} className={SHIP_BUTTON} title={t('Copy or download variables.css')}>
           <CodeGlyph /><span className="truncate">{t('CSS')}</span>
         </button>
@@ -74,6 +79,13 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
         <button type="button" onClick={ship.agent} className={SHIP_BUTTON} title={t('One message your AI agent reads as the source of truth.')}>
           <AgentGlyph /><span className="truncate">{t('Agent')}</span>
         </button>
+        {ship.github && (
+          <HintTip label={t('Push to GitHub')}>
+            <button type="button" onClick={ship.github} aria-label={t('Push to GitHub')} className={`${SHIP_BUTTON} !w-8 !flex-none !px-0`}>
+              <GitHubGlyph size={14} />
+            </button>
+          </HintTip>
+        )}
       </div>
     </div>
   )

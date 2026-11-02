@@ -235,6 +235,11 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > "Exit inspector" only while something is pinned (`pinned`); inspect mode still starts on. A
 > guest's board header says "Sample screens drawn from your tokens" (its login-card artefact
 > read as a wall). Don't add a fourth door or a second name for one of the three.
+> **UPDATE (2026-10-31, owner's call): the inspector's Ship row ends with a GitHub ICON** —
+> `CSS · Figma · Agent · [GitHub mark]`, the mark alone with "Push to GitHub" in its tooltip
+> (`ShipActions.github`, optional; `shipFor` wires it to `openGithubPage` for that brand). It
+> is not a fourth named door: the three words stay the promise, and GitHub is still not in
+> the Export pill or Home's brand menu.
 > **The three doors open IN the right panel, not on another page** (phase 1b): `ShipPanel.tsx`
 > layers over the inspector slot (z-30, like Token Details) with Back to editing / Esc, a
 > short preview, Copy + Download, and a link to the long view (Code tab, Figma page). Its
