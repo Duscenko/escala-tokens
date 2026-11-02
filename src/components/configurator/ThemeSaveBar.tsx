@@ -99,6 +99,13 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
 // is full strength: at 50% it measured under 3:1 on the bar.
 const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 motion-reduce:active:scale-100 aria-disabled:cursor-not-allowed aria-disabled:text-fg-faint aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui'
 
+/** Where the board toolbar floats: centred at the board's foot, letting
+ *  clicks through beside its pills. The Board and the create studio both use
+ *  it, so the bar sits in ONE place whichever board is on screen. */
+export const BOARD_TOOLBAR_DOCK = 'pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4'
+/** The lift under each pill of that bar. */
+export const BOARD_TOOLBAR_LIFT = 'pointer-events-auto shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]'
+
 /**
  * Undo · Redo · Random, on the BOARD's header — the surface they act on.
  * They used to sit in the inspector footer, stacked with the save status and
@@ -643,11 +650,14 @@ export default function ThemeSaveBar({
   // The Ship row stands in for the Get code primary wherever that primary
   // would have shown: the brand is kept (or a guest's), so the next move is
   // the way out, and there are three of them, not one.
-  // A signed-in DRAFT keeps Save brand as the primary, full width, with the
-  // Ship row under it. It used to be the other way round — doors first,
-  // Save as a small button on the status line — and people shipped (or
-  // left) thinking the brand was already in the system. Keeping it is THE
-  // decision on a draft, so it takes the primary's place.
+  // A signed-in DRAFT: the doors, then ONE line — "Not saved", Discard and
+  // Save brand. History, so it is not flipped back blindly: Save was first a
+  // SMALL button on this line (missed — people shipped thinking the brand was
+  // kept), then a full-width primary above the doors, with "Not saved" two
+  // rows below it (reported 2026-11-02: state and act read as unrelated).
+  // Now it is the line's primary at full size (h-8, the CTA fill): the state
+  // and the act that changes it read as one sentence, and once saved the
+  // same line says "Saved to your account" in the same place.
   const draftShip = Boolean(ship) && !inactive && draft && !access.guest && !exploringRandom
   const shipOut = Boolean(ship) && use
   const showAction = !(guestPrimary && inactive)
@@ -703,7 +713,7 @@ export default function ThemeSaveBar({
           work lives. Variables greys the row out; a guest there already has
           the status line's two actions, so a dead grey "Save with an account"
           would only repeat it. */}
-      {showAction && (shipOut && ship ? (
+      {showAction && !draftShip && (shipOut && ship ? (
         <ShipRow ship={ship} />
       ) : (
       <div className="flex items-center gap-2">
@@ -744,13 +754,15 @@ export default function ThemeSaveBar({
       </button>
       </div>
       ))}
-      {/* A draft still ships: the three doors sit under Save, not instead of it. */}
+      {/* A draft still ships: the three doors, then the line that keeps it. */}
       {draftShip && ship && <ShipRow ship={ship} />}
       {/* Last line: where the work lives — "Not saved" for a guest, "Saved to
-          your account" (or why not) signed in. Status reads after the action. */}
+          your account" (or why not) signed in. On a draft the line carries
+          Save brand itself: the state and the act that changes it read as one
+          sentence, and once saved the same line says so in the same place. */}
       {draftShip ? (
         <div className="border-t border-line pt-2.5">
-          <UnsavedNotice onSave={saveBrand} quiet />
+          <UnsavedNotice onSave={saveBrand} />
         </div>
       ) : (guestPrimary || !access.guest) && <FooterStatus guest={guestPrimary} divided={showAction || (exploringRandom && Boolean(onDiscard))} />}
     </div>
@@ -761,15 +773,12 @@ export default function ThemeSaveBar({
  *  are the two ways to keep it. Information, not a gate — everything else on
  *  the page works without an account. A system already pushed to GitHub says
  *  where it is, and only offers the account. */
-export function UnsavedNotice({ onSave, onDiscard, quiet = false }: {
+export function UnsavedNotice({ onSave, onDiscard }: {
   /** Signed in, a brand not kept yet: the line's action saves it here
    *  instead of sending to sign-up. Gets the link as the confetti anchor. */
   onSave?: (anchor: HTMLElement | null) => void
   /** A draft that can be thrown away (the create studio's Cancel). */
   onDiscard?: () => void
-  /** The Save brand button already sits above this line as the primary:
-   *  say "Not saved" without repeating it beside. The ⓘ still offers it. */
-  quiet?: boolean
 } = {}) {
   const { t } = useI18n()
   const saveLinkRef = useRef<HTMLButtonElement>(null)
@@ -798,11 +807,12 @@ export function UnsavedNotice({ onSave, onDiscard, quiet = false }: {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="flex items-center gap-1.5 rounded text-caption font-medium text-status-warning transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        title={t('Not saved')}
+        className="flex min-w-0 items-center gap-1.5 rounded text-caption font-medium text-status-warning transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >
         <span aria-hidden className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
-        <span>{t('Not saved')}</span>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+        <span className="truncate">{t('Not saved')}</span>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden className="flex-shrink-0">
           <circle cx="8" cy="8" r="6.25" />
           <path d="M8 7.25v3.5" />
           <circle cx="8" cy="5" r="0.5" fill="currentColor" />
@@ -810,15 +820,15 @@ export function UnsavedNotice({ onSave, onDiscard, quiet = false }: {
       </button>
       {/* The warning carries its own way out, not only behind the ⓘ. */}
       {onDiscard && (
-        <button type="button" onClick={onDiscard} className={`ml-auto rounded text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+        <button type="button" onClick={onDiscard} className={`ml-auto flex-shrink-0 rounded text-caption font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
           {t('Discard')}
         </button>
       )}
-      {onSave && !quiet ? (
+      {onSave ? (
         // A real button, not a link: keeping the brand is THE decision on a
         // draft, and as underlined text beside "Not saved" it was missed —
         // people shipped (or left) thinking the brand was already in the system.
-        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg bg-cta px-2.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2.5 6.5 5 9l4.5-5.5" />
           </svg>
@@ -827,7 +837,7 @@ export function UnsavedNotice({ onSave, onDiscard, quiet = false }: {
       ) : guest && !onSave ? (
         // A button, like Save brand above: for a visitor this IS the one way
         // to keep the work, and as an underlined line it read as a footnote.
-        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}flex h-7 flex-shrink-0 items-center rounded-lg bg-cta px-2.5 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}flex h-8 flex-shrink-0 items-center rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
           {t('Save with an account')}
         </button>
       ) : null}
@@ -989,23 +999,14 @@ export function CreateStudioFooter({
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
         // The SAME layout as a draft's footer in the editor (ThemeSaveBar):
-        // Save brand as the primary, the three doors under it, then the
-        // status line with Discard. A guest has no save here, so the doors
-        // lead and the line offers the account.
+        // the three doors, then ONE line — "Not saved", Discard, Save brand.
+        // Save used to be a full-width button above the doors with "Not
+        // saved" two rows below it: the state and the act that changes it
+        // read as two unrelated things. A guest's line offers the account.
         <>
-          {!guest && (
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={(e) => onSave(e.currentTarget)} className={primary}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M2.5 6.5 5 9l4.5-5.5" />
-                </svg>
-                <span className="truncate">{t('Save brand')}</span>
-              </button>
-            </div>
-          )}
           <ShipRow ship={ship} />
           <div className="border-t border-line pt-2.5">
-            <UnsavedNotice onSave={guest ? undefined : (anchor) => onSave(anchor)} onDiscard={onCancel} quiet={!guest} />
+            <UnsavedNotice onSave={guest ? undefined : (anchor) => onSave(anchor)} onDiscard={onCancel} />
           </div>
         </>
       ) : (

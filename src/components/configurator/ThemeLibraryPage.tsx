@@ -28,9 +28,10 @@ import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
 import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardThemeSwitch } from './BrandThemesPicker'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
-import { BoardHistoryControls, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
+import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -227,37 +228,6 @@ const CREATE_STEPS = [
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
 
-/** The studio's title lives on the CANVAS, not in the inspector: it names the
- *  screen, and the inspector is the tool you use on it. The number is the step
- *  the footer counts, so the two never disagree. The hint is behind "?" —
- *  one sentence nobody needs twice. */
-function CreateBoardHeader({ title, stepLabel, lead, trailing }: {
-  title: string
-  stepLabel: string
-  /** The board's view switch. It leads, as in the Generator's header. */
-  lead?: ReactNode
-  /** The Inspector toggle, on the right as in the Generator's header. */
-  trailing?: ReactNode
-}) {
-  return (
-    <div
-      className="flex flex-shrink-0 items-center gap-4 border-b border-line px-5"
-      style={{ minHeight: INSPECTOR_TABS_H }}
-    >
-      {lead}
-      {/* The title says what this screen IS — a new brand, not yet kept —
-          so the board is not mistaken for the Board of a saved one. The
-          count stays for screen readers only (it added noise). */}
-      <h2 className="flex min-w-0 items-center gap-2 text-ui font-semibold text-fg">
-        <span className="truncate">{title}</span>
-        <span className="sr-only"> · {stepLabel}</span>
-      </h2>
-      <div className="flex-1" aria-hidden />
-      {trailing}
-    </div>
-  )
-}
-
 function CreateBoard({
   store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent, onRandom,
 }: {
@@ -294,20 +264,11 @@ function CreateBoard({
   )
   const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
   return (
-    <div className={`flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
-      <CreateBoardHeader
-        title={title}
-        stepLabel={stepLabel}
-        lead={<BoardViewSwitch value={view} onChange={setView} panelId={panelId} />}
-        trailing={(
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <BoardHistoryControls onRandom={onRandom}>
-              <InspectorToggle bare active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
-            </BoardHistoryControls>
-          </div>
-        )}
-      />
-      <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+    <div className={`relative flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
+      {/* The screen's name, for screen readers: the brand's name heads the
+          inspector, as on the Board, so the canvas carries no title band. */}
+      <h2 className="sr-only">{title} · {stepLabel}</h2>
+      <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-20">
         <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
         <InspectorModeProvider active={inspecting}>
         {view === 'theme' ? (
@@ -322,6 +283,21 @@ function CreateBoard({
           <ComponentCoversGrid tokens={stage} onOpen={onOpenComponent ? (def) => onOpenComponent(def.key) : undefined} />
         )}
         </InspectorModeProvider>
+        </div>
+      </div>
+      {/* The Board's toolbar, in the Board's place: Undo · Redo · Random ·
+          Inspector · Light/Dark ‖ Theme · Components, floating at the foot.
+          The studio used to carry these in a header band of its own — two
+          homes for one bar read as two different tools. */}
+      <div className={BOARD_TOOLBAR_DOCK} data-board-toolbar>
+        <div className={`rounded-xl ${BOARD_TOOLBAR_LIFT}`}>
+          <BoardHistoryControls
+            onRandom={onRandom}
+            appearance={<BoardThemeSwitch previewTheme={themeKey} onAppearance={() => {}} />}
+            trailing={<BoardViewSwitch inset value={view} onChange={setView} panelId={panelId} />}
+          >
+            <InspectorToggle bare active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
+          </BoardHistoryControls>
         </div>
       </div>
       <InspectorOverlay

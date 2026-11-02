@@ -3,7 +3,24 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 export type ToastAction = { label: string; onClick: () => void }
 
-type Toast = { id: number; message: string; action?: ToastAction; notice?: boolean }
+type Toast = { id: number; message: string; action?: ToastAction; notice?: boolean; bottom?: number }
+
+/** Room under the toast by default (px from the window's foot). */
+const TOAST_BOTTOM = 40
+
+/** Where the toast sits: above the board toolbar when one floats at the
+ *  board's foot (`data-board-toolbar`), or the default. Saving a brand
+ *  confirms right where its toolbar is — the toast used to cover it. */
+function toastBottom(): number {
+  if (typeof document === 'undefined') return TOAST_BOTTOM
+  let top = Infinity
+  for (const el of document.querySelectorAll<HTMLElement>('[data-board-toolbar]')) {
+    const rect = el.getBoundingClientRect()
+    if (rect.height > 0) top = Math.min(top, rect.top)
+  }
+  if (!Number.isFinite(top)) return TOAST_BOTTOM
+  return Math.max(TOAST_BOTTOM, Math.round(window.innerHeight - top + 12))
+}
 
 let push: ((message: string, action?: ToastAction, notice?: boolean) => void) | null = null
 let seq = 0
@@ -20,7 +37,7 @@ export function ToastHost() {
   const [toast, setToast] = useState<Toast | null>(null)
 
   useEffect(() => {
-    push = (message, action, notice) => setToast({ id: ++seq, message, action, notice })
+    push = (message, action, notice) => setToast({ id: ++seq, message, action, notice, bottom: toastBottom() })
     return () => { push = null }
   }, [])
 
@@ -31,7 +48,7 @@ export function ToastHost() {
   }, [toast])
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-10 z-[80] flex justify-center px-4" aria-live="polite">
+    <div className="pointer-events-none fixed inset-x-0 z-[80] flex justify-center px-4" style={{ bottom: toast?.bottom ?? TOAST_BOTTOM }} aria-live="polite">
       <AnimatePresence>
         {toast && (
           <motion.div

@@ -41,7 +41,7 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
-import { BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
+import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { HintTip } from '../ui/HintTip'
@@ -992,15 +992,16 @@ export default function ThemePreviewHub({
                     initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0, transition: { ...VIEW_IN, delay: 0.12 } }}
                     exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 12, transition: VIEW_OUT }}
-                    className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4"
+                    className={BOARD_TOOLBAR_DOCK}
+                    data-board-toolbar
                   >
                     {/* Reset rides beside the bar for an account. */}
                     {!guest && !mapOpen && (
-                      <div className="pointer-events-auto rounded-lg bg-nav shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)] empty:hidden">
+                      <div className={`rounded-lg bg-nav empty:hidden ${BOARD_TOOLBAR_LIFT}`}>
                         <EditHistoryControls previewTheme={previewTheme} />
                       </div>
                     )}
-                    <div className="pointer-events-auto rounded-xl shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]">
+                    <div className={`rounded-xl ${BOARD_TOOLBAR_LIFT}`}>
                       {/* With the colour map open the bar leads with Map ·
                           Board. On the map's graph that is all it edits with
                           (no history, Random or Inspector: nothing there to act

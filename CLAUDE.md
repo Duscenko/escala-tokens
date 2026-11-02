@@ -180,11 +180,20 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   only for a system with no brand yet.
 > - **Save brand is a solid button** in the draft's status line (`UnsavedNotice` `onSave`), same
 >   layout as before (Ship row, then status) — not a second primary stacked over the doors.
+>   **UPDATE (2026-11-02): back on the status line, at primary size.** In between it had become a
+>   full-width primary ABOVE the doors with "Not saved" two rows under it — reported as the state
+>   and its action reading as unrelated. Both draft footers (the studio's `CreateStudioFooter` and
+>   the editor's `ThemeSaveBar` draft) are now: Ship row, then ONE line `● Not saved ⓘ · Discard ·
+>   [✓ Save brand]` (`UnsavedNotice`, h-8 CTA; the `quiet` prop is gone). A guest's line has the
+>   same shape with "Save with an account". The line fits the 288px inspector with ~5px to spare in
+>   English — longer translations truncate "Not saved" (title keeps it). The app toast rises above
+>   a board toolbar on screen (`data-board-toolbar`, `ui/Toast.tsx`), so Save's confirmation no
+>   longer covers it.
 > - **ONE confirmation, `announceBrandSaved` (`lib/brandSaved.ts`)**: "“Acme” saved to Escala" +
 >   **See all brands** (→ Home, `OPEN_HOME_EVENT`). Used by the Board's Save, the studio's Save
 >   (with confetti), every door that keeps a draft (Ship, Get code, advanced edition), the import,
 >   and the login return. Don't add a second "saved" toast elsewhere.
-> - The studio board header shows its title ("New brand" / "Set your foundations").
+> - ~~The studio board header shows its title~~ — **UPDATE (2026-11-02): the studio has NO header band.** Its board uses the Board's floating toolbar, in the Board's place and order (`BOARD_TOOLBAR_DOCK` / `BOARD_TOOLBAR_LIFT` in `ThemeSaveBar.tsx`, shared by `ThemePreviewHub` and `CreateBoard`): Undo · Redo · Random · Inspector · Light/Dark ‖ Theme · Components. Two homes for one bar read as two tools (reported). The title ("New brand" / "Set your foundations" · n changed) stays as an `sr-only` h2; the brand's name heads the inspector, as on the Board.
 
 > **UPDATE (2026-10-22): DELETE A BRAND — web and plugin, and Figma follows (plugin 0.21.2).**
 > Home had no per-brand delete (only "delete all brands" / delete the system). Each brand column now
