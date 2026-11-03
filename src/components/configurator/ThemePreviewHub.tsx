@@ -51,7 +51,7 @@ import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
-import ColorRoleMapView, { MapViewSwitch } from './ColorRoleMapView'
+import ColorRoleMapView, { MAP_VIEW_GLYPH, MapViewSwitch } from './ColorRoleMapView'
 import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
 import { OPEN_COLOUR_MAP_EVENT, takeColourMapRequest } from '../../lib/colourMapRequest'
 import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
@@ -188,7 +188,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
         ? `${HEADER_CONTROL_BTN.replace('focus-visible:ring-offset-1 focus-visible:ring-offset-app', '').replace('transition-[color,box-shadow,transform]', 'transition-[color,background-color,box-shadow,transform]')} ${
           active && !disabled
             ? `font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)] ${accent ? '' : 'bg-accent-solid text-accent-ink'}`
-            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
         }`
         : `${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
           active && !disabled
@@ -202,8 +202,9 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
     </button>
   )
   if (bare) {
-    // The same recessed track the view tabs sit in.
-    const track = <span className="flex h-8 flex-shrink-0 items-center rounded-lg bg-fg/[0.04] p-0.5">{button}</span>
+    // No well of its own: off, it sits bare like Undo · Redo · Random beside
+    // it; only the active pill carries a fill.
+    const track = <span className="flex h-8 flex-shrink-0 items-center p-0.5">{button}</span>
     return disabled && disabledTitle ? track : <HintTip label={label} shortcut={active ? 'Esc' : undefined}>{track}</HintTip>
   }
   return (
@@ -1002,18 +1003,43 @@ export default function ThemePreviewHub({
                       </div>
                     )}
                     <div className={`rounded-xl ${BOARD_TOOLBAR_LIFT}`}>
-                      {/* With the colour map open the bar leads with Map ·
-                          Board. On the map's graph that is all it edits with
+                      {/* With the colour map open the bar carries Map ·
+                          Board beside Inspector. On the map's graph that is all it edits with
                           (no history, Random or Inspector: nothing there to act
                           on); on its Board the board tools come back. Theme ·
                           Components steps out (the map reads the theme board). */}
                       <BoardHistoryControls
-                        leading={mapOpen ? <MapViewSwitch inset value={mapView} onChange={setMapView} /> : undefined}
                         history={!mapOpen || mapView === 'board'}
                         onRandom={canRandom && (!mapOpen || mapView === 'board') ? () => randomHandle.current?.() : undefined}
-                        trailing={mapOpen ? undefined : <BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />}
+                        trailing={mapOpen ? undefined : (
+                          <>
+                            <BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
+                            {/* The colour map's door on the bar: before, it
+                                was only the ramp toggle inside the Color card,
+                                so the map was hard to find. Opens Accent's map
+                                (Color row, theme board, Map view). */}
+                            <HintTip label={t('Colour map')}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onSelectFoundation?.('color')
+                                  setBoardView('theme')
+                                  setMapView('graph')
+                                  setMappedColour('accent')
+                                }}
+                                aria-label={t('Colour map')}
+                                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+                              >
+                                {MAP_VIEW_GLYPH.graph}
+                              </button>
+                            </HintTip>
+                          </>
+                        )}
                         appearance={<BoardThemeSwitch previewTheme={previewTheme} onAppearance={handleAppearanceChange} />}
                       >
+                        {/* Map · Board sits beside Inspector: both pick what
+                            the board shows, so they read as one tool group. */}
+                        {mapOpen && <MapViewSwitch inset value={mapView} onChange={setMapView} />}
                         {(!mapOpen || mapView === 'board') && <InspectorToggle
                           bare
                           active={inspecting}

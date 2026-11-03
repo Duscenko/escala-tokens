@@ -10,7 +10,7 @@
 // (`docs/componentArticle.tsx`) is unchanged and still the single source for
 // what a component page contains.
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { usePreviewTokens } from '../../lib/previewTokens'
@@ -37,6 +37,7 @@ export default function ComponentsView({
   const themeKind = useDesignStore((s) => s.themeKinds[previewTheme])
   const appearance: ThemeAppearance = themeKind === 'dark' ? 'dark' : 'light'
   const articleRef = useRef<HTMLDivElement>(null)
+  const [stripCollapsed, setStripCollapsed] = useState(false)
 
   const def = active ?? COMPONENTS[0]
 
@@ -73,8 +74,18 @@ export default function ComponentsView({
           activeKey={def.key}
           tokens={tokens}
           onSelect={onSelect}
+          collapsed={stripCollapsed}
         />
-        <div ref={articleRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div
+          ref={articleRef}
+          // Hysteresis: fold past 40px, unfold under 8px, so the row's own
+          // height change can't flip it back and forth at the threshold.
+          onScroll={(e) => {
+            const top = e.currentTarget.scrollTop
+            setStripCollapsed((was) => (was ? top > 8 : top > 40))
+          }}
+          className="flex-1 min-h-0 overflow-y-auto"
+        >
           <motion.div
             key={def.key}
             initial={{ opacity: 0, y: 8 }}

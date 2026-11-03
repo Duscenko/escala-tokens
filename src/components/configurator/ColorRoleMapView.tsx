@@ -20,7 +20,7 @@ import type { ColorRoleMapData } from './useColorRoleMap'
 import { HintTip } from '../ui/HintTip'
 
 /** Map: a colour wired out to its roles. Board: the bento of screens. */
-const MAP_VIEW_GLYPH: Record<'graph' | 'board', React.ReactNode> = {
+export const MAP_VIEW_GLYPH: Record<'graph' | 'board', React.ReactNode> = {
   graph: (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
       <circle cx="3.5" cy="8" r="1.75" />

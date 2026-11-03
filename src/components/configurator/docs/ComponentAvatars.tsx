@@ -6,6 +6,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../../lib/componentCatalogue'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
+import { motion, useReducedMotion } from 'framer-motion'
 import { SPECIMENS } from './specimens'
 import { useI18n } from '../../../lib/i18n'
 import { axisDefaults } from './componentArticle'
@@ -37,20 +38,32 @@ function useHorizontalScrollFade<T extends HTMLElement>(contentKey: string) {
 }
 
 export function ComponentAvatarStrip({
-  category, activeKey, tokens, onSelect,
+  category, activeKey, tokens, onSelect, collapsed = false,
 }: {
   category: string
+  /** Fold the row away (the article below is scrolled). */
+  collapsed?: boolean
   activeKey: string
   tokens: PreviewTokens
   onSelect: (c: ComponentDef) => void
 }) {
   const items = COMPONENTS.filter((c) => c.category === category)
   const { ref: scrollRef, fadeRight } = useHorizontalScrollFade<HTMLDivElement>(category)
+  const reduceMotion = useReducedMotion()
 
   if (items.length === 0) return null
 
+  // Folds away while the article below is scrolled, so reading gets the
+  // height back; it returns once the article is back at the top.
   return (
-    <div className="relative flex-shrink-0 border-b border-line">
+    <motion.div
+      initial={false}
+      animate={{ height: collapsed ? 0 : 'auto', opacity: collapsed ? 0 : 1 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      aria-hidden={collapsed || undefined}
+      inert={collapsed || undefined}
+      className={`relative flex-shrink-0 overflow-hidden ${collapsed ? '' : 'border-b border-line'}`}
+    >
       <div
         ref={scrollRef}
         role="group"
@@ -73,7 +86,7 @@ export function ComponentAvatarStrip({
           className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-app via-app/80 to-transparent"
         />
       )}
-    </div>
+    </motion.div>
   )
 }
 

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
 import { myThemeKeys } from '../../lib/themeLibrary'
@@ -41,6 +41,11 @@ export interface ShipActions {
 }
 
 export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+/** Save on the status line: a firm edge over a faint fill of the ink itself
+ *  (reads on any panel grey), so it stands out from the Ship doors at rest
+ *  without a loud fill. Hover deepens the fill; a press settles it. */
+const SAVE_OUTLINE_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line-strong bg-fg/[0.06] px-3 text-caption font-semibold text-fg transition-[background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.1] active:scale-[0.97] active:bg-fg/[0.13] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
 /** The door whose file is on screen: the inspector's raised selected fill
  *  with a firmer edge, so "pressed" reads without a second accent colour. */
@@ -147,6 +152,11 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
   const lastRedo = useEditHistory((h) => h.future[h.future.length - 1]?.label)
   const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
   const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
+  const reduceMotion = useReducedMotion()
+  // Undo · Redo appear with the first edit and leave when there is nothing
+  // either way: two dead arrows on a fresh board are noise. While either has
+  // a step, BOTH stay (the empty one dimmed) so the pair never jitters.
+  const showHistory = history && Boolean(lastUndo || lastRedo)
   const toolbar = (
     // The whole bar is one named group of three: history, the board tools
     // (Random, Inspector) and the view tabs. It used to be ONE group named
@@ -158,9 +168,19 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
     // the buttons, hints and tabs keep their contrast on the black.
     <div role="group" aria-label={t('Board tools')} className="dark flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1">
       {leading}
-      {leading && history && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
-      {history && (
-      <div role="group" aria-label={t('History')} className="flex items-center gap-0.5">
+      <AnimatePresence initial={false}>
+      {showHistory && (
+      <motion.div
+        key="history"
+        role="group"
+        aria-label={t('History')}
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: 'auto', opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-center gap-0.5 overflow-hidden"
+      >
+        {leading && <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />}
         <HintTip label={undoLabel} shortcut="⌘Z">
         <button type="button" onClick={() => { if (lastUndo) undoEdit() }} aria-disabled={!lastUndo || undefined} aria-label={undoLabel} aria-keyshortcuts="Meta+Z" className={HISTORY_SEGMENT}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -177,11 +197,12 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
           </svg>
         </button>
         </HintTip>
-      </div>
+      </motion.div>
       )}
+      </AnimatePresence>
       {onRandom && (
         <>
-          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
+          {(leading || showHistory) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
           <div className="flex items-center">
             <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
@@ -191,7 +212,7 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
       )}
       {children && (
         <>
-          <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />
+          {(leading || showHistory || onRandom) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {children}
         </>
       )}
@@ -523,21 +544,16 @@ export function RandomLevelPicker({ chevron = false }: {
                 onClick={() => { writePaletteLevel(id); close() }}
                 onPointerEnter={() => setActive(id)}
                 onFocus={() => setActive(id)}
-                className={`${SELECT_OPTION} grid ${chevron ? 'grid-cols-[auto_auto_1fr]' : 'grid-cols-[auto_1fr_auto]'} items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                className={`${SELECT_OPTION} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
-                {chevron && (
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
-                    <path d="M3.5 8.5l3 3 6-7" />
-                  </svg>
-                )}
                 <span className={on ? 'text-accent-ui' : 'text-fg-faint'}><LevelMeter level={id} /></span>
                 <span className="min-w-0 truncate text-ui">{t(LEVEL_COPY[id].label)}</span>
                 <span id={`random-level-hint-${id}`} className="sr-only">{t(LEVEL_COPY[id].hint)}</span>
-                {!chevron && (
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
-                    <path d="M3.5 8.5l3 3 6-7" />
-                  </svg>
-                )}
+                {/* The check trails, so the leading column holds one icon (the
+                    meter) and the selection mark never stacks beside it. */}
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                  <path d="M3.5 8.5l3 3 6-7" />
+                </svg>
               </button>
             )
           })}
@@ -727,14 +743,12 @@ export default function ThemeSaveBar({
     ? t('Get code')
     : justSaved || kept
     ? t('Saved')
-    : guestPrimary
-      ? t('Save with an account')
-      : t('Save brand')
+    : t('Save brand')
   return (
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
     // stretches a portaled panel): as a direct slot child (Variables) the bar
     // must stay its own height, pinned under the scrolling nav.
-    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
       {statusOnly ? (
         // A signed-in draft keeps its Save on the line; otherwise the usual
         // status (a guest's "Not saved · Save with an account", or the account's).
@@ -878,7 +892,7 @@ export function UnsavedNotice({ onSave, onDiscard }: {
         // A real button, not a link: keeping the brand is THE decision on a
         // draft, and as underlined text beside "Not saved" it was missed —
         // people shipped (or left) thinking the brand was already in the system.
-        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
+        <button ref={saveLinkRef} type="button" onClick={() => onSave(saveLinkRef.current)} className={`${onDiscard ? '' : 'ml-auto '}${SAVE_OUTLINE_BUTTON}`}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2.5 6.5 5 9l4.5-5.5" />
           </svg>
@@ -887,8 +901,10 @@ export function UnsavedNotice({ onSave, onDiscard }: {
       ) : guest && !onSave ? (
         // A button, like Save brand above: for a visitor this IS the one way
         // to keep the work, and as an underlined line it read as a footnote.
-        <button type="button" onClick={() => goToLogin('save-library')} className={`${onDiscard ? '' : 'ml-auto '}flex h-8 flex-shrink-0 items-center rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}>
-          {t('Save with an account')}
+        // Same word as a signed-in Save: the act is the same, and sign-in is
+        // a step on the way, said by the tooltip and the ⓘ, not the label.
+        <button type="button" onClick={() => goToLogin('save-library')} title={t('Sign in to save your brand')} className={`${onDiscard ? '' : 'ml-auto '}${SAVE_OUTLINE_BUTTON}`}>
+          {t('Save brand')}
         </button>
       ) : null}
       {open && (
@@ -967,7 +983,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
     burstConfetti(finishRef.current, [tk.brandSolid, tk.brandSolid, tk.successColor ?? '', tk.warningColor ?? '', tk.infoColor ?? '', tk.errorColor])
   }
   return (
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
       <div className="flex items-center gap-2">
         <span className="text-caption font-semibold text-fg">{t('Step {n} of {total}', { n: step + 1, total: SETUP_STEPS.length })}</span>
         <span className="flex flex-1 gap-1" aria-hidden>
@@ -1045,7 +1061,7 @@ export function CreateStudioFooter({
   ) : null
   return (
     // Same chrome as a saved brand's footer (ThemeSaveBar), not `bg-app`.
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] ${WORKSPACE_CHROME}`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
         // The SAME layout as a draft's footer in the editor (ThemeSaveBar):

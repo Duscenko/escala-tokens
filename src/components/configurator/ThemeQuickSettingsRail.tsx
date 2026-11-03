@@ -862,7 +862,7 @@ function PanelHeader({ editing, title, name, onEdit, onBack }: {
         <button
           type="button"
           onClick={onEdit}
-          className="-mr-2 flex h-9 flex-shrink-0 items-center gap-2 rounded-lg px-2 text-strong font-medium text-fg transition-colors hover:bg-fg/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="-mr-2 flex h-[36px] flex-shrink-0 items-center gap-2 rounded-lg px-2 text-strong font-medium text-fg transition-colors hover:bg-fg/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Edit')}
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
