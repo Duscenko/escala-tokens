@@ -119,7 +119,6 @@ import { OPEN_GITHUB_EVENT } from '../lib/guestSave'
 import { OPEN_HOME_EVENT, announceBrandSaved } from '../lib/brandSaved'
 import { addBrandFromPayload } from '../lib/importBrand'
 import { showToast } from '../components/ui/Toast'
-import { VariablesContextButton } from '../components/configurator/VariablesContextButton'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -3078,13 +3077,14 @@ export default function Configurator() {
               ) : foundationCanvas ? (
                 <div className="h-full flex flex-col min-h-0">
                 {/* The card names what it shows — the active collection — and
-                    carries the token search (⌘K), which only Variables uses. */}
+                    carries the token search (⌘K), which only Variables uses.
+                    No Copy context here: the inspector's CSS · Figma · Agent
+                    doors already carry the paste (owner's call, 2026-11-03). */}
                 <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
                   <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
                     {t(activeFoundationCollections.find(({ key }) => key === activeCollection)?.label ?? section.variablesLabel)}
                   </h2>
                   <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                    <VariablesContextButton brand={previewTheme} appearance={previewAppearance} foundation={activeFoundation} />
                     {tokenSearchField}
                   </div>
                 </div>
