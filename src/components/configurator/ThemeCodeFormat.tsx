@@ -1,6 +1,11 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { CONTEXT_SCOPES, useBrandCssList, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
+import { CONTEXT_SCOPES, formatBytes, useBrandCssList, useCodeArtifacts, writeClipboard, type ExportFacts } from './codeArtifacts'
+import { buildFigmaContext } from '../../lib/figmaContext'
+import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
+import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
+import { FigmaGlyph } from '../ui/icons'
+import { FigmaModesPicker, FigmaViewportsPicker } from './FigmaControlsPanel'
 import { brandSlug, combineBrandCss, cutCssCollection } from '../../lib/cssCut'
 import { CONTEXT_FOUNDATIONS, type ContextScope } from '../../lib/contextRequest'
 import { themeDisplayName } from '../../lib/themeSources'
@@ -25,17 +30,25 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
   // which is the Agent door's job (design-plans/entry-flow-set-see-ship.md).
   // The shell picks the format for the door that was pressed (`format`).
   { key: 'css', label: 'CSS', file: 'variables.css' },
+  // Figma is a file too: the message the plugin imports (its context card).
+  // It used to live only in the ship panel, so the Code tab's Figma door
+  // opened a third surface over the inspector instead of showing it here.
+  { key: 'figma', label: 'Figma', file: 'figma-context.md' },
   // A shadcn globals.css used to be a format here. It read as a second CSS
   // file beside variables.css and said less (no hover/pressed, no warning /
   // success / info, no alpha). shadcn projects get it from the registry
   // (`npx shadcn add`, `api/registry.ts`), which still builds it.
-  { key: 'agent', label: 'Agent context', file: 'references/*.md' },
+  { key: 'agent', label: 'Agent', file: 'references/*.md' },
   // README.md used to be a third format here. It said what Agent context says
   // in a different shape, and two markdown tabs read as "which one do I
   // paste?". It still ships where files ship: Export and GitHub.
 ]
 
 const PREVIEW_LINE_LIMIT = 32
+/** The Figma context carries the whole Escala JSON on one line (~100 KB).
+ *  On screen it is clipped to this many characters with a note; Copy always
+ *  takes the full message. */
+const LONG_LINE_LIMIT = 280
 
 
 const COPY_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
@@ -60,9 +73,9 @@ type AppearanceMenu = {
   buildFor: (appearance: ContextAppearance) => string
 }
 
-function CopyPageButton({ disabled, pageContent, block = false, agentContext = false, appearanceMenu }: { disabled: boolean; pageContent: string; block?: boolean; agentContext?: boolean; appearanceMenu?: AppearanceMenu }) {
-  // On Agent context the file IS the context, so the button says so.
-  const idle = agentContext ? 'Copy context' : 'Copy file'
+function CopyPageButton({ disabled, pageContent, block = false, kind = 'css', appearanceMenu }: { disabled: boolean; pageContent: string; block?: boolean; kind?: Format; appearanceMenu?: AppearanceMenu }) {
+  // On Agent and Figma the file IS the context, so the button says so.
+  const idle = kind === 'css' ? 'Copy file' : 'Copy context'
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
@@ -74,7 +87,11 @@ function CopyPageButton({ disabled, pageContent, block = false, agentContext = f
     }
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1800)
-    showToast(agentContext ? t('Copied the agent context. Paste it into any agent.') : t('Copied the file on this page.'))
+    showToast(kind === 'agent'
+      ? t('Copied the agent context. Paste it into any agent.')
+      : kind === 'figma'
+        ? t('Copied. In Figma, open the Escala plugin and paste it in the context card.')
+        : t('Copied the file on this page.'))
   }
   // It sits in the file header, whose fill IS the chip's (`--chip-rest`): with
   // no edge the control had no shape, and a hovered or open half lit up as a
@@ -198,13 +215,13 @@ export function CodeLine({ value, number, format }: { value: string; number: num
   // what keeps tables and `--var:` rows intact; the same pair turns Agent
   // context into an infinitely-wide column. Wrap + a prose measure only there;
   // table rows keep the pane width so columns stay aligned.
-  const wrap = format === 'agent'
+  const wrap = format !== 'css'
   const heading = wrap && /^#{1,6}\s/.test(value)
   const table = wrap && /^\s*\|/.test(value)
   return (
     <div className={`grid grid-cols-[48px_minmax(0,1fr)] ${wrap ? 'text-caption leading-relaxed' : 'min-w-max text-body leading-[22px]'} ${heading ? 'pt-2.5' : ''}`}>
       <span aria-hidden className="select-none border-r border-line pr-3 text-right font-mono text-fg-faint/70">{number}</span>
-      <code className={`px-4 font-mono text-fg-muted ${wrap ? `block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'agent' ? highlightedMarkdown(value) : highlightedCss(value)}</code>
+      <code className={`px-4 font-mono text-fg-muted ${wrap ? `block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'css' ? highlightedCss(value) : highlightedMarkdown(value)}</code>
     </div>
   )
 }
@@ -268,6 +285,68 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
   )
 }
 
+/** The Figma format's filters: brands × themes, then viewports — the same
+ *  pickers the Figma page uses, on the same persisted selection. File name,
+ *  platforms and live sync stay on that page, one link away. */
+function FigmaFilters({ previewTheme, onSelectTheme, figma }: {
+  previewTheme: string
+  onSelectTheme: (key: string) => void
+  figma: NonNullable<Parameters<typeof ThemeCodeFormat>[0]['figma']>
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-ui text-fg-muted">{t('Brands & themes')}</p>
+        <FigmaModesPicker
+          previewTheme={previewTheme}
+          onSelectTheme={onSelectTheme}
+          syncModes={figma.syncModes}
+          onSyncModesChange={figma.onSyncModesChange}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-ui text-fg-muted">{t('Viewports')}</p>
+        <FigmaViewportsPicker viewports={figma.viewports} onViewportsChange={figma.onViewportsChange} />
+      </div>
+      <button
+        type="button"
+        onClick={figma.onOpenPage}
+        className="self-start rounded text-caption font-medium text-fg-muted underline decoration-fg-faint underline-offset-2 transition-colors hover:text-fg hover:decoration-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        {t('File name, platforms and live sync')}
+      </button>
+    </div>
+  )
+}
+
+/** Copy → plugin → paste, over the file it hands to the plugin. */
+function FigmaSteps() {
+  const { t } = useI18n()
+  const steps = [t('Copy the context'), t('Open the Escala plugin in Figma'), t('Paste it in the context card')]
+  return (
+    <div className="flex flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-line px-3 py-2">
+      <ol className="m-0 flex min-w-0 flex-1 list-none flex-wrap items-center gap-x-4 gap-y-1 p-0">
+        {steps.map((step, i) => (
+          <li key={step} className="flex items-center gap-1.5 text-caption text-fg-muted">
+            <span aria-hidden className="grid h-4 w-4 flex-shrink-0 place-items-center rounded-full border border-line-strong font-mono text-nano font-semibold text-fg-faint">{i + 1}</span>
+            {step}
+          </li>
+        ))}
+      </ol>
+      <a
+        href={FIGMA_PLUGIN_COMMUNITY}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`inline-flex h-7 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 text-caption font-medium text-fg transition-shadow ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+      >
+        <FigmaGlyph size={11} />
+        {t('Get the plugin')}
+      </a>
+    </div>
+  )
+}
+
 export default function ThemeCodeFormat({
   previewTheme,
   previewAppearance,
@@ -280,7 +359,20 @@ export default function ThemeCodeFormat({
   onEditTheme,
   format: formatProp,
   onFormatChange,
+  figma,
 }: {
+  /** The Figma file's selection — the same File & modes the Figma page and
+   *  auto-sync use, so the context here is the one that ships. Without it the
+   *  Figma format is not offered. */
+  figma?: {
+    fileName: string
+    syncModes: FigmaSyncMode[]
+    onSyncModesChange: (modes: FigmaSyncMode[], planCut?: boolean) => void
+    viewports: FigmaViewport[]
+    onViewportsChange: (viewports: FigmaViewport[]) => void
+    /** The Figma page: file name, platforms, live sync. */
+    onOpenPage: () => void
+  }
   /** The format the door that opened this page asked for (CSS or Agent).
    *  Controlled when given; the rail still switches, through `onFormatChange`. */
   format?: Format
@@ -304,10 +396,11 @@ export default function ThemeCodeFormat({
   const { t } = useI18n()
   const store = useDesignStore()
   const [localFormat, setLocalFormat] = useState<Format>(formatProp ?? 'css')
-  const format = formatProp ?? localFormat
   const setFormat = (next: Format) => { setLocalFormat(next); onFormatChange?.(next) }
   const [expanded, setExpanded] = useState(false)
-  const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
+  const formats = figma ? FORMATS : FORMATS.filter((item) => item.key !== 'figma')
+  const active = formats.find((item) => item.key === (formatProp ?? localFormat)) ?? formats[0]
+  const format = active.key
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const effectiveScope = resolveCodeTheme(listed, scope, previewTheme)
   const artifacts = useCodeArtifacts(effectiveScope, previewAppearance)
@@ -341,20 +434,36 @@ export default function ThemeCodeFormat({
       return { slug: brandSlug(name, taken), name, css: cutCssCollection(css, cssScope) }
     }))
   }, [allBrands, cssScope, brandCss, effectiveScope, store.projectName, store.themeLabels])
-  const content = format === 'css' ? cssFile : agentMd
+  // Built only while it is on screen: it runs a whole token export.
+  const figmaContext = useMemo(() => {
+    if (format !== 'figma' || !figma || !effectiveScope || figma.syncModes.length === 0) return null
+    return buildFigmaContext({
+      project: figma.fileName || themeDisplayName(effectiveScope, store.themeLabels),
+      modes: figma.syncModes,
+      viewports: figma.viewports,
+      theme: effectiveScope,
+      brandName: (key) => themeDisplayName(key, store.themeLabels),
+    })
+    // `store` changes on every edit, and the context has to follow the tokens.
+  }, [format, figma, effectiveScope, store])
+  const content = format === 'css' ? cssFile : format === 'figma' ? (figmaContext?.text ?? '') : agentMd
   // The header names what is on screen: the cut, not just the format.
   const scopeLabel = (scope: ContextScope) => (scope === 'all' ? t('All') : t(CONTEXT_FOUNDATIONS.find((f) => f.key === scope)?.label ?? scope))
-  const themeLabel = (appearance: ContextAppearance) => t(CONTEXT_APPEARANCES.find((a) => a.key === appearance)?.label ?? appearance)
   const scopeName = (scope: ContextScope) => (scope === 'all' ? '' : ` · ${scopeLabel(scope)}`)
   const fileLabel = format === 'css'
     ? `${allBrands ? 'brands.css' : 'variables.css'}${scopeName(cssScope)}`
-    : `${active.file}${scopeName(ctx.scope)}`
-  // A closed row says what its file carries now, like a Board row's value.
-  const summaries = {
-    css: [scopeLabel(cssScope), themeLabel(cssTheme), ...(allBrands ? [t('All brands')] : [])].join(' · '),
-    agent: [scopeLabel(ctx.scope), themeLabel(ctx.appearance)].join(' · '),
-  }
-  const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
+    : format === 'figma'
+      ? active.file
+      : `${active.file}${scopeName(ctx.scope)}`
+  const lines = useMemo(() => {
+    if (!effectiveScope || !content) return []
+    const all = content.split('\n')
+    if (format !== 'figma') return all
+    // The payload line is one ~100 KB string: show its start and its size.
+    return all.map((line) => (line.length > LONG_LINE_LIMIT
+      ? `${line.slice(0, LONG_LINE_LIMIT)}… ${t('(+{size}, copied in full)', { size: formatBytes(new TextEncoder().encode(line).length - LONG_LINE_LIMIT) })}`
+      : line))
+  }, [content, effectiveScope, format, t])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
     ? themeDisplayName(effectiveScope, store.themeLabels)
@@ -368,9 +477,9 @@ export default function ThemeCodeFormat({
   const onTabListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
-    const current = Math.max(0, FORMATS.findIndex((item) => item.key === format))
-    const next = (current + (event.key === 'ArrowRight' ? 1 : FORMATS.length - 1)) % FORMATS.length
-    selectFormat(FORMATS[next].key)
+    const current = Math.max(0, formats.findIndex((item) => item.key === format))
+    const next = (current + (event.key === 'ArrowRight' ? 1 : formats.length - 1)) % formats.length
+    selectFormat(formats[next].key)
     const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
     requestAnimationFrame(() => tabs[next]?.focus())
   }
@@ -381,11 +490,16 @@ export default function ThemeCodeFormat({
         <ThemeCodeScopeRail
           scope={effectiveScope}
           previewTheme={previewTheme}
-          formats={FORMATS}
+          formats={formats}
           format={format}
           onFormat={selectFormat}
-          summaries={effectiveScope ? summaries : undefined}
-          settings={!effectiveScope ? null : format === 'agent' ? (
+          settings={!effectiveScope ? null : format === 'figma' && figma ? (
+            <FigmaFilters
+              previewTheme={effectiveScope}
+              onSelectTheme={onPreviewThemeChange}
+              figma={figma}
+            />
+          ) : format === 'agent' ? (
             <ContextFilters
               opts={ctx}
               onChange={(patch) => { setCtx(patch); setExpanded(false) }}
@@ -435,6 +549,8 @@ export default function ThemeCodeFormat({
                 <p className="min-w-0 flex-1 truncate font-mono text-caption text-fg-muted">{fileLabel}</p>
                 {format === 'agent' && content ? (
                   <ContextSizeNote markdown={content} className="flex-shrink-0" />
+                ) : format === 'figma' && figmaContext ? (
+                  <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{formatBytes(figmaContext.bytes)}</span>
                 ) : lines.length > 0 ? (
                   <span className="flex-shrink-0 text-caption tabular-nums text-fg-faint">{t('{n} lines', { n: String(lines.length) })}</span>
                 ) : null}
@@ -448,9 +564,9 @@ export default function ThemeCodeFormat({
                   </button>
                 ) : null}
                 <CopyPageButton
-                  disabled={!effectiveScope}
+                  disabled={!effectiveScope || !content}
                   pageContent={content}
-                  agentContext={format === 'agent'}
+                  kind={format}
                 />
               </header>
             ) : (
@@ -461,7 +577,7 @@ export default function ThemeCodeFormat({
                 aria-label="Code format"
                 onKeyDown={onTabListKeyDown}
               >
-                {FORMATS.map((item) => {
+                {formats.map((item) => {
                   const selected = item.key === format
                   return (
                     <button
@@ -491,7 +607,7 @@ export default function ThemeCodeFormat({
                 ) : null}
               </div>
               {expanded ? <button type="button" onClick={() => setExpanded(false)} className="ml-auto flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">Collapse</button> : <span className="ml-auto" />}
-              <CopyPageButton disabled={!effectiveScope} pageContent={content} agentContext={format === 'agent'} />
+              <CopyPageButton disabled={!effectiveScope || !content} pageContent={content} kind={format} />
             </header>
             )}
       {/* The fade + "Show full file" is a SIBLING of the scroller, inside a
@@ -509,11 +625,14 @@ export default function ThemeCodeFormat({
           between them, larger than most of this app's own elevation steps, so
           it read as a dark BAR across the bottom instead of a dissolve. One
           opaque token on both sides is the only way the two can't disagree. */}
+            {format === 'figma' && effectiveScope ? <FigmaSteps /> : null}
             <div className="relative min-h-0 flex-1">
-              <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
-                {effectiveScope
-                  ? visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)
-                  : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a brand to get its code.')}</p>}
+              <div className={`h-full bg-app py-3 ${format !== 'css' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
+                {!effectiveScope
+                  ? <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a brand to get its code.')}</p>
+                  : format === 'figma' && !figmaContext
+                    ? <p className="px-7 py-2 text-caption text-fg-faint">{t('Pick at least one theme to send to Figma.')}</p>
+                    : visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)}
               </div>
               {!expanded && lines.length > PREVIEW_LINE_LIMIT ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-app via-app/90 to-transparent pb-4 pt-8">

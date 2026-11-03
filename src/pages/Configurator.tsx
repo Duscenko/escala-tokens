@@ -1752,6 +1752,14 @@ export default function Configurator() {
   const openShip = (key: string | null, kind: ShipKind) => {
     if (!key) { showToast(t('Add a brand to get its code.'), undefined, true); return }
     if (brandIsDraft(key)) { showToast(randomDraftHint, undefined, true); return }
+    // On the Code tab the file IS the page: a door switches what the centre
+    // shows (and stays pressed in the rail) instead of opening the ship panel
+    // over it — that was a third copy of the same file.
+    if (tab === 'foundations' && !exportMode && themeWorkspaceTab === 'code') {
+      if (key !== previewTheme) changePreviewTheme(key)
+      setCodeFormat(kind)
+      return
+    }
     leaveExportWizard()
     let at = shipWhere
     // Outside the Generator there is no inspector to open in: land on the
@@ -1787,8 +1795,9 @@ export default function Configurator() {
     if (!ship) return
     const key = ship.key
     setShip(null)
-    if (kind === 'figma') syncFigmaForTheme(key)
-    else openCodeForTheme(key, kind)
+    // The Code tab carries all three now, Figma's brands × themes × viewports
+    // included, so every "long view" lands there on its own format.
+    openCodeForTheme(key, kind)
   }
   /**
    * Per-theme twin of the canvas header's Sync button. Same shape as
@@ -3050,6 +3059,14 @@ export default function Configurator() {
                     previewAppearance={previewAppearance}
                     format={codeFormat}
                     onFormatChange={setCodeFormat}
+                    figma={{
+                      fileName: figmaFileName,
+                      syncModes: figmaSyncModes,
+                      onSyncModesChange: chooseFigmaSyncModes,
+                      viewports: figmaViewports,
+                      onViewportsChange: setFigmaViewports,
+                      onOpenPage: () => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') },
+                    }}
                     // The theme switcher in the tab bar IS this page's picker.
                     scope={previewTheme}
                     onScopeChange={(next) => { if (next) changePreviewTheme(next) }}

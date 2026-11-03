@@ -47,6 +47,14 @@ function useSteps(kind: HowToKind, skillFolders: string[]): Step[] {
       { title: t('Switch to dark'), body: t('Put the dark class on the html element. Every role changes with it.'), snippet: ['<html class="dark">'] },
     ]
   }
+  if (kind === 'figma') {
+    return [
+      { title: t('Pick what to send'), body: t('Choose the brands, themes and viewports in the panel on the right. The file on screen is exactly what gets copied.') },
+      { title: t('Copy the context') },
+      { title: t('Open the Escala plugin in Figma') },
+      { title: t('Paste it in the context card'), body: t('Press ⌘V, then Import into this file.') },
+    ]
+  }
   if (kind === 'agent') {
     return [
       { title: t('Pick what to send'), body: t('Choose the foundations, the theme and the detail in the panel on the right. The file on screen is exactly what gets copied.') },

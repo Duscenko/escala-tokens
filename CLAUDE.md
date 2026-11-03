@@ -256,6 +256,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > with the Code tab), `brandContext`, `buildFigmaContext` — never a second renderer.
 > `openShip(key, kind)` in `Configurator` is the one entry for every door; the panel closes
 > whenever the place it opened on changes (`shipWhere`).
+> **UPDATE (2026-11-02): on the CODE tab the doors are the format switch, not a panel.**
+> The Code inspector used to offer the same choice three times — the Ship row, an
+> accordion of CSS / Agent context, and the ship panel the row opened over both.
+> Now `ThemeCodeScopeRail` is: breadcrumb · the Ship row with the format on screen
+> PRESSED (`ShipRow active`, `aria-pressed`) · "Filters" + its `?` · the filters of
+> that format. `openShip` on the Code tab only sets `codeFormat` (from the rail, the
+> Export pill, anywhere). **Figma is a third centre format** (`CodeFormatKey` css ·
+> figma · agent): the `buildFigmaContext` message with its payload line clipped on
+> screen (Copy takes it whole), a copy → plugin → paste strip over it, and the
+> filters `FigmaModesPicker` + `FigmaViewportsPicker` — extracted from
+> `FigmaControlsPanel`, on the same persisted File & modes. File name, platforms and
+> live sync stay on the Figma page, one link away. The ship panel's "Open full
+> file" lands on the Code tab for all three. Don't put an accordion of formats back.
 > **Phase 2: the create studio has NO step 1 and NO Continue.** The brand is minted the
 > moment the studio opens (`mintStart` in `ThemeLibraryPage`: `adoptPreset` for a style,
 > `mintTheme` for Scratch; default Core), as a draft (`markBrandUnsaved`) until Save or a Ship

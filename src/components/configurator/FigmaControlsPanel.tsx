@@ -84,30 +84,15 @@ export default function FigmaControlsPanel({
   syncModes, onSyncModesChange, viewports, onViewportsChange, onOpenGithub,
 }: FigmaControlsProps) {
   const store = useDesignStore()
-  const { themeOrder, themes, themeLabels, themeKinds, themeSources, pluginBuildSeen, githubRepo, platformAxis, setPlatformAxis } = store
+  const { themeOrder, themes, themeLabels, pluginBuildSeen, githubRepo, platformAxis, setPlatformAxis } = store
   const { t, locale } = useI18n()
   const entitlement = useEntitlement()
   const free = useFreeTier()
   const cap = figmaModeCapFor(free)
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
-  /** Free stops at `cap` modes: the next column asks for Pro instead of silently dropping. */
-  const commit = (next: FigmaSyncMode[]) => {
-    if (free && next.length > cap) { setUpgradeOpen(true); onSyncModesChange(next.slice(0, cap), true); return }
-    onSyncModesChange(next)
-  }
   const [licenceOpen, setLicenceOpen] = useState(false)
   const fileNameRef = useRef<HTMLInputElement>(null)
   const fileId = useId()
   const syncThemes = useMemo(() => figmaSyncThemeKeys(themeOrder, themes), [themeOrder, themes])
-  const cannotSync = syncThemes.length === 0
-
-  const summary = useMemo(() => {
-    const byBrand = brandThemesFromSyncModes(syncModes)
-    const brands = syncThemes.filter((key) => byBrand[key]?.length)
-    return brands
-      .map((key) => `${themeDisplayName(key, themeLabels)} ${t(brandThemesSummary(byBrand[key]).replace(/ only$/, ''))}`)
-      .join(' · ')
-  }, [syncModes, syncThemes, themeLabels, t])
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
   const valid = entitlement.licence.status === 'valid'
@@ -166,7 +151,120 @@ export default function FigmaControlsPanel({
               title="Brands & themes"
               trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(syncModes.length), max: String(cap) })}</span>}
             >
-              <div className="flex flex-col gap-1 px-2 pb-2.5 pt-1" role="group" aria-label={t('Modes to include')}>
+              <div className="px-2 pb-2.5 pt-1">
+                <FigmaModesPicker previewTheme={previewTheme} onSelectTheme={onSelectTheme} syncModes={syncModes} onSyncModesChange={onSyncModesChange} />
+              </div>
+            </RailCard>
+
+            <RailCard
+              title="Viewports"
+              trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(viewports.length), max: String(FIGMA_VIEWPORTS.length) })}</span>}
+            >
+              <div className="px-2 pb-2.5 pt-1">
+                <FigmaViewportsPicker viewports={viewports} onViewportsChange={onViewportsChange} />
+                <p className="px-1 pt-2 text-caption leading-snug text-fg-faint">
+                  {t('Spacing, radius, size, stroke and grid get one Figma mode per viewport.')}
+                </p>
+              </div>
+            </RailCard>
+
+            <RailCard
+              title="Platforms"
+              trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(platformAxis.shipped.length), max: String(PLATFORMS.length) })}</span>}
+            >
+              <div className="flex flex-col gap-1 px-2 pb-2.5 pt-1" role="group" aria-label={t('Platforms to include')}>
+                {PLATFORMS.map((platform) => {
+                  const on = platformAxis.shipped.includes(platform)
+                  const web = platform === 'web'
+                  return (
+                    <button
+                      key={platform}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={web}
+                      title={web ? t('Web always ships') : undefined}
+                      onClick={() => setPlatformAxis({ shipped: on ? platformAxis.shipped.filter((p) => p !== platform) : [...platformAxis.shipped, platform] })}
+                      className={`flex h-9 items-center gap-2 rounded-lg border border-line px-2.5 text-left text-caption transition-colors ${FOCUS} ${
+                        on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
+                      } ${web ? 'cursor-not-allowed' : ''}`}
+                    >
+                      <CheckMark selected={on} />
+                      {PLATFORM_LABELS[platform]}
+                    </button>
+                  )
+                })}
+                <p className="px-1 pt-1 text-caption leading-snug text-fg-faint">
+                  {t('Body family, body and control type, touch target and control radii get one Figma mode per platform. Display, headings and layout follow viewports.')}
+                </p>
+              </div>
+            </RailCard>
+
+            {onOpenGithub ? (
+              <RailCard title="Backup">
+                <div className="flex items-center justify-between gap-2 px-3 py-2.5 text-caption">
+                  <span className="min-w-0 truncate text-fg-muted">{githubRepo ?? t('No repository')}</span>
+                  <button
+                    type="button"
+                    onClick={onOpenGithub}
+                    className={`flex-shrink-0 rounded text-fg underline decoration-fg-faint underline-offset-2 transition-colors hover:decoration-fg ${FOCUS}`}
+                  >
+                    {githubRepo ? t('Open') : t('Connect')}
+                  </button>
+                </div>
+              </RailCard>
+            ) : null}
+          </div>
+        </ThemeRailScrollRegion>
+
+        {/* Pinned: the plugin is the way IN, so it never scrolls away. */}
+        <div className="flex-shrink-0 border-t border-line px-3 pb-3 pt-1">
+          <PluginInstallPromo
+            layout="stacked"
+            version={PLUGIN_VERSION}
+            updateAvailable={pluginUpdateAvailable}
+            info="Sign in from the Escala plugin. Your folders show up there. Paste the agent context into the plugin’s context card and press Import into this file."
+          />
+        </div>
+      </aside>
+      {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
+    </InspectorPortal>
+  )
+}
+
+/**
+ * Brands × themes the Figma context carries: one row per brand (check, swatch,
+ * name), Light and Dark as one segmented pair. Shared by the Figma page's panel
+ * and the Code tab's Figma filters, so both pick the same thing the same way.
+ * Free stops at its cap: the next column asks for Pro instead of dropping.
+ */
+export function FigmaModesPicker({ previewTheme, onSelectTheme, syncModes, onSyncModesChange }: {
+  previewTheme: string
+  onSelectTheme: (key: string) => void
+  syncModes: FigmaSyncMode[]
+  onSyncModesChange: (modes: FigmaSyncMode[], planCut?: boolean) => void
+}) {
+  const store = useDesignStore()
+  const { themeOrder, themes, themeLabels, themeKinds, themeSources } = store
+  const { t } = useI18n()
+  const free = useFreeTier()
+  const cap = figmaModeCapFor(free)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const commit = (next: FigmaSyncMode[]) => {
+    if (free && next.length > cap) { setUpgradeOpen(true); onSyncModesChange(next.slice(0, cap), true); return }
+    onSyncModesChange(next)
+  }
+  const syncThemes = useMemo(() => figmaSyncThemeKeys(themeOrder, themes), [themeOrder, themes])
+  const cannotSync = syncThemes.length === 0
+  const summary = useMemo(() => {
+    const byBrand = brandThemesFromSyncModes(syncModes)
+    const brands = syncThemes.filter((key) => byBrand[key]?.length)
+    return brands
+      .map((key) => `${themeDisplayName(key, themeLabels)} ${t(brandThemesSummary(byBrand[key]).replace(/ only$/, ''))}`)
+      .join(' · ')
+  }, [syncModes, syncThemes, themeLabels, t])
+  return (
+    <>
+              <div className="flex flex-col gap-1" role="group" aria-label={t('Modes to include')}>
                 {cannotSync ? (
                   <p className="px-1 py-1 text-caption leading-relaxed text-fg-faint">{t('Add a System style or create a brand. Trying one on does not add it.')}</p>
                 ) : syncThemes.map((key) => {
@@ -235,13 +333,19 @@ export default function FigmaControlsPanel({
                   <p className="sr-only" aria-live="polite">{summary}</p>
                 ) : null}
               </div>
-            </RailCard>
+      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+    </>
+  )
+}
 
-            <RailCard
-              title="Viewports"
-              trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(viewports.length), max: String(FIGMA_VIEWPORTS.length) })}</span>}
-            >
-              <div className="flex flex-col gap-1 px-2 pb-2.5 pt-1" role="group" aria-label={t('Viewports to include')}>
+/** Which viewports get a Figma mode. At least one always ships. */
+export function FigmaViewportsPicker({ viewports, onViewportsChange }: {
+  viewports: FigmaViewport[]
+  onViewportsChange: (viewports: FigmaViewport[]) => void
+}) {
+  const { t } = useI18n()
+  return (
+              <div className="flex flex-col gap-1" role="group" aria-label={t('Viewports to include')}>
                 {FIGMA_VIEWPORTS.map((viewport) => {
                   const on = viewports.includes(viewport)
                   const last = on && viewports.length === 1
@@ -262,72 +366,6 @@ export default function FigmaControlsPanel({
                     </button>
                   )
                 })}
-                <p className="px-1 pt-1 text-caption leading-snug text-fg-faint">
-                  {t('Spacing, radius, size, stroke and grid get one Figma mode per viewport.')}
-                </p>
               </div>
-            </RailCard>
-
-            <RailCard
-              title="Platforms"
-              trailing={<span className="text-caption text-fg-faint">{t('{count} of {max}', { count: String(platformAxis.shipped.length), max: String(PLATFORMS.length) })}</span>}
-            >
-              <div className="flex flex-col gap-1 px-2 pb-2.5 pt-1" role="group" aria-label={t('Platforms to include')}>
-                {PLATFORMS.map((platform) => {
-                  const on = platformAxis.shipped.includes(platform)
-                  const web = platform === 'web'
-                  return (
-                    <button
-                      key={platform}
-                      type="button"
-                      aria-pressed={on}
-                      disabled={web}
-                      title={web ? t('Web always ships') : undefined}
-                      onClick={() => setPlatformAxis({ shipped: on ? platformAxis.shipped.filter((p) => p !== platform) : [...platformAxis.shipped, platform] })}
-                      className={`flex h-9 items-center gap-2 rounded-lg border border-line px-2.5 text-left text-caption transition-colors ${FOCUS} ${
-                        on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
-                      } ${web ? 'cursor-not-allowed' : ''}`}
-                    >
-                      <CheckMark selected={on} />
-                      {PLATFORM_LABELS[platform]}
-                    </button>
-                  )
-                })}
-                <p className="px-1 pt-1 text-caption leading-snug text-fg-faint">
-                  {t('Body family, body and control type, touch target and control radii get one Figma mode per platform. Display, headings and layout follow viewports.')}
-                </p>
-              </div>
-            </RailCard>
-
-            {onOpenGithub ? (
-              <RailCard title="Backup">
-                <div className="flex items-center justify-between gap-2 px-3 py-2.5 text-caption">
-                  <span className="min-w-0 truncate text-fg-muted">{githubRepo ?? t('No repository')}</span>
-                  <button
-                    type="button"
-                    onClick={onOpenGithub}
-                    className={`flex-shrink-0 rounded text-fg underline decoration-fg-faint underline-offset-2 transition-colors hover:decoration-fg ${FOCUS}`}
-                  >
-                    {githubRepo ? t('Open') : t('Connect')}
-                  </button>
-                </div>
-              </RailCard>
-            ) : null}
-          </div>
-        </ThemeRailScrollRegion>
-
-        {/* Pinned: the plugin is the way IN, so it never scrolls away. */}
-        <div className="flex-shrink-0 border-t border-line px-3 pb-3 pt-1">
-          <PluginInstallPromo
-            layout="stacked"
-            version={PLUGIN_VERSION}
-            updateAvailable={pluginUpdateAvailable}
-            info="Sign in from the Escala plugin. Your folders show up there. Paste the agent context into the plugin’s context card and press Import into this file."
-          />
-        </div>
-      </aside>
-      <UpgradeToProDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
-      {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
-    </InspectorPortal>
   )
 }

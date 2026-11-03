@@ -42,6 +42,10 @@ export interface ShipActions {
 
 export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
+/** The door whose file is on screen: the inspector's raised selected fill
+ *  with a firmer edge, so "pressed" reads without a second accent colour. */
+const SHIP_BUTTON_PRESSED = '!border-line-strong !bg-elevated text-fg shadow-[inset_0_0_0_1px_var(--line-strong)]'
+
 export function CodeGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
@@ -60,8 +64,16 @@ export function AgentGlyph() {
 
 /** Three equal doors. Each opens ONE page; none is the primary, because which
  *  one you came for is yours to say. */
-export function ShipRow({ ship }: { ship: ShipActions }) {
+export function ShipRow({ ship, active }: {
+  ship: ShipActions
+  /** On the Code tab the three doors ARE its format switch: the one on screen
+   *  stays pressed, and pressing another changes what the centre shows. */
+  active?: 'css' | 'figma' | 'agent'
+}) {
   const { t } = useI18n()
+  const door = (key: 'css' | 'figma' | 'agent') => (active
+    ? { 'aria-pressed': active === key, className: `${SHIP_BUTTON} ${active === key ? SHIP_BUTTON_PRESSED : 'text-fg-muted'}` }
+    : { className: SHIP_BUTTON })
   return (
     // No "Ship to" eyebrow: three named doors in a row say it themselves, and
     // the caption only added a line between Save and them. The group keeps the
@@ -70,13 +82,13 @@ export function ShipRow({ ship }: { ship: ShipActions }) {
       {/* With the GitHub icon in the row, the three named doors tighten a
           little (padding, gaps) so "Agent" still fits whole at 287px. */}
       <div role="group" aria-label={t('Ship to')} className={`flex items-center ${ship.github ? 'gap-1 [&>button]:!gap-1 [&>button]:!px-1.5' : 'gap-1.5'}`}>
-        <button type="button" onClick={ship.css} className={SHIP_BUTTON} title={t('Copy or download variables.css')}>
+        <button type="button" onClick={ship.css} {...door('css')} title={t('Copy or download variables.css')}>
           <CodeGlyph /><span className="truncate">{t('CSS')}</span>
         </button>
-        <button type="button" onClick={ship.figma} className={SHIP_BUTTON} title={t('Copy the context and paste it in the plugin.')}>
+        <button type="button" onClick={ship.figma} {...door('figma')} title={t('Copy the context and paste it in the plugin.')}>
           <FigmaGlyph size={13} /><span className="truncate">{t('Figma')}</span>
         </button>
-        <button type="button" onClick={ship.agent} className={SHIP_BUTTON} title={t('One message your AI agent reads as the source of truth.')}>
+        <button type="button" onClick={ship.agent} {...door('agent')} title={t('One message your AI agent reads as the source of truth.')}>
           <AgentGlyph /><span className="truncate">{t('Agent')}</span>
         </button>
         {ship.github && (
