@@ -8,7 +8,7 @@ import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { OPEN_BETA, PRICING_PATH } from '../../lib/entitlement'
-import { CONTACT_PATH, PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
+import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
@@ -912,7 +912,6 @@ export function AboutHome({
   // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
   const uid = useId()
   const faqId = `${uid}-faq`
-  const contactId = `${uid}-contact`
   const playgroundId = `${uid}-playground`
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
@@ -1140,33 +1139,17 @@ export function AboutHome({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* ── Contact — the maker and one way to reach him. The socials are NOT
-            here: they live once, in the footer's Social column. ── */}
-        <section aria-labelledby={contactId} className="flex flex-col items-start gap-3 border-b border-line px-6 py-16">
-          <Eyebrow>{t('Contact')}</Eyebrow>
-          <h2 id={contactId} className="text-[26px] font-semibold leading-tight text-fg">
-            {t('Built and maintained by Cesar Durango')}
-          </h2>
-          <p className="text-ui leading-relaxed text-fg-muted">{t('Design systems and design engineering.')}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            {CONTACT.email && (
-              <a href={PUBLIC_CONTACT_MAILTO} className={secondaryCta}>
-                {CONTACT.email}
-                <ArrowGlyph />
-              </a>
-            )}
-            <a href={CONTACT_PATH} className={secondaryCta}>
-              {t('Contact form')}
-              <ArrowGlyph />
-            </a>
-          </div>
-        </section>
-
-        {/* ── Footer — NAVIGATION back into the product. The shell's 28px strip
-            under every view stays the only colophon (copyright · Contact ·
-            Legal · Privacy · Terms · MIT), so none of that is repeated here. ── */}
-        <AboutFooter onStart={onStart} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
+      {/* ── Footer — NAVIGATION back into the product. The shell's 28px strip
+          under every view stays the only colophon (copyright · Contact ·
+          Legal · Privacy · Terms · MIT), so none of that is repeated here.
+          A full-width band one layer up (`--surface` over `--app`) so the page
+          visibly ends, in both appearances. ── */}
+      <div className="border-t border-line bg-surface">
+        <div className="mx-auto max-w-[1080px]">
+          <AboutFooter onStart={onStart} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
+        </div>
       </div>
     </div>
   )

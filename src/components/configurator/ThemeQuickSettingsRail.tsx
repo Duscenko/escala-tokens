@@ -1204,8 +1204,9 @@ function ContrastGridThumb({ tones, className = 'size-7 rounded-[5px]' }: { tone
  *  muted ink on the left, the current value in full ink on the right. Every
  *  stepped control in the panel heads itself with this, so "Text scale",
  *  "Border width", "Saturation" and Radius' axes read as one family. */
-const SLIDER_LABEL = 'min-w-0 truncate text-caption font-medium text-fg-muted'
-const SLIDER_VALUE = 'flex-shrink-0 text-caption tabular-nums text-fg'
+/** Exported with `DotSlider` so the About page's demos draw the rail's own header. */
+export const SLIDER_LABEL = 'min-w-0 truncate text-caption font-medium text-fg-muted'
+export const SLIDER_VALUE = 'flex-shrink-0 text-caption tabular-nums text-fg'
 
 function SettingItem({ label, value, hint, advancedLabel, onAdvanced, children }: {
   label?: string
@@ -1501,7 +1502,7 @@ const CORNER_MAX = 26 // the plugin caps the drawn arc so `full` stays a corner
 /** The picked step's corner, drawn small on the slider thumb: an L of top +
  *  left border at the step's radius, scaled from the plugin's capped arc into
  *  a 10px box so `none` → `5xl` still read as square → round. */
-function RadiusThumbCorner({ px }: { px: number }) {
+export function RadiusThumbCorner({ px }: { px: number }) {
   return (
     <span
       aria-hidden

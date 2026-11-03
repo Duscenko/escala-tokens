@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { apcaLc, wcagRatio } from '../../lib/color/apca'
-import { RADIUS_ROLE_PRESETS, RADIUS_STANDARD } from '../../lib/layoutTokens'
+import { RADIUS_AXIS_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD } from '../../lib/layoutTokens'
+import { TYPE_SCALE_MODES, buildTypeScale } from '../../lib/typographyStandard'
+import { DotSlider, RadiusThumbCorner, SLIDER_LABEL, SLIDER_VALUE } from './ThemeQuickSettingsRail'
 
 /* The six small animated pictures of the About page's "What the foundations
  * take care of" carousel. Each one loops through a few real states of one
@@ -42,6 +44,21 @@ function Stage({ stageRef, children }: { stageRef: React.RefObject<HTMLDivElemen
 
 function Caption({ children }: { children: ReactNode }) {
   return <span className="font-mono text-mini text-fg-faint">{children}</span>
+}
+
+/** The inspector's own slider row (label · value over a `DotSlider`), played
+ *  by the demo. `inert`: the stage is decorative (`aria-hidden`), so the
+ *  slider must not take focus or clicks. */
+function AxisDemo({ label, value, className = 'w-full', children }: { label: string; value: string; className?: string; children: ReactNode }) {
+  return (
+    <div inert className={className}>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className={SLIDER_LABEL}>{label}</span>
+        <span className={SLIDER_VALUE}>{value}</span>
+      </div>
+      {children}
+    </div>
+  )
 }
 
 /* ── 1 · Ramps in both appearances ───────────────────────────────────────── */
@@ -200,13 +217,9 @@ export function MetricsArt() {
 
 /* ── 4 · A type scale with a density dial ────────────────────────────────── */
 
-const DENSITIES = [
-  { name: 'Compact', f: 0.82 },
-  { name: 'Cozy', f: 0.91 },
-  { name: 'Default', f: 1 },
-  { name: 'Comfortable', f: 1.09 },
-  { name: 'Spacious', f: 1.18 },
-]
+// The Text scale dial's own modes, and the body size each one writes — the
+// numbers the inspector's thumb shows.
+const BODY_PX = TYPE_SCALE_MODES.map(mode => parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 16)
 const TYPE_LINES = [
   { text: 'Display', size: 30, weight: 500, tone: 'text-fg' },
   { text: 'Section heading', size: 17, weight: 500, tone: 'text-fg' },
@@ -219,7 +232,7 @@ export function TypeScaleArt() {
   // Ping-pong across the five steps so the thumb never jumps back.
   const tick = useStep(8, 1300, live)
   const idx = [2, 3, 4, 3, 2, 1, 0, 1][tick]
-  const d = DENSITIES[idx]
+  const mode = TYPE_SCALE_MODES[idx]
   return (
     <Stage stageRef={ref}>
       <div className="flex w-[244px] flex-col gap-5">
@@ -229,7 +242,7 @@ export function TypeScaleArt() {
               key={l.text}
               className={`block whitespace-nowrap tracking-[-0.01em] ${l.tone}`}
               style={{ fontWeight: l.weight }}
-              animate={{ fontSize: l.size * d.f, lineHeight: `${Math.round(l.size * d.f * 1.3)}px` }}
+              animate={{ fontSize: l.size * mode.factor, lineHeight: `${Math.round(l.size * mode.factor * 1.3)}px` }}
               initial={false}
               transition={SPRING}
             >
@@ -237,24 +250,15 @@ export function TypeScaleArt() {
             </motion.span>
           ))}
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="relative mx-1 h-4">
-            <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line-strong" />
-            {DENSITIES.map((_, i) => (
-              <span key={i} className="absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg/25" style={{ left: `${(i / 4) * 100}%` }} />
-            ))}
-            <motion.span
-              className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent-ui bg-app"
-              animate={{ left: `${(idx / 4) * 100}%` }}
-              initial={false}
-              transition={SPRING}
-            />
-          </div>
-          <div className="flex justify-between">
-            <Caption>density</Caption>
-            <Caption>{d.name}</Caption>
-          </div>
-        </div>
+        <AxisDemo label="Text scale" value={mode.label}>
+          <DotSlider
+            ariaLabel="Type scale"
+            stops={TYPE_SCALE_MODES.map((_, i) => i)}
+            value={idx}
+            format={i => `${BODY_PX[i]}px`}
+            onChange={() => {}}
+          />
+        </AxisDemo>
       </div>
     </Stage>
   )
@@ -310,15 +314,16 @@ export function RadiusArt() {
             <Caption>sel. {selector}</Caption>
           </div>
         </div>
-        <motion.span
-          key={p.label}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: EASE }}
-          className="rounded-full bg-surface px-2.5 py-1 text-caption font-medium text-fg-muted"
-        >
-          {p.label}
-        </motion.span>
+        <AxisDemo label="Boxes" value={`${p.picks.boxes} · ${box}px`} className="w-[244px]">
+          <DotSlider
+            ariaLabel="Boxes radius"
+            stops={RADIUS_AXIS_STEPS.map((_, i) => i)}
+            value={RADIUS_AXIS_STEPS.indexOf(p.picks.boxes as (typeof RADIUS_AXIS_STEPS)[number])}
+            format={i => RADIUS_AXIS_STEPS[i]}
+            renderValue={i => <><RadiusThumbCorner px={pxOf(RADIUS_AXIS_STEPS[i])} />{RADIUS_AXIS_STEPS[i]}</>}
+            onChange={() => {}}
+          />
+        </AxisDemo>
       </div>
     </Stage>
   )
