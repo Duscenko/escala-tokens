@@ -70,8 +70,14 @@ export function FoundationGlyph({ id, className = 'h-4 w-4' }: { id: string; cla
  *  so the selection reads without shouting over the canvas. Inactive glyph and
  *  label share the same faint ink; hover lifts both. `compact` drops the label. */
 export function RailTile({
-  on, label, onClick, children, ariaCurrent, compact = false, className = '', step, dimmed = false, grow = true, ...aria
+  on, label, onClick, children, ariaCurrent, compact = false, block = false, className = '', step, dimmed = false, grow = true, ...aria
 }: {
+  /** The workspace nav's shape (YouTube's mini guide, Figma's left bar): ONE
+   *  72px block carries the hover around glyph AND label, and the tiles stack
+   *  almost flush. The selection is no fill at all: the filled glyph and the
+   *  full-strength ink (`text-fg`) say "you are here". The foundation rails keep the
+   *  glyph-only wash. */
+  block?: boolean
   /** Scale the active glyph up. Off where the glyph itself changes on
    *  activation (the nav rail's regular → fill swap). */
   grow?: boolean
@@ -104,9 +110,17 @@ export function RailTile({
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
       className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
-        compact ? '' : 'w-[72px] gap-0.5 py-1'
+        block
+          ? `w-[72px] gap-1 pb-2 pt-2.5 transition-colors ${on ? 'text-fg' : 'text-fg-faint hover:bg-black/[0.06] dark:hover:bg-white/[0.07] hover:text-fg'}`
+          : compact ? '' : 'w-[72px] gap-0.5 py-1'
       } ${className}`}
     >
+      {block ? (
+        <>
+          {children}
+          <span aria-hidden className="block max-w-full truncate px-0.5 text-mini font-medium leading-tight">{label}</span>
+        </>
+      ) : (<>
       {/* Only the glyph's square carries the selection — the label stays plain
           beneath it, so the rail doesn't read as a column of filled blocks.
           The active glyph scales inside that fixed 40px box (`transform` does
@@ -140,6 +154,7 @@ export function RailTile({
           {label}
         </span>
       )}
+      </>)}
     </button>
   )
 }
@@ -221,7 +236,7 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
     <nav
       aria-label={ariaLabel}
       data-shell-chrome=""
-      className="flex h-full flex-shrink-0 flex-col items-center gap-2 overflow-y-auto pt-3 pb-3 scrollbar-thin bg-nav"
+      className="flex h-full flex-shrink-0 flex-col items-center gap-0.5 overflow-y-auto pt-2 pb-3 scrollbar-thin bg-nav"
       style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
     >
       {items.map(({ key, label }) => {
@@ -237,6 +252,7 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
             dimmed={off}
             title={off ? dimmedReason : label}
             grow={false}
+            block
           >
             <NavIcon id={key} filled={on} />
           </RailTile>
