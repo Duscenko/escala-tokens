@@ -20,6 +20,7 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
 import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
 import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
+import { readableInk } from '../../../lib/colorUtils'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
 
@@ -163,14 +164,57 @@ function ColorStyleSpecimen({ t }: { t: PreviewTokens }) {
   // to the padding — the surface inset has to read the same on all four sides.
   return (
     <div className="flex flex-1 flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-      <div className="flex flex-1 overflow-hidden" style={{ minHeight: 120, borderRadius: radius }}>
-        {accentBands.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
-      </div>
-      {steps.length > 0 && (
-        <div className="flex overflow-hidden" style={{ height: 40, borderRadius: radius }}>
-          {steps.map((c, i) => <span key={i} style={{ flex: '1 1 0', background: c }} />)}
-        </div>
-      )}
+      <RampStrip colors={accentBands} className="flex-1" style={{ minHeight: 120, borderRadius: radius }} labelled />
+      {steps.length > 0 && <RampStrip colors={steps} style={{ height: 40, borderRadius: radius }} />}
+    </div>
+  )
+}
+
+/**
+ * One ramp as a row of bands that answers the pointer: the band under it
+ * widens (its siblings give the room back, so the row never changes size),
+ * and the tall row writes the step and hex on it in an ink solved against
+ * that band. A click copies the hex — only while the inspector is off, since
+ * with it on a click means "inspect this card". Reduced motion: no easing.
+ */
+function RampStrip({ colors, labelled = false, className = '', style }: { colors: string[]; labelled?: boolean; className?: string; style: CSSProperties }) {
+  const inspecting = useInspectorActive()
+  const [hover, setHover] = useState<number | null>(null)
+  const [copied, setCopied] = useState<number | null>(null)
+  const copy = (i: number) => {
+    if (inspecting) return
+    void navigator.clipboard?.writeText(colors[i]).then(() => {
+      setCopied(i)
+      window.setTimeout(() => setCopied(c => (c === i ? null : c)), 1200)
+    }, () => {})
+  }
+  return (
+    <div className={`flex overflow-hidden ${className}`} style={style} onPointerLeave={() => setHover(null)}>
+      {colors.map((c, i) => {
+        const open = hover === i
+        const ink = readableInk(c)
+        return (
+          <span
+            key={i}
+            title={inspecting ? undefined : `Copy ${c}`}
+            onPointerEnter={() => setHover(i)}
+            onClick={() => copy(i)}
+            className={`relative min-w-0 overflow-hidden transition-[flex-grow] duration-300 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${inspecting ? '' : 'cursor-copy'}`}
+            style={{ flex: `${open ? (labelled ? 5 : 3) : 1} 1 0`, background: c }}
+          >
+            {labelled && (
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute inset-x-3 bottom-3 flex flex-col gap-1 whitespace-nowrap font-mono transition-opacity duration-200 motion-reduce:transition-none ${open ? 'opacity-100 delay-100' : 'opacity-0'}`}
+                style={{ color: ink }}
+              >
+                <span style={{ fontSize: 13, letterSpacing: '0.08em', opacity: 0.7 }}>{i + 1}</span>
+                <span style={{ fontSize: 17, fontWeight: 500 }}>{copied === i ? 'Copied' : c.toUpperCase()}</span>
+              </span>
+            )}
+          </span>
+        )
+      })}
     </div>
   )
 }
