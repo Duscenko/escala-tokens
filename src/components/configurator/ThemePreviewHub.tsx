@@ -58,6 +58,8 @@ import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
 import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus } from '../../lib/colorRoleMap'
 import { useColorRoleMap } from './useColorRoleMap'
 import type { RampLegend } from './ColorRolesPanel'
+import { BoardTourCoach, useBoardTourStep } from '../ui/BoardTourCoach'
+import { boardTourStep, tourEvent } from '../../lib/boardTour'
 
 // The lit-board spotlight (ColorSpotlight) is off for now.
 const SPOTLIGHT_ON = false
@@ -568,8 +570,15 @@ export default function ThemePreviewHub({
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
   // Open to guests and during the first setup pass too: naming the roles on
   // screen is how a first-time visitor learns what the colour step is setting.
-  // Only an unsaved Random draft keeps it off.
-  const [inspecting, setInspecting] = useState(true)
+  // Only an unsaved Random draft keeps it off — and the first-run tour, whose
+  // first step is the die: its hover tags would talk over the guide.
+  const [inspecting, setInspecting] = useState(() => boardTourStep() !== 'roll')
+  const tourStep = useBoardTourStep()
+  // The tour's second step is the Inspector: turning it on (or having it on
+  // already when the step arrives) is what closes it.
+  useEffect(() => {
+    if (tourStep === 'inspect' && inspecting) tourEvent('inspected')
+  }, [tourStep, inspecting])
   // The rail owns "a whole new theme"; it hands it here so the die sits on
   // the board it repaints (`BoardHistoryControls`), not in the footer.
   const randomHandle = useRef<(() => void) | null>(null)
@@ -812,6 +821,10 @@ export default function ThemePreviewHub({
   const pageCanvasColor = boardCanvasTokens.archTokens?.['surface.page']
     ?? boardCanvasTokens.pageBackground
     ?? boardCanvasTokens.surface
+  const tourColors = useMemo(() => {
+    const tk = boardCanvasTokens
+    return [tk.brandSolid, tk.brandSolid, tk.successColor ?? '', tk.warningColor ?? '', tk.infoColor ?? '', tk.errorColor]
+  }, [boardCanvasTokens])
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
   return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Brand')}>
@@ -1040,7 +1053,7 @@ export default function ThemePreviewHub({
                         {/* Map · Board sits beside Inspector: both pick what
                             the board shows, so they read as one tool group. */}
                         {mapOpen && <MapViewSwitch inset value={mapView} onChange={setMapView} />}
-                        {(!mapOpen || mapView === 'board') && <InspectorToggle
+                        {(!mapOpen || mapView === 'board') && <span className="flex" data-tour="inspect"><InspectorToggle
                           bare
                           active={inspecting}
                           pinned={Boolean(inspectedSelection)}
@@ -1049,7 +1062,7 @@ export default function ThemePreviewHub({
                           ink={boardCanvasTokens.onBrand}
                           disabled={randomDraft}
                           disabledTitle={headerActionsLockedHint}
-                        />}
+                        /></span>}
                       </BoardHistoryControls>
                     </div>
                   </motion.div>
@@ -1169,5 +1182,7 @@ export default function ThemePreviewHub({
       onOpenInVariables={onOpenInVariables}
       backLabel={inspecting ? inspectedSelection : null}
     />
+    {/* The first-run guide: shows only while its anchor is on screen. */}
+    {!stylePreview && <BoardTourCoach colors={tourColors} />}
   </section>
 }

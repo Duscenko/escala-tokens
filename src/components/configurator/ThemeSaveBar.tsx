@@ -12,6 +12,7 @@ import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLev
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
+import { tourEvent } from '../../lib/boardTour'
 import { announceBrandSaved } from '../../lib/brandSaved'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { requestOpenGithub } from '../../lib/guestSave'
@@ -86,7 +87,7 @@ export function ShipRow({ ship, active }: {
     <div className="flex flex-col gap-2">
       {/* With the GitHub icon in the row, the three named doors tighten a
           little (padding, gaps) so "Agent" still fits whole at 287px. */}
-      <div role="group" aria-label={t('Ship to')} className={`flex items-center ${ship.github ? 'gap-1 [&>button]:!gap-1 [&>button]:!px-1.5' : 'gap-1.5'}`}>
+      <div role="group" aria-label={t('Ship to')} data-tour="ship" onClickCapture={() => tourEvent('shipped')} className={`flex items-center ${ship.github ? 'gap-1 [&>button]:!gap-1 [&>button]:!px-1.5' : 'gap-1.5'}`}>
         <button type="button" onClick={ship.css} {...door('css')} title={t('Copy or download variables.css')}>
           <CodeGlyph /><span className="truncate">{t('CSS')}</span>
         </button>
@@ -204,8 +205,8 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
         <>
           {(leading || showHistory) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
-          <div className="flex items-center">
-            <RandomWholeThemeButton bare onClick={onRandom} label={t('Random theme')} />
+          <div className="flex items-center" data-tour="roll">
+            <RandomWholeThemeButton bare onClick={() => { onRandom(); tourEvent('rolled') }} label={t('Random theme')} />
             <RandomLevelPicker chevron />
           </div>
         </>
