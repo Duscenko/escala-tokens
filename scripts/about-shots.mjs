@@ -5,16 +5,18 @@
 //   npm run about:shots -- semantics # only the ones whose name matches
 //
 // The About page IS the guide to the generator, so these are captured from the
-// real app rather than drawn: dark chrome, the default system (Core, the
-// seeded theme), 1440×900 at 2×. Re-run it whenever the interface changes and
+// real app rather than drawn: dark chrome, a fresh brand in Escala's violet
+// (`ACCENT`), 1440×900 at 2×. Re-run it whenever the interface changes and
 // the guide follows. Each shot declares the ratio of the slot it fills in
 // `AboutMenu.tsx`, so nothing is stretched or letterboxed there.
 //
 // Accounts must be off (the `Vite Dev (accounts off)` launch config) so Variables,
 // System and Docs aren't behind the sign-up wall. DEBUG_SHOTS=<dir> also saves
-// the uncropped frame of each shot there.
+// the uncropped frame of each shot there; OUT_DIR=<dir> writes the files there
+// instead of public/about/ (to review before replacing).
 //
-// Env: BASE_URL (default http://localhost:5183) · CHROMIUM (path to a Chromium
+// Env: BASE_URL (default http://localhost:5183) · ACCENT (default #874FFF) ·
+// CHROMIUM (path to a Chromium
 // / Chrome executable; defaults to the newest one in Playwright's cache).
 
 import { chromium } from 'playwright-core'
@@ -25,7 +27,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 const BASE = process.env.BASE_URL || 'http://localhost:5183'
-const OUT = new URL('../public/about/', import.meta.url).pathname
+const OUT = process.env.OUT_DIR || new URL('../public/about/', import.meta.url).pathname
 const ONLY = process.argv.slice(2).filter((a) => !a.startsWith('-'))
 /** Width of the stored file. The slots render ≤ 640 CSS px wide, so this is
  *  2× for sharp text on retina without shipping the 2880px capture. */
@@ -60,19 +62,27 @@ const rail = (p, name) => p.getByRole('button', { name, exact: true }).filter({ 
 /** A control inside the right inspector. */
 const inspector = (p) => p.locator('#workspace-inspector')
 
+/** The accent every capture is taken in: Escala's own violet, so the About
+ *  page shows the product's colour rather than the default blue Core. */
+const ACCENT = process.env.ACCENT || '#874FFF'
+
 async function seedBrand(p) {
   await p.goto(BASE + '/?section=system', { waitUntil: 'networkidle' })
   await settle(p, 1000)
-  await p.getByRole('button', { name: 'Add brand' }).last().click()
+  await p.getByRole('button', { name: 'Add brand' }).first().click()
   await settle(p, 400)
   await p.getByText('Start from blank', { exact: true }).click()
-  await settle(p, 400)
-  await p.getByText('Blank', { exact: true }).click()
-  await settle(p, 1200)
-  await p.getByRole('button', { name: 'Continue', exact: true }).click()
-  await settle(p, 800)
-  await p.getByRole('button', { name: 'Save', exact: true }).click()
-  await settle(p, 1200)
+  await settle(p, 1500)
+  // The create studio opens on Color: type the accent into its row's hex
+  // field. Neutral and the four states follow it (linked by default).
+  const hex = p.getByLabel('Accent hex').first()
+  await hex.click()
+  await hex.fill(ACCENT)
+  await hex.press('Enter')
+  await settle(p, 900)
+  await blur(p)
+  await p.getByRole('button', { name: 'Save brand' }).click()
+  await settle(p, 1500)
 }
 
 async function openBoard(p, row) {
@@ -178,12 +188,9 @@ const SHOTS = [
   {
     name: 'docs', ratio: '16:10',
     async setup(p) {
-      await rail(p, 'Home').click()
-      await settle(p, 700)
-      await inspector(p).getByRole('button', { name: 'Docs', exact: true }).click()
-      await settle(p, 600)
-      await inspector(p).getByRole('button', { name: 'Color', exact: true }).first().click({ timeout: 2000 }).catch(() => {})
-      await settle(p, 1200)
+      // Docs is a page of Home (the System dashboard): one foundation per page.
+      await p.goto(BASE + '/?section=system/color', { waitUntil: 'networkidle' })
+      await settle(p, 1500)
       return wideCrop(p)
     },
   },
@@ -198,9 +205,10 @@ const SHOTS = [
   {
     name: 'figma', ratio: '16:10',
     async setup(p) {
-      await p.getByRole('button', { name: /^Export/ }).first().click()
-      await settle(p, 400)
-      await p.getByText('Sync with Figma', { exact: true }).click()
+      // Figma is the Code tab's third format: the context to copy + its filters.
+      await rail(p, 'Code').click()
+      await settle(p, 1200)
+      await inspector(p).getByRole('button', { name: 'Figma', exact: true }).first().click()
       await settle(p, 1500)
       return wideCrop(p)
     },
@@ -233,6 +241,8 @@ async function capture(browser, shot, appearance) {
   try {
     await seedBrand(p)
     const crop = await shot.setup(p)
+    // The "saved to Escala" toast from seedBrand is not part of any shot.
+    await p.addStyleTag({ content: '[aria-live="polite"].fixed { display: none !important; }' })
     if (process.env.DEBUG_SHOTS) await p.screenshot({ path: join(process.env.DEBUG_SHOTS, `dbg-${shot.name}-${appearance}.png`) })
     await blur(p)
     const [rw, rh] = shot.ratio.split(':').map(Number)

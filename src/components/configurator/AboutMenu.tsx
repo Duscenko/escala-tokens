@@ -14,6 +14,7 @@ import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H, type DocsMenuPage } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
+import { ContrastRoleArt, MetricsArt, RadiusArt, RampsArt, SpacingArt, TypeScaleArt } from './AboutFoundationArt'
 import { RainbowButton } from '../ui/rainbow-button'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
@@ -423,19 +424,27 @@ export function AboutAccordion({
     <Accordion
       type="single"
       collapsible
+      className={faq ? 'flex flex-col gap-2' : undefined}
       value={section ?? ''}
       onValueChange={(v) => onSectionChange((v || null) as AboutSection | null)}
     >
       {sections.map((s) => {
         const Icon = SECTION_ICONS[s.key]
         return (
-          <AccordionItem key={s.key} value={s.key} data-section={s.key}>
+          <AccordionItem
+            key={s.key}
+            value={s.key}
+            data-section={s.key}
+            // faq: each question is its own filled card (after shippp.ai's FAQ),
+            // a step darker on hover while closed.
+            className={faq ? 'rounded-lg border-b-0 bg-elevated/40 transition-colors hover:bg-elevated/70 data-[state=open]:hover:bg-elevated/40' : undefined}
+          >
             {faq ? (
               <>
-                <AccordionTrigger className="items-center py-6 [&>svg]:translate-y-0">
-                  <span className="flex-1 min-w-0 text-title font-medium leading-snug text-fg">{s.question}</span>
+                <AccordionTrigger className="items-center rounded-lg px-6 py-5 focus-visible:ring-accent-ui/50 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:translate-y-0 [&>svg]:text-fg-muted">
+                  <span className="flex-1 min-w-0 text-[18px] font-normal leading-snug tracking-[-0.01em] text-fg">{s.question}</span>
                 </AccordionTrigger>
-                <AccordionContent className="max-w-[640px] pb-6 text-ui leading-relaxed text-fg-muted">
+                <AccordionContent className="faq-answer px-6 pb-6">
                   {s.body}
                 </AccordionContent>
               </>
@@ -641,82 +650,133 @@ function Eyebrow({ children, className }: { children: ReactNode; className?: str
   )
 }
 
-/** Centered section opener: eyebrow · headline · one-line lead. */
-function SectionHeader({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+/** Centered section opener: (eyebrow) · headline · one-line lead. Same voice
+ *  as the hero: a light, tight headline, not a bold one. */
+function SectionHeader({ eyebrow, title, lead, id }: { eyebrow?: string; title: string; lead: string; id?: string }) {
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="max-w-[640px] text-[26px] font-semibold leading-tight text-fg">{title}</h2>
-      <p className="max-w-[560px] text-ui leading-relaxed text-fg-muted">{lead}</p>
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+      <h2 id={id} className="max-w-[640px] text-balance text-[32px] font-normal leading-[1.1] tracking-[-0.02em] text-fg">{title}</h2>
+      <p className="max-w-[520px] text-balance text-ui leading-relaxed text-fg-muted">{lead}</p>
     </div>
   )
 }
 
-/** One feature tile: a media slot on top (a placeholder until a real
- *  screenshot is dropped in) and title + one or two sentences below. */
-function ShowcaseCard({ title, body, media }: {
-  title: string
-  body: string
-  media: AboutShotSpec
-}) {
+/** The foundations carousel (after shippp.ai's "Six reasons"): borderless
+ *  square-ish cards, an animated picture on top and title + one sentence
+ *  below, in a row that scrolls sideways and bleeds past the column's right
+ *  edge to the window's. Snap per card; the arrows scroll one card at a time
+ *  and grey out at either end. */
+function FoundationCarousel({ items }: { items: { art: ReactNode; title: string; body: string }[] }) {
+  const { t } = useI18n()
+  const rowRef = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ start: true, end: false })
+  const measure = () => {
+    const el = rowRef.current
+    if (!el) return
+    setEdge({ start: el.scrollLeft < 4, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 4 })
+  }
+  useEffect(() => {
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
+  const page = (dir: 1 | -1) => {
+    const el = rowRef.current
+    const card = el?.firstElementChild as HTMLElement | null
+    if (!el || !card) return
+    el.scrollBy({ left: dir * (card.offsetWidth + 16), behavior: 'smooth' })
+  }
+  const arrow = (dir: 1 | -1, disabled: boolean) => (
+    <button
+      type="button"
+      onClick={() => page(dir)}
+      disabled={disabled}
+      aria-label={dir === 1 ? t('Next') : t('Previous')}
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-elevated/60 text-fg transition-colors hover:bg-elevated disabled:opacity-30 disabled:hover:bg-elevated/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <span className={dir === -1 ? 'rotate-180' : undefined}><ArrowGlyph size={14} /></span>
+    </button>
+  )
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-elevated/20 transition-colors hover:border-line-strong">
-      <div className="p-2">
-        {/* One ratio for every card, so a row of 16:10 and 4:3 shots lines up. */}
-        <AboutShot shot={media} ratio="16 / 10" />
+    <div className="flex flex-col gap-5">
+      <div
+        ref={rowRef}
+        onScroll={measure}
+        role="list"
+        aria-label={t('What the foundations take care of.')}
+        // Bleeds to both window edges; the inset puts the first card on the
+        // column's left edge (the column is 1080 wide with 1.5rem padding).
+        style={{ ['--bleed' as string]: 'max(1.5rem, calc(50vw - 540px + 1.5rem))' }}
+        className="-my-2 mx-[calc(var(--bleed)*-1)] flex snap-x snap-mandatory scroll-px-[var(--bleed)] gap-4 overflow-x-auto py-2 pl-[var(--bleed)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {items.map(item => (
+          <div
+            key={item.title}
+            role="listitem"
+            className="flex w-[min(380px,78vw)] flex-shrink-0 snap-start flex-col rounded-lg bg-elevated/40"
+          >
+            <div className="h-[260px] px-6 pt-6">{item.art}</div>
+            <div className="flex flex-col gap-2.5 px-7 pb-8 pt-6">
+              <h3 className="text-[20px] font-normal leading-tight tracking-[-0.01em] text-fg">{item.title}</h3>
+              <p className="text-strong leading-relaxed text-fg-muted">{item.body}</p>
+            </div>
+          </div>
+        ))}
+        {/* Same inset after the last card (a scroller ignores its end padding). */}
+        <div aria-hidden className="w-[calc(var(--bleed)-1rem)] flex-shrink-0" />
       </div>
-      <div className="flex flex-col gap-1.5 px-4 pb-4 pt-2">
-        <h3 className="text-strong font-semibold text-fg">{title}</h3>
-        <p className="text-body leading-relaxed text-fg-muted">{body}</p>
+      <div className="flex justify-end gap-2">
+        {arrow(-1, edge.start)}
+        {arrow(1, edge.end)}
       </div>
     </div>
   )
 }
 
-/** One destination of the system — what the tokens become (Components ·
- *  Docs · Code · Figma). A large real capture on one side, the claim, up to
- *  three facts and an optional action on the other; `flip` alternates the
- *  sides so four in a row read as a sequence, not a stack. */
-function FeatureSection({ eyebrow, title, body, points, media, flip = false, action, children }: {
-  eyebrow: string
+/** One step of the workflow (after shippp.ai's #workflow): two equal square
+ *  cards side by side — the step's words on a soft surface, its real capture
+ *  on a deeper one, bleeding past the right edge. `flip` swaps the sides so
+ *  the steps read as a sequence, not a stack. */
+function WorkflowStep({ label, title, body, media, flip = false, action }: {
+  label: string
   title: string
   body: string
-  points: string[]
   media: AboutShotSpec
   flip?: boolean
   action?: ReactNode
-  children?: ReactNode
 }) {
   return (
-    <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
-      <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        <AboutShot shot={media} className={cn('rounded-2xl', flip && 'lg:order-2')} />
-        <div className="flex flex-col gap-3">
-          <Eyebrow className="self-start">{eyebrow}</Eyebrow>
-          <h2 className="text-[26px] font-semibold leading-tight text-fg">{title}</h2>
-          <p className="text-ui leading-relaxed text-fg-muted">{body}</p>
-          <ul className="mt-1 flex flex-col gap-2">
-            {points.map((point) => (
-              <li key={point} className="flex gap-2.5 text-body leading-relaxed text-fg-muted">
-                <CheckGlyph />
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-          {action}
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className={cn('flex flex-col justify-between gap-8 rounded-lg bg-elevated/40 px-8 py-8 md:aspect-square lg:px-10 lg:py-9', flip && 'md:order-2')}>
+        <div className="flex flex-col gap-5">
+          <p className="text-ui font-medium text-accent-ui">{label}</p>
+          <h3 className="text-balance text-[28px] font-normal leading-[1.08] tracking-[-0.02em] text-fg lg:text-[32px]">{title}</h3>
+          <p className="text-strong leading-relaxed text-fg-muted">{body}</p>
         </div>
+        {action && <div className="flex justify-end">{action}</div>}
       </div>
-      {children}
-    </section>
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-elevated md:aspect-square">
+        <AboutShot
+          shot={media}
+          className="absolute left-8 top-10 w-[112%] max-w-none rounded-lg shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)] lg:left-10 lg:top-12"
+        />
+      </div>
+    </div>
   )
 }
 
-function CheckGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="mt-[3px] flex-shrink-0 text-accent-ui" aria-hidden>
-      <path d="m5 12 5 5 9-10" />
+/** The link at the foot of a workflow step: a quiet label + ↗. */
+function StepLink({ children, ...props }: { children: ReactNode } & ({ href: string; onClick?: never } | { onClick: () => void; href?: never })) {
+  const cls = 'inline-flex items-center gap-1.5 rounded text-ui font-medium text-fg transition-colors hover:text-accent-ui focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const glyph = (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3.5 8.5 8.5 3.5M4.5 3.5h4v4" />
     </svg>
   )
+  return 'href' in props && props.href
+    ? <a href={props.href} target="_blank" rel="noreferrer" className={cls}>{children}{glyph}</a>
+    : <button type="button" onClick={props.onClick} className={cls}>{children}{glyph}</button>
 }
 
 function ArrowGlyph({ size = 12 }: { size?: number }) {
@@ -825,6 +885,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
 export function AboutHome({
   onStart, onOpenDocsPage, onOpenComponents,
   foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
+  topInset, onScrolledChange,
 }: {
   onStart: () => void
   /** Docs' focused pages — the SAME mapping TopNav's Docs menu uses
@@ -841,6 +902,11 @@ export function AboutHome({
   scroll?: boolean
   /** The phone screen: no autoplay (see `DemoVideo`). */
   videoTapToPlay?: boolean
+  /** The shell's top bar floats over this page: the scroll region starts
+   *  under it (so content scrolls beneath the blur) and reports when it has
+   *  left the top, which shows the bar's hairline. */
+  topInset?: number
+  onScrolledChange?: (scrolled: boolean) => void
 }) {
   const { t } = useI18n()
   // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
@@ -856,30 +922,35 @@ export function AboutHome({
     'inline-flex h-10 items-center gap-1.5 rounded-[13px] border border-line-strong px-5 text-ui font-semibold text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
   return (
-    <div className={scroll ? 'h-full overflow-y-auto' : undefined}>
+    <div
+      className={scroll ? 'h-full overflow-y-auto overflow-x-hidden' : undefined}
+      style={topInset ? { paddingTop: topInset } : undefined}
+      onScroll={onScrolledChange ? e => onScrolledChange(e.currentTarget.scrollTop > 0) : undefined}
+    >
       <div className="mx-auto flex max-w-[1080px] flex-col">
         {/* ── Hero — the one staggered entrance this page gets. ── */}
         <motion.div
           initial={reduceMotion ? false : 'hidden'}
           animate="show"
           variants={heroContainer}
-          className="flex flex-col items-center gap-4 px-6 pt-16 pb-10 text-center"
+          className="flex flex-col items-center gap-4 px-6 pt-20 pb-12 text-center"
         >
           <motion.div variants={heroItem}>
-            <Eyebrow>{t('For Figma, code, and your AI agent')}</Eyebrow>
+            {/* The hero's eyebrow is a soft accent pill in sentence case — the
+                page's section eyebrows keep the mono caption (`Eyebrow`). */}
+            <span className="inline-flex items-center rounded-md bg-accent-ui/[0.1] px-2.5 py-1 text-body font-medium leading-none text-accent-ui">
+              {t('For Figma, code, and your AI agent')}
+            </span>
           </motion.div>
-          <motion.div variants={heroItem} className="flex max-w-[640px] flex-col gap-3">
-            <h1>
+          <motion.div variants={heroItem} className="flex max-w-[560px] flex-col">
+            <h1 className="text-balance">
               <DiaTextReveal
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
-                className="text-[30px] font-semibold leading-[1.1] tracking-tight sm:text-[38px]"
+                className="text-[30px] font-normal leading-[1.12] tracking-[-0.02em] sm:text-[36px]"
               />
             </h1>
-            <p className="text-ui leading-relaxed text-fg-muted">
-              {t('Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius.')}
-            </p>
           </motion.div>
           {/* On a phone the demo sits in the hero, right above "Try it here":
               the workspace first, then the door to the playground. */}
@@ -888,7 +959,7 @@ export function AboutHome({
               <DemoVideo tapToPlay={videoTapToPlay} />
             </motion.div>
           )}
-          <motion.div variants={heroItem} className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <motion.div variants={heroItem} className="mt-3 flex flex-wrap items-center justify-center gap-3">
             {/* A phone can't open the editor, so its CTA goes to the one thing
                 it can do: the playground just below. */}
             <RainbowButton
@@ -958,110 +1029,90 @@ export function AboutHome({
         </div>
         )}
 
-        {/* ── 01 · Foundations — what you set ── */}
-        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+        {/* ── Workflow — the five steps from settings to every place the
+            system ships, laid out like shippp.ai's #workflow: a centred opener,
+            then one row of two square cards per step, alternating sides. Figma
+            goes last on purpose: it hands straight to the closing CTA. ── */}
+        <section className="flex flex-col gap-12 border-b border-line px-6 py-20">
           <SectionHeader
-            eyebrow={t('01 · Foundations')}
-            title={t('One accent in. A whole system out.')}
-            lead={t('Colour, type, radius and spacing from the same settings, checked for contrast in light and dark.')}
+            title={t('From one accent to every place your system ships.')}
+            lead={t('Set your foundations, see them on real components and docs, then hand the same system to your code, your agent and Figma.')}
           />
-          <div className="grid gap-4 lg:grid-cols-3">
-            <ShowcaseCard
-              title={t('Ramps in both appearances')}
-              body={t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.')}
+          <div className="flex flex-col gap-4">
+            <WorkflowStep
+              label={t('01 · Foundations')}
+              title={t('One accent in. A whole system out.')}
+              body={t('Colour, type, radius and spacing from the same settings, checked for contrast in light and dark.')}
               media={SHOTS.primitives}
             />
-            <ShowcaseCard
-              title={t('Roles solved for contrast')}
-              body={t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.')}
-              media={SHOTS.semantics}
+            <WorkflowStep
+              flip
+              label={t('02 · Components')}
+              title={t('A component catalogue, painted with your tokens.')}
+              body={t('{count} components, each on one page: a live playground, every variant the Figma library ships, and the snippet for exactly what is on screen.', { count: COMPONENT_KEYS.length })}
+              media={SHOTS.components}
+              action={<StepLink onClick={onOpenComponents}>{t('Browse components')}</StepLink>}
             />
-            <ShowcaseCard
-              title={t('WCAG and APCA, side by side')}
-              body={t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.')}
-              media={SHOTS.contrast}
+            <WorkflowStep
+              label={t('03 · Docs')}
+              title={t('Documentation written from your own values.')}
+              body={t('Every foundation gets a reference page built from your ramps, roles and scales. Change a token and its page changes with it, so the spec never goes stale.')}
+              media={SHOTS.docs}
             />
-            <ShowcaseCard
-              title={t('A type scale with a density dial')}
-              body={t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.')}
-              media={SHOTS.type}
+            <WorkflowStep
+              flip
+              label={t('04 · Code and agents')}
+              title={t('Real files for your repo. Design skills your agent reads.')}
+              body={t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or drop the Design skills into your product repo.')}
+              media={SHOTS.code}
             />
-            <ShowcaseCard
-              title={t('Radius on three axes')}
-              body={t('Boxes, fields and selectors round independently, so a pill button never turns your cards into stadiums.')}
-              media={SHOTS.radius}
-            />
-            <ShowcaseCard
-              title={t('Spacing that tightens on mobile')}
-              body={t('Component, section and layout tokens step down per viewport, all from one base unit.')}
-              media={SHOTS.spacing}
+            <WorkflowStep
+              label={t('05 · Agent context for Figma')}
+              title={t('Copy your system. Paste it into Figma or any AI agent.')}
+              body={t('Press Copy context, open the Escala plugin in Figma, paste it into the context card and press Import into this file. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
+              media={SHOTS.figma}
+              action={<StepLink href={FIGMA_PLUGIN_COMMUNITY}>{t('Get the plugin')}</StepLink>}
             />
           </div>
         </section>
 
-        {/* ── 02–05 · What the tokens become. Figma goes last on purpose: it
-            is where Pro comes in, and it hands straight to the closing CTA. ── */}
-        <FeatureSection
-          eyebrow={t('02 · Components')}
-          title={t('A component catalogue, painted with your tokens.')}
-          body={t('{count} components, each on one page: a live playground, every variant the Figma library ships, and the snippet for exactly what is on screen.', { count: COMPONENT_KEYS.length })}
-          points={[
-            t('Change colour, style, size and state, and see the real variant'),
-            t('Usage, accessibility and API reference beside the preview'),
-            t('Copy the page as context for your AI agent'),
-          ]}
-          media={SHOTS.components}
-          action={(
-            <button type="button" onClick={onOpenComponents} className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
-              {t('Browse components')}
-              <ArrowGlyph size={10} />
-            </button>
-          )}
-        />
+        {/* ── Inside the foundations — the detail behind step 01 (shippp's
+            "Six reasons" grid sits in the same place). ── */}
+        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+          <SectionHeader
+            title={t('What the foundations take care of.')}
+            lead={t('Six things Escala solves for you, so a system stays consistent in every theme and every viewport.')}
+          />
+          <FoundationCarousel
+            items={[
+              { art: <RampsArt />, title: t('Ramps in both appearances'), body: t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.') },
+              { art: <ContrastRoleArt />, title: t('Roles solved for contrast'), body: t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.') },
+              { art: <MetricsArt />, title: t('WCAG and APCA, side by side'), body: t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.') },
+              { art: <TypeScaleArt />, title: t('A type scale with a density dial'), body: t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.') },
+              { art: <RadiusArt />, title: t('Radius on three axes'), body: t('Boxes, fields and selectors round independently, so a pill button never turns your cards into stadiums.') },
+              { art: <SpacingArt />, title: t('Spacing that tightens on mobile'), body: t('Component, section and layout tokens step down per viewport, all from one base unit.') },
+            ]}
+          />
+        </section>
 
-        <FeatureSection
-          flip
-          eyebrow={t('03 · Docs')}
-          title={t('Documentation written from your own values.')}
-          body={t('Every foundation gets a reference page built from your ramps, roles and scales. Change a token and its page changes with it, so the spec never goes stale.')}
-          points={[
-            t('Primitives, semantic roles and usage for each foundation'),
-            t('A Use it block on every page: Figma, code and AI'),
-            t('One click copies the page as context for an agent'),
-          ]}
-          media={SHOTS.docs}
-        />
-
-        <FeatureSection
-          eyebrow={t('04 · Code and agents')}
-          title={t('Real files for your repo. Design skills your agent reads.')}
-          body={t('Each brand as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or drop the Design skills into your product repo.')}
-          points={[
-            t('CSS variables with light and dark in one file'),
-            t('W3C design tokens that keep their aliases'),
-            t('AGENTS.md and agent skills for Cursor and Claude Code'),
-          ]}
-          media={SHOTS.code}
-        />
-
-        <FeatureSection
-          flip
-          eyebrow={t('05 · Agent context for Figma')}
-          title={t('Copy your system. Paste it into Figma or any AI agent.')}
-          body={t('Press Copy context, open the Escala plugin in Figma, paste it into the context card and press Import into this file. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
-          points={[
-            t('One message carries the whole system'),
-            t('Pick which brands, themes and viewports it includes'),
-            t('Paste it into Cursor, Claude Code or Copilot too'),
-          ]}
-          media={SHOTS.figma}
-          action={(
-            <a href={FIGMA_PLUGIN_COMMUNITY} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
-              {t('Get the plugin')}
-              <ArrowGlyph size={10} />
-            </a>
-          )}
-        />
+        {/* ── Good questions — the shared reference sections, phrased as a
+            FAQ (same `useAboutSections` content as the drawer, mobile and
+            /about; only the presentation differs). ── */}
+        <section aria-labelledby={faqId} className="flex flex-col gap-10 border-b border-line px-6 py-16">
+          <SectionHeader
+            id={faqId}
+            title={t('Frequently asked questions')}
+            lead={t('Quick answers about what Escala ships, how the tokens work and where your data lives.')}
+          />
+          {/* A fixed reading width (shippp's FAQ), so an open answer doesn't
+              leave a wide empty band on its right. */}
+          <div className="mx-auto w-full max-w-[720px]">
+            <AboutAccordion variant="faq" section={section} onSectionChange={setSection} />
+          </div>
+          <div className="flex justify-center">
+            <StepLink onClick={() => onOpenDocsPage('faq')}>{t('Read the docs')}</StepLink>
+          </div>
+        </section>
 
         {/* ── Closing CTA — a background slot behind the copy ── */}
         <div className="px-6 py-16">
@@ -1089,24 +1140,6 @@ export function AboutHome({
             </div>
           </div>
         </div>
-
-        {/* ── Good questions — the shared reference sections, phrased as a
-            FAQ (same `useAboutSections` content as the drawer, mobile and
-            /about; only the presentation differs). ── */}
-        <section aria-labelledby={faqId} className="grid gap-10 border-b border-line px-6 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-          <div className="flex flex-col items-start gap-4">
-            <h2 id={faqId} className="text-[26px] font-semibold leading-tight text-fg">{t('Good questions')}</h2>
-            <button
-              type="button"
-              onClick={() => onOpenDocsPage('faq')}
-              className="inline-flex items-center gap-1.5 rounded text-ui font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-            >
-              {t('Read the docs')}
-              <span aria-hidden className="inline-flex -rotate-45"><ArrowGlyph /></span>
-            </button>
-          </div>
-          <AboutAccordion variant="faq" section={section} onSectionChange={setSection} />
-        </section>
 
         {/* ── Contact — the maker and one way to reach him. The socials are NOT
             here: they live once, in the footer's Social column. ── */}

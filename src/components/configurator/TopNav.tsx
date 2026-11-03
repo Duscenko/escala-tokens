@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
@@ -162,20 +162,23 @@ export function ChromeAnchoredDropdown({
 export type TopNavKey = 'about' | 'variables' | 'components' | 'docs' | 'pricing'
 export type DocsMenuPage = 'figma' | 'changelog' | 'faq' | 'beta'
 
-/** The product hexagon, cropped out of `BrandMark`. It sits beside Generator
- *  and eases up in scale on a slow rest, so that word is the one item in the
- *  row that asks to be opened. Still while that section is current. */
-function GeneratorMark({ live }: { live: boolean }) {
+/** Generator's glyph (Figma node 1:388): outline while the section is idle,
+ *  filled while it is the current one. Both paint with `currentColor`. */
+function GeneratorMark({ active }: { active: boolean }) {
   return (
     <svg
-      width="14"
-      height="14"
-      viewBox="0 0 32 32"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
       fill="currentColor"
       aria-hidden
-      className={`generator-cue -mt-px flex-shrink-0 ${live ? 'generator-cue-live text-accent-solid' : 'text-current'}`}
+      className="flex-shrink-0"
     >
-      <path d="M28 9.01611V22.9839L15.9033 29.9683L3.80664 22.9839V9.01611L15.9033 2.03174L28 9.01611ZM5.80664 10.1704V21.8286L15.9033 27.6587L26 21.8286V10.1704L15.9033 4.34033L5.80664 10.1704Z" />
+      {active ? (
+        <path d="M15 9.74437C14.9975 9.6329 14.9764 9.52263 14.9375 9.41812L13.7463 6.155C13.6545 5.90758 13.4687 5.70646 13.2292 5.59547C12.9898 5.48449 12.7163 5.47264 12.4681 5.5625L8.23001 7.09812L8.98501 2.78562C9.03177 2.52464 8.97298 2.25577 8.82156 2.03812C8.67013 1.82048 8.43847 1.67188 8.17751 1.625L4.76063 1.01562C4.63146 0.992911 4.49907 0.99593 4.37107 1.0245C4.24306 1.05308 4.12196 1.10665 4.01471 1.18214C3.90746 1.25763 3.81617 1.35355 3.74607 1.4644C3.67598 1.57526 3.62847 1.69886 3.60626 1.82812L2.04376 10.7731C1.97233 11.1675 1.98832 11.5728 2.09062 11.9603C2.19291 12.3478 2.37902 12.7081 2.63579 13.0159C2.89257 13.3236 3.21376 13.5712 3.5767 13.7413C3.93963 13.9113 4.33546 13.9996 4.73626 14H14C14.2652 14 14.5196 13.8946 14.7071 13.7071C14.8947 13.5196 15 13.2652 15 13V9.74437ZM4.75001 12.25C4.55223 12.25 4.35889 12.1913 4.19444 12.0815C4.02999 11.9716 3.90182 11.8154 3.82613 11.6327C3.75044 11.45 3.73064 11.2489 3.76922 11.0549C3.80781 10.8609 3.90305 10.6827 4.0429 10.5429C4.18275 10.403 4.36094 10.3078 4.55492 10.2692C4.7489 10.2306 4.94997 10.2504 5.13269 10.3261C5.31542 10.4018 5.4716 10.53 5.58148 10.6944C5.69136 10.8589 5.75001 11.0522 5.75001 11.25C5.75001 11.5152 5.64465 11.7696 5.45712 11.9571C5.26958 12.1446 5.01523 12.25 4.75001 12.25ZM7.42001 11.7262L8.03126 8.23125L12.8075 6.5L14 9.75687L7.29876 12.1875C7.35219 12.0375 7.39276 11.8832 7.42001 11.7262ZM14 13H7.98376L14 10.8194V13Z" />
+      ) : (
+        <path d="M5.49999 11.25C5.49999 11.3983 5.45601 11.5433 5.3736 11.6667C5.29119 11.79 5.17405 11.8861 5.03701 11.9429C4.89996 11.9997 4.74916 12.0145 4.60368 11.9856C4.45819 11.9566 4.32455 11.8852 4.21966 11.7803C4.11477 11.6754 4.04334 11.5418 4.01441 11.3963C3.98547 11.2508 4.00032 11.1 4.05708 10.963C4.11385 10.8259 4.20998 10.7088 4.33332 10.6264C4.45665 10.544 4.60166 10.5 4.74999 10.5C4.94891 10.5 5.13967 10.579 5.28032 10.7197C5.42098 10.8603 5.49999 11.0511 5.49999 11.25ZM15 9.76187V13C15 13.2652 14.8946 13.5196 14.7071 13.7071C14.5196 13.8946 14.2652 14 14 14H4.74999C4.58366 14.0001 4.41763 13.9859 4.25374 13.9575C3.53876 13.8271 2.90449 13.4189 2.48956 12.8222C2.07462 12.2255 1.91277 11.4888 2.03937 10.7731L3.60187 1.8275C3.62408 1.69824 3.67159 1.57463 3.74168 1.46378C3.81178 1.35292 3.90307 1.257 4.01032 1.18151C4.11757 1.10602 4.23868 1.05245 4.36668 1.02388C4.49468 0.995304 4.62707 0.992285 4.75624 1.015L8.17749 1.625C8.43781 1.67191 8.66894 1.82005 8.82028 2.03699C8.97162 2.25393 9.03085 2.52199 8.98499 2.7825L8.22999 7.095L12.4681 5.5625C12.7166 5.47276 12.9904 5.48497 13.2299 5.59645C13.4693 5.70792 13.655 5.90962 13.7462 6.1575L14.9375 9.41812C14.9758 9.52884 14.9968 9.64477 15 9.76187ZM6.43749 11.5544L7.99999 2.60875L4.59124 2L3.02874 10.9437C2.94717 11.3987 3.04886 11.8674 3.31162 12.2476C3.57438 12.6278 3.97687 12.8886 4.43124 12.9731C4.65367 13.013 4.88181 13.0083 5.10241 12.9593C5.323 12.9102 5.53166 12.8179 5.71624 12.6875C5.90555 12.5558 6.0668 12.3879 6.19062 12.1933C6.31443 11.9988 6.39835 11.7816 6.43749 11.5544ZM7.29874 12.1875L14 9.75687L12.8075 6.5L8.03124 8.23125L7.41999 11.7262C7.39282 11.8832 7.35225 12.0375 7.29874 12.1875ZM14 10.82L7.98374 13H14V10.82Z" />
+      )}
     </svg>
   )
 }
@@ -244,6 +247,12 @@ interface TopNavProps {
   pluginLink?: boolean
   /** The brand on screen's accent vars, for the guest Sign up button only. */
   signUpAccent?: CSSProperties
+  /** Reading pages (About): the bar FLOATS over the page instead of taking a
+   *  row, on a translucent, blurred fill, so the content scrolls under it. */
+  overlay?: boolean
+  /** With `overlay`: the page under it has scrolled — the bottom hairline
+   *  shows only then, so at the top the bar melts into the hero. */
+  scrolled?: boolean
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -481,7 +490,7 @@ function TopNavCompactMenu({
                 onClick={() => { onNav(key); close() }}
                 className={`${COMPACT_MENU_ITEM} ${on ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
               >
-                {key === 'variables' && <GeneratorMark live={!on} />}
+                {key === 'variables' && <GeneratorMark active={on} />}
                 {t(label)}
               </button>
             )
@@ -623,7 +632,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null, brandEdge = true, railAligned = false,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, pluginLink = true, signUpAccent,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary, pluginLink = true, signUpAccent, overlay = false, scrolled = false,
   hamburgerNav = false, navInMenu = false,
 }: TopNavProps) {
   const { t } = useI18n()
@@ -632,7 +641,14 @@ export default function TopNav({
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
-    <header data-shell-chrome data-top-nav className={`relative z-30 flex items-stretch flex-shrink-0 ${SHELL_CHROME} border-b border-line`} style={{ height: TOP_NAV_H }}>
+    <header
+      data-shell-chrome
+      data-top-nav
+      className={overlay
+        ? `absolute inset-x-0 top-0 z-30 flex items-stretch border-b bg-nav/80 backdrop-blur-xl backdrop-saturate-150 transition-[border-color] duration-150 ${scrolled ? 'border-line' : 'border-transparent'}`
+        : `relative z-30 flex items-stretch flex-shrink-0 ${SHELL_CHROME} border-b border-line`}
+      style={{ height: TOP_NAV_H }}
+    >
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
           the mark (no wordmark) in step with the rail below it. One line, never
@@ -659,9 +675,9 @@ export default function TopNav({
             <BrandMark size={24} />
           </span>
           {!railCollapsed && (
-            <div className="flex items-baseline gap-1.5 whitespace-nowrap leading-none">
+            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none">
               <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>
-              <span className="text-mini font-light leading-none text-fg-faint">Beta</span>
+              <span className="rounded-md bg-accent-ui/[0.1] px-1.5 py-1 text-mini font-medium leading-none text-accent-ui">Beta</span>
               {(hamburgerNav || navInMenu) && (
                 <>
                   <span className="mx-0.5 text-mini font-light leading-none text-fg-faint" aria-hidden>|</span>
@@ -686,24 +702,35 @@ export default function TopNav({
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {
-              return <DocsNavMenu key={key} active={on || nav === 'pricing'} onOpenDocsPage={onOpenDocsPage} />
+              return (
+                <Fragment key={key}>
+                  {pluginLink && (
+                    <a
+                      href={FIGMA_PLUGIN_COMMUNITY}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t('Get the Escala Tokens plugin on Figma Community')}
+                      className="inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-ui font-medium whitespace-nowrap text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+                    >
+                      <FigmaGlyph className="h-3.5 w-auto" />
+                      {t('Plugin')}
+                    </a>
+                  )}
+                  <DocsNavMenu active={on || nav === 'pricing'} onOpenDocsPage={onOpenDocsPage} />
+                </Fragment>
+              )
             }
-            // Generator is the entrance to the engine, not a peer of About —
-            // a tinted capsule with the label at full ink (`generator-entry`
-            // in index.css carries its sheen and the hexagon's hover turn).
             const entry = key === 'variables'
             return (
               <button
                 key={key}
                 onClick={() => onNav(key)}
                 aria-current={on ? 'page' : undefined}
-                className={`inline-flex items-center gap-1.5 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
-                  entry
-                    ? `generator-entry rounded-full bg-accent-ui/[0.08] px-2.5 py-1 font-semibold text-fg ring-1 ring-inset ring-accent-ui/25 hover:bg-accent-ui/[0.14] hover:ring-accent-ui/45 active:scale-[0.97] transition-[background-color,box-shadow,transform]`
-                    : `rounded-md px-0.5 py-1 ${on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'}`
+                className={`inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+                  on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
                 }`}
               >
-                {key === 'variables' && <GeneratorMark live={!on} />}
+                {entry && <GeneratorMark active={on} />}
                 {t(label)}
               </button>
             )
@@ -739,28 +766,6 @@ export default function TopNav({
           {/* Light/dark sits where the Home door was: one tap, every visitor. */}
           {always && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           {themeControl}
-          {/* The plugin lives on Figma Community, so this is a link OUT, not a
-              workspace destination. The label drops before the glyph does. */}
-          {pluginLink && (
-            // Icon-only: same 32×32 square as ☰ / Language / Appearance; label
-            // widens the control from 1320px up.
-            <a
-              href={FIGMA_PLUGIN_COMMUNITY}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={t('Get the Escala Tokens plugin on Figma Community')}
-              aria-label={t('Plugin')}
-              className={[
-                GLOBAL_ICON_ACTION,
-                'min-[1320px]:inline-flex min-[1320px]:w-auto min-[1320px]:gap-1.5',
-                'min-[1320px]:border min-[1320px]:border-line min-[1320px]:px-2',
-                'text-caption font-medium hover:text-fg',
-              ].join(' ')}
-            >
-              <FigmaGlyph className="h-3 w-auto min-[1320px]:h-3.5" />
-              <span className="hidden min-[1320px]:inline">{t('Plugin')}</span>
-            </a>
-          )}
           <AccountControl onOpenLibrary={onOpenLibrary} signUpAccent={signUpAccent} quiet={Boolean(exportAction)} />
           {exportAction}
       </div>

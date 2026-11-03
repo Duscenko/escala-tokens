@@ -51,7 +51,7 @@ import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { SYSTEM_STYLES_VISIBLE } from '../lib/featureFlags'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
-import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
+import TopNav, { TOP_NAV_H, type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
@@ -996,6 +996,11 @@ export default function Configurator() {
     () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? null,
   )
   const [exportMode, setExportMode] = useState<ExportMode>(null)
+  // About is a reading page: the top bar floats over it on a blurred fill and
+  // the hairline under it shows once the page has scrolled.
+  const aboutOverlay = tab === 'about' && !exportMode
+  const [aboutScrolled, setAboutScrolled] = useState(false)
+  useEffect(() => { if (!aboutOverlay) setAboutScrolled(false) }, [aboutOverlay])
   // Manual Figma publishing is one interaction shared by the top bar and the
   // detail screen. It is intentionally local — never restore a stale spinner
   // or request failure after reload.
@@ -2290,6 +2295,8 @@ export default function Configurator() {
         onOpenDocsPage={openDocsPage}
         onOpenComponents={() => changeTab('components')}
         foundationCount={FOUNDATIONS.length}
+        topInset={TOP_NAV_H}
+        onScrolledChange={setAboutScrolled}
       />
     )
     centerKey = 'about'
@@ -2706,6 +2713,8 @@ export default function Configurator() {
         // Export pill; the plugin is step 02 of the page they open.
         pluginLink={tab !== 'foundations'}
         signUpAccent={canvasAccentStyle}
+        overlay={aboutOverlay}
+        scrolled={aboutScrolled}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces, and
         // Home (the file browser) has no theme open to export.

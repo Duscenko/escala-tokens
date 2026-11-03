@@ -310,13 +310,10 @@
 
 /* TopNav sits on `--nav`, and `--chip-rest` (#f1f1f2 light) measured 1.02:1
    against it, so the menu and Figma chips had no visible shape. On the frame a
-   chip takes the chrome-control fill (a step OFF the frame in both themes) and
-   a hairline. The outline (not a box-shadow) leaves the inset hover wash and
-   the focus ring alone. */
+   chip takes the chrome-control fill (a step OFF the frame in both themes), with NO border (design call: the fill
+   alone carries the shape). */
 header[data-top-nav] .bg-chip-rest {
   background-color: var(--chrome-control);
-  outline: var(--line-width) solid var(--line-strong);
-  outline-offset: calc(-1 * var(--line-width));
 }
 
 /* Hairline painted as a fill (`RailDivider`, inline separators). Same
@@ -1023,4 +1020,24 @@ button:focus-visible > .generator-cue-live {
 }
 @media (prefers-reduced-motion: reduce) {
   [data-pulse] { animation: none; }
+}
+
+/* About FAQ answers: one step under the question (13px) in a quieter grey.
+ * Set here, not with utilities: the answer bodies are shared JSX whose own
+ * `text-body` / `text-fg-muted` classes would win over a parent utility, and
+ * `cn` drops a custom `text-<size>` next to a colour. Dark softens
+ * --fg-muted to 72 % (≈6.2:1 on the card); light keeps it whole, since 72 %
+ * there measured ≈3.1:1, under AA. Emphasis inside an answer steps down too. */
+.faq-answer p,
+.faq-answer ol {
+  font-size: var(--text-ui);
+  line-height: 1.65;
+  color: var(--fg-muted);
+}
+.dark .faq-answer p,
+.dark .faq-answer ol {
+  color: color-mix(in oklab, var(--fg-muted) 72%, transparent);
+}
+.faq-answer :is(p, li) .text-fg {
+  color: var(--fg-muted);
 }
