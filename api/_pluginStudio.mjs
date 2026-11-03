@@ -5305,6 +5305,7 @@ function sameBrandSet(a2, b) {
 function isThisSystem(sys, live, currentId, liveBrands) {
   if (sys.id === currentId) return true;
   if (live.publishId && sys.snapshot.publishId === live.publishId) return true;
+  if (sys.snapshot.publishId && sys.snapshot.publishId !== live.publishId) return false;
   return sameBrandSet(savedSystemBrandKeys(sys), liveBrands);
 }
 function reconcileSavedSystems(saved, live, mode = "fold") {
@@ -11321,6 +11322,55 @@ function scopeSnapshotToTheme(snapshot, themeKey) {
     architectureOverrides
   };
 }
+function brandRemovalPatch(state2, keys) {
+  const gone = new Set(keys.filter((key2) => state2.themes[key2]));
+  if (gone.size === 0) return state2;
+  const keep = (map) => Object.fromEntries(Object.entries(map ?? {}).filter(([key2]) => !gone.has(key2)));
+  const themeSources = keep(state2.themeSources);
+  const deletedSlots = new Set(
+    [...gone].flatMap((key2) => Object.values(state2.themeSources[key2] ?? {}).filter(Boolean))
+  );
+  const stillUsed = (famKey) => Object.values(themeSources).some(
+    (refs) => ["brand", "gray", "error", "warning", "success", "info"].some((s) => refs[s] === famKey) || refs.secondary === famKey || refs.tertiary === famKey
+  );
+  const customColors = deletedSlots.size ? state2.customColors.filter((c2) => !deletedSlots.has(c2.key) || stillUsed(c2.key)) : state2.customColors;
+  const architectureOverrides = Object.fromEntries(
+    Object.entries(state2.architectureOverrides).map(([arch, tokens]) => [
+      arch,
+      Object.fromEntries(
+        Object.entries(tokens).map(([token, modes]) => [
+          token,
+          Object.fromEntries(Object.entries(modes).filter(([mode]) => !gone.has(mode)))
+        ]).filter(([, modes]) => Object.keys(modes).length > 0)
+      )
+    ])
+  );
+  return {
+    themes: keep(state2.themes),
+    themeSemantics: keep(state2.themeSemantics),
+    themeKinds: keep(state2.themeKinds),
+    themeLabels: keep(state2.themeLabels),
+    themeSources,
+    themeFoundations: keep(state2.themeFoundations),
+    themeOrigin: keep(state2.themeOrigin),
+    brandThemes: keep(state2.brandThemes),
+    architectureOverrides,
+    themeOrder: state2.themeOrder.filter((key2) => !gone.has(key2)),
+    customColors
+  };
+}
+function setDraftBrandSource(source) {
+  draftBrandSource = source;
+}
+function snapshotForFiling(state2, drafts = draftBrandSource()) {
+  const snapshot = captureSnapshot(state2);
+  if (drafts.length === 0) return snapshot;
+  const entry = state2.savedSystems.find((item) => item.id === activeLibraryId(state2));
+  const held = new Set(entry?.snapshot.themeOrder ?? []);
+  const leave = drafts.filter((key2) => !held.has(key2) && snapshot.themes[key2]);
+  if (leave.length === 0) return snapshot;
+  return { ...snapshot, ...brandRemovalPatch(snapshot, leave) };
+}
 function forgetPluginLibraries(ids, survivors = []) {
   const alive = new Set(survivors.filter((id) => typeof id === "string" && id.length > 0));
   const clean = ids.filter((id) => typeof id === "string" && id.length > 0 && !alive.has(id));
@@ -11348,7 +11398,7 @@ function buildSavedSystemEntry(state2, snapshot, nameOverride) {
     source: state2.githubRepo ? "github" : "local"
   };
 }
-var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_DARK_BACKGROUND, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, NEUTRAL_LIGHT_SCALE, NEUTRAL_BASE, NEUTRAL_DARK_SCALE, DEFAULT_ROLE_OVERRIDES, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, useDesignStore;
+var COMPONENTS_V97, COMPONENTS_V98, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES, GRAY_DARK_SCALE, DEFAULT_ACCENT2, DEFAULT_DARK_BACKGROUND, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE, NEUTRAL_LIGHT_SCALE, NEUTRAL_BASE, NEUTRAL_DARK_SCALE, DEFAULT_ROLE_OVERRIDES, SEMANTIC_KEY_RENAME, EMPTY_SEMANTIC, OPACITY_DEFAULT, SHADOW_DEFAULT, GRID_DEFAULT, SIZES_DEFAULT, STROKE_DEFAULT, PADDING_DEFAULT, SNAPSHOT_KEYS, draftBrandSource, useDesignStore;
 var init_useDesignStore = __esm({
   "src/store/useDesignStore.ts"() {
     init_customFonts();
@@ -11654,6 +11704,7 @@ var init_useDesignStore = __esm({
     STROKE_DEFAULT = { ...STROKE_STANDARD };
     PADDING_DEFAULT = { ...PADDING_STANDARD };
     SNAPSHOT_KEYS = Object.keys(makeDesignDefaults());
+    draftBrandSource = () => [];
     useDesignStore = create2()(
       persist(
         // `get` is used by `ensurePublishId` — it must read the CURRENT id before
@@ -11942,48 +11993,15 @@ var init_useDesignStore = __esm({
           }),
           removeTheme: (key2) => set((state2) => {
             if (!state2.themes[key2]) return state2;
-            const { [key2]: _, ...themes } = state2.themes;
-            const { [key2]: __, ...themeSemantics } = state2.themeSemantics;
-            const { [key2]: ___, ...themeKinds } = state2.themeKinds;
-            const { [key2]: ____, ...themeLabels } = state2.themeLabels;
-            const { [key2]: _____, ...themeSources } = state2.themeSources;
-            const { [key2]: ______, ...themeFoundations } = state2.themeFoundations;
-            const { [key2]: _______, ...themeOrigin } = state2.themeOrigin ?? {};
-            const { [key2]: ________, ...brandThemes } = state2.brandThemes ?? {};
-            const deletedSlots = new Set(Object.values(state2.themeSources[key2] ?? {}).filter(Boolean));
-            const stillUsed = (famKey) => Object.values(themeSources).some(
-              (refs) => ["brand", "gray", "error", "warning", "success", "info"].some((s) => refs[s] === famKey) || refs.secondary === famKey || refs.tertiary === famKey
-            );
-            const customColors = deletedSlots.size ? state2.customColors.filter((c2) => !deletedSlots.has(c2.key) || stillUsed(c2.key)) : state2.customColors;
-            const architectureOverrides = Object.fromEntries(
-              Object.entries(state2.architectureOverrides).map(([arch, tokens]) => [
-                arch,
-                Object.fromEntries(
-                  Object.entries(tokens).map(([token, modes]) => [
-                    token,
-                    Object.fromEntries(Object.entries(modes).filter(([mode]) => mode !== key2))
-                  ]).filter(([, modes]) => Object.keys(modes).length > 0)
-                )
-              ])
-            );
-            const themeOrder = state2.themeOrder.filter((t) => t !== key2);
+            const patch = brandRemovalPatch(state2, [key2]);
+            const { themes, themeOrder } = patch;
             const saved = myThemeKeys(themeOrder, themes).length === 0 ? reconcileSavedSystems(state2.savedSystems, state2, "drop") : null;
             if (saved) forgetPluginLibraries([state2.publishId]);
             else if (isPublishId(state2.publishId) && state2.figmaLastPublishAt) {
               setTimeout(requestRepublish, 0);
             }
             return {
-              themes,
-              themeSemantics,
-              themeKinds,
-              themeLabels,
-              themeSources,
-              themeFoundations,
-              themeOrigin,
-              brandThemes,
-              architectureOverrides,
-              themeOrder,
-              customColors,
+              ...patch,
               ...saved ? {
                 savedSystems: saved.savedSystems,
                 // Erased above: it is no longer published, and says so.
@@ -12264,7 +12282,7 @@ var init_useDesignStore = __esm({
             return { savedSystems: next.savedSystems };
           }),
           saveCurrentSystem: () => set((state2) => {
-            const snapshot = captureSnapshot(state2);
+            const snapshot = snapshotForFiling(state2);
             const entry = buildSavedSystemEntry(state2, snapshot);
             const upserted = state2.savedSystems.some((s) => s.id === entry.id) ? state2.savedSystems.map((s) => s.id === entry.id ? entry : s) : [...state2.savedSystems, entry];
             const next = reconcileSavedSystems(upserted, state2);
@@ -13602,33 +13620,18 @@ var init_useDesignStore = __esm({
   }
 });
 
-// src/lib/pluginStudio.ts
-init_useDesignStore();
-init_colorActions();
-
-// src/lib/themeMint.ts
-init_useDesignStore();
-init_themeSources();
-init_colorUtils();
-init_utils();
-init_themeLibrary();
-init_freeThemeLimit();
-init_entitlement();
-
-// src/lib/libraryStatus.ts
-init_themeLibrary();
-import { useEffect as useEffect5, useMemo } from "react";
+// src/lib/editHistory.ts
+import { create as create3 } from "zustand";
+var useEditHistory;
+var init_editHistory = __esm({
+  "src/lib/editHistory.ts"() {
+    init_useDesignStore();
+    useEditHistory = create3(() => ({ past: [], future: [] }));
+  }
+});
 
 // src/lib/themeSetup.ts
 import { create as create4 } from "zustand";
-
-// src/lib/editHistory.ts
-init_useDesignStore();
-import { create as create3 } from "zustand";
-var useEditHistory = create3(() => ({ past: [], future: [] }));
-
-// src/lib/themeSetup.ts
-var STORAGE_KEY2 = "sd-theme-setup";
 function read() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY2);
@@ -13644,7 +13647,6 @@ function write(drafts) {
   } catch {
   }
 }
-var UNSAVED_KEY = "sd-brand-unsaved";
 function readUnsaved() {
   try {
     const raw = localStorage.getItem(UNSAVED_KEY);
@@ -13660,7 +13662,6 @@ function writeUnsaved(unsaved) {
   } catch {
   }
 }
-var useThemeSetup = create4(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }));
 function forgetUnsavedBrand(key2) {
   const unsaved = { ...useThemeSetup.getState().unsaved };
   if (!(key2 in unsaved)) return;
@@ -13675,166 +13676,36 @@ function finishThemeSetup(key2) {
   write(drafts);
   useThemeSetup.setState({ drafts });
 }
+var STORAGE_KEY2, UNSAVED_KEY, useThemeSetup;
+var init_themeSetup = __esm({
+  "src/lib/themeSetup.ts"() {
+    init_editHistory();
+    init_useDesignStore();
+    STORAGE_KEY2 = "sd-theme-setup";
+    UNSAVED_KEY = "sd-brand-unsaved";
+    useThemeSetup = create4(() => ({ drafts: read(), stepStart: {}, unsaved: readUnsaved() }));
+    setDraftBrandSource(() => Object.keys(useThemeSetup.getState().unsaved));
+  }
+});
 
 // src/lib/libraryStatus.ts
-init_useDesignStore();
+import { useEffect as useEffect5, useMemo } from "react";
 function savedBrandKeysFrom(state2, unsaved = useThemeSetup.getState().unsaved) {
   const entry = state2.savedSystems.find((item) => item.id === activeLibraryId(state2));
   const savedKeys = new Set(entry?.snapshot.themeOrder ?? []);
   const drafts = new Set(Object.keys(unsaved).filter((key2) => !savedKeys.has(key2)));
   return myThemeKeys(state2.themeOrder, state2.themes).filter((key2) => !drafts.has(key2));
 }
+var init_libraryStatus = __esm({
+  "src/lib/libraryStatus.ts"() {
+    init_themeLibrary();
+    init_themeSetup();
+    init_useDesignStore();
+  }
+});
 
 // src/lib/industryPacks.ts
-init_brandPalette();
 import chroma3 from "chroma-js";
-var INDUSTRY_GROUP_ORDER = ["market", "work", "life"];
-var INDUSTRY_PACKS = [
-  {
-    id: "food",
-    label: "Food",
-    group: "market",
-    theory: "Appetite sits in warm fruit hues \u2014 orange, citrus, berry, leaf.",
-    accents: [
-      { label: "Orange", hex: "#ef6820" },
-      { label: "Yellow", hex: "#eaaa08" },
-      { label: "Green", hex: "#16b364" },
-      { label: "Ros\xE9", hex: "#f63d68" }
-    ]
-  },
-  {
-    id: "fashion",
-    label: "Fashion",
-    group: "market",
-    theory: "Cosmetic chroma \u2014 pink, berry, fuchsia. Seasonal, not corporate.",
-    accents: [
-      { label: "Pink", hex: "#ee46bc" },
-      { label: "Fuchsia", hex: "#d444f1" },
-      { label: "Magenta", hex: "#c026d3" },
-      { label: "Grape", hex: "#a855f7" }
-    ]
-  },
-  {
-    id: "hospitality",
-    label: "Hospitality",
-    group: "market",
-    theory: "Warm welcome \u2014 coral, mint, ice. Invitation, not urgency.",
-    accents: [
-      { label: "Coral", hex: "#fb542b" },
-      { label: "Mint", hex: "#34d399" },
-      { label: "Aqua", hex: "#2dd4bf" },
-      { label: "Ice", hex: "#22d3ee" }
-    ]
-  },
-  {
-    id: "luxury",
-    label: "Luxury",
-    group: "market",
-    theory: "Jewel tones. Rare, not loud \u2014 violet, indigo, periwinkle.",
-    accents: [
-      { label: "Violet", hex: "#875bf7" },
-      { label: "Purple", hex: "#7a5af8" },
-      { label: "Indigo", hex: "#6172f3" },
-      { label: "Periwinkle", hex: "#818cf8" }
-    ]
-  },
-  {
-    id: "business",
-    label: "Business",
-    group: "work",
-    theory: "Trust and authority sit in blue through cobalt.",
-    accents: [
-      { label: "Blue Dark", hex: "#2970ff" },
-      { label: "Blue", hex: "#2e90fa" },
-      { label: "Cobalt", hex: "#1d4ed8" },
-      { label: "Electric", hex: "#4f46e5" }
-    ]
-  },
-  {
-    id: "tech",
-    label: "Tech",
-    group: "work",
-    theory: "Signal \u2014 cyan, aqua, ice. Screens, not navy boardrooms.",
-    accents: [
-      { label: "Cyan", hex: "#06aed4" },
-      { label: "Aqua", hex: "#2dd4bf" },
-      { label: "Ice", hex: "#22d3ee" },
-      { label: "Periwinkle", hex: "#818cf8" }
-    ]
-  },
-  {
-    id: "education",
-    label: "Education",
-    group: "work",
-    theory: "Clarity and highlight \u2014 sky, indigo, a mark of yellow.",
-    accents: [
-      { label: "Sky", hex: "#0ba5ec" },
-      { label: "Indigo", hex: "#6172f3" },
-      { label: "Yellow", hex: "#eaaa08" },
-      { label: "Grape", hex: "#a855f7" }
-    ]
-  },
-  {
-    id: "energy",
-    label: "Energy",
-    group: "work",
-    theory: "Heat and charge \u2014 flame, amber, earth.",
-    accents: [
-      { label: "Flame", hex: "#ff4405" },
-      { label: "Orange", hex: "#ef6820" },
-      { label: "Amber", hex: "#f59e0b" },
-      { label: "Moss", hex: "#669f2a" }
-    ]
-  },
-  {
-    id: "health",
-    label: "Health",
-    group: "life",
-    theory: "Calm vitality \u2014 teal, emerald, cyan. Clinical without going cold.",
-    accents: [
-      { label: "Teal", hex: "#15b79e" },
-      { label: "Emerald", hex: "#0d9488" },
-      { label: "Cyan", hex: "#06aed4" },
-      { label: "Aqua", hex: "#2dd4bf" }
-    ]
-  },
-  {
-    id: "nature",
-    label: "Nature",
-    group: "life",
-    theory: "Growth. Moss, forest, mint \u2014 earthbound, not neon.",
-    accents: [
-      { label: "Moss", hex: "#669f2a" },
-      { label: "Green", hex: "#16b364" },
-      { label: "Forest", hex: "#15803d" },
-      { label: "Mint", hex: "#34d399" }
-    ]
-  },
-  {
-    id: "recreation",
-    label: "Recreation",
-    group: "life",
-    theory: "Motion outdoors \u2014 lime, coral, sun.",
-    accents: [
-      { label: "Lime", hex: "#66c61c" },
-      { label: "Coral", hex: "#fb542b" },
-      { label: "Orange", hex: "#ef6820" },
-      { label: "Yellow", hex: "#eaaa08" }
-    ]
-  },
-  {
-    id: "art",
-    label: "Art",
-    group: "life",
-    theory: "Expression in fuchsia, magenta, grape \u2014 hue as the signature.",
-    accents: [
-      { label: "Fuchsia", hex: "#d444f1" },
-      { label: "Magenta", hex: "#c026d3" },
-      { label: "Pink", hex: "#ee46bc" },
-      { label: "Grape", hex: "#a855f7" }
-    ]
-  }
-];
 function collectIndustryAccents() {
   const byHex = /* @__PURE__ */ new Map();
   for (const group of INDUSTRY_GROUP_ORDER) {
@@ -13867,7 +13738,160 @@ function buildIndustrySpectrum() {
   });
   return [...ordered, ...rest];
 }
-var INDUSTRY_SPECTRUM = buildIndustrySpectrum();
+var INDUSTRY_GROUP_ORDER, INDUSTRY_PACKS, INDUSTRY_SPECTRUM;
+var init_industryPacks = __esm({
+  "src/lib/industryPacks.ts"() {
+    init_brandPalette();
+    INDUSTRY_GROUP_ORDER = ["market", "work", "life"];
+    INDUSTRY_PACKS = [
+      {
+        id: "food",
+        label: "Food",
+        group: "market",
+        theory: "Appetite sits in warm fruit hues \u2014 orange, citrus, berry, leaf.",
+        accents: [
+          { label: "Orange", hex: "#ef6820" },
+          { label: "Yellow", hex: "#eaaa08" },
+          { label: "Green", hex: "#16b364" },
+          { label: "Ros\xE9", hex: "#f63d68" }
+        ]
+      },
+      {
+        id: "fashion",
+        label: "Fashion",
+        group: "market",
+        theory: "Cosmetic chroma \u2014 pink, berry, fuchsia. Seasonal, not corporate.",
+        accents: [
+          { label: "Pink", hex: "#ee46bc" },
+          { label: "Fuchsia", hex: "#d444f1" },
+          { label: "Magenta", hex: "#c026d3" },
+          { label: "Grape", hex: "#a855f7" }
+        ]
+      },
+      {
+        id: "hospitality",
+        label: "Hospitality",
+        group: "market",
+        theory: "Warm welcome \u2014 coral, mint, ice. Invitation, not urgency.",
+        accents: [
+          { label: "Coral", hex: "#fb542b" },
+          { label: "Mint", hex: "#34d399" },
+          { label: "Aqua", hex: "#2dd4bf" },
+          { label: "Ice", hex: "#22d3ee" }
+        ]
+      },
+      {
+        id: "luxury",
+        label: "Luxury",
+        group: "market",
+        theory: "Jewel tones. Rare, not loud \u2014 violet, indigo, periwinkle.",
+        accents: [
+          { label: "Violet", hex: "#875bf7" },
+          { label: "Purple", hex: "#7a5af8" },
+          { label: "Indigo", hex: "#6172f3" },
+          { label: "Periwinkle", hex: "#818cf8" }
+        ]
+      },
+      {
+        id: "business",
+        label: "Business",
+        group: "work",
+        theory: "Trust and authority sit in blue through cobalt.",
+        accents: [
+          { label: "Blue Dark", hex: "#2970ff" },
+          { label: "Blue", hex: "#2e90fa" },
+          { label: "Cobalt", hex: "#1d4ed8" },
+          { label: "Electric", hex: "#4f46e5" }
+        ]
+      },
+      {
+        id: "tech",
+        label: "Tech",
+        group: "work",
+        theory: "Signal \u2014 cyan, aqua, ice. Screens, not navy boardrooms.",
+        accents: [
+          { label: "Cyan", hex: "#06aed4" },
+          { label: "Aqua", hex: "#2dd4bf" },
+          { label: "Ice", hex: "#22d3ee" },
+          { label: "Periwinkle", hex: "#818cf8" }
+        ]
+      },
+      {
+        id: "education",
+        label: "Education",
+        group: "work",
+        theory: "Clarity and highlight \u2014 sky, indigo, a mark of yellow.",
+        accents: [
+          { label: "Sky", hex: "#0ba5ec" },
+          { label: "Indigo", hex: "#6172f3" },
+          { label: "Yellow", hex: "#eaaa08" },
+          { label: "Grape", hex: "#a855f7" }
+        ]
+      },
+      {
+        id: "energy",
+        label: "Energy",
+        group: "work",
+        theory: "Heat and charge \u2014 flame, amber, earth.",
+        accents: [
+          { label: "Flame", hex: "#ff4405" },
+          { label: "Orange", hex: "#ef6820" },
+          { label: "Amber", hex: "#f59e0b" },
+          { label: "Moss", hex: "#669f2a" }
+        ]
+      },
+      {
+        id: "health",
+        label: "Health",
+        group: "life",
+        theory: "Calm vitality \u2014 teal, emerald, cyan. Clinical without going cold.",
+        accents: [
+          { label: "Teal", hex: "#15b79e" },
+          { label: "Emerald", hex: "#0d9488" },
+          { label: "Cyan", hex: "#06aed4" },
+          { label: "Aqua", hex: "#2dd4bf" }
+        ]
+      },
+      {
+        id: "nature",
+        label: "Nature",
+        group: "life",
+        theory: "Growth. Moss, forest, mint \u2014 earthbound, not neon.",
+        accents: [
+          { label: "Moss", hex: "#669f2a" },
+          { label: "Green", hex: "#16b364" },
+          { label: "Forest", hex: "#15803d" },
+          { label: "Mint", hex: "#34d399" }
+        ]
+      },
+      {
+        id: "recreation",
+        label: "Recreation",
+        group: "life",
+        theory: "Motion outdoors \u2014 lime, coral, sun.",
+        accents: [
+          { label: "Lime", hex: "#66c61c" },
+          { label: "Coral", hex: "#fb542b" },
+          { label: "Orange", hex: "#ef6820" },
+          { label: "Yellow", hex: "#eaaa08" }
+        ]
+      },
+      {
+        id: "art",
+        label: "Art",
+        group: "life",
+        theory: "Expression in fuchsia, magenta, grape \u2014 hue as the signature.",
+        accents: [
+          { label: "Fuchsia", hex: "#d444f1" },
+          { label: "Magenta", hex: "#c026d3" },
+          { label: "Pink", hex: "#ee46bc" },
+          { label: "Grape", hex: "#a855f7" }
+        ]
+      }
+    ];
+    INDUSTRY_SPECTRUM = buildIndustrySpectrum();
+  }
+});
 
 // src/lib/themeMint.ts
 function uniqueKey(wanted, taken) {
@@ -13908,7 +13932,6 @@ function scalesForSlot(slot, hex, s, neutralTint = s.neutralTint, pages = { ligh
     darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, rampShift, pages.dark)
   };
 }
-var replaceOnMint = [];
 function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShift) {
   let s = useDesignStore.getState();
   if (!editKey && replaceOnMint.length > 0) {
@@ -13997,8 +14020,158 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
     return { error: "One of the colors is invalid." };
   }
 }
+var replaceOnMint;
+var init_themeMint = __esm({
+  "src/lib/themeMint.ts"() {
+    init_useDesignStore();
+    init_themeSources();
+    init_colorUtils();
+    init_utils();
+    init_themeLibrary();
+    init_freeThemeLimit();
+    init_entitlement();
+    init_libraryStatus();
+    init_themeSetup();
+    init_industryPacks();
+    replaceOnMint = [];
+  }
+});
+
+// src/lib/previewTokens.ts
+import { useEffect as useEffect6 } from "react";
+var ROLE_BY_KEY;
+var init_previewTokens = __esm({
+  "src/lib/previewTokens.ts"() {
+    init_motion();
+    init_platformAxis();
+    init_iconSizing();
+    init_shadowTokens();
+    init_useDesignStore();
+    init_colorUtils();
+    init_gradients();
+    init_themeSources();
+    init_semanticRoles();
+    init_semanticArchitectures();
+    init_fonts();
+    init_iconLibraries();
+    init_typeRoles();
+    init_layoutTokens();
+    init_themeModes();
+    init_themeFoundations();
+    ROLE_BY_KEY = Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]));
+  }
+});
+
+// src/lib/stylePreviewOverlay.ts
+function withStyleSemantics(current, semantics, themeKey, architecture = "categorical") {
+  if (!semantics) return current;
+  const forArch = { ...current[architecture] ?? {} };
+  for (const [tokenId, modes] of Object.entries(semantics)) {
+    const entry = { ...forArch[tokenId] ?? {} };
+    for (const appearance of ["light", "dark"]) {
+      const ref = modes[appearance];
+      const key2 = themeModeKey(themeKey, appearance);
+      if (ref) entry[key2] = ref;
+      else delete entry[key2];
+    }
+    if (Object.keys(entry).length) forArch[tokenId] = entry;
+    else delete forArch[tokenId];
+  }
+  return { ...current, [architecture]: forArch };
+}
+var init_stylePreviewOverlay = __esm({
+  "src/lib/stylePreviewOverlay.ts"() {
+    init_colorUtils();
+    init_previewTokens();
+    init_themePresets();
+    init_themeModes();
+  }
+});
+
+// src/lib/shuffleLocks.ts
+var init_shuffleLocks = __esm({
+  "src/lib/shuffleLocks.ts"() {
+  }
+});
+
+// src/lib/remixLink.ts
+var FONTS, REMIX_ID_PREFIX;
+var init_remixLink = __esm({
+  "src/lib/remixLink.ts"() {
+    init_fontStack();
+    init_shuffleLocks();
+    init_themePresets();
+    FONTS = new Set(FONT_PRESETS.map((font) => font.value));
+    REMIX_ID_PREFIX = "remix-";
+  }
+});
+
+// src/lib/adoptPreset.ts
+function adoptPreset(preset, appearance, opts = {}) {
+  const store = useDesignStore.getState();
+  const themes = store.themes;
+  if (!canAddMyTheme(myThemeKeys(store.themeOrder, themes).length)) {
+    return { error: MY_THEME_FULL_ERROR };
+  }
+  const baseLabel = opts.asCopy ? `${preset.shortLabel} ${opts.copyWord ?? "Copy"}` : preset.label;
+  let label = baseLabel;
+  let key2 = slugify(label);
+  let suffix = 2;
+  while (themes[key2]) {
+    label = `${baseLabel} ${suffix++}`;
+    key2 = slugify(label);
+  }
+  const h = presetHarmony(preset);
+  const slots = slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset));
+  if (preset.neutral) slots.gray = preset.neutral;
+  const result = mintTheme(
+    slots,
+    appearance,
+    label,
+    null,
+    preset.neutralTint,
+    { light: h.pageLight, dark: h.pageDark }
+  );
+  if ("error" in result) return result;
+  const next = useDesignStore.getState();
+  if (preset.semantics) {
+    useDesignStore.setState({
+      architectureOverrides: withStyleSemantics(
+        next.architectureOverrides,
+        preset.semantics,
+        result.key
+      )
+    });
+  }
+  next.setThemeFoundations(result.key, preset.foundations);
+  next.setThemeLabel(result.key, label);
+  next.setThemeOrigin(result.key, preset.id);
+  loadGoogleFont(preset.foundations.typography?.fontFamily ?? "");
+  loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? "");
+  if (opts.track !== false) {
+    trackEvent({ name: "style_adopt", props: { style: preset.id.startsWith(REMIX_ID_PREFIX) ? "remix" : preset.id } });
+  }
+  return { key: result.key, name: label };
+}
+var init_adoptPreset = __esm({
+  "src/lib/adoptPreset.ts"() {
+    init_themeMint();
+    init_useDesignStore();
+    init_fonts();
+    init_stylePreviewOverlay();
+    init_utils();
+    init_analytics();
+    init_themeLibrary();
+    init_themePresets();
+    init_themeModes();
+    init_remixLink();
+  }
+});
 
 // src/lib/pluginStudio.ts
+init_useDesignStore();
+init_colorActions();
+init_themeMint();
 init_themeFoundations();
 init_themeModes();
 init_tokenGenerator();
@@ -14170,116 +14343,7 @@ function approximateSource(text, name = "From code") {
 // src/lib/pluginStudio.ts
 init_themePresets();
 init_shadowTokens();
-
-// src/lib/adoptPreset.ts
-init_useDesignStore();
-init_fonts();
-
-// src/lib/stylePreviewOverlay.ts
-init_colorUtils();
-
-// src/lib/previewTokens.ts
-init_motion();
-init_platformAxis();
-init_iconSizing();
-init_shadowTokens();
-init_useDesignStore();
-init_colorUtils();
-init_gradients();
-init_themeSources();
-init_semanticRoles();
-init_semanticArchitectures();
-init_fonts();
-init_iconLibraries();
-init_typeRoles();
-init_layoutTokens();
-init_themeModes();
-init_themeFoundations();
-import { useEffect as useEffect6 } from "react";
-var ROLE_BY_KEY = Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]));
-
-// src/lib/stylePreviewOverlay.ts
-init_themePresets();
-init_themeModes();
-function withStyleSemantics(current, semantics, themeKey, architecture = "categorical") {
-  if (!semantics) return current;
-  const forArch = { ...current[architecture] ?? {} };
-  for (const [tokenId, modes] of Object.entries(semantics)) {
-    const entry = { ...forArch[tokenId] ?? {} };
-    for (const appearance of ["light", "dark"]) {
-      const ref = modes[appearance];
-      const key2 = themeModeKey(themeKey, appearance);
-      if (ref) entry[key2] = ref;
-      else delete entry[key2];
-    }
-    if (Object.keys(entry).length) forArch[tokenId] = entry;
-    else delete forArch[tokenId];
-  }
-  return { ...current, [architecture]: forArch };
-}
-
-// src/lib/adoptPreset.ts
-init_utils();
-init_analytics();
-init_themeLibrary();
-init_themePresets();
-init_themeModes();
-
-// src/lib/remixLink.ts
-init_fontStack();
-init_themePresets();
-var FONTS = new Set(FONT_PRESETS.map((font) => font.value));
-var REMIX_ID_PREFIX = "remix-";
-
-// src/lib/adoptPreset.ts
-function adoptPreset(preset, appearance, opts = {}) {
-  const store = useDesignStore.getState();
-  const themes = store.themes;
-  if (!canAddMyTheme(myThemeKeys(store.themeOrder, themes).length)) {
-    return { error: MY_THEME_FULL_ERROR };
-  }
-  const baseLabel = opts.asCopy ? `${preset.shortLabel} ${opts.copyWord ?? "Copy"}` : preset.label;
-  let label = baseLabel;
-  let key2 = slugify(label);
-  let suffix = 2;
-  while (themes[key2]) {
-    label = `${baseLabel} ${suffix++}`;
-    key2 = slugify(label);
-  }
-  const h = presetHarmony(preset);
-  const slots = slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset));
-  if (preset.neutral) slots.gray = preset.neutral;
-  const result = mintTheme(
-    slots,
-    appearance,
-    label,
-    null,
-    preset.neutralTint,
-    { light: h.pageLight, dark: h.pageDark }
-  );
-  if ("error" in result) return result;
-  const next = useDesignStore.getState();
-  if (preset.semantics) {
-    useDesignStore.setState({
-      architectureOverrides: withStyleSemantics(
-        next.architectureOverrides,
-        preset.semantics,
-        result.key
-      )
-    });
-  }
-  next.setThemeFoundations(result.key, preset.foundations);
-  next.setThemeLabel(result.key, label);
-  next.setThemeOrigin(result.key, preset.id);
-  loadGoogleFont(preset.foundations.typography?.fontFamily ?? "");
-  loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? "");
-  if (opts.track !== false) {
-    trackEvent({ name: "style_adopt", props: { style: preset.id.startsWith(REMIX_ID_PREFIX) ? "remix" : preset.id } });
-  }
-  return { key: result.key, name: label };
-}
-
-// src/lib/pluginStudio.ts
+init_adoptPreset();
 init_motion();
 var STATE_SLOTS = ["error", "warning", "success", "info"];
 function studioOptions() {
