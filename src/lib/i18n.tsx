@@ -547,6 +547,8 @@ const es: Record<string, string> = {
   // Board tour (first run)
   'Getting started': 'Primeros pasos',
   'Skip tour': 'Saltar guía',
+  'Close colour map': 'Cerrar el mapa de color',
+  'More with {name}': 'Más con {name}',
   'Pick your brand at random': 'Elija su marca al azar',
   'Roll the die: a new colour, type and shape. Roll as often as you like.': 'Tire el dado: color, tipografía y forma nuevos. Tire cuantas veces quiera.',
   'See which token paints each part': 'Vea qué token pinta cada parte',
@@ -2448,6 +2450,8 @@ const fr: Record<string, string> = {
   // Board tour (first run)
   'Getting started': 'Premiers pas',
   'Skip tour': 'Passer le guide',
+  'Close colour map': 'Fermer la carte des couleurs',
+  'More with {name}': 'Plus avec {name}',
   'Pick your brand at random': 'Choisissez votre marque au hasard',
   'Roll the die: a new colour, type and shape. Roll as often as you like.': 'Lancez le dé : nouvelle couleur, typographie et forme. Relancez autant que vous voulez.',
   'See which token paints each part': 'Voyez quel token peint chaque partie',

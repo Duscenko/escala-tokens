@@ -12,8 +12,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
-import { traceElement } from '../../lib/tokenTrace'
-import { holesMask, litSlots, outermostRects, type LitSlot, type SpotRect } from '../../lib/colorSpotlight'
+import { axesOf, traceElement, traceRecipe } from '../../lib/tokenTrace'
+import { COMPONENT_RECIPES } from '../../lib/componentRecipes'
+import { holesMask, isStrokeRole, litSlots, outermostRects, type LitSlot, type SpotRect } from '../../lib/colorSpotlight'
 import { COMPONENTS } from '../../lib/componentCatalogue'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 
@@ -24,6 +25,10 @@ const CARD_W = 288
  *  and scale themselves); the spotlight waits for it. */
 const SETTLE_MS = 280
 const GAP = 28
+/** Breathing room around a lit part, and on each side of a stroke's ring. */
+const RING_PAD = 3
+/** How far into a stroke spot the pointer still counts as on its edge. */
+const EDGE_HIT = 8
 
 export interface SpotlightRole { label: string; css: string }
 
@@ -69,40 +74,75 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
     const box = root.getBoundingClientRect()
     const out: Spot[] = []
     const seen = new Set<Element>()
-    for (const el of root.querySelectorAll('[data-escala]')) {
-      const trace = traceElement(tokens, el)
-      if (!trace) continue
-      const key = el.getAttribute('data-escala') ?? ''
-      for (const lit of litSlots(trace, roleIds)) {
-        const node = lit.slot === trace.slots[0]?.slot
-          ? el
-          : el.querySelector(`[data-part="${CSS.escape(`${key}.${lit.slot}`)}"]`) ?? el
-        const rect = node.getBoundingClientRect()
-        if (rect.width < 1 || rect.height < 1) continue
-        if (seen.has(node)) {
-          // Two slots resolved to one node (no part of its own): one spot.
-          const spot = out.find((s) => s.id === spotId(node))
-          if (spot) spot.roles.push(...lit.roles.filter((r) => !spot.roles.some((x) => x.id === r.id)))
-          continue
+    const addSpot = (node: Element, lit: LitSlot, component: string) => {
+      const rect = node.getBoundingClientRect()
+      if (rect.width < 1 || rect.height < 1) return
+      if (seen.has(node)) {
+        // Two slots resolved to one node (no part of its own): one spot.
+        const spot = out.find((s) => s.id === spotId(node))
+        if (spot) {
+          spot.roles.push(...lit.roles.filter((r) => !spot.roles.some((x) => x.id === r.id)))
+          // A fill joining a stroke spot makes it a whole part again.
+          if (!spot.roles.every((r) => isStrokeRole(r.id))) delete spot.ring
         }
-        seen.add(node)
-        // The radius is in the node's own px; tiles are scaled photographs.
-        const own = (node as HTMLElement).offsetWidth || rect.width
-        const radius = parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0
-        out.push({
-          id: spotId(node),
-          component: COMPONENTS.find((c) => c.key === trace.component)?.label ?? trace.component,
-          roles: [...lit.roles],
-          x: rect.left - box.left,
-          y: rect.top - box.top,
-          w: rect.width,
-          h: rect.height,
-          r: radius * (rect.width / own),
-        })
+        return
+      }
+      seen.add(node)
+      // The radius is in the node's own px; tiles are scaled photographs.
+      const own = (node as HTMLElement).offsetWidth || rect.width
+      const style = getComputedStyle(node)
+      const radius = parseFloat(style.borderTopLeftRadius) || 0
+      const scale = rect.width / own
+      // Lit only through its stroke: cut the edge, not the body.
+      const strokeOnly = lit.roles.every((r) => isStrokeRole(r.id))
+      const ring = strokeOnly ? (Math.max(1, parseFloat(style.borderTopWidth) || 0) * scale) + RING_PAD * 2 : undefined
+      out.push({
+        id: spotId(node),
+        component: COMPONENTS.find((c) => c.key === component)?.label ?? component,
+        roles: [...lit.roles],
+        x: rect.left - box.left,
+        y: rect.top - box.top,
+        w: rect.width,
+        h: rect.height,
+        r: radius * scale,
+        ...(ring ? { ring } : {}),
+      })
+    }
+    for (const el of root.querySelectorAll('[data-escala]')) {
+      const key = el.getAttribute('data-escala') ?? ''
+      const dom = COMPONENT_RECIPES[key]?.dom
+      // A component that renders a library's DOM (Sonner) names its own root
+      // and parts (`recipe.dom`); its axes live on that root (`data-type` on
+      // the toast), not on our wrapper, which is `display: contents`.
+      const domRoot = dom ? el.querySelector(dom.root) : null
+      const trace = domRoot
+        ? traceRecipe(tokens, key, { ...axesOf(el, key), ...axesOf(domRoot, key) })
+        : traceElement(tokens, el)
+      if (!trace) continue
+      for (const lit of litSlots(trace, roleIds)) {
+        const isRoot = lit.slot === trace.slots[0]?.slot
+        // Every node of the slot: a meter draws its filled segment twice.
+        let nodes: Element[]
+        if (domRoot) {
+          const sel = dom?.slots?.[lit.slot]
+          nodes = isRoot ? [domRoot] : sel ? [...domRoot.querySelectorAll(sel)] : []
+        } else if (isRoot) {
+          nodes = [el]
+        } else {
+          nodes = [...el.querySelectorAll(`[data-part="${CSS.escape(`${key}.${lit.slot}`)}"]`)]
+          // A component that marks its parts and has no node for this slot is
+          // not drawing it (a Field with no error message): nothing to light.
+          // Only one that marks none stands in for its slots with its root.
+          if (!nodes.length && !el.querySelector(`[data-part^="${CSS.escape(`${key}.`)}"]`)) nodes = [el]
+        }
+        for (const node of nodes) addSpot(node, lit, trace.component)
       }
     }
     setSpots(out)
-    setSize({ w: box.width, h: box.height })
+    // The board can be wider than its box (a bento on a narrow window
+    // overflows and scrolls sideways): the scrim covers what is drawn, not
+    // the box, or the overflowing column sat sharp beside a blurred board.
+    setSize({ w: Math.max(box.width, root.scrollWidth), h: Math.max(box.height, root.scrollHeight) })
   }, [rootRef, tokens, roleIds])
 
   // Before paint: a new focus never shows a frame of the old holes.
@@ -123,11 +163,17 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
     const mo = new MutationObserver(schedule)
     mo.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class', 'data-state'] })
     window.addEventListener('resize', schedule)
+    // A part that slides in (Sonner's toast) moves by transform, which no
+    // observer sees: measure again when the motion ends.
+    root.addEventListener('transitionend', schedule, true)
+    root.addEventListener('animationend', schedule, true)
     return () => {
       cancelAnimationFrame(frame)
       ro.disconnect()
       mo.disconnect()
       window.removeEventListener('resize', schedule)
+      root.removeEventListener('transitionend', schedule, true)
+      root.removeEventListener('animationend', schedule, true)
     }
   }, [rootRef, measure])
 
@@ -145,6 +191,8 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
       const y = event.clientY - box.top
       const hit = spots
         .filter((s) => x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h)
+        // A stroke spot answers only on its edge: its body stays under the scrim.
+        .filter((s) => !s.ring || x <= s.x + EDGE_HIT || x >= s.x + s.w - EDGE_HIT || y <= s.y + EDGE_HIT || y >= s.y + s.h - EDGE_HIT)
         .sort((a, b) => a.w * a.h - b.w * b.h)[0]
       const next = hit?.id ?? null
       if (next === hoverRef.current) return
@@ -163,8 +211,10 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
 
   // Every lit part cuts its hole (a mask unions them); only the outermost
   // get an outline, so a label inside its lit button is not boxed twice.
-  const holes = outermostRects(spots).map((s) => pad(s, 3))
-  const mask = holesMask(size.w, size.h, spots.map((s) => pad(s, 3)))
+  // Stroke spots never swallow what sits inside them: a button inside an
+  // accent-bordered card keeps its own outline.
+  const holes = [...outermostRects(spots.filter((s) => !s.ring)), ...spots.filter((s) => s.ring)].map((s) => pad(s, RING_PAD))
+  const mask = holesMask(size.w, size.h, spots.map((s) => pad(s, RING_PAD)))
   const hovered = spots.find((s) => s.id === hover) ?? null
   if (!size.w || !settled) return null
 
@@ -179,7 +229,7 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
   })() : null
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-20">
+    <div aria-hidden className="pointer-events-none absolute left-0 top-0 z-20" style={{ width: size.w, height: size.h }}>
       {/* The scrim: the board minus a hole per lit part (a luminance mask —
           white shows the scrim, black cuts it). Blur is the focus
           pull; reduced motion keeps only the dim (it is a state, not motion,
@@ -232,10 +282,10 @@ export default function ColorSpotlight({ rootRef, tokens, roleIds, roleInfo, vei
           >
             <span
               className={`absolute inset-0 rounded-[inherit] transition-[box-shadow] duration-150 ${
-                hovered && overlaps(hovered, h) ? 'ring-2 ring-accent-ui' : 'ring-1 ring-accent-ui/80'
+                hovered?.id === h.id || (hovered && !h.ring && overlaps(hovered, h)) ? 'ring-2 ring-accent-ui' : h.ring ? 'ring-1 ring-accent-ui/45' : 'ring-1 ring-accent-ui/80'
               }`}
             />
-            {CORNERS.map((c) => (
+            {!h.ring && CORNERS.map((c) => (
               <span key={c} className={`absolute h-[5px] w-[5px] border border-accent-ui bg-app ${c}`} />
             ))}
           </motion.div>

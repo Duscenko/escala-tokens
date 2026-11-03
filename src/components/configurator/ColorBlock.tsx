@@ -64,8 +64,14 @@ function HexInput({ hex, label, readOnly, readOnlyTitle, onHex, onFocus, inputRe
 
 export function ColorBlock({
   label, hex, active = false, open = false, readOnly, readOnlyTitle,
-  landing = 0, index = 0, anchorRef, onSwatch, onFocusHex, onHex, trailing,
+  landing = 0, index = 0, anchorRef, onSwatch, onLabel, labelHint, onFocusHex, onHex, trailing,
 }: {
+  /** What the NAME does when pressed — while the colour map is open, it shows
+   *  this colour on the board. Without it the name opens the picker, like
+   *  the swatch beside it. */
+  onLabel?: () => void
+  /** Its hint, when `onLabel` says something the picker does not. */
+  labelHint?: string
   /** At the field's end (the ramp toggle), like a select's chevron. Its
    *  clicks never reach the hex. */
   trailing?: ReactNode
@@ -100,9 +106,14 @@ export function ColorBlock({
       // The panel's own field (`FIELD_SHELL`): the same bordered row as Font,
       // the name + swatch in its label chip, the hex after it. The ring is for
       // an open picker or a hex being typed — not for "the selected role".
-      className={`group ${FIELD_SHELL} cursor-text ${open ? FIELD_SHELL_ON : `${FIELD_SHELL_REST} focus-within:border-fg/40 focus-within:shadow-[0_0_0_1px_var(--line-selected)]`}`}
+      // Only the hex reads as text: the chip (swatch + name) is a control, so
+      // it takes the pointer; the I-beam is for the value you would edit.
+      className={`group ${FIELD_SHELL} cursor-text ${open ? FIELD_SHELL_ON : `${FIELD_SHELL_REST} has-[input:focus]:border-fg/40 has-[input:focus]:shadow-[0_0_0_1px_var(--line-selected)]`}`}
     >
-      <span className={FIELD_CHIP}>
+      <span
+        className={`${FIELD_CHIP} cursor-pointer hover:bg-fg/[0.12]`}
+        onClick={(event) => { event.stopPropagation(); (onLabel ?? onSwatch)() }}
+      >
       <button
         key={landing}
         type="button"
@@ -114,9 +125,20 @@ export function ColorBlock({
         className={`h-3.5 w-3.5 flex-shrink-0 rounded-[3px] cursor-pointer border border-fg/10 transition-[background-color] duration-200 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 motion-reduce:transition-none ${landing ? 'swatch-land' : ''}`}
         style={{ background: hex, '--swatch-i': index } as CSSProperties}
       />
-      <span className={`min-w-0 truncate transition-colors ${lit ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
-        {label}
-      </span>
+      {onLabel ? (
+        <button
+          type="button"
+          onClick={(event) => { event.stopPropagation(); onLabel() }}
+          title={labelHint}
+          className={`min-w-0 truncate rounded-[3px] text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${lit ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}
+        >
+          {label}
+        </button>
+      ) : (
+        <span className={`min-w-0 truncate transition-colors ${lit ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
+          {label}
+        </span>
+      )}
       </span>
       <HexInput
         inputRef={input}

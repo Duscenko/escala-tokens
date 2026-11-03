@@ -3,7 +3,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../previewTokens'
 import type { PreviewTokens } from '../../components/preview/ButtonPreview'
 import { traceRecipe } from '../tokenTrace'
-import { holesMask, litSlots, outermostRects } from '../colorSpotlight'
+import { holesMask, isStrokeRole, litSlots, outermostRects } from '../colorSpotlight'
 
 const t = resolvePreviewTokens(useDesignStore.getState() as never, 'light') as PreviewTokens
 
@@ -53,5 +53,20 @@ describe('holesMask', () => {
     expect(svg).toContain("rx='4'")
     // A radius larger than the rect is capped to half its side.
     expect(decodeURIComponent(holesMask(10, 10, [{ x: 0, y: 0, w: 4, h: 4, r: 99 }]))).toContain("rx='2'")
+  })
+  it('cuts only the edge of a part lit by its stroke', () => {
+    const svg = decodeURIComponent(holesMask(200, 100, [{ x: 10, y: 10, w: 100, h: 60, r: 8, ring: 5 }]))
+    expect(svg).toContain("fill-rule='evenodd'")
+    // Outer and inner contour in one path, so the body stays under the scrim.
+    expect(svg.match(/M/g)).toHaveLength(2)
+    // A ring too thick for its box falls back to the whole box.
+    expect(decodeURIComponent(holesMask(20, 20, [{ x: 0, y: 0, w: 8, h: 8, r: 0, ring: 5 }]))).not.toContain('evenodd')
+  })
+})
+
+describe('isStrokeRole', () => {
+  it('names strokes, never fills or inks', () => {
+    for (const id of ['border.subtle', 'border.ring.brand', 'status.success.border']) expect(isStrokeRole(id)).toBe(true)
+    for (const id of ['action.primary.default', 'status.success.surface', 'content.accent', 'surface.page']) expect(isStrokeRole(id)).toBe(false)
   })
 })

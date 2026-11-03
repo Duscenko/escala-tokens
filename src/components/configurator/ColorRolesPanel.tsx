@@ -130,6 +130,8 @@ export function ColorRolesPanel({
     if (changed >= 2) setLanding((n) => n + 1)
   }
 
+  const hasRampFor = (id: ColorRoleId) => Boolean(ramps?.[id] && Object.keys(ramps[id]!).length)
+
   return (
     <div className="flex flex-col gap-3">
       {header}
@@ -174,6 +176,9 @@ export function ColorRolesPanel({
             rampOpen={rampOpen === row.id}
             legend={rampOpen === row.id ? rampLegend : undefined}
             onToggleRamp={() => setRampOpen((current) => (current === row.id ? null : row.id))}
+            // While a ramp is open (the board maps its colour), a name moves
+            // the map to that colour; the board follows without a second click.
+            onShowRamp={rampOpen && hasRampFor(row.id) ? () => setRampOpen(() => row.id) : undefined}
           />
           </div>
         ))}
@@ -186,9 +191,11 @@ export function ColorRolesPanel({
 function RoleRow({
   row, index, landing, on, open, appearance, page, neutralTint, list,
   onToggle, onClose, onFocusHex, onHex, onHexPreview, onHuePreview, onHueCommit, solveAt, onNeutralTint, onToggleLink,
-  rampContrast, ramp, naming, rampOpen, onToggleRamp, legend,
+  rampContrast, ramp, naming, rampOpen, onToggleRamp, onShowRamp, legend,
 }: {
   legend?: RampLegend
+  /** Show this row's ramp (and so its map) in place of the one open. */
+  onShowRamp?: () => void
   rampContrast?: ReactNode
   ramp?: ColorScale
   naming: ColorNaming
@@ -280,6 +287,8 @@ function RoleRow({
             landing={landing}
             index={index}
             onSwatch={onToggle}
+            onLabel={onShowRamp}
+            labelHint={onShowRamp ? t('Show {name} on the map', { name: label }) : undefined}
             onFocusHex={onFocusHex}
             onHex={onHex}
             trailing={hasRamp ? (

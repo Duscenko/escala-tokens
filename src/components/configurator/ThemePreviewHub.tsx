@@ -53,6 +53,7 @@ import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
 import ColorRoleMapView, { MAP_VIEW_GLYPH, MapViewSwitch } from './ColorRoleMapView'
 import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
+import { ColourShowcase } from './ColourShowcase'
 import { OPEN_COLOUR_MAP_EVENT, takeColourMapRequest } from '../../lib/colourMapRequest'
 import { COLOR_ROLE_LABEL, type ColorRoleId } from '../../lib/colorRoles'
 import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus } from '../../lib/colorRoleMap'
@@ -61,8 +62,9 @@ import type { RampLegend } from './ColorRolesPanel'
 import { BoardTourCoach, useBoardTourStep } from '../ui/BoardTourCoach'
 import { boardTourStep, tourEvent } from '../../lib/boardTour'
 
-// The lit-board spotlight (ColorSpotlight) is off for now.
-const SPOTLIGHT_ON = false
+// The colour map's "Board" view lights only the parts that paint with the
+// colour (ColorSpotlight); everything else recedes behind a scrim.
+const SPOTLIGHT_ON = true
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -306,7 +308,7 @@ function ArtefactsView({
 }: {
   /** The colour map shown ON the board: the roles to light, and what the
    *  callout names for each. */
-  spotlight?: { roleIds: ReadonlySet<string>; roleInfo: ReadonlyMap<string, SpotlightRole> }
+  spotlight?: { roleIds: ReadonlySet<string>; roleInfo: ReadonlyMap<string, SpotlightRole>; colour: ColorRoleId }
   /** Components view: a cover's ↗ opens that component's page. */
   onOpenComponent?: (def: ComponentDef) => void
   /** Theme (the bento board) or Components (every component as a cover). */
@@ -398,8 +400,16 @@ function ArtefactsView({
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
       <div className="relative mx-auto w-full">
-        <div ref={boardRef} style={inspecting ? { cursor: 'crosshair' } : undefined}>
+        {/* `isolate`: the board is its own stacking context, so nothing in it
+            (Sonner's toaster is z 999999999) can rise above the colour map's
+            scrim, its sibling. */}
+        <div ref={boardRef} className="isolate" style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
+            {/* A colour the bento barely paints with gets a tile of
+                catalogue parts that do, so the spotlight lights something. */}
+            {spotlight && view === 'theme' && (
+              <ColourShowcase colour={spotlight.colour} tokens={stageTokens} appearance={boardAppearance} />
+            )}
             {view === 'theme' ? (
               <SystemCollage
                 layout={previewViewport === 'desktop' ? 'board' : 'phones'}
@@ -800,8 +810,9 @@ export default function ThemePreviewHub({
     return {
       roleIds: focused && focused.size ? focused : new Set(all.map((r) => r.id)),
       roleInfo: new Map(all.map((r) => [r.id, { label: r.label, css: r.css }])),
+      colour: mappedColour as ColorRoleId,
     }
-  }, [mapData, mapView, mapGroup, mapFocus])
+  }, [mapData, mapView, mapGroup, mapFocus, mappedColour])
   const effectiveTileAppearances = useMemo(
     () => Array.from({ length: COLLAGE_TILE_COUNT }, () => effectiveBoardAppearance),
     [effectiveBoardAppearance],
@@ -1024,7 +1035,24 @@ export default function ThemePreviewHub({
                       <BoardHistoryControls
                         history={!mapOpen || mapView === 'board'}
                         onRandom={canRandom && (!mapOpen || mapView === 'board') ? () => randomHandle.current?.() : undefined}
-                        trailing={mapOpen ? undefined : (
+                        trailing={mapOpen ? (
+                          // The way out of the map, on the bar you are using:
+                          // Esc did it before, but nothing on screen said so.
+                          <HintTip label={t('Close colour map')} shortcut="Esc">
+                            <button
+                              type="button"
+                              onClick={() => setMappedColour(null)}
+                              aria-label={t('Close colour map')}
+                              aria-keyshortcuts="Escape"
+                              className="flex h-7 flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-caption font-medium text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+                                <path d="M4 4l8 8M12 4l-8 8" />
+                              </svg>
+                              {t('Close')}
+                            </button>
+                          </HintTip>
+                        ) : (
                           <>
                             <BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
                             {/* The colour map's door on the bar: before, it

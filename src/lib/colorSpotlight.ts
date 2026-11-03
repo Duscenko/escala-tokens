@@ -34,7 +34,20 @@ export function litSlots(trace: ElementTrace, roleIds: ReadonlySet<string>): Lit
   return out
 }
 
-export interface SpotRect { x: number; y: number; w: number; h: number; r: number }
+export interface SpotRect {
+  x: number; y: number; w: number; h: number; r: number
+  /** Lit only by its STROKE (a card whose border reads the colour): the hole
+   *  is a ring this thick at the edge, not the whole box — or every card of a
+   *  theme with an accent border cut out its whole body and the scrim, which
+   *  is the point of the view, vanished. */
+  ring?: number
+}
+
+/** A role that paints a stroke, never a fill or ink: `border.*`,
+ *  `status.<sev>.border`. */
+export function isStrokeRole(id: string): boolean {
+  return /(^border\.|\.border$|\.border\.)/.test(id)
+}
 
 /** Drop every rect that sits inside another: the outer one already shows it,
  *  and one outline per lit part keeps the board readable. */
@@ -51,11 +64,26 @@ export function outermostRects<T extends SpotRect>(rects: readonly T[]): T[] {
  *  in an even-odd path their overlap filled back in. */
 export function holesMask(width: number, height: number, rects: readonly SpotRect[]): string {
   const f = (n: number) => Math.round(n * 10) / 10
-  const holes = rects.map(({ x, y, w, h, r }) => {
+  const holes = rects.map(({ x, y, w, h, r, ring }) => {
     const radius = Math.max(0, Math.min(r, w / 2, h / 2))
+    if (ring && ring * 2 < Math.min(w, h)) {
+      // One even-odd path per ring (outer minus inner), so rings still UNION
+      // with every other hole across paths.
+      const inner = Math.max(0, radius - ring)
+      const d = roundedRectPath(x, y, w, h, radius, f) + roundedRectPath(x + ring, y + ring, w - ring * 2, h - ring * 2, inner, f)
+      return `<path d='${d}' fill='black' fill-rule='evenodd'/>`
+    }
     return `<rect x='${f(x)}' y='${f(y)}' width='${f(w)}' height='${f(h)}' rx='${f(radius)}' fill='black'/>`
   }).join('')
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${f(width)}' height='${f(height)}' viewBox='0 0 ${f(width)} ${f(height)}'>`
     + `<rect width='100%' height='100%' fill='white'/>${holes}</svg>`
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+}
+
+function roundedRectPath(x: number, y: number, w: number, h: number, r: number, f: (n: number) => number): string {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2))
+  return `M${f(x + rr)} ${f(y)}H${f(x + w - rr)}A${f(rr)} ${f(rr)} 0 0 1 ${f(x + w)} ${f(y + rr)}`
+    + `V${f(y + h - rr)}A${f(rr)} ${f(rr)} 0 0 1 ${f(x + w - rr)} ${f(y + h)}`
+    + `H${f(x + rr)}A${f(rr)} ${f(rr)} 0 0 1 ${f(x)} ${f(y + h - rr)}`
+    + `V${f(y + rr)}A${f(rr)} ${f(rr)} 0 0 1 ${f(x + rr)} ${f(y)}Z`
 }
