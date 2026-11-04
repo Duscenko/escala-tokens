@@ -299,13 +299,17 @@ const POPOVER_W = 340
  *  so a clipping card or scroll column can't cut it. Closes on outside click,
  *  Escape, and a scroll of whatever holds the anchor. */
 export function AnchoredPopover({
-  anchor, open, onClose, children, label,
+  anchor, open, onClose, children, label, width = POPOVER_W, shell,
 }: {
   anchor: HTMLElement | null
   open: boolean
   onClose: () => void
   children: ReactNode
   label: string
+  /** Panel width; a short menu passes its own (the default fits the filters). */
+  width?: number
+  /** Replaces the panel's surface classes — a menu uses the workspace list shell. */
+  shell?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
@@ -316,13 +320,13 @@ export function AnchoredPopover({
       const r = anchor.getBoundingClientRect()
       // Right-aligned to the anchor, but never past the viewport's LEFT edge:
       // an anchor near the left (a Docs page title) pushed the panel off-screen.
-      const maxRight = window.innerWidth - POPOVER_W - 8
+      const maxRight = window.innerWidth - width - 8
       setPos({ top: r.bottom + 6, right: Math.max(8, Math.min(window.innerWidth - r.right, maxRight)) })
     }
     place()
     window.addEventListener('resize', place)
     return () => window.removeEventListener('resize', place)
-  }, [open, anchor])
+  }, [open, anchor, width])
   useCloseOnAnchorScroll(open, anchor, onClose)
 
   useEffect(() => {
@@ -347,8 +351,8 @@ export function AnchoredPopover({
       ref={ref}
       role="dialog"
       aria-label={label}
-      style={{ position: 'fixed', top: pos.top, right: pos.right, width: POPOVER_W }}
-      className="z-[70] rounded-xl border border-line-strong bg-elevated p-3 shadow-lg"
+      style={{ position: 'fixed', top: pos.top, right: pos.right, width }}
+      className={`z-[70] ${shell ?? 'rounded-xl border border-line-strong bg-elevated p-3 shadow-lg'}`}
     >
       {children}
     </div>,

@@ -15,6 +15,7 @@
 // is the snippet for the variant on screen — which neither half could claim.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF } from '../themeWorkspaceLayout'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -194,6 +195,30 @@ export interface FigmaCopyScope {
 
 const COPY_BTN = 'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
+const FIGMA_MENU_W = 240
+const FIGMA_COPY_ROWS: { id: 'element' | 'system'; label: string; icon: ReactNode }[] = [
+  {
+    id: 'element',
+    label: 'This element',
+    // The Components rail mark: four diamonds, one component.
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
+        <path d="M8 1.8 10.2 4 8 6.2 5.8 4zM12 5.8 14.2 8 12 10.2 9.8 8zM4 5.8 6.2 8 4 10.2 1.8 8zM8 9.8l2.2 2.2L8 14.2 5.8 12z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'system',
+    label: 'Whole design system',
+    // The Board's stack: every layer of the system.
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M8 2 14 5.2 8 8.4 2 5.2z" /><path d="m2 8 6 3.2L14 8" /><path d="m2 10.8 6 3.2 6-3.2" />
+      </svg>
+    ),
+  },
+]
+
 /** The click copies THIS element; the ⌄ offers the whole design system. Both
  *  are pasted with ⌘V in the Escala plugin, which reads which one it got. */
 function FigmaCopyButton({ label, build }: { label: string; build: (what: 'element' | 'system') => string }) {
@@ -215,7 +240,8 @@ function FigmaCopyButton({ label, build }: { label: string; build: (what: 'eleme
       showToast(t('Couldn’t copy — try again'))
     }
   }
-  const row = 'flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  // The row in reach, so the one line under the list can say what it does.
+  const [active, setActive] = useState<'element' | 'system' | null>(null)
   return (
     <>
       <div ref={setAnchor} className="flex h-8 items-center rounded-lg border border-line p-0.5">
@@ -238,20 +264,40 @@ function FigmaCopyButton({ label, build }: { label: string; build: (what: 'eleme
           </svg>
         </button>
       </div>
-      <AnchoredPopover anchor={anchor} open={open} onClose={() => setOpen(false)} label={t('Figma copy options')}>
-        {open ? (
-          <div role="menu" className="-m-1 flex flex-col gap-0.5">
-            <button type="button" role="menuitem" className={row} onClick={() => copy('element')}>
-              <span className="text-ui font-medium text-fg">{t('Copy this element')}</span>
-              <span className="text-caption text-fg-muted">{t('Only {name}, placed on the page you are on', { name: label })}</span>
+      <AnchoredPopover
+        anchor={anchor}
+        open={open}
+        onClose={() => { setOpen(false); setActive(null) }}
+        label={t('Figma copy options')}
+        width={FIGMA_MENU_W}
+        shell={SELECT_LIST}
+      >
+        {/* The Random level menu's shape: icon · two words · the row's own
+            line underneath, so the list stays short and the explanation
+            follows the pointer instead of sitting under every row. */}
+        <div role="menu" className="flex flex-col gap-0.5" onPointerLeave={() => setActive(null)}>
+          {FIGMA_COPY_ROWS.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              role="menuitem"
+              onClick={() => copy(r.id)}
+              onPointerEnter={() => setActive(r.id)}
+              onFocus={() => setActive(r.id)}
+              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg`}
+            >
+              <span className="text-fg-faint">{r.icon}</span>
+              <span className="min-w-0 truncate text-ui">{t(r.label)}</span>
             </button>
-            <button type="button" role="menuitem" className={row} onClick={() => copy('system')}>
-              <span className="text-ui font-medium text-fg">{t('Copy whole design system')}</span>
-              <span className="text-caption text-fg-muted">{t('Every variable, style and page, like the Figma page')}</span>
-            </button>
-            <p className="px-3 pb-1 pt-2 text-caption text-fg-faint">{t('In Figma: open the Escala plugin and press ⌘V.')}</p>
-          </div>
-        ) : null}
+          ))}
+          <p aria-live="polite" className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
+            {active === 'element'
+              ? t('Only {name}, on the page you are on', { name: label })
+              : active === 'system'
+                ? t('Every variable, style and page')
+                : t('Paste with ⌘V in the Escala plugin')}
+          </p>
+        </div>
       </AnchoredPopover>
     </>
   )
