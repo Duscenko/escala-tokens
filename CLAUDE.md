@@ -891,6 +891,16 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > at `text-strong`/14px for secondary copy there. A new About block reuses the class; it does not
 > invent a tone.
 
+> **UPDATE (2026-11-04): a component page's panel is Preview · Agent context — no Code tab.**
+> Owner's call: a bare `<Button>Button</Button>` told users nothing; the agent context is what
+> they act on. `ComponentCatalogueHero` tabs are Preview · Agent context (`ViewToggle views`);
+> the Agent context tab SHOWS the exact brief (`componentContext`, `button.context.md`, ≈ tokens)
+> and the panel's one copy action is `AIContextButton` "Copy context" with Theme · Detail, in
+> CONTROLLED mode (`filters.options` / `onOptionsChange`) so the tab and the clipboard agree. The
+> header's "Copy context to Agents" and the Components header slot (`actionsSlot`) are gone. The
+> snippet still ships in the brief, Use it → Code and Usage. Don't put a Code tab or a snippet
+> copy back as the panel's action. Plan: `design-plans/component-agent-context-first.md`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**

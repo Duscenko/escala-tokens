@@ -10,9 +10,6 @@
 // pre-merge Documentation/Components split once did.
 
 import { useState, type ReactNode } from 'react'
-import { AIContextButton } from '../../ui/AIContextButton'
-import type { ContextOptions } from '../../ui/ContextControls'
-import type { ContextAppearance } from '../../../lib/contextRequest'
 import { useI18n } from '../../../lib/i18n'
 import type { UseIt, UseItDestId } from './useIt'
 
@@ -53,22 +50,6 @@ export function CopyButton({
         </>
       )}
     </button>
-  )
-}
-
-/** Component article header — `AIContextButton` scoped to one catalogue page,
- *  with Theme and Detail filters (the scope is the page itself). */
-export function CopyAgentContextButton({
-  build, fallbackAppearance,
-}: {
-  build: (opts: ContextOptions) => string
-  fallbackAppearance: ContextAppearance
-}) {
-  return (
-    <AIContextButton
-      scope="component"
-      filters={{ build, scope: 'all', fallbackAppearance }}
-    />
   )
 }
 
@@ -179,26 +160,29 @@ export function BlockChrome({ left, children }: { left: ReactNode; children?: Re
   )
 }
 
-export function ViewToggle({
-  view, onChange,
-}: { view: 'preview' | 'code'; onChange: (v: 'preview' | 'code') => void }) {
+const VIEW_LABEL = { preview: 'Preview', code: 'Code', agent: 'Agent context' } as const
+export type BlockView = keyof typeof VIEW_LABEL
+
+export function ViewToggle<V extends BlockView>({
+  view, onChange, views = ['preview', 'code'] as V[],
+}: { view: V; onChange: (v: V) => void; views?: V[] }) {
   const { t } = useI18n()
   // The label is now a real word, not the state key under a `capitalize`
   // class — that class also has to go, or "vista previa" would render as
   // "Vista Previa" (Spanish and French capitalise only the first word).
-  const label = { preview: t('Preview'), code: t('Code') }
+  const label = (v: V) => t(VIEW_LABEL[v])
   return (
     <div className="flex items-center gap-1">
-      {(['preview', 'code'] as const).map((v) => (
+      {views.map((v) => (
         <button
           key={v}
           onClick={() => onChange(v)}
           aria-pressed={view === v}
-          className={`px-2.5 py-1 rounded-md text-caption font-medium transition-colors ${
+          className={`whitespace-nowrap px-2.5 py-1 rounded-md text-caption font-medium transition-colors ${
             view === v ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
           }`}
         >
-          {label[v]}
+          {label(v)}
         </button>
       ))}
     </div>

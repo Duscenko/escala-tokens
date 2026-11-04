@@ -20,7 +20,7 @@ import { ComponentArticle } from './docs/componentArticle'
 import { ComponentAvatarStrip, ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, actionsSlot, search = '',
+  previewTheme = 'light', active, onSelect, onInspectRole, search = '',
 }: {
   previewTheme?: string
   /** null = the catalogue index (every component as a card). */
@@ -31,7 +31,6 @@ export default function ComponentsView({
   /** A role named on the open component. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
   /** Header node the article's "Copy context to Agents" portals into. */
-  actionsSlot?: HTMLElement | null
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const themeKind = useDesignStore((s) => s.themeKinds[previewTheme])
@@ -100,7 +99,6 @@ export default function ComponentsView({
               appearance={appearance}
               previewTheme={previewTheme}
               onInspectRole={onInspectRole}
-              actionsSlot={actionsSlot}
             />
           </motion.div>
         </div>

@@ -1530,7 +1530,6 @@ export default function Configurator() {
   const [componentSearch, setComponentSearch] = useState('')
   // Where the open component's "Copy context to Agents" lands: the header band,
   // beside Edit Color. The article owns its state, so it portals into this node.
-  const [componentActionsSlot, setComponentActionsSlot] = useState<HTMLElement | null>(null)
   // Docs exposes only focused operating pages from the top-menu. The token
   // reference stays in the preview's contextual documentation surface, so the
   // global destination never duplicates it.
@@ -2422,7 +2421,6 @@ export default function Configurator() {
             value={previewTheme}
             onChange={changePreviewTheme}
           />
-          <div ref={setComponentActionsSlot} className="flex items-center" />
           <button
             type="button"
             onClick={() => selectFoundation('color')}
@@ -2439,7 +2437,6 @@ export default function Configurator() {
         active={activeComponent}
         onSelect={selectComponent}
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
-        actionsSlot={componentActionsSlot}
         search={componentSearch}
       />
     )

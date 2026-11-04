@@ -33,6 +33,10 @@ export interface AIContextFilters {
   lockedAppearance?: ContextAppearance | null
   /** Appearance when nothing is remembered yet. */
   fallbackAppearance?: ContextAppearance
+  /** Controlled options: a surface that SHOWS the paste (the component
+   *  panel's Agent context tab) owns them, so the tab and the copy agree. */
+  options?: ContextOptions
+  onOptionsChange?: (patch: Partial<ContextOptions>) => void
 }
 
 export interface AIContextButtonProps {
@@ -46,7 +50,7 @@ export interface AIContextButtonProps {
   filters?: AIContextFilters
 }
 
-const BTN = 'flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+const BTN = 'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
 /**
  * Unified “copy this as agent context” CTA.
@@ -63,10 +67,12 @@ export function AIContextButton({ scope, markdown, label, filters }: AIContextBu
   const [open, setOpen] = useState(false)
   const anchorRef = useRef<HTMLDivElement>(null)
   const shownLabel = label ? t(label) : t(copy.label)
-  const [opts, setOpts] = useContextOptions(
+  const [ownOpts, setOwnOpts] = useContextOptions(
     filters?.scope ?? 'all',
     filters?.lockedAppearance ?? filters?.fallbackAppearance ?? 'both',
   )
+  const opts = filters?.options ?? ownOpts
+  const setOpts = filters?.onOptionsChange ?? setOwnOpts
   const effective: ContextOptions = filters?.lockedAppearance
     ? { ...opts, appearance: filters.lockedAppearance }
     : opts

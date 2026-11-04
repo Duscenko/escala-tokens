@@ -1,4 +1,7 @@
-# Component page: "Copy context to Agents" first, Code second
+# Component page: "Copy context to Agents" first, no Code tab
+
+**DONE 2026-11-04.** Revised by the owner before building: the Code tab is REMOVED
+(it confused people), not moved after Agent context. Header button removed.
 
 Owner's call (2026-11-04): on every component page the agent context matters more
 than the code. Users understand "copy this for my agent" far better than a

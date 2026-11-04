@@ -14,7 +14,6 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
-import { createPortal } from 'react-dom'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
@@ -22,11 +21,12 @@ import {
 } from '../../../lib/componentCatalogue'
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown, componentImportLine } from '../../../lib/agentContext'
-import { cutComponentContext } from '../../../lib/contextRequest'
+import { contextSize, cutComponentContext, formatApproxTokens } from '../../../lib/contextRequest'
 import { contextTokenJson } from '../../../lib/contextSource'
 import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
-import type { ContextOptions } from '../../ui/ContextControls'
+import { useContextOptions, type ContextOptions } from '../../ui/ContextControls'
+import { AIContextButton } from '../../ui/AIContextButton'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -36,8 +36,8 @@ import { InspectGlyph } from '../../ui/icons'
 import { AppearanceGlyph } from '../colorControls'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
-  CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
-  ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
+  DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
+  ViewToggle, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
   type TocEntry,
 } from './blocks'
 import { useItForComponent, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
@@ -220,9 +220,30 @@ function AppearanceSwitch({ value, onChange }: { value: ThemeAppearance; onChang
 // transparent fill, `#be3a2f` ink) while every one of those three consumers
 // kept printing `color="brand" style="solid"`. One shared snippet, computed
 // once by the parent and passed down, is what makes that impossible again.
+/** `button.tsx` → `button.context.md`: the brief is a file you paste. */
+function contextFileName(def: ComponentDef): string {
+  return fileNameFor(def).replace(/\.tsx$/, '') + '.context.md'
+}
+
+/** The agent brief on screen, the same height as the Preview canvas, with its
+ *  size so the cost of the paste is visible before it is copied. */
+function AgentContextPane({ markdown }: { markdown: string }) {
+  const size = contextSize(markdown)
+  return (
+    <div className="relative">
+      <pre className="h-[300px] overflow-auto whitespace-pre-wrap break-words bg-surface/40 px-4 py-3 font-mono text-caption leading-relaxed text-fg-muted">
+        {markdown}
+      </pre>
+      <span className="pointer-events-none absolute bottom-3 right-4 rounded-full border border-line bg-elevated/90 px-2 py-0.5 text-mini text-fg-faint">
+        {formatApproxTokens(size.approxTokens)}
+      </span>
+    </div>
+  )
+}
+
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme,
+  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -245,11 +266,21 @@ export function ComponentCatalogueHero({
   onInspectRole?: (roleId: string) => void
   /** The brand on screen — the canvas resolves its OTHER appearance from it. */
   previewTheme?: string
+  /** The agent brief for this page, cut to the chosen options. The panel's
+   *  Agent context tab SHOWS it and its Copy context button copies it. */
+  buildContext: (opts: ContextOptions) => string
 }) {
   const { t } = useI18n()
-  const [view, setView] = useState<'preview' | 'code'>('preview')
+  // Preview · Agent context. There is no Code tab: owner's call (2026-11-04),
+  // a bare `<Button>Button</Button>` told people nothing, while the agent
+  // context is what they act on. The snippet still ships inside the brief, in
+  // Use it → Code and in Usage.
+  const [view, setView] = useState<'preview' | 'agent'>('preview')
   const canvasRef = useRef<HTMLDivElement>(null)
   const appearance = appearanceProp ?? 'light'
+  // One set of options for the tab and the button, so what is on screen is
+  // exactly what Copy context puts on the clipboard.
+  const [contextOpts, setContextOpts] = useContextOptions('all', appearance)
   // The canvas can show the brand's other appearance without changing the
   // brand on screen: only this stage repaints, the rest of the page does not.
   const [canvasAppearance, setCanvasAppearance] = useState<ThemeAppearance>(appearance)
@@ -267,6 +298,13 @@ export function ComponentCatalogueHero({
   }
 
   const slots = ICON_SLOTS[def.key]
+  // Built only while the tab is open: the brief resolves the whole payload.
+  const agentMarkdown = useMemo(
+    () => (view === 'agent' ? buildContext(contextOpts) : ''),
+    // `snippet` and `tokens` change the brief; `buildContext` is a fresh closure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view, contextOpts, snippet, tokens],
+  )
   const Specimen = SPECIMENS[def.key]
   const variantCount = def.axes.reduce((n, a) => n * a.values.length, 1)
   const hasControls = def.axes.length > 0 || Boolean(slots)
@@ -295,14 +333,28 @@ export function ComponentCatalogueHero({
         <BlockChrome
           left={
             <div className="flex items-center gap-2.5 min-w-0">
-              <ViewToggle view={view} onChange={setView} />
-              <span className="text-caption font-mono text-fg-faint truncate">{fileNameFor(def)}</span>
+              <ViewToggle view={view} onChange={setView} views={['preview', 'agent']} />
+              {view === 'agent' && (
+                <span className="text-caption font-mono text-fg-faint truncate">{contextFileName(def)}</span>
+              )}
             </div>
           }
         >
           <div className="flex items-center gap-1.5">
             {view === 'preview' && <InspectSwitch active={inspecting} onToggle={toggleInspecting} />}
-            {headerTrailing ?? <CopyButton text={snippet} label={t('Copy snippet')} iconOnly />}
+            {headerTrailing ?? (
+              <AIContextButton
+                scope="component"
+                label="Copy context"
+                filters={{
+                  build: buildContext,
+                  scope: 'all',
+                  fallbackAppearance: appearance,
+                  options: contextOpts,
+                  onOptionsChange: setContextOpts,
+                }}
+              />
+            )}
           </div>
         </BlockChrome>
 
@@ -348,18 +400,18 @@ export function ComponentCatalogueHero({
             />
           </InspectorModeProvider>
         ) : (
-          // The snippet tracks the controls, so "Code" is the code for the
-          // variant on screen — the reason the two blocks were worth fusing.
-          <CodePane code={snippet} minH={300} />
+          // The brief tracks the controls too: it carries the snippet for the
+          // variant on screen and the tokens that paint it.
+          <AgentContextPane markdown={agentMarkdown} />
         )}
       </div>
-      {view === 'preview' && (
-        <p className="px-1 text-mini text-fg-faint">
-          {inspecting
+      <p className="px-1 text-mini text-fg-faint">
+        {view === 'agent'
+          ? t('Paste this into Cursor, Claude Code or any agent. It names the real tokens and the Figma set.')
+          : inspecting
             ? t('Hover the component to see its borders and the tokens that paint it.')
             : t('Inspector off — the component responds to clicks and typing.')}
-        </p>
-      )}
+      </p>
       </div>
 
       {hasControls && (
@@ -635,7 +687,7 @@ function componentContext(
 // ── The page ─────────────────────────────────────────────────────────────────
 
 export function ComponentArticle({
-  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light', actionsSlot,
+  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light',
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -645,9 +697,6 @@ export function ComponentArticle({
   /** Brand the page is painted in — Copy context resolves the OTHER
    *  appearance of it when the person asks for Light, Dark or both. */
   previewTheme?: string
-  /** When set, "Copy context to Agents" renders there (the page header, beside
-   *  Edit Color) instead of in the article's own breadcrumb row. */
-  actionsSlot?: HTMLElement | null
 }) {
   const { t } = useI18n()
   // The live playground's own selection — OWNED here, not inside `Hero` (see
@@ -683,12 +732,10 @@ export function ComponentArticle({
   const prev = COMPONENTS[idx - 1]
   const next = COMPONENTS[idx + 1]
 
-  const contextButton = (
-    <CopyAgentContextButton
-      build={(opts) => componentContext(def, heroCode, previewTheme, appearance ?? 'light', tokens, opts)}
-      fallbackAppearance={appearance ?? 'light'}
-    />
-  )
+  // The brief lives in the hero panel now (Agent context tab + Copy context),
+  // not in the page header: two doors to one action, two rows apart.
+  const buildContext = (opts: ContextOptions) =>
+    componentContext(def, heroCode, previewTheme, appearance ?? 'light', tokens, opts)
 
   return (
     <div className="flex flex-col gap-8">
@@ -696,9 +743,8 @@ export function ComponentArticle({
         section={t('Components')}
         kind={t(def.category)}
         title={def.label}
-        actions={actionsSlot ? null : contextButton}
+        actions={null}
       />
-      {actionsSlot && createPortal(contextButton, actionsSlot)}
 
       {/* `def.label` is NOT translated: it is the plugin's own component name
           and the key a designer matches against the Figma variant set. Its
@@ -724,6 +770,7 @@ export function ComponentArticle({
         appearance={appearance}
         onInspectRole={onInspectRole}
         previewTheme={previewTheme}
+        buildContext={buildContext}
       />
 
       {/* Use it — Figma · Code · the agent brief, same as a foundation page.
