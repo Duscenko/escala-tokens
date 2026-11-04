@@ -212,14 +212,17 @@ const NAV_ICON_PATHS: Record<WorkspaceNavKey, { regular: string; fill: string }>
   },
 }
 
-function NavIcon({ id, filled }: { id: WorkspaceNavKey; filled: boolean }) {
+/** The rail's own glyph, also lent to other surfaces that point at the same
+ *  place (the component stage's Code button), so one place has one mark. */
+export function NavIcon({ id, filled, size = 20 }: { id: WorkspaceNavKey; filled: boolean; size?: number }) {
   const paths = NAV_ICON_PATHS[id]
+  const props = { ...NAV_ICON_PROPS, width: size, height: size }
   if (id === 'variables') {
     return filled
-      ? <svg {...NAV_ICON_PROPS}><path fillRule="evenodd" d={`${paths.fill}${HEX_DOT}`} /></svg>
-      : <svg {...NAV_ICON_PROPS}><path d={paths.regular} /><path d={HEX_DOT} /></svg>
+      ? <svg {...props}><path fillRule="evenodd" d={`${paths.fill}${HEX_DOT}`} /></svg>
+      : <svg {...props}><path d={paths.regular} /><path d={HEX_DOT} /></svg>
   }
-  return <svg {...NAV_ICON_PROPS}><path d={filled ? paths.fill : paths.regular} /></svg>
+  return <svg {...props}><path d={filled ? paths.fill : paths.regular} /></svg>
 }
 
 export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, dimmedReason }: {

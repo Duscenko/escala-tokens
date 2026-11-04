@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF } from '../themeWorkspaceLayout'
+import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
@@ -139,16 +140,6 @@ function PaletteGlyph() {
       <circle cx="4.9" cy="7.3" r=".9" fill="currentColor" stroke="none" />
       <circle cx="6.9" cy="4.7" r=".9" fill="currentColor" stroke="none" />
       <circle cx="10.1" cy="4.9" r=".9" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-
-function CodeGlyphSmall() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
-      <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
     </svg>
   )
 }
@@ -380,7 +371,8 @@ function CanvasBar({
             aria-label={t('Agent context')}
             className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : BAR_ICON_OFF}`}
           >
-            <CodeGlyphSmall />
+            {/* The left rail's Code mark (brackets-curly), filled while open, as the rail fills its active page. */}
+            <NavIcon id="code" filled={panel === 'context'} size={16} />
           </button>
         </HintTip>
         {sep}
