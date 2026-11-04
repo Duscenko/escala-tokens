@@ -25,7 +25,7 @@ import { contextSize, cutComponentContext, formatApproxTokens } from '../../../l
 import { contextTokenJson } from '../../../lib/contextSource'
 import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
-import { useContextOptions, type ContextOptions } from '../../ui/ContextControls'
+import { ContextFilters, useContextOptions, type ContextOptions } from '../../ui/ContextControls'
 import { AIContextButton } from '../../ui/AIContextButton'
 import { InspectorPortal } from '../WorkspaceInspector'
 import SemanticTokenDrawer from '../SemanticTokenGroups'
@@ -327,7 +327,9 @@ function CanvasSidePanel({ title, back, children, footer }: {
               <span className="truncate">{back.label}</span>
             </button>
           )}
-          <span className={`min-w-0 truncate text-caption font-medium text-fg ${back ? 'ml-auto pr-1' : ''}`}>{title}</span>
+          {/* With a back link the header is "‹ Component settings · ✕": the
+              panel's own title would only truncate beside it. */}
+          {back ? <span className="ml-auto" /> : <span className="min-w-0 truncate text-caption font-medium text-fg">{title}</span>}
           {back && (
             <button
               type="button"
@@ -363,27 +365,6 @@ function CanvasSidePanel({ title, back, children, footer }: {
 // transparent fill, `#be3a2f` ink) while every one of those three consumers
 // kept printing `color="brand" style="solid"`. One shared snippet, computed
 // once by the parent and passed down, is what makes that impossible again.
-/** `button.tsx` → `button.context.md`: the brief is a file you paste. */
-function contextFileName(def: ComponentDef): string {
-  return fileNameFor(def).replace(/\.tsx$/, '') + '.context.md'
-}
-
-/** The agent brief on screen, the same height as the Preview canvas, with its
- *  size so the cost of the paste is visible before it is copied. */
-function AgentContextPane({ markdown }: { markdown: string }) {
-  const size = contextSize(markdown)
-  return (
-    <div className="relative">
-      <pre className="h-[300px] overflow-auto whitespace-pre-wrap break-words bg-surface/40 px-4 py-3 font-mono text-caption leading-relaxed text-fg-muted">
-        {markdown}
-      </pre>
-      <span className="pointer-events-none absolute bottom-3 right-4 rounded-full border border-line bg-elevated/90 px-2 py-0.5 text-mini text-fg-faint">
-        {formatApproxTokens(size.approxTokens)}
-      </span>
-    </div>
-  )
-}
-
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
   headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation,
@@ -420,7 +401,7 @@ export function ComponentCatalogueHero({
   // a bare `<Button>Button</Button>` told people nothing, while the agent
   // context is what they act on. The snippet still ships inside the brief, in
   // Use it → Code and in Usage.
-  const [view, setView] = useState<'preview' | 'agent'>('preview')
+  const view = 'preview' as 'preview' | 'agent'
   const canvasRef = useRef<HTMLDivElement>(null)
   const appearance = appearanceProp ?? 'light'
   // One set of options for the tab and the button, so what is on screen is
@@ -460,7 +441,7 @@ export function ComponentCatalogueHero({
   const slots = ICON_SLOTS[def.key]
   // Built only while the tab is open: the brief resolves the whole payload.
   const agentMarkdown = useMemo(
-    () => (view === 'agent' || panel === 'context' ? buildContext(contextOpts) : ''),
+    () => (panel === 'context' ? buildContext(contextOpts) : ''),
     // `snippet` and `tokens` change the brief; `buildContext` is a fresh closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [view, panel, contextOpts, snippet, tokens],
@@ -492,12 +473,9 @@ export function ComponentCatalogueHero({
       <div className="rounded-xl border border-line overflow-hidden">
         <BlockChrome
           left={
-            <div className="flex items-center gap-2.5 min-w-0">
-              <ViewToggle view={view} onChange={setView} views={['preview', 'agent']} />
-              {view === 'agent' && (
-                <span className="text-caption font-mono text-fg-faint truncate">{contextFileName(def)}</span>
-              )}
-            </div>
+            // No tabs: the agent context lives in the right panel (the bar's
+            // Code icon) — a second copy as a tab here read as two places.
+            <span />
           }
         >
           <div className="flex items-center gap-1.5">
@@ -581,16 +559,10 @@ export function ComponentCatalogueHero({
               backLabel={inspecting ? selection : null}
             />
           </InspectorModeProvider>
-        ) : (
-          // The brief tracks the controls too: it carries the snippet for the
-          // variant on screen and the tokens that paint it.
-          <AgentContextPane markdown={agentMarkdown} />
-        )}
+        ) : null}
       </div>
       <p className="px-1 text-mini text-fg-faint">
-        {view === 'agent'
-          ? t('Paste this into Cursor, Claude Code or any agent. It names the real tokens and the Figma set.')
-          : inspecting
+        {inspecting
             ? t('Hover the component to see its borders and the tokens that paint it.')
             : t('Inspector off — the component responds to clicks and typing.')}
       </p>
@@ -643,15 +615,22 @@ export function ComponentCatalogueHero({
           back={backToHome}
           footer={
             <div className="flex items-center justify-between gap-2">
-              <span className="text-mini text-fg-faint">{formatApproxTokens(contextSize(agentMarkdown).approxTokens)}</span>
-              <AIContextButton
-                scope="component"
-                label="Copy context"
-                filters={{ build: buildContext, scope: 'all', fallbackAppearance: appearance, options: contextOpts, onOptionsChange: setContextOpts }}
-              />
+              <span className="text-mini text-fg-faint">
+                {formatApproxTokens(contextSize(agentMarkdown).approxTokens)} · {t('{n} lines', { n: contextSize(agentMarkdown).lines })}
+              </span>
+              {/* The filters are on screen above, so the button only copies:
+                  no chevron, no popover (it opened past the window's foot). */}
+              <AIContextButton scope="component" label="Copy context" markdown={() => agentMarkdown} />
             </div>
           }
         >
+          <div className="flex flex-col gap-3 border-b border-line px-4 py-3">
+            <div>
+              <p className="text-ui font-semibold text-fg">{t('Copy context for agents')}</p>
+              <p className="mt-0.5 text-caption text-fg-muted">{t('Pick what the agent needs. Less context, better answers.')}</p>
+            </div>
+            <ContextFilters opts={contextOpts} onChange={setContextOpts} />
+          </div>
           <pre className="whitespace-pre-wrap break-words px-4 py-3 font-mono text-caption leading-relaxed text-fg-muted">{agentMarkdown}</pre>
         </CanvasSidePanel>
       )}
