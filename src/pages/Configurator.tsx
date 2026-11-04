@@ -2206,6 +2206,20 @@ export default function Configurator() {
   let header: { Icon: ComponentType; title: string; subtitle: string; right?: ReactNode }
   let body: ReactNode
   let centerKey: string
+  /** Row 3, the colophon strip. Pinned under the workspace in the editor; a
+   *  reading page (About) takes it at the END of its own scroll instead, so
+   *  it reads as the page's footer rather than a fixed bar. */
+  let footerInPage = false
+  const shellFooter = (
+    <footer className={`flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line ${SHELL_CHROME}`}>
+      <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
+        {COPYRIGHT_LINE}
+      </span>
+      {/* Contact · Legal · Privacy · Source · MIT License — shared with the
+          phone / `/about` footer (`AboutScaffold`) so the two can't drift. */}
+      <FooterLinks className="h-full" />
+    </footer>
+  )
 
   if (exportMode === 'github') {
     header = { Icon: GitHubIcon, title: 'GitHub', subtitle: 'Version your design system in a repository.' }
@@ -2276,6 +2290,7 @@ export default function Configurator() {
     // `skipCenterHeader` note below) in favor of its own hero. StartIcon is
     // just a harmless placeholder to satisfy the type.
     header = { Icon: StartIcon, title: 'About', subtitle: '' }
+    footerInPage = true
     body = (
       <AboutHome
         onStart={() => {
@@ -2297,6 +2312,7 @@ export default function Configurator() {
         foundationCount={FOUNDATIONS.length}
         topInset={TOP_NAV_H}
         onScrolledChange={setAboutScrolled}
+        end={shellFooter}
       />
     )
     centerKey = 'about'
@@ -3302,17 +3318,9 @@ export default function Configurator() {
           links. The About TAB already carries the full story (how it works,
           changelog, legal). `bg-nav` keeps this
           strip on `--nav` with TopNav and the Themes library — the shell
-          frame. `--tab-bar` is the workspace level; `--app` is the page. */}
-      <footer className={`flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line ${SHELL_CHROME}`}>
-        <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
-          {COPYRIGHT_LINE}
-        </span>
-        {/* Contact · Legal · Privacy · Source · MIT License — shared with the
-            phone / `/about` footer (`AboutScaffold`) so the two can't drift.
-            Source used to be an icon in TopNav's global cluster; it's a
-            colophon link, so it lives on the attribution line. */}
-        <FooterLinks className="h-full" />
-      </footer>
+          frame. `--tab-bar` is the workspace level; `--app` is the page.
+          On About it moves into the page's scroll (`footerInPage`). */}
+      {!footerInPage && shellFooter}
 
       {/* Guided export — Source → Format → Export. TRANSVERSAL: reachable from
           TopNav regardless of `tab`/`exportMode`, so this modal overlay (its

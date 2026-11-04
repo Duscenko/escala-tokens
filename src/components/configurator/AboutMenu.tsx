@@ -559,6 +559,46 @@ function AboutShot({ shot, className, ratio }: {
 
 type AboutShotSpec = { file: string; size: [number, number]; alt: string }
 
+/** A short looping capture: `public/about/<file>.{webm,mp4}` + `<file>-poster.webp`,
+ *  composed square (it carries its own background, so it fills its card). */
+type AboutClipSpec = { clip: string; alt: string }
+
+const CLIPS = {
+  foundations: { clip: 'foundations', alt: 'A pointer opens Accent\'s twelve-step ramp in the Color panel, and the board turns into Accent\'s colour map, where the pointer follows it to the Content and Action groups' },
+} satisfies Record<string, AboutClipSpec>
+
+/** Plays only while on screen; with reduced motion it stays on its poster. */
+function AboutClip({ clip, className }: { clip: AboutClipSpec; className?: string }) {
+  const { t } = useI18n()
+  const reduceMotion = useReducedMotion() ?? false
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const video = ref.current
+    if (!video || reduceMotion) return
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) void video.play().catch(() => {})
+      else video.pause()
+    }, { threshold: 0.25 })
+    io.observe(video)
+    return () => io.disconnect()
+  }, [reduceMotion])
+  return (
+    <video
+      ref={ref}
+      className={className}
+      poster={`/about/${clip.clip}-poster.webp`}
+      muted
+      loop
+      playsInline
+      preload={reduceMotion ? 'none' : 'metadata'}
+      aria-label={t(clip.alt)}
+    >
+      <source src={`/about/${clip.clip}.webm`} type="video/webm" />
+      <source src={`/about/${clip.clip}.mp4`} type="video/mp4" />
+    </video>
+  )
+}
+
 /** Every screenshot the About page shows. `size` is the stored file's own
  *  pixel size (what `about:shots` prints); the alt text is the translatable
  *  description a screen reader gets in place of the picture. */
@@ -635,15 +675,15 @@ const statsItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
 }
 
-/** A small mono eyebrow chip — names a section without competing with its
- *  headline. Section numbers ("01 · Foundations") give the long page a spine. */
+/** A small accent-tinted chip — the hero's "For Figma, code, and your AI
+ *  agent" tag — naming a section without competing with its headline. Section numbers ("01 · Foundations") give the long page a spine. */
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
     // Plain concatenation, NOT `cn`: tailwind-merge reads the custom
     // `text-mini` size as a colour and drops it in favour of `text-fg-muted`
     // (same trap FooterLinks documents).
     <span
-      className={`inline-flex items-center rounded-md border border-line-strong bg-elevated/40 px-2 py-0.5 font-mono text-mini font-medium uppercase tracking-widest text-fg-muted ${className ?? ''}`}
+      className={`inline-flex items-center rounded-md bg-accent-ui/[0.1] px-2.5 py-1 text-body font-medium leading-none text-accent-ui ${className ?? ''}`}
     >
       {children}
     </span>
@@ -742,7 +782,7 @@ function WorkflowStep({ label, title, body, media, flip = false, action }: {
   label: string
   title: string
   body: string
-  media: AboutShotSpec
+  media: AboutShotSpec | AboutClipSpec
   flip?: boolean
   action?: ReactNode
 }) {
@@ -757,10 +797,14 @@ function WorkflowStep({ label, title, body, media, flip = false, action }: {
         {action && <div className="flex justify-end">{action}</div>}
       </div>
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-elevated md:aspect-square">
-        <AboutShot
-          shot={media}
-          className="absolute left-8 top-10 w-[112%] max-w-none rounded-lg shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)] lg:left-10 lg:top-12"
-        />
+        {'clip' in media ? (
+          <AboutClip clip={media} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <AboutShot
+            shot={media}
+            className="absolute left-8 top-10 w-[112%] max-w-none rounded-lg shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)] lg:left-10 lg:top-12"
+          />
+        )}
       </div>
     </div>
   )
@@ -885,7 +929,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
 export function AboutHome({
   onStart, onOpenDocsPage, onOpenComponents,
   foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
-  topInset, onScrolledChange,
+  topInset, onScrolledChange, end,
 }: {
   onStart: () => void
   /** Docs' focused pages — the SAME mapping TopNav's Docs menu uses
@@ -907,6 +951,10 @@ export function AboutHome({
    *  left the top, which shows the bar's hairline. */
   topInset?: number
   onScrolledChange?: (scrolled: boolean) => void
+  /** Rendered after the page's last band, inside the scroll: the shell's
+   *  colophon strip, so on a reading page it sits at the END of the page
+   *  rather than pinned to the viewport. */
+  end?: ReactNode
 }) {
   const { t } = useI18n()
   // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
@@ -1042,7 +1090,7 @@ export function AboutHome({
               label={t('01 · Foundations')}
               title={t('One accent in. A whole system out.')}
               body={t('Colour, type, radius and spacing from the same settings, checked for contrast in light and dark.')}
-              media={SHOTS.primitives}
+              media={CLIPS.foundations}
             />
             <WorkflowStep
               flip
@@ -1151,6 +1199,7 @@ export function AboutHome({
           <AboutFooter onStart={onStart} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
         </div>
       </div>
+      {end}
     </div>
   )
 }
