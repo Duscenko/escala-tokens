@@ -544,6 +544,8 @@ const es: Record<string, string> = {
   'Border': 'Borde',
   'Inspect tokens': 'Inspeccionar tokens',
   'Exit inspector': 'Salir del inspector',
+  'Component tools': 'Herramientas del componente',
+  'Component settings': 'Ajustes del componente',
   // Board tour (first run)
   'Getting started': 'Primeros pasos',
   'Skip tour': 'Saltar guía',
@@ -2454,6 +2456,8 @@ const fr: Record<string, string> = {
   'Border': 'Bordure',
   'Inspect tokens': 'Inspecter les tokens',
   'Exit inspector': 'Quitter l’inspecteur',
+  'Component tools': 'Outils du composant',
+  'Component settings': 'Réglages du composant',
   // Board tour (first run)
   'Getting started': 'Premiers pas',
   'Skip tour': 'Passer le guide',

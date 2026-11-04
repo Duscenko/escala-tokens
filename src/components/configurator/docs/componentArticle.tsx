@@ -14,7 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -27,6 +27,7 @@ import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { useContextOptions, type ContextOptions } from '../../ui/ContextControls'
 import { AIContextButton } from '../../ui/AIContextButton'
+import { InspectorPortal } from '../WorkspaceInspector'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -143,66 +144,165 @@ function writeInspectPref(on: boolean) {
 
 /** Inspector on / off. The name stays "Inspect" and `aria-pressed` carries
  *  the state, so a screen reader hears one answer, not two. */
-function InspectSwitch({ active, onToggle }: { active: boolean; onToggle: () => void }) {
-  const { t } = useI18n()
+type CanvasPanel = 'settings' | 'context'
+
+const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-faint transition-colors duration-150 ease-out hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
+const BAR_ICON_ON = 'text-fg bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)]'
+
+function SettingsGlyph() {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={active}
-      title={active
-        ? t('Turn the inspector off to use the component')
-        : t('Turn the inspector on to see the tokens that paint the component')}
-      className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium transition-colors duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui ${
-        active ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'
-      }`}
-    >
-      <InspectGlyph size={14} />
-      <span>{t('Inspect')}</span>
-      <span
-        aria-hidden
-        className={`h-1.5 w-1.5 rounded-full transition-colors duration-150 ${active ? 'bg-accent-ui' : 'bg-line-strong'}`}
-      />
-    </button>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
+      <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" />
+      <circle cx="10" cy="4.5" r="1.5" />
+      <circle cx="6" cy="11.5" r="1.5" />
+    </svg>
   )
 }
 
-/** Light · Dark for this canvas only. Chrome-painted, so it reads the same
- *  over a light and a dark stage. */
-function AppearanceSwitch({ value, onChange }: { value: ThemeAppearance; onChange: (v: ThemeAppearance) => void }) {
-  const { t } = useI18n()
-  const options: { key: ThemeAppearance; label: string }[] = [
-    { key: 'light', label: t('Light') },
-    { key: 'dark', label: t('Dark') },
-  ]
+function CodeGlyphSmall() {
   return (
-    <div
-      role="group"
-      aria-label={t('Preview appearance')}
-      data-inspect-exempt=""
-      className="absolute top-3 left-3 flex items-center gap-0.5 rounded-full border border-line bg-elevated/80 p-0.5 backdrop-blur-sm"
-    >
-      {options.map((o) => {
-        const on = value === o.key
-        const name = t('Preview in {appearance}', { appearance: o.label })
-        return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
+      <path d="m10.5 4.5 3.5 3.5-3.5 3.5" />
+    </svg>
+  )
+}
+
+/** The stage's tools, docked at its foot like the Board's toolbar (same black
+ *  well, same raised pill): Settings and Code open the right-hand panel,
+ *  Inspector arms the token inspector, then Light · Dark for this stage. One
+ *  bar instead of controls scattered over the canvas and the header. */
+function CanvasBar({
+  panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings,
+}: {
+  panel: CanvasPanel | null
+  onPanel: (p: CanvasPanel | null) => void
+  inspecting: boolean
+  onInspect: () => void
+  appearance: ThemeAppearance
+  onAppearance: (a: ThemeAppearance) => void
+  hasSettings: boolean
+}) {
+  const { t } = useI18n()
+  const toggle = (p: CanvasPanel) => onPanel(panel === p ? null : p)
+  const sep = <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />
+  return (
+    <div data-inspect-exempt="" className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center px-4">
+      <div
+        role="toolbar"
+        aria-label={t('Component tools')}
+        className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
+      >
+        {hasSettings && (
           <button
-            key={o.key}
             type="button"
-            onClick={() => onChange(o.key)}
-            aria-pressed={on}
-            aria-label={name}
-            title={name}
-            className={`flex h-6 items-center gap-1 rounded-full px-2 text-mini font-medium transition-colors duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-ui ${
-              on ? 'bg-surface text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
-            }`}
+            onClick={() => toggle('settings')}
+            aria-pressed={panel === 'settings'}
+            aria-label={t('Component settings')}
+            title={t('Component settings')}
+            className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : ''}`}
           >
-            <AppearanceGlyph kind={o.key} size={12} />
-            {on && <span aria-hidden>{o.label}</span>}
+            <SettingsGlyph />
           </button>
-        )
-      })}
+        )}
+        <button
+          type="button"
+          onClick={() => toggle('context')}
+          aria-pressed={panel === 'context'}
+          aria-label={t('Agent context')}
+          title={t('Agent context')}
+          className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : ''}`}
+        >
+          <CodeGlyphSmall />
+        </button>
+        {sep}
+        <button
+          type="button"
+          onClick={onInspect}
+          aria-pressed={inspecting}
+          aria-keyshortcuts={inspecting ? 'Escape' : undefined}
+          title={inspecting
+            ? t('Turn the inspector off to use the component')
+            : t('Turn the inspector on to see the tokens that paint the component')}
+          className={`flex h-7 flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-caption transition-[color,background-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+            inspecting
+              ? 'bg-accent-solid font-semibold text-accent-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)]'
+              : 'font-medium text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+          }`}
+        >
+          <InspectGlyph size={16} />
+          <span>{inspecting ? t('Exit inspector') : t('Inspector')}</span>
+        </button>
+        {sep}
+        <div role="group" aria-label={t('Preview appearance')} className="flex items-center gap-0.5">
+          {(['light', 'dark'] as const).map((a) => {
+            const name = t('Preview in {appearance}', { appearance: a === 'light' ? t('Light') : t('Dark') })
+            return (
+              <button
+                key={a}
+                type="button"
+                onClick={() => onAppearance(a)}
+                aria-pressed={appearance === a}
+                aria-label={name}
+                title={name}
+                className={`${BAR_ICON} ${appearance === a ? BAR_ICON_ON : ''}`}
+              >
+                <AppearanceGlyph kind={a} size={14} />
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
+  )
+}
+
+/** What the bar opens: a layer over the Components rail (the right panel),
+ *  like the Ship panel over the inspector. Back / ✕ / Esc closes it and the
+ *  component list is underneath again. */
+function CanvasSidePanel({ title, onClose, children, footer }: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+  footer?: ReactNode
+}) {
+  const { t } = useI18n()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <InspectorPortal>
+      <div role="region" aria-label={title} className="absolute inset-0 z-30 flex flex-col overflow-hidden bg-side-panel">
+        <div className="flex h-11 flex-shrink-0 items-center gap-2 border-b border-line px-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10 3.5 5.5 8l4.5 4.5" />
+            </svg>
+            {t('Components')}
+          </button>
+          <span className="ml-auto min-w-0 truncate pr-1 text-caption font-medium text-fg">{title}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('Close')}
+            title={t('Close')}
+            className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+              <path d="M4 4l8 8M12 4l-8 8" />
+            </svg>
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        {footer && <div className="flex-shrink-0 border-t border-line p-3">{footer}</div>}
+      </div>
+    </InspectorPortal>
   )
 }
 
@@ -281,6 +381,9 @@ export function ComponentCatalogueHero({
   // One set of options for the tab and the button, so what is on screen is
   // exactly what Copy context puts on the clipboard.
   const [contextOpts, setContextOpts] = useContextOptions('all', appearance)
+  // What the bar has open in the right panel (settings or the agent brief).
+  const [panel, setPanel] = useState<CanvasPanel | null>(null)
+  const closePanel = useCallback(() => setPanel(null), [])
   // The canvas can show the brand's other appearance without changing the
   // brand on screen: only this stage repaints, the rest of the page does not.
   const [canvasAppearance, setCanvasAppearance] = useState<ThemeAppearance>(appearance)
@@ -300,10 +403,10 @@ export function ComponentCatalogueHero({
   const slots = ICON_SLOTS[def.key]
   // Built only while the tab is open: the brief resolves the whole payload.
   const agentMarkdown = useMemo(
-    () => (view === 'agent' ? buildContext(contextOpts) : ''),
+    () => (view === 'agent' || panel === 'context' ? buildContext(contextOpts) : ''),
     // `snippet` and `tokens` change the brief; `buildContext` is a fresh closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [view, contextOpts, snippet, tokens],
+    [view, panel, contextOpts, snippet, tokens],
   )
   const Specimen = SPECIMENS[def.key]
   const variantCount = def.axes.reduce((n, a) => n * a.values.length, 1)
@@ -327,7 +430,7 @@ export function ComponentCatalogueHero({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex-1 min-w-0 flex flex-col gap-2">
       <div className="rounded-xl border border-line overflow-hidden">
         <BlockChrome
@@ -341,7 +444,6 @@ export function ComponentCatalogueHero({
           }
         >
           <div className="flex items-center gap-1.5">
-            {view === 'preview' && <InspectSwitch active={inspecting} onToggle={toggleInspecting} />}
             {headerTrailing ?? (
               <AIContextButton
                 scope="component"
@@ -379,7 +481,15 @@ export function ComponentCatalogueHero({
               )}
               {/* The stage paints the BRAND's appearance, not the site's. The
                   switch names which one is on screen and flips only this stage. */}
-              <AppearanceSwitch value={canvasAppearance} onChange={setCanvasAppearance} />
+              <CanvasBar
+                panel={panel}
+                onPanel={setPanel}
+                inspecting={inspecting}
+                onInspect={toggleInspecting}
+                appearance={canvasAppearance}
+                onAppearance={setCanvasAppearance}
+                hasSettings={hasControls}
+              />
               {variantCount > 1 && (
                 <span
                   data-inspect-exempt=""
@@ -414,9 +524,9 @@ export function ComponentCatalogueHero({
       </p>
       </div>
 
-      {hasControls && (
-        <div className="lg:w-60 flex-shrink-0">
-          <div className="rounded-xl border border-line bg-surface/40 px-4 py-2">
+      {hasControls && panel === 'settings' && (
+        <CanvasSidePanel title={t('Component settings')} onClose={closePanel}>
+          <div className="px-4 py-2">
             {def.axes.map((axis) => (
               <AxisControl
                 key={axis.name}
@@ -433,16 +543,30 @@ export function ComponentCatalogueHero({
               </>
             )}
           </div>
-          {slots ? (
-            <p className="text-mini text-fg-faint leading-relaxed px-1 pt-2">
-              {t('Icons come from')} <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.
-            </p>
-          ) : (
-            <p className="text-mini text-fg-faint leading-relaxed px-1 pt-2">
-              {t('Same axes as the Figma variant set the plugin generates.')}
-            </p>
-          )}
-        </div>
+          <p className="text-mini text-fg-faint leading-relaxed px-4 pb-4 pt-1">
+            {slots
+              ? <>{t('Icons come from')} <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.</>
+              : t('Same axes as the Figma variant set the plugin generates.')}
+          </p>
+        </CanvasSidePanel>
+      )}
+      {panel === 'context' && (
+        <CanvasSidePanel
+          title={t('Agent context')}
+          onClose={closePanel}
+          footer={
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-mini text-fg-faint">{formatApproxTokens(contextSize(agentMarkdown).approxTokens)}</span>
+              <AIContextButton
+                scope="component"
+                label="Copy context"
+                filters={{ build: buildContext, scope: 'all', fallbackAppearance: appearance, options: contextOpts, onOptionsChange: setContextOpts }}
+              />
+            </div>
+          }
+        >
+          <pre className="whitespace-pre-wrap break-words px-4 py-3 font-mono text-caption leading-relaxed text-fg-muted">{agentMarkdown}</pre>
+        </CanvasSidePanel>
       )}
     </div>
   )

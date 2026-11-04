@@ -61,7 +61,7 @@ export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
  * 4.25:1 on the light track — under AA for a 12px label. 75 % ink clears it in
  * both appearances while still reading as the quieter state.
  */
-export const SEGMENT_SELECTED_FILL = 'bg-app shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-fg/[0.16] dark:shadow-none'
+export const SEGMENT_SELECTED_FILL = 'bg-app shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-transparent dark:bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
 /** The selected segment's ink alone — for controls whose fill is the sliding
  *  `SegmentHighlight` (`ui/SegmentHighlight.tsx`) rather than a static class. */
 export const SEGMENT_ACTIVE_INK = 'font-semibold text-fg'

@@ -17,7 +17,7 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { ComponentArticle } from './docs/componentArticle'
-import { ComponentAvatarStrip, ComponentsIndex } from './docs/ComponentAvatars'
+import { ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
   previewTheme = 'light', active, onSelect, onInspectRole, search = '',
@@ -36,7 +36,6 @@ export default function ComponentsView({
   const themeKind = useDesignStore((s) => s.themeKinds[previewTheme])
   const appearance: ThemeAppearance = themeKind === 'dark' ? 'dark' : 'light'
   const articleRef = useRef<HTMLDivElement>(null)
-  const [stripCollapsed, setStripCollapsed] = useState(false)
 
   const def = active ?? COMPONENTS[0]
 
@@ -65,24 +64,10 @@ export default function ComponentsView({
           completes, and that never resolved when this pattern was first tried
           here — the view re-rendered with the new page while the DOM kept the
           old one indefinitely. The shell's own center swap avoids it for the
-          same reason. The avatar row stays outside that remount so switching
-          components in the same category does not rebuild the series. */}
+          same reason. */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
-        <ComponentAvatarStrip
-          category={def.category}
-          activeKey={def.key}
-          tokens={tokens}
-          onSelect={onSelect}
-          collapsed={stripCollapsed}
-        />
         <div
           ref={articleRef}
-          // Hysteresis: fold past 40px, unfold under 8px, so the row's own
-          // height change can't flip it back and forth at the threshold.
-          onScroll={(e) => {
-            const top = e.currentTarget.scrollTop
-            setStripCollapsed((was) => (was ? top > 8 : top > 40))
-          }}
           className="flex-1 min-h-0 overflow-y-auto"
         >
           <motion.div
