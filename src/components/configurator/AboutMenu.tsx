@@ -542,8 +542,17 @@ function AboutShot({ shot, className, ratio }: {
 }) {
   const { t } = useI18n()
   const [w, h] = shot.size
+  // Lazy captures used to pop in at full strength the frame they decoded.
+  // They fade in instead; one already in the cache (`complete` at mount)
+  // shows at once, so nothing flickers on a revisit.
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true)
+  }, [])
   return (
     <img
+      ref={imgRef}
       src={`/about/${shot.file}.webp`}
       alt={t(shot.alt)}
       width={w}
@@ -551,7 +560,13 @@ function AboutShot({ shot, className, ratio }: {
       loading="lazy"
       decoding="async"
       draggable={false}
-      className={cn('block w-full select-none rounded-xl border border-line object-cover object-top', className)}
+      onLoad={() => setLoaded(true)}
+      onError={() => setLoaded(true)}
+      className={cn(
+        'block w-full select-none rounded-xl border border-line object-cover object-top transition-opacity duration-[400ms] ease-[var(--ease-out-quint)] motion-reduce:transition-none',
+        loaded ? 'opacity-100' : 'opacity-0',
+        className,
+      )}
       style={{ aspectRatio: ratio ?? `${w} / ${h}` }}
     />
   )
@@ -745,27 +760,65 @@ function Stat({ value, label, delay = 0 }: { value: number; label: string; delay
 
 /** `</>` — the "Code" tile's mark. Kept local (matches `MailIcon`/`GlobeIcon`
  *  above): one glyph, no reason to pull in an icon package for it. */
-/** Hero stagger — the ONE choreographed moment this page gets (see the
- *  `animate` note on `AboutHome` below): mark → eyebrow → headline → CTA,
- *  each fading/rising in ~70ms after the last. `hidden`/`show` are picked up
- *  automatically by any `motion.*` child that doesn't declare its own
- *  initial/animate, so nothing but the outer container needs to know about
- *  reduced motion. */
-const heroContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07, delayChildren: 0.02 } },
-}
-const heroItem = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+/** The hero's choreography — the ONE orchestrated moment this page gets, in
+ *  reading order: eyebrow → headline (its colour sweep starts with it) → CTA
+ *  once the sweep is past the middle → the demo video, which then plays when
+ *  the sweep ends (`DemoVideo hold`). Measured before: the stagger was 70ms
+ *  apart, so eyebrow, CTA and the 930px video were all fully on screen at
+ *  ~300ms while the headline was still sweeping in from nothing — the
+ *  message arrived LAST. Explicit delays, not `staggerChildren`, because the
+ *  CTA has to wait for the sweep, not for its neighbour. Seconds. */
+const HERO_AT = { eyebrow: 0, headline: 0.08, sweep: 0.12, cta: 0.6, video: 0.75 }
+/** One sweep pass of the headline (DiaTextReveal's default is 1.5s). */
+const HERO_SWEEP_S = 1.2
+
+function heroEnter(delay: number, reduceMotion: boolean, y = 10) {
+  return reduceMotion
+    ? { initial: false as const }
+    : {
+        initial: { opacity: 0, y },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.5, ease: EASE, delay },
+      }
 }
 
-/** The stats row's own small stagger — starts while the hero's is still
- *  settling (`delayChildren`), so the two read as one continuous beat
- *  rather than a second, disconnected animation kicking in after a pause. */
+/** Below the fold, sections enter ONCE as they come into view: a short rise
+ *  and fade, nothing else (Credible · Precise · Quiet — no scale, no
+ *  stagger per word). Only section openers and the workflow steps use it, so
+ *  the page reads as a few deliberate beats, not everything twitching. */
+const revealItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+}
+
+function Reveal({ children, className, stagger, amount = 0.25 }: {
+  children: ReactNode
+  className?: string
+  /** Set to stagger `motion` children that use `revealItem` (seconds). */
+  stagger?: number
+  amount?: number
+}) {
+  const reduceMotion = useReducedMotion() ?? false
+  return (
+    <motion.div
+      className={className}
+      initial={reduceMotion ? false : 'hidden'}
+      whileInView="show"
+      viewport={{ once: true, amount }}
+      variants={stagger != null ? { hidden: {}, show: { transition: { staggerChildren: stagger } } } : revealItem}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+/** The stats row's own small stagger. It runs when the row comes into view
+ *  (it sits under the demo video, below the fold on a laptop) — it used to
+ *  run on mount, so the fade was over before anyone scrolled to it and only
+ *  the count-up was ever seen. */
 const statsContainer = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.25 } },
+  show: { transition: { staggerChildren: 0.08 } },
 }
 const statsItem = {
   hidden: { opacity: 0, y: 8 },
@@ -791,11 +844,11 @@ function Eyebrow({ children, className }: { children: ReactNode; className?: str
  *  as the hero: a light, tight headline, not a bold one. */
 function SectionHeader({ eyebrow, title, lead, id }: { eyebrow?: string; title: string; lead: string; id?: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
+    <Reveal className="flex flex-col items-center gap-3 text-center" amount={0.6}>
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       <h2 id={id} className="max-w-[640px] text-balance text-[32px] font-normal leading-[1.1] tracking-[-0.02em] text-fg">{title}</h2>
       <p className="about-copy max-w-[520px] text-balance">{lead}</p>
-    </div>
+    </Reveal>
   )
 }
 
@@ -885,9 +938,11 @@ function WorkflowStep({ label, title, body, media, flip = false, action, footer 
   /** Left-aligned content at the foot of the words card (the agent logos). */
   footer?: ReactNode
 }) {
+  // The two cards enter as the step scrolls in, words first, picture 80ms
+  // behind — the picture is what the words point at.
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className={cn('flex flex-col justify-between gap-8 rounded-lg bg-elevated/40 px-8 py-8 md:aspect-square lg:px-10 lg:py-9', flip && 'md:order-2')}>
+    <Reveal className="grid gap-4 md:grid-cols-2" stagger={0.08} amount={0.2}>
+      <motion.div variants={revealItem} className={cn('flex flex-col justify-between gap-8 rounded-lg bg-elevated/40 px-8 py-8 md:aspect-square lg:px-10 lg:py-9', flip && 'md:order-2')}>
         <div className="flex flex-col gap-5">
           <p className="text-ui font-medium text-accent-ui">{label}</p>
           <h3 className="text-balance text-[28px] font-normal leading-[1.08] tracking-[-0.02em] text-fg lg:text-[32px]">{title}</h3>
@@ -895,8 +950,8 @@ function WorkflowStep({ label, title, body, media, flip = false, action, footer 
         </div>
         {footer}
         {action && <div className="flex justify-end">{action}</div>}
-      </div>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-elevated md:aspect-square">
+      </motion.div>
+      <motion.div variants={revealItem} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-elevated md:aspect-square">
         {'clip' in media ? (
           <AboutClip clip={media} className="absolute inset-0 h-full w-full object-cover" />
         ) : 'cycle' in media ? (
@@ -911,8 +966,8 @@ function WorkflowStep({ label, title, body, media, flip = false, action, footer 
             className="absolute left-8 top-10 w-[112%] max-w-none rounded-lg shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)] lg:left-10 lg:top-12"
           />
         )}
-      </div>
-    </div>
+      </motion.div>
+    </Reveal>
   )
 }
 
@@ -1134,25 +1189,22 @@ export function AboutHome({
     >
       <div className="mx-auto flex max-w-[1080px] flex-col">
         {/* ── Hero — the one staggered entrance this page gets. ── */}
-        <motion.div
-          initial={reduceMotion ? false : 'hidden'}
-          animate="show"
-          variants={heroContainer}
-          className="flex flex-col items-center gap-4 px-6 pt-20 pb-12 text-center"
-        >
-          <motion.div variants={heroItem}>
+        <div className="flex flex-col items-center gap-4 px-6 pt-20 pb-12 text-center">
+          <motion.div {...heroEnter(HERO_AT.eyebrow, reduceMotion)}>
             {/* The hero's eyebrow is a soft accent pill in sentence case — the
                 page's section eyebrows keep the mono caption (`Eyebrow`). */}
             <span className="inline-flex items-center rounded-md bg-accent-ui/[0.1] px-2.5 py-1 text-body font-medium leading-none text-accent-ui">
               {t('For Figma, code, and your AI agent')}
             </span>
           </motion.div>
-          <motion.div variants={heroItem} className="flex max-w-[560px] flex-col">
+          <motion.div {...heroEnter(HERO_AT.headline, reduceMotion, 6)} className="flex max-w-[560px] flex-col">
             <h1 className="text-balance">
               <DiaTextReveal
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
+                duration={HERO_SWEEP_S}
+                delay={HERO_AT.sweep}
                 className="text-[30px] font-normal leading-[1.12] tracking-[-0.02em] sm:text-[36px]"
                 onComplete={() => setHeadlineDone(true)}
               />
@@ -1161,11 +1213,11 @@ export function AboutHome({
           {/* On a phone the demo sits in the hero, right above "Try it here":
               the workspace first, then the door to the playground. */}
           {isPhone && (
-            <motion.div variants={heroItem} className="mt-2 w-full">
+            <motion.div {...heroEnter(HERO_AT.cta, reduceMotion)} className="mt-2 w-full">
               <DemoVideo tapToPlay={videoTapToPlay} />
             </motion.div>
           )}
-          <motion.div variants={heroItem} className="mt-3 flex flex-wrap items-center justify-center gap-3">
+          <motion.div {...heroEnter(HERO_AT.cta + (isPhone ? 0.08 : 0), reduceMotion)} className="mt-3 flex flex-wrap items-center justify-center gap-3">
             {/* A phone can't open the editor, so its CTA goes to the one thing
                 it can do: the playground just below. */}
             <RainbowButton
@@ -1179,7 +1231,7 @@ export function AboutHome({
               <ArrowGlyph />
             </RainbowButton>
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* ── The phone generator — PHONE ONLY, and first after the hero: on
             a phone it is the one live piece of the workspace a visitor can use
@@ -1200,17 +1252,20 @@ export function AboutHome({
         )}
 
         {!isPhone && (
-          <div className="px-6">
-            {/* Held on its first frame until the headline's sweep ends: two
-                motions at once split the eye; one after the other reads. */}
+          // Enters (fade + a short rise) as the sweep nears its end, held on its
+          // first frame; it PLAYS when the sweep ends. Two motions at once split
+          // the eye; one after the other reads. It used to pop in at full size
+          // at first paint and sit frozen for 1.5s, reading as a still image.
+          <motion.div {...heroEnter(HERO_AT.video, reduceMotion, 16)} className="px-6">
             <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} hold={!headlineDone} />
-          </div>
+          </motion.div>
         )}
 
         {/* ── Proof — real counts, imported, never typed ── */}
         <motion.div
           initial={reduceMotion ? false : 'hidden'}
-          animate="show"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.5 }}
           variants={statsContainer}
           className="mx-6 grid grid-cols-2 gap-6 border-b border-line pb-14 sm:grid-cols-3"
         >
@@ -1323,14 +1378,29 @@ export function AboutHome({
           </div>
         </section>
 
-        {/* ── Closing CTA — a background slot behind the copy ── */}
+        {/* ── Closing CTA — the page's one coloured break: a blue → violet
+            gradient behind the copy, after a long run of neutral bands. The
+            picture is the same in both appearances, so the card's content is
+            scoped `dark` (white ink, the white primary button) whatever the
+            chrome is — otherwise light mode would put dark text on a dark
+            image. A soft scrim keeps the copy legible over the pale corner. ── */}
         <div className="px-6 py-16">
-          <div className="relative overflow-hidden rounded-3xl border border-line">
-            {/* Background slot (image or video, `absolute inset-0 h-full w-full
-                object-cover`) is hidden until the media exists. */}
-            <div className="relative flex flex-col items-center gap-4 bg-elevated/20 px-6 py-16 text-center">
-              <Eyebrow>{t('Get started')}</Eyebrow>
-              <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-fg">
+          <Reveal className="relative overflow-hidden rounded-3xl bg-[#1a0b6b]" amount={0.4}>
+            <img
+              src="/about/cta-gradient.webp"
+              alt=""
+              aria-hidden
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="absolute inset-0 h-full w-full select-none object-cover"
+            />
+            <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,6,40,0.45),rgba(10,6,40,0.1)_70%)]" />
+            <div className="dark relative flex flex-col items-center gap-4 px-6 py-16 text-center">
+              <span className="inline-flex items-center rounded-md bg-white/15 px-2.5 py-1 text-body font-medium leading-none text-white backdrop-blur-sm">
+                {t('Get started')}
+              </span>
+              <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-white">
                 {OPEN_BETA
                   ? t('Your own token system. Everything is open during the beta.')
                   : t('Your own token system. Free to build. Pro for the UI Kit and more than 10 modes.')}
@@ -1347,7 +1417,7 @@ export function AboutHome({
                 <a href={PRICING_PATH} className={secondaryCta}>{t(OPEN_BETA ? 'About the open beta' : 'See pricing')}</a>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
 
