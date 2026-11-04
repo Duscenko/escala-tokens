@@ -79,7 +79,7 @@ export default function ComponentsView({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18 }}
-            className="px-6 lg:px-8 py-6"
+            className="pb-6"
           >
             <ComponentArticle
               def={def}

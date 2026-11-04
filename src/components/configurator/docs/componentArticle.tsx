@@ -282,8 +282,21 @@ function ZoomGlyph({ plus }: { plus?: boolean }) {
   )
 }
 
-/** Stage zoom levels, the − / + buttons step through them. */
-const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.25, 1.5, 2]
+/** The stage's 100 %: the component drawn at 2/3 of its true pixel size.
+ *  Why 2/3 and not 1:1 — the stage is a view of the system INSIDE the
+ *  platform's chrome, and at true size the specimen outweighs everything
+ *  around it: a default control (`size-control`, 40px) towered over the
+ *  tool bar's 31.5px buttons beneath it (h-7 at the 18px root), and the
+ *  Overview wrapped onto four rows. At 2/3 that control measures 26.7px, a
+ *  step UNDER the chrome, and the Overview fits in two rows (measured at
+ *  1440px). It is also the Board's family: the Board
+ *  draws the same components at 156/260 = 0.6; a single-component close-up
+ *  is one step larger (0.67), not a different scale. True size is still one
+ *  click away: 150 % = 1:1 pixels (2/3 × 1.5 = 1). */
+const STAGE_BASE = 2 / 3
+/** Zoom levels RELATIVE to `STAGE_BASE` — what the bar shows and steps through.
+ *  150 % is the true pixel size. */
+const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 
 function CanvasBar({
   panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings, zoom, onZoom,
@@ -630,6 +643,7 @@ export function ComponentCatalogueHero({
   const [overview, setOverview] = useState(() => hasOverview(def.key))
   // The stage's scale (the bar's − / +): a wide Overview can be shrunk to fit,
   // a small control enlarged to read its details.
+  // Relative to `STAGE_BASE` (1 = the stage's 100 %, 2/3 of true size).
   const [zoom, setZoom] = useState(1)
   // Copy for Figma. The element is the brand on screen only (its own themes),
   // as the variant the settings show; the whole system is the Figma page's
@@ -672,7 +686,7 @@ export function ComponentCatalogueHero({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex-1 min-w-0 flex flex-col gap-2">
-      <div className="rounded-xl border border-line overflow-clip">
+      <div className="border-b border-line overflow-clip">
         <BlockChrome
           left={
             // The stage's name, not a tab: the agent context lives in the right
@@ -729,11 +743,11 @@ export function ComponentCatalogueHero({
                 {/* `zoom`, not a transform: the stage keeps the scaled size in
                     the layout, so it grows and shrinks with it. */}
                 {overview ? (
-                  <div className="relative" style={{ zoom }}>
+                  <div className="relative" style={{ zoom: zoom * STAGE_BASE }}>
                     <OverviewStage def={def} tokens={canvasTokens} prefix={PHOSPHOR_LIBRARY.key} />
                   </div>
                 ) : Specimen ? (
-                  <div className="relative" style={{ zoom }}>
+                  <div className="relative" style={{ zoom: zoom * STAGE_BASE }}>
                     <TokenInspector component={def.key} variant={values}>
                       <Specimen t={canvasTokens} v={values} icons={icons} />
                     </TokenInspector>
@@ -783,7 +797,7 @@ export function ComponentCatalogueHero({
           </InspectorModeProvider>
         ) : null}
       </div>
-      <p className="px-1 text-mini text-fg-faint">
+      <p className="px-6 lg:px-8 text-mini text-fg-faint">
         {inspecting
             ? t('Hover the component to see its borders and the tokens that paint it.')
             : t('Inspector off — the component responds to clicks and typing.')}
@@ -1138,7 +1152,7 @@ export function ComponentArticle({
 
       {/* The stage above spans the card; the prose below keeps a reading
           width, aligned with the stage's left edge. */}
-      <div className="flex max-w-4xl flex-col gap-8">
+      <div className="flex max-w-4xl flex-col gap-8 px-6 lg:px-8">
       {/* The description follows the stage: the page opens on the component
           itself, the prose reads as its caption. Carries the TOC anchor. */}
       <Prose
