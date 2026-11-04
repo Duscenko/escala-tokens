@@ -2421,13 +2421,6 @@ export default function Configurator() {
             value={previewTheme}
             onChange={changePreviewTheme}
           />
-          <button
-            type="button"
-            onClick={() => selectFoundation('color')}
-            className="h-8 rounded-lg border border-line bg-app px-2.5 text-body font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            {t('Edit Color')}
-          </button>
         </div>
       ),
     }
@@ -2888,8 +2881,12 @@ export default function Configurator() {
                       <button
                         type="button"
                         onClick={openComponentsIndex}
-                        className="inline-flex h-7 flex-shrink-0 items-center rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                        aria-label={t('Back to all components')}
+                        className="inline-flex h-7 flex-shrink-0 items-center gap-1 rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                       >
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M7.5 2.5 4 6l3.5 3.5" />
+                        </svg>
                         {t('Components')}
                       </button>
                       <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>

@@ -37,7 +37,7 @@ import { InspectGlyph } from '../../ui/icons'
 import { AppearanceGlyph } from '../colorControls'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
-  DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
+  DocTitle, DocSection, SectionHeading, BlockChrome,
   ViewToggle, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
   type TocEntry,
 } from './blocks'
@@ -382,7 +382,10 @@ export function ComponentCatalogueHero({
   // exactly what Copy context puts on the clipboard.
   const [contextOpts, setContextOpts] = useContextOptions('all', appearance)
   // What the bar has open in the right panel (settings or the agent brief).
-  const [panel, setPanel] = useState<CanvasPanel | null>(null)
+  // Settings open by default: working on a component means its controls are
+  // beside it. The catalogue is one step back (the panel's ‹ Components, or
+  // the header breadcrumb).
+  const [panel, setPanel] = useState<CanvasPanel | null>(() => (def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null))
   const closePanel = useCallback(() => setPanel(null), [])
   // The canvas can show the brand's other appearance without changing the
   // brand on screen: only this stage repaints, the rest of the page does not.
@@ -537,7 +540,6 @@ export function ComponentCatalogueHero({
             ))}
             {slots && (
               <>
-                {def.axes.length > 0 && <div className="border-t border-line my-1" />}
                 <OptionSwitch label={t('Leading icon')} checked={leadingIcon} onChange={onLeadingIconChange} />
                 <OptionSwitch label={t('Trailing icon')} checked={trailingIcon} onChange={onTrailingIconChange} />
               </>
@@ -863,12 +865,6 @@ export function ComponentArticle({
 
   return (
     <div className="flex flex-col gap-8">
-      <DocHeader
-        section={t('Components')}
-        kind={t(def.category)}
-        title={def.label}
-        actions={null}
-      />
 
       {/* `def.label` is NOT translated: it is the plugin's own component name
           and the key a designer matches against the Figma variant set. Its

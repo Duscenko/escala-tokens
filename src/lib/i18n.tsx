@@ -546,6 +546,7 @@ const es: Record<string, string> = {
   'Exit inspector': 'Salir del inspector',
   'Component tools': 'Herramientas del componente',
   'Component settings': 'Ajustes del componente',
+  'Back to all components': 'Volver a todos los componentes',
   // Board tour (first run)
   'Getting started': 'Primeros pasos',
   'Skip tour': 'Saltar guía',
@@ -2458,6 +2459,7 @@ const fr: Record<string, string> = {
   'Exit inspector': 'Quitter l’inspecteur',
   'Component tools': 'Outils du composant',
   'Component settings': 'Réglages du composant',
+  'Back to all components': 'Retour à tous les composants',
   // Board tour (first run)
   'Getting started': 'Premiers pas',
   'Skip tour': 'Passer le guide',
