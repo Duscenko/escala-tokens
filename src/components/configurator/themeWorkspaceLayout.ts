@@ -142,3 +142,9 @@ export const discloseChip = (open: boolean) =>
       ? 'text-fg-muted group-hover:text-fg'
       : 'bg-elevated text-fg'
   }`
+
+/** The soft grey button surface (Save brand): an ink-tinted gradient, so it
+ *  reads as a grey control in BOTH appearances — a step above a dark page and
+ *  a step below a light one — with a hairline highlight on top. Surface and
+ *  feedback only: callers add their own size, radius and type. */
+export const SOFT_BUTTON_SURFACE = 'border border-transparent bg-[linear-gradient(164deg,color-mix(in_srgb,var(--fg)_10%,transparent)_18%,color-mix(in_srgb,var(--fg)_5%,transparent)_71%)] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[filter,transform] duration-150 ease-[var(--ease-out-quint)] hover:brightness-125 active:scale-[0.97] motion-reduce:active:scale-100'

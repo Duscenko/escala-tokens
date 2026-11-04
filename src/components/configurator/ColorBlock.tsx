@@ -259,11 +259,16 @@ function SaturationCanvas({ hex, disabled, onPreview, onCommit }: {
       onKeyUp={(event) => {
         if (!disabled && event.key.startsWith('Arrow')) land(hex, hsv)
       }}
-      className={`relative h-36 w-full touch-none overflow-hidden rounded-lg ring-1 ring-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 ${disabled ? 'opacity-50' : 'cursor-crosshair'}`}
-      style={{ background: chroma.hsv(hsv.h, 1, 1).hex() }}
+      // ONE element paints the square: hue, white and black are layered
+      // backgrounds of the same box. As three boxes, each clipped by the
+      // rounded corner on its own, the hue under them bled through the
+      // anti-aliased edge as a bright rim. The inset hairline is the panel's
+      // own line, so the edge sits like the fields below it.
+      className={`relative h-36 w-full touch-none overflow-hidden rounded-lg shadow-[inset_0_0_0_1px_var(--line)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 ${disabled ? 'opacity-50' : 'cursor-crosshair'}`}
+      style={{
+        background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ${chroma.hsv(hsv.h, 1, 1).hex()}`,
+      }}
     >
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #fff, transparent)' }} />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #000, transparent)' }} />
       <span
         className={THUMB_CLASS}
         style={{ left: along(hsv.s), top: along(1 - hsv.v), transform: THUMB_CENTER, background: hsvHex(hsv) }}

@@ -8,7 +8,7 @@ import { myThemeKeys } from '../../lib/themeLibrary'
 import { redoEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
-import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_SHELL, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_SHELL, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLevel, type PaletteLevel } from '../../lib/radixPalettes'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
@@ -47,7 +47,7 @@ export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center 
 /** Save on the status line: a firm edge over a faint fill of the ink itself
  *  (reads on any panel grey), so it stands out from the Ship doors at rest
  *  without a loud fill. Hover deepens the fill; a press settles it. */
-const SAVE_OUTLINE_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent bg-[linear-gradient(164deg,color-mix(in_srgb,var(--fg)_10%,transparent)_18%,color-mix(in_srgb,var(--fg)_5%,transparent)_71%)] px-3 text-caption font-medium text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[filter,transform] duration-150 ease-[var(--ease-out-quint)] hover:brightness-125 active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+const SAVE_OUTLINE_BUTTON = `flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-caption font-medium ${SOFT_BUTTON_SURFACE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`
 
 /** The door whose file is on screen: the inspector's raised selected fill
  *  with a firmer edge, so "pressed" reads without a second accent colour. */

@@ -34,6 +34,7 @@ import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/le
 import { PRICING_PATH } from '../../lib/entitlement'
 import { accountsEnabled, authProviders, supabase, type AuthProvider } from '../../lib/supabase'
 import { forgetLoginReturn, pathForNext, pendingNext, readLoginSearch, rememberReturn, workspaceReturnContext } from '../../lib/loginReturn'
+import { SOFT_BUTTON_SURFACE } from '../configurator/themeWorkspaceLayout'
 
 const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
   figma: '/docs/figma',
@@ -374,7 +375,7 @@ export function LoginPage() {
                               type="button"
                               onClick={() => void social(p)}
                               aria-label={p === 'google' ? t('Continue with Google') : t('Continue with GitHub')}
-                              className={`flex h-12 items-center justify-center gap-2.5 raised-control rounded-2xl border border-transparent text-ui font-medium text-fg transition-[background-color,box-shadow] ${FOCUS}`}
+                              className={`flex h-12 items-center justify-center gap-2.5 rounded-2xl text-ui font-medium ${SOFT_BUTTON_SURFACE} ${FOCUS}`}
                             >
                               {p === 'google' ? <GoogleMark /> : <GithubMark />}
                               {p === 'google' ? 'Google' : 'GitHub'}
