@@ -84,6 +84,12 @@ export interface ThemeStylePreset {
   description: string
   detail: string
   accent: string
+  /**
+   * The accent's OWN dark anchor, when the style sets Dark apart from Light
+   * (Core: #874fff / #905cff). Omit and Dark reads `accent`, as before. It
+   * lands on the minted family's `darkBase`, so Variables shows both.
+   */
+  darkAccent?: string
   preferredAppearance: 'light' | 'dark'
   neutralTint: NeutralTint
   /**
@@ -486,7 +492,9 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     shortLabel: 'Core',
     description: 'Quiet, precise, content-first.',
     detail: 'A dependable baseline for SaaS, dashboards, and corporate tools.',
-    accent: accent('Blue Dark'),
+    // Escala's own violet: #874fff in Light, a step lighter in Dark.
+    accent: '#874fff',
+    darkAccent: '#905cff',
     // Matches the adopted Core theme the designer iterated (dark-first).
     preferredAppearance: 'dark',
     neutralTint: 'subtle',

@@ -161,7 +161,7 @@ export function stylePreviewBrandRamp(
   const alg = store.colorAlgorithm
   const shift = store.contrastShift
   return appearance === 'dark'
-    ? generateFamilyDarkScale(preset.accent, alg, shift, h.pageDark)
+    ? generateFamilyDarkScale(preset.darkAccent ?? preset.accent, alg, shift, h.pageDark)
     : generateColorScale(preset.accent, alg, shift, h.pageLight)
 }
 
@@ -213,7 +213,7 @@ export function stylePreviewStore(
     successColor: st.success,
     infoColor: st.info,
     primaryScale: generateColorScale(preset.accent, alg, shift, light),
-    primaryDarkScale: generateFamilyDarkScale(preset.accent, alg, shift, dark),
+    primaryDarkScale: generateFamilyDarkScale(preset.darkAccent ?? preset.accent, alg, shift, dark),
     grayLightScale: generateLightNeutralScale(h.neutral, alg, shift, light, tint),
     grayDarkScale: generateDarkColorScale(h.neutral, alg, shift, dark, tint),
     errorScale: generateColorScale(st.error, alg, shift, light),

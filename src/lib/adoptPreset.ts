@@ -14,6 +14,7 @@
 // both editable and honest.
 
 import { mintTheme, slotsFromAccent } from './themeMint'
+import { applyScopedAccentColor } from './colorActions'
 import { useDesignStore } from '../store/useDesignStore'
 import { loadGoogleFont } from './fonts'
 import { resetThemeSemantics, withStyleSemantics } from './stylePreviewOverlay'
@@ -92,6 +93,11 @@ export function adoptPreset(
   // semantic layer). They land as ordinary `architectureOverrides`, so the
   // Semantics table shows them as edits and "Reset to schema" hands each row
   // back to the solver.
+  // A style that sets Dark apart from Light re-anchors the dark ramp on its
+  // own seed (the minted family's `darkBase`); the light side stays as minted.
+  if (preset.darkAccent && preset.darkAccent.toLowerCase() !== preset.accent.toLowerCase()) {
+    applyScopedAccentColor(preset.accent, false, result.key, preset.darkAccent)
+  }
   if (preset.semantics) {
     useDesignStore.setState({
       architectureOverrides: withStyleSemantics(
@@ -260,6 +266,7 @@ export function resetThemeColorToOrigin(
     ),
   })
   applyAccent(preset.accent, true, themeKey)
+  if (preset.darkAccent) applyScopedAccentColor(preset.accent, false, themeKey, preset.darkAccent)
 }
 
 // ── A phone remix over the guest's automatic brand ───────────────────────────
