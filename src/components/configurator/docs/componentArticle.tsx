@@ -41,7 +41,7 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
-import { InspectGlyph } from '../../ui/icons'
+import { InspectGlyph, SparkleCircleIcon } from '../../ui/icons'
 import { OVERVIEWS, OVERVIEW_VALUE, hasOverview } from './componentOverviews'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
@@ -692,17 +692,22 @@ export function ComponentCatalogueHero({
           <div className="flex items-center gap-1.5">
             {!headerTrailing && figmaCopy && <FigmaCopyButton label={def.label} build={buildFigma} />}
             {headerTrailing ?? (
-              <AIContextButton
-                scope="component"
-                label="Copy context"
-                filters={{
-                  build: buildContext,
-                  scope: 'all',
-                  fallbackAppearance: appearance,
-                  options: contextOpts,
-                  onOptionsChange: setContextOpts,
-                }}
-              />
+              // Agent context lives in the right panel (filters, preview and
+              // Copy there): this icon opens it, the same door as the bar's
+              // code icon — not a second copy button with its own options.
+              <HintTip label={t('Agent context')}>
+                <button
+                  type="button"
+                  onClick={() => setPanel(panel === 'context' ? homePanel : 'context')}
+                  aria-pressed={panel === 'context'}
+                  aria-label={t('Agent context')}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                    panel === 'context' ? 'border-line-strong bg-surface text-fg' : 'border-line text-fg-muted hover:bg-surface hover:text-fg'
+                  }`}
+                >
+                  <SparkleCircleIcon size={15} />
+                </button>
+              </HintTip>
             )}
           </div>
         </BlockChrome>
@@ -1131,6 +1136,9 @@ export function ComponentArticle({
         figmaCopy={figmaCopy}
       />
 
+      {/* The stage above spans the card; the prose below keeps a reading
+          width, aligned with the stage's left edge. */}
+      <div className="flex max-w-4xl flex-col gap-8">
       {/* The description follows the stage: the page opens on the component
           itself, the prose reads as its caption. Carries the TOC anchor. */}
       <Prose
@@ -1181,6 +1189,7 @@ export function ComponentArticle({
         next={next && { key: next.key, label: next.label }}
         onOpen={(key) => { const c = COMPONENTS.find((x) => x.key === key); if (c) onOpen(c) }}
       />
+      </div>
     </div>
   )
 }
