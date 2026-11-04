@@ -694,6 +694,17 @@ const SHOTS = {
 /** The Figma plugin's own screens. NOT made by `about:shots` (it drives the
  *  web app, not Figma): captured in the plugin and exported to 1200x980 webp
  *  by hand. Replace them when the plugin's screens change. */
+/** Docs pages of a real brand (Color · Font · Motion), captured by hand from
+ *  the System menu's Docs and cropped to the page card alone — no app
+ *  chrome, like the plugin's screens (1200x980 webp, the plugin's frame). */
+const DOCS_CYCLE: AboutCycleSpec = {
+  cycle: [
+    { file: 'docs-color', size: [1200, 980], alt: 'The Color docs page: each Action role with the primitive and hex it resolves to in light and dark' },
+    { file: 'docs-font', size: [1200, 980], alt: 'The Font docs page: every type role, the scale step it points at and its resolved value' },
+    { file: 'docs-motion', size: [1200, 980], alt: 'The Motion docs page: the eight easings, each drawn from its own value and playable' },
+  ],
+}
+
 const PLUGIN_CYCLE: AboutCycleSpec = {
   cycle: [
     { file: 'plugin-system', size: [1200, 980], alt: 'The Escala plugin in Figma: the design system with its collections, Export and Add brand' },
@@ -1269,7 +1280,7 @@ export function AboutHome({
               label={t('05 · Docs')}
               title={t('Documentation written from your own values.')}
               body={t('Every foundation gets a reference page built from your ramps, roles and scales. Change a token and its page changes with it, so the spec never goes stale.')}
-              media={SHOTS.docs}
+              media={DOCS_CYCLE}
             />
           </div>
         </section>
@@ -1365,9 +1376,9 @@ export function AboutHome({
  * The workspace demo clip. Shared by the About tab's hero and `AboutScaffold`
  * (the mobile notice + the `/about` route) so the ratio below is stated once.
  *
- * The frame is sized to the clip's real ratio (1920x896, measured via
+ * The frame is sized to the clip's real ratio (1920x890, measured via
  * ffprobe) rather than a 16:9 guess. The clip is re-encoded from the source
- * recording (H.264, CRF 28, no audio, faststart: ~1.7 MB for 22 s at 60 fps).
+ * recording (H.264, CRF 28, no audio, faststart; a new file name per recording, so no cache serves the old one).
  * Autoplay requires muted + playsInline (Safari/iOS policy).
  *
  * `tapToPlay` is what `AboutScaffold` needs, and NOT a style preference:
@@ -1403,10 +1414,10 @@ export function DemoVideo({ className, tapToPlay, hold = false }: {
   return (
     <video
       ref={videoRef}
-      src="/video/escala-tokens-demo.mp4"
+      src="/video/escala-tokens-demo-v2.mp4"
       className={cn('w-full h-auto rounded-2xl object-cover', className)}
-      style={{ aspectRatio: '1920 / 896' }}
-      poster={tapToPlay ? '/video/escala-tokens-demo-frame.jpg' : undefined}
+      style={{ aspectRatio: '1920 / 890' }}
+      poster={tapToPlay ? '/video/escala-tokens-demo-v2-frame.jpg' : undefined}
       preload={tapToPlay ? 'none' : undefined}
       autoPlay={!tapToPlay && !hold}
       controls={tapToPlay}
