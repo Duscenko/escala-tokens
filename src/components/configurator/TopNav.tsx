@@ -339,6 +339,11 @@ const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] =
 const COMPACT_MENU_ITEM =
   'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
+// The compact menu's groups: a rule, 8px of air under it, rows 2px apart.
+const MENU_GROUP = 'mt-1.5 flex flex-col gap-0.5 border-t border-line pt-2'
+// A group's caption: 6px above its first row (plus the group's 2px gap).
+const MENU_CAPTION = 'px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint'
+
 // Global icon actions — same gray shell as `ThemeViewSwitcher`.
 const GLOBAL_ICON_ACTION = `grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
@@ -475,10 +480,17 @@ function TopNavCompactMenu({
         anchorRef={triggerRef}
         align="right"
         menuAriaLabel={t('Navigation menu')}
-        className="w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+        className="w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-2 shadow-xl"
         style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
       >
+          {/* Spacing (polish): rows sit 2px apart, every group opens 8px under
+              its rule with its caption 6px above the first row, and the panel
+              has 8px of inset. Rows used to touch and captions sat 4px off the
+              line. The primary group carries no icons: one row with a mark
+              (Generator) pushed its label out of line with About and
+              Components. */}
           <div className={mobileOnlySections}>
+          <div className="flex flex-col gap-0.5">
           {NAV_ITEMS.filter(({ key }) => key !== 'docs').map(({ key, label }) => {
             const on = nav === key
             return (
@@ -490,15 +502,15 @@ function TopNavCompactMenu({
                 onClick={() => { onNav(key); close() }}
                 className={`${COMPACT_MENU_ITEM} ${on ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
               >
-                {key === 'variables' && <GeneratorMark active={on} />}
                 {t(label)}
               </button>
             )
           })}
-          <div className="mt-1 border-t border-line pt-1" role="group" aria-label={t('Docs')}>
-            <p className="px-2.5 py-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Docs')}</p>
+          </div>
+          <div className={MENU_GROUP} role="group" aria-label={t('Docs')}>
+            <p className={MENU_CAPTION}>{t('Docs')}</p>
             {DOCS_MENU_PAGES.map((page, index) => (
-              <div key={page.key} className={index === 2 ? 'mt-0.5 border-t border-line pt-0.5' : ''}>
+              <div key={page.key} className={index === 2 ? 'mt-1.5 border-t border-line pt-2' : ''}>
                 <button
                   type="button"
                   role="menuitem"
@@ -511,8 +523,8 @@ function TopNavCompactMenu({
               </div>
             ))}
           </div>
-          <div className="mt-1 border-t border-line pt-1" role="group" aria-label={t('Language')}>
-            <p className="px-2.5 py-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Language')}</p>
+          <div className={MENU_GROUP} role="group" aria-label={t('Language')}>
+            <p className={MENU_CAPTION}>{t('Language')}</p>
             {LOCALES.map((option) => (
               <button
                 key={option.key}
@@ -531,9 +543,9 @@ function TopNavCompactMenu({
           {/* The Generator (`always`) carries the sun/moon in the bar itself, where
               the Home door used to be, so ☰ does not repeat it there. */}
           {!always && (
-          <div className="min-[1080px]:pt-0 max-[1079px]:mt-1 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-1.5 pb-0.5" role="group" aria-label={t('Appearance')}>
-            <p className="px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Appearance')}</p>
-            <div className="grid grid-cols-2 gap-1 px-0.5">
+          <div className="flex flex-col gap-0.5 max-[1079px]:mt-1.5 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-2" role="group" aria-label={t('Appearance')}>
+            <p className={MENU_CAPTION}>{t('Appearance')}</p>
+            <div className="grid grid-cols-2 gap-1">
               {(['light', 'dark'] as const).map((appearance) => {
                 const selected = chromeAppearance === appearance
                 return (
@@ -677,7 +689,10 @@ export default function TopNav({
           {!railCollapsed && (
             <div className="flex items-center gap-1.5 whitespace-nowrap leading-none">
               <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>
-              <span className="rounded-md bg-accent-ui/[0.1] px-1.5 py-1 text-mini font-medium leading-none text-accent-ui">Beta</span>
+              {/* 10px on the header's grey band: plain --accent-ui measured
+                  4.38:1 there in light. Pulled 20% toward --fg (darker in
+                  light, lighter in dark) so it clears AA in both. */}
+              <span className="rounded-md bg-accent-ui/[0.1] px-1.5 py-1 text-mini font-medium leading-none text-[color-mix(in_oklab,var(--accent-ui)_80%,var(--fg))]">Beta</span>
               {(hamburgerNav || navInMenu) && (
                 <>
                   <span className="mx-0.5 text-mini font-light leading-none text-fg-faint" aria-hidden>|</span>

@@ -269,9 +269,12 @@
   @media (max-resolution: 1.99dppx) {
     --line-width: 1px;
   }
-  /* Fallback until the shell derives it from the primary scale. */
-  --accent-ui: #7f56d9;
-  --accent-solid: #7f56d9;
+  /* The platform accent as the shell resolves it (`Configurator`: chromeAccent
+     / brandSolidPair on PLATFORM_ACCENT's light ramp). The shell overwrites
+     these inline on <html>; pages OUTSIDE it (/about, the phone screen,
+     public docs) read these. Dark has its own values below (:root.dark). */
+  --accent-ui: #7838f9;
+  --accent-solid: #7838f9;
   --accent-ink: #ffffff;
   --inverse-action: #18181b;
   --inverse-action-hover: #27272a;
@@ -445,6 +448,19 @@ header[data-top-nav] .bg-chip-rest:hover {
 }
 .scrollbar-always::-webkit-scrollbar-thumb {
   background: var(--line-strong);
+}
+
+/* Off-shell dark accent. The shell solves `--accent-ui` per chrome
+   appearance (dark ramp, 4.5:1 against the dark page) and writes it inline;
+   pages outside it kept the LIGHT fallback in dark, so the About eyebrow,
+   the "01 · Foundations" labels and the Beta chip read 3.4–3.7:1 on /about
+   and the phone screen. These are the shell's own dark values. Scoped to
+   the ROOT on purpose: a `.dark` subtree inside the light shell (a preview
+   card painted dark) keeps the shell's accent, as before. */
+:root.dark {
+  --accent-ui: #cec5ff;
+  --accent-solid: #7838f9;
+  --accent-ink: #ffffff;
 }
 
 .dark {
