@@ -547,6 +547,7 @@ const es: Record<string, string> = {
   'Component tools': 'Herramientas del componente',
   'Component settings': 'Ajustes del componente',
   'Back to all components': 'Volver a todos los componentes',
+  'Edit theme': 'Editar tema',
   // Board tour (first run)
   'Getting started': 'Primeros pasos',
   'Skip tour': 'Saltar guía',
@@ -2460,6 +2461,7 @@ const fr: Record<string, string> = {
   'Component tools': 'Outils du composant',
   'Component settings': 'Réglages du composant',
   'Back to all components': 'Retour à tous les composants',
+  'Edit theme': 'Modifier le thème',
   // Board tour (first run)
   'Getting started': 'Premiers pas',
   'Skip tour': 'Passer le guide',

@@ -20,7 +20,7 @@ import { ComponentArticle } from './docs/componentArticle'
 import { ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, search = '',
+  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '',
 }: {
   previewTheme?: string
   /** null = the catalogue index (every component as a card). */
@@ -30,6 +30,8 @@ export default function ComponentsView({
   onSelect: (c: ComponentDef) => void
   /** A role named on the open component. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
+  /** "Go to advanced edition" from the Theme panel: Variables on that foundation. */
+  onOpenFoundation?: (key: string) => void
   /** Header node the article's "Copy context to Agents" portals into. */
 }) {
   const tokens = usePreviewTokens(previewTheme)
@@ -84,6 +86,7 @@ export default function ComponentsView({
               appearance={appearance}
               previewTheme={previewTheme}
               onInspectRole={onInspectRole}
+              onOpenFoundation={onOpenFoundation}
             />
           </motion.div>
         </div>

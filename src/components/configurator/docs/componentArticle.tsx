@@ -28,6 +28,8 @@ import { useDesignStore } from '../../../store/useDesignStore'
 import { useContextOptions, type ContextOptions } from '../../ui/ContextControls'
 import { AIContextButton } from '../../ui/AIContextButton'
 import { InspectorPortal } from '../WorkspaceInspector'
+import SemanticTokenDrawer from '../SemanticTokenGroups'
+import ThemeQuickSettingsRail, { type QuickPanelFoundation } from '../ThemeQuickSettingsRail'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -144,13 +146,24 @@ function writeInspectPref(on: boolean) {
 
 /** Inspector on / off. The name stays "Inspect" and `aria-pressed` carries
  *  the state, so a screen reader hears one answer, not two. */
-type CanvasPanel = 'settings' | 'context'
+type CanvasPanel = 'theme' | 'settings' | 'context'
 
 const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
 // Pressed: full white glyph on the raised pill, so "on" can't be mistaken
 // for a hover. Off: faint, warming on hover. Never both colours at once.
 const BAR_ICON_ON = 'text-white bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
 const BAR_ICON_OFF = 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+
+function PaletteGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 1.75a6.25 6.25 0 1 0 0 12.5c.9 0 1.35-.6 1.35-1.25 0-.55-.35-.9-.35-1.4 0-.6.5-1.1 1.1-1.1h1.3a2.8 2.8 0 0 0 2.8-2.8C14.2 4.4 11.4 1.75 8 1.75Z" />
+      <circle cx="4.9" cy="7.3" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="6.9" cy="4.7" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="10.1" cy="4.9" r=".9" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
 
 function SettingsGlyph() {
   return (
@@ -187,7 +200,10 @@ function CanvasBar({
   hasSettings: boolean
 }) {
   const { t } = useI18n()
-  const toggle = (p: CanvasPanel) => onPanel(panel === p ? null : p)
+  // Settings is home: the other panels toggle back to it, and Settings itself
+  // only ever opens (a component without settings falls back to the list).
+  const home: CanvasPanel | null = hasSettings ? 'settings' : null
+  const toggle = (p: CanvasPanel) => onPanel(p === 'settings' ? 'settings' : panel === p ? home : p)
   const sep = <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />
   return (
     <div data-inspect-exempt="" className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center px-4">
@@ -196,6 +212,17 @@ function CanvasBar({
         aria-label={t('Component tools')}
         className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
       >
+        <button
+          type="button"
+          onClick={() => toggle('theme')}
+          aria-pressed={panel === 'theme'}
+          aria-label={t('Edit theme')}
+          title={t('Edit theme')}
+          className={`${BAR_ICON} ${panel === 'theme' ? BAR_ICON_ON : BAR_ICON_OFF}`}
+        >
+          <PaletteGlyph />
+        </button>
+        {sep}
         {hasSettings && (
           <button
             type="button"
@@ -260,53 +287,60 @@ function CanvasBar({
   )
 }
 
-/** What the bar opens: a layer over the Components rail (the right panel),
- *  like the Ship panel over the inspector. Back / ✕ / Esc closes it and the
- *  component list is underneath again. */
-function CanvasSidePanel({ title, onClose, children, footer }: {
+/** What the bar opens: a layer over the Components rail. Component settings
+ *  is HOME — the panel you see and control the element from — so it has no
+ *  way out of its own; Theme and Agent context return to it (‹ back, ✕, Esc). */
+function CanvasSidePanel({ title, back, children, footer }: {
   title: string
-  onClose: () => void
+  /** Where ‹ / ✕ / Esc land. Omit for the home panel (no back, no close). */
+  back?: { label: string; onBack: () => void }
   children: ReactNode
   footer?: ReactNode
 }) {
   const { t } = useI18n()
+  const onBack = back?.onBack
   useEffect(() => {
+    if (!onBack) return
     // Esc with a pinned token list open closes only that list (the inspector
-    // handles it); the settings underneath stay.
+    // handles it); the panel underneath stays.
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       if (document.querySelector('[data-inspector-pin]')) return
-      onClose()
+      onBack()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onBack])
   return (
     <InspectorPortal>
       <div role="region" aria-label={title} className="absolute inset-0 z-[5] flex flex-col overflow-hidden bg-side-panel">
-        <div className="flex h-11 flex-shrink-0 items-center gap-2 border-b border-line px-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M10 3.5 5.5 8l4.5 4.5" />
-            </svg>
-            {t('Components')}
-          </button>
-          <span className="ml-auto min-w-0 truncate pr-1 text-caption font-medium text-fg">{title}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('Close')}
-            title={t('Close')}
-            className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
-              <path d="M4 4l8 8M12 4l-8 8" />
-            </svg>
-          </button>
+        <div className={`flex h-11 flex-shrink-0 items-center gap-2 border-b border-line ${back ? 'px-2' : 'px-4'}`}>
+          {back && (
+            <button
+              type="button"
+              onClick={back.onBack}
+              className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M10 3.5 5.5 8l4.5 4.5" />
+              </svg>
+              <span className="truncate">{back.label}</span>
+            </button>
+          )}
+          <span className={`min-w-0 truncate text-caption font-medium text-fg ${back ? 'ml-auto pr-1' : ''}`}>{title}</span>
+          {back && (
+            <button
+              type="button"
+              onClick={back.onBack}
+              aria-label={t('Close')}
+              title={t('Close')}
+              className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+          )}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
         {footer && <div className="flex-shrink-0 border-t border-line p-3">{footer}</div>}
@@ -352,7 +386,7 @@ function AgentContextPane({ markdown }: { markdown: string }) {
 
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext,
+  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -378,6 +412,8 @@ export function ComponentCatalogueHero({
   /** The agent brief for this page, cut to the chosen options. The panel's
    *  Agent context tab SHOWS it and its Copy context button copies it. */
   buildContext: (opts: ContextOptions) => string
+  /** The Theme panel's "Go to advanced edition": Variables on that foundation. */
+  onOpenFoundation?: (key: string) => void
 }) {
   const { t } = useI18n()
   // Preview · Agent context. There is no Code tab: owner's call (2026-11-04),
@@ -394,8 +430,17 @@ export function ComponentCatalogueHero({
   // Settings open by default: working on a component means its controls are
   // beside it. The catalogue is one step back (the panel's ‹ Components, or
   // the header breadcrumb).
+  // The token being edited from the inspector's list, and what was pinned.
+  const [editing, setEditing] = useState<{ id: string; css: string; appearance: ThemeAppearance } | null>(null)
+  const [selection, setSelection] = useState<string | null>(null)
+  // The Theme panel's open foundation row (Color, Font, Radius…).
+  const [quickPanel, setQuickPanel] = useState<QuickPanelFoundation>('color')
   const [panel, setPanel] = useState<CanvasPanel | null>(() => (def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null))
-  const closePanel = useCallback(() => setPanel(null), [])
+  const homePanel: CanvasPanel | null = def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null
+  const closePanel = useCallback(() => setPanel(homePanel), [homePanel])
+  const backToHome = homePanel
+    ? { label: t('Component settings'), onBack: closePanel }
+    : { label: t('Components'), onBack: closePanel }
   // The canvas can show the brand's other appearance without changing the
   // brand on screen: only this stage repaints, the rest of the page does not.
   const [canvasAppearance, setCanvasAppearance] = useState<ThemeAppearance>(appearance)
@@ -516,9 +561,24 @@ export function ComponentCatalogueHero({
               rootRef={canvasRef}
               tokensByAppearance={{ light: canvasTokens, dark: canvasTokens }}
               defaultAppearance={canvasAppearance}
-              onPick={(roleId) => onInspectRole?.(roleId)}
+              // A row edits the token HERE (Token Details over the right
+              // panel, its ramp beside the component), never by leaving for
+              // Variables — that lost the component page. Variables stays one
+              // explicit link away (the drawer's "Open in table").
+              onPick={(roleId, css, a) => setEditing({ id: roleId, css, appearance: a })}
               onOpenTable={onInspectRole}
+              editing={editing != null}
+              onSelectionChange={setSelection}
               onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
+            />
+            <SemanticTokenDrawer
+              previewTheme={previewTheme ?? 'light'}
+              previewAppearance={editing?.appearance ?? canvasAppearance}
+              tokenId={editing?.id ?? null}
+              inspectedCss={editing?.css ?? null}
+              onClose={() => setEditing(null)}
+              onOpenInVariables={onInspectRole}
+              backLabel={inspecting ? selection : null}
             />
           </InspectorModeProvider>
         ) : (
@@ -537,7 +597,7 @@ export function ComponentCatalogueHero({
       </div>
 
       {hasControls && panel === 'settings' && (
-        <CanvasSidePanel title={t('Component settings')} onClose={closePanel}>
+        <CanvasSidePanel title={t('Component settings')}>
           <div className="px-4 py-2">
             {def.axes.map((axis) => (
               <AxisControl
@@ -561,10 +621,26 @@ export function ComponentCatalogueHero({
           </p>
         </CanvasSidePanel>
       )}
+      {panel === 'theme' && (
+        // Quick edition of the brand on screen, the Board's own rail, so a
+        // colour, font or radius can change without leaving the component.
+        <CanvasSidePanel title={t('Edit theme')} back={backToHome}>
+          <ThemeQuickSettingsRail
+            embed
+            previewTheme={previewTheme ?? 'light'}
+            previewAppearance={canvasAppearance}
+            colorAppearance={canvasAppearance}
+            onColorAppearanceChange={setCanvasAppearance}
+            activePanel={quickPanel}
+            onSelectPanel={setQuickPanel}
+            onOpenAdvanced={(key) => onOpenFoundation?.(key)}
+          />
+        </CanvasSidePanel>
+      )}
       {panel === 'context' && (
         <CanvasSidePanel
           title={t('Agent context')}
-          onClose={closePanel}
+          back={backToHome}
           footer={
             <div className="flex items-center justify-between gap-2">
               <span className="text-mini text-fg-faint">{formatApproxTokens(contextSize(agentMarkdown).approxTokens)}</span>
@@ -822,8 +898,10 @@ function componentContext(
 // ── The page ─────────────────────────────────────────────────────────────────
 
 export function ComponentArticle({
-  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light',
+  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light', onOpenFoundation,
 }: {
+  /** The Theme panel's "Go to advanced edition". */
+  onOpenFoundation?: (key: string) => void
   def: ComponentDef
   tokens: PreviewTokens
   onOpen: (c: ComponentDef) => void
@@ -900,6 +978,7 @@ export function ComponentArticle({
         onInspectRole={onInspectRole}
         previewTheme={previewTheme}
         buildContext={buildContext}
+        onOpenFoundation={onOpenFoundation}
       />
 
       {/* Use it — Figma · Code · the agent brief, same as a foundation page.

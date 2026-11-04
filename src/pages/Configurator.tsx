@@ -2430,6 +2430,7 @@ export default function Configurator() {
         active={activeComponent}
         onSelect={selectComponent}
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
+        onOpenFoundation={selectFoundation}
         search={componentSearch}
       />
     )
