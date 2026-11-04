@@ -559,6 +559,81 @@ function AboutShot({ shot, className, ratio }: {
 
 type AboutShotSpec = { file: string; size: [number, number]; alt: string }
 
+/** A few captures shown in turn, crossfading in place (the Figma plugin's
+ *  screens). Same size each, so the frame never moves between them. */
+type AboutCycleSpec = { cycle: AboutShotSpec[] }
+
+/** How long each capture stays before the next fades in, and the fade. */
+const CYCLE_HOLD_MS = 3200
+const CYCLE_FADE_S = 0.6
+
+/** The captures of a cycle stacked in one frame; one is visible at a time.
+ *  Advances only while on screen, and not at all under reduced motion (the
+ *  first capture stays). Dots under it name where you are and jump on click. */
+function AboutShotCycle({ cycle, className, frameClassName }: {
+  cycle: AboutShotSpec[]
+  /** The card-filling wrapper (the dots sit at its foot). */
+  className?: string
+  /** Where the captures sit inside it. */
+  frameClassName?: string
+}) {
+  const { t } = useI18n()
+  const reduceMotion = useReducedMotion() ?? false
+  const [index, setIndex] = useState(0)
+  const [visible, setVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.25 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  useEffect(() => {
+    if (reduceMotion || !visible || cycle.length < 2) return
+    const id = window.setTimeout(() => setIndex((i) => (i + 1) % cycle.length), CYCLE_HOLD_MS)
+    return () => window.clearTimeout(id)
+  }, [index, visible, reduceMotion, cycle.length])
+  const [w, h] = cycle[0].size
+  return (
+    <div ref={ref} className={className}>
+      <div className={cn('relative', frameClassName)} style={{ aspectRatio: `${w} / ${h}` }}>
+        {cycle.map((shot, i) => (
+          <motion.img
+            key={shot.file}
+            src={`/about/${shot.file}.webp`}
+            alt={i === index ? t(shot.alt) : ''}
+            aria-hidden={i === index ? undefined : true}
+            width={w}
+            height={h}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            initial={false}
+            animate={{ opacity: i === index ? 1 : 0 }}
+            transition={{ duration: reduceMotion ? 0 : CYCLE_FADE_S, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 block h-full w-full select-none rounded-lg border border-line object-cover object-top"
+          />
+        ))}
+      </div>
+      {cycle.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-app/70 px-2.5 py-2 shadow-sm backdrop-blur">
+          {cycle.map((shot, i) => (
+            <button
+              key={shot.file}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={t(shot.alt)}
+              aria-current={i === index || undefined}
+              className={cn('h-1.5 rounded-full transition-[width,background-color] duration-300 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50', i === index ? 'w-5 bg-fg/60' : 'w-1.5 bg-fg/20 hover:bg-fg/40')}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** A short looping capture: `public/about/<file>.{webm,mp4}` + `<file>-poster.webp`,
  *  composed square (it carries its own background, so it fills its card). */
 type AboutClipSpec = { clip: string; alt: string }
@@ -615,6 +690,17 @@ const SHOTS = {
   code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the brand\'s agent context, with its CSS file beside it' },
   figma: { file: 'figma', size: [1360, 850], alt: 'The Figma page: the agent context to copy, and the brands, themes and viewports it carries' },
 } satisfies Record<string, AboutShotSpec>
+
+/** The Figma plugin's own screens. NOT made by `about:shots` (it drives the
+ *  web app, not Figma): captured in the plugin and exported to 1200x980 webp
+ *  by hand. Replace them when the plugin's screens change. */
+const PLUGIN_CYCLE: AboutCycleSpec = {
+  cycle: [
+    { file: 'plugin-system', size: [1200, 980], alt: 'The Escala plugin in Figma: the design system with its collections, Export and Add brand' },
+    { file: 'plugin-variables', size: [1200, 980], alt: 'The plugin\'s Variables list: every role with the primitive it points at' },
+    { file: 'plugin-token', size: [1200, 980], alt: 'Token Details in the plugin: a role\'s value per theme, its contrast and a one-click fix' },
+  ],
+}
 
 /** One number in the stats row, real counts, imported/derived, never typed
  *  by hand (see the callers below). `NumberTicker` (magicui) drives the
@@ -782,7 +868,7 @@ function WorkflowStep({ label, title, body, media, flip = false, action, footer 
   label: string
   title: string
   body: string
-  media: AboutShotSpec | AboutClipSpec
+  media: AboutShotSpec | AboutClipSpec | AboutCycleSpec
   flip?: boolean
   action?: ReactNode
   /** Left-aligned content at the foot of the words card (the agent logos). */
@@ -802,6 +888,12 @@ function WorkflowStep({ label, title, body, media, flip = false, action, footer 
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-elevated md:aspect-square">
         {'clip' in media ? (
           <AboutClip clip={media} className="absolute inset-0 h-full w-full object-cover" />
+        ) : 'cycle' in media ? (
+          <AboutShotCycle
+            cycle={media.cycle}
+            className="absolute inset-0"
+            frameClassName="absolute left-8 top-10 w-[112%] max-w-none rounded-lg shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)] lg:left-10 lg:top-12"
+          />
         ) : (
           <AboutShot
             shot={media}
@@ -1170,7 +1262,7 @@ export function AboutHome({
               label={t('04 · Figma plugin')}
               title={t('Your whole system, built inside Figma.')}
               body={t('Open the Escala plugin, paste your context and press Import into this file. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per brand and Desktop, Tablet and Mobile for every length.')}
-              media={SHOTS.figma}
+              media={PLUGIN_CYCLE}
               action={<StepLink href={FIGMA_PLUGIN_COMMUNITY}>{t('Get the plugin')}</StepLink>}
             />
             <WorkflowStep
