@@ -16,12 +16,14 @@ import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { ComponentArticle } from './docs/componentArticle'
+import { ComponentArticle, type FigmaCopyScope } from './docs/componentArticle'
 import { ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '',
+  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '', figmaCopy,
 }: {
+  /** What Copy for Figma ships (the Figma page's File & modes). */
+  figmaCopy?: FigmaCopyScope
   previewTheme?: string
   /** null = the catalogue index (every component as a card). */
   active: ComponentDef | null
@@ -87,6 +89,7 @@ export default function ComponentsView({
               previewTheme={previewTheme}
               onInspectRole={onInspectRole}
               onOpenFoundation={onOpenFoundation}
+              figmaCopy={figmaCopy}
             />
           </motion.div>
         </div>

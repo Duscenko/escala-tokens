@@ -130,7 +130,7 @@ export function BrandThemesPicker({ value, onChange, lead, onLead, label = true,
                   <motion.span
                     layoutId={group}
                     aria-hidden
-                    className="absolute inset-0 rounded-md bg-fg/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_2px_rgba(0,0,0,0.4)]"
+                    className="absolute inset-0 rounded-lg bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     transition={reduceMotion ? { duration: 0 } : { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   />
                 )}

@@ -1,3 +1,4 @@
+import { PhIcon } from '../ui/PhIcon'
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -46,7 +47,7 @@ export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center 
 /** Save on the status line: a firm edge over a faint fill of the ink itself
  *  (reads on any panel grey), so it stands out from the Ship doors at rest
  *  without a loud fill. Hover deepens the fill; a press settles it. */
-const SAVE_OUTLINE_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line-strong bg-fg/[0.06] px-3 text-caption font-semibold text-fg transition-[background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.1] active:scale-[0.97] active:bg-fg/[0.13] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+const SAVE_OUTLINE_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent bg-[linear-gradient(164deg,color-mix(in_srgb,var(--fg)_10%,transparent)_18%,color-mix(in_srgb,var(--fg)_5%,transparent)_71%)] px-3 text-caption font-medium text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[filter,transform] duration-150 ease-[var(--ease-out-quint)] hover:brightness-125 active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
 /** The door whose file is on screen: the inspector's raised selected fill
  *  with a firmer edge, so "pressed" reads without a second accent colour. */
@@ -99,7 +100,7 @@ export function ShipRow({ ship, active }: {
         </button>
         {ship.github && (
           <HintTip label={t('Push to GitHub')}>
-            <button type="button" onClick={ship.github} aria-label={t('Push to GitHub')} className={`${SHIP_BUTTON} !w-8 !flex-none !px-0`}>
+            <button type="button" onClick={ship.github} aria-label={t('Push to GitHub')} className={`${SHIP_BUTTON} !w-9 !flex-none !px-0`}>
               <GitHubGlyph size={14} />
             </button>
           </HintTip>
@@ -749,7 +750,7 @@ export default function ThemeSaveBar({
     // `[&&]:!flex-none` beats the inspector slot's `[&>*]:!flex-1` (which
     // stretches a portaled panel): as a direct slot child (Variables) the bar
     // must stay its own height, pinned under the scrolling nav.
-    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
+    <div className={`flex flex-shrink-0 [&&]:!flex-none flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-fg/[0.025]`}>
       {statusOnly ? (
         // A signed-in draft keeps its Save on the line; otherwise the usual
         // status (a guest's "Not saved · Save with an account", or the account's).
@@ -873,15 +874,10 @@ export function UnsavedNotice({ onSave, onDiscard }: {
         aria-expanded={open}
         aria-haspopup="dialog"
         title={t('Not saved')}
-        className="flex min-w-0 items-center gap-1.5 rounded text-caption font-medium text-status-warning transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className="flex min-w-0 items-center gap-1.5 rounded text-caption text-status-warning transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >
-        <span aria-hidden className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-warning-solid" />
+        <PhIcon id="alert" size={14} />
         <span className="truncate">{t('Not saved')}</span>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden className="flex-shrink-0">
-          <circle cx="8" cy="8" r="6.25" />
-          <path d="M8 7.25v3.5" />
-          <circle cx="8" cy="5" r="0.5" fill="currentColor" />
-        </svg>
       </button>
       {/* The warning carries its own way out, not only behind the ⓘ. */}
       {onDiscard && (
@@ -984,7 +980,7 @@ export function ThemeSetupBar({ themeKey }: { themeKey: string }) {
     burstConfetti(finishRef.current, [tk.brandSolid, tk.brandSolid, tk.successColor ?? '', tk.warningColor ?? '', tk.infoColor ?? '', tk.errorColor])
   }
   return (
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-fg/[0.025]`}>
       <div className="flex items-center gap-2">
         <span className="text-caption font-semibold text-fg">{t('Step {n} of {total}', { n: step + 1, total: SETUP_STEPS.length })}</span>
         <span className="flex flex-1 gap-1" aria-hidden>
@@ -1062,7 +1058,7 @@ export function CreateStudioFooter({
   ) : null
   return (
     // Same chrome as a saved brand's footer (ThemeSaveBar), not `bg-app`.
-    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-transparent`}>
+    <div className={`flex flex-shrink-0 flex-col gap-2.5 border-t border-line p-[var(--inspector-inset)] bg-fg/[0.025]`}>
       {error && <p role="alert" className="text-caption text-status-danger">{error}</p>}
       {committed && ship ? (
         // The SAME layout as a draft's footer in the editor (ThemeSaveBar):

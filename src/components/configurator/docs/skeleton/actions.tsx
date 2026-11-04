@@ -47,7 +47,7 @@ export function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenPro
             {loading && spinner}
             {!loading && icons?.leading && <PreviewIcon prefix={icons.prefix} concept={leadConcept} size={iconPx} />}
             <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
-            {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />}
+            {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={icons.trailingConcept ?? slots.trailing} size={iconPx} />}
           </>
         )}
       </SkButton>

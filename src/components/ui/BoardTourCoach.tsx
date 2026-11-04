@@ -29,13 +29,36 @@ const W = 280
 
 type Rect = { left: number; top: number; width: number; height: number }
 
-/** The first visible element for a step — the Ship row also renders on the
- *  Code tab, and a hidden copy has an empty rect. */
+/** When a step's control is on screen but COVERED (the pinned inspector sits
+ *  over the Ship row; the colour map's graph replaces Random and Inspector),
+ *  the ring used to land on whatever covered it. Instead the coach points at
+ *  the way back to the control, with copy that says so. */
+const DETOURS: Record<Exclude<TourStep, 'done'>, { anchor: string; title: string; body: string }[]> = {
+  roll: [{ anchor: 'map-close', title: 'Back to the board', body: 'Close the colour map (Esc) to roll a new brand.' }],
+  inspect: [{ anchor: 'map-close', title: 'Back to the board', body: 'Close the colour map (Esc) to turn on the Inspector.' }],
+  ship: [{ anchor: 'exit-inspector', title: 'Exit the inspector to ship', body: 'Press Esc or Exit inspector: the Ship row is underneath.' }],
+}
+
+/** True when the element's centre is in the viewport and nothing but the
+ *  element itself (or the coach) is on top of it there. */
+function reachable(el: HTMLElement, r: DOMRect): boolean {
+  if (r.width <= 0 || r.height <= 0) return false
+  const x = r.left + r.width / 2
+  const y = r.top + r.height / 2
+  if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false
+  for (const hit of document.elementsFromPoint(x, y)) {
+    if (hit instanceof HTMLElement && hit.closest('[data-tour-coach]')) continue
+    return el === hit || el.contains(hit)
+  }
+  return false
+}
+
+/** The first visible, uncovered element for a step — the Ship row also
+ *  renders on the Code tab, and a hidden copy has an empty rect. */
 function findAnchor(step: string): HTMLElement | null {
   const all = document.querySelectorAll<HTMLElement>(`[data-tour="${step}"]`)
   for (const el of all) {
-    const r = el.getBoundingClientRect()
-    if (r.width > 0 && r.height > 0) return el
+    if (reachable(el, el.getBoundingClientRect())) return el
   }
   return null
 }
@@ -63,6 +86,8 @@ export function BoardTourCoach({ colors }: {
   const reduce = useReducedMotion()
   const step = useBoardTourStep()
   const [rect, setRect] = useState<Rect | null>(null)
+  // Which detour is showing (index into DETOURS[step]), or -1 for the step itself.
+  const [detour, setDetour] = useState(-1)
   const lastAnchor = useRef<HTMLElement | null>(null)
   const prevStep = useRef(step)
 
@@ -73,8 +98,18 @@ export function BoardTourCoach({ colors }: {
     if (step === 'done') { setRect(null); return }
     let raf = 0
     const tick = () => {
-      const el = findAnchor(step)
-      lastAnchor.current = el
+      let el = findAnchor(step)
+      let which = -1
+      if (!el) {
+        DETOURS[step].some((d, i) => {
+          el = findAnchor(d.anchor)
+          if (el) which = i
+          return Boolean(el)
+        })
+      }
+      // Only the step's own control is where a ship lands (confetti origin).
+      if (which === -1) lastAnchor.current = el
+      setDetour(which)
       const r = el?.getBoundingClientRect()
       const next = r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null
       setRect((prev) => (sameRect(prev, next) ? prev : next))
@@ -94,7 +129,7 @@ export function BoardTourCoach({ colors }: {
 
   if (step === 'done' || typeof document === 'undefined') return null
   const index = TOUR_STEPS.indexOf(step)
-  const copy = COPY[step]
+  const copy = detour >= 0 ? DETOURS[step][detour] : COPY[step]
 
   let bubble: { left: number; bottom: number; arrow: number } | null = null
   if (rect) {
@@ -106,7 +141,7 @@ export function BoardTourCoach({ colors }: {
   return createPortal(
     <AnimatePresence>
       {rect && bubble && (
-        <motion.div key="tour" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.18 }}>
+        <motion.div key="tour" data-tour-coach="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.18 }}>
           {/* The ring: around the control, letting clicks through to it. */}
           <span
             aria-hidden
@@ -114,7 +149,7 @@ export function BoardTourCoach({ colors }: {
             style={{ left: rect.left - 4, top: rect.top - 4, width: rect.width + 8, height: rect.height + 8 }}
           />
           <motion.div
-            key={step}
+            key={`${step}-${detour}`}
             role="dialog"
             aria-modal="false"
             aria-label={t('Getting started')}

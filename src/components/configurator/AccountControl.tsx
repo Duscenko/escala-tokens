@@ -134,24 +134,9 @@ function AccountControlInner({ onOpenLibrary, signUpAccent, quiet }: AccountCont
           href={loginHref({ next })}
           onClick={remember}
           title={keepsWork ? t('Save your work with a free account') : undefined}
-          className={`hidden h-8 flex-shrink-0 items-center rounded-lg px-3 text-body font-medium text-fg transition-[color,box-shadow] min-[1080px]:inline-flex ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${FOCUS_RING}`}
+          className={`inline-flex h-9 flex-shrink-0 items-center rounded-lg px-3 text-body text-fg transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${FOCUS_RING}`}
         >
           {t('Sign in')}
-        </a>
-        {/* Below 1080px (☰ header): one filled entry instead of two crowded links. It opens on
-            Create account (the likelier first visit); the page links back to
-            Sign in for anyone returning. */}
-        <a
-          href={loginHref({ next, mode: 'signup' })}
-          onClick={remember}
-          style={quiet ? undefined : { backgroundColor: 'var(--rainbow-fill-a)', color: 'var(--rainbow-ink)' }}
-          className={`inline-flex h-8 flex-shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-body font-semibold min-[1080px]:hidden ${FOCUS_RING} ${
-            quiet
-              ? 'border border-line-strong text-fg transition-colors hover:bg-elevated'
-              : 'transition-[filter] hover:brightness-110 active:brightness-95'
-          }`}
-        >
-          {t('Get started free')}
         </a>
         {licenceDialog}
       </>

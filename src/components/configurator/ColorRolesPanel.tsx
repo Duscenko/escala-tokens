@@ -14,6 +14,7 @@
 // own saturation and brightness, and the dark one is kept a little dimmer —
 // the same colour, tuned for the page it sits on.
 
+import { PhIcon } from '../ui/PhIcon'
 import { useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { COLOR_ROLE_BAND, COLOR_ROLE_LABEL, ROLE_LABEL_INKS, checkRoleColor, rolePasses, type ColorRoleId } from '../../lib/colorRoles'
@@ -476,14 +477,7 @@ function RoleRamp({ id, open, label, ramp, naming, legend }: {
 /** Three sliders — "tune this colour". Drawn without a filled knob, so it
  *  reads on any surface the inspector paints (SlidersIcon fills with --app). */
 function RampToggleGlyph() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden>
-      <path d="M3.5 2v2.6M3.5 7.9V14M8 2v6.1M8 11.4V14M12.5 2v1.1M12.5 6.4V14" />
-      <circle cx="3.5" cy="6.25" r="1.65" />
-      <circle cx="8" cy="9.75" r="1.65" />
-      <circle cx="12.5" cy="4.75" r="1.65" />
-    </svg>
-  )
+  return <PhIcon id="faders" size={16} />
 }
 
 type FineTool = 'saturation' | 'lightness' | 'contrast'

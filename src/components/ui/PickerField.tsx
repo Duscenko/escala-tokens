@@ -57,7 +57,7 @@ export const FIELD_LEAD = 'h-[calc(100%-10px)] aspect-square flex-shrink-0 round
  *  `FIELD_CONTROL` in those two places. */
 // The edge is the quiet `line`: the filled chip is the anchor, so a heavier
 // border only doubled the weight. It firms up on hover and while open.
-export const FIELD_SHELL = 'flex h-7 w-full min-w-0 items-center gap-2 rounded-lg border border-line p-[2px] pr-2.5 transition-[border-color,box-shadow] duration-150'
+export const FIELD_SHELL = 'flex h-7 w-full min-w-0 items-center gap-2 rounded-lg border border-line bg-fg/[0.03] p-[2px] pr-2.5 transition-[border-color,box-shadow] duration-150'
 export const FIELD_SHELL_REST = 'hover:border-line-strong'
 export const FIELD_SHELL_ON = 'border-fg/40 shadow-[0_0_0_1px_var(--line-selected)]'
 /** The label chip: a filled pill the field's height less its 2px inset,
@@ -65,7 +65,7 @@ export const FIELD_SHELL_ON = 'border-fg/40 shadow-[0_0_0_1px_var(--line-selecte
  *  line. */
 // `--field-chip-w`: a list can size every chip to its longest name (the colour
 // rows do), so a short name leaves no empty pill and the values still align.
-export const FIELD_CHIP = 'flex h-full w-[var(--field-chip-w,42%)] max-w-[60%] flex-shrink-0 min-w-0 items-center gap-1.5 rounded-[calc(0.5rem-3px)] bg-fg/[0.08] px-2 text-ui transition-colors'
+export const FIELD_CHIP = 'flex h-full w-[var(--field-chip-w,42%)] max-w-[60%] flex-shrink-0 min-w-0 items-center gap-1.5 rounded-[calc(0.5rem-2px)] bg-fg/[0.08] px-2 text-ui transition-colors'
 
 const SEARCH_FROM = 9
 const LIST_GAP = 6

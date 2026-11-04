@@ -7,7 +7,7 @@ import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
-import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardViewSwitch, BoardGlyph, boardTabId, type BoardView } from './BoardViewSwitch'
 import { BoardThemeSwitch } from './BrandThemesPicker'
 
 /** The Generator board — the region Theme · Components switches. */
@@ -51,7 +51,7 @@ import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
-import ColorRoleMapView, { MAP_VIEW_GLYPH, MapViewSwitch } from './ColorRoleMapView'
+import ColorRoleMapView, { MapViewSwitch } from './ColorRoleMapView'
 import ColorSpotlight, { type SpotlightRole } from './ColorSpotlight'
 import { ColourShowcase } from './ColourShowcase'
 import { OPEN_COLOUR_MAP_EVENT, takeColourMapRequest } from '../../lib/colourMapRequest'
@@ -108,13 +108,13 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 /** The label of an icon-first header control. Collapsed at rest (the icon
  *  alone), it slides open on hover and keyboard focus, and stays open while
  *  `open` — the control is in a state worth naming (inspecting, syncing). */
-function RevealLabel({ open, children }: { open: boolean; children: ReactNode }) {
+function RevealLabel({ open, children, onHover = true }: { open: boolean; children: ReactNode; onHover?: boolean }) {
   return (
     <span
       className={`flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${
         open
           ? 'ml-1.5 max-w-[10rem] opacity-100'
-          : 'ml-0 max-w-0 opacity-0 group-hover:ml-1.5 group-hover:max-w-[10rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100'
+          : onHover ? 'ml-0 max-w-0 opacity-0 group-hover:ml-1.5 group-hover:max-w-[10rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100' : 'ml-0 max-w-0 opacity-0'
       }`}
     >
       {children}
@@ -192,7 +192,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
         ? `${HEADER_CONTROL_BTN.replace('focus-visible:ring-offset-1 focus-visible:ring-offset-app', '').replace('transition-[color,box-shadow,transform]', 'transition-[color,background-color,box-shadow,transform]')} ${
           active && !disabled
             ? `font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)] ${accent ? '' : 'bg-accent-solid text-accent-ink'}`
-            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg'
+            : disabled ? `text-fg-faint ${HEADER_CONTROL_DISABLED}` : 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
         }`
         : `${HEADER_CONTROL_BTN.replace('rounded-md', 'rounded-lg')} ${
           active && !disabled
@@ -202,7 +202,7 @@ export function InspectorToggle({ active, pinned = false, onChange, accent, ink,
       style={active && accent && !disabled ? { backgroundColor: accent, color: ink } : undefined}
     >
       <InspectGlyph size={16} hint={!active} />
-      <RevealLabel open={active}>{label}</RevealLabel>
+      <RevealLabel open={active} onHover={!bare}>{label}</RevealLabel>
     </button>
   )
   if (bare) {
@@ -1042,6 +1042,7 @@ export default function ThemePreviewHub({
                             <button
                               type="button"
                               onClick={() => setMappedColour(null)}
+                              data-tour="map-close"
                               aria-label={t('Close colour map')}
                               aria-keyshortcuts="Escape"
                               className="flex h-7 flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-caption font-medium text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
@@ -1069,9 +1070,9 @@ export default function ThemePreviewHub({
                                   setMappedColour('accent')
                                 }}
                                 aria-label={t('Colour map')}
-                                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+                                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-fg/[0.06] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
                               >
-                                {MAP_VIEW_GLYPH.graph}
+                                <BoardGlyph id="map" />
                               </button>
                             </HintTip>
                           </>

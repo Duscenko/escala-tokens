@@ -60,6 +60,56 @@ export function buildFigmaContext(input: FigmaContextInput): FigmaContext {
   return { text, bytes: new TextEncoder().encode(text).length, brands: brands.length, themes: input.modes.length }
 }
 
+/** "Copy this element": one component, as the variant on screen. The plugin
+ *  builds that component (and what it is built from) and places an instance
+ *  on the page you are on — nothing else in the file is drawn. The payload is
+ *  the brand's full one plus `copy`: the variables a component binds to come
+ *  as a whole, because a partial set would be recreated, bindings and all, the
+ *  next time anything else is pasted into the file. `copy` is additive (an
+ *  older plugin ignores it and imports the brand as usual). */
+export interface ElementCopy {
+  /** Catalogue key (the plugin's gate). */
+  component: string
+  /** Display name, for the plugin's "<label> added to this page". */
+  label: string
+  variant: Record<string, string>
+}
+
+export function buildElementFigmaContext(input: FigmaContextInput & { element: ElementCopy }): FigmaContext {
+  const viewports = normalizeFigmaViewports(input.viewports)
+  const project = input.project.trim() || 'Escala'
+  const payload = {
+    ...generateTokenJSON(undefined, {
+      ...(input.theme ? { theme: input.theme } : {}),
+      ...(input.modes.length ? { modes: input.modes } : {}),
+      viewports,
+      project,
+    }),
+    copy: { kind: 'element' as const, ...input.element },
+  }
+  const brands = Object.keys(brandThemesFromSyncModes(input.modes))
+  const text = elementContextMarkdown({
+    project,
+    label: input.element.label,
+    brand: brands.map(input.brandName).join(' · '),
+    json: JSON.stringify(payload),
+  })
+  return { text, bytes: new TextEncoder().encode(text).length, brands: brands.length, themes: input.modes.length }
+}
+
+export function elementContextMarkdown(parts: { project: string; label: string; brand: string; json: string }): string {
+  const body = [
+    `Paste this into the Escala plugin in Figma (⌘V on any screen): it builds ${parts.label} and places it on the page you are on.`,
+    'Only this component is drawn (plus the ones it is built from). A file with no Escala variables gets this brand\'s first, so the element stays bound to tokens.',
+    '',
+    `- Element: ${parts.label}`,
+    `- Brand: ${parts.brand || '—'}`,
+    '',
+    escalaPayloadFence(parts.json),
+  ].join('\n')
+  return withAgentEnvelope('global', parts.project, body)
+}
+
 /** Pure: the message around a payload. Split out so tests need no store.
  *  Same `agent-context/v1` envelope as Copy context elsewhere, plus the Escala
  *  JSON fence the plugin imports. */

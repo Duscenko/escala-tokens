@@ -125,6 +125,8 @@ export interface IconOpts {
   trailing: boolean
   /** Overrides `buttonLeadingConcept` / `ICON_SLOTS` for this render. */
   leadingConcept?: IconConcept
+  /** Same, for the trailing slot. */
+  trailingConcept?: IconConcept
 }
 
 /**

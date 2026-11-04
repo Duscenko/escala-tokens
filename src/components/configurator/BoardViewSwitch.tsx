@@ -1,4 +1,4 @@
-import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useId, useRef, type KeyboardEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { HintTip } from '../ui/HintTip'
@@ -6,6 +6,34 @@ import { HintTip } from '../ui/HintTip'
 /** What the board shows: the bento board of the brand, or every catalogue
  *  component as a cover painted in its tokens. */
 export type BoardView = 'theme' | 'components'
+
+/** Phosphor bodies (`@phosphor-icons/core@2.1.1`, 256 grid) for the board
+ *  toolbar's three views, from the Figma "Icons bar bottom controls" frame:
+ *  line when idle, fill when on. */
+const BOARD_GLYPH_PATHS = {
+  "brand": {
+    "regular": "M88,180a12,12,0,1,1-12-12A12,12,0,0,1,88,180Zm152-23.81V208a16,16,0,0,1-16,16H76a46.36,46.36,0,0,1-7.94-.68,44,44,0,0,1-35.43-50.95l25-143.13a15.94,15.94,0,0,1,18.47-13L130.84,26a16,16,0,0,1,12.92,18.52l-12.08,69L199.49,89a16,16,0,0,1,20.45,9.52L239,150.69A18.35,18.35,0,0,1,240,156.19ZM103,184.87,128,41.74,73.46,32l-25,143.1A28,28,0,0,0,70.9,207.57,27.29,27.29,0,0,0,91.46,203,27.84,27.84,0,0,0,103,184.87ZM116.78,195,224,156.11,204.92,104,128.5,131.7l-9.78,55.92A44.63,44.63,0,0,1,116.78,195ZM224,173.12,127.74,208H224Z",
+    "fill": "M240,155.91a16,16,0,0,0-1-5.22L219.94,98.48A16,16,0,0,0,199.49,89l-67.81,24.57,12.08-69A16,16,0,0,0,130.84,26L76.17,16.25a15.94,15.94,0,0,0-18.47,13l-25,143.12A43.82,43.82,0,0,0,75.78,224H224a16,16,0,0,0,16-16ZM76,196a16,16,0,1,1,16-16A16,16,0,0,1,76,196Zm42.72-8.38,9.78-55.92L204.92,104,224,156.11,116.78,195A44.89,44.89,0,0,0,118.72,187.62ZM224,208H127.74L224,173.11Z"
+  },
+  "map": {
+    "regular": "M160,112h48a16,16,0,0,0,16-16V48a16,16,0,0,0-16-16H160a16,16,0,0,0-16,16V64H128a24,24,0,0,0-24,24v32H72v-8A16,16,0,0,0,56,96H24A16,16,0,0,0,8,112v32a16,16,0,0,0,16,16H56a16,16,0,0,0,16-16v-8h32v32a24,24,0,0,0,24,24h16v16a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V160a16,16,0,0,0-16-16H160a16,16,0,0,0-16,16v16H128a8,8,0,0,1-8-8V88a8,8,0,0,1,8-8h16V96A16,16,0,0,0,160,112ZM56,144H24V112H56v32Zm104,16h48v48H160Zm0-112h48V96H160Z",
+    "fill": "M144,96V80H128a8,8,0,0,0-8,8v80a8,8,0,0,0,8,8h16V160a16,16,0,0,1,16-16h48a16,16,0,0,1,16,16v48a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V192H128a24,24,0,0,1-24-24V136H72v8a16,16,0,0,1-16,16H24A16,16,0,0,1,8,144V112A16,16,0,0,1,24,96H56a16,16,0,0,1,16,16v8h32V88a24,24,0,0,1,24-24h16V48a16,16,0,0,1,16-16h48a16,16,0,0,1,16,16V96a16,16,0,0,1-16,16H160A16,16,0,0,1,144,96Z"
+  },
+  "components": {
+    "regular": "M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z",
+    "fill": "M120,56v48a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V56A16,16,0,0,1,56,40h48A16,16,0,0,1,120,56Zm80-16H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm-96,96H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm96,0H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Z"
+  }
+} as const
+
+export type BoardGlyphId = keyof typeof BOARD_GLYPH_PATHS
+
+export function BoardGlyph({ id, on = false, size = 16 }: { id: BoardGlyphId; on?: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" aria-hidden>
+      <path d={BOARD_GLYPH_PATHS[id][on ? 'fill' : 'regular']} />
+    </svg>
+  )
+}
 
 const VIEWS: BoardView[] = ['theme', 'components']
 
@@ -16,7 +44,7 @@ export function boardTabId(panelId: string, view: BoardView): string {
 }
 
 /**
- * Theme · Components, at the head of the board. One control for the create
+ * Brand · Components, at the head of the board. One control for the create
  * studio and the Generator, so the switch does not disappear when the studio
  * hands over to the editor. Same segmented pill as Light / Dark and
  * Desktop / Tablet / Mobile.
@@ -46,24 +74,7 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
   // One pill per instance, so two switches never slide a pill between them.
   const pillId = useId()
   const reduceMotion = useReducedMotion()
-  const glyphs: Record<BoardView, ReactNode> = {
-    theme: (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden>
-        <path d="M2.5 3.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v8.5a2 2 0 0 1-4 0Z" />
-        <path d="M7.5 5.5 9.6 3.4a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4L6.3 12.7" />
-        <circle cx="5.5" cy="12" r=".6" fill="currentColor" />
-      </svg>
-    ),
-    components: (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-        <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2" />
-        <rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2" />
-        <rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2" />
-        <rect x="9" y="9" width="4.5" height="4.5" rx="1.2" />
-      </svg>
-    ),
-  }
-  const labels: Record<BoardView, string> = { theme: t('Theme'), components: t('Components') }
+  const labels: Record<BoardView, string> = { theme: t('Brand'), components: t('Components') }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const at = VIEWS.indexOf(value)
@@ -121,12 +132,12 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
               <motion.span
                 layoutId={pillId}
                 aria-hidden
-                className="absolute inset-0 rounded-md bg-fg/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_2px_rgba(0,0,0,0.4)]"
+                className="absolute inset-0 rounded-lg bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 transition={reduceMotion ? { duration: 0 } : { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               />
             )}
             <span className="relative flex items-center gap-1.5">
-              {glyphs[view]}
+              <BoardGlyph id={view === 'theme' ? 'brand' : 'components'} on={on} />
               <span className={inset ? 'sr-only' : '@max-[560px]/boardhead:sr-only'}>{labels[view]}</span>
             </span>
           </button>

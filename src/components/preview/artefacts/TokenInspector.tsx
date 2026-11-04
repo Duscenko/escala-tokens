@@ -958,6 +958,7 @@ export function InspectorOverlay({
               type="button"
               onClick={() => { clearAll(); onExitMode() }}
               aria-keyshortcuts="Escape"
+              data-tour="exit-inspector"
               className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               <InspectGlyph size={13} />

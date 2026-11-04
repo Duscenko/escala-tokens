@@ -13,6 +13,7 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
+import { PhIcon } from '../ui/PhIcon'
 import { releaseInspectorPin } from '../preview/artefacts/TokenInspector'
 import { recordEdit } from '../../lib/editHistory'
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
@@ -466,7 +467,7 @@ function InfoIcon() {
 }
 
 function AdvancedIcon() {
-  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden><path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1" /><circle cx="10" cy="4" r="1.4" /><circle cx="6" cy="8" r="1.4" /><circle cx="11" cy="12" r="1.4" /></svg>
+  return <PhIcon id="faders" size={16} />
 }
 
 function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
@@ -862,15 +863,10 @@ function PanelHeader({ editing, title, name, onEdit, onBack }: {
         <button
           type="button"
           onClick={onEdit}
-          className="-mr-2 flex h-[36px] flex-shrink-0 items-center gap-2 rounded-lg px-2 text-strong font-medium text-fg transition-colors hover:bg-fg/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="-mr-2 flex h-[36px] flex-shrink-0 items-center gap-2 rounded-lg px-2 text-body text-fg-muted transition-colors hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Edit')}
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
-            <path d="M4 3v5M4 12v5M10 3v2M10 9v8M16 3v8M16 15v2" />
-            <circle cx="4" cy="10" r="2" />
-            <circle cx="10" cy="7" r="2" />
-            <circle cx="16" cy="13" r="2" />
-          </svg>
+          <PhIcon id="faders" size={16} />
         </button>
       )}
     </div>
@@ -1001,7 +997,7 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
     // The tools float over the header (a button cannot hold a button); the
     // title keeps clear of them so it never runs underneath.
     const clear = onReset && action ? 'mr-[3.25rem]' : onReset || action ? 'mr-[1.75rem]' : ''
-    const title_ = <span className={`min-w-0 flex-1 truncate text-left text-strong font-medium text-fg ${clear}`}>{t(title)}</span>
+    const title_ = <span className={`min-w-0 flex-1 truncate text-left text-ui text-fg-muted ${clear}`}>{t(title)}</span>
     if (!ctx?.setCollapsed) {
       return (
         <div className="relative">
@@ -1162,11 +1158,11 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
               onClick={() => onOpenAdvanced(foundationKey)}
               disabled={advancedDisabled}
               title={advancedDisabled ? t('Available once the brand is finished') : undefined}
-              className="-ml-1.5 inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-mini font-medium text-fg-faint transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
+              className="-ml-1.5 inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-caption text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
             >
               <AdvancedIcon />
               {t('Go to advanced edition')}
-              <span aria-hidden>→</span>
+              <PhIcon id="arrow" size={12} />
             </button>
           </div>
         ) : null}

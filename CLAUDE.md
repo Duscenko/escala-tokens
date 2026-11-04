@@ -901,6 +901,32 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > snippet still ships in the brief, Use it → Code and Usage. Don't put a Code tab or a snippet
 > copy back as the panel's action. Plan: `design-plans/component-agent-context-first.md`.
 
+> **UPDATE (2026-11-04): a component page opens on an OVERVIEW, and COPY FOR FIGMA copies one
+> element.** Plan + protocol: `design-plans/figma-copy-one-component.md`.
+> - **Overview:** the first axis' select offers "Overview", first and default; the stage shows
+>   that component's variants side by side (`docs/componentOverviews.ts`, every component with
+>   axes has one — `componentOverviews.test.ts`). Picking a value shows that single specimen.
+>   The title is gone (the stage leads, the description follows it); the tool bar is `sticky`
+>   to the page's bottom (stage `overflow-clip`, never `hidden`, or sticky pins to it) and ends
+>   with zoom − · % · +. No per-axis board, no Examples section, no snippet in Usage.
+> - **Copy for Figma** (split button beside Copy context): the click copies THIS element
+>   (`buildElementFigmaContext`, `lib/figmaContext.ts`); ⌄ offers the whole design system
+>   (`buildFigmaContext`, the Figma page's paste). The element paste is the brand's full
+>   payload + an additive `copy: { kind: 'element', component, label, variant }` — the
+>   variables come whole on purpose (a partial set would be recreated, bindings and all, by
+>   the next paste). **Plugin ≥ 0.32.0:** ⌘V on ANY screen (capture-phase listener in
+>   `ui.html`, `elementFromPaste`) builds `importSample(…, only)`: every set already in the
+>   file is reused where it lives (registered, never moved or harvested); only missing types
+>   and their `uses` closure (+ Icon, + the glyph masters) are built on `⬡ Escala components`;
+>   an INSTANCE of the copied variant lands at the viewport centre of the page on screen,
+>   selected. No other page is created, swept or retired; an empty file takes the brand's
+>   variables + styles first (`protectPages`), a file with a system keeps its own.
+>   **Two visible doors to it in the plugin** (⌘V alone is not discoverable): a **Paste
+>   component** tile beside Add brand on the System overview, and a **Paste component** button
+>   beside Create · Import on an empty file's start screen. Both open `#pasteCompDlg` (three
+>   steps + a focused ⌘V zone, `data-element-paste`), which reports Building… → "✓ Button
+>   added to this page", and says so when the paste is a whole system instead.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**

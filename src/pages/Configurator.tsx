@@ -2432,6 +2432,12 @@ export default function Configurator() {
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
         onOpenFoundation={selectFoundation}
         search={componentSearch}
+        figmaCopy={{
+          modes: figmaSyncModes,
+          viewports: figmaViewports,
+          project: figmaFileName.trim() || store.projectName,
+          brandName: (key) => themeDisplayName(key, store.themeLabels),
+        }}
       />
     )
     // Constant, NOT keyed on the open component: the view owns its own article

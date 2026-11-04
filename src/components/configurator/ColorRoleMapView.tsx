@@ -5,6 +5,7 @@
 // `buildColorRoleMap` (design-plans/color-role-map.md); this file only lays
 // it out.
 
+import { BoardGlyph } from './BoardViewSwitch'
 import { useMemo, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
@@ -464,11 +465,11 @@ export function MapViewSwitch({ value, onChange, inset = false }: {
               <motion.span
                 layoutId={inset ? 'map-view-pill-bar' : 'map-view-pill'}
                 aria-hidden
-                className="absolute inset-0 rounded-md bg-fg/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_2px_rgba(0,0,0,0.4)]"
+                className="absolute inset-0 rounded-lg bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 transition={reduce ? { duration: 0 } : { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               />
             )}
-            <span className="relative flex">{inset ? MAP_VIEW_GLYPH[view.id] : view.label}</span>
+            <span className="relative flex">{inset ? <BoardGlyph id={view.id === 'graph' ? 'map' : 'brand'} on={on} /> : view.label}</span>
           </button>
         )
         return inset ? <HintTip key={view.id} label={view.label}>{tab}</HintTip> : tab

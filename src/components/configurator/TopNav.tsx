@@ -340,7 +340,7 @@ const COMPACT_MENU_ITEM =
   'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
 // Global icon actions — same gray shell as `ThemeViewSwitcher`.
-const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
+const GLOBAL_ICON_ACTION = `grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
 // Appearance is one action, not a two-choice segment. The glyph shows the
 // destination: sun while dark is active, moon while light is active.
