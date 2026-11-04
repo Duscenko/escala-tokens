@@ -146,8 +146,11 @@ function writeInspectPref(on: boolean) {
  *  the state, so a screen reader hears one answer, not two. */
 type CanvasPanel = 'settings' | 'context'
 
-const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-faint transition-colors duration-150 ease-out hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
-const BAR_ICON_ON = 'text-fg bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)]'
+const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
+// Pressed: full white glyph on the raised pill, so "on" can't be mistaken
+// for a hover. Off: faint, warming on hover. Never both colours at once.
+const BAR_ICON_ON = 'text-white bg-[linear-gradient(126deg,color-mix(in_srgb,var(--fg)_15%,transparent)_18%,color-mix(in_srgb,var(--fg)_9%,transparent)_71%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+const BAR_ICON_OFF = 'text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
 
 function SettingsGlyph() {
   return (
@@ -200,7 +203,7 @@ function CanvasBar({
             aria-pressed={panel === 'settings'}
             aria-label={t('Component settings')}
             title={t('Component settings')}
-            className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : ''}`}
+            className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : BAR_ICON_OFF}`}
           >
             <SettingsGlyph />
           </button>
@@ -211,7 +214,7 @@ function CanvasBar({
           aria-pressed={panel === 'context'}
           aria-label={t('Agent context')}
           title={t('Agent context')}
-          className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : ''}`}
+          className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : BAR_ICON_OFF}`}
         >
           <CodeGlyphSmall />
         </button>
@@ -245,7 +248,7 @@ function CanvasBar({
                 aria-pressed={appearance === a}
                 aria-label={name}
                 title={name}
-                className={`${BAR_ICON} ${appearance === a ? BAR_ICON_ON : ''}`}
+                className={`${BAR_ICON} ${appearance === a ? BAR_ICON_ON : BAR_ICON_OFF}`}
               >
                 <AppearanceGlyph kind={a} size={14} />
               </button>
@@ -268,13 +271,19 @@ function CanvasSidePanel({ title, onClose, children, footer }: {
 }) {
   const { t } = useI18n()
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    // Esc with a pinned token list open closes only that list (the inspector
+    // handles it); the settings underneath stay.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (document.querySelector('[data-inspector-pin]')) return
+      onClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   return (
     <InspectorPortal>
-      <div role="region" aria-label={title} className="absolute inset-0 z-30 flex flex-col overflow-hidden bg-side-panel">
+      <div role="region" aria-label={title} className="absolute inset-0 z-[5] flex flex-col overflow-hidden bg-side-panel">
         <div className="flex h-11 flex-shrink-0 items-center gap-2 border-b border-line px-2">
           <button
             type="button"

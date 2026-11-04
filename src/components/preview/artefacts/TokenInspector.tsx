@@ -1018,6 +1018,7 @@ export function InspectorOverlay({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
             className="absolute inset-0 z-10 flex flex-col overflow-hidden bg-side-panel"
+            data-inspector-pin=""
             role="region"
             aria-label={t('Inspector')}
           >
