@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF } from '../themeWorkspaceLayout'
+import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -76,64 +77,37 @@ function variantIndex(def: ComponentDef, values: AxisValues): number {
 
 // ── Axis controls (the catalogue playground's rail) ──────────────────────────
 
+/** One variant axis, in the edition panel's field (`PickerField`): the name
+ *  in the filled chip, the value beside it, the list under the whole field —
+ *  the same row the Theme panel's Font and Radius use. A True/False axis is a
+ *  switch in that same shell. */
 function AxisControl({ axis, value, onChange, lead }: { axis: VariantAxis; value: string; onChange: (v: string) => void; /** An extra first option (Overview). */ lead?: string }) {
-  // Boolean-shaped axes (True/False) read better as a switch-like pill pair.
   const isBool = axis.values.length === 2 && axis.values.includes('True') && axis.values.includes('False')
-  return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-b-0">
-      <span className="text-xs text-fg-muted">{axis.name}</span>
-      {isBool ? (
-        <button
-          role="switch"
-          aria-checked={value === 'True'}
-          aria-label={axis.name}
-          onClick={() => onChange(value === 'True' ? 'False' : 'True')}
-          className={`relative w-9 h-5 rounded-full transition-colors ${value === 'True' ? 'bg-fg' : 'bg-line-strong'}`}
-        >
-          <span
-            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white dark:bg-app shadow transition-all ${value === 'True' ? 'left-[18px]' : 'left-0.5'}`}
-          />
-        </button>
-      ) : (
-        <div className="relative">
-          <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            aria-label={axis.name}
-            className="appearance-none text-xs font-medium text-fg bg-surface border border-line rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-line-strong cursor-pointer"
-          >
-            {lead && <option value={lead}>{lead}</option>}
-            {axis.values.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <svg
-            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-fg-faint"
-            aria-hidden
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </div>
-      )}
-    </div>
-  )
+  if (isBool) return <OptionSwitch label={axis.name} checked={value === 'True'} onChange={(on) => onChange(on ? 'True' : 'False')} />
+  const options = [...(lead ? [lead] : []), ...axis.values].map((v) => ({ value: v, label: v }))
+  return <PickerField label={axis.name} value={value} options={options} onChange={onChange} searchable={false} />
 }
 
+/** An on/off option in the same field shell: the whole row is the switch. */
 function OptionSwitch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  const { t } = useI18n()
   return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-b-0">
-      <span className="text-xs text-fg-muted">{label}</span>
-      <button
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition-colors ${checked ? 'bg-fg' : 'bg-line-strong'}`}
-      >
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white dark:bg-app shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
-      </button>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={`group ${FIELD_SHELL} ${FIELD_SHELL_REST} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+    >
+      <span className={`${FIELD_CHIP} ${checked ? 'text-fg' : 'text-fg-muted group-hover:text-fg'}`}>
+        <span className="min-w-0 truncate">{label}</span>
+      </span>
+      <span className={`min-w-0 flex-1 truncate text-ui ${checked ? 'text-fg' : 'text-fg-faint'}`}>{checked ? t('On') : t('Off')}</span>
+      <span aria-hidden className={`relative h-4 w-7 flex-shrink-0 rounded-full transition-colors duration-150 ${checked ? 'bg-accent-solid' : 'bg-line-strong'}`}>
+        <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-[left] duration-150 ease-[var(--ease-out-quint)] ${checked ? 'left-[14px]' : 'left-0.5'}`} />
+      </span>
+    </button>
   )
 }
 // ── Playground canvas controls ──────────────────────────────────────────────
@@ -852,7 +826,7 @@ export function ComponentCatalogueHero({
 
       {hasControls && panel === 'settings' && (
         <CanvasSidePanel title={t('Component settings')}>
-          <div className="px-4 py-2">
+          <div className="flex flex-col gap-2 p-[var(--inspector-inset,12px)]">
             {def.axes.map((axis) => (
               <AxisControl
                 key={axis.name}
@@ -873,7 +847,7 @@ export function ComponentCatalogueHero({
               </>
             )}
           </div>
-          <p className="text-mini text-fg-faint leading-relaxed px-4 pb-4 pt-1">
+          <p className="px-[var(--inspector-inset,12px)] pb-4 text-mini leading-relaxed text-fg-faint">
             {slots
               ? <>{t('Icons come from')} <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.</>
               : t('Same axes as the Figma variant set the plugin generates.')}
