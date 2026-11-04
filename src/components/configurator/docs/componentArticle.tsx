@@ -27,6 +27,7 @@ import { resolvePreviewTokens } from '../../../lib/previewTokens'
 import { useDesignStore } from '../../../store/useDesignStore'
 import { ContextFilters, useContextOptions, type ContextOptions } from '../../ui/ContextControls'
 import { AIContextButton } from '../../ui/AIContextButton'
+import { HintTip } from '../../ui/HintTip'
 import { InspectorPortal } from '../WorkspaceInspector'
 import SemanticTokenDrawer from '../SemanticTokenGroups'
 import ThemeQuickSettingsRail, { type QuickPanelFoundation } from '../ThemeQuickSettingsRail'
@@ -212,73 +213,76 @@ function CanvasBar({
         aria-label={t('Component tools')}
         className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
       >
-        <button
-          type="button"
-          onClick={() => toggle('theme')}
-          aria-pressed={panel === 'theme'}
-          aria-label={t('Edit theme')}
-          title={t('Edit theme')}
-          className={`${BAR_ICON} ${panel === 'theme' ? BAR_ICON_ON : BAR_ICON_OFF}`}
-        >
-          <PaletteGlyph />
-        </button>
-        {sep}
-        {hasSettings && (
+        <HintTip label={t('Edit theme')}>
           <button
             type="button"
-            onClick={() => toggle('settings')}
-            aria-pressed={panel === 'settings'}
-            aria-label={t('Component settings')}
-            title={t('Component settings')}
-            className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : BAR_ICON_OFF}`}
+            onClick={() => toggle('theme')}
+            aria-pressed={panel === 'theme'}
+            aria-label={t('Edit theme')}
+            className={`${BAR_ICON} ${panel === 'theme' ? BAR_ICON_ON : BAR_ICON_OFF}`}
           >
-            <SettingsGlyph />
+            <PaletteGlyph />
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => toggle('context')}
-          aria-pressed={panel === 'context'}
-          aria-label={t('Agent context')}
-          title={t('Agent context')}
-          className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : BAR_ICON_OFF}`}
-        >
-          <CodeGlyphSmall />
-        </button>
+        </HintTip>
         {sep}
-        <button
-          type="button"
-          onClick={onInspect}
-          aria-pressed={inspecting}
-          aria-keyshortcuts={inspecting ? 'Escape' : undefined}
-          title={inspecting
-            ? t('Turn the inspector off to use the component')
-            : t('Turn the inspector on to see the tokens that paint the component')}
-          className={`flex h-7 flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-caption transition-[color,background-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
-            inspecting
-              ? 'bg-accent-solid font-semibold text-accent-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)]'
-              : 'font-medium text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
-          }`}
-        >
-          <InspectGlyph size={16} />
-          <span>{inspecting ? t('Exit inspector') : t('Inspector')}</span>
-        </button>
+        {hasSettings && (
+          <HintTip label={t('Component settings')}>
+            <button
+              type="button"
+              onClick={() => toggle('settings')}
+              aria-pressed={panel === 'settings'}
+              aria-label={t('Component settings')}
+              className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : BAR_ICON_OFF}`}
+            >
+              <SettingsGlyph />
+            </button>
+          </HintTip>
+        )}
+        <HintTip label={t('Agent context')}>
+          <button
+            type="button"
+            onClick={() => toggle('context')}
+            aria-pressed={panel === 'context'}
+            aria-label={t('Agent context')}
+            className={`${BAR_ICON} ${panel === 'context' ? BAR_ICON_ON : BAR_ICON_OFF}`}
+          >
+            <CodeGlyphSmall />
+          </button>
+        </HintTip>
+        {sep}
+        <HintTip label={inspecting ? t('Exit inspector') : t('Inspect tokens')} shortcut={inspecting ? 'Esc' : undefined}>
+          <button
+            type="button"
+            onClick={onInspect}
+            aria-pressed={inspecting}
+            aria-keyshortcuts={inspecting ? 'Escape' : undefined}
+            className={`flex h-7 flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-caption transition-[color,background-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+              inspecting
+                ? 'bg-accent-solid font-semibold text-accent-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_2px_rgba(0,0,0,0.4)]'
+                : 'font-medium text-fg-faint hover:bg-fg/[0.06] hover:text-fg'
+            }`}
+          >
+            <InspectGlyph size={16} />
+            <span>{inspecting ? t('Exit inspector') : t('Inspector')}</span>
+          </button>
+        </HintTip>
         {sep}
         <div role="group" aria-label={t('Preview appearance')} className="flex items-center gap-0.5">
           {(['light', 'dark'] as const).map((a) => {
             const name = t('Preview in {appearance}', { appearance: a === 'light' ? t('Light') : t('Dark') })
             return (
-              <button
-                key={a}
-                type="button"
-                onClick={() => onAppearance(a)}
-                aria-pressed={appearance === a}
-                aria-label={name}
-                title={name}
-                className={`${BAR_ICON} ${appearance === a ? BAR_ICON_ON : BAR_ICON_OFF}`}
-              >
-                <AppearanceGlyph kind={a} size={14} />
-              </button>
+              <HintTip label={name}>
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => onAppearance(a)}
+                  aria-pressed={appearance === a}
+                  aria-label={name}
+                  className={`${BAR_ICON} ${appearance === a ? BAR_ICON_ON : BAR_ICON_OFF}`}
+                >
+                  <AppearanceGlyph kind={a} size={14} />
+                </button>
+              </HintTip>
             )
           })}
         </div>
@@ -473,9 +477,9 @@ export function ComponentCatalogueHero({
       <div className="rounded-xl border border-line overflow-hidden">
         <BlockChrome
           left={
-            // No tabs: the agent context lives in the right panel (the bar's
-            // Code icon) — a second copy as a tab here read as two places.
-            <span />
+            // The stage's name, not a tab: the agent context lives in the right
+            // panel (the bar's Code icon), so there is nothing to switch to.
+            <span className="rounded-md bg-elevated px-2.5 py-1 text-caption font-medium text-fg">{t('Preview')}</span>
           }
         >
           <div className="flex items-center gap-1.5">
