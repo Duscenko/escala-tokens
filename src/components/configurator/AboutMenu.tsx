@@ -1016,6 +1016,8 @@ export function AboutHome({
   const playgroundId = `${uid}-playground`
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
+  // The desktop demo waits for the headline's sweep (see `DemoVideo hold`).
+  const [headlineDone, setHeadlineDone] = useState(false)
   const isPhone = useIsPhone()
 
   const secondaryCta =
@@ -1049,6 +1051,7 @@ export function AboutHome({
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
                 className="text-[30px] font-normal leading-[1.12] tracking-[-0.02em] sm:text-[36px]"
+                onComplete={() => setHeadlineDone(true)}
               />
             </h1>
           </motion.div>
@@ -1095,7 +1098,9 @@ export function AboutHome({
 
         {!isPhone && (
           <div className="px-6">
-            <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} />
+            {/* Held on its first frame until the headline's sweep ends: two
+                motions at once split the eye; one after the other reads. */}
+            <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} hold={!headlineDone} />
           </div>
         )}
 
@@ -1268,14 +1273,15 @@ export function AboutHome({
  * The workspace demo clip. Shared by the About tab's hero and `AboutScaffold`
  * (the mobile notice + the `/about` route) so the ratio below is stated once.
  *
- * The frame is sized to the clip's real ratio (1878x1078, square pixels,
- * display_aspect_ratio 939:539, measured via ffprobe) rather than a 16:9
- * guess. Autoplay requires muted + playsInline (Safari/iOS policy).
+ * The frame is sized to the clip's real ratio (1920x896, measured via
+ * ffprobe) rather than a 16:9 guess. The clip is re-encoded from the source
+ * recording (H.264, CRF 28, no audio, faststart: ~1.7 MB for 22 s at 60 fps).
+ * Autoplay requires muted + playsInline (Safari/iOS policy).
  *
  * `tapToPlay` is what `AboutScaffold` needs, and NOT a style preference:
  * that screen is `md:hidden`, which is `display: none`, not an unmount — so
  * on a desktop it sits in the DOM behind the real app. Measured: an
- * autoplaying copy there fetched and decoded the whole 4.5 MB clip on every
+ * autoplaying copy there fetched and decoded the whole clip on every
  * desktop load, for a screen nobody sees. `preload="none"` means the file is
  * not touched until someone presses play, so the cost lands only on the
  * visitor who asked for it. It also sidesteps iOS Low Power Mode, which
@@ -1287,16 +1293,30 @@ export function AboutHome({
  * The desktop hero keeps autoplay and no controls: it is a passive backdrop
  * on a screen where the app itself is one click away.
  */
-export function DemoVideo({ className, tapToPlay }: { className?: string; tapToPlay?: boolean }) {
+export function DemoVideo({ className, tapToPlay, hold = false }: {
+  className?: string
+  tapToPlay?: boolean
+  /** Autoplay waits while true (loaded and on its first frame), then starts. */
+  hold?: boolean
+}) {
   const { t } = useI18n()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v || tapToPlay || hold) return
+    // A rejected play() (Low Power Mode, a background tab) just leaves the
+    // first frame up; nothing to recover.
+    v.play().catch(() => {})
+  }, [hold, tapToPlay])
   return (
     <video
-      src="/video/inspector-lr.mp4"
+      ref={videoRef}
+      src="/video/escala-tokens-demo.mp4"
       className={cn('w-full h-auto rounded-2xl object-cover', className)}
-      style={{ aspectRatio: '1920 / 928' }}
-      poster={tapToPlay ? '/video/video-realise-poster.jpg' : undefined}
+      style={{ aspectRatio: '1920 / 896' }}
+      poster={tapToPlay ? '/video/escala-tokens-demo-frame.jpg' : undefined}
       preload={tapToPlay ? 'none' : undefined}
-      autoPlay={!tapToPlay}
+      autoPlay={!tapToPlay && !hold}
       controls={tapToPlay}
       muted
       loop

@@ -145,6 +145,12 @@ export interface DiaTextRevealProps extends Omit<
    * @defaultValue `false`
    */
   keepTextVisible?: boolean
+  /**
+   * LOCAL ADDITION. Called once, when the FIRST sweep has finished (at once
+   * under reduced motion, where there is no sweep) — so something else on the
+   * page can wait its turn (the About hero holds its demo video on it).
+   */
+  onComplete?: () => void
 }
 
 export function DiaTextReveal({
@@ -160,8 +166,17 @@ export function DiaTextReveal({
   className,
   fixedWidth = false,
   keepTextVisible = false,
+  onComplete,
   ...props
 }: DiaTextRevealProps) {
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  const completedRef = useRef(false)
+  const reportComplete = () => {
+    if (completedRef.current) return
+    completedRef.current = true
+    onCompleteRef.current?.()
+  }
   const texts = Array.isArray(text) ? text : [text]
   const isMulti = texts.length > 1
   const prefersReducedMotion = useReducedMotion()
@@ -226,6 +241,7 @@ export function DiaTextReveal({
       delay,
       ease: sweepEase,
       onComplete() {
+        reportComplete()
         if (!repeat) return
         timerRef.current = setTimeout(() => {
           const next = (indexRef.current + 1) % texts.length
@@ -242,6 +258,7 @@ export function DiaTextReveal({
   useEffect(() => {
     if (prefersReducedMotion) {
       sweepPos.set(SWEEP_END)
+      reportComplete()
       return
     }
     if (startOnView && !isInView) return
