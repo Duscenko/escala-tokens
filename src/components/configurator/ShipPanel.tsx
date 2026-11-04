@@ -349,7 +349,7 @@ function FigmaShip({ themeKey, fileName, syncModes, viewports, onOpenFull }: {
           href={FIGMA_PLUGIN_COMMUNITY}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex h-8 items-center gap-1.5 self-start rounded-lg border border-line px-2.5 text-caption font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated ${FOCUS}`}
+          className={`inline-flex h-8 items-center gap-1.5 self-start raised-control rounded-lg border border-transparent px-2.5 text-caption font-medium text-fg transition-[background-color,box-shadow] ${FOCUS}`}
         >
           <FigmaGlyph size={12} />
           {t('Get the plugin')}

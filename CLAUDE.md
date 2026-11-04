@@ -883,6 +883,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `<theme>::<appearance>` always wins. Runtime vars a component sets
 > (`--switch-from`…) are listed in `RUNTIME_VARS` — a new one is a decision.
 
+> **DESIGN RULE (2026-11-04): secondary copy on the About page is SOFT — `.about-copy` (`index.css`).**
+> Any supporting text under a headline, number or title (section leads, workflow-step bodies,
+> carousel card bodies, stat labels) uses `.about-copy`: `text-ui` (13px), line-height 1.65,
+> `--fg-muted`, and in dark `--fg-muted` at 72 %. It is the same voice as the FAQ answers
+> (`.faq-answer`). Headlines and numbers keep `text-fg`; never use full-strength `text-fg-muted`
+> at `text-strong`/14px for secondary copy there. A new About block reuses the class; it does not
+> invent a tone.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**

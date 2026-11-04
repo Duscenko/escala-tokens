@@ -19,7 +19,7 @@ import { accountsEnabled } from '../../lib/supabase'
 import { useI18n } from '../../lib/i18n'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
-const SECONDARY = `flex h-11 w-full items-center justify-center rounded-2xl border border-line-strong px-4 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`
+const SECONDARY = `flex h-11 w-full items-center justify-center raised-control rounded-2xl border border-transparent px-4 text-ui font-medium text-fg transition-[background-color,box-shadow] ${FOCUS}`
 const PRIMARY = `flex h-12 w-full items-center justify-center rounded-2xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
 
 function readCode(): string {

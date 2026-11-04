@@ -276,7 +276,7 @@ export function PricingPage() {
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>
-                <a href="/" className={`${PLAN_CTA} mt-auto border border-line-strong text-fg hover:bg-elevated`}>
+                <a href="/" className={`${PLAN_CTA} mt-auto raised-control border border-transparent text-fg`}>
                   {t('Open the configurator')}<Arrow />
                 </a>
               </div>

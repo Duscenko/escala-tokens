@@ -285,7 +285,7 @@ export function StartDesignModal({
         {!importMode && <button
           type="button"
           onClick={closeDialog}
-          className="mt-4 h-10 w-full rounded-xl border border-line bg-surface text-body font-medium text-fg transition-colors hover:bg-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="mt-4 h-10 w-full raised-control rounded-xl border border-transparent text-body font-medium text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Cancel')}
         </button>}

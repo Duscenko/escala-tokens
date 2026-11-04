@@ -312,8 +312,48 @@
    against it, so the menu and Figma chips had no visible shape. On the frame a
    chip takes the chrome-control fill (a step OFF the frame in both themes), with NO border (design call: the fill
    alone carries the shape). */
+/* RAISED CONTROL — one look, both chromes. Dark (Figma 6:1063): a soft
+   diagonal gradient + a faint top highlight. Light: the same idea needs the
+   opposite light — a white fill can't be lifted by a white highlight, so it
+   gets a hairline ring + a 1px contact shadow instead. This rule is UNLAYERED
+   (it has to beat the `bg-chip-rest` utility), so it also states its own hover:
+   a layered `hover:shadow-*` utility can never reach it. */
 header[data-top-nav] .bg-chip-rest {
   background-color: var(--chrome-control);
+  background-image: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--chrome-control) 94%, var(--fg)) 100%);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+header[data-top-nav] .bg-chip-rest:hover {
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 9999px rgba(0, 0, 0, 0.03);
+}
+.dark header[data-top-nav] .bg-chip-rest {
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--fg) 5%, transparent) 18%, transparent 71%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dark header[data-top-nav] .bg-chip-rest:hover {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 9999px rgba(255, 255, 255, 0.07);
+}
+
+/* The inspector's Ship doors (CSS · Figma · Agent · GitHub) — same raised look.
+   In @layer components so a pressed state's utilities still win. */
+@layer components {
+  .raised-control {
+    background-color: var(--chrome-control);
+    background-image: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--chrome-control) 95%, var(--fg)) 100%);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  .raised-control:hover {
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 9999px rgba(0, 0, 0, 0.03);
+  }
+  .dark .raised-control {
+    background-color: color-mix(in srgb, var(--app) 45%, transparent);
+    background-image: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 1px rgba(0, 0, 0, 0.4);
+  }
+  .dark .raised-control:hover {
+    background-color: color-mix(in srgb, var(--app) 70%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 1px rgba(0, 0, 0, 0.4);
+  }
 }
 
 /* Hairline painted as a fill (`RailDivider`, inline separators). Same
@@ -1036,6 +1076,14 @@ button:focus-visible > .generator-cue-live {
 }
 .dark .faq-answer p,
 .dark .faq-answer ol {
+  color: color-mix(in oklab, var(--fg-muted) 72%, transparent);
+}
+.about-copy {
+  font-size: var(--text-ui);
+  line-height: 1.65;
+  color: var(--fg-muted);
+}
+.dark .about-copy {
   color: color-mix(in oklab, var(--fg-muted) 72%, transparent);
 }
 .faq-answer :is(p, li) .text-fg {

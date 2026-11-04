@@ -41,7 +41,7 @@ export interface ShipActions {
   github?: () => void
 }
 
-export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-caption font-semibold text-fg transition-colors hover:border-line-strong hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+export const SHIP_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg raised-control border border-transparent px-2 text-caption font-medium text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
 /** Save on the status line: a firm edge over a faint fill of the ink itself
  *  (reads on any panel grey), so it stands out from the Ship doors at rest
@@ -50,7 +50,7 @@ const SAVE_OUTLINE_BUTTON = 'flex h-8 min-w-0 flex-1 items-center justify-center
 
 /** The door whose file is on screen: the inspector's raised selected fill
  *  with a firmer edge, so "pressed" reads without a second accent colour. */
-const SHIP_BUTTON_PRESSED = '!border-line-strong !bg-elevated text-fg shadow-[inset_0_0_0_1px_var(--line-strong)]'
+const SHIP_BUTTON_PRESSED = '!border-line-strong !bg-elevated !bg-none text-fg !shadow-[inset_0_0_0_1px_var(--line-strong)]'
 
 export function CodeGlyph() {
   return (
@@ -1044,7 +1044,7 @@ export function CreateStudioFooter({
 }) {
   const { t } = useI18n()
   const primary = 'flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-cta px-3 text-caption font-semibold text-cta-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
-  const secondary = 'h-8 flex-shrink-0 rounded-lg border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  const secondary = 'h-8 flex-shrink-0 raised-control rounded-lg border border-transparent px-2.5 text-caption font-medium text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
   const codeGlyph = (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
       <path d="m5.5 4.5-3.5 3.5 3.5 3.5" />
@@ -1156,7 +1156,7 @@ export function CreateStudioBar({
         <button
           type="button"
           onClick={onSkip}
-          className="h-8 flex-shrink-0 rounded-lg border border-line bg-surface px-2.5 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="h-8 flex-shrink-0 raised-control rounded-lg border border-transparent px-2.5 text-caption font-medium text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Skip setup')}
         </button>
