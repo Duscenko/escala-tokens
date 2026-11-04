@@ -97,7 +97,7 @@ import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatc
 import { MotionPreview, motionSummary } from './MotionPreview'
 import { AddFontButton, AddFontDialog } from './AddFontDialog'
 import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './PresetGlyphs'
-import ThemeSaveBar, { ThemeSetupBar, type ShipActions } from './ThemeSaveBar'
+import ThemeSaveBar, { ThemeSetupBar, RollingDie, type ShipActions } from './ThemeSaveBar'
 import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow, type RampLegend } from './ColorRolesPanel'
 import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
@@ -2613,6 +2613,37 @@ export default function ThemeQuickSettingsRail({
   }
   if (randomHandle) randomHandle.current = applyRandomTheme
 
+  // The colour-only roll (a component page's Color row): the same dealer as
+  // Random, but only its COLOURS land — accent, neutral (+ tint) and the four
+  // severities. Font, radius, type and the brand's name stay as they are.
+  const [colourRolls, setColourRolls] = useState(0)
+  const applyRandomColours = () => {
+    const recipe = nextShuffle({
+      currentStyle: useDesignStore.getState().themeOrigin?.[previewTheme],
+      accent: liveAccent,
+      bodyFont: typography.fontFamily,
+      headingFont: typography.headingFontFamily ?? typography.fontFamily,
+      typeScale: inferTypeScaleMode(typography.sizes ?? {}),
+      avoidScaffold: lastRandomScaffold.current,
+      avoidMood: lastRandomMood.current,
+      rng: Math.random,
+    })
+    lastRandomScaffold.current = recipe.scaffoldId
+    lastRandomMood.current = recipe.moodId
+    setColourRolls((n) => n + 1)
+    commit(t('Random colours applied'), (themeKey) => {
+      setNeutralTint(recipe.neutralTint)
+      writeAccent(themeKey, recipe.accent)
+      applyNeutral(recipe.neutral, themeKey)
+      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
+      for (const role of STATE_IDS) {
+        const hex = recipe.states[role]
+        writeState(themeKey, role, hex, 'light')
+        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
+      }
+    })
+  }
+
   const typeScaleMode = inferTypeScaleMode(typography.sizes)
   const typeScaleBodyPx = TYPE_SCALE_MODES.map((mode) => parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 0)
   const currentBodyPx = parseFloat(typography.sizes?.['text-md'] ?? '') || 0
@@ -2744,7 +2775,19 @@ export default function ThemeQuickSettingsRail({
           // The Contrast grid is a check, not a setting: a small toggle on the
           // header (beside Reset and the chevron) instead of a row in the body,
           // so the colours stay short and Font · Radius sit closer below.
-          action={(
+          action={embed ? (
+            // On a component page the Color row rolls new colours instead:
+            // the contrast grid has no board to open on there.
+            <button
+              type="button"
+              onClick={applyRandomColours}
+              aria-label={t('Random colours')}
+              title={t('Random colours')}
+              className="group grid h-6 w-6 place-items-center rounded-md text-fg-muted transition-[background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+            >
+              <RollingDie rolls={colourRolls} size={15} />
+            </button>
+          ) : (
             <button
               type="button"
               onClick={() => onContrastOpenChange?.(!contrastOpen)}
