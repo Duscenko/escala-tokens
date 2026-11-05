@@ -1105,3 +1105,30 @@ button:focus-visible > .generator-cue-live {
 .faq-answer :is(p, li) .text-fg {
   color: var(--fg-muted);
 }
+
+
+/* A Select's list inside the component stage. The stage scales with CSS `zoom`;
+   Radix positions its popper wrapper in viewport pixels, which `zoom` then
+   scales again, so the list landed ~120px left of its trigger (audit
+   2026-11-05). The wrapper is zoomed back to 1 so its translate is true
+   pixels, and the list itself carries the stage's zoom so it still reads at
+   the specimen's scale. */
+[data-radix-popper-content-wrapper]:has(> [data-slot="select-content"]) {
+  zoom: calc(1 / var(--stage-zoom, 1));
+}
+[data-slot="select-content"] {
+  zoom: var(--stage-zoom, 1);
+}
+
+/* The same `zoom` clips an open Accordion / Collapsible: Radix measures the
+   panel with getBoundingClientRect (visual px) and publishes it as a CSS
+   length, which the zoomed stage then shrinks again — an open panel showed
+   ~2/3 of its text (audit 2026-11-05). The recipe reads
+   --escala-disclosure-height, so only the stage divides it back. Products
+   have no stage and keep the plain value. */
+[data-escala-stage] [data-part="Accordion.content"] {
+  --escala-disclosure-height: calc(var(--radix-accordion-content-height) / var(--stage-zoom, 1)) !important;
+}
+[data-escala-stage] [data-part="Collapsible.content"] {
+  --escala-disclosure-height: calc(var(--radix-collapsible-content-height) / var(--stage-zoom, 1)) !important;
+}

@@ -2909,8 +2909,17 @@ export default function Configurator() {
                       <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
                     </>
                   )}
+                  {/* Components / <category> / <component>: the page's own name
+                      is the last crumb. It used to stop at the category, so
+                      Sidebar read "Components / Navigation" (audit 2026-11-05). */}
+                  {activeComponent && (
+                    <>
+                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(activeComponent.category)}</span>
+                      <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
+                    </>
+                  )}
                   <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                    {t(activeComponent?.category ?? 'Components')}
+                    {activeComponent ? activeComponent.label : t('Components')}
                   </h2>
                 </div>
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-2">

@@ -14,7 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF } from '../themeWorkspaceLayout'
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
@@ -709,7 +709,7 @@ export function ComponentCatalogueHero({
                 <span className="text-mini text-fg-faint tabular-nums">
                   {overview
                     ? t('{total} variants', { total: variantCount })
-                    : t('{index} of {total} variants', { index: variantIndex(def, values), total: variantCount })}
+                    : t('Variant {index} of {total}', { index: variantIndex(def, values), total: variantCount })}
                 </span>
               )}
             </span>
@@ -755,11 +755,11 @@ export function ComponentCatalogueHero({
                 {/* `zoom`, not a transform: the stage keeps the scaled size in
                     the layout, so it grows and shrinks with it. */}
                 {overview ? (
-                  <div className="relative" style={{ zoom: zoom * STAGE_BASE }}>
+                  <div className="relative" data-escala-stage="" style={{ zoom: zoom * STAGE_BASE, '--stage-zoom': zoom * STAGE_BASE } as CSSProperties}>
                     <OverviewStage def={def} tokens={canvasTokens} prefix={PHOSPHOR_LIBRARY.key} />
                   </div>
                 ) : Specimen ? (
-                  <div className="relative" style={{ zoom: zoom * STAGE_BASE }}>
+                  <div className="relative" data-escala-stage="" style={{ zoom: zoom * STAGE_BASE, '--stage-zoom': zoom * STAGE_BASE } as CSSProperties}>
                     <TokenInspector component={def.key} variant={values}>
                       <Specimen t={canvasTokens} v={values} icons={icons} />
                     </TokenInspector>

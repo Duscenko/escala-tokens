@@ -3,7 +3,7 @@
 // InputOTPSeparator. Appearance: recipe (InputOTP); a slot reads
 // `data-active`, the wrapper carries `aria-invalid`.
 import * as React from 'react'
-import { OTPInput, OTPInputContext } from 'input-otp'
+import { OTPInput, OTPInputContext, REGEXP_ONLY_DIGITS } from 'input-otp'
 import { cn } from '../../lib/utils'
 
 type OTPProps = React.ComponentProps<typeof OTPInput> & { containerClassName?: string }
@@ -15,6 +15,10 @@ function InputOTP({ className, containerClassName, ...props }: OTPProps) {
         data-slot="input-otp"
         containerClassName={cn('flex items-center has-disabled:opacity-50', containerClassName)}
         spellCheck={false}
+        // A one-time code is digits: the numeric keypad alone did not stop a
+        // physical keyboard typing "a" and "b" (audit 2026-11-05). A product
+        // with alphanumeric codes passes its own `pattern`.
+        pattern={REGEXP_ONLY_DIGITS}
         className={cn('disabled:cursor-not-allowed', className)}
         {...props}
       />

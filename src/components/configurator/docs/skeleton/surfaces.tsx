@@ -82,14 +82,19 @@ export function SkeletonSeparatorSpecimen({ t, v, w }: SpecimenProps) {
 }
 
 export function SkeletonAccordionSpecimen({ t }: SpecimenProps) {
-  const rows = ['What are design tokens?', 'How does Figma sync work?', 'Can I export CSS?']
+  // Each question has its own answer — three identical panels read as a bug.
+  const rows: [string, string][] = [
+    ['What are design tokens?', 'Named values for color, type and spacing that keep every surface consistent.'],
+    ['How does Figma sync work?', 'The plugin reads your published system and writes it as Figma variables and styles.'],
+    ['Can I export CSS?', 'Yes. Download variables.css, or copy it straight into your project.'],
+  ]
   return (
     <RecipeScope t={t}>
       <SkAccordion type="single" collapsible defaultValue="item-0" style={{ width: 320 }}>
-        {rows.map((q, i) => (
+        {rows.map(([q, a], i) => (
           <SkAccordionItem key={q} value={`item-${i}`}>
             <SkAccordionTrigger icon={<PreviewIcon concept="chevron" size={iconOf(13)} />}>{q}</SkAccordionTrigger>
-            <SkAccordionContent>Named values for color, type and spacing that keep every surface consistent.</SkAccordionContent>
+            <SkAccordionContent>{a}</SkAccordionContent>
           </SkAccordionItem>
         ))}
       </SkAccordion>
