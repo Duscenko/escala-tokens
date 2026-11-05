@@ -1553,20 +1553,24 @@ export function DemoVideo({ className, tapToPlay, hold = false }: {
 export function PauseMotionButton({ className }: { className?: string }) {
   const { t } = useI18n()
   const paused = useAboutMotionPaused()
+  // Icon only: the glyph is the universal play/pause mark, and the name lives
+  // in aria-label and the tooltip.
+  const label = t(paused ? 'Play animations' : 'Pause animations')
   return (
     <button
       type="button"
       aria-pressed={paused}
+      aria-label={label}
+      title={label}
       onClick={() => setAboutMotionPaused(!paused)}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-app/85 px-2.5 text-caption font-medium text-fg backdrop-blur transition-colors hover:bg-elevated focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui',
+        'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-app/85 text-fg backdrop-blur transition-colors hover:bg-elevated focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui',
         className,
       )}
     >
       <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
         {paused ? <path d="M3 1.8v8.4L10 6z" /> : <path d="M3 2h2v8H3zM7 2h2v8H7z" />}
       </svg>
-      {paused ? t('Play animations') : t('Pause animations')}
     </button>
   )
 }
