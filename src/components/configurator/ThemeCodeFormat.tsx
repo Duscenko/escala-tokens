@@ -253,7 +253,8 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
   const items = facts
     ? [
         [compactCount(facts.primitives), t('primitives')],
-        [compactCount(facts.tokens), t('tokens')],
+        // "roles", the word Export uses for the same number (audit 2026-11-05).
+        [compactCount(facts.tokens), t('roles')],
         [String(facts.modes), t('modes')],
         [compactCount(facts.cssBytes), 'CSS'],
       ]

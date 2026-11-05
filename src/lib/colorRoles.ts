@@ -214,6 +214,11 @@ export function darkTwinOf(lightHex: string, darkPage: string): string {
  *  used to leave Light on its previous colour, so a brand that looked right
  *  in Dark switched to a different one in Light. */
 export function lightTwinOf(darkHex: string, lightPage: string): string {
+  // A colour that already passes on the light page IS its own light twin.
+  // Re-solving it sampled 97 discrete lightnesses and returned the nearest,
+  // so `#e11d48` (4.70:1, passing) shipped as `#e01d48` — the brand drifting
+  // by quantisation alone (audit 2026-11-05).
+  if (rolePasses(checkRoleColor(darkHex, lightPage), 'light')) return darkHex.toLowerCase()
   return roleColorAtHue(darkHex, readHuePosition(darkHex).hue, 'light', lightPage)
 }
 

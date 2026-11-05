@@ -708,15 +708,19 @@ var init_motion = __esm({
       "slide-out-bottom": { transform: ["translateY(0)", "translateY(100%)"] },
       // Height from 0 to the content's own (a Radix disclosure publishes it;
       // the recipe points `--escala-disclosure-height` at that variable).
-      "disclosure-expand": { height: ["0", "var(--escala-disclosure-height)"] },
-      "disclosure-collapse": { height: ["var(--escala-disclosure-height)", "0"] },
-      "switch-move": { transform: ["translateX(var(--switch-from))", "translateX(var(--switch-to))"] },
+      // Every runtime var carries a fallback: variables.css ships these keyframes
+      // on their own, and a consumer that never sets the var must still get a
+      // valid declaration (audit 2026-11-05). `--switch-to` falls back to the
+      // recipe's own thumb travel.
+      "disclosure-expand": { height: ["0", "var(--escala-disclosure-height, auto)"] },
+      "disclosure-collapse": { height: ["var(--escala-disclosure-height, auto)", "0"] },
+      "switch-move": { transform: ["translateX(var(--switch-from, 0px))", "translateX(var(--switch-to, var(--escala-travel, 0px)))"] },
       "switch-toggle": {
         transform: [
-          "translateX(var(--switch-from)) scaleX(1) scaleY(1)",
-          "translateX(var(--switch-from)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash)))",
-          "translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash)))",
-          "translateX(var(--switch-to)) scaleX(1) scaleY(1)"
+          "translateX(var(--switch-from, 0px)) scaleX(1) scaleY(1)",
+          "translateX(var(--switch-from, 0px)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash)))",
+          "translateX(calc(var(--switch-from, 0px) + (var(--switch-to, var(--escala-travel, 0px)) - var(--switch-from, 0px)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash)))",
+          "translateX(var(--switch-to, var(--escala-travel, 0px))) scaleX(1) scaleY(1)"
         ],
         offset: [0, 0.278, 0.722, 1],
         easing: ["entrance", "gentle", "exit"]
@@ -1151,7 +1155,11 @@ function buildScale(baseHex, spec, shift, background, appearance = "light", tint
     if (i === BASE_TONE + 1) {
       const step = 0.045 * (1 + shift * 0.6);
       const H2 = baseH + (spec.hueShift?.(0.2) ?? 0);
-      out.push(oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H2));
+      let hover = oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H2);
+      if (hover.toLowerCase() === String(out[out.length - 1]).toLowerCase()) {
+        hover = oklchToHex(clamp01(baseL - dir * 0.2), baseC * spec.darkCmul, H2);
+      }
+      out.push(hover);
       continue;
     }
     const isMaxTone = i === TONES;
@@ -1240,7 +1248,10 @@ function alphaColorOver(targetHex, backgroundHex, appearance = "light") {
   const alphaFor = (t, b) => overlay === b ? 0 : (t - b) / (overlay - b);
   const raw = Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb));
   let a2 = Math.min(1, Math.max(0, Math.ceil(raw * 100) / 100));
-  if (a2 <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex();
+  if (a2 <= 0) {
+    const same = Math.round(tr) === Math.round(br) && Math.round(tg) === Math.round(bg) && Math.round(tb) === Math.round(bb);
+    return same ? chroma.rgb(overlay, overlay, overlay).alpha(0).hex() : chroma.rgb(tr, tg, tb).alpha(1).hex("rgba");
+  }
   const exact = (t, b, alpha) => (t - (1 - alpha) * b) / alpha;
   const channels = [[tr, br], [tg, bg], [tb, bb]];
   while (a2 < 1 && channels.some(([c2, b]) => {
@@ -5472,6 +5483,7 @@ var STORAGE_KEY, ACTIVATION_KEY, DEV_LICENCE, memoryKey, state, listeners;
 var init_licence = __esm({
   "src/lib/licence.ts"() {
     init_supabase();
+    init_openBeta();
     STORAGE_KEY = "sd-licence-key";
     ACTIVATION_KEY = "sd-licence-activation";
     DEV_LICENCE = null;
@@ -10506,6 +10518,7 @@ function buildCSS(store, opts) {
   lines.push("\n  /* Dimension primitives \u2014 one value each; every length below aliases these */");
   Object.entries(dimensionScaleForStore(store, themeOrder)).sort(([, a2], [, b]) => parseFloat(a2) - parseFloat(b)).forEach(([k, v]) => lines.push(`  --dimension-${k}: ${v};`));
   lines.push("\n  /* Typography */");
+  lines.push("  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */");
   lines.push(`  --font-family-heading: ${stackFor(typography2.headingFontFamily ?? typography2.fontFamily)};`);
   lines.push(`  --font-family-body: ${stackFor(typography2.fontFamily)};`);
   Object.entries(typography2.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`));

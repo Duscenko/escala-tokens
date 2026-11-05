@@ -192,6 +192,11 @@ export function buildCSS(
     .forEach(([k, v]) => lines.push(`  --dimension-${k}: ${v};`))
 
   lines.push('\n  /* Typography */')
+  // The "heading" family is the editor's DISPLAY font: only display-* roles
+  // read it. heading-* roles use the body family by design (size and weight
+  // carry their hierarchy). Said in the file, since the name suggests
+  // otherwise (audit 2026-11-05).
+  lines.push('  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */')
   lines.push(`  --font-family-heading: ${stackFor(typography.headingFontFamily ?? typography.fontFamily)};`)
   lines.push(`  --font-family-body: ${stackFor(typography.fontFamily)};`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))

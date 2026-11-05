@@ -120,11 +120,13 @@ export function FittedSpecimen({ children, interactive = false }: { children: Re
  * category + name below. Ordered by category so neighbours belong together.
  */
 export function ComponentsIndex({
-  tokens, onSelect, search = '',
+  tokens, onSelect, search = '', onClearSearch,
 }: {
   tokens: PreviewTokens
   onSelect: (c: ComponentDef) => void
   search?: string
+  /** Empties the directory's search — offered on the no-results state. */
+  onClearSearch?: () => void
 }) {
   const { t } = useI18n()
   const q = search.trim().toLowerCase()
@@ -142,13 +144,32 @@ export function ComponentsIndex({
         <p className="mt-2 max-w-2xl text-strong leading-relaxed text-fg-muted">{t('Every component in the library, drawn with your tokens. Open one to see its variants, code and the roles it reads.')}</p>
         <p className="mt-2 text-caption text-fg-faint">{items.length} {t(items.length === 1 ? 'component' : 'components')}</p>
       </header>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3">
-        {items.map((def) => (
-          <li key={def.key}>
-            <ComponentCard def={def} tokens={tokens} onSelect={onSelect} />
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 && q ? (
+        // The page says why it is empty and how out — it used to leave a
+        // blank grid under "0 components" while only the directory beside it
+        // explained (audit 2026-11-05).
+        <div role="status" className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-6 py-10">
+          <p className="text-strong text-fg">{t('No components match')} “{search.trim()}”.</p>
+          <p className="text-ui text-fg-muted">{t('Try a component name such as Button, Dialog or Switch.')}</p>
+          {onClearSearch && (
+            <button
+              type="button"
+              onClick={onClearSearch}
+              className="h-8 rounded-lg border border-line bg-surface px-3 text-caption font-medium text-fg hover:bg-elevated focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui"
+            >
+              {t('Clear search')}
+            </button>
+          )}
+        </div>
+      ) : (
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3">
+          {items.map((def) => (
+            <li key={def.key}>
+              <ComponentCard def={def} tokens={tokens} onSelect={onSelect} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

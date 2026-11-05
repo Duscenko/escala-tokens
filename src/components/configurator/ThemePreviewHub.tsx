@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
+import { useNoTabStops } from '../../lib/useNoTabStops'
 import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
@@ -353,6 +354,9 @@ function ArtefactsView({
   }), [overlayStore, previewTheme, accentPreview, collagePlatform])
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const boardRef = useRef<HTMLDivElement | null>(null)
+  // The sample screens are not controls: out of the Tab order and the a11y
+  // tree. The Components view's covers ARE navigation and stay reachable.
+  useNoTabStops(boardRef, view === 'theme')
   const stageTokens = tokensByAppearance[boardAppearance]
   // Token Details sits ON Color edition, not beside Themes library. The
   // canvas only needs to cede whatever of the 360px drawer actually crosses
@@ -403,7 +407,7 @@ function ArtefactsView({
         {/* `isolate`: the board is its own stacking context, so nothing in it
             (Sonner's toaster is z 999999999) can rise above the colour map's
             scrim, its sibling. */}
-        <div ref={boardRef} className="isolate" style={inspecting ? { cursor: 'crosshair' } : undefined}>
+        <div ref={boardRef} className="isolate" aria-hidden={view === 'theme' || undefined} style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
             {/* A colour the bento barely paints with gets a tile of
                 catalogue parts that do, so the spotlight lights something. */}

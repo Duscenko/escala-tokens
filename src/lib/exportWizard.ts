@@ -225,6 +225,8 @@ export interface CollectionMeta {
   count: number
   /** Present on 'semantics' — the theme columns available as modes. */
   modes?: string[]
+  /** Present on 'semantics' — unique roles; `count` is roles × modes. */
+  roles?: number
 }
 
 export function collectionMeta(full: TokenJSON = generateTokenJSON()): CollectionMeta[] {
@@ -233,10 +235,17 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
   const typographyCount =
     2 + Object.keys(t.sizes).length + Object.keys(t.lineHeights ?? {}).length + Object.keys(t.weights).length + typeRoleCount
   const themeNames = full.colors.themeOrder
-  const roleCount = Object.keys(full.colors.themes[themeNames[0]] ?? {}).length
+  // The semantic layer every file ships is the Categorical projection
+  // (`colors.architecture.tokens`) — the same roles Code's header counts. The
+  // flat catalogue in `colors.themes` is the editing matrix, a different
+  // number, which is why the two screens disagreed (40 vs 76 — audit
+  // 2026-11-05). Flat stays the fallback for a document with no projection.
+  const archGroups = (full.colors as { architecture?: { tokens?: Record<string, Record<string, unknown>> } }).architecture?.tokens
+  const archRoles = archGroups ? Object.values(archGroups).reduce((n, g) => n + Object.keys(g ?? {}).length, 0) : 0
+  const roleCount = archRoles || Object.keys(full.colors.themes[themeNames[0]] ?? {}).length
   return [
     { key: 'primitives', label: 'Color · Primitives', count: Object.keys(full.colors.primitive).length },
-    { key: 'semantics', label: 'Color · Semantics', count: roleCount * themeNames.length, modes: themeNames },
+    { key: 'semantics', label: 'Color · Semantics', count: roleCount * themeNames.length, modes: themeNames, roles: roleCount },
     { key: 'gradients', label: 'Gradients', count: Object.keys(full.gradients).length + Object.keys(full.gradientsDark).length },
     { key: 'typography', label: 'Font', count: typographyCount },
     { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length + Object.keys(full.spacingRoles ?? {}).length },

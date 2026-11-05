@@ -20,7 +20,7 @@ import { ComponentArticle, type FigmaCopyScope } from './docs/componentArticle'
 import { ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '', figmaCopy,
+  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '', onClearSearch, figmaCopy,
 }: {
   /** What Copy for Figma ships (the Figma page's File & modes). */
   figmaCopy?: FigmaCopyScope
@@ -29,6 +29,8 @@ export default function ComponentsView({
   active: ComponentDef | null
   /** The directory's search; on the index it filters the cards too. */
   search?: string
+  /** Empties that search (the index's no-results state offers it). */
+  onClearSearch?: () => void
   onSelect: (c: ComponentDef) => void
   /** A role named on the open component. Opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
@@ -55,7 +57,7 @@ export default function ComponentsView({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
         >
-          <ComponentsIndex tokens={tokens} onSelect={onSelect} search={search} />
+          <ComponentsIndex tokens={tokens} onSelect={onSelect} search={search} onClearSearch={onClearSearch} />
         </motion.div>
       </div>
     )

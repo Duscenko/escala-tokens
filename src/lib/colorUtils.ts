@@ -303,7 +303,16 @@ function buildScale(
       // at the floor) across the whole slider.
       const step = 0.045 * (1 + shift * 0.6)
       const H = baseH + (spec.hueShift?.(0.2) ?? 0)
-      out.push(oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H))
+      let hover = oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H)
+      // A solid already at the end of the lightness range (#000000 in light,
+      // #ffffff in dark) clamps the hover onto itself. Step the other way so
+      // tone 10 stays a real, distinguishable state (audit 2026-11-05).
+      // A plain reverse step is not enough at L≈0: OKLab L 0.045 still rounds
+      // to #000000-ish, so the reverse step is a perceptible 0.2.
+      if (hover.toLowerCase() === String(out[out.length - 1]).toLowerCase()) {
+        hover = oklchToHex(clamp01(baseL - dir * 0.2), baseC * spec.darkCmul, H)
+      }
+      out.push(hover)
       continue
     }
 
@@ -759,7 +768,18 @@ export function alphaColorOver(
   // Two decimals, rounded UP: rounding down would demand an overlay outside
   // 0–255 to hit the target, which then clamps and breaks the reconstruction.
   let a = Math.min(1, Math.max(0, Math.ceil(raw * 100) / 100))
-  if (a <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex()
+  if (a <= 0) {
+    // α = 0 is right only for the page itself (tone 1). A solid on the FAR
+    // side of the page from the overlay (darker than a dark page, e.g. a
+    // #000000 accent) cannot be reached by layering white at any α < 1, so
+    // the only overlay that reproduces it is the solid itself. Emitting a
+    // transparent white there made a whole alpha twin vanish (audit
+    // 2026-11-05).
+    const same = Math.round(tr) === Math.round(br) && Math.round(tg) === Math.round(bg) && Math.round(tb) === Math.round(bb)
+    return same
+      ? chroma.rgb(overlay, overlay, overlay).alpha(0).hex()
+      : chroma.rgb(tr, tg, tb).alpha(1).hex('rgba')
+  }
 
   const exact = (t: number, b: number, alpha: number) => (t - (1 - alpha) * b) / alpha
   const channels: [number, number][] = [[tr, br], [tg, bg], [tb, bb]]

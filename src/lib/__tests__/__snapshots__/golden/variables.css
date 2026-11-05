@@ -363,6 +363,7 @@
   --dimension-9999: 9999px;
 
   /* Typography */
+  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */
   --font-family-heading: 'Inter', sans-serif;
   --font-family-body: 'Inter', sans-serif;
   --font-size-text-xs: 12px;
@@ -1257,21 +1258,21 @@
 }
 @keyframes motion-disclosure-expand {
   0% { height: 0; }
-  100% { height: var(--escala-disclosure-height); }
+  100% { height: var(--escala-disclosure-height, auto); }
 }
 @keyframes motion-disclosure-collapse {
-  0% { height: var(--escala-disclosure-height); }
+  0% { height: var(--escala-disclosure-height, auto); }
   100% { height: 0; }
 }
 @keyframes motion-switch-move {
-  0% { transform: translateX(var(--switch-from)); }
-  100% { transform: translateX(var(--switch-to)); }
+  0% { transform: translateX(var(--switch-from, 0px)); }
+  100% { transform: translateX(var(--switch-to, var(--escala-travel, 0px))); }
 }
 @keyframes motion-switch-toggle {
-  0% { transform: translateX(var(--switch-from)) scaleX(1) scaleY(1); animation-timing-function: var(--motion-easing-entrance); }
-  27.8% { transform: translateX(var(--switch-from)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash))); animation-timing-function: var(--motion-easing-gentle); }
-  72.2% { transform: translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash))); animation-timing-function: var(--motion-easing-exit); }
-  100% { transform: translateX(var(--switch-to)) scaleX(1) scaleY(1); }
+  0% { transform: translateX(var(--switch-from, 0px)) scaleX(1) scaleY(1); animation-timing-function: var(--motion-easing-entrance); }
+  27.8% { transform: translateX(var(--switch-from, 0px)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash))); animation-timing-function: var(--motion-easing-gentle); }
+  72.2% { transform: translateX(calc(var(--switch-from, 0px) + (var(--switch-to, var(--escala-travel, 0px)) - var(--switch-from, 0px)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash))); animation-timing-function: var(--motion-easing-exit); }
+  100% { transform: translateX(var(--switch-to, var(--escala-travel, 0px))) scaleX(1) scaleY(1); }
 }
 @keyframes motion-spring-in {
   0% { opacity: 0; transform: scale(var(--motion-transform-pop)); animation-timing-function: var(--motion-easing-entrance); }

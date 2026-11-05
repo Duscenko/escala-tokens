@@ -569,15 +569,19 @@ export const MOTION_KEYFRAMES: Record<string, MotionKeyframes> = {
   'slide-out-bottom': { transform: ['translateY(0)', 'translateY(100%)'] },
   // Height from 0 to the content's own (a Radix disclosure publishes it;
   // the recipe points `--escala-disclosure-height` at that variable).
-  'disclosure-expand': { height: ['0', 'var(--escala-disclosure-height)'] },
-  'disclosure-collapse': { height: ['var(--escala-disclosure-height)', '0'] },
-  'switch-move': { transform: ['translateX(var(--switch-from))', 'translateX(var(--switch-to))'] },
+  // Every runtime var carries a fallback: variables.css ships these keyframes
+  // on their own, and a consumer that never sets the var must still get a
+  // valid declaration (audit 2026-11-05). `--switch-to` falls back to the
+  // recipe's own thumb travel.
+  'disclosure-expand': { height: ['0', 'var(--escala-disclosure-height, auto)'] },
+  'disclosure-collapse': { height: ['var(--escala-disclosure-height, auto)', '0'] },
+  'switch-move': { transform: ['translateX(var(--switch-from, 0px))', 'translateX(var(--switch-to, var(--escala-travel, 0px)))'] },
   'switch-toggle': {
     transform: [
-      'translateX(var(--switch-from)) scaleX(1) scaleY(1)',
-      'translateX(var(--switch-from)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash)))',
-      'translateX(calc(var(--switch-from) + (var(--switch-to) - var(--switch-from)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash)))',
-      'translateX(var(--switch-to)) scaleX(1) scaleY(1)',
+      'translateX(var(--switch-from, 0px)) scaleX(1) scaleY(1)',
+      'translateX(var(--switch-from, 0px)) scaleX(calc(1 - var(--motion-squash))) scaleY(calc(1 + var(--motion-squash)))',
+      'translateX(calc(var(--switch-from, 0px) + (var(--switch-to, var(--escala-travel, 0px)) - var(--switch-from, 0px)) * 0.9)) scaleX(calc(1 + var(--motion-squash))) scaleY(calc(1 - var(--motion-squash)))',
+      'translateX(var(--switch-to, var(--escala-travel, 0px))) scaleX(1) scaleY(1)',
     ],
     offset: [0, 0.278, 0.722, 1],
     easing: ['entrance', 'gentle', 'exit'],

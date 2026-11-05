@@ -101,7 +101,7 @@ import { RadiusPresetGlyph, ShadowPresetGlyph, SpacingModeGlyph } from './Preset
 import ThemeSaveBar, { ThemeSetupBar, RollingDie, type ShipActions } from './ThemeSaveBar'
 import { StylePicker } from './ThemePanel'
 import { ColorRolesPanel, type ColorRoleRow, type RampLegend } from './ColorRolesPanel'
-import { COLOR_ROLE_ORDER, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
+import { COLOR_ROLE_ORDER, checkRoleColor, darkTwinOf, harmonizedState, lightTwinOf, roleColorAtHue, type ColorRoleId, type StateRoleId } from '../../lib/colorRoles'
 import type { ColorScale } from '../../types/tokens'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { useLibraryStatus } from '../../lib/libraryStatus'
@@ -2449,6 +2449,11 @@ export default function ThemeQuickSettingsRail({
       : id === 'neutral' ? neutralAnchor(appearance)
         : stateHex(id, appearance)
   const themePage = resolveThemePages(store, previewTheme)
+  // The collapsed Color row names the SAME value its Accent field shows: the
+  // anchor of the appearance on screen. It read the light anchor always, so in
+  // Dark the summary said #8B4DFF beside a field saying #905CFF (audit
+  // 2026-11-05).
+  const accentSummaryHex = rolePreview?.id === 'accent' ? rolePreview.hex : roleHex('accent', rampAppearance)
   // Each role's ramp in the theme on screen, from the family this theme
   // reads for that slot — what the row's ramp toggle shows.
   const roleRamps = Object.fromEntries(COLOR_ROLE_ORDER.map((id) => {
@@ -2554,7 +2559,16 @@ export default function ThemeQuickSettingsRail({
         : applyNeutral(hex, themeKey)))
       return
     }
-    const dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)
+    let dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)
+    // A colour typed in Dark that cannot even be SEEN on the dark page (under
+    // WCAG 1.4.11's 3:1) is not a brand choice, it is a blank button: #000000
+    // collapsed ramp tones 8–10, emptied the alpha twin and drew the primary
+    // black on black, with no warning (audit 2026-11-05). Land on its solved
+    // twin instead, and say so — never a silent change.
+    if (rampAppearance === 'dark' && checkRoleColor(hex, themePage.dark).pageWcag < 3) {
+      dark = darkTwinOf(hex, themePage.dark)
+      showToast(t('{hex} is invisible on the dark page — using {fixed} instead.', { hex: hex.toUpperCase(), fixed: dark.toUpperCase() }))
+    }
     if (id === 'accent') {
       const light = rampAppearance === 'dark' ? lightTwinOf(hex, themePage.light) : hex
       colorCommit('Accent updated', (themeKey) => writeAccentAndStates(themeKey, light, dark))
@@ -2788,7 +2802,7 @@ export default function ThemeQuickSettingsRail({
           title="Color"
           foundationKey="color"
           open={activePanel === 'color'}
-          summary={<><span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-[3px] border border-line" style={{ background: liveAccent }} />{liveAccent.toUpperCase()}</>}
+          summary={<><span aria-hidden className="h-3 w-3 flex-shrink-0 rounded-[3px] border border-line" style={{ background: accentSummaryHex }} />{accentSummaryHex.toUpperCase()}</>}
           flush
           onReset={colorReset}
           resetTarget={rowResetTarget}

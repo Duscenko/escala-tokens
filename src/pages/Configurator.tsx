@@ -590,6 +590,7 @@ function ExportPill({
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
+        data-export-pill
         onClick={() => setOpen((next) => !next)}
         className={`inline-flex h-8 items-center gap-1.5 rounded-lg bg-white pl-2.5 pr-2 text-caption font-medium text-black ring-1 ring-inset ring-black/15 dark:ring-0 ${EXPORT_HALF} active:scale-[0.98] ${EXPORT_FOCUS} ${open ? 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)]' : ''}`}
       >
@@ -2432,6 +2433,7 @@ export default function Configurator() {
         onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
         onOpenFoundation={selectFoundation}
         search={componentSearch}
+        onClearSearch={() => setComponentSearch('')}
         figmaCopy={{
           modes: figmaSyncModes,
           viewports: figmaViewports,
@@ -2849,6 +2851,14 @@ export default function Configurator() {
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
                 title, and the tab strip above owns the header row. */}
+            {/* …so the page still needs ONE heading for assistive tech: the
+                Generator rendered no h1 at all (audit 2026-11-05). Visually
+                hidden; the rail and the inspector already say it on screen. */}
+            {themesCanvas && (
+              <h1 className="sr-only">
+                {t('Escala')} — {t(({ system: 'Home', preview: 'Board', primitives: 'Variables', code: 'Code', library: 'New brand' } as Record<string, string>)[themeWorkspaceTab] ?? 'Generator')}
+              </h1>
+            )}
             {/* Components uses Variables' header band — same 52px / px-4 shell,
                 the section named at the left (the active category, where
                 Variables names its collection) and the controls at the right —

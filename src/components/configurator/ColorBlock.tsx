@@ -14,12 +14,22 @@ import { FIELD_CHIP, FIELD_SHELL, FIELD_SHELL_ON, FIELD_SHELL_REST } from '../ui
 import { THUMB_CENTER, THUMB_CLASS, along, ratioIn } from '../ui/ColorField'
 import { INSPECTOR_ID } from './WorkspaceInspector'
 
-const HEX_RE = /^#?([0-9a-f]{6})$/i
+const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 
-/** A typed hex, normalised, or null when it is not one. */
-function parseHex(raw: string): string | null {
+/** A typed hex, normalised to `#rrggbb`, or null when it is not one.
+ *  Accepts the CSS shorthand (`#abc` → `#aabbcc`) and an 8-digit hex whose
+ *  alpha is fully opaque (`ff`) — a role here is a solid, so a translucent
+ *  value is refused rather than silently flattened. */
+export function parseHex(raw: string): string | null {
   const match = HEX_RE.exec(raw.trim())
-  return match ? `#${match[1].toLowerCase()}` : null
+  if (!match) return null
+  let body = match[1].toLowerCase()
+  if (body.length === 3) body = body.split('').map((c) => c + c).join('')
+  if (body.length === 8) {
+    if (body.slice(6) !== 'ff') return null
+    body = body.slice(0, 6)
+  }
+  return `#${body}`
 }
 
 function HexInput({ hex, label, readOnly, readOnlyTitle, onHex, onFocus, inputRef, className }: {
@@ -32,33 +42,44 @@ function HexInput({ hex, label, readOnly, readOnlyTitle, onHex, onFocus, inputRe
   inputRef?: RefObject<HTMLInputElement | null>
   className: string
 }) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState<string | null>(null)
+  // An invalid value is KEPT on screen and flagged, never reverted in
+  // silence: a revert reads as "the field ignored me" (audit 2026-11-05).
+  const [invalid, setInvalid] = useState(false)
   // Leaving the field writes only a CHANGED, valid hex. Writing back what was
   // shown is not a no-op: the neutral's dark row shows a derived tone, and
   // committing it would set the neutral itself and unlink it from the accent.
   const save = () => {
     if (draft == null) return
     const next = parseHex(draft)
-    if (next && next !== hex.toLowerCase()) onHex(next)
+    if (!next) { setInvalid(true); return }
+    if (next !== hex.toLowerCase()) onHex(next)
+    setInvalid(false)
     setDraft(null)
   }
+  const hint = t('Not a hex colour — use #RGB or #RRGGBB. Esc restores it.')
   return (
-    <input
-      ref={inputRef}
-      value={draft ?? hex.toUpperCase()}
-      onFocus={(event) => { onFocus?.(); setDraft(hex.toUpperCase()); event.currentTarget.select() }}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={save}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') event.currentTarget.blur()
-        if (event.key === 'Escape') { setDraft(null); event.currentTarget.blur() }
-      }}
-      spellCheck={false}
-      readOnly={readOnly}
-      title={readOnly ? readOnlyTitle : undefined}
-      aria-label={`${label} hex`}
-      className={className}
-    />
+    <>
+      <input
+        ref={inputRef}
+        value={draft ?? hex.toUpperCase()}
+        onFocus={(event) => { onFocus?.(); if (!invalid) setDraft(hex.toUpperCase()); event.currentTarget.select() }}
+        onChange={(event) => { setDraft(event.target.value); if (invalid) setInvalid(false) }}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+          if (event.key === 'Escape') { setDraft(null); setInvalid(false); event.currentTarget.blur() }
+        }}
+        spellCheck={false}
+        readOnly={readOnly}
+        title={readOnly ? readOnlyTitle : invalid ? hint : undefined}
+        aria-label={`${label} hex`}
+        aria-invalid={invalid || undefined}
+        className={invalid ? `${className} !text-status-danger underline decoration-status-danger decoration-wavy underline-offset-2` : className}
+      />
+      {invalid && <span role="alert" className="sr-only">{hint}</span>}
+    </>
   )
 }
 

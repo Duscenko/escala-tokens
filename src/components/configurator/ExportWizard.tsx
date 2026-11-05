@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
@@ -275,8 +275,39 @@ export default function ExportWizard({
     setTimeout(() => setJustSaved(false), 2200)
   }
 
+  // Focus moves INTO the dialog on open, stays inside it while open (Tab
+  // wraps), and goes back where it came from on close. Closing with Esc used
+  // to leave focus on <body> (audit 2026-11-05). The element that opened the
+  // wizard is usually a menu item that unmounts on pick, so the fallback is
+  // the Export pill itself.
+  const panelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    panelRef.current?.focus({ preventScroll: true })
+    return () => {
+      const target = opener?.isConnected && opener !== document.body
+        ? opener
+        : document.querySelector<HTMLElement>('[data-export-pill]')
+      // After the exit animation's first frame, so nothing re-steals it.
+      requestAnimationFrame(() => target?.focus({ preventScroll: true }))
+    }
+  }, [])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab' || !panelRef.current) return
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter((el) => el.offsetParent !== null)
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || active === panelRef.current)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus() }
+      else if (!panelRef.current.contains(active)) { e.preventDefault(); first.focus() }
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
@@ -391,7 +422,9 @@ export default function ExportWizard({
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.16, ease: 'easeOut' }}
         onMouseDown={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl h-[min(88vh,46rem)] flex flex-col rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
+        ref={panelRef}
+        tabIndex={-1}
+        className="outline-none w-full max-w-3xl h-[min(88vh,46rem)] flex flex-col rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
       >
         {/* Stepper — a progress rail, and the way back to a finished step */}
         <div className="flex items-center gap-3 px-6 h-14 border-b border-line flex-shrink-0">
@@ -479,8 +512,8 @@ export default function ExportWizard({
                             <span className={`flex-1 min-w-0 truncate text-ui ${on ? 'text-fg font-medium' : 'text-fg-muted'}`}>
                               {c.label}
                             </span>
-                            <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{c.count} vars</span>
-                            {c.modes && (
+                            <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0" title={c.roles != null && c.modes ? `${c.roles} roles × ${c.modes.length} modes` : undefined}>{c.roles != null && c.modes ? `${c.roles} roles × ${c.modes.length} = ${c.count} vars` : `${c.count} vars`}</span>
+                            {c.modes && c.roles == null && (
                               <span className="text-caption px-2 py-0.5 rounded-full bg-accent-ui/10 text-accent-ui flex-shrink-0">
                                 {c.modes.length} modes
                               </span>

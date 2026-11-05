@@ -20,6 +20,7 @@
 
 import { useSyncExternalStore } from 'react'
 import { supabase } from './supabase'
+import { OPEN_BETA } from './openBeta'
 
 const STORAGE_KEY = 'sd-licence-key'
 const ACTIVATION_KEY = 'sd-licence-activation'
@@ -274,6 +275,14 @@ function watchAccount(): void {
 export function ensureLicenceChecked(): void {
   if (checkedOnce) return
   checkedOnce = true
+  // Open beta: every plan question already answers "everything open", so a
+  // licence round trip on every page load buys nothing — and when the account
+  // lookup behind it fails it surfaced as a 502 in the console (audit
+  // 2026-11-05). Settle locally instead; flipping OPEN_BETA brings it back.
+  if (OPEN_BETA) {
+    if (state.status === 'checking') setState({ status: 'none', expiresAt: null, hasKey: Boolean(memoryKey) })
+    return
+  }
   watchAccount()
   runCheck()
 }
