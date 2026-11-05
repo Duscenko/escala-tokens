@@ -176,9 +176,11 @@ function App() {
     <>
       {isPhone && <DesktopOnlyNotice />}
       {desktopSeen && (
-        <main className="hidden md:block min-h-screen bg-app text-fg">
+        // A <div>: the Generator renders its own <main> (the workspace
+        // canvas). A second one here made two <main> landmarks.
+        <div className="hidden md:block min-h-screen bg-app text-fg">
           <Configurator />
-        </main>
+        </div>
       )}
       <ToastHost />
     </>

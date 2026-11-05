@@ -2775,7 +2775,9 @@ export default function Configurator() {
             onOpenComponents={() => changeTab('components')}
             onSyncFigma={() => syncFigmaForTheme(previewTheme)}
             onGetCode={() => openCodeForTheme(previewTheme)}
-            onSelectTheme={(key) => { changePreviewTheme(key); openThemePreviewPage() }}
+            // On About, picking a brand only changes the brand in the header: it
+            // used to throw the reader onto the Board mid-page (audit 2026-11-05).
+            onSelectTheme={(key) => { changePreviewTheme(key); if (tab !== 'about') openThemePreviewPage() }}
           />
         ) : undefined}
         onOpenDocsPage={openDocsPage}

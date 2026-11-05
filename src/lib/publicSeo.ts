@@ -189,6 +189,19 @@ export function workspaceDocumentHead(section: string): WorkspaceHead {
   if (mapped) {
     return { ...headSourceForPage(mapped), robots: 'noindex, nofollow' }
   }
+  // The About tab IS the landing page of `/`: it has its own title and
+  // description (the same ones `/about` ships), not the generator's — every
+  // route used to report "Token generator" (audit 2026-11-05).
+  if (section === 'about') {
+    return {
+      title: ABOUT_TITLE,
+      description: ABOUT_DESCRIPTION,
+      path: '/',
+      translateTitle: true,
+      titleIsFull: true,
+      robots: 'index, follow',
+    }
+  }
   const editing = section === 'sync'
     || section.startsWith('themes')
     || section.startsWith('variables')

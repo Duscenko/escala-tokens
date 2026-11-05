@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useAboutMotionPaused } from '../../lib/aboutMotion'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { apcaLc, wcagRatio } from '../../lib/color/apca'
 import { RADIUS_AXIS_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD } from '../../lib/layoutTokens'
@@ -20,7 +21,9 @@ function useLive() {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { amount: 0.4 })
   const reduce = useReducedMotion() ?? false
-  return { ref, live: inView && !reduce }
+  // The visitor's own pause (`PauseMotionButton`) stops every demo at once.
+  const paused = useAboutMotionPaused()
+  return { ref, live: inView && !reduce && !paused }
 }
 
 /** Steps 0 → count-1 every `ms` while live; holds otherwise. */

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode 
 import { motion, useReducedMotion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
 import { useI18n } from '../../lib/i18n'
+import { setAboutMotionPaused, useAboutMotionPaused } from '../../lib/aboutMotion'
 import { setTheme, useTheme } from '../../lib/theme'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
@@ -157,7 +158,7 @@ export function useAboutSections(): {
           <Tier
             n={1}
             name={t('Primitives')}
-            detail={t("Radix's model: each family is a 1–12 scale where the step means a role, not a lightness. Tone 9 is the anchor: your input hex, verbatim. Every family ships a light ramp and a dark twin.")}
+            detail={t("Radix's model: each family is a 1–12 scale where the step means a role, not a lightness. Tone 9 is the anchor: your hex, verbatim, whenever it can carry a readable label. Every family ships a light ramp and a dark twin.")}
             example="accent-9 · neutral-dark-3 · error-11"
           />
           <Tier
@@ -604,11 +605,12 @@ function AboutShotCycle({ cycle, className, frameClassName }: {
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  const motionPaused = useAboutMotionPaused()
   useEffect(() => {
-    if (reduceMotion || !visible || cycle.length < 2) return
+    if (reduceMotion || motionPaused || !visible || cycle.length < 2) return
     const id = window.setTimeout(() => setIndex((i) => (i + 1) % cycle.length), CYCLE_HOLD_MS)
     return () => window.clearTimeout(id)
-  }, [index, visible, reduceMotion, cycle.length])
+  }, [index, visible, reduceMotion, motionPaused, cycle.length])
   const [w, h] = cycle[0].size
   return (
     <div ref={ref} className={className}>
@@ -662,16 +664,19 @@ function AboutClip({ clip, className }: { clip: AboutClipSpec; className?: strin
   const { t } = useI18n()
   const reduceMotion = useReducedMotion() ?? false
   const ref = useRef<HTMLVideoElement>(null)
+  const motionPaused = useAboutMotionPaused()
   useEffect(() => {
     const video = ref.current
     if (!video || reduceMotion) return
+    // The visitor's pause switch holds the frame, like reduced motion does.
+    if (motionPaused) { video.pause(); return }
     const io = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) void video.play().catch(() => {})
       else video.pause()
     }, { threshold: 0.25 })
     io.observe(video)
     return () => io.disconnect()
-  }, [reduceMotion])
+  }, [reduceMotion, motionPaused])
   return (
     <video
       ref={ref}
@@ -1022,16 +1027,34 @@ function AgentLogos() {
 }
 
 /** The link at the foot of a workflow step: a quiet label + ↗. */
-function StepLink({ children, ...props }: { children: ReactNode } & ({ href: string; onClick?: never } | { onClick: () => void; href?: never })) {
+/** A real link for an in-app door. A plain click runs the app's own handler
+ *  (the SPA state change); a middle/⌘/Ctrl click, "open in new tab" and a
+ *  crawler get the path itself. They were `<button>`s, so none of those
+ *  worked and nothing was indexable (audit 2026-11-05). */
+function appLink(href: string, onActivate: () => void) {
+  return {
+    href,
+    onClick: (event: React.MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      event.preventDefault()
+      onActivate()
+    },
+  }
+}
+
+/** Where "Start building" really lands: the system tab of the Generator. */
+const START_PATH = '/?section=system'
+
+function StepLink({ children, appHref, ...props }: { children: ReactNode; appHref?: string } & ({ href: string; onClick?: never } | { onClick: () => void; href?: never })) {
   const cls = 'inline-flex items-center gap-1.5 rounded text-ui font-medium text-fg transition-colors hover:text-accent-ui focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
   const glyph = (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M3.5 8.5 8.5 3.5M4.5 3.5h4v4" />
     </svg>
   )
-  return 'href' in props && props.href
-    ? <a href={props.href} target="_blank" rel="noreferrer" className={cls}>{children}{glyph}</a>
-    : <button type="button" onClick={props.onClick} className={cls}>{children}{glyph}</button>
+  if ('href' in props && props.href) return <a href={props.href} target="_blank" rel="noreferrer" className={cls}>{children}{glyph}</a>
+  if (appHref) return <a {...appLink(appHref, props.onClick!)} className={cls}>{children}{glyph}</a>
+  return <button type="button" onClick={props.onClick} className={cls}>{children}{glyph}</button>
 }
 
 function ArrowGlyph({ size = 12 }: { size?: number }) {
@@ -1045,7 +1068,7 @@ function ArrowGlyph({ size = 12 }: { size?: number }) {
 const FOOTER_LINK =
   'inline-flex min-h-6 items-center self-start rounded text-body text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
-type FooterItem = { label: string; onClick?: () => void; href?: string; external?: boolean }
+type FooterItem = { label: string; onClick?: () => void; href?: string; external?: boolean; appHref?: string }
 
 function FooterColumn({ title, items }: { title: string; items: FooterItem[] }) {
   return (
@@ -1058,6 +1081,10 @@ function FooterColumn({ title, items }: { title: string; items: FooterItem[] }) 
           className={FOOTER_LINK}
           {...(item.external ? { target: '_blank', rel: 'noreferrer' } : {})}
         >
+          {item.label}
+        </a>
+      ) : item.appHref && item.onClick ? (
+        <a key={item.label} {...appLink(item.appHref, item.onClick)} className={FOOTER_LINK}>
           {item.label}
         </a>
       ) : (
@@ -1086,7 +1113,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
     // nothing in that strip is repeated here.
   ]
   return (
-    <footer className="grid grid-cols-2 gap-10 px-6 pb-16 pt-14 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]">
+    <div className="grid grid-cols-2 gap-10 px-6 pb-16 pt-14 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]">
       <div className="col-span-2 flex flex-col gap-3 sm:col-span-full lg:col-span-1">
         <span className="flex items-center gap-2.5">
           <BrandMark size={24} />
@@ -1099,15 +1126,15 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
       <FooterColumn
         title={t('Product')}
         items={[
-          { label: t('Generator'), onClick: onStart },
-          { label: t('Components'), onClick: onOpenComponents },
-          { label: t('Use in Figma'), onClick: () => onOpenDocsPage('figma') },
+          { label: t('Generator'), onClick: onStart, appHref: START_PATH },
+          { label: t('Components'), onClick: onOpenComponents, appHref: '/components' },
+          { label: t('Use in Figma'), onClick: () => onOpenDocsPage('figma'), appHref: '/docs/figma' },
           { label: t(OPEN_BETA ? 'Open beta' : 'Pricing'), href: PRICING_PATH },
-          { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog') },
+          { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog'), appHref: '/docs/changelog' },
         ]}
       />
       <FooterColumn title={t('Social')} items={social} />
-    </footer>
+    </div>
   )
 }
 
@@ -1221,14 +1248,17 @@ export function AboutHome({
             {/* A phone can't open the editor, so its CTA goes to the one thing
                 it can do: the playground just below. */}
             <RainbowButton
-              type="button"
-              onClick={isPhone
-                ? () => document.getElementById(playgroundId)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
-                : onStart}
+              asChild
               className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
             >
-              {t(isPhone ? 'Try it here' : 'Start building')}
-              <ArrowGlyph />
+              <a
+                {...(isPhone
+                  ? appLink(`#${playgroundId}`, () => document.getElementById(playgroundId)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }))
+                  : appLink(START_PATH, onStart))}
+              >
+                {t(isPhone ? 'Try it here' : 'Start building')}
+                <ArrowGlyph />
+              </a>
             </RainbowButton>
           </motion.div>
         </div>
@@ -1314,7 +1344,7 @@ export function AboutHome({
               title={t('A component catalogue, painted with your tokens.')}
               body={t('{count} components, each on one page: a live playground, every variant the Figma library ships, and the snippet for exactly what is on screen.', { count: COMPONENT_KEYS.length })}
               media={SHOTS.components}
-              action={<StepLink onClick={onOpenComponents}>{t('Browse components')}</StepLink>}
+              action={<StepLink appHref="/components" onClick={onOpenComponents}>{t('Browse components')}</StepLink>}
             />
             <WorkflowStep
               label={t('03 · Code and agents')}
@@ -1347,9 +1377,12 @@ export function AboutHome({
             title={t('What the foundations take care of.')}
             lead={t('Six things Escala solves for you, so a system stays consistent in every theme and every viewport.')}
           />
+          <div className="-mt-6 flex justify-end">
+            <PauseMotionButton />
+          </div>
           <FoundationCarousel
             items={[
-              { art: <RampsArt />, title: t('Ramps in both appearances'), body: t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.') },
+              { art: <RampsArt />, title: t('Ramps in both appearances'), body: t("Every family ships a light ramp and a dark twin. Step 9 is your brand colour as typed; Escala moves it only when it can't carry a readable label.") },
               { art: <ContrastRoleArt />, title: t('Roles solved for contrast'), body: t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.') },
               { art: <MetricsArt />, title: t('WCAG and APCA, side by side'), body: t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.') },
               { art: <TypeScaleArt />, title: t('A type scale with a density dial'), body: t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.') },
@@ -1374,7 +1407,7 @@ export function AboutHome({
             <AboutAccordion variant="faq" section={section} onSectionChange={setSection} />
           </div>
           <div className="flex justify-center">
-            <StepLink onClick={() => onOpenDocsPage('faq')}>{t('Read the docs')}</StepLink>
+            <StepLink appHref="/docs/faq" onClick={() => onOpenDocsPage('faq')}>{t('Read the docs')}</StepLink>
           </div>
         </section>
 
@@ -1407,12 +1440,13 @@ export function AboutHome({
               </h2>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                 <RainbowButton
-                  type="button"
-                  onClick={onStart}
+                  asChild
                   className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
                 >
-                  {t('Start building')}
-                  <ArrowGlyph />
+                  <a {...appLink(START_PATH, onStart)}>
+                    {t('Start building')}
+                    <ArrowGlyph />
+                  </a>
                 </RainbowButton>
                 <a href={PRICING_PATH} className={secondaryCta}>{t(OPEN_BETA ? 'About the open beta' : 'See pricing')}</a>
               </div>
@@ -1474,28 +1508,66 @@ export function DemoVideo({ className, tapToPlay, hold = false }: {
 }) {
   const { t } = useI18n()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const reduceMotion = useReducedMotion() ?? false
+  const motionPaused = useAboutMotionPaused()
+  const idle = reduceMotion || motionPaused
   useEffect(() => {
     const v = videoRef.current
     if (!v || tapToPlay || hold) return
+    // Paused by the visitor (or reduced motion): hold the current frame.
+    if (idle) { v.pause(); return }
     // A rejected play() (Low Power Mode, a background tab) just leaves the
     // first frame up; nothing to recover.
     v.play().catch(() => {})
-  }, [hold, tapToPlay])
-  return (
+  }, [hold, tapToPlay, idle])
+  const video = (
     <video
       ref={videoRef}
       src="/video/escala-tokens-demo-v2.mp4"
       className={cn('w-full h-auto rounded-2xl object-cover', className)}
       style={{ aspectRatio: '1920 / 890' }}
-      poster={tapToPlay ? '/video/escala-tokens-demo-v2-frame.jpg' : undefined}
+      // A real frame of the workspace stands in until the clip plays, and
+      // stays when it is paused or reduced motion keeps it from starting.
+      poster="/video/escala-tokens-demo-v2-frame.jpg"
       preload={tapToPlay ? 'none' : undefined}
-      autoPlay={!tapToPlay && !hold}
+      autoPlay={!tapToPlay && !hold && !reduceMotion}
       controls={tapToPlay}
       muted
       loop
       playsInline
       aria-label={t('Escala Tokens workspace demo')}
     />
+  )
+  if (tapToPlay) return video
+  // The desktop hero is a passive backdrop, but it moves for 22 s on a loop:
+  // it gets the page's pause switch (WCAG 2.2.2).
+  return (
+    <div className="relative">
+      {video}
+      <PauseMotionButton className="absolute bottom-3 right-3" />
+    </div>
+  )
+}
+
+/** The page's one switch for self-running motion (see `lib/aboutMotion`). */
+export function PauseMotionButton({ className }: { className?: string }) {
+  const { t } = useI18n()
+  const paused = useAboutMotionPaused()
+  return (
+    <button
+      type="button"
+      aria-pressed={paused}
+      onClick={() => setAboutMotionPaused(!paused)}
+      className={cn(
+        'inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-app/85 px-2.5 text-caption font-medium text-fg backdrop-blur transition-colors hover:bg-elevated focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui',
+        className,
+      )}
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+        {paused ? <path d="M3 1.8v8.4L10 6z" /> : <path d="M3 2h2v8H3zM7 2h2v8H7z" />}
+      </svg>
+      {paused ? t('Play animations') : t('Pause animations')}
+    </button>
   )
 }
 
