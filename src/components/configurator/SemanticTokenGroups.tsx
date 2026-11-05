@@ -204,9 +204,7 @@ function GeometryTokenDetails({
     : `${kind}-${roleKey}`
 
   return (
-    <AnimatePresence>
       <TokenDetailsModal
-        key={tokenId}
         name={tokenId}
         cssVarName={cssVarName}
         description={spec.description}
@@ -278,23 +276,10 @@ function GeometryTokenDetails({
           ),
         }]}
       />
-    </AnimatePresence>
   )
 }
 
-export default function SemanticTokenDrawer({
-  previewTheme,
-  previewAppearance,
-  previewViewport = 'desktop',
-  tokenId,
-  onClose,
-  onOpenPrimitiveFamily,
-  onOpenInVariables,
-  stylePreview,
-  inspectedCss,
-  onTryOnEdit,
-  backLabel,
-}: {
+type SemanticTokenDrawerProps = {
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** The board's viewport. Radius and text roles step down on Tablet and Mobile. */
@@ -314,7 +299,35 @@ export default function SemanticTokenDrawer({
   onTryOnEdit?: (tokenId: string, mode: string, ref: string | null) => void
   /** Inspector selection this token was opened from — the drawer's back link. */
   backLabel?: string | null
-}) {
+}
+
+/** Token Details for any role the inspector traces — colour, layout, geometry.
+ *  ONE presence wrapper for every kind, keyed by the token: each opens, swaps
+ *  and closes with the same inspector layer motion (lib/inspectorMotion). It
+ *  used to be one wrapper per kind, and the layout kind's sat under an early
+ *  `return null`, so a spacing or radius token snapped shut while a colour
+ *  token faded. */
+export default function SemanticTokenDrawer(props: SemanticTokenDrawerProps) {
+  return (
+    <AnimatePresence>
+      {props.tokenId ? <SemanticTokenDrawerBody key={props.tokenId} {...props} /> : null}
+    </AnimatePresence>
+  )
+}
+
+function SemanticTokenDrawerBody({
+  previewTheme,
+  previewAppearance,
+  previewViewport = 'desktop',
+  tokenId,
+  onClose,
+  onOpenPrimitiveFamily,
+  onOpenInVariables,
+  stylePreview,
+  inspectedCss,
+  onTryOnEdit,
+  backLabel,
+}: SemanticTokenDrawerProps) {
   const reduce = useReducedMotion() ?? false
   const live = useDesignStore()
   const overlay = useMemo(
@@ -368,10 +381,9 @@ export default function SemanticTokenDrawer({
     : null
 
   return (
-    <AnimatePresence>
+    <>
       {token && (
         <TokenDetailsModal
-          key={token.id}
           name={token.id}
           cssVarName={token.id.replace(/\./g, '-')}
           description={token.description}
@@ -428,6 +440,6 @@ export default function SemanticTokenDrawer({
             }))}
         />
       )}
-    </AnimatePresence>
+    </>
   )
 }

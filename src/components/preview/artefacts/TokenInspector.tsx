@@ -73,7 +73,8 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
 import { slotUnder, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
 import { TokenTraceList } from './TokenTracePanel'
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { inspectorLayerMotion } from '../../../lib/inspectorMotion'
 import { InspectorPortal, useInInspector } from '../../configurator/WorkspaceInspector'
 
 const InspectorActiveContext = createContext(false)
@@ -690,7 +691,10 @@ export function InspectorOverlay({
     return () => window.removeEventListener('keydown', onKey)
   }, [active, hover, onExitMode])
 
-  if (!active || !target) return null
+  // With nothing selected, keep the pin's presence wrapper mounted at the SAME
+  // place in the tree as below (second child of the fragment): unmounting it
+  // here is what cut the docked pin instantly on Exit inspector / Esc.
+  if (!active || !target) return <>{null}<AnimatePresence initial={false}>{null}</AnimatePresence></>
 
   const { rect, roles, label, kind, measured } = target
   const previewTokens = tokensFor(target.el)
@@ -1011,13 +1015,14 @@ export function InspectorOverlay({
         </div>,
         document.body,
       )}
-      {dockedPin && (
-        <InspectorPortal>
+      {/* Same layer motion as Token Details and the ship panel above it
+          (lib/inspectorMotion). Picking another element crossfades the two
+          selections; Exit inspector slides this one out instead of cutting. */}
+      <AnimatePresence initial={false}>
+        {dockedPin && (
+        <InspectorPortal key={`${pin.kind}:${pin.label}`}>
           <motion.div
-            key={`${pin.kind}:${pin.label}`}
-            initial={{ opacity: 0, x: reduceMotion ? 0 : 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+            {...inspectorLayerMotion(reduceMotion)}
             className="absolute inset-0 z-10 flex flex-col overflow-hidden bg-side-panel"
             data-inspector-pin=""
             role="region"
@@ -1026,7 +1031,8 @@ export function InspectorOverlay({
             {panelInner}
           </motion.div>
         </InspectorPortal>
-      )}
+        )}
+      </AnimatePresence>
     </>
   )
 }

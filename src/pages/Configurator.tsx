@@ -3184,10 +3184,10 @@ export default function Configurator() {
               onInspectorSlot={setComponentsSlot}
             />
           )}
+          <AnimatePresence initial={false}>
           {ship && themesCanvas && !homePage && (
-            <InspectorPortal>
+            <InspectorPortal key={ship.key}>
               <ShipPanel
-                key={ship.key}
                 themeKey={ship.key}
                 kind={ship.kind}
                 onKindChange={(kind) => {
@@ -3203,6 +3203,7 @@ export default function Configurator() {
               />
             </InspectorPortal>
           )}
+          </AnimatePresence>
           {themesCanvas && !homePage && (
             <WorkspaceInspector
               onSlot={setInspectorSlot}

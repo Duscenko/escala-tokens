@@ -11,7 +11,7 @@
 //    edit is the base unit (it rescales every step — the drawer says so);
 //    stroke and shadow steps are edited directly, like their Variables tables.
 
-import { AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useReducedMotion } from 'framer-motion'
 import { useMemo } from 'react'
 import { captureSnapshot, SHADOW_DEFAULT, useDesignStore, type DesignSnapshot } from '../../store/useDesignStore'
 import { recordEdit } from '../../lib/editHistory'
@@ -280,10 +280,10 @@ export default function LayoutTokenDetails({
 
   if (!content) return null
 
+  // The presence wrapper (and the key) live in SemanticTokenDrawer, the one
+  // entry for every token kind: so this one also animates out on close.
   return (
-    <AnimatePresence>
       <TokenDetailsModal
-        key={tokenId}
         name={tokenId}
         cssVarName={cssVarName}
         description={locked ? `${description} Add the style to My themes to edit it.` : description}
@@ -299,6 +299,5 @@ export default function LayoutTokenDetails({
         initialOpenKey={viewport}
         sections={[{ key: viewport, label: PLATFORM_LABEL[viewport], content }]}
       />
-    </AnimatePresence>
   )
 }

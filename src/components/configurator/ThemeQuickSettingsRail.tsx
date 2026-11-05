@@ -18,6 +18,7 @@ import { releaseInspectorPin } from '../preview/artefacts/TokenInspector'
 import { recordEdit } from '../../lib/editHistory'
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { INSPECTOR_FOLD_SETTLE_MS, inspectorFoldMotion } from '../../lib/inspectorMotion'
 import { createPortal } from 'react-dom'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
@@ -1053,8 +1054,8 @@ function EditionRowHeader({ title, foundationKey, summary, open, panelId, onRese
   )
 }
 
-/** An edition's body, unfolding from its header: height + fade on the way
- *  in, quicker on the way out. Its own component so every opening starts
+/** An edition's body, unfolding from its header: height + fade, the same
+ *  fold both ways (`inspectorFoldMotion`). Its own component so every opening starts
  *  CLIPPED (a body mounting at height 0 must not spill for a frame) and lets
  *  go of the clip once it lands — popovers and focus rings inside are never
  *  cut at rest. */
@@ -1064,10 +1065,10 @@ export function EditionBody({ id, children }: { id: string; children: React.Reac
   return (
     <motion.div
       id={id}
-      initial={reduce ? false : { height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }}
-      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      // One fold for in AND out (lib/inspectorMotion): a row folding while the
+      // next unfolds sums to a monotone height, so the rows under them never
+      // dip and spring back.
+      {...inspectorFoldMotion(reduce)}
       onAnimationStart={() => setMoving(true)}
       onAnimationComplete={() => setMoving(false)}
       style={{ overflow: moving ? 'hidden' : 'visible' }}
@@ -1110,28 +1111,47 @@ function EditionCard({ title, foundationKey, open = true, summary, trailing, foo
   const sectionRef = useRef<HTMLElement>(null)
   const wasOpen = useRef(open)
   const reduce = useReducedMotion()
-  // A row opened from its header lands in view: once the row above has folded
-  // and this one has unfolded (EditionBody, 0.26s), the rail scrolls just
-  // enough to show the whole row, never past its header. Without it a row
-  // low in the list (Radius, Motion) opened under the panel's footer.
+  // A row opened from its header lands in view: the rail scrolls just enough
+  // to show the whole row, never past its header. It FOLLOWS the fold frame
+  // by frame (same curve, same moment) instead of waiting for it to land and
+  // then scrolling: that second, late movement read as a jump. Without any
+  // scroll a row low in the list (Radius, Motion) opened under the footer.
   useEffect(() => {
     const opened = open && !wasOpen.current
     wasOpen.current = open
     if (!opened) return
-    const timer = window.setTimeout(() => {
-      const section = sectionRef.current
-      if (!section) return
-      let scroller = section.parentElement
-      while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
-      if (!scroller) return
-      const view = scroller.getBoundingClientRect()
+    const section = sectionRef.current
+    let scroller = section?.parentElement ?? null
+    while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
+    if (!section || !scroller) return
+    const view = scroller
+    const follow = () => {
+      const box = view.getBoundingClientRect()
       const row = section.getBoundingClientRect()
-      const below = row.bottom - view.bottom
-      const above = row.top - view.top
+      const below = row.bottom - box.bottom
+      const above = row.top - box.top
       const delta = above < 0 ? above : below > 0 ? Math.min(below, above) : 0
-      if (delta) scroller.scrollBy({ top: delta, behavior: reduce ? 'auto' : 'smooth' })
-    }, reduce ? 0 : 280)
-    return () => window.clearTimeout(timer)
+      if (Math.abs(delta) >= 0.5) view.scrollTop += delta
+    }
+    if (reduce) { follow(); return }
+    // Track until the fold has settled; a wheel or drag by the person wins.
+    let frame = 0
+    let stopped = false
+    const stop = () => { stopped = true }
+    view.addEventListener('wheel', stop, { passive: true })
+    view.addEventListener('pointerdown', stop)
+    const until = performance.now() + INSPECTOR_FOLD_SETTLE_MS
+    const tick = () => {
+      if (stopped) return
+      follow()
+      if (performance.now() < until) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(frame)
+      view.removeEventListener('wheel', stop)
+      view.removeEventListener('pointerdown', stop)
+    }
   }, [open, reduce])
   return (
     <section ref={sectionRef} aria-label={t(title)} className="min-w-0 overflow-visible border-b border-line">

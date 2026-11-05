@@ -883,6 +883,19 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `<theme>::<appearance>` always wins. Runtime vars a component sets
 > (`--switch-from`…) are listed in `RUNTIME_VARS` — a new one is a decision.
 
+> **UPDATE (2026-11-05): the INSPECTOR moves ONE way — `lib/inspectorMotion.ts`.** Reported as
+> many bugs in the right panel. Measured: three layers over the panel slot moved three ways (pinned
+> trace 0.16s `easeOut` with no exit, Token Details 0.18s under a second fade, the ship panel not at
+> all), and the accordion folded a row out in 0.18s while the next unfolded in 0.26s, so the rows
+> below dipped 8px and sprang back. Now: every layer (pin z-10, Token Details z-20, ship z-30) uses
+> `inspectorLayerMotion` (8px slide + fade, 0.2s in / 0.14s out, `--ease-out-quint`) and leaves with
+> an exit; an accordion body uses `inspectorFoldMotion` (height at ONE duration both ways, so the
+> summed height is monotone); the scroll-into-view FOLLOWS the fold frame by frame for `INSPECTOR_FOLD_SETTLE_MS` (a scroll that waited for the fold to land, then moved, read as a jump). Token Details
+> has ONE `AnimatePresence`, in `SemanticTokenDrawer`, keyed by token — never one per kind (the layout
+> kind's sat under a `return null` and snapped shut). A presence wrapper must stay mounted at the same
+> tree position when its content goes (see `TokenInspector`'s early return). A new inspector layer or
+> accordion imports these; it does not pick its own duration.
+
 > **DESIGN RULE (2026-11-04): secondary copy on the About page is SOFT — `.about-copy` (`index.css`).**
 > Any supporting text under a headline, number or title (section leads, workflow-step bodies,
 > carousel card bodies, stat labels) uses `.about-copy`: `text-ui` (13px), line-height 1.65,

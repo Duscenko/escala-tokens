@@ -1,5 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { INSPECTOR_DURATION, INSPECTOR_EASE } from '../../lib/inspectorMotion'
 import { FoundationGlyph } from './FoundationIconRail'
 import { HintTip } from '../ui/HintTip'
 import { CHROME_CONTROL_SHELL, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
@@ -45,7 +46,7 @@ export default function FoundationSwitchStrip({
   const glyphWithName = bar && items.length <= GLYPH_WITH_NAME_MAX
   const shift = reduce
     ? { duration: 0 }
-    : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
+    : { duration: INSPECTOR_DURATION.layerIn, ease: INSPECTOR_EASE }
 
   const move = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (lockOthers) return
@@ -160,7 +161,7 @@ export default function FoundationSwitchStrip({
               key={on ? item.key : 'mark'}
               initial={on && !reduce ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
-              transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduce ? 0 : INSPECTOR_DURATION.layerOut, ease: INSPECTOR_EASE }}
               className="relative flex items-center gap-1.5 whitespace-nowrap"
             >
               {on ? (

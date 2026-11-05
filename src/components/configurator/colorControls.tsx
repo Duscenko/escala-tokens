@@ -6,6 +6,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { INSPECTOR_DURATION, INSPECTOR_EASE, inspectorLayerMotion } from '../../lib/inspectorMotion'
 import chroma from 'chroma-js'
 import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralCuratedPalette, neutralTintSpec, type NeutralTint } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
@@ -1659,10 +1660,12 @@ export function TokenDetailsModal({
 
   const dialog = (
     <motion.div
-      initial={{ opacity: 0 }}
+      // Docked, this box is only the layer's frame: the panel inside moves
+      // (`inspectorLayerMotion`), and a second fade here would compound it.
+      initial={docked ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: reduce ? 0 : 0.15 }}
+      exit={docked ? undefined : { opacity: 0 }}
+      transition={{ duration: reduce ? 0 : INSPECTOR_DURATION.layerIn, ease: INSPECTOR_EASE }}
       // Docked, there is no backdrop: the canvas stays live, so picking another
       // element swaps the token in place instead of first closing the drawer.
       onMouseDown={docked ? undefined : onClose}
@@ -1691,10 +1694,12 @@ export function TokenDetailsModal({
           bottom: dockV.bottom,
           width: `min(${PANEL_W}px, calc(100vw - ${(dockV.left ?? dockLeft) + 16}px))`,
         }}
-        initial={{ opacity: 0, x: docked ? 8 : -16 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: docked ? 8 : -16 }}
-        transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
+        {...(docked ? inspectorLayerMotion(reduce) : {
+          initial: { opacity: 0, x: reduce ? 0 : -16 },
+          animate: { opacity: 1, x: 0 },
+          exit: { opacity: 0, x: reduce ? 0 : -16 },
+          transition: { duration: reduce ? 0 : INSPECTOR_DURATION.layerIn, ease: INSPECTOR_EASE },
+        })}
         onMouseDown={(e) => e.stopPropagation()}
         className={docked
           // The inspector's own surface: its box, radius and edge already frame

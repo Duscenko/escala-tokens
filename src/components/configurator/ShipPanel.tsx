@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
+import { inspectorLayerMotion } from '../../lib/inspectorMotion'
 import { useI18n } from '../../lib/i18n'
 import { themeDisplayName } from '../../lib/themeSources'
 import { brandContext } from '../../lib/contextSource'
@@ -53,6 +55,7 @@ export default function ShipPanel({
   const { t } = useI18n()
   const store = useDesignStore()
   const backRef = useRef<HTMLButtonElement>(null)
+  const reduce = useReducedMotion()
   const name = themeDisplayName(themeKey, store.themeLabels)
 
   // Focus lands on the way back, so Esc and Tab both start from here.
@@ -76,7 +79,10 @@ export default function ShipPanel({
   }
 
   return (
-    <div
+    <motion.div
+      // The inspector's one layer motion (lib/inspectorMotion), like the pinned
+      // trace and Token Details under it: it used to snap in and out.
+      {...inspectorLayerMotion(reduce)}
       role="region"
       aria-label={t('Ship to')}
       onKeyDown={onKeyDown}
@@ -139,7 +145,7 @@ export default function ShipPanel({
           />
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
