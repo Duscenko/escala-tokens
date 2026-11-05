@@ -1230,6 +1230,9 @@ function generateDarkColorScale(neutralHex, algorithm = "default", contrastShift
   }
   return generateColorScale(base, algorithm, contrastShift, darkBackground, "dark", tint);
 }
+function generateNeutralDarkScale(neutralHex, darkHex, algorithm = "default", contrastShift = 0, darkBackground, tint = DEFAULT_NEUTRAL_TINT) {
+  return darkHex ? generateColorScale(darkHex, algorithm, contrastShift, darkBackground, "dark", tint) : generateDarkColorScale(neutralHex, algorithm, contrastShift, darkBackground, tint);
+}
 function alphaColorOver(targetHex, backgroundHex, appearance = "light") {
   const [tr, tg, tb] = chroma(targetHex).rgb();
   const [br, bg, bb] = chroma(backgroundHex).rgb();
@@ -3134,7 +3137,9 @@ var init_themePresets = __esm({
         shortLabel: "Core",
         description: "Quiet, precise, content-first.",
         detail: "A dependable baseline for SaaS, dashboards, and corporate tools.",
-        accent: accent("Blue Dark"),
+        // Escala's own violet: #874fff in Light, a step lighter in Dark.
+        accent: "#874fff",
+        darkAccent: "#905cff",
         // Matches the adopted Core theme the designer iterated (dark-first).
         preferredAppearance: "dark",
         neutralTint: "subtle",
@@ -6147,7 +6152,7 @@ function privateFamilyKeys(themeSources) {
 function customScalePair(hex, s, pages, isGray, darkHex) {
   return {
     scale: isGray ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint) : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light"),
-    darkScale: isGray ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark)
+    darkScale: isGray ? generateNeutralDarkScale(hex, darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : void 0, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
 }
 function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
@@ -6166,6 +6171,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
   if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
     s.updateCustomColor(refs.gray, {
       base: pages.nextNeutral,
+      darkBase: "",
       ...customScalePair(pages.nextNeutral, s, pages, true)
     });
   }
@@ -6269,6 +6275,7 @@ function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
     }
     if (neutral && gScale && gDark) {
       setGrayBaseColor(neutral);
+      useDesignStore.getState().setGrayDarkColor("");
       setGrayLightScale(gScale);
       setGrayDarkScale(gDark);
     }
@@ -11208,6 +11215,7 @@ function makeDesignDefaults() {
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: NEUTRAL_BASE,
+    grayDarkColor: "",
     grayLightScale: { ...NEUTRAL_LIGHT_SCALE },
     grayDarkScale: { ...NEUTRAL_DARK_SCALE },
     errorColor: "#d90b09",
@@ -11789,6 +11797,7 @@ var init_useDesignStore = __esm({
           setPrimaryDarkScale: (scale) => set({ primaryDarkScale: scale }),
           // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
           setGrayBaseColor: (hex) => set({ grayBaseColor: hex }),
+          setGrayDarkColor: (hex) => set({ grayDarkColor: hex }),
           setGrayLightScale: (scale) => set({ grayLightScale: scale }),
           setGrayDarkScale: (scale) => set({ grayDarkScale: scale }),
           // Semantic state scales (defaults from the Figma DS)
@@ -14134,6 +14143,9 @@ function adoptPreset(preset, appearance, opts = {}) {
   );
   if ("error" in result) return result;
   const next = useDesignStore.getState();
+  if (preset.darkAccent && preset.darkAccent.toLowerCase() !== preset.accent.toLowerCase()) {
+    applyScopedAccentColor(preset.accent, false, result.key, preset.darkAccent);
+  }
   if (preset.semantics) {
     useDesignStore.setState({
       architectureOverrides: withStyleSemantics(
@@ -14156,6 +14168,7 @@ function adoptPreset(preset, appearance, opts = {}) {
 var init_adoptPreset = __esm({
   "src/lib/adoptPreset.ts"() {
     init_themeMint();
+    init_colorActions();
     init_useDesignStore();
     init_fonts();
     init_stylePreviewOverlay();

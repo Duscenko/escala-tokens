@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type CustomColor, type ThemeSources } from '../store/useDesignStore'
 import {
-  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
+  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateNeutralDarkScale, generateFamilyDarkScale, backgroundFromBase,
   recommendStateColors, neutralFromBrand, BASE_TONE, type ColorAlgorithm, type NeutralTint,
 } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
@@ -93,8 +93,9 @@ function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<s
 
 /** Both ramps of a custom family. `darkHex` is the family's own dark anchor
  *  (`darkBase`) when the dark theme was set apart from the light one — a
- *  re-anchor that rebuilt dark from `hex` would silently erase it. The
- *  neutral has one base by design (its dark twin is derived from it). */
+ *  re-anchor that rebuilt dark from `hex` would silently erase it. A neutral
+ *  family's dark ramp is derived from its base unless it, too, was given a
+ *  dark anchor of its own (a hex typed in Dark). */
 function customScalePair(
   hex: string,
   s: { colorAlgorithm: ColorAlgorithm; contrastShift: number; neutralTint: NeutralTint },
@@ -107,7 +108,7 @@ function customScalePair(
       ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint)
       : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light'),
     darkScale: isGray
-      ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
+      ? generateNeutralDarkScale(hex, darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : undefined, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
       : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark),
   }
 }
@@ -137,6 +138,7 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
   if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
     s.updateCustomColor(refs.gray, {
       base: pages.nextNeutral,
+      darkBase: '',
       ...customScalePair(pages.nextNeutral, s, pages, true),
     })
   }
@@ -271,6 +273,8 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light',
     }
     if (neutral && gScale && gDark) {
       setGrayBaseColor(neutral)
+      // A neutral re-derived from the accent has no dark anchor of its own.
+      useDesignStore.getState().setGrayDarkColor('')
       setGrayLightScale(gScale)
       setGrayDarkScale(gDark)
     }
@@ -459,7 +463,7 @@ export function useRegenerateScalesOnScaleSettings() {
       // page), not the generic family transform — same split useEnsureColorScales
       // and the accent applier use.
       s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint))
-      s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
+      s.setGrayDarkScale(generateNeutralDarkScale(s.grayBaseColor, s.grayDarkColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
       s.customColors.forEach((c) => {
         const pages = resolveFamilyPages(s, c.key)
         s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray, c.darkBase))
@@ -565,6 +569,9 @@ export function useApplyGrayColor() {
         // neutral edit shipped that family's whole dark ramp missing.
         s.updateCustomColor(refs.gray, {
           base: hex,
+          // A light edit re-derives Dark, as an accent edit re-solves its
+          // dark twin: any dark anchor set by hand is cleared.
+          darkBase: '',
           scale: generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, bg, s.neutralTint),
           darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint),
         })
@@ -600,6 +607,7 @@ export function useApplyGrayColor() {
         .map((c) => [c.key, gen(c.base), genDark(c.base)] as const)
 
       s.setGrayBaseColor(hex)
+      s.setGrayDarkColor('')
       s.setPageBackground(bg)
       s.setDarkBackground(darkBg)
       s.setGrayLightScale(scale)
@@ -632,6 +640,43 @@ export function useApplyGrayColor() {
   }, [])
 }
 
+/** Sets the neutral's DARK anchor only — a hex typed or picked while editing
+ *  Dark, the neutral twin of `applyAccentDarkColor`. The light ramp, the base
+ *  and both pages stay; the dark ramp grows from this hex (tone 9) on the dark
+ *  page it already had. A hand edit, so it unlinks the neutral from the accent,
+ *  like a light edit does. The hex equal to the derived anchor clears it. */
+export function applyNeutralDarkColor(hex: string, themeKey = 'light') {
+  const s = useDesignStore.getState()
+  try {
+    if (s.linkNeutralToAccent) s.setLinkNeutralToAccent(false)
+    const refs = s.themeSources[themeKey]
+    if (refs && refs.gray !== GLOBAL_FAMILY.gray) {
+      const fam = s.customColors.find((c) => c.key === refs.gray)
+      if (!fam) return
+      const pages = resolveThemePages(s, themeKey)
+      const derived = generateDarkColorScale(fam.base, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
+      const own = hex.toLowerCase() === (derived[BASE_TONE] ?? '').toLowerCase() ? '' : hex
+      s.updateCustomColor(refs.gray, {
+        darkBase: own,
+        darkScale: own ? generateNeutralDarkScale(fam.base, own, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : derived,
+      })
+      return
+    }
+    const derived = generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint)
+    const own = hex.toLowerCase() === (derived[BASE_TONE] ?? '').toLowerCase() ? '' : hex
+    const gDark = own ? generateNeutralDarkScale(s.grayBaseColor, own, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint) : derived
+    s.setGrayDarkColor(own)
+    s.setGrayDarkScale(gDark)
+    for (const t of s.themeOrder) {
+      if ((s.themeSources[t]?.gray ?? 'neutral') !== 'neutral' || (s.themeKinds[t] ?? 'light') !== 'dark') continue
+      const updates = grayTokenUpdates(gDark, s.themes[t] ?? {}, 'dark')
+      if (Object.keys(updates).length) s.mergeThemeTokens(t, updates)
+    }
+  } catch {
+    /* invalid hex — ignore */
+  }
+}
+
 // Applies a new DARK page background — the dark-theme twin of
 // useApplyPageBackground. It anchors tone 12 of the dark neutral ramp (what dark
 // themes read as surface-0), so changing it regenerates that ramp and resyncs
@@ -641,7 +686,7 @@ export function useApplyDarkBackground() {
   return useCallback((hex: string) => {
     const s = useDesignStore.getState()
     try {
-      const gDark = generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex, s.neutralTint)
+      const gDark = generateNeutralDarkScale(s.grayBaseColor, s.grayDarkColor, s.colorAlgorithm, s.contrastShift, hex, s.neutralTint)
       s.setDarkBackground(hex)
       s.setGrayDarkScale(gDark)
       for (const t of s.themeOrder) {
@@ -686,7 +731,8 @@ function setGlobalStateRole(
 }
 
 /** The slots whose dark anchor can FOLLOW the light one: the brand and the
- *  four states. The neutral is excluded — its dark ramp is always derived. */
+ *  four states. The neutral is excluded — its dark ramp is derived from its
+ *  base unless Dark was given an anchor of its own (`applyNeutralDarkColor`). */
 const TWIN_SLOTS = ['brand', 'error', 'warning', 'success', 'info'] as const
 
 /** A theme's private brand/state families whose dark anchor still FOLLOWS the

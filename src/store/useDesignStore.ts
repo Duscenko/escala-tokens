@@ -439,6 +439,11 @@ export interface DesignSnapshot {
   // ramps, so tints deepen onto the dark page instead of a light one.
   primaryDarkScale: ColorScale
   grayBaseColor: string
+  // Optional DARK anchor for the neutral, the twin of `primaryDarkColor`.
+  // '' / absent = the dark ramp is derived from `grayBaseColor` (mid grey at
+  // its hue). Set (a hex typed in Dark), `grayDarkScale` grows from it with
+  // this hex as tone 9. Any edit to the light neutral clears it.
+  grayDarkColor?: string
   grayLightScale: ColorScale
   // Dark-appearance neutral ramp, generated from `grayBaseColor` (itself derived
   // from the accent when linked) anchored to `darkBackground`. Gray roles in a
@@ -616,6 +621,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: NEUTRAL_BASE,
+    grayDarkColor: '',
     grayLightScale: { ...NEUTRAL_LIGHT_SCALE },
     grayDarkScale: { ...NEUTRAL_DARK_SCALE },
     errorColor: '#d90b09',
@@ -1017,9 +1023,11 @@ interface DesignStore {
 
   // Step 2 — Neutral gray (user-selectable flavor, generates light + dark scales)
   grayBaseColor: string
+  grayDarkColor?: string
   grayLightScale: ColorScale
   grayDarkScale: ColorScale
   setGrayBaseColor: (hex: string) => void
+  setGrayDarkColor: (hex: string) => void
   setGrayLightScale: (scale: ColorScale) => void
   setGrayDarkScale: (scale: ColorScale) => void
 
@@ -1367,6 +1375,7 @@ export const useDesignStore = create<DesignStore>()(
 
       // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
       setGrayBaseColor: (hex) => set({ grayBaseColor: hex }),
+      setGrayDarkColor: (hex) => set({ grayDarkColor: hex }),
       setGrayLightScale: (scale) => set({ grayLightScale: scale }),
       setGrayDarkScale: (scale) => set({ grayDarkScale: scale }),
 

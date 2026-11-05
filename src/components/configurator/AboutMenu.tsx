@@ -1526,10 +1526,31 @@ export function AboutScaffold({
     else showToast(t('Escala opens on a laptop or desktop screen.'))
   }
 
+  // The browser's own top bar / status bar takes the page colour, so the slim
+  // header reads as part of the system UI instead of a band under it.
+  useEffect(() => {
+    const app = getComputedStyle(document.documentElement).getPropertyValue('--app').trim()
+    if (!app) return
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'theme-color'
+      document.head.appendChild(meta)
+    }
+    meta.content = app
+  }, [theme])
+
   return (
-    <div className={cn('flex h-screen flex-col bg-app text-fg', wrapperClassName)}>
-      {/* TopNav stays pinned — same shell as `/pricing` and `/contact`. */}
-      <div className="flex-shrink-0">
+    // `h-dvh`, never `h-screen`: on a phone 100vh is the height with the
+    // browser bars HIDDEN, so the frame was taller than the screen, the
+    // document itself scrolled, and the header slid up under the status bar.
+    // The dynamic height is what is actually visible, so only the inner
+    // column scrolls and the header stays put.
+    <div className={cn('flex h-dvh flex-col bg-app text-fg', wrapperClassName)}>
+      {/* TopNav stays pinned — same shell as `/pricing` and `/contact`.
+          The safe-area pad keeps it clear of the notch / status bar when the
+          page runs edge to edge (home-screen app, landscape). */}
+      <div className="relative z-10 flex-shrink-0 bg-app pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         {/* `/about` on a laptop gets the public TopNav; below `md` its links and
             sign-in don't fit, so a phone always gets the slim bar. CSS, not a
             JS check, so there is no flash. */}

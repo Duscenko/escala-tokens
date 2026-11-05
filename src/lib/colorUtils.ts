@@ -701,6 +701,24 @@ export function generateDarkColorScale(
   return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark', tint)
 }
 
+/** The neutral's DARK ramp, with or without an anchor of its own. With no
+ *  `darkHex` it is derived from the one base (`generateDarkColorScale`); with
+ *  one — a hex typed while editing Dark — that hex is tone 9 verbatim and the
+ *  ramp grows out of the dark page, as the accent's dark reference does. The
+ *  tint still applies: this is the neutral, the family the page comes from. */
+export function generateNeutralDarkScale(
+  neutralHex: string,
+  darkHex: string | undefined,
+  algorithm: ColorAlgorithm = 'default',
+  contrastShift = 0,
+  darkBackground?: string,
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
+): Record<number, string> {
+  return darkHex
+    ? generateColorScale(darkHex, algorithm, contrastShift, darkBackground, 'dark', tint)
+    : generateDarkColorScale(neutralHex, algorithm, contrastShift, darkBackground, tint)
+}
+
 // ── Alpha ramps (Radix custom-palette architecture) ─────────────────────────
 // Radix ships every scale twice: solid AND alpha, where each alpha step is the
 // most-transparent overlay that reproduces the solid when composited over the

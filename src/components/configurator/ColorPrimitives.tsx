@@ -21,7 +21,7 @@ import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../sto
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateLightNeutralScale, generateAlphaScale,
-  generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
+  generateNeutralDarkScale, generateFamilyDarkScale, backgroundFromBase,
   neutralFromBrand, readableInk,
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
 } from '../../lib/colorUtils'
@@ -29,6 +29,14 @@ import {
   useApplyAccentColor, applyAccentDarkColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
   resolveThemePages, resolveFamilyPages, addBrandExtra, removeBrandExtra,
 } from '../../lib/colorActions'
+
+/** The neutral's own Dark anchor, if one was typed in Dark: the system's
+ *  `grayDarkColor`, or a theme's gray family `darkBase`. */
+function neutralDarkAnchor(key: string, customKey?: string): string | undefined {
+  const s = useDesignStore.getState()
+  if (customKey) return s.customColors.find((c) => c.key === customKey)?.darkBase || undefined
+  return key === 'neutral' ? s.grayDarkColor || undefined : undefined
+}
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
   curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL, THEME_BAND_H,
@@ -1616,14 +1624,16 @@ export default function ColorPrimitives({
         light: isNeutral
           ? generateLightNeutralScale(family.base, colorAlgorithm, contrastShift, pages.light, neutralTint)
           : generateColorScale(family.base, colorAlgorithm, contrastShift, pages.light, 'light'),
+        // A neutral given its own Dark anchor (typed in Dark) resets to the
+        // ramp grown from that anchor, the way the applier builds it.
         dark: isNeutral
-          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, pages.dark, neutralTint)
+          ? generateNeutralDarkScale(family.base, neutralDarkAnchor(family.key, family.customKey), colorAlgorithm, contrastShift, pages.dark, neutralTint)
           : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, pages.dark),
       }
     } catch {
       return null
     }
-  }, [family.base, family.key, family.customKey, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
+  }, [family.base, family.key, family.customKey, family.dark, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 
   const detailsModal = !family.isAlpha && expandedTone != null ? (() => {
     const tone = expandedTone

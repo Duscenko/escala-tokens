@@ -21,7 +21,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyStateColor,
+  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, applyNeutralDarkColor,
   resolveThemePages, stateColorAnchor, type StateRole,
   followingDarkAnchors, retwinFollowingDarkAnchors,
 } from '../../lib/colorActions'
@@ -2440,7 +2440,6 @@ export default function ThemeQuickSettingsRail({
     id,
     hex: rolePreview?.id === id ? rolePreview.hex : roleHex(id, rampAppearance),
     linked: id === 'neutral' ? linkNeutralToAccent : id === 'accent' ? undefined : store.linkStatesToAccent,
-    readOnly: id === 'neutral' && rampAppearance === 'dark',
   }))
   /** Both themes at `hue`, each SOLVED against its own page: light keeps the
    *  passing tone nearest your colour, dark the dimmest one that still passes
@@ -2528,7 +2527,11 @@ export default function ThemeQuickSettingsRail({
   }
   const setRoleHex = (id: ColorRoleId, hex: string) => {
     if (id === 'neutral') {
-      colorCommit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))
+      // In Dark the hex is the neutral's own dark anchor, like Accent's; in
+      // Light it is the base, and Dark is derived from it again.
+      colorCommit('Neutral updated', (themeKey) => (rampAppearance === 'dark'
+        ? applyNeutralDarkColor(hex, themeKey)
+        : applyNeutral(hex, themeKey)))
       return
     }
     const dark = rampAppearance === 'dark' ? hex : darkTwinOf(hex, themePage.dark)

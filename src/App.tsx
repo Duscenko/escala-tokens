@@ -155,7 +155,7 @@ function App() {
   if (path === '/about') {
     return (
       <>
-        <main className="h-screen overflow-hidden bg-app text-fg">
+        <main className="h-dvh overflow-hidden bg-app text-fg">
           <AboutPage />
         </main>
         <ToastHost />
