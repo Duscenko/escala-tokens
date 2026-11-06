@@ -8,6 +8,8 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import {
   brandThemesFromSyncModes,
   figmaModeCapFor,
+  figmaModesUsed,
+  clampFigmaSyncModes,
   FIGMA_VIEWPORTS,
   FIGMA_VIEWPORT_LABEL,
   hasFigmaSyncMode,
@@ -250,7 +252,7 @@ export function FigmaModesPicker({ previewTheme, onSelectTheme, syncModes, onSyn
   const cap = figmaModeCapFor(free)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const commit = (next: FigmaSyncMode[]) => {
-    if (free && next.length > cap) { setUpgradeOpen(true); onSyncModesChange(next.slice(0, cap), true); return }
+    if (free && figmaModesUsed(next) > cap) { setUpgradeOpen(true); onSyncModesChange(clampFigmaSyncModes(next, cap), true); return }
     onSyncModesChange(next)
   }
   const syncThemes = useMemo(() => figmaSyncThemeKeys(themeOrder, themes), [themeOrder, themes])

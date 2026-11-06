@@ -3,8 +3,9 @@ import { shippedThemes, type BrandThemes } from './brandThemes'
 import { FREE_MAX_MODES, PRO_MAX_MODES } from './entitlement'
 
 /**
- * How many Color Semantics columns Sync will offer — five themes, each as a
- * Light and a Dark column.
+ * How many Figma modes Sync will fill in the widest collection
+ * (`figmaModesUsed`): ten brands (a `Brand` mode each, Light · Dark shared),
+ * or one brand's columns.
  *
  * This is NOT Figma's limit, and it deliberately exceeds it on most plans:
  * Starter allows 1 mode per collection, Professional and Organization 4,
@@ -54,8 +55,37 @@ export function uniqueThemesFromModes(modes: readonly FigmaSyncMode[] | undefine
   return [...new Set(modes.map((mode) => mode.theme))]
 }
 
+/**
+ * Modes the widest Figma collection needs for this selection — what the cap
+ * counts. The plugin writes the same layout (`modesUsed` in its ui.html):
+ * one brand ships its columns in Color Semantics (Light, Dark); two or more
+ * brands get a `Brand` collection with ONE mode per brand and Color Semantics
+ * keeps one mode per appearance. So with brands, Light + Dark no longer count
+ * twice and ten brands fit ten modes.
+ */
+export function figmaModesUsed(modes: readonly FigmaSyncMode[]): number {
+  const brands = new Set(modes.map((mode) => mode.theme))
+  if (brands.size < 2) return modes.length
+  return Math.max(brands.size, new Set(modes.map((mode) => mode.appearance)).size)
+}
+
+/** Whether one more column still fits `cap` modes. */
+function fits(modes: readonly FigmaSyncMode[], mode: FigmaSyncMode, cap: number): boolean {
+  return figmaModesUsed([...modes, mode]) <= cap
+}
+
+/** The columns that fit `cap` modes, first ones first. */
 export function clampFigmaSyncModes(modes: readonly FigmaSyncMode[], cap: number = FIGMA_SYNC_MODE_CAP): FigmaSyncMode[] {
-  return modes.slice(0, cap)
+  const out: FigmaSyncMode[] = []
+  for (const mode of modes) {
+    if (!fits(out, mode, cap)) {
+      // A brand that does not fit is left out whole, never half of it.
+      if (out.some((m) => m.theme === mode.theme)) continue
+      break
+    }
+    out.push(mode)
+  }
+  return out
 }
 
 /**
@@ -80,7 +110,7 @@ export function defaultFigmaSyncModes(
     const shipped = shippedThemes(brandThemes, theme)
     for (const appearance of appearanceOrder(preferred)) {
       if (!shipped.includes(appearance)) continue
-      if (next.length >= cap) return next
+      if (!fits(next, { theme, appearance }, cap)) return next
       next.push({ theme, appearance })
     }
   }
@@ -145,7 +175,7 @@ export function toggleFigmaSyncAppearance(
     const next = modes.filter((mode) => !(mode.theme === theme && mode.appearance === appearance))
     return next.length ? next : [...modes]
   }
-  if (modes.length >= cap) return [...modes]
+  if (!fits(modes, { theme, appearance }, cap)) return [...modes]
   return [...modes, { theme, appearance }]
 }
 
@@ -167,7 +197,7 @@ export function toggleFigmaSyncTheme(
   const next = [...modes]
   for (const appearance of order) {
     if (hasFigmaSyncMode(next, theme, appearance)) continue
-    if (next.length >= cap) break
+    if (!fits(next, { theme, appearance }, cap)) break
     next.push({ theme, appearance })
   }
   return next

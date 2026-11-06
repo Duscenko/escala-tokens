@@ -79,10 +79,11 @@ describe('plugin GitHub save', () => {
     expect(fileOf(files, 'variables.css')).toBe('/* plugin fallback */\n')
   })
 
-  it('five brands still fit the publish limit with their CSS', () => {
-    const keys = ['core-minimal', 'retro-vintage', 'terminal-mono', 'abyss-neon', 'cupcake-pastel'].map((id) => adopt(id))
+  it('ten brands (the beta limit) still fit the publish limit with their CSS', () => {
+    const keys = ['core-minimal', 'retro-vintage', 'terminal-mono', 'abyss-neon', 'cupcake-pastel',
+      'cupertino-glass', 'material-elevation', 'nature-organic', 'neo-brutalism', 'editorial-serif'].map((id) => adopt(id))
     const payload = published(keys)
-    expect(payload.brandCss).toHaveLength(5)
+    expect(payload.brandCss).toHaveLength(10)
     expect(JSON.stringify(payload).length).toBeLessThan(2 * 1024 * 1024)
   })
 })

@@ -5,7 +5,7 @@ import type { TokenJSON } from './types'
 
 export { buildFoundationsMd, buildTokensMd } from './markdownFromJson'
 // The plugin's Export hub: scope · mode · detail over the same renderer.
-export { agentContextFromJSON, contextModes, CONTEXT_FOUNDATIONS, contextSize, formatApproxTokens } from './contextFromJson'
+export { agentContextFromJSON, contextAppearances, contextBrands, contextModes, CONTEXT_FOUNDATIONS, contextSize, formatApproxTokens, narrowToBrand } from './contextFromJson'
 
 /**
  * Clipboard / download payload for Get code · Agent.

@@ -56,6 +56,41 @@ export interface PrimitiveNameContext {
   themeSources?: Record<string, Partial<Record<string, string>>>
   themeOrder?: string[]
   themeLabels?: Record<string, string>
+  /** The names brands were given in the plugin (Add brand), by slug. Read only
+   *  to label per-brand state ramps, like the plugin's `brandLabelOf`. */
+  studioThemes?: Record<string, { name?: string } | undefined>
+}
+
+/** `hola::light` → `hola`; a plain key (`light`) is its own brand. */
+export function brandOfKey(key: string): string {
+  const i = key.indexOf('::')
+  return i === -1 ? key : key.slice(0, i)
+}
+
+/** The brands behind a payload's `brand::appearance` columns, in column order.
+ *  Mirrors the plugin's `brandSlugsOf`. */
+export function brandSlugsOf(ctx?: Pick<PrimitiveNameContext, 'themeOrder'>): string[] {
+  const out: string[] = []
+  for (const key of ctx?.themeOrder ?? []) {
+    if (key.indexOf('::') <= 0) continue
+    const slug = brandOfKey(key)
+    if (!out.includes(slug)) out.push(slug)
+  }
+  return out
+}
+
+/** "Hola Light" → "Hola": a brand's name without its appearance. Mirrors the
+ *  plugin's `brandLabelOf` (the Brand collection's mode names). */
+export function brandLabelOf(slug: string, ctx?: PrimitiveNameContext): string {
+  const own = ctx?.studioThemes?.[slug]?.name?.trim()
+  if (own) return own
+  const key = (ctx?.themeOrder ?? []).find((k) => brandOfKey(k) === slug)
+  const labeled = key ? ctx?.themeLabels?.[key]?.trim() : undefined
+  if (labeled) {
+    const bare = labeled.replace(/\s+(light|dark)$/i, '').trim()
+    if (bare) return bare
+  }
+  return slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 const STATE_SLOTS = new Set(['error', 'warning', 'success', 'info'])
@@ -113,6 +148,12 @@ function primitiveGroupFor(family: string, ctx?: PrimitiveNameContext): string {
   if (slot) {
     const folder = family.endsWith('-dark') ? `${slot} Dark` : slot
     const owners = themesUsingFamily(family, ctx)
+    // Two or more brands: each brand's state ramps sit under its own name, even
+    // when its Light AND Dark columns use them (the plugin's `brandOwningFamily`).
+    if (brandSlugsOf(ctx).length >= 2) {
+      const brands = [...new Set(owners.map(brandOfKey))]
+      if (brands.length === 1) return `States/${brandLabelOf(brands[0]!, ctx)}/${folder}`
+    }
     if (owners.length === 1 && (ctx?.themeOrder?.length ?? 0) > 1) {
       return `States/${shippedThemeLabel(owners[0]!, ctx)}/${folder}`
     }

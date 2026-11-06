@@ -71,7 +71,9 @@ import {
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { brandThemeDef, plannedBrandThemes, shippedThemes } from '../../lib/brandThemes'
+import { brandThemeDef, plannedBrandThemes, shippedThemes, type BrandThemeId } from '../../lib/brandThemes'
+import { BRAND_SPACING_MODES, brandOwnsRow, followSystemRow, matchBrandSpacingMode, type BrandOwnRow } from '../../lib/brandFoundations'
+import { BrandShipsChoice } from './BrandThemesPicker'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import {
   adoptRemixOverGuestSeed, colorRowHasEdits, foundationRowHasEdits, openStyleForEditing, resetFoundationRow, resetThemeColorToOrigin,
@@ -587,7 +589,10 @@ function InsetSidesCard({ spacing, spacingRoles, onBase, onSide, onScrubStart, o
   )
 }
 
-function SpacingModeGrid({ value, spacing, sizes, stroke, onChange }: {
+function SpacingModeGrid({ value, spacing, sizes, stroke, onChange, brand = false }: {
+  /** Inside an added brand a mode sets the card padding only: field size and
+   *  border width are shared by every brand. */
+  brand?: boolean
   value: SpacingMode['id'] | null
   /** The theme's own scale, so a drawn inset is the px it will really be. */
   spacing: Record<string, string>
@@ -596,9 +601,14 @@ function SpacingModeGrid({ value, spacing, sizes, stroke, onChange }: {
   onChange: (mode: SpacingMode) => void
 }) {
   const { t } = useI18n()
-  const order: SpacingMode['id'][] = ['compact', 'quiet', 'airy', 'bold']
+  const order: SpacingMode['id'][] = brand ? BRAND_SPACING_MODES.map((m) => m.id) : ['compact', 'quiet', 'airy', 'bold']
   const insetPx = (step: string) => parseFloat(spacing[step] ?? '') || Number(step) * 4
   const current = SPACING_MODES.find((m) => m.id === value)
+  // A brand's glyphs draw the shared field and border, its own padding.
+  const sharedBase = inferSizeBase(sizes) ?? SIZE_DEFAULT_BASE
+  const sharedBorder = parseFloat(stroke?.sm ?? '1') || 1
+  const fieldOf = (mode: SpacingMode) => (brand ? sharedBase : mode.fieldBase)
+  const borderOf = (mode: SpacingMode) => (brand ? sharedBorder : mode.border)
   return (
     <div>
       <PickerField
@@ -607,21 +617,25 @@ function SpacingModeGrid({ value, spacing, sizes, stroke, onChange }: {
         value={value ?? ''}
         valueLabel={t('Custom')}
         leading={current
-          ? <SpacingModeGlyph size="sm" fieldBase={current.fieldBase} insetPx={insetPx(current.insetStep)} border={current.border} />
+          ? <SpacingModeGlyph size="sm" fieldBase={fieldOf(current)} insetPx={insetPx(current.insetStep)} border={borderOf(current)} />
           : <SpacingModeGlyph size="sm" fieldBase={inferSizeBase(sizes) ?? SIZE_DEFAULT_BASE} insetPx={12} border={parseFloat(stroke?.sm ?? '1') || 1} />}
         options={order.map((id) => {
           const mode = SPACING_MODES.find((m) => m.id === id)!
           return {
             value: id,
             label: mode.label,
-            description: `${t('Field')} ${Math.round(mode.fieldBase * 10)} · ${t('Card')} ${insetPx(mode.insetStep)} · ${t('Border')} ${mode.border}`,
+            description: brand
+              ? `${t('Card')} ${insetPx(mode.insetStep)}`
+              : `${t('Field')} ${Math.round(mode.fieldBase * 10)} · ${t('Card')} ${insetPx(mode.insetStep)} · ${t('Border')} ${mode.border}`,
           }
         })}
         optionVisual={(id, selected) => {
           const mode = SPACING_MODES.find((m) => m.id === id)!
-          return <SpacingModeGlyph fieldBase={mode.fieldBase} insetPx={insetPx(mode.insetStep)} border={mode.border} selected={selected} />
+          return <SpacingModeGlyph fieldBase={fieldOf(mode)} insetPx={insetPx(mode.insetStep)} border={borderOf(mode)} selected={selected} />
         }}
-        info={<InfoHint>{t("Four ready-made densities. Each sets field size, card padding and border width together; Custom means they were set by hand. Ordinary tokens, still editable in Variables.")}</InfoHint>}
+        info={<InfoHint>{brand
+          ? t("Ready-made card paddings for this brand. Field size and border width are shared by every brand.")
+          : t("Four ready-made densities. Each sets field size, card padding and border width together; Custom means they were set by hand. Ordinary tokens, still editable in Variables.")}</InfoHint>}
         onChange={(id) => {
           const mode = SPACING_MODES.find((m) => m.id === id)
           if (mode) onChange(mode)
@@ -886,15 +900,17 @@ const EDIT_LIST: { key: QuickPanelFoundation; title: string }[] = [
   { key: 'motion', title: 'Motion' },
 ]
 
-function EditList({ active, locked, onPick }: {
+function EditList({ active, locked, onPick, only }: {
   active: string
   locked: boolean
   onPick: (key: QuickPanelFoundation) => void
+  /** Add brand lists only the rows a brand may own (and Color). */
+  only?: readonly QuickPanelFoundation[]
 }) {
   const { t } = useI18n()
   return (
     <nav aria-label={t('Editions')} className="flex flex-col px-[var(--inspector-inset)]">
-      {EDIT_LIST.map((item) => (
+      {EDIT_LIST.filter((item) => !only || only.includes(item.key)).map((item) => (
         <button
           key={item.key}
           type="button"
@@ -1908,7 +1924,19 @@ export default function ThemeQuickSettingsRail({
   mappedColour,
   onMappedColourChange,
   rampLegend,
+  addBrand,
 }: {
+  /** Add brand (the system already has a brand): only Color, Font, Radius and
+   *  Spacing are listed, each of the last three "System" (the system brand's
+   *  value) or "Own" (lib/brandFoundations.ts); the Color row picks the
+   *  themes the brand ships. Shadow, icons, motion and text sizes are shared. */
+  addBrand?: {
+    /** The system brand the shared foundations come from. */
+    system: string
+    systemLabel: string
+    /** Fired when the person picks the themes this brand ships. */
+    onShipsPicked?: () => void
+  }
   /** The open ramp as the board map's legend (ThemePreviewHub owns it). */
   rampLegend?: RampLegend
   /** The colour whose ramp is open — the board maps it (ColorRoleMapView).
@@ -2272,6 +2300,64 @@ export default function ThemeQuickSettingsRail({
       }
     })
   }
+  // Add brand: Font, Radius and Spacing are each the system brand's value
+  // ("System") or this brand's ("Own"), read off the tokens. The row's Reset
+  // and the "Use <system>'s …" link both put the system's value back.
+  const ownsRow = (row: BrandOwnRow) => (addBrand ? brandOwnsRow(store, previewTheme, addBrand.system, row) : false)
+  const brandSummary = (row: BrandOwnRow, summary: ReactNode) => {
+    if (!addBrand) return summary
+    const own = ownsRow(row)
+    return (
+      <>
+        <em className={`rounded px-1.5 py-px text-micro font-medium not-italic ${own ? 'bg-accent-ui/15 text-fg' : 'bg-fg/[0.06] text-fg-muted'}`}>
+          {t(own ? 'Own' : 'System')}
+        </em>
+        <span className="truncate">{summary}</span>
+      </>
+    )
+  }
+  const followSystem = (row: BrandOwnRow, title: string) => {
+    if (!addBrand || !ownsRow(row)) return undefined
+    const { system } = addBrand
+    return () => commit(`${title}: ${addBrand.systemLabel}`, (themeKey) => {
+      followSystemRow(themeKey, system, row)
+      if (row === 'typography') {
+        const f = resolveThemeFoundations(useDesignStore.getState(), themeKey).typography
+        loadGoogleFont(f.fontFamily)
+        if (f.headingFontFamily) loadGoogleFont(f.headingFontFamily)
+      }
+    })
+  }
+  const brandRowNote = (row: BrandOwnRow, title: string) => {
+    if (!addBrand) return null
+    const back = followSystem(row, title)
+    return (
+      <div className="px-[var(--inspector-inset)] pb-2">
+        {back ? (
+          <button
+            type="button"
+            onClick={back}
+            className="-ml-1.5 inline-flex h-7 items-center rounded-md px-1.5 text-caption text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Use {name}’s {thing}', { name: addBrand.systemLabel, thing: t(title).toLowerCase() })}
+          </button>
+        ) : (
+          <p className="text-mini text-fg-faint">{t('Same as {name}. Change it to give this brand its own.', { name: addBrand.systemLabel })}</p>
+        )}
+      </div>
+    )
+  }
+  const pickShips = (ids: BrandThemeId[]) => commit('Themes this brand ships', (themeKey) => {
+    // Said first, so the host stops following the board's look before the
+    // write lands (it would otherwise put a single theme back).
+    addBrand?.onShipsPicked?.()
+    const live = useDesignStore.getState()
+    live.setBrandThemes(themeKey, ids)
+    // A brand that ships one theme leads with it, and the board shows it.
+    const only = ids.length === 1 ? brandThemeDef(ids[0])?.base : undefined
+    const sources = live.themeSources[themeKey]
+    if (only && sources && live.themeKinds[themeKey] !== only) live.updateTheme(themeKey, only, sources)
+  })
   const colorReset = !tryOn && setupStep == null && colorRowHasEdits(store, previewTheme)
     ? () => commit('Colour reset', (themeKey) => resetThemeColorToOrigin(themeKey, applyAccent))
     : undefined
@@ -2770,6 +2856,7 @@ export default function ThemeQuickSettingsRail({
         <EditList
           active={activePanel}
           locked={setupStep != null}
+          only={addBrand ? ['color', 'typography', 'radius', 'sizes'] : undefined}
           onPick={(key) => {
             onSelectPanel(key)
             setEditList(false)
@@ -2856,6 +2943,11 @@ export default function ThemeQuickSettingsRail({
             {startStyle && (
               <div className={RAIL_BLOCK}>
                 <StylePicker value={startStyle.value} accent={liveAccent} onChange={startStyle.onChange} />
+              </div>
+            )}
+            {addBrand && (
+              <div className={RAIL_BLOCK}>
+                <BrandShipsChoice value={shippedThemes(store.brandThemes, previewTheme)} onChange={pickShips} />
               </div>
             )}
             <div className={RAIL_BLOCK}>
@@ -2945,7 +3037,7 @@ export default function ThemeQuickSettingsRail({
           )
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Font" foundationKey="typography" onReset={rowReset('typography', 'Font')} resetTarget={rowResetTarget} open={activePanel === 'typography'} summary={headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Font" foundationKey="typography" onReset={addBrand ? followSystem('typography', 'Font') : rowReset('typography', 'Font')} resetTarget={addBrand ? addBrand.systemLabel : rowResetTarget} open={activePanel === 'typography'} summary={brandSummary('typography', headingFamily === typography.fontFamily ? typography.fontFamily : `${typography.fontFamily} · ${headingFamily}`)} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           {/* One stack of labelled fields (name | control, like Colour's role
               rows), then the roles they grade. The
               notes that used to be hover hints now open with the list, where
@@ -2987,8 +3079,10 @@ export default function ThemeQuickSettingsRail({
             />
             {/* A dot per scale step, the body size riding the thumb: the mode
                 names are too long for a thumb, so the name sits in the header
-                (as Border width's word does) and the thumb says what it does. */}
-            <div className="mt-1">
+                (as Border width's word does) and the thumb says what it does.
+                Inside an added brand the scale is the system's: only the
+                families are this brand's. */}
+            {!addBrand && <div className="mt-1">
               <div className="mb-1.5 flex items-center justify-between gap-2">
                 <span className={SLIDER_LABEL}>{t('Text scale')}</span>
                 <span className={SLIDER_VALUE}>{t(TYPE_SCALE_MODES.find((mode) => mode.key === typeScaleMode)?.label ?? 'Custom')}</span>
@@ -3008,14 +3102,15 @@ export default function ThemeQuickSettingsRail({
                   setTypography(themeKey, { ...typography, sizes: nextSizes, lineHeights })
                 })}
               />
-            </div>
+            </div>}
           </div>
+          {brandRowNote('typography', 'Font')}
         </EditionCard>
           )
         })()}
 
         {(
-        <EditionCard title="Radius" foundationKey="radius" onReset={rowReset('radius', 'Radius')} resetTarget={rowResetTarget} open={activePanel === 'radius'} summary={t(matchRadiusRolePreset(foundations.radiusRoles) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+        <EditionCard title="Radius" foundationKey="radius" onReset={addBrand ? followSystem('radius', 'Radius') : rowReset('radius', 'Radius')} resetTarget={addBrand ? addBrand.systemLabel : rowResetTarget} open={activePanel === 'radius'} summary={brandSummary('radius', t(matchRadiusRolePreset(foundations.radiusRoles) ?? 'Custom'))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <SettingItem>
             <RadiusCard
               radius={radius}
@@ -3028,10 +3123,11 @@ export default function ThemeQuickSettingsRail({
               onPreset={(label) => commit('Radius preset updated', (themeKey) => setRadiusPreset(themeKey, label))}
             />
           </SettingItem>
+          {brandRowNote('radius', 'Radius')}
         </EditionCard>
         )}
 
-        {(
+        {!addBrand && (
         <EditionCard title="Shadow" foundationKey="shadow" onReset={rowReset('shadow', 'Shadow')} resetTarget={rowResetTarget} open={activePanel === 'shadow'} summary={shadowsDark
           ? `${t(matchShadowPreset(shadows) ?? 'Custom')} / ${t(matchDarkShadowPreset(shadowsDark) ?? 'Custom')}`
           : t(matchShadowPreset(shadows) ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
@@ -3047,22 +3143,24 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {(
-        <EditionCard title="Spacing" foundationKey="sizes" onReset={rowReset('sizes', 'Spacing')} resetTarget={rowResetTarget} open={activePanel === 'sizes'} summary={t(SPACING_MODES.find((mode) => mode.id === matchSpacingMode(sizes, spacingRoles, stroke))?.label ?? 'Custom')} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
-          <SettingItem>
+        <EditionCard title="Spacing" foundationKey="sizes" onReset={addBrand ? followSystem('sizes', 'Spacing') : rowReset('sizes', 'Spacing')} resetTarget={addBrand ? addBrand.systemLabel : rowResetTarget} open={activePanel === 'sizes'} summary={brandSummary('sizes', t(SPACING_MODES.find((mode) => mode.id === (addBrand ? matchBrandSpacingMode(spacingRoles) : matchSpacingMode(sizes, spacingRoles, stroke)))?.label ?? 'Custom'))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
+          {!addBrand && <SettingItem>
             <CutFacts rows={[
               { label: previewViewport === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
             ]} />
-          </SettingItem>
+          </SettingItem>}
           <SettingItem>
             <SpacingModeGrid
-              value={matchSpacingMode(sizes, spacingRoles, stroke)}
+              brand={Boolean(addBrand)}
+              value={addBrand ? matchBrandSpacingMode(spacingRoles) : matchSpacingMode(sizes, spacingRoles, stroke)}
               spacing={spacing}
               sizes={sizes}
               stroke={stroke}
               onChange={(mode) => commit(`Spacing mode: ${mode.label}`, (themeKey) => {
-                setSizes(themeKey, buildSizesFromBase(mode.fieldBase))
+                // Inside an added brand only the paddings are its own.
+                if (!addBrand) setSizes(themeKey, buildSizesFromBase(mode.fieldBase))
                 setContainerInset(themeKey, SPACING_STEPS.indexOf(mode.insetStep))
-                setStroke(themeKey, { ...stroke, sm: `${mode.border}px` })
+                if (!addBrand) setStroke(themeKey, { ...stroke, sm: `${mode.border}px` })
               })}
             />
           </SettingItem>
@@ -3078,7 +3176,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem
+          {!addBrand && <SettingItem
             label="Fields"
             hint={t('Base unit × 8 = SM, × 10 = Control (MD). Keep MD at least {minPx}px (base {minBase} or higher).', {
               minPx: SIZE_CONTROL_MIN_PX,
@@ -3096,9 +3194,9 @@ export default function ThemeQuickSettingsRail({
               onScrubEnd={endScrub}
               onChange={(base) => applyScrub('Field sizes updated', (themeKey) => setSizes(themeKey, buildSizesFromBase(base)))}
             />
-          </SettingItem>
+          </SettingItem>}
 
-          <SettingItem
+          {!addBrand && <SettingItem
             label="Border width"
             value={t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}
             hint="Controls dividers and component borders. The 2px focus ring remains unchanged."
@@ -3114,11 +3212,12 @@ export default function ThemeQuickSettingsRail({
                 onChange={(next) => applyScrub('Border width updated', (themeKey) => setStroke(themeKey, { ...stroke, sm: `${next}px` }))}
               />
             </div>
-          </SettingItem>
+          </SettingItem>}
+          {brandRowNote('sizes', 'Spacing')}
         </EditionCard>
         )}
 
-        {(
+        {!addBrand && (
         <EditionCard title="Icons" foundationKey="icons" onReset={rowReset('icons', 'Icons')} resetTarget={rowResetTarget} open={activePanel === 'icons'} summary={t((iconWeight ?? 'regular').charAt(0).toUpperCase() + (iconWeight ?? 'regular').slice(1))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <div className={RAIL_BLOCK}>
             <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
@@ -3144,7 +3243,7 @@ export default function ThemeQuickSettingsRail({
         </EditionCard>
         )}
 
-        {(
+        {!addBrand && (
         <EditionCard title="Motion" foundationKey="motion" onReset={rowReset('motion', 'Motion')} resetTarget={rowResetTarget} open={activePanel === 'motion'} summary={t(motionSummary(motion))} onOpenAdvanced={onOpenAdvanced} showAdvancedEdition={showAdvancedEdition} advancedDisabled={editionLocked}>
           <div className={RAIL_BLOCK}>
             <MotionPreview settings={motion} />
@@ -3165,6 +3264,12 @@ export default function ThemeQuickSettingsRail({
             />
           </div>
         </EditionCard>
+        )}
+
+        {addBrand && (
+          <p className="px-[var(--inspector-inset)] pt-3 text-mini leading-relaxed text-fg-faint">
+            {t('Shadow, icons, motion and text sizes are shared by every brand.')}
+          </p>
         )}
 
         {themeReset.show && (

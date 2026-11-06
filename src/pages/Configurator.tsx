@@ -7,7 +7,7 @@ import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorS
 import { PLATFORM_ACCENT } from '../lib/chromeTheme'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
 import { PRO_MAX_MODES } from '../lib/entitlement'
-import { figmaModeCapFor, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
+import { clampFigmaSyncModes, figmaModeCapFor, applyBrandThemesToSyncModes, brandThemesFromSyncModes, defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { canonicalizePublishId } from '../lib/publishId'
@@ -855,9 +855,11 @@ export default function Configurator() {
    *  menu. The brand is kept at once and put on the Board. */
   const importBrandFromTopBar = (json: Record<string, unknown>, name: string) => {
     const res = addBrandFromPayload(json, name)
-    if ('error' in res) return res
-    finishThemeSetup(res.key)
-    forgetUnsavedBrand(res.key)
+    if (!('key' in res)) return res
+    for (const key of res.keys) {
+      finishThemeSetup(key)
+      forgetUnsavedBrand(key)
+    }
     useDesignStore.getState().saveCurrentSystem()
     announceBrandSaved(t, res.key)
     changePreviewTheme(res.key)
@@ -1270,7 +1272,7 @@ export default function Configurator() {
   // them. The saved pick is untouched, so going Pro finds it whole.
   const freeSync = useFreeTier()
   const figmaSyncModes = useMemo(
-    () => figmaSyncModesRaw.slice(0, figmaModeCapFor(freeSync)),
+    () => clampFigmaSyncModes(figmaSyncModesRaw, figmaModeCapFor(freeSync)),
     [figmaSyncModesRaw, freeSync],
   )
   useEffect(() => {

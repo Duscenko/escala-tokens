@@ -69,6 +69,7 @@ function nameContext(json: TokenJSON): PrimitiveNameContext {
     themeSources: json.colors.themeSources,
     themeOrder: json.colors.themeOrder,
     themeLabels: json.colors.themeLabels,
+    studioThemes: (json as { studioThemes?: PrimitiveNameContext['studioThemes'] }).studioThemes,
   }
 }
 

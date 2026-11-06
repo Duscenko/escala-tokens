@@ -42,6 +42,7 @@ export function buildTokensMd(json: TokenJSON): string {
       themeSources: json.colors.themeSources,
       themeOrder: json.colors.themeOrder,
       themeLabels: json.colors.themeLabels,
+      studioThemes: json.studioThemes,
     })
     const group = name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : name
     const list = byGroup.get(group) ?? []

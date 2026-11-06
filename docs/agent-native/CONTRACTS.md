@@ -91,6 +91,22 @@ Spacing steps in Figma nest under `step/` because a variable name cannot start w
 
 Shadows and gradients are **styles**, not variables (Figma has no type for them).
 
+### 5b. Multi-brand layout — the `Brand` collection
+
+A system with **two or more brands** (Color Semantics columns `<slug>::light` / `<slug>::dark` from two or more slugs) ships one Figma file and one CSS file. The plugin's `importVariables` (`../escala-figma-plugin/src/code.ts`) is the source of truth; `figmaCollections/fromTokens.ts` mirrors it for the W3C export.
+
+- **Token names are invariant across brands.** `Action/primary/default`, `Radius/role/action`, `var(--radius-action)` name the same token in every brand; only the value changes. Never mint a per-brand name (`Hola/Action/…`, `--hola-radius-action`).
+- **`Brand` collection**: one mode per brand, in `themeOrder` order, named after the brand (`studioThemes[slug].name`, else its `themeLabels` without Light/Dark, else the title-cased slug). Its variables have no scopes and are not published; designers bind the semantic collections, never `Brand/…`.
+- **Color Semantics** has two modes, `Light` · `Dark`. A role whose value differs between brands aliases `Brand/<Light|Dark>/<role path>`. A brand that ships one appearance repeats it in the other mode.
+- **Dimension Semantics** `Spacing/role/*`, `Radius/component/*` and `Radius/role/*` alias `Brand/<group path>/<viewport>` — **per viewport** — where brands differ.
+- **Typography** `font-family-body` / `font-family-display` alias `Brand/Font/body` · `Brand/Font/display` where brands differ. The type scale is shared.
+- **What a brand may change**: colour, radius, spacing (paddings, gaps) and the two font families. Sizes, stroke, shadows, icons, motion, weights, line heights and viewports are the system's (the first brand's). Each brand's values live in `foundationsByTheme[<slug>::<appearance>]` (any of its columns).
+- **Shared values are written directly**, without a `Brand` alias. One brand: no `Brand` collection, output identical to the single-brand layout.
+- **State ramps** are grouped per brand: `States/<Brand>/Error/…` (`figmaPrimitiveName` mirrors it).
+- **Cap**: the widest collection holds one mode per brand, so the brand cap is the mode cap (`BETA_MAX_BRANDS = 10`, `figmaModesUsed`).
+- **Activation**: Figma — the `Brand` mode on a frame, `Color Semantics` for Light/Dark, `Dimension Semantics` / `Typography` for the viewport. Code — `[data-brand="<slug>"]` on `<html>` in the multi-brand `variables.css` (`cssCut.combineBrandCss`), `.dark` for the appearance.
+- **Agent context** (`agentBundle/brands.ts`): All brands = the invariance line once, shared values once, then a **By brand** table with only the tokens that differ, one column per brand (with its appearance). One brand = its values flat (`narrowToBrand`). Both end with the Escala JSON; pasting it (plugin ⌘V, web Add brand → Import agent context) recreates every brand with its own `foundationsByTheme`.
+
 ## 6. Plugin field names the configurator must keep emitting
 
 The plugin is authoritative for component sets (`code.ts`). The web catalogue (`componentCatalogue.ts`) mirrors it.

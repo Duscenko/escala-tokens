@@ -4,16 +4,18 @@
 // so a scoped document never references a token it does not carry.
 
 import type { generateTokenJSON } from '../tokenGenerator'
-import { figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
+import { brandLabelOf, brandOfKey } from '../agentBundle/names'
+import { BRAND_COLLECTION, figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
 import { isSnapAlias, snapshotToW3C, type CollectionsSnapshot, type SnapScalar, type SnapValue, type SnapshotToW3COptions } from './w3cTree'
 
-export { figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
+export { BRAND_COLLECTION, figmaCollectionsSnapshot, primitiveEntries } from './fromTokens'
 export * from './w3cTree'
 
 type TokenJSON = ReturnType<typeof generateTokenJSON>
 
 export interface FigmaW3COptions {
-  /** Collections to write; all five when omitted. */
+  /** Collections to write; all when omitted (the five, plus `Brand` with two
+   *  or more brands). */
   include?: readonly string[]
   /** Dimension Semantics groups to keep (`Spacing`, `Radius`, `Stroke`, `Size`,
    *  `Selector`, `Icon`, `Grid`); all when omitted. */
@@ -88,8 +90,27 @@ export function figmaCollectionsW3C(tokens: TokenJSON, opts: FigmaW3COptions = {
     const colors = tokens.colors as unknown as Record<string, any>
     const label = (m: string) => (colors.themeLabels?.[m] as string | undefined)?.trim() || m.charAt(0).toUpperCase() + m.slice(1)
     const wanted = new Set(opts.semanticModes.map(label))
+    // With a Brand collection Color Semantics is Light · Dark: a picked
+    // `hola::dark` keeps the Dark column and Hola's Brand mode.
+    const brandCol = snap.collections.find((c) => c.name === BRAND_COLLECTION)
+    const wantedBrands = new Set<string>()
+    if (brandCol) {
+      const ctx = { themeOrder: colors.themeOrder, themeLabels: colors.themeLabels, studioThemes: (tokens as unknown as Record<string, any>).studioThemes }
+      for (const m of opts.semanticModes) {
+        const i = m.indexOf('::')
+        if (i <= 0) continue
+        const appearance = m.slice(i + 2).toLowerCase()
+        wanted.add(appearance.charAt(0).toUpperCase() + appearance.slice(1))
+        wantedBrands.add(brandLabelOf(brandOfKey(m), ctx))
+      }
+    }
     snap = {
       collections: snap.collections.map((c) => {
+        if (c.name === BRAND_COLLECTION) {
+          const modes = c.modes.filter((m) => wantedBrands.has(m))
+          if (!modes.length) return c
+          return { ...c, modes, variables: c.variables.map((v) => ({ ...v, values: Object.fromEntries(modes.map((m) => [m, v.values[m]])) })) }
+        }
         if (c.name !== 'Color Semantics') return c
         const modes = c.modes.filter((m) => wanted.has(m))
         if (!modes.length) return c

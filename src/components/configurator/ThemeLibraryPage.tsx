@@ -19,6 +19,8 @@ import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
 import type { GridViewport } from '../../lib/layoutTokens'
 import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
 import { adoptPreset } from '../../lib/adoptPreset'
+import { seedAddedBrand, systemBrandFor } from '../../lib/brandFoundations'
+import { shippedThemes } from '../../lib/brandThemes'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { useEditHistory } from '../../lib/editHistory'
 import { announceBrandSaved } from '../../lib/brandSaved'
@@ -489,6 +491,10 @@ export default function ThemeLibraryPage({
   // ("6 foundations · 2 changed"). A count, not a stepper: it says how big
   // the job is without ordering it.
   const [changedRows, setChangedRows] = useState<Set<CreateStep>>(() => new Set())
+  // Add brand: until the person picks which themes the brand ships, it ships
+  // the one its colour is being picked in (the board's look), as in the
+  // plugin. Light + Dark stays one click away on the Color row.
+  const [shipsPicked, setShipsPicked] = useState(false)
   // The embedded rail's Random, for the footer's die.
   const randomHandle = useRef<(() => void) | null>(null)
   // The mint-on-open guard is a ref, not state: React runs that effect twice
@@ -502,6 +508,7 @@ export default function ThemeLibraryPage({
     setCreateError(null)
     setStartStyle(DEFAULT_START_STYLE)
     setChangedRows(new Set())
+    setShipsPicked(false)
     mintedRef.current = false
   }, [creating])
   useEffect(() => {
@@ -663,7 +670,7 @@ export default function ThemeLibraryPage({
    * brand is a draft (unsaved) until the person leaves through Save or Ship;
    * Cancel and Home's draft sweep drop it, so nothing is kept that nobody chose.
    */
-  const mintStart = (styleId: string, keepLabel?: string) => {
+  const mintStart = (styleId: string, keepLabel?: string): string | undefined => {
     setCreateError(null)
     const live = useDesignStore.getState()
     const firstBrand = myThemeKeys(live.themeOrder, live.themes).length === 0
@@ -678,12 +685,23 @@ export default function ThemeLibraryPage({
       const pages = { light: backgroundFromBase(slots.gray, 'light', tint), dark: backgroundFromBase(slots.gray, 'dark', tint) }
       res = mintTheme(slots, kind, keepLabel || (firstBrand ? live.projectName : t('Brand')), null, tint, pages, live.contrastShift)
     }
-    if ('error' in res) { setCreateError(t(res.error, { count: MY_THEME_HARD_CAP })); return }
+    if ('error' in res) { setCreateError(t(res.error, { count: MY_THEME_HARD_CAP })); return undefined }
     // Blank on the first brand means "keep the design system name"; a later
     // brand takes the style's short name until it is renamed in the band.
     const label = keepLabel || (firstBrand ? live.projectName.trim() : (preset?.shortLabel ?? t('Brand')))
     if (label) useDesignStore.getState().setThemeLabel(res.key, label)
+    // A brand added to a system shares its foundations (type scale, shadow,
+    // icons, motion, sizes, stroke) and starts on the system's font, radius
+    // and spacing; a style brings its colour only. It ships the theme its
+    // colour is picked in until the Color row says otherwise.
+    const system = firstBrand ? undefined : systemBrandFor(useDesignStore.getState(), res.key)
+    if (system) {
+      seedAddedBrand(res.key, system)
+      const lead = useDesignStore.getState().themeKinds[res.key] === 'dark' ? 'dark' : 'light'
+      useDesignStore.getState().setBrandThemes(res.key, [lead])
+    }
     onColorCommitted(res.key)
+    return res.key
   }
   /** "Start from style" on the Color row: the draft is re-minted from the
    *  pick, keeping its name. A style you only glanced at leaves nothing. */
@@ -691,11 +709,14 @@ export default function ThemeLibraryPage({
     setStartStyle(id)
     if (!createdKey) { mintStart(id); return }
     const label = themeDisplayName(createdKey, store.themeLabels)
+    // Themes the person already picked for this brand survive the re-mint.
+    const ships = shipsPicked ? shippedThemes(useDesignStore.getState().brandThemes, createdKey) : null
     finishThemeSetup(createdKey)
     forgetUnsavedBrand(createdKey)
     deleteTheme(createdKey)
     setChangedRows(new Set())
-    mintStart(id, label)
+    const key = mintStart(id, label)
+    if (key && ships) useDesignStore.getState().setBrandThemes(key, ships)
   }
   // The studio opened with no brand on it. A guest's refresh resumes the
   // draft the studio already minted (it would otherwise mint a second one on
@@ -705,6 +726,8 @@ export default function ThemeLibraryPage({
     mintedRef.current = true
     const draft = studioOnly ? mine.find((item) => unsavedBrands.has(item)) : undefined
     if (draft) {
+      // A resumed draft keeps whatever it ships: that may have been picked.
+      setShipsPicked(true)
       setCreatedKey(draft)
       const at = useThemeSetup.getState().drafts[draft]
       const step = at != null ? SETUP_STEPS[at] : 'color'
@@ -743,11 +766,14 @@ export default function ThemeLibraryPage({
   // Function declaration on purpose: Home's `body` (built above) reads it.
   function importBrand(json: Record<string, unknown>, name: string) {
     const res = addBrandFromPayload(json, name)
-    if ('error' in res) return res
+    if (!('key' in res)) return res
     // Kept like a brand the studio makes (saved to the account when there
-    // is one), and put on screen so its card is the one lit.
-    markBrandUnsaved(res.key)
-    keepCreatedBrand(res.key)
+    // is one), and put on screen so its card is the one lit. A multi-brand
+    // paste keeps every brand it carried; the first is the one shown.
+    for (const key of res.keys) {
+      markBrandUnsaved(key)
+      keepCreatedBrand(key)
+    }
     onSelectTheme(res.key)
     return res
   }
@@ -775,6 +801,16 @@ export default function ThemeLibraryPage({
   // The first system this browser makes: the studio says so, and what is on
   // the board is a draft until Create brand.
   const firstSystem = mine.every((key) => key === createdKey)
+  // Adding a brand to a system that has one: the studio offers only what a
+  // brand may own (lib/brandFoundations.ts) against that system brand.
+  const systemBrand = createdKey && !firstSystem ? systemBrandFor(store, createdKey) : undefined
+  const createdKind = createdKey ? store.themeKinds[createdKey] : undefined
+  const createdShips = createdKey ? shippedThemes(store.brandThemes, createdKey).join('+') : ''
+  useEffect(() => {
+    if (!createdKey || !systemBrand || shipsPicked) return
+    const look = createdKind === 'dark' ? 'dark' : 'light'
+    if (createdShips !== look) useDesignStore.getState().setBrandThemes(createdKey, [look])
+  }, [createdKey, systemBrand, shipsPicked, createdKind, createdShips])
   const getCreatedCode = (key: string) => {
     keepCreatedBrand(key)
     setCreating(false)
@@ -831,6 +867,11 @@ export default function ThemeLibraryPage({
                     // studio can remount around a re-mint and must still name
                     // the style the brand on screen came from.
                     startStyle={{ value: store.themeOrigin?.[createdKey] ?? '', onChange: switchStyle }}
+                    addBrand={systemBrand ? {
+                      system: systemBrand,
+                      systemLabel: themeDisplayName(systemBrand, store.themeLabels),
+                      onShipsPicked: () => setShipsPicked(true),
+                    } : undefined}
                   />
                 )}
               </div>
@@ -858,7 +899,7 @@ export default function ThemeLibraryPage({
               // tokens — not "design system" or "brand" (phase 3).
               title={firstSystem ? t('Set your foundations') : t('New brand')}
               // Not a step: how big the job is, and how much of it was touched.
-              stepLabel={`${t('{n} foundations', { n: String(CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
+              stepLabel={`${t('{n} foundations', { n: String(systemBrand ? 4 : CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
               onOpenComponent={onOpenComponent}
               onRandom={() => randomHandle.current?.()}
             />

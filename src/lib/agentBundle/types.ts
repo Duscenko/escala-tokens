@@ -167,6 +167,9 @@ export interface TokenJSON {
     sizes?: IconSizeBlock
   }
   atoms?: string[]
+  /** Plugin-made systems: each brand's Add brand choices, by brand slug. Only
+   *  `name` is read here (the brand's label, as the Brand collection names it). */
+  studioThemes?: Record<string, { name?: string } & Record<string, unknown>>
   /** Each brand's own variables.css (lib/brandCss), for the plugin's GitHub save. Never written into a repo's tokens.json. */
   brandCss?: { key: string; name: string; css: string }[]
 }

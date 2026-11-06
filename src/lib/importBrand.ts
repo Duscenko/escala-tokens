@@ -15,6 +15,8 @@ import { mintTheme } from './themeMint'
 import { backgroundFromBase } from './colorUtils'
 import { loadGoogleFont } from './fonts'
 import type { ThemeFoundationOverride } from './themeFoundations'
+import { contextBrands, narrowToBrand } from './agentBundle/brands'
+import type { TokenJSON } from './agentBundle/types'
 
 export type BrandSource = 'context' | 'json'
 
@@ -54,8 +56,32 @@ export function readBrandPayload(text: string, source: BrandSource, fileName?: s
   return { ok: true, json, name }
 }
 
-/** Mint the payload as a new brand of the system on screen. */
-export function addBrandFromPayload(json: Record<string, unknown>, name: string): { key: string } | { error: string } {
+/** Mint the payload as new brands of the system on screen: one, or — for a
+ *  multi-brand context (the plugin's All brands, `brand::appearance` columns
+ *  of two or more brands) — every brand it carries, each from its own flat
+ *  payload (`narrowToBrand`: its colours, radius, spacing and font families).
+ *  `key` is the first brand; `keys` all of them, in the paste's order. A brand
+ *  the system has no room for stops the loop; the ones minted stay. */
+export function addBrandFromPayload(json: Record<string, unknown>, name: string): { key: string; keys: string[]; error?: string } | { error: string } {
+  const brands = contextBrands(json as unknown as TokenJSON)
+  if (brands.length < 2) {
+    const one = addOneBrand(json, name)
+    return 'error' in one ? one : { key: one.key, keys: [one.key] }
+  }
+  const keys: string[] = []
+  for (const b of brands) {
+    const flat = narrowToBrand(json as unknown as TokenJSON, b.slug) as unknown as Record<string, unknown>
+    const res = addOneBrand(flat, b.label)
+    if ('error' in res) {
+      if (!keys.length) return res
+      return { key: keys[0]!, keys, error: res.error }
+    }
+    keys.push(res.key)
+  }
+  return { key: keys[0]!, keys }
+}
+
+function addOneBrand(json: Record<string, unknown>, name: string): { key: string } | { error: string } {
   const analyzed = analyzeTokens(json, { consolidate: true })
   if (!analyzed.ok) return { error: analyzed.error }
   const snap = materializeImport(analyzed.analysis, { name, normalize: false })
@@ -67,7 +93,10 @@ export function addBrandFromPayload(json: Record<string, unknown>, name: string)
     success: snap.successColor,
     info: snap.infoColor,
   }
-  const kind = snap.themeKinds?.[snap.themeOrder?.[0] ?? 'light'] === 'dark' ? 'dark' : 'light'
+  // A brand that ships only Dark (`otra::dark`) opens in Dark.
+  const cols = ((json.colors as { themeOrder?: unknown } | undefined)?.themeOrder as string[] | undefined) ?? []
+  const darkOnly = cols.length > 0 && cols.every((c) => String(c).endsWith('::dark'))
+  const kind = darkOnly || snap.themeKinds?.[snap.themeOrder?.[0] ?? 'light'] === 'dark' ? 'dark' : 'light'
   const res = mintTheme(slots, kind, name, null, snap.neutralTint, {
     light: backgroundFromBase(slots.gray, 'light', snap.neutralTint),
     dark: backgroundFromBase(slots.gray, 'dark', snap.neutralTint),
@@ -91,6 +120,23 @@ export function addBrandFromPayload(json: Record<string, unknown>, name: string)
     breakpointRoles: snap.breakpointRoles,
     gridFrame: snap.gridFrame,
   }
+  // Role maps the import pipeline does not read: a brand's own radius roles
+  // (Sharp vs Pill on the same ramp) and their per-viewport values live only
+  // there, so they come straight from the payload.
+  const roles = (v: unknown): Record<string, string> | undefined =>
+    v && typeof v === 'object' && Object.values(v as object).every((x) => typeof x === 'string') ? (v as Record<string, string>) : undefined
+  const ownRadius = roles(json.radiusRoles)
+  if (ownRadius) foundations.radiusRoles = { ...snap.radiusRoles, ...ownRadius }
+  const ownSpacing = roles(json.spacingRoles)
+  if (ownSpacing && snap.spacingRoles) {
+    // Only roles the store already knows, so a payload from another version
+    // cannot add names the editor has no row for.
+    foundations.spacingRoles = { ...snap.spacingRoles, ...Object.fromEntries(Object.entries(ownSpacing).filter(([k]) => k in snap.spacingRoles!)) }
+  }
+  const ownPadding = roles(json.padding)
+  if (ownPadding && snap.padding) foundations.padding = { ...snap.padding, ...ownPadding } as typeof snap.padding
+  const rv = json.radiusRoleViewports
+  if (rv && typeof rv === 'object') (foundations as Record<string, unknown>).radiusRoleViewports = rv
   const s = useDesignStore.getState()
   s.setThemeFoundations(res.key, foundations)
   // The key is a slug; the card shows the name as it came in.

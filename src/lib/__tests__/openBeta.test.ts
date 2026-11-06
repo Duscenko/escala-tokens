@@ -63,13 +63,13 @@ describe('open beta', () => {
     expect(e.maxThemes).toBe(BETA_MAX_BRANDS)
   })
 
-  it('caps a design system at five brands, for everyone', () => {
-    expect(BETA_MAX_BRANDS).toBe(5)
-    expect(betaBrandLimitReached(4)).toBe(false)
-    expect(betaBrandLimitReached(5)).toBe(true)
+  it('caps a design system at ten brands, for everyone', () => {
+    expect(BETA_MAX_BRANDS).toBe(10)
+    expect(betaBrandLimitReached(9)).toBe(false)
+    expect(betaBrandLimitReached(10)).toBe(true)
     // No session in tests: the beta limit applies with or without an account.
-    expect(freeAnotherThemeBlockedNow(4)).toBe(false)
-    expect(freeAnotherThemeBlockedNow(5)).toBe(true)
+    expect(freeAnotherThemeBlockedNow(9)).toBe(false)
+    expect(freeAnotherThemeBlockedNow(10)).toBe(true)
   })
 
   it('publishes and serves with no licence and no account', async () => {

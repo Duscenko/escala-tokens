@@ -17,8 +17,15 @@
 //                        Grid, modes = the shipped viewports
 //   Typography           size / weight / line-height / letter-spacing steps,
 //                        the two families, and `role/<role>/*` per viewport
+//   Brand                only with two or more brands (`<slug>::<appearance>`
+//                        columns): one mode per brand. Color Semantics turns
+//                        into Light · Dark, and whatever differs between brands
+//                        (a semantic colour, Spacing/Radius per viewport, the
+//                        two font families) aliases `Brand/<…>`; what all
+//                        brands share is written directly. One brand: no Brand
+//                        collection, and every other collection is as before.
 
-import { figmaPrimitiveName, type PrimitiveNameContext } from '../agentBundle/names'
+import { brandLabelOf, brandOfKey, brandSlugsOf, figmaPrimitiveName, type PrimitiveNameContext } from '../agentBundle/names'
 import type { generateTokenJSON } from '../tokenGenerator'
 import type { CollectionsSnapshot, SnapCollection, SnapValue, SnapVariable } from './w3cTree'
 
@@ -36,6 +43,7 @@ const ICON_SIZE_PX = { small: 16, medium: 20, large: 24 } as const
 const ICON_SIZE_NAMES = ['small', 'medium', 'large'] as const
 const FAMILY_BODY = 'font-family-body'
 const FAMILY_DISPLAY = 'font-family-display'
+export const BRAND_COLLECTION = 'Brand'
 
 // ── Plugin helpers, mirrored ─────────────────────────────────────────────────
 
@@ -122,6 +130,30 @@ function activeThemeKey(t: TokenJSON): string {
   return own[own.length - 1] ?? order[0] ?? 'light'
 }
 
+/** `hola::dark` → `dark` (the plugin's `appearanceOfKey`). */
+function appearanceOfKey(key: string): string {
+  const i = key.indexOf('::')
+  return i === -1 ? '' : key.slice(i + 2).toLowerCase()
+}
+
+/** The brand's own foundations — any of its columns carries them. Undefined:
+ *  the brand follows the root (the plugin's `brandFoundationOf`). */
+function brandFoundationOf(t: Loose, slug: string): Loose | undefined {
+  for (const key of (t.colors?.themeOrder ?? []) as string[]) {
+    if (brandOfKey(key) !== slug) continue
+    const f = t.foundationsByTheme?.[key]
+    if (f) return f
+  }
+  return t.foundationsByTheme?.[slug]
+}
+
+/** The plugin writes Typography's families through Platform (not Brand) when
+ *  the payload ships a native platform (its `shippedPlatforms`). */
+function shipsNativePlatform(t: Loose): boolean {
+  const picked = (['web', 'ios', 'android'] as const).filter((p) => (t.platforms as string[] | undefined)?.includes(p))
+  return picked.length > 1 && picked[0] === 'web'
+}
+
 function shippedViewports(t: TokenJSON): [Viewport, string][] {
   const listed = (t as Loose).viewports as string[] | undefined
   const picked = VIEWPORTS.filter(([k]) => listed?.includes(k))
@@ -192,9 +224,19 @@ class Collection {
 export interface PrimitiveEntry { key: string; alpha: boolean; name: string; hex: string }
 
 /** Every Color Primitives variable with the tokens.json key it came from. */
+function namingContext(tokens: TokenJSON): PrimitiveNameContext {
+  const colors = tokens.colors as unknown as Loose
+  return {
+    themeSources: colors.themeSources,
+    themeOrder: colors.themeOrder,
+    themeLabels: colors.themeLabels,
+    studioThemes: (tokens as unknown as Loose).studioThemes,
+  }
+}
+
 export function primitiveEntries(tokens: TokenJSON): PrimitiveEntry[] {
   const colors = tokens.colors as unknown as Loose
-  const ctx: PrimitiveNameContext = { themeSources: colors.themeSources, themeOrder: colors.themeOrder, themeLabels: colors.themeLabels }
+  const ctx = namingContext(tokens)
   const out: PrimitiveEntry[] = []
   for (const [key, hex] of Object.entries((colors.primitive ?? {}) as Record<string, string>)) {
     if (hex) out.push({ key, alpha: false, name: figmaPrimitiveName(key, ctx), hex: String(hex).toLowerCase() })
@@ -211,6 +253,39 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
   const fbt = (t.foundationsByTheme ?? {}) as Record<string, Loose>
   const foundationThemes = columnsFrom(colors.themeOrder, t.foundationsByTheme)
   const vps = shippedViewports(tokens)
+
+  // ── Brand: one mode per brand (two or more brands only) ────────────────────
+  // The plugin's `brandLayer` + `brandValue`: a value every brand shares is
+  // returned as is; one that differs becomes a Brand variable holding one
+  // value per brand, and the semantic variable aliases it. A brand with no
+  // value takes the first brand's.
+  const nameCtx = namingContext(tokens)
+  const brandSlugs = brandSlugsOf(nameCtx)
+  const brandCol = brandSlugs.length > 1 ? new Collection(BRAND_COLLECTION, brandSlugs.map((s) => brandLabelOf(s, nameCtx))) : null
+  const brandValue = (name: string, type: SnapVariable['type'], perBrand: Record<string, SnapValue | undefined>): SnapValue | undefined => {
+    const values = brandSlugs.map((s) => perBrand[s])
+    const first = values.find((v) => v !== undefined)
+    if (first === undefined) return undefined
+    const filled = values.map((v) => v ?? first)
+    if (!brandCol || filled.every((v) => JSON.stringify(v) === JSON.stringify(filled[0]))) return filled[0]
+    const varName = figmaVarName(name)
+    brandCol.set(varName, type, Object.fromEntries(brandCol.modes.map((m, i) => [m, filled[i]])))
+    return alias(BRAND_COLLECTION, varName)
+  }
+  const brandFoundations = brandCol ? brandSlugs.map((s) => brandFoundationOf(t, s)) : null
+
+  // Each brand's body and display family (the plugin writes Typography before
+  // the colours, so `Font/*` leads the Brand collection). Null when every brand
+  // uses the same two, or when the families follow Platform instead.
+  const ty = t.typography as Loose
+  const brandFamilies = (() => {
+    if (!brandFoundations || shipsNativePlatform(t)) return null
+    const body = brandFoundations.map((f) => normalizeFontFamilyName(f?.typography?.fontFamily ?? ty.fontFamily))
+    const display = brandFoundations.map((f) => normalizeFontFamilyName(f?.typography?.headingFontFamily ?? f?.typography?.fontFamily ?? ty.headingFontFamily ?? ty.fontFamily))
+    if (body.every((x) => x === body[0]) && display.every((x) => x === display[0])) return null
+    const of = (list: string[]) => Object.fromEntries(brandSlugs.map((s, i) => [s, list[i]]))
+    return { body: brandValue('Font/body', 'STRING', of(body)), display: brandValue('Font/display', 'STRING', of(display)) }
+  })()
 
   // ── Color Primitives ───────────────────────────────────────────────────────
   const prim = new Collection('Color Primitives', [SINGLE_MODE])
@@ -238,7 +313,17 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
     const ordered = themeNames.filter((m) => present.has(m))
     return ordered.length ? ordered : themeNames
   })()
-  const sem = new Collection('Color Semantics', semKeys.map(labelOf))
+  // Two or more brands, every column a brand's: the modes are the APPEARANCES
+  // (Light · Dark) and the brand comes from Brand. A brand that only ships one
+  // appearance repeats it in the other column.
+  const brandSplit = !!brandCol && semKeys.length > 0 && semKeys.every((k) => k.includes('::') && brandSlugs.includes(brandOfKey(k)))
+  const appearances: string[] = []
+  if (brandSplit) {
+    for (const k of semKeys) { const a = appearanceOfKey(k) || 'light'; if (!appearances.includes(a)) appearances.push(a) }
+    appearances.sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : 0))
+  }
+  const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  const sem = new Collection('Color Semantics', brandSplit ? appearances.map(capital) : semKeys.map(labelOf))
   const colorValue = (hex: string): SnapValue => {
     const { opaque, alpha } = splitHex(hex)
     const target = alpha ? byAlpha.get(alpha) : byHex.get(opaque)
@@ -275,7 +360,23 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
       for (const [tok, byMode] of Object.entries(archTokens[key] ?? {})) {
         const base = semKeys.map((m) => archHex(byMode[m])).find(Boolean)
         if (!base) continue
-        sem.set(figmaVarName(`${label}/${tok}`), 'COLOR', Object.fromEntries(semKeys.map((m) => [labelOf(m), colorValue(archHex(byMode[m]) ?? base)])))
+        const varName = figmaVarName(`${label}/${tok}`)
+        if (!brandSplit) {
+          sem.set(varName, 'COLOR', Object.fromEntries(semKeys.map((m) => [labelOf(m), colorValue(archHex(byMode[m]) ?? base)])))
+          continue
+        }
+        const byKey = new Map(semKeys.map((m) => [m, colorValue(archHex(byMode[m]) ?? base)] as const))
+        const values: Record<string, SnapValue> = {}
+        for (const a of appearances) {
+          const perBrand: Record<string, SnapValue | undefined> = {}
+          for (const slug of brandSlugs) {
+            perBrand[slug] = byKey.get(`${slug}::${a}`)
+              ?? semKeys.filter((k) => brandOfKey(k) === slug).map((k) => byKey.get(k)).find((v) => v !== undefined)
+          }
+          const value = brandValue(`${capital(a)}/${varName}`, 'COLOR', perBrand)
+          if (value !== undefined) values[capital(a)] = value
+        }
+        sem.set(varName, 'COLOR', values)
       }
     }
   }
@@ -348,41 +449,80 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
   }
   const same = (v: SnapValue | undefined) => ({ desktop: v, tablet: v, mobile: v })
 
-  const fSpacing = pick('spacing')
-  const fRadius = pick('radius')
   const strokeV6 = !!(t.stroke && Object.keys(t.stroke).length)
   const fStroke = (dimF?.stroke ?? (strokeV6 ? t.stroke : t.borders?.width)) as Record<string, string> | undefined
   const strokeName = strokeV6 ? (k: string) => k : (k: string) => `width/${k}`
 
+  // Spacing and Radius may differ per brand. With a Brand collection each is
+  // computed per brand from that brand's foundations and folded through
+  // `brandValue` one viewport at a time (`Brand/<name>/<viewport>`); without
+  // one, from `dimF` as before (the plugin's `perBrandDim`).
+  type DimPerVp = Partial<Record<Viewport, SnapValue | undefined>>
+  const dimBrands: (Loose | undefined)[] = brandFoundations ?? [dimF]
+  const perBrandDim = (name: string, compute: (f: Loose | undefined) => DimPerVp): DimPerVp => {
+    if (!brandFoundations) return compute(dimF)
+    const per = brandFoundations.map(compute)
+    const out: DimPerVp = {}
+    for (const [vp] of vps) {
+      const byBrand: Record<string, SnapValue | undefined> = {}
+      brandSlugs.forEach((slug, i) => { byBrand[slug] = per[i][vp] ?? per[i][vps[0][0]] ?? per[i].desktop })
+      out[vp] = brandValue(`${name}/${vp}`, 'FLOAT', byBrand)
+    }
+    return out
+  }
+  const unionKeys = (read: (f: Loose | undefined) => Record<string, string> | undefined) => {
+    const keys: string[] = []
+    for (const f of dimBrands) for (const k of Object.keys(read(f) ?? {})) if (!keys.includes(k)) keys.push(k)
+    return keys
+  }
+  const pickOf = (f: Loose | undefined, k: string) => (f?.[k] ?? t[k]) as Record<string, string> | undefined
+
   {
-    const roles = pick('spacingRoles') ?? {}
-    const refs = (dimF?.spacingRoleRefs ?? t.spacingRoleRefs ?? {}) as Record<string, string>
+    const rolesOf = (f: Loose | undefined) => pickOf(f, 'spacingRoles') ?? {}
     const table = (t.spacingResponsive ?? {}) as Record<string, Record<Viewport, string>>
-    for (const [role, desktopStep] of Object.entries(roles)) {
-      if (typeof desktopStep !== 'string') continue
-      const ref = refs[role] || desktopStep
-      const at = (vp: Viewport) => primAlias(valuePx(table[ref]?.[vp] ?? table[ref]?.desktop ?? ref, fSpacing))
-      writeDim(`Spacing/role/${role}`, { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') })
+    for (const role of unionKeys(rolesOf)) {
+      const per = perBrandDim(`Spacing/role/${role}`, (f) => {
+        const desktopStep = rolesOf(f)[role]
+        if (typeof desktopStep !== 'string') return {}
+        const refs = (f?.spacingRoleRefs ?? t.spacingRoleRefs ?? {}) as Record<string, string>
+        const scale = pickOf(f, 'spacing')
+        const ref = refs[role] || desktopStep
+        const at = (vp: Viewport) => primAlias(valuePx(table[ref]?.[vp] ?? table[ref]?.desktop ?? ref, scale))
+        return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
+      })
+      writeDim(`Spacing/role/${role}`, per)
     }
   }
   {
-    const roles = pick('radiusRoles') ?? {}
-    const perVp = (dimF?.radiusRoleViewports ?? t.radiusRoleViewports ?? {}) as Partial<Record<'tablet' | 'mobile', Record<string, string>>>
+    const rolesOf = (f: Loose | undefined) => pickOf(f, 'radiusRoles') ?? {}
+    const perVpOf = (f: Loose | undefined) => (f?.radiusRoleViewports ?? t.radiusRoleViewports ?? {}) as Partial<Record<'tablet' | 'mobile', Record<string, string>>>
+    const scaleOf = (f: Loose | undefined) => pickOf(f, 'radius')
     const table = (t.radiusResponsive ?? {}) as Record<string, Partial<Record<Viewport, string>>>
     const tokenVar = new Set<string>()
     for (const [step, row] of Object.entries(table)) {
-      const at = (vp: Viewport) => primAlias(valuePx(row?.[vp] ?? row?.desktop ?? step, fRadius))
-      if (writeDim(`Radius/component/${step}`, { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') })) tokenVar.add(step)
+      const per = perBrandDim(`Radius/component/${step}`, (f) => {
+        const at = (vp: Viewport) => primAlias(valuePx(row?.[vp] ?? row?.desktop ?? step, scaleOf(f)))
+        return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
+      })
+      if (writeDim(`Radius/component/${step}`, per)) tokenVar.add(step)
     }
-    for (const [role, desktopStep] of Object.entries(roles)) {
+    const leadRoles = rolesOf(dimF)
+    for (const role of unionKeys(rolesOf)) {
+      const desktopStep = leadRoles[role] ?? rolesOf(dimBrands.find((f) => typeof rolesOf(f)[role] === 'string'))[role]
       if (typeof desktopStep !== 'string') continue
-      const at = (vp: Viewport): SnapValue | undefined => {
-        const override = vp === 'desktop' ? undefined : perVp[vp]?.[role]
-        if (override === undefined && tokenVar.has(desktopStep)) return alias('Dimension Semantics', `Radius/component/${desktopStep}`)
-        const step = override ?? (vp === 'desktop' ? desktopStep : (table[desktopStep]?.[vp] ?? desktopStep))
-        return primAlias(valuePx(step, fRadius))
-      }
-      writeDim(`Radius/role/${role}`, { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') })
+      const per = perBrandDim(`Radius/role/${role}`, (f) => {
+        const step0 = rolesOf(f)[role]
+        if (typeof step0 !== 'string') return {}
+        const perVp = perVpOf(f)
+        const at = (vp: Viewport): SnapValue | undefined => {
+          const override = vp === 'desktop' ? undefined : perVp[vp]?.[role]
+          if (override === undefined && tokenVar.has(step0)) return alias('Dimension Semantics', `Radius/component/${step0}`)
+          const step = override ?? (vp === 'desktop' ? step0 : (table[step0]?.[vp] ?? step0))
+          return primAlias(valuePx(step, scaleOf(f)))
+        }
+        return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
+      })
+      writeDim(`Radius/role/${role}`, per)
     }
   }
   const emitRoles = (group: string, roles: Record<string, string> | undefined, scale: Record<string, string> | undefined, stepName: (s: string) => string = (s) => s) => {
@@ -425,13 +565,14 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
   const typo = new Collection('Typography', vps.map(([, label]) => label))
   const typoTheme = [activeThemeKey(tokens), ...foundationThemes].find((k) => k && fbt[k]?.typography)
   const tf = (typoTheme ? fbt[typoTheme]?.typography : undefined) as Loose | undefined
-  const ty = t.typography as Loose
   for (const [k, v] of Object.entries((tf?.sizes ?? ty.sizes ?? {}) as Record<string, string>)) typo.all(`size/${k}`, 'FLOAT', pxToFloat(v))
   for (const [k, v] of Object.entries((tf?.weights ?? ty.weights ?? {}) as Record<string, number>)) typo.all(`weight/${k}`, 'FLOAT', Number(v))
   for (const [k, v] of Object.entries((tf?.lineHeights ?? ty.lineHeights ?? {}) as Record<string, string>)) typo.all(`line-height/${k}`, 'FLOAT', pxToFloat(v))
   for (const [k, v] of Object.entries((tf?.letterSpacings ?? ty.letterSpacings ?? {}) as Record<string, string>)) typo.all(`letter-spacing/${k}`, 'FLOAT', pxToFloat(v))
-  typo.all(FAMILY_BODY, 'STRING', normalizeFontFamilyName(tf?.fontFamily ?? ty.fontFamily))
-  typo.all(FAMILY_DISPLAY, 'STRING', normalizeFontFamilyName(tf?.headingFontFamily ?? tf?.fontFamily ?? ty.headingFontFamily ?? ty.fontFamily))
+  // Brands with their own typeface alias `Brand/Font/body` / `Brand/Font/display`;
+  // the type scale stays shared.
+  typo.all(FAMILY_BODY, 'STRING', brandFamilies?.body ?? normalizeFontFamilyName(tf?.fontFamily ?? ty.fontFamily))
+  typo.all(FAMILY_DISPLAY, 'STRING', brandFamilies?.display ?? normalizeFontFamilyName(tf?.headingFontFamily ?? tf?.fontFamily ?? ty.headingFontFamily ?? ty.fontFamily))
   const roles = (tf?.roles ?? ty.roles) as Record<string, Partial<Record<Viewport, { family?: string; size?: string; weight?: string }>>> | undefined
   if (roles) {
     const typoAlias = (name: string | undefined): SnapValue | undefined => (name && typo.vars.has(name) ? alias('Typography', name) : undefined)
@@ -454,5 +595,7 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
     }
   }
 
-  return { collections: [prim, sem, dimPrim, dimSem, typo].map((c) => c.done()) }
+  // Brand goes last: snapshotToW3C writes the five collections first anyway,
+  // and a one-brand payload has none.
+  return { collections: [prim, sem, dimPrim, dimSem, typo, ...(brandCol ? [brandCol] : [])].map((c) => c.done()) }
 }

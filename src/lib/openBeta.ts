@@ -14,4 +14,6 @@
 //   vi.mock('../openBeta', () => ({ OPEN_BETA: false, BETA_MAX_BRANDS: 5 }))
 
 export const OPEN_BETA = true
-export const BETA_MAX_BRANDS = 5
+// Ten since the Brand collection (PLAN-multibrand-foundations): a brand is ONE
+// Figma mode, so ten brands fit Figma Professional's ten modes per collection.
+export const BETA_MAX_BRANDS = 10

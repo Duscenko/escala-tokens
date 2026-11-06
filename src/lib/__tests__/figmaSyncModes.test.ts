@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   FIGMA_SYNC_MODE_CAP,
+  figmaModesUsed,
   clampFigmaSyncModes,
   defaultFigmaSyncModes,
   figmaSyncModeId,
@@ -30,23 +31,34 @@ describe('figma sync modes', () => {
     ])
   })
 
-  it('fills five themes to the ten-column cap and stops', () => {
-    const keys = ['a', 'b', 'c', 'd', 'e', 'f']
+  // With two or more brands Figma gets a Brand collection (one mode per
+  // brand) and Color Semantics keeps Light · Dark: the cap counts brands.
+  it('fills ten brands (Light + Dark each) to the cap and stops', () => {
+    const keys = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
     const kinds = Object.fromEntries(keys.map((key) => [key, 'light']))
     const next = defaultFigmaSyncModes(keys, kinds)
-    expect(next).toHaveLength(FIGMA_SYNC_MODE_CAP)
-    expect(next.filter((mode) => mode.theme === 'e')).toEqual([
-      { theme: 'e', appearance: 'light' },
-      { theme: 'e', appearance: 'dark' },
+    expect(next).toHaveLength(FIGMA_SYNC_MODE_CAP * 2)
+    expect(figmaModesUsed(next)).toBe(FIGMA_SYNC_MODE_CAP)
+    expect(next.filter((mode) => mode.theme === 'j')).toEqual([
+      { theme: 'j', appearance: 'light' },
+      { theme: 'j', appearance: 'dark' },
     ])
-    expect(next.some((mode) => mode.theme === 'f')).toBe(false)
+    expect(next.some((mode) => mode.theme === 'k')).toBe(false)
+  })
+
+  it('counts one brand by its columns and several by brands', () => {
+    expect(figmaModesUsed([{ theme: 'a', appearance: 'light' }, { theme: 'a', appearance: 'dark' }])).toBe(2)
+    expect(figmaModesUsed([
+      { theme: 'a', appearance: 'light' }, { theme: 'a', appearance: 'dark' },
+      { theme: 'b', appearance: 'light' }, { theme: 'c', appearance: 'dark' },
+    ])).toBe(3)
   })
 
   // Built from the constant, not from a literal count: the cap is a product
   // decision that has moved once already (3 → 10) and these assert the
   // BEHAVIOUR at the cap, not what the cap happens to be.
   const atCap = (): { theme: string; appearance: 'light' | 'dark' }[] =>
-    Array.from({ length: FIGMA_SYNC_MODE_CAP }, (_, i) => ({
+    Array.from({ length: FIGMA_SYNC_MODE_CAP * 2 }, (_, i) => ({
       theme: `t${Math.floor(i / 2)}`,
       appearance: i % 2 === 0 ? 'light' : 'dark',
     }))
@@ -54,7 +66,7 @@ describe('figma sync modes', () => {
   it('caps the selection and never empties it', () => {
     const full = atCap()
     expect(clampFigmaSyncModes([...full, { theme: 'over', appearance: 'light' }]))
-      .toHaveLength(FIGMA_SYNC_MODE_CAP)
+      .toEqual(full)
     // At the cap, adding is a no-op — the earlier picks win, which is what
     // makes the order meaningful when Figma's own plan limit trims further.
     expect(toggleFigmaSyncAppearance(full, 'over', 'dark')).toEqual(full)
@@ -82,17 +94,17 @@ describe('figma sync modes', () => {
     ])
   })
 
-  it('adds only the appearances that still fit', () => {
-    // One slot left: the preferred appearance takes it and the other is
-    // dropped, rather than the whole toggle being refused.
-    const oneLeft = atCap().slice(0, FIGMA_SYNC_MODE_CAP - 1)
+  it('a brand that fits brings both appearances', () => {
+    // One brand slot left: Light and Dark both fit, since they share the
+    // Color Semantics modes every brand uses.
+    const oneLeft = atCap().slice(0, (FIGMA_SYNC_MODE_CAP - 1) * 2)
     const next = toggleFigmaSyncTheme(oneLeft, 'core', { core: 'dark' })
-    expect(next).toHaveLength(FIGMA_SYNC_MODE_CAP)
+    expect(figmaModesUsed(next)).toBe(FIGMA_SYNC_MODE_CAP)
     expect(hasFigmaSyncMode(next, 'core', 'dark')).toBe(true)
-    expect(hasFigmaSyncMode(next, 'core', 'light')).toBe(false)
+    expect(hasFigmaSyncMode(next, 'core', 'light')).toBe(true)
   })
 
-  it('offers five themes in both appearances', () => {
+  it('offers ten brands in both appearances', () => {
     expect(FIGMA_SYNC_MODE_CAP).toBe(10)
   })
 

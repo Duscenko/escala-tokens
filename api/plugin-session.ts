@@ -74,7 +74,10 @@ function tierPayload(tier: PluginTier): { tier: PluginTier; maxThemes: number; m
 function tierOf(session: Pick<SessionRecord, 'proUntil' | 'plan'> | null | undefined, now = new Date()): { tier: PluginTier; maxThemes: number } {
   // Open beta: everyone is Pro, capped at the beta's brand limit (Light +
   // Dark each), which is about cost, not value.
-  if (OPEN_BETA) return { tier: 'pro', maxThemes: BETA_MAX_BRANDS, maxModes: BETA_MAX_BRANDS * 2 } as ReturnType<typeof tierPayload>
+  // With two or more brands the plugin writes a Brand collection (one mode per
+  // brand) and Color Semantics as Light · Dark, so the widest collection holds
+  // one mode per brand: the mode cap IS the brand cap.
+  if (OPEN_BETA) return { tier: 'pro', maxThemes: BETA_MAX_BRANDS, maxModes: BETA_MAX_BRANDS } as ReturnType<typeof tierPayload>
   if (entitlementAt(now).promo) return tierPayload('pro')
   if (!session) return tierPayload('unknown')
   const licensed = !!session.proUntil && (session.proUntil === 'lifetime' || Date.parse(session.proUntil) > now.getTime())

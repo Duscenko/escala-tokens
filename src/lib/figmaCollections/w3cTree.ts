@@ -101,7 +101,12 @@ function w3cTypeOf(col: string, v: SnapVariable): string {
   if (v.type === 'COLOR') return 'color'
   if (v.type === 'BOOLEAN') return 'boolean'
   const segs = segmentsOf(v.name)
-  if (v.type === 'STRING') return col === 'Typography' && segs.some((s) => /family/.test(s)) ? 'fontFamily' : 'string'
+  if (v.type === 'STRING') {
+    // `Brand/Font/body` · `Brand/Font/display`: each brand's typeface, which
+    // Typography's `font-family-*` alias with two or more brands.
+    const family = col === 'Typography' ? segs.some((s) => /family/.test(s)) : col === 'Brand' && segs[0] === 'Font'
+    return family ? 'fontFamily' : 'string'
+  }
   if (col === 'Typography' && segs.some((s) => s === 'weight')) return 'fontWeight'
   if (segs[0] === 'columns' || segs[segs.length - 1] === 'columns') return 'number'
   return 'dimension'

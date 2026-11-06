@@ -18,7 +18,7 @@ export const FREE_ANOTHER_THEME_ERROR =
 
 /** Shown when the open beta's brand limit refuses a create. */
 export const BETA_BRAND_LIMIT_ERROR =
-  'During the open beta a design system holds up to five brands.'
+  'During the open beta a design system holds up to ten brands.'
 
 /** Open beta: no plan, ONE cost limit — the brands a design system holds,
  *  for everyone, account or not. */

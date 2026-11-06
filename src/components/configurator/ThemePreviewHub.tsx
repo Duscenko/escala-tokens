@@ -35,7 +35,7 @@ import { FOUNDATION_DOCS, foundationDoc } from './docs/foundationDocs'
 import { PANEL_W, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SHELL_CHROME, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
-import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
+import { figmaModesUsed, type FigmaSyncMode, type FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { type ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
@@ -887,7 +887,7 @@ export default function ThemePreviewHub({
           figmaPublishState={figmaPublishState}
                     workspaceSection={workspaceSection}
           fileName={figmaFileName}
-          modeCount={figmaSyncModes.length}
+          modeCount={figmaModesUsed(figmaSyncModes)}
         />
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">

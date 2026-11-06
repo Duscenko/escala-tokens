@@ -11,7 +11,7 @@ import { buildColorRoleMap, focusedRoleIds, modeForAppearance, ownerOfLabel, ton
 const state = () => useDesignStore.getState()
 
 /** Every brand worth mapping — the default system, then each System Style in
- *  a fresh system of its own (the beta caps a system at five brands) — with
+ *  a fresh system of its own (the beta caps a system at ten brands) — with
  *  its roles resolved while that system is the store. */
 function eachBrand(run: (name: string, roles: ReturnType<typeof resolveSystemRoles>) => void) {
   run('default', resolveSystemRoles(state(), 'light'))

@@ -220,3 +220,59 @@ export function BoardThemeSwitch({ previewTheme, onAppearance }: {
     />
   )
 }
+
+/** Add brand: which themes the new brand ships — Light + Dark, Light only or
+ *  Dark only, the plugin's three options (`BRAND_THEME_CHOICES`, so a third
+ *  theme adds its own "only" segment). Unlike `BrandThemesPicker`, a single
+ *  theme is a real choice here on every plan: a brand added to a system
+ *  fills only the columns it ships (`defaultFigmaSyncModes`). */
+export function BrandShipsChoice({ value, onChange }: {
+  value: readonly BrandThemeId[]
+  onChange: (ids: BrandThemeId[]) => void
+}) {
+  const { t } = useI18n()
+  const group = useId()
+  const current = brandThemeChoiceFor(value)
+  const caption = t('Themes this brand ships')
+  const onRadioKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
+    if (!step) return
+    event.preventDefault()
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'))
+    const at = radios.findIndex((radio) => radio === document.activeElement)
+    const next = radios[(at + step + radios.length) % radios.length]
+    next?.focus()
+    next?.click()
+  }
+  const hint = current.ids.length > 1
+    ? t('Fills the Light and Dark columns')
+    : t('Only {theme} leaves for Figma and the downloads', { theme: t(brandThemeLabel(current.ids[0])) })
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-ui text-fg-muted">{caption}</p>
+      <div role="radiogroup" aria-label={caption} onKeyDown={onRadioKeys} className={`flex h-8 select-none items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}>
+        {BRAND_THEME_CHOICES.map((choice) => {
+          const on = choice.id === current.id
+          return (
+            <button
+              key={choice.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              tabIndex={on ? 0 : -1}
+              onClick={() => onChange([...choice.ids])}
+              className={`relative flex h-full min-w-0 flex-1 items-center justify-center rounded-md px-2 text-caption transition-colors duration-150 ease-out motion-reduce:transition-none ${FOCUS} ${
+                on ? SEGMENT_ACTIVE_INK : SEGMENT_INACTIVE
+              }`}
+            >
+              {on && <SegmentHighlight group={group} />}
+              <span className="relative truncate">{t(choice.label)}</span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="text-mini text-fg-faint">{hint}</p>
+    </div>
+  )
+}

@@ -17,7 +17,8 @@
 // themes pre-normalized onto their source ramps.
 
 import { motionModesFromTokens, motionW3CGroup } from './motion'
-import { figmaCollectionsW3C, MOTION_COLLECTION, type SnapshotToW3COptions } from './figmaCollections'
+import { BRAND_COLLECTION, figmaCollectionsW3C, MOTION_COLLECTION, type SnapshotToW3COptions } from './figmaCollections'
+import { brandSlugsOf } from './agentBundle/names'
 import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { freeDownloadStore, type FigmaScope } from './freeFigmaScope'
@@ -419,7 +420,13 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // each mode a group under its collection (lib/figmaCollections). The
     // plugin's own W3C export runs the same converter over the file's real
     // variables, so the two downloads share one shape.
-    const include = figmaCollectionsFor(ordered)
+    // Two or more brands: the semantic collections alias the Brand collection,
+    // so it ships with any of them (a one-brand payload has none).
+    const branded = brandSlugsOf(full.colors).length > 1
+    const base = figmaCollectionsFor(ordered)
+    const include = branded && base.some((n) => n === 'Color Semantics' || n === 'Dimension Semantics' || n === 'Typography')
+      ? [...base, BRAND_COLLECTION]
+      : base
     const families = sel.primitiveFamilies ? new Set(sel.primitiveFamilies) : null
     const keepPrimitive = families || sel.primitiveAppearance
       ? (key: string, alpha: boolean) => {
