@@ -87,6 +87,13 @@ export function categoricalSolvedRoles(): Record<string, { light: boolean; dark:
   ]))
 }
 
+/** The role table as data, in shipping order — a copy, so a reader cannot
+ *  edit the source. Refs are the schema's own (`{accent.solid}`, `{ui:…}`),
+ *  before any theme resolves them. Read by the agent skill generator. */
+export function categoricalRoleCatalogue(): { group: string; key: string; light: string; dark: string }[] {
+  return CATEGORICAL_ROLES.map((r) => ({ ...r }))
+}
+
 export function architectureLabel(kind: SemanticArchitecture): string {
   return ARCHITECTURE_OPTIONS.find((o) => o.key === kind)?.label ?? kind
 }
