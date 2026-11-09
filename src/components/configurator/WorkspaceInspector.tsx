@@ -1,7 +1,7 @@
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../lib/i18n'
-import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H, PANEL_SURFACE } from './themeWorkspaceLayout'
 
 // ─── The Generator's right-hand INSPECTOR ───────────────────────────────────
 // Layout: [nav rail] [canvas card — your system] [inspector — edit it].
@@ -113,7 +113,7 @@ export default function WorkspaceInspector({
       // #f5f5f5 in light, +.050 ΔL in dark — see `--side-panel` in index.css).
       // `336px` = INSPECTOR_WIDTH + INSPECTOR_SIDE_WIDTH, while the side column
       // holds something (Variables); `!` beats the inline width.
-      className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-gradient-to-t from-side-panel to-[color-mix(in_srgb,var(--side-panel),white_3%)] [&:has([data-inspector-side]:not(:empty))]:!w-[336px]"
+      className={`my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl ${PANEL_SURFACE} [&:has([data-inspector-side]:not(:empty))]:!w-[336px]`}
       // Panels portaled in here were built as WORKSPACE_CHROME columns
       // (`bg-tab-bar`, incl. their sticky headers). Inside the inspector the
       // whole column is one surface, so `--tab-bar` resolves to the panel's.

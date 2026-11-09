@@ -15,7 +15,7 @@
 // is the snippet for the variant on screen — which neither half could claim.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF } from '../themeWorkspaceLayout'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } from '../themeWorkspaceLayout'
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
@@ -249,7 +249,7 @@ function FigmaCopyButton({ label, build }: { label: string; build: (what: 'eleme
               onClick={() => copy(r.id)}
               onPointerEnter={() => setActive(r.id)}
               onFocus={() => setActive(r.id)}
-              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg`}
+              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr] items-center gap-x-2 ${SELECT_OPTION_FOCUS}`}
             >
               <span className="text-fg-faint">{r.icon}</span>
               <span className="min-w-0 truncate text-ui">{t(r.label)}</span>

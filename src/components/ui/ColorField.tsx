@@ -18,6 +18,7 @@ import {
 } from '../../lib/colorUtils'
 import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import { HarmonyFollows } from '../configurator/HarmonyFollows'
+import { POPOVER_SURFACE } from '../configurator/themeWorkspaceLayout'
 
 type HSVA = { h: number; s: number; v: number; a: number }
 
@@ -565,7 +566,7 @@ export default function ColorField({
             transition={{ duration: 0.12 }}
             role="dialog"
             aria-label={ariaLabel}
-            className={`absolute z-50 mt-2 w-64 rounded-2xl border border-line-strong bg-app shadow-xl p-3 ${align === 'right' ? 'right-0' : 'left-0'}`}
+            className={`absolute z-50 mt-2 w-64 rounded-2xl ${POPOVER_SURFACE} shadow-xl p-3 ${align === 'right' ? 'right-0' : 'left-0'}`}
           >
             <ColorPickerPanel value={value} onChange={onChange} />
           </motion.div>

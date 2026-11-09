@@ -7,6 +7,7 @@ import { resetThemeToOrigin, themeHasEdits } from '../../lib/adoptPreset'
 import { themeStylePreset } from '../../lib/themePresets'
 import { useI18n } from '../../lib/i18n'
 import { recordEdit, undoEdit } from '../../lib/editHistory'
+import { MENU_SURFACE } from './themeWorkspaceLayout'
 
 const UNDO_MS = 9000
 
@@ -173,7 +174,7 @@ export function ResetScopeControl({
             role="dialog"
             aria-modal="true"
             aria-labelledby="reset-scope-title"
-            className="w-full max-w-[380px] rounded-xl border border-line-strong bg-app p-4 shadow-xl"
+            className={`w-full max-w-[380px] ${MENU_SURFACE} p-4`}
             initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, scale: 0.97 }}
@@ -188,7 +189,7 @@ export function ResetScopeControl({
                 type="button"
                 onClick={() => run('theme')}
                 disabled={!themeEdited}
-                className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:enabled:border-line-strong hover:enabled:bg-elevated disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:enabled:border-line-strong hover:enabled:bg-fg/[0.05] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
               >
                 <span className="text-caption font-medium text-fg">{t('This brand')}</span>
                 <span className="text-caption text-fg-muted">
@@ -213,7 +214,7 @@ export function ResetScopeControl({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="mt-3 h-8 w-full rounded-lg border border-line text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              className="mt-3 h-8 w-full rounded-lg border border-line text-caption font-medium text-fg-muted transition-colors hover:bg-fg/[0.05] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               {t('Cancel')}
             </button>

@@ -13,6 +13,7 @@ import { useI18n } from '../../lib/i18n'
 import { FIELD_CHIP, FIELD_SHELL, FIELD_SHELL_ON, FIELD_SHELL_REST } from '../ui/PickerField'
 import { THUMB_CENTER, THUMB_CLASS, along, ratioIn } from '../ui/ColorField'
 import { INSPECTOR_ID } from './WorkspaceInspector'
+import { POPOVER_SURFACE } from './themeWorkspaceLayout'
 
 const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 
@@ -473,7 +474,7 @@ export function FloatingColorPicker({
       // Docked against the inspector, so the shadow falls to the left and down,
       // over the board. Strong enough to read on a dark board, where the
       // default `shadow-xl` vanished.
-      className="z-[60] flex flex-col overflow-hidden rounded-xl border border-line-strong bg-app shadow-[-16px_20px_48px_-12px_rgba(0,0,0,0.55),-4px_6px_16px_-4px_rgba(0,0,0,0.35)]"
+      className={`z-[60] flex flex-col overflow-hidden rounded-2xl ${POPOVER_SURFACE} shadow-[-16px_20px_48px_-12px_rgba(0,0,0,0.55),-4px_6px_16px_-4px_rgba(0,0,0,0.35)]`}
     >
       {/* The header is the handle. */}
       <div

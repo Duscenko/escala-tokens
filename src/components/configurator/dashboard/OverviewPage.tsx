@@ -25,6 +25,7 @@ import { GitHubGlyph } from '../../ui/icons'
 import { Tag, TEXT_LINK } from './parts'
 import { DEFAULT_DOC_KEY, type Dashboard } from './dashboardData'
 import type { ColorScale } from '../../../types/tokens'
+import { MENU_SURFACE } from '../themeWorkspaceLayout'
 
 /** Chrome page the rule and Edit sit on. Same hexes as `--app`. */
 const CHROME_PAGE = { dark: '#0e0f13', light: '#fdfdff' } as const
@@ -606,7 +607,7 @@ function DeleteBrandButton({ name, onConfirm }: { name: string; onConfirm: () =>
         align="right"
         gap={6}
         menuAriaLabel={t('Delete {name}', { name })}
-        className="w-72 rounded-lg border border-line-strong bg-app p-3 shadow-lg"
+        className={`w-72 ${MENU_SURFACE} p-3`}
       >
         <p className="text-caption font-semibold text-fg">{t('Delete “{name}”?', { name })}</p>
         <p className="mt-1 text-mini leading-snug text-fg-muted">
@@ -674,7 +675,7 @@ function BrandExportMenu({ brandKey, brandName, brandCount, onExportBrand, actio
         align="left"
         gap={6}
         menuAriaLabel={t('Export {name}', { name: brandName })}
-        className="w-72 rounded-lg border border-line-strong bg-app p-1 shadow-lg"
+        className={`w-72 ${MENU_SURFACE} p-1.5`}
       >
         {items.map((item) => (
           <button

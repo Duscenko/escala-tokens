@@ -5,7 +5,7 @@ import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
 import { OPEN_BETA } from '../../lib/entitlement'
 import { FOUNDATION_ICON_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, MENU_CHECK, MENU_SURFACE, SELECT_OPTION_OFF, SHELL_CHROME } from './themeWorkspaceLayout'
 
 type ChromeMenuAlign = 'left' | 'right' | 'center'
 
@@ -336,13 +336,30 @@ const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] =
   { key: 'beta', label: OPEN_BETA ? 'Open beta' : 'Pricing', icon: <BetaIcon /> },
 ]
 
+// The top-bar menus (☰, Language, Docs), after the reference the owner
+// supplied: a flat panel-coloured sheet with a 16px corner, 36px rows in
+// regular weight, groups split by FULL-WIDTH rules, sentence-case captions, and
+// the chosen row marked by a trailing ✓ rather than a filled background.
 const COMPACT_MENU_ITEM =
-  'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+  'flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+/** A row's ink: the chosen one full-strength (its ✓ says why), the rest muted. */
+const menuRowInk = (on = false) => (on ? 'text-fg' : SELECT_OPTION_OFF)
 
-// The compact menu's groups: a rule, 8px of air under it, rows 2px apart.
-const MENU_GROUP = 'mt-1.5 flex flex-col gap-0.5 border-t border-line pt-2'
-// A group's caption: 6px above its first row (plus the group's 2px gap).
-const MENU_CAPTION = 'px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint'
+// A group: a rule edge to edge (it cancels the sheet's 6px inset), 6px of air
+// under it, rows 2px apart.
+const MENU_GROUP = '-mx-1.5 mt-1.5 flex flex-col gap-0.5 border-t border-line px-1.5 pt-1.5'
+// A group's caption: a quiet sentence-case label, not an eyebrow.
+const MENU_CAPTION = 'px-2.5 pb-0.5 pt-1 text-caption text-fg-faint'
+const MENU_ICON = 'grid h-4 w-4 flex-shrink-0 place-items-center text-fg-muted'
+
+/** The trailing mark of the chosen row. */
+function MenuCheck() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`ml-auto ${MENU_CHECK}`}>
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
+  )
+}
 
 // Global icon actions — same gray shell as `ThemeViewSwitcher`.
 const GLOBAL_ICON_ACTION = `grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
@@ -405,7 +422,7 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
         anchorRef={triggerRef}
         align={align}
         menuAriaLabel={t('Select language')}
-        className="w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+        className={`flex w-44 flex-col gap-0.5 overflow-hidden ${MENU_SURFACE} p-1.5`}
       >
         {LOCALES.map((option) => (
           <button
@@ -414,10 +431,10 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
             role="menuitemradio"
             aria-checked={locale === option.key}
             onClick={() => { setLocale(option.key); setOpen(false) }}
-            className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+            className={`${COMPACT_MENU_ITEM} ${menuRowInk(locale === option.key)}`}
           >
             <span>{option.label}</span>
-            <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+            {locale === option.key && <MenuCheck />}
           </button>
         ))}
       </ChromeAnchoredDropdown>
@@ -480,13 +497,11 @@ function TopNavCompactMenu({
         anchorRef={triggerRef}
         align="right"
         menuAriaLabel={t('Navigation menu')}
-        className="w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-2 shadow-xl"
+        className={`w-60 overflow-y-auto ${MENU_SURFACE} p-1.5`}
         style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
       >
-          {/* Spacing (polish): rows sit 2px apart, every group opens 8px under
-              its rule with its caption 6px above the first row, and the panel
-              has 8px of inset. Rows used to touch and captions sat 4px off the
-              line. The primary group carries no icons: one row with a mark
+          {/* Rows sit 2px apart inside a 6px inset; every rule runs edge to
+              edge. The primary group carries no icons: one row with a mark
               (Generator) pushed its label out of line with About and
               Components. */}
           <div className={mobileOnlySections}>
@@ -500,9 +515,10 @@ function TopNavCompactMenu({
                 role="menuitem"
                 aria-current={on ? 'page' : undefined}
                 onClick={() => { onNav(key); close() }}
-                className={`${COMPACT_MENU_ITEM} ${on ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+                className={`${COMPACT_MENU_ITEM} ${menuRowInk(on)}`}
               >
                 {t(label)}
+                {on && <MenuCheck />}
               </button>
             )
           })}
@@ -510,14 +526,14 @@ function TopNavCompactMenu({
           <div className={MENU_GROUP} role="group" aria-label={t('Docs')}>
             <p className={MENU_CAPTION}>{t('Docs')}</p>
             {DOCS_MENU_PAGES.map((page, index) => (
-              <div key={page.key} className={index === 2 ? 'mt-1.5 border-t border-line pt-2' : ''}>
+              <div key={page.key} className={index === 2 ? '-mx-1.5 mt-1.5 border-t border-line px-1.5 pt-1.5' : ''}>
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => { onOpenDocsPage?.(page.key); close() }}
-                  className={`${COMPACT_MENU_ITEM} text-fg-muted hover:bg-elevated hover:text-fg`}
+                  className={`${COMPACT_MENU_ITEM} ${menuRowInk()}`}
                 >
-                  <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+                  <span className={MENU_ICON}>{page.icon}</span>
                   {t(page.label)}
                 </button>
               </div>
@@ -532,10 +548,10 @@ function TopNavCompactMenu({
                 role="menuitemradio"
                 aria-checked={locale === option.key}
                 onClick={() => { onOpenLanguages?.(); setLocale(option.key); close() }}
-                className={`${COMPACT_MENU_ITEM} justify-between ${locale === option.key ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+                className={`${COMPACT_MENU_ITEM} ${menuRowInk(locale === option.key)}`}
               >
                 <span>{option.label}</span>
-                <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+                {locale === option.key && <MenuCheck />}
               </button>
             ))}
           </div>
@@ -543,7 +559,7 @@ function TopNavCompactMenu({
           {/* The Generator (`always`) carries the sun/moon in the bar itself, where
               the Home door used to be, so ☰ does not repeat it there. */}
           {!always && (
-          <div className="flex flex-col gap-0.5 max-[1079px]:mt-1.5 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:pt-2" role="group" aria-label={t('Appearance')}>
+          <div className="flex flex-col gap-0.5 max-[1079px]:-mx-1.5 max-[1079px]:mt-1.5 max-[1079px]:border-t max-[1079px]:border-line max-[1079px]:px-1.5 max-[1079px]:pt-1.5" role="group" aria-label={t('Appearance')}>
             <p className={MENU_CAPTION}>{t('Appearance')}</p>
             <div className="grid grid-cols-2 gap-1">
               {(['light', 'dark'] as const).map((appearance) => {
@@ -622,17 +638,17 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
         align="center"
         gap={6}
         menuAriaLabel={t('Docs')}
-        className="w-40 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+        className={`flex w-48 flex-col gap-0.5 ${MENU_SURFACE} p-1.5`}
       >
         {DOCS_MENU_PAGES.map((page, index) => (
-          <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
+          <div key={page.key} className={index === 2 ? '-mx-1.5 mt-1.5 border-t border-line px-1.5 pt-1.5' : ''}>
             <button
               type="button"
               role="menuitem"
               onClick={() => { setOpen(false); onOpenDocsPage?.(page.key) }}
-              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+              className={`${COMPACT_MENU_ITEM} ${menuRowInk()}`}
             >
-              <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+              <span className={MENU_ICON}>{page.icon}</span>
               {t(page.label)}
             </button>
           </div>

@@ -44,7 +44,7 @@ import { RANDOM_THEME_LABEL, startRandomTheme } from '../lib/randomTheme'
 import { decodeRemix, remixPreset, takeIncomingRemix } from '../lib/remixLink'
 import { trackEvent } from '../lib/analytics'
 import { RemixBanner } from '../components/configurator/RemixBanner'
-import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
+import { MENU_SURFACE, SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { GUEST_START_STYLE, adoptPreset, openStyleForEditing } from '../lib/adoptPreset'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
@@ -606,7 +606,7 @@ function ExportPill({
           role="menu"
           aria-label={t('Export')}
           onKeyDown={onMenuKey}
-          className="fixed z-[70] overflow-y-auto rounded-lg border border-line-strong bg-app p-1 shadow-lg"
+          className={`fixed z-[70] overflow-y-auto ${MENU_SURFACE} p-1.5`}
           style={{
             width: EXPORT_MENU_W,
             left: pos.left,

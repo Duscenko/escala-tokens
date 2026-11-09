@@ -240,7 +240,7 @@ export function PickerField<T extends string>({
           aria-controls={open ? listId : undefined}
           aria-label={`${t(ariaLabel ?? label)}: ${shown}`}
           // No leading item: the text keeps the same inset as the chevron side.
-          className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md pr-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md pr-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
         >
           {leading ? <span aria-hidden className="flex flex-shrink-0 items-center justify-center text-fg-muted">{leading}</span> : null}
           <span className="min-w-0 flex-1 truncate text-ui text-fg" style={render?.(value)}>{shown}</span>

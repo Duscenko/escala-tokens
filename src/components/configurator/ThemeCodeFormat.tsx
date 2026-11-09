@@ -15,7 +15,7 @@ import { brandContext } from '../../lib/contextSource'
 import { ContextFilters, ContextSizeNote, CssFilters, useContextOptions, type CssBrandMode } from '../ui/ContextControls'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { showToast } from '../ui/Toast'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, MENU_SURFACE, WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
 import { ChromeAnchoredDropdown } from './TopNav'
 import ThemeCodeScopeRail, { FormatGlyph, resolveCodeTheme, type CodeFormatKey, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
@@ -147,7 +147,7 @@ function CopyPageButton({ disabled, pageContent, block = false, kind = 'css', ap
         align="right"
         gap={6}
         menuAriaLabel={t('Choose the theme to copy')}
-        className="w-48 rounded-lg border border-line-strong bg-app p-1 shadow-xl"
+        className={`w-48 ${MENU_SURFACE} p-1.5`}
       >
         <p className="px-2.5 pb-1 pt-1.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{t('Theme')}</p>
         {CONTEXT_APPEARANCES.map((item) => {
@@ -166,7 +166,7 @@ function CopyPageButton({ disabled, pageContent, block = false, kind = 'css', ap
                 appearanceMenu.onPick(item.key)
                 void copyText(appearanceMenu.buildFor(item.key))
               }}
-              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-fg/[0.05] hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
             >
               <span className="flex-1">{t(item.label)}</span>
               {selected ? (

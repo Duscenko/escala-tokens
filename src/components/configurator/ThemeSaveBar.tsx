@@ -8,7 +8,7 @@ import { myThemeKeys } from '../../lib/themeLibrary'
 import { redoEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
-import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_SHELL, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS, SELECT_OPTION_ON, SELECT_SHELL, MENU_CHECK, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLevel, type PaletteLevel } from '../../lib/radixPalettes'
 import { TWO_COLOR_PAIRS, pairPalette, requestTwoColorPair, type PairStrength, type TwoColorPair } from '../../lib/twoColorPairs'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
@@ -134,10 +134,15 @@ export const BOARD_TOOLBAR_LIFT = 'pointer-events-auto shadow-[0_8px_24px_-6px_r
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, children, trailing, appearance, leading, history = true }: {
+export function BoardHistoryControls({ onRandom, onRandomTool, children, trailing, appearance, leading, history = true }: {
   /** A whole new theme — only while the brand is a draft (see callers). The
    *  die carries a chevron for how daring it is (Safe · Free · Bold). */
   onRandom?: () => void
+  /** Random is in use: the die was rolled or its menu (levels, Rich / Soft
+   *  pairs) opened. The board turns the Inspector off — picking colours and
+   *  pinning tokens are two different modes, and a pinned trace would sit
+   *  over the board the pairs repaint. */
+  onRandomTool?: () => void
   /** Board tools that join the pill after a divider (the Inspector). */
   children?: ReactNode
   /** A group of its own at the pill's end (the Theme · Components switch),
@@ -208,8 +213,8 @@ export function BoardHistoryControls({ onRandom, children, trailing, appearance,
           {(leading || showHistory) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
           <div className="flex items-center" data-tour="roll">
-            <RandomWholeThemeButton bare onClick={() => { onRandom(); tourEvent('rolled') }} label={t('Random theme')} />
-            <RandomLevelPicker chevron />
+            <RandomWholeThemeButton bare onClick={() => { onRandomTool?.(); onRandom(); tourEvent('rolled') }} label={t('Random theme')} />
+            <RandomLevelPicker chevron onOpen={onRandomTool} />
           </div>
         </>
       )}
@@ -365,18 +370,11 @@ const LEVEL_COPY: Record<PaletteLevel, { label: string; hint: string }> = {
 
 /** The two pair decks: the same 29 pairs at two strengths. Rich rides with
  *  Free (deep coloured dark pages), Soft with Bold (calm dark, off-white
- *  light). Picking one sets that level. */
-const PAIR_DECKS: { strength: PairStrength; level: PaletteLevel; label: string; hint: string; foot: string }[] = [
-  {
-    strength: 'rich', level: 'liberal', label: 'Rich pairs',
-    hint: 'Deep, coloured dark pages, as the collection shows them',
-    foot: 'Rich dark pages with the pair’s accent. Light keeps the accent, on a coloured paper.',
-  },
-  {
-    strength: 'soft', level: 'bold', label: 'Soft pairs',
-    hint: 'A calm dark page and an off-white light one, one accent adapted to both',
-    foot: 'Each pair ships Dark and Light: one accent, adapted to each page. Switch the board to compare.',
-  },
+ *  light). Picking one sets that level. The menu names them only: the tiles
+ *  show what a pair is. */
+const PAIR_DECKS: { strength: PairStrength; level: PaletteLevel; label: string }[] = [
+  { strength: 'rich', level: 'liberal', label: 'Rich pairs' },
+  { strength: 'soft', level: 'bold', label: 'Soft pairs' },
 ]
 
 /** The level Random draws its colours at (`radixPalettes`), shared by every
@@ -385,10 +383,13 @@ function usePaletteLevel(): PaletteLevel {
   return useSyncExternalStore(subscribePaletteLevel, getPaletteLevel, getPaletteLevel)
 }
 
-/** Menu width, px: the names and their meter; the hint reads at the foot. */
+/** Menu width, px: the names and their meter. */
 const LEVEL_MENU_W = 220
-/** The pairs view is wider: five tiles a row. */
-const PAIRS_MENU_W = 312
+/** Tiles per row in the pairs view; arrow keys step by it. */
+const PAIR_COLS = 6
+/** The pairs view: six small tiles a row, about four rows before it scrolls,
+ *  so it stays a menu beside the level list rather than a panel. */
+const PAIRS_MENU_W = 256
 
 /** One pair as a tiny screen, in BOTH themes it ships: the dark page with
  *  the accent ("Aa" and a button), and a light strip below with the same
@@ -414,16 +415,16 @@ function PairTile({ pair, strength, picked, onPick, tabIndex, setRef }: {
         aria-label={name}
         tabIndex={tabIndex}
         onClick={onPick}
-        className={`relative flex aspect-square w-full flex-col overflow-hidden rounded-md text-left transition-transform duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.04] active:scale-[0.97] motion-reduce:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui focus-visible:ring-offset-1 focus-visible:ring-offset-app ${
-          picked ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app' : 'ring-1 ring-inset ring-white/10'
+        className={`relative flex aspect-square w-full flex-col overflow-hidden rounded-[5px] text-left transition-transform duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.06] active:scale-[0.96] motion-reduce:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui focus-visible:ring-offset-1 focus-visible:ring-offset-side-panel ${
+          picked ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-side-panel' : 'ring-1 ring-inset ring-white/10'
         }`}
       >
-        <span aria-hidden className="flex flex-1 flex-col items-start justify-between p-1.5" style={{ background: p.pages.dark }}>
-          <span className="text-strong font-semibold leading-none" style={{ color: p.accent }}>Aa</span>
-          <span className="h-1.5 w-6 rounded-full" style={{ background: p.accent }} />
+        <span aria-hidden className="flex flex-1 flex-col items-start justify-between p-1" style={{ background: p.pages.dark }}>
+          <span className="text-caption font-semibold leading-none" style={{ color: p.accent }}>Aa</span>
+          <span className="h-1 w-4 rounded-full" style={{ background: p.accent }} />
         </span>
-        <span aria-hidden className="flex h-3 items-center px-1.5" style={{ background: p.pages.light }}>
-          <span className="h-1 w-4 rounded-full" style={{ background: p.accentLight }} />
+        <span aria-hidden className="flex h-2 items-center px-1" style={{ background: p.pages.light }}>
+          <span className="h-[3px] w-3 rounded-full" style={{ background: p.accentLight }} />
         </span>
       </button>
     </HintTip>
@@ -437,7 +438,7 @@ function PairStack({ strength }: { strength: PairStrength }) {
       {TWO_COLOR_PAIRS.slice(0, 3).map((pair) => {
         const p = pairPalette(pair, strength)
         return (
-          <span key={pair.id} className="h-3.5 w-3.5 rounded-full ring-1 ring-app" style={{ background: `linear-gradient(135deg, ${p.pages.dark} 50%, ${p.accent} 50%)` }} />
+          <span key={pair.id} className="h-3.5 w-3.5 rounded-full ring-1 ring-side-panel" style={{ background: `linear-gradient(135deg, ${p.pages.dark} 50%, ${p.accent} 50%)` }} />
         )
       })}
     </span>
@@ -466,10 +467,12 @@ const LEVEL_MENU_GAP = 6
  *  trigger sits in the inspector's scroll column, which clipped an absolute
  *  menu (its left half was cut off). Right edges align, clamped to the window,
  *  and it opens upward when there is no room below. */
-export function RandomLevelPicker({ chevron = false }: {
+export function RandomLevelPicker({ chevron = false, onOpen }: {
   /** Beside the board toolbar's die, Figma-style: a bare chevron, and the
    *  menu opens ABOVE it, dark like the bar, with the check on the left. */
   chevron?: boolean
+  /** Called each time the menu opens. */
+  onOpen?: () => void
 } = {}) {
   const { t } = useI18n()
   const level = usePaletteLevel()
@@ -479,13 +482,9 @@ export function RandomLevelPicker({ chevron = false }: {
   const trigger = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
   const options = useRef<(HTMLButtonElement | null)[]>([])
-  // The level under the pointer or focus; the foot reads out its hint (the
-  // chosen level's when neither is on a row).
-  const [active, setActive] = useState<PaletteLevel | null>(null)
   // Bold's second door: the curated two-colour pairs, picked by hand.
   const [view, setView] = useState<'levels' | 'pairs'>('levels')
   const [deck, setDeck] = useState<PairStrength>('soft')
-  const [hoverDeck, setHoverDeck] = useState<PairStrength | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
   const deckRows = useRef<(HTMLButtonElement | null)[]>([])
   const deckIndex = PAIR_DECKS.findIndex((d) => d.strength === deck)
@@ -495,7 +494,6 @@ export function RandomLevelPicker({ chevron = false }: {
 
   const close = (refocus = true) => {
     setOpen(false)
-    setActive(null)
     setView('levels')
     if (refocus) trigger.current?.focus()
   }
@@ -530,6 +528,12 @@ export function RandomLevelPicker({ chevron = false }: {
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [open, chevron, menuWidth])
+
+  // Tell the board the menu opened (it turns the Inspector off). Read through a
+  // ref so a new callback identity never re-fires it while the menu is open.
+  const onOpenRef = useRef(onOpen)
+  onOpenRef.current = onOpen
+  useEffect(() => { if (open) onOpenRef.current?.() }, [open])
 
   // Switching views moves focus into the new one.
   useEffect(() => {
@@ -566,8 +570,8 @@ export function RandomLevelPicker({ chevron = false }: {
       else if (i < 0) return
       else if (event.key === 'ArrowRight') go(i + 1)
       else if (event.key === 'ArrowLeft') go(i - 1)
-      else if (event.key === 'ArrowDown') go(i + 5)
-      else if (event.key === 'ArrowUp') go(i - 5)
+      else if (event.key === 'ArrowDown') go(i + PAIR_COLS)
+      else if (event.key === 'ArrowUp') go(i - PAIR_COLS)
       else if (event.key === 'Home') go(0)
       else if (event.key === 'End') go(n - 1)
       return
@@ -646,7 +650,6 @@ export function RandomLevelPicker({ chevron = false }: {
             bottom: place?.bottom,
             visibility: place ? 'visible' : 'hidden',
           }}
-          onPointerLeave={() => { setActive(null); setHoverDeck(null) }}
           className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST} ${chevron ? 'dark' : ''}`}
         >
           {view === 'levels' ? (
@@ -663,16 +666,14 @@ export function RandomLevelPicker({ chevron = false }: {
                 aria-selected={on}
                 aria-describedby={`random-level-hint-${id}`}
                 onClick={() => { writePaletteLevel(id); close() }}
-                onPointerEnter={() => { setActive(id); setHoverDeck(null) }}
-                onFocus={() => { setActive(id); setHoverDeck(null) }}
-                className={`${SELECT_OPTION} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                className={`${SELECT_OPTION} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 ${SELECT_OPTION_FOCUS} ${on ? 'text-fg' : SELECT_OPTION_OFF}`}
               >
                 <span className={on ? 'text-accent-ui' : 'text-fg-faint'}><LevelMeter level={id} /></span>
                 <span className="min-w-0 truncate text-ui">{t(LEVEL_COPY[id].label)}</span>
                 <span id={`random-level-hint-${id}`} className="sr-only">{t(LEVEL_COPY[id].hint)}</span>
                 {/* The check trails, so the leading column holds one icon (the
                     meter) and the selection mark never stacks beside it. */}
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`text-accent-ui ${on ? '' : 'invisible'}`}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`${MENU_CHECK} ${on ? '' : 'invisible'}`}>
                   <path d="M3.5 8.5l3 3 6-7" />
                 </svg>
               </button>
@@ -681,47 +682,38 @@ export function RandomLevelPicker({ chevron = false }: {
           </div>
           {/* The pair decks: pick a pair yourself instead of letting the die
               deal one. Rich rides with Free, Soft with Bold. */}
-          <div className="mt-0.5 flex flex-col gap-0.5 border-t border-line pt-1">
+          <div className="-mx-1.5 mt-1 flex flex-col gap-0.5 border-t border-line px-1.5 pt-1.5">
           {PAIR_DECKS.map((d, i) => (
             <button
               key={d.strength}
               ref={(el) => { deckRows.current[i] = el }}
               type="button"
               onClick={() => { setDeck(d.strength); setView('pairs') }}
-              onPointerEnter={() => setHoverDeck(d.strength)}
-              onFocus={() => setHoverDeck(d.strength)}
-              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg`}
+              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 ${SELECT_OPTION_FOCUS}`}
             >
               <PairStack strength={d.strength} />
               <span className="min-w-0 truncate text-caption">{t(d.label)}</span>
-              <span className="text-mini text-fg-faint">{t(LEVEL_COPY[d.level].label)}</span>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-fg-faint">
                 <path d="M6 4l4 4-4 4" />
               </svg>
             </button>
           ))}
           </div>
-          {/* One line of WHAT a level does, for the row in reach — the list
-              itself stays three words long. Fixed at two lines' height so the
-              menu never resizes under the pointer. */}
-          <p aria-hidden className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
-            {hoverDeck ? t(PAIR_DECKS.find((d) => d.strength === hoverDeck)!.hint) : t(LEVEL_COPY[active ?? level].hint)}
-          </p>
           </>
           ) : (
           <>
-          <div className="flex items-center gap-1 px-0.5 pb-1">
+          <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={backToLevels}
               aria-label={t('Back')}
-              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
             >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M10 4L6 8l4 4" /></svg>
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M10 4L6 8l4 4" /></svg>
             </button>
-            <span className="min-w-0 flex-1 truncate text-ui font-medium text-fg">{t(PAIR_DECKS[deckIndex].label)}</span>
+            <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t(PAIR_DECKS[deckIndex].label)}</span>
           </div>
-          <div role="radiogroup" aria-label={t(PAIR_DECKS[deckIndex].label)} className="grid max-h-[min(352px,55vh)] grid-cols-5 gap-1.5 overflow-y-auto p-1">
+          <div role="radiogroup" aria-label={t(PAIR_DECKS[deckIndex].label)} className="grid max-h-[min(184px,45vh)] grid-cols-6 gap-1 overflow-y-auto p-1">
             {TWO_COLOR_PAIRS.map((pair, i) => {
               const focusIndex = Math.max(0, TWO_COLOR_PAIRS.findIndex((p) => p.id === picked))
               return (
@@ -737,9 +729,6 @@ export function RandomLevelPicker({ chevron = false }: {
               )
             })}
           </div>
-          <p className="mt-0.5 border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
-            {t(PAIR_DECKS[deckIndex].foot)}
-          </p>
           </>
           )}
         </motion.div>,

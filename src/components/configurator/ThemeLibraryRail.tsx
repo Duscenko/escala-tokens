@@ -8,7 +8,7 @@ import type { ColorScale } from '../../types/tokens'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
-import { THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { MENU_SURFACE, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 import { InspectorPortal } from './WorkspaceInspector'
@@ -103,7 +103,7 @@ function ThemeLibraryOptionsPopover({
     <motion.div
       initial={{ opacity: 0, scale: 0.98, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -4 }}
       transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute inset-x-0 top-full z-[60] mt-1.5 origin-top overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+      className={`absolute inset-x-0 top-full z-[60] mt-1.5 origin-top overflow-hidden ${MENU_SURFACE} p-1.5`}
       role="menu" aria-label={t('Brand library options')}
     >
           {onReset && (
@@ -111,7 +111,7 @@ function ThemeLibraryOptionsPopover({
               type="button"
               role="menuitem"
               onClick={onReset}
-              className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+              className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
             >
               <ResetStyleIcon />
               <span className="text-caption font-medium">{t('Reset')}</span>
@@ -121,7 +121,7 @@ function ThemeLibraryOptionsPopover({
             type="button"
             role="menuitem"
             onClick={onResetSuggestedStyles}
-            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-fg/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
           >
             <ResetStyleIcon />
             <span className="text-caption font-medium">{t('Reset system style')}</span>
@@ -269,7 +269,7 @@ const THEME_OPTIONS_MENU_PAD = 8
 /** Both non-destructive rows in the theme menu. Delete keeps its own danger
  *  styling; these two are one decision and must not drift apart. */
 const THEME_MENU_ITEM =
-  'flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+  'flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-fg/[0.05] hover:text-fg active:bg-fg/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
 export function ThemeOptionsMenu({
   open,
@@ -357,7 +357,7 @@ export function ThemeOptionsMenu({
           transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
           role="menu"
           aria-label={t('Brand options')}
-          className={`z-[60] w-44 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl ${
+          className={`z-[60] w-44 overflow-hidden ${MENU_SURFACE} p-1.5 ${
             place.up ? 'origin-bottom-right' : 'origin-top-right'
           }`}
           style={{

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON } from './themeWorkspaceLayout'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_CURSOR, SELECT_OPTION_ON } from './themeWorkspaceLayout'
 import { PLATFORM_FONT_DEFAULTS, fontFamilyFor, headingFontFamilyFor } from '../../lib/platformAxis'
 import ScrubInput from '../ui/ScrubInput'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
@@ -224,7 +224,7 @@ function FontPickerPopover({
             data-option
             onClick={() => onSelect(query.trim())}
             onPointerEnter={() => setCursor(0)}
-            className={`${SELECT_OPTION} flex items-center gap-2 text-ui ${cursor === 0 ? 'bg-surface text-fg' : SELECT_OPTION_OFF}`}
+            className={`${SELECT_OPTION} flex items-center gap-2 text-ui ${cursor === 0 ? SELECT_OPTION_CURSOR : SELECT_OPTION_OFF}`}
           >
             <span className="text-fg-faint">Use</span>
             <span className="font-medium text-fg" style={{ fontFamily: fontStack(query.trim()) }}>“{query.trim()}”</span>
@@ -245,7 +245,7 @@ function FontPickerPopover({
               onPointerEnter={() => setCursor(at)}
               style={{ fontFamily: stackOf(f) }}
               className={`${SELECT_OPTION} flex items-center justify-between gap-2 text-ui ${
-                active ? SELECT_OPTION_ON : cursor === at ? 'bg-surface text-fg' : SELECT_OPTION_OFF
+                active ? SELECT_OPTION_ON : cursor === at ? SELECT_OPTION_CURSOR : SELECT_OPTION_OFF
               }`}
             >
               <span className="truncate">{f}</span>

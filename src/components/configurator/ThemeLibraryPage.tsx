@@ -15,7 +15,7 @@ import { flushLibraryAutosave, useUnsavedBrands } from '../../lib/libraryStatus'
 import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
-import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H, MENU_SURFACE } from './themeWorkspaceLayout'
 import type { GridViewport } from '../../lib/layoutTokens'
 import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
 import { adoptPreset } from '../../lib/adoptPreset'
@@ -133,10 +133,10 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes, onDeleteSyste
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             role="menu"
             aria-label={t('Design system options')}
-            className="absolute right-0 top-full z-[60] mt-1.5 w-48 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+            className={`absolute right-0 top-full z-[60] mt-1.5 w-48 origin-top-right overflow-hidden ${MENU_SURFACE} p-1.5`}
           >
             {onReset && (
-              <button type="button" role="menuitem" onClick={() => { setOpen(false); onReset() }} className={`${item} text-fg-muted hover:bg-elevated hover:text-fg focus-visible:ring-accent-ui/50`}>
+              <button type="button" role="menuitem" onClick={() => { setOpen(false); onReset() }} className={`${item} text-fg-muted hover:bg-fg/[0.05] hover:text-fg focus-visible:ring-accent-ui/50`}>
                 {t('Reset')}
               </button>
             )}
@@ -295,6 +295,7 @@ function CreateBoard({
         <div className={`rounded-xl ${BOARD_TOOLBAR_LIFT}`}>
           <BoardHistoryControls
             onRandom={onRandom}
+            onRandomTool={() => setInspecting(false)}
             appearance={<BoardThemeSwitch previewTheme={themeKey} onAppearance={() => {}} />}
             trailing={<BoardViewSwitch inset value={view} onChange={setView} panelId={panelId} />}
           >

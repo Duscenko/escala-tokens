@@ -13,7 +13,7 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, MENU_SURFACE } from './themeWorkspaceLayout'
 import { ThemeAvatar } from './ThemeLibraryRail'
 import { PRESET_AVATAR_RAMPS } from './StyleOverview'
 import { ChromeAnchoredDropdown, FigmaGlyph } from './TopNav'
@@ -22,7 +22,7 @@ import type { BrandSource } from '../../lib/importBrand'
 
 const ICON = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
-const MENU_ITEM = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+const MENU_ITEM = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-fg/[0.05] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
 function EmptySystemAvatar({ size = 18 }: { size?: number | '100%' }) {
   return (
@@ -403,7 +403,7 @@ export function ThemeAppearanceControl({
         align="right"
         gap={8}
         menuAriaLabel={themeLabel}
-        className="w-64 rounded-xl border border-line-strong bg-app p-1.5 shadow-xl"
+        className={`w-64 ${MENU_SURFACE} p-1.5`}
       >
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
           {empty

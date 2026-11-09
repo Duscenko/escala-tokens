@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import type { CodeFormatKey } from './ThemeCodeScopeRail'
-import { CHROME_CONTROL_ACTIVE } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, MENU_SURFACE } from './themeWorkspaceLayout'
 import { INSPECTOR_ID } from './WorkspaceInspector'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
@@ -223,7 +223,7 @@ export function CodeHowToButton({ kind, className = '', iconOnly = false }: { ki
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: pos.up ? 4 : -4, scale: 0.98 }}
               transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
               style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, right: pos.right, width: pos.width, maxHeight: pos.maxHeight, transformOrigin: pos.up ? 'bottom right' : 'top right', zIndex: 80 }}
-              className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-app shadow-xl outline-none"
+              className={`flex flex-col overflow-hidden ${MENU_SURFACE} outline-none`}
             >
               <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4 py-3">
                 <p id={titleId} className="text-ui font-semibold text-fg">{t('How to use it')}</p>

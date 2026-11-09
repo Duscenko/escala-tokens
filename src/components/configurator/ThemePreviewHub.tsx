@@ -1053,6 +1053,7 @@ export default function ThemePreviewHub({
                       <BoardHistoryControls
                         history={!mapOpen || mapView === 'board'}
                         onRandom={canRandom && (!mapOpen || mapView === 'board') ? () => randomHandle.current?.() : undefined}
+                        onRandomTool={() => setInspecting(false)}
                         trailing={mapOpen ? (
                           // The way out of the map, on the bar you are using:
                           // Esc did it before, but nothing on screen said so.

@@ -91,7 +91,7 @@ import { SHADOW_PRESETS, matchShadowPreset, matchDarkShadowPreset } from '../../
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview, PhosphorWeightProvider, PreviewIcon } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, POPOVER_SURFACE, SEGMENT_ACTIVE_INK, SEGMENT_INACTIVE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { SegmentHighlight } from '../ui/SegmentHighlight'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -751,7 +751,7 @@ function RailTooltip({ children, label, tooltipId, clickOnly = false }: { childr
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none fixed z-[70] w-[192px] rounded-md border border-line-strong bg-app px-2.5 py-2 text-mini leading-relaxed text-fg-muted shadow-lg"
+          className={`pointer-events-none fixed z-[70] w-[192px] rounded-md ${POPOVER_SURFACE} px-2.5 py-2 text-mini leading-relaxed text-fg-muted shadow-lg`}
           style={position}
         >
           {label}

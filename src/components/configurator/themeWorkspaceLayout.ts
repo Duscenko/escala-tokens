@@ -126,10 +126,33 @@ export const SELECT_SHELL = 'rounded-lg border border-line-strong/80 bg-elevated
 export const SELECT_CARD = 'rounded-lg border border-line-strong/80 bg-elevated/70'
 export const SELECT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 export const SELECT_TRIGGER = `w-full h-9 px-2.5 flex items-center gap-2 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`
-export const SELECT_LIST = 'rounded-lg border border-line-strong bg-app shadow-lg p-1'
-export const SELECT_OPTION = 'w-full px-2.5 py-1.5 rounded-md text-left transition-colors'
-export const SELECT_OPTION_ON = 'bg-elevated text-fg font-medium'
-export const SELECT_OPTION_OFF = 'text-fg-muted hover:bg-surface hover:text-fg'
+/** THE raised panel surface: the right inspector's edge and fill (a soft
+ *  `line` edge, `side-panel` lifting 3% toward white at the top). The
+ *  inspector adds its own `rounded-2xl`; every dropdown list wears the same
+ *  surface at `rounded-xl`, so a menu opened anywhere reads as a piece of the
+ *  panel, not a second material. */
+export const PANEL_SURFACE = 'border border-line bg-gradient-to-t from-side-panel to-[color-mix(in_srgb,var(--side-panel),white_3%)]'
+/** Every floating surface (menus, popovers, tooltips): the panel's colour,
+ *  FLAT — a gradient on a 200px menu reads as decoration, not depth — with a
+ *  faint edge; the shadow carries the lift. Add a radius at the call site. */
+export const POPOVER_SURFACE = 'border border-line/60 bg-side-panel'
+/** A menu: the inspector's own 16px corner, so a menu opened over the board
+ *  and the panel beside it share one silhouette. */
+export const MENU_SURFACE = `rounded-2xl ${POPOVER_SURFACE} shadow-[0_16px_40px_-12px_rgba(0,0,0,0.45),0_4px_12px_-4px_rgba(0,0,0,0.25)]`
+export const SELECT_LIST = `${MENU_SURFACE} p-1.5`
+// Rows sit 6px inside a 16px corner, so they take 10px: concentric.
+export const SELECT_OPTION = 'w-full px-2.5 py-1.5 rounded-[10px] text-left transition-colors'
+/** The trailing ✓ that marks the chosen row of a menu (the reference pattern:
+ *  the check says "selected", the row stays unfilled). */
+export const MENU_CHECK = 'flex-shrink-0 text-fg'
+// Row states are ink TINTS, not surface steps: in dark `--side-panel` IS
+// `--elevated`, so an `elevated` selected row vanished on the panel. A tint of
+// `--fg` reads on any surface, light or dark.
+export const SELECT_OPTION_ON = 'bg-fg/[0.08] text-fg font-medium'
+export const SELECT_OPTION_OFF = 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+/** A keyboard cursor / focused row that is not the selected one. */
+export const SELECT_OPTION_CURSOR = 'bg-fg/[0.05] text-fg'
+export const SELECT_OPTION_FOCUS = 'focus-visible:outline-none focus-visible:bg-fg/[0.05] focus-visible:text-fg'
 
 /** The Show / Hide pill that discloses a section (Fine-tune, Contrast grid).
  *  One size for every disclosure in the panels, taken from the Contrast grid's

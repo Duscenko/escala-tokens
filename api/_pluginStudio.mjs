@@ -3737,7 +3737,7 @@ var OPEN_BETA, BETA_MAX_BRANDS;
 var init_openBeta = __esm({
   "src/lib/openBeta.ts"() {
     OPEN_BETA = true;
-    BETA_MAX_BRANDS = 5;
+    BETA_MAX_BRANDS = 10;
   }
 });
 
@@ -3780,8 +3780,24 @@ function uniqueThemesFromModes(modes) {
   if (!modes?.length) return [];
   return [...new Set(modes.map((mode) => mode.theme))];
 }
+function figmaModesUsed(modes) {
+  const brands = new Set(modes.map((mode) => mode.theme));
+  if (brands.size < 2) return modes.length;
+  return Math.max(brands.size, new Set(modes.map((mode) => mode.appearance)).size);
+}
+function fits(modes, mode, cap) {
+  return figmaModesUsed([...modes, mode]) <= cap;
+}
 function clampFigmaSyncModes(modes, cap = FIGMA_SYNC_MODE_CAP) {
-  return modes.slice(0, cap);
+  const out = [];
+  for (const mode of modes) {
+    if (!fits(out, mode, cap)) {
+      if (out.some((m) => m.theme === mode.theme)) continue;
+      break;
+    }
+    out.push(mode);
+  }
+  return out;
 }
 function defaultFigmaSyncModes(themes, themeKinds, brandThemes, cap = FIGMA_SYNC_MODE_CAP) {
   const next = [];
@@ -3790,7 +3806,7 @@ function defaultFigmaSyncModes(themes, themeKinds, brandThemes, cap = FIGMA_SYNC
     const shipped = shippedThemes(brandThemes, theme);
     for (const appearance of appearanceOrder(preferred)) {
       if (!shipped.includes(appearance)) continue;
-      if (next.length >= cap) return next;
+      if (!fits(next, { theme, appearance }, cap)) return next;
       next.push({ theme, appearance });
     }
   }
@@ -5520,7 +5536,7 @@ var init_freeThemeLimit = __esm({
     init_supabase();
     FREE_MY_THEME_LIMIT = 3;
     FREE_ANOTHER_THEME_ERROR = "Free includes one design system with three brands, each with Light and Dark. Pro adds brands and systems.";
-    BETA_BRAND_LIMIT_ERROR = "During the open beta a design system holds up to five brands.";
+    BETA_BRAND_LIMIT_ERROR = "During the open beta a design system holds up to ten brands.";
   }
 });
 

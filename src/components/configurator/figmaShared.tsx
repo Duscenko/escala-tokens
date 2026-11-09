@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 
 import { createPortal } from 'react-dom'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
+import { POPOVER_SURFACE } from './themeWorkspaceLayout'
 
 // ── Shared between FigmaSyncView and FigmaDownloadView ──────────────────────
 
@@ -137,7 +138,7 @@ function ClickInfo({ label, children }: { label: string; children: ReactNode }) 
           ref={panel}
           id={tooltipId}
           role="tooltip"
-          className="fixed z-[70] w-[220px] rounded-lg border border-line-strong bg-app px-3 py-2.5 text-caption leading-relaxed text-fg-muted shadow-lg"
+          className={`fixed z-[70] w-[220px] rounded-lg ${POPOVER_SURFACE} px-3 py-2.5 text-caption leading-relaxed text-fg-muted shadow-lg`}
           style={position}
         >
           {children}

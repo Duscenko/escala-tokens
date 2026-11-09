@@ -13,7 +13,7 @@ import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
-import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { MENU_SURFACE, SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 import { useI18n } from '../../lib/i18n'
@@ -338,7 +338,7 @@ export function ColorSelect({
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.12 }}
               role="listbox"
-              className="absolute z-30 left-0 bottom-full mb-1.5 w-56 max-h-56 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5"
+              className={`absolute z-30 left-0 bottom-full mb-1.5 w-56 max-h-56 overflow-y-auto ${MENU_SURFACE} p-1.5`}
             >
               {groups.map((g) => (
                 <div key={g.label || 'all'}>
@@ -351,7 +351,7 @@ export function ColorSelect({
                         role="option"
                         aria-selected={isSel}
                         onClick={() => { onChange(o.hex); setOpen(false) }}
-                        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${isSel ? 'bg-elevated' : 'hover:bg-surface'}`}
+                        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${isSel ? 'bg-fg/[0.08]' : 'hover:bg-fg/[0.05]'}`}
                       >
                         <span className={SWATCH} style={{ backgroundColor: o.hex }} />
                         <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
@@ -420,7 +420,7 @@ export function ColorSelect({
               // than a narrow trigger gives — and `overflow-y-auto` computes
               // overflow-x to auto, which CLIPPED the hex field. The panel is
               // absolutely positioned, so it just grows past the trigger.
-              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? (compact ? 'right-0 w-56 max-h-72' : 'w-full min-w-[17rem] max-h-72')}`}
+              className={`absolute z-30 mt-1.5 overflow-y-auto ${MENU_SURFACE} p-1.5 ${panelClassName ?? (compact ? 'right-0 w-56 max-h-72' : 'w-full min-w-[17rem] max-h-72')}`}
             >
               {allowCustom && (
                 <div className="mb-1 border-b border-line pb-1.5">
@@ -982,7 +982,7 @@ export function StateColorsSelect({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.12 }}
-              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? 'w-full min-w-[17rem] max-h-[360px]'}`}
+              className={`absolute z-30 mt-1.5 overflow-y-auto ${MENU_SURFACE} p-1.5 ${panelClassName ?? 'w-full min-w-[17rem] max-h-[360px]'}`}
             >
               <StateColorRows
                 bare
