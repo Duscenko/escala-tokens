@@ -1215,6 +1215,10 @@ export default function Configurator() {
     if (exploringRandomKey && exploringRandomKey !== previewTheme) setExploringRandomKey(null)
     if (randomDraftKey && randomDraftKey !== previewTheme) setRandomDraftKey(null)
   }, [previewTheme, exploringRandomKey, randomDraftKey])
+  // The appearance the Board is showing right now (a Random spin's view
+  // overlay included), reported by ThemePreviewHub; the card around the
+  // board is painted with it. Null when no board is mounted.
+  const [boardShownAppearance, setBoardShownAppearance] = useState<'light' | 'dark' | null>(null)
   const previewAppearance = previewSelection.theme === previewTheme
     ? previewSelection.appearance
     : (themeKinds[previewTheme] ?? 'light')
@@ -2847,7 +2851,7 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : previewAppearance) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
               : componentsCanvas
                 // Components reads like the Generator: [rail] [page CARD] [directory].
                 ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
@@ -2959,6 +2963,7 @@ export default function Configurator() {
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <ThemePreviewHub
+                    onBoardAppearanceChange={setBoardShownAppearance}
                     docsOpen={docsPanelOpen}
                     onDocsOpenChange={setDocsPanelOpen}
                     surface={themeHubSurface}

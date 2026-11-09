@@ -18,6 +18,7 @@ import {
   styleLabelAfterShuffle,
   withOppositePage,
 } from '../randomTheme'
+import { TWO_COLOR_PAIRS } from '../twoColorPairs'
 import { RADIX_ACCENTS, radixSolid } from '../radixPalettes'
 import { backgroundFromBase, checkContrast, generateColorScale } from '../colorUtils'
 import { PROCEDURAL_MOOD_ID, curatedMood } from '../themeMoods'
@@ -193,16 +194,36 @@ describe('random theme naming', () => {
   })
 })
 
-describe('the dice: System Styles first, then Random', () => {
-  it('deals every System Style once, in catalogue order, before any random look', () => {
+describe('the dice: System Styles and two-colour pairs, then Random', () => {
+  it('deals in threes — a System Style, a Rich pair, a Soft pair — every style once, in order', () => {
     const deck = createShuffleDeck()
-    const dealt: (string | undefined)[] = []
-    for (let i = 0; i < THEME_STYLE_PRESETS.length; i++) {
-      dealt.push(nextShuffle({ accent: VIVID, deck, rng: sequence(i + 1) }).styleId)
+    const styles: string[] = []
+    for (let i = 0; i < THEME_STYLE_PRESETS.length * 3; i++) {
+      const recipe = nextShuffle({ accent: VIVID, deck, rng: sequence(i + 1) })
+      const slot = i % 3
+      if (slot === 0) styles.push(recipe.styleId!)
+      else expect(recipe.pair?.strength, `spin ${i}`).toBe(slot === 1 ? 'rich' : 'soft')
     }
-    expect(dealt).toEqual(THEME_STYLE_PRESETS.map((preset) => preset.id))
+    expect(styles).toEqual(THEME_STYLE_PRESETS.map((preset) => preset.id))
     const after = nextShuffle({ accent: VIVID, deck, rng: sequence(99) })
     expect(after.styleId).toBeUndefined()
+    expect(after.pair).toBeUndefined()
+  })
+
+  it('a dealt pair carries one accent read two ways, and never repeats in a session', () => {
+    const deck = createShuffleDeck()
+    const seen = { rich: new Set<string>(), soft: new Set<string>() }
+    for (let i = 0; i < 200; i++) {
+      const recipe = nextShuffle({ accent: VIVID, deck, rng: sequence(i + 11) })
+      if (!recipe.pair) continue
+      const { id, strength } = recipe.pair
+      expect(seen[strength].has(id), `${strength} ${id}`).toBe(false)
+      seen[strength].add(id)
+      expect(recipe.accentDark).toBeTruthy()
+      expect(recipe.appearance).toBe(strength === 'rich' ? 'dark' : 'light')
+    }
+    expect(seen.rich.size).toBe(29)
+    expect(seen.soft.size).toBe(29)
   })
 
   it('never deals the style already on screen', () => {
@@ -232,6 +253,8 @@ describe('the dice: System Styles first, then Random', () => {
     for (const level of ['conservative', 'liberal', 'bold'] as const) {
       const deck = createShuffleDeck()
       THEME_STYLE_PRESETS.forEach((preset) => deck.shown.add(preset.id))
+      // Pairs dealt out too, so every spin is a random look at the level.
+      for (const strength of ['rich', 'soft'] as const) TWO_COLOR_PAIRS.forEach((pair) => deck.pairs[strength].add(pair.id))
       for (let i = 0; i < 40; i++) {
         const recipe = nextShuffle({ accent: VIVID, deck, level, rng: sequence(i * 7 + 3) })
         expect(Boolean(recipe.oppositePage), `${level} #${i}`).toBe(level === 'bold')

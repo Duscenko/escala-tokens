@@ -10,6 +10,7 @@ import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_SHELL, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLevel, type PaletteLevel } from '../../lib/radixPalettes'
+import { TWO_COLOR_PAIRS, pairPalette, requestTwoColorPair, type PairStrength, type TwoColorPair } from '../../lib/twoColorPairs'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
@@ -362,6 +363,22 @@ const LEVEL_COPY: Record<PaletteLevel, { label: string; hint: string }> = {
   bold: { label: 'Bold (random level)', hint: 'Page in the colour opposite the accent' },
 }
 
+/** The two pair decks: the same 29 pairs at two strengths. Rich rides with
+ *  Free (deep coloured dark pages), Soft with Bold (calm dark, off-white
+ *  light). Picking one sets that level. */
+const PAIR_DECKS: { strength: PairStrength; level: PaletteLevel; label: string; hint: string; foot: string }[] = [
+  {
+    strength: 'rich', level: 'liberal', label: 'Rich pairs',
+    hint: 'Deep, coloured dark pages, as the collection shows them',
+    foot: 'Rich dark pages with the pair’s accent. Light keeps the accent, on a coloured paper.',
+  },
+  {
+    strength: 'soft', level: 'bold', label: 'Soft pairs',
+    hint: 'A calm dark page and an off-white light one, one accent adapted to both',
+    foot: 'Each pair ships Dark and Light: one accent, adapted to each page. Switch the board to compare.',
+  },
+]
+
 /** The level Random draws its colours at (`radixPalettes`), shared by every
  *  Random in this browser. */
 function usePaletteLevel(): PaletteLevel {
@@ -370,6 +387,62 @@ function usePaletteLevel(): PaletteLevel {
 
 /** Menu width, px: the names and their meter; the hint reads at the foot. */
 const LEVEL_MENU_W = 220
+/** The pairs view is wider: five tiles a row. */
+const PAIRS_MENU_W = 312
+
+/** One pair as a tiny screen, in BOTH themes it ships: the dark page with
+ *  the accent ("Aa" and a button), and a light strip below with the same
+ *  accent adapted to it. These are the colours the board will get. */
+function PairTile({ pair, strength, picked, onPick, tabIndex, setRef }: {
+  pair: TwoColorPair
+  strength: PairStrength
+  picked: boolean
+  onPick: () => void
+  tabIndex: number
+  setRef: (el: HTMLButtonElement | null) => void
+}) {
+  const { t } = useI18n()
+  const p = pairPalette(pair, strength)
+  const name = t('Page {page}, accent {accent}', { page: p.neutral.toUpperCase(), accent: p.accent.toUpperCase() })
+  return (
+    <HintTip label={`${p.neutral.toUpperCase()} · ${p.accent.toUpperCase()}`}>
+      <button
+        ref={setRef}
+        type="button"
+        role="radio"
+        aria-checked={picked}
+        aria-label={name}
+        tabIndex={tabIndex}
+        onClick={onPick}
+        className={`relative flex aspect-square w-full flex-col overflow-hidden rounded-md text-left transition-transform duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.04] active:scale-[0.97] motion-reduce:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui focus-visible:ring-offset-1 focus-visible:ring-offset-app ${
+          picked ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app' : 'ring-1 ring-inset ring-white/10'
+        }`}
+      >
+        <span aria-hidden className="flex flex-1 flex-col items-start justify-between p-1.5" style={{ background: p.pages.dark }}>
+          <span className="text-strong font-semibold leading-none" style={{ color: p.accent }}>Aa</span>
+          <span className="h-1.5 w-6 rounded-full" style={{ background: p.accent }} />
+        </span>
+        <span aria-hidden className="flex h-3 items-center px-1.5" style={{ background: p.pages.light }}>
+          <span className="h-1 w-4 rounded-full" style={{ background: p.accentLight }} />
+        </span>
+      </button>
+    </HintTip>
+  )
+}
+
+/** Three overlapping chips: a preview of the pairs behind the Bold row. */
+function PairStack({ strength }: { strength: PairStrength }) {
+  return (
+    <span aria-hidden className="flex flex-shrink-0 -space-x-1">
+      {TWO_COLOR_PAIRS.slice(0, 3).map((pair) => {
+        const p = pairPalette(pair, strength)
+        return (
+          <span key={pair.id} className="h-3.5 w-3.5 rounded-full ring-1 ring-app" style={{ background: `linear-gradient(135deg, ${p.pages.dark} 50%, ${p.accent} 50%)` }} />
+        )
+      })}
+    </span>
+  )
+}
 
 /** How daring a level is, drawn: one, two or three rising bars. The three
  *  options read as one scale before their names are read. */
@@ -409,11 +482,27 @@ export function RandomLevelPicker({ chevron = false }: {
   // The level under the pointer or focus; the foot reads out its hint (the
   // chosen level's when neither is on a row).
   const [active, setActive] = useState<PaletteLevel | null>(null)
+  // Bold's second door: the curated two-colour pairs, picked by hand.
+  const [view, setView] = useState<'levels' | 'pairs'>('levels')
+  const [deck, setDeck] = useState<PairStrength>('soft')
+  const [hoverDeck, setHoverDeck] = useState<PairStrength | null>(null)
+  const [picked, setPicked] = useState<string | null>(null)
+  const deckRows = useRef<(HTMLButtonElement | null)[]>([])
+  const deckIndex = PAIR_DECKS.findIndex((d) => d.strength === deck)
+  const backToLevels = () => { setView('levels'); requestAnimationFrame(() => deckRows.current[deckIndex]?.focus()) }
+  const tiles = useRef<(HTMLButtonElement | null)[]>([])
+  const menuWidth = view === 'pairs' ? PAIRS_MENU_W : LEVEL_MENU_W
 
   const close = (refocus = true) => {
     setOpen(false)
     setActive(null)
+    setView('levels')
     if (refocus) trigger.current?.focus()
+  }
+  const pickPair = (pair: TwoColorPair) => {
+    writePaletteLevel(PAIR_DECKS[deckIndex].level)
+    setPicked(pair.id)
+    requestTwoColorPair(pair, deck)
   }
 
   // Measure on open and keep in step with resize. Scrolling the column under
@@ -427,11 +516,11 @@ export function RandomLevelPicker({ chevron = false }: {
       const height = menu.current?.offsetHeight ?? 180
       if (chevron) {
         // Above the toolbar, starting at the die (one 32px segment left).
-        const left = Math.max(LEVEL_MENU_GAP, Math.min(r.left - 32, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
+        const left = Math.max(LEVEL_MENU_GAP, Math.min(r.left - 32, window.innerWidth - menuWidth - LEVEL_MENU_GAP))
         setPlace({ bottom: window.innerHeight - r.top + LEVEL_MENU_GAP + 4, left })
         return
       }
-      const left = Math.max(LEVEL_MENU_GAP, Math.min(r.right - LEVEL_MENU_W, window.innerWidth - LEVEL_MENU_W - LEVEL_MENU_GAP))
+      const left = Math.max(LEVEL_MENU_GAP, Math.min(r.right - menuWidth, window.innerWidth - menuWidth - LEVEL_MENU_GAP))
       const below = window.innerHeight - r.bottom - LEVEL_MENU_GAP
       setPlace(below >= height || below >= r.top
         ? { top: r.bottom + LEVEL_MENU_GAP, left }
@@ -440,7 +529,18 @@ export function RandomLevelPicker({ chevron = false }: {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [open, chevron])
+  }, [open, chevron, menuWidth])
+
+  // Switching views moves focus into the new one.
+  useEffect(() => {
+    if (!open) return
+    if (view === 'pairs') {
+      const i = Math.max(0, TWO_COLOR_PAIRS.findIndex((p) => p.id === picked))
+      tiles.current[i]?.focus()
+    }
+    // `picked` is read once, on entering the view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, open])
 
   // Focus the selected level when the menu opens; outside click closes it.
   useEffect(() => {
@@ -458,9 +558,25 @@ export function RandomLevelPicker({ chevron = false }: {
   }, [open])
 
   const onMenuKey = (event: React.KeyboardEvent) => {
-    const i = options.current.findIndex((el) => el === document.activeElement)
-    const n = PALETTE_LEVELS.length
-    const go = (to: number) => { event.preventDefault(); options.current[(to + n) % n]?.focus() }
+    if (view === 'pairs') {
+      const i = tiles.current.findIndex((el) => el === document.activeElement)
+      const n = TWO_COLOR_PAIRS.length
+      const go = (to: number) => { event.preventDefault(); tiles.current[Math.max(0, Math.min(n - 1, to))]?.focus() }
+      if (event.key === 'Escape') { event.preventDefault(); backToLevels() }
+      else if (i < 0) return
+      else if (event.key === 'ArrowRight') go(i + 1)
+      else if (event.key === 'ArrowLeft') go(i - 1)
+      else if (event.key === 'ArrowDown') go(i + 5)
+      else if (event.key === 'ArrowUp') go(i - 5)
+      else if (event.key === 'Home') go(0)
+      else if (event.key === 'End') go(n - 1)
+      return
+    }
+    // The three levels, then Bold's pairs row.
+    const items = [...options.current, ...deckRows.current]
+    const i = items.findIndex((el) => el === document.activeElement)
+    const n = items.length
+    const go = (to: number) => { event.preventDefault(); items[(to + n) % n]?.focus() }
     if (event.key === 'ArrowDown') go(i + 1)
     else if (event.key === 'ArrowUp') go(i - 1)
     else if (event.key === 'Home') go(0)
@@ -474,7 +590,7 @@ export function RandomLevelPicker({ chevron = false }: {
       type="button"
       onClick={() => setOpen((v) => !v)}
       onKeyDown={(event) => { if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !open) { event.preventDefault(); setOpen(true) } }}
-      aria-haspopup="listbox"
+      aria-haspopup="true"
       aria-expanded={open}
       aria-label={`${t('Random colours')}: ${t(LEVEL_COPY[level].label)}`}
       className={`flex h-8 w-4 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
@@ -498,7 +614,7 @@ export function RandomLevelPicker({ chevron = false }: {
         type="button"
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(event) => { if (event.key === 'ArrowDown' && !open) { event.preventDefault(); setOpen(true) } }}
-        aria-haspopup="listbox"
+        aria-haspopup="true"
         aria-expanded={open}
         aria-label={`${t('Random colours')}: ${t(LEVEL_COPY[level].label)}`}
         title={t('How daring Random is')}
@@ -516,23 +632,26 @@ export function RandomLevelPicker({ chevron = false }: {
       {open && createPortal(
         <motion.div
           ref={menu}
-          role="listbox"
-          aria-label={t('Random colours')}
+          role="group"
+          aria-label={view === 'pairs' ? t(PAIR_DECKS[deckIndex].label) : t('Random colours')}
           onKeyDown={onMenuKey}
           initial={reduce ? false : { opacity: 0, y: place?.bottom != null ? 4 : -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
           style={{
             position: 'fixed',
-            width: LEVEL_MENU_W,
+            width: menuWidth,
             left: place?.left ?? -9999,
             top: place?.top,
             bottom: place?.bottom,
             visibility: place ? 'visible' : 'hidden',
           }}
-          onPointerLeave={() => setActive(null)}
+          onPointerLeave={() => { setActive(null); setHoverDeck(null) }}
           className={`z-[70] flex flex-col gap-0.5 ${SELECT_LIST} ${chevron ? 'dark' : ''}`}
         >
+          {view === 'levels' ? (
+          <>
+          <div role="listbox" aria-label={t('Random colours')} className="flex flex-col gap-0.5">
           {PALETTE_LEVELS.map((id, i) => {
             const on = id === level
             return (
@@ -544,8 +663,8 @@ export function RandomLevelPicker({ chevron = false }: {
                 aria-selected={on}
                 aria-describedby={`random-level-hint-${id}`}
                 onClick={() => { writePaletteLevel(id); close() }}
-                onPointerEnter={() => setActive(id)}
-                onFocus={() => setActive(id)}
+                onPointerEnter={() => { setActive(id); setHoverDeck(null) }}
+                onFocus={() => { setActive(id); setHoverDeck(null) }}
                 className={`${SELECT_OPTION} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
                 <span className={on ? 'text-accent-ui' : 'text-fg-faint'}><LevelMeter level={id} /></span>
@@ -559,12 +678,70 @@ export function RandomLevelPicker({ chevron = false }: {
               </button>
             )
           })}
+          </div>
+          {/* The pair decks: pick a pair yourself instead of letting the die
+              deal one. Rich rides with Free, Soft with Bold. */}
+          <div className="mt-0.5 flex flex-col gap-0.5 border-t border-line pt-1">
+          {PAIR_DECKS.map((d, i) => (
+            <button
+              key={d.strength}
+              ref={(el) => { deckRows.current[i] = el }}
+              type="button"
+              onClick={() => { setDeck(d.strength); setView('pairs') }}
+              onPointerEnter={() => setHoverDeck(d.strength)}
+              onFocus={() => setHoverDeck(d.strength)}
+              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-2 focus-visible:outline-none focus-visible:bg-surface focus-visible:text-fg`}
+            >
+              <PairStack strength={d.strength} />
+              <span className="min-w-0 truncate text-caption">{t(d.label)}</span>
+              <span className="text-mini text-fg-faint">{t(LEVEL_COPY[d.level].label)}</span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-fg-faint">
+                <path d="M6 4l4 4-4 4" />
+              </svg>
+            </button>
+          ))}
+          </div>
           {/* One line of WHAT a level does, for the row in reach — the list
               itself stays three words long. Fixed at two lines' height so the
               menu never resizes under the pointer. */}
           <p aria-hidden className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
-            {t(LEVEL_COPY[active ?? level].hint)}
+            {hoverDeck ? t(PAIR_DECKS.find((d) => d.strength === hoverDeck)!.hint) : t(LEVEL_COPY[active ?? level].hint)}
           </p>
+          </>
+          ) : (
+          <>
+          <div className="flex items-center gap-1 px-0.5 pb-1">
+            <button
+              type="button"
+              onClick={backToLevels}
+              aria-label={t('Back')}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M10 4L6 8l4 4" /></svg>
+            </button>
+            <span className="min-w-0 flex-1 truncate text-ui font-medium text-fg">{t(PAIR_DECKS[deckIndex].label)}</span>
+          </div>
+          <div role="radiogroup" aria-label={t(PAIR_DECKS[deckIndex].label)} className="grid max-h-[min(352px,55vh)] grid-cols-5 gap-1.5 overflow-y-auto p-1">
+            {TWO_COLOR_PAIRS.map((pair, i) => {
+              const focusIndex = Math.max(0, TWO_COLOR_PAIRS.findIndex((p) => p.id === picked))
+              return (
+                <PairTile
+                  key={pair.id}
+                  pair={pair}
+                  strength={deck}
+                  picked={pair.id === picked}
+                  onPick={() => pickPair(pair)}
+                  tabIndex={i === focusIndex ? 0 : -1}
+                  setRef={(el) => { tiles.current[i] = el }}
+                />
+              )
+            })}
+          </div>
+          <p className="mt-0.5 border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
+            {t(PAIR_DECKS[deckIndex].foot)}
+          </p>
+          </>
+          )}
         </motion.div>,
         document.body,
       )}

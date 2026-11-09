@@ -499,7 +499,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewViewport = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewViewport = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onBoardAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, ship, onCreateTheme,
@@ -526,6 +526,12 @@ export default function ThemePreviewHub({
   onAdoptStyle: (themeKey: string) => void
   onSelectTheme: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
+  /** The appearance the board is ACTUALLY showing, view overlays included (a
+   *  Random spin opens the board on its mood's appearance without changing
+   *  the brand's). The shell paints the card around the board with it — it
+   *  used to read the brand's own appearance, so a spin into Dark left the
+   *  card's light \`bg-app\` showing as a white ring around a dark board. */
+  onBoardAppearanceChange?: (appearance: ThemeAppearance | null) => void
   /** Open the Components destination — catalogue link in the Button teaser header. */
   onOpenComponents: () => void
   /** Open one component's page — the ↗ on a board cover. */
@@ -777,6 +783,8 @@ export default function ThemePreviewHub({
   // switch reads and writes this, so it works for both.
   const boardAppearance: ThemeAppearance = stylePreview?.appearance ?? previewAppearance
   const effectiveBoardAppearance: ThemeAppearance = randomBoardAppearance ?? boardAppearance
+  useEffect(() => { onBoardAppearanceChange?.(effectiveBoardAppearance) }, [effectiveBoardAppearance, onBoardAppearanceChange])
+  useEffect(() => () => onBoardAppearanceChange?.(null), [onBoardAppearanceChange])
   // ── The colour map: resolved once here, read by the board's map AND the
   // rail's ramp legend. Its focus and group filter live here too, so pointing
   // at a step of the ramp lights the map and pointing in the map lights the
@@ -1024,8 +1032,14 @@ export default function ThemePreviewHub({
                     className={BOARD_TOOLBAR_DOCK}
                     data-board-toolbar
                   >
-                    {/* Reset rides beside the bar for an account. */}
-                    {!guest && !mapOpen && (
+                    {/* Reset rides beside the bar for an account — but NOT while
+                        Random is on the bar. Reset compares the brand with the
+                        style it came from (\`themeOrigin\`): a dealt style resets
+                        that origin and hid the button, a pair or random look
+                        keeps the previous one and showed it, offering a style
+                        no longer on screen. So it came and went between rolls
+                        (reported). While rolling, Undo is the way back. */}
+                    {!guest && !mapOpen && !canRandom && (
                       <div className={`rounded-lg bg-nav empty:hidden ${BOARD_TOOLBAR_LIFT}`}>
                         <EditHistoryControls previewTheme={previewTheme} />
                       </div>

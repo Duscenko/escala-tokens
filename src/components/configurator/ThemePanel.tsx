@@ -22,6 +22,7 @@ import { COLOR_ROLE_ORDER, roleColorAtHue, type ColorRoleId } from '../../lib/co
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_SHELL } from './themeWorkspaceLayout'
+import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
@@ -182,9 +183,36 @@ export function StylePicker({ value, accent, onChange }: {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLDivElement>(null)
+  // The list is PORTALED and `fixed` off the trigger: inside the inspector's
+  // scroll column an absolute list was clipped by the column and covered by
+  // the pinned Ship / Save footer. It opens below when it fits, else above,
+  // and its height is capped to the room on that side.
+  const [place, setPlace] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number } | null>(null)
+  useCloseOnAnchorScroll(open, ref, () => setOpen(false))
+  useLayoutEffect(() => {
+    if (!open) { setPlace(null); return }
+    const measure = () => {
+      const r = ref.current?.getBoundingClientRect()
+      if (!r) return
+      const GAP = 6, EDGE = 8, WANT = 320
+      const below = window.innerHeight - r.bottom - GAP - EDGE
+      const above = r.top - GAP - EDGE
+      const down = below >= Math.min(WANT, 200) || below >= above
+      setPlace(down
+        ? { top: r.bottom + GAP, left: r.left, width: r.width, maxHeight: Math.min(WANT, below) }
+        : { bottom: window.innerHeight - r.top + GAP, left: r.left, width: r.width, maxHeight: Math.min(WANT, above) })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [open])
   useEffect(() => {
     if (!open) return
-    const down = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const down = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (!ref.current?.contains(target) && !list.current?.contains(target)) setOpen(false)
+    }
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', down)
     document.addEventListener('keydown', key)
@@ -211,8 +239,22 @@ export function StylePicker({ value, accent, onChange }: {
         </span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 text-fg-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}><path d="M3 4.5 6 7.5l3-3" /></svg>
       </button>
-      {open && (
-        <div role="listbox" aria-label={t('Start from style')} className={`absolute left-0 right-0 top-full z-30 mt-1.5 flex max-h-80 flex-col overflow-y-auto ${SELECT_LIST}`}>
+      {open && createPortal(
+        <div
+          ref={list}
+          role="listbox"
+          aria-label={t('Start from style')}
+          style={{
+            position: 'fixed',
+            left: place?.left ?? -9999,
+            width: place?.width,
+            top: place?.top,
+            bottom: place?.bottom,
+            maxHeight: place?.maxHeight,
+            visibility: place ? 'visible' : 'hidden',
+          }}
+          className={`z-[70] flex flex-col overflow-y-auto ${SELECT_LIST}`}
+        >
           {options.map((o) => {
             const on = o.id === value
             return (
@@ -235,7 +277,8 @@ export function StylePicker({ value, accent, onChange }: {
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

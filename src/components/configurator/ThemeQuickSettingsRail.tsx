@@ -80,6 +80,7 @@ import {
   type FoundationRow,
 } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
+import { PICK_TWO_COLOR_PAIR, pairPalette, type PickTwoColorPairDetail } from '../../lib/twoColorPairs'
 import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
@@ -2087,7 +2088,10 @@ export default function ThemeQuickSettingsRail({
   const access = useAccess()
   // Guest canvas header no longer carries Undo / Redo / Reset. Undo sits in
   // the save bar; Reset belongs with this theme's settings (back to Core).
-  const themeReset = useThemeReset(previewTheme, access.guest && !tryOn && setupStep == null)
+  // Not while this rail owns the board's Random (same rule as the board's bar,
+  // `ThemePreviewHub`): rolls are undone with Undo, and Reset's "differs from
+  // its style" test flickered between a dealt style and a pair.
+  const themeReset = useThemeReset(previewTheme, access.guest && !tryOn && setupStep == null && !randomHandle)
   // Variables is open without an account, so the door is too.
   const showAdvancedEdition = true
   const foundations = tryOn
@@ -2700,10 +2704,17 @@ export default function ThemeQuickSettingsRail({
       // the commit so one Undo also reverts it where it is stored (the studio).
       onRandomBoardAppearance?.(recipe.appearance)
       setNeutralTint(recipe.neutralTint)
-      writeAccent(themeKey, recipe.accent)
-      // The page gets its OWN hue now (Abyss: teal page, lime accent), so the
-      // neutral is written by hand — which unlinks it from the accent.
-      applyNeutral(recipe.neutral, themeKey)
+      if (recipe.accentDark) {
+        // A two-colour pair: one accent read two ways. The neutral first, so
+        // both accent ramps anchor to the pages it produces.
+        applyNeutral(recipe.neutral, themeKey)
+        writeAccent(themeKey, recipe.accent, recipe.accentDark)
+      } else {
+        writeAccent(themeKey, recipe.accent)
+        // The page gets its OWN hue now (Abyss: teal page, lime accent), so the
+        // neutral is written by hand — which unlinks it from the accent.
+        applyNeutral(recipe.neutral, themeKey)
+      }
       // The mood's severities, after the neutral: their ramps anchor to the
       // page it just produced. A hand-set state unlinks the states too.
       const pages = resolveThemePages(useDesignStore.getState(), themeKey)
@@ -2756,8 +2767,13 @@ export default function ThemeQuickSettingsRail({
     setColourRolls((n) => n + 1)
     commit(t('Random colours applied'), (themeKey) => {
       setNeutralTint(recipe.neutralTint)
-      writeAccent(themeKey, recipe.accent)
-      applyNeutral(recipe.neutral, themeKey)
+      if (recipe.accentDark) {
+        applyNeutral(recipe.neutral, themeKey)
+        writeAccent(themeKey, recipe.accent, recipe.accentDark)
+      } else {
+        writeAccent(themeKey, recipe.accent)
+        applyNeutral(recipe.neutral, themeKey)
+      }
       const pages = resolveThemePages(useDesignStore.getState(), themeKey)
       for (const role of STATE_IDS) {
         const hex = recipe.states[role]
@@ -2766,6 +2782,36 @@ export default function ThemeQuickSettingsRail({
       }
     })
   }
+
+  // Bold's "Two-colour pairs": a pair picked by hand lands like a colour-only
+  // roll. ONE accent read two ways — the pair's own hex in Dark, the same hue
+  // deepened for Light (`lightAccentOf`) — so the board's Light / Dark switch
+  // shows one brand. The board opens on Dark, the pair as the collection shows
+  // it. Only the rail that owns the board's Random listens.
+  const applyPairRef = useRef<(detail: PickTwoColorPairDetail) => void>(() => {})
+  applyPairRef.current = ({ pair, strength }) => {
+    const palette = pairPalette(pair, strength)
+    commit(t('Pair applied'), (themeKey) => {
+      onRandomBoardAppearance?.('dark')
+      setNeutralTint(palette.neutralTint)
+      applyNeutral(palette.neutral, themeKey)
+      // After the neutral: the accent ramps anchor to the pages it produced.
+      writeAccent(themeKey, palette.accentLight, palette.accent)
+      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
+      for (const role of STATE_IDS) {
+        const hex = palette.states[role]
+        writeState(themeKey, role, hex, 'light')
+        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
+      }
+    })
+  }
+  const ownsBoardRandom = Boolean(randomHandle)
+  useEffect(() => {
+    if (!ownsBoardRandom) return
+    const onPick = (event: Event) => applyPairRef.current((event as CustomEvent<PickTwoColorPairDetail>).detail)
+    window.addEventListener(PICK_TWO_COLOR_PAIR, onPick)
+    return () => window.removeEventListener(PICK_TWO_COLOR_PAIR, onPick)
+  }, [ownsBoardRandom])
 
   const typeScaleMode = inferTypeScaleMode(typography.sizes)
   const typeScaleBodyPx = TYPE_SCALE_MODES.map((mode) => parseFloat(buildTypeScale(mode.factor).sizes['text-md'] ?? '') || 0)

@@ -36,6 +36,7 @@ import { SHADOW_PRESETS } from './shadowTokens'
 import { pickMood, type MoodStates, type ThemeMood } from './themeMoods'
 import { motionPresetPatch } from './motion'
 import { getPaletteLevel, radixFamilyOf, radixPalette, type PaletteLevel } from './radixPalettes'
+import { TWO_COLOR_PAIRS, pairPalette, type PairStrength, type TwoColorPair } from './twoColorPairs'
 
 /** Relative positions — same contract as SpectrumSlider, so a voice stays
  *  vivid at every hue instead of ratcheting into mud. */
@@ -159,6 +160,11 @@ export interface RandomThemeRecipe {
   /** The page was turned to the far side of the wheel from the accent
    *  (`withOppositePage`). */
   oppositePage?: boolean
+  /** The dark theme's own accent anchor, when it is not `accent` read again
+   *  (a two-colour pair: the pair's hex in Dark, `accent` deepened for Light). */
+  accentDark?: string
+  /** Set when the dice dealt a two-colour pair. */
+  pair?: { id: string; strength: PairStrength }
 }
 
 /** Scaffolds whose elevation or stroke IS their signature — a mood keeps
@@ -343,11 +349,48 @@ export function withOppositePage(recipe: RandomThemeRecipe, rng: () => number = 
   }
 }
 
-/** Which System Styles this session's dice has already dealt. */
-export interface ShuffleDeck { shown: Set<string> }
+/** What this session's dice has already dealt: System Styles, and the
+ *  two-colour pairs of each strength. `step` walks the deal's rhythm. */
+export interface ShuffleDeck {
+  shown: Set<string>
+  pairs: Record<PairStrength, Set<string>>
+  step: number
+}
 
 export function createShuffleDeck(): ShuffleDeck {
-  return { shown: new Set() }
+  return { shown: new Set(), pairs: { rich: new Set(), soft: new Set() }, step: 0 }
+}
+
+/** A pair of `strength` not dealt yet this session, or null when all were. */
+function drawPair(deck: ShuffleDeck, strength: PairStrength, rng: () => number): TwoColorPair | null {
+  const pool = TWO_COLOR_PAIRS.filter((pair) => !deck.pairs[strength].has(pair.id))
+  if (!pool.length) return null
+  const pair = pick(pool, rng)
+  deck.pairs[strength].add(pair.id)
+  return pair
+}
+
+/**
+ * A two-colour pair as a dice result: the pair's colours (one accent, read in
+ * Dark as the pair's hex and in Light deepened to read — `pairPalette`) over a
+ * random scaffold's geometry and type. Rich opens the board on Dark, its best
+ * side; Soft on Light, its off-white page.
+ */
+export function pairRecipe(pair: TwoColorPair, strength: PairStrength, base: RandomThemeRecipe): RandomThemeRecipe {
+  const palette = pairPalette(pair, strength)
+  return {
+    ...base,
+    accent: palette.accentLight,
+    accentDark: palette.accent,
+    neutral: palette.neutral,
+    neutralTint: palette.neutralTint,
+    states: { ...palette.states },
+    appearance: strength === 'rich' ? 'dark' : 'light',
+    moodId: `pair:${strength}:${pair.id}`,
+    oppositePage: undefined,
+    styleId: undefined,
+    pair: { id: pair.id, strength },
+  }
 }
 
 const SESSION_DECK = createShuffleDeck()
@@ -355,19 +398,33 @@ const SESSION_DECK = createShuffleDeck()
 /**
  * One press of the dice. `currentStyle` is the style the theme on screen came
  * from: it counts as seen, so the first press never deals it back.
+ *
+ * The deal runs in threes so a few presses show the whole range: a System
+ * Style (or, once they are all seen, a random look at the chosen level), then
+ * a Rich pair, then a Soft pair (`twoColorPairs`). Pairs never repeat in a
+ * session; once a strength runs out its slot falls back to the style deck,
+ * then to a random look.
  */
 export function nextShuffle(
   input: RandomThemeInput & { currentStyle?: string; deck?: ShuffleDeck },
 ): RandomThemeRecipe {
   const deck = input.deck ?? SESSION_DECK
   if (input.currentStyle) deck.shown.add(input.currentStyle)
+  const rng = input.rng ?? Math.random
+  const slot = deck.step++ % 3
   // Inside one style there is no deck to deal: every spin is a variation of it.
   const style = input.scaffold ? undefined : THEME_STYLE_PRESETS.find((preset) => !deck.shown.has(preset.id))
-  if (style) {
-    deck.shown.add(style.id)
-    return styleRecipe(style)
+  const dealStyle = (preset: ThemeStylePreset) => {
+    deck.shown.add(preset.id)
+    return styleRecipe(preset)
   }
-  const rng = input.rng ?? Math.random
+  if (slot === 0 && style) return dealStyle(style)
+  if (slot !== 0) {
+    const strength: PairStrength = slot === 1 ? 'rich' : 'soft'
+    const pair = drawPair(deck, strength, rng)
+    if (pair) return pairRecipe(pair, strength, randomTheme({ ...input, rng }))
+    if (style) return dealStyle(style)
+  }
   // The level decides the page now: Bold always opposes the accent, the
   // other two never do (`radixPalettes`).
   return randomTheme({ ...input, rng })
@@ -387,6 +444,9 @@ export function stylePreviewFromRecipe(
     preset: {
       ...scaffold,
       accent: recipe.accent,
+      // A pair's Dark accent is its own hex; anything else lets Dark read
+      // `accent` (the scaffold's own dark anchor belonged to its colour).
+      darkAccent: recipe.accentDark,
       neutral: recipe.neutral,
       neutralTint: recipe.neutralTint,
       states: { ...recipe.states },

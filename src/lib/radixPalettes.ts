@@ -79,7 +79,7 @@ export function radixGraySeed(gray: RadixGray): string {
   return oklchToHex(l, c, h)
 }
 
-function hueOf(hex: string): number {
+export function hueOf(hex: string): number {
   return hexToOklch(hex).h || 0
 }
 
@@ -118,7 +118,7 @@ export interface RadixPalette {
 /** Severities: never the accent's own family. Liberal and Bold also skip a hue
  *  that reads as the accent (within 20°), so a red brand does not get a red
  *  error that looks like a second button. */
-function drawStates(level: PaletteLevel, accentFamily: string, rng: Rng): MoodStates {
+export function drawStates(level: PaletteLevel, accentFamily: string, rng: Rng): MoodStates {
   const accentHue = hueOf(radixSolid(accentFamily))
   const out = {} as MoodStates
   for (const role of Object.keys(STATE_FAMILIES) as (keyof MoodStates)[]) {
