@@ -940,6 +940,65 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   steps + a focused ⌘V zone, `data-element-paste`), which reports Building… → "✓ Button
 >   added to this page", and says so when the paste is a whole system instead.
 
+> **UPDATE (2026-11-11): the `Escala design system` FIGMA FILE is the ground truth for every
+> name, default and alias (web `8d20af8`, plugin 0.34.0).** Inventory:
+> `escala-figma-plugin/spec/figma-variables.txt`; differences and the owner's decisions:
+> `escala-figma-plugin/PLAN-figma-ground-truth.md`. In the plugin,
+> `node scripts/check-ground-truth.mjs --values` runs the import against an in-memory Figma and
+> must print `✓ structure · ✓ values`. Where they disagree, this SUPERSEDES the notes below on
+> `border.control` as a hairline, radius roles stepping down per viewport, inset sides in the
+> payload, the `Spacing/role/*` · `Radius/role/*` · `Radius/component/*` · `Icon/role/*` ·
+> `Selector/role/*` Figma names, and the default type scale.
+> - **Defaults (owner decision):** type scale ×0.875 (`DEFAULT_TYPE_SCALE_FACTOR`: 11 · 12 · 14 ·
+>   16 · 18 · 21 · 26 · 32 · 42 · 53 · 63). `radius.control` lg (8); Rounded follows. Radius ROLES
+>   no longer step down per viewport (`RADIUS_RESPONSIVE` stays; a hand-set Tablet / Mobile value
+>   still applies). `inset-control` 12 everywhere, `inset-page` 32 / 16 / 16, new `inset-section`
+>   96 / 64 / 48, new `size.target-min` 24 / 44 / 44, selector roles pinned to the 20 / 16
+>   primitives.
+> - **Colour:** `border.control` is back at WCAG 3:1 (`control-boundary` = `{ wcag: 3, apcaLc:
+>   null }` → black-a.7 / white-a.6, hover a.8 / a.7). Focus 3:1 (Dark accent-dark 09), link tone
+>   11, solids picked by job (Light 09 · 10 · 11 with the light ink; Dark accent 10 · 11 · 12),
+>   status tints a.3 / a.4 and pressed a.4 / a.5. Status ramps get vivid Light solids when the
+>   seed's 09 cannot carry the light ink. New roles: `content.inverse-secondary`,
+>   `surface.inverse-muted`, `border.inverse`, `elevation.shadow-key | shadow-ambient |
+>   shadow-ring | highlight` (EFFECT colour only — never a fill or stroke).
+>   `escalaInvariants.test.ts` holds the file's WCAG invariants on the default system.
+> - **Names = the file's code syntax, one map: `src/lib/roleNames.ts`.** Role IDS do not change
+>   (`size.hit`, `radius.pill`, `selector.control`, `icon.small` — tokens.json, recipes, agents);
+>   their CSS / Figma names do: `--size-control-xs…xl` · `Size/control-xs…xl`,
+>   `--size-target-min`, `--size-selector-md|sm`, `--size-icon-sm|md|lg`, `--radius-full`,
+>   `--spacing-inset-section`, `--grid-column`, `--motion-<role>-duration|easing`, `--depth-*`,
+>   `--blur-*`, `--social-<id>-*`. Dimension Semantics has no `role/` segment and no `Icon/` or
+>   `Selector/` group.
+> - **Payload (additive):** `spacingRoleViewports`, `sizeRoleViewports`, complete
+>   `radiusRoleViewports`, `socialBrands`, `elevation` (shadow / depth recipes + blur). No longer
+>   shipped: `overlap-xs|lg|xl|2xl`, the twelve `inset-*-<side>` keys in `spacingRoles` (sides
+>   still exist in the editor and a hand-set side still reaches `padding`), `selector.indicator`.
+>   Theme labels `Escala Light` / `Escala Dark`.
+> - **Plugin 0.34.0** names every variable after the file (older names renamed in place, so
+>   bound layers stay bound), sets WEB code syntax on every published role, hides the type /
+>   motion scales and `panel-background`, writes `States/<System>/<Sev>` ramps and a
+>   `Social Media Brands` collection, and builds `Shadow/*` · `Depth/*` · `Blur/*` effect styles
+>   whose layers are bound to `Elevation/*` (no `(Dark)` twins). After a sync it renders a
+>   design-system skill for that file (`src/systemSkill.ts`, adapted from `escala-architecture`).
+> - **Ship order:** the plugin reads the new payload fields, and it reads production. Deploy the
+>   web, Sync now (republish), then hand out the plugin.
+> - **Known deviation kept on purpose:** the web's dark step 09 stays the brand seed, so on a hex
+>   tie the plugin aliases a Dark column to the `* Dark` ramp first.
+
+> **UPDATE (2026-11-08): the `escala-architecture` agent skill — GENERATED, never edited by
+> hand.** `src/lib/escalaArchitectureSkill.ts` builds three outputs from one text: the repo
+> skill `.claude/skills/escala-architecture/` (SKILL.md + `references/{color,dimension,type}-roles.md`,
+> default values + a section on editing roles here), a portable copy for Claude Desktop /
+> claude.ai (`npm run gen:escala-skill -- --portable <dir>`), and a per-brand
+> `skills/architecture/` in the agent package with that brand's hex per theme and px per
+> viewport (AGENTS.md and llms.txt route to it). The references come from `CATEGORICAL_ROLES`
+> (`categoricalRoleCatalogue()`), the layout role tables, `iconSizing.ts` and `TYPE_ROLES`.
+> **After changing a role, a CSS / Figma name or the skill's prose, run
+> `npm run gen:escala-skill`** — `escalaArchitectureSkill.test.ts` fails when the committed skill
+> drifts from the tables. A portable copy installed elsewhere is not updated by that; regenerate
+> it with `--portable`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-14): Components reads like the Generator — `[icon rail] [page CARD] [DIRECTORY]`.**
@@ -3486,6 +3545,10 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > is not a property of the spacing base. `gridViewportStandard.test.ts` locks all of it.
 >
 > **UPDATE (store v77): RADIUS is the Corner Radius table, and it is RESPONSIVE.**
+> **Partly SUPERSEDED (2026-11-11):** radius ROLES no longer step down per viewport, the
+> `Radius/component/*` scale and `Radius/role/*` names are gone from Figma (`Radius/none|control|
+> action|container|overlay|full`), and `radius.control` defaults to lg (8). See the Figma-file
+> note under "What this is".
 > This supersedes the step NAMES in the radius notes above — every pixel they quote
 > still holds. The ramp is Tailwind v4's names + a 5xl: none 0 · xs 2 · sm 4 · md 6 ·
 > lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full (`RADIUS_STANDARD` =
@@ -3599,7 +3662,10 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   chips back to the role). One viewport at a time via the Platform switch.
 
 > **INSET SIDES (2026-10-18): every inset role has four sides — `inset-control|surface|page`
-> `-top · -right · -bottom · -left` (`INSET_SIDE_KEYS`, `layoutTokens.ts`).** Reported as users
+> `-top · -right · -bottom · -left` (`INSET_SIDE_KEYS`, `layoutTokens.ts`).**
+> **Partly SUPERSEDED (2026-11-11):** tokens.json `spacingRoles` no longer carries the twelve
+> side keys and the plugin writes no `Spacing/role/inset-*-<side>` (the Figma file has none); the
+> sides still exist in the editor and a hand-set side still reaches `padding`. Reported as users
 > confused about top/bottom padding: an inset was one symmetric value. A side lives in
 > `spacingRoles` under its own key ONLY when set by hand (same value grammar as a role); an absent
 > side FOLLOWS its inset, so moving `inset-surface` still moves every untouched side and a system
@@ -5212,6 +5278,9 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 
 > **UPDATE (2026-10-21, second pass): `border.control` is a HAIRLINE, and an icon slot IS the
 > `Icon` component (plugin 0.17.1).** Two owner decisions after seeing the file.
+> **The hairline half is SUPERSEDED (2026-11-11):** `border.control` is back at WCAG 3:1
+> (black-a.7 / white-a.6), matching the Escala Figma file. See the Figma-file note under "What
+> this is". The icon-slot half still holds.
 > - **The field outline no longer claims WCAG 1.4.11.** `control-boundary` (`color/apca.ts`) is
 >   WCAG **1.4:1, no APCA term** — a visibility floor (black-a.2 reads 1.26, just under it), the
 >   weight shadcn draws `--border` at. The `{ctl-a:…}` walk starts at step 3 and lands on
