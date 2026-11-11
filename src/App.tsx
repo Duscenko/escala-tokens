@@ -12,6 +12,8 @@ import { LoginPage } from './components/public/LoginPage'
 import { AccountPage } from './components/public/AccountPage'
 import { matchAccountPath } from './lib/accountRoutes'
 import { PluginConnectPage } from './components/public/PluginConnectPage'
+import { FigmaKitPage } from './components/public/FigmaKitPage'
+import { FIGMA_KIT_PATH } from './lib/figmaKit'
 import { OPEN_BETA, PRICING_PATH } from './lib/entitlement'
 import { CONTACT_PATH, LEGAL_PATH, LICENSE_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
@@ -138,6 +140,15 @@ function App() {
     return (
       <>
         {OPEN_BETA ? <OpenBetaPage /> : <PricingPage />}
+        <ToastHost />
+      </>
+    )
+  }
+
+  if (path === FIGMA_KIT_PATH) {
+    return (
+      <>
+        <FigmaKitPage />
         <ToastHost />
       </>
     )

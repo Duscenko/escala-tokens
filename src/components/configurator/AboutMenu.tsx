@@ -9,6 +9,7 @@ import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { OPEN_BETA, PRICING_PATH } from '../../lib/entitlement'
+import { FIGMA_KIT_PATH } from '../../lib/figmaKit'
 import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '../../lib/legal'
 import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
 import { showToast } from '../ui/Toast'
@@ -1260,6 +1261,12 @@ export function AboutHome({
                 <ArrowGlyph />
               </a>
             </RainbowButton>
+            {/* The Figma design system is sold on its own page (`/figma-kit`):
+                a live embed of the file and the Polar checkout. */}
+            <a href={FIGMA_KIT_PATH} className={secondaryCta}>
+              <FigmaGlyph className="h-3.5 w-auto" />
+              {t('Preview in Figma')}
+            </a>
           </motion.div>
         </div>
 
