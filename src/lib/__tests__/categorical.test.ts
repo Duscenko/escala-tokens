@@ -43,7 +43,7 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 72 roles across five groups', () => {
+  it('ships 83 roles across six groups', () => {
     // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
     // semantic-border audit re-homed the severity strokes:
     //
@@ -65,8 +65,12 @@ describe('the categorical catalogue is complete', () => {
     //  +3 (2026-10-24): `content.on-secondary` (secondary's own label ink) and
     //  `surface.muted` / `-hover` (the control tracks that used to borrow
     //  `action.secondary`), so a system can darken its secondary button → 76.
-    expect(roleIds).toHaveLength(76)
-    for (const group of ['content', 'action', 'surface', 'status', 'border']) {
+    //  +7 (2026-11-11, the Escala Figma file): the inverse context
+    //  (`content.inverse-secondary`, `surface.inverse-muted`, `border.inverse`)
+    //  and the Elevation group (`shadow-key`, `shadow-ambient`, `shadow-ring`,
+    //  `highlight`) → 83.
+    expect(roleIds).toHaveLength(83)
+    for (const group of ['content', 'action', 'surface', 'status', 'border', 'elevation']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
   })
@@ -116,7 +120,7 @@ describe('the categorical catalogue is complete', () => {
   // pure-prose line that names no ref at all is fine — many roles describe
   // the job without pinning a number, which is better usage guidance.
   it('no guidance line quotes a ref without also naming the role\'s own', () => {
-    const MARKERS = ['{ui-a:', '{ui+a:', '{ui:', '{ui+:', '{step:', '{on:', '{ink:', '.solid}']
+    const MARKERS = ['{ui-a:', '{ui+a:', '{ui:', '{ui+:', '{focus:', '{step:', '{on:', '{ink:', '.solid}']
     const PLAIN = /^\{[a-z-]+\.\d+\}$/
     const REF = /\{[a-z-]+(?:\.(?:\d+|solid)|\+\d+|-a\.\d+)?[^}]*\}/g
     const stale: string[] = []
@@ -184,7 +188,9 @@ describe('the categorical catalogue is complete', () => {
   it('uses the layout-tuned dark steps as catalogue defaults', () => {
     const label = (group: string, key: string) =>
       view.categories.find((c) => c.key === group)?.tokens.find((t) => t.key === key)?.modes.dark.label
-    expect(label('surface', 'inverse')).toBe('neutral-dark.11')
+    // Step 12 in both themes since the Escala Figma file (2026-11-11): step 11
+    // stays a text step, and Light / Dark are now symmetric.
+    expect(label('surface', 'inverse')).toBe('neutral-dark.12')
     // border.subtle is on the fixed alpha ladder now (audit F4) — white-a in
     // dark, black-a in light. The dark-step assertions for it live in the
     // "decorative ladder" test above.
@@ -235,13 +241,14 @@ describe('the categorical catalogue is complete', () => {
   it('border.control/control-hover/strong are solved on the alpha ladder', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    // The field outline is a HAIRLINE (2026-10-21): the first alpha step that
-    // is visibly off the page (1.4:1), shadcn's `--border` weight. It was held
-    // to 3:1 + Lc 15 (black-a.7 / white-a.6) and reported as too strong.
-    expect(label('control')?.light.label).toBe('black-a.3')
-    expect(label('control')?.dark.label).toBe('white-a.3')
-    expect(label('control-hover')?.light.label).toBe('black-a.4')
-    expect(label('control-hover')?.dark.label).toBe('white-a.4')
+    // The field outline is the WCAG 1.4.11 control boundary again (the Escala
+    // Figma file, 2026-11-11): 3:1 on the page, black-a.7 / white-a.6. The
+    // 2026-10-21 hairline (1.4:1, black-a.3) did not let a field read without
+    // a fill.
+    expect(label('control')?.light.label).toBe('black-a.7')
+    expect(label('control')?.dark.label).toBe('white-a.6')
+    expect(label('control-hover')?.light.label).toBe('black-a.8')
+    expect(label('control-hover')?.dark.label).toBe('white-a.7')
     // Emphasis keeps the stricter ui-component solve.
     expect(label('strong')?.light.label).toBe('black-a.7')
     expect(label('strong')?.dark.label).toBe('white-a.8')
@@ -276,8 +283,9 @@ describe('the categorical catalogue is complete', () => {
   it('border.focus resolves via the solver, matching the pinned value for a passing hue', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    // WCAG 1.4.11 only (`{focus:…}`): dark tone 9 clears 3:1 on the dark page.
     expect(label('focus')?.light.label).toBe('accent.9')
-    expect(label('focus')?.dark.label).toBe('accent.11')
+    expect(label('focus')?.dark.label).toBe('accent.9')
   })
 
   // status.<sev>.border-strong is the CONTROL BOUNDARY (invalid input outline),
@@ -288,7 +296,7 @@ describe('the categorical catalogue is complete', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === key)?.modes
     expect(label('critical.border-strong')?.light.label).toBe('error.9')
-    expect(label('critical.border-strong')?.dark.label).toBe('error.11')
+    expect(label('critical.border-strong')?.dark.label).toBe('error.10')
     expect(label('warning.border-strong')?.light.label).toBe('warning.11')
     expect(label('success.border-strong')?.light.label).toBe('success.10')
     expect(label('info.border-strong')?.light.label).toBe('info.9')
@@ -316,7 +324,9 @@ describe('the categorical catalogue is complete', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === key)?.modes
     for (const sev of ['critical', 'warning', 'success', 'info']) {
-      expect(label(`${sev}.surface-pressed`)?.light.label, sev).toBe(`${sev === 'critical' ? 'error' : sev}-a.5`)
+      // One step past the tint (a.3 → a.4) in Light, a.4 → a.5 in Dark.
+      expect(label(`${sev}.surface-pressed`)?.light.label, sev).toBe(`${sev === 'critical' ? 'error' : sev}-a.4`)
+      expect(label(`${sev}.surface-pressed`)?.dark.label, sev).toBe(`${sev === 'critical' ? 'error' : sev}-a.5`)
     }
   })
 
@@ -329,7 +339,7 @@ describe('the categorical catalogue is complete', () => {
       }
     }
     const label = (k: string) => action.tokens.find((t) => t.key === k)?.modes.light.label
-    expect([label('secondary.default'), label('secondary.hover'), label('secondary.pressed')]).toEqual(['neutral.4', 'neutral.5', 'neutral.5'])
+    expect([label('secondary.default'), label('secondary.hover'), label('secondary.pressed')]).toEqual(['neutral.4', 'neutral.5', 'neutral.6'])
   })
 })
 

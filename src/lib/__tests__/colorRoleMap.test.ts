@@ -60,11 +60,11 @@ describe('buildColorRoleMap', () => {
     })
   })
 
-  it('lists all five groups for every colour, empty or not', () => {
+  it('lists all six groups for every colour, empty or not', () => {
     const roles = resolveSystemRoles(state(), 'light')
     const keys = (colour: typeof COLOR_ROLE_ORDER[number]) =>
       buildColorRoleMap(roles, colour, roles.modeKeys[0]).groups.map((g) => g.key)
-    expect(keys('accent')).toEqual(['content', 'action', 'surface', 'status', 'border'])
+    expect(keys('accent')).toEqual(['content', 'action', 'surface', 'status', 'border', 'elevation'])
     for (const colour of COLOR_ROLE_ORDER) expect(keys(colour)).toEqual(keys('accent'))
   })
 

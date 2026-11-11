@@ -32,7 +32,7 @@ import {
   radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
-import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
+import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, darkShadowMap, generateColorScale, generateStatusScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
 import { approximateSource } from './tokenImport/approximateSource'
 import { THEME_STYLE_PRESETS, themeStylePreset, presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import { matchShadowPreset } from './shadowTokens'
@@ -505,7 +505,7 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     : generateLightNeutralScale(gray, 'radix', shift, pageLight, tint)
   const family = (hex: string) => kind === 'dark'
     ? generateFamilyDarkScale(hex, 'radix', shift, pageDark)
-    : generateColorScale(hex, 'radix', shift, pageLight)
+    : generateStatusScale(hex, 'radix', shift, pageLight)
   const darkSeed = (slot: 'error' | 'warning' | 'success' | 'info') => {
     const hex = c.statesDark?.[slot]
     return typeof hex === 'string' && HEX.test(hex) ? hex.toLowerCase() : null
@@ -519,7 +519,8 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     stateInk[slot] = solid.ink
   }
 
-  let box = 16, field = 8, control = 4
+  // The Escala defaults: boxes 16 · fields 12 · selectors 8.
+  let box = 16, field = 12, control = 8
   if (c.radiusAxes && (c.radiusAxes.boxes || c.radiusAxes.fields || c.radiusAxes.selectors)) {
     const pxOf = (step: string | undefined, fallback: number) => {
       const n = parseFloat(step ? (RADIUS_STANDARD as Record<string, string>)[step] ?? '' : '')

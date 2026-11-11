@@ -44,7 +44,7 @@ const NON_DIMENSION_KEYS: Partial<Record<DimensionCategory, ReadonlySet<string>>
 }
 
 import { dimensionFromKey, dimensionKey, normalizeDimension as normalize, parseDimension } from './dimensionCore'
-import { roleDimensionPx } from './layoutTokens'
+import { roleDimensionPx, gridColumnPx, extractBreakpoints, type GridFrameModes } from './layoutTokens'
 export { dimensionFromKey, dimensionKey, parseDimension }
 
 /** The W3C / tokens.json reference to a primitive. */
@@ -145,6 +145,14 @@ export function dimensionScaleForStore(store: FoundationSource, themeKeys: reado
   const values = collectDimensions(sources)
   for (const src of sources) {
     for (const px of Object.values(iconSizesFor(src.sizes))) values.add(px)
+    // `--grid-column` aliases the column width each viewport's grid style
+    // lays out with (72 · 60 · 60 on the standard frame); a whole px a custom
+    // frame produces must be on the ladder too.
+    const s = src as FoundationSource & { gridFrame?: GridFrameModes; spacing?: Record<string, string>; grid?: Record<string, string> }
+    for (const vp of ['desktop', 'tablet', 'mobile'] as const) {
+      const col = gridColumnPx(s.gridFrame, vp, { spacing: s.spacing, breakpoints: extractBreakpoints(s.grid) })
+      if (col != null && Number.isInteger(col)) values.add(col)
+    }
   }
   return buildDimensionScale(values)
 }

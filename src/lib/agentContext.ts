@@ -23,8 +23,11 @@ import {
   mergeLayoutRoles,
   resolveLayoutRole,
   layoutValueCss,
+  layoutRoleVar,
+  layoutRoleFigmaName,
   type LayoutFamily,
 } from './layoutTokens'
+import { hasRoleName, roleFigmaName } from './roleNames'
 
 export interface AgentFoundationTokens extends Partial<Record<PreviewColorField, string>> {
   /** Resolved Categorical roles of the previewed mode (`PreviewTokens.archTokens`). */
@@ -114,12 +117,12 @@ function semanticTable(t: AgentFoundationTokens, family: LayoutFamily, title: st
     '',
     'Intent aliases. Bind these in components — each points at a Dimension primitive, never a new px.',
     '',
-    '| Role | CSS | Aliases | Live |',
-    '|---|---|---|---|',
+    '| Role | CSS | Figma | Aliases | Live |',
+    '|---|---|---|---|---|',
   ]
   for (const role of LAYOUT_ROLES[family]) {
     lines.push(
-      `| \`${role.key}\` | \`--${family}-${role.key}\` | \`${layoutValueCss(family, roles[role.key], primitivesOf(t, family))}\` | \`${roleVal(t, family, role.key)}\` |`,
+      `| \`${role.key}\` | \`${layoutRoleVar(family, role.key)}\` | \`${layoutRoleFigmaName(family, role.key) ?? '—'}\` | \`${layoutValueCss(family, roles[role.key], primitivesOf(t, family))}\` | \`${roleVal(t, family, role.key)}\` |`,
     )
   }
   lines.push('')
@@ -240,7 +243,9 @@ function colorSection(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJ
       const figma = json && !inFigma ? '—'
         : refs ? refs.map((r) => `\`${r.name}\``).join(' + ')
         : refs === null ? 'not published'
-        : isColor ? `\`${figmaVar(id)}\`` : '—'
+        : isColor ? `\`${figmaVar(id)}\``
+        : hasRoleName(row.ref.slice(0, row.ref.indexOf('.')), id) || /^(radius|spacing|stroke)\./.test(row.ref) && LAYOUT_ROLES[row.ref.slice(0, row.ref.indexOf('.')) as LayoutFamily]?.some((r) => r.key === id)
+          ? `\`${roleFigmaName(row.ref.slice(0, row.ref.indexOf('.')), id)}\`` : '—'
       const liveValue = isColor ? (t.archTokens?.[id] ?? '—') : liveDimension(row.ref, t)
       const live = liveValue === '—' ? '—' : `\`${liveValue}\``
       lines.push(`| ${mdCell(row.slot)} | ${row.prop} | ${mdCell(row.when)} | \`${row.ref}\` | ${css} | ${figma} | ${live} |`)
@@ -282,7 +287,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJS
     '| Step | CSS | Figma | Value |',
     '|---|---|---|---|',
   ]
-  ordered(t.radius, RADIUS_ORDER).forEach(([k, v]) =>
+  ordered(t.radius, RADIUS_ORDER).filter(([k]) => k !== 'full').forEach(([k, v]) =>
     lines.push(`| \`${k}\` | \`--radius-${k}\` | \`${figmaDim('Radius', k)}\` | \`${v}\` |`),
   )
   lines.push('', ...semanticTable(t, 'radius', 'Radius roles'))
@@ -332,17 +337,18 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJS
   if (t.selector && Object.keys(t.selector).length) {
     lines.push(
       '',
-      '### Selector glyph (`Dimension Semantics` → `Selector/`)',
+      '### Selector glyph',
       '',
       'The square a checkbox, radio or switch knob is drawn in — a glyph, not a',
       'control height. Below 24px pair it with a transparent hit area',
-      '(`--size-hit`) for WCAG 2.2 target size; do not grow the glyph instead.',
+      '(`--size-control-xs`) for WCAG 2.2 target size; do not grow the glyph instead.',
+      'The roles are sizes in Figma (`Size/selector-md|sm`); the ramp below is primitives only.',
       '',
       '| Step | CSS | Figma | Value |',
       '|---|---|---|---|',
     )
     ordered(t.selector, ['xs', 'sm', 'md', 'lg', 'xl']).forEach(([k, v]) =>
-      lines.push(`| \`${k}\` | \`--selector-${k}\` | \`${figmaDim('Selector', k)}\` | \`${v}\` |`),
+      lines.push(`| \`${k}\` | \`--selector-${k}\` | — | \`${v}\` |`),
     )
     lines.push('', ...semanticTable(t, 'selector', 'Selector roles'))
   }
@@ -446,7 +452,7 @@ function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
     const name = ref ? ref.split('.')[1] : v.toLowerCase()
     const isRole = LAYOUT_ROLES.size.some((r) => r.key === name)
     const live = isRole && t ? roleVal(t, 'size', name) : val(t?.sizes, name)
-    const figma = figmaDim('Size', isRole ? `role/${name}` : name)
+    const figma = isRole ? layoutRoleFigmaName('size', name) ?? `Size/${name}` : figmaDim('Size', name)
     lines.push(`| \`${v}\` | \`var(${ref ? cssVarOf(ref) : `--size-${name}`})\` | \`${figma}\` | \`${live}\` |`)
   })
   lines.push(

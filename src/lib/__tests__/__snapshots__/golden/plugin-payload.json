@@ -19,7 +19,7 @@
       "core--minimalist-8": "#9c7cff",
       "core--minimalist-9": "#874fff",
       "core--minimalist-10": "#784ddd",
-      "core--minimalist-11": "#7556cc",
+      "core--minimalist-11": "#7252c9",
       "core--minimalist-12": "#3a2b68",
       "core--minimalist-dark-1": "#100e13",
       "core--minimalist-dark-2": "#17161d",
@@ -43,7 +43,7 @@
       "core--minimalist-gray-8": "#aca7b6",
       "core--minimalist-gray-9": "#9791a4",
       "core--minimalist-gray-10": "#898494",
-      "core--minimalist-gray-11": "#6f6a77",
+      "core--minimalist-gray-11": "#6e6976",
       "core--minimalist-gray-12": "#37343b",
       "core--minimalist-gray-dark-1": "#100e13",
       "core--minimalist-gray-dark-2": "#151515",
@@ -67,7 +67,7 @@
       "core--minimalist-error-8": "#e46757",
       "core--minimalist-error-9": "#d92d20",
       "core--minimalist-error-10": "#bd3226",
-      "core--minimalist-error-11": "#b64537",
+      "core--minimalist-error-11": "#b34134",
       "core--minimalist-error-12": "#5d231c",
       "core--minimalist-error-dark-1": "#140d0c",
       "core--minimalist-error-dark-2": "#1c1413",
@@ -89,9 +89,9 @@
       "core--minimalist-warning-6": "#eeb89a",
       "core--minimalist-warning-7": "#eaa37b",
       "core--minimalist-warning-8": "#e58b55",
-      "core--minimalist-warning-9": "#dc6803",
-      "core--minimalist-warning-10": "#c2621f",
-      "core--minimalist-warning-11": "#a55522",
+      "core--minimalist-warning-9": "#bc5700",
+      "core--minimalist-warning-10": "#a64d00",
+      "core--minimalist-warning-11": "#914200",
       "core--minimalist-warning-12": "#532b11",
       "core--minimalist-warning-dark-1": "#130e0b",
       "core--minimalist-warning-dark-2": "#1c1613",
@@ -113,9 +113,9 @@
       "core--minimalist-success-6": "#9cc9ab",
       "core--minimalist-success-7": "#7eba93",
       "core--minimalist-success-8": "#59aa78",
-      "core--minimalist-success-9": "#079455",
-      "core--minimalist-success-10": "#1f834f",
-      "core--minimalist-success-11": "#2d794e",
+      "core--minimalist-success-9": "#00854c",
+      "core--minimalist-success-10": "#007541",
+      "core--minimalist-success-11": "#006437",
       "core--minimalist-success-12": "#163c26",
       "core--minimalist-success-dark-1": "#0b110d",
       "core--minimalist-success-dark-2": "#131815",
@@ -137,9 +137,9 @@
       "core--minimalist-info-6": "#96bcf5",
       "core--minimalist-info-7": "#77a8f4",
       "core--minimalist-info-8": "#5391f2",
-      "core--minimalist-info-9": "#1570ef",
-      "core--minimalist-info-10": "#1f66ce",
-      "core--minimalist-info-11": "#3169c1",
+      "core--minimalist-info-9": "#006df4",
+      "core--minimalist-info-10": "#0060d8",
+      "core--minimalist-info-11": "#0053bd",
       "core--minimalist-info-12": "#183562",
       "core--minimalist-info-dark-1": "#0c0f14",
       "core--minimalist-info-dark-2": "#13161c",
@@ -165,7 +165,7 @@
       "core--minimalist-8": "#3e00ff82",
       "core--minimalist-9": "#5201ffb0",
       "core--minimalist-10": "#3f02ceb3",
-      "core--minimalist-11": "#3204b3ab",
+      "core--minimalist-11": "#3002b0ad",
       "core--minimalist-12": "#15034bd6",
       "core--minimalist-dark-1": "#ffffff00",
       "core--minimalist-dark-2": "#9caedb0d",
@@ -189,7 +189,7 @@
       "core--minimalist-gray-8": "#0d002857",
       "core--minimalist-gray-9": "#0e022b6e",
       "core--minimalist-gray-10": "#0a01207a",
-      "core--minimalist-gray-11": "#0c041896",
+      "core--minimalist-gray-11": "#0a021796",
       "core--minimalist-gray-12": "#05020acc",
       "core--minimalist-gray-dark-1": "#ffffff00",
       "core--minimalist-gray-dark-2": "#b7f75608",
@@ -213,7 +213,7 @@
       "core--minimalist-error-8": "#d71a00a8",
       "core--minimalist-error-9": "#d41102e0",
       "core--minimalist-error-10": "#b21103db",
-      "core--minimalist-error-11": "#a31402c9",
+      "core--minimalist-error-11": "#a01201cc",
       "core--minimalist-error-12": "#4b0b03e6",
       "core--minimalist-error-dark-1": "#1b0b005c",
       "core--minimalist-error-dark-2": "#d872130f",
@@ -235,9 +235,9 @@
       "core--minimalist-warning-6": "#d6510366",
       "core--minimalist-warning-7": "#d8500185",
       "core--minimalist-warning-8": "#d95301ab",
-      "core--minimalist-warning-9": "#dc6600fc",
-      "core--minimalist-warning-10": "#ba4d00e0",
-      "core--minimalist-warning-11": "#983c01de",
+      "core--minimalist-warning-9": "#bc5700",
+      "core--minimalist-warning-10": "#a64d00",
+      "core--minimalist-warning-11": "#914200",
       "core--minimalist-warning-12": "#481e02f0",
       "core--minimalist-warning-dark-1": "#170e006b",
       "core--minimalist-warning-dark-2": "#d893130f",
@@ -259,9 +259,9 @@
       "core--minimalist-success-6": "#03782863",
       "core--minimalist-success-7": "#037a2b82",
       "core--minimalist-success-8": "#007d2fa6",
-      "core--minimalist-success-9": "#029252fa",
-      "core--minimalist-success-10": "#017237e0",
-      "core--minimalist-success-11": "#025e2ad4",
+      "core--minimalist-success-9": "#00854c",
+      "core--minimalist-success-10": "#007541",
+      "core--minimalist-success-11": "#006437",
       "core--minimalist-success-12": "#022b13eb",
       "core--minimalist-success-dark-1": "#0018004f",
       "core--minimalist-success-dark-2": "#4cd63b0d",
@@ -283,9 +283,9 @@
       "core--minimalist-info-6": "#005ee769",
       "core--minimalist-info-7": "#0460eb8a",
       "core--minimalist-info-8": "#035eecad",
-      "core--minimalist-info-9": "#0164eeeb",
-      "core--minimalist-info-10": "#0151c7e0",
-      "core--minimalist-info-11": "#0146b2cf",
+      "core--minimalist-info-9": "#006df4",
+      "core--minimalist-info-10": "#0060d8",
+      "core--minimalist-info-11": "#0053bd",
       "core--minimalist-info-12": "#012152e8",
       "core--minimalist-info-dark-1": "#00121740",
       "core--minimalist-info-dark-2": "#5bd6f40a",
@@ -326,16 +326,16 @@
     },
     "semantic": {
       "content-primary": "#37343b",
-      "content-secondary": "#6f6a77",
+      "content-secondary": "#6e6976",
       "content-tertiary": "#898494",
       "content-quaternary": "#9791a4",
       "content-inverse": "#ffffff",
       "content-disabled": "#cac7d0",
-      "content-brand": "#7556cc",
+      "content-brand": "#7252c9",
       "content-brand-hover": "#3a2b68",
-      "content-error": "#b64537",
-      "content-warning": "#a55522",
-      "content-success": "#2d794e",
+      "content-error": "#b34134",
+      "content-warning": "#914200",
+      "content-success": "#006437",
       "background-primary": "#ffffff",
       "background-primary-hover": "#f5f4f6",
       "background-secondary": "#f5f4f6",
@@ -353,9 +353,9 @@
       "background-error-primary": "#fbefed",
       "background-error-solid": "#d92d20",
       "background-warning-primary": "#fbf2ee",
-      "background-warning-solid": "#a55522",
+      "background-warning-solid": "#bc5700",
       "background-success-primary": "#eef5f0",
-      "background-success-solid": "#1f834f",
+      "background-success-solid": "#00854c",
       "border-primary": "#d8d6dd",
       "border-secondary": "#e3e1e6",
       "border-tertiary": "#ececee",
@@ -411,16 +411,16 @@
     "themes": {
       "core--minimalist::light": {
         "content-primary": "#37343b",
-        "content-secondary": "#6f6a77",
+        "content-secondary": "#6e6976",
         "content-tertiary": "#898494",
         "content-quaternary": "#9791a4",
         "content-inverse": "#ffffff",
         "content-disabled": "#cac7d0",
-        "content-brand": "#7556cc",
+        "content-brand": "#7252c9",
         "content-brand-hover": "#3a2b68",
-        "content-error": "#b64537",
-        "content-warning": "#a55522",
-        "content-success": "#2d794e",
+        "content-error": "#b34134",
+        "content-warning": "#914200",
+        "content-success": "#006437",
         "background-primary": "#ffffff",
         "background-primary-hover": "#f5f4f6",
         "background-secondary": "#f5f4f6",
@@ -438,9 +438,9 @@
         "background-error-primary": "#fbefed",
         "background-error-solid": "#d92d20",
         "background-warning-primary": "#fbf2ee",
-        "background-warning-solid": "#a55522",
+        "background-warning-solid": "#bc5700",
         "background-success-primary": "#eef5f0",
-        "background-success-solid": "#1f834f",
+        "background-success-solid": "#00854c",
         "border-primary": "#d8d6dd",
         "border-secondary": "#e3e1e6",
         "border-tertiary": "#ececee",
@@ -498,16 +498,16 @@
       "core--minimalist": {
         "light": {
           "content-primary": "#37343b",
-          "content-secondary": "#6f6a77",
+          "content-secondary": "#6e6976",
           "content-tertiary": "#898494",
           "content-quaternary": "#9791a4",
           "content-inverse": "#ffffff",
           "content-disabled": "#cac7d0",
-          "content-brand": "#7556cc",
+          "content-brand": "#7252c9",
           "content-brand-hover": "#3a2b68",
-          "content-error": "#b64537",
-          "content-warning": "#a55522",
-          "content-success": "#2d794e",
+          "content-error": "#b34134",
+          "content-warning": "#914200",
+          "content-success": "#006437",
           "background-primary": "#ffffff",
           "background-primary-hover": "#f5f4f6",
           "background-secondary": "#f5f4f6",
@@ -525,9 +525,9 @@
           "background-error-primary": "#fbefed",
           "background-error-solid": "#d92d20",
           "background-warning-primary": "#fbf2ee",
-          "background-warning-solid": "#a55522",
+          "background-warning-solid": "#bc5700",
           "background-success-primary": "#eef5f0",
-          "background-success-solid": "#1f834f",
+          "background-success-solid": "#00854c",
           "border-primary": "#d8d6dd",
           "border-secondary": "#e3e1e6",
           "border-tertiary": "#ececee",
@@ -620,7 +620,7 @@
             "core--minimalist::dark": "#e8e0ff"
           },
           "secondary": {
-            "core--minimalist::light": "#6f6a77",
+            "core--minimalist::light": "#6e6976",
             "core--minimalist::dark": "#cdcbd3"
           },
           "subtle": {
@@ -628,12 +628,12 @@
             "core--minimalist::dark": "#716e77"
           },
           "accent": {
-            "core--minimalist::light": "#7556cc",
+            "core--minimalist::light": "#7252c9",
             "core--minimalist::dark": "#d2c4ff"
           },
           "on-action": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#e5e4e8"
+            "core--minimalist::dark": "#100e13"
           },
           "on-secondary": {
             "core--minimalist::light": "#37343b",
@@ -643,12 +643,16 @@
             "core--minimalist::light": "#fefdff",
             "core--minimalist::dark": "#100e13"
           },
+          "inverse-secondary": {
+            "core--minimalist::light": "#ffffffb3",
+            "core--minimalist::dark": "#000000b3"
+          },
           "disabled": {
             "core--minimalist::light": "#898494",
             "core--minimalist::dark": "#716e77"
           },
           "link.default": {
-            "core--minimalist::light": "#3a2b68",
+            "core--minimalist::light": "#7252c9",
             "core--minimalist::dark": "#d2c4ff"
           },
           "link.hover": {
@@ -659,15 +663,15 @@
         "action": {
           "primary.default": {
             "core--minimalist::light": "#874fff",
-            "core--minimalist::dark": "#714ec3"
+            "core--minimalist::dark": "#9a75fd"
           },
           "primary.hover": {
             "core--minimalist::light": "#784ddd",
-            "core--minimalist::dark": "#5a4299"
+            "core--minimalist::dark": "#d2c4ff"
           },
           "primary.pressed": {
-            "core--minimalist::light": "#7556cc",
-            "core--minimalist::dark": "#483775"
+            "core--minimalist::light": "#7252c9",
+            "core--minimalist::dark": "#e8e0ff"
           },
           "secondary.default": {
             "core--minimalist::light": "#e3e1e6",
@@ -678,7 +682,7 @@
             "core--minimalist::dark": "#2a292c"
           },
           "secondary.pressed": {
-            "core--minimalist::light": "#d8d6dd",
+            "core--minimalist::light": "#cac7d0",
             "core--minimalist::dark": "#363539"
           },
           "disabled.default": {
@@ -737,7 +741,11 @@
           },
           "inverse": {
             "core--minimalist::light": "#37343b",
-            "core--minimalist::dark": "#cdcbd3"
+            "core--minimalist::dark": "#e5e4e8"
+          },
+          "inverse-muted": {
+            "core--minimalist::light": "#ffffff26",
+            "core--minimalist::dark": "#00000026"
           },
           "overlay": {
             "core--minimalist::light": "#00000099",
@@ -747,10 +755,10 @@
         "status": {
           "critical.surface": {
             "core--minimalist::light": "#da350c24",
-            "core--minimalist::dark": "#f3722e1c"
+            "core--minimalist::dark": "#f4673a2e"
           },
           "critical.surface-pressed": {
-            "core--minimalist::light": "#dd2b084d",
+            "core--minimalist::light": "#dd2b0336",
             "core--minimalist::dark": "#f75f3942"
           },
           "critical.surface-solid": {
@@ -762,15 +770,15 @@
             "core--minimalist::dark": "#852c23"
           },
           "critical.surface-solid-pressed": {
-            "core--minimalist::light": "#b64537",
+            "core--minimalist::light": "#b34134",
             "core--minimalist::dark": "#682820"
           },
           "critical.on-solid": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#e5e4e8"
+            "core--minimalist::dark": "#fefdff"
           },
           "critical.content": {
-            "core--minimalist::light": "#b64537",
+            "core--minimalist::light": "#b34134",
             "core--minimalist::dark": "#ffbcae"
           },
           "critical.border": {
@@ -779,34 +787,34 @@
           },
           "critical.border-strong": {
             "core--minimalist::light": "#d92d20",
-            "core--minimalist::dark": "#ffbcae"
+            "core--minimalist::dark": "#dd5141"
           },
           "success.surface": {
             "core--minimalist::light": "#107a2021",
-            "core--minimalist::dark": "#67fb6a14"
+            "core--minimalist::dark": "#65f57f21"
           },
           "success.surface-pressed": {
-            "core--minimalist::light": "#08752547",
+            "core--minimalist::light": "#09762333",
             "core--minimalist::dark": "#5ef7882e"
           },
           "success.surface-solid": {
-            "core--minimalist::light": "#1f834f",
-            "core--minimalist::dark": "#8fdcaa"
+            "core--minimalist::light": "#00854c",
+            "core--minimalist::dark": "#079455"
           },
           "success.surface-solid-hover": {
-            "core--minimalist::light": "#2d794e",
-            "core--minimalist::dark": "#c3efd1"
+            "core--minimalist::light": "#007541",
+            "core--minimalist::dark": "#419f69"
           },
           "success.surface-solid-pressed": {
-            "core--minimalist::light": "#163c26",
-            "core--minimalist::dark": "#419f69"
+            "core--minimalist::light": "#006437",
+            "core--minimalist::dark": "#8fdcaa"
           },
           "success.on-solid": {
             "core--minimalist::light": "#fefdff",
             "core--minimalist::dark": "#100e13"
           },
           "success.content": {
-            "core--minimalist::light": "#2d794e",
+            "core--minimalist::light": "#006437",
             "core--minimalist::dark": "#8fdcaa"
           },
           "success.border": {
@@ -814,35 +822,35 @@
             "core--minimalist::dark": "#54fe8f40"
           },
           "success.border-strong": {
-            "core--minimalist::light": "#1f834f",
+            "core--minimalist::light": "#007541",
             "core--minimalist::dark": "#419f69"
           },
           "warning.surface": {
             "core--minimalist::light": "#d0540121",
-            "core--minimalist::dark": "#f396371c"
+            "core--minimalist::dark": "#f4933a2e"
           },
           "warning.surface-pressed": {
-            "core--minimalist::light": "#d854074a",
+            "core--minimalist::light": "#d14e0033",
             "core--minimalist::dark": "#f78d3942"
           },
           "warning.surface-solid": {
-            "core--minimalist::light": "#a55522",
-            "core--minimalist::dark": "#864820"
+            "core--minimalist::light": "#bc5700",
+            "core--minimalist::dark": "#e17e40"
           },
           "warning.surface-solid-hover": {
-            "core--minimalist::light": "#532b11",
-            "core--minimalist::dark": "#693b20"
+            "core--minimalist::light": "#a64d00",
+            "core--minimalist::dark": "#ffbe92"
           },
           "warning.surface-solid-pressed": {
-            "core--minimalist::light": "#c2621f",
-            "core--minimalist::dark": "#4c2f1d"
+            "core--minimalist::light": "#914200",
+            "core--minimalist::dark": "#ffdec5"
           },
           "warning.on-solid": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#e5e4e8"
+            "core--minimalist::dark": "#100e13"
           },
           "warning.content": {
-            "core--minimalist::light": "#a55522",
+            "core--minimalist::light": "#914200",
             "core--minimalist::dark": "#ffbe92"
           },
           "warning.border": {
@@ -850,35 +858,35 @@
             "core--minimalist::dark": "#fa843561"
           },
           "warning.border-strong": {
-            "core--minimalist::light": "#a55522",
+            "core--minimalist::light": "#914200",
             "core--minimalist::dark": "#ffbe92"
           },
           "info.surface": {
             "core--minimalist::light": "#0b67db24",
-            "core--minimalist::dark": "#4caef91a"
+            "core--minimalist::dark": "#4299f72e"
           },
           "info.surface-pressed": {
-            "core--minimalist::light": "#0764e44d",
+            "core--minimalist::light": "#0660de36",
             "core--minimalist::dark": "#3e91fe42"
           },
           "info.surface-solid": {
-            "core--minimalist::light": "#1570ef",
-            "core--minimalist::dark": "#1e5bb7"
+            "core--minimalist::light": "#006df4",
+            "core--minimalist::dark": "#3c82ed"
           },
           "info.surface-solid-hover": {
-            "core--minimalist::light": "#1f66ce",
-            "core--minimalist::dark": "#1f4b90"
+            "core--minimalist::light": "#0060d8",
+            "core--minimalist::dark": "#a7cfff"
           },
           "info.surface-solid-pressed": {
-            "core--minimalist::light": "#3169c1",
-            "core--minimalist::dark": "#1e3e6f"
+            "core--minimalist::light": "#0053bd",
+            "core--minimalist::dark": "#cfe7ff"
           },
           "info.on-solid": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#e5e4e8"
+            "core--minimalist::dark": "#100e13"
           },
           "info.content": {
-            "core--minimalist::light": "#3169c1",
+            "core--minimalist::light": "#0053bd",
             "core--minimalist::dark": "#a7cfff"
           },
           "info.border": {
@@ -886,7 +894,7 @@
             "core--minimalist::dark": "#3489ff63"
           },
           "info.border-strong": {
-            "core--minimalist::light": "#1570ef",
+            "core--minimalist::light": "#006df4",
             "core--minimalist::dark": "#3c82ed"
           }
         },
@@ -917,7 +925,7 @@
           },
           "focus": {
             "core--minimalist::light": "#874fff",
-            "core--minimalist::dark": "#d2c4ff"
+            "core--minimalist::dark": "#905cff"
           },
           "ring.default": {
             "core--minimalist::light": "#3005fc4f",
@@ -926,6 +934,28 @@
           "rim-highlight": {
             "core--minimalist::light": "#ffffff0d",
             "core--minimalist::dark": "#ffffff0d"
+          },
+          "inverse": {
+            "core--minimalist::light": "#ffffff4d",
+            "core--minimalist::dark": "#0000004d"
+          }
+        },
+        "elevation": {
+          "shadow-key": {
+            "core--minimalist::light": "#0000001a",
+            "core--minimalist::dark": "#00000066"
+          },
+          "shadow-ambient": {
+            "core--minimalist::light": "#0000000d",
+            "core--minimalist::dark": "#00000033"
+          },
+          "shadow-ring": {
+            "core--minimalist::light": "#ffffff0d",
+            "core--minimalist::dark": "#ffffff0d"
+          },
+          "highlight": {
+            "core--minimalist::light": "#ffffff26",
+            "core--minimalist::dark": "#ffffff26"
           }
         }
       }
@@ -1266,24 +1296,9 @@
         "inset-control": "3",
         "inset-surface": "5",
         "inset-page": "8",
-        "overlap-xs": "dimension--2",
+        "inset-section": "24",
         "overlap-sm": "dimension--4",
-        "overlap-md": "dimension--8",
-        "overlap-lg": "dimension--16",
-        "overlap-xl": "dimension--24",
-        "overlap-2xl": "dimension--32",
-        "inset-control-top": "3",
-        "inset-control-right": "3",
-        "inset-control-bottom": "3",
-        "inset-control-left": "3",
-        "inset-surface-top": "5",
-        "inset-surface-right": "5",
-        "inset-surface-bottom": "5",
-        "inset-surface-left": "5",
-        "inset-page-top": "8",
-        "inset-page-right": "8",
-        "inset-page-bottom": "8",
-        "inset-page-left": "8"
+        "overlap-md": "dimension--8"
       },
       "spacingRoleRefs": {
         "none": "0",
@@ -1291,27 +1306,22 @@
         "gap-control": "component-sm",
         "gap-group": "section-sm",
         "gap-section": "section-md",
-        "inset-control": "component-md",
+        "inset-control": "3",
         "inset-surface": "5",
-        "inset-page": "layout-xs",
-        "overlap-xs": "dimension--2",
+        "inset-page": "8",
+        "inset-section": "24",
         "overlap-sm": "dimension--4",
-        "overlap-md": "dimension--8",
-        "overlap-lg": "dimension--16",
-        "overlap-xl": "dimension--24",
-        "overlap-2xl": "dimension--32",
-        "inset-control-top": "component-md",
-        "inset-control-right": "component-md",
-        "inset-control-bottom": "component-md",
-        "inset-control-left": "component-md",
-        "inset-surface-top": "5",
-        "inset-surface-right": "5",
-        "inset-surface-bottom": "5",
-        "inset-surface-left": "5",
-        "inset-page-top": "layout-xs",
-        "inset-page-right": "layout-xs",
-        "inset-page-bottom": "layout-xs",
-        "inset-page-left": "layout-xs"
+        "overlap-md": "dimension--8"
+      },
+      "spacingRoleViewports": {
+        "tablet": {
+          "inset-page": "4",
+          "inset-section": "16"
+        },
+        "mobile": {
+          "inset-page": "4",
+          "inset-section": "12"
+        }
       },
       "padding": {
         "top": "20px",
@@ -1339,7 +1349,22 @@
         "overlay": "2xl",
         "pill": "full"
       },
-      "radiusRoleViewports": {},
+      "radiusRoleViewports": {
+        "tablet": {
+          "control": "lg",
+          "action": "lg",
+          "container": "2xl",
+          "overlay": "2xl",
+          "pill": "full"
+        },
+        "mobile": {
+          "control": "lg",
+          "action": "lg",
+          "container": "2xl",
+          "overlay": "2xl",
+          "pill": "full"
+        }
+      },
       "shadows": {
         "xs": "0 1px 1px rgba(10,13,18,0.03)",
         "sm": "0 1px 2px rgba(10,13,18,0.05)",
@@ -1474,7 +1499,16 @@
         "control": "md",
         "touch": "lg",
         "hit": "xs",
-        "fab": "xl"
+        "fab": "xl",
+        "target-min": "xs"
+      },
+      "sizeRoleViewports": {
+        "tablet": {
+          "target-min": "dimension-44"
+        },
+        "mobile": {
+          "target-min": "dimension-44"
+        }
       },
       "selector": {
         "xs": "12px",
@@ -1484,9 +1518,8 @@
         "xl": "24px"
       },
       "selectorRoles": {
-        "control": "md",
-        "compact": "sm",
-        "indicator": "xs"
+        "control": "dimension-20",
+        "compact": "dimension-16"
       },
       "stroke": {
         "none": "0px",
@@ -2090,24 +2123,9 @@
         "inset-control": "3",
         "inset-surface": "5",
         "inset-page": "8",
-        "overlap-xs": "dimension--2",
+        "inset-section": "24",
         "overlap-sm": "dimension--4",
-        "overlap-md": "dimension--8",
-        "overlap-lg": "dimension--16",
-        "overlap-xl": "dimension--24",
-        "overlap-2xl": "dimension--32",
-        "inset-control-top": "3",
-        "inset-control-right": "3",
-        "inset-control-bottom": "3",
-        "inset-control-left": "3",
-        "inset-surface-top": "5",
-        "inset-surface-right": "5",
-        "inset-surface-bottom": "5",
-        "inset-surface-left": "5",
-        "inset-page-top": "8",
-        "inset-page-right": "8",
-        "inset-page-bottom": "8",
-        "inset-page-left": "8"
+        "overlap-md": "dimension--8"
       },
       "spacingRoleRefs": {
         "none": "0",
@@ -2115,27 +2133,22 @@
         "gap-control": "component-sm",
         "gap-group": "section-sm",
         "gap-section": "section-md",
-        "inset-control": "component-md",
+        "inset-control": "3",
         "inset-surface": "5",
-        "inset-page": "layout-xs",
-        "overlap-xs": "dimension--2",
+        "inset-page": "8",
+        "inset-section": "24",
         "overlap-sm": "dimension--4",
-        "overlap-md": "dimension--8",
-        "overlap-lg": "dimension--16",
-        "overlap-xl": "dimension--24",
-        "overlap-2xl": "dimension--32",
-        "inset-control-top": "component-md",
-        "inset-control-right": "component-md",
-        "inset-control-bottom": "component-md",
-        "inset-control-left": "component-md",
-        "inset-surface-top": "5",
-        "inset-surface-right": "5",
-        "inset-surface-bottom": "5",
-        "inset-surface-left": "5",
-        "inset-page-top": "layout-xs",
-        "inset-page-right": "layout-xs",
-        "inset-page-bottom": "layout-xs",
-        "inset-page-left": "layout-xs"
+        "overlap-md": "dimension--8"
+      },
+      "spacingRoleViewports": {
+        "tablet": {
+          "inset-page": "4",
+          "inset-section": "16"
+        },
+        "mobile": {
+          "inset-page": "4",
+          "inset-section": "12"
+        }
       },
       "padding": {
         "top": "20px",
@@ -2163,7 +2176,22 @@
         "overlay": "2xl",
         "pill": "full"
       },
-      "radiusRoleViewports": {},
+      "radiusRoleViewports": {
+        "tablet": {
+          "control": "lg",
+          "action": "lg",
+          "container": "2xl",
+          "overlay": "2xl",
+          "pill": "full"
+        },
+        "mobile": {
+          "control": "lg",
+          "action": "lg",
+          "container": "2xl",
+          "overlay": "2xl",
+          "pill": "full"
+        }
+      },
       "shadows": {
         "xs": "0 1px 1px rgba(10,13,18,0.03)",
         "sm": "0 1px 2px rgba(10,13,18,0.05)",
@@ -2298,7 +2326,16 @@
         "control": "md",
         "touch": "lg",
         "hit": "xs",
-        "fab": "xl"
+        "fab": "xl",
+        "target-min": "xs"
+      },
+      "sizeRoleViewports": {
+        "tablet": {
+          "target-min": "dimension-44"
+        },
+        "mobile": {
+          "target-min": "dimension-44"
+        }
       },
       "selector": {
         "xs": "12px",
@@ -2308,9 +2345,8 @@
         "xl": "24px"
       },
       "selectorRoles": {
-        "control": "md",
-        "compact": "sm",
-        "indicator": "xs"
+        "control": "dimension-20",
+        "compact": "dimension-16"
       },
       "stroke": {
         "none": "0px",
@@ -2585,30 +2621,30 @@
     "fontFamily": "Inter",
     "headingFontFamily": "Inter",
     "sizes": {
-      "text-xs": "12px",
-      "text-sm": "14px",
-      "text-md": "16px",
-      "text-lg": "18px",
-      "text-xl": "20px",
-      "display-xs": "24px",
-      "display-sm": "30px",
-      "display-md": "36px",
-      "display-lg": "48px",
-      "display-xl": "60px",
-      "display-2xl": "72px"
+      "text-xs": "11px",
+      "text-sm": "12px",
+      "text-md": "14px",
+      "text-lg": "16px",
+      "text-xl": "18px",
+      "display-xs": "21px",
+      "display-sm": "26px",
+      "display-md": "32px",
+      "display-lg": "42px",
+      "display-xl": "53px",
+      "display-2xl": "63px"
     },
     "lineHeights": {
-      "text-xs": "18px",
-      "text-sm": "20px",
-      "text-md": "24px",
-      "text-lg": "28px",
-      "text-xl": "30px",
-      "display-xs": "32px",
-      "display-sm": "38px",
-      "display-md": "44px",
-      "display-lg": "60px",
-      "display-xl": "72px",
-      "display-2xl": "90px"
+      "text-xs": "16px",
+      "text-sm": "18px",
+      "text-md": "21px",
+      "text-lg": "25px",
+      "text-xl": "26px",
+      "display-xs": "28px",
+      "display-sm": "33px",
+      "display-md": "39px",
+      "display-lg": "53px",
+      "display-xl": "63px",
+      "display-2xl": "79px"
     },
     "letterSpacings": {
       "text-xs": "0px",
@@ -2616,12 +2652,12 @@
       "text-md": "0px",
       "text-lg": "0px",
       "text-xl": "-0.2px",
-      "display-xs": "-0.4px",
-      "display-sm": "-0.6px",
-      "display-md": "-0.7px",
-      "display-lg": "-1px",
-      "display-xl": "-1.2px",
-      "display-2xl": "-1.4px"
+      "display-xs": "-0.3px",
+      "display-sm": "-0.5px",
+      "display-md": "-0.6px",
+      "display-lg": "-0.8px",
+      "display-xl": "-1.1px",
+      "display-2xl": "-1.3px"
     },
     "weights": {
       "regular": 400,
@@ -3043,24 +3079,9 @@
     "inset-control": "3",
     "inset-surface": "5",
     "inset-page": "8",
-    "overlap-xs": "dimension--2",
+    "inset-section": "24",
     "overlap-sm": "dimension--4",
-    "overlap-md": "dimension--8",
-    "overlap-lg": "dimension--16",
-    "overlap-xl": "dimension--24",
-    "overlap-2xl": "dimension--32",
-    "inset-control-top": "3",
-    "inset-control-right": "3",
-    "inset-control-bottom": "3",
-    "inset-control-left": "3",
-    "inset-surface-top": "5",
-    "inset-surface-right": "5",
-    "inset-surface-bottom": "5",
-    "inset-surface-left": "5",
-    "inset-page-top": "8",
-    "inset-page-right": "8",
-    "inset-page-bottom": "8",
-    "inset-page-left": "8"
+    "overlap-md": "dimension--8"
   },
   "spacingRoleRefs": {
     "none": "0",
@@ -3068,27 +3089,12 @@
     "gap-control": "component-sm",
     "gap-group": "section-sm",
     "gap-section": "section-md",
-    "inset-control": "component-md",
+    "inset-control": "3",
     "inset-surface": "5",
-    "inset-page": "layout-xs",
-    "overlap-xs": "dimension--2",
+    "inset-page": "8",
+    "inset-section": "24",
     "overlap-sm": "dimension--4",
-    "overlap-md": "dimension--8",
-    "overlap-lg": "dimension--16",
-    "overlap-xl": "dimension--24",
-    "overlap-2xl": "dimension--32",
-    "inset-control-top": "component-md",
-    "inset-control-right": "component-md",
-    "inset-control-bottom": "component-md",
-    "inset-control-left": "component-md",
-    "inset-surface-top": "5",
-    "inset-surface-right": "5",
-    "inset-surface-bottom": "5",
-    "inset-surface-left": "5",
-    "inset-page-top": "layout-xs",
-    "inset-page-right": "layout-xs",
-    "inset-page-bottom": "layout-xs",
-    "inset-page-left": "layout-xs"
+    "overlap-md": "dimension--8"
   },
   "spacingResponsive": {
     "component-xl": {
@@ -3182,6 +3188,16 @@
       "mobile": "0"
     }
   },
+  "spacingRoleViewports": {
+    "tablet": {
+      "inset-page": "4",
+      "inset-section": "16"
+    },
+    "mobile": {
+      "inset-page": "4",
+      "inset-section": "12"
+    }
+  },
   "padding": {
     "top": "20px",
     "right": "20px",
@@ -3202,13 +3218,28 @@
     "5xl": "48px"
   },
   "radiusRoles": {
-    "control": "sm",
+    "control": "lg",
     "action": "xl",
     "container": "2xl",
     "overlay": "2xl",
     "pill": "full"
   },
-  "radiusRoleViewports": {},
+  "radiusRoleViewports": {
+    "tablet": {
+      "control": "lg",
+      "action": "xl",
+      "container": "2xl",
+      "overlay": "2xl",
+      "pill": "full"
+    },
+    "mobile": {
+      "control": "lg",
+      "action": "xl",
+      "container": "2xl",
+      "overlay": "2xl",
+      "pill": "full"
+    }
+  },
   "radiusResponsive": {
     "none": {
       "desktop": "none",
@@ -3263,8 +3294,8 @@
   },
   "gradients": {
     "brand-cover": "linear-gradient(135deg, #015ef0 0%, #183568 100%)",
-    "aurora": "linear-gradient(120deg, #6fa0f6 0%, #015ef0 50%, #3269ce 100%)",
-    "moss-glow": "radial-gradient(circle at 30% 30%, #6fa0f6 0%, #3269ce 100%)"
+    "aurora": "linear-gradient(120deg, #6fa0f6 0%, #015ef0 50%, #2c63c8 100%)",
+    "moss-glow": "radial-gradient(circle at 30% 30%, #6fa0f6 0%, #2c63c8 100%)"
   },
   "gradientsDark": {
     "brand-cover": "linear-gradient(135deg, #015ef0 0%, #d0e7ff 100%)",
@@ -3274,8 +3305,8 @@
   "gradientsByTheme": {
     "core--minimalist::light": {
       "brand-cover": "linear-gradient(135deg, #874fff 0%, #3a2b68 100%)",
-      "aurora": "linear-gradient(120deg, #ad99fe 0%, #874fff 50%, #7556cc 100%)",
-      "moss-glow": "radial-gradient(circle at 30% 30%, #ad99fe 0%, #7556cc 100%)"
+      "aurora": "linear-gradient(120deg, #ad99fe 0%, #874fff 50%, #7252c9 100%)",
+      "moss-glow": "radial-gradient(circle at 30% 30%, #ad99fe 0%, #7252c9 100%)"
     },
     "core--minimalist::dark": {
       "brand-cover": "linear-gradient(135deg, #905cff 0%, #e8e0ff 100%)",
@@ -3302,6 +3333,282 @@
     "lg": "0 0 0 1px rgba(255,255,255,0.058), 0 12px 16px -4px rgba(0,0,0,0.394), 0 4px 6px -2px rgba(0,0,0,0.167)",
     "xl": "0 0 0 1px rgba(255,255,255,0.058), 0 20px 24px -4px rgba(0,0,0,0.394), 0 8px 8px -4px rgba(0,0,0,0.167)",
     "2xl": "0 0 0 1px rgba(255,255,255,0.093), 0 24px 48px -12px rgba(0,0,0,0.696)"
+  },
+  "elevation": {
+    "shadow": {
+      "xs": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 2,
+          "spread": 0,
+          "role": "ambient"
+        }
+      ],
+      "sm": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 3,
+          "spread": 0,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 2,
+          "spread": -1,
+          "role": "key"
+        }
+      ],
+      "md": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "blur": 6,
+          "spread": -1,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "blur": 4,
+          "spread": -2,
+          "role": "ambient"
+        }
+      ],
+      "lg": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "blur": 16,
+          "spread": -4,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "blur": 6,
+          "spread": -2,
+          "role": "ambient"
+        }
+      ],
+      "xl": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 20,
+          "blur": 24,
+          "spread": -4,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 8,
+          "blur": 8,
+          "spread": -4,
+          "role": "ambient"
+        }
+      ],
+      "2xl": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 24,
+          "blur": 48,
+          "spread": -12,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 24,
+          "blur": 48,
+          "spread": -12,
+          "role": "key"
+        }
+      ]
+    },
+    "depth": {
+      "xs": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 2,
+          "spread": 0,
+          "role": "ambient"
+        }
+      ],
+      "sm": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 3,
+          "spread": 0,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 2,
+          "spread": -1,
+          "role": "key"
+        }
+      ],
+      "md": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "blur": 4,
+          "spread": -1,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 2,
+          "spread": -1,
+          "role": "ambient"
+        }
+      ],
+      "lg": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "blur": 8,
+          "spread": -2,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "blur": 4,
+          "spread": -2,
+          "role": "ambient"
+        }
+      ],
+      "xl": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 8,
+          "blur": 16,
+          "spread": -4,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "blur": 8,
+          "spread": -4,
+          "role": "ambient"
+        }
+      ],
+      "2xl": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 0,
+          "spread": 1,
+          "role": "ring"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "blur": 24,
+          "spread": -6,
+          "role": "key"
+        },
+        {
+          "x": 0,
+          "y": 6,
+          "blur": 12,
+          "spread": -6,
+          "role": "ambient"
+        }
+      ]
+    },
+    "blur": {
+      "xs": 4,
+      "sm": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 24,
+      "2xl": 40
+    }
   },
   "grid": {
     "columns": "12",
@@ -3421,7 +3728,16 @@
     "control": "md",
     "touch": "lg",
     "hit": "xs",
-    "fab": "xl"
+    "fab": "xl",
+    "target-min": "xs"
+  },
+  "sizeRoleViewports": {
+    "tablet": {
+      "target-min": "dimension-44"
+    },
+    "mobile": {
+      "target-min": "dimension-44"
+    }
   },
   "selector": {
     "xs": "12px",
@@ -3431,9 +3747,8 @@
     "xl": "24px"
   },
   "selectorRoles": {
-    "control": "md",
-    "compact": "sm",
-    "indicator": "xs"
+    "control": "dimension-20",
+    "compact": "dimension-16"
   },
   "stroke": {
     "none": "0px",
@@ -4780,6 +5095,143 @@
           "direction": "Fallback for storytelling changes."
         }
       }
+    }
+  },
+  "socialBrands": {
+    "google": {
+      "label": "Google",
+      "ramp": {
+        "500": "#db4437",
+        "600": "#c53d32",
+        "700": "#af362c"
+      },
+      "action": {
+        "default": "500",
+        "hover": "600",
+        "pressed": "700"
+      },
+      "onAction": "white",
+      "focus": "black"
+    },
+    "apple": {
+      "label": "Apple",
+      "ramp": {
+        "300": "#333333",
+        "400": "#1f1f1f",
+        "500": "#000000"
+      },
+      "action": {
+        "default": "500",
+        "hover": "400",
+        "pressed": "300"
+      },
+      "onAction": "white",
+      "focus": "white"
+    },
+    "discord": {
+      "label": "Discord",
+      "ramp": {
+        "500": "#5865f2",
+        "600": "#4f5bda",
+        "700": "#4651c2"
+      },
+      "action": {
+        "default": "500",
+        "hover": "600",
+        "pressed": "700"
+      },
+      "onAction": "white",
+      "focus": "white"
+    },
+    "dribbble": {
+      "label": "Dribbble",
+      "ramp": {
+        "500": "#ea4c89",
+        "600": "#d3447b",
+        "700": "#bb3d6e"
+      },
+      "action": {
+        "default": "500",
+        "hover": "600",
+        "pressed": "700"
+      },
+      "onAction": "white",
+      "focus": "black"
+    },
+    "facebook": {
+      "label": "Facebook",
+      "ramp": {
+        "500": "#1877f2",
+        "600": "#166bda",
+        "700": "#135fc2"
+      },
+      "action": {
+        "default": "500",
+        "hover": "600",
+        "pressed": "700"
+      },
+      "onAction": "white",
+      "focus": "black"
+    },
+    "github": {
+      "label": "GitHub",
+      "ramp": {
+        "300": "#505459",
+        "400": "#3e4348",
+        "500": "#24292f"
+      },
+      "action": {
+        "default": "500",
+        "hover": "400",
+        "pressed": "300"
+      },
+      "onAction": "white",
+      "focus": "white"
+    },
+    "linkedin": {
+      "label": "LinkedIn",
+      "ramp": {
+        "500": "#0a66c2",
+        "600": "#095caf",
+        "700": "#08529b"
+      },
+      "action": {
+        "default": "500",
+        "hover": "600",
+        "pressed": "700"
+      },
+      "onAction": "white",
+      "focus": "white"
+    },
+    "slack": {
+      "label": "Slack",
+      "ramp": {
+        "300": "#6e446f",
+        "400": "#603161",
+        "500": "#4a154b"
+      },
+      "action": {
+        "default": "500",
+        "hover": "400",
+        "pressed": "300"
+      },
+      "onAction": "white",
+      "focus": "white"
+    },
+    "x": {
+      "label": "X",
+      "ramp": {
+        "300": "#333333",
+        "400": "#1f1f1f",
+        "500": "#000000"
+      },
+      "action": {
+        "default": "500",
+        "hover": "400",
+        "pressed": "300"
+      },
+      "onAction": "white",
+      "focus": "white"
     }
   },
   "style": null,
@@ -10363,13 +10815,20 @@
       "border/brand-alt": "Brand border; turns gray in dark mode.",
       "border/error": "Error border — invalid inputs.",
       "border/error-subtle": "Subtle error border.",
+      "Elevation/highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.",
+      "Elevation/shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
+      "Elevation/shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
+      "Elevation/shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
+      "Border/inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
+      "Content/inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
+      "Surface/inverse-muted": "[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse — a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.",
       "Surface/page": "[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.",
       "Surface/layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
       "Surface/layer-2": "[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.",
       "Surface/input": "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
       "Surface/selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "Surface/selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.",
-      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} — a muted inverse chip, not the dark ramp's near-white step.",
+      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "Surface/overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.",
       "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
@@ -10379,26 +10838,26 @@
       "Content/subtle": "[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.",
       "Content/disabled": "[ROLE: Inactive Text] Disabled controls and copy. Exempt from strict WCAG rules — must communicate inactivity, not full legibility.",
       "Content/inverse": "[ROLE: Inverted Text] Required when the background is surface.inverse or any dark/solid fill outside the accent.",
-      "Content/on-action": "[ROLE: Button Text] Label ink used ONLY on action.primary.default. Solved per theme against that fill — never assume white. Must exceed 4.5:1 against the button fill.",
+      "Content/on-action": "[ROLE: Button Text] Label ink used ONLY on action.primary.*. The ink the fill was solved WITH: the light page in Light, the dark page in Dark for the default system — never assume white. Exceeds 4.5:1 against every primary state.",
       "Content/on-secondary": "[ROLE: Secondary Button Text] Label ink used ONLY on action.secondary.*. {neutral.12} in light — content.primary while secondary is a light wash; re-pointed with the fill when a system makes secondary a dark button. Must exceed 4.5:1 against the fill.",
       "Content/accent": "[ROLE: Accent Text] Brand-tinted emphasis — active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).",
       "Content/link/default": "[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.",
       "Content/link/hover": "[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.",
-      "Action/primary/default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
-      "Action/primary/hover": "[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) — one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)",
-      "Action/primary/pressed": "[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) — two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)",
+      "Action/primary/default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.",
+      "Action/primary/hover": "[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) — darker under a light ink (Light 10), lighter under a dark ink (Dark 11) — re-verified for label contrast.",
+      "Action/primary/pressed": "[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) — Light 11, Dark 12 — re-verified for label contrast.",
       "Action/secondary/default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.",
       "Action/secondary/hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.",
-      "Action/secondary/pressed": "[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.on-secondary.",
+      "Action/secondary/pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} — two steps past action.secondary.default. Label stays content.on-secondary.",
       "Action/disabled/default": "[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.2} in dark — so it reads as \"muted\" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.",
       "Action/ghost/default": "[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "Action/ghost/hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.",
       "Action/ghost/pressed": "[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.",
       "Status/critical/surface": "[ROLE: Feedback Background Subtle] Affects error alerts, banners, toasts, destructive row-menu items. Tinted background. Pair with status.critical.content — never a fixed ink on the bg alone.",
-      "Status/critical/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a \"dismiss\" on an error banner. {error-a.5} — two steps deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.",
-      "Status/warning/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.5}.",
-      "Status/success/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.5}.",
-      "Status/info/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.5}.",
+      "Status/critical/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a \"dismiss\" on an error banner. {error-a.4} in Light, {error-a.5} in Dark — one step deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.",
+      "Status/warning/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.4} in Light, {warning-a.5} in Dark.",
+      "Status/success/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.4} in Light, {success-a.5} in Dark.",
+      "Status/info/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.4} in Light, {info-a.5} in Dark.",
       "Status/critical/surface-solid": "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes — solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
       "Status/critical/content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix's chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
       "Status/critical/on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
@@ -10432,10 +10891,10 @@
       "Status/info/border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "Border/subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "Border/default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.",
-      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. A HAIRLINE at the weight modern systems draw it (shadcn's --border): SOLVED on the alpha ladder ({ctl-a:…}) to a 1.4:1 visibility floor, the first step visibly off the page — {black-a.3} (1.41:1) in light, {white-a.3} (1.50:1) in dark for the default system. It does NOT clear WCAG 1.4.11 on its own by design: a control that must be identified without a fill gives itself one (surface.input a step off the page).",
-      "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
+      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:…}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.",
+      "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.",
       "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
-      "Border/focus": "[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned — the ring is always the user's own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only — the translucent halo is border.ring.*.",
+      "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
       "Border/ring/default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.",
       "Border/rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.",
       "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
@@ -10456,24 +10915,21 @@
       "role/inset-control": "Padding inside buttons, inputs, chips.",
       "role/inset-surface": "Card / modal / alert padding.",
       "role/inset-page": "Page and sheet margins when Grid is unused.",
-      "role/overlap-xs": "Barely touching — dense avatar stacks.",
+      "role/inset-section": "Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.",
       "role/overlap-sm": "A hairline tuck.",
-      "role/overlap-md": "The default avatar-stack overlap.",
-      "role/overlap-lg": "A third of a 48px avatar.",
-      "role/overlap-xl": "Heavily stacked; only the edge shows.",
-      "role/overlap-2xl": "Nearly fully covered — a count badge on a stack."
+      "role/overlap-md": "The default avatar-stack overlap."
     },
     "Size": {
       "role/compact": "Toolbars, dense tables.",
       "role/control": "Default button, input, select height.",
       "role/touch": "Mobile CTA. 48px covers HIG 44.",
       "role/hit": "Close button and icon-only hit area.",
-      "role/fab": "Floating action button."
+      "role/fab": "Floating action button.",
+      "role/target-min": "Smallest interactive target: WCAG 2.2 24px on Desktop, 44px (HIG) on touch viewports."
     },
     "Selector": {
-      "role/control": "Checkbox, radio, switch track height.",
-      "role/compact": "The same glyphs in a dense row or table.",
-      "role/indicator": "Badge dot, status pip, unread marker."
+      "role/control": "Checkbox, radio, switch track height (component Size=default).",
+      "role/compact": "The same glyphs in a dense row or table (Size=sm and xs)."
     },
     "Border": {
       "role/divider": "Separator, table rules, layout splits.",

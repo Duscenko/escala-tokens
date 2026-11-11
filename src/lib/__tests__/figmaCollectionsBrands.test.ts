@@ -95,7 +95,8 @@ describe('Figma collections with several brands', () => {
   it('one brand: the five collections, no Brand', () => {
     const one = figmaCollectionsSnapshot(escala as Tokens)
     expect(one.collections.map((c) => c.name)).toEqual([...FIGMA_COLLECTION_ORDER])
-    expect(col(one, 'Color Semantics').modes).toEqual(['escala Light', 'escala Dark'])
+    // Mode names start upper-case: the system's name, not its slug.
+    expect(col(one, 'Color Semantics').modes).toEqual(['Escala Light', 'Escala Dark'])
   })
 
   it('a Brand collection with one mode per brand, named as the brand was', () => {
@@ -145,9 +146,9 @@ describe('Figma collections with several brands', () => {
 
   it('each brand resolves the colours, spacing, radii and families it has alone', () => {
     const cases: [Loose, string, [string, string][]][] = [
-      [escala, 'Escala', [['Light', 'escala Light'], ['Dark', 'escala Dark']]],
-      [hola, 'Hola', [['Light', 'hola Light'], ['Dark', 'hola Light']]],
-      [otra, 'Otra', [['Light', 'otra Dark'], ['Dark', 'otra Dark']]],
+      [escala, 'Escala', [['Light', 'Escala Light'], ['Dark', 'Escala Dark']]],
+      [hola, 'Hola', [['Light', 'Hola Light'], ['Dark', 'Hola Light']]],
+      [otra, 'Otra', [['Light', 'Otra Dark'], ['Dark', 'Otra Dark']]],
     ]
     for (const [alone, label, columns] of cases) {
       const own = figmaCollectionsSnapshot(alone as Tokens)
@@ -179,7 +180,7 @@ describe('Figma collections with several brands', () => {
       .filter(([, , x]) => isSnapAlias(x) && x.alias.collection === BRAND_COLLECTION)
     expect(branded.length).toBeGreaterThan(0)
     for (const [n, m, x] of branded) {
-      expect(n).toMatch(/^(Spacing\/role|Radius\/(role|component))\//)
+      expect(n).toMatch(/^(Spacing|Radius)\//)
       expect((x as { alias: { name: string } }).alias.name).toBe(`${n}/${m.toLowerCase()}`)
     }
   })

@@ -12,7 +12,7 @@
 // mirrors what `mintTheme` would produce, minus the commit.
 
 import {
-  generateColorScale, generateLightNeutralScale,
+  generateColorScale, generateStatusScale, generateLightNeutralScale,
   generateDarkColorScale,
   generateFamilyDarkScale,
 } from './colorUtils'
@@ -216,13 +216,13 @@ export function stylePreviewStore(
     primaryDarkScale: generateFamilyDarkScale(preset.darkAccent ?? preset.accent, alg, shift, dark),
     grayLightScale: generateLightNeutralScale(h.neutral, alg, shift, light, tint),
     grayDarkScale: generateDarkColorScale(h.neutral, alg, shift, dark, tint),
-    errorScale: generateColorScale(st.error, alg, shift, light),
+    errorScale: generateStatusScale(st.error, alg, shift, light),
     errorDarkScale: generateFamilyDarkScale(st.error, alg, shift, dark),
-    warningScale: generateColorScale(st.warning, alg, shift, light),
+    warningScale: generateStatusScale(st.warning, alg, shift, light),
     warningDarkScale: generateFamilyDarkScale(st.warning, alg, shift, dark),
-    successScale: generateColorScale(st.success, alg, shift, light),
+    successScale: generateStatusScale(st.success, alg, shift, light),
     successDarkScale: generateFamilyDarkScale(st.success, alg, shift, dark),
-    infoScale: generateColorScale(st.info, alg, shift, light),
+    infoScale: generateStatusScale(st.info, alg, shift, light),
     infoDarkScale: generateFamilyDarkScale(st.info, alg, shift, dark),
     // Try-on must not inherit the open system's custom families — those are
     // leftover Core/Material/… ramps that made Theme-doc "Primitives" claim

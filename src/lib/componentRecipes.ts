@@ -21,8 +21,10 @@
  *
  * A reference is `<namespace>.<name>`:
  *   color.<categorical role id>  → `--color-<id with dashes>`  · Figma `Action/primary/default`
- *   size.<role|step>             → `--size-<name>`
- *   radius.<role>                → `--radius-<name>`
+ *   size.<role|step>             → `--size-<name>`; a role takes its Figma name (`size.hit` → `--size-control-xs`)
+ *   selector.<role|step>         → `--size-selector-md|sm` (roles) · `--selector-<step>`
+ *   icon.<role>                  → `--size-icon-sm|md|lg`
+ *   radius.<role>                → `--radius-<name>` (`radius.pill` → `--radius-full`)
  *   spacing.<role|step>          → `--spacing-<name>`
  *   stroke.<role>                → `--stroke-<name>`
  *   type.<role>                  → `--text-<name>-font-size|line-height|font-weight|font-family|letter-spacing`
@@ -48,6 +50,7 @@ export {
   type TokenRef, type RecipeProp, type SlotProps, type RecipeMotion, type RecipeChoreo, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
 } from './recipes/helpers.js'
 import { RECIPE_MOTION } from './recipes/motion.js'
+import { roleCssVar } from './roleNames.js'
 import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
@@ -232,7 +235,10 @@ export function cssVarOf(ref: TokenRef, facet = 'font-size'): string {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return `--color-${name.replace(/\./g, '-')}`
   if (ns === 'type') return `--text-${name}-${facet}`
-  return `--${ns}-${name}`
+  // A dimension ROLE takes the Figma file's code-syntax name (`size.hit` →
+  // `--size-control-xs`, `radius.pill` → `--radius-full`); a scale step keeps
+  // its own (`size.md` → `--size-md`).
+  return roleCssVar(ns, name)
 }
 
 /** `tokens.json` payload: the recipes as plain data (they already are). */

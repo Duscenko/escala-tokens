@@ -73,6 +73,11 @@ export const TYPE_SCALE_MODES = [
   { key: 'spacious', label: 'Spacious', factor: 1.125 },
 ] as const
 export type TypeScaleMode = (typeof TYPE_SCALE_MODES)[number]['key']
+/** The text size dial a NEW system starts on: Compact, the Escala Figma
+ *  file's scale (11 · 12 · 14 · 16 · 18 · 21 · 26 · 32 · 42 · 53 · 63, owner
+ *  decision 2026-11-11). `FONT_SIZE_STANDARD` stays the factor-1 table every
+ *  mode multiplies, so an existing system on Default does not restyle. */
+export const DEFAULT_TYPE_SCALE_FACTOR = 0.875
 
 export function buildTypeScale(factor: number): {
   sizes: Record<string, string>

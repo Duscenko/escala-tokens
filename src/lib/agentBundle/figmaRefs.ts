@@ -3,11 +3,12 @@
 // MIRRORS the plugin (`escala-figma-plugin/src/code.ts`), which is the source
 // of truth for what a Figma variable or style is called:
 //   color.<role>        → `Color Semantics`     `Action/primary/default`
-//   <dim>.<role>        → `Dimension Semantics` `Radius/role/action`, `Spacing/role/gap-group`
+//   <dim>.<role>        → `Dimension Semantics` `Radius/action`, `Spacing/gap-group`,
+//                         `Size/control-xs` (size.hit), `Size/selector-md`, `Radius/full`
 //   <dim>.<step>        → `Dimension Primitives` named by its px (`10`, `2_5`) —
 //                         a bare step is not published as a semantic, the plugin
 //                         binds "the Dimension primitive of that exact px"
-//   icon.<role>         → `Dimension Semantics` `Icon/role/medium`
+//   icon.<role>         → `Dimension Semantics` `Size/icon-md`
 //   type.<role>         → text style `Type/label`
 //   shadow.<step>       → effect style `Shadow/lg`
 // A reference this system does not publish resolves to null: a skill writes
@@ -15,6 +16,7 @@
 
 import { dimensionKey } from '../dimensionCore'
 import { figmaSemanticName } from './names'
+import { roleFigmaName } from '../roleNames'
 import type { TokenJSON } from './types'
 
 export type FigmaCollection =
@@ -59,10 +61,13 @@ function oneRef(ref: string, json: TokenJSON, roles: Set<string>): FigmaRef | nu
   if (ns === 'color') return roles.has(name) ? { collection: 'Color Semantics', name: figmaSemanticName(name) } : null
   if (ns === 'type') return json.typography?.roles?.[name] ? { collection: 'Text style', name: `Type/${name}` } : null
   if (ns === 'shadow') return json.shadows?.[name] ? { collection: 'Effect style', name: `Shadow/${name}` } : null
-  if (ns === 'icon') return json.icons?.sizes?.roles?.[name] ? { collection: 'Dimension Semantics', name: `Icon/role/${name}` } : null
+  if (ns === 'icon') return json.icons?.sizes?.roles?.[name] ? { collection: 'Dimension Semantics', name: roleFigmaName('icon', name) ?? `Size/icon-${name}` } : null
   const dim = DIM_GROUP[ns]
   if (!dim) return null
-  if (dim.roles(json)?.[name] !== undefined) return { collection: 'Dimension Semantics', name: `${dim.group}/role/${name}` }
+  if (dim.roles(json)?.[name] !== undefined) {
+    const figma = roleFigmaName(ns, name)
+    return figma ? { collection: 'Dimension Semantics', name: figma } : null
+  }
   const value = px(dim.scale(json)?.[name])
   if (value === null) return null
   const key = dimensionKey(value)

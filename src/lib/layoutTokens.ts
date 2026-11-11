@@ -10,6 +10,7 @@
 // `spacing-`. Steps are the public scale names (xs/sm/md… and 0/1/2/3/4/5…).
 
 import { dimensionFromKey, dimensionKey, parseDimension } from './dimensionCore'
+import { roleCssVar, roleFigmaName } from './roleNames'
 
 export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'selector' | 'stroke' | 'breakpoint'
 
@@ -100,10 +101,68 @@ export function spacingRefStep(value: string, viewport: GridViewport = 'desktop'
   return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value
 }
 
-/** Every spacing role read at one viewport (responsive refs → static steps). */
-export function spacingRolesAtViewport(roles: Record<string, string> | undefined, viewport: GridViewport): Record<string, string> {
-  const merged = withInsetSides(roles)
-  return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]))
+/** The value one spacing role reads at a viewport: its own Tablet / Mobile
+ *  value while it sits on its default (`inset-page`, `inset-section`), else
+ *  its responsive token's step, else its one static value. An inset side that
+ *  was not set by hand follows its inset. */
+export function spacingRoleAt(roles: Record<string, string> | undefined, key: string, viewport: GridViewport): string | undefined {
+  const merged = mergeLayoutRoles('spacing', roles)
+  const side = INSET_SIDE_KEYS.find((entry) => entry.key === key)
+  if (side && merged[key] === undefined) return spacingRoleAt(merged, side.role, viewport)
+  const value = merged[key]
+  if (value === undefined) return undefined
+  if (viewport !== 'desktop') {
+    const own = roleViewportDefault('spacing', key, value, viewport)
+    if (own !== undefined) return own
+  }
+  return spacingRefStep(value, viewport)
+}
+
+/** Every spacing role read at one viewport (responsive refs and per-viewport
+ *  defaults → static steps). `sides: false` leaves out the twelve inset sides —
+ *  what tokens.json ships, since the Figma file has no per-side variables. */
+export function spacingRolesAtViewport(
+  roles: Record<string, string> | undefined,
+  viewport: GridViewport,
+  opts: { sides?: boolean } = {},
+): Record<string, string> {
+  const merged = mergeLayoutRoles('spacing', roles)
+  const keys = opts.sides === false ? LAYOUT_ROLES.spacing.map((r) => r.key) : Object.keys(withInsetSides(merged))
+  return Object.fromEntries(keys.map((k) => [k, spacingRoleAt(merged, k, viewport) ?? '0']))
+}
+
+/** A role's own Tablet / Mobile value (`LayoutRole.viewports`), or undefined
+ *  when it has none or has been moved off its default `primitive`. */
+export function roleViewportDefault(family: LayoutFamily, key: string, value: string | undefined, viewport: 'tablet' | 'mobile'): string | undefined {
+  const spec = LAYOUT_ROLES[family].find((r) => r.key === key)
+  return spec?.viewports && value === spec.primitive ? spec.viewports[viewport] : undefined
+}
+
+/** Tablet / Mobile values for the roles of one family that carry their own
+ *  (see `LayoutRole.viewports`) — tokens.json's `spacingRoleViewports` and
+ *  `sizeRoleViewports`, the same `{ tablet: { role: value }, mobile: … }` shape
+ *  as `radiusRoleViewports`. A role absent here keeps its Desktop value (or
+ *  follows its responsive token, for spacing). */
+export function roleViewportsOf(
+  family: 'spacing' | 'size',
+  roles: Record<string, string> | undefined,
+): Partial<Record<'tablet' | 'mobile', Record<string, string>>> {
+  const merged = mergeLayoutRoles(family, roles)
+  const out: Partial<Record<'tablet' | 'mobile', Record<string, string>>> = {}
+  for (const vp of ['tablet', 'mobile'] as const) {
+    for (const role of LAYOUT_ROLES[family]) {
+      const own = roleViewportDefault(family, role.key, merged[role.key], vp)
+      if (own !== undefined) (out[vp] ??= {})[role.key] = own
+    }
+  }
+  return out
+}
+
+/** The value one size role reads at a viewport (`target-min` 24 / 44 / 44). */
+export function sizeRoleAt(roles: Record<string, string> | undefined, key: string, viewport: GridViewport): string | undefined {
+  const value = mergeLayoutRoles('size', roles)[key]
+  if (value === undefined || viewport === 'desktop') return value
+  return roleViewportDefault('size', key, value, viewport) ?? value
 }
 
 /** The spacing roles that point at responsive token `key`. */
@@ -121,8 +180,9 @@ export function spacingResponsiveCss(viewport: GridViewport = 'desktop'): string
     .map((key) => `--spacing-${key}: var(--spacing-${SPACING_RESPONSIVE[key][viewport]});`)
 }
 
-/** `--spacing-<role>` overrides for one smaller viewport — only the roles on a
- *  responsive token whose step changes there. */
+/** `--spacing-<role>` overrides for one smaller viewport — only the roles whose
+ *  step changes there (a responsive token, or the role's own Tablet / Mobile
+ *  value). */
 export function spacingRolesViewportCss(
   viewport: GridViewport,
   roles: Record<string, string> | undefined,
@@ -131,10 +191,8 @@ export function spacingRolesViewportCss(
   const merged = mergeLayoutRoles('spacing', roles)
   const out: string[] = []
   for (const role of LAYOUT_ROLES.spacing) {
-    const value = merged[role.key]
-    if (!isSpacingResponsiveRef(value)) continue
-    const step = spacingRefStep(value, viewport)
-    if (step === spacingRefStep(value)) continue
+    const step = spacingRoleAt(merged, role.key, viewport)
+    if (step === undefined || step === spacingRoleAt(merged, role.key, 'desktop')) continue
     out.push(`--spacing-${role.key}: ${layoutValueCss('spacing', step, spacing)};`)
   }
   // A side that follows its inset aliases it and steps down for free; a side
@@ -504,6 +562,10 @@ export function buildSizesFromBase(base: number): Record<string, string> {
 // it needs its own ramp rather than borrowing Size's. At base 3 this yields
 // 12/15/18/21/24, and 15/18 are the exact values the specimens hardcoded before
 // this collection existed — so the default is a visual no-op.
+//
+// The ROLES do not sit on this ramp: `selector.control` / `compact` are pinned
+// to the Dimension primitives 20 / 16 (`Size/selector-md|sm` in the Escala
+// Figma file, on the 4px grid). The ramp stays as primitives a role may pick.
 //
 // A selector below 24px does NOT meet WCAG 2.2 target size on its own; callers
 // wrap it in a transparent hit area (`size` role `hit`, 24px). Growing the glyph
@@ -941,6 +1003,13 @@ export interface LayoutRole {
   group: string
   /** Primitive step this role aliases by default. */
   primitive: string
+  /** The role's own Tablet / Mobile value while it sits on its default
+   *  `primitive` (a step or a pinned `dimension-*`). `inset-page` is 32 / 16 /
+   *  16 and `target-min` 24 / 44 / 44 in the Escala Figma file. A role moved
+   *  off its default holds that one value everywhere (or follows its
+   *  responsive token). Shipped as `spacingRoleViewports` /
+   *  `sizeRoleViewports` in tokens.json. */
+  viewports?: Partial<Record<'tablet' | 'mobile', string>>
 }
 
 export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: string; hint: string }[]> = {
@@ -1016,11 +1085,12 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * the export contract does not change.
  *
  * Fields then moved from 8 to 12 (`action` xl, store v105): at 8 next to a
- * 16px card the Rounded buttons read as Soft. The ladder is now **selectors 4 ·
- * fields 12 · boxes 16**.
+ * 16px card the Rounded buttons read as Soft. Selectors then moved from 4 to 8
+ * (`control` lg) to match the Escala Figma file (`Radius/control` 8). The
+ * ladder is now **selectors 8 · fields 12 · boxes 16**, all on the 4px grid.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'sm' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'lg' },
   { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'xl' },
   { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: '2xl' },
   { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '2xl' },
@@ -1151,7 +1221,7 @@ export interface RadiusRolePreset {
 export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
   { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
   { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
-  { label: 'Rounded', description: 'The standard — boxes 16, fields 12, selectors 4.', picks: { boxes: '2xl', fields: 'xl', selectors: 'sm' } },
+  { label: 'Rounded', description: 'The standard — boxes 16, fields 12, selectors 8.', picks: { boxes: '2xl', fields: 'xl', selectors: 'lg' } },
   // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
   // tags and text keeps its shape — 32 rounded the corners past the content
   // and clipped it. The full pill look is the fields'.
@@ -1268,9 +1338,13 @@ export function renameRadiusV77(
 //   Mob    none  xs   sm   md   lg   xl   xl   2xl  3xl  full   two from 3xl up
 //
 // `xs` is the floor, not a responsive token: there is nothing smaller to step
-// to, so a role on xs (or pinned to a primitive) holds one value everywhere.
-// The radius ROLES follow this table — `radius.container` on 2xl is 16 / 12 /
-// 12 — which is what makes a component's corners responsive at all.
+// to.
+//
+// The radius ROLES do NOT follow this table (owner decision 2026-11-11, the
+// Escala Figma file): `Radius/control|action|container|overlay|full` hold one
+// value on every viewport. Only a hand-set Tablet / Mobile value
+// (`radiusRoleViewports`) makes a role differ. The table stays for the
+// `--radius-component-*` tokens, which a component may opt into.
 
 export const RADIUS_RESPONSIVE_STEPS = ['none', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', 'full'] as const
 export type RadiusResponsiveStep = (typeof RADIUS_RESPONSIVE_STEPS)[number]
@@ -1289,13 +1363,14 @@ export const RADIUS_RESPONSIVE: Record<RadiusResponsiveStep, Record<GridViewport
 }
 
 /** Hand-set radius role values for the smaller viewports. A role with no
- *  entry FOLLOWS Desktop one (or two) rungs down; an entry is a step or a
- *  pinned primitive, exactly like a Desktop role value. Only what someone
- *  changed is stored, so an untouched system carries `{}`. */
+ *  entry holds its Desktop value; an entry is a step or a pinned primitive,
+ *  exactly like a Desktop role value. Only what someone changed is stored, so
+ *  an untouched system carries `{}`. */
 export type RadiusRoleViewports = Partial<Record<'tablet' | 'mobile', Record<string, string>>>
 
 /** The value one radius role reads at a viewport: Desktop's own value; on a
- *  smaller viewport the hand-set override, else Desktop stepped down. */
+ *  smaller viewport the hand-set override, else the Desktop value (radius
+ *  roles do not step down — see the table above). */
 export function radiusRoleAt(
   roles: Record<string, string> | undefined,
   viewports: RadiusRoleViewports | undefined,
@@ -1304,7 +1379,20 @@ export function radiusRoleAt(
 ): string {
   const desktop = mergeLayoutRoles('radius', roles)[role]
   if (viewport === 'desktop') return desktop
-  return viewports?.[viewport]?.[role] ?? radiusAtViewport(desktop, viewport)
+  return viewports?.[viewport]?.[role] ?? desktop
+}
+
+/** Every radius role at Tablet and Mobile, resolved — what tokens.json ships
+ *  as `radiusRoleViewports`, so a consumer that would step a role down by
+ *  `radiusResponsive` (an older plugin) reads the value the web renders. */
+export function resolvedRadiusRoleViewports(
+  roles: Record<string, string> | undefined,
+  viewports: RadiusRoleViewports | undefined,
+): Required<RadiusRoleViewports> {
+  const merged = mergeLayoutRoles('radius', roles)
+  const at = (vp: 'tablet' | 'mobile') =>
+    Object.fromEntries(Object.keys(merged).map((k) => [k, radiusRoleAt(merged, viewports, k, vp)]))
+  return { tablet: at('tablet'), mobile: at('mobile') }
 }
 
 /** The static step a role value reads at a viewport. A pinned primitive or a
@@ -1353,7 +1441,7 @@ export function radiusPickerOptions(
   return options
 }
 
-/** Every radius role read at one viewport (steps moved down, pins kept). */
+/** Every radius role read at one viewport (hand-set values, else Desktop). */
 export function radiusRolesAtViewport(
   roles: Record<string, string> | undefined,
   viewport: GridViewport,
@@ -1375,7 +1463,7 @@ export function setRadiusRoleViewport(
   value: string | null,
 ): RadiusRoleViewports {
   const next: RadiusRoleViewports = { ...viewports, [viewport]: { ...viewports?.[viewport] } }
-  const follows = radiusAtViewport(mergeLayoutRoles('radius', roles)[role], viewport)
+  const follows = mergeLayoutRoles('radius', roles)[role]
   if (value === null || value === follows) delete next[viewport]![role]
   else next[viewport]![role] = value
   if (!Object.keys(next[viewport]!).length) delete next[viewport]
@@ -1387,9 +1475,12 @@ export function setRadiusRoleViewport(
  *  block of its own). Desktop on `:root`; Tablet / Mobile override only the
  *  tokens that step down. */
 export function radiusComponentCss(viewport: GridViewport = 'desktop'): string[] {
+  // `full` reads its Dimension primitive: `--radius-full` is the ROLE
+  // (`radius.pill`), which a theme may point somewhere else.
+  const target = (step: string) => step === 'full' ? 'var(--dimension-9999)' : `var(--radius-${step})`
   return RADIUS_RESPONSIVE_STEPS
     .filter((step) => viewport === 'desktop' || RADIUS_RESPONSIVE[step][viewport] !== step)
-    .map((step) => `--radius-component-${step}: var(--radius-${RADIUS_RESPONSIVE[step][viewport]});`)
+    .map((step) => `--radius-component-${step}: ${target(RADIUS_RESPONSIVE[step][viewport])};`)
 }
 
 /** The radius roles that alias responsive token `step` (a pinned role aliases
@@ -1448,10 +1539,16 @@ export function radiusRolesAreLegacyDefault(roles: Record<string, string> | unde
 /**
  * Spacing roles alias a RESPONSIVE token where one carries their Desktop value
  * exactly (`gap-section` → `section-md`, 24 / 16 / 12), so they tighten on
- * Tablet and Mobile without any Desktop pixel moving. Two stay on a static step
- * on purpose: `none` (0 everywhere anyway) and `inset-surface` — its 20px has
- * no responsive token, and moving every card to 16 would restyle every system
- * and System Style; point it at `component-lg` in the table to opt in.
+ * Tablet and Mobile without any Desktop pixel moving. The insets match the
+ * Escala Figma file (owner decision 2026-11-11, Escala's values are the
+ * defaults of every new system): `inset-control` 12 on every viewport,
+ * `inset-surface` 20, `inset-page` 32 / 16 / 16 and `inset-section` 96 / 64 /
+ * 48 — the last two through the role's own `viewports`, since no responsive
+ * token carries those curves.
+ *
+ * `inset-section` is the VERTICAL padding of a full-width page section (hero,
+ * pricing, footer); its sides keep `inset-page`. The Overlap group keeps the
+ * two sizes the file carries (`overlap-sm` −4, `overlap-md` −8).
  */
 export const SPACING_ROLES: LayoutRole[] = [
   { key: 'none', label: 'None', description: 'Collapse a gap or inset.', group: 'gap', primitive: '0' },
@@ -1459,18 +1556,12 @@ export const SPACING_ROLES: LayoutRole[] = [
   { key: 'gap-control', label: 'Gap control', description: 'Button groups, OTP cells, field + helper.', group: 'gap', primitive: 'component-sm' },
   { key: 'gap-group', label: 'Gap group', description: 'Stacked fields, nav item groups.', group: 'gap', primitive: 'section-sm' },
   { key: 'gap-section', label: 'Gap section', description: 'Between sections, modal header → body.', group: 'gap', primitive: 'section-md' },
-  { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: 'component-md' },
+  { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: '3' },
   { key: 'inset-surface', label: 'Inset surface', description: 'Card / modal / alert padding.', group: 'inset', primitive: '5' },
-  { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: 'layout-xs' },
-  // Overlap — NEGATIVE space: how far a stacked item tucks under its neighbour
-  // (avatar stacks, overlapping badges). Pinned primitives, not steps: a spacing
-  // step is never negative, and the base-unit dial must not move an avatar stack.
-  { key: 'overlap-xs', label: 'Overlap xs', description: 'Barely touching — dense avatar stacks.', group: 'overlap', primitive: 'dimension--2' },
+  { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: '8', viewports: { tablet: '4', mobile: '4' } },
+  { key: 'inset-section', label: 'Inset section', description: 'Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.', group: 'inset', primitive: '24', viewports: { tablet: '16', mobile: '12' } },
   { key: 'overlap-sm', label: 'Overlap sm', description: 'A hairline tuck.', group: 'overlap', primitive: 'dimension--4' },
   { key: 'overlap-md', label: 'Overlap md', description: 'The default avatar-stack overlap.', group: 'overlap', primitive: 'dimension--8' },
-  { key: 'overlap-lg', label: 'Overlap lg', description: 'A third of a 48px avatar.', group: 'overlap', primitive: 'dimension--16' },
-  { key: 'overlap-xl', label: 'Overlap xl', description: 'Heavily stacked; only the edge shows.', group: 'overlap', primitive: 'dimension--24' },
-  { key: 'overlap-2xl', label: 'Overlap 2xl', description: 'Nearly fully covered — a count badge on a stack.', group: 'overlap', primitive: 'dimension--32' },
 ]
 
 // ── Inset sides ─────────────────────────────────────────────────────────────
@@ -1543,15 +1634,15 @@ export function withInsetSides(roles: Record<string, string> | undefined): Recor
   return out
 }
 
-/** CSS for the twelve sides: a side that follows aliases its inset
- *  (`--spacing-inset-surface-top: var(--spacing-inset-surface)`), so it steps
- *  down with it; a side set by hand aliases its own primitive. */
+/** CSS for the inset sides set BY HAND only (each aliases its own
+ *  primitive). A side that follows its inset has no variable: read the inset
+ *  (`--spacing-inset-surface`). The Escala Figma file has no per-side
+ *  variables, so tokens.json does not ship them either. */
 export function insetSideCssVars(roles: Record<string, string> | undefined, steps?: Record<string, string>): string[] {
   const merged = mergeLayoutRoles('spacing', roles)
-  return INSET_SIDE_KEYS.map(({ key, role }) => {
-    const own = merged[key]
-    return `--spacing-${key}: ${own === undefined ? `var(--spacing-${role})` : layoutValueCss('spacing', own, steps)};`
-  })
+  return INSET_SIDE_KEYS
+    .filter(({ key }) => merged[key] !== undefined)
+    .map(({ key }) => `--spacing-${key}: ${layoutValueCss('spacing', merged[key], steps)};`)
 }
 
 /**
@@ -1599,7 +1690,7 @@ export function matchSpacingMode(
 }
 
 /** The six Overlap sizes, as the `overlap-<size>` role keys carry them. */
-export const OVERLAP_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
+export const OVERLAP_SIZES = ['sm', 'md'] as const
 export type OverlapSize = (typeof OVERLAP_SIZES)[number]
 
 /** The static steps the spacing roles defaulted to before v79 — the migration
@@ -1637,12 +1728,12 @@ export const SIZE_ROLES: LayoutRole[] = [
   { key: 'touch', label: 'Touch', description: 'Mobile CTA. 48px covers HIG 44.', group: 'control', primitive: 'lg' },
   { key: 'hit', label: 'Hit', description: 'Close button and icon-only hit area.', group: 'special', primitive: 'xs' },
   { key: 'fab', label: 'FAB', description: 'Floating action button.', group: 'special', primitive: 'xl' },
+  { key: 'target-min', label: 'Target min', description: 'Smallest interactive target: WCAG 2.2 24px on Desktop, 44px (HIG) on touch viewports.', group: 'special', primitive: 'xs', viewports: { tablet: 'dimension-44', mobile: 'dimension-44' } },
 ]
 
 export const SELECTOR_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, radio, switch track height.', group: 'glyph', primitive: 'md' },
-  { key: 'compact', label: 'Compact', description: 'The same glyphs in a dense row or table.', group: 'glyph', primitive: 'sm' },
-  { key: 'indicator', label: 'Indicator', description: 'Badge dot, status pip, unread marker.', group: 'glyph', primitive: 'xs' },
+  { key: 'control', label: 'Control', description: 'Checkbox, radio, switch track height (component Size=default).', group: 'glyph', primitive: 'dimension-20' },
+  { key: 'compact', label: 'Compact', description: 'The same glyphs in a dense row or table (Size=sm and xs).', group: 'glyph', primitive: 'dimension-16' },
 ]
 
 export const STROKE_ROLES: LayoutRole[] = [
@@ -1753,8 +1844,16 @@ export function resolveLayoutRole(
   return primitives[step] || fallback
 }
 
+/** `size.hit` → `--size-control-xs`, `radius.pill` → `--radius-full`,
+ *  `spacing.gap-group` → `--spacing-gap-group` (see `roleNames.ts`). */
 export function layoutRoleVar(family: LayoutFamily, key: string): string {
-  return `--${family}-${key}`
+  return roleCssVar(family, key)
+}
+
+/** The role's variable in Figma `Dimension Semantics` (`Size/control-xs`,
+ *  `Radius/full`), or null for breakpoints (CSS only). */
+export function layoutRoleFigmaName(family: LayoutFamily, key: string): string | null {
+  return roleFigmaName(family, key)
 }
 
 export function layoutPrimitiveVar(family: LayoutFamily, step: string): string {
@@ -1872,26 +1971,41 @@ export interface GridFrameScales {
   breakpoints?: Record<string, string>
 }
 
-function gridFrameAliasCss(alias: GridFrameAlias, scales: GridFrameScales = {}): string[] {
+/** The grid style each viewport's frame lays out with — the column width
+ *  `--grid-column` / Figma `Grid/column` carries (XL Desktop 72 · MD Tablet
+ *  60 · SM Mobile 60 on the standard frame). */
+const GRID_MODE_STYLE: Record<GridViewport, GridStyleKey> = { desktop: 'xl-desktop', tablet: 'md-tablet', mobile: 'sm-mobile' }
+
+/** The fixed column width (px) a viewport's grid style lays out with. */
+export function gridColumnPx(frame: GridFrameModes | null | undefined, viewport: GridViewport, scales: GridFrameScales = {}): number | null {
+  const hit = resolveGridStyles(frame ?? undefined, scales.spacing ?? SPACING_STANDARD, scales.breakpoints ?? BREAKPOINT_STANDARD)
+    .find((st) => st.key === GRID_MODE_STYLE[viewport])
+  return hit ? hit.column : null
+}
+
+function gridFrameAliasCss(alias: GridFrameAlias, scales: GridFrameScales = {}, column?: number | null): string[] {
   const container = alias.container === 'none' ? 'none' : layoutValueCss('breakpoint', alias.container, scales.breakpoints)
   return [
     `--grid-columns: ${alias.columns};`,
     `--grid-gutter: ${layoutValueCss('spacing', alias.gutter, scales.spacing)};`,
     `--grid-margin: ${layoutValueCss('spacing', alias.margin, scales.spacing)};`,
     `--grid-container: ${container};`,
+    // The width a card spans per column, a number a designer sizes to. A
+    // whole px aliases its Dimension primitive; a fraction stays raw.
+    ...(column != null ? [`--grid-column: ${Number.isInteger(column) ? `var(--dimension-${dimensionKey(column)})` : `${column}px`};`] : []),
   ]
 }
 
 export function gridFrameRootCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales)
+  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales, gridColumnPx(frame, 'desktop', scales))
 }
 
 export function gridFrameTabletCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales)
+  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales, gridColumnPx(frame, 'tablet', scales))
 }
 
 export function gridFrameMobileCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales)
+  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales, gridColumnPx(frame, 'mobile', scales))
 }
 
 /** Nested tablet then mobile overrides. Desktop lives on `:root`. */
@@ -1906,6 +2020,9 @@ export function gridFrameMediaCss(
   /** When given, the responsive spacing tokens and the roles on them step down
    *  in the same two blocks. */
   spacingOpts?: { roles?: Record<string, string>; spacing?: Record<string, string> },
+  /** When given, the size roles with their own Tablet / Mobile value
+   *  (`target-min` 24 / 44 / 44) are overridden in the same blocks. */
+  sizeOpts?: { roles?: Record<string, string>; sizes?: Record<string, string> },
 ): string {
   const bps = extractBreakpoints(grid)
   const scales: GridFrameScales = { spacing, breakpoints: bps }
@@ -1913,6 +2030,7 @@ export function gridFrameMediaCss(
   const radiusFor = (vp: GridViewport) => [
     ...(radiusOpts ? [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports)] : []),
     ...(spacingOpts ? spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing) : []),
+    ...(sizeOpts ? sizeRolesViewportCss(vp, sizeOpts.roles, sizeOpts.sizes) : []),
   ]
   return [
     `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
@@ -1927,6 +2045,24 @@ export function gridFrameMediaCss(
     '  }',
     '}',
   ].join('\n')
+}
+
+/** `--size-<role>` overrides for one smaller viewport — the size roles with
+ *  their own Tablet / Mobile value (`--size-target-min: var(--dimension-44)`). */
+export function sizeRolesViewportCss(
+  viewport: GridViewport,
+  roles: Record<string, string> | undefined,
+  sizes: Record<string, string> | undefined,
+): string[] {
+  if (viewport === 'desktop') return []
+  const merged = mergeLayoutRoles('size', roles)
+  const out: string[] = []
+  for (const role of LAYOUT_ROLES.size) {
+    const step = sizeRoleAt(merged, role.key, viewport)
+    if (step === undefined || step === merged[role.key]) continue
+    out.push(`${layoutRoleVar('size', role.key)}: ${layoutValueCss('size', step, sizes)};`)
+  }
+  return out
 }
 
 /** Only the spacing tokens' and roles' tablet / mobile step-down, for a

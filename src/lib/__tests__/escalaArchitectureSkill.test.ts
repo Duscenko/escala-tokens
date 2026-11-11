@@ -93,7 +93,9 @@ describe('escala-architecture skill', () => {
       const hex = arch.action['primary.default'][theme]
       expect(files['skills/architecture/references/color-roles.md']).toContain(`\`${hex}\``)
       const dim = files['skills/architecture/references/dimension-roles.md']
-      expect(dim).toContain(`| \`size.control\` | \`--size-control\` | \`Size/role/control\` | ${parseFloat(json.sizes![json.sizeRoles!.control])}px |`)
+      expect(dim).toContain(`| \`size.control\` | \`--size-control-md\` | \`Size/control-md\` | ${parseFloat(json.sizes![json.sizeRoles!.control])}px |`)
+      // Its own Tablet / Mobile value: 24 / 44 / 44.
+      expect(dim).toContain('| `size.target-min` | `--size-target-min` | `Size/target-min` | 24px / 44px / 44px |')
       expect(dim).toContain('| `icon.medium` | 20px |')
       expect(dim).not.toMatch(/\| — \| (Cards|Buttons|Default button)/)
       expect(files['skills/architecture/references/type-roles.md']).toContain(json.typography.fontFamily)

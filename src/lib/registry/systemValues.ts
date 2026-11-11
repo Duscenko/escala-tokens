@@ -16,6 +16,7 @@
 import type { TokenJSON } from '../agentBundle/types.js'
 import { resolveToken } from '../agentAccess/resolveToken.js'
 import { cssVarOf } from '../componentRecipes.js'
+import { roleIdFromName } from '../roleNames.js'
 import { fontStack } from '../fontStack.js'
 
 export type Appearance = 'light' | 'dark'
@@ -132,9 +133,11 @@ function pick(values: Record<string, string> | undefined, mode: string): string 
 function dimensionValue(json: Json, name: string, mode: string, appearance: Appearance): string | undefined {
   const text = /^--text-(.+)-(font-family|font-size|line-height|font-weight|letter-spacing)$/.exec(name)
   if (text) return typeFacet(json, text[1], text[2], mode)
+  // A role under its Figma-file name (`--size-control-md` = `size.control`).
+  const renamed = roleIdFromName(name)
   for (const ns of DIMENSION_NS) {
     if (!name.startsWith(`--${ns}-`)) continue
-    const token = resolveToken(json, `${ns}.${name.slice(ns.length + 3)}`)
+    const token = resolveToken(json, renamed ?? `${ns}.${name.slice(ns.length + 3)}`)
     if (!token.found) return undefined
     if (ns === 'shadow') return token.appearances?.[appearance] ?? pick(token.values, mode)
     const v = pick(token.values, mode)

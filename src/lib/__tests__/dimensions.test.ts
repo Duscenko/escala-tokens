@@ -118,10 +118,12 @@ describe('overlap roles — negative space reaches the plugin', () => {
   // The Figma plugin aliases a role to a primitive BY VALUE: a role pinned to
   // `dimension--8` whose `-8` is missing from the shipped ladder lands in Figma
   // as a detached raw float (or not at all). Both halves ship in one payload.
-  it('ships all six overlap roles, each pinned to a negative primitive that exists', () => {
+  // The Escala Figma file carries two overlaps (sm −4, md −8); xs / lg / xl /
+  // 2xl were dropped on 2026-11-11.
+  it('ships the two overlap roles, each pinned to a negative primitive that exists', () => {
     const json = generateTokenJSON() as { spacingRoles: Record<string, string>; dimensions: Record<string, string> }
     const overlaps = Object.entries(json.spacingRoles).filter(([key]) => key.startsWith('overlap-'))
-    expect(overlaps.map(([key]) => key)).toEqual(['overlap-xs', 'overlap-sm', 'overlap-md', 'overlap-lg', 'overlap-xl', 'overlap-2xl'])
+    expect(overlaps.map(([key]) => key)).toEqual(['overlap-sm', 'overlap-md'])
     for (const [key, value] of overlaps) {
       const px = roleDimensionPx(value, true)
       expect(px, `${key} → ${value}`).not.toBeNull()
@@ -144,7 +146,7 @@ describe('dimension primitives — W3C export', () => {
     })
     const tree = JSON.parse(file.content)
     expect(tree['Dimension Primitives'].Default['16']).toEqual({ $type: 'dimension', $value: '16px' })
-    expect(tree['Dimension Semantics'].Desktop.Radius.role.container.$value).toMatch(/^\{Dimension (Primitives|Semantics)\./)
+    expect(tree['Dimension Semantics'].Desktop.Radius.container.$value).toMatch(/^\{Dimension (Primitives|Semantics)\./)
     expect(tree['Dimension Semantics'].Desktop.Grid.columns.$value).toBe('{Dimension Primitives.Default.columns.12}')
     // Every reference in the document resolves inside it.
     const resolve = (ref: string) => ref.slice(1, -1).split('.').reduce((n: any, k) => n?.[k], tree)
@@ -300,6 +302,8 @@ describe('roles pinned to a Dimension primitive (layoutTokens)', () => {
     expect(resolveGridFrame('desktop', frame, spacing, bps)).toMatchObject({ gutter: '20px', margin: '32px', container: '1100px' })
     expect(gridFrameRootCss(frame, { spacing, breakpoints: bps })).toEqual([
       '--grid-columns: 12;', '--grid-gutter: var(--dimension-20);', '--grid-margin: var(--dimension-32);', '--grid-container: var(--dimension-1100);',
+      // The XL Desktop style's fixed column width on this frame.
+      '--grid-column: var(--dimension-68);',
     ])
     expect(gridFrameMediaCss(roles, undefined, frame, spacing)).toContain('@media (max-width: 999px)')
   })

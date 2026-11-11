@@ -36,7 +36,8 @@ describe('cutCssCollection', () => {
       }
       // Only the collection and what it aliases: never another collection's own roles.
       const owners = new Set([...names].map((name) => cssCollectionOf(name)))
-      if (key !== 'dimensions') expect(owners.has('color') && key !== 'color' && key !== 'gradients').toBe(false)
+      // Gradients and Depth read colour roles (`--color-elevation-*`).
+      if (key !== 'dimensions') expect(owners.has('color') && key !== 'color' && key !== 'gradients' && key !== 'shadow').toBe(false)
       // A cut never invents a line: each declaration is in the full file.
       for (const line of cut.split('\n')) if (/^\s*--/.test(line)) expect(full.includes(line)).toBe(true)
     })

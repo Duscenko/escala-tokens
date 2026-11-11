@@ -92,6 +92,8 @@ export interface TokenJSON {
   spacingRoleRefs?: Record<string, string>
   /** Responsive spacing token → Desktop / Tablet / Mobile static step. */
   spacingResponsive?: Record<string, Record<string, string>>
+  /** A role's own Tablet / Mobile value (`inset-page`, `inset-section`). */
+  spacingRoleViewports?: RadiusRoleViewportsJSON
   padding?: Record<string, string>
   radius: Record<string, string>
   radiusRoles?: Record<string, string>
@@ -100,6 +102,8 @@ export interface TokenJSON {
   radiusResponsive?: Record<string, Record<string, string>>
   sizes?: Record<string, string>
   sizeRoles?: Record<string, string>
+  /** A size role's own Tablet / Mobile value (`target-min` 44). */
+  sizeRoleViewports?: RadiusRoleViewportsJSON
   selector?: Record<string, string>
   selectorRoles?: Record<string, string>
   stroke?: Record<string, string>
@@ -118,11 +122,13 @@ export interface TokenJSON {
     spacing?: Record<string, string>
     spacingRoles?: Record<string, string>
     spacingRoleRefs?: Record<string, string>
+    spacingRoleViewports?: RadiusRoleViewportsJSON
     radius?: Record<string, string>
     radiusRoles?: Record<string, string>
     radiusRoleViewports?: RadiusRoleViewportsJSON
     sizes?: Record<string, string>
     sizeRoles?: Record<string, string>
+    sizeRoleViewports?: RadiusRoleViewportsJSON
     selector?: Record<string, string>
     selectorRoles?: Record<string, string>
     stroke?: Record<string, string>

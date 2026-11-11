@@ -371,12 +371,16 @@ function motionCssVars(settings, opts = {}) {
   vars["--motion-stagger"] = `${opts.reduced ? 0 : settings.stagger}ms`;
   MOTION_ROLES.forEach((role) => {
     const pick = settings.roles[role] ?? STANDARD_ROLES[role];
+    let duration = `var(--motion-duration-${pick.duration})`;
+    let easing = `var(--motion-easing-${pick.easing})`;
     if (opts.reduced && !KEEP_UNDER_REDUCED.has(role)) {
       const exits = /-(out|exit)$/.test(role);
-      vars[`--motion-${role}`] = `var(--motion-duration-fade) var(--motion-easing-${exits ? "exit" : "entrance"})`;
-    } else {
-      vars[`--motion-${role}`] = `var(--motion-duration-${pick.duration}) var(--motion-easing-${pick.easing})`;
+      duration = "var(--motion-duration-fade)";
+      easing = `var(--motion-easing-${exits ? "exit" : "entrance"})`;
     }
+    vars[`--motion-${role}`] = `${duration} ${easing}`;
+    vars[`--motion-${role}-duration`] = duration;
+    vars[`--motion-${role}-easing`] = easing;
   });
   for (const [name, c2] of Object.entries(motionChoreographies(settings))) {
     if (!c2.components.length) continue;
@@ -896,19 +900,19 @@ var init_apca = __esm({
       "large-text": { wcag: 3, apcaLc: 60 },
       "action-label": { wcag: 4.5, apcaLc: 60 },
       "ui-component": { wcag: 3, apcaLc: 45 },
-      // The resting outline of a field / select / checkbox / outline button — a
-      // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
-      // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
-      // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
-      // (3.81:1): reported twice as "los bordes de control están muy fuertes",
-      // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
-      // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
-      // 1.26, below it) — not an accessibility claim: a control identified by its
-      // stroke alone no longer clears 1.4.11, which is why a field that must
-      // clear it gives itself a FILL (`surface.input` a step off the page), the
-      // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
-      // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
-      "control-boundary": { wcag: 1.4, apcaLc: null },
+      // A control's BOUNDARY: the resting outline of a field / select / checkbox
+      // / outline button (`border.control`), the focus ring's boundary
+      // (`border.focus`) and an invalid / valid field's edge
+      // (`status.<sev>.border-strong`). WCAG 1.4.11's 3:1 with no APCA term — the
+      // Escala Figma file's signed-off invariants (2026-11-11) are WCAG 2.x, and
+      // its pinned steps (Black α 07 / White α 06, Dark focus 09, Dark critical
+      // border 10) sit at Lc 20–44 on the dark page. History: 2026-10-21 made the
+      // field outline a 1.4:1 hairline (black-a.3); the file reverted it.
+      "control-boundary": { wcag: 3, apcaLc: null },
+      // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
+      // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
+      // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
+      "pressed-label": { wcag: 4.5, apcaLc: null },
       // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
       // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
       // (Lc 30). Full AA would make a disabled outline / ghost / link button —
@@ -1024,7 +1028,20 @@ function gamutMapSrgb(color) {
 function oklchToHex(l, c2, h) {
   return oklchToHexClipped(gamutMapSrgb({ l, c: c2, h: Number.isNaN(h) ? 0 : h }));
 }
-var toLinear, toGamma, OKLAB_TO_LMS, LMS_TO_XYZ, XYZ_TO_LMS, XYZ_TO_LIN_SRGB, LIN_SRGB_TO_XYZ, apply, oklchToOklab, oklabToOklch, byte, GAMUT_EPS, JND, SEARCH_EPS;
+function maxChromaSrgb(l, h) {
+  if (l <= 0 || l >= 1) return 0;
+  const hue = Number.isNaN(h) ? 0 : h;
+  if (inSrgbGamut({ l, c: MAX_SEARCH_CHROMA, h: hue })) return MAX_SEARCH_CHROMA;
+  let lo = 0;
+  let hi = MAX_SEARCH_CHROMA;
+  while (hi - lo > SEARCH_EPS) {
+    const mid = (lo + hi) / 2;
+    if (inSrgbGamut({ l, c: mid, h: hue })) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+var toLinear, toGamma, OKLAB_TO_LMS, LMS_TO_XYZ, XYZ_TO_LMS, XYZ_TO_LIN_SRGB, LIN_SRGB_TO_XYZ, apply, oklchToOklab, oklabToOklch, byte, GAMUT_EPS, JND, SEARCH_EPS, MAX_SEARCH_CHROMA;
 var init_gamut = __esm({
   "src/lib/color/gamut.ts"() {
     toLinear = (v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -1072,6 +1089,7 @@ var init_gamut = __esm({
     GAMUT_EPS = 1e-6;
     JND = 0.02;
     SEARCH_EPS = 1e-4;
+    MAX_SEARCH_CHROMA = 0.4;
   }
 });
 
@@ -1080,8 +1098,8 @@ import chroma from "chroma-js";
 function clamp01(n) {
   return Math.max(0, Math.min(1, n));
 }
-function lightnessForContrast(target, hue, chromaC, bg, towardDark) {
-  const meets = (hex) => wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc;
+function lightnessForContrast(target, hue, chromaC, bg, towardDark, alsoOn = []) {
+  const meets = (hex) => wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc && alsoOn.every((s) => wcagRatio(hex, s) >= target.wcag);
   const bgL = chroma(bg).oklch()[0];
   let lo = towardDark ? 0 : bgL;
   let hi = towardDark ? bgL : 1;
@@ -1144,12 +1162,12 @@ function buildScale(baseHex, spec, shift, background, appearance = "light", tint
         continue;
       }
       const w = Math.pow(BG_WEIGHTS[i], gamma);
-      const L = pageL + (baseL - pageL) * w;
+      const L2 = pageL + (baseL - pageL) * w;
       const shapedC = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15));
       const linkedC = pageC + (baseC - pageC) * Math.pow(w, 1.15);
       const C2 = shapedC + (linkedC - shapedC) * chromaLink;
       const H2 = baseH + (spec.hueShift?.(-(1 - w)) ?? 0);
-      out.push(oklchToHex(clamp01(L), Math.max(0, C2), H2));
+      out.push(oklchToHex(clamp01(L2), Math.max(0, C2), H2));
       continue;
     }
     if (i === BASE_TONE + 1) {
@@ -1168,7 +1186,8 @@ function buildScale(baseHex, spec, shift, background, appearance = "light", tint
     const target = isMaxTone ? { wcag: 12 * gain, apcaLc: Math.max(75, 90 * gain) } : { wcag: 4.5 * gain, apcaLc: Math.max(60, 75 * gain) };
     const C = baseC * (i === TONES ? 0.42 : 0.72);
     const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0);
-    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark));
+    const also = isMaxTone ? [] : [out[2]].filter(Boolean);
+    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark, also));
   }
   return out;
 }
@@ -1184,6 +1203,25 @@ function generateColorScale(baseHex, algorithm = "default", contrastShift = 0, b
     scale[i + 1] = color;
   });
   return scale;
+}
+function vividStatusSolids(scale, ink) {
+  const anchor = scale[9];
+  const light = ink ?? scale[1] ?? "#ffffff";
+  if (!anchor || wcagRatio(light, anchor) >= STATUS_SOLID_INK_TARGET) return scale;
+  const h = hexToOklch(anchor).h;
+  const at = (l) => oklchToHex(l, maxChromaSrgb(l, h), h);
+  let lo = 0.2;
+  let hi = 0.95;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (wcagRatio(light, at(mid)) >= STATUS_SOLID_INK_TARGET) lo = mid;
+    else hi = mid;
+  }
+  return { ...scale, 9: at(lo), 10: at(lo - 0.05), 11: at(lo - 0.1) };
+}
+function generateStatusScale(baseHex, algorithm = "default", contrastShift = 0, background, appearance = "light") {
+  const scale = generateColorScale(baseHex, algorithm, contrastShift, background, appearance);
+  return appearance === "light" ? vividStatusSolids(scale) : scale;
 }
 function neutralTintSpec(tint = DEFAULT_NEUTRAL_TINT) {
   return NEUTRAL_TINTS.find((t) => t.key === tint) ?? NEUTRAL_TINTS[1];
@@ -1406,7 +1444,7 @@ function darkShadow(css, opts = {}) {
 function darkShadowMap(shadows) {
   return Object.fromEntries(Object.entries(shadows).map(([k, v]) => [k, darkShadow(v)]));
 }
-var TONES, BASE_TONE, BG_WEIGHTS, SPECS, ALGORITHM_OPTIONS, NAMING_SCHEMES, NEUTRAL_TINTS, DEFAULT_NEUTRAL_TINT, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, STATE_CANONICAL, WCAG_AA, ACTION_LABEL_TARGET, DARK_ALPHA_GAIN, SHADOW_COLOR_RE, round2;
+var TONES, BASE_TONE, BG_WEIGHTS, SPECS, ALGORITHM_OPTIONS, NAMING_SCHEMES, STATUS_SOLID_INK_TARGET, NEUTRAL_TINTS, DEFAULT_NEUTRAL_TINT, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, STATE_CANONICAL, WCAG_AA, ACTION_LABEL_TARGET, DARK_ALPHA_GAIN, SHADOW_COLOR_RE, round2;
 var init_colorUtils = __esm({
   "src/lib/colorUtils.ts"() {
     init_apca();
@@ -1442,6 +1480,7 @@ var init_colorUtils = __esm({
       { key: "hundreds", label: "25, 50, 100\u2026", labels: ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"] },
       { key: "tens", label: "10, 20, 30\u2026", labels: ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100", "110", "120"] }
     ];
+    STATUS_SOLID_INK_TARGET = 4.6;
     NEUTRAL_TINTS = [
       {
         key: "pure",
@@ -1546,6 +1585,22 @@ var init_dimensionCore = __esm({
   }
 });
 
+// src/lib/roleNames.ts
+function roleCssVar(family, key2) {
+  return `--${(ROLE_PATH[family]?.[key2] ?? `${family}/${key2}`).replace("/", "-")}`;
+}
+var ROLE_PATH;
+var init_roleNames = __esm({
+  "src/lib/roleNames.ts"() {
+    ROLE_PATH = {
+      size: { hit: "size/control-xs", compact: "size/control-sm", control: "size/control-md", touch: "size/control-lg", fab: "size/control-xl", "target-min": "size/target-min" },
+      selector: { control: "size/selector-md", compact: "size/selector-sm" },
+      icon: { small: "size/icon-sm", medium: "size/icon-md", large: "size/icon-lg" },
+      radius: { pill: "radius/full" }
+    };
+  }
+});
+
 // src/lib/layoutTokens.ts
 function roleDimensionPx(value, signed = false) {
   if (typeof value !== "string" || !value.startsWith(ROLE_DIMENSION_PREFIX)) return null;
@@ -1553,8 +1608,8 @@ function roleDimensionPx(value, signed = false) {
   const n = dimensionFromKey(key2);
   return Number.isFinite(n) && (signed || n >= 0) && dimensionKey(n) === key2 ? n : null;
 }
-function dimensionRoleValue(px) {
-  return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}`;
+function dimensionRoleValue(px2) {
+  return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px2)}`;
 }
 function roleValuePx(value, steps) {
   if (value === void 0) return null;
@@ -1567,18 +1622,49 @@ function isSpacingResponsiveRef(value) {
 function spacingRefStep(value, viewport = "desktop") {
   return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value;
 }
-function spacingRolesAtViewport(roles, viewport) {
-  const merged = withInsetSides(roles);
-  return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]));
+function spacingRoleAt(roles, key2, viewport) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  const side = INSET_SIDE_KEYS.find((entry) => entry.key === key2);
+  if (side && merged[key2] === void 0) return spacingRoleAt(merged, side.role, viewport);
+  const value = merged[key2];
+  if (value === void 0) return void 0;
+  if (viewport !== "desktop") {
+    const own = roleViewportDefault("spacing", key2, value, viewport);
+    if (own !== void 0) return own;
+  }
+  return spacingRefStep(value, viewport);
+}
+function spacingRolesAtViewport(roles, viewport, opts = {}) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  const keys = opts.sides === false ? LAYOUT_ROLES.spacing.map((r) => r.key) : Object.keys(withInsetSides(merged));
+  return Object.fromEntries(keys.map((k) => [k, spacingRoleAt(merged, k, viewport) ?? "0"]));
+}
+function roleViewportDefault(family, key2, value, viewport) {
+  const spec = LAYOUT_ROLES[family].find((r) => r.key === key2);
+  return spec?.viewports && value === spec.primitive ? spec.viewports[viewport] : void 0;
+}
+function roleViewportsOf(family, roles) {
+  const merged = mergeLayoutRoles(family, roles);
+  const out = {};
+  for (const vp of ["tablet", "mobile"]) {
+    for (const role of LAYOUT_ROLES[family]) {
+      const own = roleViewportDefault(family, role.key, merged[role.key], vp);
+      if (own !== void 0) (out[vp] ??= {})[role.key] = own;
+    }
+  }
+  return out;
+}
+function sizeRoleAt(roles, key2, viewport) {
+  const value = mergeLayoutRoles("size", roles)[key2];
+  if (value === void 0 || viewport === "desktop") return value;
+  return roleViewportDefault("size", key2, value, viewport) ?? value;
 }
 function spacingRolesViewportCss(viewport, roles, spacing) {
   const merged = mergeLayoutRoles("spacing", roles);
   const out = [];
   for (const role of LAYOUT_ROLES.spacing) {
-    const value = merged[role.key];
-    if (!isSpacingResponsiveRef(value)) continue;
-    const step = spacingRefStep(value, viewport);
-    if (step === spacingRefStep(value)) continue;
+    const step = spacingRoleAt(merged, role.key, viewport);
+    if (step === void 0 || step === spacingRoleAt(merged, role.key, "desktop")) continue;
     out.push(`--spacing-${role.key}: ${layoutValueCss("spacing", step, spacing)};`);
   }
   for (const { key: key2 } of INSET_SIDE_KEYS) {
@@ -1621,8 +1707,8 @@ function buildSpacingFromBase(base) {
   }
   return result;
 }
-function insetSurfacePadding(px) {
-  return { top: px, right: px, bottom: px, left: px };
+function insetSurfacePadding(px2) {
+  return { top: px2, right: px2, bottom: px2, left: px2 };
 }
 function clampFieldBase(base) {
   return Math.min(BASE_UNIT_RANGE.max, Math.max(FIELD_BASE_MIN, base));
@@ -1661,7 +1747,7 @@ function extractBreakpoints(grid) {
 }
 function resolveGridStyles(frame, spacing, breakpoints) {
   const merged = mergeGridFrame(frame);
-  const px = (v) => {
+  const px2 = (v) => {
     if (!v) return 0;
     const pinned = roleDimensionPx(v);
     if (pinned !== null) return pinned;
@@ -1671,8 +1757,8 @@ function resolveGridStyles(frame, spacing, breakpoints) {
   return GRID_STYLES.map((def) => {
     const base = merged[def.viewport];
     const columns = Math.max(1, parseInt(base.columns, 10) || 12);
-    const gutter = px(def.recipe?.gutter ?? base.gutter);
-    const margin = px(def.recipe?.margin ?? base.margin);
+    const gutter = px2(def.recipe?.gutter ?? base.gutter);
+    const margin = px2(def.recipe?.margin ?? base.margin);
     const sidebar = def.sidebar ? roleDimensionPx(def.sidebar) ?? 0 : 0;
     const container = merged.desktop.container;
     const width = def.width === "container" ? (container !== "none" ? bp(container) : 0) || bp("xl") : bp(def.width);
@@ -1798,8 +1884,8 @@ function radiusPresetPatch(label, roles) {
   return { radius: { ...RADIUS_STANDARD }, radiusRoles, radiusRoleViewports: {} };
 }
 function radiusPresetPx(preset) {
-  const px = (step) => parseFloat(RADIUS_STANDARD[step] ?? "0") || 0;
-  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.selectors)];
+  const px2 = (step) => parseFloat(RADIUS_STANDARD[step] ?? "0") || 0;
+  return [px2(preset.picks.boxes), px2(preset.picks.fields), px2(preset.picks.selectors)];
 }
 function isGradedRadiusRamp(radius) {
   const lg = parseFloat(radius?.lg ?? "");
@@ -1812,14 +1898,14 @@ function renameRadiusV77(slot, inheritedRadius) {
   const own = slot.radius && typeof slot.radius === "object" ? slot.radius : void 0;
   const old = own ?? inheritedRadius;
   if (own) {
-    const px = (k) => parseFloat(own[k] ?? "");
+    const px2 = (k) => parseFloat(own[k] ?? "");
     const next = { none: own.none ?? "0px", full: own.full ?? "9999px" };
     for (const [from, to] of Object.entries(RADIUS_V77_RENAME)) {
       if (from === "none" || from === "full" || own[from] === void 0) continue;
       next[to] = own[from];
     }
-    if (Number.isFinite(px("xs"))) next.xs = `${Math.round(px("xs") / 2)}px`;
-    if (Number.isFinite(px("xs")) && Number.isFinite(px("sm"))) next.md = `${Math.round((px("xs") + px("sm")) / 2)}px`;
+    if (Number.isFinite(px2("xs"))) next.xs = `${Math.round(px2("xs") / 2)}px`;
+    if (Number.isFinite(px2("xs")) && Number.isFinite(px2("sm"))) next.md = `${Math.round((px2("xs") + px2("sm")) / 2)}px`;
     slot.radius = next;
   }
   if (slot.radiusRoles && typeof slot.radiusRoles === "object") {
@@ -1839,14 +1925,16 @@ function renameRadiusV77(slot, inheritedRadius) {
 function radiusRoleAt(roles, viewports, role, viewport) {
   const desktop = mergeLayoutRoles("radius", roles)[role];
   if (viewport === "desktop") return desktop;
-  return viewports?.[viewport]?.[role] ?? radiusAtViewport(desktop, viewport);
+  return viewports?.[viewport]?.[role] ?? desktop;
 }
-function radiusAtViewport(value, viewport) {
-  const row = RADIUS_RESPONSIVE[value];
-  return row ? row[viewport] : value;
+function resolvedRadiusRoleViewports(roles, viewports) {
+  const merged = mergeLayoutRoles("radius", roles);
+  const at = (vp) => Object.fromEntries(Object.keys(merged).map((k) => [k, radiusRoleAt(merged, viewports, k, vp)]));
+  return { tablet: at("tablet"), mobile: at("mobile") };
 }
 function radiusComponentCss(viewport = "desktop") {
-  return RADIUS_RESPONSIVE_STEPS.filter((step) => viewport === "desktop" || RADIUS_RESPONSIVE[step][viewport] !== step).map((step) => `--radius-component-${step}: var(--radius-${RADIUS_RESPONSIVE[step][viewport]});`);
+  const target = (step) => step === "full" ? "var(--dimension-9999)" : `var(--radius-${step})`;
+  return RADIUS_RESPONSIVE_STEPS.filter((step) => viewport === "desktop" || RADIUS_RESPONSIVE[step][viewport] !== step).map((step) => `--radius-component-${step}: ${target(RADIUS_RESPONSIVE[step][viewport])};`);
 }
 function radiusRolesViewportCss(viewport, roles, radius, viewports) {
   const merged = mergeLayoutRoles("radius", roles);
@@ -1874,10 +1962,7 @@ function withInsetSides(roles) {
 }
 function insetSideCssVars(roles, steps) {
   const merged = mergeLayoutRoles("spacing", roles);
-  return INSET_SIDE_KEYS.map(({ key: key2, role }) => {
-    const own = merged[key2];
-    return `--spacing-${key2}: ${own === void 0 ? `var(--spacing-${role})` : layoutValueCss("spacing", own, steps)};`;
-  });
+  return INSET_SIDE_KEYS.filter(({ key: key2 }) => merged[key2] !== void 0).map(({ key: key2 }) => `--spacing-${key2}: ${layoutValueCss("spacing", merged[key2], steps)};`);
 }
 function matchSpacingMode(sizes, spacingRoles, stroke) {
   const base = inferSizeBase(sizes ?? {});
@@ -1934,14 +2019,14 @@ function resolveLayoutRole(family, roles, primitives, key2, fallback = "") {
   return primitives[step] || fallback;
 }
 function layoutRoleVar(family, key2) {
-  return `--${family}-${key2}`;
+  return roleCssVar(family, key2);
 }
 function layoutPrimitiveVar(family, step) {
   return `var(--${family}-${step})`;
 }
 function layoutValueCss(family, value, steps) {
-  const px = roleValuePx(value, steps);
-  return px !== null ? `var(--dimension-${dimensionKey(px)})` : layoutPrimitiveVar(family, value);
+  const px2 = roleValuePx(value, steps);
+  return px2 !== null ? `var(--dimension-${dimensionKey(px2)})` : layoutPrimitiveVar(family, value);
 }
 function layoutRoleCssVars(family, roles, steps) {
   const map = mergeLayoutRoles(family, roles);
@@ -1978,31 +2063,39 @@ function breakpointMobileMax(roles, breakpoints) {
   const min = breakpointStepPx(roles, breakpoints, "mobile", "sm");
   return `${Math.max(0, Math.round(min) - 1)}px`;
 }
-function gridFrameAliasCss(alias, scales = {}) {
+function gridColumnPx(frame, viewport, scales = {}) {
+  const hit = resolveGridStyles(frame ?? void 0, scales.spacing ?? SPACING_STANDARD, scales.breakpoints ?? BREAKPOINT_STANDARD).find((st) => st.key === GRID_MODE_STYLE[viewport]);
+  return hit ? hit.column : null;
+}
+function gridFrameAliasCss(alias, scales = {}, column) {
   const container = alias.container === "none" ? "none" : layoutValueCss("breakpoint", alias.container, scales.breakpoints);
   return [
     `--grid-columns: ${alias.columns};`,
     `--grid-gutter: ${layoutValueCss("spacing", alias.gutter, scales.spacing)};`,
     `--grid-margin: ${layoutValueCss("spacing", alias.margin, scales.spacing)};`,
-    `--grid-container: ${container};`
+    `--grid-container: ${container};`,
+    // The width a card spans per column, a number a designer sizes to. A
+    // whole px aliases its Dimension primitive; a fraction stays raw.
+    ...column != null ? [`--grid-column: ${Number.isInteger(column) ? `var(--dimension-${dimensionKey(column)})` : `${column}px`};`] : []
   ];
 }
 function gridFrameRootCss(frame, scales) {
-  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales);
+  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales, gridColumnPx(frame, "desktop", scales));
 }
 function gridFrameTabletCss(frame, scales) {
-  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales);
+  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales, gridColumnPx(frame, "tablet", scales));
 }
 function gridFrameMobileCss(frame, scales) {
-  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales);
+  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales, gridColumnPx(frame, "mobile", scales));
 }
-function gridFrameMediaCss(roles, grid, frame, spacing, radiusOpts, spacingOpts) {
+function gridFrameMediaCss(roles, grid, frame, spacing, radiusOpts, spacingOpts, sizeOpts) {
   const bps = extractBreakpoints(grid);
   const scales = { spacing, breakpoints: bps };
   const indent = (lines) => lines.map((l) => `    ${l}`).join("\n");
   const radiusFor = (vp) => [
     ...radiusOpts ? [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports)] : [],
-    ...spacingOpts ? spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing) : []
+    ...spacingOpts ? spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing) : [],
+    ...sizeOpts ? sizeRolesViewportCss(vp, sizeOpts.roles, sizeOpts.sizes) : []
   ];
   return [
     `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
@@ -2018,6 +2111,17 @@ function gridFrameMediaCss(roles, grid, frame, spacing, radiusOpts, spacingOpts)
     "}"
   ].join("\n");
 }
+function sizeRolesViewportCss(viewport, roles, sizes) {
+  if (viewport === "desktop") return [];
+  const merged = mergeLayoutRoles("size", roles);
+  const out = [];
+  for (const role of LAYOUT_ROLES.size) {
+    const step = sizeRoleAt(merged, role.key, viewport);
+    if (step === void 0 || step === merged[role.key]) continue;
+    out.push(`${layoutRoleVar("size", role.key)}: ${layoutValueCss("size", step, sizes)};`);
+  }
+  return out;
+}
 function nearestSpacingStep(spacing, targetPx) {
   const rows = SPACING_STEPS.map((key2) => ({ key: key2, n: parseFloat(spacing[key2] ?? "") })).filter((r) => Number.isFinite(r.n));
   if (!rows.length) return null;
@@ -2029,10 +2133,11 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET;
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
+    init_roleNames();
     ROLE_DIMENSION_PREFIX = "dimension-";
     SPACING_RESPONSIVE_FAMILIES = ["component", "section", "layout"];
     SPACING_RESPONSIVE_SIZES = ["xl", "lg", "md", "sm", "xs", "none"];
@@ -2198,7 +2303,7 @@ var init_layoutTokens = __esm({
     ];
     GRID_STANDARD = buildGridStandard();
     RADIUS_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "sm" },
+      { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "lg" },
       { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "xl" },
       { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: "2xl" },
       { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
@@ -2213,7 +2318,7 @@ var init_layoutTokens = __esm({
     RADIUS_ROLE_PRESETS = [
       { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
       { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
-      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 12, selectors 4.", picks: { boxes: "2xl", fields: "xl", selectors: "sm" } },
+      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 12, selectors 8.", picks: { boxes: "2xl", fields: "xl", selectors: "lg" } },
       // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
       // tags and text keeps its shape — 32 rounded the corners past the content
       // and clipped it. The full pill look is the fields'.
@@ -2252,18 +2357,12 @@ var init_layoutTokens = __esm({
       { key: "gap-control", label: "Gap control", description: "Button groups, OTP cells, field + helper.", group: "gap", primitive: "component-sm" },
       { key: "gap-group", label: "Gap group", description: "Stacked fields, nav item groups.", group: "gap", primitive: "section-sm" },
       { key: "gap-section", label: "Gap section", description: "Between sections, modal header \u2192 body.", group: "gap", primitive: "section-md" },
-      { key: "inset-control", label: "Inset control", description: "Padding inside buttons, inputs, chips.", group: "inset", primitive: "component-md" },
+      { key: "inset-control", label: "Inset control", description: "Padding inside buttons, inputs, chips.", group: "inset", primitive: "3" },
       { key: "inset-surface", label: "Inset surface", description: "Card / modal / alert padding.", group: "inset", primitive: "5" },
-      { key: "inset-page", label: "Inset page", description: "Page and sheet margins when Grid is unused.", group: "inset", primitive: "layout-xs" },
-      // Overlap — NEGATIVE space: how far a stacked item tucks under its neighbour
-      // (avatar stacks, overlapping badges). Pinned primitives, not steps: a spacing
-      // step is never negative, and the base-unit dial must not move an avatar stack.
-      { key: "overlap-xs", label: "Overlap xs", description: "Barely touching \u2014 dense avatar stacks.", group: "overlap", primitive: "dimension--2" },
+      { key: "inset-page", label: "Inset page", description: "Page and sheet margins when Grid is unused.", group: "inset", primitive: "8", viewports: { tablet: "4", mobile: "4" } },
+      { key: "inset-section", label: "Inset section", description: "Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.", group: "inset", primitive: "24", viewports: { tablet: "16", mobile: "12" } },
       { key: "overlap-sm", label: "Overlap sm", description: "A hairline tuck.", group: "overlap", primitive: "dimension--4" },
-      { key: "overlap-md", label: "Overlap md", description: "The default avatar-stack overlap.", group: "overlap", primitive: "dimension--8" },
-      { key: "overlap-lg", label: "Overlap lg", description: "A third of a 48px avatar.", group: "overlap", primitive: "dimension--16" },
-      { key: "overlap-xl", label: "Overlap xl", description: "Heavily stacked; only the edge shows.", group: "overlap", primitive: "dimension--24" },
-      { key: "overlap-2xl", label: "Overlap 2xl", description: "Nearly fully covered \u2014 a count badge on a stack.", group: "overlap", primitive: "dimension--32" }
+      { key: "overlap-md", label: "Overlap md", description: "The default avatar-stack overlap.", group: "overlap", primitive: "dimension--8" }
     ];
     INSET_ROLES = ["inset-control", "inset-surface", "inset-page"];
     INSET_SIDES = ["top", "right", "bottom", "left"];
@@ -2288,12 +2387,12 @@ var init_layoutTokens = __esm({
       { key: "control", label: "Control", description: "Default button, input, select height.", group: "control", primitive: "md" },
       { key: "touch", label: "Touch", description: "Mobile CTA. 48px covers HIG 44.", group: "control", primitive: "lg" },
       { key: "hit", label: "Hit", description: "Close button and icon-only hit area.", group: "special", primitive: "xs" },
-      { key: "fab", label: "FAB", description: "Floating action button.", group: "special", primitive: "xl" }
+      { key: "fab", label: "FAB", description: "Floating action button.", group: "special", primitive: "xl" },
+      { key: "target-min", label: "Target min", description: "Smallest interactive target: WCAG 2.2 24px on Desktop, 44px (HIG) on touch viewports.", group: "special", primitive: "xs", viewports: { tablet: "dimension-44", mobile: "dimension-44" } }
     ];
     SELECTOR_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, radio, switch track height.", group: "glyph", primitive: "md" },
-      { key: "compact", label: "Compact", description: "The same glyphs in a dense row or table.", group: "glyph", primitive: "sm" },
-      { key: "indicator", label: "Indicator", description: "Badge dot, status pip, unread marker.", group: "glyph", primitive: "xs" }
+      { key: "control", label: "Control", description: "Checkbox, radio, switch track height (component Size=default).", group: "glyph", primitive: "dimension-20" },
+      { key: "compact", label: "Compact", description: "The same glyphs in a dense row or table (Size=sm and xs).", group: "glyph", primitive: "dimension-16" }
     ];
     STROKE_ROLES = [
       { key: "divider", label: "Divider", description: "Separator, table rules, layout splits.", group: "line", primitive: "sm" },
@@ -2321,6 +2420,7 @@ var init_layoutTokens = __esm({
       stroke: new Set(STROKE_STEPS),
       breakpoint: new Set(BREAKPOINT_STEPS)
     };
+    GRID_MODE_STYLE = { desktop: "xl-desktop", tablet: "md-tablet", mobile: "sm-mobile" };
   }
 });
 
@@ -2563,8 +2663,8 @@ var init_themeMoods = __esm({
 // src/lib/typographyStandard.ts
 function letterSpacingFor(key2, size) {
   const ratio = LETTER_SPACING_RATIO[key2] ?? 0;
-  const px = parseFloat(size ?? "") || 0;
-  const v = Math.round(px * ratio * 10) / 10;
+  const px2 = parseFloat(size ?? "") || 0;
+  const v = Math.round(px2 * ratio * 10) / 10;
   return `${v === 0 ? 0 : v}px`;
 }
 function letterSpacingsFor(sizes) {
@@ -2583,7 +2683,7 @@ function buildTypeScale(factor) {
   }
   return { sizes, lineHeights };
 }
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, DEFAULT_TYPE_SCALE_FACTOR, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
 var init_typographyStandard = __esm({
   "src/lib/typographyStandard.ts"() {
     TYPE_SCALE_KEYS = [
@@ -2645,6 +2745,7 @@ var init_typographyStandard = __esm({
       { key: "comfortable", label: "Comfortable", factor: 1.0625 },
       { key: "spacious", label: "Spacious", factor: 1.125 }
     ];
+    DEFAULT_TYPE_SCALE_FACTOR = 0.875;
     FONT_WEIGHT_BASES = [
       { key: "regular", label: "Regular", weight: 400 },
       { key: "medium", label: "Medium", weight: 500 },
@@ -3816,7 +3917,8 @@ function appearanceTitle(appearance) {
   return appearance === "dark" ? "Dark" : "Light";
 }
 function figmaSyncModeLabel(themeName, appearance) {
-  return `${themeName} ${appearanceTitle(appearance)}`;
+  const name = themeName.charAt(0).toUpperCase() + themeName.slice(1);
+  return `${name} ${appearanceTitle(appearance)}`;
 }
 function normalizeFigmaViewports(list) {
   const picked = FIGMA_VIEWPORTS.filter((v) => list?.includes(v));
@@ -4352,7 +4454,7 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["sm", "default", "lg"] }],
         figmaSets: ["Icon"],
         props: [
-          { name: "size", type: '"sm" | "default" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Icon/role/small \xB7 medium \xB7 large)." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Size/icon-sm \xB7 md \xB7 lg)." },
           { name: "children", type: "ReactNode", description: "The glyph, from the system icon set (Phosphor by default)." },
           { name: "label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative." }
         ],
@@ -5806,13 +5908,13 @@ function iconSizesFor(controlMd = ICON_REFERENCE_CONTROL_PX) {
   return out;
 }
 function iconSizeCssVars(controlMd) {
-  const px = iconSizesFor(controlMd);
-  return ICON_ROLES.map((role) => `  --icon-${role}: var(--dimension-${px[role]});`);
+  const px2 = iconSizesFor(controlMd);
+  return ICON_ROLES.map((role) => `  ${iconRoleVar(role)}: var(--dimension-${px2[role]});`);
 }
 function iconSizeTokens(controlMd) {
   const sizes = iconSizesFor(controlMd);
-  const px = (role, _viewport) => `${sizes[role]}px`;
-  const at = (viewport) => Object.fromEntries(ICON_ROLES.map((role) => [role, px(role, viewport)]));
+  const px2 = (role, _viewport) => `${sizes[role]}px`;
+  const at = (viewport) => Object.fromEntries(ICON_ROLES.map((role) => [role, px2(role, viewport)]));
   return {
     scale: Object.fromEntries(ICON_ROLES.map((role) => [role, `${sizes[role]}px`])),
     roles: Object.fromEntries(ICON_ROLES.map((role) => [role, role])),
@@ -5820,9 +5922,10 @@ function iconSizeTokens(controlMd) {
     minWeight: { belowPx: ICON_MIN_WEIGHT_PX, weight: "regular" }
   };
 }
-var ICON_ROLES, ICON_SIZE_PX, ICON_REFERENCE_CONTROL_PX, ICON_MIN_WEIGHT_PX;
+var ICON_ROLES, ICON_SIZE_PX, ICON_REFERENCE_CONTROL_PX, ICON_MIN_WEIGHT_PX, iconRoleVar;
 var init_iconSizing = __esm({
   "src/lib/iconSizing.ts"() {
+    init_roleNames();
     ICON_ROLES = ["small", "medium", "large"];
     ICON_SIZE_PX = {
       small: 16,
@@ -5831,6 +5934,7 @@ var init_iconSizing = __esm({
     };
     ICON_REFERENCE_CONTROL_PX = 40;
     ICON_MIN_WEIGHT_PX = 16;
+    iconRoleVar = (role) => roleCssVar("icon", role);
   }
 });
 
@@ -6177,9 +6281,12 @@ function privateFamilyKeys(themeSources) {
   }
   return keys;
 }
-function customScalePair(hex, s, pages, isGray, darkHex) {
+function isStatusFamily(themeSources, key2) {
+  return Object.values(themeSources).some((refs) => !!refs && [...STATUS_SLOTS].some((slot) => refs[slot] === key2));
+}
+function customScalePair(hex, s, pages, isGray, darkHex, isStatus = false) {
   return {
-    scale: isGray ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint) : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light"),
+    scale: isGray ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint) : isStatus ? generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light") : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, "light"),
     darkScale: isGray ? generateNeutralDarkScale(hex, darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : void 0, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint) : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark)
   };
 }
@@ -6209,7 +6316,7 @@ function applyScopedAccentColor(hex, linked, themeKey, darkHex) {
     if (!key2 || key2 === GLOBAL_FAMILY[slot] || skip.has(key2)) continue;
     const fam = s.customColors.find((c2) => c2.key === key2);
     if (!fam) continue;
-    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, slot === "gray", fam.darkBase));
+    s.updateCustomColor(key2, customScalePair(fam.base, s, pages, slot === "gray", fam.darkBase, isStatusSlot(slot)));
   }
   const latest = useDesignStore.getState();
   for (const rank of BRAND_EXTRA_RANKS) {
@@ -6252,6 +6359,7 @@ function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
     const nextDarkBg = neutral ? backgroundFromBase(neutral, "dark", neutralTint) : darkBackground;
     const pageMoved = nextBg !== pageBackground || nextDarkBg !== darkBackground;
     const gen = (base) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg);
+    const genStatus = (base) => generateStatusScale(base, colorAlgorithm, contrastShift, nextBg);
     const scale = gen(hex);
     const genDark = (base) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg);
     const darkOverride = darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : "";
@@ -6281,16 +6389,16 @@ function applyAccentColor(hex, linked = true, themeKey = "light", darkHex) {
       const nextSuccess = rec?.success ?? s.successColor;
       const nextInfo = rec?.info ?? s.infoColor;
       if (rec) s.setErrorColor(nextError);
-      s.setErrorScale(gen(nextError));
+      s.setErrorScale(genStatus(nextError));
       s.setErrorDarkScale(genDark(nextError));
       if (rec) s.setWarningColor(nextWarning);
-      s.setWarningScale(gen(nextWarning));
+      s.setWarningScale(genStatus(nextWarning));
       s.setWarningDarkScale(genDark(nextWarning));
       if (rec) s.setSuccessColor(nextSuccess);
-      s.setSuccessScale(gen(nextSuccess));
+      s.setSuccessScale(genStatus(nextSuccess));
       s.setSuccessDarkScale(genDark(nextSuccess));
       if (rec) s.setInfoColor(nextInfo);
-      s.setInfoScale(gen(nextInfo));
+      s.setInfoScale(genStatus(nextInfo));
       s.setInfoDarkScale(genDark(nextInfo));
     }
     for (const t of themeOrder) {
@@ -6352,14 +6460,15 @@ function applyAccentDarkColor(hex, themeKey = "light") {
 function ensureColorScales() {
   const s = useDesignStore.getState();
   const gen = (base) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground);
+  const genStatus = (base) => generateStatusScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground);
   const genDark = (base) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground);
   const empty = (o) => !o || !Object.keys(o).length;
   try {
     if (!Object.keys(s.primaryScale).length) s.setPrimaryScale(gen(s.primaryColor));
-    if (!Object.keys(s.errorScale).length) s.setErrorScale(gen(s.errorColor));
-    if (!Object.keys(s.warningScale).length) s.setWarningScale(gen(s.warningColor));
-    if (!Object.keys(s.successScale).length) s.setSuccessScale(gen(s.successColor));
-    if (!Object.keys(s.infoScale).length) s.setInfoScale(gen(s.infoColor));
+    if (!Object.keys(s.errorScale).length) s.setErrorScale(genStatus(s.errorColor));
+    if (!Object.keys(s.warningScale).length) s.setWarningScale(genStatus(s.warningColor));
+    if (!Object.keys(s.successScale).length) s.setSuccessScale(genStatus(s.successColor));
+    if (!Object.keys(s.infoScale).length) s.setInfoScale(genStatus(s.infoColor));
     if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint));
     if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(accentDarkBase(s)));
     if (empty(s.errorDarkScale)) s.setErrorDarkScale(genDark(s.errorColor));
@@ -6368,7 +6477,7 @@ function ensureColorScales() {
     if (empty(s.infoDarkScale)) s.setInfoDarkScale(genDark(s.infoColor));
     s.customColors.forEach((c2) => {
       const pages = resolveFamilyPages(s, c2.key);
-      const next = customScalePair(c2.base, s, pages, pages.isGray, c2.darkBase);
+      const next = customScalePair(c2.base, s, pages, pages.isGray, c2.darkBase, isStatusFamily(s.themeSources, c2.key));
       if (empty(c2.darkScale)) {
         s.updateCustomColor(c2.key, { darkScale: next.darkScale });
         return;
@@ -6408,7 +6517,7 @@ function applyStateColorForAppearance(role, hex, appearance, fromLink = false, t
     if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
       const pages = resolveThemePages(s, themeKey);
       if (appearance === "light") {
-        s.updateCustomColor(familyKey, { base: hex, scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) });
+        s.updateCustomColor(familyKey, { base: hex, scale: generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) });
       } else {
         s.updateCustomColor(familyKey, {
           darkBase: hex,
@@ -6418,7 +6527,7 @@ function applyStateColorForAppearance(role, hex, appearance, fromLink = false, t
       return;
     }
     if (appearance === "light") {
-      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground);
+      const scale = generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground);
       setGlobalStateRole(s, role, { color: hex, scale });
       return;
     }
@@ -6427,7 +6536,7 @@ function applyStateColorForAppearance(role, hex, appearance, fromLink = false, t
   } catch {
   }
 }
-var accentDarkBase, BRAND_ROLES, GRAY_ROLES;
+var accentDarkBase, BRAND_ROLES, GRAY_ROLES, STATUS_SLOTS, isStatusSlot;
 var init_colorActions = __esm({
   "src/lib/colorActions.ts"() {
     init_useDesignStore();
@@ -6440,6 +6549,8 @@ var init_colorActions = __esm({
     accentDarkBase = (s) => s.primaryDarkColor || s.primaryColor;
     BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === "brand");
     GRAY_ROLES = ALL_ROLES.filter((r) => r.scale === "gray");
+    STATUS_SLOTS = /* @__PURE__ */ new Set(["error", "warning", "success", "info"]);
+    isStatusSlot = (slot) => STATUS_SLOTS.has(slot);
   }
 });
 
@@ -6550,7 +6661,12 @@ function dimensionScaleForStore(store, themeKeys) {
   const sources = [store, ...themeKeys.map((t) => resolveThemeFoundations(store, t))];
   const values = collectDimensions(sources);
   for (const src of sources) {
-    for (const px of Object.values(iconSizesFor(src.sizes))) values.add(px);
+    for (const px2 of Object.values(iconSizesFor(src.sizes))) values.add(px2);
+    const s = src;
+    for (const vp of ["desktop", "tablet", "mobile"]) {
+      const col = gridColumnPx(s.gridFrame, vp, { spacing: s.spacing, breakpoints: extractBreakpoints(s.grid) });
+      if (col != null && Number.isInteger(col)) values.add(col);
+    }
   }
   return buildDimensionScale(values);
 }
@@ -6686,7 +6802,7 @@ function tintInkRef(fam, bgTone, look) {
   }
   return `{${fam}.${fallback}}`;
 }
-function uiBoundaryRef(fam, start, kind, look) {
+function uiBoundaryRef(fam, start, kind, look, apcaMin = APCA_UI) {
   const page = look(kind === "dark" ? "neutral-dark" : "neutral", 1);
   if (!page) return `{${fam}.${start}}`;
   const ramp = rampOf(look, fam);
@@ -6697,8 +6813,8 @@ function uiBoundaryRef(fam, start, kind, look) {
     if (!hex) continue;
     const w = checkContrast(hex, page);
     const lc = Math.abs(apcaLc(hex, page));
-    if (w >= WCAG_UI && lc >= APCA_UI) return `{${fam}.${t}}`;
-    const score = Math.min(w / WCAG_UI, lc / APCA_UI);
+    if (w >= WCAG_UI && lc >= apcaMin) return `{${fam}.${t}}`;
+    const score = Math.min(w / WCAG_UI, apcaMin > 0 ? lc / apcaMin : Infinity);
     if (score > bestScore) {
       bestScore = score;
       fallback = t;
@@ -6810,22 +6926,51 @@ function solidStepRef(fam, _offset, solidTone, look, inkHex, used) {
   const fallback = claimed[claimed.length - 1] ?? solidTone;
   return `{${fam}.${fallback}}`;
 }
+function inkRefOf(side, kind) {
+  if (side === "light") return kind === "light" ? "{neutral.1}" : "{neutral-light.1}";
+  return kind === "dark" ? "{neutral.1}" : "{neutral.12}";
+}
 function curatedRefs(roles, kind, look, accentHex = "#000000") {
   const chartSlots = chartPalette(accentHex);
   const solids = /* @__PURE__ */ new Map();
   const solidFor = (fam) => {
     let s = solids.get(fam);
     if (s === void 0) {
+      const ramp = rampOf(look, fam);
+      const job = SOLID_JOB[fam]?.[kind];
+      if (job) {
+        const inkRef = inkRefOf(job.ink, kind);
+        const m = REF_RE.exec(inkRef);
+        const ink = m ? look(m[1], Number(m[2])) : void 0;
+        const fill = ramp[job.tone];
+        if (ink && fill && checkContrast(ink, fill) >= WCAG_AA) {
+          const dir = job.ink === "light" === (kind === "light") ? 1 : -1;
+          s = { tone: job.tone, ink, inkRef, used: /* @__PURE__ */ new Set([job.tone]), dir };
+          solids.set(fam, s);
+          return s;
+        }
+      }
       const inks = inkHexes(look);
-      const pair = brandSolidPair(rampOf(look, fam), inks, BASE_TONE, ACTION_LABEL_TARGET);
-      s = { tone: pair.tone, ink: inks[pair.ink] ?? inks[0], used: /* @__PURE__ */ new Set([pair.tone]) };
+      const pair = brandSolidPair(ramp, inks, BASE_TONE, ACTION_LABEL_TARGET);
+      s = { tone: pair.tone, ink: inks[pair.ink] ?? inks[0], inkRef: INK_REFS[pair.ink] ?? INK_REFS[0], used: /* @__PURE__ */ new Set([pair.tone]) };
       solids.set(fam, s);
     }
     return s;
   };
+  const jobStep = (fam, n) => {
+    const s = solidFor(fam);
+    if (s.dir === void 0) return null;
+    const t = s.tone + s.dir * n;
+    const fill = look(fam, t);
+    if (t < 1 || t > 12 || !fill || s.used.has(t) || checkContrast(s.ink, fill) < WCAG_AA) return null;
+    s.used.add(t);
+    return `{${fam}.${t}}`;
+  };
   const solidToneFor = (fam) => solidFor(fam).tone;
   return roles.map((r) => {
-    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => `{${on ?? ""}${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => inkRefFor(look(fam, Number(tone2)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => tintInkRef(fam, Number(tone2), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`).replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`).replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+    const ref = (kind === "dark" ? r.dark : r.light).replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on, fam) => on ? solidFor(fam).inkRef : `{${fam}.${solidToneFor(fam)}}`).replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => inkRefFor(look(fam, Number(tone2)), look)).replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam, tone2) => tintInkRef(fam, Number(tone2), look)).replace(/\{ctl\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL) + 1, 12), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ctl-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look, APCA_CONTROL, WCAG_CONTROL)).replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiAlphaBoundaryRef(fam, Number(start), kind, look)).replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look)).replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look)).replace(/\{focus:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => uiBoundaryRef(fam, Number(start), kind, look, 0)).replace(/\{dis:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${disabledTextTone(fam, Number(start), kind, look)}}`).replace(/\{link\+:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${Math.min(linkTextTone(fam, Number(start), kind, look) + 1, 12)}}`).replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam, start) => `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`).replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam, n) => {
+      const job = jobStep(fam, Number(n));
+      if (job) return job;
       const s = solidFor(fam);
       return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used);
     }).replace(/\{chart\.(\d)\}/g, (_m, n) => chartSlots[Number(n) - 1] ?? "");
@@ -6866,7 +7011,15 @@ function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackgr
     // design-plans/alpha-primitives.md. Not derived from any family, so
     // there's no lookup chain here, just the constant.
     "black-a": BLACK_ALPHA_SCALE,
-    "white-a": WHITE_ALPHA_SCALE
+    "white-a": WHITE_ALPHA_SCALE,
+    // The LIGHT page, reachable from a dark theme too: the light ink a solid
+    // carries when it stays light in Dark (`status.critical.on-solid`, the
+    // Escala file's `Accents/…/01`). Only step 1 exists — the dark palette
+    // does not carry the light ramp.
+    "neutral-light": (() => {
+      const page = kind === "light" ? (palette?.gray ?? scales.gray)?.[1] : palette?.alphaPages?.neutral?.light ?? scales.gray?.[1] ?? pageBackground;
+      return page ? { 1: page } : void 0;
+    })()
   };
   if (pageBackground && darkBackground) {
     const systemPage = kind === "dark" ? darkBackground : pageBackground;
@@ -6939,7 +7092,7 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, SOLID_JOB, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
@@ -6949,8 +7102,8 @@ var init_semanticArchitectures = __esm({
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
     APCA_UI = INTENT_THRESHOLDS["ui-component"].apcaLc ?? 45;
-    WCAG_CONTROL = INTENT_THRESHOLDS["control-boundary"].wcag ?? 1.4;
-    APCA_CONTROL = INTENT_THRESHOLDS["control-boundary"].apcaLc ?? 0;
+    WCAG_CONTROL = WCAG_UI;
+    APCA_CONTROL = 0;
     INK_REFS = ["{neutral.1}", "{neutral.12}"];
     REF_RE = /^\{([a-z-]+)\.(\d+)\}$/;
     TEXT_END_TONE = 12;
@@ -6959,6 +7112,13 @@ var init_semanticArchitectures = __esm({
     WCAG_DISABLED = INTENT_THRESHOLDS["disabled-text"].wcag ?? 3;
     APCA_DISABLED = INTENT_THRESHOLDS["disabled-text"].apcaLc ?? 30;
     OPAQUE6 = /^#[0-9a-f]{6}$/i;
+    SOLID_JOB = {
+      accent: { light: { tone: 9, ink: "light" }, dark: { tone: 10, ink: "dark" } },
+      error: { light: { tone: 9, ink: "light" }, dark: { tone: 8, ink: "light" } },
+      success: { light: { tone: 9, ink: "light" }, dark: { tone: 9, ink: "dark" } },
+      warning: { light: { tone: 9, ink: "light" }, dark: { tone: 10, ink: "dark" } },
+      info: { light: { tone: 9, ink: "light" }, dark: { tone: 10, ink: "dark" } }
+    };
     CATEGORICAL_ROLES = [
       // Content — text & icon ink
       { group: "content", key: "primary", light: "{neutral.12}", dark: "{neutral-dark.12}" },
@@ -6978,6 +7138,9 @@ var init_semanticArchitectures = __esm({
       { group: "content", key: "on-secondary", light: "{neutral.12}", dark: "{neutral-dark.12}" },
       { group: "content", key: "inverse", light: "{neutral.1}", dark: "{neutral-dark.1}" },
       // ink on surface.inverse
+      // Secondary ink on surface.inverse: the alpha ladder pointing AWAY from the
+      // inverse chip — white where it is dark (Light), black where it is light (Dark).
+      { group: "content", key: "inverse-secondary", light: "{white-a.9}", dark: "{black-a.9}" },
       // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
       // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
       // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
@@ -7036,7 +7199,7 @@ var init_semanticArchitectures = __esm({
       // on every seed, while dark tone 6 clears it. Same shape as primary's
       // documented residual — hover and pressed can share a tone and still be a
       // real, legible state; a pressed fill that fails the label floor is not.
-      { group: "action", key: "secondary.pressed", light: "{neutral.5}", dark: "{neutral-dark.6}" },
+      { group: "action", key: "secondary.pressed", light: "{neutral.6}", dark: "{neutral-dark.6}" },
       // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
       // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
       // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
@@ -7119,7 +7282,8 @@ var init_semanticArchitectures = __esm({
       // (a hair off the page) and `content.inverse` (`{neutral-dark.1}`, the
       // page) sat on it at ~1.2:1. `{neutral-dark.11}` is the muted light chip
       // of THIS page — AA + Lc 75 against tone 1, without the tone-12 flash.
-      { group: "surface", key: "inverse", light: "{neutral.12}", dark: "{neutral-dark.11}" },
+      { group: "surface", key: "inverse", light: "{neutral.12}", dark: "{neutral-dark.12}" },
+      { group: "surface", key: "inverse-muted", light: "{white-a.3}", dark: "{black-a.3}" },
       // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
       // `{black-a.8}` (60% — Radix blackA8) is a genuine translucent overlay: the
       // pre-alpha-primitives value here was `{neutral.12}` / `{neutral-dark.1}`,
@@ -7155,9 +7319,9 @@ var init_semanticArchitectures = __esm({
       //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
       //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
       //    reads as red, and all three severities now agree on the same step.
-      { group: "status", key: "critical.surface", light: "{error-a.3}", dark: "{error-a.3}" },
+      { group: "status", key: "critical.surface", light: "{error-a.3}", dark: "{error-a.4}" },
       { group: "status", key: "critical.content", light: "{error.11}", dark: "{error.11}" },
-      { group: "status", key: "warning.surface", light: "{warning-a.3}", dark: "{warning-a.3}" },
+      { group: "status", key: "warning.surface", light: "{warning-a.3}", dark: "{warning-a.4}" },
       // Warning content / border-strong / surface-solid can resolve to ONE hex.
       // That is ramp geometry, not a schema defect — do not collapse the three
       // roles. Content is pinned to tone 11 so the severity hue survives (tone 12
@@ -7168,7 +7332,7 @@ var init_semanticArchitectures = __esm({
       // one appearance. The four `*.on-solid` sharing near-white/near-black is
       // correct: `{on:…}` solves ink against the fill, not a second hue.
       { group: "status", key: "warning.content", light: "{warning.11}", dark: "{warning.11}" },
-      { group: "status", key: "success.surface", light: "{success-a.3}", dark: "{success-a.3}" },
+      { group: "status", key: "success.surface", light: "{success-a.3}", dark: "{success-a.4}" },
       { group: "status", key: "success.content", light: "{success.11}", dark: "{success.11}" },
       // Info — same shape as the three severities above, added because the Info
       // primitive (seeded, generated, exported to tokens.json) had NO semantic
@@ -7182,7 +7346,7 @@ var init_semanticArchitectures = __esm({
       // clears WCAG 4.35 / Lc 63.8 in light and 10.21 / Lc 73.6 in dark — the
       // same range critical/warning/success already accept (critical's own
       // residual is Lc ~42, short of the 60 floor, and was kept anyway).
-      { group: "status", key: "info.surface", light: "{info-a.3}", dark: "{info-a.3}" },
+      { group: "status", key: "info.surface", light: "{info-a.3}", dark: "{info-a.4}" },
       { group: "status", key: "info.content", light: "{info.11}", dark: "{info.11}" },
       // ── The PRESSED wash of a status-tinted interactive surface — a destructive
       // row-menu item held down, a "dismiss all" on an error banner. `{fam-a.5}`,
@@ -7194,10 +7358,10 @@ var init_semanticArchitectures = __esm({
       // Added for all four severities in one go — the rule this file re-decides by
       // hand every time: a severity gets a slot because ALL FOUR do, never because
       // one component reached for it (see `status.info.*` above).
-      { group: "status", key: "critical.surface-pressed", light: "{error-a.5}", dark: "{error-a.5}" },
-      { group: "status", key: "warning.surface-pressed", light: "{warning-a.5}", dark: "{warning-a.5}" },
-      { group: "status", key: "success.surface-pressed", light: "{success-a.5}", dark: "{success-a.5}" },
-      { group: "status", key: "info.surface-pressed", light: "{info-a.5}", dark: "{info-a.5}" },
+      { group: "status", key: "critical.surface-pressed", light: "{error-a.4}", dark: "{error-a.5}" },
+      { group: "status", key: "warning.surface-pressed", light: "{warning-a.4}", dark: "{warning-a.5}" },
+      { group: "status", key: "success.surface-pressed", light: "{success-a.4}", dark: "{success-a.5}" },
+      { group: "status", key: "info.surface-pressed", light: "{info-a.4}", dark: "{info-a.5}" },
       // ── The STROKE of a status surface, one role per severity.
       //
       // Added because both renderers were painting it from a magic number and
@@ -7242,7 +7406,7 @@ var init_semanticArchitectures = __esm({
       // `info` is NEW — the severity every other status slot already covers "one
       // decision across all four" — and lands on the same light-9 / dark-10 shape as
       // error, one step earlier than error in dark because its ramp clears sooner.
-      { group: "status", key: "critical.border-strong", light: "{error.9}", dark: "{error.11}" },
+      { group: "status", key: "critical.border-strong", light: "{error.9}", dark: "{error.10}" },
       { group: "status", key: "warning.border-strong", light: "{warning.11}", dark: "{warning.11}" },
       { group: "status", key: "success.border-strong", light: "{success.10}", dark: "{success.10}" },
       { group: "status", key: "info.border-strong", light: "{info.9}", dark: "{info.10}" },
@@ -7394,7 +7558,7 @@ var init_semanticArchitectures = __esm({
       // six-seed search showed dark ramps have no blind spot worth walking around,
       // so the walk simply lands on 11 for every seed tried (WCAG 11.83–11.90,
       // Lc 75.0–75.3). Both columns are the solver, not a pin.
-      { group: "border", key: "focus", light: "{ui:accent.9}", dark: "{ui:accent.9}" },
+      { group: "border", key: "focus", light: "{focus:accent.9}", dark: "{focus:accent.9}" },
       // ── Focus RING (the translucent halo), distinct from `border.focus` (the
       // solid boundary). Two roles, not one, because they do different jobs: the
       // boundary must clear WCAG 1.4.11 as a UI component (hence the `{ui:…}`
@@ -7421,7 +7585,16 @@ var init_semanticArchitectures = __esm({
       // design-plans/alpha-primitives.md); it gives the CONCEPT a name so a
       // consumer building elevation by hand has the same rim available, and so
       // `white-a` stops being a family the export ships that no role references.
-      { group: "border", key: "rim-highlight", light: "{white-a.1}", dark: "{white-a.1}" }
+      { group: "border", key: "rim-highlight", light: "{white-a.1}", dark: "{white-a.1}" },
+      // Any stroke ON surface.inverse (outline badge, divider in a tooltip).
+      { group: "border", key: "inverse", light: "{white-a.5}", dark: "{black-a.5}" },
+      // Elevation — the colours INSIDE an effect (Shadow/*, Depth/*, the solid
+      // control highlight), never a fill or a stroke. One shadow recipe follows
+      // Light and Dark because its layers read these.
+      { group: "elevation", key: "shadow-key", light: "{black-a.2}", dark: "{black-a.6}" },
+      { group: "elevation", key: "shadow-ambient", light: "{black-a.1}", dark: "{black-a.4}" },
+      { group: "elevation", key: "shadow-ring", light: "{white-a.1}", dark: "{white-a.1}" },
+      { group: "elevation", key: "highlight", light: "{white-a.3}", dark: "{white-a.3}" }
       // `border.critical` / `border.warning` / `border.success` moved to
       // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
       // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -7441,13 +7614,20 @@ var init_semanticArchitectures = __esm({
       CATEGORICAL_ROLES.splice(0, CATEGORICAL_ROLES.length, ...rest.slice(0, first), ...status, ...rest.slice(first));
     }
     CATEGORICAL_ROLE_COMMENTS = {
+      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.",
+      "elevation.shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
+      "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
+      "elevation.shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
+      "border.inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse \u2014 an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
+      "content.inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse \u2014 content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
+      "surface.inverse-muted": "[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse \u2014 a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.",
       "surface.page": "[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.",
       "surface.layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
       "surface.layer-2": "[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS \u2014 the color step alone does not convey floating.",
       "surface.input": "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design \u2014 named separately so forms have their own token.",
       "surface.selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "surface.selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected \u2014 the brand twin of status.*.surface-pressed.",
-      "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} \u2014 a muted inverse chip, not the dark ramp's near-white step.",
+      "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "surface.overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill.",
       "surface.muted": "[ROLE: Control Track] Neutral fill of a control's passive part \u2014 a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
@@ -7457,26 +7637,26 @@ var init_semanticArchitectures = __esm({
       "content.subtle": "[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only \u2014 not a third readable body tier. Minimum ~3:1; do not convey information.",
       "content.disabled": "[ROLE: Inactive Text] Disabled controls and copy. Exempt from strict WCAG rules \u2014 must communicate inactivity, not full legibility.",
       "content.inverse": "[ROLE: Inverted Text] Required when the background is surface.inverse or any dark/solid fill outside the accent.",
-      "content.on-action": "[ROLE: Button Text] Label ink used ONLY on action.primary.default. Solved per theme against that fill \u2014 never assume white. Must exceed 4.5:1 against the button fill.",
+      "content.on-action": "[ROLE: Button Text] Label ink used ONLY on action.primary.*. The ink the fill was solved WITH: the light page in Light, the dark page in Dark for the default system \u2014 never assume white. Exceeds 4.5:1 against every primary state.",
       "content.on-secondary": "[ROLE: Secondary Button Text] Label ink used ONLY on action.secondary.*. {neutral.12} in light \u2014 content.primary while secondary is a light wash; re-pointed with the fill when a system makes secondary a dark button. Must exceed 4.5:1 against the fill.",
       "content.accent": "[ROLE: Accent Text] Brand-tinted emphasis \u2014 active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).",
       "content.link.default": "[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.",
       "content.link.hover": "[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default \u2014 one ramp step for visible feedback while staying accessible.",
-      "action.primary.default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme \u2014 not pinned to a fixed accent step.",
-      "action.primary.hover": "[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) \u2014 one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)",
-      "action.primary.pressed": "[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) \u2014 two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)",
+      "action.primary.default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.",
+      "action.primary.hover": "[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) \u2014 darker under a light ink (Light 10), lighter under a dark ink (Dark 11) \u2014 re-verified for label contrast.",
+      "action.primary.pressed": "[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) \u2014 Light 11, Dark 12 \u2014 re-verified for label contrast.",
       "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
       "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
-      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark \u2014 so light pressed shares the hover tone. Label stays content.on-secondary.",
+      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} \u2014 two steps past action.secondary.default. Label stays content.on-secondary.",
       "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.2} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
       "action.ghost.default": "[ROLE: Ghost Default] Resting fill of a borderless button \u2014 fully transparent (`{neutral-a.1}` \u2014 alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "action.ghost.hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance \u2014 {black-a.1} in light, {white-a.1} in dark \u2014 because a neutral wash has to darken a light page and lighten a dark one.",
       "action.ghost.pressed": "[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.",
       "status.critical.surface": "[ROLE: Feedback Background Subtle] Affects error alerts, banners, toasts, destructive row-menu items. Tinted background. Pair with status.critical.content \u2014 never a fixed ink on the bg alone.",
-      "status.critical.surface-pressed": '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.5} \u2014 two steps deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
-      "status.warning.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.5}.",
-      "status.success.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.5}.",
-      "status.info.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.5}.",
+      "status.critical.surface-pressed": '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.4} in Light, {error-a.5} in Dark \u2014 one step deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
+      "status.warning.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.4} in Light, {warning-a.5} in Dark.",
+      "status.success.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.4} in Light, {success-a.5} in Dark.",
+      "status.info.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.4} in Light, {info-a.5} in Dark.",
       "status.critical.surface-solid": "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes \u2014 solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
       "status.critical.content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes \u2014 Radix's chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
       "status.critical.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
@@ -7510,10 +7690,10 @@ var init_semanticArchitectures = __esm({
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.",
-      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. A HAIRLINE at the weight modern systems draw it (shadcn's --border): SOLVED on the alpha ladder ({ctl-a:\u2026}) to a 1.4:1 visibility floor, the first step visibly off the page \u2014 {black-a.3} (1.41:1) in light, {white-a.3} (1.50:1) in dark for the default system. It does NOT clear WCAG 1.4.11 on its own by design: a control that must be identified without a fill gives itself one (surface.input a step off the page).",
-      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control's hover stroke from this concept.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:\u2026}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.",
+      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
-      "border.focus": "[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned \u2014 the ring is always the user's own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field \u2014 focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only \u2014 the translucent halo is border.ring.*.",
+      "border.focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page \u2014 tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
       "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
       "border.accent": "[ROLE: Accent Border] Border painted in the brand accent \u2014 a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
@@ -7541,6 +7721,125 @@ var init_semanticArchitectures = __esm({
   }
 });
 
+// src/lib/elevationTokens.ts
+function parseLayer(css) {
+  const inner = css.replace(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|inset/gi, " ").trim();
+  const nums = inner.split(/\s+/).filter(Boolean).map((t) => parseFloat(t));
+  if (nums.length < 2 || nums.some((n) => !Number.isFinite(n))) return null;
+  const [x, y, blur = 0, spread = 0] = nums;
+  return { x, y, blur, spread };
+}
+function splitLayers(css) {
+  const out = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of css) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      out.push(cur.trim());
+      cur = "";
+    } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function shadowRecipesFor(shadows) {
+  const ramp = shadows ?? SOFT;
+  const isDefault = SHADOW_STEPS.every((step) => (ramp[step] ?? "") === SOFT[step]);
+  if (isDefault) return structuredClone(SHADOW_RECIPES);
+  const out = {};
+  for (const step of SHADOW_STEPS) {
+    const css = ramp[step];
+    if (!css || css === "none") {
+      out[step] = [];
+      continue;
+    }
+    const layers = splitLayers(css).map(parseLayer);
+    out[step] = layers.every(Boolean) ? [RING, ...layers.map((g, i) => ({ ...g, role: i === 0 ? "key" : "ambient" }))] : structuredClone(SHADOW_RECIPES[step]);
+  }
+  return out;
+}
+function elevationTokens(shadows) {
+  return { shadow: shadowRecipesFor(shadows), depth: structuredClone(DEPTH_RECIPES), blur: { ...BLUR_PX } };
+}
+function layerCss(layer, inset) {
+  return `${inset ? "inset " : ""}${px(layer.x)} ${px(layer.y)} ${px(layer.blur)} ${px(layer.spread)} ${ROLE_VAR[layer.role]}`;
+}
+function elevationCssVars() {
+  return [
+    ...SHADOW_STEPS.map((step) => `--depth-${step}: ${DEPTH_RECIPES[step].map((l) => layerCss(l, true)).join(", ")};`),
+    ...SHADOW_STEPS.map((step) => `--blur-${step}: ${BLUR_PX[step]}px;`)
+  ];
+}
+var L, RING, SHADOW_RECIPES, DEPTH_RECIPES, BLUR_PX, ROLE_VAR, SOFT, px;
+var init_elevationTokens = __esm({
+  "src/lib/elevationTokens.ts"() {
+    init_shadowTokens();
+    L = (x, y, blur, spread, role) => ({ x, y, blur, spread, role });
+    RING = L(0, 0, 0, 1, "ring");
+    SHADOW_RECIPES = {
+      xs: [RING, L(0, 1, 2, 0, "ambient")],
+      sm: [RING, L(0, 1, 3, 0, "key"), L(0, 1, 2, -1, "key")],
+      md: [RING, L(0, 4, 6, -1, "key"), L(0, 2, 4, -2, "ambient")],
+      lg: [RING, L(0, 12, 16, -4, "key"), L(0, 4, 6, -2, "ambient")],
+      xl: [RING, L(0, 20, 24, -4, "key"), L(0, 8, 8, -4, "ambient")],
+      "2xl": [RING, L(0, 24, 48, -12, "key"), L(0, 24, 48, -12, "key")]
+    };
+    DEPTH_RECIPES = {
+      xs: [RING, L(0, 1, 2, 0, "ambient")],
+      sm: [RING, L(0, 1, 3, 0, "key"), L(0, 1, 2, -1, "key")],
+      md: [RING, L(0, 2, 4, -1, "key"), L(0, 1, 2, -1, "ambient")],
+      lg: [RING, L(0, 4, 8, -2, "key"), L(0, 2, 4, -2, "ambient")],
+      xl: [RING, L(0, 8, 16, -4, "key"), L(0, 4, 8, -4, "ambient")],
+      "2xl": [RING, L(0, 12, 24, -6, "key"), L(0, 6, 12, -6, "ambient")]
+    };
+    BLUR_PX = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, "2xl": 40 };
+    ROLE_VAR = {
+      key: "var(--color-elevation-shadow-key)",
+      ambient: "var(--color-elevation-shadow-ambient)",
+      ring: "var(--color-elevation-shadow-ring)"
+    };
+    SOFT = SHADOW_PRESETS.find((p2) => p2.label === "Soft").values;
+    px = (n) => n === 0 ? "0" : `${n}px`;
+  }
+});
+
+// src/lib/socialBrands.ts
+function socialBrandTokens() {
+  return structuredClone(SOCIAL_BRANDS);
+}
+function socialCssVars() {
+  const out = [];
+  for (const [id, b] of Object.entries(SOCIAL_BRANDS)) {
+    for (const state2 of ["default", "hover", "pressed"]) {
+      out.push(`--social-${id}-action-${state2}: ${b.ramp[b.action[state2]]};`);
+    }
+    out.push(`--social-${id}-content-on-action: ${SOCIAL_INK[b.onAction]};`);
+    out.push(`--social-${id}-border-focus: ${SOCIAL_INK[b.focus]};`);
+  }
+  return out;
+}
+var SOCIAL_INK, darkens, lightens, SOCIAL_BRANDS;
+var init_socialBrands = __esm({
+  "src/lib/socialBrands.ts"() {
+    SOCIAL_INK = { white: "#ffffff", black: "#000000" };
+    darkens = { default: "500", hover: "600", pressed: "700" };
+    lightens = { default: "500", hover: "400", pressed: "300" };
+    SOCIAL_BRANDS = {
+      google: { label: "Google", ramp: { 500: "#db4437", 600: "#c53d32", 700: "#af362c" }, action: darkens, onAction: "white", focus: "black" },
+      apple: { label: "Apple", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white" },
+      discord: { label: "Discord", ramp: { 500: "#5865f2", 600: "#4f5bda", 700: "#4651c2" }, action: darkens, onAction: "white", focus: "white" },
+      dribbble: { label: "Dribbble", ramp: { 500: "#ea4c89", 600: "#d3447b", 700: "#bb3d6e" }, action: darkens, onAction: "white", focus: "black" },
+      facebook: { label: "Facebook", ramp: { 500: "#1877f2", 600: "#166bda", 700: "#135fc2" }, action: darkens, onAction: "white", focus: "black" },
+      github: { label: "GitHub", ramp: { 500: "#24292f", 400: "#3e4348", 300: "#505459" }, action: lightens, onAction: "white", focus: "white" },
+      linkedin: { label: "LinkedIn", ramp: { 500: "#0a66c2", 600: "#095caf", 700: "#08529b" }, action: darkens, onAction: "white", focus: "white" },
+      slack: { label: "Slack", ramp: { 500: "#4a154b", 400: "#603161", 300: "#6e446f" }, action: lightens, onAction: "white", focus: "white" },
+      x: { label: "X", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white" }
+    };
+  }
+});
+
 // src/lib/agentBundle/names.ts
 function figmaSemanticName(id) {
   const [group, ...rest] = id.split(".");
@@ -7556,7 +7855,8 @@ var init_names = __esm({
       action: "Action",
       surface: "Surface",
       status: "Status",
-      border: "Border"
+      border: "Border",
+      elevation: "Elevation"
     };
   }
 });
@@ -9514,6 +9814,7 @@ var init_componentRecipes = __esm({
     init_indicators();
     init_helpers();
     init_motion2();
+    init_roleNames();
     init_helpers();
     COMPONENT_RECIPES = {
       Button: BUTTON,
@@ -9792,14 +10093,15 @@ function generateTokenJSON(source, opts) {
       // THIS theme's spacing roles: a System Style pins its own (Neo's
       // `inset-surface` is step 6). Without them the plugin fell back to the
       // root store's roles and wrote another theme's insets into Figma's
-      // `Spacing/role/*`. Same split as the root: Desktop static steps, plus
+      // `Spacing/*`. Same split as the root: Desktop static steps, plus
       // which roles alias a responsive token.
-      spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, "desktop"),
-      spacingRoleRefs: withInsetSides(resolved.spacingRoles),
+      spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, "desktop", { sides: false }),
+      spacingRoleRefs: spacingRoleRefsOf(resolved.spacingRoles),
+      spacingRoleViewports: roleViewportsOf("spacing", resolved.spacingRoles),
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles("radius", resolved.radiusRoles),
-      radiusRoleViewports: resolved.radiusRoleViewports ?? {},
+      radiusRoleViewports: resolvedRadiusRoleViewports(resolved.radiusRoles, resolved.radiusRoleViewports),
       shadows: resolved.shadows,
       // THIS theme's dark elevation ramp: its own pick, else the derived twin
       // (`darkShadowsOf`). The root `shadowsDark` stays the global twin.
@@ -9810,6 +10112,7 @@ function generateTokenJSON(source, opts) {
       breakpointRoles: mergeLayoutRoles("breakpoint", resolved.breakpointRoles),
       sizes: resolved.sizes,
       sizeRoles: mergeLayoutRoles("size", resolved.sizeRoles),
+      sizeRoleViewports: roleViewportsOf("size", resolved.sizeRoles),
       selector: resolved.selector,
       selectorRoles: mergeLayoutRoles("selector", resolved.selectorRoles),
       stroke: resolved.stroke,
@@ -10011,23 +10314,32 @@ function generateTokenJSON(source, opts) {
     // Desktop STATIC steps, so a consumer that predates responsive spacing
     // (an older plugin, an agent reading `spacingRoles`) keeps resolving every
     // role to the same value it always did…
-    spacingRoles: spacingRolesAtViewport(store.spacingRoles, "desktop"),
+    // The Escala Figma file has no per-side inset variables, so the twelve
+    // `inset-*-top|right|bottom|left` keys are not shipped (a hand-set card
+    // side still reaches `padding`).
+    spacingRoles: spacingRolesAtViewport(store.spacingRoles, "desktop", { sides: false }),
     // …and the responsive layer on top, additive: which roles alias a
     // responsive token (`component-md`), and the token table itself.
-    spacingRoleRefs: withInsetSides(store.spacingRoles),
+    spacingRoleRefs: spacingRoleRefsOf(store.spacingRoles),
     spacingResponsive: SPACING_RESPONSIVE,
+    // The roles with their own Tablet / Mobile value, same shape as
+    // `radiusRoleViewports` (Desktop stays in `spacingRoles`): `inset-page`
+    // 32 / 16 / 16 → { tablet: { 'inset-page': '4' }, mobile: { 'inset-page':
+    // '4' } }, `inset-section` 96 / 64 / 48. Additive.
+    spacingRoleViewports: roleViewportsOf("spacing", store.spacingRoles),
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).
     padding: store.padding,
     radius: store.radius,
     radiusRoles: mergeLayoutRoles("radius", store.radiusRoles),
-    // Hand-set radius roles on Tablet / Mobile (only the ones someone changed);
-    // a role absent here follows `radiusResponsive`. Additive.
-    radiusRoleViewports: store.radiusRoleViewports ?? {},
-    // Responsive radius: the static step each role reads per viewport (one
-    // smaller on Tablet, one — two from 3xl up — on Mobile). The plugin writes
-    // each Radius/role/* mode as an alias of that step's dimension primitive.
-    // Additive, so no schemaVersion bump.
+    // Every radius role's value on Tablet and Mobile, resolved. Radius roles
+    // do not step down (the Escala Figma file): each holds its Desktop value
+    // unless someone set Tablet / Mobile by hand. Shipped complete so a
+    // consumer that would step a missing role down by `radiusResponsive` reads
+    // the value the web renders.
+    radiusRoleViewports: resolvedRadiusRoleViewports(store.radiusRoles, store.radiusRoleViewports),
+    // The `--radius-component-*` tokens' steps per viewport (one smaller on
+    // Tablet, one — two from 3xl up — on Mobile). The ROLES do not follow it.
     radiusResponsive: RADIUS_RESPONSIVE,
     // Named gradients (slug → CSS) + which one drives each preview surface.
     gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
@@ -10069,6 +10381,12 @@ function generateTokenJSON(source, opts) {
     // colour IS the dark page: unoverridden, every elevation composites to
     // within 0.36 of one 8-bit level of the background. See `darkShadow`.
     shadowsDark: darkShadowMap(store.shadows),
+    // Shadow and depth recipes per step (`xs…2xl`): layers `{ x, y, blur,
+    // spread, role }` whose colour is an Elevation role
+    // (`color.elevation.shadow-key|shadow-ambient|shadow-ring`), so one style
+    // follows Light and Dark. `blur` is the CSS `backdrop-filter` px per step
+    // (Figma's BACKGROUND_BLUR radius is twice it). Additive.
+    elevation: elevationTokens(store.shadows),
     grid: store.grid,
     gridFrame: mergeGridFrame(store.gridFrame),
     // The six named layouts a designer applies in Figma (2XL Desktop … SM
@@ -10077,6 +10395,9 @@ function generateTokenJSON(source, opts) {
     breakpointRoles: mergeLayoutRoles("breakpoint", store.breakpointRoles),
     sizes: store.sizes,
     sizeRoles: mergeLayoutRoles("size", store.sizeRoles),
+    // `target-min` 24 / 44 / 44: Desktop in `sizeRoles`, Tablet / Mobile here
+    // (pinned `dimension-44`). Same shape as `radiusRoleViewports`. Additive.
+    sizeRoleViewports: roleViewportsOf("size", store.sizeRoles),
     // Additive, so no schemaVersion bump — same call as `shadowsDark` /
     // `gradientsDark`: a plugin that predates this key ignores it.
     selector: store.selector,
@@ -10109,6 +10430,11 @@ function generateTokenJSON(source, opts) {
     // choreographies with their reduced-motion versions, and the intent text
     // agents read. Additive, no schemaVersion bump (the `shadowsDark` precedent).
     motion: motionTokens(normalizeMotionSettings(store.motion)),
+    // Social-login provider colours (Google, Apple…), the same in every
+    // system: `{ <id>: { label, ramp: { <step>: hex }, action: { default,
+    // hover, pressed } (ramp steps), onAction, focus: 'white' | 'black' } }`.
+    // Additive.
+    socialBrands: socialBrandTokens(),
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
@@ -10125,6 +10451,10 @@ function generateTokenJSON(source, opts) {
     // field — only present when the publisher passed `opts.section`.
     ...opts?.section?.trim() ? { editor: { section: opts.section.trim() } } : {}
   };
+}
+function spacingRoleRefsOf(roles) {
+  const merged = mergeLayoutRoles("spacing", roles);
+  return Object.fromEntries(LAYOUT_ROLES.spacing.map((r) => [r.key, merged[r.key]]));
 }
 var TOKEN_SCHEMA_VERSION, activeThemeHint;
 var init_tokenGenerator = __esm({
@@ -10147,6 +10477,8 @@ var init_tokenGenerator = __esm({
     init_platformAxis();
     init_customFonts();
     init_layoutTokens();
+    init_elevationTokens();
+    init_socialBrands();
     init_gradients();
     init_themeModes();
     init_themeFoundations();
@@ -10431,12 +10763,17 @@ var init_fonts = __esm({
 
 // src/lib/exporters.ts
 function paddingCssEntries(padding, spacing, spacingRoles) {
+  const own = mergeLayoutRoles("spacing", spacingRoles);
   const sides = withInsetSides(spacingRoles);
   return Object.entries(padding).map(([side, value]) => {
     const key2 = `inset-surface-${side}`;
     const resolved = key2 in sides ? resolveLayoutRole("spacing", sides, spacing, key2) : "";
-    return [side, resolved && value === resolved ? `var(--spacing-${key2})` : dimensionVar(value)];
+    const alias = own[key2] !== void 0 ? `--spacing-${key2}` : "--spacing-inset-surface";
+    return [side, resolved && value === resolved ? `var(${alias})` : dimensionVar(value)];
   });
+}
+function radiusRampEntries(radius) {
+  return Object.entries(radius).filter(([k]) => k !== "full");
 }
 function primitiveRampLines(store, kind) {
   const { colorNaming, customColors, pageBackground } = store;
@@ -10547,13 +10884,13 @@ function buildCSS(store, opts) {
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`));
   lines.push("\n  /* Padding \u2014 per-side surface inset (alias of spacing-inset-surface) */");
   paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`));
-  lines.push("\n  /* Radius */");
-  Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
+  lines.push("\n  /* Radius \u2014 the ramp. `full` is the role `--radius-full` (radius.pill), below. */");
+  radiusRampEntries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
   lines.push("\n  /* Radius \u2014 responsive tokens (Tablet / Mobile step down in the media blocks) */");
   radiusComponentCss("desktop").forEach((l) => lines.push(`  ${l}`));
   lines.push("\n  /* Sizes */");
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`));
-  lines.push("\n  /* Selectors \u2014 checkbox / radio / switch glyph, a square not a height */");
+  lines.push("\n  /* Selectors \u2014 checkbox / radio / switch glyph ramp, a square not a height. Roles: --size-selector-md|sm */");
   Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`));
   lines.push("\n  /* Icon sizes \u2014 scaled to the md control height, the same in every viewport */");
   iconSizeCssVars(sizes).forEach((l) => lines.push(l));
@@ -10572,6 +10909,10 @@ function buildCSS(store, opts) {
   const rootIsDark = rootKind === "dark";
   const rootShadows = rootIsDark ? darkShadowMap(shadows) : shadows;
   Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`));
+  lines.push("\n  /* Depth and blur \u2014 box-shadow: var(--depth-sm) \xB7 backdrop-filter: blur(var(--blur-sm)) */");
+  elevationCssVars().forEach((l) => lines.push(`  ${l}`));
+  lines.push("\n  /* Social-login colours \u2014 fixed per provider */");
+  socialCssVars().forEach((l) => lines.push(`  ${l}`));
   lines.push("\n  /* Breakpoints \u2014 primitive min-widths */");
   const bps = extractBreakpoints(grid);
   BREAKPOINT_STEPS.forEach((step) => {
@@ -10590,8 +10931,8 @@ function buildCSS(store, opts) {
   motionRootCss(motion).forEach((l) => lines.push(`  ${l}`));
   lines.push("}");
   const hairlines = Object.entries(stroke ?? {}).filter(([, v]) => {
-    const px = parseFloat(v);
-    return Number.isFinite(px) && px > 0 && px < 1;
+    const px2 = parseFloat(v);
+    return Number.isFinite(px2) && px2 > 0 && px2 < 1;
   });
   if (hairlines.length) {
     lines.push("\n@media (max-resolution: 1.99dppx) {");
@@ -10602,7 +10943,7 @@ function buildCSS(store, opts) {
   }
   if (!desktopOnly) {
     lines.push(`
-${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`);
+${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing }, { roles: sizeRoles, sizes })}`);
   }
   const themedMotion = [];
   const themedRadius = [];
@@ -10652,7 +10993,7 @@ ${themeSelector} {`);
       typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`));
       Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`));
       paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`));
-      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
+      radiusRampEntries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`));
       radiusComponentCss("desktop").forEach((l) => lines.push(`  ${l}`));
       Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`));
       Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`));
@@ -10674,7 +11015,7 @@ ${themeSelector} {`);
       }).forEach((line) => lines.push(`  ${line}`));
       if (kind !== "dark") Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`));
       gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`));
-      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing });
+      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing, sizeRoles: foundations.sizeRoles, sizes: foundations.sizes });
       lines.push(`  --panel-blur: ${foundations.panelBackground === "translucent" ? "blur(16px)" : "none"};`);
       const motionDiff = motionThemeCssDiff(motion, normalizeMotionSettings(foundations.motion));
       if (motionDiff.full.length) {
@@ -10704,7 +11045,7 @@ ${themeSelector} {`);
   if (!desktopOnly && themedRadius.length) {
     const bps2 = extractBreakpoints(grid);
     for (const [vp, max] of [["tablet", breakpointTabletMax(breakpointRoles, bps2)], ["mobile", breakpointMobileMax(breakpointRoles, bps2)]]) {
-      const blocks = themedRadius.map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] })).filter((b) => b.decls.length);
+      const blocks = themedRadius.map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing), ...sizeRolesViewportCss(vp, t.sizeRoles, t.sizes)] })).filter((b) => b.decls.length);
       if (!blocks.length) continue;
       lines.push(`
 @media (max-width: ${max}) {`);
@@ -10733,6 +11074,8 @@ var init_exporters = __esm({
     init_colorActions();
     init_semanticArchitectures();
     init_typeRoles();
+    init_elevationTokens();
+    init_socialBrands();
     init_layoutTokens();
     init_gradients();
     init_themeFoundations();
@@ -11279,8 +11622,8 @@ function makeDesignDefaults() {
     typography: {
       fontFamily: "Inter",
       headingFontFamily: "Inter",
-      sizes: { ...FONT_SIZE_STANDARD },
-      lineHeights: { ...LINE_HEIGHT_STANDARD },
+      // A new system starts on the Escala scale (×0.875), not factor 1.
+      ...buildTypeScale(DEFAULT_TYPE_SCALE_FACTOR),
       weights: { ...FONT_WEIGHT_STANDARD },
       roles: mergeTypeRoles()
     },
@@ -13965,8 +14308,9 @@ function scalesForSlot(slot, hex, s, neutralTint = s.neutralTint, pages = { ligh
       darkScale: generateDarkColorScale(hex, s.colorAlgorithm, rampShift, pages.dark, neutralTint)
     };
   }
+  const status = slot === "error" || slot === "warning" || slot === "success" || slot === "info";
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light),
+    scale: status ? generateStatusScale(hex, s.colorAlgorithm, rampShift, pages.light) : generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light),
     darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, rampShift, pages.dark)
   };
 }
@@ -14053,6 +14397,7 @@ function mintTheme(chosen, kind, nameLabel, editKey, neutralTint, pages, rampShi
       return renamed ? { key: key2, renamedFrom: editKey } : { key: key2 };
     }
     s.addTheme(key2, kind, refs);
+    s.setThemeLabel(key2, label);
     return { key: key2 };
   } catch {
     return { error: "One of the colors is invalid." };
@@ -14433,7 +14778,7 @@ function styleSummary(p2, standard) {
   const f = p2.foundations;
   const ramp = f.radius ?? standard;
   const roles = mergeLayoutRoles("radius", f.radiusRoles);
-  const px = (role) => parseFloat(ramp[roles[role]] ?? "0") || 0;
+  const px2 = (role) => parseFloat(ramp[roles[role]] ?? "0") || 0;
   const mode = SPACING_MODES.find((m) => m.id === matchSpacingMode(f.sizes, f.spacingRoles, f.stroke));
   const states2 = presetStates(p2);
   return {
@@ -14448,7 +14793,7 @@ function styleSummary(p2, standard) {
     appearance: p2.preferredAppearance,
     font: f.typography?.fontFamily ?? "Inter",
     heading: f.typography?.headingFontFamily ?? f.typography?.fontFamily ?? "Inter",
-    radius: { boxes: px("container"), fields: px("action"), selectors: px("control") },
+    radius: { boxes: px2("container"), fields: px2("action"), selectors: px2("control") },
     spacing: mode?.label ?? "Custom",
     shadow: (f.shadows && matchShadowPreset(f.shadows)) ?? "Custom",
     shadowMd: f.shadows?.md ?? "none",
@@ -14538,12 +14883,12 @@ function buildStudioTokens(choices, tier) {
   if (mode) {
     const f = resolved();
     const step = SPACING_STEPS[Math.max(0, SPACING_STEPS.indexOf(mode.insetStep))];
-    const px = f.spacing[step] ?? `${Number(step) * 4}px`;
+    const px2 = f.spacing[step] ?? `${Number(step) * 4}px`;
     patch({
       sizes: buildSizesFromBase(mode.fieldBase),
       stroke: { ...f.stroke, sm: `${mode.border}px` },
       spacingRoles: { ...f.spacingRoles, [INSET_SURFACE_ROLE]: step },
-      padding: insetSurfacePadding(px)
+      padding: insetSurfacePadding(px2)
     });
   }
   if (choices.cardInset && SPACING_STEPS.includes(choices.cardInset)) {
@@ -14574,12 +14919,12 @@ function buildStudioTokens(choices, tier) {
   return { project: slugify(label), tokens: withBrandCss(generateTokenJSON(s, { ...scope, project: label }), s) };
 }
 var REM = 16;
-function presetForBaseRadius(px) {
+function presetForBaseRadius(px2) {
   let best = RADIUS_ROLE_PRESETS[0];
   let gap = Infinity;
   for (const p2 of RADIUS_ROLE_PRESETS) {
     const fields = radiusPresetPx(p2)[1];
-    const d = Math.abs(fields - px);
+    const d = Math.abs(fields - px2);
     if (d < gap) {
       gap = d;
       best = p2;
@@ -14671,7 +15016,7 @@ function studioLook(choices) {
   const page = kind === "dark" ? pageDark : pageLight;
   const brand = kind === "dark" ? generateFamilyDarkScale(typeof c2.accentDark === "string" && HEX.test(c2.accentDark) ? c2.accentDark.toLowerCase() : accent2, "radix", shift, pageDark) : generateColorScale(accent2, "radix", shift, pageLight);
   const neutral = kind === "dark" ? generateDarkColorScale(gray, "radix", shift, pageDark, tint) : generateLightNeutralScale(gray, "radix", shift, pageLight, tint);
-  const family = (hex) => kind === "dark" ? generateFamilyDarkScale(hex, "radix", shift, pageDark) : generateColorScale(hex, "radix", shift, pageLight);
+  const family = (hex) => kind === "dark" ? generateFamilyDarkScale(hex, "radix", shift, pageDark) : generateStatusScale(hex, "radix", shift, pageLight);
   const darkSeed = (slot) => {
     const hex = c2.statesDark?.[slot];
     return typeof hex === "string" && HEX.test(hex) ? hex.toLowerCase() : null;
@@ -14684,7 +15029,7 @@ function studioLook(choices) {
     states2[slot] = solid.fill;
     stateInk[slot] = solid.ink;
   }
-  let box = 16, field = 8, control = 4;
+  let box = 16, field = 12, control = 8;
   if (c2.radiusAxes && (c2.radiusAxes.boxes || c2.radiusAxes.fields || c2.radiusAxes.selectors)) {
     const pxOf = (step, fallback) => {
       const n = parseFloat(step ? RADIUS_STANDARD[step] ?? "" : "");
@@ -14696,10 +15041,10 @@ function studioLook(choices) {
   } else if (c2.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p2) => p2.label === c2.radiusPreset);
     if (hit) {
-      const px = radiusPresetPx(hit);
-      box = px[0];
-      field = px[1];
-      control = px[2];
+      const px2 = radiusPresetPx(hit);
+      box = px2[0];
+      field = px2[1];
+      control = px2[2];
     }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD);

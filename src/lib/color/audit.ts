@@ -194,12 +194,15 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label' },
     { fg: 'content.on-secondary', bg: 'action.secondary.default', intent: 'action-label' },
     { fg: 'content.on-secondary', bg: 'action.secondary.hover',   intent: 'action-label' },
-    { fg: 'content.on-secondary', bg: 'action.secondary.pressed', intent: 'action-label' },
+    { fg: 'content.on-secondary', bg: 'action.secondary.pressed', intent: 'pressed-label' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
+    // `content.inverse-secondary` is an alpha ink (white-a.9 / black-a.9); the
+    // loop does not composite inks, so its 4.5:1 is held by
+    // escalaInvariants.test.ts, composited over surface.inverse.
     { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'action-label' },
     // `ui-component`, and it MUST pass — this is the control boundary, the one
     // stroke that identifies a control (WCAG 1.4.11 + APCA Lc 45). Now a
@@ -210,12 +213,13 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // {white-a.8} = 7.29/Lc50 dark for the default system. The ladder is not
     // accent-tinted, so this holds across every seed rather than drifting.
     { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component' },
-    // The FIELD outline: WCAG 1.4.11 3:1 + APCA's non-text floor
-    // (`control-boundary`, a 1.4:1 hairline) — black-a.3 = 1.41:1 light, white-a.3 = 1.50:1 dark.
+    // The FIELD outline: WCAG 1.4.11 3:1 (`control-boundary`) — black-a.7
+    // light, white-a.6 dark for the default system (the Escala Figma file).
     { fg: 'border.control',       bg: 'surface.page', intent: 'control-boundary' },
     // Its hover, one step past whatever it resolved to.
     { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-boundary' },
-    { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
+    // The focus BOUNDARY: WCAG 1.4.11 on the page, like the file's invariant.
+    { fg: 'border.focus',     bg: 'surface.page',    intent: 'control-boundary' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
     // signalling selected/focused/active must use border.focus, which is
     // solved to clear both floors. See the note on CATEGORICAL_ROLES.
@@ -227,10 +231,10 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // boundary is exactly what the report exists to surface.
     { fg: 'border.subtle',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
-    { fg: 'status.critical.border-strong', bg: 'surface.input', intent: 'ui-component' },
-    { fg: 'status.warning.border-strong',  bg: 'surface.input', intent: 'ui-component' },
-    { fg: 'status.success.border-strong',  bg: 'surface.input', intent: 'ui-component' },
-    { fg: 'status.info.border-strong',     bg: 'surface.input', intent: 'ui-component' },
+    { fg: 'status.critical.border-strong', bg: 'surface.input', intent: 'control-boundary' },
+    { fg: 'status.warning.border-strong',  bg: 'surface.input', intent: 'control-boundary' },
+    { fg: 'status.success.border-strong',  bg: 'surface.input', intent: 'control-boundary' },
+    { fg: 'status.info.border-strong',     bg: 'surface.input', intent: 'control-boundary' },
     { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text' },
     { fg: 'status.warning.content',  bg: 'status.warning.surface',  intent: 'large-text' },
     { fg: 'status.success.content',  bg: 'status.success.surface',  intent: 'large-text' },

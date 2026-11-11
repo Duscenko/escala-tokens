@@ -10,6 +10,7 @@ import type {
   TokenJSON,
 } from '../agentBundle/types.js'
 import type { ResolvedToken } from './resolveToken.js'
+import { roleCssVar, roleFigmaName, roleIdFromName } from '../roleNames.js'
 
 const COLOR_GROUPS = ['action', 'content', 'surface', 'status', 'border'] as const
 const VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
@@ -34,6 +35,9 @@ const FIGMA_GROUP: Record<string, string> = {
 export function canonicalTokenId(raw: string): string | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
+  // A role under its Figma-file name (`Size/control-xs`, `--radius-full`).
+  const renamed = roleIdFromName(trimmed)
+  if (renamed) return renamed
   if (trimmed.includes('/')) return fromFigma(trimmed)
   const wrapped = /^var\(--(.+)\)$/i.exec(trimmed)
   const bare = wrapped?.[1] ?? (trimmed.startsWith('--') ? trimmed.slice(2) : null)
@@ -123,6 +127,7 @@ interface ThemeBag {
   spacing: Record<string, string>
   spacingRoles?: Record<string, string>
   spacingRoleRefs?: Record<string, string>
+  spacingRoleViewports?: Partial<Record<'tablet' | 'mobile', Record<string, string>>>
   radius: Record<string, string>
   radiusRoles?: Record<string, string>
   radiusRoleViewports?: RadiusRoleViewportsJSON
@@ -150,6 +155,7 @@ function bagsOf(json: TokenJSON): ThemeBag[] {
       spacing: f?.spacing ?? json.spacing ?? {},
       spacingRoles: f?.spacingRoles ?? json.spacingRoles,
       spacingRoleRefs: f?.spacingRoleRefs ?? json.spacingRoleRefs,
+      spacingRoleViewports: f?.spacingRoleViewports ?? json.spacingRoleViewports,
       radius: f?.radius ?? json.radius ?? {},
       radiusRoles: f?.radiusRoles ?? json.radiusRoles,
       radiusRoleViewports: f?.radiusRoleViewports ?? json.radiusRoleViewports,
@@ -274,7 +280,7 @@ function staticRole(json: TokenJSON, family: string, key: string): ResolvedToken
       packed.aliases[theme] = alias
     }
   }
-  return hit(`${family}.${key}`, `${meta.figma}/role/${key}`, `var(--${meta.css}-${key})`, packed)
+  return hit(`${family}.${key}`, roleFigmaName(family, key) ?? `${meta.figma}/${key}`, `var(${roleCssVar(family, key)})`, packed)
 }
 
 function spacingRole(json: TokenJSON, key: string): ResolvedToken | null {
@@ -283,7 +289,10 @@ function spacingRole(json: TokenJSON, key: string): ResolvedToken | null {
   for (const bag of bagsOf(json)) {
     const ref = bag.spacingRoleRefs?.[key] ?? bag.spacingRoles?.[key]
     if (!ref) continue
-    const at = (vp: Viewport) => json.spacingResponsive?.[ref]?.[vp] ?? ref
+    // A role's own Tablet / Mobile value (`spacingRoleViewports`) wins over
+    // its responsive token, like the plugin reads it.
+    const own = (vp: Viewport) => (vp === 'desktop' ? undefined : bag.spacingRoleViewports?.[vp]?.[key])
+    const at = (vp: Viewport) => own(vp) ?? json.spacingResponsive?.[ref]?.[vp] ?? ref
     const px = (vp: Viewport) => lengthOf(at(vp), bag.spacing, json.dimensions)
     const desktop = px('desktop')
     if (!desktop) continue
@@ -296,7 +305,7 @@ function spacingRole(json: TokenJSON, key: string): ResolvedToken | null {
   }
   const packed = pack(rows, 'desktop', (theme) => dimensionAlias(rows[theme]?.desktop))
   if (!packed) return null
-  return hit(`spacing.${key}`, `Spacing/role/${key}`, `var(--spacing-${key})`, packed)
+  return hit(`spacing.${key}`, roleFigmaName('spacing', key) ?? `Spacing/${key}`, `var(${roleCssVar('spacing', key)})`, packed)
 }
 
 function radiusRole(json: TokenJSON, key: string): ResolvedToken | null {
@@ -319,7 +328,7 @@ function radiusRole(json: TokenJSON, key: string): ResolvedToken | null {
   }
   const packed = pack(rows, 'desktop', (theme) => dimensionAlias(rows[theme]?.desktop))
   if (!packed) return null
-  return hit(`radius.${key}`, `Radius/role/${key}`, `var(--radius-${key})`, packed)
+  return hit(`radius.${key}`, roleFigmaName('radius', key) ?? `Radius/${key}`, `var(${roleCssVar('radius', key)})`, packed)
 }
 
 function breakpointScale(grid: Record<string, string>): Record<string, string> {
@@ -407,7 +416,7 @@ function iconSize(json: TokenJSON, step: string): ResolvedToken | null {
   }
   const packed = pack(rows, 'desktop', (theme) => dimensionAlias(rows[theme]?.desktop))
   if (!packed) return null
-  return hit(`icon.${step}`, `Icon/role/${step}`, `var(--icon-${step})`, packed)
+  return hit(`icon.${step}`, roleFigmaName('icon', step) ?? `Size/icon-${step}`, `var(${roleCssVar('icon', step)})`, packed)
 }
 
 function iconRole(json: TokenJSON, role: string): ResolvedToken | null {

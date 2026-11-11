@@ -189,6 +189,7 @@ export type IntentClass =
   | 'action-label'
   | 'ui-component'
   | 'control-boundary'
+  | 'pressed-label'
   | 'disabled-text'
   | 'decorative'
   | 'surface'
@@ -200,19 +201,19 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   'large-text':   { wcag: 3.0, apcaLc: 60 },
   'action-label': { wcag: 4.5, apcaLc: 60 },
   'ui-component': { wcag: 3.0, apcaLc: 45 },
-  // The resting outline of a field / select / checkbox / outline button — a
-  // HAIRLINE, the weight modern systems draw it at (shadcn's `--border` is
-  // ~1.26:1, its dark `--input` is white at 15%). It used to be held to WCAG
-  // 1.4.11's 3:1 + APCA Lc 15 and landed on black-a.7 (3.94:1) / white-a.6
-  // (3.81:1): reported twice as "los bordes de control están muy fuertes",
-  // and the owner chose the quiet edge over the 3:1 guarantee (2026-10-21).
-  // 1.4:1 is a VISIBILITY floor — one step off the page (black-a.2 reads
-  // 1.26, below it) — not an accessibility claim: a control identified by its
-  // stroke alone no longer clears 1.4.11, which is why a field that must
-  // clear it gives itself a FILL (`surface.input` a step off the page), the
-  // rule the System Styles already follow. Lands on black-a.3 (1.41:1) /
-  // white-a.3 (1.50:1). No APCA term: every hairline sits under its floor.
-  'control-boundary': { wcag: 1.4, apcaLc: null },
+  // A control's BOUNDARY: the resting outline of a field / select / checkbox
+  // / outline button (`border.control`), the focus ring's boundary
+  // (`border.focus`) and an invalid / valid field's edge
+  // (`status.<sev>.border-strong`). WCAG 1.4.11's 3:1 with no APCA term — the
+  // Escala Figma file's signed-off invariants (2026-11-11) are WCAG 2.x, and
+  // its pinned steps (Black α 07 / White α 06, Dark focus 09, Dark critical
+  // border 10) sit at Lc 20–44 on the dark page. History: 2026-10-21 made the
+  // field outline a 1.4:1 hairline (black-a.3); the file reverted it.
+  'control-boundary': { wcag: 3, apcaLc: null },
+  // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
+  // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
+  // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
+  'pressed-label': { wcag: 4.5, apcaLc: null },
   // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
   // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
   // (Lc 30). Full AA would make a disabled outline / ghost / link button —

@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type CustomColor, type ThemeSources } from '../store/useDesignStore'
 import {
-  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateNeutralDarkScale, generateFamilyDarkScale, backgroundFromBase,
+  generateColorScale, generateStatusScale, generateLightNeutralScale, generateDarkColorScale, generateNeutralDarkScale, generateFamilyDarkScale, backgroundFromBase,
   recommendStateColors, neutralFromBrand, BASE_TONE, type ColorAlgorithm, type NeutralTint,
 } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
@@ -91,6 +91,15 @@ function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<s
   return keys
 }
 
+const STATUS_SLOTS = new Set<string>(['error', 'warning', 'success', 'info'])
+const isStatusSlot = (slot: string) => STATUS_SLOTS.has(slot)
+
+/** Does any theme read this family as one of its four status slots? Its Light
+ *  ramp then gets vivid solids (`generateStatusScale`). */
+function isStatusFamily(themeSources: ThemePageSource['themeSources'], key: string): boolean {
+  return Object.values(themeSources).some((refs) => !!refs && [...STATUS_SLOTS].some((slot) => refs[slot as keyof typeof refs] === key))
+}
+
 /** Both ramps of a custom family. `darkHex` is the family's own dark anchor
  *  (`darkBase`) when the dark theme was set apart from the light one — a
  *  re-anchor that rebuilt dark from `hex` would silently erase it. A neutral
@@ -102,11 +111,15 @@ function customScalePair(
   pages: { light: string; dark: string },
   isGray: boolean,
   darkHex?: string,
+  /** A status family (error · warning · success · info): vivid Light solids. */
+  isStatus = false,
 ) {
   return {
     scale: isGray
       ? generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, s.neutralTint)
-      : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light'),
+      : isStatus
+        ? generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light')
+        : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light'),
     darkScale: isGray
       ? generateNeutralDarkScale(hex, darkHex && darkHex.toLowerCase() !== hex.toLowerCase() ? darkHex : undefined, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
       : generateFamilyDarkScale(darkHex || hex, s.colorAlgorithm, s.contrastShift, pages.dark),
@@ -151,7 +164,7 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
     if (!key || key === GLOBAL_FAMILY[slot] || skip.has(key)) continue
     const fam = s.customColors.find((c) => c.key === key)
     if (!fam) continue
-    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray', fam.darkBase))
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray', fam.darkBase, isStatusSlot(slot)))
   }
   // Extra brand palettes sit on the same paper. Rebuild their ramps, never
   // their bases — they are independent hues, not a reading of the new accent.
@@ -202,6 +215,7 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light',
     // out of it, so a moved page that only rebuilt the brand would leave the
     // status ramps anchored to the old one.
     const gen = (base: string) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg)
+    const genStatus = (base: string) => generateStatusScale(base, colorAlgorithm, contrastShift, nextBg)
     const scale = gen(hex)
     // Every coloured family keeps a dark twin in step with its light ramp.
     const genDark = (base: string) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg)
@@ -252,13 +266,13 @@ export function applyAccentColor(hex: string, linked = true, themeKey = 'light',
       const nextSuccess = rec?.success ?? s.successColor
       const nextInfo = rec?.info ?? s.infoColor
       if (rec) s.setErrorColor(nextError)
-      s.setErrorScale(gen(nextError)); s.setErrorDarkScale(genDark(nextError))
+      s.setErrorScale(genStatus(nextError)); s.setErrorDarkScale(genDark(nextError))
       if (rec) s.setWarningColor(nextWarning)
-      s.setWarningScale(gen(nextWarning)); s.setWarningDarkScale(genDark(nextWarning))
+      s.setWarningScale(genStatus(nextWarning)); s.setWarningDarkScale(genDark(nextWarning))
       if (rec) s.setSuccessColor(nextSuccess)
-      s.setSuccessScale(gen(nextSuccess)); s.setSuccessDarkScale(genDark(nextSuccess))
+      s.setSuccessScale(genStatus(nextSuccess)); s.setSuccessDarkScale(genDark(nextSuccess))
       if (rec) s.setInfoColor(nextInfo)
-      s.setInfoScale(gen(nextInfo)); s.setInfoDarkScale(genDark(nextInfo))
+      s.setInfoScale(genStatus(nextInfo)); s.setInfoDarkScale(genDark(nextInfo))
     }
     for (const t of themeOrder) {
       // Only themes reading the GLOBAL accent follow this change.
@@ -355,14 +369,15 @@ export function useApplyAccentColor() {
 export function ensureColorScales() {
   const s = useDesignStore.getState()
   const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+  const genStatus = (base: string) => generateStatusScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
   const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
   const empty = (o?: Record<number, string>) => !o || !Object.keys(o).length
   try {
     if (!Object.keys(s.primaryScale).length)   s.setPrimaryScale(gen(s.primaryColor))
-    if (!Object.keys(s.errorScale).length)     s.setErrorScale(gen(s.errorColor))
-    if (!Object.keys(s.warningScale).length)   s.setWarningScale(gen(s.warningColor))
-    if (!Object.keys(s.successScale).length)   s.setSuccessScale(gen(s.successColor))
-    if (!Object.keys(s.infoScale).length)      s.setInfoScale(gen(s.infoColor))
+    if (!Object.keys(s.errorScale).length)     s.setErrorScale(genStatus(s.errorColor))
+    if (!Object.keys(s.warningScale).length)   s.setWarningScale(genStatus(s.warningColor))
+    if (!Object.keys(s.successScale).length)   s.setSuccessScale(genStatus(s.successColor))
+    if (!Object.keys(s.infoScale).length)      s.setInfoScale(genStatus(s.infoColor))
     // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
     if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, s.neutralTint))
     // Dark twins — backfills systems created before the two-scale model.
@@ -373,7 +388,7 @@ export function ensureColorScales() {
     if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
     s.customColors.forEach((c) => {
       const pages = resolveFamilyPages(s, c.key)
-      const next = customScalePair(c.base, s, pages, pages.isGray, c.darkBase)
+      const next = customScalePair(c.base, s, pages, pages.isGray, c.darkBase, isStatusFamily(s.themeSources, c.key))
       if (empty(c.darkScale)) {
         s.updateCustomColor(c.key, { darkScale: next.darkScale })
         return
@@ -447,17 +462,18 @@ export function useRegenerateScalesOnScaleSettings() {
 
     const s = useDesignStore.getState()
     const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+    const genStatus = (base: string) => generateStatusScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
     const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
     try {
       s.setPrimaryScale(gen(s.primaryColor))
       s.setPrimaryDarkScale(genDark(accentDarkBase(s)))
-      s.setErrorScale(gen(s.errorColor))
+      s.setErrorScale(genStatus(s.errorColor))
       s.setErrorDarkScale(genDark(s.errorColor))
-      s.setWarningScale(gen(s.warningColor))
+      s.setWarningScale(genStatus(s.warningColor))
       s.setWarningDarkScale(genDark(s.warningColor))
-      s.setSuccessScale(gen(s.successColor))
+      s.setSuccessScale(genStatus(s.successColor))
       s.setSuccessDarkScale(genDark(s.successColor))
-      s.setInfoScale(gen(s.infoColor))
+      s.setInfoScale(genStatus(s.infoColor))
       s.setInfoDarkScale(genDark(s.infoColor))
       // Gray's dark twin is a genuine dark-neutral ramp (anchored to the dark
       // page), not the generic family transform — same split useEnsureColorScales
@@ -466,7 +482,7 @@ export function useRegenerateScalesOnScaleSettings() {
       s.setGrayDarkScale(generateNeutralDarkScale(s.grayBaseColor, s.grayDarkColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
       s.customColors.forEach((c) => {
         const pages = resolveFamilyPages(s, c.key)
-        s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray, c.darkBase))
+        s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray, c.darkBase, isStatusFamily(s.themeSources, c.key)))
       })
     } catch {
       /* invalid hex — leave the ramps as they are */
@@ -486,13 +502,14 @@ export function useApplyPageBackground() {
     const s = useDesignStore.getState()
     try {
       const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, hex)
+      const genStatus = (base: string) => generateStatusScale(base, s.colorAlgorithm, s.contrastShift, hex)
       const brandScale = gen(s.primaryColor)
       const grayScale = generateLightNeutralScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex, s.neutralTint)
       // Generate everything first — an invalid base throws before any write.
-      const errorScale = gen(s.errorColor)
-      const warningScale = gen(s.warningColor)
-      const successScale = gen(s.successColor)
-      const infoScale = gen(s.infoColor)
+      const errorScale = genStatus(s.errorColor)
+      const warningScale = genStatus(s.warningColor)
+      const successScale = genStatus(s.successColor)
+      const infoScale = genStatus(s.infoColor)
       const owned = privateFamilyKeys(s.themeSources)
       const customScales = s.customColors
         .filter((c) => !owned.has(c.key))
@@ -582,7 +599,7 @@ export function useApplyGrayColor() {
           if (!key || key === GLOBAL_FAMILY[slot]) continue
           const fam = s.customColors.find((c) => c.key === key)
           if (!fam) continue
-          s.updateCustomColor(key, customScalePair(fam.base, s, pages, false, fam.darkBase))
+          s.updateCustomColor(key, customScalePair(fam.base, s, pages, false, fam.darkBase, isStatusSlot(slot)))
         }
         return
       }
@@ -590,6 +607,7 @@ export function useApplyGrayColor() {
       const bg = backgroundFromBase(hex, 'light', s.neutralTint)
       const darkBg = backgroundFromBase(hex, 'dark', s.neutralTint)
       const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, bg)
+      const genStatus = (base: string) => generateStatusScale(base, s.colorAlgorithm, s.contrastShift, bg)
       const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, darkBg)
       // Generate everything first — an invalid base throws before any write.
       // `hex` IS the neutral here, so its two ramps take the tint; `gen` (used
@@ -597,10 +615,10 @@ export function useApplyGrayColor() {
       const scale = generateLightNeutralScale(hex, s.colorAlgorithm, s.contrastShift, bg, s.neutralTint)
       const dScale = generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint)
       const brandScale = gen(s.primaryColor)
-      const errorScale = gen(s.errorColor)
-      const warningScale = gen(s.warningColor)
-      const successScale = gen(s.successColor)
-      const infoScale = gen(s.infoColor)
+      const errorScale = genStatus(s.errorColor)
+      const warningScale = genStatus(s.warningColor)
+      const successScale = genStatus(s.successColor)
+      const infoScale = genStatus(s.infoColor)
       const owned = privateFamilyKeys(s.themeSources)
       const customScales = s.customColors
         .filter((c) => !owned.has(c.key))
@@ -846,7 +864,7 @@ export function applyStateColorForAppearance(
     if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
       const pages = resolveThemePages(s, themeKey!)
       if (appearance === 'light') {
-        s.updateCustomColor(familyKey, { base: hex, scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) })
+        s.updateCustomColor(familyKey, { base: hex, scale: generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) })
       } else {
         s.updateCustomColor(familyKey, {
           darkBase: hex,
@@ -856,7 +874,7 @@ export function applyStateColorForAppearance(
       return
     }
     if (appearance === 'light') {
-      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+      const scale = generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
       setGlobalStateRole(s, role, { color: hex, scale })
       return
     }
@@ -894,10 +912,10 @@ export function useApplyStateColor() {
       const familyKey = refs?.[role]
       if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
         const pages = resolveThemePages(s, themeKey!)
-        s.updateCustomColor(familyKey, { base: hex, darkBase: hex, ...customScalePair(hex, s, pages, false) })
+        s.updateCustomColor(familyKey, { base: hex, darkBase: hex, ...customScalePair(hex, s, pages, false, undefined, true) })
         return
       }
-      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+      const scale = generateStatusScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
       const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
       setGlobalStateRole(s, role, { color: hex, scale, darkScale: dark })
     } catch {

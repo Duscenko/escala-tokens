@@ -207,9 +207,9 @@ describe('roleOverrides (the plugin Token Details)', () => {
     const base = build()
     const [light, dark] = base.colors.themeOrder
     const status = base.colors.architecture.tokens.status
-    // By default surface-pressed reads error-a · 5: pointing surface at it must
-    // land on exactly that hex, in Light, and leave Dark alone.
-    const edited = build({ 'status.critical.surface': { light: '{error-a.5}' } }).colors.architecture.tokens.status
+    // By default surface-pressed reads error-a · 4 in Light: pointing surface
+    // at it must land on exactly that hex, in Light, and leave Dark alone.
+    const edited = build({ 'status.critical.surface': { light: '{error-a.4}' } }).colors.architecture.tokens.status
     expect(edited['critical.surface'][light]).toBe(status['critical.surface-pressed'][light])
     expect(edited['critical.surface'][light]).not.toBe(status['critical.surface'][light])
     expect(edited['critical.surface'][dark]).toBe(status['critical.surface'][dark])

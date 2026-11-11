@@ -42,11 +42,13 @@ describe('inset sides', () => {
     expect(filled['inset-surface-bottom']).toBe('3')
   })
 
-  it('CSS: a following side aliases its inset, a set side its primitive', () => {
+  // The Escala Figma file has no per-side variables: only a side set by hand
+  // gets one; a following side reads its inset (`--spacing-inset-surface`).
+  it('CSS: only a side set by hand has a variable, aliasing its primitive', () => {
     const one = withInsetSide(roles, 'inset-surface', 'bottom', '3')
     const css = insetSideCssVars(one, SPACING_STANDARD)
-    expect(css).toContain('--spacing-inset-surface-top: var(--spacing-inset-surface);')
-    expect(css).toContain('--spacing-inset-surface-bottom: var(--dimension-12);')
+    expect(css).toEqual(['--spacing-inset-surface-bottom: var(--dimension-12);'])
+    expect(insetSideCssVars(roles, SPACING_STANDARD)).toEqual([])
     expect(layoutRoleCssVars('spacing', one, SPACING_STANDARD)).toEqual(expect.arrayContaining(css))
   })
 
@@ -58,13 +60,16 @@ describe('inset sides', () => {
     expect(spacingRolesAtViewport(one, 'mobile')['inset-surface-top']).toBe('3')
   })
 
-  it('tokens.json ships all twelve sides, filled, so the plugin needs no "follow" rule', () => {
+  it('tokens.json ships no sides (the Figma file has none); a hand-set card side still reaches padding', () => {
     useDesignStore.setState({ spacingRoles: withInsetSide(defaultLayoutRoles('spacing'), 'inset-surface', 'bottom', '3') })
     const json = generateTokenJSON() as unknown as { spacingRoles: Record<string, string>; spacingRoleRefs: Record<string, string> }
-    for (const { key } of INSET_SIDE_KEYS) expect(json.spacingRoles[key]).toBeDefined()
-    expect(json.spacingRoles['inset-surface-bottom']).toBe('3')
-    expect(json.spacingRoleRefs['inset-surface-top']).toBe(json.spacingRoleRefs['inset-surface'])
-    expect(buildCSS(useDesignStore.getState())).toContain('--padding-bottom: var(--dimension-20);')
+    for (const { key } of INSET_SIDE_KEYS) {
+      expect(json.spacingRoles[key]).toBeUndefined()
+      expect(json.spacingRoleRefs[key]).toBeUndefined()
+    }
+    const css = buildCSS(useDesignStore.getState())
+    expect(css).toContain('--padding-bottom: var(--dimension-20);')
+    expect(css).toContain('--padding-top: var(--spacing-inset-surface);')
     useDesignStore.setState({ spacingRoles: defaultLayoutRoles('spacing') })
   })
 })

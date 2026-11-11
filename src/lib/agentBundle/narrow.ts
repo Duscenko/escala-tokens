@@ -24,10 +24,26 @@ function darkTwinKeys(map: Record<string, string>): Set<string> {
  *  light gradients as if they were its own. Every semantic value of the kept
  *  appearance resolves to a primitive that survives this cut (tested). */
 export function onlyAppearance(json: TokenJSON, appearance: 'light' | 'dark'): TokenJSON {
+  // Every colour a semantic role ships, so a primitive of the other
+  // appearance that a role still reads survives the cut. One does by design:
+  // Dark `status.critical.on-solid` is the LIGHT page (the Escala Figma file's
+  // light ink on a red that stays light-inked in Dark).
+  const used = new Set<string>()
+  for (const group of Object.values((json.colors.architecture?.tokens ?? {}) as Record<string, Record<string, Record<string, string>>>)) {
+    for (const byMode of Object.values(group)) for (const v of Object.values(byMode)) if (typeof v === 'string') used.add(v.toLowerCase())
+  }
   const keep = (map: Record<string, string> | undefined) => {
     if (!map) return map
     const twins = darkTwinKeys(map)
-    return Object.fromEntries(Object.entries(map).filter(([k]) => (appearance === 'dark') === twins.has(k)))
+    const kept = Object.fromEntries(Object.entries(map).filter(([k]) => (appearance === 'dark') === twins.has(k)))
+    const have = new Set(Object.values(kept).map((v) => v.toLowerCase()))
+    for (const [k, v] of Object.entries(map)) {
+      const hex = v.toLowerCase()
+      if (k in kept || have.has(hex) || !used.has(hex)) continue
+      kept[k] = v
+      have.add(hex)
+    }
+    return kept
   }
   const out: TokenJSON = {
     ...json,

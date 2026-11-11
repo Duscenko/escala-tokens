@@ -37,6 +37,8 @@ import {
   GRID_FRAME_STANDARD,
   extractBreakpoints,
   radiusRoleAt,
+  layoutRoleVar,
+  layoutRoleFigmaName,
   roleValuePx,
   type GridViewport,
   type LayoutFamily,
@@ -104,15 +106,16 @@ const COLOR_GROUP_META: Record<string, [string, string]> = {
  *  fails, so the skill never shows a ref it does not explain. `prefix` is
  *  what precedes the colon (`''` = a plain ref with no marker). */
 export const COLOR_MARKERS: { prefix: string[]; forms: string[]; means: string }[] = [
-  { prefix: [''], forms: ['{fam.N}'], means: 'Step N of the family ramp (1 = page end, 12 = high-contrast text end, 9 = the brand hex itself). Same step means the same job in Light and Dark.' },
+  { prefix: [''], forms: ['{fam.N}'], means: 'Step N of the family ramp (1 = page end, 12 = high-contrast text end, 9 = the brand hex itself). Same step means the same job in Light and Dark. `{neutral-light.1}` is the LIGHT page, reachable from a dark theme (the light ink of a solid that stays light-inked in Dark).' },
   { prefix: [], forms: ['{fam-a.N}'], means: 'Alpha twin of step N, solved against the page so it reproduces the solid there. Translucent: composites on any surface.' },
   { prefix: [], forms: ['{black-a.N}', '{white-a.N}'], means: 'Fixed Radix alpha ladder (5 … 95 %). Darkens / lightens an unknown backdrop.' },
-  { prefix: [], forms: ['{fam.solid}'], means: 'The fill: the tone nearest the anchor that can carry a label (WCAG 4.5 + APCA Lc 60).' },
-  { prefix: ['on'], forms: ['{on:fam.solid}'], means: 'The label ink solved against that fill — near-white OR near-black. Never assume white.' },
-  { prefix: ['step'], forms: ['{step:fam+N}'], means: 'N tones past the resolved solid that still carry the same ink (hover +1, pressed +2).' },
+  { prefix: [], forms: ['{fam.solid}'], means: 'The fill, by job: Light step 09 with the light ink; Dark accent 10, critical 08 (light ink), success 09, warning / info 10 (dark ink) — kept while the pair clears WCAG AA, else the tone nearest the anchor that carries a label.' },
+  { prefix: ['on'], forms: ['{on:fam.solid}'], means: 'The ink that fill was solved with: the light page or the dark page. Never assume white.' },
+  { prefix: ['step'], forms: ['{step:fam+N}'], means: 'N steps AWAY from the ink (hover +1, pressed +2): darker under a light ink, lighter under a dark one.' },
   { prefix: ['ui', 'ui+'], forms: ['{ui:fam.N}', '{ui+:fam.N}'], means: 'Walks from step N until WCAG 1.4.11 (3:1) + APCA Lc 45 clear; `+` is one step past it.' },
   { prefix: ['ui-a'], forms: ['{ui-a:…}'], means: 'The same 3:1 + Lc 45 walk on the black/white alpha ladder (border.strong).' },
-  { prefix: ['ctl-a', 'ctl+a'], forms: ['{ctl-a:…}', '{ctl+a:…}'], means: 'Control hairline on the alpha ladder: the first step visibly off the page (1.4:1); `+` is its hover.' },
+  { prefix: ['ctl-a', 'ctl+a'], forms: ['{ctl-a:…}', '{ctl+a:…}'], means: 'Control boundary on the alpha ladder: the first step clearing WCAG 1.4.11 (3:1) on the page; `+` is its hover.' },
+  { prefix: ['focus'], forms: ['{focus:fam.N}'], means: 'The focus boundary: the first step from N clearing WCAG 1.4.11 (3:1) on the page.' },
   { prefix: ['ink'], forms: ['{ink:fam.N}'], means: 'The tone of that family legible as text on its own tint at step N.' },
   { prefix: ['link', 'link+'], forms: ['{link:fam.N}', '{link+:fam.N}'], means: 'Link ink solved against page, layer-1 and layer-2 from step N; `+` is its hover.' },
   { prefix: ['dis'], forms: ['{dis:fam.N}'], means: 'Disabled ink: walks from N to the disabled-text floor, never reaching body contrast.' },
@@ -216,23 +219,26 @@ function brandRolePx(json: TokenJSON, family: LayoutFamily, role: string): (numb
     return VIEWPORTS.map((vp) => roleValuePx(radiusRoleAt(json.radiusRoles, json.radiusRoleViewports, role, vp), scale))
   }
   const value = meta.roles(json)?.[role]
+  // A role's own Tablet / Mobile value (`inset-page`, `inset-section`, `target-min`).
+  const own = family === 'spacing' ? json.spacingRoleViewports : family === 'size' ? json.sizeRoleViewports : undefined
   if (family === 'spacing' && value) {
     const responsive = json.spacingResponsive?.[value]
-    if (responsive) return VIEWPORTS.map((vp) => roleValuePx(responsive[vp] ?? responsive.desktop, scale))
+    if (responsive) return VIEWPORTS.map((vp) => roleValuePx((vp === 'desktop' ? undefined : own?.[vp]?.[role]) ?? responsive[vp] ?? responsive.desktop, scale))
   }
-  const one = roleValuePx(value, scale)
-  return [one, one, one]
+  return VIEWPORTS.map((vp) => roleValuePx((vp === 'desktop' ? undefined : own?.[vp]?.[role]) ?? value, scale))
 }
 
 /** Default px of a role in the standard system (schema mode). */
-function defaultRolePx(family: LayoutFamily, primitive: string): string {
-  if (primitive.startsWith('dimension-')) return `${primitive.slice('dimension-'.length)}px`
+function defaultRolePx(family: LayoutFamily, primitive: string, viewports?: Partial<Record<'tablet' | 'mobile', string>>): string {
   const scale = FAMILY_META[family].scale(undefined)
+  const one = (v: string) => (v.startsWith('dimension-') ? `${v.slice('dimension-'.length)}px` : scale[v] ?? '—')
+  if (viewports) return [one(primitive), one(viewports.tablet ?? primitive), one(viewports.mobile ?? primitive)].join(' / ')
+  if (primitive.startsWith('dimension-')) return one(primitive)
   if (family === 'spacing' && SPACING_RESPONSIVE[primitive]) {
     const r = SPACING_RESPONSIVE[primitive]
     return VIEWPORTS.map((vp) => scale[r[vp]] ?? r[vp]).join(' / ')
   }
-  return scale[primitive] ?? '—'
+  return one(primitive)
 }
 
 /** The mobile breakpoint role is a MAX-width, one below the value it aliases. */
@@ -243,8 +249,8 @@ function dimensionRoles(json: Source): string {
   out.push(
     'Every length is ONE global ladder, `Dimension Primitives` (`--dimension-<px>`, `{dimension.<px>}`; `3_5` = 3.5px, `-8` = −8px). Each family has a static scale (steps) and ROLES that alias a step. **Components read roles.** A step is only for anatomy no role covers.',
     '',
-    '- **CSS** `--<family>-<role>` (`--radius-action`, `--spacing-gap-group`, `--size-control`). Roles that step down per viewport are re-declared inside the `@media (max-width: …)` blocks of `variables.css` — read the variable, never hard-code the mobile value.',
-    '- **Figma** collection `Dimension Semantics`, variable `<Family>/role/<role>` (`Radius/role/action`), modes = viewports **Desktop · Tablet · Mobile** (never Light/Dark: a length does not change with appearance).',
+    '- **CSS** = the Figma code syntax: `--<group>-<name>` (`--radius-action`, `--spacing-gap-group`, `--size-control-md`). Roles that change per viewport are re-declared inside the `@media (max-width: …)` blocks of `variables.css` — read the variable, never hard-code the mobile value.',
+    '- **Figma** collection `Dimension Semantics`, variable `<Group>/<name>` with NO `role/` segment (`Radius/action`, `Spacing/gap-group`, `Size/control-md`), modes = viewports **Desktop · Tablet · Mobile** (never Light/Dark: a length does not change with appearance). Sizes follow `<object>-<size>`: `Size/control-*`, `Size/selector-*`, `Size/icon-*`, `Size/target-min`.',
     '- **Recipes / tokens.json** `<family>.<role>` (`radius.action`, `spacing.inset-surface`) and `<family>Roles` maps.',
     '',
     json
@@ -259,9 +265,10 @@ function dimensionRoles(json: Source): string {
     out.push(`## ${meta.title}`, '', meta.why, '')
     for (const g of LAYOUT_ROLE_GROUPS[f]) {
       const rows = LAYOUT_ROLES[f].filter((r) => r.group === g.id).map((r) => {
-        const names = [`\`${f}.${r.key}\``, `\`${meta.css}${r.key}\``, meta.figma ? `\`${meta.figma}/role/${r.key}\`` : '—']
+        const figma = meta.figma ? layoutRoleFigmaName(f, r.key) : null
+        const names = [`\`${f}.${r.key}\``, `\`${layoutRoleVar(f, r.key)}\``, figma ? `\`${figma}\`` : '—']
         if (json) return [...names, breakpointCell(r.key, viewportCell(brandRolePx(json, f, r.key))), r.description]
-        return [...names, `\`${r.primitive}\``, breakpointCell(r.key, defaultRolePx(f, r.primitive)), r.description]
+        return [...names, `\`${r.primitive}\``, breakpointCell(r.key, defaultRolePx(f, r.primitive, r.viewports)), r.description]
       })
       if (!rows.length) continue
       const head = json ? ['Role', 'CSS', 'Figma', 'Value', 'Use'] : ['Role', 'CSS', 'Figma', 'Default step', 'Default px', 'Use']
@@ -274,7 +281,7 @@ function dimensionRoles(json: Source): string {
       out.push(
         '**Axes.** ' + RADIUS_GROUPS.map((g) => `${g.label} (${g.hint}) → ${g.roles.map((r) => `\`radius.${r}\``).join(', ')}`).join('; ') + '. `radius.pill` is not an axis: it means "a circle" and stays `full`.',
         '',
-        '**Responsive.** Each step reads one rung smaller on Tablet and Mobile (two from 3xl up):',
+        '**Roles hold one value on every viewport** (the Escala Figma file): only a hand-set Tablet / Mobile value changes one. The `--radius-component-<step>` tokens are the opt-in responsive corners — each reads one rung smaller on Tablet and Mobile (two from 3xl up):',
         '',
         table(['Step', 'Desktop', 'Tablet', 'Mobile'], Object.entries(RADIUS_RESPONSIVE).map(([k, v]) => [`\`${k}\``, v.desktop, v.tablet, v.mobile])),
         '',
@@ -286,7 +293,7 @@ function dimensionRoles(json: Source): string {
       const responsive = json?.spacingResponsive ?? SPACING_RESPONSIVE
       const spacingScale = meta.scale(json)
       out.push(
-        `**Inset sides.** ${INSET_ROLES.map((r) => `\`${r}\``).join(', ')} each have \`-top · -right · -bottom · -left\` (\`--spacing-inset-surface-top\`). An unset side FOLLOWS its inset. A fixed-height control uses only left/right — its height is \`size.*\`.`,
+        `**Inset sides.** ${INSET_ROLES.map((r) => `\`${r}\``).join(', ')} have no per-side variables in Figma or tokens.json; a side set by hand in the editor ships only as \`--spacing-<inset>-<side>\` in CSS. A fixed-height control uses only left/right — its height is \`size.*\`. \`inset-section\` is the top and bottom of a full-width page section; its sides use \`inset-page\`.`,
         '',
         '**Responsive tokens** (static step per viewport) that roles alias — Component · Section · Layout:',
         '',
@@ -308,7 +315,7 @@ function dimensionRoles(json: Source): string {
     if (f === 'size') {
       const iconRoles = json?.icons?.sizes?.roles
       out.push(
-        `**Icons scale with controls.** Roles \`icon.<role>\` → CSS \`--icon-<role>\`, Figma \`Icon/role/<role>\`${json ? '' : ' (reference control md = 40px)'}:`,
+        `**Icons.** Roles \`icon.small|medium|large\` → CSS \`--size-icon-sm|md|lg\`, Figma \`Size/icon-sm|md|lg\`${json ? '' : ' (reference control md = 40px)'}:`,
         '',
         table(['Role', json ? 'Value' : 'Default px', 'Use'], ICON_ROLES.map((r) => [
           `\`icon.${r}\``,
@@ -448,9 +455,10 @@ decides its STRUCTURE; this skill decides every VALUE.
 2. **Bind everything, leave no raw value.**
    - Fills and strokes → a \`Color Semantics\` variable (never a primitive).
    - Padding, gap (item spacing), corner radius, fixed width / height and
-     stroke weight → a \`Dimension Semantics\` role (\`Spacing/role/…\`,
-     \`Radius/role/…\`, \`Size/role/…\`, \`Selector/role/…\`, \`Stroke/role/…\`,
-     \`Icon/role/…\`).
+     stroke weight → a \`Dimension Semantics\` role (\`Spacing/…\`,
+     \`Radius/…\`, \`Size/control-*\`, \`Size/selector-*\`, \`Size/icon-*\`,
+     \`Size/target-min\`, \`Stroke/…\`). There is no \`role/\` segment and no
+     \`Icon/\` or \`Selector/\` group.
    - Text → apply the text style \`Type/<role>\` (all facets at once).
    - Elevation → the effect style \`Shadow/<step>\`.
    - Use auto layout so padding and gap are real properties you can bind.
@@ -532,7 +540,7 @@ Naming, everywhere:
 |---|---|---|---|
 | Role id (recipes, tokens.json) | \`color.action.primary.hover\` | \`radius.action\`, \`spacing.gap-group\` | \`type.label\` |
 | CSS | \`--color-action-primary-hover\` | \`--radius-action\`, \`--spacing-gap-group\` | \`--text-label-font-size\` (+ family · weight · line-height · letter-spacing) |
-| Figma | \`Color Semantics\` → \`Action/primary/hover\` | \`Dimension Semantics\` → \`Radius/role/action\` | text style \`Type/label\` |
+| Figma | \`Color Semantics\` → \`Action/primary/hover\` | \`Dimension Semantics\` → \`Radius/action\`, \`Spacing/gap-group\` | text style \`Type/label\` |
 
 ## Rules
 

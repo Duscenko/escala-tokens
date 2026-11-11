@@ -92,7 +92,7 @@
         "architecture": {
           "type": "object",
           "additionalProperties": true,
-          "description": "Projected view. Always includes kind. Categorical tokens nest group → key → theme → hex.",
+          "description": "Projected view. Always includes kind. Categorical tokens nest group → key → theme → hex. Groups: content · action · surface · status · border · elevation. The Escala Figma file's inverse context (content.inverse-secondary, surface.inverse-muted, border.inverse) and Elevation colours (elevation.shadow-key | shadow-ambient | shadow-ring | highlight, EFFECT_COLOR only) ship since 2026-11-11.",
           "properties": {
             "kind": { "type": "string" },
             "tokens": { "type": "object", "additionalProperties": true }
@@ -177,7 +177,16 @@
     "spacingRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "Desktop static step each spacing role resolves to (gap-tight → \"1\"), or a pinned Dimension primitive (\"dimension-20\"). The responsive link lives in spacingRoleRefs."
+      "description": "Desktop static step each spacing role resolves to (gap-tight → \"1\"), or a pinned Dimension primitive (\"dimension-20\"). The responsive link lives in spacingRoleRefs. Roles only: the twelve inset-*-top|right|bottom|left keys and overlap-xs|lg|xl|2xl are no longer shipped (the Escala Figma file has neither). inset-section (vertical padding of a page section) is \"24\" (96px)."
+    },
+    "spacingRoleViewports": {
+      "type": "object",
+      "properties": {
+        "tablet": { "type": "object", "additionalProperties": { "type": "string" } },
+        "mobile": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "additionalProperties": false,
+      "description": "Additive. A spacing role's own Tablet / Mobile value (a step or dimension-N), same shape as radiusRoleViewports; wins over its responsive token. Default: inset-page 4 / 4 (32 · 16 · 16) and inset-section 16 / 12 (96 · 64 · 48). Also per theme in foundationsByTheme."
     },
     "spacingRoleRefs": {
       "type": "object",
@@ -201,7 +210,7 @@
     "radiusRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "Role → a radius step (container → 2xl) or a pinned Dimension primitive (\"dimension-21\"). A step follows radiusResponsive on Tablet and Mobile unless radiusRoleViewports overrides it."
+      "description": "Role → a radius step (container → 2xl) or a pinned Dimension primitive (\"dimension-21\"). Default control lg (8) · action xl (12) · container 2xl (16) · overlay 2xl (16) · pill full. Radius roles do NOT step down per viewport (the Escala Figma file); their Tablet / Mobile values are in radiusRoleViewports."
     },
     "radiusRoleViewports": {
       "type": "object",
@@ -209,7 +218,7 @@
         "type": "object",
         "additionalProperties": { "type": "string" }
       },
-      "description": "Hand-set radius roles on tablet and mobile. A role absent here follows radiusResponsive."
+      "description": "Every radius role's value on tablet and mobile, resolved: its Desktop value unless set by hand. Complete since 2026-11-11, so a consumer never steps a role down by radiusResponsive."
     },
     "radiusResponsive": {
       "type": "object",
@@ -217,7 +226,7 @@
         "type": "object",
         "additionalProperties": { "type": "string" }
       },
-      "description": "Radius step → the static step it reads at desktop, tablet and mobile (2xl → 2xl / xl / xl)."
+      "description": "Radius step → the static step it reads at desktop, tablet and mobile (2xl → 2xl / xl / xl). Drives the opt-in --radius-component-* tokens only; the radius ROLES do not follow it."
     },
     "gradients": { "type": "object", "additionalProperties": { "type": "string" } },
     "gradientsDark": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -234,6 +243,41 @@
       "type": "object",
       "additionalProperties": { "type": "string" },
       "description": "Dark-appearance twin of shadows. Same keys. Light `shadows` is unchanged."
+    },
+    "elevation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Additive. The Escala Figma file's Shadow/*, Depth/* and Blur/* styles. Layer colours are Elevation roles (color.elevation.*), so one recipe follows Light and Dark. shadow follows the theme's shadow preset geometry when it is not the default ramp; none → [].",
+      "properties": {
+        "shadow": { "$ref": "#/$defs/elevationRecipes" },
+        "depth": { "$ref": "#/$defs/elevationRecipes" },
+        "blur": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Step (xs…2xl) → CSS backdrop-filter blur radius in px (4 · 8 · 12 · 16 · 24 · 40). Figma's BACKGROUND_BLUR radius is twice it."
+        }
+      }
+    },
+    "socialBrands": {
+      "type": "object",
+      "description": "Additive. Social-login provider colours, the same in every system (google, apple, discord, dribbble, facebook, github, linkedin, slack, x).",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label", "ramp", "action", "onAction", "focus"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "description": "Figma group name (Social/<Label>/<step>, <Label>/Action/*)." },
+          "ramp": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } },
+          "action": {
+            "type": "object",
+            "required": ["default", "hover", "pressed"],
+            "properties": { "default": { "type": "string" }, "hover": { "type": "string" }, "pressed": { "type": "string" } },
+            "description": "Which ramp step each state reads."
+          },
+          "onAction": { "enum": ["white", "black"] },
+          "focus": { "enum": ["white", "black"] }
+        }
+      }
     },
     "grid": { "type": "object", "additionalProperties": { "type": "string" } },
     "gridStyles": {
@@ -260,13 +304,22 @@
     "sizeRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "control | compact | touch | hit | fab → a size step, or a pinned Dimension primitive."
+      "description": "control | compact | touch | hit | fab | target-min → a size step, or a pinned Dimension primitive. CSS / Figma names: --size-control-md|sm|lg|xs|xl, --size-target-min (Size/control-*, Size/target-min)."
+    },
+    "sizeRoleViewports": {
+      "type": "object",
+      "properties": {
+        "tablet": { "type": "object", "additionalProperties": { "type": "string" } },
+        "mobile": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "additionalProperties": false,
+      "description": "Additive. A size role's own Tablet / Mobile value, same shape as radiusRoleViewports. Default: target-min dimension-44 on both (24 · 44 · 44)."
     },
     "selector": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Checkbox / radio / switch box scale." },
     "selectorRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "control | compact | indicator → a selector step, or a pinned Dimension primitive."
+      "description": "control | compact → a selector step, or a pinned Dimension primitive. Default dimension-20 / dimension-16 (Figma Size/selector-md|sm, CSS --size-selector-md|sm). indicator is no longer shipped."
     },
     "stroke": { "type": "object", "additionalProperties": { "type": "string" } },
     "strokeRoles": {
@@ -344,6 +397,25 @@
     }
   },
   "$defs": {
+    "elevationRecipes": {
+      "type": "object",
+      "description": "Step (xs…2xl) → layers, first to last.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["x", "y", "blur", "spread", "role"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "blur": { "type": "number" },
+            "spread": { "type": "number" },
+            "role": { "enum": ["key", "ambient", "ring"] }
+          }
+        }
+      }
+    },
     "typeAlias": {
       "type": "object",
       "required": ["family", "size", "weight"],

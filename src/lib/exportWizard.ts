@@ -313,7 +313,9 @@ export function primitiveGroupOf(family: string): (typeof PRIMITIVE_GROUPS)[numb
 // Gradients and shadows are Figma STYLES, not variables, so the collections
 // document has no place for them.
 const DIMENSION_GROUPS_OF: Partial<Record<WizardCollection, string[]>> = {
-  spacing: ['Spacing'], radius: ['Radius'], stroke: ['Stroke'], sizes: ['Size', 'Selector'], icons: ['Icon'], grid: ['Grid'],
+  // Icons and selector boxes live in `Size/` (the Escala Figma file), so the
+  // two are picked by name prefix rather than by group.
+  spacing: ['Spacing'], radius: ['Radius'], stroke: ['Stroke'], sizes: ['Size/control-', 'Size/target-min', 'Size/selector-'], icons: ['Size/icon-'], grid: ['Grid'],
 }
 
 function figmaCollectionsFor(ordered: WizardCollection[]): string[] {

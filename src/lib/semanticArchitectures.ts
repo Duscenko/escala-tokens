@@ -31,10 +31,12 @@ const APCA_BODY_TEXT = INTENT_THRESHOLDS['body-text'].apcaLc ?? 75
  *  intent. Shared by the focus-ring solver below. */
 const WCAG_UI = INTENT_THRESHOLDS['ui-component'].wcag ?? 3
 const APCA_UI = INTENT_THRESHOLDS['ui-component'].apcaLc ?? 45
-/** The resting outline of a field (`border.control`): a hairline one step
- *  off the page — see `control-boundary` in color/apca.ts. */
-const WCAG_CONTROL = INTENT_THRESHOLDS['control-boundary'].wcag ?? 1.4
-const APCA_CONTROL = INTENT_THRESHOLDS['control-boundary'].apcaLc ?? 0
+/** The resting outline of a field (`border.control`): the 3:1 WCAG 1.4.11
+ *  control boundary the Escala Figma file signed off (2026-11-11: Black α 07
+ *  Light, White α 06 Dark). WCAG only — the file's contrast invariants are
+ *  WCAG 2.x, and APCA Lc 45 would push Dark two steps past the file. */
+const WCAG_CONTROL = WCAG_UI
+const APCA_CONTROL = 0
 import { chartPalette } from './chartPalette'
 import type { ThemePalette } from '../store/useDesignStore'
 
@@ -282,7 +284,7 @@ function tintInkRef(fam: string, bgTone: number, look: Look): string {
  *    remove, one notch milder. Starting the walk at 8 keeps every passing
  *    system on 8 and lifts only the ones that need it.
  */
-function uiBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look): string {
+function uiBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look, apcaMin = APCA_UI): string {
   const page = look(kind === 'dark' ? 'neutral-dark' : 'neutral', 1)
   if (!page) return `{${fam}.${start}}`
   const ramp = rampOf(look, fam)
@@ -293,8 +295,8 @@ function uiBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look:
     if (!hex) continue
     const w = checkContrast(hex, page)
     const lc = Math.abs(apcaLc(hex, page))
-    if (w >= WCAG_UI && lc >= APCA_UI) return `{${fam}.${t}}`
-    const score = Math.min(w / WCAG_UI, lc / APCA_UI)
+    if (w >= WCAG_UI && lc >= apcaMin) return `{${fam}.${t}}`
+    const score = Math.min(w / WCAG_UI, apcaMin > 0 ? lc / apcaMin : Infinity)
     if (score > bestScore) { bestScore = score; fallback = t }
   }
   return `{${fam}.${fallback}}`
@@ -544,6 +546,38 @@ function solidStepRef(
  * result editable: `architectureOverrides` are applied AFTER this, so the
  * system assigns a sensible value by default and a hand-picked one still wins.
  */
+/**
+ * Where each family's SOLID sits, by job (the Escala Figma file, signed off
+ * 2026-11-11): the step and the ink it carries per appearance. Light: every
+ * solid is step 09 with the light ink (the page). Dark: the accent sits one
+ * step higher (10) because its ink is dark; critical stays a red with light
+ * ink (08), success holds 09 and warning / info 10 with the dark ink.
+ *
+ * Hover and pressed move AWAY from the ink, one and two steps: light ink → the
+ * fill gets darker, dark ink → lighter (Light 09 · 10 · 11, Dark accent 10 ·
+ * 11 · 12, Dark critical 08 · 07 · 06).
+ *
+ * A preference is kept only when its fill carries its ink at WCAG AA (4.5:1);
+ * a hue where it does not (a yellow accent with light ink) falls back to the
+ * contrast search below (`brandSolidPair`), so the invariant always holds.
+ */
+type InkSide = 'light' | 'dark'
+const SOLID_JOB: Record<string, Record<'light' | 'dark', { tone: number; ink: InkSide }>> = {
+  accent: { light: { tone: 9, ink: 'light' }, dark: { tone: 10, ink: 'dark' } },
+  error: { light: { tone: 9, ink: 'light' }, dark: { tone: 8, ink: 'light' } },
+  success: { light: { tone: 9, ink: 'light' }, dark: { tone: 9, ink: 'dark' } },
+  warning: { light: { tone: 9, ink: 'light' }, dark: { tone: 10, ink: 'dark' } },
+  info: { light: { tone: 9, ink: 'light' }, dark: { tone: 10, ink: 'dark' } },
+}
+
+/** The ink refs per appearance: the light page (`neutral.1` in Light,
+ *  `neutral-light.1` in Dark) and the dark ink (the dark page `neutral.1` in
+ *  Dark, `neutral.12` in Light). */
+function inkRefOf(side: InkSide, kind: 'light' | 'dark'): string {
+  if (side === 'light') return kind === 'light' ? '{neutral.1}' : '{neutral-light.1}'
+  return kind === 'dark' ? '{neutral.1}' : '{neutral.12}'
+}
+
 function curatedRefs(
   roles: { group: string; key: string; light: string; dark: string }[],
   kind: 'light' | 'dark',
@@ -559,20 +593,49 @@ function curatedRefs(
   // its own ink can flip the label colour mid-interaction. `used` is the set of
   // tones this family's interaction states have already claimed, so pressed
   // cannot land on hover.
-  const solids = new Map<string, { tone: number; ink: string; used: Set<number> }>()
+  const solids = new Map<string, { tone: number; ink: string; inkRef: string; used: Set<number>; dir?: number }>()
   const solidFor = (fam: string) => {
     let s = solids.get(fam)
     if (s === undefined) {
+      const ramp = rampOf(look, fam)
+      // The job's step and ink first (see SOLID_JOB), kept when the pair
+      // clears AA.
+      const job = SOLID_JOB[fam]?.[kind]
+      if (job) {
+        const inkRef = inkRefOf(job.ink, kind)
+        const m = REF_RE.exec(inkRef)
+        const ink = m ? look(m[1], Number(m[2])) : undefined
+        const fill = ramp[job.tone]
+        if (ink && fill && checkContrast(ink, fill) >= WCAG_AA) {
+          // Away from the ink: a light ink darkens the fill (up a Light ramp,
+          // down a Dark one); a dark ink lightens it.
+          const dir = (job.ink === 'light') === (kind === 'light') ? 1 : -1
+          s = { tone: job.tone, ink, inkRef, used: new Set([job.tone]), dir }
+          solids.set(fam, s)
+          return s
+        }
+      }
       // `brandSolidPair`, not `solidInkPair`: the tone NEAREST the anchor that
       // carries a label, rather than the first one found walking toward 12. On
       // a dark ramp "toward 12" is toward near-white, which is how every dark
       // theme's primary button became a pastel. See `brandSolidPair`.
       const inks = inkHexes(look)
-      const pair = brandSolidPair(rampOf(look, fam), inks, BASE_TONE, ACTION_LABEL_TARGET)
-      s = { tone: pair.tone, ink: inks[pair.ink] ?? inks[0], used: new Set([pair.tone]) }
+      const pair = brandSolidPair(ramp, inks, BASE_TONE, ACTION_LABEL_TARGET)
+      s = { tone: pair.tone, ink: inks[pair.ink] ?? inks[0], inkRef: INK_REFS[pair.ink] ?? INK_REFS[0], used: new Set([pair.tone]) }
       solids.set(fam, s)
     }
     return s
+  }
+  /** Hover (`n` 1) / pressed (2) of a job solid: `n` steps away from the ink,
+   *  kept while that step exists and still carries the ink at AA. */
+  const jobStep = (fam: string, n: number): string | null => {
+    const s = solidFor(fam)
+    if (s.dir === undefined) return null
+    const t = s.tone + s.dir * n
+    const fill = look(fam, t)
+    if (t < 1 || t > 12 || !fill || s.used.has(t) || checkContrast(s.ink, fill) < WCAG_AA) return null
+    s.used.add(t)
+    return `{${fam}.${t}}`
   }
   const solidToneFor = (fam: string): number => solidFor(fam).tone
   return roles.map((r) => {
@@ -584,8 +647,10 @@ function curatedRefs(
       // cannot carry white OR near-black ink at AA (measured worst: 3.55), so
       // the pinned form was unfixable by choosing a better ink. Solving the
       // FILL tone is what Categorical already does.
+      // `{on:fam.solid}` is the ink the solid was solved WITH — the same ref,
+      // so the label can never be re-solved to the other ink.
       .replace(/\{(on:)?([a-z-]+)\.solid\}/g, (_m, on: string | undefined, fam: string) =>
-        `{${on ?? ''}${fam}.${solidToneFor(fam)}}`)
+        on ? solidFor(fam).inkRef : `{${fam}.${solidToneFor(fam)}}`)
       .replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
         inkRefFor(look(fam, Number(tone)), look))
       .replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
@@ -615,6 +680,12 @@ function curatedRefs(
         uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
       .replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         uiBoundaryRef(fam, Number(start), kind, look))
+      // `{focus:<fam>.<start>}` — the focus boundary: the first tone from
+      // `start` clearing WCAG 1.4.11 (3:1) on the page. WCAG only, like the
+      // file's invariants: on the Escala ramps Dark 09 reads 7.4:1 but APCA
+      // Lc 45 would push it to 11.
+      .replace(/\{focus:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        uiBoundaryRef(fam, Number(start), kind, look, 0))
       // `{link:<fam>.<start>}` — link ink solved against page, layer-1 and
       // layer-2 (see `linkTextTone`); `{link+:…}` is its hover, one step past.
       // `{dis:<fam>.<start>}` — disabled label ink (see `disabledTextTone`).
@@ -625,6 +696,8 @@ function curatedRefs(
       .replace(/\{link:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         `{${fam}.${linkTextTone(fam, Number(start), kind, look)}}`)
       .replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam: string, n: string) => {
+        const job = jobStep(fam, Number(n))
+        if (job) return job
         const s = solidFor(fam)
         return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used)
       })
@@ -693,6 +766,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // (the default theme does) re-points this to the page tone with it.
   { group: 'content', key: 'on-secondary', light: '{neutral.12}', dark: '{neutral-dark.12}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
+  // Secondary ink on surface.inverse: the alpha ladder pointing AWAY from the
+  // inverse chip — white where it is dark (Light), black where it is light (Dark).
+  { group: 'content', key: 'inverse-secondary', light: '{white-a.9}', dark: '{black-a.9}' },
   // Disabled ink. Light tone 7 reads ≈3.5:1 on the disabled wash. Dark is NOT
   // tone-for-tone: the dark ramp's 6–8 band sits next to the page, and tone 7
   // measured 1.4:1 on `action.disabled` (the label vanished). Tone 10 reads
@@ -751,7 +827,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // on every seed, while dark tone 6 clears it. Same shape as primary's
   // documented residual — hover and pressed can share a tone and still be a
   // real, legible state; a pressed fill that fails the label floor is not.
-  { group: 'action', key: 'secondary.pressed', light: '{neutral.5}', dark: '{neutral-dark.6}' },
+  { group: 'action', key: 'secondary.pressed', light: '{neutral.6}', dark: '{neutral-dark.6}' },
   // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
   // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
   // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
@@ -834,7 +910,8 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // (a hair off the page) and `content.inverse` (`{neutral-dark.1}`, the
   // page) sat on it at ~1.2:1. `{neutral-dark.11}` is the muted light chip
   // of THIS page — AA + Lc 75 against tone 1, without the tone-12 flash.
-  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.11}' },
+  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  { group: 'surface', key: 'inverse-muted', light: '{white-a.3}', dark: '{black-a.3}' },
   // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
   // `{black-a.8}` (60% — Radix blackA8) is a genuine translucent overlay: the
   // pre-alpha-primitives value here was `{neutral.12}` / `{neutral-dark.1}`,
@@ -870,9 +947,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
   //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
   //    reads as red, and all three severities now agree on the same step.
-  { group: 'status', key: 'critical.surface', light: '{error-a.3}',   dark: '{error-a.3}' },
+  { group: 'status', key: 'critical.surface', light: '{error-a.3}', dark: '{error-a.4}' },
   { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.11}' },
-  { group: 'status', key: 'warning.surface',  light: '{warning-a.3}', dark: '{warning-a.3}' },
+  { group: 'status', key: 'warning.surface', light: '{warning-a.3}', dark: '{warning-a.4}' },
   // Warning content / border-strong / surface-solid can resolve to ONE hex.
   // That is ramp geometry, not a schema defect — do not collapse the three
   // roles. Content is pinned to tone 11 so the severity hue survives (tone 12
@@ -883,7 +960,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // one appearance. The four `*.on-solid` sharing near-white/near-black is
   // correct: `{on:…}` solves ink against the fill, not a second hue.
   { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
-  { group: 'status', key: 'success.surface',  light: '{success-a.3}', dark: '{success-a.3}' },
+  { group: 'status', key: 'success.surface', light: '{success-a.3}', dark: '{success-a.4}' },
   { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.11}' },
   // Info — same shape as the three severities above, added because the Info
   // primitive (seeded, generated, exported to tokens.json) had NO semantic
@@ -897,7 +974,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // clears WCAG 4.35 / Lc 63.8 in light and 10.21 / Lc 73.6 in dark — the
   // same range critical/warning/success already accept (critical's own
   // residual is Lc ~42, short of the 60 floor, and was kept anyway).
-  { group: 'status', key: 'info.surface',     light: '{info-a.3}',    dark: '{info-a.3}' },
+  { group: 'status', key: 'info.surface', light: '{info-a.3}', dark: '{info-a.4}' },
   { group: 'status', key: 'info.content',     light: '{info.11}',       dark: '{info.11}' },
   // ── The PRESSED wash of a status-tinted interactive surface — a destructive
   // row-menu item held down, a "dismiss all" on an error banner. `{fam-a.5}`,
@@ -909,10 +986,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Added for all four severities in one go — the rule this file re-decides by
   // hand every time: a severity gets a slot because ALL FOUR do, never because
   // one component reached for it (see `status.info.*` above).
-  { group: 'status', key: 'critical.surface-pressed', light: '{error-a.5}',   dark: '{error-a.5}' },
-  { group: 'status', key: 'warning.surface-pressed',  light: '{warning-a.5}', dark: '{warning-a.5}' },
-  { group: 'status', key: 'success.surface-pressed',  light: '{success-a.5}', dark: '{success-a.5}' },
-  { group: 'status', key: 'info.surface-pressed',     light: '{info-a.5}',    dark: '{info-a.5}' },
+  { group: 'status', key: 'critical.surface-pressed', light: '{error-a.4}', dark: '{error-a.5}' },
+  { group: 'status', key: 'warning.surface-pressed', light: '{warning-a.4}', dark: '{warning-a.5}' },
+  { group: 'status', key: 'success.surface-pressed', light: '{success-a.4}', dark: '{success-a.5}' },
+  { group: 'status', key: 'info.surface-pressed', light: '{info-a.4}', dark: '{info-a.5}' },
   // ── The STROKE of a status surface, one role per severity.
   //
   // Added because both renderers were painting it from a magic number and
@@ -957,7 +1034,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // `info` is NEW — the severity every other status slot already covers "one
   // decision across all four" — and lands on the same light-9 / dark-10 shape as
   // error, one step earlier than error in dark because its ramp clears sooner.
-  { group: 'status', key: 'critical.border-strong', light: '{error.9}',    dark: '{error.11}' },
+  { group: 'status', key: 'critical.border-strong', light: '{error.9}',    dark: '{error.10}' },
   { group: 'status', key: 'warning.border-strong',  light: '{warning.11}', dark: '{warning.11}' },
   { group: 'status', key: 'success.border-strong',  light: '{success.10}', dark: '{success.10}' },
   { group: 'status', key: 'info.border-strong',     light: '{info.9}',     dark: '{info.10}' },
@@ -1109,7 +1186,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // six-seed search showed dark ramps have no blind spot worth walking around,
   // so the walk simply lands on 11 for every seed tried (WCAG 11.83–11.90,
   // Lc 75.0–75.3). Both columns are the solver, not a pin.
-  { group: 'border', key: 'focus',   light: '{ui:accent.9}',  dark: '{ui:accent.9}' },
+  { group: 'border', key: 'focus',   light: '{focus:accent.9}',  dark: '{focus:accent.9}' },
   // ── Focus RING (the translucent halo), distinct from `border.focus` (the
   // solid boundary). Two roles, not one, because they do different jobs: the
   // boundary must clear WCAG 1.4.11 as a UI component (hence the `{ui:…}`
@@ -1137,6 +1214,15 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // consumer building elevation by hand has the same rim available, and so
   // `white-a` stops being a family the export ships that no role references.
   { group: 'border', key: 'rim-highlight', light: '{white-a.1}', dark: '{white-a.1}' },
+  // Any stroke ON surface.inverse (outline badge, divider in a tooltip).
+  { group: 'border', key: 'inverse', light: '{white-a.5}', dark: '{black-a.5}' },
+  // Elevation — the colours INSIDE an effect (Shadow/*, Depth/*, the solid
+  // control highlight), never a fill or a stroke. One shadow recipe follows
+  // Light and Dark because its layers read these.
+  { group: 'elevation', key: 'shadow-key',     light: '{black-a.2}', dark: '{black-a.6}' },
+  { group: 'elevation', key: 'shadow-ambient', light: '{black-a.1}', dark: '{black-a.4}' },
+  { group: 'elevation', key: 'shadow-ring',    light: '{white-a.1}', dark: '{white-a.1}' },
+  { group: 'elevation', key: 'highlight',      light: '{white-a.3}', dark: '{white-a.3}' },
   // `border.critical` / `border.warning` / `border.success` moved to
   // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
   // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -1186,13 +1272,20 @@ export function projectCategorical(
  * actually ship.
  */
 export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
+  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.',
+  'elevation.shadow-ring': '[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.',
+  'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
+  'elevation.shadow-key': '[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.',
+  'border.inverse': '[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.',
+  'content.inverse-secondary': '[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.',
+  'surface.inverse-muted': '[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse — a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.',
   'surface.page': '[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.',
   'surface.layer-1': '[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.',
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
-  'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral-dark.11} — a muted inverse chip, not the dark ramp's near-white step.",
+  'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
   'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
@@ -1202,26 +1295,26 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'content.subtle': '[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.',
   'content.disabled': '[ROLE: Inactive Text] Disabled controls and copy. Exempt from strict WCAG rules — must communicate inactivity, not full legibility.',
   'content.inverse': "[ROLE: Inverted Text] Required when the background is surface.inverse or any dark/solid fill outside the accent.",
-  'content.on-action': "[ROLE: Button Text] Label ink used ONLY on action.primary.default. Solved per theme against that fill — never assume white. Must exceed 4.5:1 against the button fill.",
+  'content.on-action': '[ROLE: Button Text] Label ink used ONLY on action.primary.*. The ink the fill was solved WITH: the light page in Light, the dark page in Dark for the default system — never assume white. Exceeds 4.5:1 against every primary state.',
   'content.on-secondary': '[ROLE: Secondary Button Text] Label ink used ONLY on action.secondary.*. {neutral.12} in light — content.primary while secondary is a light wash; re-pointed with the fill when a system makes secondary a dark button. Must exceed 4.5:1 against the fill.',
   'content.accent': '[ROLE: Accent Text] Brand-tinted emphasis — active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).',
   'content.link.default': '[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.',
   'content.link.hover': '[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.',
-  'action.primary.default': "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
-  'action.primary.hover': '[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) — one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)',
-  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) — two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)',
+  'action.primary.default': '[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.',
+  'action.primary.hover': '[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) — darker under a light ink (Light 10), lighter under a dark ink (Dark 11) — re-verified for label contrast.',
+  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) — Light 11, Dark 12 — re-verified for label contrast.',
   'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.',
   'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.',
-  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.on-secondary.',
+  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} — two steps past action.secondary.default. Label stays content.on-secondary.',
   'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.2} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
   'action.ghost.default': '[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.',
   'action.ghost.hover': '[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
   'action.ghost.pressed': '[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',
   'status.critical.surface': "[ROLE: Feedback Background Subtle] Affects error alerts, banners, toasts, destructive row-menu items. Tinted background. Pair with status.critical.content — never a fixed ink on the bg alone.",
-  'status.critical.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.5} — two steps deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
-  'status.warning.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.5}.',
-  'status.success.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.5}.',
-  'status.info.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.5}.',
+  'status.critical.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.4} in Light, {error-a.5} in Dark — one step deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
+  'status.warning.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.4} in Light, {warning-a.5} in Dark.',
+  'status.success.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.4} in Light, {success-a.5} in Dark.',
+  'status.info.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.4} in Light, {info-a.5} in Dark.',
   'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes — solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
   'status.critical.content': '[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix\'s chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
@@ -1255,10 +1348,10 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
   'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. A HAIRLINE at the weight modern systems draw it (shadcn\'s --border): SOLVED on the alpha ladder ({ctl-a:…}) to a 1.4:1 visibility floor, the first step visibly off the page — {black-a.3} (1.41:1) in light, {white-a.3} (1.50:1) in dark for the default system. It does NOT clear WCAG 1.4.11 on its own by design: a control that must be identified without a fill gives itself one (surface.input a step off the page).',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.4} / {white-a.4} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:…}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
-  'border.focus': '[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only — the translucent halo is border.ring.*.',
+  'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
@@ -1381,6 +1474,16 @@ export function scaleLookup(
     // there's no lookup chain here, just the constant.
     'black-a': BLACK_ALPHA_SCALE,
     'white-a': WHITE_ALPHA_SCALE,
+    // The LIGHT page, reachable from a dark theme too: the light ink a solid
+    // carries when it stays light in Dark (`status.critical.on-solid`, the
+    // Escala file's `Accents/…/01`). Only step 1 exists — the dark palette
+    // does not carry the light ramp.
+    'neutral-light': (() => {
+      const page = kind === 'light'
+        ? (palette?.gray ?? scales.gray)?.[1]
+        : (palette?.alphaPages?.neutral?.light ?? scales.gray?.[1] ?? pageBackground)
+      return page ? { 1: page } : undefined
+    })(),
   }
   // Alpha twins — ONE name per family, kind-aware exactly like `accent`
   // already is: the SAME ref text (`{accent-a.3}`) resolves to the light
@@ -1509,6 +1612,7 @@ export function buildArchitectureView(
       surface: ['Surface', 'Page and layer backgrounds'],
       status: ['Status', 'Feedback fg/bg pairs per severity'],
       border: ['Border', 'Strokes, focus and severity borders'],
+      elevation: ['Elevation', 'Shadow, depth and highlight colours inside effects'],
     }
     // Status needs no display-only sort: `CATEGORICAL_ROLES` is already
     // severity-first (see STATUS_SEVERITY_ORDER), so the table, tokens.json and

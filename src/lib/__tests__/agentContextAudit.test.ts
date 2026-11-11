@@ -24,6 +24,7 @@ import { offlineSkillCommand, unzipSkillCommand } from '../agentInstall'
 import { CLI_PUBLISHED } from '../featureFlags'
 import type { TokenJSON } from '../agentBundle/types'
 import { figmaSemanticName } from '../agentBundle/names'
+import { roleIdFromName } from '../roleNames'
 
 let brand = ''
 
@@ -88,9 +89,13 @@ describe('appearance narrowing', () => {
     for (const appearance of ['light', 'dark'] as const) {
       const json = contextTokenJson(store, brand, appearance)
       const prim = Object.keys(json.colors.primitive ?? {})
-      if (appearance === 'light') expect(twins(json)).toEqual([])
-      else expect(twins(json).length).toBe(prim.length)
       const hexes = new Set([...Object.values(json.colors.primitive ?? {}), ...Object.values(json.colors.primitiveAlpha ?? {})].map((h) => h.toLowerCase()))
+      // The other appearance ships no RAMP: only a single primitive a role of
+      // this appearance reads (Dark critical on-solid is the light page).
+      const read = new Set(Object.values(json.colors.architecture?.tokens ?? {}).flatMap((t) => Object.values(t).map((m) => (m[appearance] ?? '').toLowerCase())))
+      const foreign = appearance === 'light' ? twins(json) : prim.filter((k) => !twins(json).includes(k))
+      expect(foreign.filter((k) => !read.has((json.colors.primitive?.[k] ?? '').toLowerCase()))).toEqual([])
+      expect(foreign.length).toBeLessThanOrEqual(1)
       for (const [group, tokens] of Object.entries(json.colors.architecture?.tokens ?? {})) {
         for (const [key, byMode] of Object.entries(tokens)) {
           const v = (byMode[appearance] ?? '').toLowerCase()
@@ -217,8 +222,8 @@ describe('component briefs', () => {
     const button = COMPONENTS.find((c) => c.key === 'Button')!
     const json = generateTokenJSON() as unknown as TokenJSON
     const md = agentContextMarkdown(button, '<Button />', resolvePreviewTokens(store, brand, 'light') as never, json)
-    expect(md).toContain('`Radius/role/action`')
-    expect(md).toContain('`Size/role/control`')
+    expect(md).toContain('`Radius/action`')
+    expect(md).toContain('`Size/control-md`')
     expect(md).not.toContain('not published')
   })
 })
@@ -382,9 +387,15 @@ describe('design skills cite only names the system ships', () => {
     const { buildAgentProductFiles } = await import('../agentBundle/product')
     const json = productJson([...COMPONENT_KEYS])
     const roles = figmaRoleNames(json)
+    // Figma name → role id (`Size/control-xs` → size.hit, `Radius/full` → radius.pill).
     const dims: Record<string, Record<string, string> | undefined> = {
-      Radius: json.radiusRoles, Spacing: json.spacingRoles, Size: json.sizeRoles, Selector: json.selectorRoles,
-      Stroke: json.strokeRoles, Icon: json.icons?.sizes?.roles,
+      radius: json.radiusRoles, spacing: json.spacingRoles, size: json.sizeRoles, selector: json.selectorRoles,
+      stroke: json.strokeRoles, icon: json.icons?.sizes?.roles,
+    }
+    const roleOf = (name: string) => {
+      const id = roleIdFromName(name) ?? name.replace('/', '.').toLowerCase()
+      const dot = id.indexOf('.')
+      return [id.slice(0, dot), id.slice(dot + 1)] as const
     }
     const files = buildAgentProductFiles(json).files.filter((f) => f.path.startsWith('skills/'))
     let checked = 0
@@ -402,15 +413,22 @@ describe('design skills cite only names the system ships', () => {
           else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
           else {
-            const [group, , role] = name.split('/')
+            const [family, role] = roleOf(name)
             expect(col, `${f.path}: ${name}`).toBe('Dimension Semantics')
-            expect(dims[group]?.[role], `${f.path}: ${name}`).toBeDefined()
+            expect(dims[family]?.[role], `${f.path}: ${name}`).toBeDefined()
           }
         })
       }
       // Role and style names cited in prose (review rules, handoff tables).
-      for (const m of f.text.matchAll(/`((Radius|Spacing|Size|Selector|Stroke|Icon)\/role\/([\w-]+)|Type\/([\w-]+)|Shadow\/([\w-]+))`/g)) {
-        if (m[2]) expect(dims[m[2]]?.[m[3]], `${f.path}: ${m[1]}`).toBeDefined()
+      // A `<Group>/<name>` that is a scale step (`Radius/lg`, `Spacing/4`) is a
+      // primitive, not a role.
+      const steps: Record<string, Record<string, string> | undefined> = { Radius: json.radius, Spacing: json.spacing, Size: json.sizes, Stroke: json.stroke }
+      for (const m of f.text.matchAll(/`((Radius|Spacing|Size|Stroke)\/([a-z0-9][\w-]*)|Type\/([\w-]+)|Shadow\/([\w-]+))`/g)) {
+        if (m[2]) {
+          if (steps[m[2]]?.[m[3]] !== undefined) continue
+          const [family, role] = roleOf(m[1])
+          expect(dims[family]?.[role], `${f.path}: ${m[1]}`).toBeDefined()
+        }
         else if (m[4]) expect(json.typography.roles?.[m[4]], `${f.path}: ${m[1]}`).toBeDefined()
         else expect(json.shadows?.[m[5]], `${f.path}: ${m[1]}`).toBeDefined()
       }

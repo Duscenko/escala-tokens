@@ -18,7 +18,8 @@ export interface FigmaW3COptions {
    *  or more brands). */
   include?: readonly string[]
   /** Dimension Semantics groups to keep (`Spacing`, `Radius`, `Stroke`, `Size`,
-   *  `Selector`, `Icon`, `Grid`); all when omitted. */
+   *  `Grid`), or name prefixes when the entry holds a slash (`Size/icon-`);
+   *  all when omitted. */
   dimensionGroups?: readonly string[]
   /** Theme keys (themeOrder entries) whose Color Semantics columns ship. */
   semanticModes?: readonly string[]
@@ -83,8 +84,9 @@ export function figmaCollectionsW3C(tokens: TokenJSON, opts: FigmaW3COptions = {
     snap = pruneSnapshot(snap, 'Color Primitives', (n) => keepNames.has(n))
   }
   if (opts.dimensionGroups) {
-    const groups = new Set(opts.dimensionGroups)
-    snap = pruneSnapshot(snap, 'Dimension Semantics', (n) => groups.has(n.split('/')[0]))
+    const groups = opts.dimensionGroups
+    snap = pruneSnapshot(snap, 'Dimension Semantics', (n) =>
+      groups.some((g) => (g.includes('/') ? n.startsWith(g) : n.split('/')[0] === g)))
   }
   if (opts.semanticModes) {
     const colors = tokens.colors as unknown as Record<string, any>

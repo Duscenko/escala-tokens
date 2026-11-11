@@ -12,7 +12,9 @@ import { toneLabel, withAlpha, darkShadow, darkShadowMap, generateAlphaScale, BL
 import { resolveFamilyPages } from './colorActions'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
+import { elevationCssVars } from './elevationTokens'
+import { socialCssVars } from './socialBrands'
+import { allLayoutRoleCssVars, layoutRoleVar, sizeRolesViewportCss, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -34,12 +36,22 @@ function paddingCssEntries(
 ): [string, string][] {
   // The role may hold a step OR a pinned primitive — resolve through the same
   // helper everything else uses, so a pinned inset still collapses the mirror.
+  // A side set by hand has its own `--spacing-inset-surface-<side>`; a side
+  // that follows the inset reads `--spacing-inset-surface` itself.
+  const own = mergeLayoutRoles('spacing', spacingRoles)
   const sides = withInsetSides(spacingRoles)
   return Object.entries(padding).map(([side, value]) => {
     const key = `inset-surface-${side}`
     const resolved = key in sides ? resolveLayoutRole('spacing', sides, spacing, key) : ''
-    return [side, resolved && value === resolved ? `var(--spacing-${key})` : dimensionVar(value)]
+    const alias = own[key] !== undefined ? `--spacing-${key}` : '--spacing-inset-surface'
+    return [side, resolved && value === resolved ? `var(${alias})` : dimensionVar(value)]
   })
+}
+
+/** The radius ramp as CSS declares it: every step but `full`, whose name the
+ *  role `radius.pill` holds (`--radius-full`, Figma `Radius/full`). */
+function radiusRampEntries(radius: Record<string, string>): [string, string][] {
+  return Object.entries(radius).filter(([k]) => k !== 'full')
 }
 
 export type ShippedFileOptions = {
@@ -214,15 +226,15 @@ export function buildCSS(
   lines.push('\n  /* Padding — per-side surface inset (alias of spacing-inset-surface) */')
   paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
-  lines.push('\n  /* Radius */')
-  Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+  lines.push('\n  /* Radius — the ramp. `full` is the role `--radius-full` (radius.pill), below. */')
+  radiusRampEntries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
   lines.push('\n  /* Radius — responsive tokens (Tablet / Mobile step down in the media blocks) */')
   radiusComponentCss('desktop').forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
 
-  lines.push('\n  /* Selectors — checkbox / radio / switch glyph, a square not a height */')
+  lines.push('\n  /* Selectors — checkbox / radio / switch glyph ramp, a square not a height. Roles: --size-selector-md|sm */')
   Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Icon sizes — scaled to the md control height, the same in every viewport */')
@@ -252,6 +264,17 @@ export function buildCSS(
   const rootIsDark = rootKind === 'dark'
   const rootShadows = rootIsDark ? darkShadowMap(shadows) : shadows
   Object.entries(rootShadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
+
+  // Depth (inner shadows) and backdrop blur — the Escala Figma file's
+  // `Depth/*` and `Blur/*` styles. Depth layers read the Elevation colour
+  // roles, so one declaration follows Light and Dark.
+  lines.push('\n  /* Depth and blur — box-shadow: var(--depth-sm) · backdrop-filter: blur(var(--blur-sm)) */')
+  elevationCssVars().forEach((l) => lines.push(`  ${l}`))
+
+  // Social-login buttons — each provider's own colours, the same in every
+  // theme (Figma `Social Media Brands`).
+  lines.push('\n  /* Social-login colours — fixed per provider */')
+  socialCssVars().forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Breakpoints — primitive min-widths */')
   const bps = extractBreakpoints(grid)
@@ -298,12 +321,12 @@ export function buildCSS(
   // stepping down (RADIUS_RESPONSIVE): one media query per viewport.
   // Desktop-only (the Free cut) keeps the :root values and skips both blocks.
   if (!desktopOnly) {
-    lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`)
+    lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing }, { roles: sizeRoles, sizes })}`)
   }
   // Brands that move their own way (a System Style's motion preset).
   const themedMotion: { selector: string; reduced: string[] }[] = []
   // Themes with their own foundations step their OWN radius roles down too.
-  const themedRadius: { selector: string; roles?: Record<string, string>; radius: Record<string, string>; viewports?: RadiusRoleViewports; spacingRoles?: Record<string, string>; spacing: Record<string, string> }[] = []
+  const themedRadius: { selector: string; roles?: Record<string, string>; radius: Record<string, string>; viewports?: RadiusRoleViewports; spacingRoles?: Record<string, string>; spacing: Record<string, string>; sizeRoles?: Record<string, string>; sizes: Record<string, string> }[] = []
 
   // Theme blocks contain semantics plus any complete foundation override.
   // Dark keeps the `.dark` convention; extra themes use data-theme.
@@ -381,7 +404,7 @@ export function buildCSS(
       Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
       paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles)
         .forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
-      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+      radiusRampEntries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
       radiusComponentCss('desktop').forEach((l) => lines.push(`  ${l}`))
       Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
       Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
@@ -399,7 +422,7 @@ export function buildCSS(
       }).forEach((line) => lines.push(`  ${line}`))
       if (kind !== 'dark') Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
       gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`))
-      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing })
+      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing, sizeRoles: foundations.sizeRoles, sizes: foundations.sizes })
       lines.push(`  --panel-blur: ${foundations.panelBackground === 'translucent' ? 'blur(16px)' : 'none'};`)
       const motionDiff = motionThemeCssDiff(motion, normalizeMotionSettings(foundations.motion))
       if (motionDiff.full.length) {
@@ -431,7 +454,7 @@ export function buildCSS(
     const bps = extractBreakpoints(grid)
     for (const [vp, max] of [['tablet', breakpointTabletMax(breakpointRoles, bps)], ['mobile', breakpointMobileMax(breakpointRoles, bps)]] as const) {
       const blocks = themedRadius
-        .map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] }))
+        .map((t) => ({ selector: t.selector, decls: [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing), ...sizeRolesViewportCss(vp, t.sizeRoles, t.sizes)] }))
         .filter((b) => b.decls.length)
       if (!blocks.length) continue
       lines.push(`\n@media (max-width: ${max}) {`)
@@ -621,7 +644,7 @@ ${readmeLengthTable('spacing', spacing)}
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`${layoutValueCss('spacing', mergeLayoutRoles('spacing', spacingRoles)[r.key], spacing)}\` |`).join('\n')}
+${LAYOUT_ROLES.spacing.map((r) => `| \`${layoutRoleVar('spacing', r.key)}\` | \`${layoutValueCss('spacing', mergeLayoutRoles('spacing', spacingRoles)[r.key], spacing)}\` |`).join('\n')}
 ${insetSideCssVars(spacingRoles, spacing).map((d) => { const [k, v] = d.replace(/;$/, '').split(': '); return `| \`${k}\` | \`${v}\` |` }).join('\n')}
 
 ### Padding — surface inset
@@ -634,17 +657,17 @@ ${paddingCssEntries(padding, spacing, spacingRoles).map(([k,v])=>`| \`--padding-
 
 ## Border Radius
 
-${readmeLengthTable('radius', radius)}
+${readmeLengthTable('radius', Object.fromEntries(radiusRampEntries(radius)))}
 
 ### Radius roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`${layoutValueCss('radius', mergeLayoutRoles('radius', radiusRoles)[r.key], radius)}\` |`).join('\n')}
+${LAYOUT_ROLES.radius.map((r) => `| \`${layoutRoleVar('radius', r.key)}\` | \`${layoutValueCss('radius', mergeLayoutRoles('radius', radiusRoles)[r.key], radius)}\` |`).join('\n')}
 
 ### Responsive radius
 
-${desktopOnly ? 'Desktop. The roles follow the static step.' : 'Corner rounding steps down on smaller screens: every responsive token points at a static step, one smaller on Tablet and one (two from 3xl up) smaller on Mobile. The radius roles follow it in the Tablet and Mobile media queries; in Figma, Dimension Semantics carries a value per viewport mode.'}
+${desktopOnly ? 'Desktop.' : 'The radius ROLES hold one value on every viewport (the Escala Figma file); only a hand-set Tablet or Mobile value changes one. The `--radius-component-*` tokens below step down instead, for a component that wants its corners to shrink on a phone: each points at a static step, one smaller on Tablet and one (two from 3xl up) smaller on Mobile.'}
 
 ${responsiveRadiusTable}
 
@@ -689,7 +712,7 @@ ${readmeLengthTable('size', sizes)}
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`${layoutValueCss('size', mergeLayoutRoles('size', sizeRoles)[r.key], sizes)}\` |`).join('\n')}
+${LAYOUT_ROLES.size.map((r) => `| \`${layoutRoleVar('size', r.key)}\` | \`${layoutValueCss('size', mergeLayoutRoles('size', sizeRoles)[r.key], sizes)}\` |`).join('\n')}
 
 ---
 
@@ -697,7 +720,7 @@ ${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`${layoutValueCss('size
 
 The square a checkbox, radio or switch knob is drawn in — a glyph, not a control
 height, so it has its own ramp. Below 24px, pair it with a transparent hit area
-(\`--size-hit\`) to meet WCAG 2.2 target size; don't grow the glyph instead.
+(\`--size-control-xs\`) to meet WCAG 2.2 target size; don't grow the glyph instead.
 
 ${readmeLengthTable('selector', selector ?? {})}
 
@@ -705,7 +728,7 @@ ${readmeLengthTable('selector', selector ?? {})}
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.selector.map((r) => `| \`--selector-${r.key}\` | \`${layoutValueCss('selector', mergeLayoutRoles('selector', selectorRoles)[r.key], selector ?? {})}\` |`).join('\n')}
+${LAYOUT_ROLES.selector.map((r) => `| \`${layoutRoleVar('selector', r.key)}\` | \`${layoutValueCss('selector', mergeLayoutRoles('selector', selectorRoles)[r.key], selector ?? {})}\` |`).join('\n')}
 
 ---
 
@@ -719,7 +742,7 @@ ${readmeLengthTable('stroke', stroke ?? {})}
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.stroke.map((r) => `| \`--stroke-${r.key}\` | \`${layoutValueCss('stroke', mergeLayoutRoles('stroke', strokeRoles)[r.key], stroke ?? {})}\` |`).join('\n')}
+${LAYOUT_ROLES.stroke.map((r) => `| \`${layoutRoleVar('stroke', r.key)}\` | \`${layoutValueCss('stroke', mergeLayoutRoles('stroke', strokeRoles)[r.key], stroke ?? {})}\` |`).join('\n')}
 
 ---
 

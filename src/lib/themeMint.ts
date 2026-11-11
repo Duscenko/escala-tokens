@@ -5,7 +5,7 @@
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemeSources } from '../store/useDesignStore'
 import { FAMILY_SLOTS, type FamilySlot } from './themeSources'
 import {
-  generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony,
+  generateColorScale, generateStatusScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony,
   type NeutralTint,
 } from './colorUtils'
 import { slugify } from './utils'
@@ -102,8 +102,12 @@ function scalesForSlot(
       darkScale: generateDarkColorScale(hex, s.colorAlgorithm, rampShift, pages.dark, neutralTint),
     }
   }
+  // The four status families carry vivid Light solids (`generateStatusScale`).
+  const status = slot === 'error' || slot === 'warning' || slot === 'success' || slot === 'info'
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light),
+    scale: status
+      ? generateStatusScale(hex, s.colorAlgorithm, rampShift, pages.light)
+      : generateColorScale(hex, s.colorAlgorithm, rampShift, pages.light),
     darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, rampShift, pages.dark),
   }
 }
@@ -236,6 +240,9 @@ export function mintTheme(
       return renamed ? { key, renamedFrom: editKey } : { key }
     }
     s.addTheme(key, kind, refs)
+    // The name as typed ("Escala"), not the slug: Figma modes and every
+    // display read it (`Escala Light`, never `escala Light`).
+    s.setThemeLabel(key, label)
     return { key }
   } catch {
     return { error: 'One of the colors is invalid.' }

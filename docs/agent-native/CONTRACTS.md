@@ -36,6 +36,7 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 | 5 | `opacity` **removed** (alpha lives in `colors.primitiveAlpha`) | Older plugin already guards `if (tokens.opacity)` |
 | 6 | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame`. Configurator also emits `borders.width` as a copy of `stroke` so a v5 plugin still creates the Border collection. Plugin v6 imports the role maps as `role/*` aliases (and one text style per type role). | Plugin v5 warns, imports colors/primitives, ignores role maps |
 | 7 | Semantic architecture colors may contain 8-digit alpha hex. Additive `foundationsByTheme` resolves the existing foundation collections for every library theme; root foundation fields remain the compatibility fallback. | Plugin imports `foundationsByTheme` as modes on Typography / Spacing / Radius / Size / Selector / Border / Grid whenever a theme's resolved map **differs from the root** (or themes differ from each other). A Theme Preview typeface edit that only patches `themeFoundations` must still reach Figma — comparing themes only to each other silently dropped same-override / single-theme kits. |
+| 7 (additive, 2026-11-11) | The Escala Figma file is the ground truth (`escala-figma-plugin/spec/figma-variables.txt`). **Added:** `spacingRoleViewports` and `sizeRoleViewports` (same `{ tablet: { role: value }, mobile: { … } }` shape as `radiusRoleViewports`; Desktop stays in the role map), `spacingRoles['inset-section']` (96 · 64 · 48), `sizeRoles['target-min']` (24 · 44 · 44), `socialBrands`, `elevation` (`shadow` / `depth` recipes of `{ x, y, blur, spread, role }` + `blur` px), and the colour roles `content.inverse-secondary`, `surface.inverse-muted`, `border.inverse` and group `elevation` (`shadow-key`, `shadow-ambient`, `shadow-ring`, `highlight`). `radiusRoleViewports` is now COMPLETE (every role, resolved): radius roles no longer step down per viewport. **No longer emitted:** `spacingRoles` / `spacingRoleRefs` keys `overlap-xs\|lg\|xl\|2xl` and `inset-*-top\|right\|bottom\|left`, `selectorRoles.indicator`. Role ids are unchanged. | A plugin reading the old shape keeps working: it finds fewer keys (it never received anything the file carries for them) and ignores the new ones. A plugin that steps radius roles down by `radiusResponsive` reads the complete `radiusRoleViewports` first. |
 | 7 (additive) | `platforms` + `platform` — the Platform axis (web · ios · android), only emitted when a system ships a native target. `platform.*.web` always mirrors the root field; body/control type roles, body family, touch target and control radii may differ per OS. Viewports stay as they are; the two axes never combine. | Plugin ≤ 0.30 ignores both keys and imports a web file. A plugin that understands them adds a `Platform` collection with one mode per platform; `role/*` in Typography aliases it for body/control roles. |
 
 Rules:
@@ -82,10 +83,28 @@ Skill script `/.claude/skills/color-science-core/scripts/contrast.mjs` must stay
 |---|---|---|
 | Catalogue / JSON architecture | `action.primary.default` | Dots |
 | CSS | `var(--color-action-primary-default)` | Hyphens, `var()` wrapper required for Figma Dev Mode |
-| Figma variable | `Action/primary/default` | Slashes. A dot in a Figma name throws and aborts import. Type mobile size is `role/{key}/size-mobile`. Grid keeps `columns` as desktop and adds `desktop/*` / `mobile/*`. |
+| Figma variable | `Action/primary/default` | Slashes. A dot in a Figma name throws and aborts import. Every published semantic variable carries its WEB code syntax, which IS the CSS name below. |
 | Collections | `Color Primitives`, `Color Semantics`, `Typography`, `Spacing`, `Radius`, `Size`, `Selector`, `Grid` | Exact strings. Semantics groups: Content · Action · Surface · Status · Border. `Border` is the stroke-width collection. |
 
 Primitives: `scopes = []` (hidden from property pickers). Semantics: `ALL_SCOPES` (“Show in all supported properties”) so mapped roles appear wherever designers paint.
+
+### 5a. Dimension roles — one name per layer (the Escala Figma file)
+
+Role ids in `tokens.json` and recipes do not change. The Figma variable (`Dimension Semantics`, no `role/` segment) and the CSS name follow the file's code syntax; `src/lib/roleNames.ts` is the one map.
+
+| Role id | Figma | CSS |
+|---|---|---|
+| `spacing.<k>` (`gap-*`, `inset-control\|surface\|page\|section`, `overlap-sm\|md`, `none`) | `Spacing/<k>` | `--spacing-<k>` |
+| `radius.control\|action\|container\|overlay` · `radius.pill` | `Radius/<k>` · `Radius/full` (+ `Radius/none`, always 0) | `--radius-<k>` · `--radius-full` (the ramp's `full` step is not declared) |
+| `stroke.divider\|control\|focus` | `Stroke/<k>` | `--stroke-<k>` |
+| `size.hit\|compact\|control\|touch\|fab` | `Size/control-xs\|sm\|md\|lg\|xl` | `--size-control-xs…xl` |
+| `size.target-min` | `Size/target-min` | `--size-target-min` |
+| `selector.control\|compact` | `Size/selector-md\|sm` | `--size-selector-md\|sm` |
+| `icon.small\|medium\|large` | `Size/icon-sm\|md\|lg` | `--size-icon-sm\|md\|lg` |
+| grid column width | `Grid/column` | `--grid-column` |
+| motion role | `role/<role>/duration\|easing` (Motion) | `--motion-<role>-duration\|easing` (the shorthand `--motion-<role>` stays) |
+| shadow / depth / blur | `Shadow/*` · `Depth/*` · `Blur/*` effect styles | `--shadow-*` · `--depth-*` · `--blur-*` |
+| social-login colours | `Social Media Brands` → `<Label>/Action/default` … | `--social-<id>-action-default` … `--social-<id>-border-focus` |
 
 Spacing steps in Figma nest under `step/` because a variable name cannot start with a digit.
 
@@ -95,10 +114,10 @@ Shadows and gradients are **styles**, not variables (Figma has no type for them)
 
 A system with **two or more brands** (Color Semantics columns `<slug>::light` / `<slug>::dark` from two or more slugs) ships one Figma file and one CSS file. The plugin's `importVariables` (`../escala-figma-plugin/src/code.ts`) is the source of truth; `figmaCollections/fromTokens.ts` mirrors it for the W3C export.
 
-- **Token names are invariant across brands.** `Action/primary/default`, `Radius/role/action`, `var(--radius-action)` name the same token in every brand; only the value changes. Never mint a per-brand name (`Hola/Action/…`, `--hola-radius-action`).
+- **Token names are invariant across brands.** `Action/primary/default`, `Radius/action`, `var(--radius-action)` name the same token in every brand; only the value changes. Never mint a per-brand name (`Hola/Action/…`, `--hola-radius-action`).
 - **`Brand` collection**: one mode per brand, in `themeOrder` order, named after the brand (`studioThemes[slug].name`, else its `themeLabels` without Light/Dark, else the title-cased slug). Its variables have no scopes and are not published; designers bind the semantic collections, never `Brand/…`.
-- **Color Semantics** has two modes, `Light` · `Dark`. A role whose value differs between brands aliases `Brand/<Light|Dark>/<role path>`. A brand that ships one appearance repeats it in the other mode.
-- **Dimension Semantics** `Spacing/role/*`, `Radius/component/*` and `Radius/role/*` alias `Brand/<group path>/<viewport>` — **per viewport** — where brands differ.
+- **Color Semantics** has two modes, `Light` · `Dark`. With ONE brand the modes are `<Name> Light` · `<Name> Dark`, named after the system as typed (`Escala Light`, never `escala Light`). A role whose value differs between brands aliases `Brand/<Light|Dark>/<role path>`. A brand that ships one appearance repeats it in the other mode.
+- **Dimension Semantics** `Spacing/*` and `Radius/*` alias `Brand/<group path>/<viewport>` — **per viewport** — where brands differ.
 - **Typography** `font-family-body` / `font-family-display` alias `Brand/Font/body` · `Brand/Font/display` where brands differ. The type scale is shared.
 - **What a brand may change**: colour, radius, spacing (paddings, gaps) and the two font families. Sizes, stroke, shadows, icons, motion, weights, line heights and viewports are the system's (the first brand's). Each brand's values live in `foundationsByTheme[<slug>::<appearance>]` (any of its columns).
 - **Shared values are written directly**, without a `Brand` alias. One brand: no `Brand` collection, output identical to the single-brand layout.
@@ -117,7 +136,7 @@ Always emit when present in the store:
 - `colors.semantic`, `colors.semanticDark` (compat)
 - **Role values** (`radiusRoles`, `spacingRoles`, `sizeRoles`, `selectorRoles`, `strokeRoles`, `breakpointRoles`, and the `gridFrame` gutter/margin/container fields) are a **step** of the family's scale (`lg`, `5`) **or a pinned Dimension primitive** (`dimension-20`, `dimension-3_5`) — additive, no bump: a payload that only holds steps is unchanged. A consumer resolves either to a length; the plugin and the exports alias the primitive directly.
 - `dimensions` (the Dimension primitives, named by value) and `dimensionRefs` (category → step → `{dimension.N}`), also per theme in `foundationsByTheme.<theme>.dimensionRefs` — additive, no bump
-- `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `selector`, `selectorRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
+- `typography` (including `roles`), `spacing`, `spacingRoles`, `spacingRoleViewports`, `padding`, `radius`, `radiusRoles`, `radiusRoleViewports` (complete), `sizes`, `sizeRoles`, `sizeRoleViewports`, `selector`, `selectorRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `elevation`, `gradients`, `gradientsDark`, `gradientAssignments`, `socialBrands`
 - `foundationsByTheme` — per-library-theme copies of the foundation maps above; the plugin materializes differing themes as modes on those collections
 - `platforms`, `platform` — only when `platformAxis.shipped` has a native target (also per theme under `foundationsByTheme.<theme>`). Never emit them for a web-only system: that payload must stay byte-identical.
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection

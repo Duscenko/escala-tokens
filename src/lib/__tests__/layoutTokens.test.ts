@@ -160,7 +160,7 @@ describe('layout primitives', () => {
   it('the default system resolves the three-axis ladder', () => {
     const roles = defaultLayoutRoles('radius')
     const px = (role: string) => resolveLayoutRole('radius', roles, RADIUS_STANDARD, role)
-    expect(px('control')).toBe('4px')
+    expect(px('control')).toBe('8px')
     expect(px('action')).toBe('12px')
     expect(px('container')).toBe('16px')
     expect(px('overlay')).toBe('16px')
@@ -254,7 +254,7 @@ describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
     expect(radius.action).toBe('xl')
-    expect(radius.control).toBe('sm')
+    expect(radius.control).toBe('lg')
     expect(radius.container).toBe('2xl')
     expect(radius.overlay).toBe('2xl')
     expect(radius.pill).toBe('full')
@@ -273,8 +273,11 @@ describe('layout semantics', () => {
       const steps = new Set(LAYOUT_PRIMITIVE_STEPS[family as LayoutFamily])
       for (const role of roles) {
         // A spacing role may alias a responsive token instead of a step.
-        // …or, for an Overlap role, a pinned (negative) Dimension primitive.
-        const ok = steps.has(role.primitive) || (family === 'spacing' && (isSpacingResponsiveRef(role.primitive) || roleDimensionPx(role.primitive, true) !== null))
+        // …or, for an Overlap role, a pinned (negative) Dimension primitive;
+        // the selector roles pin the 20 / 16 primitives of the Figma file.
+        const ok = steps.has(role.primitive)
+          || (family === 'spacing' && (isSpacingResponsiveRef(role.primitive) || roleDimensionPx(role.primitive, true) !== null))
+          || (family === 'selector' && roleDimensionPx(role.primitive) !== null)
         expect(ok, `${family}-${role.key} → ${role.primitive}`).toBe(true)
       }
     }
@@ -313,7 +316,11 @@ describe('layout semantics', () => {
     }).join('\n')
     expect(css).toContain('--radius-action: var(--radius-xl);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
-    expect(css).toContain('--size-control: var(--size-md);')
+    // Size roles take the Figma file's code syntax (`Size/control-md`).
+    expect(css).toContain('--size-control-md: var(--size-md);')
+    expect(layoutRoleVar('size', 'hit')).toBe('--size-control-xs')
+    expect(layoutRoleVar('radius', 'pill')).toBe('--radius-full')
+    expect(layoutRoleVar('selector', 'control')).toBe('--size-selector-md')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')
     expect(css).toContain('--breakpoint-desktop: var(--breakpoint-md);')
     expect(css).toContain('--breakpoint-tablet: var(--breakpoint-sm);')

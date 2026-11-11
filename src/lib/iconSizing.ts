@@ -14,6 +14,7 @@
 // the mode so a later change cannot update one column and leave the others.
 
 import type { PhosphorWeight } from './phosphorIcons'
+import { roleCssVar, roleFigmaName } from './roleNames'
 
 export const ICON_ROLES = ['small', 'medium', 'large'] as const
 export type IconRole = (typeof ICON_ROLES)[number]
@@ -105,11 +106,17 @@ export function anatomyIconPx(px: number): number {
   return best
 }
 
+/** An icon role's name in CSS and Figma: `small` → `size-icon-sm`
+ *  (`--size-icon-sm`, `Size/icon-sm`). Icons are sizes, so they live in the
+ *  `Size/` group of the Escala Figma file with `<object>-<size>` names. */
+export const iconRoleVar = (role: IconRole | string) => roleCssVar('icon', role)
+export const iconRoleFigmaName = (role: IconRole | string) => roleFigmaName('icon', role) ?? `Size/icon-${role}`
+
 /** CSS: each size aliases its Dimension primitive. One declaration, every
  *  viewport — the values do not differ, so there is no tablet/mobile override. */
 export function iconSizeCssVars(controlMd?: number | Record<string, string> | null): string[] {
   const px = iconSizesFor(controlMd)
-  return ICON_ROLES.map((role) => `  --icon-${role}: var(--dimension-${px[role]});`)
+  return ICON_ROLES.map((role) => `  ${iconRoleVar(role)}: var(--dimension-${px[role]});`)
 }
 
 export interface IconSizeViewportMap {

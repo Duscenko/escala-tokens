@@ -82,13 +82,13 @@ describe('agent context with several brands', () => {
     const byBrand = head.slice(head.indexOf('## By brand'))
     expect(byBrand).toMatch(/\| Appearance \| Light \+ Dark \| Light only \| Dark only \|/)
     expect(byBrand).toMatch(/\| `font-family-body` \| `Inter` \| `Roboto` \| `Inter` \|/)
-    expect(byBrand).toMatch(/\| `Radius\/role\/action` \| `12px` \| `0px` \| `32px` \|/)
+    expect(byBrand).toMatch(/\| `Radius\/action` \| `12px` \| `0px` \| `32px` \|/)
     // Light / Dark for the brand that ships both, its one value otherwise.
     expect(byBrand).toMatch(/\| `Action\/primary\/default` \| `#[0-9a-f]{6}` \/ `#[0-9a-f]{6}` \| `#[0-9a-f]{6}` \| `#[0-9a-f]{6}` \|/)
     // A shared value is not in By brand, and a differing one not in the shared part.
-    expect(byBrand).not.toContain('`Radius/role/pill`')
+    expect(byBrand).not.toContain('`Radius/full`')
     const shared = head.slice(head.indexOf('# '), head.indexOf('## By brand'))
-    expect(shared).toContain('`Radius/role/pill`')
+    expect(shared).toContain('`Radius/full`')
     expect(shared).not.toMatch(/\| `Radius\/role\/action` \|/)
     // Per-brand state ramps, named the way the plugin writes them.
     expect(shared).toContain('States/Hola/Error')

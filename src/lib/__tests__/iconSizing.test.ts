@@ -48,9 +48,10 @@ describe('icon sizing', () => {
 
   it('CSS aliases each size to its dimension, with no raw px and no per-viewport override', () => {
     const css = iconSizeCssVars().join('\n')
-    expect(css).toContain('--icon-small: var(--dimension-16);')
-    expect(css).toContain('--icon-medium: var(--dimension-20);')
-    expect(css).toContain('--icon-large: var(--dimension-24);')
+    // `Size/icon-sm|md|lg` in the Figma file.
+    expect(css).toContain('--size-icon-sm: var(--dimension-16);')
+    expect(css).toContain('--size-icon-md: var(--dimension-20);')
+    expect(css).toContain('--size-icon-lg: var(--dimension-24);')
     expect(css).not.toMatch(/:\s*\d+px;/)
     expect(css).not.toContain('control-')
   })
@@ -70,11 +71,13 @@ describe('W3C icon group', () => {
     })
     const doc = JSON.parse(file.content)
     const resolve = (ref: string) => ref.slice(1, -1).split('.').reduce((n: any, k) => n?.[k], doc)
-    const icon = doc['Dimension Semantics'].Desktop.Icon.role
-    expect(icon.small.$value).toBe('{Dimension Primitives.Default.16}')
-    expect(resolve(icon.small.$value)?.$value).toBe('16px')
-    expect(icon.medium.$value).toBe('{Dimension Primitives.Default.20}')
-    expect(icon.large.$value).toBe('{Dimension Primitives.Default.24}')
-    expect(Object.keys(doc['Dimension Semantics'].Desktop)).toEqual(['Icon'])
+    // `Size/icon-sm|md|lg` in the Escala Figma file.
+    const icon = doc['Dimension Semantics'].Desktop.Size
+    expect(icon['icon-sm'].$value).toBe('{Dimension Primitives.Default.16}')
+    expect(resolve(icon['icon-sm'].$value)?.$value).toBe('16px')
+    expect(icon['icon-md'].$value).toBe('{Dimension Primitives.Default.20}')
+    expect(icon['icon-lg'].$value).toBe('{Dimension Primitives.Default.24}')
+    expect(Object.keys(doc['Dimension Semantics'].Desktop)).toEqual(['Size'])
+    expect(Object.keys(icon)).toEqual(['icon-sm', 'icon-md', 'icon-lg'])
   })
 })

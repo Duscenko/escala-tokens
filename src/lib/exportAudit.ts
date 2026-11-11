@@ -12,6 +12,7 @@
  * UI calls, so what it checks is what ships.
  */
 import type { DesignSnapshot } from '../store/useDesignStore'
+import { roleCssVar } from './roleNames'
 import { generateTokenJSON } from './tokenGenerator'
 import { captureCodeSnapshot } from './codeScope'
 import { buildCSS } from './exporters'
@@ -229,9 +230,10 @@ function checkCssAgainstJson(add: (f: Omit<Finding, 'brand'>) => void, f: BrandF
   for (const [prefix, rampKey, rolesKey] of ramps) {
     const ramp = json[rampKey] as Record<string, string> | undefined
     // stroke.sm is floored to 1px under 2dppx by a media block; :root carries the token.
-    for (const [k, v] of Object.entries(ramp ?? {})) expect('light', `--${prefix}-${k}`, v, rampKey)
+    // `full` is not declared as a ramp step: `--radius-full` is the role (radius.pill).
+    for (const [k, v] of Object.entries(ramp ?? {})) if (!(prefix === 'radius' && k === 'full')) expect('light', `--${prefix}-${k}`, v, rampKey)
     for (const [role, ref] of Object.entries((json[rolesKey] ?? {}) as Record<string, string>)) {
-      expect('light', `--${prefix}-${role}`, roleValue(json, ramp, String(ref)), `${rolesKey}.${role}`)
+      expect('light', roleCssVar(prefix, role), roleValue(json, ramp, String(ref)), `${rolesKey}.${role}`)
     }
   }
   const t = json.typography ?? {}

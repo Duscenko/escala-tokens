@@ -221,7 +221,7 @@ describe('target size', () => {
   it('renders the target as a centred ::before at least size.hit square', () => {
     const css = recipeCss(COMPONENT_RECIPES.Checkbox)
     expect(css).toContain('[data-escala="Checkbox"]::before')
-    expect(css).toContain('width: max(100%, var(--size-hit))')
+    expect(css).toContain('width: max(100%, var(--size-control-xs))')
     expect(css).toContain('position: relative')
   })
 })

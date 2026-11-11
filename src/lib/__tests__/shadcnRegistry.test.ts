@@ -129,9 +129,9 @@ describe('registry item (shadcn CLI format)', () => {
     // `.dark` carries only what differs from `:root` (the default blue is one hex in both).
     expect(dark['--color-action-primary-default'] ?? root['--color-action-primary-default']).toBe(roleColor(synced, 'action.primary.default', modes.dark!))
     expect(root['--radius-action']).toBe(Object.values(resolveToken(synced, 'radius.action').values)[0])
-    expect(root['--size-control']).toMatch(/^\d+px$/)
+    expect(root['--size-control-md']).toMatch(/^\d+px$/)
     // A length is one value: dark carries only what changes.
-    expect(dark['--size-control']).toBeUndefined()
+    expect(dark['--size-control-md']).toBeUndefined()
     for (const [k, v] of Object.entries(dark)) expect(root[k], k).not.toBe(v)
   })
 

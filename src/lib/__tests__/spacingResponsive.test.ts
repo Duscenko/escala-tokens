@@ -51,9 +51,14 @@ describe('responsive spacing', () => {
     const roles = defaultLayoutRoles('spacing')
     const at = (role: string, vp: GridViewport) => px(spacingRolesAtViewport(roles, vp)[role])
     expect(VPS.map((vp) => at('gap-section', vp))).toEqual([24, 16, 12])
-    expect(VPS.map((vp) => at('inset-page', vp))).toEqual([32, 16, 8])
+    // The Escala Figma file's insets: their own per-viewport values, not a curve.
+    expect(VPS.map((vp) => at('inset-page', vp))).toEqual([32, 16, 16])
+    expect(VPS.map((vp) => at('inset-section', vp))).toEqual([96, 64, 48])
+    expect(VPS.map((vp) => at('inset-control', vp))).toEqual([12, 12, 12])
     expect(VPS.map((vp) => at('inset-surface', vp))).toEqual([20, 20, 20])
-    expect(rolesUsingSpacingToken(roles, 'component-md')).toEqual(['inset-control'])
+    expect(rolesUsingSpacingToken(roles, 'section-md')).toEqual(['gap-section'])
+    // A role moved off its default drops its own per-viewport values.
+    expect(VPS.map((vp) => px(spacingRolesAtViewport({ ...roles, 'inset-page': '6' }, vp)['inset-page']))).toEqual([24, 24, 24])
   })
 
   it('a responsive token follows the base unit (it references steps, not px)', () => {
@@ -69,8 +74,11 @@ describe('responsive spacing', () => {
     const [tablet, mobile] = css.split('@media').slice(1)
     expect(tablet).not.toContain('--spacing-section-md')
     expect(tablet).toContain('--spacing-gap-section: var(--dimension-16);')
-    expect(mobile).toContain('--spacing-inset-page: var(--dimension-8);')
+    expect(tablet).toContain('--spacing-inset-section: var(--dimension-64);')
+    expect(mobile).toContain('--spacing-inset-page: var(--dimension-16);')
+    expect(mobile).toContain('--spacing-inset-section: var(--dimension-48);')
     expect(css).not.toContain('--spacing-inset-surface')
+    expect(css).not.toContain('--spacing-inset-control')
   })
 
   it('tokens.json keeps spacingRoles as Desktop static steps and adds the responsive layer', () => {
@@ -80,6 +88,22 @@ describe('responsive spacing', () => {
     expect(doc.spacingRoles['gap-section']).toBe('6')
     expect(doc.spacingRoleRefs['gap-section']).toBe('section-md')
     expect(doc.spacingResponsive['layout-xl']).toEqual({ desktop: '32', tablet: '16', mobile: '12' })
+  })
+
+  it('tokens.json ships the roles\' own Tablet / Mobile values, shaped like radiusRoleViewports', () => {
+    const doc = generateTokenJSON() as unknown as {
+      spacingRoles: Record<string, string>; spacingRoleViewports: Record<string, Record<string, string>>
+      sizeRoles: Record<string, string>; sizeRoleViewports: Record<string, Record<string, string>>
+    }
+    expect(doc.spacingRoles['inset-section']).toBe('24')
+    expect(doc.spacingRoleViewports).toEqual({
+      tablet: { 'inset-page': '4', 'inset-section': '16' },
+      mobile: { 'inset-page': '4', 'inset-section': '12' },
+    })
+    expect(doc.sizeRoles['target-min']).toBe('xs')
+    expect(doc.sizeRoleViewports).toEqual({ tablet: { 'target-min': 'dimension-44' }, mobile: { 'target-min': 'dimension-44' } })
+    // No per-side insets and no extra overlaps: the Figma file has neither.
+    expect(Object.keys(doc.spacingRoles).filter((k) => /-(top|right|bottom|left)$|overlap-(xs|lg|xl|2xl)/.test(k))).toEqual([])
   })
 })
 

@@ -20,7 +20,7 @@ import { CONTEXT_FOUNDATIONS, type ContextFoundation, type ContextScope } from '
 
 /** The `--<prefix>-…` families each collection owns in variables.css. */
 const COLLECTION_PREFIXES: Record<ContextFoundation, string[]> = {
-  color: ['color', 'panel'],
+  color: ['color', 'panel', 'social'],
   typography: ['font', 'text', 'line-height', 'letter-spacing'],
   dimensions: ['dimension'],
   spacing: ['spacing', 'padding'],
@@ -28,9 +28,12 @@ const COLLECTION_PREFIXES: Record<ContextFoundation, string[]> = {
   stroke: ['stroke'],
   sizes: ['size', 'selector'],
   grid: ['grid', 'breakpoint'],
-  shadow: ['shadow'],
+  // Depth (inner shadows) and backdrop blur are the same Elevation family.
+  shadow: ['shadow', 'depth', 'blur'],
   gradients: ['gradient'],
-  icons: ['icon'],
+  // Icon sizes are `--size-icon-*` (the Figma file's `Size/icon-*`): the
+  // longer prefix wins over `size`.
+  icons: ['icon', 'size-icon'],
   motion: ['motion'],
 }
 

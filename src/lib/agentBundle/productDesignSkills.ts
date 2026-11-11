@@ -8,6 +8,7 @@
 // exist.
 
 import { COMPONENTS, COMPONENT_KEYS, selectedComponentKeys } from '../componentCatalogue'
+import { roleCssVar, roleFigmaName } from '../roleNames'
 import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, recipeColorRoles, type ComponentRecipe, type SlotMap } from '../componentRecipes'
 import { RADIUS_GROUPS } from '../layoutTokens'
 import { recipeCss, recipeCssVars } from '../recipeStyles'
@@ -127,7 +128,7 @@ Every component is ONE recipe: the same table paints the Figma component set and
 1. **Name each layer after its slot.** The component itself is \`root\`. A part is its slot name (\`label\`, \`icon\`, \`thumb\`). A second copy of a part takes a suffix (\`icon-leading\`, \`icon-trailing\`). A data state is a suffix too (\`item-highlighted\`, \`cell-active\`).
 2. **Bind, never type a value.** Each property in the component's file names the variable or style to bind. No hex, no px, no primitive colour ramp.
 3. **Variants come from the variant properties** listed per component. A Hover / Focused / Disabled look is a variant of \`State\`, painted from its own row, not an override on an instance.
-4. **A sum has no single variable** (\`Selector/role/control\` + \`2\`): set the resulting length and leave a note; do not bind one of the terms alone.
+4. **A sum has no single variable** (\`Size/selector-md\` + \`2\`): set the resulting length and leave a note; do not bind one of the terms alone.
 5. **"Not published in this system"** means the recipe asks for a token this system does not ship. Do not invent one: report it.
 6. Text layers take a text style \`Type/<role>\` (a text style listed on \`root\` goes on the component's text layers); shadows take an effect style \`Shadow/<step>\`.
 
@@ -249,7 +250,7 @@ function designReviewSkill(json: TokenJSON, project: string, slug: string): stri
   const spacingRoles = Object.keys(json.spacingRoles ?? {}).filter((r) => !/-(top|right|bottom|left)$/.test(r))
   const typeRoles = Object.keys(json.typography?.roles ?? {})
   const radiusRows = RADIUS_GROUPS.map((g) =>
-    `| ${g.label} | ${g.hint} | ${g.roles.filter((r) => json.radiusRoles?.[r] !== undefined).map((r) => `\`Radius/role/${r}\``).join(', ')} | ${g.roles.map((r) => radiusPx(json, r)).join(', ')} |`)
+    `| ${g.label} | ${g.hint} | ${g.roles.filter((r) => json.radiusRoles?.[r] !== undefined).map((r) => `\`${roleFigmaName('radius', r)}\``).join(', ')} | ${g.roles.map((r) => radiusPx(json, r)).join(', ')} |`)
   const ring = roles.has('border.ring.default') ? ` The halo around it is \`${F('border.ring.default')}\`.` : ''
 
   return `---
@@ -288,13 +289,13 @@ Any other pairing is a finding, even if it looks readable: it was not audited. F
 ${radiusRows.join('\n')}
 
 - A card corner on a Fields radius (or a checkbox on a Boxes radius) is a finding, even when the px happens to match: change the axis and the two drift apart.
-- Circles (avatar, switch track, badge) use \`Radius/role/pill\`.
+- Circles (avatar, switch track, badge) use \`Radius/full\`.
 - A flush nested shape (a chip inside a field, a card filling a modal) has a smaller radius than its parent. A button floating with padding inside a card is not nested.
 
 ## 4. Spacing on the scale
 
 - Padding and gaps resolve to the spacing scale: ${spacingScale(json)} px. Anything else is off-scale.
-- Prefer the role: ${spacingRoles.map((r) => `\`Spacing/role/${r}\``).join(' · ')}.
+- Prefer the role: ${spacingRoles.map((r) => `\`Spacing/${r}\``).join(' · ')}.
 
 ## 5. Field outline
 
@@ -306,7 +307,7 @@ ${radiusRows.join('\n')}
 
 | Layer | Property | Found | Should bind | Rule |
 |---|---|---|---|---|
-| \`card/root\` | Corner radius | \`8\` (unbound) | \`Radius/role/container\` | 3 |
+| \`card/root\` | Corner radius | \`8\` (unbound) | \`Radius/container\` | 3 |
 `
 }
 
@@ -324,8 +325,8 @@ function handoffSkill(json: TokenJSON, project: string, slug: string, keys: stri
   const roles = semanticRoleIds(json)
   const colorRows = [...roles].map((id) => `| \`${F(id)}\` | \`${webCodeSyntax(id)}\` |`)
   const dimRows = DIM_CSS.flatMap(([group, field, ns]) =>
-    Object.keys((json[field] as unknown as Record<string, string> | undefined) ?? {}).map((r) => `| \`${group}/role/${r}\` | \`var(${cssVarOf(`${ns}.${r}`)})\` |`))
-  const iconRows = Object.keys(json.icons?.sizes?.roles ?? {}).map((r) => `| \`Icon/role/${r}\` | \`var(--icon-${r})\` |`)
+    Object.keys((json[field] as unknown as Record<string, string> | undefined) ?? {}).map((r) => `| \`${roleFigmaName(ns, r) ?? `${group}/${r}`}\` | \`var(${cssVarOf(`${ns}.${r}`)})\` |`))
+  const iconRows = Object.keys(json.icons?.sizes?.roles ?? {}).map((r) => `| \`${roleFigmaName('icon', r)}\` | \`var(${roleCssVar('icon', r)})\` |`)
   const typeRows = Object.keys(json.typography?.roles ?? {}).map((r) =>
     `| \`Type/${r}\` | \`var(${cssVarOf(`type.${r}`, 'font-size')})\`, \`-line-height\`, \`-font-weight\`, \`-font-family\`, \`-letter-spacing\` |`)
   const shadowRows = Object.keys(json.shadows ?? {}).map((s) => `| \`Shadow/${s}\` | \`var(--shadow-${s})\` |`)
@@ -506,7 +507,7 @@ function screenComposeSkill(json: TokenJSON, project: string, slug: string, keys
   const roles = [...new Set(SCREEN_PATTERNS.flatMap((p) => p.spacing.map((s) => s.role)))]
   const spacingRows = roles.filter((r) => json.spacingRoles?.[r] !== undefined).map((r) => {
     const [d, t, m] = spacingRolePx(json, r)
-    return `| \`Spacing/role/${r}\` | \`var(--spacing-${r})\` | ${pxCell(d)} | ${pxCell(t)} | ${pxCell(m)} |`
+    return `| \`Spacing/${r}\` | \`var(--spacing-${r})\` | ${pxCell(d)} | ${pxCell(t)} | ${pxCell(m)} |`
   })
   const gridRows = (json.gridStyles ?? []).map((g) =>
     `| \`Grid/${g.label ?? g.key}\` | ${g.viewport ?? '—'} | ${g.width ?? '—'} | ${g.columns ?? '—'} | ${g.column ?? '—'} | ${g.gutter ?? '—'} | ${g.margin ?? '—'}${g.sidebar ? ` (sidebar ${g.sidebar})` : ''} |`)
@@ -525,9 +526,9 @@ function screenComposeSkill(json: TokenJSON, project: string, slug: string, keys
     '',
     ...p.parts.map((part, i) => `${i + 1}. ${link(part.key)}${axes(part.axes)}: ${part.use}.`),
     '',
-    `- Spacing: ${p.spacing.map((s) => `\`Spacing/role/${s.role}\` between ${s.between}`).join(' · ')}.`,
+    `- Spacing: ${p.spacing.map((s) => `\`Spacing/${s.role}\` between ${s.between}`).join(' · ')}.`,
     `- Type: ${p.type.map((t) => `\`Type/${t.role}\` for ${t.use}`).join(' · ')}.`,
-    ...(p.radius ? [`- Radius: ${p.radius.map((r) => `\`Radius/role/${r.role}\` for ${r.use}`).join(' · ')}.`] : []),
+    ...(p.radius ? [`- Radius: ${p.radius.map((r) => `\`${roleFigmaName('radius', r.role)}\` for ${r.use}`).join(' · ')}.`] : []),
     ...(p.cardShadow ? [`- The card's elevation: \`Shadow/${p.cardShadow}\`.`] : []),
     '',
   ].join('\n'))
@@ -544,7 +545,7 @@ Design skills · Figma and code. Load \`AGENTS.md\` first. A screen is the syste
 ## Rules
 
 1. **The page sits on a grid style.** In Figma apply the layout grid style; in code the page inset is \`var(--grid-margin)\` and the content width \`var(--grid-container)\` (both step down per viewport).
-2. **Every gap is a spacing role**, from the outside in: \`gap-section\` between blocks, \`gap-group\` between controls of one group, \`gap-control\` inside a row, \`gap-tight\` between a title and its subtitle. Bind the role (\`Spacing/role/<role>\` / \`var(--spacing-<role>)\`), never its px.
+2. **Every gap is a spacing role**, from the outside in: \`gap-section\` between blocks, \`gap-group\` between controls of one group, \`gap-control\` inside a row, \`gap-tight\` between a title and its subtitle. Bind the role (\`Spacing/<role>\` / \`var(--spacing-<role>)\`), never its px.
 3. **Text uses type roles** (\`Type/<role>\` / \`var(--text-<role>-*)\`).
 4. **One primary action per screen**, full width on mobile, \`size=lg\` (it resolves the touch height). A destructive action goes last.
 5. **Controls come from \`skills/component-build/\`**, never redrawn.

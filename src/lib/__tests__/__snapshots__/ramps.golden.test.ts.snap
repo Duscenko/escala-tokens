@@ -4,7 +4,7 @@ exports[`contrastShift baseline > shift -0.5 1`] = `
 {
   "1": "#ffffff",
   "10": "#7454c0",
-  "11": "#8870cc",
+  "11": "#7d65c0",
   "12": "#403463",
   "2": "#f8f7fd",
   "3": "#eeecfa",
@@ -21,7 +21,7 @@ exports[`contrastShift baseline > shift -1 1`] = `
 {
   "1": "#ffffff",
   "10": "#7858c5",
-  "11": "#917ad7",
+  "11": "#8971ce",
   "12": "#463969",
   "2": "#fafafe",
   "3": "#f3f1fb",
@@ -38,7 +38,7 @@ exports[`contrastShift baseline > shift 0 1`] = `
 {
   "1": "#ffffff",
   "10": "#7050bc",
-  "11": "#775eb9",
+  "11": "#7158b3",
   "12": "#3b2e5d",
   "2": "#f4f2fb",
   "3": "#e8e5f8",
@@ -92,7 +92,7 @@ exports[`neutral tint baseline > tint pure 1`] = `
   "scale": {
     "1": "#fdfdfd",
     "10": "#686868",
-    "11": "#6c6b6c",
+    "11": "#686768",
     "12": "#363536",
     "2": "#f1f1f1",
     "3": "#e6e6e6",
@@ -113,7 +113,7 @@ exports[`neutral tint baseline > tint subtle 1`] = `
   "scale": {
     "1": "#fefdff",
     "10": "#656070",
-    "11": "#6f6a78",
+    "11": "#696573",
     "12": "#37343c",
     "2": "#f2f1f3",
     "3": "#e6e5e8",
@@ -134,7 +134,7 @@ exports[`neutral tint baseline > tint tinted 1`] = `
   "scale": {
     "1": "#fbf8ff",
     "10": "#615876",
-    "11": "#6a627d",
+    "11": "#68607b",
     "12": "#35313f",
     "2": "#eeecf3",
     "3": "#e2dfe9",
@@ -190,7 +190,7 @@ exports[`ramp golden baseline > amber (#d97706) > analogous — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c36f00",
-  "11": "#916200",
+  "11": "#906000",
   "12": "#443302",
   "2": "#ffefeb",
   "3": "#ffe4de",
@@ -224,7 +224,7 @@ exports[`ramp golden baseline > amber (#d97706) > ant — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c76b00",
-  "11": "#9d5b1e",
+  "11": "#9d5a1d",
   "12": "#4f2d0f",
   "2": "#fff1e4",
   "3": "#fee7d6",
@@ -292,7 +292,7 @@ exports[`ramp golden baseline > amber (#d97706) > default — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c46d15",
-  "11": "#9d5b1e",
+  "11": "#9c5a1d",
   "12": "#4f2d0f",
   "2": "#fff1e7",
   "3": "#fde7d8",
@@ -334,7 +334,7 @@ exports[`ramp golden baseline > amber (#d97706) > hueShift — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c07000",
-  "11": "#936100",
+  "11": "#925f00",
   "12": "#463203",
   "2": "#fff0eb",
   "3": "#ffe5dd",
@@ -368,7 +368,7 @@ exports[`ramp golden baseline > amber (#d97706) > lightness — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c46d15",
-  "11": "#9d5b1e",
+  "11": "#9c5a1d",
   "12": "#4f2d0f",
   "2": "#fff1e7",
   "3": "#fde7d8",
@@ -402,7 +402,7 @@ exports[`ramp golden baseline > amber (#d97706) > monochromatic — light 1`] = 
 {
   "1": "#fefdfc",
   "10": "#c76b00",
-  "11": "#9d5b1e",
+  "11": "#9d5a1d",
   "12": "#4f2d0f",
   "2": "#fff1e4",
   "3": "#fee7d6",
@@ -436,7 +436,7 @@ exports[`ramp golden baseline > amber (#d97706) > neutral ramp — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#716961",
-  "11": "#716b64",
+  "11": "#6d665f",
   "12": "#383531",
   "2": "#f2f2f1",
   "3": "#e8e6e5",
@@ -470,7 +470,7 @@ exports[`ramp golden baseline > amber (#d97706) > radix — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#c16f23",
-  "11": "#9d5b1e",
+  "11": "#9d5a1d",
   "12": "#4f2d0f",
   "2": "#faf3ee",
   "3": "#f7e9df",
@@ -504,7 +504,7 @@ exports[`ramp golden baseline > amber (#d97706) > saturation — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#ce6500",
-  "11": "#9d5b1e",
+  "11": "#9c5a1d",
   "12": "#4f2d0f",
   "2": "#fcf2eb",
   "3": "#f9e8dc",
@@ -538,7 +538,7 @@ exports[`ramp golden baseline > amber (#d97706) > tailwind — light 1`] = `
 {
   "1": "#fefdfc",
   "10": "#ca6900",
-  "11": "#9d5b1e",
+  "11": "#9d5a1d",
   "12": "#4f2d0f",
   "2": "#fff1e5",
   "3": "#fee7d7",
@@ -572,7 +572,7 @@ exports[`ramp golden baseline > blue (#2563eb) > analogous — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#3751d6",
-  "11": "#625fc5",
+  "11": "#5e5bc1",
   "12": "#3a2c62",
   "2": "#def5ff",
   "3": "#cbebff",
@@ -606,7 +606,7 @@ exports[`ramp golden baseline > blue (#2563eb) > ant — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#1d56d5",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#e5f2ff",
   "3": "#d5e6ff",
@@ -640,7 +640,7 @@ exports[`ramp golden baseline > blue (#2563eb) > complementary — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#1d56d5",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#ffeedb",
   "3": "#ffdeca",
@@ -674,7 +674,7 @@ exports[`ramp golden baseline > blue (#2563eb) > default — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#2158d0",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#e7f2ff",
   "3": "#d7e6ff",
@@ -716,7 +716,7 @@ exports[`ramp golden baseline > blue (#2563eb) > hueShift — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#3554d0",
-  "11": "#5c60c6",
+  "11": "#585cc2",
   "12": "#362d63",
   "2": "#e0f5ff",
   "3": "#ceeaff",
@@ -750,7 +750,7 @@ exports[`ramp golden baseline > blue (#2563eb) > lightness — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#2158d0",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#e7f2ff",
   "3": "#d7e6ff",
@@ -784,7 +784,7 @@ exports[`ramp golden baseline > blue (#2563eb) > monochromatic — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#1d56d5",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#e5f2ff",
   "3": "#d5e6ff",
@@ -818,7 +818,7 @@ exports[`ramp golden baseline > blue (#2563eb) > neutral ramp — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#606570",
-  "11": "#686c76",
+  "11": "#636771",
   "12": "#33353a",
   "2": "#f1f1f2",
   "3": "#e5e6e8",
@@ -852,7 +852,7 @@ exports[`ramp golden baseline > blue (#2563eb) > radix — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#265aca",
-  "11": "#3a67c5",
+  "11": "#3763c1",
   "12": "#1c3364",
   "2": "#ecf2fb",
   "3": "#dce6f9",
@@ -886,7 +886,7 @@ exports[`ramp golden baseline > blue (#2563eb) > saturation — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#0037ff",
-  "11": "#3a67c5",
+  "11": "#3663c1",
   "12": "#1c3364",
   "2": "#ebf2ff",
   "3": "#dae6fc",
@@ -920,7 +920,7 @@ exports[`ramp golden baseline > blue (#2563eb) > tailwind — light 1`] = `
 {
   "1": "#fdfdff",
   "10": "#1754db",
-  "11": "#3a67c5",
+  "11": "#3662c0",
   "12": "#1c3364",
   "2": "#e6f2ff",
   "3": "#d6e6ff",
@@ -954,7 +954,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > analogous — light 1`]
 {
   "1": "#fcfdff",
   "10": "#616671",
-  "11": "#6a6b75",
+  "11": "#656670",
   "12": "#353439",
   "2": "#eff2f3",
   "3": "#e3e6e8",
@@ -988,7 +988,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > ant — light 1`] = `
 {
   "1": "#fcfdff",
   "10": "#606671",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f0f1f4",
   "3": "#e4e6e9",
@@ -1022,7 +1022,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > complementary — light
 {
   "1": "#fcfdff",
   "10": "#606671",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f3f1ef",
   "3": "#e8e5e3",
@@ -1056,7 +1056,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > default — light 1`] =
 {
   "1": "#fcfdff",
   "10": "#606671",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f0f1f3",
   "3": "#e4e6e8",
@@ -1098,7 +1098,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > hueShift — light 1`] 
 {
   "1": "#fcfdff",
   "10": "#616671",
-  "11": "#6a6b75",
+  "11": "#656670",
   "12": "#353439",
   "2": "#f0f2f3",
   "3": "#e3e6e8",
@@ -1132,7 +1132,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > lightness — light 1`]
 {
   "1": "#fcfdff",
   "10": "#606671",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f0f1f3",
   "3": "#e4e6e8",
@@ -1166,7 +1166,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > monochromatic — light
 {
   "1": "#fcfdff",
   "10": "#606671",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f0f1f4",
   "3": "#e4e6e9",
@@ -1200,7 +1200,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > neutral ramp — light 
 {
   "1": "#fcfdff",
   "10": "#606670",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f1f1f2",
   "3": "#e5e6e7",
@@ -1234,7 +1234,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > radix — light 1`] = `
 {
   "1": "#fcfdff",
   "10": "#606670",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f1f1f2",
   "3": "#e5e6e7",
@@ -1268,7 +1268,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > saturation — light 1`
 {
   "1": "#fcfdff",
   "10": "#5c6677",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f1f1f2",
   "3": "#e4e6e8",
@@ -1302,7 +1302,7 @@ exports[`ramp golden baseline > near-neutral (#6c737f) > tailwind — light 1`] 
 {
   "1": "#fcfdff",
   "10": "#5f6672",
-  "11": "#676c75",
+  "11": "#636770",
   "12": "#33353a",
   "2": "#f0f1f3",
   "3": "#e4e6e9",
@@ -1336,7 +1336,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > analogous — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#7b47c0",
-  "11": "#8a55aa",
+  "11": "#8650a5",
   "12": "#4c284f",
   "2": "#e9f2ff",
   "3": "#dbe6ff",
@@ -1370,7 +1370,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > ant — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#724bc5",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f3efff",
   "3": "#e8e2ff",
@@ -1404,7 +1404,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > complementary — light 1`] =
 {
   "1": "#fefdff",
   "10": "#724bc5",
-  "11": "#755cb7",
+  "11": "#7158b2",
   "12": "#3a2e5c",
   "2": "#f6f3dd",
   "3": "#f3e5c9",
@@ -1438,7 +1438,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > default — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#714dc0",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f3efff",
   "3": "#e7e2fe",
@@ -1480,7 +1480,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > hueShift — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#784abc",
-  "11": "#8756ad",
+  "11": "#8352a8",
   "12": "#492952",
   "2": "#ebf2ff",
   "3": "#dee6ff",
@@ -1514,7 +1514,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > lightness — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#714dc0",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f3efff",
   "3": "#e7e2fe",
@@ -1548,7 +1548,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > monochromatic — light 1`] =
 {
   "1": "#fefdff",
   "10": "#724bc5",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f3efff",
   "3": "#e8e2ff",
@@ -1582,7 +1582,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > neutral ramp — light 1`] = 
 {
   "1": "#fefdff",
   "10": "#656070",
-  "11": "#6f6a78",
+  "11": "#696573",
   "12": "#37343c",
   "2": "#f2f1f3",
   "3": "#e6e5e8",
@@ -1616,7 +1616,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > radix — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#7050bc",
-  "11": "#755cb7",
+  "11": "#7058b2",
   "12": "#3a2e5c",
   "2": "#f2f1fa",
   "3": "#e7e4f6",
@@ -1650,7 +1650,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > saturation — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#7b15f4",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f2f0fd",
   "3": "#e7e3f9",
@@ -1684,7 +1684,7 @@ exports[`ramp golden baseline > violet (#7f56d9) > tailwind — light 1`] = `
 {
   "1": "#fefdff",
   "10": "#7248ca",
-  "11": "#755cb7",
+  "11": "#7057b2",
   "12": "#3a2e5c",
   "2": "#f3efff",
   "3": "#e7e2ff",
@@ -1718,7 +1718,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > analogous — light 1`
 {
   "1": "#fffdfd",
   "10": "#eb0036",
-  "11": "#c23516",
+  "11": "#c03314",
   "12": "#622000",
   "2": "#ffeaf9",
   "3": "#ffddef",
@@ -1752,7 +1752,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > ant — light 1`] = `
 {
   "1": "#fffdfd",
   "10": "#e9004b",
-  "11": "#c32f4b",
+  "11": "#c02c49",
   "12": "#651926",
   "2": "#ffeaeb",
   "3": "#ffdddf",
@@ -1820,7 +1820,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > default — light 1`] 
 {
   "1": "#fffdfd",
   "10": "#e5154e",
-  "11": "#c32f4b",
+  "11": "#c02d49",
   "12": "#651926",
   "2": "#ffebec",
   "3": "#ffdedf",
@@ -1862,7 +1862,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > hueShift — light 1`]
 {
   "1": "#fffdfd",
   "10": "#e6173e",
-  "11": "#c33423",
+  "11": "#c13121",
   "12": "#631e00",
   "2": "#ffebf6",
   "3": "#ffddec",
@@ -1896,7 +1896,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > lightness — light 1`
 {
   "1": "#fffdfd",
   "10": "#e5154e",
-  "11": "#c32f4b",
+  "11": "#c02d49",
   "12": "#651926",
   "2": "#ffebec",
   "3": "#ffdedf",
@@ -1930,7 +1930,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > monochromatic — ligh
 {
   "1": "#fffdfd",
   "10": "#e9004b",
-  "11": "#c32f4b",
+  "11": "#c02c49",
   "12": "#651926",
   "2": "#ffeaeb",
   "3": "#ffdddf",
@@ -1964,7 +1964,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > neutral ramp — light
 {
   "1": "#fffdfd",
   "10": "#706065",
-  "11": "#76696d",
+  "11": "#716468",
   "12": "#3b3336",
   "2": "#f3f1f2",
   "3": "#e8e5e6",
@@ -2032,7 +2032,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > saturation — light 1
 {
   "1": "#fffdfd",
   "10": "#ee0048",
-  "11": "#c32f4b",
+  "11": "#c22f4b",
   "12": "#651926",
   "2": "#ffeeef",
   "3": "#ffe1e2",
@@ -2066,7 +2066,7 @@ exports[`ramp golden baseline > vivid-magenta (#ff0055) > tailwind — light 1`]
 {
   "1": "#fffdfd",
   "10": "#ee0048",
-  "11": "#c32f4b",
+  "11": "#c02c49",
   "12": "#651926",
   "2": "#ffeaec",
   "3": "#ffdddf",

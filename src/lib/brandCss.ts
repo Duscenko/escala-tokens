@@ -4,7 +4,7 @@
 // code snapshot. The plugin only has the JSON, and re-deriving the CSS from it
 // cannot reproduce the roles, gradients and overrides the editor resolves: its
 // hand-built `variables.css` missed every role variable (`--radius-action`,
-// `--size-control`, `--text-button-*` — the ones recipes.css reads), shipped
+// `--size-control-md`, `--text-button-*` — the ones recipes.css reads), shipped
 // the light primitives only and the system accent's gradients.
 //
 // Added by the two producers of plugin payloads: the web publish

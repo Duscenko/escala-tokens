@@ -2,6 +2,7 @@
 // and the Figma plugin clipboard all call these — do not hand-write a second
 // catalog. Values come from the payload; names use Figma slashes / CSS var().
 
+import { roleCssVar, roleFigmaName } from '../roleNames'
 import {
   GROUP_LABEL,
   GROUP_ORDER,
@@ -110,7 +111,7 @@ function roleTable(group: string, cssPrefix: string, roles: Record<string, strin
     '',
     table(
       ['Figma variable', 'CSS', 'Step', 'Value'],
-      entries.map(([k, v]) => [`\`${figmaDimensionName(group, `role/${k}`)}\``, `\`var(--${cssPrefix}-${k})\``, ...roleTarget(v, steps)]),
+      entries.map(([k, v]) => [`\`${roleFigmaName(cssPrefix, k) ?? figmaDimensionName(group, k)}\``, `\`var(${roleCssVar(cssPrefix, k)})\``, ...roleTarget(v, steps)]),
     ),
     '',
   ]
@@ -364,9 +365,9 @@ export function buildFoundationsMd(json: TokenJSON, opts: { appearance?: 'light'
   if (Object.keys(iconScale).length) {
     const min = json.icons?.sizes?.minWeight
     parts.push(
-      '### Icon sizes (`Dimension Semantics` → `Icon/role/`)',
+      '### Icon sizes (`Dimension Semantics` → `Size/icon-*`)',
       '',
-      table(['Figma variable', 'CSS', 'Value'], Object.entries(iconScale).map(([k, v]) => [`\`Icon/role/${k}\``, `\`var(--icon-${k})\``, `\`${v}\``])),
+      table(['Figma variable', 'CSS', 'Value'], Object.entries(iconScale).map(([k, v]) => [`\`${roleFigmaName('icon', k) ?? k}\``, `\`var(${roleCssVar('icon', k)})\``, `\`${v}\``])),
       '',
       ...(min?.belowPx && min.weight ? [`Below ${min.belowPx}px a thin or light icon renders \`${min.weight}\`.`, ''] : []),
     )

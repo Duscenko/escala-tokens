@@ -211,7 +211,7 @@ export function relabelBrandColumns(md: string, keys: string[]): string {
 }
 
 interface Row {
-  /** `## Radius › ### Radius roles › Radius/role/action` */
+  /** `## Radius › ### Radius roles › Radius/action` */
   id: string
   /** The `## ` and `### ` headings the row sits under. */
   section: string
@@ -444,7 +444,7 @@ export function buildBrandsContext(json: TokenJSON, brands: ContextBrand[], req:
   const head = [
     `# ${project} — ${brands.length} brands`,
     '',
-    `**Token names are the same in every brand; only the values change.** \`Radius/role/action\`, \`Action/primary/default\` or \`var(--radius-action)\` mean the same thing in ${brands.map((b) => b.label).join(', ')}. Never add a brand to a token name, and never mix values from two brands on one screen.`,
+    `**Token names are the same in every brand; only the values change.** \`Radius/action\`, \`Action/primary/default\` or \`var(--radius-action)\` mean the same thing in ${brands.map((b) => b.label).join(', ')}. Never add a brand to a token name, and never mix values from two brands on one screen.`,
     '',
     table(['Brand', 'Appearance', 'Own foundations'], brands.map((b) => [b.label, appearanceLabel(b.appearance), ownFoundations(json, b, brands[0]!)])),
     '',

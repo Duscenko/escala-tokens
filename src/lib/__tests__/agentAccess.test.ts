@@ -265,28 +265,30 @@ describe('resolve_token matches the current payload', () => {
     return generateTokenJSON() as unknown as TokenJSON
   }
 
-  it('resolves radius roles, and steps them down on smaller viewports', () => {
+  // Radius roles hold one value on every viewport (the Escala Figma file).
+  it('resolves radius roles under their Figma-file names, one value on every viewport', () => {
     const json = published()
     const theme = json.colors.themeOrder?.[0] ?? 'light'
     const step = json.radiusRoles?.container
     expect(step).toBeTruthy()
     const desktopStep = step ?? ''
-    const tabletStep = json.radiusResponsive?.[desktopStep]?.tablet ?? ''
-    expect(tabletStep).not.toBe('')
-    expect(json.radius[tabletStep]).not.toBe(json.radius[desktopStep])
 
     const hit = resolveToken(json, 'radius.container')
     expect(hit.found).toBe(true)
     expect(hit.id).toBe('radius.container')
     expect(hit.kind).toBe('foundation')
     expect(hit.css).toBe('var(--radius-container)')
-    expect(hit.figma).toBe('Radius/role/container')
+    expect(hit.figma).toBe('Radius/container')
     expect(hit.values[theme]).toBe(json.radius[desktopStep])
-    expect(hit.viewports?.[theme]?.tablet).toBe(json.radius[tabletStep])
+    expect(hit.viewports?.[theme]?.tablet ?? hit.values[theme]).toBe(json.radius[desktopStep])
     expect(hit.aliases?.[theme]).toMatch(/^dimension\./)
 
     expect(resolveToken(json, 'Radius/role/container').id).toBe('radius.container')
     expect(resolveToken(json, 'var(--radius-container)').values).toEqual(hit.values)
+    // The renamed roles answer to their Figma / CSS names.
+    expect(resolveToken(json, 'Radius/full').id).toBe('radius.pill')
+    expect(resolveToken(json, 'var(--size-control-xs)').id).toBe('size.hit')
+    expect(resolveToken(json, 'Size/selector-md').id).toBe('selector.control')
   })
 
   it('resolves a spacing role through its responsive token', () => {
@@ -300,7 +302,7 @@ describe('resolve_token matches the current payload', () => {
 
     const hit = resolveToken(json, 'Spacing/role/gap-section')
     expect(hit.css).toBe('var(--spacing-gap-section)')
-    expect(hit.figma).toBe('Spacing/role/gap-section')
+    expect(hit.figma).toBe('Spacing/gap-section')
     expect(hit.values[theme]).toBe(json.spacing[json.spacingResponsive![ref!].desktop])
     expect(hit.viewports?.[theme]?.mobile).toBe(json.spacing[mobileStep!])
   })
@@ -322,8 +324,9 @@ describe('resolve_token matches the current payload', () => {
     const json = published()
     const theme = json.colors.themeOrder?.[0] ?? 'light'
     const role = resolveToken(json, 'Icon/role/medium')
-    expect(role.css).toBe('var(--icon-medium)')
-    expect(role.figma).toBe('Icon/role/medium')
+    expect(role.css).toBe('var(--size-icon-md)')
+    expect(role.figma).toBe('Size/icon-md')
+    expect(resolveToken(json, 'Size/icon-md').id).toBe('icon.medium')
     expect(role.values[theme]).toBe('20px')
     expect(role.aliases?.[theme]).toBe('dimension.20')
     expect(role.viewports).toBeUndefined()

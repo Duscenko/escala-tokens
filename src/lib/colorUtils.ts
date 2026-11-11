@@ -159,9 +159,12 @@ function lightnessForContrast(
   chromaC: number,
   bg: string,
   towardDark: boolean,
+  /** Further surfaces the WCAG target must also clear on (APCA stays the page's). */
+  alsoOn: string[] = [],
 ): string {
   const meets = (hex: string) =>
     wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc
+    && alsoOn.every((s) => wcagRatio(hex, s) >= target.wcag)
 
   const bgL = chroma(bg).oklch()[0]
   let lo = towardDark ? 0 : bgL
@@ -342,7 +345,11 @@ function buildScale(
       : { wcag: 4.5 * gain, apcaLc: Math.max(60, 75 * gain) }
     const C = baseC * (i === TONES ? 0.42 : 0.72)
     const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0)
-    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark))
+    // Step 11 is secondary text on EVERY surface step, not only the page: it
+    // must also clear its WCAG target on step 3 (`surface.layer-2`, a popover
+    // or a dialog). Solved against the page alone it read 4.30–4.45:1 there.
+    const also = isMaxTone ? [] : [out[2]].filter(Boolean)
+    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark, also))
   }
   return out
 }
@@ -413,6 +420,59 @@ export function generateColorScale(
     scale[i + 1] = color
   })
   return scale
+}
+
+// ── Status ramps: vivid solids ────────────────────────────────────────────────
+// The four status ramps (error · warning · success · info) are the system's
+// severity colours, and their LIGHT step 09 has one job: the solid a
+// destructive button or a solid badge is filled with, carrying the light ink
+// (the page) at AA. A ramp grown from a seed rarely lands there — measured on
+// the default seeds, error 09 carried white at 3.6:1 and success 09 at 2.6:1 —
+// so every role that wanted "the status solid" had to walk to step 11.
+//
+// The Escala Figma file (signed off 2026-11-11) re-solves steps 09–11 in OKLCH
+// at the ramp's own hue, when step 09 cannot carry the light ink: 09 is the gamut-max chroma at the LIGHTEST lightness
+// where the light ink reaches 4.6:1 (a hair over AA, so rounding never drops
+// it under), and 10 / 11 sit 0.05 / 0.10 lower in lightness at their own
+// gamut-max chroma. Every other step keeps the generated value.
+
+/** Light ink on a status solid (step 09), WCAG. */
+export const STATUS_SOLID_INK_TARGET = 4.6
+
+/** A light status ramp with steps 09–11 re-solved as vivid solids (see above).
+ *  `ink` is the light ink the solid carries; the ramp's own step 1 (the page)
+ *  when omitted. Pure. A ramp whose step 9 ALREADY carries the light ink at
+ *  the target (a severity colour someone picked, `#b91c1c`) is returned as is:
+ *  the picked colour stays the solid. */
+export function vividStatusSolids(scale: Record<number, string>, ink?: string): Record<number, string> {
+  const anchor = scale[9]
+  const light = ink ?? scale[1] ?? '#ffffff'
+  if (!anchor || wcagRatio(light, anchor) >= STATUS_SOLID_INK_TARGET) return scale
+  const h = hexToOklch(anchor).h
+  const at = (l: number) => oklchToHex(l, maxChromaSrgb(l, h), h)
+  // Contrast with a light ink falls as the solid gets lighter: keep the
+  // lightest L that still clears the target.
+  let lo = 0.2
+  let hi = 0.95
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2
+    if (wcagRatio(light, at(mid)) >= STATUS_SOLID_INK_TARGET) lo = mid
+    else hi = mid
+  }
+  return { ...scale, 9: at(lo), 10: at(lo - 0.05), 11: at(lo - 0.1) }
+}
+
+/** A status family's ramp: the generated ramp, with vivid solids in Light
+ *  (`vividStatusSolids`). The Dark ramp is the generated one. */
+export function generateStatusScale(
+  baseHex: string,
+  algorithm: ColorAlgorithm = 'default',
+  contrastShift = 0,
+  background?: string,
+  appearance: ScaleAppearance = 'light',
+): Record<number, string> {
+  const scale = generateColorScale(baseHex, algorithm, contrastShift, background, appearance)
+  return appearance === 'light' ? vividStatusSolids(scale) : scale
 }
 
 /**

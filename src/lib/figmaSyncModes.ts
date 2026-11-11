@@ -162,7 +162,10 @@ export function appearanceTitle(appearance: ThemeAppearance): 'Light' | 'Dark' {
 }
 
 export function figmaSyncModeLabel(themeName: string, appearance: ThemeAppearance): string {
-  return `${themeName} ${appearanceTitle(appearance)}`
+  // A mode name starts upper-case (`Escala Light`): a theme saved under its
+  // slug (`escala`) still reads as a name in Figma.
+  const name = themeName.charAt(0).toUpperCase() + themeName.slice(1)
+  return `${name} ${appearanceTitle(appearance)}`
 }
 
 export function toggleFigmaSyncAppearance(

@@ -4,8 +4,8 @@
 
 Every length is ONE global ladder, `Dimension Primitives` (`--dimension-<px>`, `{dimension.<px>}`; `3_5` = 3.5px, `-8` = −8px). Each family has a static scale (steps) and ROLES that alias a step. **Components read roles.** A step is only for anatomy no role covers.
 
-- **CSS** `--<family>-<role>` (`--radius-action`, `--spacing-gap-group`, `--size-control`). Roles that step down per viewport are re-declared inside the `@media (max-width: …)` blocks of `variables.css` — read the variable, never hard-code the mobile value.
-- **Figma** collection `Dimension Semantics`, variable `<Family>/role/<role>` (`Radius/role/action`), modes = viewports **Desktop · Tablet · Mobile** (never Light/Dark: a length does not change with appearance).
+- **CSS** = the Figma code syntax: `--<group>-<name>` (`--radius-action`, `--spacing-gap-group`, `--size-control-md`). Roles that change per viewport are re-declared inside the `@media (max-width: …)` blocks of `variables.css` — read the variable, never hard-code the mobile value.
+- **Figma** collection `Dimension Semantics`, variable `<Group>/<name>` with NO `role/` segment (`Radius/action`, `Spacing/gap-group`, `Size/control-md`), modes = viewports **Desktop · Tablet · Mobile** (never Light/Dark: a length does not change with appearance). Sizes follow `<object>-<size>`: `Size/control-*`, `Size/selector-*`, `Size/icon-*`, `Size/target-min`.
 - **Recipes / tokens.json** `<family>.<role>` (`radius.action`, `spacing.inset-surface`) and `<family>Roles` maps.
 
 Defaults below are the standard system (4px spacing base, Rounded radius, 40px control). A brand may re-point any role — resolve it from the brand's own files.
@@ -18,27 +18,27 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.container` | `--radius-container` | `Radius/role/container` | `2xl` | 16px | Cards, accordion, inline alerts. |
-| `radius.overlay` | `--radius-overlay` | `Radius/role/overlay` | `2xl` | 16px | Modal, popover, command, dropdown. |
+| `radius.container` | `--radius-container` | `Radius/container` | `2xl` | 16px | Cards, accordion, inline alerts. |
+| `radius.overlay` | `--radius-overlay` | `Radius/overlay` | `2xl` | 16px | Modal, popover, command, dropdown. |
 
 ### Fields — Button, input, select, tab.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.action` | `--radius-action` | `Radius/role/action` | `xl` | 12px | Buttons, inputs, selects, OTP, tabs. |
+| `radius.action` | `--radius-action` | `Radius/action` | `xl` | 12px | Buttons, inputs, selects, OTP, tabs. |
 
 ### Selectors — Checkbox, radio, toggle, menu, badge.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.control` | `--radius-control` | `Radius/role/control` | `sm` | 4px | Checkbox, nested child, menu item, inner thumb. |
-| `radius.pill` | `--radius-pill` | `Radius/role/pill` | `full` | 9999px | Badge, chip, avatar, switch, progress. |
+| `radius.control` | `--radius-control` | `Radius/control` | `lg` | 8px | Checkbox, nested child, menu item, inner thumb. |
+| `radius.pill` | `--radius-full` | `Radius/full` | `full` | 9999px | Badge, chip, avatar, switch, progress. |
 
 Static scale: `none` 0px · `xs` 2px · `sm` 4px · `md` 6px · `lg` 8px · `xl` 12px · `2xl` 16px · `3xl` 24px · `4xl` 32px · `5xl` 48px · `full` 9999px
 
 **Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab) → `radius.action`; Selectors (checkbox, radio, toggle, menu) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
 
-**Responsive.** Each step reads one rung smaller on Tablet and Mobile (two from 3xl up):
+**Roles hold one value on every viewport** (the Escala Figma file): only a hand-set Tablet / Mobile value changes one. The `--radius-component-<step>` tokens are the opt-in responsive corners — each reads one rung smaller on Tablet and Mobile (two from 3xl up):
 
 | Step | Desktop | Tablet | Mobile |
 | --- | --- | --- | --- |
@@ -63,34 +63,31 @@ The AIR between and inside things. Tightens on smaller viewports.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `spacing.none` | `--spacing-none` | `Spacing/role/none` | `0` | 0px | Collapse a gap or inset. |
-| `spacing.gap-tight` | `--spacing-gap-tight` | `Spacing/role/gap-tight` | `component-xs` | 4px / 4px / 4px | Icon + label, chip dismiss, inline meta. |
-| `spacing.gap-control` | `--spacing-gap-control` | `Spacing/role/gap-control` | `component-sm` | 8px / 8px / 8px | Button groups, OTP cells, field + helper. |
-| `spacing.gap-group` | `--spacing-gap-group` | `Spacing/role/gap-group` | `section-sm` | 16px / 16px / 12px | Stacked fields, nav item groups. |
-| `spacing.gap-section` | `--spacing-gap-section` | `Spacing/role/gap-section` | `section-md` | 24px / 16px / 12px | Between sections, modal header → body. |
+| `spacing.none` | `--spacing-none` | `Spacing/none` | `0` | 0px | Collapse a gap or inset. |
+| `spacing.gap-tight` | `--spacing-gap-tight` | `Spacing/gap-tight` | `component-xs` | 4px / 4px / 4px | Icon + label, chip dismiss, inline meta. |
+| `spacing.gap-control` | `--spacing-gap-control` | `Spacing/gap-control` | `component-sm` | 8px / 8px / 8px | Button groups, OTP cells, field + helper. |
+| `spacing.gap-group` | `--spacing-gap-group` | `Spacing/gap-group` | `section-sm` | 16px / 16px / 12px | Stacked fields, nav item groups. |
+| `spacing.gap-section` | `--spacing-gap-section` | `Spacing/gap-section` | `section-md` | 24px / 16px / 12px | Between sections, modal header → body. |
 
 ### Inset — Padding inside a surface or control.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `spacing.inset-control` | `--spacing-inset-control` | `Spacing/role/inset-control` | `component-md` | 12px / 12px / 8px | Padding inside buttons, inputs, chips. |
-| `spacing.inset-surface` | `--spacing-inset-surface` | `Spacing/role/inset-surface` | `5` | 20px | Card / modal / alert padding. |
-| `spacing.inset-page` | `--spacing-inset-page` | `Spacing/role/inset-page` | `layout-xs` | 32px / 16px / 8px | Page and sheet margins when Grid is unused. |
+| `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` | `3` | 12px | Padding inside buttons, inputs, chips. |
+| `spacing.inset-surface` | `--spacing-inset-surface` | `Spacing/inset-surface` | `5` | 20px | Card / modal / alert padding. |
+| `spacing.inset-page` | `--spacing-inset-page` | `Spacing/inset-page` | `8` | 32px / 16px / 16px | Page and sheet margins when Grid is unused. |
+| `spacing.inset-section` | `--spacing-inset-section` | `Spacing/inset-section` | `24` | 96px / 64px / 48px | Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page. |
 
 ### Overlap — Negative space — stacked avatars and badges.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `spacing.overlap-xs` | `--spacing-overlap-xs` | `Spacing/role/overlap-xs` | `dimension--2` | -2px | Barely touching — dense avatar stacks. |
-| `spacing.overlap-sm` | `--spacing-overlap-sm` | `Spacing/role/overlap-sm` | `dimension--4` | -4px | A hairline tuck. |
-| `spacing.overlap-md` | `--spacing-overlap-md` | `Spacing/role/overlap-md` | `dimension--8` | -8px | The default avatar-stack overlap. |
-| `spacing.overlap-lg` | `--spacing-overlap-lg` | `Spacing/role/overlap-lg` | `dimension--16` | -16px | A third of a 48px avatar. |
-| `spacing.overlap-xl` | `--spacing-overlap-xl` | `Spacing/role/overlap-xl` | `dimension--24` | -24px | Heavily stacked; only the edge shows. |
-| `spacing.overlap-2xl` | `--spacing-overlap-2xl` | `Spacing/role/overlap-2xl` | `dimension--32` | -32px | Nearly fully covered — a count badge on a stack. |
+| `spacing.overlap-sm` | `--spacing-overlap-sm` | `Spacing/overlap-sm` | `dimension--4` | -4px | A hairline tuck. |
+| `spacing.overlap-md` | `--spacing-overlap-md` | `Spacing/overlap-md` | `dimension--8` | -8px | The default avatar-stack overlap. |
 
 Static scale: `0` 0px · `0_5` 2px · `1` 4px · `1_5` 6px · `2` 8px · `2_5` 10px · `3` 12px · `4` 16px · `5` 20px · `6` 24px · `8` 32px · `10` 40px · `12` 48px · `16` 64px · `24` 96px · `32` 128px
 
-**Inset sides.** `inset-control`, `inset-surface`, `inset-page` each have `-top · -right · -bottom · -left` (`--spacing-inset-surface-top`). An unset side FOLLOWS its inset. A fixed-height control uses only left/right — its height is `size.*`.
+**Inset sides.** `inset-control`, `inset-surface`, `inset-page` have no per-side variables in Figma or tokens.json; a side set by hand in the editor ships only as `--spacing-<inset>-<side>` in CSS. A fixed-height control uses only left/right — its height is `size.*`. `inset-section` is the top and bottom of a full-width page section; its sides use `inset-page`.
 
 **Responsive tokens** (static step per viewport) that roles alias — Component · Section · Layout:
 
@@ -125,20 +122,21 @@ The OBJECT: control heights and hit areas. Holds or grows on touch — never mix
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `size.compact` | `--size-compact` | `Size/role/compact` | `sm` | 32px | Toolbars, dense tables. |
-| `size.control` | `--size-control` | `Size/role/control` | `md` | 40px | Default button, input, select height. |
-| `size.touch` | `--size-touch` | `Size/role/touch` | `lg` | 48px | Mobile CTA. 48px covers HIG 44. |
+| `size.compact` | `--size-control-sm` | `Size/control-sm` | `sm` | 32px | Toolbars, dense tables. |
+| `size.control` | `--size-control-md` | `Size/control-md` | `md` | 40px | Default button, input, select height. |
+| `size.touch` | `--size-control-lg` | `Size/control-lg` | `lg` | 48px | Mobile CTA. 48px covers HIG 44. |
 
 ### Special — Hit areas and FABs.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `size.hit` | `--size-hit` | `Size/role/hit` | `xs` | 24px | Close button and icon-only hit area. |
-| `size.fab` | `--size-fab` | `Size/role/fab` | `xl` | 56px | Floating action button. |
+| `size.hit` | `--size-control-xs` | `Size/control-xs` | `xs` | 24px | Close button and icon-only hit area. |
+| `size.fab` | `--size-control-xl` | `Size/control-xl` | `xl` | 56px | Floating action button. |
+| `size.target-min` | `--size-target-min` | `Size/target-min` | `xs` | 24px / 44px / 44px | Smallest interactive target: WCAG 2.2 24px on Desktop, 44px (HIG) on touch viewports. |
 
 Static scale: `xs` 24px · `sm` 32px · `md` 40px · `lg` 48px · `xl` 56px · `2xl` 64px
 
-**Icons scale with controls.** Roles `icon.<role>` → CSS `--icon-<role>`, Figma `Icon/role/<role>` (reference control md = 40px):
+**Icons.** Roles `icon.small|medium|large` → CSS `--size-icon-sm|md|lg`, Figma `Size/icon-sm|md|lg` (reference control md = 40px):
 
 | Role | Default px | Use |
 | --- | --- | --- |
@@ -156,9 +154,8 @@ The square a checkbox, radio or switch knob is drawn in. Not a control height.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `selector.control` | `--selector-control` | `Selector/role/control` | `md` | 18px | Checkbox, radio, switch track height. |
-| `selector.compact` | `--selector-compact` | `Selector/role/compact` | `sm` | 15px | The same glyphs in a dense row or table. |
-| `selector.indicator` | `--selector-indicator` | `Selector/role/indicator` | `xs` | 12px | Badge dot, status pip, unread marker. |
+| `selector.control` | `--size-selector-md` | `Size/selector-md` | `dimension-20` | 20px | Checkbox, radio, switch track height (component Size=default). |
+| `selector.compact` | `--size-selector-sm` | `Size/selector-sm` | `dimension-16` | 16px | The same glyphs in a dense row or table (Size=sm and xs). |
 
 Static scale: `xs` 12px · `sm` 15px · `md` 18px · `lg` 21px · `xl` 24px
 
@@ -170,9 +167,9 @@ Border widths. The colour of a stroke is a Border colour role, never this.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `stroke.divider` | `--stroke-divider` | `Stroke/role/divider` | `sm` | 1px | Separator, table rules, layout splits. |
-| `stroke.control` | `--stroke-control` | `Stroke/role/control` | `sm` | 1px | Input, card, outline button border-width. |
-| `stroke.focus` | `--stroke-focus` | `Stroke/role/focus` | `md` | 2px | Focus-ring width: the inner edge of a focused control (the halo adds one more hairline). Paint stays border.focus. |
+| `stroke.divider` | `--stroke-divider` | `Stroke/divider` | `sm` | 1px | Separator, table rules, layout splits. |
+| `stroke.control` | `--stroke-control` | `Stroke/control` | `sm` | 1px | Input, card, outline button border-width. |
+| `stroke.focus` | `--stroke-focus` | `Stroke/focus` | `md` | 2px | Focus-ring width: the inner edge of a focused control (the halo adds one more hairline). Paint stays border.focus. |
 
 Static scale: `none` 0px · `sm` 1px · `md` 2px · `lg` 4px
 

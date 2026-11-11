@@ -851,12 +851,21 @@ export function motionCssVars(settings: MotionSettings, opts: { reduced?: boolea
   vars['--motion-stagger'] = `${opts.reduced ? 0 : settings.stagger}ms`
   MOTION_ROLES.forEach((role) => {
     const pick = settings.roles[role] ?? STANDARD_ROLES[role]
+    // `-duration` / `-easing` are the role's two halves under the names the
+    // Figma file's code syntax gives `role/<role>/duration|easing`; the
+    // shorthand stays for `transition: color var(--motion-use-hover)`. Each is
+    // written out in full (not as var() of the other) so a block that
+    // overrides one of them below `:root` still resolves on its own.
+    let duration = `var(--motion-duration-${pick.duration})`
+    let easing = `var(--motion-easing-${pick.easing})`
     if (opts.reduced && !KEEP_UNDER_REDUCED.has(role)) {
       const exits = /-(out|exit)$/.test(role)
-      vars[`--motion-${role}`] = `var(--motion-duration-fade) var(--motion-easing-${exits ? 'exit' : 'entrance'})`
-    } else {
-      vars[`--motion-${role}`] = `var(--motion-duration-${pick.duration}) var(--motion-easing-${pick.easing})`
+      duration = 'var(--motion-duration-fade)'
+      easing = `var(--motion-easing-${exits ? 'exit' : 'entrance'})`
     }
+    vars[`--motion-${role}`] = `${duration} ${easing}`
+    vars[`--motion-${role}-duration`] = duration
+    vars[`--motion-${role}-easing`] = easing
   })
   for (const [name, c] of Object.entries(motionChoreographies(settings))) {
     if (!c.components.length) continue // no component plays it (list, text): data only

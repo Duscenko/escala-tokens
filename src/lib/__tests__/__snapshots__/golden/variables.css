@@ -12,7 +12,7 @@
   --color-accent-8: #9c7cff;
   --color-accent-9: #874fff;
   --color-accent-10: #784ddd;
-  --color-accent-11: #7556cc;
+  --color-accent-11: #7252c9;
   --color-accent-12: #3a2b68;
 
   /* Neutral */
@@ -26,7 +26,7 @@
   --color-neutral-8: #aca7b6;
   --color-neutral-9: #9791a4;
   --color-neutral-10: #898494;
-  --color-neutral-11: #6f6a77;
+  --color-neutral-11: #6e6976;
   --color-neutral-12: #37343b;
 
   /* Error */
@@ -40,7 +40,7 @@
   --color-error-8: #e46757;
   --color-error-9: #d92d20;
   --color-error-10: #bd3226;
-  --color-error-11: #b64537;
+  --color-error-11: #b34134;
   --color-error-12: #5d231c;
 
   /* Warning */
@@ -52,9 +52,9 @@
   --color-warning-6: #eeb89a;
   --color-warning-7: #eaa37b;
   --color-warning-8: #e58b55;
-  --color-warning-9: #dc6803;
-  --color-warning-10: #c2621f;
-  --color-warning-11: #a55522;
+  --color-warning-9: #bc5700;
+  --color-warning-10: #a64d00;
+  --color-warning-11: #914200;
   --color-warning-12: #532b11;
 
   /* Success */
@@ -66,9 +66,9 @@
   --color-success-6: #9cc9ab;
   --color-success-7: #7eba93;
   --color-success-8: #59aa78;
-  --color-success-9: #079455;
-  --color-success-10: #1f834f;
-  --color-success-11: #2d794e;
+  --color-success-9: #00854c;
+  --color-success-10: #007541;
+  --color-success-11: #006437;
   --color-success-12: #163c26;
 
   /* Info */
@@ -80,9 +80,9 @@
   --color-info-6: #96bcf5;
   --color-info-7: #77a8f4;
   --color-info-8: #5391f2;
-  --color-info-9: #1570ef;
-  --color-info-10: #1f66ce;
-  --color-info-11: #3169c1;
+  --color-info-9: #006df4;
+  --color-info-10: #0060d8;
+  --color-info-11: #0053bd;
   --color-info-12: #183562;
 
   /* Alpha twins — reproduce a solid tone over the page, for translucent fills */
@@ -96,7 +96,7 @@
   --color-accent-a-8: #3e00ff82;
   --color-accent-a-9: #5201ffb0;
   --color-accent-a-10: #3f02ceb3;
-  --color-accent-a-11: #3204b3ab;
+  --color-accent-a-11: #3002b0ad;
   --color-accent-a-12: #15034bd6;
   --color-neutral-a-1: #00000000;
   --color-neutral-a-2: #1d1c1e0a;
@@ -108,7 +108,7 @@
   --color-neutral-a-8: #0d002857;
   --color-neutral-a-9: #0e022b6e;
   --color-neutral-a-10: #0a01207a;
-  --color-neutral-a-11: #0c041896;
+  --color-neutral-a-11: #0a021796;
   --color-neutral-a-12: #05020acc;
   --color-error-a-1: #00000000;
   --color-error-a-2: #d84e1e14;
@@ -120,7 +120,7 @@
   --color-error-a-8: #d71a00a8;
   --color-error-a-9: #d41102e0;
   --color-error-a-10: #b21103db;
-  --color-error-a-11: #a31402c9;
+  --color-error-a-11: #a01201cc;
   --color-error-a-12: #4b0b03e6;
   --color-warning-a-1: #00000000;
   --color-warning-a-2: #d3600c12;
@@ -130,9 +130,9 @@
   --color-warning-a-6: #d6510366;
   --color-warning-a-7: #d8500185;
   --color-warning-a-8: #d95301ab;
-  --color-warning-a-9: #dc6600fc;
-  --color-warning-a-10: #ba4d00e0;
-  --color-warning-a-11: #983c01de;
+  --color-warning-a-9: #bc5700;
+  --color-warning-a-10: #a64d00;
+  --color-warning-a-11: #914200;
   --color-warning-a-12: #481e02f0;
   --color-success-a-1: #00000000;
   --color-success-a-2: #198b2912;
@@ -142,9 +142,9 @@
   --color-success-a-6: #03782863;
   --color-success-a-7: #037a2b82;
   --color-success-a-8: #007d2fa6;
-  --color-success-a-9: #029252fa;
-  --color-success-a-10: #017237e0;
-  --color-success-a-11: #025e2ad4;
+  --color-success-a-9: #00854c;
+  --color-success-a-10: #007541;
+  --color-success-a-11: #006437;
   --color-success-a-12: #022b13eb;
   --color-info-a-1: #00000000;
   --color-info-a-2: #0b6ed412;
@@ -154,9 +154,9 @@
   --color-info-a-6: #005ee769;
   --color-info-a-7: #0460eb8a;
   --color-info-a-8: #035eecad;
-  --color-info-a-9: #0164eeeb;
-  --color-info-a-10: #0151c7e0;
-  --color-info-a-11: #0146b2cf;
+  --color-info-a-9: #006df4;
+  --color-info-a-10: #0060d8;
+  --color-info-a-11: #0053bd;
   --color-info-a-12: #012152e8;
 
   /* Neutral alpha — fixed opacity ladder for scrims, washes, rims */
@@ -188,11 +188,11 @@
   /* Semantic tokens — light */
   --color-content-tertiary: #898494;
   --color-content-quaternary: #9791a4;
-  --color-content-brand: #7556cc;
+  --color-content-brand: #7252c9;
   --color-content-brand-hover: #3a2b68;
-  --color-content-error: #b64537;
-  --color-content-warning: #a55522;
-  --color-content-success: #2d794e;
+  --color-content-error: #b34134;
+  --color-content-warning: #914200;
+  --color-content-success: #006437;
   --color-background-primary: #ffffff;
   --color-background-primary-hover: #f5f4f6;
   --color-background-secondary: #f5f4f6;
@@ -210,9 +210,9 @@
   --color-background-error-primary: #fbefed;
   --color-background-error-solid: #d92d20;
   --color-background-warning-primary: #fbf2ee;
-  --color-background-warning-solid: #a55522;
+  --color-background-warning-solid: #bc5700;
   --color-background-success-primary: #eef5f0;
-  --color-background-success-solid: #1f834f;
+  --color-background-success-solid: #00854c;
   --color-border-primary: #d8d6dd;
   --color-border-secondary: #e3e1e6;
   --color-border-tertiary: #ececee;
@@ -224,21 +224,22 @@
 
   /* Semantic roles (Categorical) — light. Components bind these. */
   --color-content-primary: #37343b;
-  --color-content-secondary: #6f6a77;
+  --color-content-secondary: #6e6976;
   --color-content-subtle: #9791a4;
-  --color-content-accent: #7556cc;
+  --color-content-accent: #7252c9;
   --color-content-on-action: #fefdff;
   --color-content-on-secondary: #37343b;
   --color-content-inverse: #fefdff;
+  --color-content-inverse-secondary: #ffffffb3;
   --color-content-disabled: #898494;
-  --color-content-link-default: #3a2b68;
+  --color-content-link-default: #7252c9;
   --color-content-link-hover: #3a2b68;
   --color-action-primary-default: #874fff;
   --color-action-primary-hover: #784ddd;
-  --color-action-primary-pressed: #7556cc;
+  --color-action-primary-pressed: #7252c9;
   --color-action-secondary-default: #e3e1e6;
   --color-action-secondary-hover: #d8d6dd;
-  --color-action-secondary-pressed: #d8d6dd;
+  --color-action-secondary-pressed: #cac7d0;
   --color-action-disabled-default: #00000026;
   --color-action-ghost-default: #00000000;
   --color-action-ghost-hover: #0000000d;
@@ -253,43 +254,44 @@
   --color-surface-selected: #220de11a;
   --color-surface-selected-pressed: #2808f638;
   --color-surface-inverse: #37343b;
+  --color-surface-inverse-muted: #ffffff26;
   --color-surface-overlay: #00000099;
   --color-status-critical-surface: #da350c24;
-  --color-status-critical-surface-pressed: #dd2b084d;
+  --color-status-critical-surface-pressed: #dd2b0336;
   --color-status-critical-surface-solid: #d92d20;
   --color-status-critical-surface-solid-hover: #bd3226;
-  --color-status-critical-surface-solid-pressed: #b64537;
+  --color-status-critical-surface-solid-pressed: #b34134;
   --color-status-critical-on-solid: #fefdff;
-  --color-status-critical-content: #b64537;
+  --color-status-critical-content: #b34134;
   --color-status-critical-border: #dc240469;
   --color-status-critical-border-strong: #d92d20;
   --color-status-success-surface: #107a2021;
-  --color-status-success-surface-pressed: #08752547;
-  --color-status-success-surface-solid: #1f834f;
-  --color-status-success-surface-solid-hover: #2d794e;
-  --color-status-success-surface-solid-pressed: #163c26;
+  --color-status-success-surface-pressed: #09762333;
+  --color-status-success-surface-solid: #00854c;
+  --color-status-success-surface-solid-hover: #007541;
+  --color-status-success-surface-solid-pressed: #006437;
   --color-status-success-on-solid: #fefdff;
-  --color-status-success-content: #2d794e;
+  --color-status-success-content: #006437;
   --color-status-success-border: #03782863;
-  --color-status-success-border-strong: #1f834f;
+  --color-status-success-border-strong: #007541;
   --color-status-warning-surface: #d0540121;
-  --color-status-warning-surface-pressed: #d854074a;
-  --color-status-warning-surface-solid: #a55522;
-  --color-status-warning-surface-solid-hover: #532b11;
-  --color-status-warning-surface-solid-pressed: #c2621f;
+  --color-status-warning-surface-pressed: #d14e0033;
+  --color-status-warning-surface-solid: #bc5700;
+  --color-status-warning-surface-solid-hover: #a64d00;
+  --color-status-warning-surface-solid-pressed: #914200;
   --color-status-warning-on-solid: #fefdff;
-  --color-status-warning-content: #a55522;
+  --color-status-warning-content: #914200;
   --color-status-warning-border: #d6510366;
-  --color-status-warning-border-strong: #a55522;
+  --color-status-warning-border-strong: #914200;
   --color-status-info-surface: #0b67db24;
-  --color-status-info-surface-pressed: #0764e44d;
-  --color-status-info-surface-solid: #1570ef;
-  --color-status-info-surface-solid-hover: #1f66ce;
-  --color-status-info-surface-solid-pressed: #3169c1;
+  --color-status-info-surface-pressed: #0660de36;
+  --color-status-info-surface-solid: #006df4;
+  --color-status-info-surface-solid-hover: #0060d8;
+  --color-status-info-surface-solid-pressed: #0053bd;
   --color-status-info-on-solid: #fefdff;
-  --color-status-info-content: #3169c1;
+  --color-status-info-content: #0053bd;
   --color-status-info-border: #005ee769;
-  --color-status-info-border-strong: #1570ef;
+  --color-status-info-border-strong: #006df4;
   --color-border-default: #00000026;
   --color-border-subtle: #00000026;
   --color-border-control: #d8d6dd;
@@ -299,6 +301,11 @@
   --color-border-focus: #874fff;
   --color-border-ring-default: #3005fc4f;
   --color-border-rim-highlight: #ffffff0d;
+  --color-border-inverse: #ffffff4d;
+  --color-elevation-shadow-key: #0000001a;
+  --color-elevation-shadow-ambient: #0000000d;
+  --color-elevation-shadow-ring: #ffffff0d;
+  --color-elevation-highlight: #ffffff26;
 
   /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */
   --panel-blur: none;
@@ -650,14 +657,13 @@
   --spacing-2_5: var(--dimension-10);
 
   /* Padding — per-side surface inset (alias of spacing-inset-surface) */
-  --padding-top: var(--spacing-inset-surface-top);
-  --padding-right: var(--spacing-inset-surface-right);
-  --padding-bottom: var(--spacing-inset-surface-bottom);
-  --padding-left: var(--spacing-inset-surface-left);
+  --padding-top: var(--spacing-inset-surface);
+  --padding-right: var(--spacing-inset-surface);
+  --padding-bottom: var(--spacing-inset-surface);
+  --padding-left: var(--spacing-inset-surface);
 
-  /* Radius */
+  /* Radius — the ramp. `full` is the role `--radius-full` (radius.pill), below. */
   --radius-none: var(--dimension-0);
-  --radius-full: var(--dimension-9999);
   --radius-xs: var(--dimension-2);
   --radius-sm: var(--dimension-4);
   --radius-md: var(--dimension-6);
@@ -678,7 +684,7 @@
   --radius-component-3xl: var(--radius-3xl);
   --radius-component-4xl: var(--radius-4xl);
   --radius-component-5xl: var(--radius-5xl);
-  --radius-component-full: var(--radius-full);
+  --radius-component-full: var(--dimension-9999);
 
   /* Sizes */
   --size-xs: var(--dimension-24);
@@ -688,7 +694,7 @@
   --size-xl: var(--dimension-56);
   --size-2xl: var(--dimension-64);
 
-  /* Selectors — checkbox / radio / switch glyph, a square not a height */
+  /* Selectors — checkbox / radio / switch glyph ramp, a square not a height. Roles: --size-selector-md|sm */
   --selector-xs: var(--dimension-12);
   --selector-sm: var(--dimension-15);
   --selector-md: var(--dimension-18);
@@ -696,9 +702,9 @@
   --selector-xl: var(--dimension-24);
 
   /* Icon sizes — scaled to the md control height, the same in every viewport */
-  --icon-small: var(--dimension-16);
-  --icon-medium: var(--dimension-20);
-  --icon-large: var(--dimension-24);
+  --size-icon-sm: var(--dimension-16);
+  --size-icon-md: var(--dimension-20);
+  --size-icon-lg: var(--dimension-24);
 
   /* Stroke — border-width / ring spread, not paint */
   --stroke-none: var(--dimension-0);
@@ -711,7 +717,7 @@
   --radius-action: var(--dimension-8);
   --radius-container: var(--dimension-16);
   --radius-overlay: var(--dimension-16);
-  --radius-pill: var(--dimension-9999);
+  --radius-full: var(--dimension-9999);
   --spacing-none: var(--dimension-0);
   --spacing-gap-tight: var(--dimension-4);
   --spacing-gap-control: var(--dimension-8);
@@ -720,32 +726,17 @@
   --spacing-inset-control: var(--dimension-12);
   --spacing-inset-surface: var(--dimension-20);
   --spacing-inset-page: var(--dimension-32);
-  --spacing-overlap-xs: var(--dimension--2);
+  --spacing-inset-section: var(--dimension-96);
   --spacing-overlap-sm: var(--dimension--4);
   --spacing-overlap-md: var(--dimension--8);
-  --spacing-overlap-lg: var(--dimension--16);
-  --spacing-overlap-xl: var(--dimension--24);
-  --spacing-overlap-2xl: var(--dimension--32);
-  --spacing-inset-control-top: var(--spacing-inset-control);
-  --spacing-inset-control-right: var(--spacing-inset-control);
-  --spacing-inset-control-bottom: var(--spacing-inset-control);
-  --spacing-inset-control-left: var(--spacing-inset-control);
-  --spacing-inset-surface-top: var(--spacing-inset-surface);
-  --spacing-inset-surface-right: var(--spacing-inset-surface);
-  --spacing-inset-surface-bottom: var(--spacing-inset-surface);
-  --spacing-inset-surface-left: var(--spacing-inset-surface);
-  --spacing-inset-page-top: var(--spacing-inset-page);
-  --spacing-inset-page-right: var(--spacing-inset-page);
-  --spacing-inset-page-bottom: var(--spacing-inset-page);
-  --spacing-inset-page-left: var(--spacing-inset-page);
-  --size-compact: var(--dimension-32);
-  --size-control: var(--dimension-40);
-  --size-touch: var(--dimension-48);
-  --size-hit: var(--dimension-24);
-  --size-fab: var(--dimension-56);
-  --selector-control: var(--dimension-18);
-  --selector-compact: var(--dimension-15);
-  --selector-indicator: var(--dimension-12);
+  --size-control-sm: var(--dimension-32);
+  --size-control-md: var(--dimension-40);
+  --size-control-lg: var(--dimension-48);
+  --size-control-xs: var(--dimension-24);
+  --size-control-xl: var(--dimension-56);
+  --size-target-min: var(--dimension-24);
+  --size-selector-md: var(--dimension-20);
+  --size-selector-sm: var(--dimension-16);
   --stroke-divider: var(--dimension-1);
   --stroke-control: var(--dimension-1);
   --stroke-focus: var(--dimension-2);
@@ -760,6 +751,67 @@
   --shadow-lg: 0 6px 8px -2px rgba(10,13,18,0.04);
   --shadow-xl: 0 10px 12px -2px rgba(10,13,18,0.04);
   --shadow-2xl: 0 12px 24px -6px rgba(10,13,18,0.08);
+
+  /* Depth and blur — box-shadow: var(--depth-sm) · backdrop-filter: blur(var(--blur-sm)) */
+  --depth-xs: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 1px 2px 0 var(--color-elevation-shadow-ambient);
+  --depth-sm: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 1px 3px 0 var(--color-elevation-shadow-key), inset 0 1px 2px -1px var(--color-elevation-shadow-key);
+  --depth-md: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 2px 4px -1px var(--color-elevation-shadow-key), inset 0 1px 2px -1px var(--color-elevation-shadow-ambient);
+  --depth-lg: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 4px 8px -2px var(--color-elevation-shadow-key), inset 0 2px 4px -2px var(--color-elevation-shadow-ambient);
+  --depth-xl: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 8px 16px -4px var(--color-elevation-shadow-key), inset 0 4px 8px -4px var(--color-elevation-shadow-ambient);
+  --depth-2xl: inset 0 0 0 1px var(--color-elevation-shadow-ring), inset 0 12px 24px -6px var(--color-elevation-shadow-key), inset 0 6px 12px -6px var(--color-elevation-shadow-ambient);
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+  --blur-2xl: 40px;
+
+  /* Social-login colours — fixed per provider */
+  --social-google-action-default: #db4437;
+  --social-google-action-hover: #c53d32;
+  --social-google-action-pressed: #af362c;
+  --social-google-content-on-action: #ffffff;
+  --social-google-border-focus: #000000;
+  --social-apple-action-default: #000000;
+  --social-apple-action-hover: #1f1f1f;
+  --social-apple-action-pressed: #333333;
+  --social-apple-content-on-action: #ffffff;
+  --social-apple-border-focus: #ffffff;
+  --social-discord-action-default: #5865f2;
+  --social-discord-action-hover: #4f5bda;
+  --social-discord-action-pressed: #4651c2;
+  --social-discord-content-on-action: #ffffff;
+  --social-discord-border-focus: #ffffff;
+  --social-dribbble-action-default: #ea4c89;
+  --social-dribbble-action-hover: #d3447b;
+  --social-dribbble-action-pressed: #bb3d6e;
+  --social-dribbble-content-on-action: #ffffff;
+  --social-dribbble-border-focus: #000000;
+  --social-facebook-action-default: #1877f2;
+  --social-facebook-action-hover: #166bda;
+  --social-facebook-action-pressed: #135fc2;
+  --social-facebook-content-on-action: #ffffff;
+  --social-facebook-border-focus: #000000;
+  --social-github-action-default: #24292f;
+  --social-github-action-hover: #3e4348;
+  --social-github-action-pressed: #505459;
+  --social-github-content-on-action: #ffffff;
+  --social-github-border-focus: #ffffff;
+  --social-linkedin-action-default: #0a66c2;
+  --social-linkedin-action-hover: #095caf;
+  --social-linkedin-action-pressed: #08529b;
+  --social-linkedin-content-on-action: #ffffff;
+  --social-linkedin-border-focus: #ffffff;
+  --social-slack-action-default: #4a154b;
+  --social-slack-action-hover: #603161;
+  --social-slack-action-pressed: #6e446f;
+  --social-slack-content-on-action: #ffffff;
+  --social-slack-border-focus: #ffffff;
+  --social-x-action-default: #000000;
+  --social-x-action-hover: #1f1f1f;
+  --social-x-action-pressed: #333333;
+  --social-x-content-on-action: #ffffff;
+  --social-x-border-focus: #ffffff;
 
   /* Breakpoints — primitive min-widths */
   --breakpoint-sm: var(--dimension-640);
@@ -778,11 +830,12 @@
   --grid-gutter: var(--dimension-32);
   --grid-margin: var(--dimension-32);
   --grid-container: var(--dimension-1280);
+  --grid-column: var(--dimension-72);
 
   /* Gradients */
   --gradient-brand-cover: linear-gradient(135deg, #874fff 0%, #3a2b68 100%);
-  --gradient-aurora: linear-gradient(120deg, #ad99fe 0%, #874fff 50%, #7556cc 100%);
-  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #ad99fe 0%, #7556cc 100%);
+  --gradient-aurora: linear-gradient(120deg, #ad99fe 0%, #874fff 50%, #7252c9 100%);
+  --gradient-moss-glow: radial-gradient(circle at 30% 30%, #ad99fe 0%, #7252c9 100%);
 
   /* Motion — lib/motion.ts. Roles: `transition: background-color var(--motion-use-hover)` */
   --motion-duration-instant: 0ms;
@@ -818,29 +871,77 @@
   --motion-squash: 0.1;
   --motion-stagger: 100ms;
   --motion-use-hover: var(--motion-duration-quick) var(--motion-easing-standard);
+  --motion-use-hover-duration: var(--motion-duration-quick);
+  --motion-use-hover-easing: var(--motion-easing-standard);
   --motion-use-focus: var(--motion-duration-quick) var(--motion-easing-entrance);
+  --motion-use-focus-duration: var(--motion-duration-quick);
+  --motion-use-focus-easing: var(--motion-easing-entrance);
   --motion-use-press: var(--motion-duration-quick) var(--motion-easing-exit);
+  --motion-use-press-duration: var(--motion-duration-quick);
+  --motion-use-press-easing: var(--motion-easing-exit);
   --motion-use-disclosure-in: var(--motion-duration-short) var(--motion-easing-entrance);
+  --motion-use-disclosure-in-duration: var(--motion-duration-short);
+  --motion-use-disclosure-in-easing: var(--motion-easing-entrance);
   --motion-use-disclosure-out: var(--motion-duration-quick) var(--motion-easing-exit);
+  --motion-use-disclosure-out-duration: var(--motion-duration-quick);
+  --motion-use-disclosure-out-easing: var(--motion-easing-exit);
   --motion-use-overlay-in: var(--motion-duration-medium) var(--motion-easing-entrance);
+  --motion-use-overlay-in-duration: var(--motion-duration-medium);
+  --motion-use-overlay-in-easing: var(--motion-easing-entrance);
   --motion-use-overlay-out: var(--motion-duration-short) var(--motion-easing-exit);
+  --motion-use-overlay-out-duration: var(--motion-duration-short);
+  --motion-use-overlay-out-easing: var(--motion-easing-exit);
   --motion-use-emphasis-in: var(--motion-duration-long) var(--motion-easing-emphasized);
+  --motion-use-emphasis-in-duration: var(--motion-duration-long);
+  --motion-use-emphasis-in-easing: var(--motion-easing-emphasized);
   --motion-use-travel-in: var(--motion-duration-long) var(--motion-easing-entrance);
+  --motion-use-travel-in-duration: var(--motion-duration-long);
+  --motion-use-travel-in-easing: var(--motion-easing-entrance);
   --motion-use-travel-out: var(--motion-duration-medium) var(--motion-easing-exit);
+  --motion-use-travel-out-duration: var(--motion-duration-medium);
+  --motion-use-travel-out-easing: var(--motion-easing-exit);
   --motion-use-toggle: var(--motion-duration-long) var(--motion-easing-standard);
+  --motion-use-toggle-duration: var(--motion-duration-long);
+  --motion-use-toggle-easing: var(--motion-easing-standard);
   --motion-use-stagger-in: var(--motion-duration-short) var(--motion-easing-entrance);
+  --motion-use-stagger-in-duration: var(--motion-duration-short);
+  --motion-use-stagger-in-easing: var(--motion-easing-entrance);
   --motion-use-stagger-out: var(--motion-duration-quick) var(--motion-easing-exit);
+  --motion-use-stagger-out-duration: var(--motion-duration-quick);
+  --motion-use-stagger-out-easing: var(--motion-easing-exit);
   --motion-use-reveal: var(--motion-duration-cinematic) var(--motion-easing-gentle);
+  --motion-use-reveal-duration: var(--motion-duration-cinematic);
+  --motion-use-reveal-easing: var(--motion-easing-gentle);
   --motion-use-page-transition: var(--motion-duration-long) var(--motion-easing-emphasized);
+  --motion-use-page-transition-duration: var(--motion-duration-long);
+  --motion-use-page-transition-easing: var(--motion-easing-emphasized);
   --motion-use-celebration: var(--motion-duration-extra-long) var(--motion-easing-emphasized);
+  --motion-use-celebration-duration: var(--motion-duration-extra-long);
+  --motion-use-celebration-easing: var(--motion-easing-emphasized);
   --motion-use-color: var(--motion-duration-extra-long) var(--motion-easing-gentle);
+  --motion-use-color-duration: var(--motion-duration-extra-long);
+  --motion-use-color-easing: var(--motion-easing-gentle);
   --motion-use-loop: var(--motion-duration-super-long) var(--motion-easing-linear);
+  --motion-use-loop-duration: var(--motion-duration-super-long);
+  --motion-use-loop-easing: var(--motion-easing-linear);
   --motion-base-functional-entrance: var(--motion-duration-short) var(--motion-easing-entrance);
+  --motion-base-functional-entrance-duration: var(--motion-duration-short);
+  --motion-base-functional-entrance-easing: var(--motion-easing-entrance);
   --motion-base-functional-exit: var(--motion-duration-quick) var(--motion-easing-exit);
+  --motion-base-functional-exit-duration: var(--motion-duration-quick);
+  --motion-base-functional-exit-easing: var(--motion-easing-exit);
   --motion-base-functional-standard: var(--motion-duration-short) var(--motion-easing-standard);
+  --motion-base-functional-standard-duration: var(--motion-duration-short);
+  --motion-base-functional-standard-easing: var(--motion-easing-standard);
   --motion-base-expressive-entrance: var(--motion-duration-long) var(--motion-easing-emphasized);
+  --motion-base-expressive-entrance-duration: var(--motion-duration-long);
+  --motion-base-expressive-entrance-easing: var(--motion-easing-emphasized);
   --motion-base-expressive-exit: var(--motion-duration-medium) var(--motion-easing-exit);
+  --motion-base-expressive-exit-duration: var(--motion-duration-medium);
+  --motion-base-expressive-exit-easing: var(--motion-easing-exit);
   --motion-base-expressive-standard: var(--motion-duration-long) var(--motion-easing-standard);
+  --motion-base-expressive-standard-duration: var(--motion-duration-long);
+  --motion-base-expressive-standard-easing: var(--motion-easing-standard);
   --motion-choreo-dialog-enter-overlay: motion-fade-in var(--motion-use-overlay-in) 0ms both;
   --motion-choreo-dialog-enter-content: motion-pop var(--motion-use-emphasis-in) var(--motion-duration-quick) both;
   --motion-choreo-dialog-exit-content: motion-shrink var(--motion-use-overlay-out) 0ms both;
@@ -867,6 +968,7 @@
     --grid-gutter: var(--dimension-32);
     --grid-margin: var(--dimension-32);
     --grid-container: none;
+    --grid-column: var(--dimension-60);
     --radius-component-sm: var(--radius-xs);
     --radius-component-md: var(--radius-sm);
     --radius-component-lg: var(--radius-md);
@@ -875,12 +977,10 @@
     --radius-component-3xl: var(--radius-2xl);
     --radius-component-4xl: var(--radius-3xl);
     --radius-component-5xl: var(--radius-4xl);
-    --radius-control: var(--dimension-6);
-    --radius-action: var(--dimension-6);
-    --radius-container: var(--dimension-12);
-    --radius-overlay: var(--dimension-12);
     --spacing-gap-section: var(--dimension-16);
     --spacing-inset-page: var(--dimension-16);
+    --spacing-inset-section: var(--dimension-64);
+    --size-target-min: var(--dimension-44);
   }
 }
 
@@ -890,6 +990,7 @@
     --grid-gutter: var(--dimension-16);
     --grid-margin: var(--dimension-16);
     --grid-container: none;
+    --grid-column: var(--dimension-60);
     --radius-component-sm: var(--radius-xs);
     --radius-component-md: var(--radius-sm);
     --radius-component-lg: var(--radius-md);
@@ -898,14 +999,11 @@
     --radius-component-3xl: var(--radius-xl);
     --radius-component-4xl: var(--radius-2xl);
     --radius-component-5xl: var(--radius-3xl);
-    --radius-control: var(--dimension-6);
-    --radius-action: var(--dimension-6);
-    --radius-container: var(--dimension-12);
-    --radius-overlay: var(--dimension-12);
     --spacing-gap-group: var(--dimension-12);
     --spacing-gap-section: var(--dimension-12);
-    --spacing-inset-control: var(--dimension-8);
-    --spacing-inset-page: var(--dimension-8);
+    --spacing-inset-page: var(--dimension-16);
+    --spacing-inset-section: var(--dimension-48);
+    --size-target-min: var(--dimension-44);
   }
 }
 
@@ -1110,15 +1208,16 @@
   --color-content-secondary: #cdcbd3;
   --color-content-subtle: #716e77;
   --color-content-accent: #d2c4ff;
-  --color-content-on-action: #e5e4e8;
+  --color-content-on-action: #100e13;
   --color-content-on-secondary: #e5e4e8;
   --color-content-inverse: #100e13;
+  --color-content-inverse-secondary: #000000b3;
   --color-content-disabled: #716e77;
   --color-content-link-default: #d2c4ff;
   --color-content-link-hover: #e8e0ff;
-  --color-action-primary-default: #714ec3;
-  --color-action-primary-hover: #5a4299;
-  --color-action-primary-pressed: #483775;
+  --color-action-primary-default: #9a75fd;
+  --color-action-primary-hover: #d2c4ff;
+  --color-action-primary-pressed: #e8e0ff;
   --color-action-secondary-default: #222223;
   --color-action-secondary-hover: #2a292c;
   --color-action-secondary-pressed: #363539;
@@ -1135,41 +1234,42 @@
   --color-surface-input: #151515;
   --color-surface-selected: #a196f61c;
   --color-surface-selected-pressed: #9879ff47;
-  --color-surface-inverse: #cdcbd3;
+  --color-surface-inverse: #e5e4e8;
+  --color-surface-inverse-muted: #00000026;
   --color-surface-overlay: #00000099;
-  --color-status-critical-surface: #f3722e1c;
+  --color-status-critical-surface: #f4673a2e;
   --color-status-critical-surface-pressed: #f75f3942;
   --color-status-critical-surface-solid: #a82f23;
   --color-status-critical-surface-solid-hover: #852c23;
   --color-status-critical-surface-solid-pressed: #682820;
-  --color-status-critical-on-solid: #e5e4e8;
+  --color-status-critical-on-solid: #fefdff;
   --color-status-critical-content: #ffbcae;
   --color-status-critical-border: #fe54365e;
-  --color-status-critical-border-strong: #ffbcae;
-  --color-status-success-surface: #67fb6a14;
+  --color-status-critical-border-strong: #dd5141;
+  --color-status-success-surface: #65f57f21;
   --color-status-success-surface-pressed: #5ef7882e;
-  --color-status-success-surface-solid: #8fdcaa;
-  --color-status-success-surface-solid-hover: #c3efd1;
-  --color-status-success-surface-solid-pressed: #419f69;
+  --color-status-success-surface-solid: #079455;
+  --color-status-success-surface-solid-hover: #419f69;
+  --color-status-success-surface-solid-pressed: #8fdcaa;
   --color-status-success-on-solid: #100e13;
   --color-status-success-content: #8fdcaa;
   --color-status-success-border: #54fe8f40;
   --color-status-success-border-strong: #419f69;
-  --color-status-warning-surface: #f396371c;
+  --color-status-warning-surface: #f4933a2e;
   --color-status-warning-surface-pressed: #f78d3942;
-  --color-status-warning-surface-solid: #864820;
-  --color-status-warning-surface-solid-hover: #693b20;
-  --color-status-warning-surface-solid-pressed: #4c2f1d;
-  --color-status-warning-on-solid: #e5e4e8;
+  --color-status-warning-surface-solid: #e17e40;
+  --color-status-warning-surface-solid-hover: #ffbe92;
+  --color-status-warning-surface-solid-pressed: #ffdec5;
+  --color-status-warning-on-solid: #100e13;
   --color-status-warning-content: #ffbe92;
   --color-status-warning-border: #fa843561;
   --color-status-warning-border-strong: #ffbe92;
-  --color-status-info-surface: #4caef91a;
+  --color-status-info-surface: #4299f72e;
   --color-status-info-surface-pressed: #3e91fe42;
-  --color-status-info-surface-solid: #1e5bb7;
-  --color-status-info-surface-solid-hover: #1f4b90;
-  --color-status-info-surface-solid-pressed: #1e3e6f;
-  --color-status-info-on-solid: #e5e4e8;
+  --color-status-info-surface-solid: #3c82ed;
+  --color-status-info-surface-solid-hover: #a7cfff;
+  --color-status-info-surface-solid-pressed: #cfe7ff;
+  --color-status-info-on-solid: #100e13;
   --color-status-info-content: #a7cfff;
   --color-status-info-border: #3489ff63;
   --color-status-info-border-strong: #3c82ed;
@@ -1179,9 +1279,14 @@
   --color-border-control-hover: #ffffff4d;
   --color-border-strong: #ffffff99;
   --color-border-accent: #714ec3;
-  --color-border-focus: #d2c4ff;
+  --color-border-focus: #905cff;
   --color-border-ring-default: #9570fc6b;
   --color-border-rim-highlight: #ffffff0d;
+  --color-border-inverse: #0000004d;
+  --color-elevation-shadow-key: #00000066;
+  --color-elevation-shadow-ambient: #00000033;
+  --color-elevation-shadow-ring: #ffffff0d;
+  --color-elevation-highlight: #ffffff26;
   /* Gradients — dark */
   --gradient-brand-cover: linear-gradient(135deg, #905cff 0%, #e8e0ff 100%);
   --gradient-aurora: linear-gradient(120deg, #5a4299 0%, #905cff 50%, #d2c4ff 100%);
@@ -1306,25 +1411,54 @@
     --motion-squash: 0;
     --motion-stagger: 0ms;
     --motion-use-disclosure-in: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-disclosure-in-duration: var(--motion-duration-fade);
     --motion-use-disclosure-out: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-use-disclosure-out-duration: var(--motion-duration-fade);
     --motion-use-overlay-in: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-overlay-in-duration: var(--motion-duration-fade);
     --motion-use-overlay-out: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-use-overlay-out-duration: var(--motion-duration-fade);
     --motion-use-emphasis-in: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-emphasis-in-duration: var(--motion-duration-fade);
+    --motion-use-emphasis-in-easing: var(--motion-easing-entrance);
     --motion-use-travel-in: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-travel-in-duration: var(--motion-duration-fade);
     --motion-use-travel-out: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-use-travel-out-duration: var(--motion-duration-fade);
     --motion-use-toggle: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-toggle-duration: var(--motion-duration-fade);
+    --motion-use-toggle-easing: var(--motion-easing-entrance);
     --motion-use-stagger-in: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-stagger-in-duration: var(--motion-duration-fade);
     --motion-use-stagger-out: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-use-stagger-out-duration: var(--motion-duration-fade);
     --motion-use-reveal: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-reveal-duration: var(--motion-duration-fade);
+    --motion-use-reveal-easing: var(--motion-easing-entrance);
     --motion-use-page-transition: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-page-transition-duration: var(--motion-duration-fade);
+    --motion-use-page-transition-easing: var(--motion-easing-entrance);
     --motion-use-celebration: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-celebration-duration: var(--motion-duration-fade);
+    --motion-use-celebration-easing: var(--motion-easing-entrance);
     --motion-use-color: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-use-color-duration: var(--motion-duration-fade);
+    --motion-use-color-easing: var(--motion-easing-entrance);
     --motion-base-functional-entrance: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-base-functional-entrance-duration: var(--motion-duration-fade);
     --motion-base-functional-exit: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-base-functional-exit-duration: var(--motion-duration-fade);
     --motion-base-functional-standard: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-base-functional-standard-duration: var(--motion-duration-fade);
+    --motion-base-functional-standard-easing: var(--motion-easing-entrance);
     --motion-base-expressive-entrance: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-base-expressive-entrance-duration: var(--motion-duration-fade);
+    --motion-base-expressive-entrance-easing: var(--motion-easing-entrance);
     --motion-base-expressive-exit: var(--motion-duration-fade) var(--motion-easing-exit);
+    --motion-base-expressive-exit-duration: var(--motion-duration-fade);
     --motion-base-expressive-standard: var(--motion-duration-fade) var(--motion-easing-entrance);
+    --motion-base-expressive-standard-duration: var(--motion-duration-fade);
+    --motion-base-expressive-standard-easing: var(--motion-easing-entrance);
     --motion-choreo-dialog-enter-overlay: motion-fade-in var(--motion-duration-fade) var(--motion-easing-entrance) 0ms both;
     --motion-choreo-dialog-enter-content: motion-fade-in var(--motion-duration-fade) var(--motion-easing-entrance) 0ms both;
     --motion-choreo-dialog-exit-content: motion-fade-out var(--motion-duration-fade) var(--motion-easing-exit) 0ms both;

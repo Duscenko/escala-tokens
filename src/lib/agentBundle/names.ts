@@ -1,6 +1,6 @@
 import { mdCell, slugify } from '../utils.js'
 
-export const GROUP_ORDER = ['content', 'action', 'surface', 'status', 'border'] as const
+export const GROUP_ORDER = ['content', 'action', 'surface', 'status', 'border', 'elevation'] as const
 export type SemanticGroup = (typeof GROUP_ORDER)[number]
 
 export const GROUP_LABEL: Record<SemanticGroup, string> = {
@@ -9,6 +9,7 @@ export const GROUP_LABEL: Record<SemanticGroup, string> = {
   surface: 'Surface',
   status: 'Status',
   border: 'Border',
+  elevation: 'Elevation',
 }
 
 const PRIMITIVE_GROUPS: Record<string, string> = {
@@ -273,6 +274,7 @@ export function scopesFor(id: string): string {
   if (id.endsWith('.content') || id.endsWith('.on-solid')) return '`TEXT_FILL`'
   if (id.startsWith('status.')) return '`FRAME_FILL`, `SHAPE_FILL`'
   if (id.startsWith('border.')) return '`STROKE_COLOR`'
+  if (id.startsWith('elevation.')) return '`EFFECT_COLOR`'
   return '`FRAME_FILL`'
 }
 

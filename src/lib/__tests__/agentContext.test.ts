@@ -53,7 +53,7 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('## When to use')
     expect(md).toContain('## React')
     expect(md).toContain('data-escala="Button"')
-    expect(md).toContain('`--size-control`')
+    expect(md).toContain('`--size-control-md`')
     expect(md).toContain('`--radius-action`')
     expect(md).toContain('`--stroke-control`')
     expect(md).not.toContain('Reconstruct the set')
@@ -66,10 +66,10 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('### Tokens by part (the component recipe)')
     expect(md).toContain('| root | fill | Variant: default · State: Default, Focused, Loading | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
     // A size row says which size it is, with its live value.
-    expect(md).toContain('| root | height | Size: xs, icon-xs | `size.hit` | `--size-hit` | — | `24px` |')
+    expect(md).toContain('| root | height | Size: xs, icon-xs | `size.hit` | `--size-control-xs` | `Size/control-xs` | `24px` |')
     expect(md).toContain('| root | radius | always | `radius.action` |')
     expect(md).toContain('`color.content.on-action`')
-    expect(md).toContain('`--size-control`')
+    expect(md).toContain('`--size-control-md`')
     expect(md).not.toContain('### Color (scoped to this component)')
   })
 

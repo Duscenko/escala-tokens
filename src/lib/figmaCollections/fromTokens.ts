@@ -13,8 +13,10 @@
 //                        carries its exact hex (8-digit for the alpha roles)
 //   Dimension Primitives every length the payload uses, named by value, plus
 //                        `columns/<n>` for the grid's column counts
-//   Dimension Semantics  Spacing / Radius / Stroke / Size / Selector / Icon /
-//                        Grid, modes = the shipped viewports
+//   Dimension Semantics  Spacing / Radius / Stroke / Size / Grid, the Escala
+//                        Figma file's names (`Size/control-xs`, `Radius/full`,
+//                        `Size/selector-md`, `Size/icon-sm`), modes = the
+//                        shipped viewports
 //   Typography           size / weight / line-height / letter-spacing steps,
 //                        the two families, and `role/<role>/*` per viewport
 //   Brand                only with two or more brands (`<slug>::<appearance>`
@@ -28,6 +30,7 @@
 import { brandLabelOf, brandOfKey, brandSlugsOf, figmaPrimitiveName, type PrimitiveNameContext } from '../agentBundle/names'
 import type { generateTokenJSON } from '../tokenGenerator'
 import type { CollectionsSnapshot, SnapCollection, SnapValue, SnapVariable } from './w3cTree'
+import { roleFigmaName } from '../roleNames'
 
 type TokenJSON = ReturnType<typeof generateTokenJSON>
 type Viewport = 'desktop' | 'tablet' | 'mobile'
@@ -37,7 +40,7 @@ type Loose = Record<string, any>
 const SINGLE_MODE = 'Mode 1'
 const VIEWPORTS: [Viewport, string][] = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile']]
 const CATEGORICAL_GROUPS: [string, string][] = [
-  ['content', 'Content'], ['action', 'Action'], ['surface', 'Surface'], ['status', 'Status'], ['border', 'Border'],
+  ['content', 'Content'], ['action', 'Action'], ['surface', 'Surface'], ['status', 'Status'], ['border', 'Border'], ['elevation', 'Elevation'],
 ]
 const ICON_SIZE_PX = { small: 16, medium: 20, large: 24 } as const
 const ICON_SIZE_NAMES = ['small', 'medium', 'large'] as const
@@ -477,68 +480,75 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
   }
   const pickOf = (f: Loose | undefined, k: string) => (f?.[k] ?? t[k]) as Record<string, string> | undefined
 
+  // Names follow the Escala Figma file (`roleFigmaName`): `Spacing/<role>`,
+  // `Radius/<role>` (`pill` → `Radius/full`, plus `Radius/none`), `Stroke/<role>`,
+  // `Size/control-xs…xl`, `Size/target-min`, `Size/selector-md|sm`,
+  // `Size/icon-sm|md|lg`. No `role/` segment, no `Radius/component/*` scale.
+  type VpMap = Partial<Record<'tablet' | 'mobile', Record<string, string>>>
   {
     const rolesOf = (f: Loose | undefined) => pickOf(f, 'spacingRoles') ?? {}
     const table = (t.spacingResponsive ?? {}) as Record<string, Record<Viewport, string>>
     for (const role of unionKeys(rolesOf)) {
-      const per = perBrandDim(`Spacing/role/${role}`, (f) => {
+      const name = roleFigmaName('spacing', role)
+      if (!name) continue
+      const per = perBrandDim(name, (f) => {
         const desktopStep = rolesOf(f)[role]
         if (typeof desktopStep !== 'string') return {}
         const refs = (f?.spacingRoleRefs ?? t.spacingRoleRefs ?? {}) as Record<string, string>
+        const own = (f?.spacingRoleViewports ?? t.spacingRoleViewports ?? {}) as VpMap
         const scale = pickOf(f, 'spacing')
         const ref = refs[role] || desktopStep
-        const at = (vp: Viewport) => primAlias(valuePx(table[ref]?.[vp] ?? table[ref]?.desktop ?? ref, scale))
+        const at = (vp: Viewport) => {
+          const hand = vp === 'desktop' ? undefined : own[vp]?.[role]
+          return primAlias(valuePx(hand ?? table[ref]?.[vp] ?? table[ref]?.desktop ?? ref, scale))
+        }
         return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
       })
-      writeDim(`Spacing/role/${role}`, per)
+      writeDim(name, per)
     }
   }
   {
     const rolesOf = (f: Loose | undefined) => pickOf(f, 'radiusRoles') ?? {}
-    const perVpOf = (f: Loose | undefined) => (f?.radiusRoleViewports ?? t.radiusRoleViewports ?? {}) as Partial<Record<'tablet' | 'mobile', Record<string, string>>>
+    const perVpOf = (f: Loose | undefined) => (f?.radiusRoleViewports ?? t.radiusRoleViewports ?? {}) as VpMap
     const scaleOf = (f: Loose | undefined) => pickOf(f, 'radius')
-    const table = (t.radiusResponsive ?? {}) as Record<string, Partial<Record<Viewport, string>>>
-    const tokenVar = new Set<string>()
-    for (const [step, row] of Object.entries(table)) {
-      const per = perBrandDim(`Radius/component/${step}`, (f) => {
-        const at = (vp: Viewport) => primAlias(valuePx(row?.[vp] ?? row?.desktop ?? step, scaleOf(f)))
-        return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
-      })
-      if (writeDim(`Radius/component/${step}`, per)) tokenVar.add(step)
-    }
+    // A square corner: always the 0 primitive.
+    writeDim('Radius/none', same(primAlias(0)))
     const leadRoles = rolesOf(dimF)
     for (const role of unionKeys(rolesOf)) {
       const desktopStep = leadRoles[role] ?? rolesOf(dimBrands.find((f) => typeof rolesOf(f)[role] === 'string'))[role]
       if (typeof desktopStep !== 'string') continue
-      const per = perBrandDim(`Radius/role/${role}`, (f) => {
+      const name = roleFigmaName('radius', role) ?? `Radius/${role}`
+      const per = perBrandDim(name, (f) => {
         const step0 = rolesOf(f)[role]
         if (typeof step0 !== 'string') return {}
         const perVp = perVpOf(f)
-        const at = (vp: Viewport): SnapValue | undefined => {
-          const override = vp === 'desktop' ? undefined : perVp[vp]?.[role]
-          if (override === undefined && tokenVar.has(step0)) return alias('Dimension Semantics', `Radius/component/${step0}`)
-          const step = override ?? (vp === 'desktop' ? step0 : (table[step0]?.[vp] ?? step0))
-          return primAlias(valuePx(step, scaleOf(f)))
-        }
+        // Radius roles do not step down: a viewport differs only by hand.
+        const at = (vp: Viewport) => primAlias(valuePx((vp === 'desktop' ? undefined : perVp[vp]?.[role]) ?? step0, scaleOf(f)))
         return { desktop: at('desktop'), tablet: at('tablet'), mobile: at('mobile') }
       })
-      writeDim(`Radius/role/${role}`, per)
+      writeDim(name, per)
     }
   }
-  const emitRoles = (group: string, roles: Record<string, string> | undefined, scale: Record<string, string> | undefined, stepName: (s: string) => string = (s) => s) => {
-    for (const [role, step] of Object.entries(roles ?? {})) {
-      if (typeof step !== 'string' || !step) continue
+  const emitRoles = (family: string, roles: Record<string, string> | undefined, scale: Record<string, string> | undefined, stepName: (s: string) => string = (s) => s, perVp: VpMap = {}) => {
+    const aliasOf = (step: string | undefined) => {
+      if (typeof step !== 'string' || !step) return undefined
       const px = pinnedDimension(step) ?? parseDimension(scale?.[stepName(step)])
-      if (px !== null && dims.has(px)) writeDim(`${group}/role/${role}`, same(alias('Dimension Primitives', dimensionKey(px))))
+      return px !== null && dims.has(px) ? alias('Dimension Primitives', dimensionKey(px)) : undefined
+    }
+    for (const [role, step] of Object.entries(roles ?? {})) {
+      const name = roleFigmaName(family, role)
+      const desktop = aliasOf(step)
+      if (!name || !desktop) continue
+      writeDim(name, { desktop, tablet: aliasOf(perVp.tablet?.[role]) ?? desktop, mobile: aliasOf(perVp.mobile?.[role]) ?? desktop })
     }
   }
-  emitRoles('Stroke', pick('strokeRoles'), fStroke, strokeName)
-  emitRoles('Size', pick('sizeRoles'), pick('sizes'))
-  emitRoles('Selector', pick('selectorRoles'), pick('selector'))
+  emitRoles('stroke', pick('strokeRoles'), fStroke, strokeName)
+  emitRoles('size', pick('sizeRoles'), pick('sizes'), undefined, (dimF?.sizeRoleViewports ?? t.sizeRoleViewports ?? {}) as VpMap)
+  emitRoles('selector', pick('selectorRoles'), pick('selector'))
   {
     const px = iconPx(t, dimTheme)
     for (const role of ICON_SIZE_NAMES) {
-      writeDim(`Icon/role/${role}`, { desktop: primAlias(px[role].desktop), tablet: primAlias(px[role].tablet), mobile: primAlias(px[role].mobile) })
+      writeDim(roleFigmaName('icon', role) ?? `Size/icon-${role}`, { desktop: primAlias(px[role].desktop), tablet: primAlias(px[role].tablet), mobile: primAlias(px[role].mobile) })
     }
   }
   if (t.grid) {

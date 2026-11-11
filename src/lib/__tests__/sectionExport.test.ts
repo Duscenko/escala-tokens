@@ -184,20 +184,24 @@ describe('buildSectionExport sizes carries the selector ramp', () => {
     expect(css).toContain('--selector-md: var(--dimension-18);')
     expect(css).toContain('--dimension-40: 40px;')
     expect(css).toContain('--dimension-18: 18px;')
-    expect(css).toContain('--size-control: var(--dimension-40);')
-    expect(css).toContain('--selector-control: var(--dimension-18);')
+    // Roles take the Figma file's code syntax; the selector roles pin 20 / 16.
+    expect(css).toContain('--size-control-md: var(--dimension-40);')
+    expect(css).toContain('--size-selector-md: var(--dimension-20);')
+    expect(css).toContain('--size-selector-sm: var(--dimension-16);')
   })
 
   it('markdown documents the ramp and the WCAG target-size pairing', () => {
     const md = buildSectionExport('sizes', 'md', 'hex')
     expect(md).toContain('`--selector-md`')
-    expect(md).toContain('--size-hit')
+    expect(md).toContain('--size-control-xs')
   })
 
   it('tokens.json ships selector beside sizes', () => {
     const json = JSON.parse(buildSectionExport('sizes', 'tokens', 'hex'))
     expect(json.selector.md).toBe('18px')
-    expect(json.selectorRoles.control).toBe('md')
+    expect(json.selectorRoles.control).toBe('dimension-20')
+    expect(json.selectorRoles.compact).toBe('dimension-16')
+    expect(json.selectorRoles.indicator).toBeUndefined()
   })
 })
 
@@ -242,15 +246,16 @@ describe('buildCSS hairline guard', () => {
   it('ships the selector ramp and its roles in the full stylesheet', () => {
     const css = buildCSS(useDesignStore.getState())
     expect(css).toContain('--selector-md: var(--dimension-18);')
-    expect(css).toContain('--selector-control: var(--dimension-18);')
+    expect(css).toContain('--size-selector-md: var(--dimension-20);')
   })
 
   it('aliases --padding-* onto spacing-inset-surface when the mirror still matches', () => {
     const css = buildCSS(useDesignStore.getState())
-    // Each side aliases its inset side, which follows the inset itself.
-    expect(css).toContain('--padding-top: var(--spacing-inset-surface-top);')
-    expect(css).toContain('--padding-left: var(--spacing-inset-surface-left);')
-    expect(css).toContain('--spacing-inset-surface-top: var(--spacing-inset-surface);')
+    // A side that follows the inset aliases the inset itself (the Figma file
+    // has no per-side variables, so none is declared).
+    expect(css).toContain('--padding-top: var(--spacing-inset-surface);')
+    expect(css).toContain('--padding-left: var(--spacing-inset-surface);')
+    expect(css).not.toContain('--spacing-inset-surface-top:')
     expect(css).not.toMatch(/--padding-top: 20px;/)
   })
 })

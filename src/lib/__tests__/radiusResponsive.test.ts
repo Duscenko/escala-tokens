@@ -58,27 +58,38 @@ describe('Corner radius', () => {
     }
   })
 
-  it('roles follow it: a card is 16 / 12 / 12, a button 12 / 8 / 8', () => {
+  // The Escala Figma file (owner decision 2026-11-11): radius ROLES hold one
+  // value on every viewport — a card is 16 / 16 / 16, a button 12 / 12 / 12,
+  // a checkbox 8 / 8 / 8. The responsive TOKENS above still step down.
+  it('roles do not follow it: a card is 16 everywhere, a button 12, a checkbox 8', () => {
     const roles = defaultLayoutRoles('radius')
     const at = (role: string, vp: GridViewport) =>
-      px(resolveLayoutRole('radius', { ...roles, [role]: radiusAtViewport(roles[role], vp) }, RADIUS_STANDARD, role))
-    expect(VPS.map((vp) => at('container', vp))).toEqual([16, 12, 12])
-    expect(VPS.map((vp) => at('action', vp))).toEqual([12, 8, 8])
-    expect(VPS.map((vp) => at('control', vp))).toEqual([4, 2, 2])
+      px(resolveLayoutRole('radius', { ...roles, [role]: radiusRoleAt(roles, {}, role, vp) }, RADIUS_STANDARD, role))
+    expect(VPS.map((vp) => at('container', vp))).toEqual([16, 16, 16])
+    expect(VPS.map((vp) => at('action', vp))).toEqual([12, 12, 12])
+    expect(VPS.map((vp) => at('control', vp))).toEqual([8, 8, 8])
     // A pinned primitive and the xs floor hold one value everywhere.
     expect(radiusAtViewport('dimension-10', 'mobile')).toBe('dimension-10')
     expect(radiusAtViewport('xs', 'mobile')).toBe('xs')
   })
 
-  it('CSS steps the roles down in the tablet and mobile blocks', () => {
+  it('CSS keeps the roles out of the tablet and mobile blocks', () => {
     const css = gridFrameMediaCss(defaultLayoutRoles('breakpoint'), { ...BREAKPOINT_STANDARD }, GRID_FRAME_STANDARD, SPACING_STANDARD, {
       roles: defaultLayoutRoles('radius'), radius: RADIUS_STANDARD,
     })
     const [tablet, mobile] = css.split('@media').slice(1)
-    expect(tablet).toContain('--radius-container: var(--dimension-12);')
-    expect(tablet).toContain('--radius-action: var(--dimension-8);')
-    expect(mobile).toContain('--radius-container: var(--dimension-12);')
+    for (const block of [tablet, mobile]) {
+      expect(block).not.toContain('--radius-container:')
+      expect(block).not.toContain('--radius-action:')
+      expect(block).not.toContain('--radius-control:')
+    }
     expect(css).not.toContain('--radius-pill')
+  })
+
+  it('tokens.json ships every role on Tablet and Mobile, resolved', () => {
+    const doc = generateTokenJSON() as unknown as { radiusRoles: Record<string, string>; radiusRoleViewports: Record<string, Record<string, string>> }
+    expect(doc.radiusRoleViewports.tablet).toEqual(doc.radiusRoles)
+    expect(doc.radiusRoleViewports.mobile).toEqual(doc.radiusRoles)
   })
 
   it('tokens.json ships the responsive table', () => {
@@ -129,33 +140,33 @@ describe('role ↔ responsive token links (the two editor collections)', () => {
     const byGroup = radiusTokensByRoleGroup(defaultLayoutRoles('radius'))
     expect(byGroup.boxes).toEqual(['2xl'])
     expect(byGroup.fields).toEqual(['xl'])
-    expect(byGroup.selectors).toEqual(['sm', 'full'])
-    expect(byGroup.unassigned).toEqual(['none', 'md', 'lg', '3xl', '4xl', '5xl'])
+    expect(byGroup.selectors).toEqual(['lg', 'full'])
+    expect(byGroup.unassigned).toEqual(['none', 'sm', 'md', '3xl', '4xl', '5xl'])
   })
 })
 
 describe('per-viewport radius overrides', () => {
   const roles = defaultLayoutRoles('radius')
 
-  it('a role follows Desktop until a viewport sets its own value', () => {
-    expect(radiusRoleAt(roles, {}, 'container', 'tablet')).toBe('xl')
-    const next = setRadiusRoleViewport({}, roles, 'container', 'tablet', '2xl')
-    expect(next).toEqual({ tablet: { container: '2xl' } })
-    expect(radiusRoleAt(roles, next, 'container', 'tablet')).toBe('2xl')
-    expect(radiusRoleAt(roles, next, 'container', 'mobile')).toBe('xl') // mobile still follows
+  it('a role holds its Desktop value until a viewport sets its own', () => {
+    expect(radiusRoleAt(roles, {}, 'container', 'tablet')).toBe('2xl')
+    const next = setRadiusRoleViewport({}, roles, 'container', 'tablet', 'xl')
+    expect(next).toEqual({ tablet: { container: 'xl' } })
+    expect(radiusRoleAt(roles, next, 'container', 'tablet')).toBe('xl')
+    expect(radiusRoleAt(roles, next, 'container', 'mobile')).toBe('2xl') // mobile still holds
     expect(radiusRoleAt(roles, next, 'container', 'desktop')).toBe('2xl')
   })
 
-  it('picking the followed value, or reset, clears the override', () => {
+  it('picking the Desktop value, or reset, clears the override', () => {
     const set = setRadiusRoleViewport({}, roles, 'action', 'mobile', 'sm')
-    expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', 'lg')).toEqual({})
+    expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', 'xl')).toEqual({})
     expect(setRadiusRoleViewport(set, roles, 'action', 'mobile', null)).toEqual({})
   })
 
   it('CSS ships the override in its own viewport block only', () => {
     const viewports = { mobile: { container: 'dimension-20' } }
     expect(radiusRolesViewportCss('mobile', roles, RADIUS_STANDARD, viewports)).toContain('--radius-container: var(--dimension-20);')
-    expect(radiusRolesViewportCss('tablet', roles, RADIUS_STANDARD, viewports)).toContain('--radius-container: var(--dimension-12);')
+    expect(radiusRolesViewportCss('tablet', roles, RADIUS_STANDARD, viewports)).toEqual([])
   })
 })
 
@@ -169,7 +180,7 @@ describe('radius presets are role bundles on the standard ramp', () => {
     }
     expect(sharp.radiusRoles.pill).toBe('full') // a circle is not an axis
     expect(sharp.radius).toEqual(RADIUS_STANDARD) // the ramp is the table, never regraded
-    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0], [8, 4, 4], [16, 12, 4], [24, 32, 8]])
+    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0], [8, 4, 4], [16, 12, 8], [24, 32, 8]])
     for (const p of RADIUS_ROLE_PRESETS) expect(matchRadiusRolePreset(radiusPresetPatch(p.label)!.radiusRoles)).toBe(p.label)
   })
 
@@ -185,7 +196,8 @@ describe('responsive radius tokens ship in CSS', () => {
     const { useDesignStore } = await import('../../store/useDesignStore')
     const css = buildCSS(useDesignStore.getState())
     expect(css).toContain('--radius-component-4xl: var(--radius-4xl);')
-    expect(css).toContain('--radius-component-full: var(--radius-full);')
+    // `full` reads its primitive: `--radius-full` is the role (radius.pill).
+    expect(css).toContain('--radius-component-full: var(--dimension-9999);')
     // Tablet one rung down, Mobile two from 3xl up.
     expect(css).toContain('--radius-component-4xl: var(--radius-3xl);')
     expect(css).toContain('--radius-component-4xl: var(--radius-2xl);')

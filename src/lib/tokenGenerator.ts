@@ -15,7 +15,9 @@ import { projectArchitecture, projectCategorical, type ArchOverrides } from './s
 import { mergeTypeRoles } from './typeRoles'
 import { platformPayload } from './platformAxis'
 import { fontSourceUrl } from './customFonts'
-import { mergeLayoutRoles, withInsetSides, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
+import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, roleViewportsOf, resolvedRadiusRoleViewports, LAYOUT_ROLES, type GridFrameModes, type GridStyleKey } from './layoutTokens'
+import { elevationTokens } from './elevationTokens'
+import { socialBrandTokens } from './socialBrands'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
@@ -460,14 +462,15 @@ export function generateTokenJSON(
       // THIS theme's spacing roles: a System Style pins its own (Neo's
       // `inset-surface` is step 6). Without them the plugin fell back to the
       // root store's roles and wrote another theme's insets into Figma's
-      // `Spacing/role/*`. Same split as the root: Desktop static steps, plus
+      // `Spacing/*`. Same split as the root: Desktop static steps, plus
       // which roles alias a responsive token.
-      spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, 'desktop'),
-      spacingRoleRefs: withInsetSides(resolved.spacingRoles),
+      spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, 'desktop', { sides: false }),
+      spacingRoleRefs: spacingRoleRefsOf(resolved.spacingRoles),
+      spacingRoleViewports: roleViewportsOf('spacing', resolved.spacingRoles),
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
-      radiusRoleViewports: resolved.radiusRoleViewports ?? {},
+      radiusRoleViewports: resolvedRadiusRoleViewports(resolved.radiusRoles, resolved.radiusRoleViewports),
       shadows: resolved.shadows,
       // THIS theme's dark elevation ramp: its own pick, else the derived twin
       // (`darkShadowsOf`). The root `shadowsDark` stays the global twin.
@@ -478,6 +481,7 @@ export function generateTokenJSON(
       breakpointRoles: mergeLayoutRoles('breakpoint', resolved.breakpointRoles),
       sizes: resolved.sizes,
       sizeRoles: mergeLayoutRoles('size', resolved.sizeRoles),
+      sizeRoleViewports: roleViewportsOf('size', resolved.sizeRoles),
       selector: resolved.selector,
       selectorRoles: mergeLayoutRoles('selector', resolved.selectorRoles),
       stroke: resolved.stroke,
@@ -729,23 +733,32 @@ export function generateTokenJSON(
     // Desktop STATIC steps, so a consumer that predates responsive spacing
     // (an older plugin, an agent reading `spacingRoles`) keeps resolving every
     // role to the same value it always did…
-    spacingRoles: spacingRolesAtViewport(store.spacingRoles, 'desktop'),
+    // The Escala Figma file has no per-side inset variables, so the twelve
+    // `inset-*-top|right|bottom|left` keys are not shipped (a hand-set card
+    // side still reaches `padding`).
+    spacingRoles: spacingRolesAtViewport(store.spacingRoles, 'desktop', { sides: false }),
     // …and the responsive layer on top, additive: which roles alias a
     // responsive token (`component-md`), and the token table itself.
-    spacingRoleRefs: withInsetSides(store.spacingRoles),
+    spacingRoleRefs: spacingRoleRefsOf(store.spacingRoles),
     spacingResponsive: SPACING_RESPONSIVE,
+    // The roles with their own Tablet / Mobile value, same shape as
+    // `radiusRoleViewports` (Desktop stays in `spacingRoles`): `inset-page`
+    // 32 / 16 / 16 → { tablet: { 'inset-page': '4' }, mobile: { 'inset-page':
+    // '4' } }, `inset-section` 96 / 64 / 48. Additive.
+    spacingRoleViewports: roleViewportsOf('spacing', store.spacingRoles),
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).
     padding: store.padding,
     radius: store.radius,
     radiusRoles: mergeLayoutRoles('radius', store.radiusRoles),
-    // Hand-set radius roles on Tablet / Mobile (only the ones someone changed);
-    // a role absent here follows `radiusResponsive`. Additive.
-    radiusRoleViewports: store.radiusRoleViewports ?? {},
-    // Responsive radius: the static step each role reads per viewport (one
-    // smaller on Tablet, one — two from 3xl up — on Mobile). The plugin writes
-    // each Radius/role/* mode as an alias of that step's dimension primitive.
-    // Additive, so no schemaVersion bump.
+    // Every radius role's value on Tablet and Mobile, resolved. Radius roles
+    // do not step down (the Escala Figma file): each holds its Desktop value
+    // unless someone set Tablet / Mobile by hand. Shipped complete so a
+    // consumer that would step a missing role down by `radiusResponsive` reads
+    // the value the web renders.
+    radiusRoleViewports: resolvedRadiusRoleViewports(store.radiusRoles, store.radiusRoleViewports),
+    // The `--radius-component-*` tokens' steps per viewport (one smaller on
+    // Tablet, one — two from 3xl up — on Mobile). The ROLES do not follow it.
     radiusResponsive: RADIUS_RESPONSIVE,
     // Named gradients (slug → CSS) + which one drives each preview surface.
     gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
@@ -787,6 +800,12 @@ export function generateTokenJSON(
     // colour IS the dark page: unoverridden, every elevation composites to
     // within 0.36 of one 8-bit level of the background. See `darkShadow`.
     shadowsDark: darkShadowMap(store.shadows),
+    // Shadow and depth recipes per step (`xs…2xl`): layers `{ x, y, blur,
+    // spread, role }` whose colour is an Elevation role
+    // (`color.elevation.shadow-key|shadow-ambient|shadow-ring`), so one style
+    // follows Light and Dark. `blur` is the CSS `backdrop-filter` px per step
+    // (Figma's BACKGROUND_BLUR radius is twice it). Additive.
+    elevation: elevationTokens(store.shadows),
     grid: store.grid,
     gridFrame: mergeGridFrame(store.gridFrame),
     // The six named layouts a designer applies in Figma (2XL Desktop … SM
@@ -795,6 +814,9 @@ export function generateTokenJSON(
     breakpointRoles: mergeLayoutRoles('breakpoint', store.breakpointRoles),
     sizes: store.sizes,
     sizeRoles: mergeLayoutRoles('size', store.sizeRoles),
+    // `target-min` 24 / 44 / 44: Desktop in `sizeRoles`, Tablet / Mobile here
+    // (pinned `dimension-44`). Same shape as `radiusRoleViewports`. Additive.
+    sizeRoleViewports: roleViewportsOf('size', store.sizeRoles),
     // Additive, so no schemaVersion bump — same call as `shadowsDark` /
     // `gradientsDark`: a plugin that predates this key ignores it.
     selector: store.selector,
@@ -827,6 +849,11 @@ export function generateTokenJSON(
     // choreographies with their reduced-motion versions, and the intent text
     // agents read. Additive, no schemaVersion bump (the `shadowsDark` precedent).
     motion: motionTokens(normalizeMotionSettings(store.motion)),
+    // Social-login provider colours (Google, Apple…), the same in every
+    // system: `{ <id>: { label, ramp: { <step>: hex }, action: { default,
+    // hover, pressed } (ramp steps), onAction, focus: 'white' | 'black' } }`.
+    // Additive.
+    socialBrands: socialBrandTokens(),
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
@@ -843,6 +870,13 @@ export function generateTokenJSON(
     // field — only present when the publisher passed `opts.section`.
     ...(opts?.section?.trim() ? { editor: { section: opts.section.trim() } } : {}),
   }
+}
+
+/** Which value each spacing role holds (a step, a responsive token such as
+ *  `component-md`, or a pinned primitive) — the roles only, no inset sides. */
+function spacingRoleRefsOf(roles: Record<string, string> | undefined): Record<string, string> {
+  const merged = mergeLayoutRoles('spacing', roles)
+  return Object.fromEntries(LAYOUT_ROLES.spacing.map((r) => [r.key, merged[r.key]]))
 }
 
 export function downloadTokenJSON() {

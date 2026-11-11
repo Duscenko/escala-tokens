@@ -25,7 +25,7 @@ import type { ThemeAppearance } from './themeModes'
 /** The families each colour owns on its own ramp. */
 export const COLOUR_FAMILIES: Record<ColorRoleId, string[]> = {
   accent: ['accent', 'accent-a'],
-  neutral: ['neutral', 'neutral-dark', 'neutral-a'],
+  neutral: ['neutral', 'neutral-dark', 'neutral-light', 'neutral-a'],
   success: ['success', 'success-a'],
   error: ['error', 'error-a'],
   warning: ['warning', 'warning-a'],

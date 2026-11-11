@@ -555,7 +555,7 @@ export const COMPONENTS: ComponentDef[] = [
     axes: [{ name: 'Size', values: ['sm', 'default', 'lg'] }],
     figmaSets: ['Icon'],
     props: [
-      { name: 'size', type: '"sm" | "default" | "lg"', description: 'Icon role: small 16 · medium 20 · large 24 at a 40px control (Icon/role/small · medium · large).' },
+      { name: 'size', type: '"sm" | "default" | "lg"', description: 'Icon role: small 16 · medium 20 · large 24 at a 40px control (Size/icon-sm · md · lg).' },
       { name: 'children', type: 'ReactNode', description: 'The glyph, from the system icon set (Phosphor by default).' },
       { name: 'label', type: 'string', description: 'Only for a meaningful standalone icon; omit when decorative.' },
     ],

@@ -23,7 +23,7 @@ const COMPONENTS_V98 = [
   'Toggle', 'Calendar', 'AlertDialog', 'Sheet', 'Drawer', 'HoverCard', 'Item', 'Attachment', 'Message',
   'Bubble', 'Resizable', 'Carousel', 'Chart', 'Menubar', 'NavigationMenu',
 ]
-import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
+import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, DEFAULT_TYPE_SCALE_FACTOR } from '../lib/typographyStandard'
 import { mergeTypeRoles, migrateHeadingFamilyToBody, placeholderFollowsField, promoteReadingTypeIdentity, stepHeadingsPerCut, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
@@ -656,8 +656,8 @@ export function makeDesignDefaults(): DesignSnapshot {
     typography: {
       fontFamily: 'Inter',
       headingFontFamily: 'Inter',
-      sizes: { ...FONT_SIZE_STANDARD },
-      lineHeights: { ...LINE_HEIGHT_STANDARD },
+      // A new system starts on the Escala scale (×0.875), not factor 1.
+      ...buildTypeScale(DEFAULT_TYPE_SCALE_FACTOR),
       weights: { ...FONT_WEIGHT_STANDARD },
       roles: mergeTypeRoles(),
     },

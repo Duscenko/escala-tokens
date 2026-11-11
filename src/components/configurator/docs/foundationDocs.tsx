@@ -1094,11 +1094,11 @@ line-height: var(--text-label-line-height);
 .card   { border-radius: var(--radius-container); }
 .card > .thumb { border-radius: var(--radius-control); }
 .modal  { border-radius: var(--radius-overlay); }
-.badge  { border-radius: var(--radius-pill); }`,
+.badge  { border-radius: var(--radius-full); }`,
     ships: {
       json: 'radius · radiusRoles · radiusResponsive',
-      css: '--radius-*  (named steps + role aliases; roles that change step down in the tablet / mobile media queries)',
-      figma: 'Radius/role/* — one variable per role, a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to every component set\'s corner radius',
+      css: '--radius-*  (named steps + role aliases; a role holds one value on every viewport unless set per viewport by hand · `--radius-full` is the pill role)',
+      figma: 'Radius/* — one variable per role (`Radius/action`, `Radius/full`), a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to every component set\'s corner radius',
     },
     tokenCount: () => RADIUS_STEPS.length + LAYOUT_ROLES.radius.length,
     sections: [
@@ -1160,7 +1160,7 @@ padding: var(--spacing-inset-surface);
     ships: {
       json: 'spacing · spacingRoles · spacingRoleRefs · spacingResponsive · padding',
       css: '--spacing-*  (named steps + role aliases; roles that change step down in the tablet / mobile media queries)  ·  --padding-top|right|bottom|left',
-      figma: 'Spacing/role/* — one variable per role, a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to auto-layout gaps and padding',
+      figma: 'Spacing/* — one variable per role (`Spacing/gap-group`), a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to auto-layout gaps and padding',
     },
     tokenCount: (c) => SPACING_STEPS.length + LAYOUT_ROLES.spacing.length + Object.keys(c.padding ?? {}).length,
     sections: [
@@ -1409,16 +1409,16 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     label: 'Sizes',
     lead: 'Two layers: an 8px control-height ramp (xs–2xl) and intent aliases — compact, control, touch, hit, fab. Touch is `lg` (48px); 44px is not a step. Each height points at a Dimension primitive, the same list Spacing uses. In Variables that list is called Dimensions.',
     why: 'Control height is the value most likely to be set per component and then never reconciled. One ramp means "medium" is the same 40px everywhere. Semantics then name density and job, so a toolbar compact never copies a marketing CTA, and a close-button hit area is a named token rather than a magic 24.',
-    usage: 'Reach for a semantic first: `size-control` as the default, `size-compact` in dense tables, `size-touch` for mobile CTAs, `size-hit` for icon-only chrome, `size-fab` for floating actions. Size axis SM/MD/LG maps onto `size-sm` / `size-md` / `size-lg` honestly.',
-    usageCode: `height: var(--size-control);
+    usage: 'Reach for a semantic first: `size-control-md` as the default, `size-control-sm` in dense tables, `size-control-lg` for mobile CTAs, `size-control-xs` for icon-only chrome, `size-control-xl` for floating actions, `size-target-min` for the smallest pointer target (24 Desktop · 44 touch). The names are the Figma file\'s `Size/<object>-<size>`.',
+    usageCode: `height: var(--size-control-md);
 
-.toolbar .btn { height: var(--size-compact); }
-.cta          { height: var(--size-touch); }
-.close        { width: var(--size-hit); height: var(--size-hit); }`,
+.toolbar .btn { height: var(--size-control-sm); }
+.cta          { height: var(--size-control-lg); }
+.close        { width: var(--size-control-xs); height: var(--size-control-xs); }`,
     ships: {
       json: 'sizes · sizeRoles',
-      css: '--size-*  (steps + aliases)',
-      figma: 'Size/* and Size/role/* in Dimension Semantics, bound to each component set\'s height',
+      css: '--size-*  (steps + roles: --size-control-xs…xl, --size-target-min, --size-selector-md|sm, --size-icon-sm|md|lg)',
+      figma: 'Size/control-*, Size/target-min, Size/selector-*, Size/icon-* in Dimension Semantics, bound to each component set\'s height',
     },
     tokenCount: (c) => Object.keys(c.sizes).length + LAYOUT_ROLES.size.length,
     sections: [
@@ -1472,7 +1472,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     ships: {
       json: 'stroke · strokeRoles',
       css: '--stroke-*  (steps + aliases)',
-      figma: 'Stroke/* and Stroke/role/* in Dimension Semantics — border width and focus-ring spread',
+      figma: 'Stroke/divider · control · focus in Dimension Semantics — border width and focus-ring spread',
     },
     tokenCount: () => STROKE_STEPS.length + LAYOUT_ROLES.stroke.length,
     sections: [
@@ -1603,7 +1603,7 @@ const HUB_SPACING_USAGE = 'Reach for a spacing role for the air and a size role 
 
 const HUB_SPACING_CODE = `gap:     var(--spacing-gap-group);
 padding: var(--spacing-inset-surface);
-height:  var(--size-control);`
+height:  var(--size-control-md);`
 
 /** Theme hub: the rail item is Spacing (field size, inset, overlap, border).
  *  The article it opens is the Sizes foundation. Present it as Spacing and

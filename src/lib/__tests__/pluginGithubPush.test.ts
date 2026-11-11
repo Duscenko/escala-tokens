@@ -40,7 +40,7 @@ describe('plugin GitHub save', () => {
     const { files } = buildRepoFiles(payload, { css: '/* plugin fallback */', source: 'figma-plugin' })
     const css = fileOf(files, 'variables.css')
     expect(css.trimEnd()).toBe(buildCSS(captureCodeSnapshot(store(), key) as never).trimEnd())
-    for (const v of ['--radius-action:', '--size-control:', '--spacing-gap-control:', '--text-button-font-size:', '--color-action-primary-default:']) {
+    for (const v of ['--radius-action:', '--size-control-md:', '--spacing-gap-control:', '--text-button-font-size:', '--color-action-primary-default:']) {
       expect(css, v).toContain(v)
     }
     // both themes, dark first; the light block restores the light ramp

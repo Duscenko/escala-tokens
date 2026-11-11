@@ -5,7 +5,7 @@
 import { motionMarkdown, motionRootCss, motionTokens, motionTrailingCss, normalizeMotionSettings } from './motion'
 import { findFontSource } from './customFonts'
 import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
-import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx } from './iconSizing'
+import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx, iconRoleVar } from './iconSizing'
 import chroma from 'chroma-js'
 import { toneLabel, withAlpha, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -38,6 +38,7 @@ import {
   breakpointMobileMax,
   breakpointTabletMax,
   mergeGridFrame,
+  layoutRoleVar,
   type LayoutFamily,
 } from './layoutTokens'
 
@@ -111,7 +112,7 @@ function isDimensionDecl(line: string): boolean {
 
 /** The dimension ladder is prepended so a copied file resolves. An 8-line
  *  preview that opens on `--dimension-*` never shows the alias you write
- *  (`--spacing-gap-group`, `--size-control`). Skip that preamble only. */
+ *  (`--spacing-gap-group`, `--size-control-md`). Skip that preamble only. */
 function withoutDimensionPreamble(decls: string[]): string[] {
   if (!decls[0]?.includes('Dimension primitives')) return decls
   const start = decls.findIndex((line, i) => i > 0 && !isDimensionDecl(line))
@@ -786,10 +787,10 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       opts.desktopOnly ? '| Role | Desktop | Use |' : '| Role | Desktop | Tablet | Mobile | Use |',
       opts.desktopOnly ? '|---|---|---|' : '|---|---|---|---|---|',
       ...ICON_ROLES.map((r) => opts.desktopOnly
-        ? `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`
-        : `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${iconSizePx(r, 'tablet', store.sizes)}px | ${iconSizePx(r, 'mobile', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
+        ? `| \`${iconRoleVar(r)}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`
+        : `| \`${iconRoleVar(r)}\` | ${iconSizePx(r, 'desktop', store.sizes)}px | ${iconSizePx(r, 'tablet', store.sizes)}px | ${iconSizePx(r, 'mobile', store.sizes)}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
       '',
-      `Each aliases a Dimension primitive (\`--icon-small: var(--dimension-${iconSizePx('small', 'desktop', store.sizes)})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
+      `Each aliases a Dimension primitive (\`--size-icon-sm: var(--dimension-${iconSizePx('small', 'desktop', store.sizes)})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
     ].join('\n')
     return `${ctx.markdown}${extra}${sizesMd}`
   }
@@ -898,7 +899,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       '_Intent aliases — never raw px. Components bind these; each aliases a Dimension primitive._\n',
       table(
         ['Role', 'Aliases'],
-        LAYOUT_ROLES[family].map((r) => [`\`--${family}-${r.key}\``, `\`${layoutValueCss(family, roles[r.key], layoutScaleOf(family, store))}\``]),
+        LAYOUT_ROLES[family].map((r) => [`\`${layoutRoleVar(family, r.key)}\``, `\`${layoutValueCss(family, roles[r.key], layoutScaleOf(family, store))}\``]),
       ),
     )
   }
@@ -907,12 +908,12 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     const roles = mergeLayoutRoles(ex.family, layoutRolesOf(ex.family, store))
     parts.push(
       `\n### ${ex.label}\n`,
-      '_The square a checkbox, radio or switch knob is drawn in — a glyph, not a control height. Below 24px, pair it with a transparent hit area (`--size-hit`) for WCAG 2.2 target size._\n',
+      '_The square a checkbox, radio or switch knob is drawn in — a glyph, not a control height. Below 24px, pair it with a transparent hit area (`--size-control-xs`) for WCAG 2.2 target size. The roles are sizes: `--size-selector-md` / `--size-selector-sm`._\n',
       lengthTable(ex.prefix, ex.get(store)),
       `\n#### ${ex.label} semantics\n`,
       table(
         ['Role', 'Aliases'],
-        LAYOUT_ROLES[ex.family].map((r) => [`\`--${ex.family}-${r.key}\``, `\`${layoutValueCss(ex.family, roles[r.key], layoutScaleOf(ex.family, store))}\``]),
+        LAYOUT_ROLES[ex.family].map((r) => [`\`${layoutRoleVar(ex.family, r.key)}\``, `\`${layoutValueCss(ex.family, roles[r.key], layoutScaleOf(ex.family, store))}\``]),
       ),
     )
   }

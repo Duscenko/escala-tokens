@@ -41,7 +41,7 @@ Naming, everywhere:
 |---|---|---|---|
 | Role id (recipes, tokens.json) | `color.action.primary.hover` | `radius.action`, `spacing.gap-group` | `type.label` |
 | CSS | `--color-action-primary-hover` | `--radius-action`, `--spacing-gap-group` | `--text-label-font-size` (+ family · weight · line-height · letter-spacing) |
-| Figma | `Color Semantics` → `Action/primary/hover` | `Dimension Semantics` → `Radius/role/action` | text style `Type/label` |
+| Figma | `Color Semantics` → `Action/primary/hover` | `Dimension Semantics` → `Radius/action`, `Spacing/gap-group` | text style `Type/label` |
 
 ## Rules
 
@@ -147,9 +147,10 @@ decides its STRUCTURE; this skill decides every VALUE.
 2. **Bind everything, leave no raw value.**
    - Fills and strokes → a `Color Semantics` variable (never a primitive).
    - Padding, gap (item spacing), corner radius, fixed width / height and
-     stroke weight → a `Dimension Semantics` role (`Spacing/role/…`,
-     `Radius/role/…`, `Size/role/…`, `Selector/role/…`, `Stroke/role/…`,
-     `Icon/role/…`).
+     stroke weight → a `Dimension Semantics` role (`Spacing/…`,
+     `Radius/…`, `Size/control-*`, `Size/selector-*`, `Size/icon-*`,
+     `Size/target-min`, `Stroke/…`). There is no `role/` segment and no
+     `Icon/` or `Selector/` group.
    - Text → apply the text style `Type/<role>` (all facets at once).
    - Elevation → the effect style `Shadow/<step>`.
    - Use auto layout so padding and gap are real properties you can bind.
