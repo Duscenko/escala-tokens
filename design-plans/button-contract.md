@@ -70,8 +70,16 @@ Loading = Default con spinner en lugar del icono inicial.
 
 ## No cubierto por el contrato (registrado, no bloquea)
 
-- Las sólidas llevan en Figma una sombra del color del relleno + `Elevation/highlight`
-  interior (el "top-highlight" del manual). La receta no tiene hoy un efecto ligado a un
-  rol de color; se añade cuando exista ese tipo de propiedad.
+- ~~Las sólidas llevan en Figma … `Elevation/highlight` interior~~ **Hecho (2026-11-12):**
+  propiedad de receta `highlight` (`color.elevation.highlight`, `inset 0 2px 0 0`) en todo
+  estado sólido salvo Disabled, compuesta con el foco. La "sombra del color del relleno"
+  de Figma es `0 0 0` (sin desplazamiento ni desenfoque): no pinta nada y no se copia.
+- **Trazo por dentro (2026-11-12):** Figma dibuja el trazo dentro del marco; CSS lo pone
+  fuera del padding. El padding de la receta descuenta el borde (`--escala-stroke-width`,
+  `recipeStyles.ts`), así que el Button por defecto mide 119 × 40 como en Figma.
+- **Pendiente de decisión:** el tono 11 del acento en el archivo es `#6945c1`; el generador
+  actual da `#7252c9` para el mismo acento (pressed del sólido, link…). El halo de foco de
+  Figma mide 2 px; el código usa 3 px (`stroke.focus` + `stroke.control`, compartido con
+  los campos).
 - `BadgeVisible` de IconButton: el Badge es otro componente; en código, `badge` acepta
   cualquier nodo.

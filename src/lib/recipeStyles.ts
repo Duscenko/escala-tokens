@@ -52,6 +52,15 @@ function dim(ref: string): string {
 }
 
 const HALO = 'calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px))'
+/** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
+ *  (the same 2px the focus edge is drawn at). */
+const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+
+/** The element's own border width, for its padding to give back. Registered
+ *  non-inherited, so a child never subtracts its parent's border. */
+const STROKE_WIDTH_VAR = '--escala-stroke-width'
+const STROKE_WIDTH_PROPERTY = `@property ${STROKE_WIDTH_VAR} {\n  syntax: "<length>";\n  inherits: false;\n  initial-value: 0px;\n}`
+const insetMinusStroke = (inset: string) => `max(0px, calc(${inset} - var(${STROKE_WIDTH_VAR}, 0px)))`
 
 function declarations(props: SlotProps): string[] {
   const out: string[] = []
@@ -84,13 +93,20 @@ function declarations(props: SlotProps): string[] {
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
+        const lit = props.highlight && props.highlight !== 'none' ? `, ${highlightShadow(v(props.highlight))}` : ''
         out.push(
           `border-color: ${v(ref)}`,
-          `box-shadow: inset 0 0 0 var(--stroke-focus, 2px) ${v(ref)}${halo}`,
+          `box-shadow: inset 0 0 0 var(--stroke-focus, 2px) ${v(ref)}${halo}${lit}`,
           'outline: var(--stroke-focus, 2px) solid transparent',
         )
         break
       }
+      // A focused control composes it into the focus shadow above; otherwise
+      // it is the box-shadow (`none` clears it, after `focus: none`).
+      case 'highlight':
+        if (props.focus && props.focus !== 'none') break
+        out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: ${highlightShadow(v(ref))}`)
+        break
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
@@ -101,15 +117,18 @@ function declarations(props: SlotProps): string[] {
         out.push(`border-radius: ${f ? refFnCss(f, (r) => v(r)) : v(ref)}`)
         break
       }
-      case 'paddingX': out.push(`padding-inline: ${dim(ref)}`); break
-      case 'paddingY': out.push(`padding-block: ${dim(ref)}`); break
+      // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
+      // padding. So the padding gives back the border's width, and a 12px inset
+      // with a 1px stroke lays out exactly as the Figma component does.
+      case 'paddingX': out.push(`padding-inline: ${insetMinusStroke(dim(ref))}`); break
+      case 'paddingY': out.push(`padding-block: ${insetMinusStroke(dim(ref))}`); break
       // The bottom inset alone (an accordion answer hugs its question above it).
       case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break
       // The gap between ROWS when it differs from `gap` (an Alert's icon column
       // sits 12px off the text while title and description sit 2px apart).
       case 'rowGap': out.push(`row-gap: ${dim(ref)}`); break
-      case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
+      case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${v(ref)}`); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       // The target itself is the `::before` (see `hitRule`); its host anchors it.
       case 'hit': out.push('position: relative'); break
@@ -186,6 +205,7 @@ export function recipeCss(recipe: ComponentRecipe): string {
       }
     }
   }
+  if (rules.some((r) => r.includes(`${STROKE_WIDTH_VAR}:`))) rules.unshift(STROKE_WIDTH_PROPERTY)
   return rules.join('\n')
 }
 
@@ -293,10 +313,11 @@ export const RECIPE_CSS: string = [
 /** Every custom property the sheet reads — what a container must provide.
  *  Not counted: a property the sheet declares itself (a disclosure's height)
  *  and one Radix publishes on its own element (`--radix-*`, a popper's origin
- *  or a panel's measured height). Neither is a token. */
+ *  or a panel's measured height). Neither is a token. Nor is the element's own
+ *  border width a padding gives back (`--escala-stroke-width`, 0 when unset). */
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-'))
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && v !== STROKE_WIDTH_VAR)
     .sort()
 }

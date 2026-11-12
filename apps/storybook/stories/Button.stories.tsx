@@ -1,24 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Button, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_VARIANTS, type ButtonState } from '../../../src/components/escala-ui/button'
 import { PreviewIcon } from '../../../src/components/configurator/docs/specimens'
+import type { ComponentIconName } from '../../../src/lib/iconLibraries'
+import { ICON_PX, iconSwapArg } from './iconSwap'
 
-/** Story args = the Figma `Button` set's properties (design-plans/button-contract.md):
+/** Story args = the Figma `Button` set's properties, in the order and with the
+ *  defaults of Figma's component playground (design-plans/button-contract.md):
  *  Variant · Appearance · Size · State are its variant axes, Label its TEXT
- *  property, IconLeadingVisible / IconTrailingVisible its booleans. */
+ *  property, IconLeadingVisible / IconTrailingVisible its booleans,
+ *  IconLeadingIcon / IconTrailingIcon its instance swaps. */
 interface ButtonStoryArgs {
   variant: (typeof BUTTON_VARIANTS)[number]
   appearance: (typeof BUTTON_APPEARANCES)[number]
   size: (typeof BUTTON_SIZES)[number]
   forceState: ButtonState
-  label: string
   iconLeadingVisible: boolean
+  label: string
   iconTrailingVisible: boolean
+  iconLeadingIcon: ComponentIconName
+  iconTrailingIcon: ComponentIconName
 }
 
 const STATES: ButtonState[] = ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled']
-const ICON_PX: Record<string, number> = { xs: 16, sm: 16, default: 20, lg: 24 }
 
-function render({ variant, appearance, size, forceState, label, iconLeadingVisible, iconTrailingVisible }: ButtonStoryArgs) {
+function render({ variant, appearance, size, forceState, label, iconLeadingVisible, iconTrailingVisible, iconLeadingIcon, iconTrailingIcon }: ButtonStoryArgs) {
   const px = ICON_PX[size]
   return (
     <Button
@@ -28,8 +33,8 @@ function render({ variant, appearance, size, forceState, label, iconLeadingVisib
       forceState={forceState}
       loading={forceState === 'Loading'}
       disabled={forceState === 'Disabled'}
-      leading={iconLeadingVisible ? <PreviewIcon concept="home" size={px} /> : undefined}
-      trailing={iconTrailingVisible ? <PreviewIcon concept="home" size={px} /> : undefined}
+      leading={iconLeadingVisible ? <PreviewIcon concept={iconLeadingIcon} size={px} /> : undefined}
+      trailing={iconTrailingVisible ? <PreviewIcon concept={iconTrailingIcon} size={px} /> : undefined}
     >
       {label}
     </Button>
@@ -44,18 +49,22 @@ const meta: Meta<ButtonStoryArgs> = {
     appearance: 'solid',
     size: 'default',
     forceState: 'Default',
-    label: 'Button',
     iconLeadingVisible: true,
-    iconTrailingVisible: false,
+    label: 'Button',
+    iconTrailingVisible: true,
+    iconLeadingIcon: 'home',
+    iconTrailingIcon: 'home',
   },
   argTypes: {
-    variant: { name: 'Variant', control: 'inline-radio', options: [...BUTTON_VARIANTS], description: 'Intent: default (brand) · secondary (neutral) · critical (destructive).' },
-    appearance: { name: 'Appearance', control: 'inline-radio', options: [...BUTTON_APPEARANCES], description: 'Style: solid · outline · ghost · link.' },
-    size: { name: 'Size', control: 'inline-radio', options: [...BUTTON_SIZES], description: 'Size/control-xs · sm · md · lg.' },
+    variant: { name: 'Variant', control: 'select', options: [...BUTTON_VARIANTS], description: 'Intent: default (brand) · secondary (neutral) · critical (destructive).' },
+    appearance: { name: 'Appearance', control: 'select', options: [...BUTTON_APPEARANCES], description: 'Style: solid · outline · ghost · link.' },
+    size: { name: 'Size', control: 'select', options: [...BUTTON_SIZES], description: 'Size/control-xs · sm · md · lg.' },
     forceState: { name: 'State', control: 'select', options: STATES, description: 'Pins a state; in an app Hover · Pressed · Focused come from the pointer and keyboard.' },
-    label: { name: 'Label', control: 'text' },
     iconLeadingVisible: { name: 'IconLeadingVisible', control: 'boolean' },
+    label: { name: 'Label', control: 'text' },
     iconTrailingVisible: { name: 'IconTrailingVisible', control: 'boolean' },
+    iconLeadingIcon: { ...iconSwapArg('IconLeadingIcon'), if: { arg: 'iconLeadingVisible' } },
+    iconTrailingIcon: { ...iconSwapArg('IconTrailingIcon'), if: { arg: 'iconTrailingVisible' } },
   },
 }
 export default meta

@@ -7988,7 +7988,8 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
         stroke: appearance === "outline" ? c("border.control") : NONE,
         text: c("content.disabled"),
         focus: NONE,
-        ring: NONE
+        ring: NONE,
+        highlight: NONE
       }
     };
   }
@@ -7996,11 +7997,11 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
   const focused = state2 === "Focused";
   if (appearance === "solid") {
     const k2 = SOLID[variant];
-    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(k2.focus) : NONE, ring } };
+    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(k2.focus) : NONE, ring, highlight: c("elevation.highlight") } };
   }
   if (appearance === "link") {
     const [rest, over] = LINK[variant];
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c("border.focus") : NONE, ring } };
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c("border.focus") : NONE, ring, highlight: NONE } };
   }
   const k = QUIET[variant];
   const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
@@ -8011,7 +8012,8 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
       stroke: appearance === "outline" ? c(k.edge) : NONE,
       text: c(k.ink),
       focus: focused ? c(edge) : NONE,
-      ring
+      ring,
+      highlight: NONE
     }
   };
 }

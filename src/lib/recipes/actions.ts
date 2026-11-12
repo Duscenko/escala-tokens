@@ -52,6 +52,7 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
         text: c('content.disabled'),
         focus: NONE,
         ring: NONE,
+        highlight: NONE,
       },
     }
   }
@@ -59,11 +60,12 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
   const focused = state === 'Focused'
   if (appearance === 'solid') {
     const k = SOLID[variant]
-    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(k.focus) : NONE, ring } }
+    // Every solid state but Disabled carries the top highlight (Figma).
+    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(k.focus) : NONE, ring, highlight: c('elevation.highlight') } }
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c('border.focus') : NONE, ring } }
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c('border.focus') : NONE, ring, highlight: NONE } }
   }
   const k = QUIET[variant]
   const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
@@ -77,6 +79,7 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
       text: c(k.ink),
       focus: focused ? c(edge) : NONE,
       ring,
+      highlight: NONE,
     },
   }
 }

@@ -120,9 +120,11 @@ describe('the generated stylesheet', () => {
           for (const f of ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing']) expected.add(cssVarOf(ref, f))
         } else expected.add(cssVarOf(ref))
       }
-      const used = recipeCssVars(recipeCss(recipe)).filter((v) => v !== '--stroke-focus' && v !== '--stroke-control')
-      // The focus halo reads `stroke.focus` + `stroke.control` without naming them.
-      for (const v of ['--stroke-focus', '--stroke-control']) expected.delete(v)
+      // The focus halo reads `stroke.focus` + `stroke.control` (and a solid's top
+      // highlight its 2px offset from `stroke.focus`) without the recipe naming them.
+      const implied = ['--stroke-focus', '--stroke-control']
+      const used = recipeCssVars(recipeCss(recipe)).filter((v) => !implied.includes(v))
+      for (const v of implied) expected.delete(v)
       expect(new Set(used), recipe.key).toEqual(expected)
     }
   })
