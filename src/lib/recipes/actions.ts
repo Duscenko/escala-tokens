@@ -51,6 +51,11 @@ const LINK: Record<string, [string, string]> = {
   critical: ['status.critical.content', 'status.critical.content'],
 }
 
+/** Only `outline` has a stroke in the Figma file; solid, ghost and link have
+ *  none (a transparent CSS border would push the top highlight 1px down).
+ *  Focused draws its 2px edge as an inset on top, so nothing shifts. */
+const strokeOf = (appearance: string) => (appearance === 'outline' ? 'stroke.control' : 'stroke.none')
+
 function buttonPaint(variant: string, appearance: string, state: string, iconOnly = false): SlotMap {
   const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly)
   const ring = state === 'Focused' ? c(focusRing) : NONE
@@ -63,7 +68,7 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
         focus: NONE,
         ring: NONE,
         highlight: NONE,
-        outerEdge: NONE,
+        strokeWidth: strokeOf(appearance),
       },
     }
   }
@@ -71,13 +76,14 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
   const focused = state === 'Focused'
   if (appearance === 'solid') {
     const k = SOLID[variant]
-    // Every solid state but Disabled carries Figma's two effects: the top
-    // highlight and a 1px edge in the state's own fill.
-    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight'), outerEdge: c(k.fill[step]) } }
+    // Every solid state but Disabled carries Figma's top highlight. (Its
+    // DROP_SHADOW 0 0 0 spread 1 paints nothing: Figma applies spread only to
+    // a frame that clips content — measured on the file's own render.)
+    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance) } }
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, outerEdge: NONE } }
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, strokeWidth: strokeOf(appearance) } }
   }
   const k = QUIET[variant]
   const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
@@ -89,7 +95,7 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
       focus: focused ? c(focusEdge) : NONE,
       ring,
       highlight: NONE,
-      outerEdge: NONE,
+      strokeWidth: strokeOf(appearance),
     },
   }
 }
@@ -107,7 +113,7 @@ export const BUTTON: ComponentRecipe = {
   defaults: { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.action', strokeWidth: 'stroke.control', font: 'type.button' },
+      root: { radius: 'radius.action', font: 'type.button' },
     })),
     part({ Size: BUTTON_SIZES }, (size) => ({
       root: { height: BUTTON_HEIGHT[size], paddingX: 'spacing.inset-control', gap: BUTTON_GAP[size] },
@@ -123,7 +129,7 @@ export const ICON_BUTTON: ComponentRecipe = {
   defaults: { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.action', strokeWidth: 'stroke.control' },
+      root: { radius: 'radius.action' },
     })),
     part({ Size: BUTTON_SIZES }, (size) => ({
       root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: 'spacing.0' },

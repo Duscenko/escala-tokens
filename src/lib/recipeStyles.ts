@@ -56,15 +56,9 @@ const HALO = 'var(--stroke-focus, 2px)'
 /** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
  *  (the same 2px the focus edge is drawn at). */
 const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
-/** A solid control's outer edge: Figma's drop shadow 0 · 0 · 0 · spread 1 in
- *  the state's own fill (one hairline, `stroke.control`). */
-const outerEdgeShadow = (color: string) => `0 0 0 var(--stroke-control, 1px) ${color}`
-/** The surface effects a slot carries, in Figma's order. */
+/** The surface effects a slot carries (today: the top highlight). */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
-  const out: string[] = []
-  if (props.outerEdge && props.outerEdge !== 'none') out.push(outerEdgeShadow(v(props.outerEdge)))
-  if (props.highlight && props.highlight !== 'none') out.push(highlightShadow(v(props.highlight)))
-  return out
+  return props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : []
 }
 
 /** The element's own border width, for its padding to give back. Registered
@@ -119,14 +113,10 @@ function declarations(props: SlotProps): string[] {
         )
         break
       }
-      // A solid's own effects (top highlight, 1px edge in its fill). A focused
-      // control composes them into the focus shadow above; otherwise the first
-      // of the two props present writes the box-shadow (`none` clears it).
-      case 'highlight':
-      case 'outerEdge': {
+      // A solid's top highlight. A focused control composes it into the focus
+      // shadow above; otherwise it is the box-shadow (`none` clears it).
+      case 'highlight': {
         if (props.focus && props.focus !== 'none') break
-        const first = (['highlight', 'outerEdge'] as const).find((k) => props[k])
-        if (prop !== first) break
         const shadows = surfaceShadows(props, v)
         out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
         break

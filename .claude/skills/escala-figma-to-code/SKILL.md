@@ -74,7 +74,12 @@ Copy `references/story-template.tsx` into `apps/storybook/stories/<Component>.st
    States, in Escala Light and Escala Dark (`&globals=theme:dark` on the manager URL).
 3. Compare with the script's sweep, row by row: size, fill, ink, border, radius, padding, gap, shadow /
    effects, outline, children offsets. Fix every ✗ in the recipe or the component, re-measure.
-4. One zoomed screenshot next to the Figma screenshot for the owner.
+4. **Effects and edges by pixel, not by eye.** For highlights, inner/drop shadows and borders, read the
+   Figma render's pixels (`get_screenshot` → download the PNG → `sharp(...).raw()` in node: e.g. the
+   top rows of the middle column) and compare with Storybook zoomed (`document.body.style.zoom = '10'`
+   in the story's iframe URL, then a `zoom` screenshot). A band that starts 1px lower, or a ring that
+   does not exist in Figma, only shows up this way.
+5. One zoomed screenshot next to the Figma screenshot for the owner.
 
 ### Step 6 · Close
 - `npx vitest run` (all green), `npx tsc -b`, `npm run typecheck:storybook`.
@@ -93,5 +98,7 @@ Read `references/lessons.md` before step 3. In short:
 - Figma strokes sit INSIDE the frame; the CSS padding gives back `--escala-stroke-width`.
 - Focus: a control's edge is 2px inside + a 2px halo outside; a field keeps its 1px edge and the 2px
   halo straddles it (`outline` + negative offset). Copy each set's own focus colours.
-- `get_design_context` Tailwind is lossy (shadow spread); trust `figma-read-set.js`.
+- `get_design_context` Tailwind is lossy; trust `figma-read-set.js` — and a shadow's spread on a frame that
+  does not clip content paints NOTHING in Figma (the script flags it). Pixels decide.
+- A stroke Figma does not draw must not exist in CSS either (`stroke.none`), or effects shift by its width.
 - The plugin's ground-truth check compares aliases, not hex: verify resolved hex.

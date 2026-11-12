@@ -36,7 +36,9 @@ export function previewDimension(t: PreviewTokens, ref: string): Record<string, 
     case 'icon': return one(`${iconRoleOf(t, name as 'small' | 'medium' | 'large')}px`)
     case 'selector': return one(selectorRoleOf(t, name, '') || t.selector?.[name])
     case 'spacing': return one(t.spacing?.[name] || spacingRoleOf(t, name, ''))
-    case 'stroke': return one(strokeRoleOf(t, name, '1px'))
+    // A role (`stroke.control`) or a step of the ramp (`stroke.none` — a solid
+    // Button has no stroke). A step used to fall back to 1px.
+    case 'stroke': return one(strokeRoleOf(t, name, t.stroke?.[name] ?? '1px'))
     case 'shadow': return one(shadowOf(t, name, 'none'))
     case 'type': {
       const s = typeStyleOf(t, name, { leading: true })

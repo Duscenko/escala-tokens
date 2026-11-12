@@ -8009,7 +8009,7 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
         focus: NONE,
         ring: NONE,
         highlight: NONE,
-        outerEdge: NONE
+        strokeWidth: strokeOf(appearance)
       }
     };
   }
@@ -8017,11 +8017,11 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
   const focused = state2 === "Focused";
   if (appearance === "solid") {
     const k2 = SOLID[variant];
-    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight"), outerEdge: c(k2.fill[step]) } };
+    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight"), strokeWidth: strokeOf(appearance) } };
   }
   if (appearance === "link") {
     const [rest, over] = LINK[variant];
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, outerEdge: NONE } };
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, strokeWidth: strokeOf(appearance) } };
   }
   const k = QUIET[variant];
   const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
@@ -8033,11 +8033,11 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
       focus: focused ? c(focusEdge) : NONE,
       ring,
       highlight: NONE,
-      outerEdge: NONE
+      strokeWidth: strokeOf(appearance)
     }
   };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8060,6 +8060,7 @@ var init_actions = __esm({
       secondary: ["content.secondary", "content.primary"],
       critical: ["status.critical.content", "status.critical.content"]
     };
+    strokeOf = (appearance) => appearance === "outline" ? "stroke.control" : "stroke.none";
     BUTTON_HEIGHT = { xs: "size.hit", sm: "size.compact", default: "size.control", lg: "size.touch" };
     BUTTON_GAP = { xs: "spacing.gap-tight", sm: "spacing.gap-control", default: "spacing.gap-control", lg: "spacing.gap-control" };
     BUTTON = {
@@ -8068,7 +8069,7 @@ var init_actions = __esm({
       defaults: { Variant: "default", Appearance: "solid", Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.action", strokeWidth: "stroke.control", font: "type.button" }
+          root: { radius: "radius.action", font: "type.button" }
         })),
         part({ Size: BUTTON_SIZES }, (size) => ({
           root: { height: BUTTON_HEIGHT[size], paddingX: "spacing.inset-control", gap: BUTTON_GAP[size] }
@@ -8082,7 +8083,7 @@ var init_actions = __esm({
       defaults: { Variant: "default", Appearance: "solid", Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.action", strokeWidth: "stroke.control" }
+          root: { radius: "radius.action" }
         })),
         part({ Size: BUTTON_SIZES }, (size) => ({
           root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: "spacing.0" }

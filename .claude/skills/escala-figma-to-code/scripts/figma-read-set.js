@@ -62,7 +62,17 @@ async function effects(n) {
   for (const e of n.effects) {
     if (e.visible === false) continue
     const col = e.boundVariables?.color ? await vname(e.boundVariables.color) : (e.color ? hex(e.color) + ` @${+(e.color.a ?? 1).toFixed(2)}` : '')
-    out.push(`${e.type} ${e.offset ? `${e.offset.x} ${e.offset.y} ` : ''}${e.radius ?? ''} ${e.spread ?? ''} ${col}`.replace(/\s+/g, ' ').trim())
+    let line = `${e.type} ${e.offset ? `${e.offset.x} ${e.offset.y} ` : ''}${e.radius ?? ''} ${e.spread ?? ''} ${col}`.replace(/\s+/g, ' ').trim()
+    // Figma applies a shadow's SPREAD only to a frame that clips content (or a
+    // rectangle / ellipse). Measured on the Button: DROP_SHADOW 0 0 0 spread 1
+    // on a non-clipping frame paints NOTHING. Don't copy it.
+    const noClip = (n.type === 'FRAME' || n.type === 'COMPONENT' || n.type === 'INSTANCE') && n.clipsContent === false
+    if (e.type === 'DROP_SHADOW' && e.spread && noClip) {
+      line += ' [spread NOT rendered: frame does not clip content'
+      if (!e.radius && !e.offset?.x && !e.offset?.y) line += ' → this shadow paints nothing; skip it'
+      line += ']'
+    }
+    out.push(line)
   }
   if (n.effectStyleId) {
     const s = await figma.getStyleByIdAsync(n.effectStyleId)

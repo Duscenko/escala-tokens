@@ -216,19 +216,26 @@ describe('focus', () => {
     expect(root.ring).toBe(ring)
   })
 
-  // Figma: every solid state but Disabled carries DROP_SHADOW 0 0 0 spread 1
-  // in its own fill + INNER_SHADOW 0 2 0 0 Elevation/highlight.
-  it.each([['Default', 'color.action.primary.default'], ['Hover', 'color.action.primary.hover'], ['Pressed', 'color.action.primary.pressed']])(
-    'a solid %s carries the 1px edge in its own fill and the top highlight', (state, fill) => {
-      const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: 'default', Appearance: 'solid', Size: 'default', State: state }).root
-      expect(root.outerEdge).toBe(fill)
-      expect(root.highlight).toBe('color.elevation.highlight')
-    })
-  it('a disabled solid carries neither effect', () => {
+  // Figma's render of the solid Button (4:2186), read pixel by pixel: the top
+  // highlight fills the node's top 2 rows, and the DROP_SHADOW spread 1 paints
+  // nothing (Figma ignores spread on a frame that does not clip content).
+  it.each(['Default', 'Hover', 'Pressed', 'Focused', 'Loading'])('a solid %s carries the top highlight', (state) => {
+    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: 'default', Appearance: 'solid', Size: 'default', State: state }).root
+    expect(root.highlight).toBe('color.elevation.highlight')
+  })
+  it('a disabled solid carries no highlight', () => {
     const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Disabled' }).root
-    expect(root.outerEdge).toBe('none')
     expect(root.highlight).toBe('none')
   })
+  // Only outline has a stroke in the file: a transparent border on a solid
+  // would push its highlight 1px below the top edge.
+  it.each([['solid', 'stroke.none'], ['outline', 'stroke.control'], ['ghost', 'stroke.none'], ['link', 'stroke.none']])(
+    'a %s button strokes %s, as the Figma file', (appearance, stroke) => {
+      for (const key of ['Button', 'IconButton']) {
+        const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: 'default', Appearance: appearance, Size: 'default', State: 'Default' }).root
+        expect(root.strokeWidth, key).toBe(stroke)
+      }
+    })
 
   it('IconButton critical · outline focuses on border.focus (Figma)', () => {
     const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: 'critical', Appearance: 'outline', Size: 'default', State: 'Focused' }).root
