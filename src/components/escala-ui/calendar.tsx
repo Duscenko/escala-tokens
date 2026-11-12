@@ -11,6 +11,11 @@
 // A pinned state stops the pointer rules (a selected day has no hover look). `indicator` is
 // Figma IndicatorVisible (the dash under the date); `children` is the TEXT property Day.
 // `shape` is the file's instance override: rounded · pill · square. Paint: the CalendarDay recipe.
+//
+// CalendarHeader is the FIGMA `CalendarHeader` set (design-plans/calendar-header-contract.md, 422:355):
+// the row above the days, as wide as seven cells. `size` default · sm, `header` single (one
+// "Month Year" chip) · multiple (a month chip and a year chip) · plain (the bare label); `label`,
+// `month` and `year` are the file's TEXT properties. Arrows flank the title. Paint: the CalendarHeader recipe.
 import * as React from 'react'
 import { DayPicker, getDefaultClassNames, type DayButtonProps } from 'react-day-picker'
 import { cn } from '../../lib/utils'
@@ -143,4 +148,69 @@ function CalendarDay({
   )
 }
 
-export { Calendar, CalendarDayButton, CalendarDay }
+export const CALENDAR_HEADER_SIZES = ['default', 'sm'] as const
+export type CalendarHeaderSize = (typeof CALENDAR_HEADER_SIZES)[number]
+export const CALENDAR_HEADER_HEADERS = ['single', 'multiple', 'plain'] as const
+export type CalendarHeaderHeader = (typeof CALENDAR_HEADER_HEADERS)[number]
+
+function CaretGlyph({ d }: { d: string }) {
+  return <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
+}
+// Phosphor caret-left · caret-right · caret-down (regular), the file's icon/chevron-*.
+const CARET_LEFT = 'M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z'
+const CARET_RIGHT = 'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'
+const CARET_DOWN = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
+
+export interface CalendarHeaderProps extends Omit<React.ComponentProps<'div'>, 'children'> {
+  size?: CalendarHeaderSize
+  /** single: one combined chip · multiple: month and year chips · plain: static heading. */
+  header?: CalendarHeaderHeader
+  /** Figma Label (single · plain), default "November 2026". */
+  label?: React.ReactNode
+  /** Figma Month (multiple), default "November". */
+  month?: React.ReactNode
+  /** Figma Year (multiple), default "2026". */
+  year?: React.ReactNode
+  onPreviousMonth?: () => void
+  onNextMonth?: () => void
+  /** Click of the combined chip (single). */
+  onLabelClick?: () => void
+  onMonthClick?: () => void
+  onYearClick?: () => void
+}
+
+function CalendarHeader({
+  size = 'default', header = 'single', label = 'November 2026', month = 'November', year = '2026',
+  onPreviousMonth, onNextMonth, onLabelClick, onMonthClick, onYearClick, className, ...props
+}: CalendarHeaderProps) {
+  const chip = (name: string, text: React.ReactNode, onClick?: () => void) => (
+    <button type="button" data-part="CalendarHeader.chip" data-chip={name} onClick={onClick} className="inline-flex cursor-pointer items-center border-0 bg-transparent outline-none">
+      <span data-part="CalendarHeader.label">{text}</span>
+      <span data-part="CalendarHeader.chevron" aria-hidden className="inline-flex shrink-0"><CaretGlyph d={CARET_DOWN} /></span>
+    </button>
+  )
+  return (
+    <div
+      data-slot="calendar-header"
+      data-escala="CalendarHeader"
+      data-size={size}
+      data-header={header}
+      className={cn('flex items-center justify-between', className)}
+      {...props}
+    >
+      <button type="button" aria-label="Previous month" data-part="CalendarHeader.nav" onClick={onPreviousMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
+        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_LEFT} /></span>
+      </button>
+      <div data-part="CalendarHeader.title" className="flex items-center">
+        {header === 'single' && chip('month-year', label, onLabelClick)}
+        {header === 'multiple' && (<>{chip('month', month, onMonthClick)}{chip('year', year, onYearClick)}</>)}
+        {header === 'plain' && <span data-part="CalendarHeader.label">{label}</span>}
+      </div>
+      <button type="button" aria-label="Next month" data-part="CalendarHeader.nav" onClick={onNextMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
+        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_RIGHT} /></span>
+      </button>
+    </div>
+  )
+}
+
+export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader }

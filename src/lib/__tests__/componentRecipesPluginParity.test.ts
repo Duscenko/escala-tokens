@@ -175,10 +175,10 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // The plugin is frozen for components (owner, 2026-11-12): a component built
     // from the Figma file after that day is web + Storybook only and has no
     // builder here. Each entry is a decision, not a gap to close.
-    // DatePickerTrigger / DatePickerPopover / CalendarDay (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
+    // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput (WEB_ONLY above).

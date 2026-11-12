@@ -303,6 +303,48 @@ export const CALENDAR_DAY: ComponentRecipe = {
   ],
 }
 
+// ── CalendarHeader ─────────────────────────────────────────────────────────
+// The Figma `CalendarHeader` set (design-plans/calendar-header-contract.md, 422:355, 6 variants:
+// Size default · sm × Header single · multiple · plain). A row as wide as seven day cells
+// (7 × Size/control · 7 × Size/compact), the title centred between two outlined arrow buttons
+// (32 · 28 square, Radius/action, a 1px Border/control edge inside, no fill, Content/secondary glyph).
+// The title is one chip with the combined "Month Year" label (single), a month chip and a year chip
+// (multiple) or the bare label (plain). A chip is hugging: 4px × 8px padding, gap-tight, Radius/action,
+// no fill or stroke, Type/body-md · body-sm label in Content/primary and a 16px chevron-down in
+// Content/secondary. The file draws no hover or focus for any of them.
+export const CALENDAR_HEADER_SIZES = ['default', 'sm'] as const
+export const CALENDAR_HEADER_HEADERS = ['single', 'multiple', 'plain'] as const
+const CALENDAR_HEADER_GEOMETRY: Record<string, { cell: string; nav: string; navIcon: string; font: string }> = {
+  default: { cell: 'size.control', nav: 'size.compact', navIcon: 'icon.medium', font: 'type.body-md' },
+  sm: { cell: 'size.compact', nav: 'spacing.6+spacing.1', navIcon: 'icon.small', font: 'type.body-sm' },
+}
+const SEVEN = (ref: string) => Array.from({ length: 7 }, () => ref).join('+')
+
+export const CALENDAR_HEADER: ComponentRecipe = {
+  key: 'CalendarHeader',
+  slots: ['root', 'nav', 'navIcon', 'title', 'chip', 'label', 'chevron'],
+  defaults: { Size: 'default', Header: 'single' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.none' },
+      nav: { radius: 'radius.action', stroke: c('border.control'), strokeWidth: 'stroke.control', text: c('content.secondary') },
+      title: { gap: 'spacing.gap-tight' },
+      chip: { radius: 'radius.action', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.gap-tight' },
+      label: { text: c('content.primary') },
+      chevron: { width: 'icon.small', height: 'icon.small', text: c('content.secondary') },
+    })),
+    part({ Size: CALENDAR_HEADER_SIZES }, (size) => {
+      const g = CALENDAR_HEADER_GEOMETRY[size]
+      return {
+        root: { width: SEVEN(g.cell), height: g.nav },
+        nav: { width: g.nav, height: g.nav },
+        navIcon: { width: g.navIcon, height: g.navIcon },
+        label: { font: g.font },
+      }
+    }),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

@@ -4549,6 +4549,28 @@ var init_componentCatalogue = __esm({
         accessibility: "A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough."
       },
       {
+        key: "CalendarHeader",
+        label: "Calendar Header",
+        category: "Form Controls",
+        description: "The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.",
+        usage: "Use at the top of Calendar. single opens one month-and-year picker, multiple opens the month and the year separately, plain is a static heading for a calendar with no picker.",
+        // The Figma file\'s axes, value for value (design-plans/calendar-header-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Header", values: ["single", "multiple", "plain"] }
+        ],
+        figmaSets: ["CalendarHeader"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Figma Size: the width of seven 40 or 32 px day cells." },
+          { name: "header", type: '"single" | "multiple" | "plain"', description: "Figma Header: one combined chip, separate month and year chips, or a static heading." },
+          { name: "label", type: "ReactNode", description: 'Figma Label (single and plain), default "November 2026".' },
+          { name: "month / year", type: "ReactNode", description: 'Figma Month and Year (multiple), default "November" and "2026".' },
+          { name: "onPreviousMonth / onNextMonth", type: "() => void", description: "The arrows." },
+          { name: "onLabelClick / onMonthClick / onYearClick", type: "() => void", description: "The picker chips." }
+        ],
+        accessibility: 'The arrows are buttons named "Previous month" and "Next month"; each chip is a button whose visible text is its name.'
+      },
+      {
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
@@ -9074,7 +9096,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9243,6 +9265,36 @@ var init_forms = __esm({
           return { root: { width: g.box, height: g.box }, day: { font: g.font } };
         }),
         part({ Variant: CALENDAR_DAY_VARIANTS, State: CALENDAR_DAY_STATES }, (variant, state2) => calendarDayPaint(variant, state2))
+      ]
+    };
+    CALENDAR_HEADER_SIZES = ["default", "sm"];
+    CALENDAR_HEADER_GEOMETRY = {
+      default: { cell: "size.control", nav: "size.compact", navIcon: "icon.medium", font: "type.body-md" },
+      sm: { cell: "size.compact", nav: "spacing.6+spacing.1", navIcon: "icon.small", font: "type.body-sm" }
+    };
+    SEVEN = (ref) => Array.from({ length: 7 }, () => ref).join("+");
+    CALENDAR_HEADER = {
+      key: "CalendarHeader",
+      slots: ["root", "nav", "navIcon", "title", "chip", "label", "chevron"],
+      defaults: { Size: "default", Header: "single" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.none" },
+          nav: { radius: "radius.action", stroke: c("border.control"), strokeWidth: "stroke.control", text: c("content.secondary") },
+          title: { gap: "spacing.gap-tight" },
+          chip: { radius: "radius.action", paddingX: "spacing.2", paddingY: "spacing.1", gap: "spacing.gap-tight" },
+          label: { text: c("content.primary") },
+          chevron: { width: "icon.small", height: "icon.small", text: c("content.secondary") }
+        })),
+        part({ Size: CALENDAR_HEADER_SIZES }, (size) => {
+          const g = CALENDAR_HEADER_GEOMETRY[size];
+          return {
+            root: { width: SEVEN(g.cell), height: g.nav },
+            nav: { width: g.nav, height: g.nav },
+            navIcon: { width: g.navIcon, height: g.navIcon },
+            label: { font: g.font }
+          };
+        })
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
@@ -10974,6 +11026,7 @@ var init_componentRecipes = __esm({
       Textarea: TEXTAREA,
       DatePickerTrigger: DATE_PICKER_TRIGGER,
       CalendarDay: CALENDAR_DAY,
+      CalendarHeader: CALENDAR_HEADER,
       DatePickerPopover: DATE_PICKER_POPOVER,
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
@@ -13859,7 +13912,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 120,
+          version: 121,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15318,6 +15371,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("Calendar");
                 if (at < 0 || sel.includes("CalendarDay")) return;
                 sel.splice(at, 0, "CalendarDay");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 121) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Calendar");
+                if (at < 0 || sel.includes("CalendarHeader")) return;
+                sel.splice(at, 0, "CalendarHeader");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

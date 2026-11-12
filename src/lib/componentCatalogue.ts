@@ -653,6 +653,28 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough.',
   },
   {
+    key: 'CalendarHeader',
+    label: 'Calendar Header',
+    category: 'Form Controls',
+    description: 'The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.',
+    usage: 'Use at the top of Calendar. single opens one month-and-year picker, multiple opens the month and the year separately, plain is a static heading for a calendar with no picker.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-header-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Header', values: ['single', 'multiple', 'plain'] },
+    ],
+    figmaSets: ['CalendarHeader'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: the width of seven 40 or 32 px day cells.' },
+      { name: 'header', type: '"single" | "multiple" | "plain"', description: 'Figma Header: one combined chip, separate month and year chips, or a static heading.' },
+      { name: 'label', type: 'ReactNode', description: 'Figma Label (single and plain), default "November 2026".' },
+      { name: 'month / year', type: 'ReactNode', description: 'Figma Month and Year (multiple), default "November" and "2026".' },
+      { name: 'onPreviousMonth / onNextMonth', type: '() => void', description: 'The arrows.' },
+      { name: 'onLabelClick / onMonthClick / onYearClick', type: '() => void', description: 'The picker chips.' },
+    ],
+    accessibility: 'The arrows are buttons named "Previous month" and "Next month"; each chip is a button whose visible text is its name.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

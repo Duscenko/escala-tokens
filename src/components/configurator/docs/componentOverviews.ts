@@ -165,6 +165,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['RangeStart', 'RangeMiddle', 'RangeEnd', 'Disabled', 'Unavailable'], { Variant: 'secondary' }, 64),
     each('Size', ['default', 'sm'], { State: 'Selected' }, 64),
   ],
+  CalendarHeader: [
+    ...stack('Header', ['single', 'multiple', 'plain'], { Size: 'default' }),
+    ...stack('Header', ['single', 'multiple', 'plain'], { Size: 'sm' }),
+  ],
   InputOTP: [
     ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
     ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),

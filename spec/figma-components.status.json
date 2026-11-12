@@ -26,10 +26,6 @@
       "status": "part",
       "of": "Calendar"
     },
-    "CalendarHeader": {
-      "status": "part",
-      "of": "Calendar"
-    },
     "CalendarMonth": {
       "status": "part",
       "of": "Calendar"

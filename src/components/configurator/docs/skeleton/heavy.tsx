@@ -10,7 +10,7 @@ import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { chartPalette } from '../../../../lib/chartPalette'
-import { Calendar as SkCalendar, CalendarDay as SkCalendarDay, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
+import { Calendar as SkCalendar, CalendarDay as SkCalendarDay, CalendarHeader as SkCalendarHeader, type CalendarHeaderHeader, type CalendarHeaderSize, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
 import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
 import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, ChartLegendContent as SkChartLegendContent, ChartTooltip as SkChartTooltip, ChartTooltipContent as SkChartTooltipContent, type ChartConfig } from '../../../escala-ui/chart'
 import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
@@ -52,6 +52,15 @@ export function SkeletonCalendarDaySpecimen({ t, v }: SpecimenProps) {
         variant={(v.Variant ?? 'default') as CalendarDayVariant}
         forceState={state === 'Default' ? undefined : state}
       />
+    </RecipeScope>
+  )
+}
+
+/** The Figma CalendarHeader: Size × Header with the file's own November 2026. */
+export function SkeletonCalendarHeaderSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkCalendarHeader size={(v.Size ?? 'default') as CalendarHeaderSize} header={(v.Header ?? 'single') as CalendarHeaderHeader} />
     </RecipeScope>
   )
 }

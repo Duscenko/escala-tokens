@@ -10044,6 +10044,98 @@
         }
       }
     },
+    "CalendarHeader": {
+      "key": "CalendarHeader",
+      "slots": [
+        "root",
+        "nav",
+        "navIcon",
+        "title",
+        "chip",
+        "label",
+        "chevron"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Header": "single"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.none"
+              },
+              "nav": {
+                "radius": "radius.action",
+                "stroke": "color.border.control",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.secondary"
+              },
+              "title": {
+                "gap": "spacing.gap-tight"
+              },
+              "chip": {
+                "radius": "radius.action",
+                "paddingX": "spacing.2",
+                "paddingY": "spacing.1",
+                "gap": "spacing.gap-tight"
+              },
+              "label": {
+                "text": "color.content.primary"
+              },
+              "chevron": {
+                "width": "icon.small",
+                "height": "icon.small",
+                "text": "color.content.secondary"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.control+size.control+size.control+size.control+size.control+size.control+size.control",
+                "height": "size.compact"
+              },
+              "nav": {
+                "width": "size.compact",
+                "height": "size.compact"
+              },
+              "navIcon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "label": {
+                "font": "type.body-md"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.compact+size.compact+size.compact+size.compact+size.compact+size.compact+size.compact",
+                "height": "spacing.6+spacing.1"
+              },
+              "nav": {
+                "width": "spacing.6+spacing.1",
+                "height": "spacing.6+spacing.1"
+              },
+              "navIcon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "font": "type.body-sm"
+              }
+            }
+          }
+        }
+      ]
+    },
     "DatePickerPopover": {
       "key": "DatePickerPopover",
       "slots": [

@@ -171,3 +171,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Calendar parts import react-day-picker through `calendar.tsx` | An eager specimen would pull it into the main bundle | Register the specimen through `lazySpecimen` (`skeleton/heavy.tsx`) |
 | Measuring recipe roles with a probe on `body` | Every `var(--color-…)` resolved to the same fallback | Append the probe INSIDE the component (the vars live in `RecipeScope`) |
 | `exportAudit` I10 budget again | Agent context 90 045 > 90 000 | Raise `contextAllTokens` with a dated note |
+
+# Lessons from the CalendarHeader (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A size with no token (nav button 28 in the sm header) | `Size/*` has 24 · 32 · 40, nothing at 28 | A summed ref (`spacing.6+spacing.1`), as InputTag does; say it in the contract |
+| A set whose width is "N cells of another set" (header = 7 day cells) | A magic 280 / 224 | `size.control` × 7 / `size.compact` × 7 as a summed ref, so it follows the day cell |
+| A set with no hover / focus on any piece (arrows, chips) | Tempting to give the chips a hover wash | Copy: none. No `recipes/motion.ts` entry either |
+| `figma.setCurrentPageAsync(set.parent)` | "expects a PageNode" (the set's parent is a section) | Walk up `.parent` until `type === 'PAGE'` (the read script already does) |
