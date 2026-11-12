@@ -125,3 +125,10 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A text layer NOT bound to its TEXT property in some variants | InputOTPSlot `filled` / `underline`: the digit has no `componentPropertyReferences`, so every instance shows "7" | Read `componentPropertyReferences` per variant. A functional value (the typed digit) is not copied as a constant: say it in the contract and the report |
 | A composite's State is a PATTERN over its parts | InputOTP Typing = first half Filled, next slot Typing, rest Default | Read every instance's main-component state per variant (one line per variant), then encode the pattern (`pinnedSlotState`) |
 | A recipe slot moved to a new catalogue key | `recipeMotion` named `InputOTP.slot`; agent-context and audit tests named InputOTP as the field | Move the motion entry (`lib/recipes/motion.ts`) and the field-like lists to the new key (`InputOTPSlot`) |
+
+# Lessons from the PasswordStrength (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Splicing a recipe file from "the previous `// ──` heading" | The cut took Field and Label with it (PasswordStrength had no heading of its own) | Cut from the recipe's OWN const/comment, then `git diff | grep '^-'` before going on — every removed line must belong to the component you rebuild |
+| An axis whose values changed type (weak · fair · strong → 0–5) | Other surfaces (`ColourShowcase`, `PreviewPanel`) passed the old strings | grep every `v={{ <Axis>: … }}` caller and move it; the specimen maps the legacy values for old links |

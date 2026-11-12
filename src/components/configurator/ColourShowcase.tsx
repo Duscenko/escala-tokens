@@ -21,14 +21,14 @@ export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
   success: [
     { key: 'Sonner', v: { Type: 'success' }, w: 300 },
     { key: 'StatusBadge', v: { Status: 'online' } },
-    { key: 'PasswordStrength', v: { Strength: 'strong' } },
+    { key: 'PasswordStrength', v: { Strength: '4' } },
   ],
   warning: [
     { key: 'Sonner', v: { Type: 'warning' }, w: 300 },
     { key: 'StatusBadge', v: { Status: 'away' } },
     { key: 'Rating', v: {} },
     { key: 'FileFormat', v: { Format: 'zip' } },
-    { key: 'PasswordStrength', v: { Strength: 'fair' } },
+    { key: 'PasswordStrength', v: { Strength: '3' } },
   ],
   info: [
     { key: 'Sonner', v: { Type: 'info' }, w: 300 },
@@ -41,7 +41,7 @@ export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
     { key: 'Badge', v: { Variant: 'destructive' } },
     { key: 'StatusBadge', v: { Status: 'busy' } },
     { key: 'FileFormat', v: { Format: 'pdf' } },
-    { key: 'PasswordStrength', v: { Strength: 'weak' } },
+    { key: 'PasswordStrength', v: { Strength: '1' } },
   ],
 }
 

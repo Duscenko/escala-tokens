@@ -151,7 +151,7 @@ function ColorCollage({
       <Live c="Dropzone" t={tokens} hoverState="Dragging" />
       <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />
-      <PasswordStrengthSpec t={tokens} v={{ Strength: 'weak' }} />
+      <PasswordStrengthSpec t={tokens} v={{ Strength: '1' }} />
 
       <div className="flex items-center justify-between gap-3">
         <TabMenuSpec t={tokens} v={{}} />

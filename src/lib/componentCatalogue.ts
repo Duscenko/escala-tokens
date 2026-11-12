@@ -711,16 +711,57 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PasswordStrength',
     label: 'Password Strength',
     category: 'Form Controls',
-    description: 'Segmented meter + caption that scores a password as the user types.',
-    usage: 'Update live while typing. Pair the meter with concrete guidance, not just a score.',
-    axes: [{ name: 'Strength', values: ['weak', 'fair', 'strong'] }],
-    figmaSets: ['Password Strength'],
-    props: [
-      { name: 'value', type: 'string', description: 'Password to score (typed live).' },
-      { name: 'strength', type: '"weak" | "fair" | "strong"', description: 'Show a level without typing (docs, previews).' },
-      { name: 'children', type: 'ReactNode', description: 'The password field, so the meter sits under any Input.' },
+    description: 'A card that scores a password: the rules checklist, a five-segment PasswordStrengthMeter and the level label (Too Weak · Weak · Fair · Strong · Very Strong).',
+    usage: 'Show it under a password field and update it as the user types. Keep the rules visible when the requirements are not obvious; hide them for a compact card.',
+    // The Figma file's axes, value for value (design-plans/password-strength-contract.md).
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default'] },
+      { name: 'Strength', values: ['0', '1', '2', '3', '4', '5'] },
     ],
-    accessibility: 'Score announced politely via aria-live; color is never the only signal.',
+    figmaSets: ['PasswordStrength'],
+    props: [
+      { name: 'value', type: 'string', description: 'The password; Strength = the number of rules it meets.' },
+      { name: 'strength', type: '0 | 1 | 2 | 3 | 4 | 5', description: 'Figma Strength, pinned (docs, previews).' },
+      { name: 'size', type: '"xs" | "sm" | "default"', description: 'Padding, gaps, meter height and rule type.' },
+      { name: 'rulesVisible', type: 'boolean', description: 'Figma RulesVisible (default true).' },
+      { name: 'rules / labels', type: 'PasswordRule[] / string[]', description: 'The checklist and the level copy (the file\'s by default).' },
+    ],
+    accessibility: 'The meter is role="meter"; the level is announced politely (aria-live); each rule says met or not met, so colour is never the only signal.',
+  },
+  {
+    key: 'PasswordStrengthMeter',
+    label: 'Password Strength Meter',
+    category: 'Form Controls',
+    description: 'Five pill segments; Strength n fills the first n — critical, warning, warning pressed, success pressed, success.',
+    usage: 'Used by PasswordStrength; on its own where only the bar fits.',
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default'] },
+      { name: 'Strength', values: ['0', '1', '2', '3', '4', '5'] },
+    ],
+    figmaSets: ['PasswordStrengthMeter'],
+    props: [
+      { name: 'strength', type: '0 | 1 | 2 | 3 | 4 | 5', description: 'Filled segments.' },
+      { name: 'size', type: '"xs" | "sm" | "default"', description: 'Segment height 4 · 6 · 8.' },
+    ],
+    accessibility: 'role="meter" with aria-valuenow 0–5; give it a label when used alone.',
+  },
+  {
+    key: 'PasswordStrengthRule',
+    label: 'Password Strength Rule',
+    category: 'Form Controls',
+    description: 'One requirement of a password: a success check when met, an empty ring when not, and its label.',
+    usage: 'Used by PasswordStrength\'s checklist.',
+    axes: [
+      { name: 'Met', values: ['true', 'false'] },
+      { name: 'Size', values: ['xs', 'sm', 'default'] },
+    ],
+    figmaSets: ['PasswordStrengthRule'],
+    props: [
+      { name: 'met', type: 'boolean', description: 'Figma Met.' },
+      { name: 'label', type: 'ReactNode', description: 'Figma Label.' },
+      { name: 'size', type: '"xs" | "sm" | "default"', description: 'Type/caption · body-sm · body-md.' },
+    ],
+    accessibility: 'Says "met" / "not met" to screen readers, not only by colour.',
   },
   // ── Indicators ──────────────────────────────────────────────────────────────
   {

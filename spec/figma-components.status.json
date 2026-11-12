@@ -4,17 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "PasswordStrength": {
-      "status": "rebuild"
-    },
-    "PasswordStrengthMeter": {
-      "status": "part",
-      "of": "PasswordStrength"
-    },
-    "PasswordStrengthRule": {
-      "status": "part",
-      "of": "PasswordStrength"
-    },
     "InputTag": {
       "status": "rebuild"
     },

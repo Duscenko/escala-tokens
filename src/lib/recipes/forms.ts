@@ -569,27 +569,79 @@ export const LABEL: ComponentRecipe = {
   ],
 }
 
-const STRENGTH_FILL: Record<string, string> = {
-  weak: 'status.critical.surface-solid',
-  fair: 'status.warning.surface-solid',
-  strong: 'status.success.surface-solid',
+// ── PasswordStrength · Meter · Rule ────────────────────────────────────────
+// The Figma `PasswordStrength` page (design-plans/password-strength-contract.md).
+// PasswordStrength (417:679, Size xs · sm · default × Strength 0–5, RulesVisible) is a
+// card (Surface/layer-1, Border/subtle, Radius/container, stroke laid out) holding the
+// rules checklist, the meter and the level label (Type/label, coloured by strength,
+// hidden at 0). PasswordStrengthMeter (417:131) is five pill segments gap-tight apart,
+// 4 · 6 · 8 high; Strength n fills the first n (1 critical, 2 warning, 3 warning
+// pressed, 4 success pressed, 5 success). PasswordStrengthRule (417:156, Met × Size) is
+// a check (Status/success/content) or an empty ring (Border/control) and the label
+// (Content/primary met, Content/secondary not), Type/caption · body-sm · body-md.
+export const PASSWORD_STRENGTH_SIZES = ['xs', 'sm', 'default'] as const
+export const PASSWORD_STRENGTHS = ['0', '1', '2', '3', '4', '5'] as const
+const STRENGTH_SEGMENT: Record<string, string> = {
+  '1': 'status.critical.surface-solid', '2': 'status.warning.surface-solid', '3': 'status.warning.surface-solid-pressed',
+  '4': 'status.success.surface-solid-pressed', '5': 'status.success.surface-solid',
+}
+const STRENGTH_LEVEL: Record<string, string> = {
+  '0': 'status.critical.content', '1': 'status.critical.content', '2': 'status.warning.content', '3': 'status.warning.content',
+  '4': 'status.success.content', '5': 'status.success.content',
 }
 
 export const PASSWORD_STRENGTH: ComponentRecipe = {
   key: 'PasswordStrength',
-  slots: ['root', 'meter', 'segment', 'segmentOn', 'caption'],
-  defaults: { Strength: 'fair' },
+  slots: ['root', 'rules', 'level'],
+  defaults: { Size: 'default', Strength: '0' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-control' },
-      meter: { gap: 'spacing.gap-tight' },
-      segment: { fill: c('surface.muted'), height: 'spacing.1', radius: 'radius.pill' },
-      segmentOn: { height: 'spacing.1', radius: 'radius.pill' },
-      caption: { text: c('content.secondary'), font: 'type.helper' },
+      root: { fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container' },
+      level: { font: 'type.label' },
     })),
-    part({ Strength: ['weak', 'fair', 'strong'] as const }, (strength) => ({
-      segmentOn: { fill: c(STRENGTH_FILL[strength]) },
+    part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => (size === 'xs'
+      ? { root: { paddingX: 'spacing.inset-control+stroke.control', paddingY: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control' }, rules: { gap: 'spacing.gap-tight' } }
+      : { root: { paddingX: 'spacing.inset-surface+stroke.control', paddingY: 'spacing.inset-surface+stroke.control', gap: 'spacing.gap-group' }, rules: { gap: 'spacing.gap-control' } })),
+    part({ Strength: PASSWORD_STRENGTHS }, (strength) => ({ level: { text: c(STRENGTH_LEVEL[strength]) } })),
+  ],
+}
+
+const METER_HEIGHT: Record<string, string> = { xs: 'spacing.1', sm: 'spacing.1_5', default: 'spacing.2' }
+
+export const PASSWORD_STRENGTH_METER: ComponentRecipe = {
+  key: 'PasswordStrengthMeter',
+  slots: ['root', 'segment'],
+  defaults: { Size: 'default', Strength: '0' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-tight' },
+      segment: { fill: c('surface.muted'), radius: 'radius.pill' },
     })),
+    part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => ({ segment: { height: METER_HEIGHT[size] } })),
+    part({ Strength: PASSWORD_STRENGTHS }, (strength): SlotMap => (strength === '0' ? {} : { 'segment[data-on="true"]': { fill: c(STRENGTH_SEGMENT[strength]) } })),
+  ],
+}
+
+const RULE_ICON: Record<string, string> = { xs: 'spacing.3', sm: 'spacing.3+spacing.0_5', default: 'spacing.4' }
+const RULE_MARKER: Record<string, string> = { xs: 'spacing.2', sm: 'spacing.2_5', default: 'spacing.3' }
+const RULE_FONT: Record<string, string> = { xs: 'type.caption', sm: 'type.body-sm', default: 'type.body-md' }
+
+export const PASSWORD_STRENGTH_RULE: ComponentRecipe = {
+  key: 'PasswordStrengthRule',
+  slots: ['root', 'icon', 'marker', 'label'],
+  defaults: { Met: 'true', Size: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-tight' },
+      icon: { text: c('status.success.content') },
+      marker: { stroke: c('border.control'), strokeWidth: 'stroke.control', radius: 'radius.pill' },
+    })),
+    part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => ({
+      icon: { width: RULE_ICON[size], height: RULE_ICON[size] },
+      marker: { width: RULE_MARKER[size], height: RULE_MARKER[size] },
+      label: { font: RULE_FONT[size] },
+    })),
+    part({ Met: ['true', 'false'] as const }, (met) => ({ label: { text: c(met === 'true' ? 'content.primary' : 'content.secondary') } })),
   ],
 }
 

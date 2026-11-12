@@ -4606,16 +4606,57 @@ var init_componentCatalogue = __esm({
         key: "PasswordStrength",
         label: "Password Strength",
         category: "Form Controls",
-        description: "Segmented meter + caption that scores a password as the user types.",
-        usage: "Update live while typing. Pair the meter with concrete guidance, not just a score.",
-        axes: [{ name: "Strength", values: ["weak", "fair", "strong"] }],
-        figmaSets: ["Password Strength"],
-        props: [
-          { name: "value", type: "string", description: "Password to score (typed live)." },
-          { name: "strength", type: '"weak" | "fair" | "strong"', description: "Show a level without typing (docs, previews)." },
-          { name: "children", type: "ReactNode", description: "The password field, so the meter sits under any Input." }
+        description: "A card that scores a password: the rules checklist, a five-segment PasswordStrengthMeter and the level label (Too Weak \xB7 Weak \xB7 Fair \xB7 Strong \xB7 Very Strong).",
+        usage: "Show it under a password field and update it as the user types. Keep the rules visible when the requirements are not obvious; hide them for a compact card.",
+        // The Figma file's axes, value for value (design-plans/password-strength-contract.md).
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "Strength", values: ["0", "1", "2", "3", "4", "5"] }
         ],
-        accessibility: "Score announced politely via aria-live; color is never the only signal."
+        figmaSets: ["PasswordStrength"],
+        props: [
+          { name: "value", type: "string", description: "The password; Strength = the number of rules it meets." },
+          { name: "strength", type: "0 | 1 | 2 | 3 | 4 | 5", description: "Figma Strength, pinned (docs, previews)." },
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Padding, gaps, meter height and rule type." },
+          { name: "rulesVisible", type: "boolean", description: "Figma RulesVisible (default true)." },
+          { name: "rules / labels", type: "PasswordRule[] / string[]", description: "The checklist and the level copy (the file's by default)." }
+        ],
+        accessibility: 'The meter is role="meter"; the level is announced politely (aria-live); each rule says met or not met, so colour is never the only signal.'
+      },
+      {
+        key: "PasswordStrengthMeter",
+        label: "Password Strength Meter",
+        category: "Form Controls",
+        description: "Five pill segments; Strength n fills the first n \u2014 critical, warning, warning pressed, success pressed, success.",
+        usage: "Used by PasswordStrength; on its own where only the bar fits.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "Strength", values: ["0", "1", "2", "3", "4", "5"] }
+        ],
+        figmaSets: ["PasswordStrengthMeter"],
+        props: [
+          { name: "strength", type: "0 | 1 | 2 | 3 | 4 | 5", description: "Filled segments." },
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Segment height 4 \xB7 6 \xB7 8." }
+        ],
+        accessibility: 'role="meter" with aria-valuenow 0\u20135; give it a label when used alone.'
+      },
+      {
+        key: "PasswordStrengthRule",
+        label: "Password Strength Rule",
+        category: "Form Controls",
+        description: "One requirement of a password: a success check when met, an empty ring when not, and its label.",
+        usage: "Used by PasswordStrength's checklist.",
+        axes: [
+          { name: "Met", values: ["true", "false"] },
+          { name: "Size", values: ["xs", "sm", "default"] }
+        ],
+        figmaSets: ["PasswordStrengthRule"],
+        props: [
+          { name: "met", type: "boolean", description: "Figma Met." },
+          { name: "label", type: "ReactNode", description: "Figma Label." },
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Type/caption \xB7 body-sm \xB7 body-md." }
+        ],
+        accessibility: 'Says "met" / "not met" to screen readers, not only by colour.'
       },
       // ── Indicators ──────────────────────────────────────────────────────────────
       {
@@ -8802,7 +8843,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9207,26 +9248,69 @@ var init_forms = __esm({
         part({}, () => ({ root: { text: c("content.primary"), font: "type.label" } }))
       ]
     };
-    STRENGTH_FILL = {
-      weak: "status.critical.surface-solid",
-      fair: "status.warning.surface-solid",
-      strong: "status.success.surface-solid"
+    PASSWORD_STRENGTH_SIZES = ["xs", "sm", "default"];
+    PASSWORD_STRENGTHS = ["0", "1", "2", "3", "4", "5"];
+    STRENGTH_SEGMENT = {
+      "1": "status.critical.surface-solid",
+      "2": "status.warning.surface-solid",
+      "3": "status.warning.surface-solid-pressed",
+      "4": "status.success.surface-solid-pressed",
+      "5": "status.success.surface-solid"
+    };
+    STRENGTH_LEVEL = {
+      "0": "status.critical.content",
+      "1": "status.critical.content",
+      "2": "status.warning.content",
+      "3": "status.warning.content",
+      "4": "status.success.content",
+      "5": "status.success.content"
     };
     PASSWORD_STRENGTH = {
       key: "PasswordStrength",
-      slots: ["root", "meter", "segment", "segmentOn", "caption"],
-      defaults: { Strength: "fair" },
+      slots: ["root", "rules", "level"],
+      defaults: { Size: "default", Strength: "0" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.gap-control" },
-          meter: { gap: "spacing.gap-tight" },
-          segment: { fill: c("surface.muted"), height: "spacing.1", radius: "radius.pill" },
-          segmentOn: { height: "spacing.1", radius: "radius.pill" },
-          caption: { text: c("content.secondary"), font: "type.helper" }
+          root: { fill: c("surface.layer-1"), stroke: c("border.subtle"), strokeWidth: "stroke.control", radius: "radius.container" },
+          level: { font: "type.label" }
         })),
-        part({ Strength: ["weak", "fair", "strong"] }, (strength) => ({
-          segmentOn: { fill: c(STRENGTH_FILL[strength]) }
-        }))
+        part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => size === "xs" ? { root: { paddingX: "spacing.inset-control+stroke.control", paddingY: "spacing.inset-control+stroke.control", gap: "spacing.gap-control" }, rules: { gap: "spacing.gap-tight" } } : { root: { paddingX: "spacing.inset-surface+stroke.control", paddingY: "spacing.inset-surface+stroke.control", gap: "spacing.gap-group" }, rules: { gap: "spacing.gap-control" } }),
+        part({ Strength: PASSWORD_STRENGTHS }, (strength) => ({ level: { text: c(STRENGTH_LEVEL[strength]) } }))
+      ]
+    };
+    METER_HEIGHT = { xs: "spacing.1", sm: "spacing.1_5", default: "spacing.2" };
+    PASSWORD_STRENGTH_METER = {
+      key: "PasswordStrengthMeter",
+      slots: ["root", "segment"],
+      defaults: { Size: "default", Strength: "0" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          segment: { fill: c("surface.muted"), radius: "radius.pill" }
+        })),
+        part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => ({ segment: { height: METER_HEIGHT[size] } })),
+        part({ Strength: PASSWORD_STRENGTHS }, (strength) => strength === "0" ? {} : { 'segment[data-on="true"]': { fill: c(STRENGTH_SEGMENT[strength]) } })
+      ]
+    };
+    RULE_ICON = { xs: "spacing.3", sm: "spacing.3+spacing.0_5", default: "spacing.4" };
+    RULE_MARKER = { xs: "spacing.2", sm: "spacing.2_5", default: "spacing.3" };
+    RULE_FONT = { xs: "type.caption", sm: "type.body-sm", default: "type.body-md" };
+    PASSWORD_STRENGTH_RULE = {
+      key: "PasswordStrengthRule",
+      slots: ["root", "icon", "marker", "label"],
+      defaults: { Met: "true", Size: "default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight" },
+          icon: { text: c("status.success.content") },
+          marker: { stroke: c("border.control"), strokeWidth: "stroke.control", radius: "radius.pill" }
+        })),
+        part({ Size: PASSWORD_STRENGTH_SIZES }, (size) => ({
+          icon: { width: RULE_ICON[size], height: RULE_ICON[size] },
+          marker: { width: RULE_MARKER[size], height: RULE_MARKER[size] },
+          label: { font: RULE_FONT[size] }
+        })),
+        part({ Met: ["true", "false"] }, (met) => ({ label: { text: c(met === "true" ? "content.primary" : "content.secondary") } }))
       ]
     };
     FILE_UPLOAD = {
@@ -10560,6 +10644,8 @@ var init_componentRecipes = __esm({
       Field: FIELD,
       Label: LABEL,
       PasswordStrength: PASSWORD_STRENGTH,
+      PasswordStrengthMeter: PASSWORD_STRENGTH_METER,
+      PasswordStrengthRule: PASSWORD_STRENGTH_RULE,
       Badge: BADGE,
       StatusBadge: STATUS_BADGE,
       Chip: CHIP,
@@ -13424,7 +13510,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 114,
+          version: 115,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14817,6 +14903,20 @@ var init_useDesignStore = __esm({
                 if (!Array.isArray(state2?.selectedComponents)) return;
                 const sel = state2.selectedComponents;
                 if (sel.includes("InputOTP") && !sel.includes("InputOTPSlot")) sel.splice(sel.indexOf("InputOTP") + 1, 0, "InputOTPSlot");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 115) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (!sel.includes("PasswordStrength")) return;
+                for (const key2 of ["PasswordStrengthRule", "PasswordStrengthMeter"]) {
+                  if (!sel.includes(key2)) sel.splice(sel.indexOf("PasswordStrength") + 1, 0, key2);
+                }
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

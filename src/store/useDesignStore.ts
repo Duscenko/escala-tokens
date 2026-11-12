@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 114,
+      version: 115,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3940,6 +3940,22 @@ export const useDesignStore = create<DesignStore>()(
             if (!Array.isArray(state?.selectedComponents)) return
             const sel: string[] = state.selectedComponents
             if (sel.includes('InputOTP') && !sel.includes('InputOTPSlot')) sel.splice(sel.indexOf('InputOTP') + 1, 0, 'InputOTPSlot')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 115) {
+          // v114→v115: PasswordStrengthMeter and PasswordStrengthRule are components of
+          // their own (the Figma file's sets). A selection with PasswordStrength gets both.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (!sel.includes('PasswordStrength')) return
+            for (const key of ['PasswordStrengthRule', 'PasswordStrengthMeter']) {
+              if (!sel.includes(key)) sel.splice(sel.indexOf('PasswordStrength') + 1, 0, key)
+            }
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

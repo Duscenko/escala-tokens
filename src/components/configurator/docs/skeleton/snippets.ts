@@ -170,7 +170,11 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Label: () =>
     `import { Label } from "@/components/ui/label"\n\n<Label htmlFor="email">Email address</Label>`,
   PasswordStrength: (v) =>
-    `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <Input type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
+    `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} value={password} />`,
+  PasswordStrengthMeter: (v) =>
+    `import { PasswordStrengthMeter } from "@/components/ui/password-strength"\n\n<PasswordStrengthMeter strength={${v.Strength ?? 3}}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
+  PasswordStrengthRule: (v) =>
+    `import { PasswordStrengthRule } from "@/components/ui/password-strength"\n\n<PasswordStrengthRule met={${v.Met !== 'false'}} label="At least 8 characters" />`,
 
   ButtonGroup: (v) => {
     const attrs = [

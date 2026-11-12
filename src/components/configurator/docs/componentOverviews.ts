@@ -183,7 +183,12 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Default', 'Invalid', 'Disabled']),
     each('Size', ['sm', 'default', 'lg']),
   ],
-  PasswordStrength: stack('Strength', ['weak', 'fair', 'strong']),
+  PasswordStrength: [each('Strength', ['0', '1', '2', '3', '4', '5'], {}, 350)],
+  PasswordStrengthMeter: [
+    ...stack('Strength', ['0', '1', '2', '3', '4', '5'], {}, 280),
+    ...stack('Size', ['xs', 'sm', 'default'], { Strength: '3' }, 280),
+  ],
+  PasswordStrengthRule: [each('Met', ['true', 'false']), each('Size', ['xs', 'sm', 'default'])],
 
   // ── Indicators ─────────────────────────────────────────────────────────────
   Badge: [

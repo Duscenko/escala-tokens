@@ -42,6 +42,8 @@
   <url><loc>https://www.escalatokens.com/components/Field</loc></url>
   <url><loc>https://www.escalatokens.com/components/Label</loc></url>
   <url><loc>https://www.escalatokens.com/components/PasswordStrength</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PasswordStrengthMeter</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PasswordStrengthRule</loc></url>
   <url><loc>https://www.escalatokens.com/components/Badge</loc></url>
   <url><loc>https://www.escalatokens.com/components/StatusBadge</loc></url>
   <url><loc>https://www.escalatokens.com/components/Chip</loc></url>

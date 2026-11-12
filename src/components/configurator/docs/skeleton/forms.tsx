@@ -22,7 +22,7 @@ import {
   Field as SkField, FieldContent as SkFieldContent, FieldDescription as SkFieldDescription, FieldGroup as SkFieldGroup,
   FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
-import { PasswordStrength as SkPasswordStrength, type Strength } from '../../../escala-ui/password-strength'
+import { PasswordStrength as SkPasswordStrength, PasswordStrengthMeter as SkPasswordStrengthMeter, PasswordStrengthRule as SkPasswordStrengthRule, type PasswordStrengthSize, type Strength } from '../../../escala-ui/password-strength'
 import { Dropzone as SkDropzone, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
@@ -414,28 +414,32 @@ export function SkeletonLabelSpecimen({ t }: SpecimenProps) {
   )
 }
 
-export function SkeletonPasswordStrengthSpecimen({ t, v }: SpecimenProps) {
-  // The visibility toggle is the component set's eye / eye-off pair.
-  const [visible, setVisible] = useState(false)
-  const iconPx = iconForControl(sizeRoleOf(t, 'control'), t)
+/** Pre-Figma docs said weak · fair · strong; old saved links still pass them. */
+const LEGACY_STRENGTH: Record<string, string> = { weak: '1', fair: '3', strong: '4' }
+const strengthOf = (v: SpecimenProps['v'], fallback: string) => Number(LEGACY_STRENGTH[v.Strength ?? ''] ?? v.Strength ?? fallback) as Strength
+
+export function SkeletonPasswordStrengthSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkPasswordStrength strength={(v.Strength ?? 'fair') as Strength} width={260}>
-        <SkInputGroup style={{ width: '100%' }}>
-          <SkGroupInput type={visible ? 'text' : 'password'} defaultValue="hunter2hunter2" aria-label="Password" />
-          <SkAddon align="inline-end">
-            <button
-              type="button"
-              aria-label={visible ? 'Hide password' : 'Show password'}
-              aria-pressed={visible}
-              onClick={() => setVisible((x) => !x)}
-              className="inline-flex cursor-pointer items-center border-0 bg-transparent p-0 text-current"
-            >
-              <PreviewIcon concept={visible ? 'eye-off' : 'eye'} size={iconPx} />
-            </button>
-          </SkAddon>
-        </SkInputGroup>
-      </SkPasswordStrength>
+      <SkPasswordStrength size={(v.Size ?? 'default') as PasswordStrengthSize} strength={strengthOf(v, '3')} style={{ width: w ?? 350 }} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonPasswordStrengthMeterSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 280 }}>
+        <SkPasswordStrengthMeter size={(v.Size ?? 'default') as PasswordStrengthSize} strength={strengthOf(v, '3')} />
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonPasswordStrengthRuleSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkPasswordStrengthRule size={(v.Size ?? 'default') as PasswordStrengthSize} met={v.Met !== 'false'} />
     </RecipeScope>
   )
 }
