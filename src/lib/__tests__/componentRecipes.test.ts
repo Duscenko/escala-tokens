@@ -175,6 +175,8 @@ describe('focus', () => {
     for (const key of ['Checkbox', 'Switch']) {
       const def = COMPONENTS.find((c) => c.key === key)!
       for (const v of combos(def.axes.filter((a) => a.name !== 'State'))) {
+        // Checkbox's other Variants carry their own focus pair (the Figma file, checkbox-contract.md).
+        if (key === 'Checkbox' && v.Variant !== 'default') continue
         const root = resolveRecipe(COMPONENT_RECIPES[key], { ...v, State: 'Focused' }).root
         if (root.fill === 'color.action.disabled.default') continue
         expect(root.focus, `${key} ${JSON.stringify(v)}`).toBe('color.border.focus')

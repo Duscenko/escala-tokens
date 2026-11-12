@@ -819,33 +819,59 @@ export const INPUT_OTP_SLOT: ComponentRecipe = {
 }
 
 // ── Checkbox ───────────────────────────────────────────────────────────────
-// shadcn's Checkbox: the box alone (label it with Label / a horizontal Field).
-// Checked is shadcn's `data-checked`: bg-primary + primary-foreground check.
-
-function checkPaint(checked: string, state: string): SlotMap {
-  const on = checked === 'True'
-  const disabled = state === 'Disabled'
-  const hover = state === 'Hover'
-  const focus = state === 'Focused' ? c('border.focus') : NONE
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  let root: SlotProps
-  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus, ring }
-  else if (on) {
-    const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
-    root = { fill, stroke: fill, focus, ring }
-  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), focus, ring }
-  return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
+// The Figma `Checkbox` set (design-plans/checkbox-contract.md, 1014:686, 270 variants: Size xs · sm ·
+// default × Checked false · true · indeterminate × State Default · Hover · Focused · Disabled · Invalid ×
+// Variant default · secondary · critical · success · info · inverse). A Radius/control box (selector
+// sm 16 · sm 16 · md 20) with a Check / Minus glyph (12 · 12 · 16). Colours do not change with Size.
+// Focused: a 2px edge inside + a 2px halo outside, per Variant. Disabled mutes everything; Invalid only
+// turns the edge Status/critical/border-strong.
+export const CHECKBOX_SIZES = ['xs', 'sm', 'default'] as const
+export const CHECKBOX_CHECKED = ['false', 'true', 'indeterminate'] as const
+export const CHECKBOX_STATES = ['Default', 'Hover', 'Focused', 'Disabled', 'Invalid'] as const
+export const CHECKBOX_VARIANTS = ['default', 'secondary', 'critical', 'success', 'info', 'inverse'] as const
+const CHECKBOX_ON: Record<string, { fill: string; hover: string; ink: string; edge: string; ring: string }> = {
+  default: { fill: 'action.primary.default', hover: 'action.primary.hover', ink: 'content.on-action', edge: 'border.focus', ring: 'border.ring.default' },
+  secondary: { fill: 'content.primary', hover: 'content.secondary', ink: 'content.inverse', edge: 'border.strong', ring: 'border.subtle' },
+  critical: { fill: 'status.critical.surface-solid', hover: 'status.critical.surface-solid-hover', ink: 'status.critical.on-solid', edge: 'status.critical.border-strong', ring: 'status.critical.border' },
+  success: { fill: 'status.success.surface-solid', hover: 'status.success.surface-solid-hover', ink: 'status.success.on-solid', edge: 'status.success.border-strong', ring: 'status.success.border' },
+  info: { fill: 'status.info.surface-solid', hover: 'status.info.surface-solid-hover', ink: 'status.info.on-solid', edge: 'status.info.border-strong', ring: 'status.info.border' },
+  inverse: { fill: 'content.inverse', hover: 'content.inverse-secondary', ink: 'content.primary', edge: 'border.inverse', ring: 'surface.inverse-muted' },
+}
+function checkPaint(checked: string, state: string, variant: string): SlotMap {
+  const on = checked !== 'false'
+  const v = CHECKBOX_ON[variant]
+  const inverse = variant === 'inverse'
+  if (state === 'Disabled') return {
+    root: { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus: NONE, ring: NONE },
+    indicator: { text: c('content.disabled') },
+  }
+  const restFill = on ? v.fill : inverse ? 'surface.inverse' : 'surface.input'
+  const restEdge = on ? v.fill : inverse ? 'border.inverse' : 'border.control'
+  const root: SlotProps = { fill: c(restFill), stroke: c(restEdge), focus: NONE, ring: NONE }
+  if (state === 'Hover') {
+    const h = on ? v.hover : inverse ? 'content.inverse-secondary' : 'border.control-hover'
+    root.stroke = c(h)
+    if (on) root.fill = c(h)
+  } else if (state === 'Focused') {
+    root.focus = c(v.edge)
+    root.ring = c(v.ring)
+  } else if (state === 'Invalid') root.stroke = c('status.critical.border-strong')
+  return { root, indicator: { text: c(v.ink) } }
 }
 
 export const CHECKBOX: ComponentRecipe = {
   key: 'Checkbox',
   slots: ['root', 'indicator'],
-  defaults: { Checked: 'True', State: 'Default' },
+  defaults: { Size: 'default', Checked: 'false', State: 'Default', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.control', strokeWidth: 'stroke.control', height: 'selector.control', width: 'selector.control', hit: 'size.hit' },
+      root: { radius: 'radius.control', strokeWidth: 'stroke.control', hit: 'size.hit' },
     })),
-    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, checkPaint),
+    part({ Size: CHECKBOX_SIZES }, (size) => ({
+      root: { height: size === 'default' ? 'selector.control' : 'selector.compact', width: size === 'default' ? 'selector.control' : 'selector.compact' },
+      indicator: { width: size === 'default' ? 'icon.small' : 'spacing.3', height: size === 'default' ? 'icon.small' : 'spacing.3' },
+    })),
+    part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint),
   ],
 }
 

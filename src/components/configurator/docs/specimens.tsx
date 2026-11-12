@@ -548,8 +548,10 @@ export function Live({
   const inspecting = useInspectorActive()
 
   const toggleValues = toggle ? axisValues(c, toggle) : []
-  const canToggle = !!toggle && toggleValues.includes('True') && toggleValues.includes('False')
-  const [on, setOn] = useState((v[toggle ?? ''] ?? 'True') === 'True')
+  // The pair is True / False, or the Figma file's lowercase true / false (Checkbox).
+  const [yes, no] = toggleValues.includes('true') && toggleValues.includes('false') ? ['true', 'false'] : ['True', 'False']
+  const canToggle = !!toggle && toggleValues.includes(yes) && toggleValues.includes(no)
+  const [on, setOn] = useState(['True', 'true'].includes(v[toggle ?? ''] ?? yes))
 
   if (!render) return null
 
@@ -565,7 +567,7 @@ export function Live({
 
   const merged: AxisValues = { ...v }
   if (state) merged.State = state
-  if (canToggle) merged[toggle] = on ? 'True' : 'False'
+  if (canToggle) merged[toggle] = on ? yes : no
 
   const flip = canToggle ? () => setOn((o) => !o) : undefined
 

@@ -4680,19 +4680,25 @@ var init_componentCatalogue = __esm({
         key: "Checkbox",
         label: "Checkbox",
         category: "Form Controls",
-        description: "shadcn/ui Checkbox: the box alone. Label it with a horizontal Field and a FieldLabel.",
-        usage: "Use for independent on/off choices and multi-select lists. For an instant setting, use Switch.",
+        description: "Single checkbox for an independent boolean or a parent row summarising a partial selection (indeterminate). The box alone: label it with CheckboxItem.",
+        usage: "Use for independent on/off choices and multi-select lists; indeterminate for a parent whose children are partly checked. For an instant setting, use Switch. Variant colours the checked box (default accent, secondary neutral, status colours, inverse on dark surfaces).",
+        // The Figma file's axes, value for value (design-plans/checkbox-contract.md).
         axes: [
-          { name: "Checked", values: ["True", "False"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "Checked", values: ["false", "true", "indeterminate"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled", "Invalid"] },
+          { name: "Variant", values: ["default", "secondary", "critical", "success", "info", "inverse"] }
         ],
         figmaSets: ["Checkbox"],
         props: [
-          { name: "checked / defaultChecked", type: 'boolean | "indeterminate"', description: "Value (Radix)." },
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Box 16 \xB7 16 \xB7 20 (Size/selector-sm \xB7 md), glyph 12 \xB7 12 \xB7 16." },
+          { name: "checked / defaultChecked", type: 'boolean | "indeterminate"', description: "Figma Checked false \xB7 true \xB7 indeterminate (Radix)." },
+          { name: "variant", type: '"default" | "secondary" | "critical" | "success" | "info" | "inverse"', description: "Colour of the checked box and of its focus ring." },
           { name: "onCheckedChange", type: "(checked) => void", description: "Change handler." },
-          { name: "disabled", type: "boolean", description: "Prevents interaction." }
+          { name: "disabled / aria-invalid", type: "boolean", description: "Disabled mutes the box; aria-invalid turns its edge critical." },
+          { name: "forceState", type: '"Default" | "Hover" | "Focused" | "Disabled" | "Invalid"', description: "Pin a state without a pointer (docs)." }
         ],
-        accessibility: 'Radix checkbox (role="checkbox", Space toggles). Associate a FieldLabel with htmlFor.'
+        accessibility: 'Radix checkbox (role="checkbox", aria-checked mixed for indeterminate, Space toggles). Give it a label: CheckboxItem, or a Label with htmlFor.'
       },
       {
         key: "RadioGroup",
@@ -9183,19 +9189,26 @@ function otpSlotRoot(variant, state2) {
   }
   return { ...rest, halo: NONE };
 }
-function checkPaint(checked, state2) {
-  const on = checked === "True";
-  const disabled = state2 === "Disabled";
-  const hover = state2 === "Hover";
-  const focus = state2 === "Focused" ? c("border.focus") : NONE;
-  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  let root;
-  if (disabled) root = { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), focus, ring };
-  else if (on) {
-    const fill = c(hover ? "action.primary.hover" : "action.primary.default");
-    root = { fill, stroke: fill, focus, ring };
-  } else root = { fill: c("surface.input"), stroke: c(hover ? "border.control-hover" : "border.control"), focus, ring };
-  return { root, indicator: { text: c(disabled ? "content.disabled" : "content.on-action") } };
+function checkPaint(checked, state2, variant) {
+  const on = checked !== "false";
+  const v = CHECKBOX_ON[variant];
+  const inverse = variant === "inverse";
+  if (state2 === "Disabled") return {
+    root: { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), focus: NONE, ring: NONE },
+    indicator: { text: c("content.disabled") }
+  };
+  const restFill = on ? v.fill : inverse ? "surface.inverse" : "surface.input";
+  const restEdge = on ? v.fill : inverse ? "border.inverse" : "border.control";
+  const root = { fill: c(restFill), stroke: c(restEdge), focus: NONE, ring: NONE };
+  if (state2 === "Hover") {
+    const h = on ? v.hover : inverse ? "content.inverse-secondary" : "border.control-hover";
+    root.stroke = c(h);
+    if (on) root.fill = c(h);
+  } else if (state2 === "Focused") {
+    root.focus = c(v.edge);
+    root.ring = c(v.ring);
+  } else if (state2 === "Invalid") root.stroke = c("status.critical.border-strong");
+  return { root, indicator: { text: c(v.ink) } };
 }
 function switchPaint(checked, state2) {
   const on = checked === "True";
@@ -9236,7 +9249,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9737,15 +9750,31 @@ var init_forms = __esm({
         }))
       ]
     };
+    CHECKBOX_SIZES = ["xs", "sm", "default"];
+    CHECKBOX_CHECKED = ["false", "true", "indeterminate"];
+    CHECKBOX_STATES = ["Default", "Hover", "Focused", "Disabled", "Invalid"];
+    CHECKBOX_VARIANTS = ["default", "secondary", "critical", "success", "info", "inverse"];
+    CHECKBOX_ON = {
+      default: { fill: "action.primary.default", hover: "action.primary.hover", ink: "content.on-action", edge: "border.focus", ring: "border.ring.default" },
+      secondary: { fill: "content.primary", hover: "content.secondary", ink: "content.inverse", edge: "border.strong", ring: "border.subtle" },
+      critical: { fill: "status.critical.surface-solid", hover: "status.critical.surface-solid-hover", ink: "status.critical.on-solid", edge: "status.critical.border-strong", ring: "status.critical.border" },
+      success: { fill: "status.success.surface-solid", hover: "status.success.surface-solid-hover", ink: "status.success.on-solid", edge: "status.success.border-strong", ring: "status.success.border" },
+      info: { fill: "status.info.surface-solid", hover: "status.info.surface-solid-hover", ink: "status.info.on-solid", edge: "status.info.border-strong", ring: "status.info.border" },
+      inverse: { fill: "content.inverse", hover: "content.inverse-secondary", ink: "content.primary", edge: "border.inverse", ring: "surface.inverse-muted" }
+    };
     CHECKBOX = {
       key: "Checkbox",
       slots: ["root", "indicator"],
-      defaults: { Checked: "True", State: "Default" },
+      defaults: { Size: "default", Checked: "false", State: "Default", Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.control", strokeWidth: "stroke.control", height: "selector.control", width: "selector.control", hit: "size.hit" }
+          root: { radius: "radius.control", strokeWidth: "stroke.control", hit: "size.hit" }
         })),
-        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, checkPaint)
+        part({ Size: CHECKBOX_SIZES }, (size) => ({
+          root: { height: size === "default" ? "selector.control" : "selector.compact", width: size === "default" ? "selector.control" : "selector.compact" },
+          indicator: { width: size === "default" ? "icon.small" : "spacing.3", height: size === "default" ? "icon.small" : "spacing.3" }
+        })),
+        part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint)
       ]
     };
     RADIO_GROUP = {

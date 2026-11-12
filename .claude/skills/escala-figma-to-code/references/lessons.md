@@ -248,3 +248,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Nested sets FILL the parent but carry a fixed specimen width in their recipe | Dropzone 400 / rows 480 inside a 480 column | `w-full!` on the nested root from the parent (important beats the recipe rule) |
 | A new story file 404s in a running Storybook («importers[path] is not a function») | The index had not picked it up yet | Reload the iframe once |
 | Rebuilt recipe drops the plugin's old slots | Parity `anatomyGaps` | New slots in `WEB_ONLY_SLOTS` (old ones were not demanded here) |
+
+# Lessons from the Checkbox (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A 270-variant set | One read would pass 48 KB | Geometry from 7 picked variants, then colours grouped by Variant · Checked · State with a Size-invariance check (empty here) |
+| Axis values changed case (`True` → `true`) | `Live`'s toggle only knew `True / False`; callers passed `Checked: 'True'` | `Live` accepts either pair; grep every `Checked: 'True'` (board, artefacts, RadiusRolesPreview, overview, agent screen patterns) and the specimen maps the old values |
+| Per-Variant focus pairs (secondary `Border/strong` + `Border/subtle`, inverse…) | Two tests demanded `border.focus` / "never border.strong" on every Checkbox | Narrow the tests to what the file says (default Variant's focus; the RESTING edge is border.control) with a dated comment |
+| Fills bound to TEXT roles (secondary `Content/primary`, inverse `Content/inverse`) | Looks like a binding mistake | Copy; say it in the contract |
+| `exportAudit` I10 budget again | 95 762 > 95 000 | 105 000 with a dated note |

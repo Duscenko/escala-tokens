@@ -19,9 +19,6 @@
       "status": "part",
       "of": "Combobox"
     },
-    "Checkbox": {
-      "status": "rebuild"
-    },
     "CheckboxGroup": {
       "status": "part",
       "of": "Checkbox"

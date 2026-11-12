@@ -219,8 +219,10 @@ export const OVERVIEWS: Record<string, Overview> = {
   // A row of labelled controls repeats the label; two short columns read as
   // the on/off pair, then the same pair disabled.
   Checkbox: [
-    [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
-    [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
+    each('Checked', ['false', 'true', 'indeterminate']),
+    each('Variant', ['default', 'secondary', 'critical', 'success', 'info', 'inverse'], { Checked: 'true' }),
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled', 'Invalid'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
   ],
   Switch: [
     [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],

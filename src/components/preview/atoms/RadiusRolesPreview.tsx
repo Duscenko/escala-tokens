@@ -21,8 +21,8 @@ function Examples({ role, tokens: t }: { role: string; tokens: PreviewTokens }) 
   if (role === 'control') {
     return (
       <>
-        <CheckboxSpec t={t} v={{ Checked: 'True' }} />
-        <CheckboxSpec t={t} v={{ Checked: 'False' }} />
+        <CheckboxSpec t={t} v={{ Checked: 'true' }} />
+        <CheckboxSpec t={t} v={{ Checked: 'false' }} />
       </>
     )
   }

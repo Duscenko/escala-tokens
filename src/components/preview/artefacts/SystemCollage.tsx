@@ -1131,7 +1131,7 @@ export function SystemCollage({
     ),
     checkbox: (
         <ScaledModule key="checkbox" t={tile(20)} appearance={appearanceAt(20)}>
-          <TokenInspector component="Checkbox" variant={{ Checked: 'True' }}>
+          <TokenInspector component="Checkbox" variant={{ Checked: 'true' }}>
             <SkeletonSettingsList
               t={tile(20)}
               control="checkbox"

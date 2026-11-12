@@ -44,7 +44,7 @@ export const SCREEN_PATTERNS: ScreenPattern[] = [
     parts: [
       { key: 'Card', use: 'the sign-in surface holding the whole form' },
       { key: 'Input', use: 'email, then password, full width' },
-      { key: 'Checkbox', axes: { Checked: 'True' }, use: 'remember me' },
+      { key: 'Checkbox', axes: { Checked: 'true' }, use: 'remember me' },
       { key: 'Button', axes: { Variant: 'default', Size: 'lg' }, use: 'sign in: the one primary action, full width' },
       { key: 'Separator', use: 'the "or" rule, a separator on each side of the word' },
       { key: 'SocialLoginButton', axes: { Provider: 'google' }, use: 'one per provider (google, apple), full width' },

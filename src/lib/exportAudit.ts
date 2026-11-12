@@ -70,7 +70,9 @@ export const BUDGETS = {
   // option), each with its own design-skill file.
   // 90k → 95k (2026-11-12): date picker page (trigger, popover) and CalendarDay, each with
   // its own design-skill file.
-  contextAllTokens: 95_000,
+  // 95k → 105k (2026-11-12): FileUpload became three Figma components (dropzone, item,
+  // upload) and Checkbox carries 270 variants (Size × Checked × State × Variant).
+  contextAllTokens: 105_000,
   contextFoundationTokens: 12_000,
 }
 

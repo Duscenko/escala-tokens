@@ -14,7 +14,7 @@ import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption 
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
-import { Checkbox as SkCheckbox } from '../../../escala-ui/checkbox'
+import { Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
 import { Switch as SkSwitch, type SwitchSize } from '../../../escala-ui/switch'
 import { Slider as SkSlider } from '../../../escala-ui/slider'
@@ -332,28 +332,23 @@ export function SkeletonInputOTPSlotSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-function checkGlyph(t: SpecimenProps['t']) {
-  const px = parseFloat(selectorRoleOf(t, 'control', '18px')) || 18
-  return (
-    <PhosphorWeightProvider weight="bold">
-      <PreviewIcon concept="check" size={Math.round(px * 0.72)} />
-    </PhosphorWeightProvider>
-  )
-}
-
-/** shadcn's docs example: the checkbox in a horizontal Field with its label. */
+/** The Figma Checkbox in a horizontal Field with its label (the board's «Remember me»). Legacy
+ *  links named Checked True / False. */
 export function SkeletonCheckboxSpecimen({ t, v }: SpecimenProps) {
   const { t: translate } = useI18n()
   const id = useId()
+  const raw = v.Checked ?? 'true'
+  const checked: CheckboxChecked = raw === 'indeterminate' ? 'indeterminate' : raw === 'true' || raw === 'True'
   return (
     <RecipeScope t={t}>
       <SkField orientation="horizontal" style={{ width: 'auto' }}>
         <SkCheckbox
           id={id}
-          key={`${v.Checked}`}
-          defaultChecked={(v.Checked ?? 'True') === 'True'}
-          forceState={(v.State ?? 'Default') as 'Default'}
-          icon={checkGlyph(t)}
+          key={`${raw}`}
+          defaultChecked={checked}
+          size={(v.Size ?? 'default') as CheckboxSize}
+          variant={(v.Variant ?? 'default') as CheckboxVariant}
+          forceState={(v.State ?? 'Default') as CheckboxState}
         />
         <SkFieldLabel htmlFor={id}>{translate('Remember me')}</SkFieldLabel>
       </SkField>
@@ -415,7 +410,7 @@ export function SkeletonSettingsList({ t, control, legend, rows, w }: {
         <SkFieldGroup style={{ gap: 'var(--spacing-3)' }}>
           {rows.map((r, i) => (
             <SkField key={r.label} orientation="horizontal">
-              {control === 'checkbox' && <SkCheckbox id={`${id}-${i}`} defaultChecked={r.on} icon={checkGlyph(t)} />}
+              {control === 'checkbox' && <SkCheckbox id={`${id}-${i}`} defaultChecked={r.on} />}
               <SkFieldLabel htmlFor={`${id}-${i}`}>{r.label}</SkFieldLabel>
               {control === 'switch' && <SkSwitch id={`${id}-${i}`} defaultChecked={r.on} />}
             </SkField>

@@ -134,7 +134,7 @@ function ColorCollage({
           Both actually flip on click (`toggle`), which is the only way to see
           the brand fill arrive and leave the way it will in the product. */}
       <div className="flex flex-wrap items-center gap-4">
-        <Live c="Checkbox" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
+        <Live c="Checkbox" t={tokens} v={{ Checked: 'true' }} toggle="Checked" />
         <Live c="Switch" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
       </div>
 
