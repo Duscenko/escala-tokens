@@ -1,6 +1,7 @@
 # Button — el manual "de Figma a React", aplicado
 
-Fecha: 2026-11-12 · Estado: **plan, nada hecho**.
+Fecha: 2026-11-12 · Estado: **F1, F2, F3, F5 hechas** (noche del 12-11); **F4 planificada**
+(`packages-ui-extraction.md`), sin ejecutar.
 Fuente: archivo Figma `Escala Design System (Real)` (`7j5zukN5HpihGVJMmyjA20`),
 página `❖ Button (✓)` (`4:2185`) y `❖ IconButton (✓)` (`627:785`). Manual:
 `Manual Escala de Figma a React` (Cesar Durango, 2026-11-12).
