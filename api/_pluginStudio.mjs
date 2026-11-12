@@ -3945,25 +3945,54 @@ var init_componentCatalogue = __esm({
         key: "Button",
         label: "Button",
         category: "Button & Actions",
-        description: "shadcn/ui Button: six variants (default, secondary, outline, ghost, destructive, link) and eight sizes, four of them square icon buttons. An icon-only ghost button is the dismiss control; a link button is an inline link.",
-        usage: "Use default for the single most important action on a surface (1\u20132 per section); secondary/outline/ghost for the rest; destructive for an action that removes data. An icon-only button needs an aria-label.",
-        // Variant and Size are shadcn's own, value for value. State is a Figma
-        // axis only: in code it is pseudo-classes (forceState pins it in docs).
+        description: "Triggers an action or navigation. Variant is the intent \u2014 default (brand), secondary (neutral), critical (destructive) \u2014 and Appearance the style \u2014 solid, outline, ghost, link \u2014 in all 12 combinations, four sizes and six states.",
+        usage: "Use default \xB7 solid for the single most important action on a surface (one per view); secondary for the rest; critical \xB7 solid for an irreversible action and critical \xB7 outline for a risky one next to a safe one. Icon-only actions are IconButton.",
+        // The Figma file's axes, value for value (spec/figma-components.json). State is
+        // a Figma axis only: in code it is pseudo-classes (forceState pins it in docs).
         axes: [
-          { name: "Variant", values: ["default", "secondary", "outline", "ghost", "destructive", "link"] },
-          { name: "Size", values: ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] },
+          { name: "Variant", values: ["default", "secondary", "critical"] },
+          { name: "Appearance", values: ["solid", "outline", "ghost", "link"] },
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
           { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"] }
         ],
         figmaSets: ["Button"],
         props: [
-          { name: "variant", type: '"default" | "secondary" | "outline" | "ghost" | "destructive" | "link"', description: "Visual emphasis \u2014 shadcn's variants." },
-          { name: "size", type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"', description: "Control height from the Sizes foundation (hit \xB7 compact \xB7 control \xB7 touch). icon* are square." },
+          { name: "variant", type: '"default" | "secondary" | "critical"', description: "Intent: brand, neutral or destructive." },
+          { name: "appearance", type: '"solid" | "outline" | "ghost" | "link"', description: "Style: a fill, an edge, nothing until hover, or an inline link." },
+          { name: "size", type: '"default" | "xs" | "sm" | "lg"', description: "Control height from the Size roles (control-xs \xB7 sm \xB7 md \xB7 lg)." },
+          { name: "leading", type: "ReactNode", description: "Icon before the label (Figma IconLeadingVisible + IconLeadingIcon)." },
+          { name: "trailing", type: "ReactNode", description: "Icon after the label (Figma IconTrailingVisible + IconTrailingIcon)." },
+          { name: "loading", type: "boolean", description: "Replaces the leading icon with a spinner and sets aria-busy." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled roles." },
           { name: "asChild", type: "boolean", description: "Render the child element (a link, a router link) with the Button styles \u2014 Radix Slot." },
-          { name: "loading", type: "boolean", description: "Escala: replaces the leading icon with a spinner and sets aria-busy." },
-          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." },
-          { name: "children", type: "ReactNode", description: "Label, with optional icons before / after it as plain children." }
+          { name: "children", type: "ReactNode", description: "The label (Figma Label). Always visible: it is the accessible name." }
         ],
-        accessibility: "Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. Icon-only buttons (size icon*) need an aria-label."
+        accessibility: "Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. The label is the accessible name; an icon-only action is IconButton."
+      },
+      {
+        key: "IconButton",
+        label: "Icon Button",
+        category: "Button & Actions",
+        description: "An action with a single icon and no visible label: a square at the Button heights. Same Variant \xD7 Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.",
+        usage: "Use in toolbars, table rows and dialog headers where the icon is unambiguous. Always give it an aria-label; an action that needs words is a Button.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary", "critical"] },
+          { name: "Appearance", values: ["solid", "outline", "ghost", "link"] },
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"] }
+        ],
+        figmaSets: ["IconButton"],
+        props: [
+          { name: "icon", type: "ReactNode", description: "The glyph (Figma Icon)." },
+          { name: "aria-label", type: "string", description: "Required: the accessible name, including a count when the badge shows one." },
+          { name: "variant", type: '"default" | "secondary" | "critical"', description: "Intent: brand, neutral or destructive." },
+          { name: "appearance", type: '"solid" | "outline" | "ghost" | "link"', description: "Style, as Button." },
+          { name: "size", type: '"default" | "xs" | "sm" | "lg"', description: "Square side from the Size roles." },
+          { name: "badge", type: "ReactNode", description: "A count or dot on the top-right corner (Figma BadgeVisible)." },
+          { name: "loading", type: "boolean", description: "Replaces the icon with a spinner and sets aria-busy." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled roles." }
+        ],
+        accessibility: "Native <button> with a required aria-label (there is no visible text). Disabled sets aria-disabled; loading sets aria-busy."
       },
       {
         key: "ButtonGroup",
@@ -5140,6 +5169,7 @@ var init_componentCatalogue = __esm({
     COMPONENT_KEYS = COMPONENTS.map((c2) => c2.key);
     ESSENTIAL_COMPONENT_KEYS = [
       "Button",
+      "IconButton",
       "Input",
       "Select",
       "Checkbox",
@@ -7949,66 +7979,93 @@ var init_helpers = __esm({
 });
 
 // src/lib/recipes/actions.ts
-function buttonPaint(variant, state2) {
+function buttonPaint(variant, appearance, state2, iconOnly = false) {
+  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
   if (state2 === "Disabled") {
-    const filled = variant === "default" || variant === "secondary" || variant === "destructive";
     return {
       root: {
-        fill: filled ? c("action.disabled.default") : NONE,
-        stroke: variant === "outline" ? c("action.disabled.default") : NONE,
+        fill: appearance === "solid" ? c("action.disabled.default") : NONE,
+        stroke: appearance === "outline" ? c("border.control") : NONE,
         text: c("content.disabled"),
         focus: NONE,
         ring: NONE
       }
     };
   }
-  const hover = state2 === "Hover";
-  const pressed = state2 === "Pressed";
-  const focus = state2 === "Focused";
-  const gap = focus ? c("surface.page") : NONE;
-  const halo = (role) => focus ? c(role) : NONE;
-  switch (variant) {
-    case "default":
-      return { root: { fill: c(pressed ? "action.primary.pressed" : hover ? "action.primary.hover" : "action.primary.default"), stroke: NONE, text: c("content.on-action"), focus: gap, ring: halo("border.ring.default") } };
-    case "secondary":
-      return { root: { fill: c(pressed ? "action.secondary.pressed" : hover ? "action.secondary.hover" : "action.secondary.default"), stroke: NONE, text: c("content.on-secondary"), focus: gap, ring: halo("border.control") } };
-    case "outline":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: c("border.control"), text: c("content.primary"), focus: NONE, ring: halo("border.control") } };
-    case "ghost":
-      return { root: { fill: pressed ? c("action.ghost.pressed") : hover ? c("action.ghost.hover") : NONE, stroke: NONE, text: c("content.primary"), focus: NONE, ring: halo("border.control") } };
-    case "destructive":
-      return { root: { fill: c(pressed ? "status.critical.surface-solid-pressed" : hover ? "status.critical.surface-solid-hover" : "status.critical.surface-solid"), stroke: NONE, text: c("status.critical.on-solid"), focus: gap, ring: halo("status.critical.border") } };
-    default:
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? "content.link.hover" : "content.link.default"), focus: NONE, ring: halo("border.ring.default") } };
+  const step = state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
+  const focused = state2 === "Focused";
+  if (appearance === "solid") {
+    const k2 = SOLID[variant];
+    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(k2.focus) : NONE, ring } };
   }
+  if (appearance === "link") {
+    const [rest, over] = LINK[variant];
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c("border.focus") : NONE, ring } };
+  }
+  const k = QUIET[variant];
+  const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
+  const edge = variant === "critical" && appearance === "outline" && !iconOnly ? "status.critical.border-strong" : "border.focus";
+  return {
+    root: {
+      fill: wash,
+      stroke: appearance === "outline" ? c(k.edge) : NONE,
+      text: c(k.ink),
+      focus: focused ? c(edge) : NONE,
+      ring
+    }
+  };
 }
-var BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_STATES, BUTTON_GEOMETRY, BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
-    BUTTON_VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "link"];
-    BUTTON_SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"];
+    BUTTON_VARIANTS = ["default", "secondary", "critical"];
+    BUTTON_APPEARANCES = ["solid", "outline", "ghost", "link"];
+    BUTTON_SIZES = ["default", "xs", "sm", "lg"];
     BUTTON_STATES = ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"];
-    BUTTON_GEOMETRY = {
-      xs: { height: "size.hit", paddingX: "spacing.2", gap: "spacing.1" },
-      sm: { height: "size.compact", paddingX: "spacing.3", gap: "spacing.1_5" },
-      default: { height: "size.control", paddingX: "spacing.4", gap: "spacing.gap-control" },
-      lg: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.gap-control" },
-      "icon-xs": { height: "size.hit", width: "size.hit", paddingX: "spacing.0" },
-      "icon-sm": { height: "size.compact", width: "size.compact", paddingX: "spacing.0" },
-      icon: { height: "size.control", width: "size.control", paddingX: "spacing.0" },
-      "icon-lg": { height: "size.touch", width: "size.touch", paddingX: "spacing.0" }
+    SOLID = {
+      default: { fill: ["action.primary.default", "action.primary.hover", "action.primary.pressed"], ink: "content.on-action", focus: "border.focus" },
+      secondary: { fill: ["action.secondary.default", "action.secondary.hover", "action.secondary.pressed"], ink: "content.on-secondary", focus: "border.strong" },
+      critical: { fill: ["status.critical.surface-solid", "status.critical.surface-solid-hover", "status.critical.surface-solid-pressed"], ink: "status.critical.on-solid", focus: "status.critical.border-strong" }
     };
+    QUIET = {
+      default: { ink: "content.accent", edge: "border.accent" },
+      secondary: { ink: "content.primary", edge: "border.control" },
+      critical: { ink: "status.critical.content", edge: "status.critical.border-strong" }
+    };
+    LINK = {
+      default: ["content.link.default", "content.link.hover"],
+      secondary: ["content.secondary", "content.primary"],
+      critical: ["status.critical.content", "status.critical.content"]
+    };
+    BUTTON_HEIGHT = { xs: "size.hit", sm: "size.compact", default: "size.control", lg: "size.touch" };
+    BUTTON_GAP = { xs: "spacing.gap-tight", sm: "spacing.gap-control", default: "spacing.gap-control", lg: "spacing.gap-control" };
     BUTTON = {
       key: "Button",
       slots: ["root", "label", "icon"],
-      defaults: { Variant: "default", Size: "default", State: "Default" },
+      defaults: { Variant: "default", Appearance: "solid", Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
           root: { radius: "radius.action", strokeWidth: "stroke.control", font: "type.button" }
         })),
-        part({ Size: BUTTON_SIZES }, (size) => ({ root: BUTTON_GEOMETRY[size] })),
-        part({ Variant: BUTTON_VARIANTS, State: BUTTON_STATES }, buttonPaint)
+        part({ Size: BUTTON_SIZES }, (size) => ({
+          root: { height: BUTTON_HEIGHT[size], paddingX: "spacing.inset-control", gap: BUTTON_GAP[size] }
+        })),
+        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s))
+      ]
+    };
+    ICON_BUTTON = {
+      key: "IconButton",
+      slots: ["root", "icon", "badge"],
+      defaults: { Variant: "default", Appearance: "solid", Size: "default", State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.action", strokeWidth: "stroke.control" }
+        })),
+        part({ Size: BUTTON_SIZES }, (size) => ({
+          root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: "spacing.0" }
+        })),
+        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s, true))
       ]
     };
     BUTTON_GROUP = {
@@ -9818,6 +9875,7 @@ var init_componentRecipes = __esm({
     init_helpers();
     COMPONENT_RECIPES = {
       Button: BUTTON,
+      IconButton: ICON_BUTTON,
       ButtonGroup: BUTTON_GROUP,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
@@ -12698,7 +12756,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 106,
+          version: 107,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -13991,6 +14049,19 @@ var init_useDesignStore = __esm({
               seed(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) seed(sys?.snapshot);
+              }
+            }
+            if (version < 107) {
+              const split = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                if (state2.selectedComponents.includes("Button") && !state2.selectedComponents.includes("IconButton")) {
+                  const at = state2.selectedComponents.indexOf("Button") + 1;
+                  state2.selectedComponents.splice(at, 0, "IconButton");
+                }
+              };
+              split(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) split(sys?.snapshot);
               }
             }
             return persisted;
