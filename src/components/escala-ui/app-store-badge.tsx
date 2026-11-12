@@ -25,7 +25,7 @@ function AppStoreBadge({ store, className, style, ...props }: AppStoreBadgeProps
     >
       <StoreGlyph play={play} />
       <span className="flex flex-col" style={{ lineHeight: 1.15 }}>
-        <span data-part="AppStoreBadge.eyebrow" style={{ opacity: 0.8 }}>{play ? 'GET IT ON' : 'Download on the'}</span>
+        <span data-part="AppStoreBadge.eyebrow">{play ? 'GET IT ON' : 'Download on the'}</span>
         <span data-part="AppStoreBadge.name">{play ? 'Google Play' : 'App Store'}</span>
       </span>
     </a>
