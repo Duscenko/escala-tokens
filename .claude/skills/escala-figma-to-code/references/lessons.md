@@ -108,3 +108,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A fixed width with no variable (3 × control height) | — | A summed ref (`size.control+size.control+size.control`): `dim()` turns it into `calc(...)`, still tokens |
 | `:focus-visible` checks from script | `el.focus()` from `javascript_tool` gave no ring: the document had no focus | Click into the element in the pane first (`document.hasFocus()` true), then measure |
 | A nested component's slot the recipe declared but never sized (IconButton `icon`) | The owner: the − / + of NumberInput "muy exagerados" — an unsized SVG filled the whole 32px button (glyph 24×2 instead of 12×1) | Size the slot in the NESTED component's recipe from its own Figma frame (`Size/icon-sm · sm · md · lg`) and wrap the glyph in the slot (`[&>svg]:size-full`); measure the glyph's box against the file's vector, not just the button's box |
+
+# Lessons from the Textarea (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A glyph the file positions ABSOLUTELY in a box that lays its stroke out | Absolute children ignore padding and stroke in Figma (icon at width − padX − glyph); a CSS absolute child measures from the PADDING edge, 1px inside the border | An overlay slot (`adornment`, `corner`) with `inset: calc(-1 * var(--stroke-control))` so it starts at the border's outer edge, and the file's padding on it — no stroke of its own, so `insetMinusStroke` gives nothing back. `--escala-stroke-width` is NOT inherited: never read it from a child |
+| A nested component whose inner frame is anchored MIN | Spinner instance resized to 14 · 18, its 16px glyph stays top-left (overflows / off-centre) | Copied: the spinner slot is the frame size, the glyph a fixed 16px at its top-left. Read the nested vector's box and constraints, not only the instance's size |
+| A rebuilt recipe drops slots the frozen plugin documents (`RECIPE_FIGMA_ANATOMY` root `field`, omit label · hint · count) | Parity: `Textarea.label: expected … to include 'label'` | `STALE_ANATOMY` + the new slots in `WEB_ONLY_SLOTS`, dated |
+| The file has a prototype board (`DocBoardPrototype`) | — | Read its Textarea instances (props) and captions, and add a "Resting · Focused" story with the same copy |

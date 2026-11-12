@@ -6,7 +6,7 @@ import { useI18n } from '../../../../lib/i18n'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../preview/artefacts/boardScripts'
 import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type InputType } from '../../../escala-ui/input'
-import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
+import { Textarea as SkTextarea, type TextareaSize, type TextareaState } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag } from '../../../escala-ui/input-tag'
@@ -135,18 +135,25 @@ function BoardInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProps) {
   )
 }
 
+/** The Figma Textarea: Size × State × Value, the file's own copy. */
+const TEXTAREA_COPY = {
+  placeholder: 'Write a message…',
+  filled: 'Tell us about the project: goals, timeline and any constraints we should know about before the kickoff.',
+}
 export function SkeletonTextareaSpecimen({ t, v, w }: SpecimenProps) {
-  const error = v.State === 'Error'
+  const state = (v.State ?? 'Default') as TextareaState
+  const filled = v.Value === 'filled'
   return (
     <RecipeScope t={t}>
-      <SkTextareaField
-        label="Description"
-        placeholder="Tell us about your design system…"
-        hint={error ? 'Description is required.' : 'Max 200 characters.'}
-        maxLength={200}
-        forceState={(v.State ?? 'Default') as 'Default'}
-        width={w ?? 280}
-        rows={3}
+      <SkTextarea
+        aria-label="Message"
+        size={(v.Size ?? 'default') as TextareaSize}
+        forceState={state === 'Default' ? undefined : state}
+        placeholder={TEXTAREA_COPY.placeholder}
+        // Keyed on Value so the docs control swaps between empty and filled.
+        key={filled ? 'filled' : 'empty'}
+        defaultValue={filled ? TEXTAREA_COPY.filled : undefined}
+        style={{ width: w ?? 360 }}
       />
     </RecipeScope>
   )

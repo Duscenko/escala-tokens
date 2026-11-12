@@ -9218,20 +9218,24 @@
       "key": "Textarea",
       "slots": [
         "root",
-        "label",
-        "field",
+        "text",
         "placeholder",
-        "hint",
-        "count"
+        "adornment",
+        "status",
+        "spinner",
+        "corner",
+        "grip"
       ],
       "pseudoSlots": {
         "placeholder": {
-          "of": "field",
+          "of": "text",
           "pseudo": "::placeholder"
         }
       },
       "defaults": {
-        "State": "Default"
+        "Size": "default",
+        "State": "Default",
+        "Value": "placeholder"
       },
       "parts": [
         {
@@ -9239,26 +9243,95 @@
           "values": {
             "": {
               "root": {
-                "gap": "spacing.gap-tight"
+                "radius": "radius.action",
+                "strokeWidth": "stroke.control"
               },
-              "label": {
-                "font": "type.label"
+              "status": {
+                "text": "color.status.critical.content"
               },
-              "field": {
-                "radius": "min(radius.action,radius.2xl)",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.inset-control",
-                "gap": "spacing.gap-control",
-                "minHeight": "size.2xl+spacing.6",
-                "paddingY": "spacing.2_5",
-                "font": "type.placeholder"
-              },
-              "hint": {
-                "font": "type.helper"
-              },
-              "count": {
-                "font": "type.helper",
+              "spinner": {
                 "text": "color.content.secondary"
+              },
+              "corner": {
+                "paddingX": "spacing.1_5",
+                "paddingY": "spacing.1_5"
+              },
+              "grip": {
+                "width": "spacing.2",
+                "height": "spacing.2"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "height": "size.touch+size.touch",
+                "paddingX": "spacing.inset-control+stroke.control",
+                "paddingY": "spacing.gap-control+stroke.control"
+              },
+              "text": {
+                "font": "type.body-md"
+              },
+              "adornment": {
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.gap-control"
+              },
+              "status": {
+                "width": "spacing.4",
+                "height": "spacing.4"
+              },
+              "spinner": {
+                "width": "spacing.4",
+                "height": "spacing.4"
+              }
+            },
+            "sm": {
+              "root": {
+                "height": "size.compact+size.control",
+                "paddingX": "spacing.gap-control+stroke.control",
+                "paddingY": "spacing.1_5+stroke.control"
+              },
+              "text": {
+                "font": "type.body-sm"
+              },
+              "adornment": {
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.1_5"
+              },
+              "status": {
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              },
+              "spinner": {
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.2xl+size.2xl",
+                "paddingX": "spacing.gap-group+stroke.control",
+                "paddingY": "spacing.inset-control+stroke.control"
+              },
+              "text": {
+                "font": "type.body-lg"
+              },
+              "adornment": {
+                "paddingX": "spacing.gap-group",
+                "paddingY": "spacing.inset-control"
+              },
+              "status": {
+                "width": "spacing.4+spacing.0_5",
+                "height": "spacing.4+spacing.0_5"
+              },
+              "spinner": {
+                "width": "spacing.4+spacing.0_5",
+                "height": "spacing.4+spacing.0_5"
               }
             }
           }
@@ -9269,71 +9342,98 @@
           ],
           "values": {
             "Default": {
-              "label": {
-                "text": "color.content.primary"
-              },
-              "field": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.control",
-                "ring": "none",
+              "text": {
                 "text": "color.content.primary"
               },
               "placeholder": {
                 "text": "color.content.subtle"
               },
-              "hint": {
-                "text": "color.content.secondary"
+              "grip": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control"
+              }
+            },
+            "Hover": {
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "grip": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control-hover"
               }
             },
             "Focused": {
-              "label": {
+              "text": {
                 "text": "color.content.primary"
               },
-              "field": {
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "grip": {
+                "text": "color.content.subtle"
+              },
+              "root": {
                 "fill": "color.surface.input",
                 "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
-                "text": "color.content.primary"
-              },
-              "placeholder": {
-                "text": "color.content.subtle"
-              },
-              "hint": {
-                "text": "color.content.secondary"
+                "halo": "color.border.ring.default"
               }
             },
-            "Error": {
-              "label": {
-                "text": "color.content.primary"
-              },
-              "field": {
-                "fill": "color.surface.input",
-                "stroke": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+            "Invalid": {
+              "text": {
                 "text": "color.content.primary"
               },
               "placeholder": {
                 "text": "color.content.subtle"
               },
-              "hint": {
-                "text": "color.status.critical.content"
+              "grip": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.status.critical.border-strong",
+                "halo": "color.status.critical.border",
+                "paddingRight": "spacing.8+spacing.1"
+              }
+            },
+            "Loading": {
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "grip": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control",
+                "paddingRight": "spacing.8+spacing.1"
               }
             },
             "Disabled": {
-              "label": {
-                "text": "color.content.disabled"
-              },
-              "field": {
-                "fill": "color.action.disabled.default",
-                "stroke": "color.border.control",
-                "ring": "none",
+              "text": {
                 "text": "color.content.disabled"
               },
               "placeholder": {
                 "text": "color.content.disabled"
               },
-              "hint": {
-                "text": "color.content.secondary"
+              "grip": {
+                "text": "color.content.disabled"
+              },
+              "root": {
+                "fill": "color.action.disabled.default",
+                "stroke": "color.border.control",
+                "halo": "none"
               }
             }
           }

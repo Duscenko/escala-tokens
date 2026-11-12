@@ -5,7 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -93,35 +93,71 @@ export const INPUT: ComponentRecipe = {
 }
 
 // ── Textarea ───────────────────────────────────────────────────────────────
+// The Figma `Textarea` set (design-plans/textarea-contract.md, 394:152, 36 variants):
+// Size × State × Value. The box is the root (Surface/input, Border/control, Radius/action,
+// a fixed height per Size: 72 · 96 · 128) and lays its stroke out, so the text starts at
+// the padding + the stroke. The <textarea> is `text` (Type/body-sm · md · lg);
+// `placeholder` its empty state. Invalid and Loading reserve 36px on the right and
+// show a glyph at the top-right corner, `padding` in from the edge (`adornment`):
+// the warning in Status/critical/content, or the Spinner (16px glyph, top-left of a
+// 14 · 16 · 18 frame, as the file draws it). Focused and Invalid draw a 2px halo
+// fully OUTSIDE the 1px edge. `grip` is the optional resize glyph, 6px in from the
+// bottom-right corner (`corner` is its overlay).
+export const TEXTAREA_SIZES = ['default', 'sm', 'lg'] as const
+export const TEXTAREA_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Loading', 'Disabled'] as const
+/** Box height per Size (unbound in the file: 72 · 96 · 128). */
+const TEXTAREA_HEIGHT: Record<string, string> = { sm: 'size.compact+size.control', default: 'size.touch+size.touch', lg: 'size.2xl+size.2xl' }
+/** Padding per Size (Y · X): 6 · 8, gap-control · inset-control, inset-control · gap-group. */
+const TEXTAREA_PAD: Record<string, [string, string]> = {
+  sm: ['spacing.1_5', 'spacing.gap-control'], default: ['spacing.gap-control', 'spacing.inset-control'], lg: ['spacing.inset-control', 'spacing.gap-group'],
+}
+const TEXTAREA_FONT: Record<string, string> = { sm: 'type.body-sm', default: 'type.body-md', lg: 'type.body-lg' }
+/** The status glyph's frame (unbound: 14 · 16 · 18). */
+const TEXTAREA_GLYPH: Record<string, string> = { sm: 'spacing.3+spacing.0_5', default: 'spacing.4', lg: 'spacing.4+spacing.0_5' }
+
+function textareaPaint(state: string): SlotMap {
+  const disabled = state === 'Disabled'
+  const out: SlotMap = {
+    text: { text: c(disabled ? 'content.disabled' : 'content.primary') },
+    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+    grip: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+  }
+  if (disabled) out.root = { fill: c('action.disabled.default'), stroke: c('border.control'), halo: NONE }
+  else if (state === 'Invalid') out.root = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: c('status.critical.border') }
+  else if (state === 'Focused') out.root = { fill: c('surface.input'), stroke: c('border.focus'), halo: c('border.ring.default') }
+  else if (state === 'Hover') out.root = { fill: c('surface.input'), stroke: c('border.control-hover') }
+  else out.root = { fill: c('surface.input'), stroke: c('border.control') }
+  // Invalid and Loading keep 36px free on the right for the corner glyph.
+  if (state === 'Invalid' || state === 'Loading') out.root.paddingRight = 'spacing.8+spacing.1'
+  return out
+}
 
 export const TEXTAREA: ComponentRecipe = {
   key: 'Textarea',
-  slots: ['root', 'label', 'field', 'placeholder', 'hint', 'count'],
-  pseudoSlots: { placeholder: { of: 'field', pseudo: '::placeholder' } },
-  defaults: { State: 'Default' },
+  slots: ['root', 'text', 'placeholder', 'adornment', 'status', 'spinner', 'corner', 'grip'],
+  pseudoSlots: { placeholder: { of: 'text', pseudo: '::placeholder' } },
+  defaults: { Size: 'default', State: 'Default', Value: 'placeholder' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-tight' },
-      label: { font: 'type.label' },
-      field: {
-        ...FIELD_FIXED,
-        // A multi-line box: the Fields radius, capped. A pill one-line field
-        // (Fields at its roundest) would otherwise turn the box into a blob.
-        radius: TALL_FIELD_RADIUS,
-        minHeight: 'size.2xl+spacing.6', paddingY: 'spacing.2_5', font: 'type.placeholder',
-      },
-      hint: { font: 'type.helper' },
-      count: { font: 'type.helper', text: c('content.secondary') },
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control' },
+      status: { text: c('status.critical.content') },
+      spinner: { text: c('content.secondary') },
+      // The resize glyph: 8×8, 6px in from the bottom-right corner at every Size.
+      corner: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
+      grip: { width: 'spacing.2', height: 'spacing.2' },
     })),
-    part({ State: ['Default', 'Focused', 'Error', 'Disabled'] as const }, (state) => {
-      const disabled = state === 'Disabled'
+    part({ Size: TEXTAREA_SIZES }, (size) => {
+      const [y, x] = TEXTAREA_PAD[size]
+      const glyph = TEXTAREA_GLYPH[size]
       return {
-        label: { text: c(disabled ? 'content.disabled' : 'content.primary') },
-        field: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
-        placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
-        hint: { text: c(state === 'Error' ? 'status.critical.content' : 'content.secondary') },
+        root: { height: TEXTAREA_HEIGHT[size], paddingX: `${x}+stroke.control`, paddingY: `${y}+stroke.control` },
+        text: { font: TEXTAREA_FONT[size] },
+        adornment: { paddingX: x, paddingY: y },
+        status: { width: glyph, height: glyph },
+        spinner: { width: glyph, height: glyph },
       }
     }),
+    part({ State: TEXTAREA_STATES }, (state) => textareaPaint(state)),
   ],
 }
 

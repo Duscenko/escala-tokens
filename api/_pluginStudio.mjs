@@ -4298,18 +4298,23 @@ var init_componentCatalogue = __esm({
         key: "Textarea",
         label: "Textarea",
         category: "Form Controls",
-        description: "Multi-line text entry sharing the input tokens, with auto-grow and counter support.",
-        usage: "Use for free-form text over one line. Show a character counter when limits apply.",
-        axes: [{ name: "State", values: ["Default", "Focused", "Error", "Disabled"] }],
-        figmaSets: ["Input Text Area"],
-        props: [
-          { name: "label", type: "ReactNode", description: "Visible label above the field." },
-          { name: "hint", type: "ReactNode", description: "Helper text under the field." },
-          { name: "maxLength", type: "number", description: "Shows the live n/max counter." },
-          { name: "invalid", type: "boolean", description: "Error state: critical edge and aria-invalid." },
-          { name: "rows", type: "number", description: "Initial visible lines; the field resizes vertically." }
+        description: "Multi-line text field for free-form input with an optional resize glyph. Invalid shows a warning glyph and Loading a spinner in the top-right corner.",
+        usage: "Use for free-form text over one line (messages, descriptions, notes). Labels, hints and error text come from Field. Show the resize glyph when the expected length varies.",
+        // The Figma file's axes, value for value (design-plans/textarea-contract.md).
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Invalid", "Loading", "Disabled"] },
+          { name: "Value", values: ["placeholder", "filled"] }
         ],
-        accessibility: "Label linked via htmlFor/id. Counter announced politely via aria-live."
+        figmaSets: ["Textarea"],
+        props: [
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Box 72 \xB7 96 \xB7 128 high; Type/body-sm \xB7 md \xB7 lg." },
+          { name: "placeholder", type: "string", description: "Figma Placeholder: shown while the value is empty (Value placeholder)." },
+          { name: "value / defaultValue", type: "string", description: "Figma Text (Value filled)." },
+          { name: "aria-invalid / loading / disabled", type: "boolean", description: "State Invalid (warning glyph), Loading (spinner, aria-busy), Disabled. Hover and Focused come from the pointer and keyboard." },
+          { name: "resizeGlyph", type: "boolean", description: "Figma ResizeGlyphVisible: the corner glyph, which drags the box taller." }
+        ],
+        accessibility: "Give it a visible label (Field, or aria-label). On Invalid set aria-invalid and expose the error text through aria-describedby (Field does both). Loading sets aria-busy."
       },
       {
         key: "InputOTP",
@@ -8711,6 +8716,21 @@ function fieldBox(state2) {
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
   return { fill: c("surface.input"), stroke: c("border.control"), ring: NONE };
 }
+function textareaPaint(state2) {
+  const disabled = state2 === "Disabled";
+  const out = {
+    text: { text: c(disabled ? "content.disabled" : "content.primary") },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
+    grip: { text: c(disabled ? "content.disabled" : "content.subtle") }
+  };
+  if (disabled) out.root = { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE };
+  else if (state2 === "Invalid") out.root = { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") };
+  else if (state2 === "Focused") out.root = { fill: c("surface.input"), stroke: c("border.focus"), halo: c("border.ring.default") };
+  else if (state2 === "Hover") out.root = { fill: c("surface.input"), stroke: c("border.control-hover") };
+  else out.root = { fill: c("surface.input"), stroke: c("border.control") };
+  if (state2 === "Invalid" || state2 === "Loading") out.root.paddingRight = "spacing.8+spacing.1";
+  return out;
+}
 function numberInputPaint(state2) {
   if (state2 === "Disabled") return { root: { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE }, value: { text: c("content.disabled") } };
   if (state2 === "Invalid") return { root: { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") } };
@@ -8744,7 +8764,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -8815,36 +8835,42 @@ var init_forms = __esm({
         })
       ]
     };
+    TEXTAREA_SIZES = ["default", "sm", "lg"];
+    TEXTAREA_STATES = ["Default", "Hover", "Focused", "Invalid", "Loading", "Disabled"];
+    TEXTAREA_HEIGHT = { sm: "size.compact+size.control", default: "size.touch+size.touch", lg: "size.2xl+size.2xl" };
+    TEXTAREA_PAD = {
+      sm: ["spacing.1_5", "spacing.gap-control"],
+      default: ["spacing.gap-control", "spacing.inset-control"],
+      lg: ["spacing.inset-control", "spacing.gap-group"]
+    };
+    TEXTAREA_FONT = { sm: "type.body-sm", default: "type.body-md", lg: "type.body-lg" };
+    TEXTAREA_GLYPH = { sm: "spacing.3+spacing.0_5", default: "spacing.4", lg: "spacing.4+spacing.0_5" };
     TEXTAREA = {
       key: "Textarea",
-      slots: ["root", "label", "field", "placeholder", "hint", "count"],
-      pseudoSlots: { placeholder: { of: "field", pseudo: "::placeholder" } },
-      defaults: { State: "Default" },
+      slots: ["root", "text", "placeholder", "adornment", "status", "spinner", "corner", "grip"],
+      pseudoSlots: { placeholder: { of: "text", pseudo: "::placeholder" } },
+      defaults: { Size: "default", State: "Default", Value: "placeholder" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.gap-tight" },
-          label: { font: "type.label" },
-          field: {
-            ...FIELD_FIXED,
-            // A multi-line box: the Fields radius, capped. A pill one-line field
-            // (Fields at its roundest) would otherwise turn the box into a blob.
-            radius: TALL_FIELD_RADIUS,
-            minHeight: "size.2xl+spacing.6",
-            paddingY: "spacing.2_5",
-            font: "type.placeholder"
-          },
-          hint: { font: "type.helper" },
-          count: { font: "type.helper", text: c("content.secondary") }
+          root: { radius: "radius.action", strokeWidth: "stroke.control" },
+          status: { text: c("status.critical.content") },
+          spinner: { text: c("content.secondary") },
+          // The resize glyph: 8×8, 6px in from the bottom-right corner at every Size.
+          corner: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
+          grip: { width: "spacing.2", height: "spacing.2" }
         })),
-        part({ State: ["Default", "Focused", "Error", "Disabled"] }, (state2) => {
-          const disabled = state2 === "Disabled";
+        part({ Size: TEXTAREA_SIZES }, (size) => {
+          const [y, x] = TEXTAREA_PAD[size];
+          const glyph = TEXTAREA_GLYPH[size];
           return {
-            label: { text: c(disabled ? "content.disabled" : "content.primary") },
-            field: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
-            placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
-            hint: { text: c(state2 === "Error" ? "status.critical.content" : "content.secondary") }
+            root: { height: TEXTAREA_HEIGHT[size], paddingX: `${x}+stroke.control`, paddingY: `${y}+stroke.control` },
+            text: { font: TEXTAREA_FONT[size] },
+            adornment: { paddingX: x, paddingY: y },
+            status: { width: glyph, height: glyph },
+            spinner: { width: glyph, height: glyph }
           };
-        })
+        }),
+        part({ State: TEXTAREA_STATES }, (state2) => textareaPaint(state2))
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';

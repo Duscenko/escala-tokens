@@ -127,8 +127,11 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Avatar: (v) =>
     `import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"\n\n<Avatar${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <AvatarImage src={user.image} alt="Maya Duscenko" />\n  <AvatarFallback>MD</AvatarFallback>\n</Avatar>`,
 
-  Textarea: (v) =>
-    `import { TextareaField } from "@/components/ui/textarea"\n\n<TextareaField\n  label="Description"\n  hint="${v.State === 'Error' ? 'Description is required.' : 'Max 200 characters.'}"\n  maxLength={200}${v.State === 'Error' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`,
+  Textarea: (v) => {
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const state = v.State === 'Invalid' ? '\n  aria-invalid' : v.State === 'Loading' ? '\n  loading' : v.State === 'Disabled' ? '\n  disabled' : ''
+    return `import { Textarea } from "@/components/ui/textarea"\n\n<Textarea${size}\n  placeholder="Write a message…"${state}\n/>`
+  },
   InputGroup: () =>
     `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
   InputOTP: () =>

@@ -185,7 +185,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).
-    const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'] }
+    const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
+      // 2026-11-12: Textarea rebuilt from the file (394:152): its corner glyphs and resize grip.
+      Textarea: ['adornment', 'status', 'spinner', 'corner', 'grip'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))
@@ -195,7 +197,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // Every documented difference names real slots of that recipe.
     // A frozen plugin may still document slots of a recipe rebuilt from the file
     // after the freeze (ButtonGroup lost shadcn's `text` / `separator`, 2026-11-12).
-    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'] }
+    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'] }
     for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
       if (!COMPONENT_RECIPES[key]) continue // a plugin key renamed on the web (RENAMED_ON_WEB)
       for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {
