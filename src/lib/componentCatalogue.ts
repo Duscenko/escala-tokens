@@ -610,6 +610,26 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'A real button with aria-haspopup="dialog"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.',
   },
   {
+    key: 'DatePickerPopover',
+    label: 'Date Picker Popover',
+    category: 'Form Controls',
+    description: 'The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).',
+    usage: 'Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.',
+    // The Figma file\'s axes, value for value (design-plans/date-picker-popover-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Mode', values: ['single', 'range'] },
+    ],
+    figmaSets: ['DatePickerPopover'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: 322 px (default) or 250 px (sm) wide in single mode; the Calendar inside sets the width.' },
+      { name: 'mode', type: '"single" | "range"', description: 'Figma Mode: single date, or a range with the presets rail (482 · 390 px wide).' },
+      { name: 'sideOffset / align', type: 'number / "start" | "center" | "end"', description: 'Radix Popover placement (default 8 px below the trigger, aligned to its start).' },
+      { name: 'inline', type: 'boolean', description: 'Draw the panel in place instead of in a Portal (docs, previews).' },
+    ],
+    accessibility: 'Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

@@ -152,3 +152,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | The set's own description and usage board disagree with its numbers | «xs 32 / sm 36 / default 40» against measured sm 32 · default 40 · lg 48 | Trust the measured geometry; say it in the report |
 | Focused stroke 2px laid out + a `focus-ring` rectangle OUTSIDE | The field `ring` path draws the halo straddling a 1px edge | Focused: `strokeWidth: stroke.focus`, `halo` (outside), padding `inset-control+stroke.focus`. Invalid has NO halo in this set |
 | `:focus-visible` read right after `Tab` | Border 2px but the colour still the resting one | The recipe transitions `border-color` / `box-shadow`: wait ~600 ms before measuring |
+
+# Lessons from the DatePickerPopover (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set that is only a shell around another set (DatePickerPopover = radius + Shadow/lg around a Calendar instance) | Tempting to rebuild the Calendar (header, month, days, presets) inside it | Read the nested instances' main components first (`getMainComponentAsync` per instance): they were queue items 3–8. Build only the shell (`children` = the calendar), note the dependency in the contract |
+| A shadow style whose three layers all carry spread on a non-clipping frame | Ring `0 0 0 1` + `-4` / `-2` spreads | Pixels of the render (no hard 1px ring, side edge 237) showed none render: reuse the FAB `lift: rest` (`0 12 16 key + 0 4 6 ambient`) |
+| A new popover-like recipe key | `recipeMotion.test` failed | Add the key to the `popover-enter` / `popover-exit` `components` lists in `lib/motion.ts` besides `recipes/motion.ts` |

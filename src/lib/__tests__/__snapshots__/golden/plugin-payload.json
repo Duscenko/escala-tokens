@@ -4509,6 +4509,7 @@
         "pattern": "coordinated",
         "components": [
           "Popover",
+          "DatePickerPopover",
           "Tooltip",
           "HoverCard",
           "DropdownMenu",
@@ -4552,6 +4553,7 @@
         "pattern": "coordinated",
         "components": [
           "Popover",
+          "DatePickerPopover",
           "Tooltip",
           "HoverCard",
           "DropdownMenu",
@@ -9663,6 +9665,38 @@
             "box-shadow": "use-focus"
           }
         }
+      }
+    },
+    "DatePickerPopover": {
+      "key": "DatePickerPopover",
+      "slots": [
+        "root"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Mode": "single"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "radius": "radius.overlay",
+                "lift": "rest"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "enter": {
+          "name": "popover-enter"
+        },
+        "exit": {
+          "name": "popover-exit"
+        },
+        "origin": "var(--radix-popover-content-transform-origin, center)"
       }
     },
     "InputGroup": {

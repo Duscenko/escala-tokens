@@ -11,6 +11,7 @@ import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { chartPalette } from '../../../../lib/chartPalette'
 import { Calendar as SkCalendar } from '../../../escala-ui/calendar'
+import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
 import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, ChartLegendContent as SkChartLegendContent, ChartTooltip as SkChartTooltip, ChartTooltipContent as SkChartTooltipContent, type ChartConfig } from '../../../escala-ui/chart'
 import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
 import { Card as SkCard, CardContent as SkCardContent } from '../../../escala-ui/card'
@@ -37,6 +38,27 @@ export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
       {v.Mode === 'range'
         ? <SkCalendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} footer={children} {...icons} />
         : <SkCalendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} footer={children} {...icons} />}
+    </RecipeScope>
+  )
+}
+
+/** The Figma DatePickerPopover: the shell (Radius/overlay + Shadow/lg) around a Calendar. Size and Mode
+ *  are the file's. The Calendar is still the shadcn one until the file's Calendar is rebuilt. */
+export function SkeletonDatePickerPopoverSpecimen({ t, v }: SpecimenProps) {
+  const [day, setDay] = useState<Date | undefined>(new Date(2026, 10, 12))
+  const [range, setRange] = useState<DateRange | undefined>({ from: new Date(2026, 10, 10), to: new Date(2026, 10, 18) })
+  const mode = (v.Mode ?? 'single') as DatePickerPopoverMode
+  const icons = {
+    prevIcon: <PreviewIcon concept="chevron-left" size={iconOf(13)} />,
+    nextIcon: <PreviewIcon concept="chevron-right" size={iconOf(13)} />,
+  }
+  return (
+    <RecipeScope t={t}>
+      <SkDatePickerPopover inline size={(v.Size ?? 'default') as DatePickerPopoverSize} mode={mode}>
+        {mode === 'range'
+          ? <SkCalendar mode="range" defaultMonth={new Date(2026, 10, 1)} selected={range} onSelect={setRange} {...icons} />
+          : <SkCalendar mode="single" defaultMonth={new Date(2026, 10, 1)} selected={day} onSelect={setDay} {...icons} />}
+      </SkDatePickerPopover>
     </RecipeScope>
   )
 }

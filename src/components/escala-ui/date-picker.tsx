@@ -1,6 +1,6 @@
 // Escala components: DatePickerTrigger — the Figma `DatePickerTrigger` set
-// (design-plans/date-picker-trigger-contract.md, 425:199). DatePickerPopover (425:2276), the
-// panel it opens, lives in this file too.
+// (design-plans/date-picker-trigger-contract.md, 425:199). DatePickerPopover (425:2276,
+// design-plans/date-picker-popover-contract.md), the panel it opens, lives in this file too.
 //  · DatePickerTrigger: an input-styled button that opens the popover — the calendar glyph
 //    and the placeholder or the formatted date. `size` sm · default · lg, State Default ·
 //    Hover · Focused · Invalid · Disabled · Loading (Hover and Focused come from the pointer
@@ -9,9 +9,17 @@
 //    the placeholder shows. Loading swaps the glyph for the Spinner. A label and the error text
 //    come from Field, which wires `id`, `aria-describedby`, `aria-invalid` and `disabled`.
 // Paint: the DatePickerTrigger recipe.
+//  · DatePickerPopover: the THIN SHELL of the file's set — Radius/overlay and the Shadow/lg lift around
+//    one Calendar (the Calendar paints the panel: fill, edge, header, days, footer, presets). It opens
+//    below the trigger with an 8px offset (`sideOffset`), closes on Escape (Radix) and, when a day is
+//    chosen, as the caller decides. `size` and `mode` are the file's Size · Mode: they surface as
+//    `data-size` / `data-mode`; the Calendar you pass picks the 322 · 250 · 482 · 390 widths.
+// Paint: the DatePickerPopover recipe.
 import * as React from 'react'
+import { Popover as PopoverPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 import { Spinner } from './spinner'
+import { usePortalContainer } from './portal-scope'
 
 export const DATE_PICKER_TRIGGER_SIZES = ['default', 'sm', 'lg'] as const
 export type DatePickerTriggerSize = (typeof DATE_PICKER_TRIGGER_SIZES)[number]
@@ -86,4 +94,55 @@ function DatePickerTrigger({
   )
 }
 
-export { DatePickerTrigger }
+export const DATE_PICKER_POPOVER_SIZES = ['default', 'sm'] as const
+export type DatePickerPopoverSize = (typeof DATE_PICKER_POPOVER_SIZES)[number]
+export const DATE_PICKER_POPOVER_MODES = ['single', 'range'] as const
+export type DatePickerPopoverMode = (typeof DATE_PICKER_POPOVER_MODES)[number]
+
+export interface DatePickerPopoverProps extends React.ComponentProps<typeof PopoverPrimitive.Content> {
+  /** Figma Size (default 322px / sm 250px wide in single mode). */
+  size?: DatePickerPopoverSize
+  /** Figma Mode: single date, or a range with the presets rail. */
+  mode?: DatePickerPopoverMode
+  /** Draw the panel in place instead of in a Portal (docs, previews). */
+  inline?: boolean
+}
+
+/** Use inside `<Popover>`: `<PopoverTrigger asChild><DatePickerTrigger /></PopoverTrigger><DatePickerPopover>…Calendar…</DatePickerPopover>`. */
+function DatePickerPopover({
+  size = 'default', mode = 'single', inline, sideOffset = 8, align = 'start', className, children, ...props
+}: DatePickerPopoverProps) {
+  const container = usePortalContainer()
+  if (inline) {
+    return (
+      <div
+        data-slot="date-picker-popover"
+        data-escala="DatePickerPopover"
+        data-size={size}
+        data-mode={mode}
+        className={cn('relative flex w-fit flex-col', className)}
+        {...(props as React.ComponentProps<'div'>)}
+      >
+        {children}
+      </div>
+    )
+  }
+  return (
+    <PopoverPrimitive.Portal container={container}>
+      <PopoverPrimitive.Content
+        data-slot="date-picker-popover"
+        data-escala="DatePickerPopover"
+        data-size={size}
+        data-mode={mode}
+        sideOffset={sideOffset}
+        align={align}
+        className={cn('z-50 flex w-fit flex-col outline-none', className)}
+        {...props}
+      >
+        {children}
+      </PopoverPrimitive.Content>
+    </PopoverPrimitive.Portal>
+  )
+}
+
+export { DatePickerTrigger, DatePickerPopover }

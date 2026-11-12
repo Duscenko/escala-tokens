@@ -50,6 +50,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Dropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
   DatePickerTrigger: { transitions: { root: FIELD } },
+  DatePickerPopover: popover('--radix-popover-content-transform-origin'),
   InputGroup: { transitions: { root: FIELD } },
   InputTag: { transitions: { root: FIELD, field: FIELD } },
   InputTagChip: { transitions: { root: FIELD } },

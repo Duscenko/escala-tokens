@@ -221,6 +221,25 @@ export const DATE_PICKER_TRIGGER: ComponentRecipe = {
   ],
 }
 
+// ── DatePickerPopover ──────────────────────────────────────────────────────
+// The Figma `DatePickerPopover` set (design-plans/date-picker-popover-contract.md, 425:2276,
+// 4 variants: Size default · sm × Mode single · range): a THIN SHELL — a frame with no fill,
+// stroke or padding, Radius/overlay and the Shadow/lg effect, around one Calendar. Everything
+// visible (Surface/layer-1, Border/default, the header, the days, Clear / Apply, the presets rail
+// of Mode=range, the 322 · 250 · 482 · 390 widths) belongs to the Calendar. The shadow is what
+// Figma PAINTS: key 0 12 16 + ambient 0 4 6, no ring and no spread (the frame does not clip), the
+// FABButton's `lift: rest`.
+export const DATE_PICKER_POPOVER_SIZES = ['default', 'sm'] as const
+export const DATE_PICKER_POPOVER_MODES = ['single', 'range'] as const
+export const DATE_PICKER_POPOVER: ComponentRecipe = {
+  key: 'DatePickerPopover',
+  slots: ['root'],
+  defaults: { Size: 'default', Mode: 'single' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.overlay', lift: 'rest' } })),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

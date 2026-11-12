@@ -275,14 +275,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -4504,6 +4504,26 @@ var init_componentCatalogue = __esm({
           { name: "aria-expanded / aria-controls", type: "boolean / string", description: "Set by the popover that opens from it." }
         ],
         accessibility: 'A real button with aria-haspopup="dialog"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.'
+      },
+      {
+        key: "DatePickerPopover",
+        label: "Date Picker Popover",
+        category: "Form Controls",
+        description: "The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).",
+        usage: "Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.",
+        // The Figma file\'s axes, value for value (design-plans/date-picker-popover-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Mode", values: ["single", "range"] }
+        ],
+        figmaSets: ["DatePickerPopover"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Figma Size: 322 px (default) or 250 px (sm) wide in single mode; the Calendar inside sets the width." },
+          { name: "mode", type: '"single" | "range"', description: "Figma Mode: single date, or a range with the presets rail (482 \xB7 390 px wide)." },
+          { name: "sideOffset / align", type: 'number / "start" | "center" | "end"', description: "Radix Popover placement (default 8 px below the trigger, aligned to its start)." },
+          { name: "inline", type: "boolean", description: "Draw the panel in place instead of in a Portal (docs, previews)." }
+        ],
+        accessibility: "Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates."
       },
       {
         key: "Calendar",
@@ -8992,7 +9012,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9127,6 +9147,14 @@ var init_forms = __esm({
           };
         }),
         part({ State: DATE_PICKER_TRIGGER_STATES }, (state2) => datePickerTriggerPaint(state2))
+      ]
+    };
+    DATE_PICKER_POPOVER = {
+      key: "DatePickerPopover",
+      slots: ["root"],
+      defaults: { Size: "default", Mode: "single" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.overlay", lift: "rest" } }))
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
@@ -10796,6 +10824,7 @@ var init_motion2 = __esm({
       Dropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
+      DatePickerPopover: popover("--radix-popover-content-transform-origin"),
       InputGroup: { transitions: { root: FIELD2 } },
       InputTag: { transitions: { root: FIELD2, field: FIELD2 } },
       InputTagChip: { transitions: { root: FIELD2 } },
@@ -10855,6 +10884,7 @@ var init_componentRecipes = __esm({
       Input: INPUT,
       Textarea: TEXTAREA,
       DatePickerTrigger: DATE_PICKER_TRIGGER,
+      DatePickerPopover: DATE_PICKER_POPOVER,
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
       InputTag: INPUT_TAG,
@@ -13739,7 +13769,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 118,
+          version: 119,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15172,6 +15202,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("Calendar");
                 if (at < 0 || sel.includes("DatePickerTrigger")) return;
                 sel.splice(at, 0, "DatePickerTrigger");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 119) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("DatePickerTrigger");
+                if (at < 0 || sel.includes("DatePickerPopover")) return;
+                sel.splice(at + 1, 0, "DatePickerPopover");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

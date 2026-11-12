@@ -19,10 +19,6 @@
       "status": "part",
       "of": "Combobox"
     },
-    "DatePickerPopover": {
-      "status": "part",
-      "of": "DatePickerTrigger"
-    },
     "Calendar": {
       "status": "rebuild"
     },

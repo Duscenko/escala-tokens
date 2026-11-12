@@ -154,6 +154,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], { Value: 'filled' }, 280),
     each('Value', ['placeholder', 'filled'], {}, 280),
   ],
+  DatePickerPopover: [
+    ...stack('Size', ['default', 'sm'], { Mode: 'single' }),
+    ...stack('Mode', ['range'], { Size: 'default' }),
+  ],
   InputOTP: [
     ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
     ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),
