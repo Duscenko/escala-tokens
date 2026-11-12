@@ -345,6 +345,38 @@ export const CALENDAR_HEADER: ComponentRecipe = {
   ],
 }
 
+// ── CalendarMonth ──────────────────────────────────────────────────────────
+// The Figma `CalendarMonth` set (design-plans/calendar-month-contract.md, 422:1713, 12 variants:
+// Size default · sm × Mode single · multiple · range × Variant default · secondary). One visible month,
+// Sunday first, a column of 7 day cells wide: a `weekdays` row of seven squares (the day cell's size,
+// Type/caption in Content/secondary, centred) over the weeks, each a row of seven CalendarDay cells with
+// no gap. The month frame has no fill, stroke, padding or gap. Mode and Variant only change which
+// CalendarDay states and variant the cells carry; the geometry is Size's alone.
+export const CALENDAR_MONTH_SIZES = ['default', 'sm'] as const
+export const CALENDAR_MONTH_MODES = ['single', 'multiple', 'range'] as const
+export const CALENDAR_MONTH_VARIANTS = ['default', 'secondary'] as const
+
+export const CALENDAR_MONTH: ComponentRecipe = {
+  key: 'CalendarMonth',
+  slots: ['root', 'weekdays', 'weekday', 'week'],
+  defaults: { Size: 'default', Mode: 'single', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.none' },
+      weekday: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+    part({ Size: CALENDAR_DAY_SIZES }, (size) => {
+      const g = CALENDAR_DAY_GEOMETRY[size]
+      return {
+        root: { width: SEVEN(g.box) },
+        weekdays: { height: g.box },
+        weekday: { width: g.box, height: g.box },
+        week: { height: g.box },
+      }
+    }),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

@@ -140,6 +140,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : '', v.State && v.State !== 'Default' && v.State !== 'Hover' && v.State !== 'Focused' ? ` state="${v.State}"` : ''].join('')
     return `import { CalendarDay } from "@/components/ui/calendar"\n\n<CalendarDay${attrs}>15</CalendarDay>`
   },
+  CalendarMonth: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Mode && v.Mode !== 'single' ? ` mode="${v.Mode}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : ''].join('')
+    return `import { CalendarMonth } from "@/components/ui/calendar"\n\n<CalendarMonth${attrs} month={month} selected={selected} onDayClick={pick} />`
+  },
   CalendarHeader: (v) => {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''].join('')
     return `import { CalendarHeader } from "@/components/ui/calendar"\n\n<CalendarHeader${attrs} label="November 2026" onPreviousMonth={prev} onNextMonth={next} />`

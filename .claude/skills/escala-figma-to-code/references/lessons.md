@@ -180,3 +180,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A set whose width is "N cells of another set" (header = 7 day cells) | A magic 280 / 224 | `size.control` × 7 / `size.compact` × 7 as a summed ref, so it follows the day cell |
 | A set with no hover / focus on any piece (arrows, chips) | Tempting to give the chips a hover wash | Copy: none. No `recipes/motion.ts` entry either |
 | `figma.setCurrentPageAsync(set.parent)` | "expects a PageNode" (the set's parent is a section) | Walk up `.parent` until `type === 'PAGE'` (the read script already does) |
+
+# Lessons from the CalendarMonth (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| `use_figma` return over 48 000 bytes (a set whose default variant has 40+ nested instances) | «Return value exceeds the limit», nothing read | Read in two passes: props + default structure with a child cap (`slice(0, 8)`), then one compact line per cell (`Day:State/Variant`) for every variant |
+| `componentProperties` keys carry a `#id` suffix (`Day#12:3`) | `cp.Day.value` → undefined | `Object.fromEntries(entries.map(([k, x]) => [k.split('#')[0], x.value]))` |
+| A set that is only a grid of another set's instances (Month = weekdays + 5 weeks of CalendarDay) | Tempting to redraw days or put paint in the Month recipe | The recipe holds only the Month's own geometry (7 × day box, weekday cell, Type/caption ink); the days are `<CalendarDay>` with the Figma state per date |
+| A sample frame that mixes states (Today next to Selected, Unavailable beside Disabled) | Looks like a bug to "fix" | Copy it as the default data when no `selected` / `range` / `today` / `disabledDays` props arrive; real data overrides it |
+| A python edit script with a syntax error | Nothing applied (python compiles the whole heredoc first) except what ran in an earlier script | Check `git status` after a multi-file edit before measuring |

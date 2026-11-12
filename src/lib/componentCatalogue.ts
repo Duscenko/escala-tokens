@@ -675,6 +675,30 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'The arrows are buttons named "Previous month" and "Next month"; each chip is a button whose visible text is its name.',
   },
   {
+    key: 'CalendarMonth',
+    label: 'Calendar Month',
+    category: 'Form Controls',
+    description: 'One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first.',
+    usage: 'Use inside Calendar below the header. single and multiple mark chosen days, range marks a span with its band; secondary swaps the selected look for the inverse one.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-month-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Mode', values: ['single', 'multiple', 'range'] },
+      { name: 'Variant', values: ['default', 'secondary'] },
+    ],
+    figmaSets: ['CalendarMonth'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: seven 40 or 32 px day cells wide.' },
+      { name: 'mode', type: '"single" | "multiple" | "range"', description: 'Figma Mode: which days are marked, and how.' },
+      { name: 'variant', type: '"default" | "secondary"', description: 'Figma Variant, passed to every CalendarDay.' },
+      { name: 'month', type: 'Date', description: 'The month shown. Default: November 2026, the file\'s sample.' },
+      { name: 'selected / range', type: 'Date[] · { from, to }', description: 'The marked days; the file\'s sample when omitted.' },
+      { name: 'today / disabledDays / unavailableDays', type: 'Date · Date[]', description: 'The Today, Disabled and Unavailable cells.' },
+      { name: 'onDayClick', type: '(date: Date) => void', description: 'A day was pressed.' },
+    ],
+    accessibility: 'Each day is a button (see CalendarDay); Disabled and Unavailable days are disabled. The weekday row is plain text.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',
