@@ -286,15 +286,34 @@ describe('Input (Figma)', () => {
     expect(at({ State: 'Invalid' }).root).toMatchObject({ stroke: 'color.status.critical.border-strong', ring: 'color.status.critical.border' })
   })
 
-  it('Disabled keeps the Default stroke colour — only the fill and the ink mute', () => {
+  it('Disabled keeps the Default stroke colour — only the fill and the inks mute', () => {
     const r = at({ State: 'Disabled' })
-    expect(r.root).toMatchObject({ fill: 'color.action.disabled.default', stroke: 'color.border.control', text: 'color.content.disabled' })
-    expect(r.placeholder.text).toBe('color.content.disabled')
+    expect(r.root).toMatchObject({ fill: 'color.action.disabled.default', stroke: 'color.border.control' })
+    for (const slot of ['text', 'placeholder', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.disabled')
   })
 
-  it('the placeholder reads content.subtle, a typed value reads content.primary', () => {
-    expect(at({}).root.text).toBe('color.content.primary')
-    expect(at({}).placeholder.text).toBe('color.content.subtle')
+  it('the placeholder reads content.subtle; a typed value, icons and add-ons content.primary', () => {
+    const r = at({})
+    expect(r.placeholder.text).toBe('color.content.subtle')
+    for (const slot of ['text', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.primary')
+  })
+
+  it('the Types that lay their strokes out start 1px further in (13, not 12)', () => {
+    for (const type of ['currency-select', 'url', 'upload', 'copy-link']) {
+      expect(at({ Type: type }).root.paddingX, type).toBe('spacing.inset-control+stroke.control')
+    }
+    for (const type of ['default', 'phone', 'currency', 'password', 'tag', 'credit-card', 'search']) {
+      expect(at({ Type: type }).root.paddingX, type).toBe('spacing.inset-control')
+    }
+  })
+
+  it('glyphs and keys follow the box (icon-sm in sm, icon-md else); the select caret stays 16', () => {
+    expect(at({ Size: 'sm' }).icon).toMatchObject({ width: 'icon.small', height: 'icon.small' })
+    expect(at({ Size: 'lg' }).icon.width).toBe('icon.medium')
+    expect(at({ Size: 'lg' })['icon[data-icon="chevron"]'].width).toBe('icon.small')
+    expect(at({ Size: 'sm' }).kbd.height).toBe('icon.small')
+    expect(at({}).kbd).toMatchObject({ fill: 'color.surface.muted', stroke: 'color.border.subtle', text: 'color.content.secondary', radius: 'radius.control' })
+    expect(at({}).divider).toMatchObject({ fill: 'color.border.subtle', width: 'stroke.control' })
   })
 })
 

@@ -122,8 +122,11 @@ export const OVERVIEWS: Record<string, Overview> = {
 
   // ── Form Controls ──────────────────────────────────────────────────────────
   Input: [
-    each('State', ['Default', 'Focused'], {}, 240),
-    each('State', ['Invalid', 'Disabled'], {}, 240),
+    each('State', ['Default', 'Focused'], { Type: 'default' }, 240),
+    each('State', ['Invalid', 'Disabled'], { Type: 'default' }, 240),
+    each('Type', ['search', 'phone', 'currency'], {}, 240),
+    each('Type', ['password', 'url', 'upload'], {}, 240),
+    each('Type', ['tag', 'copy-link', 'currency-select', 'credit-card'], {}, 240),
   ],
   Textarea: [each('State', ['Default', 'Focused', 'Error'], {}, 240)],
   InputOTP: stack('State', ['Default', 'Filled', 'Error']),

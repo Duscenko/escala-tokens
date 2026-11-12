@@ -33,31 +33,60 @@ const FIELD_FIXED: SlotProps = {
 const FIELD_FOCUS: SlotProps = { stroke: c('border.focus'), ring: c('border.ring.default') }
 
 // ── Input ──────────────────────────────────────────────────────────────────
-// The Figma `Input` set (design-plans/input-contract.md, 114 variants): the box IS
-// the <input> — a label and a hint are Field's, icons and add-ons are InputGroup's
-// (the file draws them inline on the same component; the code keeps shadcn's split).
-// `State` is Figma's axis (`Invalid`, not `Error`); `Size` is the same Size roles as
-// Button (compact 32 · control 40 · touch 48); `Value` (placeholder · filled) needs no
-// prop — the real `<input>` already tells a typed value from its own placeholder.
+// The Figma `Input` set (design-plans/input-contract.md, 4:12380, 114 variants):
+// the box with the text field inside it. `Size` × `State` × `Type` × `Value`, as in
+// the file. The box is the root (fill, edge, halo, height, insets); the <input> is
+// `text`; `icon` is every glyph (leading, trailing, the 16px chevron of a select
+// addon); `addon` is the fixed text (+01, $, USD, https://, @, Browse, Copy);
+// `divider` the 1px rule that splits a select or a prefix off the value; `kbd` a
+// key of the search shortcut (the file's Kbd sm / xs). `Value` needs no paint of
+// its own: `text` is the typed value, `placeholder` the empty one.
 
 const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled'] as const
+export const INPUT_SIZES = ['default', 'sm', 'lg'] as const
+export const INPUT_TYPES = [
+  'default', 'phone', 'currency', 'currency-select', 'password', 'url', 'upload', 'tag', 'copy-link', 'credit-card', 'search',
+] as const
 const INPUT_GEOMETRY: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
+/** Glyphs and keys follow the box: Size/icon-sm in sm, Size/icon-md in default and lg. */
+const INPUT_GLYPH: Record<string, string> = { sm: 'icon.small', default: 'icon.medium', lg: 'icon.medium' }
+/** The Types whose divider runs edge to edge: the file lays their strokes out
+ *  (`strokesIncludedInLayout`), so their content starts 1px further in (13, not 12). */
+const INPUT_STROKE_IN_LAYOUT = new Set(['currency-select', 'url', 'upload', 'copy-link'])
 
 export const INPUT: ComponentRecipe = {
   key: 'Input',
-  slots: ['root', 'placeholder'],
-  pseudoSlots: { placeholder: { of: 'root', pseudo: '::placeholder' } },
-  defaults: { Size: 'default', State: 'Default' },
+  slots: ['root', 'text', 'placeholder', 'icon', 'addon', 'divider', 'kbd'],
+  pseudoSlots: { placeholder: { of: 'text', pseudo: '::placeholder' } },
+  defaults: { Size: 'default', State: 'Default', Type: 'default', Value: 'placeholder' },
   parts: [
     part({}, () => ({
-      root: { ...FIELD_FIXED, font: 'type.placeholder' },
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.gap-control', font: 'type.placeholder' },
+      divider: { fill: c('border.subtle'), width: 'stroke.control' },
+      kbd: {
+        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.control',
+        paddingX: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption',
+      },
     })),
-    part({ Size: ['default', 'sm', 'lg'] as const }, (size) => ({ root: { height: INPUT_GEOMETRY[size] } })),
+    part({ Type: INPUT_TYPES }, (type) => ({
+      root: { paddingX: INPUT_STROKE_IN_LAYOUT.has(type) ? 'spacing.inset-control+stroke.control' : 'spacing.inset-control' },
+    })),
+    part({ Size: INPUT_SIZES }, (size) => ({
+      root: { height: INPUT_GEOMETRY[size] },
+      icon: { width: INPUT_GLYPH[size], height: INPUT_GLYPH[size] },
+      // The select addon's caret is Size/icon-sm at every size.
+      'icon[data-icon="chevron"]': { width: 'icon.small', height: 'icon.small' },
+      kbd: { height: INPUT_GLYPH[size], minWidth: INPUT_GLYPH[size] },
+    })),
     part({ State: INPUT_STATES }, (state) => {
       const disabled = state === 'Disabled'
+      const ink = c(disabled ? 'content.disabled' : 'content.primary')
       return {
-        root: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
+        root: fieldBox(state),
+        text: { text: ink },
         placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+        icon: { text: ink },
+        addon: { text: ink },
       }
     }),
   ],

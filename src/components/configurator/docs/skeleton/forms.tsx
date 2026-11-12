@@ -5,7 +5,7 @@ import { iconForControl, iconOf, selectorRoleOf, sizeRoleOf } from '../../../../
 import { useI18n } from '../../../../lib/i18n'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../preview/artefacts/boardScripts'
-import { Input as SkInput } from '../../../escala-ui/input'
+import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type InputType } from '../../../escala-ui/input'
 import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { InputStepper as SkInputStepper } from '../../../escala-ui/input-stepper'
@@ -34,7 +34,43 @@ import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOpt
  * row — Field · FieldLabel · Input · FieldDescription — so a screen can show
  * an e-mail or password field without a second input component.
  */
-export function SkeletonInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProps) {
+/** The Figma file's own copy per Type (placeholder · filled). */
+const FIGMA_INPUT_COPY: Record<InputType, [string, string]> = {
+  default: ['Jane Doe', 'Jane Doe'], phone: ['Mobile number', '612 555 0199'], currency: ['0.00', '1,250.00'],
+  'currency-select': ['0.00', '1,250.00'], password: ['Your password', 'escala-secret'], url: ['yourcompany.com', 'escala.design'],
+  upload: ['No file chosen', ''], tag: ['username', 'maria.farerro'], 'copy-link': ['Invite link', 'escala.ds/join/4f2a'],
+  'credit-card': ['16-digit card number', '4242 4242 4242 4242'], search: ['Jane Doe', 'Jane Doe'],
+}
+
+/** The catalogue's own axes (the Figma set): Size · State · Type · Value, bare. */
+function FigmaInputSpecimen({ t, v, w }: SpecimenProps) {
+  const type = v.Type as InputType
+  const [placeholder, filled] = FIGMA_INPUT_COPY[type]
+  const state = (v.State ?? 'Default') as InputState
+  return (
+    <RecipeScope t={t}>
+      <SkInput
+        key={`${type}-${v.Value}`}
+        type={type}
+        size={(v.Size ?? 'default') as InputSize}
+        forceState={state}
+        disabled={state === 'Disabled'}
+        placeholder={placeholder}
+        defaultValue={v.Value === 'filled' ? filled : undefined}
+        aria-label={placeholder}
+        style={{ width: w ?? 260 }}
+      />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonInputSpecimen(props: SpecimenProps) {
+  if (props.v.Type && (INPUT_TYPES as readonly string[]).includes(props.v.Type)) return <FigmaInputSpecimen {...props} />
+  return <BoardInputSpecimen {...props} />
+}
+
+/** The board's named fields (E-Mail, Password, Website…) composed with Field. */
+function BoardInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProps) {
   const { t: translate } = useI18n()
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const [value, setValue] = useState(() => inputSeed(v.Type, v.State))

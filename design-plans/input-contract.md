@@ -1,111 +1,83 @@
 # Contrato · Input (de Figma a código)
 
 Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `Input` (`4:12380`,
-114 variantes, página «❖ Input»), leído con la Plugin API (solo lectura) y comprobado contra
-los píxeles del render. **Figma manda; nada se corrige.**
+114 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
 
 Descripción del set: «Input — the box itself. Type Default: Size (sm · default · lg) × Value
-(Placeholder · Filled) × State, with optional Icon leading (search) / Icon trailing (eye).
-Other Types (Phone, Currency, Currency select, Password, URL, Upload, Tag, Shortcut, Credit
-card) at the default size, every State plus one Filled. Focused is the active field, with a
-caret. Label and hint are Field.»
+(Placeholder · Filled) × State, with optional Icon leading (search) / Icon trailing (eye). Other
+Types (Phone, Currency, Currency select, Password, URL, Upload, Tag, Shortcut, Credit card) at the
+default size, every State plus one Filled. Focused is the active field, with a caret. Label and
+hint are Field.»
 
-## Alcance de esta pasada
+## API
 
-El archivo dibuja **un solo componente** con CUATRO ejes de variante: `Size` · `State` · `Type`
-(11 valores: default, phone, currency, currency-select, password, url, upload, tag, copy-link,
-credit-card, search) · `Value` (placeholder · filled). En código, `Type` y `Value` **no son
-props de `Input`** — es la decisión de arquitectura YA vigente en el repo (`Input` es shadcn's
-bare control, "the box IS the `<input>`"; iconos, addons y el badge de atajo del tipo `search`
-son de `InputGroup`; label y hint son de `Field`). Esta pasada reconstruye **la caja desnuda**
-(`Size` × `State`, con `Value` resuelto por el propio `<input>` nativo — un valor escrito se ve
-distinto de un placeholder sin ningún prop) con exactitud de píxel y token, y dejó documentado,
-no corregido, lo que falta para que `Input` + `InputGroup` reproduzcan los 11 `Type` como
-ejemplos compuestos (ver «Lo que queda fuera» más abajo). El componente sigue en
-`spec/figma-components.status.json` → `pending` porque el test de paridad exige los CUATRO ejes
-value-for-value; esto es honesto, no un parche.
+| Figma (orden del panel) | Tipo | Defecto | React |
+|---|---|---|---|
+| `Size` default · sm · lg | VARIANT | `default` | `size` |
+| `State` Default · Hover · Focused · **Invalid** · Disabled | VARIANT | `Default` | CSS (`:hover`, `:has(:focus-visible)`) + `forceState`; `aria-invalid`; `disabled` |
+| `Type` default · phone · currency · currency-select · password · url · upload · tag · copy-link · credit-card · search | VARIANT | `default` | `type` (otro valor = tipo HTML sobre el layout default) |
+| `Value` placeholder · filled | VARIANT | `placeholder` | ninguno: el campo pinta su `::placeholder` distinto de un valor escrito |
+| `IconLeadingVisible` + `IconLeadingIcon` (MagnifyingGlass) | BOOLEAN + SWAP | true | `leading` (cada Type trae el suyo; `null` lo oculta) |
+| `Placeholder` | TEXT | «Jane Doe» | `placeholder` |
+| `IconTrailingVisible` + `IconTrailingIcon` (Eye) | BOOLEAN + SWAP | true | `trailing` |
+| `ShortcutVisible` + `Shortcut` (SLOT: Kbd ⌘ · K) | BOOLEAN + SLOT | true | `shortcut` (⌘ K por defecto en `search`; `null` lo oculta) |
 
-## API (la caja desnuda)
+## Anatomía (raíz = la caja; el `<input>` es `text`)
 
-| Figma (orden del panel) | Tipo | Defecto | Opciones | React |
-|---|---|---|---|---|
-| `Size` | VARIANT | `default` | default · sm · lg | `size` |
-| `State` | VARIANT | `Default` | Default · Hover · Focused · **Invalid** · Disabled | CSS (`:hover`, `:focus-visible`) + `forceState`; `aria-invalid` para Invalid, `disabled` |
-| `Value` | VARIANT | `placeholder` | placeholder · filled | ninguno — el `<input>` real ya distingue su propio `::placeholder` de un valor escrito |
+Raíz: horizontal, centrada, gap `Spacing/gap-control` (8), padding X `Spacing/inset-control`
+(12), radio `Radius/action`, trazo `Stroke/control` INSIDE, alto `Size/control-sm|md|lg`
+(32 · 40 · 48), tipo `Type/placeholder`. Partes, en el orden del archivo:
 
-**`State` en el archivo es `Invalid`, no `Error`** — el código anterior decía `Error`; corregido
-en `Input`, su recipe y el catálogo. `fieldBox()` (compartida con Textarea/InputGroup/Select,
-que aún no se han auditado) acepta ambos literales para no romper esos consumidores.
-
-## Geometría por tamaño
-
-Raíz: horizontal, centrada, ancho completo (`w-full`), gap `Spacing/gap-control` (8), padding X
-`Spacing/inset-control` (12), padding Y 0, radio `Radius/action` (12). Trazo `Stroke/control`
-(1px) **INSIDE** siempre — incluso en Focused e Invalid, donde el halo es una capa APARTE (ver
-abajo), nunca un trazo más grueso.
-
-| Size | Alto | Fuente del placeholder/valor |
+| Type | Partes | Medido (default, 260 de ancho) |
 |---|---|---|
-| sm | `Size/control-sm` (32) → `size.compact` | `Type/placeholder` |
-| default | `Size/control-md` (40) → `size.control` | `Type/placeholder` |
-| lg | `Size/control-lg` (48) → `size.touch` | `Type/placeholder` |
+| default | [icon-leading] text [icon-trailing] | 12 · 40 · 228 |
+| phone | addon `+01` · chevron · text | 12 · 41 · 65 |
+| currency | addon `$` · text | 12 · 28 |
+| currency-select | addon `USD` · chevron · divider · text | 13 · 47 · 71 · 80 |
+| password | lock · text · eye | 12 · 40 · 228 |
+| url | addon `https://` · divider · text | 13 · 63 · 72 |
+| upload | folder · addon `Browse` · divider · text | 13 · 41 · 92 · 101 |
+| tag | addon `@` · text | 12 · 32 |
+| copy-link | text · divider · copy · addon `Copy` | 13 · 180 · 189 · 217 |
+| credit-card | lock · text | 12 · 40 |
+| search | search · text · Shortcut (Kbd ⌘ · Kbd K, gap `gap-tight`) | 12 · 40 · 204 / 228 |
 
-Medidas del archivo (default, «Jane Doe», con iconos — los iconos no son de `Input`): 260 × 40.
-La caja desnuda sin iconos mide igual de alto; el ancho lo decide el contenedor (`w-full`).
+- Iconos `Size/icon-md` (20) en default y lg, `Size/icon-sm` (16) en sm. El caret de un addon
+  select (`CaretDown`) es `Size/icon-sm` siempre.
+- `divider`: rectángulo 1 × alto interior (38), `Border/subtle`, también en Disabled.
+- **Los Types con divisor (currency-select, url, upload, copy-link) tienen
+  `strokesIncludedInLayout`**: su contenido empieza en 13, no en 12. Se copia
+  (`spacing.inset-control+stroke.control`).
+- Kbd (set `Kbd`, 1091:6): `Size=sm` en default/lg (alto y ancho mínimo `Size/icon-md`), `Size=xs`
+  en sm (`Size/icon-sm`); padding X `Spacing/gap-tight`, radio `Radius/control`, fill
+  `Surface/muted`, trazo `Border/subtle` `Stroke/divider` INSIDE, texto `Type/caption`
+  `Content/secondary`. Search Disabled oculta el atajo (medido).
 
 ## Color por State
 
-Medido en Size=default, Type=default (idéntico en todos los Size y en `Type=search`, el otro
-Type sin decoración de `InputGroup` — confirmado comparando las dos columnas del archivo).
-
-| State | Fill | Stroke | Halo (fuera) | Tinta (valor · placeholder) |
+| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · icono · addon / placeholder |
 |---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` | — | `Content/primary` · `Content/subtle` |
+| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` |
 | Hover | `Surface/input` | `Border/control-hover` | — | igual |
-| Focused | `Surface/input` | `Border/focus` | `Border/ring/default`, 2px | igual |
-| Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border`, 2px | igual |
-| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` · `Content/disabled` |
+| Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | igual (+ caret) |
+| Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | igual |
+| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` |
 
-**Disabled NO cambia el stroke** — medido: `stroke Border/control`, el mismo neutro de Default,
-solo el FILL muta. El código anterior (`fieldBox()`) ponía el stroke también en
-`action.disabled.default` — **era un bug real, corregido** (afecta a todo lo que comparte
-`fieldBox`: Textarea, InputGroup, InputTag, Select — no auditados hoy, pero la caja compartida
-ya es correcta para los cuatro).
+Disabled conserva el stroke neutro (antes `fieldBox()` lo repintaba: bug corregido, afecta también
+a Textarea/InputGroup/Select/InputTag).
 
-## Foco (Focused e Invalid)
-
-El archivo dibuja DOS capas: la raíz mantiene su trazo de 1px INSIDE (coloreado `Border/focus` o
-`Status/critical/border-strong`), y un frame `focus-ring` superpuesto del mismo tamaño que la
-raíz traza 2px **OUTSIDE** en `Border/ring/default` / `Status/critical/border` — es decir, el
-halo empieza exactamente en el borde exterior del trazo de 1px y se extiende 2px más allá: el
-borde de 1px queda a medio camino dentro del halo. Esto es EXACTAMENTE el patrón ya documentado
-en `recipeStyles.ts` (`ring`: `outline` + `outline-offset: calc(stroke-width - halo)`), que
-`fieldBox()` ya usaba — no hizo falta cambiar el mecanismo, solo verificarlo contra el render.
-
-## Caret
-
-Focused dibuja un rectángulo `caret` (1×18, fill `Content/primary`) delante del placeholder —
-es el cursor de texto del mockup, no algo que replicar: un `<input>` real ya pinta su propio
-caret (`caret-color`, que hereda de `color`/`content.primary` vía el `text` del recipe).
+## Comportamiento (el archivo es estático; el código lo hace real)
+- phone / currency-select: el addon es un `<select>` nativo (opciones `addonOptions`).
+- password: el ojo es un botón que muestra / oculta (eye ↔ eye-slash), con nombre.
+- upload: `Browse` (con la carpeta) abre el selector de archivos; el campo muestra el nombre.
+- copy-link: `Copy` (con el icono) copia el valor al portapapeles.
+- Cada Type pone su `inputmode` y `autocomplete` (tel, decimal, url, cc-number…).
 
 ## Lo que el archivo hace y parece raro (se copia igual)
-- El `State` del archivo es un eje de 5 valores (`Invalid` en vez de `Error`) mientras el resto
-  de controles de formulario del repo (Textarea, Select, InputOTP) siguen usando `Error` en su
-  propio código — no auditados todavía, así que no se les cambia el nombre.
-- `Value` (placeholder/filled) es un eje VISIBLE en Figma pero no necesita ningún prop: es la
-  diferencia nativa entre `::placeholder` y el texto escrito.
-
-## Lo que queda fuera de esta pasada (pendiente, documentado, no fingido)
-Los 10 `Type` no-`default` (phone · currency · currency-select · password · url · upload · tag ·
-copy-link · credit-card) y el badge `Shortcut` de `search` son composiciones de `Input` +
-`InputGroup` con contenido fijo por tipo (prefijo `+01`, `$`, `USD` + chevron, `https://` +
-divisor, `Browse` + divisor, `@`, `Copy` + icono, dos `Kbd`…). Construirlos es el trabajo de
-`InputGroup` (ya existe en el catálogo, sin `pending` propio) más plantillas de ejemplo — no una
-prop de `Input`. Mientras no estén, `spec/figma-components.status.json` mantiene `Input` en
-`pending` con `status: "rebuild"`: el test de paridad exige los cuatro ejes del archivo
-value-for-value, y hoy el código solo cubre `Size` y `State` (`Value` no necesita prop; `Type`
-sigue sin construirse). Esto es la verdad del ledger, no una laguna oculta.
+- `State` dice `Invalid` donde otros sets del repo dicen `Error`.
+- 4 Types (los del divisor) ponen el contenido 1px más adentro que el resto.
 
 ## Anida
-Ninguno — `Input` no instancia otros componentes del catálogo (los iconos de las demos del
-archivo son de `InputGroup`, que ya existe por separado).
+`Kbd` (pintado por la parte `kbd` de Input con los valores del set Kbd; el componente Kbd aún no se
+ha reconstruido desde el archivo). Partes nuevas (`addon`, `divider`, `kbd`) son web + Storybook:
+el plugin está congelado (`WEB_ONLY_SLOTS` en `componentRecipesPluginParity.test.ts`).

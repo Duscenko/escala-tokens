@@ -301,26 +301,32 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Input',
     label: 'Input',
     category: 'Form Controls',
-    description: 'The Figma Input set: the bare text control — the box is the <input>. Three sizes on the Size roles (sm 32 · default 40 · lg 48); a label and a hint come from Field, icons and add-ons from Input Group.',
-    usage: 'Wrap it in a Field with a FieldLabel. For a prefix, an icon or a button inside the box, use Input Group. Set the type (email, password, search) on the element.',
-    // The Figma file's axes, value for value (spec/figma-components.json): State's
-    // option is `Invalid`, not `Error`. Size is Escala's (shadcn ships one height);
-    // State is a Figma axis only (pseudo-classes in code); Value (Placeholder ·
-    // Filled) is Figma-only too — the real <input> already tells the two apart.
-    // The file's Type axis (phone, currency, password, url…) is InputGroup
-    // composed around the same bare Input, not a prop of Input itself.
+    description: 'The text field: a box with the field inside it, at three sizes on the Size roles (sm 32 · default 40 · lg 48). Eleven types compose their own parts — phone and currency-select open a select, currency, url and tag carry a prefix, password a show / hide toggle, upload a Browse button, copy-link a Copy button, search the ⌘ K shortcut.',
+    usage: 'Wrap it in a Field with a FieldLabel. Pick the type for the value it holds (phone, currency, password, url…); any other HTML type works on the default layout. For an add-on the types do not cover, use Input Group.',
+    // The Figma file's axes, value for value, in the file's own order
+    // (spec/figma-components.json). State is a Figma axis only (pseudo-classes in
+    // code, `forceState` in docs). Value (placeholder · filled) needs no prop: the
+    // field paints its placeholder differently from a typed value.
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
       { name: 'State', values: ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled'] },
+      { name: 'Type', values: ['default', 'phone', 'currency', 'currency-select', 'password', 'url', 'upload', 'tag', 'copy-link', 'credit-card', 'search'] },
+      { name: 'Value', values: ['placeholder', 'filled'] },
     ],
     figmaSets: ['Input'],
     props: [
       { name: 'size', type: "'sm' | 'default' | 'lg'", description: 'Height on the Size roles: compact 32 · control 40 · touch 48.' },
-      { name: 'type', type: 'string', description: 'The HTML input type (text, email, password, search…).' },
+      { name: 'type', type: "'default' | 'phone' | 'currency' | 'currency-select' | 'password' | 'url' | 'upload' | 'tag' | 'copy-link' | 'credit-card' | 'search'", description: 'Figma Type: the parts the field composes. Another value is an HTML input type on the default layout.' },
+      { name: 'placeholder', type: 'string', description: 'Figma Placeholder.' },
+      { name: 'leading', type: 'ReactNode | null', description: 'Leading icon (IconLeadingVisible + IconLeadingIcon). Types bring their own (search, lock, folder); null hides it.' },
+      { name: 'trailing', type: 'ReactNode | null', description: 'Trailing icon (IconTrailingVisible + IconTrailingIcon). Password brings its show / hide toggle.' },
+      { name: 'shortcut', type: 'string[] | null', description: 'The search shortcut keys (ShortcutVisible + Shortcut). ⌘ K by default on search.' },
+      { name: 'addon', type: 'string', description: 'The prefix or the select value (+01, $, USD, https://, @).' },
+      { name: 'addonOptions', type: 'string[]', description: 'The choices of the phone and currency-select select.' },
       { name: 'aria-invalid', type: 'boolean', description: 'Paints the Invalid state.' },
       { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled tokens.' },
     ],
-    accessibility: 'Native <input>. Pair it with a FieldLabel (htmlFor) or an aria-label; describe errors with FieldError and aria-invalid.',
+    accessibility: 'The field is a native <input> with its keyboard (inputmode) and autofill hint per type; pair it with a FieldLabel (htmlFor) or an aria-label. The select addon is a native <select> with its own name; Browse, Copy and the password toggle are buttons with names; the shortcut keys are <kbd>.',
   },
   {
     key: 'InputGroup',
