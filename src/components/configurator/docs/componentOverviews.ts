@@ -306,6 +306,7 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default'], { Selected: 'True', Dismissible: 'True' }),
   ],
   Icon: [each('Size', ['sm', 'default', 'lg'])],
+  Kbd: [each('Size', ['xs', 'sm', 'default'])],
   FeaturedIcon: [
     each('Size', ['default', 'sm', 'lg', 'xl']),
     each('Variant', ['default', 'secondary', 'critical', 'success', 'warning', 'info']),

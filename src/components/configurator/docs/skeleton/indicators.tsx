@@ -17,7 +17,7 @@ import {
 } from '../../../escala-ui/avatar'
 import { FeaturedIcon as SkFeaturedIcon, type FeaturedIconSize, type FeaturedIconShape, type FeaturedIconVariant, type FeaturedIconAppearance } from '../../../escala-ui/featured-icon'
 import { RecipeScope } from './scope'
-import { Kbd as SkKbd, KbdGroup as SkKbdGroup } from '../../../escala-ui/kbd'
+import { Kbd as SkKbd, KbdGroup as SkKbdGroup, type KbdSize } from '../../../escala-ui/kbd'
 
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
   return (
@@ -181,12 +181,13 @@ export function SkeletonFeaturedIconSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonKbdSpecimen({ t }: SpecimenProps) {
+export function SkeletonKbdSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as KbdSize
   return (
     <RecipeScope t={t}>
       <SkKbdGroup>
-        <SkKbd>⌘</SkKbd>
-        <SkKbd>K</SkKbd>
+        <SkKbd size={size}>⌘</SkKbd>
+        <SkKbd size={size}>K</SkKbd>
       </SkKbdGroup>
     </RecipeScope>
   )

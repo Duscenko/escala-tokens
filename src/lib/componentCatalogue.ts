@@ -1238,12 +1238,14 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Kbd',
     label: 'Kbd',
     category: 'Indicators',
-    description: 'shadcn/ui Kbd: a keyboard key cap, and KbdGroup for a shortcut of several keys.',
-    usage: 'Use to show a shortcut beside a command or in a tooltip (⌘ K). Not for buttons — a Kbd is not clickable.',
-    axes: [],
+    description: 'A keyboard key hint for shortcuts and navigation legends (⌘, K, Esc, ↑, ↓, ↵); KbdGroup spaces several keys.',
+    usage: 'Size follows the icon of the control it sits in: xs in menus and a small Input, sm in a default or large Input and in tooltips, default in standalone shortcut lists. One Kbd per key, never a whole shortcut string.',
+    // The Figma file's axes, value for value (design-plans/kbd-contract.md).
+    axes: [{ name: 'Size', values: ['xs', 'sm', 'default'] }],
     figmaSets: ['Kbd'],
     props: [
-      { name: 'children', type: 'ReactNode', description: 'The key (⌘, Shift, K).' },
+      { name: 'size', type: '"xs" | "sm" | "default"', description: 'Key cap 16 · 20 · 24 high (Size/icon-sm · md · lg).' },
+      { name: 'children', type: 'ReactNode', description: 'The key (⌘, Shift, K) — Figma Label.' },
       { name: 'KbdGroup', type: 'component', description: 'Spaces several Kbd as one shortcut.' },
     ],
     accessibility: 'Rendered as <kbd>, which assistive tech announces as keyboard input. Spell modifier names in an aria-label when the glyph alone is ambiguous.',

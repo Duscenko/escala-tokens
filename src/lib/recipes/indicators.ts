@@ -388,19 +388,31 @@ export const FEATURED_ICON: ComponentRecipe = {
 }
 
 // ── Kbd ────────────────────────────────────────────────────────────────────
-// shadcn's Kbd: a key cap on the muted surface in the muted ink, caption type.
-// KbdGroup only spaces several keys, so it has no slot.
+// The Figma set (design-plans/kbd-contract.md, 1091:6, 3 variants: Size xs · sm · default): a key cap on
+// Surface/muted with a 1px Border/subtle edge and Content/secondary ink, a Radius/control box exactly as tall as
+// the icon of the control it sits in (16 · 20 · 24, also its minimum width), 4px sides on xs / sm and 8px on default;
+// the label is Type/caption (xs, sm) or Type/label (default). KbdGroup only spaces several keys.
+
+export const KBD_SIZES = ['xs', 'sm', 'default'] as const
+const KBD_GEOMETRY: Record<string, { box: string; pad: string; font: string }> = {
+  xs: { box: 'icon.small', pad: 'spacing.gap-tight', font: 'type.caption' },
+  sm: { box: 'icon.medium', pad: 'spacing.gap-tight', font: 'type.caption' },
+  default: { box: 'icon.large', pad: 'spacing.gap-control', font: 'type.label' },
+}
 
 export const KBD: ComponentRecipe = {
   key: 'Kbd',
   slots: ['root'],
-  defaults: {},
+  defaults: { Size: 'default' },
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-2'), text: c('content.secondary'), font: 'type.caption',
-        radius: 'radius.control', paddingX: 'spacing.1_5', paddingY: 'spacing.0_5', gap: 'spacing.1',
+        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', text: c('content.secondary'),
+        radius: 'radius.control', gap: 'spacing.gap-tight',
       },
+    })),
+    part({ Size: KBD_SIZES }, (size) => ({
+      root: { height: KBD_GEOMETRY[size].box, minWidth: KBD_GEOMETRY[size].box, paddingX: KBD_GEOMETRY[size].pad, font: KBD_GEOMETRY[size].font },
     })),
   ],
 }

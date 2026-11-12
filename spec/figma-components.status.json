@@ -40,9 +40,6 @@
     "Chip": {
       "status": "rebuild"
     },
-    "Kbd": {
-      "status": "rebuild"
-    },
     "Accordion": {
       "status": "rebuild"
     },

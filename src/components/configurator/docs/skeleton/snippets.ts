@@ -50,8 +50,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"\n\n<ToggleGroup type="multiple"${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}>\n  <ToggleGroupItem value="bold" aria-label="Bold"><Bold /></ToggleGroupItem>\n  <ToggleGroupItem value="italic" aria-label="Italic"><Italic /></ToggleGroupItem>\n  <ToggleGroupItem value="underline" aria-label="Underline"><Underline /></ToggleGroupItem>\n</ToggleGroup>`,
   NativeSelect: (v) =>
     `import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"\n\n<NativeSelect${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="Team">\n  <NativeSelectOption value="design">Design</NativeSelectOption>\n  <NativeSelectOption value="engineering">Engineering</NativeSelectOption>\n</NativeSelect>`,
-  Kbd: () =>
-    `import { Kbd, KbdGroup } from "@/components/ui/kbd"\n\n<KbdGroup>\n  <Kbd>⌘</Kbd>\n  <Kbd>K</Kbd>\n</KbdGroup>`,
+  Kbd: (v) => {
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    return `import { Kbd, KbdGroup } from "@/components/ui/kbd"\n\n<KbdGroup>\n  <Kbd${size}>⌘</Kbd>\n  <Kbd${size}>K</Kbd>\n</KbdGroup>`
+  },
   Skeleton: () =>
     `import { Skeleton } from "@/components/ui/skeleton"\n\n<div aria-busy="true" className="flex items-center gap-3">\n  <Skeleton className="size-10 rounded-full" />\n  <Skeleton className="h-3.5 w-[200px]" />\n</div>`,
   Empty: (v) =>

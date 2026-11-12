@@ -340,3 +340,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A rename in the ledger whose old key is also a FILE (`aspect-ratio.tsx` → `image.tsx`) and a plugin builder (`AspectRatio`) | Same checklist as Rating / Dropzone | `git mv` the file; catalogue, recipe key, specimens map, snippets, overview, sitemap, store migration (v135 renames inside `selectedComponents`), parity `RENAMED_ON_WEB` (`AspectRatio`) + `WEB_ONLY` (`Image`) |
 | A "Media" swap with a stock photo | No image ships | `src` / `alt` (or `children`); the specimen paints the system's gradient (`avatarFillOf`) in the media slot |
 | `Ratio auto` fills its parent | A fixed height in the specimen would lie | The Image is `size-full` for auto; the specimen / story gives it the file's 240 × 160 slot |
+
+# Lessons from the Kbd (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A small component measured 16 wide in a story when its content needs 19 | The story's wrapper was 0 wide (a flex child of Storybook's root), so the `w-fit` key cap SHRANK to its `min-width` | `shrink-0` on the component (a key cap never shrinks). When a box is narrower than its content, test `flex-shrink: 0` and the parent's width before touching the recipe |
+| Figma text box 12 wide, browser 11 / 11.9 | xs 20 vs 19.0, default 28 vs 27.9 | Figma rounds the glyph's box up; same layout (padding + text) — as the SegmentedControl note |
+| An empty recipe `axes` becoming one axis | Kbd had no axes; the file has Size | Recipe `defaults: { Size: 'default' }` + a Size part; the catalogue axis; the overview row; no store migration (the key did not change) |

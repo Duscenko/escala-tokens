@@ -17232,20 +17232,52 @@
       "slots": [
         "root"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default"
+      },
       "parts": [
         {
           "axes": [],
           "values": {
             "": {
               "root": {
-                "fill": "color.surface.layer-2",
+                "fill": "color.surface.muted",
+                "stroke": "color.border.subtle",
+                "strokeWidth": "stroke.control",
                 "text": "color.content.secondary",
-                "font": "type.caption",
                 "radius": "radius.control",
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.0_5",
-                "gap": "spacing.1"
+                "gap": "spacing.gap-tight"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "root": {
+                "height": "icon.small",
+                "minWidth": "icon.small",
+                "paddingX": "spacing.gap-tight",
+                "font": "type.caption"
+              }
+            },
+            "sm": {
+              "root": {
+                "height": "icon.medium",
+                "minWidth": "icon.medium",
+                "paddingX": "spacing.gap-tight",
+                "font": "type.caption"
+              }
+            },
+            "default": {
+              "root": {
+                "height": "icon.large",
+                "minWidth": "icon.large",
+                "paddingX": "spacing.gap-control",
+                "font": "type.label"
               }
             }
           }
