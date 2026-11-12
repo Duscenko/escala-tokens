@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 132,
+      version: 133,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4187,6 +4187,20 @@ export const useDesignStore = create<DesignStore>()(
           move(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) move(sys?.snapshot)
+          }
+        }
+        if (version < 133) {
+          // v132→v133: Avatar is rebuilt from the Figma file with its AvatarStatus and AvatarGroup parts.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Avatar')
+            if (at < 0) return
+            for (const part of ['AvatarStatus', 'AvatarGroup']) if (!sel.includes(part)) sel.splice(sel.indexOf('Avatar') + 1, 0, part)
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
           }
         }
         return persisted

@@ -218,31 +218,142 @@ export const FILE_FORMAT: ComponentRecipe = {
   ],
 }
 
-// ── Avatar ─────────────────────────────────────────────────────────────────
-// shadcn's sizes: sm 24 · default 32 · lg 40 (size-6 / 8 / 10) — Escala's
-// Size steps at those lengths. The fallback is shadcn's `bg-muted
-// text-muted-foreground`.
+// ── Avatar · AvatarStatus · AvatarGroup ────────────────────────────────────
+// The Figma sets of the same names (design-plans/avatar-contract.md, 378:2094 · 377:54 · 378:2507).
+// Avatar: Type image · initials · icon × Size 2xs … 2xl × Shape circle · rounded × Variant × Appearance
+// soft · solid (350 variants; an image avatar only exists as secondary · soft). The root is a square
+// (16 · 24 · 32 · 40 · 48 · 56 · 64) on Radius/full or Radius/control with a 1px Border/subtle edge laid
+// OVER the content (0.5px on 2xs · xs), an optional 2px Border/accent ring 4px outside it and an
+// AvatarStatus dot on the bottom-right corner. The initials text styles (Type/avatar-*) are unbound in
+// the file: literal px, Medium, line height 100%.
 
-export const AVATAR_SIZES = ['default', 'sm', 'lg'] as const
-const AVATAR_GEOMETRY: Record<string, { size: string; font: string }> = {
-  sm: { size: 'size.xs', font: 'type.caption' },
-  default: { size: 'size.sm', font: 'type.label' },
-  lg: { size: 'size.md', font: 'type.label' },
+export const AVATAR_TYPES = ['image', 'initials', 'icon'] as const
+export const AVATAR_SIZES = ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl'] as const
+export const AVATAR_SHAPES = ['circle', 'rounded'] as const
+export const AVATAR_VARIANTS = ['secondary', 'default', 'info', 'success', 'warning', 'critical'] as const
+export const AVATAR_APPEARANCES = ['soft', 'solid'] as const
+export const AVATAR_STATUSES = ['online', 'busy', 'away', 'offline', 'do-not-disturb'] as const
+export const AVATAR_STATUS_SIZES = ['xs', 'sm', 'default', 'lg'] as const
+
+// box: the file binds Size/control-xs … xl (24 · 32 · 40 · 48 · 56); 2xs (16) and 2xl (64) are literals
+// that sit on a step. icon: the glyph px (10 · 14 · 18 · 20 · 24 · 28 · 32), initials: Type/avatar-* px.
+const AVATAR_GEOMETRY: Record<string, { box: string; icon: string; text: string; hairline?: string }> = {
+  '2xs': { box: 'spacing.4', icon: 'spacing.2_5', text: '8', hairline: '0.5' },
+  xs: { box: 'size.xs', icon: 'spacing.3+spacing.0_5', text: '10', hairline: '0.5' },
+  sm: { box: 'size.sm', icon: 'spacing.4+spacing.0_5', text: '12' },
+  default: { box: 'size.md', icon: 'icon.medium', text: '14' },
+  lg: { box: 'size.lg', icon: 'icon.large', text: '16' },
+  xl: { box: 'size.xl', icon: 'spacing.6+spacing.1', text: '18' },
+  '2xl': { box: 'size.2xl', icon: 'spacing.8', text: '20' },
+}
+const AVATAR_TONE: Record<string, { soft: [string, string]; solid: [string, string] }> = {
+  secondary: { soft: ['surface.muted', 'content.secondary'], solid: ['surface.inverse', 'content.inverse'] },
+  default: { soft: ['surface.accent', 'content.accent'], solid: ['action.primary.default', 'content.on-action'] },
+  info: { soft: ['status.info.surface', 'status.info.content'], solid: ['status.info.surface-solid', 'status.info.on-solid'] },
+  success: { soft: ['status.success.surface', 'status.success.content'], solid: ['status.success.surface-solid', 'status.success.on-solid'] },
+  warning: { soft: ['status.warning.surface', 'status.warning.content'], solid: ['status.warning.surface-solid', 'status.warning.on-solid'] },
+  critical: { soft: ['status.critical.surface', 'status.critical.content'], solid: ['status.critical.surface-solid', 'status.critical.on-solid'] },
 }
 
 export const AVATAR: ComponentRecipe = {
   key: 'Avatar',
-  slots: ['root', 'image', 'fallback'],
-  defaults: { Size: 'default' },
+  slots: ['root', 'image', 'initials', 'icon', 'stroke', 'ring'],
+  defaults: { Type: 'image', Size: 'default', Shape: 'circle', Variant: 'secondary', Appearance: 'soft' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.pill' },
-      fallback: { fill: c('surface.layer-2'), text: c('content.secondary'), radius: 'radius.pill' },
+      root: { fill: c('surface.muted') },
+      stroke: { stroke: c('border.subtle') },
+      ring: { stroke: c('border.accent'), strokeWidth: 'stroke.md' },
     })),
-    part({ Size: AVATAR_SIZES }, (size) => ({
-      root: { width: AVATAR_GEOMETRY[size].size, height: AVATAR_GEOMETRY[size].size },
-      fallback: { font: AVATAR_GEOMETRY[size].font },
+    part({ Shape: AVATAR_SHAPES }, (shape) => {
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } }
+    }),
+    part({ Size: AVATAR_SIZES }, (size) => {
+      const g = AVATAR_GEOMETRY[size]
+      const stroke: SlotProps = g.hairline ? { hairline: g.hairline } : { strokeWidth: 'stroke.control' }
+      return {
+        root: { width: g.box, height: g.box },
+        image: { width: g.box, height: g.box },
+        initials: size === 'sm' ? { font: 'type.label' } : { fontLiteral: g.text },
+        icon: { width: g.icon, height: g.icon },
+        stroke,
+      }
+    }),
+    part({ Variant: AVATAR_VARIANTS, Appearance: AVATAR_APPEARANCES }, (variant, appearance) => {
+      const [fill, ink] = AVATAR_TONE[variant][appearance as 'soft' | 'solid']
+      return { root: { fill: c(fill) }, initials: { text: c(ink) }, icon: { text: c(ink) } }
+    }),
+  ],
+}
+
+const STATUS_FILL: Record<string, string> = {
+  online: 'status.success.surface-solid',
+  busy: 'status.critical.surface-solid',
+  away: 'status.warning.surface-solid',
+  offline: 'content.subtle',
+  'do-not-disturb': 'status.critical.surface-solid',
+}
+// size · its outside stroke (1px on xs / sm, 2px on default / lg) · the do-not-disturb bar's height.
+const STATUS_GEOMETRY: Record<string, { box: string; edge: string; bar: string }> = {
+  xs: { box: 'spacing.1_5', edge: 'stroke.sm', bar: 'stroke.sm' },
+  sm: { box: 'spacing.2', edge: 'stroke.sm', bar: 'stroke.sm' },
+  default: { box: 'spacing.2_5', edge: 'stroke.md', bar: 'stroke.md' },
+  lg: { box: 'spacing.3', edge: 'stroke.md', bar: 'stroke.md' },
+}
+
+export const AVATAR_STATUS: ComponentRecipe = {
+  key: 'AvatarStatus',
+  slots: ['root', 'bar'],
+  defaults: { Status: 'online', Size: 'default' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.pill' }, bar: { fill: c('status.critical.on-solid') } })),
+    part({ Status: AVATAR_STATUSES }, (status) => ({ root: { fill: c(STATUS_FILL[status]) } })),
+    part({ Size: AVATAR_STATUS_SIZES }, (size) => ({
+      // The outside edge (colour + width) lives in ONE part: `outerStroke` reads its width.
+      root: { width: STATUS_GEOMETRY[size].box, height: STATUS_GEOMETRY[size].box, outerStroke: c('surface.page'), outerStrokeWidth: STATUS_GEOMETRY[size].edge },
+      bar: { height: STATUS_GEOMETRY[size].bar },
     })),
+  ],
+}
+
+// AvatarGroup: a row of avatars (each in a Surface/page ring 1 · 2 · 3px wide: stroke.sm, spacing.0_5, both) overlapping, then a +N
+// tile on Surface/inverse. The overlap is Spacing/overlap-sm (-4) on 2xs and overlap-md (-8) on sm /
+// default; xs (-6), lg · xl (-12) and 2xl (-16) are hand-set in the file (the component sets them
+// from the spacing steps).
+const GROUP_GEOMETRY: Record<string, { pad: string; box: string; overlap?: string; count: SlotProps }> = {
+  '2xs': { pad: 'stroke.sm', box: 'spacing.4', overlap: 'spacing.overlap-sm', count: { fontLiteral: '8' } },
+  xs: { pad: 'stroke.sm', box: 'size.xs', count: { fontLiteral: '10' } },
+  sm: { pad: 'spacing.0_5', box: 'size.sm', overlap: 'spacing.overlap-md', count: { font: 'type.label' } },
+  default: { pad: 'spacing.0_5', box: 'size.md', overlap: 'spacing.overlap-md', count: { fontLiteral: '14' } },
+  lg: { pad: 'spacing.0_5', box: 'size.lg', count: { fontLiteral: '16' } },
+  xl: { pad: 'spacing.0_5', box: 'size.xl', count: { fontLiteral: '18' } },
+  '2xl': { pad: 'spacing.0_5+stroke.sm', box: 'size.2xl', count: { fontLiteral: '20' } },
+}
+
+export const AVATAR_GROUP: ComponentRecipe = {
+  key: 'AvatarGroup',
+  slots: ['root', 'item', 'action', 'count'],
+  defaults: { Size: 'default', Shape: 'circle' },
+  parts: [
+    part({}, () => ({
+      item: { fill: c('surface.page') },
+      action: { fill: c('surface.inverse') },
+      count: { text: c('content.inverse') },
+    })),
+    part({ Size: AVATAR_SIZES }, (size) => {
+      const g = GROUP_GEOMETRY[size]
+      return {
+        root: g.overlap ? { overlap: g.overlap } : {},
+        item: { paddingX: g.pad, paddingY: g.pad },
+        action: { width: g.box, height: g.box },
+        count: g.count,
+      }
+    }),
+    part({ Shape: AVATAR_SHAPES }, (shape) => {
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      return { item: { radius }, action: { radius } }
+    }),
   ],
 }
 

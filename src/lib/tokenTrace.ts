@@ -103,13 +103,18 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   halo: 'Focus halo',
   opacity: 'Opacity',
   lift: 'Elevation',
+  fontLiteral: 'Typography (literal)',
+  hairline: 'Border width (hairline)',
+  outerStroke: 'Outside border',
+  outerStrokeWidth: 'Outside border width',
+  overlap: 'Overlap',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'overlay', 'overlay2', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
-  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
-  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'shadow', 'font', 'hit',
+  'fill', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
+  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
+  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'shadow', 'font', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {

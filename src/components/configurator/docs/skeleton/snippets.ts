@@ -129,7 +129,11 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   FileFormat: (v) =>
     `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'pdf'}" />`,
   Avatar: (v) =>
-    `import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"\n\n<Avatar${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <AvatarImage src={user.image} alt="Maya Duscenko" />\n  <AvatarFallback>MD</AvatarFallback>\n</Avatar>`,
+    `import { Avatar } from "@/components/ui/avatar"\n\n<Avatar${v.Type && v.Type !== 'image' ? ` type="${v.Type}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''}${v.Variant && v.Variant !== 'secondary' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''} aria-label="Maya Duscenko"${v.Type === 'image' || !v.Type ? ' src={user.image}' : ''}>${v.Type === 'initials' ? 'MD' : ''}</Avatar>`,
+  AvatarStatus: (v) =>
+    `import { AvatarStatus } from "@/components/ui/avatar"\n\n<AvatarStatus${v.Status && v.Status !== 'online' ? ` status="${v.Status}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
+  AvatarGroup: (v) =>
+    `import { Avatar, AvatarGroup } from "@/components/ui/avatar"\n\n<AvatarGroup${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} count={3} countLabel="3 more people" aria-label="Team">\n  {people.map((p) => <Avatar key={p.id} src={p.image} aria-label={p.name} />)}\n</AvatarGroup>`,
 
   Textarea: (v) => {
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''

@@ -11,7 +11,10 @@ import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { Icon as SkIcon } from '../../../escala-ui/icon'
 import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
 import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
-import { Avatar as SkAvatar, AvatarFallback as SkAvatarFallback, type AvatarSize } from '../../../escala-ui/avatar'
+import {
+  Avatar as SkAvatar, AvatarStatus as SkAvatarStatus, AvatarGroup as SkAvatarGroup,
+  type AvatarSize, type AvatarType, type AvatarShape, type AvatarVariant, type AvatarAppearance, type AvatarStatusValue, type AvatarStatusSize,
+} from '../../../escala-ui/avatar'
 import { RecipeScope } from './scope'
 import { Kbd as SkKbd, KbdGroup as SkKbdGroup } from '../../../escala-ui/kbd'
 
@@ -110,17 +113,55 @@ export function SkeletonFileFormatSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'pdf') as Format} /></RecipeScope>
 }
 
-/** `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
- *  the system's gradient instead of initials; `v.Hue` rotates it. */
+/** The Figma Avatar. `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
+ *  the system's gradient and no initials (the board's people); `v.Hue` rotates it. RingVisible and
+ *  StatusVisible are Figma booleans (`'True'` / `'False'`). */
 export function SkeletonAvatarSpecimen({ t, v }: SpecimenProps) {
   const gradient = v.Fill === 'Gradient'
   const hue = Number(v.Hue)
-  const background = gradient ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t)) : undefined
+  const size = (v.Size ?? 'default') as AvatarSize
+  const type = (gradient ? 'initials' : v.Type ?? 'initials') as AvatarType
+  // The file's photo is a stock image: shown here as the system's own gradient (no image ships).
+  const background = gradient || type === 'image' ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t)) : undefined
   return (
     <RecipeScope t={t}>
-      <SkAvatar size={(v.Size ?? 'default') as AvatarSize}>
-        <SkAvatarFallback style={background ? { background } : undefined}>{gradient ? null : 'MD'}</SkAvatarFallback>
+      <SkAvatar
+        aria-label="Maya Duscenko"
+        type={type}
+        size={size}
+        shape={(v.Shape ?? 'circle') as AvatarShape}
+        variant={(v.Variant ?? 'secondary') as AvatarVariant}
+        appearance={(v.Appearance ?? 'soft') as AvatarAppearance}
+        ringVisible={v.RingVisible === 'True'}
+        statusVisible={v.StatusVisible === 'True'}
+        style={background ? { background } : undefined}
+      >
+        {gradient ? null : size === '2xs' ? 'M' : 'MD'}
       </SkAvatar>
+    </RecipeScope>
+  )
+}
+
+/** The Figma AvatarStatus dot on its own. */
+export function SkeletonAvatarStatusSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkAvatarStatus status={(v.Status ?? 'online') as AvatarStatusValue} size={(v.Size ?? 'default') as AvatarStatusSize} />
+    </RecipeScope>
+  )
+}
+
+/** The Figma AvatarGroup: four people (the swap's sample photos are not shipped, so initials) and +3. */
+export function SkeletonAvatarGroupSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as AvatarSize
+  const variants: AvatarVariant[] = ['default', 'success', 'warning', 'info']
+  return (
+    <RecipeScope t={t}>
+      <SkAvatarGroup aria-label="Team" size={size} shape={(v.Shape ?? 'circle') as AvatarShape} count={3} countLabel="3 more people">
+        {['AB', 'CD', 'EF', 'GH'].map((initials, i) => (
+          <SkAvatar key={initials} type="initials" variant={variants[i]} aria-label={initials}>{size === '2xs' ? initials[0] : initials}</SkAvatar>
+        ))}
+      </SkAvatarGroup>
     </RecipeScope>
   )
 }

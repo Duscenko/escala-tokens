@@ -31,8 +31,21 @@ export const RECIPE_PROPS = [
   // lives in `recipeStyles.ts` (the file hand-sets it per state, there is no token
   // for it); only the two colours are roles. Not a token reference.
   'lift',
+  // A glyph's text style the Figma file leaves UNBOUND (Avatar: Type/avatar-2xs … 2xl are literal
+  // 8 · 10 · 12 · 14 · 16 · 18 · 20 px, Medium, line height 100%). The value is the px as a plain
+  // number string (`'14'`); `recipeStyles.ts` writes the CSS. Not a token reference.
+  'fontLiteral',
+  // A hand-set hairline the file leaves unbound (Avatar's 0.5px edge on the 2xs / xs sizes): px as a
+  // plain number string. Not a token reference.
+  'hairline',
+  // A stroke drawn OUTSIDE the frame (Figma AvatarStatus: Surface/page, `strokeAlign` OUTSIDE): a colour
+  // role plus its width (a stroke ref). CSS draws it as a 0-blur spread so the box does not grow.
+  'outerStroke', 'outerStrokeWidth',
+  // A negative overlap between a row's items (AvatarGroup): a spacing role (`spacing.overlap-md`). CSS has no
+  // negative gap, so it is a custom property (`--escala-overlap`) the component lays out as a margin.
+  'overlap',
 ] as const
-export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift']
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>

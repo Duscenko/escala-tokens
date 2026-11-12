@@ -23,7 +23,7 @@ import {
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
-  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen,
+  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
@@ -427,6 +427,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Kbd: SkeletonKbdSpecimen,
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
+  AvatarStatus: SkeletonAvatarStatusSpecimen,
+  AvatarGroup: SkeletonAvatarGroupSpecimen,
   Card: SkeletonCardSpecimen,
   Separator: SkeletonSeparatorSpecimen,
   Collapsible: SkeletonCollapsibleSpecimen,

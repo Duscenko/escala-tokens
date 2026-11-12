@@ -313,3 +313,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A Figma prop called `Type` on a `<button>` | `type` is the button's own attribute | `kind` on the item (documented); the group keeps `type` (a div has none) |
 | «In a star group set Checked on every item up to the value; code sets aria-checked on the chosen item only» | One boolean cannot be both | The group computes the visual `checked` (≤ value for stars, == for emoji) and the roving `aria-checked` separately |
 | Glyphs the shared component icon set lacks (the five smileys, the filled star) | No `PreviewIcon` concept | Inline Phosphor paths in the component (regular + `star-fill`) |
+
+# Lessons from the Avatar, AvatarStatus and AvatarGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Text styles the file leaves UNBOUND (`Type/avatar-2xs … 2xl`: literal 8 · 10 · 14 · 16 · 18 · 20 px, Medium, line height 100 %) | No role and no scale step matches (weight, leading and the 8 / 10 px) | Recipe prop `fontLiteral` (the px as a plain string, in `NON_TOKEN_PROPS`; `recipeStyles.ts` writes size / weight / leading). Sizes that DO bind a role (sm = `Type/label`) keep `font` |
+| A hand-set 0.5px hairline | `stroke.sm` is 1px; no token | Prop `hairline` (px string, non-token) |
+| A stroke OUTSIDE a small frame (the status dot, `strokeAlign` OUTSIDE) | A CSS border would grow the box (6 → 8) | Props `outerStroke` (colour) + `outerStrokeWidth` (stroke ref) → `box-shadow: 0 0 0 w c`. Both MUST sit in the SAME recipe part: `outerStroke` reads its width from its own rule, and a part split gave a 1px fallback on the 2px sizes |
+| A negative gap (avatar stack, −4 … −16) | CSS `gap` cannot be negative: it silently computed `normal` | Prop `overlap` → `--escala-overlap`; the component lays out `[&>*+*]:ml-[var(--escala-overlap)]`. A size with no role (−6, −12, −16) sets the variable inline from a spacing step |
+| A set with 350 variants where colours are invariant of Size × Shape | One line per variant would pass 48 KB | Group by Type · Variant · Appearance and count distinct `fill · stroke · ink` lines: 25 groups of 14, one colour line each |
+| A catalogue axis whose values change meaning (old shadcn `sm · default · lg` = 24 · 32 · 40, Figma's = 32 · 40 · 48) | Board and artefacts kept the old strings | grep every `v={{ Size: … }}` caller and move it (`SystemCollage`, `ProfileArtefact`, `PreviewPanel`, `screenPatterns`, `AboutInspectDemo`) |

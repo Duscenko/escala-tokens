@@ -979,7 +979,7 @@ export function SystemCollage({
             className="flex flex-col items-center text-center"
             style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: spaceOf(tile(5), 2) }}
           >
-            <Avatar t={tile(5)} v={{ Size: 'lg', Fill: 'Gradient' }} />
+            <Avatar t={tile(5)} v={{ Size: 'default', Fill: 'Gradient' }} />
             <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
               {translate('Create an account')}
             </p>
@@ -1015,7 +1015,7 @@ export function SystemCollage({
     profile: (
         <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
           <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
-            <Avatar t={tile(8)} v={{ Fill: 'Gradient' }} />
+            <Avatar t={tile(8)} v={{ Size: 'sm', Fill: 'Gradient' }} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
                 <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
@@ -1189,7 +1189,7 @@ export function SystemCollage({
               boxShadow: `0 0 0 2px ${cardBg}`,
             }}
           >
-            <Avatar t={tile(11)} v={{ Size: 'lg', Fill: 'Gradient', Hue: String(hue) }} />
+            <Avatar t={tile(11)} v={{ Size: 'default', Fill: 'Gradient', Hue: String(hue) }} />
           </span>
         ))}
       </div>

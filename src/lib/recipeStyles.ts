@@ -98,6 +98,10 @@ function declarations(props: SlotProps): string[] {
       case 'overlay2':
         break // painted by `fill`
       case 'opacity': out.push(`opacity: ${ref}`); break
+      // An unbound text style (Avatar initials): literal px, Medium, line height 100%.
+      case 'hairline': out.push(`border-width: ${ref}px`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${ref}px`); break
+      case 'outerStroke': out.push(`box-shadow: 0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${color(ref)}`); break
+      case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
       // forced-colors mode paints instead.
@@ -172,6 +176,7 @@ function declarations(props: SlotProps): string[] {
       case 'minWidth': out.push(`min-width: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
+      case 'overlap': out.push(`--escala-overlap: ${dim(ref)}`); break
       case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
       case 'radius': {
         const f = refFn(ref)

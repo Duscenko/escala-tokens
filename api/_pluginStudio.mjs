@@ -5181,16 +5181,59 @@ var init_componentCatalogue = __esm({
         key: "Avatar",
         label: "Avatar",
         category: "Content & Surfaces",
-        description: "Avatar with initials fallback for identity representation \u2014 XS to XL sizes.",
-        usage: "Use consistently at the same size in a given context. Stack for teams.",
-        axes: [{ name: "Size", values: ["default", "sm", "lg"] }],
+        description: "A person or entity as a photo, initials or an icon, in seven sizes, with an optional selection ring and presence dot.",
+        usage: "Use one size per context. Stack people with AvatarGroup. A photo avatar has no colour variants; initials and icon take Variant and Appearance.",
+        // The Figma file's axes, value for value (design-plans/avatar-contract.md).
+        axes: [
+          { name: "Type", values: ["image", "initials", "icon"] },
+          { name: "Size", values: ["2xs", "xs", "sm", "default", "lg", "xl", "2xl"] },
+          { name: "Shape", values: ["circle", "rounded"] },
+          { name: "Variant", values: ["secondary", "default", "info", "success", "warning", "critical"] },
+          { name: "Appearance", values: ["soft", "solid"] }
+        ],
         figmaSets: ["Avatar"],
         props: [
-          { name: "size", type: '"default" | "sm" | "lg"', description: "Diameter \u2014 shadcn's sizes: 32 / 24 / 40px (the Sizes foundation)." },
-          { name: "AvatarImage src", type: "string", description: "Image URL; the fallback shows while it loads or if it fails." },
-          { name: "AvatarFallback", type: "ReactNode", description: "Initials." }
+          { name: "ringVisible", type: "boolean", description: "Figma RingVisible: a 2px Border/accent ring 4px outside the avatar." },
+          { name: "statusVisible / status", type: "boolean / AvatarStatus value", description: "Figma StatusVisible: the presence dot on the bottom-right corner (online \xB7 busy \xB7 away \xB7 offline \xB7 do-not-disturb)." },
+          { name: "src / alt", type: "string", description: "The photo (Figma Photo swap). Type image only." },
+          { name: "children", type: "ReactNode", description: "The initials (Type initials): one letter on 2xs, two otherwise." },
+          { name: "icon", type: "ReactNode", description: "Figma Icon (the swap); default a user glyph." }
         ],
-        accessibility: 'img alt generated from name. Decorative images use alt="".'
+        accessibility: 'role="img" with an accessible name (aria-label, or the alt of the photo); hide a purely decorative avatar with aria-hidden. The presence dot is announced as text.'
+      },
+      {
+        key: "AvatarStatus",
+        label: "Avatar Status",
+        category: "Content & Surfaces",
+        description: "The presence dot of an Avatar: online, busy, away, offline or do-not-disturb, with an outside Surface/page edge.",
+        usage: "Always on an Avatar (bottom-right); never rely on colour alone.",
+        axes: [
+          { name: "Status", values: ["online", "busy", "away", "offline", "do-not-disturb"] },
+          { name: "Size", values: ["xs", "sm", "default", "lg"] }
+        ],
+        figmaSets: ["AvatarStatus"],
+        props: [
+          { name: "status / size", type: "Status / Size", description: "Dot colour (success \xB7 critical \xB7 warning \xB7 muted \xB7 critical with a bar) and 6 \xB7 8 \xB7 10 \xB7 12px." }
+        ],
+        accessibility: 'role="img" with the presence as its label ("Online"); give your own aria-label to override.'
+      },
+      {
+        key: "AvatarGroup",
+        label: "Avatar Group",
+        category: "Content & Surfaces",
+        description: "An overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile.",
+        usage: 'Show who is part of something; label the +N tile ("4 more people").',
+        axes: [
+          { name: "Size", values: ["2xs", "xs", "sm", "default", "lg", "xl", "2xl"] },
+          { name: "Shape", values: ["circle", "rounded"] }
+        ],
+        figmaSets: ["AvatarGroup"],
+        props: [
+          { name: "size / shape", type: "Size / Shape", description: "Cascade to every Avatar in the group." },
+          { name: "children", type: "Avatar[]", description: "The avatars; each is wrapped in its ring." },
+          { name: "count", type: "number", description: "The +N tile (Figma: +3). Omit or 0 for none." }
+        ],
+        accessibility: 'role="group" with an accessible name; the +N tile is a labelled image or button.'
       },
       {
         key: "Card",
@@ -11312,7 +11355,7 @@ function ratingItemPaint(type, checked, state2) {
   const ink = on ? "content.accent" : state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary";
   return { root: { fill: hoverFill, text: c(ink), ...focus } };
 }
-var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
+var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -11473,25 +11516,119 @@ var init_indicators = __esm({
         }))
       ]
     };
-    AVATAR_SIZES = ["default", "sm", "lg"];
+    AVATAR_SIZES = ["2xs", "xs", "sm", "default", "lg", "xl", "2xl"];
+    AVATAR_SHAPES = ["circle", "rounded"];
+    AVATAR_VARIANTS = ["secondary", "default", "info", "success", "warning", "critical"];
+    AVATAR_APPEARANCES = ["soft", "solid"];
+    AVATAR_STATUSES = ["online", "busy", "away", "offline", "do-not-disturb"];
+    AVATAR_STATUS_SIZES = ["xs", "sm", "default", "lg"];
     AVATAR_GEOMETRY = {
-      sm: { size: "size.xs", font: "type.caption" },
-      default: { size: "size.sm", font: "type.label" },
-      lg: { size: "size.md", font: "type.label" }
+      "2xs": { box: "spacing.4", icon: "spacing.2_5", text: "8", hairline: "0.5" },
+      xs: { box: "size.xs", icon: "spacing.3+spacing.0_5", text: "10", hairline: "0.5" },
+      sm: { box: "size.sm", icon: "spacing.4+spacing.0_5", text: "12" },
+      default: { box: "size.md", icon: "icon.medium", text: "14" },
+      lg: { box: "size.lg", icon: "icon.large", text: "16" },
+      xl: { box: "size.xl", icon: "spacing.6+spacing.1", text: "18" },
+      "2xl": { box: "size.2xl", icon: "spacing.8", text: "20" }
+    };
+    AVATAR_TONE = {
+      secondary: { soft: ["surface.muted", "content.secondary"], solid: ["surface.inverse", "content.inverse"] },
+      default: { soft: ["surface.accent", "content.accent"], solid: ["action.primary.default", "content.on-action"] },
+      info: { soft: ["status.info.surface", "status.info.content"], solid: ["status.info.surface-solid", "status.info.on-solid"] },
+      success: { soft: ["status.success.surface", "status.success.content"], solid: ["status.success.surface-solid", "status.success.on-solid"] },
+      warning: { soft: ["status.warning.surface", "status.warning.content"], solid: ["status.warning.surface-solid", "status.warning.on-solid"] },
+      critical: { soft: ["status.critical.surface", "status.critical.content"], solid: ["status.critical.surface-solid", "status.critical.on-solid"] }
     };
     AVATAR = {
       key: "Avatar",
-      slots: ["root", "image", "fallback"],
-      defaults: { Size: "default" },
+      slots: ["root", "image", "initials", "icon", "stroke", "ring"],
+      defaults: { Type: "image", Size: "default", Shape: "circle", Variant: "secondary", Appearance: "soft" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.pill" },
-          fallback: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.pill" }
+          root: { fill: c("surface.muted") },
+          stroke: { stroke: c("border.subtle") },
+          ring: { stroke: c("border.accent"), strokeWidth: "stroke.md" }
         })),
-        part({ Size: AVATAR_SIZES }, (size) => ({
-          root: { width: AVATAR_GEOMETRY[size].size, height: AVATAR_GEOMETRY[size].size },
-          fallback: { font: AVATAR_GEOMETRY[size].font }
+        part({ Shape: AVATAR_SHAPES }, (shape) => {
+          const radius = shape === "circle" ? "radius.pill" : "radius.control";
+          return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } };
+        }),
+        part({ Size: AVATAR_SIZES }, (size) => {
+          const g = AVATAR_GEOMETRY[size];
+          const stroke = g.hairline ? { hairline: g.hairline } : { strokeWidth: "stroke.control" };
+          return {
+            root: { width: g.box, height: g.box },
+            image: { width: g.box, height: g.box },
+            initials: size === "sm" ? { font: "type.label" } : { fontLiteral: g.text },
+            icon: { width: g.icon, height: g.icon },
+            stroke
+          };
+        }),
+        part({ Variant: AVATAR_VARIANTS, Appearance: AVATAR_APPEARANCES }, (variant, appearance) => {
+          const [fill, ink] = AVATAR_TONE[variant][appearance];
+          return { root: { fill: c(fill) }, initials: { text: c(ink) }, icon: { text: c(ink) } };
+        })
+      ]
+    };
+    STATUS_FILL = {
+      online: "status.success.surface-solid",
+      busy: "status.critical.surface-solid",
+      away: "status.warning.surface-solid",
+      offline: "content.subtle",
+      "do-not-disturb": "status.critical.surface-solid"
+    };
+    STATUS_GEOMETRY = {
+      xs: { box: "spacing.1_5", edge: "stroke.sm", bar: "stroke.sm" },
+      sm: { box: "spacing.2", edge: "stroke.sm", bar: "stroke.sm" },
+      default: { box: "spacing.2_5", edge: "stroke.md", bar: "stroke.md" },
+      lg: { box: "spacing.3", edge: "stroke.md", bar: "stroke.md" }
+    };
+    AVATAR_STATUS = {
+      key: "AvatarStatus",
+      slots: ["root", "bar"],
+      defaults: { Status: "online", Size: "default" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.pill" }, bar: { fill: c("status.critical.on-solid") } })),
+        part({ Status: AVATAR_STATUSES }, (status) => ({ root: { fill: c(STATUS_FILL[status]) } })),
+        part({ Size: AVATAR_STATUS_SIZES }, (size) => ({
+          // The outside edge (colour + width) lives in ONE part: `outerStroke` reads its width.
+          root: { width: STATUS_GEOMETRY[size].box, height: STATUS_GEOMETRY[size].box, outerStroke: c("surface.page"), outerStrokeWidth: STATUS_GEOMETRY[size].edge },
+          bar: { height: STATUS_GEOMETRY[size].bar }
         }))
+      ]
+    };
+    GROUP_GEOMETRY = {
+      "2xs": { pad: "stroke.sm", box: "spacing.4", overlap: "spacing.overlap-sm", count: { fontLiteral: "8" } },
+      xs: { pad: "stroke.sm", box: "size.xs", count: { fontLiteral: "10" } },
+      sm: { pad: "spacing.0_5", box: "size.sm", overlap: "spacing.overlap-md", count: { font: "type.label" } },
+      default: { pad: "spacing.0_5", box: "size.md", overlap: "spacing.overlap-md", count: { fontLiteral: "14" } },
+      lg: { pad: "spacing.0_5", box: "size.lg", count: { fontLiteral: "16" } },
+      xl: { pad: "spacing.0_5", box: "size.xl", count: { fontLiteral: "18" } },
+      "2xl": { pad: "spacing.0_5+stroke.sm", box: "size.2xl", count: { fontLiteral: "20" } }
+    };
+    AVATAR_GROUP = {
+      key: "AvatarGroup",
+      slots: ["root", "item", "action", "count"],
+      defaults: { Size: "default", Shape: "circle" },
+      parts: [
+        part({}, () => ({
+          item: { fill: c("surface.page") },
+          action: { fill: c("surface.inverse") },
+          count: { text: c("content.inverse") }
+        })),
+        part({ Size: AVATAR_SIZES }, (size) => {
+          const g = GROUP_GEOMETRY[size];
+          return {
+            root: g.overlap ? { overlap: g.overlap } : {},
+            item: { paddingX: g.pad, paddingY: g.pad },
+            action: { width: g.box, height: g.box },
+            count: g.count
+          };
+        }),
+        part({ Shape: AVATAR_SHAPES }, (shape) => {
+          const radius = shape === "circle" ? "radius.pill" : "radius.control";
+          return { item: { radius }, action: { radius } };
+        })
       ]
     };
     KBD = {
@@ -11654,6 +11791,8 @@ var init_componentRecipes = __esm({
       RatingGroupItem: RATING_GROUP_ITEM,
       FileFormat: FILE_FORMAT,
       Avatar: AVATAR,
+      AvatarStatus: AVATAR_STATUS,
+      AvatarGroup: AVATAR_GROUP,
       Separator: SEPARATOR,
       Collapsible: COLLAPSIBLE,
       Table: TABLE,
@@ -14510,7 +14649,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 132,
+          version: 133,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -16131,6 +16270,19 @@ var init_useDesignStore = __esm({
               move(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) move(sys?.snapshot);
+              }
+            }
+            if (version < 133) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Avatar");
+                if (at < 0) return;
+                for (const part2 of ["AvatarStatus", "AvatarGroup"]) if (!sel.includes(part2)) sel.splice(sel.indexOf("Avatar") + 1, 0, part2);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

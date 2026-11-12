@@ -140,7 +140,7 @@ export const SCREEN_PATTERNS: ScreenPattern[] = [
     source: 'ProfileArtefact.tsx',
     purpose: 'Account settings: identity, preferences, a destructive action last.',
     parts: [
-      { key: 'Avatar', axes: { Size: 'lg' }, use: 'the person, in the header row' },
+      { key: 'Avatar', axes: { Size: 'default' }, use: 'the person, in the header row' },
       { key: 'StatusBadge', axes: { Status: 'online' }, use: 'presence, end of the header row' },
       { key: 'Card', use: 'the notification settings: a list of Switches, each labelled through a Field' },
       { key: 'Button', axes: { Variant: 'destructive', Size: 'lg' }, use: 'delete the account, last on the page' },

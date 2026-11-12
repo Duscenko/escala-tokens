@@ -153,7 +153,7 @@ function ColorCollage({
 
       <div className="flex items-center justify-between gap-3">
         <TabMenuSpec t={tokens} v={{}} />
-        <AvatarSpec t={tokens} v={{}} />
+        <AvatarSpec t={tokens} v={{ Size: 'sm' }} />
       </div>
       </div>
     </div>

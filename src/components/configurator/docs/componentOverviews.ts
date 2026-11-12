@@ -317,7 +317,21 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
   ],
   FileFormat: [each('Format', ['pdf', 'png', 'svg', 'zip'])],
-  Avatar: [each('Size', ['sm', 'default', 'lg'])],
+  Avatar: [
+    each('Size', ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl'], { Type: 'initials' }),
+    each('Type', ['image', 'initials', 'icon']),
+    each('Variant', ['secondary', 'default', 'info', 'success', 'warning', 'critical'], { Type: 'initials' }),
+    each('Appearance', ['soft', 'solid'], { Type: 'initials', Variant: 'default' }),
+    each('Shape', ['circle', 'rounded'], { Type: 'initials' }),
+  ],
+  AvatarStatus: [
+    each('Status', ['online', 'busy', 'away', 'offline', 'do-not-disturb']),
+    each('Size', ['xs', 'sm', 'default', 'lg']),
+  ],
+  AvatarGroup: [
+    each('Size', ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl']),
+    each('Shape', ['circle', 'rounded']),
+  ],
 
   // ── Content & Surfaces ─────────────────────────────────────────────────────
   Card: [each('Size', ['default', 'sm'])],
