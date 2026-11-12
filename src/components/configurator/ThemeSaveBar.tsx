@@ -1,11 +1,10 @@
 import { PhIcon } from '../ui/PhIcon'
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useLibraryStatus, useUnsavedBrands } from '../../lib/libraryStatus'
 import { myThemeKeys } from '../../lib/themeLibrary'
-import { redoEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
 import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS, SELECT_OPTION_ON, SELECT_SHELL, MENU_CHECK, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
@@ -127,6 +126,12 @@ export const BOARD_TOOLBAR_DOCK = 'pointer-events-none absolute inset-x-0 bottom
 export const BOARD_TOOLBAR_LIFT = 'pointer-events-auto shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]'
 
 /**
+ * UPDATE (2026-11-12, owner's call): the Undo · Redo BUTTONS left this bar for
+ * the motion preset (`motionPreset`). The board plays itself with the
+ * inspector off, so "how it moves" is the tool that belongs beside it. Undo
+ * and Redo are still ⌘Z / ⇧⌘Z (`ThemePreviewHub`), walking the same history.
+ * The name stays so the bar's callers and notes keep pointing here.
+ *
  * Undo · Redo · Random, on the BOARD's header — the surface they act on.
  * They used to sit in the inspector footer, stacked with the save status and
  * the Ship doors: three jobs in one 288px band, and Undo read as part of
@@ -134,7 +139,7 @@ export const BOARD_TOOLBAR_LIFT = 'pointer-events-auto shadow-[0_8px_24px_-6px_r
  * same 36px pill shell, so history and "roll a new look" are things you do
  * TO the board you are looking at. ⌘Z / ⇧⌘Z walk the same history.
  */
-export function BoardHistoryControls({ onRandom, onRandomTool, children, trailing, appearance, leading, history = true }: {
+export function BoardHistoryControls({ onRandom, onRandomTool, children, trailing, appearance, leading, motionPreset }: {
   /** A whole new theme — only while the brand is a draft (see callers). The
    *  die carries a chevron for how daring it is (Safe · Free · Bold). */
   onRandom?: () => void
@@ -150,21 +155,13 @@ export function BoardHistoryControls({ onRandom, onRandomTool, children, trailin
   trailing?: ReactNode
   /** Light · Dark, last, after its own rule. */
   appearance?: ReactNode
-  /** First group, before Undo · Redo (the colour map's Map · Board switch). */
+  /** First group, before the motion preset (the colour map's Map · Board switch). */
   leading?: ReactNode
-  /** Undo · Redo. Off on the colour map's graph, which edits nothing. */
-  history?: boolean
+  /** The brand's motion preset (`BoardMotionPreset`), where Undo · Redo used
+   *  to sit. Off on the colour map's graph, which plays nothing. */
+  motionPreset?: ReactNode
 }) {
   const { t } = useI18n()
-  const lastUndo = useEditHistory((h) => h.past[h.past.length - 1]?.label)
-  const lastRedo = useEditHistory((h) => h.future[h.future.length - 1]?.label)
-  const undoLabel = lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')
-  const redoLabel = lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')
-  const reduceMotion = useReducedMotion()
-  // Undo · Redo appear with the first edit and leave when there is nothing
-  // either way: two dead arrows on a fresh board are noise. While either has
-  // a step, BOTH stay (the empty one dimmed) so the pair never jitters.
-  const showHistory = history && Boolean(lastUndo || lastRedo)
   const toolbar = (
     // The whole bar is one named group of three: history, the board tools
     // (Random, Inspector) and the view tabs. It used to be ONE group named
@@ -176,41 +173,15 @@ export function BoardHistoryControls({ onRandom, onRandomTool, children, trailin
     // the buttons, hints and tabs keep their contrast on the black.
     <div role="group" aria-label={t('Board tools')} className="dark flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1">
       {leading}
-      <AnimatePresence initial={false}>
-      {showHistory && (
-      <motion.div
-        key="history"
-        role="group"
-        aria-label={t('History')}
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 'auto', opacity: 1 }}
-        exit={{ width: 0, opacity: 0 }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center gap-0.5 overflow-hidden"
-      >
-        {leading && <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />}
-        <HintTip label={undoLabel} shortcut="⌘Z">
-        <button type="button" onClick={() => { if (lastUndo) undoEdit() }} aria-disabled={!lastUndo || undefined} aria-label={undoLabel} aria-keyshortcuts="Meta+Z" className={HISTORY_SEGMENT}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M5.5 3.5 2.5 6.5l3 3" />
-            <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
-          </svg>
-        </button>
-        </HintTip>
-        <HintTip label={redoLabel} shortcut="⇧⌘Z">
-        <button type="button" onClick={() => { if (lastRedo) redoEdit() }} aria-disabled={!lastRedo || undefined} aria-label={redoLabel} aria-keyshortcuts="Shift+Meta+Z" className={HISTORY_SEGMENT}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M10.5 3.5l3 3-3 3" />
-            <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
-          </svg>
-        </button>
-        </HintTip>
-      </motion.div>
+      {motionPreset && (
+        <>
+          {leading && <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />}
+          {motionPreset}
+        </>
       )}
-      </AnimatePresence>
       {onRandom && (
         <>
-          {(leading || showHistory) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
+          {(leading || motionPreset) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {/* Figma's tool + chevron: the die rolls, the chevron picks how. */}
           <div className="flex items-center" data-tour="roll">
             <RandomWholeThemeButton bare onClick={() => { onRandomTool?.(); onRandom(); tourEvent('rolled') }} label={t('Random theme')} />
@@ -220,7 +191,7 @@ export function BoardHistoryControls({ onRandom, onRandomTool, children, trailin
       )}
       {children && (
         <>
-          {(leading || showHistory || onRandom) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
+          {(leading || motionPreset || onRandom) && <span aria-hidden className="mx-0.5 h-5 w-px bg-line" />}
           {children}
         </>
       )}

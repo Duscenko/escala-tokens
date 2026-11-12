@@ -3,6 +3,7 @@ import type { SpecimenProps } from '../specimens'
 import { ICON_SLOTS, INPUT_HTML_TYPE, INPUT_META, PhosphorWeightProvider, PreviewIcon, inputSeed } from '../specimens'
 import { iconForControl, iconOf, selectorRoleOf, sizeRoleOf } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
+import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Input as SkInput } from '../../../escala-ui/input'
 import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
@@ -179,12 +180,17 @@ export function SkeletonComboboxSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
+const OTP_CODE = '824913'
+
 export function SkeletonInputOTPSpecimen({ t, v }: SpecimenProps) {
   const filled = v.State === 'Filled' || v.State === 'Error'
   const [value, setValue] = useState(filled ? '824913' : '')
+  // The board types the code a digit at a time, holds it, and clears.
+  const typed = useAutoplayStep(10, 420)
+  const shown = typed == null || !filled ? value : OTP_CODE.slice(0, Math.min(6, typed))
   return (
     <RecipeScope t={t}>
-      <SkInputOTP key={v.State} maxLength={6} value={value} onChange={setValue} aria-invalid={v.State === 'Error' || undefined} aria-label="Verification code">
+      <SkInputOTP key={v.State} maxLength={6} value={shown} onChange={setValue} aria-invalid={v.State === 'Error' || undefined} aria-label="Verification code">
         <SkInputOTPGroup>
           {[0, 1, 2, 3, 4, 5].map((i) => <SkInputOTPSlot key={i} index={i} />)}
         </SkInputOTPGroup>

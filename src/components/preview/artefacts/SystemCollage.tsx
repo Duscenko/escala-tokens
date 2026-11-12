@@ -2,6 +2,8 @@ import { fontStack } from '../../../lib/fonts'
 import { cloneElement, createContext, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
+import { BoardAutoplayContext, useAutoplayStep, useBoardConductor } from './boardAutoplay'
+import { useReducedMotion } from 'framer-motion'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
 import { RecipeScope } from '../../configurator/docs/skeleton/scope'
@@ -21,6 +23,7 @@ import { useI18n } from '../../../lib/i18n'
 import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
 import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
 import { readableInk } from '../../../lib/colorUtils'
+import { choreographyVar } from '../../../lib/motion'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
 
@@ -336,6 +339,53 @@ function px(value: string): number {
  * Card component doesn't. Only layout is set here — the tile's own gap and
  * direction — plus a translucent panel, which the recipe has no word for.
  */
+/** One pass of a tile that plays as a dialog: open and held, then closed for
+ *  the last two steps (the exit, then a beat of absence before it reopens). */
+const DIALOG_PLAY_STEPS = 9
+
+/**
+ * A tile that reads as a dialog (Unsaved changes) opens and closes on the
+ * brand's `dialog-enter` / `dialog-exit` choreographies while the board plays.
+ * Opacity and transform only: the frame keeps its box, so the column holds.
+ */
+function DialogSurface(props: { t: PreviewTokens; children: ReactNode; style?: CSSProperties }) {
+  const beat = useAutoplayStep(DIALOG_PLAY_STEPS, 760)
+  const animation = beat == null ? undefined
+    : `var(${choreographyVar(beat >= DIALOG_PLAY_STEPS - 2 ? 'dialog-exit' : 'dialog-enter', 'content')})`
+  return <ModuleSurface {...props} style={{ ...props.style, animation }} />
+}
+
+/**
+ * A primary action as the board plays it: rest, Loading, done, rest. Still
+ * (and inspectable as a plain Button) whenever the board is not playing.
+ */
+function PlayedButton({ t, v, icons, done, period, children }: {
+  t: PreviewTokens
+  v: SpecimenProps['v']
+  icons?: IconOpts
+  /** The label once the work is done ("Saved"). */
+  done: string
+  /** Milliseconds per step — tiles differ so they do not load in unison. */
+  period: number
+  children: string
+}) {
+  const beat = useAutoplayStep(BUTTON_PLAY.length, period)
+  const phase = beat == null ? 'rest' : BUTTON_PLAY[beat]
+  return (
+    <InspectableLive
+      c="Button"
+      t={t}
+      v={phase === 'loading' ? { ...v, State: 'Loading' } : v}
+      icons={phase === 'done' ? { ...catalogueIcons(t, 'check'), leading: true } : icons}
+      w="100%"
+    >
+      {phase === 'done' ? done : children}
+    </InspectableLive>
+  )
+}
+
+const BUTTON_PLAY = ['rest', 'rest', 'rest', 'rest', 'loading', 'loading', 'done', 'done'] as const
+
 function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: ReactNode; style?: CSSProperties }) {
   return (
     <RecipeScope t={t}>
@@ -366,8 +416,10 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true, dialog = false,
 }: {
+  /** Plays as a dialog while the board plays (see `DialogSurface`). */
+  dialog?: boolean
   t: PreviewTokens
   appearance?: ThemeAppearance
   children: ReactNode
@@ -483,7 +535,8 @@ function ScaledModule({
   const surfaceStyle: CSSProperties | undefined = stretches
     ? { ...style, justifyContent: 'center', minHeight: stretchHeight ? stretchHeight / scale : undefined }
     : style
-  const body = chrome ? <ModuleSurface t={t} style={surfaceStyle}>{children}</ModuleSurface> : children
+  const Surface = dialog ? DialogSurface : ModuleSurface
+  const body = chrome ? <Surface t={t} style={surfaceStyle}>{children}</Surface> : children
   const appearanceClass = appearance === 'dark' ? 'dark' : 'light'
 
   return (
@@ -586,6 +639,13 @@ export function SystemCollage({
   frameTokens?: PreviewTokens
 }) {
   const { t: translate } = useI18n()
+  // Inspecting wants a still board; with the inspector off the board plays
+  // itself, so the brand's motion is seen (see `boardAutoplay`).
+  const inspecting = useInspectorActive()
+  const reduceMotion = useReducedMotion() ?? false
+  const playing = !inspecting && !reduceMotion
+  const stageRef = useRef<HTMLDivElement>(null)
+  useBoardConductor(stageRef, playing)
   const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
   const appearanceAt = (index: number) => tileAppearances[index] ?? 'light'
   const muted = (index: number) => tile(index).fgMuted || '#717680'
@@ -751,15 +811,9 @@ export function SystemCollage({
             <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled' }} w="100%" hideHint />
             <Input t={tile(5)} v={{ Type: 'Password', State: 'Filled' }} w="100%" hideHint />
           </div>
-          <InspectableLive
-            c="Button"
-            t={tile(5)}
-            v={{ Variant: 'default', Size: 'default' }}
-            icons={catalogueIcons(tile(5), 'star')}
-            w="100%"
-          >
+          <PlayedButton t={tile(5)} v={{ Variant: 'default', Size: 'default' }} icons={catalogueIcons(tile(5), 'star')} done={translate('Welcome')} period={780}>
             {translate('Get Started')}
-          </InspectableLive>
+          </PlayedButton>
           <div className="flex items-center" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
             <span className="flex min-w-0 flex-1"><Separator t={tile(5)} v={{}} w="100%" /></span>
             <span style={{ ...typeStyleOf(tile(5), 'caption'), color: muted(5) }}>{translate('or')}</span>
@@ -815,7 +869,7 @@ export function SystemCollage({
         </ScaledModule>
     ),
     unsaved: (
-        <ScaledModule key="unsaved" t={tile(14)} appearance={appearanceAt(14)}>
+        <ScaledModule key="unsaved" t={tile(14)} appearance={appearanceAt(14)} dialog>
           <div className="flex items-start justify-between" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
             <Well t={tile(14)} size={wellSm} icon="box" />
             <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'ghost', Size: 'icon-sm' }} icons={catalogueIcons(tile(14), 'close')}>{translate('Close')}</InspectableLive>
@@ -828,7 +882,7 @@ export function SystemCollage({
           </div>
           <div className="flex flex-col" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
             <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'outline', Size: 'sm' }} w="100%">{translate('Discard')}</InspectableLive>
-            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'default', Size: 'sm' }} w="100%">{translate('Save changes')}</InspectableLive>
+            <PlayedButton t={tile(14)} v={{ Variant: 'default', Size: 'sm' }} done={translate('Saved')} period={620}>{translate('Save changes')}</PlayedButton>
           </div>
         </ScaledModule>
     ),
@@ -1004,6 +1058,8 @@ export function SystemCollage({
   return (
     <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
     <CollageFrameContext.Provider value={{ source: frame.source, display }}>
+    <BoardAutoplayContext.Provider value={playing}>
+    <div ref={stageRef} className="contents">
     {phones ? (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-start gap-3 overflow-x-auto snap-x snap-mandatory pb-1" aria-label={platformCaption}>
@@ -1042,6 +1098,8 @@ export function SystemCollage({
       </div>
     </div>
     )}
+    </div>
+    </BoardAutoplayContext.Provider>
     </CollageFrameContext.Provider>
     </PhosphorWeightProvider>
   )
