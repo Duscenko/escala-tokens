@@ -58,6 +58,19 @@
       "name": "Attach running Vite",
       "url": "http://localhost:5173",
       "port": 5173
+    },
+    {
+      "name": "Storybook",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "storybook",
+        "--",
+        "--no-open",
+        "--ci"
+      ],
+      "port": 6006,
+      "autoPort": false
     }
   ]
 }
