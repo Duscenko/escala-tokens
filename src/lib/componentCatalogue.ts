@@ -153,6 +153,35 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Native <a>. Disabled sets aria-disabled, tabindex -1 and swallows the click. Focus draws a 2px edge inside and a 2px halo outside (the link grows by the edge, as in the Figma file). An icon-only link needs an aria-label.',
   },
   {
+    key: 'FABButton',
+    label: 'FAB Button',
+    category: 'Button & Actions',
+    description:
+      'The floating action button: a leading icon and an optional label on a surface that lifts. Brand, neutral or inverse, solid or soft, rounded or pill, at 48 and 56 px, with the elevation rising on hover and settling on press.',
+    usage: 'Use for the one primary action of a screen that floats over its content (create, compose, add). Give an icon-only FAB an aria-label. A FAB inside a row of actions is a Button; several floating actions together are a FAB Group.',
+    // The Figma file's axes, value for value, in the file's own option order
+    // (spec/figma-components.json). State is a Figma axis only: in code it is
+    // pseudo-classes (forceState pins it in docs). `inverse` exists in solid only.
+    axes: [
+      { name: 'Appearance', values: ['solid', 'soft'] },
+      { name: 'Shape', values: ['rounded', 'pill'] },
+      { name: 'Size', values: ['default', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] },
+      { name: 'Variant', values: ['inverse', 'default', 'secondary'] },
+    ],
+    figmaSets: ['FABButton'],
+    props: [
+      { name: 'appearance', type: '"solid" | "soft"', description: 'Style: the variant\'s solid fill, or a soft surface.' },
+      { name: 'shape', type: '"rounded" | "pill"', description: 'Corner: the action radius (default) or fully round.' },
+      { name: 'size', type: '"default" | "lg"', description: 'Height 48 or 56 (the FAB size); the width hugs and never goes below it.' },
+      { name: 'variant', type: '"inverse" | "default" | "secondary"', description: 'Brand (default), neutral, or an inverse chip (solid only).' },
+      { name: 'icon', type: 'ReactNode', description: 'The leading icon (Figma IconLeadingIcon). Defaults to Phosphor\'s plus.' },
+      { name: 'children', type: 'ReactNode', description: 'The label (Figma Label). Leave it out for an icon-only FAB (LabelVisible off).' },
+      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled roles; the lift is gone.' },
+    ],
+    accessibility: 'Native <button>. With a label that is the accessible name; an icon-only FAB needs an aria-label. Disabled sets aria-disabled. Focus draws a 2px halo outside the button; the elevation stays.',
+  },
+  {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',

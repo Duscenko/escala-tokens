@@ -10,7 +10,7 @@ export type TokenRef = string
  *  centred on a glyph smaller than 24px — the glyph itself does not grow. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
-  'height', 'minHeight', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
+  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
   // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',
@@ -26,8 +26,13 @@ export const RECIPE_PROPS = [
   // plain number string (`'0.4'`), so every table that walks refs skips it
   // (`NON_TOKEN_PROPS`). Prefer a role; use this only where the file does.
   'opacity',
+  // A named elevation (`rest` · `hover` · `pressed`): the key + ambient drop shadows
+  // Figma's FAB lifts on (`Elevation/shadow-key`, `shadow-ambient`). The geometry
+  // lives in `recipeStyles.ts` (the file hand-sets it per state, there is no token
+  // for it); only the two colours are roles. Not a token reference.
+  'lift',
 ] as const
-export const NON_TOKEN_PROPS: readonly string[] = ['opacity']
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>

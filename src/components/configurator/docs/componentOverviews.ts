@@ -73,6 +73,20 @@ export const OVERVIEWS: Record<string, Overview> = {
     ],
     each('Size', ['xs', 'sm', 'default', 'lg'], { Variant: 'secondary', Appearance: 'outline' }),
   ],
+  FABButton: [
+    [
+      { v: { Variant: 'default', Appearance: 'solid' }, label: 'Create' },
+      { v: { Variant: 'default', Appearance: 'soft' }, label: 'Create' },
+      { v: { Variant: 'secondary', Appearance: 'solid' }, label: 'Create' },
+      { v: { Variant: 'secondary', Appearance: 'soft' }, label: 'Create' },
+    ],
+    [
+      { v: { Shape: 'rounded' }, label: 'Create' },
+      { v: { Shape: 'pill' }, label: 'Create' },
+      { v: { Size: 'lg' }, label: 'Create' },
+      { v: { State: 'Disabled' }, label: 'Create' },
+    ],
+  ],
   TextLink: [
     each('Variant', ['default', 'secondary', 'success', 'info', 'critical']),
     each('Size', ['xs', 'sm', 'default', 'lg']),

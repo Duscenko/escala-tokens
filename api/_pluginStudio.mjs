@@ -4052,6 +4052,34 @@ var init_componentCatalogue = __esm({
         accessibility: "Native <a>. Disabled sets aria-disabled, tabindex -1 and swallows the click. Focus draws a 2px edge inside and a 2px halo outside (the link grows by the edge, as in the Figma file). An icon-only link needs an aria-label."
       },
       {
+        key: "FABButton",
+        label: "FAB Button",
+        category: "Button & Actions",
+        description: "The floating action button: a leading icon and an optional label on a surface that lifts. Brand, neutral or inverse, solid or soft, rounded or pill, at 48 and 56 px, with the elevation rising on hover and settling on press.",
+        usage: "Use for the one primary action of a screen that floats over its content (create, compose, add). Give an icon-only FAB an aria-label. A FAB inside a row of actions is a Button; several floating actions together are a FAB Group.",
+        // The Figma file's axes, value for value, in the file's own option order
+        // (spec/figma-components.json). State is a Figma axis only: in code it is
+        // pseudo-classes (forceState pins it in docs). `inverse` exists in solid only.
+        axes: [
+          { name: "Appearance", values: ["solid", "soft"] },
+          { name: "Shape", values: ["rounded", "pill"] },
+          { name: "Size", values: ["default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] },
+          { name: "Variant", values: ["inverse", "default", "secondary"] }
+        ],
+        figmaSets: ["FABButton"],
+        props: [
+          { name: "appearance", type: '"solid" | "soft"', description: "Style: the variant's solid fill, or a soft surface." },
+          { name: "shape", type: '"rounded" | "pill"', description: "Corner: the action radius (default) or fully round." },
+          { name: "size", type: '"default" | "lg"', description: "Height 48 or 56 (the FAB size); the width hugs and never goes below it." },
+          { name: "variant", type: '"inverse" | "default" | "secondary"', description: "Brand (default), neutral, or an inverse chip (solid only)." },
+          { name: "icon", type: "ReactNode", description: "The leading icon (Figma IconLeadingIcon). Defaults to Phosphor's plus." },
+          { name: "children", type: "ReactNode", description: "The label (Figma Label). Leave it out for an icon-only FAB (LabelVisible off)." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled roles; the lift is gone." }
+        ],
+        accessibility: "Native <button>. With a label that is the accessible name; an icon-only FAB needs an aria-label. Disabled sets aria-disabled. Focus draws a 2px halo outside the button; the elevation stays."
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -8130,7 +8158,21 @@ function textLinkPaint(variant, state2) {
   }
   return { root: { text: rest } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+function fabPaint(variant, appearance, state2) {
+  if (state2 === "Disabled") {
+    return { root: { fill: c("surface.page"), overlay: c("action.disabled.default"), text: c("content.disabled"), lift: NONE, highlight: NONE } };
+  }
+  const k = FAB[variant][FAB[variant][appearance] ? appearance : "solid"];
+  const step = state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
+  const root = { fill: k.fill[step], text: k.ink };
+  if (k.over[step][0]) root.overlay = k.over[step][0];
+  if (k.over[step][1]) root.overlay2 = k.over[step][1];
+  root.lift = step === 2 ? "pressed" : step === 1 ? "hover" : "rest";
+  root.highlight = c("elevation.highlight");
+  if (state2 === "Focused") root.halo = k.halo;
+  return { root };
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8313,6 +8355,48 @@ var init_actions = __esm({
         // `underline={false}` hides the bar everywhere but Hover and Pressed, whose
         // own rules (above this in specificity) put it back.
         part({}, () => ({ 'underline[data-visible="false"]': { fill: NONE } }))
+      ]
+    };
+    FAB_APPEARANCES = ["solid", "soft"];
+    FAB_SHAPES = ["rounded", "pill"];
+    FAB_SIZES = ["default", "lg"];
+    FAB_VARIANTS = ["inverse", "default", "secondary"];
+    FAB_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    FAB_MUTED = "color.surface.inverse-muted";
+    FAB = {
+      default: {
+        solid: { ink: c("content.on-action"), fill: [c("action.primary.default"), c("action.primary.hover"), c("action.primary.pressed")], over: [[], [], []], halo: c("border.ring.default") },
+        soft: { ink: c("content.accent"), fill: [c("surface.accent"), c("surface.accent"), c("surface.accent")], over: [[], [c("surface.selected")], [c("surface.selected-pressed")]], halo: c("border.ring.default") }
+      },
+      secondary: {
+        solid: { ink: c("content.on-secondary"), fill: [c("action.secondary.default"), c("action.secondary.hover"), c("action.secondary.pressed")], over: [[], [], []], halo: c("border.subtle") },
+        soft: { ink: c("content.primary"), fill: [c("surface.layer-2"), c("surface.layer-2"), c("surface.layer-2")], over: [[], [c("action.ghost.hover")], [c("action.ghost.pressed")]], halo: c("border.subtle") }
+      },
+      // The file draws the inverse chip in `solid` only; `soft` reads the same.
+      inverse: {
+        solid: { ink: c("content.inverse"), fill: [c("surface.inverse"), c("surface.inverse"), c("surface.inverse")], over: [[], [FAB_MUTED], [FAB_MUTED, FAB_MUTED]], halo: FAB_MUTED }
+      }
+    };
+    FAB_SIZE = {
+      default: { box: "size.touch", icon: "icon.medium" },
+      lg: { box: "size.fab", icon: "icon.large" }
+    };
+    FAB_BUTTON = {
+      key: "FABButton",
+      slots: ["root", "icon", "label"],
+      defaults: { Appearance: "solid", Shape: "rounded", Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({}, () => ({
+          root: { paddingX: "spacing.inset-control", paddingY: "spacing.0", gap: "spacing.gap-control", font: "type.button" },
+          // The label's own 8px on its right, beyond the root's inset (the file's `label-wrap`).
+          label: { paddingRight: "spacing.gap-control" }
+        })),
+        part({ Shape: FAB_SHAPES }, (shape) => ({ root: { radius: shape === "pill" ? "radius.pill" : "radius.action" } })),
+        part({ Size: FAB_SIZES }, (size) => ({
+          root: { height: FAB_SIZE[size].box, minWidth: FAB_SIZE[size].box },
+          icon: { width: FAB_SIZE[size].icon, height: FAB_SIZE[size].icon }
+        })),
+        part({ Variant: FAB_VARIANTS, Appearance: FAB_APPEARANCES, State: FAB_STATES }, (v, a2, s) => fabPaint(v, a2, s))
       ]
     };
     BUTTON_GROUP = {
@@ -10125,6 +10209,7 @@ var init_componentRecipes = __esm({
       IconButton: ICON_BUTTON,
       CloseButton: CLOSE_BUTTON,
       TextLink: TEXT_LINK,
+      FABButton: FAB_BUTTON,
       ButtonGroup: BUTTON_GROUP,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
@@ -13009,7 +13094,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 109,
+          version: 110,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14337,6 +14422,19 @@ var init_useDesignStore = __esm({
                 if (sel.includes("TextLink")) return;
                 const after = sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
                 if (after) sel.splice(sel.indexOf(after) + 1, 0, "TextLink");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 110) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (sel.includes("FABButton")) return;
+                const after = sel.includes("TextLink") ? "TextLink" : sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
+                if (after) sel.splice(sel.indexOf(after) + 1, 0, "FABButton");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

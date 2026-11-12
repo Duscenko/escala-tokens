@@ -42,3 +42,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A text style bound to the scale, not to a role (`Type/body-xl` → `size/text-xl`) | `type.body-xl` does not exist in code; no role in the file either | A type ref may be a scale step (`type.text-xl`): `typeStyleCss` falls back to it, `cssVarOf` reads the scale primitives, `figmaRefsFor` cites `Typography` `size/text-xl`, the registry supplies those vars. No new role |
 | Adding a component grows the agent context | `exportAudit` I10-budget 75 631 > 75 000 | Budget 80 000 with a dated note (the Button change set the precedent). Not a runaway loop |
 | A skill-doc test with a closed set of Figma collections | `Typography` collection not handled in `agentContextAudit` | Add the branch; the audit still checks every cited name exists in the payload |
+
+# Lessons from the FABButton (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A NEGATIVE spread on a drop shadow of a frame that does not clip content is ignored too, not only the hard 1px ones | `DROP_SHADOW 0 12 16 spread −4` read as CSS `0 12px 16px −4px`: the shadow came out lighter (side edge 248 vs Figma 237). The render BOUNDS still count the spread (124×73), which is the trap | Drop the spread in CSS. Check by modelling a gaussian (σ = blur/2, offset) at one edge pixel and at the pixel below: with no spread it reproduced 237 and 219 against Figma's 237 and 220. `figma-read-set.js` flags only hard shadows: treat EVERY spread on a non-clipping frame as unrendered |
+| Elevation geometry is hand-set per state in the file (not tokens) | Key / ambient offset and blur differ for Default, Hover, Pressed | Recipe prop `lift` (`rest` · `hover` · `pressed`, a plain string like `opacity`); the numbers live in `recipeStyles.ts` `LIFT`, the colours are `Elevation/shadow-key` and `shadow-ambient`, counted as the recipe's refs |
+| Screenshot crops from the Browser pane are saved as PNGs | `zoom` returns a path under `tool-results/` | `resize_window` to the screenshot frame (800×600) so one image pixel is one CSS pixel (the default 1024-wide viewport downscales), then sample the file with sharp |
+| The Figma export of a node includes its neighbours | The Hover render showed a second button's top rows at the bottom | Only read pixels inside the node's own rows; ignore bands that belong to a sibling variant |
+| An inner shadow can be checked exactly | `INNER_SHADOW 0 2 0` highlight at white α.149 over `#874fff` | Composite by hand: (153,105,255) is what Figma shows and what the CSS gives |

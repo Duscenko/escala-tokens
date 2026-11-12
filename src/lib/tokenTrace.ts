@@ -82,6 +82,8 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   paddingX: 'Padding X',
   paddingY: 'Padding Y',
   paddingBottom: 'Padding bottom',
+  paddingRight: 'Padding right',
+  minWidth: 'Min width',
   gap: 'Gap',
   rowGap: 'Row gap',
   height: 'Height',
@@ -99,12 +101,13 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   overlay2: 'Overlay (second layer)',
   halo: 'Focus halo',
   opacity: 'Opacity',
+  lift: 'Elevation',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
   'fill', 'overlay', 'overlay2', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
-  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
+  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
   'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font', 'hit',
 ]
 

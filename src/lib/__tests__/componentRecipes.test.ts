@@ -390,3 +390,61 @@ describe('TextLink (Figma)', () => {
     expect(refs).not.toContain('1')
   })
 })
+
+// The Figma `FABButton` set (design-plans/fab-button-contract.md). Held here: the lift
+// (named elevation) per state composed with the highlight, the halo-only focus that
+// keeps the lift, the stacked fills, the two-layer disabled fill, and the label's own
+// trailing inset; the stylesheet leaves the file's unrendered spreads out.
+describe('FABButton (Figma)', () => {
+  const at = (over: Record<string, string>) =>
+    resolveRecipe(COMPONENT_RECIPES.FABButton, { Appearance: 'solid', Shape: 'rounded', Size: 'default', State: 'Default', Variant: 'default', ...over })
+
+  it('lifts by state: rest, hover higher, pressed tight', () => {
+    expect(at({ State: 'Default' }).root.lift).toBe('rest')
+    expect(at({ State: 'Hover' }).root.lift).toBe('hover')
+    expect(at({ State: 'Pressed' }).root.lift).toBe('pressed')
+    expect(at({ State: 'Focused' }).root.lift).toBe('rest')
+    expect(at({ State: 'Default' }).root.highlight).toBe('color.elevation.highlight')
+  })
+  it('Disabled is the page under the disabled fill, with no lift and no highlight', () => {
+    expect(at({ State: 'Disabled' }).root).toMatchObject({ fill: 'color.surface.page', overlay: 'color.action.disabled.default', text: 'color.content.disabled', lift: 'none', highlight: 'none' })
+  })
+  it.each([['default', 'color.border.ring.default'], ['secondary', 'color.border.subtle'], ['inverse', 'color.surface.inverse-muted']])(
+    '%s focuses with a halo alone (%s), and keeps its lift', (variant, halo) => {
+      const r = at({ Variant: variant, State: 'Focused' }).root
+      expect(r.halo).toBe(halo)
+      expect(r.focus).toBeUndefined()
+      expect(r.lift).toBe('rest')
+    },
+  )
+  it('stacks a translucent fill on Hover and Pressed for soft and inverse', () => {
+    expect(at({ Appearance: 'soft', State: 'Hover' }).root).toMatchObject({ fill: 'color.surface.accent', overlay: 'color.surface.selected' })
+    expect(at({ Appearance: 'soft', State: 'Pressed' }).root.overlay).toBe('color.surface.selected-pressed')
+    expect(at({ Variant: 'secondary', Appearance: 'soft', State: 'Hover' }).root).toMatchObject({ fill: 'color.surface.layer-2', overlay: 'color.action.ghost.hover' })
+    expect(at({ Variant: 'inverse', State: 'Pressed' }).root).toMatchObject({ overlay: 'color.surface.inverse-muted', overlay2: 'color.surface.inverse-muted' })
+    expect(at({ Variant: 'default', State: 'Hover' }).root.fill).toBe('color.action.primary.hover')
+  })
+  it('paints inverse · soft as the solid chip (the file draws it solid only)', () => {
+    expect(at({ Variant: 'inverse', Appearance: 'soft' }).root.fill).toBe('color.surface.inverse')
+  })
+  it('sizes: touch / fab, icon medium / large, min width = height, label trailing inset', () => {
+    expect(at({ Size: 'default' }).root).toMatchObject({ height: 'size.touch', minWidth: 'size.touch' })
+    expect(at({ Size: 'lg' }).root).toMatchObject({ height: 'size.fab', minWidth: 'size.fab' })
+    expect(at({ Size: 'lg' }).icon).toMatchObject({ width: 'icon.large' })
+    expect(at({}).label.paddingRight).toBe('spacing.gap-control')
+    expect(at({ Shape: 'pill' }).root.radius).toBe('radius.pill')
+    expect(at({ Shape: 'rounded' }).root.radius).toBe('radius.action')
+  })
+  it('writes the lift as offset and blur only, composed with the highlight and the halo', () => {
+    const css = recipeCss(COMPONENT_RECIPES.FABButton)
+    expect(css).toContain('box-shadow: 0 12px 16px var(--color-elevation-shadow-key), 0 4px 6px var(--color-elevation-shadow-ambient), inset 0 var(--stroke-focus, 2px) 0 0 var(--color-elevation-highlight)')
+    expect(css).toContain('0 0 0 var(--stroke-focus, 2px) var(--color-border-ring-default), 0 12px 16px var(--color-elevation-shadow-key)')
+    expect(css).not.toMatch(/16px -4px/)
+  })
+  it('counts the Elevation colours as references and keeps lift / opacity out of the tokens', () => {
+    const refs = recipeTokenRefs(COMPONENT_RECIPES.FABButton)
+    expect(refs).toContain('color.elevation.shadow-key')
+    expect(refs).toContain('color.elevation.shadow-ambient')
+    expect(refs).not.toContain('rest')
+  })
+})

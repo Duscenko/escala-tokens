@@ -334,6 +334,83 @@ export const TEXT_LINK: ComponentRecipe = {
   ],
 }
 
+// ── FABButton ──────────────────────────────────────────────────────────────
+// The Figma `FABButton` set (design-plans/fab-button-contract.md): a floating
+// action button, a leading icon and an optional label on a surface that lifts
+// (key + ambient shadows, per state) with the solid's top highlight. Colour is
+// the same at every Shape and Size (measured on all 100 variants). Hover and
+// Pressed of `soft` and `inverse` stack a translucent fill; Disabled is the page
+// under the disabled fill. Focus is a 2px halo OUTSIDE with no edge of its own.
+
+export const FAB_APPEARANCES = ['solid', 'soft'] as const
+export const FAB_SHAPES = ['rounded', 'pill'] as const
+export const FAB_SIZES = ['default', 'lg'] as const
+export const FAB_VARIANTS = ['inverse', 'default', 'secondary'] as const
+const FAB_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+
+/** What one Variant · Appearance paints, state by state: [rest, hover, pressed]. */
+interface FabPaint {
+  ink: string
+  fill: [string, string, string]
+  over: [string[], string[], string[]]
+  /** The focus halo (2px, outside). */
+  halo: string
+}
+const FAB_MUTED = 'color.surface.inverse-muted'
+const FAB: Record<string, Record<string, FabPaint>> = {
+  default: {
+    solid: { ink: c('content.on-action'), fill: [c('action.primary.default'), c('action.primary.hover'), c('action.primary.pressed')], over: [[], [], []], halo: c('border.ring.default') },
+    soft: { ink: c('content.accent'), fill: [c('surface.accent'), c('surface.accent'), c('surface.accent')], over: [[], [c('surface.selected')], [c('surface.selected-pressed')]], halo: c('border.ring.default') },
+  },
+  secondary: {
+    solid: { ink: c('content.on-secondary'), fill: [c('action.secondary.default'), c('action.secondary.hover'), c('action.secondary.pressed')], over: [[], [], []], halo: c('border.subtle') },
+    soft: { ink: c('content.primary'), fill: [c('surface.layer-2'), c('surface.layer-2'), c('surface.layer-2')], over: [[], [c('action.ghost.hover')], [c('action.ghost.pressed')]], halo: c('border.subtle') },
+  },
+  // The file draws the inverse chip in `solid` only; `soft` reads the same.
+  inverse: {
+    solid: { ink: c('content.inverse'), fill: [c('surface.inverse'), c('surface.inverse'), c('surface.inverse')], over: [[], [FAB_MUTED], [FAB_MUTED, FAB_MUTED]], halo: FAB_MUTED },
+  },
+}
+
+function fabPaint(variant: string, appearance: string, state: string): SlotMap {
+  if (state === 'Disabled') {
+    return { root: { fill: c('surface.page'), overlay: c('action.disabled.default'), text: c('content.disabled'), lift: NONE, highlight: NONE } }
+  }
+  const k = FAB[variant][FAB[variant][appearance] ? appearance : 'solid']
+  const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
+  const root: SlotProps = { fill: k.fill[step], text: k.ink }
+  if (k.over[step][0]) root.overlay = k.over[step][0]
+  if (k.over[step][1]) root.overlay2 = k.over[step][1]
+  root.lift = step === 2 ? 'pressed' : step === 1 ? 'hover' : 'rest'
+  root.highlight = c('elevation.highlight')
+  if (state === 'Focused') root.halo = k.halo
+  return { root }
+}
+
+const FAB_SIZE: Record<string, { box: string; icon: string }> = {
+  default: { box: 'size.touch', icon: 'icon.medium' },
+  lg: { box: 'size.fab', icon: 'icon.large' },
+}
+
+export const FAB_BUTTON: ComponentRecipe = {
+  key: 'FABButton',
+  slots: ['root', 'icon', 'label'],
+  defaults: { Appearance: 'solid', Shape: 'rounded', Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { paddingX: 'spacing.inset-control', paddingY: 'spacing.0', gap: 'spacing.gap-control', font: 'type.button' },
+      // The label's own 8px on its right, beyond the root's inset (the file's `label-wrap`).
+      label: { paddingRight: 'spacing.gap-control' },
+    })),
+    part({ Shape: FAB_SHAPES }, (shape) => ({ root: { radius: shape === 'pill' ? 'radius.pill' : 'radius.action' } })),
+    part({ Size: FAB_SIZES }, (size) => ({
+      root: { height: FAB_SIZE[size].box, minWidth: FAB_SIZE[size].box },
+      icon: { width: FAB_SIZE[size].icon, height: FAB_SIZE[size].icon },
+    })),
+    part({ Variant: FAB_VARIANTS, Appearance: FAB_APPEARANCES, State: FAB_STATES }, (v, a, s) => fabPaint(v, a, s)),
+  ],
+}
+
 // ── ButtonGroup ────────────────────────────────────────────────────────────
 // shadcn's group: Buttons attached edge to edge. The buttons paint themselves
 // (Button recipe); the group owns the separator and the text segment.

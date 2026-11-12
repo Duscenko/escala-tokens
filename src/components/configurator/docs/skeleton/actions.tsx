@@ -5,6 +5,7 @@ import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
+import { FABButton as SkFABButton, type FABButtonAppearance, type FABButtonShape, type FABButtonSize, type FABButtonState, type FABButtonVariant } from '../../../escala-ui/fab-button'
 import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
@@ -101,6 +102,26 @@ export function SkeletonTextLinkSpecimen({ t, v, icons, children }: SpecimenProp
       >
         {children ?? 'Inline Text Link'}
       </SkTextLink>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonFABButtonSpecimen({ t, v, icons, children }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as FABButtonSize
+  const iconPx = iconForControlStep(size === 'lg' ? 'lg' : 'md', t)
+  return (
+    <RecipeScope t={t}>
+      <SkFABButton
+        appearance={(v.Appearance ?? 'solid') as FABButtonAppearance}
+        shape={(v.Shape ?? 'rounded') as FABButtonShape}
+        size={size}
+        variant={(v.Variant ?? 'default') as FABButtonVariant}
+        forceState={(v.State ?? 'Default') as FABButtonState}
+        aria-label={typeof children === 'string' ? children : 'Create'}
+        icon={<PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? 'plus'} size={iconPx} />}
+      >
+        {children ?? 'Create'}
+      </SkFABButton>
     </RecipeScope>
   )
 }

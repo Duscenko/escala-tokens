@@ -32,7 +32,7 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
   CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT, CALENDAR,
@@ -58,6 +58,7 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   IconButton: ICON_BUTTON,
   CloseButton: CLOSE_BUTTON,
   TextLink: TEXT_LINK,
+  FABButton: FAB_BUTTON,
   ButtonGroup: BUTTON_GROUP,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   AppStoreBadge: APP_STORE_BADGE,
@@ -178,7 +179,10 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
     for (const slots of Object.values(p.values)) {
       for (const props of Object.values(slots)) {
         for (const [prop, ref] of Object.entries(props)) {
-          if (!ref || ref === NONE || NON_TOKEN_PROPS.includes(prop)) continue
+          if (!ref || ref === NONE) continue
+          // A named elevation paints with the two Elevation colours (recipeStyles `LIFT`).
+          if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); continue }
+          if (NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }
       }

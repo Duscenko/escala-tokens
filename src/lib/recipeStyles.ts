@@ -56,9 +56,21 @@ const HALO = 'var(--stroke-focus, 2px)'
 /** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
  *  (the same 2px the focus edge is drawn at). */
 const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
-/** The surface effects a slot carries (today: the top highlight). */
+/** The named elevations a recipe can lift on, as the Figma FAB draws them: a key
+ *  shadow and an ambient one. The file hand-sets the numbers per state (offset and
+ *  blur 12·16 / 20·24 / 4·6 and 4·6 / 8·8 / 2·4) and gives each a negative spread
+ *  (−4 · −2, −4 · −4, −1 · −2) that Figma does NOT render: the frame does not clip
+ *  its content, so a drop shadow's spread paints nothing (measured on the file's own
+ *  pixels: 237 at the side edge, not 245). The spread is therefore left out here. */
+const LIFT: Record<string, (key: string, ambient: string) => string[]> = {
+  rest: (k, a) => [`0 12px 16px ${k}`, `0 4px 6px ${a}`],
+  hover: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
+  pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+}
+/** The surface effects a slot carries: its lift, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
-  return props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : []
+  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient')) : []
+  return [...lift, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
 }
 
 /** The element's own border width, for its padding to give back. Registered
@@ -135,15 +147,25 @@ function declarations(props: SlotProps): string[] {
       }
       // A solid's top highlight. A focused control composes it into the focus
       // shadow above; otherwise it is the box-shadow (`none` clears it).
+      // A named elevation: with a focus or halo it is composed into their shadow;
+      // alone it is the box-shadow (`none` clears it).
+      case 'lift': {
+        if ((props.focus && props.focus !== 'none') || (props.halo && props.halo !== 'none')) break
+        const shadows = surfaceShadows(props, v)
+        out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
+        break
+      }
       case 'highlight': {
         if (props.focus && props.focus !== 'none') break
         if (props.halo && props.halo !== 'none') break
+        if (props.lift) break // composed by `lift`
         const shadows = surfaceShadows(props, v)
         out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
         break
       }
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
+      case 'minWidth': out.push(`min-width: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
       case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
@@ -159,6 +181,8 @@ function declarations(props: SlotProps): string[] {
       case 'paddingY': out.push(`padding-block: ${insetMinusStroke(dim(ref))}`); break
       // The bottom inset alone (an accordion answer hugs its question above it).
       case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
+      // The right inset alone (a FAB's label: 8px of its own beyond the root's 12).
+      case 'paddingRight': out.push(`padding-right: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break
       // The gap between ROWS when it differs from `gap` (an Alert's icon column
       // sits 12px off the text while title and description sit 2px apart).

@@ -182,6 +182,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
     return `import { IconButton } from "@/components/ui/icon-button"\n\n<IconButton${variant}${appearance}${size}${flags} aria-label="Home" icon={<${ICON_COMPONENT[icons?.leadingConcept ?? ICON_SLOTS.Button.leading]} />} />`
   },
+  FABButton: (v) => {
+    const appearance = v.Appearance && v.Appearance !== 'solid' ? ` appearance="${v.Appearance}"` : ''
+    const shape = v.Shape && v.Shape !== 'rounded' ? ` shape="${v.Shape}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const flags = v.State === 'Disabled' ? ' disabled' : ''
+    return `import { FABButton } from "@/components/ui/fab-button"\n\n<FABButton${appearance}${shape}${size}${variant}${flags}>\n  Create\n</FABButton>`
+  },
   TextLink: (v) => {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''

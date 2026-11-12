@@ -4,9 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "FABButton": {
-      "status": "new"
-    },
     "FABGroup": {
       "status": "new"
     },

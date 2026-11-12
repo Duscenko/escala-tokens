@@ -7777,6 +7777,354 @@
         }
       ]
     },
+    "FABButton": {
+      "key": "FABButton",
+      "slots": [
+        "root",
+        "icon",
+        "label"
+      ],
+      "defaults": {
+        "Appearance": "solid",
+        "Shape": "rounded",
+        "Size": "default",
+        "State": "Default",
+        "Variant": "default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.0",
+                "gap": "spacing.gap-control",
+                "font": "type.button"
+              },
+              "label": {
+                "paddingRight": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Shape"
+          ],
+          "values": {
+            "rounded": {
+              "root": {
+                "radius": "radius.action"
+              }
+            },
+            "pill": {
+              "root": {
+                "radius": "radius.pill"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "height": "size.touch",
+                "minWidth": "size.touch"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.fab",
+                "minWidth": "size.fab"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "Appearance",
+            "State"
+          ],
+          "values": {
+            "inverse|solid|Default": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|solid|Hover": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "overlay": "color.surface.inverse-muted",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|solid|Pressed": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "overlay": "color.surface.inverse-muted",
+                "overlay2": "color.surface.inverse-muted",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|solid|Focused": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.surface.inverse-muted"
+              }
+            },
+            "inverse|solid|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            },
+            "inverse|soft|Default": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|soft|Hover": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "overlay": "color.surface.inverse-muted",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|soft|Pressed": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "overlay": "color.surface.inverse-muted",
+                "overlay2": "color.surface.inverse-muted",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "inverse|soft|Focused": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.surface.inverse-muted"
+              }
+            },
+            "inverse|soft|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            },
+            "default|solid|Default": {
+              "root": {
+                "fill": "color.action.primary.default",
+                "text": "color.content.on-action",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|solid|Hover": {
+              "root": {
+                "fill": "color.action.primary.hover",
+                "text": "color.content.on-action",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|solid|Pressed": {
+              "root": {
+                "fill": "color.action.primary.pressed",
+                "text": "color.content.on-action",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|solid|Focused": {
+              "root": {
+                "fill": "color.action.primary.default",
+                "text": "color.content.on-action",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.border.ring.default"
+              }
+            },
+            "default|solid|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            },
+            "default|soft|Default": {
+              "root": {
+                "fill": "color.surface.accent",
+                "text": "color.content.accent",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|soft|Hover": {
+              "root": {
+                "fill": "color.surface.accent",
+                "text": "color.content.accent",
+                "overlay": "color.surface.selected",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|soft|Pressed": {
+              "root": {
+                "fill": "color.surface.accent",
+                "text": "color.content.accent",
+                "overlay": "color.surface.selected-pressed",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "default|soft|Focused": {
+              "root": {
+                "fill": "color.surface.accent",
+                "text": "color.content.accent",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.border.ring.default"
+              }
+            },
+            "default|soft|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            },
+            "secondary|solid|Default": {
+              "root": {
+                "fill": "color.action.secondary.default",
+                "text": "color.content.on-secondary",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|solid|Hover": {
+              "root": {
+                "fill": "color.action.secondary.hover",
+                "text": "color.content.on-secondary",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|solid|Pressed": {
+              "root": {
+                "fill": "color.action.secondary.pressed",
+                "text": "color.content.on-secondary",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|solid|Focused": {
+              "root": {
+                "fill": "color.action.secondary.default",
+                "text": "color.content.on-secondary",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.border.subtle"
+              }
+            },
+            "secondary|solid|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            },
+            "secondary|soft|Default": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "text": "color.content.primary",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|soft|Hover": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "text": "color.content.primary",
+                "overlay": "color.action.ghost.hover",
+                "lift": "hover",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|soft|Pressed": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "text": "color.content.primary",
+                "overlay": "color.action.ghost.pressed",
+                "lift": "pressed",
+                "highlight": "color.elevation.highlight"
+              }
+            },
+            "secondary|soft|Focused": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "text": "color.content.primary",
+                "lift": "rest",
+                "highlight": "color.elevation.highlight",
+                "halo": "color.border.subtle"
+              }
+            },
+            "secondary|soft|Disabled": {
+              "root": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.disabled.default",
+                "text": "color.content.disabled",
+                "lift": "none",
+                "highlight": "none"
+              }
+            }
+          }
+        }
+      ]
+    },
     "ButtonGroup": {
       "key": "ButtonGroup",
       "slots": [
