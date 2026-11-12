@@ -4505,17 +4505,83 @@ var init_componentCatalogue = __esm({
         key: "Combobox",
         label: "Combobox",
         category: "Form Controls",
-        description: "Type-ahead select \u2014 an input that filters a dropdown list as the user types.",
-        usage: "Use when options exceed ~10 items or need search. For short lists, plain Select is enough.",
-        axes: [{ name: "State", values: ["Default", "Focused", "Open"] }],
+        description: "Text input trigger that opens a filterable listbox, with optional leading icon, clear button and trailing chevron.",
+        usage: "Use when options exceed ~10 items or need search. For short lists, plain Select is enough. Keep a visible label (Field) and expose the error text through aria-describedby.",
+        // The Figma file's axes, value for value (design-plans/combobox-contract.md).
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Open", "Invalid", "Disabled", "Loading"] },
+          { name: "Variant", values: ["default", "compact"] },
+          { name: "Shape", values: ["rounded", "pill"] },
+          { name: "Value", values: ["placeholder", "filled"] }
+        ],
         figmaSets: ["Combobox"],
         props: [
-          { name: "options", type: "{ label: string; value: string }[]", description: "Filterable list." },
-          { name: "value / defaultValue", type: "string", description: "Selected option value." },
-          { name: "onValueChange", type: "(value: string) => void", description: "Fires when an option is chosen." },
-          { name: "placeholder", type: "string", description: "Shown in the empty field." }
+          { name: "options", type: "{ label; value; group?; description?; icon?; trailing?; disabled? }[]", description: "The list. Options with a group are listed under its ComboboxGroupLabel, a rule between groups." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Box 32 \xB7 40 \xB7 48; the list rows follow (ComboboxItem sm \xB7 default \xB7 lg)." },
+          { name: "variant", type: '"default" | "compact"', description: "default fills its width; compact hugs its content." },
+          { name: "shape", type: '"rounded" | "pill"', description: "Radius/action or Radius/full." },
+          { name: "value / defaultValue", type: "string", description: "The chosen option (Figma Value filled shows its label, SelectedText)." },
+          { name: "onValueChange", type: "(value: string | undefined) => void", description: "Fires when an option is chosen or cleared." },
+          { name: "placeholder", type: "string", description: 'Figma Placeholder (default "Search framework...").' },
+          { name: "leading", type: "ReactNode | null", description: "Figma IconLeadingVisible + IconLeadingIcon (MagnifyingGlass by default; null hides it)." },
+          { name: "clearable / chevron", type: "boolean", description: "Figma ClearVisible (off) and ChevronVisible (on)." },
+          { name: "aria-invalid / disabled / loading", type: "boolean", description: "State Invalid / Disabled / Loading (the CircleNotch replaces the chevron). Hover, Focused and Open come from the pointer, keyboard and list." },
+          { name: "emptyText / footer", type: "ReactNode", description: "The popover's EmptyText and footer." }
         ],
-        accessibility: 'ARIA combobox pattern: role="combobox", aria-expanded, aria-activedescendant.'
+        accessibility: 'role="combobox" on the input with aria-expanded, aria-controls and aria-activedescendant; arrow keys move through the options, Enter chooses, Escape closes; aria-invalid on Invalid.'
+      },
+      {
+        key: "ComboboxPopover",
+        label: "Combobox Popover",
+        category: "Form Controls",
+        description: "Floating listbox panel for the Combobox with list, grouped or empty content and an optional footer.",
+        usage: "Opened by Combobox 8px below the trigger, aligned to its start; closes on Escape. Compose it from ComboboxItem and ComboboxGroupLabel.",
+        axes: [
+          { name: "Content", values: ["list", "grouped", "empty"] },
+          { name: "Size", values: ["sm", "default", "lg"] }
+        ],
+        figmaSets: ["ComboboxPopover"],
+        props: [
+          { name: "content", type: '"list" | "grouped" | "empty"', description: "empty draws EmptyText instead of the rows." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "The rows' size; empty line and footer padding follow." },
+          { name: "emptyText", type: "ReactNode", description: 'Figma EmptyText (default "No match").' },
+          { name: "footer", type: "ReactNode", description: 'Figma FooterVisible + FooterText (e.g. "3 results").' }
+        ],
+        accessibility: `The list is role="listbox", referenced by the trigger's aria-controls.`
+      },
+      {
+        key: "ComboboxItem",
+        label: "Combobox Item",
+        category: "Form Controls",
+        description: "Option row in the Combobox listbox with optional leading icon, description, trailing value and selection indicator.",
+        usage: "Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.",
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] }
+        ],
+        figmaSets: ["ComboboxItem"],
+        props: [
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "icon / description / trailing", type: "ReactNode", description: "Figma IconLeading*, Description*, Trailing* (each shown when given)." },
+          { name: "indicator", type: "boolean", description: "Figma IndicatorVisible: the check of the selected row (default on)." },
+          { name: "selected / highlighted / disabled", type: "boolean", description: "State Selected / Focused / Disabled; forceState pins one (docs)." }
+        ],
+        accessibility: `role="option" with aria-selected; the highlighted row is the trigger's aria-activedescendant.`
+      },
+      {
+        key: "ComboboxGroupLabel",
+        label: "Combobox Group Label",
+        category: "Form Controls",
+        description: "Heading for a group of options inside the Combobox popover.",
+        usage: "One per group in a grouped list, above its options.",
+        axes: [{ name: "Size", values: ["sm", "default", "lg"] }],
+        figmaSets: ["ComboboxGroupLabel"],
+        props: [
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Type/caption \xB7 label \xB7 label." }
+        ],
+        accessibility: 'Name the group so screen readers announce it (aria-labelledby on a role="group" wrapper when you compose by hand).'
       },
       {
         key: "Checkbox",
@@ -8918,6 +8984,49 @@ function optionPaint(state2) {
   if (state2 === "Focused") return { ...rest, root: { fill: c("surface.muted-hover"), stroke: c("border.focus"), strokeWidth: "stroke.control", halo: c("border.ring.default"), text: ink } };
   return { ...rest, root: { fill: c("surface.input"), stroke: c("border.control"), strokeWidth: "stroke.control", halo: NONE, text: ink } };
 }
+function comboboxPaint(state2) {
+  const disabled = state2 === "Disabled";
+  const ink = c(disabled ? "content.disabled" : "content.primary");
+  const out = {
+    text: { text: ink },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
+    icon: { text: ink }
+  };
+  if (disabled) out.root = { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE };
+  else if (state2 === "Invalid") out.root = { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") };
+  else if (state2 === "Focused" || state2 === "Open") out.root = { fill: c("surface.input"), stroke: c("border.focus"), halo: c("border.ring.default") };
+  else if (state2 === "Hover") out.root = { fill: c("surface.input"), stroke: c("border.control-hover") };
+  else out.root = { fill: c("surface.input"), stroke: c("border.control") };
+  return out;
+}
+function comboboxItemPaint(size, state2) {
+  const g = COMBO_ITEM[size];
+  const edge = state2 === "Focused";
+  const root = {
+    minHeight: g.minH,
+    radius: "radius.control",
+    gap: g.gap,
+    font: g.font,
+    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
+    paddingY: edge ? "spacing.gap-tight+stroke.control" : "spacing.gap-tight",
+    strokeWidth: edge ? "stroke.control" : "stroke.none"
+  };
+  if (edge) {
+    root.fill = c("surface.muted");
+    root.stroke = c("border.focus");
+    root.halo = c("border.ring.default");
+  } else if (state2 === "Selected") root.fill = c("surface.selected");
+  const disabled = state2 === "Disabled";
+  const ink = (role) => ({ text: c(disabled ? "content.disabled" : role) });
+  return {
+    root,
+    icon: { ...ink("content.primary"), width: g.icon, height: g.icon },
+    label: ink("content.primary"),
+    description: { ...ink("content.secondary"), font: "type.caption" },
+    trailing: { ...ink("content.subtle"), font: "type.caption" },
+    indicator: { text: c("content.accent"), width: g.icon, height: g.icon }
+  };
+}
 function otpSlotRoot(variant, state2) {
   const underline = variant === "underline";
   const rest = variant === "filled" ? { fill: c("surface.muted"), stroke: c("border.subtle") } : { fill: c(underline ? "surface.page" : "surface.input"), stroke: c("border.control") };
@@ -8954,7 +9063,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, GROUP_LABEL2, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -8964,7 +9073,6 @@ var init_forms = __esm({
       paddingX: "spacing.inset-control",
       gap: "spacing.gap-control"
     };
-    FIELD_FOCUS = { stroke: c("border.focus"), ring: c("border.ring.default") };
     INPUT_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled"];
     INPUT_SIZES = ["default", "sm", "lg"];
     INPUT_TYPES = [
@@ -9228,28 +9336,98 @@ var init_forms = __esm({
         }))
       ]
     };
+    COMBOBOX_SIZES = ["sm", "default", "lg"];
+    COMBOBOX_STATES = ["Default", "Hover", "Focused", "Open", "Invalid", "Disabled", "Loading"];
+    COMBOBOX_SHAPES = ["rounded", "pill"];
+    COMBOBOX_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    COMBO_TRIGGER = {
+      sm: { h: "size.compact", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.caption" },
+      default: { h: "size.control", padX: "spacing.2_5", gap: "spacing.1_5", icon: "icon.small", font: "type.body-sm" },
+      lg: { h: "size.touch", padX: "spacing.inset-control", gap: "spacing.gap-control", icon: "spacing.4+spacing.0_5", font: "type.body-md" }
+    };
     COMBOBOX = {
       key: "Combobox",
-      slots: ["root", "input", "icon", "content", "item"],
-      pseudoSlots: {},
-      defaults: { State: "Default" },
+      slots: ["root", "text", "placeholder", "icon"],
+      pseudoSlots: { placeholder: { of: "text", pseudo: "::placeholder" } },
+      defaults: { Size: "default", State: "Default", Variant: "default", Shape: "rounded", Value: "placeholder" },
+      parts: [
+        part({}, () => ({ root: { strokeWidth: "stroke.control" } })),
+        part({ Size: COMBOBOX_SIZES }, (size) => {
+          const g = COMBO_TRIGGER[size];
+          return {
+            root: { height: g.h, paddingX: `${g.padX}+stroke.control`, gap: g.gap },
+            text: { font: g.font },
+            icon: { width: g.icon, height: g.icon }
+          };
+        }),
+        part({ Shape: COMBOBOX_SHAPES }, (shape) => ({ root: { radius: shape === "pill" ? "radius.pill" : "radius.action" } })),
+        part({ State: COMBOBOX_STATES }, (state2) => comboboxPaint(state2))
+      ]
+    };
+    POPOVER_SIZE = {
+      sm: { padX: "spacing.gap-control", empty: "type.caption" },
+      default: { padX: "spacing.gap-control", empty: "type.body-sm" },
+      lg: { padX: "spacing.2_5", empty: "type.body-sm" }
+    };
+    COMBOBOX_POPOVER = {
+      key: "ComboboxPopover",
+      slots: ["root", "list", "separator", "line", "empty", "footer"],
+      defaults: { Content: "list", Size: "default" },
       parts: [
         part({}, () => ({
-          root: { ...FIELD_FIXED, height: "size.control", paddingX: "spacing.inset-control" },
-          // shadcn's ComboboxInput is an InputGroup: the field box takes the
-          // control's live states (hover, focus, invalid, disabled).
-          [`root:hover:not(:focus-within)${GROUP_LIVE}`]: fieldBox("Hover"),
-          "root:focus-within": FIELD_FOCUS,
-          'root:has([aria-invalid="true"])': fieldBox("Error"),
-          "root:has(:disabled)": fieldBox("Disabled"),
-          input: { text: c("content.primary"), font: "type.placeholder" },
-          "input::placeholder": { text: c("content.subtle") },
-          "input:disabled": { text: c("content.disabled") },
-          icon: { text: c("content.secondary") },
-          content: { ...MENU_CONTENT },
-          ...MENU_ITEM
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.divider",
+            radius: "radius.overlay",
+            shadow: "shadow.md",
+            text: c("content.primary")
+          },
+          list: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          separator: { paddingY: "spacing.gap-tight" },
+          line: { height: "stroke.divider", fill: c("border.subtle") },
+          empty: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", text: c("content.secondary") },
+          footer: {
+            minHeight: "spacing.8+spacing.1",
+            stroke: c("border.subtle"),
+            strokeTopWidth: "stroke.divider",
+            text: c("content.secondary"),
+            font: "type.caption"
+          }
         })),
-        part({ State: ["Default", "Focused", "Open"] }, (state2) => ({ root: fieldBox(state2) }))
+        part({ Size: COMBOBOX_SIZES }, (size) => ({
+          empty: { font: POPOVER_SIZE[size].empty },
+          footer: { paddingX: POPOVER_SIZE[size].padX }
+        }))
+      ]
+    };
+    COMBO_ITEM = {
+      sm: { minH: "spacing.6+spacing.1", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.caption" },
+      default: { minH: "size.compact", padX: "spacing.gap-control", gap: "spacing.gap-control", icon: "icon.small", font: "type.body-sm" },
+      lg: { minH: "spacing.8+spacing.1", padX: "spacing.2_5", gap: "spacing.gap-control", icon: "spacing.4+spacing.0_5", font: "type.body-md" }
+    };
+    COMBOBOX_ITEM = {
+      key: "ComboboxItem",
+      slots: ["root", "icon", "text", "label", "description", "trailing", "indicator"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state2) => comboboxItemPaint(size, state2))
+      ]
+    };
+    GROUP_LABEL2 = {
+      sm: { minH: "size.hit", padX: "spacing.gap-control", font: "type.caption" },
+      default: { minH: "spacing.6+spacing.1", padX: "spacing.gap-control", font: "type.label" },
+      lg: { minH: "spacing.6+spacing.1", padX: "spacing.2_5", font: "type.label" }
+    };
+    COMBOBOX_GROUP_LABEL = {
+      key: "ComboboxGroupLabel",
+      slots: ["root"],
+      defaults: { Size: "default" },
+      parts: [
+        part({ Size: COMBOBOX_SIZES }, (size) => {
+          const g = GROUP_LABEL2[size];
+          return { root: { minHeight: g.minH, paddingX: g.padX, paddingY: "spacing.gap-tight", font: g.font, text: c("content.secondary") } };
+        })
       ]
     };
     INPUT_OTP_SIZES = ["sm", "default", "lg"];
@@ -10736,6 +10914,8 @@ var init_motion2 = __esm({
       InputOTPSlot: { transitions: { root: FIELD2 } },
       Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
       NativeSelect: { transitions: { select: FIELD2 } },
+      Combobox: { transitions: { root: FIELD2 } },
+      ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
       Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
@@ -10794,6 +10974,9 @@ var init_componentRecipes = __esm({
       InputTagOption: INPUT_TAG_OPTION,
       Select: SELECT,
       Combobox: COMBOBOX,
+      ComboboxPopover: COMBOBOX_POPOVER,
+      ComboboxItem: COMBOBOX_ITEM,
+      ComboboxGroupLabel: COMBOBOX_GROUP_LABEL,
       InputOTP: INPUT_OTP,
       InputOTPSlot: INPUT_OTP_SLOT,
       Checkbox: CHECKBOX,
@@ -13671,7 +13854,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 116,
+          version: 117,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15091,6 +15274,19 @@ var init_useDesignStore = __esm({
                 let at = sel.indexOf("InputTag");
                 if (at < 0) return;
                 for (const key2 of ["InputTagChip", "InputTagOption"]) if (!sel.includes(key2)) sel.splice(++at, 0, key2);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 117) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                let at = sel.indexOf("Combobox");
+                if (at < 0) return;
+                for (const key2 of ["ComboboxPopover", "ComboboxItem", "ComboboxGroupLabel"]) if (!sel.includes(key2)) sel.splice(++at, 0, key2);
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

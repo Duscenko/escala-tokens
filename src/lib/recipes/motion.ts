@@ -56,6 +56,8 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   InputOTPSlot: { transitions: { root: FIELD } },
   Select: { transitions: { root: FIELD }, ...popover('--radix-select-content-transform-origin', 'content') },
   NativeSelect: { transitions: { select: FIELD } },
+  Combobox: { transitions: { root: FIELD } },
+  ComboboxItem: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
   Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },

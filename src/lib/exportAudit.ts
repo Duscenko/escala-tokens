@@ -68,7 +68,9 @@ export const BUDGETS = {
   // item, divider), each with its own design-skill file.
   // 85k → 90k (2026-11-12): InputTag became three Figma components (field, chip,
   // option), each with its own design-skill file.
-  contextAllTokens: 90_000,
+  // 90k → 95k (2026-11-12): Combobox became four Figma components (trigger, popover,
+  // item, group label), each with its own design-skill file.
+  contextAllTokens: 95_000,
   contextFoundationTokens: 12_000,
 }
 

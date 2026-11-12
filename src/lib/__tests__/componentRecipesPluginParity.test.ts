@@ -177,7 +177,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // builder here. Each entry is a decision, not a gap to close.
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'ComboboxPopover', 'ComboboxItem', 'ComboboxGroupLabel', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput (WEB_ONLY above).
@@ -193,7 +193,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-12: PasswordStrength rebuilt from the file (417:679): a card with the rules and the level label.
       PasswordStrength: ['rules', 'level'],
       // 2026-11-12: InputTag rebuilt from the file (390:744): the outside layout's field and chips row, the spinner; its chips are InputTagChip.
-      InputTag: ['field', 'tags', 'text', 'spinner'] }
+      InputTag: ['field', 'tags', 'text', 'spinner'],
+      // 2026-11-12: Combobox rebuilt from the file (413:1478): the <input> is `text`; its list is ComboboxPopover / ComboboxItem.
+      Combobox: ['text'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))

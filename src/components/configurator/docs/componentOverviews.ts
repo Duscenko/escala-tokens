@@ -178,7 +178,18 @@ export const OVERVIEWS: Record<string, Overview> = {
   ],
   NativeSelect: [each('State', ['Default', 'Focused', 'Disabled'], {}, 200)],
   Calendar: [each('Mode', ['single', 'range'])],
-  Combobox: [each('State', ['Default', 'Focused']), each('State', ['Open'])],
+  Combobox: [
+    each('State', ['Default', 'Hover', 'Focused'], {}, 280),
+    each('State', ['Invalid', 'Disabled', 'Loading'], { Value: 'filled' }, 280),
+    each('Size', ['sm', 'default', 'lg'], {}, 280),
+    each('Shape', ['rounded', 'pill'], { Variant: 'compact' }),
+  ],
+  ComboboxPopover: [each('Content', ['list', 'grouped', 'empty'], {}, 280)],
+  ComboboxItem: [
+    each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256),
+    each('Size', ['sm', 'default', 'lg'], { State: 'Selected' }, 256),
+  ],
+  ComboboxGroupLabel: [each('Size', ['sm', 'default', 'lg'], {}, 256)],
   // A row of labelled controls repeats the label; two short columns read as
   // the on/off pair, then the same pair disabled.
   Checkbox: [

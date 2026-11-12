@@ -35,7 +35,7 @@ import {
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
-  SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
+  SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonComboboxPopoverSpecimen, SkeletonComboboxItemSpecimen, SkeletonComboboxGroupLabelSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
   SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
@@ -390,6 +390,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   NativeSelect: SkeletonNativeSelectSpecimen,
   Calendar: lazySpecimen('SkeletonCalendarSpecimen'),
   Combobox: SkeletonComboboxSpecimen,
+  ComboboxPopover: SkeletonComboboxPopoverSpecimen,
+  ComboboxItem: SkeletonComboboxItemSpecimen,
+  ComboboxGroupLabel: SkeletonComboboxGroupLabelSpecimen,
   Checkbox: SkeletonCheckboxSpecimen,
   RadioGroup: SkeletonRadioGroupSpecimen,
   Switch: SkeletonSwitchSpecimen,

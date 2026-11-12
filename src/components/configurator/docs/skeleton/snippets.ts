@@ -154,8 +154,16 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { InputTagOption } from "@/components/ui/input-tag"\n\n<InputTagOption${v.Type === 'create' ? ' type="create"' : ' meta="12"'}${v.State === 'Disabled' ? ' disabled' : ''}>${v.Type === 'create' ? 'Create “Design”' : 'Design'}</InputTagOption>`,
   Select: (v) =>
     `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${v.Size === 'sm' ? ' size="sm"' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
-  Combobox: () =>
-    `import { Combobox } from "@/components/ui/combobox"\n\n<Combobox\n  options={[{ label: "Inter", value: "inter" }, { label: "Poppins", value: "poppins" }]}\n  placeholder="Search fonts…"\n  onValueChange={setFont}\n/>`,
+  Combobox: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'compact' ? ' variant="compact"' : '', v.Shape === 'pill' ? ' shape="pill"' : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : '', v.State === 'Loading' ? ' loading' : ''].join('')
+    return `import { Combobox } from "@/components/ui/combobox"\n\n<Combobox\n  aria-label="Framework"${attrs}\n  options={[{ label: "Next.js", value: "next" }, { label: "Remix", value: "remix" }, { label: "Astro", value: "astro" }]}\n  placeholder="Search framework..."\n  value={framework}\n  onValueChange={setFramework}\n/>`
+  },
+  ComboboxPopover: (v) =>
+    `import { ComboboxPopover, ComboboxItem } from "@/components/ui/combobox"\n\n<ComboboxPopover${v.Content === 'empty' ? ' content="empty"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} footer="3 results">\n  <ComboboxItem selected>Next.js</ComboboxItem>\n  <ComboboxItem>Remix</ComboboxItem>\n</ComboboxPopover>`,
+  ComboboxItem: (v) =>
+    `import { ComboboxItem } from "@/components/ui/combobox"\n\n<ComboboxItem${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' selected' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Option</ComboboxItem>`,
+  ComboboxGroupLabel: (v) =>
+    `import { ComboboxGroupLabel } from "@/components/ui/combobox"\n\n<ComboboxGroupLabel${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Group</ComboboxGroupLabel>`,
   Checkbox: () =>
     `import { Checkbox } from "@/components/ui/checkbox"\nimport { Field, FieldLabel } from "@/components/ui/field"\n\n<Field orientation="horizontal">\n  <Checkbox id="remember" defaultChecked />\n  <FieldLabel htmlFor="remember">Remember me</FieldLabel>\n</Field>`,
   RadioGroup: () =>

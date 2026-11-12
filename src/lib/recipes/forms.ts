@@ -29,8 +29,6 @@ const FIELD_FIXED: SlotProps = {
   radius: 'radius.action', strokeWidth: 'stroke.control',
   paddingX: 'spacing.inset-control', gap: 'spacing.gap-control',
 }
-/** Live focus on a control whose root IS the box (no State axis involved). */
-const FIELD_FOCUS: SlotProps = { stroke: c('border.focus'), ring: c('border.ring.default') }
 
 // ── Input ──────────────────────────────────────────────────────────────────
 // The Figma `Input` set (design-plans/input-contract.md, 4:12380, 114 variants):
@@ -430,30 +428,166 @@ export const SELECT: ComponentRecipe = {
   ],
 }
 
-// ── Combobox ───────────────────────────────────────────────────────────────
+// ── Combobox · ComboboxPopover · ComboboxItem · ComboboxGroupLabel ─────────
+// The Figma `Combobox` page (design-plans/combobox-contract.md), four sets:
+//  · Combobox (413:1478, Size × State × Variant × Shape × Value, 168 variants): the
+//    trigger. The ROOT is the box: Surface/input, a 1px Border/control laid out
+//    (`strokesIncludedInLayout`: content starts at padding + stroke), Radius/action
+//    (pill: Radius/full), 32 · 40 · 48 tall, padding 8 · 10 · 12, gap 6 · 6 · 8. In it:
+//    the leading glyph (MagnifyingGlass), the <input> (`text`, Type/caption · body-sm ·
+//    body-md), the ✕ (`clear`) and the chevron or, Loading, the CircleNotch — every glyph
+//    14 · 16 · 18. Focused and Open: Border/focus + a 2px Border/ring/default halo OUTSIDE;
+//    Invalid: Status/critical/border-strong + a Status/critical/border halo; Disabled:
+//    Action/disabled/default fill, every ink Content/disabled. Variant compact hugs its
+//    content (the component's layout); Value needs no paint (`text` vs `::placeholder`).
+//  · ComboboxPopover (415:489, Content × Size, 9): the panel. Surface/layer-2, a 1px
+//    Border/default, Radius/overlay, Shadow/md, clips; the list is inset gap-tight; a
+//    grouped list puts a 1px Border/subtle rule (padded gap-tight) between groups; empty
+//    is one centred line (inset-control, Content/secondary); the footer is 36 tall with a
+//    Border/subtle top rule and a Type/caption Content/secondary count.
+//  · ComboboxItem (406:140, Size × State, 12): a row 28 · 32 · 36 min, Radius/control,
+//    padding gap-tight × 8 · 8 · 10, gap 6 · 8 · 8. Focused: Surface/muted + a 1px
+//    Border/focus edge the file lays out + a 2px halo outside; Selected: Surface/selected and
+//    the Content/accent check; Disabled: every ink Content/disabled.
+//  · ComboboxGroupLabel (406:147, Size, 3): 24 · 28 · 28 min, Type/caption · label ·
+//    label, Content/secondary.
+export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
+export const COMBOBOX_STATES = ['Default', 'Hover', 'Focused', 'Open', 'Invalid', 'Disabled', 'Loading'] as const
+export const COMBOBOX_SHAPES = ['rounded', 'pill'] as const
+export const COMBOBOX_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const COMBOBOX_POPOVER_CONTENTS = ['list', 'grouped', 'empty'] as const
+
+/** Per Size: box height · padding X · gap · glyph · type (unbound numbers as sums of steps). */
+const COMBO_TRIGGER: Record<string, { h: string; padX: string; gap: string; icon: string; font: string }> = {
+  sm: { h: 'size.compact', padX: 'spacing.gap-control', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', font: 'type.caption' },
+  default: { h: 'size.control', padX: 'spacing.2_5', gap: 'spacing.1_5', icon: 'icon.small', font: 'type.body-sm' },
+  lg: { h: 'size.touch', padX: 'spacing.inset-control', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', font: 'type.body-md' },
+}
+
+function comboboxPaint(state: string): SlotMap {
+  const disabled = state === 'Disabled'
+  const ink = c(disabled ? 'content.disabled' : 'content.primary')
+  const out: SlotMap = {
+    text: { text: ink },
+    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+    icon: { text: ink },
+  }
+  if (disabled) out.root = { fill: c('action.disabled.default'), stroke: c('border.control'), halo: NONE }
+  else if (state === 'Invalid') out.root = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: c('status.critical.border') }
+  else if (state === 'Focused' || state === 'Open') out.root = { fill: c('surface.input'), stroke: c('border.focus'), halo: c('border.ring.default') }
+  else if (state === 'Hover') out.root = { fill: c('surface.input'), stroke: c('border.control-hover') }
+  else out.root = { fill: c('surface.input'), stroke: c('border.control') }
+  return out
+}
 
 export const COMBOBOX: ComponentRecipe = {
   key: 'Combobox',
-  slots: ['root', 'input', 'icon', 'content', 'item'],
-  pseudoSlots: {},
-  defaults: { State: 'Default' },
+  slots: ['root', 'text', 'placeholder', 'icon'],
+  pseudoSlots: { placeholder: { of: 'text', pseudo: '::placeholder' } },
+  defaults: { Size: 'default', State: 'Default', Variant: 'default', Shape: 'rounded', Value: 'placeholder' },
+  parts: [
+    part({}, () => ({ root: { strokeWidth: 'stroke.control' } })),
+    part({ Size: COMBOBOX_SIZES }, (size) => {
+      const g = COMBO_TRIGGER[size]
+      return {
+        root: { height: g.h, paddingX: `${g.padX}+stroke.control`, gap: g.gap },
+        text: { font: g.font },
+        icon: { width: g.icon, height: g.icon },
+      }
+    }),
+    part({ Shape: COMBOBOX_SHAPES }, (shape) => ({ root: { radius: shape === 'pill' ? 'radius.pill' : 'radius.action' } })),
+    part({ State: COMBOBOX_STATES }, (state) => comboboxPaint(state)),
+  ],
+}
+
+/** Per Size: the empty line's type and the footer's padding X. */
+const POPOVER_SIZE: Record<string, { padX: string; empty: string }> = {
+  sm: { padX: 'spacing.gap-control', empty: 'type.caption' },
+  default: { padX: 'spacing.gap-control', empty: 'type.body-sm' },
+  lg: { padX: 'spacing.2_5', empty: 'type.body-sm' },
+}
+
+export const COMBOBOX_POPOVER: ComponentRecipe = {
+  key: 'ComboboxPopover',
+  slots: ['root', 'list', 'separator', 'line', 'empty', 'footer'],
+  defaults: { Content: 'list', Size: 'default' },
   parts: [
     part({}, () => ({
-      root: { ...FIELD_FIXED, height: 'size.control', paddingX: 'spacing.inset-control' },
-      // shadcn's ComboboxInput is an InputGroup: the field box takes the
-      // control's live states (hover, focus, invalid, disabled).
-      [`root:hover:not(:focus-within)${GROUP_LIVE}`]: fieldBox('Hover'),
-      'root:focus-within': FIELD_FOCUS,
-      'root:has([aria-invalid="true"])': fieldBox('Error'),
-      'root:has(:disabled)': fieldBox('Disabled'),
-      input: { text: c('content.primary'), font: 'type.placeholder' },
-      'input::placeholder': { text: c('content.subtle') },
-      'input:disabled': { text: c('content.disabled') },
-      icon: { text: c('content.secondary') },
-      content: { ...MENU_CONTENT },
-      ...MENU_ITEM,
+      root: {
+        fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider',
+        radius: 'radius.overlay', shadow: 'shadow.md', text: c('content.primary'),
+      },
+      list: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      separator: { paddingY: 'spacing.gap-tight' },
+      line: { height: 'stroke.divider', fill: c('border.subtle') },
+      empty: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', text: c('content.secondary') },
+      footer: {
+        minHeight: 'spacing.8+spacing.1', stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
+        text: c('content.secondary'), font: 'type.caption',
+      },
     })),
-    part({ State: ['Default', 'Focused', 'Open'] as const }, (state) => ({ root: fieldBox(state) })),
+    part({ Size: COMBOBOX_SIZES }, (size) => ({
+      empty: { font: POPOVER_SIZE[size].empty },
+      footer: { paddingX: POPOVER_SIZE[size].padX },
+    })),
+  ],
+}
+
+/** Per Size: min height · padding X · gap · glyph · label type. */
+const COMBO_ITEM: Record<string, { minH: string; padX: string; gap: string; icon: string; font: string }> = {
+  sm: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', font: 'type.caption' },
+  default: { minH: 'size.compact', padX: 'spacing.gap-control', gap: 'spacing.gap-control', icon: 'icon.small', font: 'type.body-sm' },
+  lg: { minH: 'spacing.8+spacing.1', padX: 'spacing.2_5', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', font: 'type.body-md' },
+}
+
+function comboboxItemPaint(size: string, state: string): SlotMap {
+  const g = COMBO_ITEM[size]
+  // Only Focused draws an edge, and the file lays it out: its content starts 1px further in.
+  const edge = state === 'Focused'
+  const root: SlotProps = {
+    minHeight: g.minH, radius: 'radius.control', gap: g.gap, font: g.font,
+    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
+    paddingY: edge ? 'spacing.gap-tight+stroke.control' : 'spacing.gap-tight',
+    strokeWidth: edge ? 'stroke.control' : 'stroke.none',
+  }
+  if (edge) { root.fill = c('surface.muted'); root.stroke = c('border.focus'); root.halo = c('border.ring.default') }
+  else if (state === 'Selected') root.fill = c('surface.selected')
+  const disabled = state === 'Disabled'
+  const ink = (role: string) => ({ text: c(disabled ? 'content.disabled' : role) })
+  return {
+    root,
+    icon: { ...ink('content.primary'), width: g.icon, height: g.icon },
+    label: ink('content.primary'),
+    description: { ...ink('content.secondary'), font: 'type.caption' },
+    trailing: { ...ink('content.subtle'), font: 'type.caption' },
+    indicator: { text: c('content.accent'), width: g.icon, height: g.icon },
+  }
+}
+
+export const COMBOBOX_ITEM: ComponentRecipe = {
+  key: 'ComboboxItem',
+  slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'indicator'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state) => comboboxItemPaint(size, state)),
+  ],
+}
+
+const GROUP_LABEL: Record<string, { minH: string; padX: string; font: string }> = {
+  sm: { minH: 'size.hit', padX: 'spacing.gap-control', font: 'type.caption' },
+  default: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', font: 'type.label' },
+  lg: { minH: 'spacing.6+spacing.1', padX: 'spacing.2_5', font: 'type.label' },
+}
+
+export const COMBOBOX_GROUP_LABEL: ComponentRecipe = {
+  key: 'ComboboxGroupLabel',
+  slots: ['root'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: COMBOBOX_SIZES }, (size) => {
+      const g = GROUP_LABEL[size]
+      return { root: { minHeight: g.minH, paddingX: g.padX, paddingY: 'spacing.gap-tight', font: g.font, text: c('content.secondary') } }
+    }),
   ],
 }
 

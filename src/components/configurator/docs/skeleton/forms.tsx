@@ -11,7 +11,7 @@ import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
-import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
+import { Combobox as SkCombobox, ComboboxGroup as SkComboboxGroup, ComboboxGroupLabel as SkComboboxGroupLabel, ComboboxItem as SkComboboxItem, ComboboxPopover as SkComboboxPopover, ComboboxSeparator as SkComboboxSeparator, type ComboboxItemState, type ComboboxPopoverContent, type ComboboxShape, type ComboboxSize, type ComboboxState, type ComboboxVariant } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
 import { Checkbox as SkCheckbox } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
@@ -262,21 +262,85 @@ export function SkeletonSelectSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-const FONTS = ['Inter', 'Poppins', 'Sora'].map((label) => ({ label, value: label.toLowerCase() }))
 
-export function SkeletonComboboxSpecimen({ t, v }: SpecimenProps) {
-  const open = (v.State ?? 'Default') === 'Open'
+/** The file's sample list (the ComboboxPopover list variant). */
+const FRAMEWORKS = [
+  { label: 'Next.js', value: 'next' },
+  { label: 'Remix', value: 'remix' },
+  { label: 'Astro', value: 'astro' },
+  { label: 'SvelteKit', value: 'sveltekit', disabled: true },
+]
+
+/** The Figma Combobox: Size × State × Variant × Shape × Value. Open draws the list. */
+export function SkeletonComboboxSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as ComboboxState
+  const variant = (v.Variant ?? 'default') as ComboboxVariant
   return (
     <RecipeScope t={t}>
       <SkCombobox
-        key={v.State}
-        options={FONTS}
-        defaultValue={open ? 'poppins' : undefined}
-        forceOpen={open}
-        placeholder="Search fonts…"
-        icon={<PreviewIcon concept="chevron" size={iconOf(12)} />}
-        width={240}
+        key={`${v.Value}-${state}`}
+        aria-label="Framework"
+        options={FRAMEWORKS}
+        size={(v.Size ?? 'default') as ComboboxSize}
+        variant={variant}
+        shape={(v.Shape ?? 'rounded') as ComboboxShape}
+        forceState={state === 'Default' ? undefined : state}
+        defaultValue={v.Value === 'filled' || state === 'Open' ? 'next' : undefined}
+        width={variant === 'compact' ? undefined : w ?? 280}
       />
+    </RecipeScope>
+  )
+}
+
+/** The Figma ComboboxPopover: Content × Size, with the file's sample rows. */
+export function SkeletonComboboxPopoverSpecimen({ t, v, w }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as ComboboxSize
+  const content = (v.Content ?? 'list') as ComboboxPopoverContent
+  return (
+    <RecipeScope t={t}>
+      <SkComboboxPopover size={size} content={content} width={w ?? 280}>
+        {content === 'grouped' ? (
+          <>
+            <SkComboboxGroup label="Suggested" size={size}>
+              <SkComboboxItem size={size} forceState="Selected" description="React framework" trailing="⌘1">Next.js</SkComboboxItem>
+              <SkComboboxItem size={size} forceState="Focused" description="Full-stack web framework" trailing="⌘2">Remix</SkComboboxItem>
+            </SkComboboxGroup>
+            <SkComboboxSeparator />
+            <SkComboboxGroup label="All frameworks" size={size}>
+              <SkComboboxItem size={size}>Astro</SkComboboxItem>
+              <SkComboboxItem size={size} forceState="Disabled">SvelteKit</SkComboboxItem>
+            </SkComboboxGroup>
+          </>
+        ) : (
+          <>
+            <SkComboboxItem size={size} forceState="Selected">Next.js</SkComboboxItem>
+            <SkComboboxItem size={size} forceState="Focused">Remix</SkComboboxItem>
+            <SkComboboxItem size={size}>Astro</SkComboboxItem>
+            <SkComboboxItem size={size} forceState="Disabled">SvelteKit</SkComboboxItem>
+          </>
+        )}
+      </SkComboboxPopover>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonComboboxItemSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as ComboboxItemState
+  return (
+    <RecipeScope t={t}>
+      <div role="listbox" aria-label="Options" style={{ width: w ?? 256 }}>
+        <SkComboboxItem size={(v.Size ?? 'default') as ComboboxSize} forceState={state === 'Default' ? undefined : state}>Option</SkComboboxItem>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonComboboxGroupLabelSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 256 }}>
+        <SkComboboxGroupLabel size={(v.Size ?? 'default') as ComboboxSize}>Group</SkComboboxGroupLabel>
+      </div>
     </RecipeScope>
   )
 }

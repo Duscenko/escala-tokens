@@ -4,21 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "Combobox": {
-      "status": "rebuild"
-    },
-    "ComboboxGroupLabel": {
-      "status": "part",
-      "of": "Combobox"
-    },
-    "ComboboxItem": {
-      "status": "part",
-      "of": "Combobox"
-    },
-    "ComboboxPopover": {
-      "status": "part",
-      "of": "Combobox"
-    },
     "DatePickerPopover": {
       "status": "part",
       "of": "DatePickerTrigger"

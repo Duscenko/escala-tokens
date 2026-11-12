@@ -142,3 +142,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A stroke that exists only in some states and is laid out | Chip default has no stroke, Focused / critical have 1px inside the layout (width +2) | One part over Size × Variant × State that sets `strokeWidth` (`stroke.none` or `stroke.control`) AND adds `+stroke.control` to the padding only when the stroke exists |
 | One box painted by State, but the box differs per Layout | inline: the root; outside: the `field` child | The paint function takes the layout and writes to `root` or `field`; root state selectors (`:hover`, `:has(:focus-visible)`, `[data-force-state]`) still reach the child |
 | `exportAudit` I10 budget | Agent context 86 440 > 85 000 | Raise `contextAllTokens` with a dated note (a catalogue grows by three components) |
+
+# Lessons from the Combobox (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Another chat edits the SAME files (`forms.ts`, `componentRecipes.ts`, `motion.ts`) for its own component | Its recipe without a catalogue entry broke the parity tests; regenerated files (registry, plugin-studio bundle, goldens) baked its work in | Commit from a clean worktree at HEAD with only your hunks, regenerate there, then move the branch and `git reset` (mixed) here so the other chat's edits stay uncommitted in the working tree |
+| A listbox holding group headings and rules | axe `aria-required-children`: a listbox may only hold `option` / `group` | `ComboboxGroup` (`role="group"` labelled by its GroupLabel), the separator `role="none"` + `aria-hidden`; the empty variant drops `role="listbox"` and the message is `role="status"` |
+| A popover opened from a box whose border is part of the root | `top: 100%` measures from the padding edge: the gap came out 1px short | A plain wrapper around the trigger holds the popover (`absolute top-full`, `mt` = `--spacing-gap-control`): measured 8 |
+| A Shadow/* style with a 1px ring layer | `shadow.md` renders key + ambient only | System-wide token, not the component: reported, not special-cased |
