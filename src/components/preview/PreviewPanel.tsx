@@ -135,7 +135,7 @@ function ColorCollage({
           the brand fill arrive and leave the way it will in the product. */}
       <div className="flex flex-wrap items-center gap-4">
         <Live c="Checkbox" t={tokens} v={{ Checked: 'true' }} toggle="Checked" />
-        <Live c="Switch" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
+        <Live c="Switch" t={tokens} v={{ Checked: 'true' }} toggle="Checked" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -466,8 +466,8 @@ export default function PreviewPanel({
 
             <Group title="Switch">
               <Tile tokens={tokens}>
-                <SwitchSpec t={tokens} v={{ Checked: 'True' }} />
-                <SwitchSpec t={tokens} v={{ Checked: 'False' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'true' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'false' }} />
               </Tile>
             </Group>
 

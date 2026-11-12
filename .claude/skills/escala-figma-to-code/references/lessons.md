@@ -273,3 +273,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 |---|---|---|
 | A group whose axes cascade to its rows (Size · Placement · State · Variant) | Repeating the props on every row | A context in the group; the row's own props win; group State Default leaves rows free |
 | A group label that does not scale with Size (Type/label everywhere) | Tempting to scale it with the rows | Copy: one type for all sizes |
+
+# Lessons from the Switch and SwitchGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A recipe `part` over a SUBSET of an axis (State Focused only) | `componentRecipes.test`: parts must cover the full axes (`default|long|Focused` vs 24 combinations) | Cover the whole axis and branch inside the builder (`state === 'Focused' ? …`) |
+| A stroke laid out in Focused (thumb 2px further in, travel −4) | The `focus` path draws the edge as an inset shadow: no layout shift | Focused part adds `paddingX/Y: spacing.0_5+stroke.focus` and a shorter `travel` |
+| A hidden instance (thumb-icon) with a `fills` override | `children` empty, ink unreadable | Say it in the contract and pick a plausible Content role; no variant draws it |
+| Absolute marks hand-placed per Size (not centred in sm / default) | Tempting to centre them | Copy the literal x / y per Size · Thumb · Checked in the component (no variable) |
+| A part (SwitchGroup) living in its parent's file | `scripts/registrySources` looks per file | `FILE_OF` in `componentFiles.ts`, literal `data-escala="SwitchGroup"` |
+| Footer `Content/subtle` | axe 3:1 in both themes | Copied (rule 1), reported |

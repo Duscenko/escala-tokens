@@ -193,7 +193,9 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   RadioGroup: () =>
     `import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"\nimport { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"\n\n<FieldSet>\n  <FieldLegend variant="label">Billing period</FieldLegend>\n  <RadioGroup defaultValue="monthly">\n    <Field orientation="horizontal">\n      <RadioGroupItem value="monthly" id="monthly" />\n      <FieldLabel htmlFor="monthly">Monthly billing</FieldLabel>\n    </Field>\n    <Field orientation="horizontal">\n      <RadioGroupItem value="yearly" id="yearly" />\n      <FieldLabel htmlFor="yearly">Yearly billing</FieldLabel>\n    </Field>\n  </RadioGroup>\n</FieldSet>`,
   Switch: (v) =>
-    `import { Switch } from "@/components/ui/switch"\nimport { Field, FieldLabel } from "@/components/ui/field"\n\n<Field orientation="horizontal">\n  <Switch id="notifications"${v.Size === 'sm' ? ' size="sm"' : ''} defaultChecked />\n  <FieldLabel htmlFor="notifications">Notifications</FieldLabel>\n</Field>`,
+    `import { Switch } from "@/components/ui/switch"\n\n<Switch${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Thumb === 'long' ? ' thumb="long"' : ''}${v.Checked === 'false' ? '' : ' defaultChecked'}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="Notifications" />`,
+  SwitchGroup: (v) =>
+    `import { SwitchGroup } from "@/components/ui/switch"\n\n<SwitchGroup\n  label="Email notifications"\n  description="Receive a summary of activity in your inbox."\n  footer="Changes apply immediately."${v.Size && v.Size !== 'default' ? `\n  size="${v.Size}"` : ''}${v.Placement === 'right' ? '\n  placement="right"' : ''}${v.State === 'Invalid' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}${v.State === 'Loading' ? '\n  loading' : ''}\n  defaultChecked\n/>`,
   Slider: () =>
     `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
   FileUpload: (v) =>

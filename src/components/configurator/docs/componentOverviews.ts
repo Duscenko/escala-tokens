@@ -236,8 +236,15 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['xs', 'sm', 'default']),
   ],
   Switch: [
-    [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
-    [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
+    each('Checked', ['true', 'false']),
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
+    each('Thumb', ['short', 'long'], { Checked: 'true' }),
+  ],
+  SwitchGroup: [
+    each('State', ['Default', 'Disabled', 'Invalid', 'Loading']),
+    each('Placement', ['left', 'right']),
+    each('Size', ['xs', 'sm', 'default']),
   ],
   FileUpload: [
     each('Layout', ['dropzone', 'trigger']),

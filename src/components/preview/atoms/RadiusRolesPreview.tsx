@@ -48,7 +48,7 @@ function Examples({ role, tokens: t }: { role: string; tokens: PreviewTokens }) 
       <>
         <BadgeSpec t={t} v={{ Variant: 'default' }} />
         <BadgeSpec t={t} v={{ Variant: 'secondary' }} />
-        <SwitchSpec t={t} v={{ Checked: 'True' }} />
+        <SwitchSpec t={t} v={{ Checked: 'true' }} />
         <AvatarSpec t={t} v={{}} />
       </>
     )

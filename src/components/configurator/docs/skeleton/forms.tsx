@@ -16,7 +16,7 @@ import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
 import { CheckboxGroup as SkCheckboxGroup, type CheckboxGroupState, CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
-import { Switch as SkSwitch, type SwitchSize } from '../../../escala-ui/switch'
+import { Switch as SkSwitch, SwitchGroup as SkSwitchGroup, type SwitchGroupPlacement, type SwitchGroupState, type SwitchSize, type SwitchState, type SwitchThumb } from '../../../escala-ui/switch'
 import { Slider as SkSlider } from '../../../escala-ui/slider'
 import { Label as SkLabel } from '../../../escala-ui/label'
 import {
@@ -408,20 +408,42 @@ export function SkeletonRadioGroupSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
+/** The Figma Switch beside a Field label (the board's toggles). Legacy links named Checked True / False. */
 export function SkeletonSwitchSpecimen({ t, v }: SpecimenProps) {
   const id = useId()
+  const raw = v.Checked ?? 'true'
+  const on = raw === 'true' || raw === 'True'
+  const size = (v.Size === 'sm' || v.Size === 'xs' ? v.Size : 'default') as SwitchSize
   return (
     <RecipeScope t={t}>
       <SkField orientation="horizontal" style={{ width: 'auto' }}>
         <SkSwitch
           id={id}
-          key={v.Checked}
-          defaultChecked={(v.Checked ?? 'True') === 'True'}
-          size={(v.Size ?? 'default') as SwitchSize}
-          forceState={(v.State ?? 'Default') as 'Default'}
+          key={raw}
+          defaultChecked={on}
+          size={size}
+          thumb={(v.Thumb ?? 'short') as SwitchThumb}
+          forceState={(v.State ?? 'Default') as SwitchState}
         />
         <SkFieldLabel htmlFor={id}>Notifications</SkFieldLabel>
       </SkField>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SwitchGroup: a checked Switch with its label, description and footer. */
+export function SkeletonSwitchGroupSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as SwitchGroupState
+  return (
+    <RecipeScope t={t}>
+      <SkSwitchGroup
+        defaultChecked
+        size={(v.Size ?? 'default') as SwitchSize}
+        placement={(v.Placement ?? 'left') as SwitchGroupPlacement}
+        forceState={state}
+        description="Receive a summary of activity in your inbox."
+        footer={state === 'Invalid' ? 'Enable at least one channel to continue.' : 'Changes apply immediately.'}
+      />
     </RecipeScope>
   )
 }

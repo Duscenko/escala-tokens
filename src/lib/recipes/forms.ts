@@ -960,44 +960,118 @@ export const RADIO_GROUP: ComponentRecipe = {
 }
 
 // ── Switch ─────────────────────────────────────────────────────────────────
-// shadcn's Switch, `size` default | sm: primary track when checked, the input
-// colour when not.
-
-const SWITCH_GEOMETRY: Record<string, { knob: string; trackH: string; trackW: string; travel: string }> = {
-  // Track = knob + 2px inset each side; the knob travels width − knob − inset.
-  default: { knob: 'selector.control', trackH: 'selector.control+spacing.1', trackW: 'selector.control+spacing.5', travel: 'spacing.4' },
-  sm: { knob: 'selector.compact', trackH: 'selector.compact+spacing.1', trackW: 'selector.compact+spacing.4', travel: 'spacing.3' },
+// The Figma `Switch` set (design-plans/switch-contract.md, 405:358, 48 variants: Size xs · sm · default
+// × State Default · Hover · Focused · Disabled × Checked true · false × Thumb short · long, plus the
+// IoVisible and ThumbIconVisible booleans). A pill track (Size/selector-sm 16 · sm 16 · md 20) with 2px
+// of padding and a thumb of 12 · 12 · 16 (long: 16 · 16 · 20 wide). Focused lays a 2px edge inside the
+// layout (the thumb moves in by 2) and a 2px halo outside. No shadow anywhere.
+export const SWITCH_SIZES = ['xs', 'sm', 'default'] as const
+export const SWITCH_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
+export const SWITCH_CHECKED = ['true', 'false'] as const
+export const SWITCH_THUMBS = ['short', 'long'] as const
+// Track width, thumb width and the thumb's travel (rest · focused), as summed spacing steps.
+const SWITCH_GEOMETRY: Record<string, Record<string, { w: string; thumbW: string; travel: string; focusTravel: string }>> = {
+  xs: {
+    short: { w: 'spacing.6+spacing.1', thumbW: 'spacing.3', travel: 'spacing.3', focusTravel: 'spacing.2' },
+    long: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+  },
+  sm: {
+    short: { w: 'spacing.6+spacing.1', thumbW: 'spacing.3', travel: 'spacing.3', focusTravel: 'spacing.2' },
+    long: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+  },
+  default: {
+    short: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+    long: { w: 'spacing.8+spacing.3', thumbW: 'spacing.5', travel: 'spacing.5', focusTravel: 'spacing.4' },
+  },
 }
 
 function switchPaint(checked: string, state: string): SlotMap {
-  const on = checked === 'True'
+  const on = checked === 'true'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
-  const focus = state === 'Focused' ? c('border.focus') : NONE
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  const track = disabled ? 'action.disabled.default'
+  const focused = state === 'Focused'
+  const track = disabled ? (on ? 'action.disabled.default' : 'surface.muted')
     : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
     : (hover ? 'surface.muted-hover' : 'surface.muted')
   return {
-    root: { fill: c(track), focus, ring },
+    root: { fill: c(track), focus: focused ? c('border.focus') : NONE, ring: focused ? c('border.ring.default') : NONE },
     thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
+    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
+    io: { text: c(on ? (disabled ? 'surface.input' : 'content.on-action') : disabled ? 'content.disabled' : 'content.subtle') },
+    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
+    thumbIcon: { text: c(disabled ? 'content.disabled' : on ? 'action.primary.default' : 'content.subtle') },
   }
 }
 
 export const SWITCH: ComponentRecipe = {
   key: 'Switch',
-  slots: ['root', 'thumb'],
-  defaults: { Checked: 'True', Size: 'default', State: 'Default' },
+  slots: ['root', 'thumb', 'io', 'thumbIcon'],
+  defaults: { Size: 'default', State: 'Default', Checked: 'false', Thumb: 'short' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.pill', hit: 'size.hit' },
-      thumb: { radius: 'radius.pill', shadow: 'shadow.xs' },
+      root: { radius: 'radius.pill', hit: 'size.hit', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5' },
+      thumb: { radius: 'radius.pill' },
     })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({
-      root: { height: SWITCH_GEOMETRY[size].trackH, width: SWITCH_GEOMETRY[size].trackW, travel: SWITCH_GEOMETRY[size].travel },
-      thumb: { height: SWITCH_GEOMETRY[size].knob, width: SWITCH_GEOMETRY[size].knob },
+    part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS }, (size, thumb) => {
+      const g = SWITCH_GEOMETRY[size][thumb]
+      const h = size === 'default' ? 'spacing.4' : 'spacing.3'
+      return {
+        root: { height: size === 'default' ? 'selector.control' : 'selector.compact', width: g.w },
+        thumb: { height: h, width: g.thumbW },
+        thumbIcon: { height: size === 'default' ? 'spacing.2+spacing.0_5' : 'spacing.2', width: size === 'default' ? 'spacing.2+spacing.0_5' : 'spacing.2' },
+      }
+    }),
+    // Travel = the room the thumb has. Focused: the 2px edge takes room in the layout, so the thumb
+    // sits 2px further in on each side and travels 4 less.
+    part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS, State: SWITCH_STATES }, (size, thumb, state) => {
+      const g = SWITCH_GEOMETRY[size][thumb]
+      return state === 'Focused'
+        ? { root: { paddingX: 'spacing.0_5+stroke.focus', paddingY: 'spacing.0_5+stroke.focus', travel: g.focusTravel } }
+        : { root: { travel: g.travel } }
+    }),
+    part({ Checked: SWITCH_CHECKED, State: SWITCH_STATES }, switchPaint),
+  ],
+}
+
+// ── SwitchGroup ────────────────────────────────────────────────────────────
+// The Figma `SwitchGroup` set (design-plans/switch-group-contract.md, 405:2153, 24 variants: Size xs ·
+// sm · default × State Default · Disabled · Invalid · Loading × Placement left · right): a Switch
+// (Checked sample) beside a 2px-gapped text column (label, description, footer), 16 apart
+// (Spacing/gap-group), the switch at the top of the row. A 360 sample row. Label Type/label · body-md ·
+// body-lg, description caption · body-sm · body-md, footer helper · helper · body-sm. Disabled turns
+// every text Content/disabled; Invalid reddens the footer; Loading swaps the switch for a Spinner
+// (14 · 16 · 20).
+export const SWITCH_GROUP_SIZES = ['xs', 'sm', 'default'] as const
+export const SWITCH_GROUP_STATES = ['Default', 'Disabled', 'Invalid', 'Loading'] as const
+export const SWITCH_GROUP_PLACEMENTS = ['left', 'right'] as const
+const SWITCH_GROUP_TYPE: Record<string, { label: string; description: string; footer: string; spinner: string }> = {
+  xs: { label: 'type.label', description: 'type.caption', footer: 'type.helper', spinner: 'spacing.3+spacing.0_5' },
+  sm: { label: 'type.body-md', description: 'type.body-sm', footer: 'type.helper', spinner: 'spacing.4' },
+  default: { label: 'type.body-lg', description: 'type.body-md', footer: 'type.body-sm', spinner: 'spacing.5' },
+}
+export const SWITCH_GROUP: ComponentRecipe = {
+  key: 'SwitchGroup',
+  slots: ['root', 'control', 'content', 'label', 'description', 'footer', 'spinner'],
+  defaults: { Size: 'default', State: 'Default', Placement: 'left' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.24+spacing.2', gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.0_5' },
     })),
-    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, switchPaint),
+    part({ Size: SWITCH_GROUP_SIZES }, (size) => ({
+      label: { font: SWITCH_GROUP_TYPE[size].label },
+      description: { font: SWITCH_GROUP_TYPE[size].description },
+      footer: { font: SWITCH_GROUP_TYPE[size].footer },
+      spinner: { width: SWITCH_GROUP_TYPE[size].spinner, height: SWITCH_GROUP_TYPE[size].spinner },
+    })),
+    part({ State: SWITCH_GROUP_STATES }, (state) => {
+      const off = state === 'Disabled'
+      return {
+        label: { text: c(off ? 'content.disabled' : 'content.primary') },
+        description: { text: c(off ? 'content.disabled' : 'content.secondary') },
+        footer: { text: c(off ? 'content.disabled' : state === 'Invalid' ? 'status.critical.content' : 'content.subtle') },
+      }
+    }),
   ],
 }
 

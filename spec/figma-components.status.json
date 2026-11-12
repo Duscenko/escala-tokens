@@ -34,13 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Switch": {
-      "status": "rebuild"
-    },
-    "SwitchGroup": {
-      "status": "part",
-      "of": "Switch"
-    },
     "SegmentedControl": {
       "status": "rebuild"
     },

@@ -4766,20 +4766,47 @@ var init_componentCatalogue = __esm({
         key: "Switch",
         label: "Switch",
         category: "Form Controls",
-        description: "shadcn/ui Switch: an instant on/off setting in two sizes. Label it with a horizontal Field.",
-        usage: "Use for a setting that applies at once. For a choice submitted with a form, use Checkbox.",
+        description: "Binary on/off control for a setting that applies immediately. The track alone: name it with SwitchGroup, a Label or a Field.",
+        usage: "Use for a setting that applies at once. For a choice submitted with a form, use Checkbox. Thumb long makes a wider, pill-shaped thumb; the I / O marks and a thumb glyph help where colour alone is not enough.",
+        // The Figma file's axes, value for value (design-plans/switch-contract.md).
         axes: [
-          { name: "Checked", values: ["True", "False"] },
-          { name: "Size", values: ["default", "sm"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] },
+          { name: "Checked", values: ["true", "false"] },
+          { name: "Thumb", values: ["short", "long"] }
         ],
         figmaSets: ["Switch"],
         props: [
-          { name: "size", type: '"default" | "sm"', description: "shadcn's sizes." },
-          { name: "checked / defaultChecked / onCheckedChange", type: "boolean", description: "Value (Radix)." },
-          { name: "disabled", type: "boolean", description: "Prevents interaction." }
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Track 16 \xB7 16 \xB7 20 high (Size/selector-sm \xB7 md)." },
+          { name: "checked / defaultChecked / onCheckedChange", type: "boolean", description: "Figma Checked true \xB7 false (Radix)." },
+          { name: "thumb", type: '"short" | "long"', description: "Round thumb, or a wider pill one." },
+          { name: "ioVisible", type: "boolean", description: "Figma IoVisible: the I / O marks." },
+          { name: "thumbIconVisible", type: "boolean", description: "Figma ThumbIconVisible: a check / close glyph on the thumb." },
+          { name: "disabled", type: "boolean", description: "Prevents interaction." },
+          { name: "forceState", type: '"Default" | "Hover" | "Focused" | "Disabled"', description: "Pin a state without a pointer (docs)." }
         ],
-        accessibility: 'Radix switch (role="switch", Space toggles). Associate a FieldLabel with htmlFor.'
+        accessibility: 'Radix switch (role="switch", aria-checked, Space toggles). Give it a visible label (SwitchGroup) or an accessible name.'
+      },
+      {
+        key: "SwitchGroup",
+        label: "Switch Group",
+        category: "Form Controls",
+        description: "Switch with a label, an optional description and a footer; Placement sets the side the switch sits on, Invalid shows critical helper text and Loading replaces the switch with a spinner.",
+        usage: "Use for one labelled setting. The whole row is a label, so clicking the text toggles the switch.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "State", values: ["Default", "Disabled", "Invalid", "Loading"] },
+          { name: "Placement", values: ["left", "right"] }
+        ],
+        figmaSets: ["SwitchGroup"],
+        props: [
+          { name: "label / description / footer", type: "ReactNode", description: "Figma Label, Description and Footer (the last two are hidden when absent)." },
+          { name: "size", type: '"xs" | "sm" | "default"', description: "Switch and text sizes." },
+          { name: "placement", type: '"left" | "right"', description: "Which side the switch sits on." },
+          { name: "invalid / loading / disabled", type: "boolean", description: "Figma State Invalid (critical footer), Loading (spinner) and Disabled." },
+          { name: "checked / defaultChecked / onCheckedChange", type: "boolean", description: "The switch value (Radix)." }
+        ],
+        accessibility: "The row is a <label htmlFor> around the Radix switch; description and footer are linked with aria-describedby."
       },
       {
         key: "Slider",
@@ -9259,15 +9286,18 @@ function checkPaint(checked, state2, variant) {
   return { root, indicator: { text: c(v.ink) } };
 }
 function switchPaint(checked, state2) {
-  const on = checked === "True";
+  const on = checked === "true";
   const disabled = state2 === "Disabled";
   const hover = state2 === "Hover";
-  const focus = state2 === "Focused" ? c("border.focus") : NONE;
-  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
-  const track2 = disabled ? "action.disabled.default" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "surface.muted-hover" : "surface.muted";
+  const focused = state2 === "Focused";
+  const track2 = disabled ? on ? "action.disabled.default" : "surface.muted" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "surface.muted-hover" : "surface.muted";
   return {
-    root: { fill: c(track2), focus, ring },
-    thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
+    root: { fill: c(track2), focus: focused ? c("border.focus") : NONE, ring: focused ? c("border.ring.default") : NONE },
+    thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") },
+    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
+    io: { text: c(on ? disabled ? "surface.input" : "content.on-action" : disabled ? "content.disabled" : "content.subtle") },
+    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
+    thumbIcon: { text: c(disabled ? "content.disabled" : on ? "action.primary.default" : "content.subtle") }
   };
 }
 function fileUploadDropzonePaint(state2) {
@@ -9297,7 +9327,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9895,25 +9925,81 @@ var init_forms = __esm({
         }))
       ]
     };
+    SWITCH_SIZES = ["xs", "sm", "default"];
+    SWITCH_STATES = ["Default", "Hover", "Focused", "Disabled"];
+    SWITCH_CHECKED = ["true", "false"];
+    SWITCH_THUMBS = ["short", "long"];
     SWITCH_GEOMETRY = {
-      // Track = knob + 2px inset each side; the knob travels width − knob − inset.
-      default: { knob: "selector.control", trackH: "selector.control+spacing.1", trackW: "selector.control+spacing.5", travel: "spacing.4" },
-      sm: { knob: "selector.compact", trackH: "selector.compact+spacing.1", trackW: "selector.compact+spacing.4", travel: "spacing.3" }
+      xs: {
+        short: { w: "spacing.6+spacing.1", thumbW: "spacing.3", travel: "spacing.3", focusTravel: "spacing.2" },
+        long: { w: "spacing.8+spacing.1", thumbW: "spacing.4", travel: "spacing.4", focusTravel: "spacing.3" }
+      },
+      sm: {
+        short: { w: "spacing.6+spacing.1", thumbW: "spacing.3", travel: "spacing.3", focusTravel: "spacing.2" },
+        long: { w: "spacing.8+spacing.1", thumbW: "spacing.4", travel: "spacing.4", focusTravel: "spacing.3" }
+      },
+      default: {
+        short: { w: "spacing.8+spacing.1", thumbW: "spacing.4", travel: "spacing.4", focusTravel: "spacing.3" },
+        long: { w: "spacing.8+spacing.3", thumbW: "spacing.5", travel: "spacing.5", focusTravel: "spacing.4" }
+      }
     };
     SWITCH = {
       key: "Switch",
-      slots: ["root", "thumb"],
-      defaults: { Checked: "True", Size: "default", State: "Default" },
+      slots: ["root", "thumb", "io", "thumbIcon"],
+      defaults: { Size: "default", State: "Default", Checked: "false", Thumb: "short" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.pill", hit: "size.hit" },
-          thumb: { radius: "radius.pill", shadow: "shadow.xs" }
+          root: { radius: "radius.pill", hit: "size.hit", paddingX: "spacing.0_5", paddingY: "spacing.0_5" },
+          thumb: { radius: "radius.pill" }
         })),
-        part({ Size: ["default", "sm"] }, (size) => ({
-          root: { height: SWITCH_GEOMETRY[size].trackH, width: SWITCH_GEOMETRY[size].trackW, travel: SWITCH_GEOMETRY[size].travel },
-          thumb: { height: SWITCH_GEOMETRY[size].knob, width: SWITCH_GEOMETRY[size].knob }
+        part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS }, (size, thumb) => {
+          const g = SWITCH_GEOMETRY[size][thumb];
+          const h = size === "default" ? "spacing.4" : "spacing.3";
+          return {
+            root: { height: size === "default" ? "selector.control" : "selector.compact", width: g.w },
+            thumb: { height: h, width: g.thumbW },
+            thumbIcon: { height: size === "default" ? "spacing.2+spacing.0_5" : "spacing.2", width: size === "default" ? "spacing.2+spacing.0_5" : "spacing.2" }
+          };
+        }),
+        // Travel = the room the thumb has. Focused: the 2px edge takes room in the layout, so the thumb
+        // sits 2px further in on each side and travels 4 less.
+        part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS, State: SWITCH_STATES }, (size, thumb, state2) => {
+          const g = SWITCH_GEOMETRY[size][thumb];
+          return state2 === "Focused" ? { root: { paddingX: "spacing.0_5+stroke.focus", paddingY: "spacing.0_5+stroke.focus", travel: g.focusTravel } } : { root: { travel: g.travel } };
+        }),
+        part({ Checked: SWITCH_CHECKED, State: SWITCH_STATES }, switchPaint)
+      ]
+    };
+    SWITCH_GROUP_SIZES = ["xs", "sm", "default"];
+    SWITCH_GROUP_STATES = ["Default", "Disabled", "Invalid", "Loading"];
+    SWITCH_GROUP_TYPE = {
+      xs: { label: "type.label", description: "type.caption", footer: "type.helper", spinner: "spacing.3+spacing.0_5" },
+      sm: { label: "type.body-md", description: "type.body-sm", footer: "type.helper", spinner: "spacing.4" },
+      default: { label: "type.body-lg", description: "type.body-md", footer: "type.body-sm", spinner: "spacing.5" }
+    };
+    SWITCH_GROUP = {
+      key: "SwitchGroup",
+      slots: ["root", "control", "content", "label", "description", "footer", "spinner"],
+      defaults: { Size: "default", State: "Default", Placement: "left" },
+      parts: [
+        part({}, () => ({
+          root: { width: "spacing.32+spacing.32+spacing.24+spacing.2", gap: "spacing.gap-group" },
+          content: { gap: "spacing.0_5" }
         })),
-        part({ Checked: ["True", "False"], State: ["Default", "Hover", "Focused", "Disabled"] }, switchPaint)
+        part({ Size: SWITCH_GROUP_SIZES }, (size) => ({
+          label: { font: SWITCH_GROUP_TYPE[size].label },
+          description: { font: SWITCH_GROUP_TYPE[size].description },
+          footer: { font: SWITCH_GROUP_TYPE[size].footer },
+          spinner: { width: SWITCH_GROUP_TYPE[size].spinner, height: SWITCH_GROUP_TYPE[size].spinner }
+        })),
+        part({ State: SWITCH_GROUP_STATES }, (state2) => {
+          const off = state2 === "Disabled";
+          return {
+            label: { text: c(off ? "content.disabled" : "content.primary") },
+            description: { text: c(off ? "content.disabled" : "content.secondary") },
+            footer: { text: c(off ? "content.disabled" : state2 === "Invalid" ? "status.critical.content" : "content.subtle") }
+          };
+        })
       ]
     };
     SLIDER = {
@@ -11390,6 +11476,7 @@ var init_componentRecipes = __esm({
       CheckboxGroup: CHECKBOX_GROUP,
       RadioGroup: RADIO_GROUP,
       Switch: SWITCH,
+      SwitchGroup: SWITCH_GROUP,
       Slider: SLIDER,
       FileUpload: FILE_UPLOAD,
       FileUploadDropzone: FILE_UPLOAD_DROPZONE,
@@ -14263,7 +14350,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 128,
+          version: 129,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15827,6 +15914,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("CheckboxItem");
                 if (at < 0 || sel.includes("CheckboxGroup")) return;
                 sel.splice(at + 1, 0, "CheckboxGroup");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 129) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Switch");
+                if (at < 0 || sel.includes("SwitchGroup")) return;
+                sel.splice(at + 1, 0, "SwitchGroup");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

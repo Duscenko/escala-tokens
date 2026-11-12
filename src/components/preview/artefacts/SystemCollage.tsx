@@ -1043,7 +1043,7 @@ export function SystemCollage({
     // A lone switch read as a widget, not a screen.
     notifications: (
         <ScaledModule key="notifications" t={tile(13)} appearance={appearanceAt(13)}>
-          <TokenInspector component="Switch" variant={{ Checked: 'True' }}>
+          <TokenInspector component="Switch" variant={{ Checked: 'true' }}>
             <SkeletonSettingsList
               t={tile(13)}
               control="switch"
