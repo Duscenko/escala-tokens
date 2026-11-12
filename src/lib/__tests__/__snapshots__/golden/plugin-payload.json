@@ -14539,12 +14539,13 @@
       "key": "Calendar",
       "slots": [
         "root",
-        "caption",
-        "weekday",
-        "day"
+        "column",
+        "body"
       ],
       "defaults": {
-        "Mode": "single"
+        "Size": "default",
+        "Mode": "single",
+        "Header": "single"
       },
       "parts": [
         {
@@ -14553,65 +14554,36 @@
             "": {
               "root": {
                 "fill": "color.surface.layer-1",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
+                "stroke": "color.border.default",
+                "strokeWidth": "stroke.divider",
+                "radius": "radius.container"
+              },
+              "body": {
+                "gap": "spacing.2"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "body": {
+                "paddingX": "spacing.4",
+                "paddingY": "spacing.4"
+              }
+            },
+            "sm": {
+              "body": {
                 "paddingX": "spacing.3",
-                "paddingY": "spacing.3",
-                "text": "color.content.primary"
-              },
-              "caption": {
-                "text": "color.content.primary",
-                "font": "type.label"
-              },
-              "weekday": {
-                "text": "color.content.secondary",
-                "font": "type.caption"
-              },
-              "day": {
-                "text": "color.content.primary",
-                "font": "type.body-sm",
-                "radius": "radius.action",
-                "height": "size.compact",
-                "width": "size.compact"
-              },
-              "day:hover": {
-                "fill": "color.action.ghost.hover"
-              },
-              "day[data-today=\"true\"]": {
-                "fill": "color.surface.layer-2"
-              },
-              "day[data-outside=\"true\"]": {
-                "text": "color.content.subtle"
-              },
-              "day[data-range-middle=\"true\"]": {
-                "fill": "color.surface.layer-2",
-                "text": "color.content.primary"
-              },
-              "day[data-selected-single=\"true\"]": {
-                "fill": "color.action.primary.default",
-                "text": "color.content.on-action"
-              },
-              "day[data-range-start=\"true\"]": {
-                "fill": "color.action.primary.default",
-                "text": "color.content.on-action"
-              },
-              "day[data-range-end=\"true\"]": {
-                "fill": "color.action.primary.default",
-                "text": "color.content.on-action"
+                "paddingY": "spacing.3"
               }
             }
           }
         }
-      ],
-      "motion": {
-        "transitions": {
-          "day": {
-            "background-color": "use-hover",
-            "color": "use-hover"
-          }
-        }
-      }
+      ]
     },
     "AlertDialog": {
       "key": "AlertDialog",

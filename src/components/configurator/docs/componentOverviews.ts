@@ -210,7 +210,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Error', 'Disabled'], {}, 220),
   ],
   NativeSelect: [each('State', ['Default', 'Focused', 'Disabled'], {}, 200)],
-  Calendar: [each('Mode', ['single', 'range'])],
+  Calendar: [
+    ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Header: 'single' }),
+    ...stack('Header', ['multiple', 'plain'], { Size: 'default', Mode: 'single' }),
+    ...stack('Size', ['sm'], { Mode: 'single', Header: 'single' }),
+  ],
   Combobox: [each('State', ['Default', 'Focused']), each('State', ['Open'])],
   // A row of labelled controls repeats the label; two short columns read as
   // the on/off pair, then the same pair disabled.

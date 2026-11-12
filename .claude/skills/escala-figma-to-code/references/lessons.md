@@ -209,3 +209,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Padding / gap bound to bare primitives named "16", "12", "8" instead of roles | No role to copy | Use the spacing step of the same px (`spacing.4`, `spacing.3`, `spacing.2`) and say so in the contract |
 | Fixed size with no variable that is clearly a sum (312 = 7 cells + 2 × 16; 72 = button + 2 × 16) | A magic number | A summed ref that keeps following the cell and button sizes |
 | Children at y 17 in Figma, 16.5 in CSS | Looks like a 0.5px miss | Figma rounds the half pixel a 1px top stroke inside the frame leaves; 16.5 is the same layout |
+
+# Lessons from the Calendar (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A parent set's INSTANCE overrides a nested set (the DatePickerPopover's Calendar pads its body with Spacing/inset-surface 20, the Calendar set pads 16) | Popover 314 wide in code, 322 in Figma | Read the instance in the parent (`findOne` the inner frame, its padding binding) — not only the nested set; copy the override in the parent component (`BODY_INSET` in `date-picker.tsx`) |
+| A utility that must beat a recipe rule on a child | The override did nothing: the recipe's `[data-escala][data-size] [data-part]` rule is more specific | Tailwind v4 important suffix (`…:p-[var(--spacing-inset-surface)]!`), with a comment saying why |
+| Replacing a recipe the frozen plugin builds (Calendar) | Parity: `{ Calendar: ['column'] }`; motion test: `Calendar.day` slot gone | New slots go in `WEB_ONLY_SLOTS`; drop the old slot's entry in `recipes/motion.ts`; goldens move ONLY in the recipe's own block (check the hunk headers are contiguous) |
+| A composite with sample data in its parts (CalendarMonth's November sample) | A real month showed the sample's selection, today and disabled days | The part shows its sample only when it gets no `month`; the composite passes month, today and the selection explicitly |
+| A board tile built on the old component (react-day-picker footer, `!w-full` stretch) | The new calendar is seven cells wide and cannot spread | The tile uses Size sm (250, the old width) centred; the event goes in as `children` under the month |

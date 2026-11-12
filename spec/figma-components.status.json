@@ -19,9 +19,6 @@
       "status": "part",
       "of": "Combobox"
     },
-    "Calendar": {
-      "status": "rebuild"
-    },
     "FileUpload": {
       "status": "rebuild"
     },

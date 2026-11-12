@@ -194,7 +194,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-12: PasswordStrength rebuilt from the file (417:679): a card with the rules and the level label.
       PasswordStrength: ['rules', 'level'],
       // 2026-11-12: InputTag rebuilt from the file (390:744): the outside layout's field and chips row, the spinner; its chips are InputTagChip.
-      InputTag: ['field', 'tags', 'text', 'spinner'] }
+      InputTag: ['field', 'tags', 'text', 'spinner'],
+      // 2026-11-12: Calendar rebuilt from the file (424:4667): the column that holds the body and the footer.
+      Calendar: ['column'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))

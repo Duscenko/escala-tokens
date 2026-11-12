@@ -1136,31 +1136,26 @@ export const NATIVE_SELECT: ComponentRecipe = {
 }
 
 // ── Calendar ───────────────────────────────────────────────────────────────
-// shadcn's Calendar (react-day-picker): caption, weekdays and ghost day cells;
-// a single or range end day takes the primary action, the range middle and
-// today the muted surface, outside days the subtle ink. Nav arrows are ghost
-// icon Buttons (their own recipe).
+// The Figma `Calendar` set (design-plans/calendar-contract.md, 424:4667, 18 variants: Size default ·
+// sm × Mode single · multiple · range × Header single · multiple · plain, + PresetsVisible and
+// FooterVisible). A Surface/layer-1 card, a Stroke/divider edge in Border/default on every side,
+// Radius/container, clipping its content. Beside the optional presets rail, a column: the body
+// (padding 16 · 12, bound to Dimension primitives, 8 between header and month) and the optional
+// footer. Header, month, presets and footer paint themselves (their own recipes).
+export const CALENDAR_SIZES = ['default', 'sm'] as const
 
 export const CALENDAR: ComponentRecipe = {
   key: 'Calendar',
-  slots: ['root', 'caption', 'weekday', 'day'],
-  defaults: { Mode: 'single' },
+  slots: ['root', 'column', 'body'],
+  defaults: { Size: 'default', Mode: 'single', Header: 'single' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container',
-        paddingX: 'spacing.3', paddingY: 'spacing.3', text: c('content.primary'),
-      },
-      caption: { text: c('content.primary'), font: 'type.label' },
-      weekday: { text: c('content.secondary'), font: 'type.caption' },
-      day: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action', height: 'size.compact', width: 'size.compact' },
-      'day:hover': { fill: c('action.ghost.hover') },
-      'day[data-today="true"]': { fill: c('surface.layer-2') },
-      'day[data-outside="true"]': { text: c('content.subtle') },
-      'day[data-range-middle="true"]': { fill: c('surface.layer-2'), text: c('content.primary') },
-      'day[data-selected-single="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      'day[data-range-start="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      'day[data-range-end="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
+      root: { fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.container' },
+      body: { gap: 'spacing.2' },
     })),
+    part({ Size: CALENDAR_SIZES }, (size) => {
+      const inset = size === 'sm' ? 'spacing.3' : 'spacing.4'
+      return { body: { paddingX: inset, paddingY: inset } }
+    }),
   ],
 }

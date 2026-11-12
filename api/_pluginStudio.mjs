@@ -4638,19 +4638,27 @@ var init_componentCatalogue = __esm({
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
-        description: "shadcn/ui Calendar: a month grid to pick a date or a range (react-day-picker).",
-        usage: "Use to pick a date when the day of the week matters, or a range. For a known date (a birthday) a text field with a format is faster.",
+        description: "The date panel: a month with its header, an optional presets rail beside it and an optional Today \xB7 Clear \xB7 Apply footer.",
+        usage: "Use to pick a date when the day of the week matters, several dates, or a range. DatePickerPopover wraps it under a DatePickerTrigger. For a known date (a birthday) a text field with a format is faster.",
+        // The Figma file\'s axes, value for value (design-plans/calendar-contract.md).
         axes: [
-          { name: "Mode", values: ["single", "range"] }
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Mode", values: ["single", "multiple", "range"] },
+          { name: "Header", values: ["single", "multiple", "plain"] }
         ],
         figmaSets: ["Calendar"],
         props: [
-          { name: "mode", type: '"single" | "range" | "multiple"', description: "What a click selects." },
-          { name: "selected / onSelect", type: "Date | DateRange", description: "Controlled selection." },
-          { name: "showOutsideDays", type: "boolean", description: "Days of the next and previous month (default true)." },
-          { name: "\u2026DayPicker props", type: "DayPickerProps", description: "Locale, disabled days, number of months." }
+          { name: "size", type: '"default" | "sm"', description: "Figma Size: 40 or 32 px day cells." },
+          { name: "mode", type: '"single" | "multiple" | "range"', description: "Figma Mode: what a click selects." },
+          { name: "header", type: '"single" | "multiple" | "plain"', description: "Figma Header: the month and year as one chip, two chips or plain text." },
+          { name: "presets", type: "boolean", description: "Figma PresetsVisible: the presets rail at the start (default false)." },
+          { name: "footer", type: "boolean", description: "Figma FooterVisible: Today, Clear and Apply under the month (default false)." },
+          { name: "value / defaultValue / onValueChange", type: "Date | Date[] | { from, to }", description: "The selection, by mode." },
+          { name: "month / defaultMonth / onMonthChange", type: "Date", description: "The month shown." },
+          { name: "today / disabledDays / unavailableDays", type: "Date \xB7 Date[]", description: "Today and the days that cannot be picked." },
+          { name: "onApply", type: "(value) => void", description: "The footer's Apply." }
         ],
-        accessibility: "react-day-picker: a grid with arrow-key navigation; each day is a button announced with its full date."
+        accessibility: "Each day is a button named with its full date and pressed when selected; one day takes Tab and the arrow keys move between days. The arrows are named Previous month and Next month."
       },
       {
         key: "Combobox",
@@ -9160,7 +9168,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9910,32 +9918,20 @@ var init_forms = __esm({
         })
       ]
     };
+    CALENDAR_SIZES = ["default", "sm"];
     CALENDAR = {
       key: "Calendar",
-      slots: ["root", "caption", "weekday", "day"],
-      defaults: { Mode: "single" },
+      slots: ["root", "column", "body"],
+      defaults: { Size: "default", Mode: "single", Header: "single" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
-            paddingX: "spacing.3",
-            paddingY: "spacing.3",
-            text: c("content.primary")
-          },
-          caption: { text: c("content.primary"), font: "type.label" },
-          weekday: { text: c("content.secondary"), font: "type.caption" },
-          day: { text: c("content.primary"), font: "type.body-sm", radius: "radius.action", height: "size.compact", width: "size.compact" },
-          "day:hover": { fill: c("action.ghost.hover") },
-          'day[data-today="true"]': { fill: c("surface.layer-2") },
-          'day[data-outside="true"]': { text: c("content.subtle") },
-          'day[data-range-middle="true"]': { fill: c("surface.layer-2"), text: c("content.primary") },
-          'day[data-selected-single="true"]': { fill: c("action.primary.default"), text: c("content.on-action") },
-          'day[data-range-start="true"]': { fill: c("action.primary.default"), text: c("content.on-action") },
-          'day[data-range-end="true"]': { fill: c("action.primary.default"), text: c("content.on-action") }
-        }))
+          root: { fill: c("surface.layer-1"), stroke: c("border.default"), strokeWidth: "stroke.divider", radius: "radius.container" },
+          body: { gap: "spacing.2" }
+        })),
+        part({ Size: CALENDAR_SIZES }, (size) => {
+          const inset = size === "sm" ? "spacing.3" : "spacing.4";
+          return { body: { paddingX: inset, paddingY: inset } };
+        })
       ]
     };
   }
@@ -11084,7 +11080,6 @@ var init_motion2 = __esm({
       Toggle: { transitions: { root: FILL } },
       ToggleGroup: { transitions: { item: FILL } },
       Item: { transitions: { root: FILL } },
-      Calendar: { transitions: { day: FILL } },
       Pagination: { transitions: { cell: FILL } },
       TabMenu: { transitions: { item: FILL } },
       SegmentedControl: { transitions: { item: FILL } },

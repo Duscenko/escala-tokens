@@ -109,6 +109,14 @@ export interface DatePickerPopoverProps extends React.ComponentProps<typeof Popo
 }
 
 /** Use inside `<Popover>`: `<PopoverTrigger asChild><DatePickerTrigger /></PopoverTrigger><DatePickerPopover>…Calendar…</DatePickerPopover>`. */
+// The file's popover overrides its Calendar's body padding: Spacing/inset-surface at default (the
+// Calendar set itself pads 16); sm keeps the Calendar's 12.
+const BODY_INSET: Record<string, string> = {
+  // `!`: the Calendar recipe's own body padding is a more specific rule.
+  default: '[&_[data-part="Calendar.body"]]:p-[var(--spacing-inset-surface)]!',
+  sm: '',
+}
+
 function DatePickerPopover({
   size = 'default', mode = 'single', inline, sideOffset = 8, align = 'start', className, children, ...props
 }: DatePickerPopoverProps) {
@@ -120,7 +128,7 @@ function DatePickerPopover({
         data-escala="DatePickerPopover"
         data-size={size}
         data-mode={mode}
-        className={cn('relative flex w-fit flex-col', className)}
+        className={cn('relative flex w-fit flex-col', BODY_INSET[size], className)}
         {...(props as React.ComponentProps<'div'>)}
       >
         {children}
@@ -136,7 +144,7 @@ function DatePickerPopover({
         data-mode={mode}
         sideOffset={sideOffset}
         align={align}
-        className={cn('z-50 flex w-fit flex-col outline-none', className)}
+        className={cn('z-50 flex w-fit flex-col outline-none', BODY_INSET[size], className)}
         {...props}
       >
         {children}

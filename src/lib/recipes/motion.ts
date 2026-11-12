@@ -39,7 +39,6 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Toggle: { transitions: { root: FILL } },
   ToggleGroup: { transitions: { item: FILL } },
   Item: { transitions: { root: FILL } },
-  Calendar: { transitions: { day: FILL } },
   Pagination: { transitions: { cell: FILL } },
   TabMenu: { transitions: { item: FILL } },
   SegmentedControl: { transitions: { item: FILL } },

@@ -1,16 +1,15 @@
 /**
- * Specimens whose components pull a large library (react-day-picker,
- * Recharts, Embla). `specimens.tsx` loads this module lazily, so none of it
+ * Specimens whose components pull a large library (Recharts, Embla) or are
+ * large themselves (the Calendar and its parts). `specimens.tsx` loads this module lazily, so none of it
  * lands in the bundle until one of these pages is opened.
  */
 import { useState } from 'react'
-import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, Line, LineChart, Area, AreaChart, CartesianGrid, XAxis } from 'recharts'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { chartPalette } from '../../../../lib/chartPalette'
-import { Calendar as SkCalendar, CalendarDay as SkCalendarDay, CalendarHeader as SkCalendarHeader, CalendarMonth as SkCalendarMonth, CalendarPresets as SkCalendarPresets, CalendarFooter as SkCalendarFooter, type CalendarFooterSize, type CalendarPresetsSize, type CalendarPresetsVariant, type CalendarMonthMode, type CalendarMonthSize, type CalendarMonthVariant, type CalendarHeaderHeader, type CalendarHeaderSize, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
+import { Calendar as SkCalendar, type CalendarHeaderKind, type CalendarMode, type CalendarSize, type CalendarValue, CalendarDay as SkCalendarDay, CalendarHeader as SkCalendarHeader, CalendarMonth as SkCalendarMonth, CalendarPresets as SkCalendarPresets, CalendarFooter as SkCalendarFooter, type CalendarFooterSize, type CalendarPresetsSize, type CalendarPresetsVariant, type CalendarMonthMode, type CalendarMonthSize, type CalendarMonthVariant, type CalendarHeaderHeader, type CalendarHeaderSize, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
 import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
 import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, ChartLegendContent as SkChartLegendContent, ChartTooltip as SkChartTooltip, ChartTooltipContent as SkChartTooltipContent, type ChartConfig } from '../../../escala-ui/chart'
 import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
@@ -19,25 +18,30 @@ import { RecipeScope } from './scope'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { CALENDAR_PLAY } from '../../../preview/artefacts/boardScripts'
 
-const MONTH = new Date(2026, 9, 1)
+const BOARD_MONTH = new Date(2026, 9, 1)
 
-/** `children` lands under the month grid (react-day-picker's `footer`), e.g.
- *  the selected day's event on the Board. Without it, the bare calendar. */
+/** The Figma Calendar: Size × Mode × Header over the file's November 2026 sample. On the Board
+ *  (`children` = the selected day's event) it shows October and its selection hops through the
+ *  board script's days. */
 export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
-  const [picked, setDay] = useState<Date | undefined>(new Date(2026, 9, 14))
-  // On the playing board the selection hops through the script's days.
+  const size = (v.Size ?? 'default') as CalendarSize
+  const mode = (v.Mode ?? 'single') as CalendarMode
+  const header = (v.Header ?? 'single') as CalendarHeaderKind
+  const [picked, setPicked] = useState<CalendarValue>(new Date(2026, 9, 14))
   const step = useAutoplayStep(CALENDAR_PLAY.days.length, CALENDAR_PLAY.ms)
-  const day = step == null ? picked : new Date(2026, 9, CALENDAR_PLAY.days[step].day)
-  const [range, setRange] = useState<DateRange | undefined>({ from: new Date(2026, 9, 12), to: new Date(2026, 9, 17) })
-  const icons = {
-    prevIcon: <PreviewIcon concept="chevron-left" size={iconOf(13)} />,
-    nextIcon: <PreviewIcon concept="chevron-right" size={iconOf(13)} />,
+  if (children == null) {
+    return (
+      <RecipeScope t={t}>
+        <SkCalendar key={mode} size={size} mode={mode} header={header} />
+      </RecipeScope>
+    )
   }
+  const value = step == null ? picked : new Date(2026, 9, CALENDAR_PLAY.days[step].day)
   return (
     <RecipeScope t={t}>
-      {v.Mode === 'range'
-        ? <SkCalendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} footer={children} {...icons} />
-        : <SkCalendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} footer={children} {...icons} />}
+      <SkCalendar size={size} mode="single" header={header} defaultMonth={BOARD_MONTH} today={new Date(2026, 9, 12)} value={value} onValueChange={setPicked}>
+        {children}
+      </SkCalendar>
     </RecipeScope>
   )
 }
@@ -92,22 +96,15 @@ export function SkeletonCalendarFooterSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-/** The Figma DatePickerPopover: the shell (Radius/overlay + Shadow/lg) around a Calendar. Size and Mode
- *  are the file's. The Calendar is still the shadcn one until the file's Calendar is rebuilt. */
+/** The Figma DatePickerPopover: the shell (Radius/overlay + Shadow/lg) around the file's Calendar
+ *  (presets beside a range, the footer under both). Size and Mode are the file's. */
 export function SkeletonDatePickerPopoverSpecimen({ t, v }: SpecimenProps) {
-  const [day, setDay] = useState<Date | undefined>(new Date(2026, 10, 12))
-  const [range, setRange] = useState<DateRange | undefined>({ from: new Date(2026, 10, 10), to: new Date(2026, 10, 18) })
   const mode = (v.Mode ?? 'single') as DatePickerPopoverMode
-  const icons = {
-    prevIcon: <PreviewIcon concept="chevron-left" size={iconOf(13)} />,
-    nextIcon: <PreviewIcon concept="chevron-right" size={iconOf(13)} />,
-  }
+  const size = (v.Size ?? 'default') as DatePickerPopoverSize
   return (
     <RecipeScope t={t}>
-      <SkDatePickerPopover inline size={(v.Size ?? 'default') as DatePickerPopoverSize} mode={mode}>
-        {mode === 'range'
-          ? <SkCalendar mode="range" defaultMonth={new Date(2026, 10, 1)} selected={range} onSelect={setRange} {...icons} />
-          : <SkCalendar mode="single" defaultMonth={new Date(2026, 10, 1)} selected={day} onSelect={setDay} {...icons} />}
+      <SkDatePickerPopover inline size={size} mode={mode}>
+        <SkCalendar key={mode} size={size} mode={mode} presets={mode === 'range'} footer />
       </SkDatePickerPopover>
     </RecipeScope>
   )

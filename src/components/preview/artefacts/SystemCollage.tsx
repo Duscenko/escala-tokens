@@ -1101,12 +1101,12 @@ export function SystemCollage({
         </ScaledModule>
     ),
     // The Calendar's root is a card, so it IS the tile (no Card around it);
-    // the selected day's event sits under the month (react-day-picker footer).
+    // the selected day's event sits under the month (the Calendar's children).
     calendar: (
         <ScaledModule key="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
-          {/* The root is `w-fit`; as the tile it spans the column, days spread. */}
-          <div className="w-full [&_[data-slot=calendar]]:!w-full">
-          <Calendar t={tile(9)} v={{ Mode: 'single' }}>
+          {/* The file's Calendar is seven cells wide: the sm one is the tile. */}
+          <div className="flex w-full justify-center">
+          <Calendar t={tile(9)} v={{ Size: 'sm', Mode: 'single' }}>
             <CalendarEvent t={tile(9)} muted={muted(9)} />
           </Calendar>
           </div>

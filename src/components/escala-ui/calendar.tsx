@@ -1,8 +1,10 @@
-// Skeleton: shadcn/ui `bases/radix/ui/calendar.tsx` (MIT, see LICENSE-shadcn.md):
-// react-day-picker with shadcn's layout — caption, ghost icon-sm nav Buttons,
-// weekdays and day buttons that mark selected / range / today / outside with
-// `data-*` (shadcn's own attributes). `mode` single | range is DayPicker's.
-// Icons come in as props. Appearance: recipe (Calendar, Button).
+// Calendar is the FIGMA `Calendar` set (design-plans/calendar-contract.md, 424:4667): the date panel,
+// a Surface/layer-1 card (Border/default edge, Radius/container) holding an optional CalendarPresets
+// rail (`presets`, Figma PresetsVisible) beside a column: the body (CalendarHeader over CalendarMonth)
+// and an optional CalendarFooter (`footer`, Figma FooterVisible). `size` default · sm, `mode` single ·
+// multiple · range and `header` single · multiple · plain are the file's axes. Month navigation,
+// selection and arrow-key movement between days are code. With no month and no value it shows the
+// file's own November 2026 sample. It replaced the shadcn / react-day-picker calendar (2026-11-12).
 //
 // CalendarDay is the FIGMA `CalendarDay` set (design-plans/calendar-day-contract.md, 421:309):
 // one day cell, Size default 40 · sm 32 × State × Variant default · secondary. Hover and Focused
@@ -35,74 +37,8 @@
 // (Button outline secondary) + "Apply" (Button solid) at the end, all at the footer's `size`
 // (default · sm, the only axis). Labels and handlers are code. Paint: the CalendarFooter recipe + Button.
 import * as React from 'react'
-import { DayPicker, getDefaultClassNames, type DayButtonProps } from 'react-day-picker'
 import { cn } from '../../lib/utils'
 import { Button } from './button'
-
-type CalendarProps = React.ComponentProps<typeof DayPicker> & {
-  /** Previous / next month glyphs. */
-  prevIcon?: React.ReactNode
-  nextIcon?: React.ReactNode
-}
-
-function Calendar({ className, classNames, showOutsideDays = true, components, prevIcon = '‹', nextIcon = '›', ...props }: CalendarProps) {
-  const d = getDefaultClassNames()
-  return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn('w-fit', className)}
-      classNames={{
-        root: cn('w-fit', d.root),
-        months: cn('relative flex flex-col gap-4 md:flex-row', d.months),
-        month: cn('flex w-full flex-col gap-4', d.month),
-        nav: cn('absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1', d.nav),
-        month_caption: cn('flex w-full items-center justify-center', d.month_caption),
-        month_grid: cn('w-full border-collapse', d.month_grid),
-        weekdays: cn('flex', d.weekdays),
-        week: cn('mt-2 flex w-full', d.week),
-        day: cn('relative flex-1 p-0 text-center select-none', d.day),
-        hidden: cn('invisible', d.hidden),
-        ...classNames,
-      }}
-      components={{
-        Root: ({ className: c, rootRef, ...rest }) => <div data-slot="calendar" data-escala="Calendar" ref={rootRef} className={c} {...rest} />,
-        CaptionLabel: (p) => <span data-part="Calendar.caption" {...p} />,
-        Weekday: ({ className: c, ...rest }) => <th data-part="Calendar.weekday" className={cn('flex-1 font-normal', c)} {...rest} />,
-        PreviousMonthButton: ({ className: c, ...rest }) => (
-          <Button variant="ghost" size="icon-sm" className={cn('z-10', c)} {...rest}>{prevIcon}</Button>
-        ),
-        NextMonthButton: ({ className: c, ...rest }) => (
-          <Button variant="ghost" size="icon-sm" className={cn('z-10', c)} {...rest}>{nextIcon}</Button>
-        ),
-        DayButton: CalendarDayButton,
-        ...components,
-      }}
-      {...props}
-    />
-  )
-}
-
-function CalendarDayButton({ className, day, modifiers, ...props }: DayButtonProps) {
-  const ref = React.useRef<HTMLButtonElement>(null)
-  React.useEffect(() => { if (modifiers.focused) ref.current?.focus() }, [modifiers.focused])
-  const single = modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle
-  return (
-    <button
-      ref={ref}
-      type="button"
-      data-part="Calendar.day"
-      data-day={day.date.toLocaleDateString()}
-      data-selected-single={single ? 'true' : undefined}
-      data-range-start={modifiers.range_start ? 'true' : undefined}
-      data-range-end={modifiers.range_end ? 'true' : undefined}
-      data-range-middle={modifiers.range_middle ? 'true' : undefined}
-      data-today={modifiers.today && !modifiers.selected ? 'true' : undefined}
-      data-outside={modifiers.outside ? 'true' : undefined}
-      className={cn('inline-flex aspect-square w-full cursor-pointer items-center justify-center border-0 bg-transparent outline-none', className)}
-      {...props}
-    />
-  )
-}
 
 export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
 export type CalendarDaySize = (typeof CALENDAR_DAY_SIZES)[number]
@@ -253,8 +189,8 @@ export interface CalendarMonthProps extends Omit<React.ComponentProps<'div'>, 'c
   today?: Date
   /** Selected days (single · multiple). Default: the file's sample for the mode. */
   selected?: Date[]
-  /** The range (range mode). Default: the 10th to the 18th. */
-  range?: { from: Date; to?: Date }
+  /** The range (range mode); null = none. Default without a month: the 10th to the 18th. */
+  range?: CalendarDateRange | null
   /** Days drawn Disabled. Default: the 24th and 25th. */
   disabledDays?: Date[]
   /** Days drawn Unavailable. Default: the 27th. */
@@ -266,6 +202,8 @@ export interface CalendarMonthProps extends Omit<React.ComponentProps<'div'>, 'c
 function CalendarMonth({
   size = 'default', mode = 'single', variant = 'default', month, today, selected, range, disabledDays, unavailableDays, onDayClick, className, ...props
 }: CalendarMonthProps) {
+  // Without a month it shows the file's sample (November 2026); with one, only the data it is given.
+  const sample = !month
   const base = month ?? day0(2026, 10, 1)
   const y = base.getFullYear()
   const m = base.getMonth()
@@ -273,14 +211,14 @@ function CalendarMonth({
   const lead = first.getDay()
   const count = new Date(y, m + 1, 0).getDate()
   const weeks = Math.ceil((lead + count) / 7)
-  const todayKey = dayKey(today ?? day0(y, m, 7))
-  const picked = new Set((selected ?? (mode === 'multiple' ? [4, 12, 19, 30] : [12]).map((d) => day0(y, m, d))).map(dayKey))
-  const span = mode === 'range' ? (range ?? { from: day0(y, m, 10), to: day0(y, m, 18) }) : undefined
+  const todayKey = dayKey(today ?? (sample ? day0(y, m, 7) : new Date()))
+  const picked = new Set((selected ?? (sample ? (mode === 'multiple' ? [4, 12, 19, 30] : [12]).map((d) => day0(y, m, d)) : [])).map(dayKey))
+  const span = mode === 'range' ? (range === undefined ? (sample ? { from: day0(y, m, 10), to: day0(y, m, 18) } : null) : range) : null
   const from = span ? dayKey(span.from) : ''
   const to = span?.to ? dayKey(span.to) : ''
   const between = (d: Date) => !!span?.to && d.getTime() > span.from.getTime() && d.getTime() < span.to.getTime()
-  const off = new Set((disabledDays ?? [day0(y, m, 24), day0(y, m, 25)]).map(dayKey))
-  const gone = new Set((unavailableDays ?? [day0(y, m, 27)]).map(dayKey))
+  const off = new Set((disabledDays ?? (sample ? [day0(y, m, 24), day0(y, m, 25)] : [])).map(dayKey))
+  const gone = new Set((unavailableDays ?? (sample ? [day0(y, m, 27)] : [])).map(dayKey))
 
   const stateOf = (d: Date): CalendarDayState => {
     const k = dayKey(d)
@@ -288,6 +226,8 @@ function CalendarMonth({
     if (gone.has(k)) return 'Unavailable'
     if (off.has(k)) return 'Disabled'
     if (mode === 'range') {
+      // A range with only its first day (or one day) reads as a selected day.
+      if (k === from && (!to || to === from)) return 'Selected'
       if (k === from) return 'RangeStart'
       if (to && k === to) return 'RangeEnd'
       if (between(d)) return 'RangeMiddle'
@@ -295,6 +235,25 @@ function CalendarMonth({
     if (k === todayKey) return 'Today'
     return 'Default'
   }
+
+  const days = Array.from({ length: weeks * 7 }, (_, i) => day0(y, m, 1 - lead + i))
+  const states = days.map(stateOf)
+  // One day takes Tab (the selection, else today, else the first enabled day of the month);
+  // the arrows move between the others.
+  const inMonth = (i: number) => days[i].getMonth() === m && states[i] !== 'Disabled' && states[i] !== 'Unavailable'
+  const tabbable = [states.findIndex((st) => st === 'Selected' || st === 'RangeStart'), states.findIndex((st) => st === 'Today'), days.findIndex((_, i) => inMonth(i))].find((i) => i >= 0 && inMonth(i)) ?? -1
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key]
+    if (!step) return
+    const buttons = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('[data-escala="CalendarDay"]')]
+    let i = buttons.indexOf(e.target as HTMLButtonElement)
+    if (i < 0) return
+    e.preventDefault()
+    for (i += step; i >= 0 && i < buttons.length; i += step) {
+      if (!buttons[i].disabled) { buttons[i].focus(); break }
+    }
+  }
+  const fullDate = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 
   return (
     <div
@@ -304,6 +263,7 @@ function CalendarMonth({
       data-mode={mode}
       data-variant={variant}
       className={cn('flex flex-col', className)}
+      onKeyDown={onKeyDown}
       {...props}
     >
       <div data-part="CalendarMonth.weekdays" className="flex">
@@ -313,14 +273,19 @@ function CalendarMonth({
       </div>
       {Array.from({ length: weeks }, (_, w) => (
         <div key={w} data-part="CalendarMonth.week" className="flex">
-          {Array.from({ length: 7 }, (_, i) => {
-            const d = day0(y, m, 1 - lead + w * 7 + i)
+          {Array.from({ length: 7 }, (_, c) => {
+            const i = w * 7 + c
+            const d = days[i]
+            const st = states[i]
             return (
               <CalendarDay
-                key={i}
+                key={c}
                 size={size}
                 variant={variant}
-                state={stateOf(d)}
+                state={st}
+                tabIndex={i === tabbable ? 0 : -1}
+                aria-label={fullDate(d)}
+                aria-pressed={st === 'Selected' || st === 'RangeStart' || st === 'RangeEnd' || st === 'RangeMiddle'}
                 onClick={onDayClick ? () => onDayClick(d) : undefined}
               >
                 {d.getDate()}
@@ -419,4 +384,158 @@ function CalendarFooter({
   )
 }
 
-export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter }
+export interface CalendarDateRange { from: Date; to?: Date }
+export const CALENDAR_SIZES = ['default', 'sm'] as const
+export type CalendarSize = (typeof CALENDAR_SIZES)[number]
+export const CALENDAR_MODES = ['single', 'multiple', 'range'] as const
+export type CalendarMode = (typeof CALENDAR_MODES)[number]
+export const CALENDAR_HEADERS = ['single', 'multiple', 'plain'] as const
+export type CalendarHeaderKind = (typeof CALENDAR_HEADERS)[number]
+/** single → a Date, multiple → Date[], range → { from, to }. */
+export type CalendarValue = Date | Date[] | CalendarDateRange | undefined
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const sameDay = (a?: Date, b?: Date) => !!a && !!b && dayKey(a) === dayKey(b)
+const addDays = (d: Date, n: number) => day0(d.getFullYear(), d.getMonth(), d.getDate() + n)
+
+/** The range each of the file's presets stands for, counted from `today`. */
+export function calendarPresetRange(preset: string, today: Date): CalendarDateRange | undefined {
+  const t = day0(today.getFullYear(), today.getMonth(), today.getDate())
+  switch (preset) {
+    case 'Today': return { from: t, to: t }
+    case 'Yesterday': { const y = addDays(t, -1); return { from: y, to: y } }
+    case 'Last 7 days': return { from: addDays(t, -6), to: t }
+    case 'Last 30 days': return { from: addDays(t, -29), to: t }
+    case 'This month': return { from: day0(t.getFullYear(), t.getMonth(), 1), to: day0(t.getFullYear(), t.getMonth() + 1, 0) }
+    default: return undefined
+  }
+}
+
+export interface CalendarProps extends Omit<React.ComponentProps<'div'>, 'defaultValue' | 'onChange'> {
+  size?: CalendarSize
+  /** What a click selects: one day, several days, or a range. */
+  mode?: CalendarMode
+  /** Figma Header: the month/year title as one chip, two chips, or plain text. */
+  header?: CalendarHeaderKind
+  /** Figma PresetsVisible: the presets rail at the start (range mode). */
+  presets?: boolean
+  /** Figma FooterVisible: Today · Clear · Apply under the month. */
+  footer?: boolean
+  /** Passed to the day cells and the presets rail (CalendarDay Variant). */
+  variant?: CalendarDayVariant
+  /** The month shown (controlled) and its first value (uncontrolled). */
+  month?: Date
+  defaultMonth?: Date
+  onMonthChange?: (month: Date) => void
+  /** The selection (controlled) and its first value (uncontrolled). */
+  value?: CalendarValue
+  defaultValue?: CalendarValue
+  onValueChange?: (value: CalendarValue) => void
+  /** Today. Default: the real date (the file's 7 November 2026 in the sample). */
+  today?: Date
+  disabledDays?: Date[]
+  unavailableDays?: Date[]
+  /** Footer Apply, with the selection. */
+  onApply?: (value: CalendarValue) => void
+  /** Rendered under the month inside the body (an event under the selected day, say). */
+  children?: React.ReactNode
+}
+
+function Calendar({
+  size = 'default', mode = 'single', header = 'single', presets = false, footer = false, variant = 'default',
+  month, defaultMonth, onMonthChange, value, defaultValue, onValueChange, today, disabledDays, unavailableDays, onApply,
+  children, className, ...props
+}: CalendarProps) {
+  // No month and no value anywhere: the file's own November 2026 sample.
+  const sample = month === undefined && defaultMonth === undefined && value === undefined && defaultValue === undefined
+  const sampleValue: CalendarValue = mode === 'multiple'
+    ? [4, 12, 19, 30].map((d) => day0(2026, 10, d))
+    : mode === 'range' ? { from: day0(2026, 10, 10), to: day0(2026, 10, 18) } : day0(2026, 10, 12)
+  const [ownMonth, setOwnMonth] = React.useState<Date>(() => defaultMonth ?? (sample ? day0(2026, 10, 1) : new Date()))
+  const [ownValue, setOwnValue] = React.useState<CalendarValue>(() => (sample ? sampleValue : defaultValue))
+  const shown = month ?? ownMonth
+  const current = value !== undefined ? value : ownValue
+  const now = today ?? (sample ? day0(2026, 10, 7) : new Date())
+  const off = disabledDays ?? (sample ? [day0(2026, 10, 24), day0(2026, 10, 25)] : undefined)
+  const gone = unavailableDays ?? (sample ? [day0(2026, 10, 27)] : undefined)
+
+  const setMonth = (d: Date) => { const first = day0(d.getFullYear(), d.getMonth(), 1); if (month === undefined) setOwnMonth(first); onMonthChange?.(first) }
+  const setValue = (v: CalendarValue) => { if (value === undefined) setOwnValue(v); onValueChange?.(v) }
+
+  const pick = (d: Date) => {
+    if (d.getMonth() !== shown.getMonth()) setMonth(d)
+    if (mode === 'single') return setValue(d)
+    if (mode === 'multiple') {
+      const list = Array.isArray(current) ? current : []
+      return setValue(list.some((x) => sameDay(x, d)) ? list.filter((x) => !sameDay(x, d)) : [...list, d])
+    }
+    const r = current && !Array.isArray(current) && !(current instanceof Date) ? current : undefined
+    if (!r || r.to) return setValue({ from: d })
+    return setValue(d < r.from ? { from: d, to: r.from } : { from: r.from, to: d })
+  }
+
+  const single = current instanceof Date ? current : undefined
+  const list = Array.isArray(current) ? current : undefined
+  const range = current && !Array.isArray(current) && !(current instanceof Date) ? current : undefined
+  const label = `${MONTH_NAMES[shown.getMonth()]} ${shown.getFullYear()}`
+  const presetSelected = sample && mode === 'range'
+    ? 'Last 7 days'
+    : CALENDAR_PRESET_LABELS.find((p) => { const pr = calendarPresetRange(p, now); return !!pr && !!range && sameDay(pr.from, range.from) && sameDay(pr.to, range.to ?? range.from) }) ?? null
+
+  return (
+    <div
+      data-slot="calendar"
+      data-escala="Calendar"
+      data-size={size}
+      data-mode={mode}
+      data-header={header}
+      className={cn('inline-flex overflow-hidden', className)}
+      {...props}
+    >
+      {presets && (
+        <CalendarPresets
+          size={size}
+          variant={variant}
+          selected={presetSelected}
+          onSelect={(p) => { const r = calendarPresetRange(p, now); if (!r) return; setMonth(r.from); setValue(mode === 'range' ? r : mode === 'multiple' ? [r.from] : r.from) }}
+        />
+      )}
+      <div data-part="Calendar.column" className="flex flex-col">
+        <div data-part="Calendar.body" className="flex flex-col">
+          <CalendarHeader
+            size={size}
+            header={header}
+            label={label}
+            month={MONTH_NAMES[shown.getMonth()]}
+            year={String(shown.getFullYear())}
+            onPreviousMonth={() => setMonth(day0(shown.getFullYear(), shown.getMonth() - 1, 1))}
+            onNextMonth={() => setMonth(day0(shown.getFullYear(), shown.getMonth() + 1, 1))}
+          />
+          <CalendarMonth
+            size={size}
+            mode={mode}
+            variant={variant}
+            month={shown}
+            today={now}
+            selected={mode === 'single' ? (single ? [single] : []) : mode === 'multiple' ? (list ?? []) : undefined}
+            range={mode === 'range' ? (range ?? null) : undefined}
+            disabledDays={off}
+            unavailableDays={gone}
+            onDayClick={pick}
+          />
+          {children}
+        </div>
+        {footer && (
+          <CalendarFooter
+            size={size}
+            onToday={() => { setMonth(now); if (mode !== 'range') setValue(mode === 'multiple' ? [now] : now) }}
+            onClear={() => setValue(mode === 'multiple' ? [] : undefined)}
+            onApply={() => onApply?.(current)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+export { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter }

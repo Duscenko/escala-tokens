@@ -346,7 +346,7 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
-// Calendar, Chart and Carousel pull react-day-picker, Recharts and Embla: their
+// Calendar (and its parts), Chart and Carousel are large or pull Recharts and Embla: their
 // module loads only when one of them renders.
 let heavyModule: Promise<typeof import('./skeleton/heavy')> | null = null
 /** Starts (once) the load those three wait on. The Board calls it on mount so
