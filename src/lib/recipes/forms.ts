@@ -416,6 +416,36 @@ export const CALENDAR_PRESETS: ComponentRecipe = {
   ],
 }
 
+// ── CalendarFooter ─────────────────────────────────────────────────────────
+// The Figma `CalendarFooter` set (design-plans/calendar-footer-contract.md, 423:963, 2 variants:
+// Size default · sm). The bottom bar of the Calendar body: as wide as seven day cells plus its padding
+// (312 · 248), 72 · 56 tall, a Stroke/divider edge in Border/default on its TOP side only, padding
+// 16 · 12 on the sides, "Today" (a link Button) at the start and the actions (an outline secondary
+// "Clear" and a solid "Apply", 8 apart) at the end. The buttons are the system's Button at the
+// footer's size; this recipe only lays out the bar.
+export const CALENDAR_FOOTER_SIZES = ['default', 'sm'] as const
+const CALENDAR_FOOTER_GEOMETRY: Record<string, { width: string; height: string; inset: string }> = {
+  // 7 day cells + both side paddings · the button height + both block paddings (no token is 312 / 72).
+  default: { width: `${SEVEN('size.control')}+spacing.4+spacing.4`, height: 'size.control+spacing.4+spacing.4', inset: 'spacing.4' },
+  sm: { width: `${SEVEN('size.compact')}+spacing.3+spacing.3`, height: 'size.compact+spacing.3+spacing.3', inset: 'spacing.3' },
+}
+
+export const CALENDAR_FOOTER: ComponentRecipe = {
+  key: 'CalendarFooter',
+  slots: ['root', 'actions'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { stroke: c('border.default'), strokeTopWidth: 'stroke.divider' },
+      actions: { gap: 'spacing.2' },
+    })),
+    part({ Size: CALENDAR_FOOTER_SIZES }, (size) => {
+      const g = CALENDAR_FOOTER_GEOMETRY[size]
+      return { root: { width: g.width, height: g.height, paddingX: g.inset } }
+    }),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

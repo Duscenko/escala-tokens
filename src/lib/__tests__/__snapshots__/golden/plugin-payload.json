@@ -10285,6 +10285,53 @@
         }
       ]
     },
+    "CalendarFooter": {
+      "key": "CalendarFooter",
+      "slots": [
+        "root",
+        "actions"
+      ],
+      "defaults": {
+        "Size": "default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "stroke": "color.border.default",
+                "strokeTopWidth": "stroke.divider"
+              },
+              "actions": {
+                "gap": "spacing.2"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.control+size.control+size.control+size.control+size.control+size.control+size.control+spacing.4+spacing.4",
+                "height": "size.control+spacing.4+spacing.4",
+                "paddingX": "spacing.4"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.compact+size.compact+size.compact+size.compact+size.compact+size.compact+size.compact+spacing.3+spacing.3",
+                "height": "size.compact+spacing.3+spacing.3",
+                "paddingX": "spacing.3"
+              }
+            }
+          }
+        }
+      ]
+    },
     "DatePickerPopover": {
       "key": "DatePickerPopover",
       "slots": [

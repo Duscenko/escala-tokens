@@ -29,6 +29,11 @@
 // right edge. `size` default · sm and `variant` default · secondary (CalendarDay's) are the file's axes;
 // `presets`, `selected` and `onSelect` are code. The selected preset takes the range tint.
 // Paint: the CalendarPresets recipe.
+//
+// CalendarFooter is the FIGMA `CalendarFooter` set (design-plans/calendar-footer-contract.md, 423:963):
+// the bar under the Calendar body, a top divider, "Today" (Button link) at the start and "Clear"
+// (Button outline secondary) + "Apply" (Button solid) at the end, all at the footer's `size`
+// (default · sm, the only axis). Labels and handlers are code. Paint: the CalendarFooter recipe + Button.
 import * as React from 'react'
 import { DayPicker, getDefaultClassNames, type DayButtonProps } from 'react-day-picker'
 import { cn } from '../../lib/utils'
@@ -378,4 +383,40 @@ function CalendarPresets({
   )
 }
 
-export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets }
+export const CALENDAR_FOOTER_SIZES = ['default', 'sm'] as const
+export type CalendarFooterSize = (typeof CALENDAR_FOOTER_SIZES)[number]
+
+export interface CalendarFooterProps extends Omit<React.ComponentProps<'div'>, 'children'> {
+  size?: CalendarFooterSize
+  /** The link at the start. Default "Today". */
+  todayLabel?: React.ReactNode
+  /** The outline action. Default "Clear". */
+  clearLabel?: React.ReactNode
+  /** The solid action. Default "Apply". */
+  applyLabel?: React.ReactNode
+  onToday?: () => void
+  onClear?: () => void
+  onApply?: () => void
+}
+
+function CalendarFooter({
+  size = 'default', todayLabel = 'Today', clearLabel = 'Clear', applyLabel = 'Apply', onToday, onClear, onApply, className, ...props
+}: CalendarFooterProps) {
+  return (
+    <div
+      data-slot="calendar-footer"
+      data-escala="CalendarFooter"
+      data-size={size}
+      className={cn('flex shrink-0 items-center justify-between', className)}
+      {...props}
+    >
+      <Button variant="default" appearance="link" size={size} onClick={onToday}>{todayLabel}</Button>
+      <div data-part="CalendarFooter.actions" className="flex items-center">
+        <Button variant="secondary" appearance="outline" size={size} onClick={onClear}>{clearLabel}</Button>
+        <Button variant="default" appearance="solid" size={size} onClick={onApply}>{applyLabel}</Button>
+      </div>
+    </div>
+  )
+}
+
+export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter }

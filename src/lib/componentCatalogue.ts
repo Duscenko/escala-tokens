@@ -721,6 +721,24 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Each preset is a button whose visible text is its name; the selected one carries aria-pressed.',
   },
   {
+    key: 'CalendarFooter',
+    label: 'Calendar Footer',
+    category: 'Form Controls',
+    description: 'The bar under a Calendar: a Today link at the start, Clear and Apply at the end, under a divider.',
+    usage: 'Use at the bottom of a Calendar that confirms its choice (a date picker popover). Apply commits the selection, Clear empties it, Today jumps to the current date.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-footer-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+    ],
+    figmaSets: ['CalendarFooter'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: a 312×72 or 248×56 bar, its Buttons at that size.' },
+      { name: 'todayLabel / clearLabel / applyLabel', type: 'ReactNode', description: 'The three labels, default "Today", "Clear" and "Apply".' },
+      { name: 'onToday / onClear / onApply', type: '() => void', description: 'The three actions.' },
+    ],
+    accessibility: 'Three Buttons whose visible text is their name.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

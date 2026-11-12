@@ -200,3 +200,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A fixed width with no variable (160 · 140) | No size token | Summed spacing steps (`spacing.32+spacing.8`, `spacing.32+spacing.3`) |
 | A label written in capitals in the text ("PRESETS", textCase ORIGINAL) | Tempting to add `uppercase` | Render the string as written; the default `label` prop is the uppercase text |
 | A review that says gaps are wrong everywhere | Ten components "missing gap" | Measure each against the file first (Storybook positions vs Figma `absoluteBoundingBox` relative to the variant): all ten matched to the pixel; ask for screenshots instead of changing code |
+
+# Lessons from the CalendarFooter (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set made of another set's instances (the footer = three Button instances) | Tempting to give the recipe button paint | Render the system's `<Button variant appearance size>` with the instance's props; the recipe only lays out the bar (size, divider, padding, gap) |
+| Padding / gap bound to bare primitives named "16", "12", "8" instead of roles | No role to copy | Use the spacing step of the same px (`spacing.4`, `spacing.3`, `spacing.2`) and say so in the contract |
+| Fixed size with no variable that is clearly a sum (312 = 7 cells + 2 × 16; 72 = button + 2 × 16) | A magic number | A summed ref that keeps following the cell and button sizes |
+| Children at y 17 in Figma, 16.5 in CSS | Looks like a 0.5px miss | Figma rounds the half pixel a 1px top stroke inside the frame leaves; 16.5 is the same layout |

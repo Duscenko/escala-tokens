@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 123,
+      version: 124,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4055,6 +4055,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('Calendar')
             if (at < 0 || sel.includes('CalendarPresets')) return
             sel.splice(at, 0, 'CalendarPresets')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 124) {
+          // v123→v124: CalendarFooter is a component of the Figma file; a selection with Calendar gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Calendar')
+            if (at < 0 || sel.includes('CalendarFooter')) return
+            sel.splice(at, 0, 'CalendarFooter')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

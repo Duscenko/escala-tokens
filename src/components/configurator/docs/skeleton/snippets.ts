@@ -140,6 +140,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : '', v.State && v.State !== 'Default' && v.State !== 'Hover' && v.State !== 'Focused' ? ` state="${v.State}"` : ''].join('')
     return `import { CalendarDay } from "@/components/ui/calendar"\n\n<CalendarDay${attrs}>15</CalendarDay>`
   },
+  CalendarFooter: (v) => {
+    const attrs = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    return `import { CalendarFooter } from "@/components/ui/calendar"\n\n<CalendarFooter${attrs} onToday={goToToday} onClear={clear} onApply={apply} />`
+  },
   CalendarPresets: (v) => {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : ''].join('')
     return `import { CalendarPresets } from "@/components/ui/calendar"\n\n<CalendarPresets${attrs} selected={preset} onSelect={applyPreset} />`

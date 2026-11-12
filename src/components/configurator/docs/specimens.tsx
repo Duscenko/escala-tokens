@@ -355,7 +355,7 @@ export function preloadHeavySpecimens() {
   heavyModule ??= import('./skeleton/heavy')
   return heavyModule
 }
-function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonCalendarHeaderSpecimen' | 'SkeletonCalendarMonthSpecimen' | 'SkeletonCalendarPresetsSpecimen' | 'SkeletonDatePickerPopoverSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
+function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonCalendarHeaderSpecimen' | 'SkeletonCalendarMonthSpecimen' | 'SkeletonCalendarPresetsSpecimen' | 'SkeletonCalendarFooterSpecimen' | 'SkeletonDatePickerPopoverSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
   const L = lazy(() => preloadHeavySpecimens().then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
   return function LazySpecimen(p: SpecimenProps) {
     return <Suspense fallback={null}><L {...p} /></Suspense>
@@ -396,6 +396,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   CalendarHeader: lazySpecimen('SkeletonCalendarHeaderSpecimen'),
   CalendarMonth: lazySpecimen('SkeletonCalendarMonthSpecimen'),
   CalendarPresets: lazySpecimen('SkeletonCalendarPresetsSpecimen'),
+  CalendarFooter: lazySpecimen('SkeletonCalendarFooterSpecimen'),
   Combobox: SkeletonComboboxSpecimen,
   Checkbox: SkeletonCheckboxSpecimen,
   RadioGroup: SkeletonRadioGroupSpecimen,
