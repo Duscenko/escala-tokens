@@ -346,8 +346,15 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // Calendar, Chart and Carousel pull react-day-picker, Recharts and Embla: their
 // module loads only when one of them renders.
+let heavyModule: Promise<typeof import('./skeleton/heavy')> | null = null
+/** Starts (once) the load those three wait on. The Board calls it on mount so
+ *  its Chart tile has its library before the tile is revealed. */
+export function preloadHeavySpecimens() {
+  heavyModule ??= import('./skeleton/heavy')
+  return heavyModule
+}
 function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
-  const L = lazy(() => import('./skeleton/heavy').then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
+  const L = lazy(() => preloadHeavySpecimens().then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
   return function LazySpecimen(p: SpecimenProps) {
     return <Suspense fallback={null}><L {...p} /></Suspense>
   }

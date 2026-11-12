@@ -4,6 +4,7 @@ import { ICON_SLOTS, INPUT_HTML_TYPE, INPUT_META, PhosphorWeightProvider, Previe
 import { iconForControl, iconOf, selectorRoleOf, sizeRoleOf } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
+import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../preview/artefacts/boardScripts'
 import { Input as SkInput } from '../../../escala-ui/input'
 import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
@@ -37,13 +38,18 @@ export function SkeletonInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProp
   const { t: translate } = useI18n()
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const [value, setValue] = useState(() => inputSeed(v.Type, v.State))
-  const state = v.State === 'Filled' ? undefined : (v.State as 'Default' | undefined)
+  // On the playing board a filled e-mail types itself, focused, a key at a time.
+  const typing = useAutoplayStep(EMAIL_PLAY.steps, EMAIL_PLAY.ms)
+  const playsEmail = typing != null && v.Type === 'E-Mail' && v.State === 'Filled'
+  const shown = playsEmail ? inputSeed(v.Type, v.State).slice(0, Math.max(0, typing - EMAIL_PLAY.typeFrom + 1)) : value
+  const state = playsEmail && typing < EMAIL_PLAY.focusUntil ? 'Focused'
+    : v.State === 'Filled' ? undefined : (v.State as 'Default' | undefined)
   const input = (
     <SkInput
       forceState={state}
       type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
       placeholder={meta.placeholder}
-      value={value}
+      value={shown}
       onChange={(e) => setValue(e.target.value)}
       autoComplete="off"
       spellCheck={false}
@@ -124,17 +130,26 @@ export function SkeletonInputGroupSpecimen({ t, w }: SpecimenProps) {
 }
 
 export function SkeletonInputStepperSpecimen({ t }: SpecimenProps) {
+  // The board steps the count up and back (the Editors tile's total follows).
+  const step = useAutoplayStep(EDITORS_PLAY.values.length, EDITORS_PLAY.ms)
   return (
     <RecipeScope t={t}>
-      <SkInputStepper defaultValue={12} min={0} max={99} />
+      <SkInputStepper defaultValue={12} value={step == null ? undefined : EDITORS_PLAY.values[step]} min={0} max={99} />
     </RecipeScope>
   )
 }
 
 export function SkeletonInputTagSpecimen({ t, w }: SpecimenProps) {
+  // The board adds a third tag, holds it, takes it away.
+  const step = useAutoplayStep(TAGS_PLAY.values.length, TAGS_PLAY.ms)
   return (
     <RecipeScope t={t}>
-      <SkInputTag defaultValue={['tokens', 'figma']} width={w ?? 300} removeIcon={<PreviewIcon concept="close" size={iconOf(9)} />} />
+      <SkInputTag
+        defaultValue={['tokens', 'figma']}
+        value={step == null ? undefined : [...TAGS_PLAY.values[step]]}
+        width={w ?? 300}
+        removeIcon={<PreviewIcon concept="close" size={iconOf(9)} />}
+      />
     </RecipeScope>
   )
 }
@@ -365,6 +380,9 @@ export function SkeletonPasswordStrengthSpecimen({ t, v }: SpecimenProps) {
 }
 
 export function SkeletonFileUploadSpecimen({ t, w }: SpecimenProps) {
+  // The board uploads: fills in steps, rests at 100 %, starts over.
+  const step = useAutoplayStep(UPLOAD_PLAY.values.length, UPLOAD_PLAY.ms)
+  const progress = step == null ? 80 : UPLOAD_PLAY.values[step]
   return (
     <RecipeScope t={t}>
       <SkFileUpload style={{ width: w ?? 300 }}>
@@ -372,7 +390,7 @@ export function SkeletonFileUploadSpecimen({ t, w }: SpecimenProps) {
           <PreviewIcon concept="upload" size={iconOf(14)} />
           Upload file
         </SkButton>
-        <SkFileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />
+        <SkFileUploadFile name="brand-guide.pdf" kind="PDF" progress={progress} />
       </SkFileUpload>
     </RecipeScope>
   )
