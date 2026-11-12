@@ -33,6 +33,7 @@ import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
 import { BoardThemeSwitch } from './BrandThemesPicker'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
+import { BoardMotionPreset } from './BoardMotionPreset'
 import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -252,7 +253,7 @@ function CreateBoard({
   // Inspector mode, as in the Generator: on by default, so pointing at a
   // component names the tokens that paint it while the brand is being made.
   // There is no Token Details here, so the list is read-only (no `onPick`).
-  const [inspecting, setInspecting] = useState(true)
+  const [inspecting, setInspecting] = useState(false)
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const panelId = `create-board-${useId().replace(/:/g, '')}`
   const tokensByAppearance = useMemo(() => ({
@@ -294,6 +295,7 @@ function CreateBoard({
       <div className={BOARD_TOOLBAR_DOCK} data-board-toolbar>
         <div className={`rounded-xl ${BOARD_TOOLBAR_LIFT}`}>
           <BoardHistoryControls
+            motionPreset={<BoardMotionPreset themeKey={themeKey} />}
             onRandom={onRandom}
             onRandomTool={() => setInspecting(false)}
             appearance={<BoardThemeSwitch previewTheme={themeKey} onAppearance={() => {}} />}

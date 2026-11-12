@@ -4,6 +4,8 @@ import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
 import { shadowOf } from '../../../../lib/previewTokens'
+import { choreographyVar } from '../../../../lib/motion'
+import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter } from '../../../escala-ui/card'
 import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../../escala-ui/dialog'
@@ -183,6 +185,9 @@ const SONNER_COPY: Record<SonnerType, [string, string]> = {
  * `id`, so a toast lands only here), its list taken out of the viewport corner
  * and laid in the flow at the front toast's height. The toast never expires.
  */
+/** One pass of a toast on the playing board: in, held, out on the last step. */
+const SONNER_PLAY_STEPS = 7
+
 export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
   const id = useId()
   const type = (v.Type ?? 'default') as SonnerType
@@ -223,9 +228,17 @@ export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
     return () => { mo.disconnect(); ro?.disconnect() }
   }, [])
   const icon = (concept: 'success' | 'info' | 'warning' | 'error') => <PreviewIcon concept={concept} size={iconOf(16)} />
+  // While the board plays, the toast leaves and arrives again on the brand's
+  // own `sonner-enter` choreography (Sonner's built-in motion is the library's,
+  // not a token). The box keeps its size, so nothing around it moves.
+  const beat = useAutoplayStep(SONNER_PLAY_STEPS, type === 'success' ? 800 : 950)
+  const play: React.CSSProperties | undefined = beat == null ? undefined
+    : beat === SONNER_PLAY_STEPS - 1
+      ? { opacity: 0, transition: 'opacity var(--motion-use-overlay-out)' }
+      : { animation: `var(${choreographyVar('sonner-enter')})` }
   return (
     <RecipeScope t={t}>
-      <div ref={box} style={{ width: w ?? 356, maxWidth: '100%' }}>
+      <div ref={box} style={{ width: w ?? 356, maxWidth: '100%', ...play }}>
         <SkToaster
           id={id}
           // Sonner collapses a stack and EXPANDS it on hover. A specimen holds

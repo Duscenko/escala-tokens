@@ -42,6 +42,7 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
+import { BoardMotionPreset } from './BoardMotionPreset'
 import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
@@ -61,7 +62,7 @@ import { focusedRoleIds, toneLegend, tonesOfRoles, visibleGroups, type MapFocus 
 import { useColorRoleMap } from './useColorRoleMap'
 import type { RampLegend } from './ColorRolesPanel'
 import { BoardTourCoach, useBoardTourStep } from '../ui/BoardTourCoach'
-import { boardTourStep, tourEvent } from '../../lib/boardTour'
+import { tourEvent } from '../../lib/boardTour'
 
 // The colour map's "Board" view lights only the parts that paint with the
 // colour (ColorSpotlight); everything else recedes behind a scrim.
@@ -584,15 +585,17 @@ export default function ThemePreviewHub({
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
   const [quickEditOpen, setQuickEditOpen] = useState(false)
-  // Inspector mode starts ON so pointing at a component names the roles that
-  // paint it. The header toggle is the exit — click it again and hover goes
-  // back to ordinary interaction. Not persisted and not part of
+  // Inspector mode starts OFF (owner's call, 2026-11-12): a new visitor's first
+  // sight of the board is the board playing itself (`boardAutoplay`), which a
+  // still, inspectable board cannot show. The toolbar toggle turns it on, and
+  // then pointing at a component names the roles that paint it. It used to
+  // start on. Not persisted and not part of
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
   // Open to guests and during the first setup pass too: naming the roles on
   // screen is how a first-time visitor learns what the colour step is setting.
   // Only an unsaved Random draft keeps it off — and the first-run tour, whose
   // first step is the die: its hover tags would talk over the guide.
-  const [inspecting, setInspecting] = useState(() => boardTourStep() !== 'roll')
+  const [inspecting, setInspecting] = useState(false)
   const tourStep = useBoardTourStep()
   // The tour's second step is the Inspector: turning it on (or having it on
   // already when the step arrives) is what closes it.
@@ -1051,7 +1054,7 @@ export default function ThemePreviewHub({
                           on); on its Board the board tools come back. Theme ·
                           Components steps out (the map reads the theme board). */}
                       <BoardHistoryControls
-                        history={!mapOpen || mapView === 'board'}
+                        motionPreset={!stylePreview && (!mapOpen || mapView === 'board') ? <BoardMotionPreset themeKey={previewTheme} /> : undefined}
                         onRandom={canRandom && (!mapOpen || mapView === 'board') ? () => randomHandle.current?.() : undefined}
                         onRandomTool={() => setInspecting(false)}
                         trailing={mapOpen ? (

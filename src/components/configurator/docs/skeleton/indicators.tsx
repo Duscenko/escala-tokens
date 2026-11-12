@@ -5,6 +5,7 @@ import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
 import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
 import { Chip as SkChip } from '../../../escala-ui/chip'
+import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Progress as SkProgress } from '../../../escala-ui/progress'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { Icon as SkIcon } from '../../../escala-ui/icon'
@@ -53,8 +54,12 @@ function ChipPlayground({ t, v }: SpecimenProps) {
   )
 }
 
+/** An upload as the board plays it: fills in steps, rests full, starts over. */
+const PROGRESS_PLAY = [0, 24, 60, 82, 100, 100]
+
 export function SkeletonProgressSpecimen({ t, w }: SpecimenProps) {
-  return <RecipeScope t={t}><SkProgress label="Uploading…" value={60} style={{ width: w ?? 240, maxWidth: '100%' }} /></RecipeScope>
+  const step = useAutoplayStep(PROGRESS_PLAY.length, 1100)
+  return <RecipeScope t={t}><SkProgress label="Uploading…" value={step == null ? 60 : PROGRESS_PLAY[step]} style={{ width: w ?? 240, maxWidth: '100%' }} /></RecipeScope>
 }
 
 export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {

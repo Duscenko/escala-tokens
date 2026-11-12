@@ -8,6 +8,7 @@ import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
 import { SegmentedControl as SkSegmentedControl } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
+import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuSeparator as SkDropdownMenuSeparator } from '../../../escala-ui/dropdown-menu'
 import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
@@ -74,9 +75,10 @@ export function SkeletonPaginationSpecimen({ t }: SpecimenProps) {
 }
 
 export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {
+  const step = useAutoplayStep(3, 2400)
   return (
     <RecipeScope t={t}>
-      <SkStepper steps={['Account', 'Tokens', 'Publish']} current={2} width={w} doneIcon={<PreviewIcon concept="check" size={iconOf(12)} />} />
+      <SkStepper steps={['Account', 'Tokens', 'Publish']} current={step == null ? 2 : step + 1} width={w} doneIcon={<PreviewIcon concept="check" size={iconOf(12)} />} />
     </RecipeScope>
   )
 }
