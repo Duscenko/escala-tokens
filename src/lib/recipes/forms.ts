@@ -240,6 +240,69 @@ export const DATE_PICKER_POPOVER: ComponentRecipe = {
   ],
 }
 
+// ── CalendarDay ────────────────────────────────────────────────────────────
+// The Figma `CalendarDay` set (design-plans/calendar-day-contract.md, 421:309, 44 variants):
+// Size default 40 · sm 32 × State (Default · Hover · Today · Selected · RangeMiddle · RangeStart ·
+// RangeEnd · Outside · Disabled · Unavailable · Focused) × Variant default · secondary. A
+// transparent square (Size/control · Size/compact) holding, from back to front, the range band
+// (Surface/selected, or Surface/muted for secondary; the whole square, or its right / left half for
+// the range ends), the `cell` (Radius/action, the fill, the 1px Today edge or the 2px Focused edge
+// stroked INSIDE with the 2px halo OUTSIDE) and the `day` number; the indicator dash (12×2) sits
+// 4px above the bottom edge. Disabled and Unavailable are drawn identically (Content/disabled).
+export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
+export const CALENDAR_DAY_STATES = ['Default', 'Hover', 'Today', 'Selected', 'RangeMiddle', 'RangeStart', 'RangeEnd', 'Outside', 'Disabled', 'Unavailable', 'Focused'] as const
+export const CALENDAR_DAY_VARIANTS = ['default', 'secondary'] as const
+const CALENDAR_DAY_GEOMETRY: Record<string, { box: string; font: string }> = {
+  default: { box: 'size.control', font: 'type.body-md' },
+  sm: { box: 'size.compact', font: 'type.body-sm' },
+}
+
+function calendarDayPaint(variant: string, state: string): SlotMap {
+  const secondary = variant === 'secondary'
+  const solid = secondary ? c('surface.inverse') : c('action.primary.default')
+  const solidInk = secondary ? c('content.inverse') : c('content.on-action')
+  const out: SlotMap = {
+    band: { fill: c(secondary ? 'surface.muted' : 'surface.selected') },
+    indicator: { fill: c(secondary ? 'border.strong' : 'border.accent') },
+    cell: {},
+    day: { text: c('content.primary') },
+  }
+  switch (state) {
+    case 'Hover': out.cell = { fill: c('action.ghost.hover') }; break
+    case 'Today': out.cell = { stroke: c(secondary ? 'border.strong' : 'border.accent'), strokeWidth: 'stroke.control' }; break
+    case 'Selected': case 'RangeStart': case 'RangeEnd': out.cell = { fill: solid }; out.day = { text: solidInk }; break
+    case 'RangeMiddle': out.day = { text: c(secondary ? 'content.primary' : 'content.accent') }; break
+    case 'Outside': out.day = { text: c('content.secondary') }; break
+    case 'Disabled': case 'Unavailable': out.day = { text: c('content.disabled') }; break
+    case 'Focused':
+      out.cell = secondary
+        ? { stroke: c('border.strong'), strokeWidth: 'stroke.focus', halo: c('border.subtle') }
+        : { stroke: c('border.focus'), strokeWidth: 'stroke.focus', halo: c('border.ring.default') }
+      break
+  }
+  return out
+}
+
+export const CALENDAR_DAY: ComponentRecipe = {
+  key: 'CalendarDay',
+  slots: ['root', 'band', 'cell', 'day', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      cell: { radius: 'radius.action' },
+      // The shape is an instance override in the file: rounded (Radius/action) · pill · square.
+      'cell[data-shape="pill"]': { radius: 'radius.pill' },
+      'cell[data-shape="square"]': { radius: 'radius.none' },
+      indicator: { width: 'spacing.3', height: 'spacing.0_5' },
+    })),
+    part({ Size: CALENDAR_DAY_SIZES }, (size) => {
+      const g = CALENDAR_DAY_GEOMETRY[size]
+      return { root: { width: g.box, height: g.box }, day: { font: g.font } }
+    }),
+    part({ Variant: CALENDAR_DAY_VARIANTS, State: CALENDAR_DAY_STATES }, (variant, state) => calendarDayPaint(variant, state)),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

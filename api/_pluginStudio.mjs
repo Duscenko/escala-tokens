@@ -4526,6 +4526,29 @@ var init_componentCatalogue = __esm({
         accessibility: "Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates."
       },
       {
+        key: "CalendarDay",
+        label: "Calendar Day",
+        category: "Form Controls",
+        description: "One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.",
+        usage: "Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.",
+        // The Figma file\'s axes, value for value (design-plans/calendar-day-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "State", values: ["Default", "Hover", "Today", "Selected", "RangeMiddle", "RangeStart", "RangeEnd", "Outside", "Disabled", "Unavailable", "Focused"] },
+          { name: "Variant", values: ["default", "secondary"] }
+        ],
+        figmaSets: ["CalendarDay"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Figma Size: a 40 or 32 px square." },
+          { name: "variant", type: '"default" | "secondary"', description: "Figma Variant: the brand fill, or the inverse (neutral) fill." },
+          { name: "state / forceState", type: "CalendarDayState", description: "The data states (Today, Selected, Range\u2026, Outside, Disabled, Unavailable). Hover and Focused come from the pointer and keyboard; forceState pins any state for docs." },
+          { name: "indicator", type: "boolean", description: "Figma IndicatorVisible: the 12\xD72 dash under the date." },
+          { name: "children", type: "ReactNode", description: 'Figma Day (default "15").' },
+          { name: "shape", type: '"rounded" | "pill" | "square"', description: "The file's instance override for the cell corner (Radius/action \xB7 Radius/full \xB7 none)." }
+        ],
+        accessibility: "A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough."
+      },
+      {
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
@@ -8908,6 +8931,45 @@ function datePickerTriggerPaint(state2) {
   else out.root = { fill: c("surface.input"), stroke: c("border.control"), halo: NONE };
   return out;
 }
+function calendarDayPaint(variant, state2) {
+  const secondary = variant === "secondary";
+  const solid = secondary ? c("surface.inverse") : c("action.primary.default");
+  const solidInk = secondary ? c("content.inverse") : c("content.on-action");
+  const out = {
+    band: { fill: c(secondary ? "surface.muted" : "surface.selected") },
+    indicator: { fill: c(secondary ? "border.strong" : "border.accent") },
+    cell: {},
+    day: { text: c("content.primary") }
+  };
+  switch (state2) {
+    case "Hover":
+      out.cell = { fill: c("action.ghost.hover") };
+      break;
+    case "Today":
+      out.cell = { stroke: c(secondary ? "border.strong" : "border.accent"), strokeWidth: "stroke.control" };
+      break;
+    case "Selected":
+    case "RangeStart":
+    case "RangeEnd":
+      out.cell = { fill: solid };
+      out.day = { text: solidInk };
+      break;
+    case "RangeMiddle":
+      out.day = { text: c(secondary ? "content.primary" : "content.accent") };
+      break;
+    case "Outside":
+      out.day = { text: c("content.secondary") };
+      break;
+    case "Disabled":
+    case "Unavailable":
+      out.day = { text: c("content.disabled") };
+      break;
+    case "Focused":
+      out.cell = secondary ? { stroke: c("border.strong"), strokeWidth: "stroke.focus", halo: c("border.subtle") } : { stroke: c("border.focus"), strokeWidth: "stroke.focus", halo: c("border.ring.default") };
+      break;
+  }
+  return out;
+}
 function numberInputPaint(state2) {
   if (state2 === "Disabled") return { root: { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE }, value: { text: c("content.disabled") } };
   if (state2 === "Invalid") return { root: { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") } };
@@ -9012,7 +9074,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9155,6 +9217,32 @@ var init_forms = __esm({
       defaults: { Size: "default", Mode: "single" },
       parts: [
         part({}, () => ({ root: { radius: "radius.overlay", lift: "rest" } }))
+      ]
+    };
+    CALENDAR_DAY_SIZES = ["default", "sm"];
+    CALENDAR_DAY_STATES = ["Default", "Hover", "Today", "Selected", "RangeMiddle", "RangeStart", "RangeEnd", "Outside", "Disabled", "Unavailable", "Focused"];
+    CALENDAR_DAY_VARIANTS = ["default", "secondary"];
+    CALENDAR_DAY_GEOMETRY = {
+      default: { box: "size.control", font: "type.body-md" },
+      sm: { box: "size.compact", font: "type.body-sm" }
+    };
+    CALENDAR_DAY = {
+      key: "CalendarDay",
+      slots: ["root", "band", "cell", "day", "indicator"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({}, () => ({
+          cell: { radius: "radius.action" },
+          // The shape is an instance override in the file: rounded (Radius/action) · pill · square.
+          'cell[data-shape="pill"]': { radius: "radius.pill" },
+          'cell[data-shape="square"]': { radius: "radius.none" },
+          indicator: { width: "spacing.3", height: "spacing.0_5" }
+        })),
+        part({ Size: CALENDAR_DAY_SIZES }, (size) => {
+          const g = CALENDAR_DAY_GEOMETRY[size];
+          return { root: { width: g.box, height: g.box }, day: { font: g.font } };
+        }),
+        part({ Variant: CALENDAR_DAY_VARIANTS, State: CALENDAR_DAY_STATES }, (variant, state2) => calendarDayPaint(variant, state2))
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
@@ -10824,6 +10912,7 @@ var init_motion2 = __esm({
       Dropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
+      CalendarDay: { transitions: { cell: states("background-color", "border-color", "box-shadow", "color"), day: states("color") } },
       DatePickerPopover: popover("--radix-popover-content-transform-origin"),
       InputGroup: { transitions: { root: FIELD2 } },
       InputTag: { transitions: { root: FIELD2, field: FIELD2 } },
@@ -10884,6 +10973,7 @@ var init_componentRecipes = __esm({
       Input: INPUT,
       Textarea: TEXTAREA,
       DatePickerTrigger: DATE_PICKER_TRIGGER,
+      CalendarDay: CALENDAR_DAY,
       DatePickerPopover: DATE_PICKER_POPOVER,
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
@@ -13769,7 +13859,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 119,
+          version: 120,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15215,6 +15305,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("DatePickerTrigger");
                 if (at < 0 || sel.includes("DatePickerPopover")) return;
                 sel.splice(at + 1, 0, "DatePickerPopover");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 120) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Calendar");
+                if (at < 0 || sel.includes("CalendarDay")) return;
+                sel.splice(at, 0, "CalendarDay");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

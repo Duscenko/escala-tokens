@@ -630,6 +630,29 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates.',
   },
   {
+    key: 'CalendarDay',
+    label: 'Calendar Day',
+    category: 'Form Controls',
+    description: 'One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.',
+    usage: 'Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-day-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'State', values: ['Default', 'Hover', 'Today', 'Selected', 'RangeMiddle', 'RangeStart', 'RangeEnd', 'Outside', 'Disabled', 'Unavailable', 'Focused'] },
+      { name: 'Variant', values: ['default', 'secondary'] },
+    ],
+    figmaSets: ['CalendarDay'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: a 40 or 32 px square.' },
+      { name: 'variant', type: '"default" | "secondary"', description: 'Figma Variant: the brand fill, or the inverse (neutral) fill.' },
+      { name: 'state / forceState', type: 'CalendarDayState', description: 'The data states (Today, Selected, Range…, Outside, Disabled, Unavailable). Hover and Focused come from the pointer and keyboard; forceState pins any state for docs.' },
+      { name: 'indicator', type: 'boolean', description: 'Figma IndicatorVisible: the 12×2 dash under the date.' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Day (default "15").' },
+      { name: 'shape', type: '"rounded" | "pill" | "square"', description: 'The file\'s instance override for the cell corner (Radius/action · Radius/full · none).' },
+    ],
+    accessibility: 'A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 119,
+      version: 120,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3999,6 +3999,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('DatePickerTrigger')
             if (at < 0 || sel.includes('DatePickerPopover')) return
             sel.splice(at + 1, 0, 'DatePickerPopover')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 120) {
+          // v119→v120: CalendarDay is a component of the Figma file; a selection with Calendar gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Calendar')
+            if (at < 0 || sel.includes('CalendarDay')) return
+            sel.splice(at, 0, 'CalendarDay')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

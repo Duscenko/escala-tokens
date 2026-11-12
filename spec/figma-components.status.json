@@ -22,10 +22,6 @@
     "Calendar": {
       "status": "rebuild"
     },
-    "CalendarDay": {
-      "status": "part",
-      "of": "Calendar"
-    },
     "CalendarFooter": {
       "status": "part",
       "of": "Calendar"

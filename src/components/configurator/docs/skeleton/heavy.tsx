@@ -10,7 +10,7 @@ import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { chartPalette } from '../../../../lib/chartPalette'
-import { Calendar as SkCalendar } from '../../../escala-ui/calendar'
+import { Calendar as SkCalendar, CalendarDay as SkCalendarDay, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
 import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
 import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, ChartLegendContent as SkChartLegendContent, ChartTooltip as SkChartTooltip, ChartTooltipContent as SkChartTooltipContent, type ChartConfig } from '../../../escala-ui/chart'
 import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
@@ -38,6 +38,20 @@ export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
       {v.Mode === 'range'
         ? <SkCalendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} footer={children} {...icons} />
         : <SkCalendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} footer={children} {...icons} />}
+    </RecipeScope>
+  )
+}
+
+/** The Figma CalendarDay: Size × State × Variant, the file's own "15". */
+export function SkeletonCalendarDaySpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as CalendarDayState
+  return (
+    <RecipeScope t={t}>
+      <SkCalendarDay
+        size={(v.Size ?? 'default') as CalendarDaySize}
+        variant={(v.Variant ?? 'default') as CalendarDayVariant}
+        forceState={state === 'Default' ? undefined : state}
+      />
     </RecipeScope>
   )
 }

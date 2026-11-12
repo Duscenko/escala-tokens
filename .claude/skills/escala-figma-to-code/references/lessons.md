@@ -160,3 +160,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A set that is only a shell around another set (DatePickerPopover = radius + Shadow/lg around a Calendar instance) | Tempting to rebuild the Calendar (header, month, days, presets) inside it | Read the nested instances' main components first (`getMainComponentAsync` per instance): they were queue items 3–8. Build only the shell (`children` = the calendar), note the dependency in the contract |
 | A shadow style whose three layers all carry spread on a non-clipping frame | Ring `0 0 0 1` + `-4` / `-2` spreads | Pixels of the render (no hard 1px ring, side edge 237) showed none render: reuse the FAB `lift: rest` (`0 12 16 key + 0 4 6 ambient`) |
 | A new popover-like recipe key | `recipeMotion.test` failed | Add the key to the `popover-enter` / `popover-exit` `components` lists in `lib/motion.ts` besides `recipes/motion.ts` |
+
+# Lessons from the CalendarDay (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A cell whose DATA states (Today, Selected, Range…) are not pointer states | The recipe's State axis only knows Hover / Focused / Disabled; the rest fall to `[data-force-state="X"]` | A real `state` prop that writes `data-force-state` (a pinned state also stops `:hover`, as the file has no hover on a selected day) beside `forceState` for docs |
+| Two states drawn identically (Disabled · Unavailable) | Tempting to invent a strikethrough for Unavailable | Copy: same ink, both `disabled`; say it in the contract |
+| An absolute child 4px from an edge (the dash, x14 y34 in 40) | Tailwind `bottom-1` = 4.5px at this app's 18px root | `bottom-[var(--spacing-1)]` and the recipe's `spacing.3` × `spacing.0_5` for its size; measure x/y against the file |
+| Calendar parts import react-day-picker through `calendar.tsx` | An eager specimen would pull it into the main bundle | Register the specimen through `lazySpecimen` (`skeleton/heavy.tsx`) |
+| Measuring recipe roles with a probe on `body` | Every `var(--color-…)` resolved to the same fallback | Append the probe INSIDE the component (the vars live in `RecipeScope`) |
+| `exportAudit` I10 budget again | Agent context 90 045 > 90 000 | Raise `contextAllTokens` with a dated note |

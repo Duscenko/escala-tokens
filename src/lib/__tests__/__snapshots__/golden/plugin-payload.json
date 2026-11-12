@@ -9667,6 +9667,383 @@
         }
       }
     },
+    "CalendarDay": {
+      "key": "CalendarDay",
+      "slots": [
+        "root",
+        "band",
+        "cell",
+        "day",
+        "indicator"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default",
+        "Variant": "default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "cell": {
+                "radius": "radius.action"
+              },
+              "cell[data-shape=\"pill\"]": {
+                "radius": "radius.pill"
+              },
+              "cell[data-shape=\"square\"]": {
+                "radius": "radius.none"
+              },
+              "indicator": {
+                "width": "spacing.3",
+                "height": "spacing.0_5"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.control",
+                "height": "size.control"
+              },
+              "day": {
+                "font": "type.body-md"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.compact",
+                "height": "size.compact"
+              },
+              "day": {
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "State"
+          ],
+          "values": {
+            "default|Default": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "default|Hover": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "fill": "color.action.ghost.hover"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "default|Today": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "stroke": "color.border.accent",
+                "strokeWidth": "stroke.control"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "default|Selected": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "fill": "color.action.primary.default"
+              },
+              "day": {
+                "text": "color.content.on-action"
+              }
+            },
+            "default|RangeMiddle": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.accent"
+              }
+            },
+            "default|RangeStart": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "fill": "color.action.primary.default"
+              },
+              "day": {
+                "text": "color.content.on-action"
+              }
+            },
+            "default|RangeEnd": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "fill": "color.action.primary.default"
+              },
+              "day": {
+                "text": "color.content.on-action"
+              }
+            },
+            "default|Outside": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.secondary"
+              }
+            },
+            "default|Disabled": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.disabled"
+              }
+            },
+            "default|Unavailable": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.disabled"
+              }
+            },
+            "default|Focused": {
+              "band": {
+                "fill": "color.surface.selected"
+              },
+              "indicator": {
+                "fill": "color.border.accent"
+              },
+              "cell": {
+                "stroke": "color.border.focus",
+                "strokeWidth": "stroke.focus",
+                "halo": "color.border.ring.default"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|Default": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|Hover": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "fill": "color.action.ghost.hover"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|Today": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "stroke": "color.border.strong",
+                "strokeWidth": "stroke.control"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|Selected": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "fill": "color.surface.inverse"
+              },
+              "day": {
+                "text": "color.content.inverse"
+              }
+            },
+            "secondary|RangeMiddle": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|RangeStart": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "fill": "color.surface.inverse"
+              },
+              "day": {
+                "text": "color.content.inverse"
+              }
+            },
+            "secondary|RangeEnd": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "fill": "color.surface.inverse"
+              },
+              "day": {
+                "text": "color.content.inverse"
+              }
+            },
+            "secondary|Outside": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.secondary"
+              }
+            },
+            "secondary|Disabled": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.disabled"
+              }
+            },
+            "secondary|Unavailable": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {},
+              "day": {
+                "text": "color.content.disabled"
+              }
+            },
+            "secondary|Focused": {
+              "band": {
+                "fill": "color.surface.muted"
+              },
+              "indicator": {
+                "fill": "color.border.strong"
+              },
+              "cell": {
+                "stroke": "color.border.strong",
+                "strokeWidth": "stroke.focus",
+                "halo": "color.border.subtle"
+              },
+              "day": {
+                "text": "color.content.primary"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "cell": {
+            "background-color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "color": "use-hover"
+          },
+          "day": {
+            "color": "use-hover"
+          }
+        }
+      }
+    },
     "DatePickerPopover": {
       "key": "DatePickerPopover",
       "slots": [
