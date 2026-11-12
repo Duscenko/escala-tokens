@@ -7,7 +7,7 @@ import { findFontSource } from './customFonts'
 import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx, iconRoleVar } from './iconSizing'
 import chroma from 'chroma-js'
-import { toneLabel, withAlpha, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { toneLabel, withAlpha, darkShadowMap, pinnedOrSolvedAlpha, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
@@ -241,14 +241,16 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
     const page = GLOBAL_ALPHA.has(f.family)
       ? store.pageBackground
       : resolveFamilyPages(store, f.family).light
-    out.push([`${f.family}-a`, generateAlphaScale(f.light!, page, 'light')])
+    const pinned = store.customColors.find((c) => c.key === f.family)?.alpha
+    out.push([`${f.family}-a`, pinnedOrSolvedAlpha(pinned, f.light!, page, 'light')])
   })
   if (hasDark) {
     fams.filter((f) => filled(f.dark)).forEach((f) => {
       const page = GLOBAL_ALPHA.has(f.family)
         ? store.darkBackground
         : resolveFamilyPages(store, f.family).dark
-      out.push([`${f.family}-a-dark`, generateAlphaScale(f.dark!, page, 'dark')])
+      const pinned = store.customColors.find((c) => c.key === f.family)?.darkAlpha
+      out.push([`${f.family}-a-dark`, pinnedOrSolvedAlpha(pinned, f.dark!, page, 'dark')])
     })
   }
 

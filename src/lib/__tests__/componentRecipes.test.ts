@@ -217,11 +217,21 @@ describe('focus', () => {
     }
   })
 
-  it('renders as shadcn does: an inset border.focus edge plus a 3px halo outside it', () => {
+  // The Figma file (Checkbox 1014:14, Button 4:2228): a 2px border.focus edge
+  // INSIDE the control (its border + an inset making up the rest) and a 2px
+  // border.ring halo fully outside it.
+  it('renders as the Figma file does: a 2px edge inside, a 2px halo outside', () => {
     const css = recipeCss(COMPONENT_RECIPES.Checkbox)
-    expect(css).toContain('box-shadow: inset 0 0 0 var(--stroke-focus, 2px) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px)) var(--color-border-ring-default)')
+    expect(css).toContain('box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(--escala-stroke-width, 0px))) var(--color-border-focus), 0 0 0 var(--stroke-focus, 2px) var(--color-border-ring-default)')
     expect(css).toContain('border-color: var(--color-border-focus)')
     expect(css).toContain('outline: var(--stroke-focus, 2px) solid transparent')
+  })
+  // The Figma file's Input (4:10640): the 1px edge stays, and a 2px ring
+  // straddles it — 1px over the edge, 1px outside.
+  it("draws a field's halo over its own edge, as the Figma Input does", () => {
+    const css = recipeCss(COMPONENT_RECIPES.Input)
+    expect(css).toContain('outline: var(--stroke-focus, 2px) solid var(--color-border-ring-default)')
+    expect(css).toContain('outline-offset: calc(var(--escala-stroke-width, 0px) - var(--stroke-focus, 2px))')
   })
 })
 

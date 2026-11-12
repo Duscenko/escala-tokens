@@ -4,7 +4,7 @@ import { darkShadowsOf } from './shadowTokens'
 import { letterSpacingsFor } from './typographyStandard'
 import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
-import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
+import { toneLabel, pinnedOrSolvedAlpha, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { dimensionRefsOf, dimensionScaleForStore } from './dimensions'
 import { normalizeFigmaViewports, type FigmaViewport } from './figmaSyncModes'
@@ -547,13 +547,13 @@ export function generateTokenJSON(
   // ramp layers black over the light page, a dark ramp layers white over the
   // dark one. Hence both `*-a*` and `*-dark-a*`.
   const primitiveAlpha: Record<string, string> = {}
-  const alphaOf = (name: string, scale: Record<number, string>, page = store.pageBackground) => {
+  const alphaOf = (name: string, scale: Record<number, string>, page = store.pageBackground, pinned?: Record<number, string>) => {
     if (!Object.keys(scale).length || !shipsFamily(name)) return
-    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, page, 'light'), colorNaming))
+    Object.assign(primitiveAlpha, flattenScale(name, pinnedOrSolvedAlpha(pinned, scale, page, 'light'), colorNaming))
   }
-  const alphaDarkOf = (name: string, scale?: Record<number, string>, page = store.darkBackground) => {
+  const alphaDarkOf = (name: string, scale?: Record<number, string>, page = store.darkBackground, pinned?: Record<number, string>) => {
     if (!hasDarkTheme || !scale || !Object.keys(scale).length || !shipsFamily(name)) return
-    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, page, 'dark'), colorNaming))
+    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, pinnedOrSolvedAlpha(pinned, scale, page, 'dark'), colorNaming))
   }
   alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
   alphaOf('neutral', store.grayLightScale); alphaDarkOf('neutral', grayDarkScale)
@@ -566,8 +566,8 @@ export function generateTokenJSON(
   // Glass accent-alpha land near-opaque (`#f0fdffe3`) instead of transparent.
   store.customColors.forEach((c) => {
     const pages = resolveFamilyPages(store, c.key)
-    alphaOf(c.key, c.scale, pages.light)
-    alphaDarkOf(c.key, c.darkScale, pages.dark)
+    alphaOf(c.key, c.scale, pages.light, c.alpha)
+    alphaDarkOf(c.key, c.darkScale, pages.dark, c.darkAlpha)
   })
 
   // Neutral alpha primitives — a fixed opacity ladder (Radix blackA/whiteA),

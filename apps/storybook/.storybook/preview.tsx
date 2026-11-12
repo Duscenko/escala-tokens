@@ -3,23 +3,21 @@ import './storybook.css'
 import { RecipeScope } from '../../../src/components/configurator/docs/skeleton/scope'
 import { resolvePreviewTokens } from '../../../src/lib/previewTokens'
 import { buildStudioTokens } from '../../../src/lib/pluginStudio'
+import { FIGMA_FILE_PALETTE, applyFigmaFilePalette } from '../../../src/lib/figmaFilePalette'
 import { useDesignStore } from '../../../src/store/useDesignStore'
 import type { GridViewport } from '../../../src/lib/layoutTokens'
 
-/** The brand of the Figma file `Escala Design System (Real)` — its
- *  `Action/primary/default` in Escala Light. */
-export const FIGMA_FILE_ACCENT = '#874fff'
-
-// The system the Figma file holds, built exactly as the plugin's ground-truth
-// check builds it (`check-ground-truth.mjs --values` is green against the
-// file): a BRAND minted from the accent, with its own neutral and pages. A
-// retint of the default system is not the same thing — its ramp solves tone 11
-// against another page (Action/primary/pressed came out #7252c9, not #6945c1).
-const built = buildStudioTokens({ accent: FIGMA_FILE_ACCENT, name: 'Escala' }, 'pro')
+// The system the Figma file `Escala Design System (Real)` holds: a brand minted
+// from the file's accent (the plugin's own build), then carrying the file's
+// CURATED ramps and alpha twins (owner, 2026-11-12: Figma wins over the
+// generator). Every Color Semantics role then resolves to the file's hex in
+// both modes — figmaFilePalette.test.ts holds all 166.
+const built = buildStudioTokens({ accent: FIGMA_FILE_PALETTE.accent, name: 'Escala' }, 'pro')
 if ('error' in built) throw new Error(`Storybook: could not build the Figma file's system — ${built.error}`)
 const { themeOrder, themeSources } = useDesignStore.getState()
 /** The brand the stories paint with: the one the studio just minted. */
 const BRAND = themeOrder.find((k) => themeSources?.[k]) ?? themeOrder[0]
+applyFigmaFilePalette(BRAND)
 
 /** Every story paints with the system's real tokens: the recipe stylesheet
  *  reads `var(--…)`, RecipeScope supplies the values for the theme and the

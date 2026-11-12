@@ -96,6 +96,12 @@ export interface CustomColor {
    *  colour as two scales). Optional only for forward-compat with pre-v40
    *  snapshots — `useEnsureColorScales` backfills it. */
   darkScale?: ColorScale
+  /** Pinned alpha twins (light / dark). Absent = solved from the solid against
+   *  its page (`generateAlphaScale`). A curated palette carries its own — the
+   *  Figma file's (`figmaFilePalette.generated.ts`). Editing the solid drops
+   *  the matching pinned twin, which then no longer reproduces it. */
+  alpha?: ColorScale
+  darkAlpha?: ColorScale
 }
 
 // Family names reserved by the built-in scales — custom colors can't use them.
@@ -129,6 +135,9 @@ export interface ThemePalette {
    * the semantic role can't alias its primitive. Absent = the system pages.
    */
   alphaPages?: Partial<Record<'neutral' | 'accent' | 'error' | 'warning' | 'success' | 'info', { light: string; dark: string }>>
+  /** The alpha twin a slot's family CARRIES (`CustomColor.alpha` / `darkAlpha`),
+   *  in the palette's appearance, keyed like `alphaPages`. Wins over solving. */
+  pinnedAlpha?: Partial<Record<'neutral' | 'accent' | 'error' | 'warning' | 'success' | 'info', ColorScale>>
 }
 
 /**
@@ -1401,9 +1410,14 @@ export const useDesignStore = create<DesignStore>()(
         ),
       updateCustomColor: (key, updates) =>
         set((state) => ({
-          customColors: state.customColors.map((c) =>
-            c.key === key ? { ...c, ...updates } : c
-          ),
+          customColors: state.customColors.map((c) => {
+            if (c.key !== key) return c
+            const next = { ...c, ...updates }
+            // A pinned twin reproduces ITS solid: a new solid un-pins it.
+            if (updates.scale && !('alpha' in updates)) delete next.alpha
+            if (updates.darkScale && !('darkAlpha' in updates)) delete next.darkAlpha
+            return next
+          }),
         })),
       // Refuses while a theme still references the family: a theme resolves
       // THROUGH its families, so deleting one out from under it would leave a

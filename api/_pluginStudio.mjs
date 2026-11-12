@@ -1309,6 +1309,9 @@ function compositeOver(overlayHex, backgroundHex) {
   const mix = (o, b) => Math.round(a2 * o + (1 - a2) * b);
   return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex();
 }
+function pinnedOrSolvedAlpha(pinned, scale, backgroundHex, appearance = "light") {
+  return pinned && Object.keys(pinned).length ? pinned : generateAlphaScale(scale, backgroundHex, appearance);
+}
 function generateAlphaScale(scale, backgroundHex, appearance = "light") {
   const out = {};
   for (const [k, hex] of Object.entries(scale)) {
@@ -6173,6 +6176,13 @@ function resolveThemePalette(sources, kind, p2) {
   }
   const alphaPages = alphaPagesFor(sources, p2);
   if (alphaPages) palette.alphaPages = alphaPages;
+  const pinned = {};
+  for (const slot of FAMILY_SLOTS) {
+    const fam = p2.customColors.find((c2) => c2.key === sources[slot]);
+    const twin = kind === "dark" ? fam?.darkAlpha : fam?.alpha;
+    if (twin && Object.keys(twin).length) pinned[ALPHA_NAME[slot]] = twin;
+  }
+  if (Object.keys(pinned).length) palette.pinnedAlpha = pinned;
   return palette;
 }
 function alphaPagesFor(sources, p2) {
@@ -7063,7 +7073,8 @@ function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackgr
       info: fams.info
     };
     for (const [fam, solid] of Object.entries(kindCorrectSolid)) {
-      if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, pageOf(fam), kind);
+      const pinned = palette?.pinnedAlpha?.[fam];
+      if (solid) fams[`${fam}-a`] = pinned ?? generateAlphaScale(solid, pageOf(fam), kind);
     }
   }
   return (fam, tone2) => fams[fam]?.[tone2];
@@ -10219,13 +10230,13 @@ function generateTokenJSON(source, opts) {
     }
   });
   const primitiveAlpha = {};
-  const alphaOf = (name, scale, page = store.pageBackground) => {
+  const alphaOf = (name, scale, page = store.pageBackground, pinned) => {
     if (!Object.keys(scale).length || !shipsFamily(name)) return;
-    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, page, "light"), colorNaming));
+    Object.assign(primitiveAlpha, flattenScale(name, pinnedOrSolvedAlpha(pinned, scale, page, "light"), colorNaming));
   };
-  const alphaDarkOf = (name, scale, page = store.darkBackground) => {
+  const alphaDarkOf = (name, scale, page = store.darkBackground, pinned) => {
     if (!hasDarkTheme || !scale || !Object.keys(scale).length || !shipsFamily(name)) return;
-    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, page, "dark"), colorNaming));
+    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, pinnedOrSolvedAlpha(pinned, scale, page, "dark"), colorNaming));
   };
   alphaOf("accent", store.primaryScale);
   alphaDarkOf("accent", store.primaryDarkScale);
@@ -10241,8 +10252,8 @@ function generateTokenJSON(source, opts) {
   alphaDarkOf("info", store.infoDarkScale);
   store.customColors.forEach((c2) => {
     const pages = resolveFamilyPages(store, c2.key);
-    alphaOf(c2.key, c2.scale, pages.light);
-    alphaDarkOf(c2.key, c2.darkScale, pages.dark);
+    alphaOf(c2.key, c2.scale, pages.light, c2.alpha);
+    alphaDarkOf(c2.key, c2.darkScale, pages.dark, c2.darkAlpha);
   });
   Object.assign(primitiveAlpha, flattenScale("black-a", BLACK_ALPHA_SCALE, colorNaming));
   Object.assign(primitiveAlpha, flattenScale("white-a", WHITE_ALPHA_SCALE, colorNaming));
@@ -10849,7 +10860,7 @@ function primitiveRampLines(store, kind) {
     ["info", pick(store.infoScale, store.infoDarkScale), dark ? store.darkBackground : pageBackground],
     ...customColors.map((c2) => {
       const pages = resolveFamilyPages(store, c2.key);
-      return [c2.key, pick(c2.scale, c2.darkScale), dark ? pages.dark : pages.light];
+      return [c2.key, pick(c2.scale, c2.darkScale), dark ? pages.dark : pages.light, dark ? c2.darkAlpha : c2.alpha];
     })
   ];
   const sorted = (scale) => Object.entries(scale).sort(([a2], [b]) => Number(a2) - Number(b));
@@ -10862,9 +10873,9 @@ function primitiveRampLines(store, kind) {
     });
   }
   out.push("\n  /* Alpha twins \u2014 reproduce a solid tone over the page, for translucent fills */");
-  for (const [name, scale, page] of fams) {
+  for (const [name, scale, page, pinned] of fams) {
     if (!Object.keys(scale).length) continue;
-    sorted(generateAlphaScale(scale, page, kind)).forEach(([k, v]) => {
+    sorted(pinnedOrSolvedAlpha(pinned, scale, page, kind)).forEach(([k, v]) => {
       if (v) out.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`);
     });
   }
@@ -12249,9 +12260,13 @@ var init_useDesignStore = __esm({
             (state2) => state2.customColors.some((x) => x.key === c2.key) ? state2 : { customColors: [...state2.customColors, c2] }
           ),
           updateCustomColor: (key2, updates) => set((state2) => ({
-            customColors: state2.customColors.map(
-              (c2) => c2.key === key2 ? { ...c2, ...updates } : c2
-            )
+            customColors: state2.customColors.map((c2) => {
+              if (c2.key !== key2) return c2;
+              const next = { ...c2, ...updates };
+              if (updates.scale && !("alpha" in updates)) delete next.alpha;
+              if (updates.darkScale && !("darkAlpha" in updates)) delete next.darkAlpha;
+              return next;
+            })
           })),
           // Refuses while a theme still references the family: a theme resolves
           // THROUGH its families, so deleting one out from under it would leave a

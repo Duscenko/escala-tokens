@@ -32,7 +32,8 @@
     "figma:inventory:check": "node scripts/figma/save-inventory.mjs --check",
     "storybook": "storybook dev -p 6006 -c apps/storybook/.storybook",
     "build-storybook": "storybook build -c apps/storybook/.storybook -o apps/storybook/storybook-static",
-    "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit"
+    "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
+    "gen:figma-palette": "tsx scripts/gen-figma-palette.ts"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

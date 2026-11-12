@@ -77,9 +77,16 @@ Loading = Default con spinner en lugar del icono inicial.
 - **Trazo por dentro (2026-11-12):** Figma dibuja el trazo dentro del marco; CSS lo pone
   fuera del padding. El padding de la receta descuenta el borde (`--escala-stroke-width`,
   `recipeStyles.ts`), así que el Button por defecto mide 119 × 40 como en Figma.
-- **Pendiente de decisión:** el tono 11 del acento en el archivo es `#6945c1`; el generador
-  actual da `#7252c9` para el mismo acento (pressed del sólido, link…). El halo de foco de
-  Figma mide 2 px; el código usa 3 px (`stroke.focus` + `stroke.control`, compartido con
-  los campos).
+- **Paleta (decisión del dueño, 2026-11-12: manda Figma).** La paleta del archivo está
+  curada: para el mismo acento, 99 de 120 pasos sólidos y la mayoría de los alfas difieren
+  del generador (no es solo el tono 11, `#6945c1` frente a `#7252c9`). Se usa como DATOS:
+  `src/lib/figmaFilePalette.generated.ts` (`npm run gen:figma-palette`, desde el inventario
+  del plugin) y `applyFigmaFilePalette(brand)`, que fija rampas y alfas de la marca
+  (`CustomColor.alpha` / `darkAlpha`, `pinnedOrSolvedAlpha`). Storybook la usa: los 166
+  roles × modo de Color Semantics coinciden con el archivo (`figmaFilePalette.test.ts`).
+- **Foco (decisión del dueño: tal cual Figma).** Button / Checkbox / Switch: borde
+  `border.focus` de 2 px por dentro y halo `border.ring` de 2 px por fuera. Campos (Input
+  4:10640): el borde de 1 px se queda y el halo de 2 px lo monta (1 encima, 1 fuera), con
+  `outline` + `outline-offset` negativo.
 - `BadgeVisible` de IconButton: el Badge es otro componente; en código, `badge` acepta
   cualquier nodo.

@@ -8,7 +8,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { findFontSource, fontImportLines } from './customFonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
-import { toneLabel, withAlpha, darkShadow, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { toneLabel, withAlpha, darkShadow, darkShadowMap, pinnedOrSolvedAlpha, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
@@ -68,16 +68,17 @@ function primitiveRampLines(store: ReturnType<typeof useDesignStore.getState>, k
   const out: string[] = []
   const pick = (light: Record<number, string>, darkScale?: Record<number, string>) =>
     dark && darkScale && Object.keys(darkScale).length ? darkScale : light
-  const fams: [string, Record<number, string>, string][] = [
+  // [name, ramp, page, pinned alpha twin]
+  const fams: [string, Record<number, string>, string, Record<number, string>?][] = [
     ['accent', pick(store.primaryScale, store.primaryDarkScale), dark ? store.darkBackground : pageBackground],
     ['neutral', pick(store.grayLightScale, store.grayDarkScale), dark ? store.darkBackground : pageBackground],
     ['error', pick(store.errorScale, store.errorDarkScale), dark ? store.darkBackground : pageBackground],
     ['warning', pick(store.warningScale, store.warningDarkScale), dark ? store.darkBackground : pageBackground],
     ['success', pick(store.successScale, store.successDarkScale), dark ? store.darkBackground : pageBackground],
     ['info', pick(store.infoScale, store.infoDarkScale), dark ? store.darkBackground : pageBackground],
-    ...customColors.map((c): [string, Record<number, string>, string] => {
+    ...customColors.map((c): [string, Record<number, string>, string, Record<number, string>?] => {
       const pages = resolveFamilyPages(store, c.key)
-      return [c.key, pick(c.scale, c.darkScale), dark ? pages.dark : pages.light]
+      return [c.key, pick(c.scale, c.darkScale), dark ? pages.dark : pages.light, dark ? c.darkAlpha : c.alpha]
     }),
   ]
   const sorted = (scale: Record<number, string>) => Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
@@ -90,9 +91,9 @@ function primitiveRampLines(store: ReturnType<typeof useDesignStore.getState>, k
   // appearance's page (tokens.json `colors.primitiveAlpha`). CSS is a flat
   // namespace, so the `-a-` infix disambiguates from the solid var.
   out.push('\n  /* Alpha twins — reproduce a solid tone over the page, for translucent fills */')
-  for (const [name, scale, page] of fams) {
+  for (const [name, scale, page, pinned] of fams) {
     if (!Object.keys(scale).length) continue
-    sorted(generateAlphaScale(scale, page, kind)).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+    sorted(pinnedOrSolvedAlpha(pinned, scale, page, kind)).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
   }
   return out
 }

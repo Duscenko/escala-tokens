@@ -51,7 +51,8 @@ function dim(ref: string): string {
   return parts.length === 1 ? vars[0] : `calc(${vars.join(' + ')})`
 }
 
-const HALO = 'calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px))'
+/** The focus halo is `stroke.focus` wide (2px), as in the Figma file. */
+const HALO = 'var(--stroke-focus, 2px)'
 /** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
  *  (the same 2px the focus edge is drawn at). */
 const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
@@ -79,24 +80,31 @@ function declarations(props: SlotProps): string[] {
       // One hairline on one side (an accordion row's divider, a tab strip's underline).
       case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
-      // The halo outside a focused control: `stroke.focus` + one hairline, i.e.
-      // shadcn's 3px at the default stroke ramp. Alone it is a FIELD's halo;
-      // with `focus` it is composed into one box-shadow below.
+      // Alone, a FIELD's focus halo (Figma's Input): the field keeps its 1px
+      // edge, and a `stroke.focus` ring straddles it — half over the edge,
+      // half outside. An outline with a negative offset paints exactly that
+      // (box-shadow cannot paint over the element's own border). With
+      // `focus` it is composed into the box-shadow below instead.
       case 'ring':
         if (props.focus && props.focus !== 'none') break
-        out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 ${HALO} ${v(ref)}`)
+        if (ref === 'none') { out.push('outline: none'); break }
+        out.push(
+          `outline: ${HALO} solid ${v(ref)}`,
+          `outline-offset: calc(var(${STROKE_WIDTH_VAR}, 0px) - ${HALO})`,
+        )
         break
-      // shadcn's `focus-visible:border-ring ring-[3px]`: the edge turns to
-      // `border.focus` (an inset `stroke.focus` ring, so a borderless button
-      // draws it too and nothing shifts) and the halo sits outside. The
-      // transparent outline is what forced-colors mode paints instead of both.
+      // Figma's focused Button / Checkbox: a `stroke.focus` (2px) edge in
+      // `border.focus` — the 1px border plus an inset making up the rest, so a
+      // borderless button draws it too and nothing shifts — and a 2px halo
+      // fully outside. The transparent outline is what forced-colors mode
+      // paints instead of both.
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
         const lit = props.highlight && props.highlight !== 'none' ? `, ${highlightShadow(v(props.highlight))}` : ''
         out.push(
           `border-color: ${v(ref)}`,
-          `box-shadow: inset 0 0 0 var(--stroke-focus, 2px) ${v(ref)}${halo}${lit}`,
+          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${lit}`,
           'outline: var(--stroke-focus, 2px) solid transparent',
         )
         break

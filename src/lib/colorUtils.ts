@@ -868,6 +868,18 @@ export function compositeOver(overlayHex: string, backgroundHex: string): string
   return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex()
 }
 
+/** A family's alpha twin: the one it CARRIES when pinned (a curated palette —
+ *  the Figma file's, `figmaFilePalette.generated.ts` — ships its own), else
+ *  solved from its solid against its page. One rule for every reader. */
+export function pinnedOrSolvedAlpha(
+  pinned: Record<number, string> | undefined,
+  scale: Record<number, string>,
+  backgroundHex: string,
+  appearance: ScaleAppearance = 'light',
+): Record<number, string> {
+  return pinned && Object.keys(pinned).length ? pinned : generateAlphaScale(scale, backgroundHex, appearance)
+}
+
 /** Alpha twin of a 1–12 solid scale, derived against its own page. */
 export function generateAlphaScale(
   scale: Record<number, string>,
