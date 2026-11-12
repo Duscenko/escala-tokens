@@ -1606,17 +1606,244 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Table',
     label: 'Table',
     category: 'Content & Surfaces',
-    description: 'shadcn/ui Table: header, rows, cells, footer and caption — a hairline under each row.',
-    usage: 'Use for tabular data people compare across columns. For a list of items with one action each prefer a list; for sorting and filtering build a data table on top.',
-    axes: [],
+    description: 'Data table root: a header, rows and an optional footer; Size and Dividers cascade to every row and cell.',
+    usage: 'Use for tabular data people compare across columns. For a list of items with one action each prefer a list; Pagination sits outside the table.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Appearance', values: ['filled', 'ghost'] },
+      { name: 'Dividers', values: ['grid', 'rows'] },
+    ],
     figmaSets: ['Table'],
     props: [
-      { name: 'TableHeader / TableBody / TableFooter', type: 'component', description: '<thead>, <tbody>, <tfoot>.' },
-      { name: 'TableRow', type: 'component', description: 'A row; data-state="selected" highlights it.' },
-      { name: 'TableHead / TableCell', type: 'component', description: 'Header and body cells.' },
-      { name: 'TableCaption', type: 'component', description: 'A caption under the table.' },
+      { name: 'size / appearance / dividers', type: 'Figma axes', description: 'Rows are 48 · 32 · 40 · 56 tall; filled adds Surface/page, Border/default and Radius/container; grid adds a hairline between columns.' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Content: TableHeader, TableBody (TableRow) and an optional TableFooter.' },
     ],
-    accessibility: 'A real <table>: header cells are <th> so each cell is announced with its column. Give the table a caption or aria-label.',
+    accessibility: 'A real <table> with explicit roles; give it an aria-label or a TableCaption. Pagination sits outside the table, next to the container.',
+  },
+  {
+    key: 'TableCell',
+    label: 'TableCell',
+    category: 'Content & Surfaces',
+    description: 'Body cell: a label with optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (overflow IconButton or Badge).',
+    usage: 'Use inside a TableRow. Align end is the numeric column. For a thumbnail use TableMediaCell, for a value with a delta TableTrendCell.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Align', values: ['start', 'end'] },
+      { name: 'Pinned', values: ['none', 'start', 'end'] },
+      { name: 'State', values: ['Default', 'Disabled'] },
+    ],
+    figmaSets: ['TableCell'],
+    props: [
+      { name: 'size / align / pinned / state', type: 'Figma axes', description: 'Size follows the row; pinned draws a 1px edge on the side that meets the scrolling columns.' },
+      { name: 'label / description / leading / trailing', type: 'ReactNode', description: 'Figma Label, Description, Leading and Trailing (each with its Visible flag).' },
+      { name: 'rowHeader', type: 'boolean', description: 'Renders a <th scope="row">.' },
+    ],
+    accessibility: 'The row-header column uses th scope="row"; actions in the trailing slot need an aria-label.',
+  },
+  {
+    key: 'TableHead',
+    label: 'TableHead',
+    category: 'Content & Surfaces',
+    description: 'Column header cell: a label, an optional leading slot (select-all Checkbox), a sort arrow and a resizer.',
+    usage: 'Use inside a TableHeader, one per column. Make a column sortable with onSort; hover only exists for sortable columns.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Align', values: ['start', 'end'] },
+      { name: 'Pinned', values: ['none', 'start', 'end'] },
+      { name: 'Sort', values: ['none', 'ascending', 'descending'] },
+      { name: 'State', values: ['Default', 'Hover'] },
+    ],
+    figmaSets: ['TableHead'],
+    props: [
+      { name: 'size / align / pinned / sort / state', type: 'Figma axes', description: 'The arrow shows only on the sorted column; Hover is the sortable column under the pointer.' },
+      { name: 'label / leading / resizerVisible', type: 'ReactNode / boolean', description: 'Figma Label, Leading and ResizerVisible.' },
+      { name: 'onSort', type: '() => void', description: 'Makes the column a button (Enter and Space).' },
+    ],
+    accessibility: 'th scope="col"; a sortable column is keyboard operable and sets aria-sort (omitted for none).',
+  },
+  {
+    key: 'TableMediaCell',
+    label: 'TableMediaCell',
+    category: 'Content & Surfaces',
+    description: 'Media cell: a thumbnail at 1:1 or 2:1 with an optional label and description.',
+    usage: 'Use for rows that lead with a picture (products, people, files). Give the image alt text, or empty alt when the label already names it.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Ratio', values: ['square', 'wide'] },
+      { name: 'State', values: ['Default', 'Disabled'] },
+    ],
+    figmaSets: ['TableMediaCell'],
+    props: [
+      { name: 'size / ratio / state', type: 'Figma axes', description: 'The thumbnail is 24 · 32 · 40 · 48 tall; wide doubles its width.' },
+      { name: 'src / alt / image', type: 'string / ReactNode', description: 'Figma Image (the swap).' },
+      { name: 'label / description', type: 'ReactNode', description: 'Figma Label and Description.' },
+    ],
+    accessibility: 'The image needs alt text, or alt="" when the label already names it.',
+  },
+  {
+    key: 'TableTrendCell',
+    label: 'TableTrendCell',
+    category: 'Content & Surfaces',
+    description: 'Trend cell: a right-aligned value with a delta whose arrow and colour carry the direction.',
+    usage: 'Use for metrics that moved (revenue, signups). Direction is never colour alone: the cell reads e.g. "up 12.4%".',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Trend', values: ['up', 'down', 'neutral'] },
+      { name: 'State', values: ['Default', 'Disabled'] },
+    ],
+    figmaSets: ['TableTrendCell'],
+    props: [
+      { name: 'size / trend / state', type: 'Figma axes', description: 'up = success, down = critical, neutral = Content/secondary.' },
+      { name: 'value / delta / deltaVisible', type: 'ReactNode / boolean', description: 'Figma Value, Delta and DeltaVisible.' },
+    ],
+    accessibility: 'A visually hidden word (up, down, unchanged) precedes the delta so the direction is not colour alone.',
+  },
+  {
+    key: 'TableResizer',
+    label: 'TableResizer',
+    category: 'Content & Surfaces',
+    description: 'Column resize handle on the end edge of a TableHead.',
+    usage: 'Use inside a TableHead (ResizerVisible). Invisible at rest, strong on hover, accent while dragging.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'State', values: ['Default', 'Hover', 'Resizing'] },
+    ],
+    figmaSets: ['TableResizer'],
+    props: [
+      { name: 'resizing / forceState', type: 'boolean / State', description: 'Figma State Resizing while the handle is dragged.' },
+    ],
+    accessibility: 'role="separator" aria-orientation="vertical", focusable; resize with the arrow keys in your handler.',
+  },
+  {
+    key: 'TableRow',
+    label: 'TableRow',
+    category: 'Content & Surfaces',
+    description: 'Body row: a strip of TableCell instances with a hairline under it and its own states.',
+    usage: 'Use inside a TableBody. Hover and focus exist only on a selectable or actionable row (interactive / onClick).',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Selected', 'Focused', 'Disabled', 'Dragging'] },
+      { name: 'Dividers', values: ['grid', 'rows'] },
+    ],
+    figmaSets: ['TableRow'],
+    props: [
+      { name: 'size / state / dividers', type: 'Figma axes', description: 'Follow the Table unless set.' },
+      { name: 'selected / disabled / dragging / interactive / forceState', type: 'boolean / State', description: 'Selected, Disabled and Dragging are data states; Hover and Focused come from the pointer and the keyboard.' },
+    ],
+    accessibility: 'Selected rows set aria-selected; disabled rows set aria-disabled and skip their action; focus-visible draws Border/focus inside the row.',
+  },
+  {
+    key: 'TableHeader',
+    label: 'TableHeader',
+    category: 'Content & Surfaces',
+    description: 'Header row of a Table: a strip of TableHead cells on Surface/muted.',
+    usage: 'Use once per Table, first. Keep it sticky in scroll containers.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Dividers', values: ['grid', 'rows'] },
+      { name: 'Scrolled', values: ['true', 'false'] },
+    ],
+    figmaSets: ['TableHeader'],
+    props: [
+      { name: 'size / dividers / scrolled', type: 'Figma axes', description: 'Scrolled turns the bottom edge Border/default.' },
+    ],
+    accessibility: 'One th per column with scope="col".',
+  },
+  {
+    key: 'TableFooter',
+    label: 'TableFooter',
+    category: 'Content & Surfaces',
+    description: 'Totals row of a Table: TableCell values in Type/label on Surface/muted.',
+    usage: 'Use for totals and summaries. Dividers follows the Table.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Dividers', values: ['rows', 'grid'] },
+    ],
+    figmaSets: ['TableFooter'],
+    props: [
+      { name: 'size / dividers', type: 'Figma axes', description: 'A top hairline above the muted strip.' },
+    ],
+    accessibility: 'Label the totals with a th scope="row" in the first cell; set it sticky in code to pin it.',
+  },
+  {
+    key: 'TableCaption',
+    label: 'TableCaption',
+    category: 'Content & Surfaces',
+    description: 'The title and description of a table.',
+    usage: 'Use to name the table for everyone; the visible heading and the accessible name are one.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [],
+    figmaSets: ['TableCaption'],
+    props: [
+      { name: 'title / description', type: 'ReactNode', description: 'Type/heading-2xs over Type/body-sm.' },
+    ],
+    accessibility: 'A real <caption>.',
+  },
+  {
+    key: 'TableDropIndicator',
+    label: 'TableDropIndicator',
+    category: 'Content & Surfaces',
+    description: 'The 2px line that shows where a dragged row will land.',
+    usage: 'Use between rows while a row is being dragged.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [],
+    figmaSets: ['TableDropIndicator'],
+    props: [
+      { name: 'className', type: 'string', description: 'A full-width Border/accent line, Stroke/focus tall.' },
+    ],
+    accessibility: 'Decorative: hidden from assistive technology; announce the move with a live region.',
+  },
+  {
+    key: 'TableEmpty',
+    label: 'TableEmpty',
+    category: 'Content & Surfaces',
+    description: 'The empty state of a table: icon, title, description and an action.',
+    usage: 'Use when a table has no rows. Say why and offer the next step.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [],
+    figmaSets: ['TableEmpty'],
+    props: [
+      { name: 'icon / title / description / action', type: 'ReactNode', description: 'Figma Action is a slot (a secondary outline Button by default); null hides it.' },
+    ],
+    accessibility: 'role="status" so the empty result is announced.',
+  },
+  {
+    key: 'TableLoading',
+    label: 'TableLoading',
+    category: 'Content & Surfaces',
+    description: 'A spinner and a label shown while rows load.',
+    usage: 'Use as the body of a table that is fetching, or under it while more rows load.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [],
+    figmaSets: ['TableLoading'],
+    props: [
+      { name: 'label', type: 'ReactNode', description: 'Figma Label.' },
+    ],
+    accessibility: 'role="status" aria-live="polite".',
+  },
+  {
+    key: 'TableLoadMore',
+    label: 'TableLoadMore',
+    category: 'Content & Surfaces',
+    description: 'The Load more row under a table, and its loading state.',
+    usage: 'Use when rows are fetched in pages and the end is not reached.',
+    // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
+    axes: [
+      { name: 'State', values: ['Default', 'Loading'] },
+    ],
+    figmaSets: ['TableLoadMore'],
+    props: [
+      { name: 'state / onLoadMore', type: 'State / () => void', description: 'Loading swaps the button for a TableLoading row.' },
+    ],
+    accessibility: 'The button is a real button; the loading row announces itself.',
   },
   {
     key: 'Item',

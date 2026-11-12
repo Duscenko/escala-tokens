@@ -30,7 +30,7 @@ import { Message as SkMessage, MessageAvatar as SkMessageAvatar, MessageContent 
 import { Bubble as SkBubble, BubbleContent as SkBubbleContent, type BubbleVariant } from '../../../escala-ui/bubble'
 import { ResizableHandle as SkResizableHandle, ResizablePanel as SkResizablePanel, ResizablePanelGroup as SkResizablePanelGroup } from '../../../escala-ui/resizable'
 import { Collapsible as SkCollapsible, CollapsibleContent as SkCollapsibleContent, CollapsibleItem as SkCollapsibleItem, CollapsibleTrigger as SkCollapsibleTrigger } from '../../../escala-ui/collapsible'
-import { Table as SkTable, TableBody as SkTableBody, TableCaption as SkTableCaption, TableCell as SkTableCell, TableFooter as SkTableFooter, TableHead as SkTableHead, TableHeader as SkTableHeader, TableRow as SkTableRow } from '../../../escala-ui/table'
+import { Table as SkTable, TableBody as SkTableBody, TableCaption as SkTableCaption, TableCell as SkTableCell, TableDropIndicator as SkTableDropIndicator, TableEmpty as SkTableEmpty, TableFooter as SkTableFooter, TableHead as SkTableHead, TableHeader as SkTableHeader, TableLoadMore as SkTableLoadMore, TableLoading as SkTableLoading, TableMediaCell as SkTableMediaCell, TableResizer as SkTableResizer, TableRow as SkTableRow, TableTrendCell as SkTableTrendCell, type TableSize } from '../../../escala-ui/table'
 import { Skeleton as SkSkeleton } from '../../../escala-ui/skeleton'
 import { Empty as SkEmpty, EmptyContent as SkEmptyContent, EmptyDescription as SkEmptyDescription, EmptyHeader as SkEmptyHeader, EmptyMedia as SkEmptyMedia, EmptyTitle as SkEmptyTitle } from '../../../escala-ui/empty'
 
@@ -295,44 +295,205 @@ export function SkeletonCollapsibleSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-const TABLE_ROWS = [
-  ['INV001', 'Paid', 'Card', '$250.00'],
-  ['INV002', 'Pending', 'Transfer', '$150.00'],
-  ['INV003', 'Unpaid', 'Card', '$350.00'],
+/** The file's sample rows (Table Prototype): name · role · status · amount (numeric, Align end). */
+const TABLE_SAMPLE = [
+  ['Olivia Martin', 'Design', 'Active', '1,280.00'],
+  ['Liam Chen', 'Engineering', 'Active', '940.50'],
+  ['Sofia Rossi', 'Product', 'Invited', '2,115.00'],
+  ['Noah Kim', 'Support', 'Paused', '310.25'],
 ]
+const TABLE_HEADS = ['Name', 'Role', 'Status', 'Amount']
+const sizeOf = (v: SpecimenProps['v']) => (v.Size ?? 'default') as TableSize
+const dividersOf = (v: SpecimenProps['v']) => ((v.Dividers ?? 'rows') as 'rows' | 'grid')
 
-export function SkeletonTableSpecimen({ t, w }: SpecimenProps) {
+/** A strip of cells, as the file draws a row: the cell specimens sit in a 200px column of one. */
+function CellFrame({ w, children }: { w?: number | string; children: React.ReactNode }) {
+  return (
+    <div style={{ width: w ?? 200, maxWidth: '100%' }}>
+      <table className="block w-full" role="table" aria-label="Sample">
+        <tbody className="block w-full" role="rowgroup">
+          <tr className="flex w-full" role="row">{children}</tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+export function SkeletonTableCellSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <div style={{ width: w ?? 420, maxWidth: '100%' }}>
-        <SkTable>
-          <SkTableCaption>Recent invoices.</SkTableCaption>
-          <SkTableHeader>
-            <SkTableRow>
-              <SkTableHead>Invoice</SkTableHead>
-              <SkTableHead>Status</SkTableHead>
-              <SkTableHead>Method</SkTableHead>
-              <SkTableHead style={{ textAlign: 'right' }}>Amount</SkTableHead>
-            </SkTableRow>
-          </SkTableHeader>
+      <CellFrame w={w}>
+        <SkTableCell size={sizeOf(v)} align={(v.Align ?? 'start') as 'start' | 'end'} pinned={(v.Pinned ?? 'none') as 'none' | 'start' | 'end'} state={(v.State ?? 'Default') as 'Default' | 'Disabled'} />
+      </CellFrame>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableHeadSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as 'Default' | 'Hover'
+  return (
+    <RecipeScope t={t}>
+      <CellFrame w={w}>
+        <SkTableHead size={sizeOf(v)} align={(v.Align ?? 'start') as 'start' | 'end'} pinned={(v.Pinned ?? 'none') as 'none' | 'start' | 'end'} sort={(v.Sort ?? 'none') as 'none' | 'ascending' | 'descending'} forceState={state} />
+      </CellFrame>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableMediaCellSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <CellFrame w={w}>
+        <SkTableMediaCell size={sizeOf(v)} ratio={(v.Ratio ?? 'square') as 'square' | 'wide'} state={(v.State ?? 'Default') as 'Default' | 'Disabled'} image={<div style={{ width: '100%', height: '100%', background: avatarFillOf(t) }} />} />
+      </CellFrame>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableTrendCellSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <CellFrame w={w}>
+        <SkTableTrendCell size={sizeOf(v)} trend={(v.Trend ?? 'up') as 'up' | 'down' | 'neutral'} state={(v.State ?? 'Default') as 'Default' | 'Disabled'} />
+      </CellFrame>
+    </RecipeScope>
+  )
+}
+
+/** The handle sits at the end edge of a head in the file (9 × the head height). */
+export function SkeletonTableResizerSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ height: 48 }} className="flex">
+        <SkTableResizer forceState={(v.State ?? 'Default') as 'Default' | 'Hover' | 'Resizing'} aria-label="Resize column" />
+      </div>
+    </RecipeScope>
+  )
+}
+
+function SampleRowCells({ row }: { row: string[] }) {
+  return (
+    <>
+      <SkTableCell label={row[0]} />
+      <SkTableCell label={row[1]} />
+      <SkTableCell label={row[2]} />
+      <SkTableCell label={row[3]} align="end" />
+    </>
+  )
+}
+
+function SampleHeads() {
+  return (
+    <>
+      {TABLE_HEADS.map((h, i) => <SkTableHead key={h} label={h} align={i === 3 ? 'end' : 'start'} />)}
+    </>
+  )
+}
+
+/** One strip (row, header or footer) at the file's 800px, alone in a ghost table. */
+function StripFrame({ w, size, dividers, children }: { w?: number | string; size: TableSize; dividers: 'rows' | 'grid'; children: React.ReactNode }) {
+  return (
+    <div style={{ width: w ?? 800, maxWidth: '100%' }}>
+      <SkTable appearance="ghost" size={size} dividers={dividers}>{children}</SkTable>
+    </div>
+  )
+}
+
+export function SkeletonTableRowSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as 'Default' | 'Hover' | 'Selected' | 'Focused' | 'Disabled' | 'Dragging'
+  return (
+    <RecipeScope t={t}>
+      <StripFrame w={w} size={sizeOf(v)} dividers={dividersOf(v)}>
+        <SkTableBody>
+          <SkTableRow forceState={state}><SampleRowCells row={TABLE_SAMPLE[0]} /></SkTableRow>
+        </SkTableBody>
+      </StripFrame>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableHeaderSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <StripFrame w={w} size={sizeOf(v)} dividers={dividersOf(v)}>
+        <SkTableHeader scrolled={v.Scrolled === 'true'}><SampleHeads /></SkTableHeader>
+      </StripFrame>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableFooterSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <StripFrame w={w} size={sizeOf(v)} dividers={dividersOf(v)}>
+        <SkTableFooter>
+          <SkTableCell label="Total" />
+          <SkTableCell label="" />
+          <SkTableCell label="" />
+          <SkTableCell label="4,645.75" align="end" />
+        </SkTableFooter>
+      </StripFrame>
+    </RecipeScope>
+  )
+}
+
+/** The file's sample table: a header, a row, a selected row, a row and a disabled row (800px). */
+export function SkeletonTableSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}>
+        <SkTable size={sizeOf(v)} appearance={(v.Appearance ?? 'filled') as 'filled' | 'ghost'} dividers={dividersOf(v)} aria-label="Team members">
+          <SkTableHeader><SampleHeads /></SkTableHeader>
           <SkTableBody>
-            {TABLE_ROWS.map(([id, status, method, amount], i) => (
-              <SkTableRow key={id} data-state={i === 1 ? 'selected' : undefined}>
-                <SkTableCell>{id}</SkTableCell>
-                <SkTableCell>{status}</SkTableCell>
-                <SkTableCell>{method}</SkTableCell>
-                <SkTableCell style={{ textAlign: 'right' }}>{amount}</SkTableCell>
-              </SkTableRow>
-            ))}
+            <SkTableRow><SampleRowCells row={TABLE_SAMPLE[0]} /></SkTableRow>
+            <SkTableRow selected><SampleRowCells row={TABLE_SAMPLE[1]} /></SkTableRow>
+            <SkTableRow><SampleRowCells row={TABLE_SAMPLE[2]} /></SkTableRow>
+            <SkTableRow disabled><SampleRowCells row={TABLE_SAMPLE[3]} /></SkTableRow>
           </SkTableBody>
-          <SkTableFooter>
-            <SkTableRow>
-              <SkTableCell colSpan={3}>Total</SkTableCell>
-              <SkTableCell style={{ textAlign: 'right' }}>$750.00</SkTableCell>
-            </SkTableRow>
-          </SkTableFooter>
         </SkTable>
       </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableCaptionSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}>
+        <table className="block w-full" aria-label="Team billing"><SkTableCaption /></table>
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableDropIndicatorSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}><SkTableDropIndicator /></div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableEmptySpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}><SkTableEmpty /></div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableLoadingSpecimen({ t, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}><SkTableLoading /></div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTableLoadMoreSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: w ?? 800, maxWidth: '100%' }}><SkTableLoadMore state={(v.State ?? 'Default') as 'Default' | 'Loading'} /></div>
     </RecipeScope>
   )
 }

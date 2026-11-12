@@ -34,61 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Table": {
-      "status": "rebuild"
-    },
-    "TableCaption": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableCell": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableDropIndicator": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableEmpty": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableFooter": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableHead": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableHeader": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableLoadMore": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableLoading": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableMediaCell": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableResizer": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableRow": {
-      "status": "part",
-      "of": "Table"
-    },
-    "TableTrendCell": {
-      "status": "part",
-      "of": "Table"
-    },
     "Alert": {
       "status": "rebuild"
     },

@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 136,
+      version: 137,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4237,6 +4237,22 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('Accordion')
             if (at >= 0 && !sel.includes('AccordionItem')) sel.splice(at + 1, 0, 'AccordionItem')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 137) {
+          // v136→v137: Table is rebuilt from the Figma page with its 13 parts (TableCell … TableLoadMore).
+          const parts = ['TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore']
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Table')
+            if (at < 0) return
+            const missing = parts.filter((k) => !sel.includes(k))
+            sel.splice(at + 1, 0, ...missing)
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

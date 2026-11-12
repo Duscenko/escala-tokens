@@ -381,3 +381,16 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Same label on every item of an `AllCombinations` story | axe `landmark-unique`: the open `region`s share one accessible name | Suffix the label with the variant · state in the story |
 | `Content/secondary` on `Surface/muted` (ghost-rounded Open, filled-rounded) | axe 4.22:1 in Light | Copied (rule 1), reported |
 | `ui/accordion` (About) is a separate shadcn file | Rebuilding `escala-ui/accordion` looked like it would break About | About imports `../ui/accordion`, not escala-ui; untouched |
+
+# Lessons from the Table page (2026-11-12) — Table + 13 parts in one go
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A PAGE of 14 sets, ~400 variants, where every part nests another (Row → Cell, Header → Head, Table → Header · Row) | One read per set would blow the budget | Read each set with the sweep script, but cap the nested instances (`describe` depth 1–2 on Row / Header / Table) and read the instances' `componentProperties`; save every reading in `design-plans/table-contract.md` BEFORE building; build all parts from one recipe file (`recipes/table.ts`) and one component file |
+| Heights with no variable (cell 48 · 32 · 40 · 56 and media thumbnails) | No `Size/*` bound on the frame | They equal `size.lg · sm · md · xl` (row) and `size.md · xs · sm · lg` (media): same px, state it in the contract |
+| A real `<table>` needs flex rows to match the file's frames | `display: table` cells cannot be 200 / 48 like the frames | Native elements with explicit roles (`table`, `rowgroup`, `row`, `columnheader`, `cell`) and `display: flex`; the header and footer are the `<thead>` / `<tfoot>` strip itself with an inner `<tr>`. A story / specimen that shows ONE cell wraps it in `role="table"` + `rowgroup` + `row` or axe says `aria-required-parent` |
+| A cell has a right stroke only in `Dividers: grid` and only if it is not the last | The cell set has no Dividers axis | A context (Table → Row → Cell) and a recipe suffix key on the root: `'root[data-grid]:not(:last-child)': { stroke, strokeRightWidth }` |
+| Hover that exists only for some instances (sortable heads, actionable rows) | A State axis whose pointer states must not always fire | `data-force-state="Default"` on the ones that must not hover (a forced state stops `:hover`); leave it unset where hover is real |
+| Footer cells use Type/label while the same TableCell set is body-sm | A set cannot know where it sits | A context flag → `data-label-type="label"` on the label and a recipe suffix key `'label[data-label-type="label"]'` |
+| Focused row = 2px ring all round and NO bottom hairline; Dragging = 1px all round | The default state's `strokeBottomWidth` would stay | Per-state recipe slot sets `strokeWidth` and omits the bottom divider; the more specific state rule wins over the border shorthand |
+| Part recipes for a frozen plugin | Parity test wants the keys in `WEB_ONLY` | Add the 13 keys (the plugin has a `Table` builder that already passes). Ledger: delete all 14 entries together |
+| axe `color-contrast` 4.22 | `Content/secondary` on `Surface/muted` (head label, Light) | Copied (rule 1), reported. Same pair as the Accordion note |

@@ -238,28 +238,6 @@ export const COLLAPSIBLE: ComponentRecipe = {
   ],
 }
 
-// ── Table ──────────────────────────────────────────────────────────────────
-// shadcn's Table: a hairline under each row, a muted hover and selected row,
-// medium-weight heads at the control height, a muted footer.
-
-export const TABLE: ComponentRecipe = {
-  key: 'Table',
-  slots: ['root', 'row', 'head', 'cell', 'footer', 'caption'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { text: c('content.primary'), font: 'type.body-sm' },
-      row: { stroke: c('border.default'), strokeBottomWidth: 'stroke.divider' },
-      'row:hover': { fill: c('action.ghost.hover') },
-      'row[data-state="selected"]': { fill: c('surface.selected') },
-      head: { text: c('content.primary'), font: 'type.label', height: 'size.control', paddingX: 'spacing.2' },
-      cell: { paddingX: 'spacing.2', paddingY: 'spacing.2' },
-      footer: { fill: c('surface.layer-2'), font: 'type.label' },
-      caption: { text: c('content.secondary'), font: 'type.body-sm' },
-    })),
-  ],
-}
-
 // ── AlertDialog ────────────────────────────────────────────────────────────
 // shadcn's AlertDialog: the Dialog's surface, a muted media tile, and a footer
 // of Buttons (they paint themselves). `size` sm tightens the padding.

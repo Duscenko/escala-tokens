@@ -60,8 +60,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import {\n  Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent,\n} from "@/components/ui/empty"\n\n<Empty>\n  <EmptyHeader>\n    <EmptyMedia${v.Media === 'icon' ? ' variant="icon"' : ''}><Package /></EmptyMedia>\n    <EmptyTitle>No projects yet</EmptyTitle>\n    <EmptyDescription>Create your first project to start.</EmptyDescription>\n  </EmptyHeader>\n  <EmptyContent><Button size="sm">Create project</Button></EmptyContent>\n</Empty>`,
   Collapsible: (v) =>
     `import {\n  Collapsible, CollapsibleTrigger, CollapsibleContent, CollapsibleItem,\n} from "@/components/ui/collapsible"\n\n<Collapsible${v.Open === 'True' ? ' defaultOpen' : ''}>\n  <CollapsibleTrigger>3 starred repositories</CollapsibleTrigger>\n  <CollapsibleItem>escala/tokens</CollapsibleItem>\n  <CollapsibleContent>\n    <CollapsibleItem>escala/figma-plugin</CollapsibleItem>\n  </CollapsibleContent>\n</Collapsible>`,
-  Table: () =>
-    `import {\n  Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption,\n} from "@/components/ui/table"\n\n<Table>\n  <TableCaption>Recent invoices.</TableCaption>\n  <TableHeader>\n    <TableRow><TableHead>Invoice</TableHead><TableHead>Amount</TableHead></TableRow>\n  </TableHeader>\n  <TableBody>\n    <TableRow><TableCell>INV001</TableCell><TableCell>$250.00</TableCell></TableRow>\n  </TableBody>\n</Table>`,
 
   Toggle: (v) =>
     `import { Toggle } from "@/components/ui/toggle"\n\n<Toggle${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}${v.Pressed === 'True' ? ' defaultPressed' : ''} aria-label="Bold">\n  <Bold />\n</Toggle>`,
@@ -101,6 +99,34 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
 
   Separator: (v) =>
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} />`,
+  Table: (v) =>
+    `import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table"\n\n<Table${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Appearance === 'ghost' ? ' appearance="ghost"' : ''}${v.Dividers === 'grid' ? ' dividers="grid"' : ''} aria-label="Team members">\n  <TableHeader>\n    <TableHead label="Name" />\n    <TableHead label="Amount" align="end" />\n  </TableHeader>\n  <TableBody>\n    <TableRow>\n      <TableCell label="Olivia Martin" />\n      <TableCell label="1,280.00" align="end" />\n    </TableRow>\n  </TableBody>\n</Table>`,
+  TableCell: (v) =>
+    `import { TableCell } from "@/components/ui/table"\n\n<TableCell${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Align === 'end' ? ' align="end"' : ''}${v.Pinned && v.Pinned !== 'none' ? ` pinned="${v.Pinned}"` : ''}${v.State === 'Disabled' ? ' state="Disabled"' : ''} label="Cell text" description="Supporting text" descriptionVisible />`,
+  TableHead: (v) =>
+    `import { TableHead } from "@/components/ui/table"\n\n<TableHead${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Align === 'end' ? ' align="end"' : ''}${v.Sort && v.Sort !== 'none' ? ` sort="${v.Sort}"` : ''} label="Column" onSort={() => {}} />`,
+  TableMediaCell: (v) =>
+    `import { TableMediaCell } from "@/components/ui/table"\n\n<TableMediaCell${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Ratio === 'wide' ? ' ratio="wide"' : ''} label="Studio portrait" src="/photo.jpg" alt="" />`,
+  TableTrendCell: (v) =>
+    `import { TableTrendCell } from "@/components/ui/table"\n\n<TableTrendCell${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Trend && v.Trend !== 'up' ? ` trend="${v.Trend}"` : ''} value="4,335.50" delta="12.4%" />`,
+  TableResizer: (v) =>
+    `// TableHead draws its own TableResizer when resizerVisible is on.\nimport { TableHead } from "@/components/ui/table"\n\n<TableHead label="Column" resizerVisible onResizeStart={startResize} />`,
+  TableRow: (v) =>
+    `import { TableRow, TableCell } from "@/components/ui/table"\n\n<TableRow${v.State === 'Selected' ? ' selected' : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Dragging' ? ' dragging' : ''} interactive onClick={open}>\n  <TableCell label="Olivia Martin" />\n</TableRow>`,
+  TableHeader: (v) =>
+    `import { TableHeader, TableHead } from "@/components/ui/table"\n\n<TableHeader${v.Scrolled === 'true' ? ' scrolled' : ''}>\n  <TableHead label="Name" />\n</TableHeader>`,
+  TableFooter: (v) =>
+    `import { TableFooter, TableCell } from "@/components/ui/table"\n\n<TableFooter>\n  <TableCell label="Total" />\n  <TableCell label="4,645.75" align="end" />\n</TableFooter>`,
+  TableCaption: (v) =>
+    `import { TableCaption } from "@/components/ui/table"\n\n<TableCaption title="Team billing" description="Invoices for the current billing period, in EUR." />`,
+  TableDropIndicator: (v) =>
+    `import { TableDropIndicator } from "@/components/ui/table"\n\n<TableDropIndicator />`,
+  TableEmpty: (v) =>
+    `import { TableEmpty } from "@/components/ui/table"\n\n<TableEmpty title="No invoices yet" description="Invoices appear here once a billing period closes." />`,
+  TableLoading: (v) =>
+    `import { TableLoading } from "@/components/ui/table"\n\n<TableLoading label="Loading data…" />`,
+  TableLoadMore: (v) =>
+    `import { TableLoadMore } from "@/components/ui/table"\n\n<TableLoadMore${v.State === 'Loading' ? ' state="Loading"' : ''} onLoadMore={next} />`,
   Accordion: (v) =>
     `import { Accordion, AccordionItem } from "@/components/ui/accordion"\n\n<Accordion${v.Variant && v.Variant !== 'ghost-default' ? ` variant="${v.Variant}"` : ''} defaultValue={["what"]}>\n  <AccordionItem value="what" label="What is Escala?">Escala is a design system…</AccordionItem>\n  <AccordionItem value="sync" label="How do design tokens sync?">Variables map to CSS custom properties…</AccordionItem>\n</Accordion>`,
   AccordionItem: (v) =>
