@@ -20,11 +20,12 @@ import { Slider as SkSlider } from '../../../escala-ui/slider'
 import { Label as SkLabel } from '../../../escala-ui/label'
 import {
   Field as SkField, FieldContent as SkFieldContent, FieldDescription as SkFieldDescription, FieldGroup as SkFieldGroup,
-  FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldOrientation,
+  FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
 import { PasswordStrength as SkPasswordStrength, type Strength } from '../../../escala-ui/password-strength'
 import { Dropzone as SkDropzone, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
+import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
 import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOption, type NativeSelectSize } from '../../../escala-ui/native-select'
 
@@ -352,31 +353,23 @@ export function SkeletonSliderSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonFieldSpecimen({ t, v }: SpecimenProps) {
-  const orientation = (v.Orientation ?? 'vertical') as FieldOrientation
-  const id = useId()
-  if (orientation === 'horizontal') {
-    return (
-      <RecipeScope t={t}>
-        <SkField orientation="horizontal" style={{ width: 300 }}>
-          <SkCheckbox id={id} defaultChecked icon={checkGlyph(t)} />
-          <SkFieldContent>
-            <SkFieldLabel htmlFor={id}>Share usage data</SkFieldLabel>
-            <SkFieldDescription>Helps us improve Escala. No tokens leave your file.</SkFieldDescription>
-          </SkFieldContent>
-        </SkField>
-      </RecipeScope>
-    )
-  }
+export function SkeletonFieldSpecimen({ t, v, w }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as FieldSize
+  const state = (v.State ?? 'Default') as FieldState
   return (
     <RecipeScope t={t}>
-      <SkFieldGroup style={{ width: 260 }}>
-        <SkField orientation={orientation}>
-          <SkFieldLabel htmlFor={id}>Workspace name</SkFieldLabel>
-          <SkInput id={id} defaultValue="Acme Inc." />
-          <SkFieldDescription>Shown to your teammates.</SkFieldDescription>
-        </SkField>
-      </SkFieldGroup>
+      <SkField
+        style={{ width: w ?? 320 }}
+        size={size}
+        state={state}
+        label="Email address"
+        required
+        trailing={<SkTextLink href="#" onClick={(e) => e.preventDefault()}>Forgot password?</SkTextLink>}
+        description="We will never share your email."
+        error="Enter a valid email address."
+      >
+        <SkInput type="email" placeholder="Jane Doe" />
+      </SkField>
     </RecipeScope>
   )
 }

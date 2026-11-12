@@ -182,7 +182,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).
-    const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'] }
+    const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))

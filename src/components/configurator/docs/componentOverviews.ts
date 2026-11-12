@@ -163,7 +163,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
   ],
   Dropzone: [each('State', ['Default', 'Dragging', 'Error'])],
-  Field: [each('Orientation', ['vertical', 'horizontal'])],
+  Field: [
+    each('State', ['Default', 'Invalid', 'Disabled']),
+    each('Size', ['sm', 'default', 'lg']),
+  ],
   PasswordStrength: stack('Strength', ['weak', 'fair', 'strong']),
 
   // ── Indicators ─────────────────────────────────────────────────────────────

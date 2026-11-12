@@ -89,3 +89,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | The frozen plugin documents slots (`RECIPE_FIGMA_ANATOMY.omit`) the rebuilt recipe no longer has | `ButtonGroup.text: expected [...] to include 'text'` | `STALE_ANATOMY` in `componentRecipesPluginParity.test.ts` (dated), never a plugin edit |
 | A pair the FILE binds fails AA | axe: outline · Active · Hover/Pressed = `Content/accent` on `Surface/selected-pressed`, 4.1:1 in Light | Copied (rule 1), reported to the owner in one line. Not a code bug |
 | axe on a story in a given theme | Swapping the manager iframe's `src` in a loop measured stale documents | Navigate the pane to `iframe.html?id=<story>&viewMode=story&globals=theme:dark`, wait, then `axe.run(#storybook-root)` (axe is on the preview window) |
+
+# Lessons from the Field (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The committed snapshot (`spec/figma-components.json`) is older than the live file | Field: snapshot 6 variants `State Default|Invalid`, live file 9 with `Disabled` | Build the LIVE file. The component stays in `pending` (with a `note`) until the snapshot is refreshed — a full refresh drags in every other change in the file (dozens of sets), so it is its own task, never a side effect of one component |
+| `components-inventory.figma.js` returns ~29 KB of JSON; as an escaped string inside the result it nears the 48 KB cap | — | Return the pages as OBJECTS in two halves (`pages.slice`) with the checksum; `JSON.stringify` of the joined halves reproduces the checksum |
+| A component whose old shadcn parts are still used by components not rebuilt yet (FieldSet, FieldLabel… lay out checkbox / switch rows) | Deleting them breaks Checkbox, Switch, RadioGroup specimens | The Figma API on the component (`label`, `state`…); the legacy parts kept as MIGRATION ONLY, out of the catalogue axes; the legacy path selected by the absence of the Figma prop (`label === undefined`) |
+| A Storybook grid wider than the canvas in Dark | axe: 12 contrast failures — dark text measured on the WHITE body, because the `.dark` wrapper is only as wide as the canvas | Stories wrap (`flexWrap`), never a fixed multi-column grid wider than the pane |

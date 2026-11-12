@@ -10479,13 +10479,16 @@
       "key": "Field",
       "slots": [
         "root",
+        "labelRow",
         "label",
+        "required",
         "description",
         "error",
         "legend"
       ],
       "defaults": {
-        "Orientation": "vertical"
+        "Size": "default",
+        "State": "Default"
       },
       "parts": [
         {
@@ -10493,10 +10496,20 @@
           "values": {
             "": {
               "root": {
+                "gap": "spacing.gap-control"
+              },
+              "root[data-orientation=\"horizontal\"]": {
                 "gap": "spacing.3"
+              },
+              "labelRow": {
+                "gap": "spacing.gap-tight"
               },
               "label": {
                 "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "required": {
+                "text": "color.content.secondary",
                 "font": "type.label"
               },
               "description": {
@@ -10510,6 +10523,26 @@
               "legend": {
                 "text": "color.content.primary",
                 "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {},
+            "Invalid": {},
+            "Disabled": {
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "required": {
+                "text": "color.content.disabled"
+              },
+              "description": {
+                "text": "color.content.disabled"
               }
             }
           }

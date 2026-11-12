@@ -426,18 +426,34 @@ export const SLIDER: ComponentRecipe = {
 // shadcn's Field: `orientation` vertical | horizontal | responsive, gap-3, a
 // muted description, a destructive error. Label: medium text-sm, no variants.
 
+// ── Field ──────────────────────────────────────────────────────────────────
+// The Figma `Field` set (design-plans/field-contract.md): a column, gap
+// `Spacing/gap-control`; a label row, gap `Spacing/gap-tight`; label and `*` in
+// `Type/label`, description and error in `Type/helper`. Disabled turns the label,
+// the `*` and the description to `Content/disabled`. Size only sizes the control
+// (and the trailing link) — the component passes it on, no paint of its own.
+export const FIELD_SIZES = ['default', 'sm', 'lg'] as const
+export const FIELD_STATES = ['Default', 'Invalid', 'Disabled'] as const
+
 export const FIELD: ComponentRecipe = {
   key: 'Field',
-  slots: ['root', 'label', 'description', 'error', 'legend'],
-  defaults: { Orientation: 'vertical' },
+  slots: ['root', 'labelRow', 'label', 'required', 'description', 'error', 'legend'],
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.3' },
+      root: { gap: 'spacing.gap-control' },
+      // MIGRATION ONLY: shadcn's horizontal rows (a checkbox beside its label) keep their 12px.
+      'root[data-orientation="horizontal"]': { gap: 'spacing.3' },
+      labelRow: { gap: 'spacing.gap-tight' },
       label: { text: c('content.primary'), font: 'type.label' },
+      required: { text: c('content.secondary'), font: 'type.label' },
       description: { text: c('content.secondary'), font: 'type.helper' },
       error: { text: c('status.critical.content'), font: 'type.helper' },
       legend: { text: c('content.primary'), font: 'type.label' },
     })),
+    part({ State: FIELD_STATES }, (state): SlotMap => (state === 'Disabled'
+      ? { label: { text: c('content.disabled') }, required: { text: c('content.disabled') }, description: { text: c('content.disabled') } }
+      : {})),
   ],
 }
 

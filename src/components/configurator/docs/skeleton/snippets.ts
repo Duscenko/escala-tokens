@@ -153,8 +153,13 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
   Dropzone: (v) =>
     `import { Dropzone } from "@/components/ui/file-upload"\n\n<Dropzone\n  title="Click to upload or drag and drop"\n  hint="${v.State === 'Error' ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}"\n  onFiles={upload}${v.State && v.State !== 'Default' ? `\n  forceState="${v.State}"` : ''}\n/>`,
-  Field: (v) =>
-    `import { Input } from "@/components/ui/input"\nimport { Field, FieldDescription, FieldLabel } from "@/components/ui/field"\n\n<Field${v.Orientation && v.Orientation !== 'vertical' ? ` orientation="${v.Orientation}"` : ''}>\n  <FieldLabel htmlFor="workspace">Workspace name</FieldLabel>\n  <Input id="workspace" defaultValue="Acme Inc." />\n  <FieldDescription>Shown to your teammates.</FieldDescription>\n</Field>`,
+  Field: (v) => {
+    const attrs = [
+      v.Size && v.Size !== 'default' ? `\n  size="${v.Size}"` : '',
+      v.State && v.State !== 'Default' ? `\n  state="${v.State}"` : '',
+    ].join('')
+    return `import { Field } from "@/components/ui/field"\nimport { Input } from "@/components/ui/input"\nimport { TextLink } from "@/components/ui/text-link"\n\n<Field\n  label="Email address"\n  required\n  trailing={<TextLink href="/reset">Forgot password?</TextLink>}\n  description="We will never share your email."\n  error="Enter a valid email address."${attrs}\n>\n  <Input type="email" placeholder="Jane Doe" />\n</Field>`
+  },
   Label: () =>
     `import { Label } from "@/components/ui/label"\n\n<Label htmlFor="email">Email address</Label>`,
   PasswordStrength: (v) =>

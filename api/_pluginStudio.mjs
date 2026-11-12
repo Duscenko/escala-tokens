@@ -4529,16 +4529,25 @@ var init_componentCatalogue = __esm({
         key: "Field",
         label: "Field",
         category: "Form Controls",
-        description: "shadcn/ui Field: a control with its label, description and error, laid out vertically, horizontally or responsively; with FieldSet, FieldLegend and FieldGroup for whole forms.",
-        usage: "Wrap every form control in a Field. Use horizontal for checkboxes and switches, FieldSet + FieldLegend for a group of them.",
-        axes: [{ name: "Orientation", values: ["vertical", "horizontal", "responsive"] }],
+        description: "A labelled form field: a label with an optional required marker and trailing link, one form control, and helper or error text. Field never draws the control \u2014 it wires the Input (or Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) you give it.",
+        usage: "Wrap a form control that needs a visible label. Use a bare control only where no visible label is needed (search). Match the control to the Field size; Invalid shows the error, Disabled disables the control and dims the texts.",
+        // The Figma file's axes, value for value (design-plans/field-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Invalid", "Disabled"] }
+        ],
         figmaSets: ["Field"],
         props: [
-          { name: "orientation", type: '"vertical" | "horizontal" | "responsive"', description: "shadcn's layouts." },
-          { name: "FieldLabel \xB7 FieldDescription \xB7 FieldError", type: "component", description: "The parts around the control." },
-          { name: "FieldSet \xB7 FieldLegend \xB7 FieldGroup \xB7 FieldContent \xB7 FieldSeparator", type: "component", description: "Grouping and layout." }
+          { name: "label", type: "ReactNode", description: "The label (Figma Label) \u2014 the control's accessible name (htmlFor)." },
+          { name: "required", type: "boolean", description: "Shows the * marker (Figma RequiredVisible); sets aria-required on the control." },
+          { name: "trailing", type: "ReactNode", description: 'A link at the end of the label row (Figma TrailingVisible), e.g. a TextLink "Forgot password?". Field sizes it (xs, sm at lg).' },
+          { name: "description", type: "ReactNode", description: "Helper text (Figma DescriptionVisible + Description), wired with aria-describedby." },
+          { name: "error", type: "ReactNode", description: "Error text (Figma Error), shown when state is Invalid." },
+          { name: "size", type: '"default" | "sm" | "lg"', description: "The control's size (Size/control-md 40 \xB7 sm 32 \xB7 lg 48), passed to it." },
+          { name: "state", type: '"Default" | "Invalid" | "Disabled"', description: "Invalid sets aria-invalid on the control and shows the error; Disabled disables it and turns the texts to Content/disabled." },
+          { name: "children", type: "ReactElement", description: "The one form control." }
         ],
-        accessibility: 'Field is role="group"; FieldLabel is a <label> (htmlFor); FieldError is role="alert".'
+        accessibility: 'role="group". The label is a <label htmlFor> on the control; description and error reach it through aria-describedby; aria-invalid on Invalid, disabled on Disabled, aria-required with required.'
       },
       {
         key: "Label",
@@ -8718,7 +8727,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9072,18 +9081,24 @@ var init_forms = __esm({
         }))
       ]
     };
+    FIELD_STATES = ["Default", "Invalid", "Disabled"];
     FIELD = {
       key: "Field",
-      slots: ["root", "label", "description", "error", "legend"],
-      defaults: { Orientation: "vertical" },
+      slots: ["root", "labelRow", "label", "required", "description", "error", "legend"],
+      defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.3" },
+          root: { gap: "spacing.gap-control" },
+          // MIGRATION ONLY: shadcn's horizontal rows (a checkbox beside its label) keep their 12px.
+          'root[data-orientation="horizontal"]': { gap: "spacing.3" },
+          labelRow: { gap: "spacing.gap-tight" },
           label: { text: c("content.primary"), font: "type.label" },
+          required: { text: c("content.secondary"), font: "type.label" },
           description: { text: c("content.secondary"), font: "type.helper" },
           error: { text: c("status.critical.content"), font: "type.helper" },
           legend: { text: c("content.primary"), font: "type.label" }
-        }))
+        })),
+        part({ State: FIELD_STATES }, (state2) => state2 === "Disabled" ? { label: { text: c("content.disabled") }, required: { text: c("content.disabled") }, description: { text: c("content.disabled") } } : {})
       ]
     };
     LABEL = {

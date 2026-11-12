@@ -633,16 +633,26 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Field',
     label: 'Field',
     category: 'Form Controls',
-    description: 'shadcn/ui Field: a control with its label, description and error, laid out vertically, horizontally or responsively; with FieldSet, FieldLegend and FieldGroup for whole forms.',
-    usage: 'Wrap every form control in a Field. Use horizontal for checkboxes and switches, FieldSet + FieldLegend for a group of them.',
-    axes: [{ name: 'Orientation', values: ['vertical', 'horizontal', 'responsive'] }],
+    description:
+      'A labelled form field: a label with an optional required marker and trailing link, one form control, and helper or error text. Field never draws the control — it wires the Input (or Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) you give it.',
+    usage: 'Wrap a form control that needs a visible label. Use a bare control only where no visible label is needed (search). Match the control to the Field size; Invalid shows the error, Disabled disables the control and dims the texts.',
+    // The Figma file's axes, value for value (design-plans/field-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Invalid', 'Disabled'] },
+    ],
     figmaSets: ['Field'],
     props: [
-      { name: 'orientation', type: '"vertical" | "horizontal" | "responsive"', description: 'shadcn\'s layouts.' },
-      { name: 'FieldLabel · FieldDescription · FieldError', type: 'component', description: 'The parts around the control.' },
-      { name: 'FieldSet · FieldLegend · FieldGroup · FieldContent · FieldSeparator', type: 'component', description: 'Grouping and layout.' },
+      { name: 'label', type: 'ReactNode', description: 'The label (Figma Label) — the control\'s accessible name (htmlFor).' },
+      { name: 'required', type: 'boolean', description: 'Shows the * marker (Figma RequiredVisible); sets aria-required on the control.' },
+      { name: 'trailing', type: 'ReactNode', description: 'A link at the end of the label row (Figma TrailingVisible), e.g. a TextLink "Forgot password?". Field sizes it (xs, sm at lg).' },
+      { name: 'description', type: 'ReactNode', description: 'Helper text (Figma DescriptionVisible + Description), wired with aria-describedby.' },
+      { name: 'error', type: 'ReactNode', description: 'Error text (Figma Error), shown when state is Invalid.' },
+      { name: 'size', type: '"default" | "sm" | "lg"', description: 'The control\'s size (Size/control-md 40 · sm 32 · lg 48), passed to it.' },
+      { name: 'state', type: '"Default" | "Invalid" | "Disabled"', description: 'Invalid sets aria-invalid on the control and shows the error; Disabled disables it and turns the texts to Content/disabled.' },
+      { name: 'children', type: 'ReactElement', description: 'The one form control.' },
     ],
-    accessibility: 'Field is role="group"; FieldLabel is a <label> (htmlFor); FieldError is role="alert".',
+    accessibility: 'role="group". The label is a <label htmlFor> on the control; description and error reach it through aria-describedby; aria-invalid on Invalid, disabled on Disabled, aria-required with required.',
   },
   {
     key: 'Label',
