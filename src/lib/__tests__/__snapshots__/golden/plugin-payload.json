@@ -13127,6 +13127,192 @@
         }
       }
     },
+    "FileUploadItem": {
+      "key": "FileUploadItem",
+      "slots": [
+        "root",
+        "icon",
+        "content",
+        "header",
+        "footer",
+        "name",
+        "status",
+        "statusIcon",
+        "label",
+        "meta",
+        "actions",
+        "track",
+        "bar"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Status": "queued"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.24",
+                "radius": "radius.container",
+                "fill": "color.surface.layer-1",
+                "strokeWidth": "stroke.control",
+                "gap": "spacing.gap-control"
+              },
+              "content": {
+                "gap": "spacing.gap-tight"
+              },
+              "header": {
+                "gap": "spacing.gap-control"
+              },
+              "footer": {
+                "gap": "spacing.gap-control"
+              },
+              "name": {
+                "text": "color.content.primary"
+              },
+              "status": {
+                "gap": "spacing.gap-tight"
+              },
+              "statusIcon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "font": "type.caption"
+              },
+              "meta": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "actions": {
+                "gap": "spacing.gap-tight"
+              },
+              "track": {
+                "fill": "color.surface.muted",
+                "height": "spacing.1",
+                "radius": "radius.pill"
+              },
+              "bar": {
+                "fill": "color.action.primary.default",
+                "radius": "radius.pill"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "paddingX": "spacing.inset-control+stroke.control",
+                "paddingY": "spacing.inset-control+stroke.control"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              },
+              "name": {
+                "font": "type.label"
+              }
+            },
+            "sm": {
+              "root": {
+                "paddingX": "spacing.gap-control+stroke.control",
+                "paddingY": "spacing.gap-control+stroke.control"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "name": {
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Status"
+          ],
+          "values": {
+            "queued": {
+              "root": {
+                "stroke": "color.border.default"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "statusIcon": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              }
+            },
+            "uploading": {
+              "root": {
+                "stroke": "color.border.default"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "statusIcon": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              }
+            },
+            "paused": {
+              "root": {
+                "stroke": "color.border.default"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "statusIcon": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              }
+            },
+            "completed": {
+              "root": {
+                "stroke": "color.border.default"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "statusIcon": {
+                "text": "color.status.success.content"
+              },
+              "label": {
+                "text": "color.status.success.content"
+              }
+            },
+            "error": {
+              "root": {
+                "stroke": "color.status.critical.border"
+              },
+              "icon": {
+                "text": "color.status.critical.content"
+              },
+              "statusIcon": {
+                "text": "color.status.critical.content"
+              },
+              "label": {
+                "text": "color.status.critical.content"
+              }
+            }
+          }
+        }
+      ]
+    },
     "Field": {
       "key": "Field",
       "slots": [

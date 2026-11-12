@@ -1136,6 +1136,52 @@ export const FILE_UPLOAD_DROPZONE: ComponentRecipe = {
   ],
 }
 
+// ── FileUploadItem ─────────────────────────────────────────────────────────
+// The Figma `FileUploadItem` set (design-plans/file-upload-item-contract.md, 994:1074, 10 variants:
+// Size default · sm × Status queued · uploading · paused · completed · error). A 480 row (no
+// variable: summed steps) on Surface/layer-1 with a Border/default edge laid out, the format glyph,
+// then the name, the status and size readouts, the row's IconButtons (secondary · ghost) and, while
+// uploading or paused, the ProgressLine (drawn here: Surface/muted track, Action/primary/default bar,
+// 4px, Radius/full). default stacks header · footer · progress, sm puts everything on one line.
+export const FILE_UPLOAD_ITEM_SIZES = ['default', 'sm'] as const
+export const FILE_UPLOAD_ITEM_STATUSES = ['queued', 'uploading', 'paused', 'completed', 'error'] as const
+export const FILE_UPLOAD_ITEM: ComponentRecipe = {
+  key: 'FileUploadItem',
+  slots: ['root', 'icon', 'content', 'header', 'footer', 'name', 'status', 'statusIcon', 'label', 'meta', 'actions', 'track', 'bar'],
+  defaults: { Size: 'default', Status: 'queued' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.32+spacing.24', radius: 'radius.container', fill: c('surface.layer-1'), strokeWidth: 'stroke.control', gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-tight' },
+      header: { gap: 'spacing.gap-control' },
+      footer: { gap: 'spacing.gap-control' },
+      name: { text: c('content.primary') },
+      status: { gap: 'spacing.gap-tight' },
+      statusIcon: { width: 'icon.small', height: 'icon.small' },
+      label: { font: 'type.caption' },
+      meta: { text: c('content.secondary'), font: 'type.caption' },
+      actions: { gap: 'spacing.gap-tight' },
+      track: { fill: c('surface.muted'), height: 'spacing.1', radius: 'radius.pill' },
+      bar: { fill: c('action.primary.default'), radius: 'radius.pill' },
+    })),
+    part({ Size: FILE_UPLOAD_ITEM_SIZES }, (size) => ({
+      root: { paddingX: size === 'sm' ? 'spacing.gap-control+stroke.control' : 'spacing.inset-control+stroke.control', paddingY: size === 'sm' ? 'spacing.gap-control+stroke.control' : 'spacing.inset-control+stroke.control' },
+      icon: { width: size === 'sm' ? 'icon.medium' : 'icon.large', height: size === 'sm' ? 'icon.medium' : 'icon.large' },
+      name: { font: size === 'sm' ? 'type.body-sm' : 'type.label' },
+    })),
+    part({ Status: FILE_UPLOAD_ITEM_STATUSES }, (status) => {
+      const error = status === 'error'
+      const ink = error ? 'status.critical.content' : status === 'completed' ? 'status.success.content' : 'content.secondary'
+      return {
+        root: { stroke: c(error ? 'status.critical.border' : 'border.default') },
+        icon: { text: c(error ? 'status.critical.content' : 'content.secondary') },
+        statusIcon: { text: c(ink) },
+        label: { text: c(ink) },
+      }
+    }),
+  ],
+}
+
 // ── NativeSelect ───────────────────────────────────────────────────────────
 // shadcn's NativeSelect: a real <select> drawn as the field box, `size` default
 // | sm (the Select heights). The wrapper is the root, so the State axis reads

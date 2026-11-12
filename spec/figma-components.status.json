@@ -22,10 +22,6 @@
     "FileUpload": {
       "status": "rebuild"
     },
-    "FileUploadItem": {
-      "status": "part",
-      "of": "FileUpload"
-    },
     "Checkbox": {
       "status": "rebuild"
     },

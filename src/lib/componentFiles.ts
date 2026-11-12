@@ -3,7 +3,7 @@
 // the Figma plugin. `agentContext.ts` re-exports both helpers.
 
 /** Keys that live in a sibling's file (shadcn groups them that way). */
-const FILE_OF: Record<string, string> = { FileUploadDropzone: 'file-upload', StatusBadge: 'badge', ButtonGroupItem: 'button-group', ButtonGroupDivider: 'button-group', InputOTPSlot: 'input-otp', PasswordStrengthMeter: 'password-strength', PasswordStrengthRule: 'password-strength', InputTagChip: 'input-tag', InputTagOption: 'input-tag', DatePickerTrigger: 'date-picker', DatePickerPopover: 'date-picker', CalendarDay: 'calendar', CalendarHeader: 'calendar', CalendarMonth: 'calendar', CalendarPresets: 'calendar', CalendarFooter: 'calendar' }
+const FILE_OF: Record<string, string> = { FileUploadDropzone: 'file-upload', FileUploadItem: 'file-upload', StatusBadge: 'badge', ButtonGroupItem: 'button-group', ButtonGroupDivider: 'button-group', InputOTPSlot: 'input-otp', PasswordStrengthMeter: 'password-strength', PasswordStrengthRule: 'password-strength', InputTagChip: 'input-tag', InputTagOption: 'input-tag', DatePickerTrigger: 'date-picker', DatePickerPopover: 'date-picker', CalendarDay: 'calendar', CalendarHeader: 'calendar', CalendarMonth: 'calendar', CalendarPresets: 'calendar', CalendarFooter: 'calendar' }
 
 /** The escala-ui / shadcn file a catalogue key lives in: kebab case
  *  (`InputOTP` → `input-otp`, `ButtonGroup` → `button-group`) — the same name

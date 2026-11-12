@@ -194,6 +194,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
   FileUpload: () =>
     `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
+  FileUploadItem: (v) =>
+    `import { FileUploadItem } from "@/components/ui/file-upload"\n\n<FileUploadItem${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}\n  status="${v.Status ?? 'queued'}"\n  name="Q3-financial-report.pdf"${v.Status === 'uploading' ? '\n  progress={48}' : ''}\n  onRemove={remove}\n/>`,
   FileUploadDropzone: (v) =>
     `import { FileUploadDropzone } from "@/components/ui/file-upload"\n\n<FileUploadDropzone${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Invalid' ? ' invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''}\n  accept=".pdf,.zip,image/*"\n  onFiles={upload}\n/>`,
   Field: (v) => {

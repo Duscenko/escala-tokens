@@ -863,6 +863,30 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Native file input behind the styled trigger. Progress announced via aria-live.',
   },
   {
+    key: 'FileUploadItem',
+    label: 'File Upload Item',
+    category: 'Form Controls',
+    description: 'One file row in FileUpload with format icon, name, status, size readout, progress and row actions.',
+    usage: 'One row per file under a FileUploadDropzone. Status follows the upload: queued, uploading (progress), paused, completed, error (with its reason). sm for dense lists.',
+    // The Figma file's axes, value for value (design-plans/file-upload-item-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Status', values: ['queued', 'uploading', 'paused', 'completed', 'error'] },
+    ],
+    figmaSets: ['FileUploadItem'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Two lines with IconButton sm (default) or one line with IconButton xs (sm).' },
+      { name: 'status', type: '"queued" | "uploading" | "paused" | "completed" | "error"', description: 'The upload lifecycle: decides the readout colour, the actions and the progress bar.' },
+      { name: 'name', type: 'ReactNode', description: 'Figma Name: the file name, truncated.' },
+      { name: 'icon', type: 'ReactNode', description: 'Figma Icon: the format glyph (FilePdf).' },
+      { name: 'completedActions', type: 'boolean', description: 'Figma CompletedActionsVisible: Change and Download beside Remove.' },
+      { name: 'progress', type: 'number', description: '0–100 while uploading or paused.' },
+      { name: 'statusText / meta', type: 'ReactNode', description: 'The status and size readouts (the file\'s copy by default).' },
+      { name: 'onPause / onResume / onRemove / onRetry / onChange / onDownload', type: '() => void', description: 'The row actions.' },
+    ],
+    accessibility: 'Every action is an IconButton with its aria-label (Pause, Resume, Remove, Retry, Change, Download). The bar is role="progressbar" with aria-valuenow. Announce completed, removed and failed files from the FileUpload\'s live region.',
+  },
+  {
     key: 'FileUploadDropzone',
     label: 'File Upload Dropzone',
     category: 'Form Controls',

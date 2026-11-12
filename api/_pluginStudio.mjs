@@ -4759,6 +4759,30 @@ var init_componentCatalogue = __esm({
         accessibility: "Native file input behind the styled trigger. Progress announced via aria-live."
       },
       {
+        key: "FileUploadItem",
+        label: "File Upload Item",
+        category: "Form Controls",
+        description: "One file row in FileUpload with format icon, name, status, size readout, progress and row actions.",
+        usage: "One row per file under a FileUploadDropzone. Status follows the upload: queued, uploading (progress), paused, completed, error (with its reason). sm for dense lists.",
+        // The Figma file's axes, value for value (design-plans/file-upload-item-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Status", values: ["queued", "uploading", "paused", "completed", "error"] }
+        ],
+        figmaSets: ["FileUploadItem"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Two lines with IconButton sm (default) or one line with IconButton xs (sm)." },
+          { name: "status", type: '"queued" | "uploading" | "paused" | "completed" | "error"', description: "The upload lifecycle: decides the readout colour, the actions and the progress bar." },
+          { name: "name", type: "ReactNode", description: "Figma Name: the file name, truncated." },
+          { name: "icon", type: "ReactNode", description: "Figma Icon: the format glyph (FilePdf)." },
+          { name: "completedActions", type: "boolean", description: "Figma CompletedActionsVisible: Change and Download beside Remove." },
+          { name: "progress", type: "number", description: "0\u2013100 while uploading or paused." },
+          { name: "statusText / meta", type: "ReactNode", description: "The status and size readouts (the file's copy by default)." },
+          { name: "onPause / onResume / onRemove / onRetry / onChange / onDownload", type: "() => void", description: "The row actions." }
+        ],
+        accessibility: `Every action is an IconButton with its aria-label (Pause, Resume, Remove, Retry, Change, Download). The bar is role="progressbar" with aria-valuenow. Announce completed, removed and failed files from the FileUpload's live region.`
+      },
+      {
         key: "FileUploadDropzone",
         label: "File Upload Dropzone",
         category: "Form Controls",
@@ -9204,7 +9228,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9932,6 +9956,44 @@ var init_forms = __esm({
           };
         }),
         part({ State: FILE_UPLOAD_DROPZONE_STATES }, (state2) => fileUploadDropzonePaint(state2))
+      ]
+    };
+    FILE_UPLOAD_ITEM_SIZES = ["default", "sm"];
+    FILE_UPLOAD_ITEM_STATUSES = ["queued", "uploading", "paused", "completed", "error"];
+    FILE_UPLOAD_ITEM = {
+      key: "FileUploadItem",
+      slots: ["root", "icon", "content", "header", "footer", "name", "status", "statusIcon", "label", "meta", "actions", "track", "bar"],
+      defaults: { Size: "default", Status: "queued" },
+      parts: [
+        part({}, () => ({
+          root: { width: "spacing.32+spacing.32+spacing.32+spacing.24", radius: "radius.container", fill: c("surface.layer-1"), strokeWidth: "stroke.control", gap: "spacing.gap-control" },
+          content: { gap: "spacing.gap-tight" },
+          header: { gap: "spacing.gap-control" },
+          footer: { gap: "spacing.gap-control" },
+          name: { text: c("content.primary") },
+          status: { gap: "spacing.gap-tight" },
+          statusIcon: { width: "icon.small", height: "icon.small" },
+          label: { font: "type.caption" },
+          meta: { text: c("content.secondary"), font: "type.caption" },
+          actions: { gap: "spacing.gap-tight" },
+          track: { fill: c("surface.muted"), height: "spacing.1", radius: "radius.pill" },
+          bar: { fill: c("action.primary.default"), radius: "radius.pill" }
+        })),
+        part({ Size: FILE_UPLOAD_ITEM_SIZES }, (size) => ({
+          root: { paddingX: size === "sm" ? "spacing.gap-control+stroke.control" : "spacing.inset-control+stroke.control", paddingY: size === "sm" ? "spacing.gap-control+stroke.control" : "spacing.inset-control+stroke.control" },
+          icon: { width: size === "sm" ? "icon.medium" : "icon.large", height: size === "sm" ? "icon.medium" : "icon.large" },
+          name: { font: size === "sm" ? "type.body-sm" : "type.label" }
+        })),
+        part({ Status: FILE_UPLOAD_ITEM_STATUSES }, (status) => {
+          const error = status === "error";
+          const ink = error ? "status.critical.content" : status === "completed" ? "status.success.content" : "content.secondary";
+          return {
+            root: { stroke: c(error ? "status.critical.border" : "border.default") },
+            icon: { text: c(error ? "status.critical.content" : "content.secondary") },
+            statusIcon: { text: c(ink) },
+            label: { text: c(ink) }
+          };
+        })
       ]
     };
     NATIVE_SELECT_STATES = ["Default", "Hover", "Focused", "Disabled"];
@@ -11207,6 +11269,7 @@ var init_componentRecipes = __esm({
       Slider: SLIDER,
       FileUpload: FILE_UPLOAD,
       FileUploadDropzone: FILE_UPLOAD_DROPZONE,
+      FileUploadItem: FILE_UPLOAD_ITEM,
       Field: FIELD,
       Label: LABEL,
       PasswordStrength: PASSWORD_STRENGTH,
@@ -14076,7 +14139,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 125,
+          version: 126,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15605,6 +15668,19 @@ var init_useDesignStore = __esm({
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 126) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("FileUpload");
+                if (at < 0 || sel.includes("FileUploadItem")) return;
+                sel.splice(at, 0, "FileUploadItem");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

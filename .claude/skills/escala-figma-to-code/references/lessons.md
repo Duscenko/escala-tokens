@@ -230,3 +230,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A dashed stroke (dash 4·4) | No recipe prop for dashes | `borderStyle: dashed` inline; CSS cannot set the dash length — report it |
 | axe in Dark composites a translucent fill over the white `body`, not the `.dark` wrapper (elementsFromPoint shows `.dark` in the stack) | 1.81:1 «failures» on Status/critical/surface | Compute the real composite by hand over the `.dark` page (≈6.5:1 here); only Light flags are real |
 | A rename in the ledger (Dropzone → FileUploadDropzone) | Same list as NumberInput | catalogue, recipe key, `FILE_OF`, motion, specimens, snippets, overview, `PreviewPanel` `Live c=`, sitemap, store migration, `RENAMED_ON_WEB` + `WEB_ONLY` |
+
+# Lessons from the FileUploadItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A nested ProgressLine instance resized wider than its main component | Its bar stays 120 px (Value=50 of ITS 240) inside a 422 track; the label says 48 % | Draw the bar as the progress % of the track; report the file's artefact |
+| Hidden instances (`change`, `download` behind a BOOLEAN) have no children | `findOne(INSTANCE)` returned null | Read their `INSTANCE_SWAP` componentProperties (`Icon → icon/Swap`) instead |
+| Glyphs the shared component icon set lacks (FilePdf, CloudArrowUp, Swap…) | No `PreviewIcon` concept for them | Inline the Phosphor regular path (`@phosphor-icons/core/assets/regular/*.svg`) in the component, as calendar.tsx does |

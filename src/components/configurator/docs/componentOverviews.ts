@@ -226,6 +226,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
     [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
   ],
+  FileUploadItem: [
+    each('Status', ['queued', 'uploading', 'paused', 'completed', 'error']),
+    each('Size', ['default', 'sm']),
+  ],
   FileUploadDropzone: [
     each('State', ['Default', 'Hover', 'Dragging', 'Invalid', 'Disabled']),
     each('Size', ['sm', 'default', 'lg']),

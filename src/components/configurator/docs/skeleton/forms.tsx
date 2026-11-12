@@ -24,7 +24,7 @@ import {
   FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
 import { PasswordStrength as SkPasswordStrength, PasswordStrengthMeter as SkPasswordStrengthMeter, PasswordStrengthRule as SkPasswordStrengthRule, type PasswordStrengthSize, type Strength } from '../../../escala-ui/password-strength'
-import { FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
+import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileUploadItemStatus, FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
@@ -517,6 +517,18 @@ export function SkeletonFileUploadDropzoneSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkFileUploadDropzone size={size} forceState={state} style={w != null ? { width: w } : undefined} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonFileUploadItemSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkFileUploadItem
+        size={(v.Size ?? 'default') as FileUploadItemSize}
+        status={(v.Status ?? 'queued') as FileUploadItemStatus}
+        style={w != null ? { width: w } : undefined}
+      />
     </RecipeScope>
   )
 }
