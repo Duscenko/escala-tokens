@@ -134,9 +134,13 @@ Pero hay excepciones que, copiadas tal cual, quedan como API pública incoherent
    componente reconstruido pasa de rojo a verde; nadie puede reintroducir un hueco.
 3. **Los 29 componentes que solo existen en código se congelan**: siguen funcionando, no se
    les añade nada, y entran o salen cuando Figma los documente.
-4. **El plugin sigue al código por familias**: hoy construye en el archivo del usuario los
-   sets con nombres de shadcn. Cada familia reconstruida cambia receta + componente + builder
-   del plugin a la vez, con el test de paridad en verde.
+4. ~~El plugin sigue al código por familias~~ **Decisión del dueño (2026-11-12): el plugin
+   se CONGELA en componentes.** Se queda con lo que tiene (Button e IconButton nuevos, el
+   resto como está, en corte base). Los componentes se construyen para la **web y
+   Storybook**; ningún componente nuevo pasa por el plugin hasta que el dueño lo reabra.
+   Consecuencia: cuando una receta de la web cambie para un componente que el plugin ya
+   construye, el test de paridad (`componentRecipesPluginParity`) lo marcará; ese
+   componente se anota como "solo web" en el test en vez de tocar el plugin.
 5. **Orden**: Buttons → Inputs → Selection → Data display → Feedback → Overlays → Navigation →
    Layout → Blocks (los bloques al final: solo componen piezas ya existentes).
 

@@ -94,6 +94,14 @@ el estado Disabled conserva sus roles neutros):
 | critical · ghost | ghost | — | Status/critical/content | Action/ghost |
 | critical · link | link | — | Status/critical/content (subrayado en Hover/Pressed) | — |
 
+### El plugin se congela en componentes (decisión 2026-11-12, después del corte)
+
+Prioridad: **web y Storybook**. El plugin se queda con Button / IconButton y el resto de
+componentes que ya tiene; no se construye nada nuevo para él. El proceso de cada
+componente de la familia Buttons pasa a ser: limpiar la gramática en Figma → contrato →
+receta y componente (web) → Storybook → sacarlo del registro de pendientes. Sin paso de
+plugin.
+
 ### El plugin construye un CORTE BASE, no la matriz (decisión 2026-11-12)
 
 El plugin crea variables, hace el handoff y entrega la skill; sus componentes son una
