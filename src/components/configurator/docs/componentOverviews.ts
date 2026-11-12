@@ -148,6 +148,23 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], {}, 240),
     each('Value', ['placeholder', 'filled'], {}, 240),
   ],
+  DatePickerTrigger: [
+    each('State', ['Default', 'Hover', 'Focused'], { Value: 'filled' }, 280),
+    each('State', ['Invalid', 'Disabled', 'Loading'], { Value: 'filled' }, 280),
+    each('Size', ['sm', 'default', 'lg'], { Value: 'filled' }, 280),
+    each('Value', ['placeholder', 'filled'], {}, 280),
+  ],
+  DatePickerPopover: [
+    ...stack('Size', ['default', 'sm'], { Mode: 'single' }),
+    ...stack('Mode', ['range'], { Size: 'default' }),
+  ],
+  CalendarDay: [
+    each('State', ['Default', 'Hover', 'Today', 'Selected', 'Focused', 'Outside'], {}, 64),
+    each('State', ['RangeStart', 'RangeMiddle', 'RangeEnd', 'Disabled', 'Unavailable'], {}, 64),
+    each('State', ['Default', 'Hover', 'Today', 'Selected', 'Focused', 'Outside'], { Variant: 'secondary' }, 64),
+    each('State', ['RangeStart', 'RangeMiddle', 'RangeEnd', 'Disabled', 'Unavailable'], { Variant: 'secondary' }, 64),
+    each('Size', ['default', 'sm'], { State: 'Selected' }, 64),
+  ],
   InputOTP: [
     ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
     ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),

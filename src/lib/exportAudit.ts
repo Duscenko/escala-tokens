@@ -70,7 +70,9 @@ export const BUDGETS = {
   // option), each with its own design-skill file.
   // 90k → 95k (2026-11-12): Combobox became four Figma components (trigger, popover,
   // item, group label), each with its own design-skill file.
-  contextAllTokens: 95_000,
+  // 95k → 100k (2026-11-12): date picker page (trigger, popover) and CalendarDay on top of
+  // Combobox's four components, each with its own design-skill file.
+  contextAllTokens: 100_000,
   contextFoundationTokens: 12_000,
 }
 

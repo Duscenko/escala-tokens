@@ -4,19 +4,8 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "DatePickerPopover": {
-      "status": "part",
-      "of": "DatePickerTrigger"
-    },
-    "DatePickerTrigger": {
-      "status": "new"
-    },
     "Calendar": {
       "status": "rebuild"
-    },
-    "CalendarDay": {
-      "status": "part",
-      "of": "Calendar"
     },
     "CalendarFooter": {
       "status": "part",

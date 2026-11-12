@@ -3,6 +3,14 @@
 // weekdays and day buttons that mark selected / range / today / outside with
 // `data-*` (shadcn's own attributes). `mode` single | range is DayPicker's.
 // Icons come in as props. Appearance: recipe (Calendar, Button).
+//
+// CalendarDay is the FIGMA `CalendarDay` set (design-plans/calendar-day-contract.md, 421:309):
+// one day cell, Size default 40 · sm 32 × State × Variant default · secondary. Hover and Focused
+// come from the pointer and keyboard; `state` pins the data states (Today, Selected, RangeMiddle,
+// RangeStart, RangeEnd, Outside, Disabled, Unavailable) and `forceState` pins any state for docs.
+// A pinned state stops the pointer rules (a selected day has no hover look). `indicator` is
+// Figma IndicatorVisible (the dash under the date); `children` is the TEXT property Day.
+// `shape` is the file's instance override: rounded · pill · square. Paint: the CalendarDay recipe.
 import * as React from 'react'
 import { DayPicker, getDefaultClassNames, type DayButtonProps } from 'react-day-picker'
 import { cn } from '../../lib/utils'
@@ -73,4 +81,66 @@ function CalendarDayButton({ className, day, modifiers, ...props }: DayButtonPro
   )
 }
 
-export { Calendar, CalendarDayButton }
+export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
+export type CalendarDaySize = (typeof CALENDAR_DAY_SIZES)[number]
+export const CALENDAR_DAY_VARIANTS = ['default', 'secondary'] as const
+export type CalendarDayVariant = (typeof CALENDAR_DAY_VARIANTS)[number]
+export const CALENDAR_DAY_STATES = ['Default', 'Hover', 'Today', 'Selected', 'RangeMiddle', 'RangeStart', 'RangeEnd', 'Outside', 'Disabled', 'Unavailable', 'Focused'] as const
+export type CalendarDayState = (typeof CALENDAR_DAY_STATES)[number]
+export type CalendarDayShape = 'rounded' | 'pill' | 'square'
+
+export interface CalendarDayProps extends Omit<React.ComponentProps<'button'>, 'children'> {
+  size?: CalendarDaySize
+  variant?: CalendarDayVariant
+  /** Figma State. Hover and Focused come from the pointer and keyboard unless pinned with `forceState`. */
+  state?: CalendarDayState
+  /** Pin any state without a pointer (docs, Storybook, Figma parity). */
+  forceState?: CalendarDayState
+  /** Figma IndicatorVisible: the 12×2 dash under the date. */
+  indicator?: boolean
+  /** The file's instance override for the cell's corner. */
+  shape?: CalendarDayShape
+  /** Figma Day (default "15"). */
+  children?: React.ReactNode
+}
+
+function CalendarDay({
+  size = 'default', variant = 'default', state, forceState, indicator = false, shape = 'rounded', children = '15',
+  disabled, className, ref, ...props
+}: CalendarDayProps) {
+  const pinned = forceState ?? (state && state !== 'Default' ? state : undefined)
+  const off = !!disabled || pinned === 'Disabled' || pinned === 'Unavailable'
+  const effective: CalendarDayState | undefined = off && pinned !== 'Unavailable' ? 'Disabled' : pinned
+  const band = pinned === 'RangeMiddle' ? 'full' : pinned === 'RangeStart' ? 'start' : pinned === 'RangeEnd' ? 'end' : undefined
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-slot="calendar-day"
+      data-escala="CalendarDay"
+      data-size={size}
+      data-variant={variant}
+      data-force-state={effective}
+      aria-disabled={off || undefined}
+      disabled={off}
+      className={cn('relative inline-flex shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none select-none disabled:cursor-not-allowed', className)}
+      {...props}
+    >
+      {band && (
+        <span
+          data-part="CalendarDay.band"
+          aria-hidden
+          className={cn('absolute inset-y-0', band === 'full' && 'inset-x-0', band === 'start' && 'left-1/2 right-0', band === 'end' && 'left-0 right-1/2')}
+        />
+      )}
+      <span data-part="CalendarDay.cell" data-shape={shape} className="relative inline-flex size-full items-center justify-center">
+        <span data-part="CalendarDay.day" className="tabular-nums">{children}</span>
+      </span>
+      {indicator && (
+        <span data-part="CalendarDay.indicator" aria-hidden className="absolute bottom-[var(--spacing-1)] left-1/2 -translate-x-1/2" />
+      )}
+    </button>
+  )
+}
+
+export { Calendar, CalendarDayButton, CalendarDay }

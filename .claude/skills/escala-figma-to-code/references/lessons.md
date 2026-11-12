@@ -151,3 +151,32 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A listbox holding group headings and rules | axe `aria-required-children`: a listbox may only hold `option` / `group` | `ComboboxGroup` (`role="group"` labelled by its GroupLabel), the separator `role="none"` + `aria-hidden`; the empty variant drops `role="listbox"` and the message is `role="status"` |
 | A popover opened from a box whose border is part of the root | `top: 100%` measures from the padding edge: the gap came out 1px short | A plain wrapper around the trigger holds the popover (`absolute top-full`, `mt` = `--spacing-gap-control`): measured 8 |
 | A Shadow/* style with a 1px ring layer | `shadow.md` renders key + ambient only | System-wide token, not the component: reported, not special-cased |
+
+# Lessons from the DatePickerTrigger (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Another chat edits the same checkout while you work (a half-done Combobox: catalogue, store, `forms.ts`, goldens, parity test) | Your edits and goldens mix with theirs; `git status` cannot tell whose hunk is whose; their `gen:registry-sources` / `vitest -u` would pick up your files | `git worktree add ../escala-tokens-wt-<x> HEAD` (+ `ln -s` the main `node_modules`, the plugin repo stays a sibling), build and verify there, commit there; land it on the main branch only when the shared files are clean. Never leave untracked component files in the shared tree |
+| A story / specimen `aria-label` on a control whose visible text IS the name | axe `label-content-name-mismatch` ×36 (`aria-label="Date"` vs "Select date") | The usage board says «the visible text is the accessible name»: no `aria-label` on the trigger in stories, specimens or snippets |
+| The set's own description and usage board disagree with its numbers | «xs 32 / sm 36 / default 40» against measured sm 32 · default 40 · lg 48 | Trust the measured geometry; say it in the report |
+| Focused stroke 2px laid out + a `focus-ring` rectangle OUTSIDE | The field `ring` path draws the halo straddling a 1px edge | Focused: `strokeWidth: stroke.focus`, `halo` (outside), padding `inset-control+stroke.focus`. Invalid has NO halo in this set |
+| `:focus-visible` read right after `Tab` | Border 2px but the colour still the resting one | The recipe transitions `border-color` / `box-shadow`: wait ~600 ms before measuring |
+
+# Lessons from the DatePickerPopover (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set that is only a shell around another set (DatePickerPopover = radius + Shadow/lg around a Calendar instance) | Tempting to rebuild the Calendar (header, month, days, presets) inside it | Read the nested instances' main components first (`getMainComponentAsync` per instance): they were queue items 3–8. Build only the shell (`children` = the calendar), note the dependency in the contract |
+| A shadow style whose three layers all carry spread on a non-clipping frame | Ring `0 0 0 1` + `-4` / `-2` spreads | Pixels of the render (no hard 1px ring, side edge 237) showed none render: reuse the FAB `lift: rest` (`0 12 16 key + 0 4 6 ambient`) |
+| A new popover-like recipe key | `recipeMotion.test` failed | Add the key to the `popover-enter` / `popover-exit` `components` lists in `lib/motion.ts` besides `recipes/motion.ts` |
+
+# Lessons from the CalendarDay (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A cell whose DATA states (Today, Selected, Range…) are not pointer states | The recipe's State axis only knows Hover / Focused / Disabled; the rest fall to `[data-force-state="X"]` | A real `state` prop that writes `data-force-state` (a pinned state also stops `:hover`, as the file has no hover on a selected day) beside `forceState` for docs |
+| Two states drawn identically (Disabled · Unavailable) | Tempting to invent a strikethrough for Unavailable | Copy: same ink, both `disabled`; say it in the contract |
+| An absolute child 4px from an edge (the dash, x14 y34 in 40) | Tailwind `bottom-1` = 4.5px at this app's 18px root | `bottom-[var(--spacing-1)]` and the recipe's `spacing.3` × `spacing.0_5` for its size; measure x/y against the file |
+| Calendar parts import react-day-picker through `calendar.tsx` | An eager specimen would pull it into the main bundle | Register the specimen through `lazySpecimen` (`skeleton/heavy.tsx`) |
+| Measuring recipe roles with a probe on `body` | Every `var(--color-…)` resolved to the same fallback | Append the probe INSIDE the component (the vars live in `RecipeScope`) |
+| `exportAudit` I10 budget again | Agent context 90 045 > 90 000 | Raise `contextAllTokens` with a dated note |

@@ -33,6 +33,9 @@
   <url><loc>https://www.escalatokens.com/components/InputTagOption</loc></url>
   <url><loc>https://www.escalatokens.com/components/Select</loc></url>
   <url><loc>https://www.escalatokens.com/components/NativeSelect</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DatePickerTrigger</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DatePickerPopover</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarDay</loc></url>
   <url><loc>https://www.escalatokens.com/components/Calendar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Combobox</loc></url>
   <url><loc>https://www.escalatokens.com/components/ComboboxPopover</loc></url>

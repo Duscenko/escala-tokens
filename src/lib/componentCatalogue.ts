@@ -588,6 +588,71 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field).',
   },
   {
+    key: 'DatePickerTrigger',
+    label: 'Date Picker Trigger',
+    category: 'Form Controls',
+    description: 'An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.',
+    usage: 'Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.',
+    // The Figma file\'s axes, value for value (design-plans/date-picker-trigger-contract.md).
+    axes: [
+      { name: 'Size', values: ['sm', 'default', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading'] },
+      { name: 'Value', values: ['placeholder', 'filled'] },
+    ],
+    figmaSets: ['DatePickerTrigger'],
+    props: [
+      { name: 'size', type: '"sm" | "default" | "lg"', description: 'Box 32 · 40 · 48; the glyph is 16 · 20 · 16.' },
+      { name: 'valueText', type: 'Date | ReactNode', description: 'Figma ValueText (Value filled); a Date is formatted as "Nov 12, 2026". Omit it for Value placeholder.' },
+      { name: 'placeholderText', type: 'ReactNode', description: 'Figma PlaceholderText (default "Select date").' },
+      { name: 'aria-invalid / disabled / loading', type: 'boolean', description: 'State Invalid / Disabled / Loading (the Spinner replaces the glyph). Hover and Focused come from the pointer and keyboard.' },
+      { name: 'aria-expanded / aria-controls', type: 'boolean / string', description: 'Set by the popover that opens from it.' },
+    ],
+    accessibility: 'A real button with aria-haspopup="dialog"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.',
+  },
+  {
+    key: 'DatePickerPopover',
+    label: 'Date Picker Popover',
+    category: 'Form Controls',
+    description: 'The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).',
+    usage: 'Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.',
+    // The Figma file\'s axes, value for value (design-plans/date-picker-popover-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Mode', values: ['single', 'range'] },
+    ],
+    figmaSets: ['DatePickerPopover'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: 322 px (default) or 250 px (sm) wide in single mode; the Calendar inside sets the width.' },
+      { name: 'mode', type: '"single" | "range"', description: 'Figma Mode: single date, or a range with the presets rail (482 · 390 px wide).' },
+      { name: 'sideOffset / align', type: 'number / "start" | "center" | "end"', description: 'Radix Popover placement (default 8 px below the trigger, aligned to its start).' },
+      { name: 'inline', type: 'boolean', description: 'Draw the panel in place instead of in a Portal (docs, previews).' },
+    ],
+    accessibility: 'Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates.',
+  },
+  {
+    key: 'CalendarDay',
+    label: 'Calendar Day',
+    category: 'Form Controls',
+    description: 'One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.',
+    usage: 'Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-day-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'State', values: ['Default', 'Hover', 'Today', 'Selected', 'RangeMiddle', 'RangeStart', 'RangeEnd', 'Outside', 'Disabled', 'Unavailable', 'Focused'] },
+      { name: 'Variant', values: ['default', 'secondary'] },
+    ],
+    figmaSets: ['CalendarDay'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: a 40 or 32 px square.' },
+      { name: 'variant', type: '"default" | "secondary"', description: 'Figma Variant: the brand fill, or the inverse (neutral) fill.' },
+      { name: 'state / forceState', type: 'CalendarDayState', description: 'The data states (Today, Selected, Range…, Outside, Disabled, Unavailable). Hover and Focused come from the pointer and keyboard; forceState pins any state for docs.' },
+      { name: 'indicator', type: 'boolean', description: 'Figma IndicatorVisible: the 12×2 dash under the date.' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Day (default "15").' },
+      { name: 'shape', type: '"rounded" | "pill" | "square"', description: 'The file\'s instance override for the cell corner (Radius/action · Radius/full · none).' },
+    ],
+    accessibility: 'A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

@@ -159,6 +159,148 @@ export const TEXTAREA: ComponentRecipe = {
   ],
 }
 
+// ── DatePickerTrigger ──────────────────────────────────────────────────────
+// The Figma `DatePickerTrigger` set (design-plans/date-picker-trigger-contract.md, 425:199,
+// 36 variants): an input-styled button that opens the DatePickerPopover. `Size` × `State` ×
+// `Value`. The ROOT is the box: Surface/input, a Border/control edge the file lays out
+// (content starts at padding + stroke), Radius/action, 32 · 40 · 48 tall, 12px insets, 8px
+// gap. In it, in order: the calendar glyph (16 · 20 · 16 — the file's numbers; Loading swaps
+// it for the Spinner) and the text, which fills the rest (Type/body-sm · body-md · body-md).
+// Hover: Border/control-hover. Focused: a 2px Border/focus edge laid out (content moves 1px)
+// + a 2px Border/ring/default halo OUTSIDE. Invalid: Status/critical/border-strong and NO halo
+// (unlike the inputs). Disabled: Surface/muted fill, the ordinary Border/control edge, every
+// ink Content/disabled. The placeholder is Content/subtle, the date Content/primary.
+export const DATE_PICKER_TRIGGER_SIZES = ['default', 'sm', 'lg'] as const
+export const DATE_PICKER_TRIGGER_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading'] as const
+export const DATE_PICKER_TRIGGER_VALUES = ['placeholder', 'filled'] as const
+const DPT_GEOMETRY: Record<string, { h: string; font: string; icon: string }> = {
+  sm: { h: 'size.compact', font: 'type.body-sm', icon: 'icon.small' },
+  default: { h: 'size.control', font: 'type.body-md', icon: 'icon.medium' },
+  lg: { h: 'size.touch', font: 'type.body-md', icon: 'icon.small' },
+}
+
+function datePickerTriggerPaint(state: string): SlotMap {
+  const disabled = state === 'Disabled'
+  const out: SlotMap = {
+    icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
+    spinner: { text: c('content.secondary') },
+    text: { text: c(disabled ? 'content.disabled' : 'content.primary') },
+    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+  }
+  if (disabled) out.root = { fill: c('surface.muted'), stroke: c('border.control'), halo: NONE }
+  else if (state === 'Invalid') out.root = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: NONE }
+  else if (state === 'Focused') {
+    // The 2px edge is laid out: the padding takes it instead of the 1px control edge.
+    out.root = { fill: c('surface.input'), stroke: c('border.focus'), strokeWidth: 'stroke.focus', halo: c('border.ring.default'), paddingX: 'spacing.inset-control+stroke.focus' }
+  } else if (state === 'Hover') out.root = { fill: c('surface.input'), stroke: c('border.control-hover'), halo: NONE }
+  else out.root = { fill: c('surface.input'), stroke: c('border.control'), halo: NONE }
+  return out
+}
+
+export const DATE_PICKER_TRIGGER: ComponentRecipe = {
+  key: 'DatePickerTrigger',
+  slots: ['root', 'icon', 'spinner', 'text', 'placeholder'],
+  defaults: { Size: 'default', State: 'Default', Value: 'placeholder' },
+  parts: [
+    part({}, () => ({
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', paddingX: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control' },
+    })),
+    part({ Size: DATE_PICKER_TRIGGER_SIZES }, (size) => {
+      const g = DPT_GEOMETRY[size]
+      return {
+        root: { height: g.h },
+        text: { font: g.font },
+        placeholder: { font: g.font },
+        icon: { width: g.icon, height: g.icon },
+        spinner: { width: g.icon, height: g.icon },
+      }
+    }),
+    part({ State: DATE_PICKER_TRIGGER_STATES }, (state) => datePickerTriggerPaint(state)),
+  ],
+}
+
+// ── DatePickerPopover ──────────────────────────────────────────────────────
+// The Figma `DatePickerPopover` set (design-plans/date-picker-popover-contract.md, 425:2276,
+// 4 variants: Size default · sm × Mode single · range): a THIN SHELL — a frame with no fill,
+// stroke or padding, Radius/overlay and the Shadow/lg effect, around one Calendar. Everything
+// visible (Surface/layer-1, Border/default, the header, the days, Clear / Apply, the presets rail
+// of Mode=range, the 322 · 250 · 482 · 390 widths) belongs to the Calendar. The shadow is what
+// Figma PAINTS: key 0 12 16 + ambient 0 4 6, no ring and no spread (the frame does not clip), the
+// FABButton's `lift: rest`.
+export const DATE_PICKER_POPOVER_SIZES = ['default', 'sm'] as const
+export const DATE_PICKER_POPOVER_MODES = ['single', 'range'] as const
+export const DATE_PICKER_POPOVER: ComponentRecipe = {
+  key: 'DatePickerPopover',
+  slots: ['root'],
+  defaults: { Size: 'default', Mode: 'single' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.overlay', lift: 'rest' } })),
+  ],
+}
+
+// ── CalendarDay ────────────────────────────────────────────────────────────
+// The Figma `CalendarDay` set (design-plans/calendar-day-contract.md, 421:309, 44 variants):
+// Size default 40 · sm 32 × State (Default · Hover · Today · Selected · RangeMiddle · RangeStart ·
+// RangeEnd · Outside · Disabled · Unavailable · Focused) × Variant default · secondary. A
+// transparent square (Size/control · Size/compact) holding, from back to front, the range band
+// (Surface/selected, or Surface/muted for secondary; the whole square, or its right / left half for
+// the range ends), the `cell` (Radius/action, the fill, the 1px Today edge or the 2px Focused edge
+// stroked INSIDE with the 2px halo OUTSIDE) and the `day` number; the indicator dash (12×2) sits
+// 4px above the bottom edge. Disabled and Unavailable are drawn identically (Content/disabled).
+export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
+export const CALENDAR_DAY_STATES = ['Default', 'Hover', 'Today', 'Selected', 'RangeMiddle', 'RangeStart', 'RangeEnd', 'Outside', 'Disabled', 'Unavailable', 'Focused'] as const
+export const CALENDAR_DAY_VARIANTS = ['default', 'secondary'] as const
+const CALENDAR_DAY_GEOMETRY: Record<string, { box: string; font: string }> = {
+  default: { box: 'size.control', font: 'type.body-md' },
+  sm: { box: 'size.compact', font: 'type.body-sm' },
+}
+
+function calendarDayPaint(variant: string, state: string): SlotMap {
+  const secondary = variant === 'secondary'
+  const solid = secondary ? c('surface.inverse') : c('action.primary.default')
+  const solidInk = secondary ? c('content.inverse') : c('content.on-action')
+  const out: SlotMap = {
+    band: { fill: c(secondary ? 'surface.muted' : 'surface.selected') },
+    indicator: { fill: c(secondary ? 'border.strong' : 'border.accent') },
+    cell: {},
+    day: { text: c('content.primary') },
+  }
+  switch (state) {
+    case 'Hover': out.cell = { fill: c('action.ghost.hover') }; break
+    case 'Today': out.cell = { stroke: c(secondary ? 'border.strong' : 'border.accent'), strokeWidth: 'stroke.control' }; break
+    case 'Selected': case 'RangeStart': case 'RangeEnd': out.cell = { fill: solid }; out.day = { text: solidInk }; break
+    case 'RangeMiddle': out.day = { text: c(secondary ? 'content.primary' : 'content.accent') }; break
+    case 'Outside': out.day = { text: c('content.secondary') }; break
+    case 'Disabled': case 'Unavailable': out.day = { text: c('content.disabled') }; break
+    case 'Focused':
+      out.cell = secondary
+        ? { stroke: c('border.strong'), strokeWidth: 'stroke.focus', halo: c('border.subtle') }
+        : { stroke: c('border.focus'), strokeWidth: 'stroke.focus', halo: c('border.ring.default') }
+      break
+  }
+  return out
+}
+
+export const CALENDAR_DAY: ComponentRecipe = {
+  key: 'CalendarDay',
+  slots: ['root', 'band', 'cell', 'day', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      cell: { radius: 'radius.action' },
+      // The shape is an instance override in the file: rounded (Radius/action) · pill · square.
+      'cell[data-shape="pill"]': { radius: 'radius.pill' },
+      'cell[data-shape="square"]': { radius: 'radius.none' },
+      indicator: { width: 'spacing.3', height: 'spacing.0_5' },
+    })),
+    part({ Size: CALENDAR_DAY_SIZES }, (size) => {
+      const g = CALENDAR_DAY_GEOMETRY[size]
+      return { root: { width: g.box, height: g.box }, day: { font: g.font } }
+    }),
+    part({ Variant: CALENDAR_DAY_VARIANTS, State: CALENDAR_DAY_STATES }, (variant, state) => calendarDayPaint(variant, state)),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

@@ -7,6 +7,7 @@ import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../preview/artefacts/boardScripts'
 import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type InputType } from '../../../escala-ui/input'
 import { Textarea as SkTextarea, type TextareaSize, type TextareaState } from '../../../escala-ui/textarea'
+import { DatePickerTrigger as SkDatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../escala-ui/date-picker'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
@@ -154,6 +155,21 @@ export function SkeletonTextareaSpecimen({ t, v, w }: SpecimenProps) {
         key={filled ? 'filled' : 'empty'}
         defaultValue={filled ? TEXTAREA_COPY.filled : undefined}
         style={{ width: w ?? 360 }}
+      />
+    </RecipeScope>
+  )
+}
+
+/** The Figma DatePickerTrigger: Size × State × Value, the file's own copy. */
+export function SkeletonDatePickerTriggerSpecimen({ t, v, w }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as DatePickerTriggerState
+  return (
+    <RecipeScope t={t}>
+      <SkDatePickerTrigger
+        size={(v.Size ?? 'default') as DatePickerTriggerSize}
+        forceState={state === 'Default' ? undefined : state}
+        valueText={v.Value === 'filled' ? 'Nov 12, 2026' : undefined}
+        style={{ width: w ?? 280 }}
       />
     </RecipeScope>
   )
