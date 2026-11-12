@@ -954,6 +954,17 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > Safety net: `spec/figma-components.json` (generated snapshot, never by hand) +
 > `spec/figma-components.status.json` (debt ledger) + `figmaComponentsParity.test.ts`.
 
+> **UPDATE (2026-11-12, owner's call): the PLUGIN builds a BASE CUT of every component, never
+> the full matrix.** The plugin's job is the variables, their handoff and the skill; its
+> components are a basic, variable-bound sample. The complete library (Button's 288 variants,
+> usage guidelines) is the paid Figma file. `representativeSpec` (`escala-figma-plugin/src/code.ts`)
+> cuts every set: `State` at rest, `Size` at default, other axes crossed up to 12 (above that,
+> each value once), plus whatever a composite nests (`NESTED_DEMANDS`, `BTN_NESTED` — a missing
+> entry makes `instanceOfVariant` nest the set's default variant). Full catalogue 1081 → 196
+> variants, Overview 425 → 48. A reused set is never pruned, so older files keep their extra
+> variants. `componentNestedVariants.test.ts` fails on a nested call that is not listed. Don't
+> grow a plugin set toward the Figma matrix. Plan: `design-plans/button-figma-parity.md`.
+
 > **UPDATE (2026-11-11): the `Escala design system` FIGMA FILE is the ground truth for every
 > name, default and alias (web `8d20af8`, plugin 0.34.0).** Inventory:
 > `escala-figma-plugin/spec/figma-variables.txt`; differences and the owner's decisions:

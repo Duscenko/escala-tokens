@@ -91,3 +91,63 @@ describe.skipIf(!existsSync(pluginCode))('plugin: every nested Button combinatio
     expect(unresolved, 'a call with a variable variant/size: make it literal, or check it by hand and list it here').toEqual(RESOLVED_BY_HAND)
   })
 })
+
+/**
+ * The same rule for every other set: each set ships the BASE CUT (State at
+ * rest, Size at default, the other axes crossed up to a cap), plus what a
+ * composite nests — `NESTED_DEMANDS` in code.ts. Every literal
+ * `instanceOfVariant('Set', { … })` call must be listed there, or the
+ * composite nests the set's default variant instead of the one it asked for.
+ */
+/** Sets nested with props that are not literals, each checked by hand:
+ *  Icon is built whole (`CUT_EXEMPT`); Toggle Group nests Toggle at its own
+ *  Variant, default size, at rest (listed as { Size, State }); Separator is two
+ *  orientations, both built; Bubble (Message) and FAB Button (FAB Group) list
+ *  their combinations; Button / IconButton go through systemButton /
+ *  systemIconButton (the test above) or a literal call. */
+const NESTED_BY_HAND = new Set(['Icon', 'Toggle', 'Separator', 'Bubble', 'FAB Button', 'Button', 'IconButton'])
+
+describe.skipIf(!existsSync(pluginCode))('plugin: every nested variant survives the base cut', () => {
+  const code = existsSync(pluginCode) ? readFileSync(pluginCode, 'utf8') : ''
+
+  const demands = (() => {
+    const block = /const NESTED_DEMANDS[^=]*=\s*\{([\s\S]*?)\n {2}\}/.exec(code)?.[1] ?? ''
+    const out = new Map<string, Record<string, string>[]>()
+    for (const m of block.matchAll(/'([^']+)':\s*\[([\s\S]*?)\],?\n/g)) {
+      out.set(m[1], [...m[2].matchAll(/\{([^}]*)\}/g)].map((o) => parseProps(o[1]) ?? {}))
+    }
+    return out
+  })()
+
+  it('finds the NESTED_DEMANDS table', () => {
+    expect(demands.size).toBeGreaterThan(0)
+  })
+
+  it('lists every literal nested variant', () => {
+    const missing: string[] = []
+    const unresolved = new Set<string>()
+    for (const m of code.matchAll(/\binstanceOfVariant\('([^']+)',\s*/g)) {
+      const set = m[1]
+      const rest = code.slice(m.index! + m[0].length)
+      const obj = /^\{([^}]*)\}/.exec(rest)
+      const props = obj ? parseProps(obj[1]) : null
+      if (!props) { unresolved.add(set); continue }
+      if (Object.keys(props).length === 0) continue // a one-variant set
+      const listed = (demands.get(set) ?? []).some((d) => Object.entries(d).every(([k, v]) => props[k] === v))
+      if (!listed) missing.push(`${set} ${JSON.stringify(props)}`)
+    }
+    expect(missing, 'add these to NESTED_DEMANDS in escala-figma-plugin/src/code.ts').toEqual([])
+    expect([...unresolved].filter((s) => !NESTED_BY_HAND.has(s)), 'a nested call with variable props: check it by hand and list its set in NESTED_BY_HAND').toEqual([])
+  })
+})
+
+/** `Key: 'value', …` → object; null when any value is not a string literal. */
+function parseProps(body: string): Record<string, string> | null {
+  const out: Record<string, string> = {}
+  for (const part of body.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const kv = /^'?([A-Za-z ]+)'?:\s*'([^']*)'$/.exec(part)
+    if (!kv) return null
+    out[kv[1]] = kv[2]
+  }
+  return out
+}

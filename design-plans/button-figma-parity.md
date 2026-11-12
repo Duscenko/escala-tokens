@@ -94,6 +94,19 @@ el estado Disabled conserva sus roles neutros):
 | critical · ghost | ghost | — | Status/critical/content | Action/ghost |
 | critical · link | link | — | Status/critical/content (subrayado en Hover/Pressed) | — |
 
+### El plugin construye un CORTE BASE, no la matriz (decisión 2026-11-12)
+
+El plugin crea variables, hace el handoff y entrega la skill; sus componentes son una
+muestra básica ligada a las variables. La biblioteca completa (288 variantes por set,
+guías de uso) es el archivo de Figma que se vende. `representativeSpec` (`code.ts`)
+aplica a todos los sets: `State` en reposo, `Size` por defecto, el resto de ejes
+cruzados hasta 12 (por encima, cada valor una vez), más lo que anidan los compuestos
+(`NESTED_DEMANDS`, `BTN_NESTED`). Medido con el mock: Full catalogue 1081 → 196
+variantes, Overview 425 → 48; Button 288 → 15. Antes de este cambio el modo por defecto
+también construía las 288 del Button (`FULL_SPEC_OVERRIDES` pisaba el corte en los dos
+modos). Un archivo que ya tiene más variantes las conserva: un set reutilizado nunca se
+poda. Red: `componentNestedVariants.test.ts`.
+
 ### Pendiente en Figma (no bloquea la F1)
 - **Usage Guideline** de la página Button: el menú de variantes y la anatomía de
   propiedades siguen mostrando los 7 valores antiguos; hay que rehacerlos con dos menús.
