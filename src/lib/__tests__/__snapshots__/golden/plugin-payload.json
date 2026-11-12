@@ -17851,8 +17851,7 @@
       "key": "SegmentedControl",
       "slots": [
         "root",
-        "item",
-        "pill"
+        "content"
       ],
       "defaults": {
         "Size": "default"
@@ -17863,27 +17862,40 @@
           "values": {
             "": {
               "root": {
-                "fill": "color.surface.layer-2",
+                "fill": "color.surface.muted",
                 "radius": "radius.action",
-                "paddingX": "spacing.1",
-                "paddingY": "spacing.1",
-                "gap": "spacing.0_5"
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.gap-tight"
               },
-              "pill": {
-                "fill": "color.surface.input",
-                "radius": "radius.control",
-                "shadow": "shadow.xs"
-              },
-              "item": {
-                "text": "color.content.secondary",
+              "content": {
+                "gap": "spacing.gap-tight"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SegmentedControlItem": {
+      "key": "SegmentedControlItem",
+      "slots": [
+        "root",
+        "icon",
+        "label"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Checked": "false",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
                 "font": "type.button",
-                "radius": "radius.control"
-              },
-              "item:hover": {
-                "text": "color.content.primary"
-              },
-              "item[aria-checked=\"true\"]": {
-                "text": "color.content.primary"
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.none"
               }
             }
           }
@@ -17894,15 +17906,120 @@
           ],
           "values": {
             "default": {
-              "item": {
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.1_5"
+              "root": {
+                "height": "size.compact",
+                "gap": "spacing.gap-control"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
               }
             },
             "sm": {
-              "item": {
-                "paddingX": "spacing.2_5",
-                "paddingY": "spacing.1"
+              "root": {
+                "height": "size.hit",
+                "gap": "spacing.gap-tight"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.control",
+                "gap": "spacing.gap-control"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Checked",
+            "State"
+          ],
+          "values": {
+            "false|Default": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary",
+                "radius": "radius.action"
+              }
+            },
+            "false|Hover": {
+              "root": {
+                "fill": "color.action.ghost.hover",
+                "text": "color.content.primary",
+                "radius": "radius.action"
+              }
+            },
+            "false|Pressed": {
+              "root": {
+                "fill": "color.action.ghost.pressed",
+                "text": "color.content.primary",
+                "radius": "radius.action"
+              }
+            },
+            "false|Focused": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary",
+                "radius": "radius.action",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "false|Disabled": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.disabled",
+                "radius": "radius.action"
+              }
+            },
+            "true|Default": {
+              "root": {
+                "fill": "color.surface.input",
+                "text": "color.content.primary",
+                "radius": "radius.control",
+                "shadow": "shadow.xs"
+              }
+            },
+            "true|Hover": {
+              "root": {
+                "fill": "color.surface.input",
+                "text": "color.content.primary",
+                "radius": "radius.control",
+                "shadow": "shadow.xs"
+              }
+            },
+            "true|Pressed": {
+              "root": {
+                "fill": "color.surface.input",
+                "text": "color.content.primary",
+                "radius": "radius.control",
+                "shadow": "shadow.xs"
+              }
+            },
+            "true|Focused": {
+              "root": {
+                "fill": "color.surface.input",
+                "text": "color.content.primary",
+                "radius": "radius.control",
+                "shadow": "shadow.xs",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "true|Disabled": {
+              "root": {
+                "fill": "color.surface.input",
+                "text": "color.content.disabled",
+                "radius": "radius.control",
+                "highlight": "none"
               }
             }
           }
@@ -17910,7 +18027,7 @@
       ],
       "motion": {
         "transitions": {
-          "item": {
+          "root": {
             "background-color": "use-hover",
             "color": "use-hover"
           }

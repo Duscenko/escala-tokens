@@ -284,3 +284,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Absolute marks hand-placed per Size (not centred in sm / default) | Tempting to centre them | Copy the literal x / y per Size · Thumb · Checked in the component (no variable) |
 | A part (SwitchGroup) living in its parent's file | `scripts/registrySources` looks per file | `FILE_OF` in `componentFiles.ts`, literal `data-escala="SwitchGroup"` |
 | Footer `Content/subtle` | axe 3:1 in both themes | Copied (rule 1), reported |
+
+# Lessons from the SegmentedControl and SegmentedControlItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A recipe slot with `focus: none` in a rule that also carries `shadow` | The checked segment lost Shadow/xs in every state: `focus` none writes `box-shadow: none` after it | Set `focus` / `ring` only for Focused; in `recipeStyles.ts` the `focus` rule now keeps the slot's own `shadow` under the rings (Shadow/xs on a raised segment) |
+| A part that must DROP an effect the Default rule paints (checked Disabled) | The state-less rule still applied to Disabled | `highlight: NONE` in that state writes `box-shadow: none` |
+| The selection used to slide (SlidingSelection pill) | In the file the checked item IS the raised thumb | Dropped the pill; the item paints its own fill and shadow; background / shadow transition in `recipes/motion.ts` (key `SegmentedControlItem`) |
+| A roving radiogroup | One tab stop, arrows move and select | `tabIndex` 0 only on the checked item, the group's `onKeyDown` clicks the next enabled radio |
+| Text width 31.49 vs Figma 32 | Every item 1px narrower | Figma rounds the text box; same layout (padding 12 + text) |

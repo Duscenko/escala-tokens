@@ -5590,17 +5590,39 @@ var init_componentCatalogue = __esm({
         key: "SegmentedControl",
         label: "Segmented Control",
         category: "Navigation",
-        description: "Joined single-choice control \u2014 one segment active at a time, iOS-style.",
-        usage: "Use for 2\u20134 exclusive views of the same data (e.g. List / Board). Not for navigation.",
-        axes: [{ name: "Size", values: ["default", "sm"] }],
-        figmaSets: ["Segmented Control"],
+        description: "Single choice between 2 to 5 short options shown as one track; the checked segment is raised on it. Size cascades to every segment.",
+        usage: "Use for 2\u20135 exclusive options of the same data (e.g. Day / Week / Month). Use RadioGroup for long labels or more options, TabMenu to switch views, ButtonGroup for independent actions.",
+        // The Figma file's axes, value for value (design-plans/segmented-control-contract.md).
+        axes: [{ name: "Size", values: ["default", "sm", "lg"] }],
+        figmaSets: ["SegmentedControl"],
         props: [
-          { name: "options", type: "string[]", description: "Segment labels." },
-          { name: "value / defaultValue", type: "string", description: "The selected segment." },
-          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection." },
-          { name: "size", type: '"default" | "sm"', description: "Segment padding." }
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Segment height 32 \xB7 24 \xB7 40; the track is 8 more. Cascades to every item." },
+          { name: "value / defaultValue / onValueChange", type: "string", description: "The checked segment (exactly one)." },
+          { name: "children", type: "SegmentedControlItem[]", description: "Figma Content slot. Omitted: Day \xB7 Week \xB7 Month." },
+          { name: "options", type: "string[]", description: "Shortcut for plain text segments." }
         ],
-        accessibility: 'role="radiogroup" semantics; segments toggle with arrow keys.'
+        accessibility: 'role="radiogroup"; each segment role="radio" with aria-checked. One tab stop; the arrow keys move and select.'
+      },
+      {
+        key: "SegmentedControlItem",
+        label: "Segmented Control Item",
+        category: "Navigation",
+        description: "One option of a SegmentedControl. Checked shows a raised Surface/input thumb with Shadow/xs on the Surface/muted track.",
+        usage: "Always inside a SegmentedControl. With LabelVisible false give the segment an aria-label.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Checked", values: ["false", "true"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["SegmentedControlItem"],
+        props: [
+          { name: "label / labelVisible", type: "ReactNode / boolean", description: "Figma Label and LabelVisible." },
+          { name: "iconLeadingVisible / iconLeading", type: "boolean / ReactNode", description: "Figma IconLeadingVisible and IconLeadingIcon." },
+          { name: "value", type: "string", description: "What it selects inside the group (defaults to the label)." },
+          { name: "checked / size", type: "boolean / Size", description: "Taken from the group when inside one." },
+          { name: "disabled / forceState", type: "boolean / State", description: "Disabled mutes it; forceState pins a state for docs." }
+        ],
+        accessibility: 'role="radio" with aria-checked; the roving tabindex belongs to the group.'
       },
       {
         key: "Breadcrumb",
@@ -10719,6 +10741,14 @@ var init_surfaces = __esm({
 });
 
 // src/lib/recipes/navigation.ts
+function segmentPaint(checked, state2) {
+  const on = checked === "true";
+  if (state2 === "Disabled") return { root: { fill: on ? c("surface.input") : NONE, text: c("content.disabled"), radius: on ? "radius.control" : "radius.action", ...on ? { highlight: NONE } : {} } };
+  const focus = state2 === "Focused" ? { focus: c("border.focus"), ring: c("border.ring.default") } : {};
+  if (on) return { root: { fill: c("surface.input"), text: c("content.primary"), radius: "radius.control", shadow: "shadow.xs", ...focus } };
+  const fill = state2 === "Hover" ? c("action.ghost.hover") : state2 === "Pressed" ? c("action.ghost.pressed") : NONE;
+  return { root: { fill, text: c(state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary"), radius: "radius.action", ...focus } };
+}
 function menu(key2) {
   const slots = {
     root: {
@@ -10747,7 +10777,7 @@ function menu(key2) {
   };
   return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
 }
-var TABS, TAB_MENU, SEGMENT_SIZE, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -10794,28 +10824,35 @@ var init_navigation = __esm({
         }))
       ]
     };
-    SEGMENT_SIZE = {
-      default: { padX: "spacing.4", padY: "spacing.1_5" },
-      sm: { padX: "spacing.2_5", padY: "spacing.1" }
-    };
+    SEGMENTED_CONTROL_SIZES = ["default", "sm", "lg"];
     SEGMENTED_CONTROL = {
       key: "SegmentedControl",
-      slots: ["root", "item", "pill"],
+      slots: ["root", "content"],
       defaults: { Size: "default" },
       parts: [
-        // The track is a container on a container: `surface.layer-2`, as the
-        // elevation contract says (layer-1 is the card it sits on).
         part({}, () => ({
-          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
-          // Concentric: the track's `radius.action` minus its `spacing.1` inset.
-          pill: { fill: c("surface.input"), radius: "radius.control", shadow: "shadow.xs" },
-          item: { text: c("content.secondary"), font: "type.button", radius: "radius.control" },
-          "item:hover": { text: c("content.primary") },
-          'item[aria-checked="true"]': { text: c("content.primary") }
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({
-          item: { paddingX: SEGMENT_SIZE[size].padX, paddingY: SEGMENT_SIZE[size].padY }
+          root: { fill: c("surface.muted"), radius: "radius.action", paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          content: { gap: "spacing.gap-tight" }
         }))
+      ]
+    };
+    SEGMENTED_CONTROL_ITEM_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    SEGMENT_ITEM = {
+      default: { box: "size.compact", gap: "spacing.gap-control", icon: "icon.small" },
+      sm: { box: "size.hit", gap: "spacing.gap-tight", icon: "icon.small" },
+      lg: { box: "size.control", gap: "spacing.gap-control", icon: "icon.medium" }
+    };
+    SEGMENTED_CONTROL_ITEM = {
+      key: "SegmentedControlItem",
+      slots: ["root", "icon", "label"],
+      defaults: { Size: "default", Checked: "false", State: "Default" },
+      parts: [
+        part({}, () => ({ root: { font: "type.button", paddingX: "spacing.inset-control", paddingY: "spacing.none" } })),
+        part({ Size: SEGMENTED_CONTROL_SIZES }, (size) => ({
+          root: { height: SEGMENT_ITEM[size].box, gap: SEGMENT_ITEM[size].gap },
+          icon: { width: SEGMENT_ITEM[size].icon, height: SEGMENT_ITEM[size].icon }
+        })),
+        part({ Checked: ["false", "true"], State: SEGMENTED_CONTROL_ITEM_STATES }, segmentPaint)
       ]
     };
     BREADCRUMB = {
@@ -11387,7 +11424,7 @@ var init_motion2 = __esm({
       Item: { transitions: { root: FILL } },
       Pagination: { transitions: { cell: FILL } },
       TabMenu: { transitions: { item: FILL } },
-      SegmentedControl: { transitions: { item: FILL } },
+      SegmentedControlItem: { transitions: { root: FILL } },
       Sidebar: { transitions: { button: FILL } },
       Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
       Table: { transitions: { row: states("background-color") } },
@@ -11528,6 +11565,7 @@ var init_componentRecipes = __esm({
       Tabs: TABS,
       TabMenu: TAB_MENU,
       SegmentedControl: SEGMENTED_CONTROL,
+      SegmentedControlItem: SEGMENTED_CONTROL_ITEM,
       Breadcrumb: BREADCRUMB,
       Pagination: PAGINATION,
       Stepper: STEPPER,
@@ -14350,7 +14388,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 129,
+          version: 130,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15927,6 +15965,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("Switch");
                 if (at < 0 || sel.includes("SwitchGroup")) return;
                 sel.splice(at + 1, 0, "SwitchGroup");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 130) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("SegmentedControl");
+                if (at < 0 || sel.includes("SegmentedControlItem")) return;
+                sel.splice(at + 1, 0, "SegmentedControlItem");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

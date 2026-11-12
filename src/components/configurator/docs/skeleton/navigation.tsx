@@ -5,7 +5,7 @@ import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
 import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
-import { SegmentedControl as SkSegmentedControl } from '../../../escala-ui/segmented-control'
+import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegmentedControlItem, type SegmentedControlItemState, type SegmentedControlSize } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
@@ -46,7 +46,21 @@ export function SkeletonTabMenuSpecimen({ t, w }: SpecimenProps) {
 export function SkeletonSegmentedControlSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkSegmentedControl options={['List', 'Board', 'Timeline']} size={v.Size === 'sm' ? 'sm' : 'default'} />
+      <SkSegmentedControl options={['List', 'Board', 'Timeline']} size={(v.Size ?? 'default') as SegmentedControlSize} />
+    </RecipeScope>
+  )
+}
+
+/** One Figma segment on its own (the overview and the docs playground). */
+export function SkeletonSegmentedControlItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSegmentedControlItem
+        size={(v.Size ?? 'default') as SegmentedControlSize}
+        checked={v.Checked === 'true'}
+        forceState={(v.State ?? 'Default') as SegmentedControlItemState}
+        label="Week"
+      />
     </RecipeScope>
   )
 }

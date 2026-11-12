@@ -34,13 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "SegmentedControl": {
-      "status": "rebuild"
-    },
-    "SegmentedControlItem": {
-      "status": "part",
-      "of": "SegmentedControl"
-    },
     "Slider": {
       "status": "rebuild"
     },

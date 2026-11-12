@@ -27,7 +27,7 @@ import {
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
-  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonBreadcrumbSpecimen,
+  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen,
   SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
@@ -455,6 +455,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Tabs: SkeletonTabsSpecimen,
   TabMenu: SkeletonTabMenuSpecimen,
   SegmentedControl: SkeletonSegmentedControlSpecimen,
+  SegmentedControlItem: SkeletonSegmentedControlItemSpecimen,
   Breadcrumb: SkeletonBreadcrumbSpecimen,
   Pagination: SkeletonPaginationSpecimen,
   Stepper: SkeletonStepperSpecimen,

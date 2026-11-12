@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 129,
+      version: 130,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4140,6 +4140,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('Switch')
             if (at < 0 || sel.includes('SwitchGroup')) return
             sel.splice(at + 1, 0, 'SwitchGroup')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 130) {
+          // v129→v130: SegmentedControlItem is a component of the Figma file; a selection with SegmentedControl gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('SegmentedControl')
+            if (at < 0 || sel.includes('SegmentedControlItem')) return
+            sel.splice(at + 1, 0, 'SegmentedControlItem')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

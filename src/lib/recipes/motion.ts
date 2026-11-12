@@ -41,7 +41,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Item: { transitions: { root: FILL } },
   Pagination: { transitions: { cell: FILL } },
   TabMenu: { transitions: { item: FILL } },
-  SegmentedControl: { transitions: { item: FILL } },
+  SegmentedControlItem: { transitions: { root: FILL } },
   Sidebar: { transitions: { button: FILL } },
   Tabs: { transitions: { trigger: states('color', 'background-color', 'border-color', 'box-shadow') } },
   Table: { transitions: { row: states('background-color') } },

@@ -57,31 +57,56 @@ export const TAB_MENU: ComponentRecipe = {
   ],
 }
 
-// ── SegmentedControl ───────────────────────────────────────────────────────
-
-const SEGMENT_SIZE: Record<string, { padX: string; padY: string }> = {
-  default: { padX: 'spacing.4', padY: 'spacing.1_5' },
-  sm: { padX: 'spacing.2_5', padY: 'spacing.1' },
-}
-
+// ── SegmentedControl + SegmentedControlItem ────────────────────────────────
+// The Figma `SegmentedControl` set (design-plans/segmented-control-contract.md, 1102:5136, 3 variants:
+// Size default · sm · lg) and its `SegmentedControlItem` (1102:5087, 30 variants: Size × Checked ×
+// State Default · Hover · Pressed · Focused · Disabled). The track is a Surface/muted pill (Radius/
+// action) with gap-tight of padding around a `Content` slot of items 4 apart; every item is 8 less than
+// the track in height (Size/control-sm 32 · control-xs 24 · control-md 40). A checked item is the raised
+// thumb (Surface/input, Shadow/xs, Radius/control); the others are ghost fills on hover / press. Focused:
+// a 2px edge inside (not in the layout) + a 2px halo outside.
+export const SEGMENTED_CONTROL_SIZES = ['default', 'sm', 'lg'] as const
 export const SEGMENTED_CONTROL: ComponentRecipe = {
   key: 'SegmentedControl',
-  slots: ['root', 'item', 'pill'],
+  slots: ['root', 'content'],
   defaults: { Size: 'default' },
   parts: [
-    // The track is a container on a container: `surface.layer-2`, as the
-    // elevation contract says (layer-1 is the card it sits on).
     part({}, () => ({
-      root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5' },
-      // Concentric: the track's `radius.action` minus its `spacing.1` inset.
-      pill: { fill: c('surface.input'), radius: 'radius.control', shadow: 'shadow.xs' },
-      item: { text: c('content.secondary'), font: 'type.button', radius: 'radius.control' },
-      'item:hover': { text: c('content.primary') },
-      'item[aria-checked="true"]': { text: c('content.primary') },
+      root: { fill: c('surface.muted'), radius: 'radius.action', paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      content: { gap: 'spacing.gap-tight' },
     })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({
-      item: { paddingX: SEGMENT_SIZE[size].padX, paddingY: SEGMENT_SIZE[size].padY },
+  ],
+}
+
+export const SEGMENTED_CONTROL_ITEM_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+const SEGMENT_ITEM: Record<string, { box: string; gap: string; icon: string }> = {
+  default: { box: 'size.compact', gap: 'spacing.gap-control', icon: 'icon.small' },
+  sm: { box: 'size.hit', gap: 'spacing.gap-tight', icon: 'icon.small' },
+  lg: { box: 'size.control', gap: 'spacing.gap-control', icon: 'icon.medium' },
+}
+
+function segmentPaint(checked: string, state: string): SlotMap {
+  const on = checked === 'true'
+  // A disabled raised segment keeps the fill but loses Shadow/xs (the file draws no effect on it).
+  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: on ? 'radius.control' : 'radius.action', ...(on ? { highlight: NONE } : {}) } }
+  // A `focus` of none would clear the box-shadow the raised segment carries, so only Focused sets it.
+  const focus = state === 'Focused' ? { focus: c('border.focus'), ring: c('border.ring.default') } : {}
+  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.control', shadow: 'shadow.xs', ...focus } }
+  const fill = state === 'Hover' ? c('action.ghost.hover') : state === 'Pressed' ? c('action.ghost.pressed') : NONE
+  return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.action', ...focus } }
+}
+
+export const SEGMENTED_CONTROL_ITEM: ComponentRecipe = {
+  key: 'SegmentedControlItem',
+  slots: ['root', 'icon', 'label'],
+  defaults: { Size: 'default', Checked: 'false', State: 'Default' },
+  parts: [
+    part({}, () => ({ root: { font: 'type.button', paddingX: 'spacing.inset-control', paddingY: 'spacing.none' } })),
+    part({ Size: SEGMENTED_CONTROL_SIZES }, (size) => ({
+      root: { height: SEGMENT_ITEM[size].box, gap: SEGMENT_ITEM[size].gap },
+      icon: { width: SEGMENT_ITEM[size].icon, height: SEGMENT_ITEM[size].icon },
     })),
+    part({ Checked: ['false', 'true'] as const, State: SEGMENTED_CONTROL_ITEM_STATES }, segmentPaint),
   ],
 }
 

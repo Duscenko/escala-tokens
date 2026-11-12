@@ -337,7 +337,12 @@ export const OVERVIEWS: Record<string, Overview> = {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   Tabs: stack('Variant', ['default', 'line']),
-  SegmentedControl: stack('Size', ['default', 'sm']),
+  SegmentedControl: stack('Size', ['default', 'sm', 'lg']),
+  SegmentedControlItem: [
+    each('Checked', ['false', 'true']),
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
+    each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
+  ],
   Sidebar: [each('Variant', ['sidebar', 'floating', 'inset'])],
 }
 

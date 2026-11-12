@@ -62,8 +62,9 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Separator')).toEqual(['border.subtle'])
   })
 
-  it('SegmentedControl can name the floating surface its track paints', () => {
-    expect(rolesForComponent('SegmentedControl')).toContain('surface.layer-2')
+  it('SegmentedControl can name the surface its track paints', () => {
+    // The Figma file paints the track Surface/muted (2026-11-12), no longer layer-2.
+    expect(rolesForComponent('SegmentedControl')).toContain('surface.muted')
   })
 
   it('a text field can name its focus ring', () => {

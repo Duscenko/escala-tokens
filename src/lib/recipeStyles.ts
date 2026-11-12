@@ -139,10 +139,12 @@ function declarations(props: SlotProps): string[] {
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
+        // The slot's own `shadow` (Shadow/xs on a raised segment) stays under the focus rings.
+        const own = props.shadow && props.shadow !== 'none' ? `, ${v(props.shadow)}` : ''
         const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
         out.push(
           `border-color: ${v(ref)}`,
-          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${lit}`,
+          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${own}${lit}`,
           'outline: var(--stroke-focus, 2px) solid transparent',
         )
         break
