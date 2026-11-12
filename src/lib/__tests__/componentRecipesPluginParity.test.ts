@@ -175,7 +175,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // The plugin is frozen for components (owner, 2026-11-12): a component built
     // from the Figma file after that day is web + Storybook only and has no
     // builder here. Each entry is a decision, not a gap to close.
-    const WEB_ONLY = new Set(['CloseButton'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(webAndPlugin.sort())
     const gaps: Record<string, string[]> = {}

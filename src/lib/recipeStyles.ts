@@ -85,6 +85,7 @@ function declarations(props: SlotProps): string[] {
       case 'overlay':
       case 'overlay2':
         break // painted by `fill`
+      case 'opacity': out.push(`opacity: ${ref}`); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
       // forced-colors mode paints instead.

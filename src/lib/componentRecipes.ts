@@ -32,7 +32,7 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
   CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT, CALENDAR,
@@ -51,12 +51,13 @@ export {
 } from './recipes/helpers.js'
 import { RECIPE_MOTION } from './recipes/motion.js'
 import { roleCssVar } from './roleNames.js'
-import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
+import { NONE, NON_TOKEN_PROPS, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
   IconButton: ICON_BUTTON,
   CloseButton: CLOSE_BUTTON,
+  TextLink: TEXT_LINK,
   ButtonGroup: BUTTON_GROUP,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   AppStoreBadge: APP_STORE_BADGE,
@@ -176,8 +177,8 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
   for (const p of recipe.parts) {
     for (const slots of Object.values(p.values)) {
       for (const props of Object.values(slots)) {
-        for (const ref of Object.values(props)) {
-          if (!ref || ref === NONE) continue
+        for (const [prop, ref] of Object.entries(props)) {
+          if (!ref || ref === NONE || NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }
       }
@@ -200,7 +201,7 @@ export function recipeRows(recipe: ComponentRecipe): RecipeRow[] {
     for (const slots of Object.values(p.values)) {
       for (const [slot, props] of Object.entries(slots)) {
         for (const [prop, ref] of Object.entries(props)) {
-          if (!ref || ref === NONE) continue
+          if (!ref || ref === NONE || NON_TOKEN_PROPS.includes(prop)) continue
           const k = `${slot}|${prop}|${ref}`
           if (seen.has(k)) continue
           seen.add(k)
@@ -231,12 +232,24 @@ export function splitRef(ref: TokenRef): [string, string] {
   return i < 0 ? [ref, ''] : [ref.slice(0, i), ref.slice(i + 1)]
 }
 
+/** A type scale step used as a reference (`type.text-xl`), not a role. */
+const TYPE_STEP = /^(text|display)-(xs|sm|md|lg|xl|2xl)$/
+
 /** The `variables.css` custom property a reference resolves to. For `type.*`
  *  pass the facet (`font-size`, `line-height`, …). */
 export function cssVarOf(ref: TokenRef, facet = 'font-size'): string {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return `--color-${name.replace(/\./g, '-')}`
-  if (ns === 'type') return `--text-${name}-${facet}`
+  if (ns === 'type') {
+    // A scale step (`type.text-xl`) reads the scale primitives, as a Figma text
+    // style bound to them does; a role reads its own `--text-<role>-*` alias.
+    if (TYPE_STEP.test(name)) {
+      if (facet === 'font-family') return '--font-family-body'
+      if (facet === 'font-weight') return '--font-weight-regular'
+      return `--${facet}-${name}`
+    }
+    return `--text-${name}-${facet}`
+  }
   // A dimension ROLE takes the Figma file's code-syntax name (`size.hit` →
   // `--size-control-xs`, `radius.pill` → `--radius-full`); a scale step keeps
   // its own (`size.md` → `--size-md`).

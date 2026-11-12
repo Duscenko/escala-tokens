@@ -126,6 +126,33 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Native <button> with an aria-label (there is no visible text), "Close" by default. Disabled sets aria-disabled. The glyph is decorative (aria-hidden).',
   },
   {
+    key: 'TextLink',
+    label: 'Text Link',
+    category: 'Button & Actions',
+    description:
+      'An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.',
+    usage: 'Use inside running copy and next to a field or a card for a destination or a small action. Give it a descriptive label; an icon-only link needs an aria-label. Hover and Pressed always show the underline; the underline can be turned off at rest. An action with its own surface is a Button.',
+    // The Figma file's axes, value for value, in the file's own option order
+    // (spec/figma-components.json). State is a Figma axis only: in code it is
+    // pseudo-classes (forceState pins it in docs). Visited paints as Default.
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Visited', 'Focused', 'Disabled'] },
+      { name: 'Variant', values: ['inverse', 'success', 'info', 'default', 'secondary', 'critical'] },
+    ],
+    figmaSets: ['TextLink'],
+    props: [
+      { name: 'variant', type: '"inverse" | "success" | "info" | "default" | "secondary" | "critical"', description: 'Colour: brand link (default), neutral, inverse, or a status.' },
+      { name: 'size', type: '"xs" | "sm" | "default" | "lg"', description: 'Label size (body-sm · md · lg and the text-xl step) with the matching icon and gap.' },
+      { name: 'underline', type: 'boolean', description: 'The underline (Figma UnderlineVisible); Hover and Pressed always show it.' },
+      { name: 'leading', type: 'ReactNode', description: 'Icon before the label (Figma IconLeadingVisible + IconLeadingIcon).' },
+      { name: 'trailing', type: 'ReactNode', description: 'Icon after the label (Figma IconTrailingVisible + IconTrailingIcon).' },
+      { name: 'disabled', type: 'boolean', description: 'Takes the link out of the tab order, ignores clicks and applies the disabled roles.' },
+      { name: 'children', type: 'ReactNode', description: 'The label (Figma Label). It is the accessible name.' },
+    ],
+    accessibility: 'Native <a>. Disabled sets aria-disabled, tabindex -1 and swallows the click. Focus draws a 2px edge inside and a 2px halo outside (the link grows by the edge, as in the Figma file). An icon-only link needs an aria-label.',
+  },
+  {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',

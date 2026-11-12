@@ -21,9 +21,6 @@
       "status": "part",
       "of": "ButtonGroup"
     },
-    "TextLink": {
-      "status": "new"
-    },
     "Field": {
       "status": "rebuild"
     },

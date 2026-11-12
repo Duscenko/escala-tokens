@@ -131,6 +131,17 @@ function pick(values: Record<string, string> | undefined, mode: string): string 
 
 /** One non-colour `variables.css` property (`--radius-action`, `--text-button-font-size`). */
 function dimensionValue(json: Json, name: string, mode: string, appearance: Appearance): string | undefined {
+  // A recipe that reads a type scale STEP (`type.text-xl`, TextLink's lg label)
+  // reads the scale primitives, not a role's alias.
+  const prim = json.foundationsByTheme?.[mode]?.typography ?? json.typography
+  const step = /^--(font-size|line-height|letter-spacing)-((?:text|display)-(?:xs|sm|md|lg|xl|2xl))$/.exec(name)
+  if (step && prim) {
+    const table = step[1] === 'font-size' ? prim.sizes : step[1] === 'line-height' ? prim.lineHeights : prim.letterSpacings
+    return table?.[step[2]] ?? (step[1] === 'letter-spacing' ? 'normal' : undefined)
+  }
+  if (name === '--font-family-body') return prim?.fontFamily ? fontStack(prim.fontFamily) : undefined
+  const weight = /^--font-weight-([a-z]+)$/.exec(name)
+  if (weight && prim?.weights?.[weight[1]] != null) return String(prim.weights[weight[1]])
   const text = /^--text-(.+)-(font-family|font-size|line-height|font-weight|letter-spacing)$/.exec(name)
   if (text) return typeFacet(json, text[1], text[2], mode)
   // A role under its Figma-file name (`--size-control-md` = `size.control`).

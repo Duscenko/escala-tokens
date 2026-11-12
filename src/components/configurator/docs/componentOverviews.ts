@@ -73,6 +73,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     ],
     each('Size', ['xs', 'sm', 'default', 'lg'], { Variant: 'secondary', Appearance: 'outline' }),
   ],
+  TextLink: [
+    each('Variant', ['default', 'secondary', 'success', 'info', 'critical']),
+    each('Size', ['xs', 'sm', 'default', 'lg']),
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled']),
+  ],
   CloseButton: [
     each('Appearance', ['soft', 'solid', 'outline', 'ghost']),
     each('Shape', ['pill', 'rounded', 'square']),

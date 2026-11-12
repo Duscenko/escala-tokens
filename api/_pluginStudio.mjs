@@ -4026,6 +4026,32 @@ var init_componentCatalogue = __esm({
         accessibility: 'Native <button> with an aria-label (there is no visible text), "Close" by default. Disabled sets aria-disabled. The glyph is decorative (aria-hidden).'
       },
       {
+        key: "TextLink",
+        label: "Text Link",
+        category: "Button & Actions",
+        description: "An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.",
+        usage: "Use inside running copy and next to a field or a card for a destination or a small action. Give it a descriptive label; an icon-only link needs an aria-label. Hover and Pressed always show the underline; the underline can be turned off at rest. An action with its own surface is a Button.",
+        // The Figma file's axes, value for value, in the file's own option order
+        // (spec/figma-components.json). State is a Figma axis only: in code it is
+        // pseudo-classes (forceState pins it in docs). Visited paints as Default.
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Visited", "Focused", "Disabled"] },
+          { name: "Variant", values: ["inverse", "success", "info", "default", "secondary", "critical"] }
+        ],
+        figmaSets: ["TextLink"],
+        props: [
+          { name: "variant", type: '"inverse" | "success" | "info" | "default" | "secondary" | "critical"', description: "Colour: brand link (default), neutral, inverse, or a status." },
+          { name: "size", type: '"xs" | "sm" | "default" | "lg"', description: "Label size (body-sm \xB7 md \xB7 lg and the text-xl step) with the matching icon and gap." },
+          { name: "underline", type: "boolean", description: "The underline (Figma UnderlineVisible); Hover and Pressed always show it." },
+          { name: "leading", type: "ReactNode", description: "Icon before the label (Figma IconLeadingVisible + IconLeadingIcon)." },
+          { name: "trailing", type: "ReactNode", description: "Icon after the label (Figma IconTrailingVisible + IconTrailingIcon)." },
+          { name: "disabled", type: "boolean", description: "Takes the link out of the tab order, ignores clicks and applies the disabled roles." },
+          { name: "children", type: "ReactNode", description: "The label (Figma Label). It is the accessible name." }
+        ],
+        accessibility: "Native <a>. Disabled sets aria-disabled, tabindex -1 and swallows the click. Focus draws a 2px edge inside and a 2px halo outside (the link grows by the edge, as in the Figma file). An icon-only link needs an aria-label."
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -8094,7 +8120,17 @@ function closePaint(variant, appearance, state2) {
   }
   return { root };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+function textLinkPaint(variant, state2) {
+  if (state2 === "Disabled") return { root: { text: c("content.disabled") } };
+  const [rest, over] = LINK_INK[variant];
+  if (state2 === "Hover" || state2 === "Pressed") return { root: { text: over }, underline: { fill: over, opacity: "1" } };
+  if (state2 === "Focused") {
+    const [edge, halo] = LINK_FOCUS[variant];
+    return { root: { text: rest, focus: edge, ring: halo, paddingX: "spacing.gap-tight+stroke.focus", paddingY: "stroke.focus" } };
+  }
+  return { root: { text: rest } };
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8235,6 +8271,48 @@ var init_actions = __esm({
           icon: { width: CLOSE_SIZE[size].icon, height: CLOSE_SIZE[size].icon }
         })),
         part({ Variant: CLOSE_BUTTON_VARIANTS, Appearance: CLOSE_BUTTON_APPEARANCES, State: CLOSE_STATES }, (v, a2, s) => closePaint(v, a2, s))
+      ]
+    };
+    TEXT_LINK_VARIANTS = ["inverse", "success", "info", "default", "secondary", "critical"];
+    TEXT_LINK_SIZES = ["xs", "sm", "default", "lg"];
+    TEXT_LINK_STATES = ["Default", "Hover", "Pressed", "Visited", "Focused", "Disabled"];
+    LINK_INK = {
+      default: [c("content.link.default"), c("content.link.hover")],
+      secondary: [c("content.secondary"), c("content.primary")],
+      inverse: [c("content.inverse"), c("content.inverse")],
+      critical: [c("status.critical.content"), c("status.critical.content")],
+      success: [c("status.success.content"), c("status.success.content")],
+      info: [c("status.info.content"), c("status.info.content")]
+    };
+    LINK_FOCUS = {
+      default: [c("border.focus"), c("border.ring.default")],
+      secondary: [c("border.strong"), c("border.subtle")],
+      inverse: [c("border.inverse"), c("surface.inverse-muted")],
+      critical: [c("status.critical.border-strong"), c("status.critical.border")],
+      success: [c("status.success.border-strong"), c("status.success.border")],
+      info: [c("status.info.border-strong"), c("status.info.border")]
+    };
+    LINK_FONT = { xs: "type.body-sm", sm: "type.body-md", default: "type.body-lg", lg: "type.text-xl" };
+    LINK_ICON = { xs: "icon.small", sm: "icon.small", default: "icon.medium", lg: "icon.medium" };
+    LINK_GAP = { xs: "spacing.gap-tight", sm: "spacing.gap-tight", default: "spacing.gap-control", lg: "spacing.gap-control" };
+    TEXT_LINK = {
+      key: "TextLink",
+      slots: ["root", "icon", "label", "underline"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.control" },
+          underline: { height: "stroke.divider", opacity: "0.4" }
+        })),
+        part({ Size: TEXT_LINK_SIZES }, (size) => ({
+          root: { paddingX: "spacing.gap-tight", paddingY: "spacing.0", gap: LINK_GAP[size] },
+          icon: { width: LINK_ICON[size], height: LINK_ICON[size] },
+          label: { font: LINK_FONT[size] }
+        })),
+        part({ Variant: TEXT_LINK_VARIANTS, State: TEXT_LINK_STATES }, (v, s) => textLinkPaint(v, s)),
+        // `underline={false}` hides the bar everywhere but Hover and Pressed, whose
+        // own rules (above this in specificity) put it back.
+        part({}, () => ({ 'underline[data-visible="false"]': { fill: NONE } }))
       ]
     };
     BUTTON_GROUP = {
@@ -10046,6 +10124,7 @@ var init_componentRecipes = __esm({
       Button: BUTTON,
       IconButton: ICON_BUTTON,
       CloseButton: CLOSE_BUTTON,
+      TextLink: TEXT_LINK,
       ButtonGroup: BUTTON_GROUP,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
@@ -12930,7 +13009,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 108,
+          version: 109,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14245,6 +14324,19 @@ var init_useDesignStore = __esm({
                   const at = state2.selectedComponents.indexOf("IconButton") + 1;
                   state2.selectedComponents.splice(at, 0, "CloseButton");
                 }
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 109) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (sel.includes("TextLink")) return;
+                const after = sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
+                if (after) sel.splice(sel.indexOf(after) + 1, 0, "TextLink");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

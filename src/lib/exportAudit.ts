@@ -62,7 +62,9 @@ export const BUDGETS = {
   cssBytes: 160_000,
   // 70k → 75k (2026-11-12): Button became Variant × Appearance (12 combinations)
   // and IconButton a component of its own — real content, not bloat.
-  contextAllTokens: 75_000,
+  // 75k → 80k (2026-11-12): CloseButton and TextLink, two more Figma components
+  // with their own design-skill files.
+  contextAllTokens: 80_000,
   contextFoundationTokens: 12_000,
 }
 

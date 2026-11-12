@@ -509,7 +509,13 @@ export function typeStyleCss(
   const viewport = asTypeViewport(opts.viewport)
   const roles = mergeTypeRoles(storedRoles)
   const spec = TYPE_ROLE_BY_KEY[role]
-  const alias = roles[role]?.[viewport] ?? spec?.[viewport]
+  // A scale step (`text-xl`) is a valid reference too: the body family at regular,
+  // the step's own size, line height and tracking — what a Figma text style bound
+  // straight to the scale primitives (TextLink's `Type/body-xl`) carries.
+  const step = (TYPE_SCALE_KEYS as readonly string[]).includes(role)
+    ? { family: 'body' as const, size: role as TypeScaleKey, weight: 'regular' as TypeWeightKey }
+    : undefined
+  const alias = roles[role]?.[viewport] ?? spec?.[viewport] ?? step
   if (!alias) return { family: primitives.fontFamily, size: '', weight: 400, letterSpacing: '0px' }
   const s = resolveTypeStyle(alias, primitives)
   return {

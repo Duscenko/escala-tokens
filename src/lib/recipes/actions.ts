@@ -262,6 +262,78 @@ export const CLOSE_BUTTON: ComponentRecipe = {
   ],
 }
 
+// ── TextLink ───────────────────────────────────────────────────────────────
+// The Figma `TextLink` set (design-plans/text-link-contract.md): an inline link,
+// Size × State × Variant, optional icons either side and an underline that is a
+// 1px bar on the label's bottom edge. Text, underline and icons share one ink.
+// Colour is the same at every Size (measured on all 144 variants). Hover and
+// Pressed always draw the underline; elsewhere `UnderlineVisible` decides.
+
+export const TEXT_LINK_VARIANTS = ['inverse', 'success', 'info', 'default', 'secondary', 'critical'] as const
+export const TEXT_LINK_SIZES = ['xs', 'sm', 'default', 'lg'] as const
+const TEXT_LINK_STATES = ['Default', 'Hover', 'Pressed', 'Visited', 'Focused', 'Disabled'] as const
+
+/** Ink at [rest · hover and pressed]; Visited and Focused read the rest ink (the
+ *  file paints Visited as Default). */
+const LINK_INK: Record<string, [string, string]> = {
+  default: [c('content.link.default'), c('content.link.hover')],
+  secondary: [c('content.secondary'), c('content.primary')],
+  inverse: [c('content.inverse'), c('content.inverse')],
+  critical: [c('status.critical.content'), c('status.critical.content')],
+  success: [c('status.success.content'), c('status.success.content')],
+  info: [c('status.info.content'), c('status.info.content')],
+}
+/** The 2px edge inside and the 2px halo outside a focused link. */
+const LINK_FOCUS: Record<string, [string, string]> = {
+  default: [c('border.focus'), c('border.ring.default')],
+  secondary: [c('border.strong'), c('border.subtle')],
+  inverse: [c('border.inverse'), c('surface.inverse-muted')],
+  critical: [c('status.critical.border-strong'), c('status.critical.border')],
+  success: [c('status.success.border-strong'), c('status.success.border')],
+  info: [c('status.info.border-strong'), c('status.info.border')],
+}
+
+function textLinkPaint(variant: string, state: string): SlotMap {
+  if (state === 'Disabled') return { root: { text: c('content.disabled') } }
+  const [rest, over] = LINK_INK[variant]
+  // The underline is drawn at 40% (node opacity) until Hover and Pressed.
+  if (state === 'Hover' || state === 'Pressed') return { root: { text: over }, underline: { fill: over, opacity: '1' } }
+  if (state === 'Focused') {
+    const [edge, halo] = LINK_FOCUS[variant]
+    // Figma's 2px inside stroke counts in the layout: the focused link is 4px
+    // larger on each axis, so its padding takes the stroke on top.
+    return { root: { text: rest, focus: edge, ring: halo, paddingX: 'spacing.gap-tight+stroke.focus', paddingY: 'stroke.focus' } }
+  }
+  return { root: { text: rest } }
+}
+
+/** The label's type: body-sm · md · lg, and the scale's text-xl at lg (the file
+ *  binds `Type/body-xl` to the scale primitives, there is no such role). */
+const LINK_FONT: Record<string, string> = { xs: 'type.body-sm', sm: 'type.body-md', default: 'type.body-lg', lg: 'type.text-xl' }
+const LINK_ICON: Record<string, string> = { xs: 'icon.small', sm: 'icon.small', default: 'icon.medium', lg: 'icon.medium' }
+const LINK_GAP: Record<string, string> = { xs: 'spacing.gap-tight', sm: 'spacing.gap-tight', default: 'spacing.gap-control', lg: 'spacing.gap-control' }
+
+export const TEXT_LINK: ComponentRecipe = {
+  key: 'TextLink',
+  slots: ['root', 'icon', 'label', 'underline'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { radius: 'radius.control' },
+      underline: { height: 'stroke.divider', opacity: '0.4' },
+    })),
+    part({ Size: TEXT_LINK_SIZES }, (size) => ({
+      root: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.0', gap: LINK_GAP[size] },
+      icon: { width: LINK_ICON[size], height: LINK_ICON[size] },
+      label: { font: LINK_FONT[size] },
+    })),
+    part({ Variant: TEXT_LINK_VARIANTS, State: TEXT_LINK_STATES }, (v, s) => textLinkPaint(v, s)),
+    // `underline={false}` hides the bar everywhere but Hover and Pressed, whose
+    // own rules (above this in specificity) put it back.
+    part({}, () => ({ 'underline[data-visible="false"]': { fill: NONE } })),
+  ],
+}
+
 // ── ButtonGroup ────────────────────────────────────────────────────────────
 // shadcn's group: Buttons attached edge to edge. The buttons paint themselves
 // (Button recipe); the group owns the separator and the text segment.

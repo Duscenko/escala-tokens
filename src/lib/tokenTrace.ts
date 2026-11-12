@@ -98,6 +98,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   overlay: 'Overlay',
   overlay2: 'Overlay (second layer)',
   halo: 'Focus halo',
+  opacity: 'Opacity',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
@@ -129,7 +130,7 @@ function pickIdOf(ref: string): string | undefined {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return name
   if (ns === 'radius') return `radius.${name}`
-  if (ns === 'type') return `text.${name}`
+  if (ns === 'type') return /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) ? undefined : `text.${name}`
   // A size ROLE is editable; a raw step (`size.md`) is a primitive, not a role.
   if (ns === 'size' && SIZE_ROLES.some((role) => role.key === name)) return `size.${name}`
   // Spacing, stroke and shadow open `LayoutTokenDetails`: a role re-points,
@@ -173,7 +174,7 @@ function resolveValue(t: PreviewTokens, ref: string): { cssVar: string; value: s
       { label: 'Tracking', cssVar: cssVarOf(ref, 'letter-spacing'), value: px(s.letterSpacing) || '0px' },
     ].filter((f) => f.value)
     const summary = [px(s.fontSize), px(s.lineHeight)].filter(Boolean).join(' / ')
-    return { cssVar: `--text-${name}-*`, value: [summary, s.fontWeight].filter(Boolean).join(' · '), facets }
+    return { cssVar: /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) ? `--font-size-${name}` : `--text-${name}-*`, value: [summary, s.fontWeight].filter(Boolean).join(' · '), facets }
   }
   const out = previewDimension(t, ref)
   const cssVar = cssVarOf(ref)

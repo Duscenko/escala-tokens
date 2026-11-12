@@ -338,3 +338,55 @@ describe('CloseButton (Figma)', () => {
     expect(css).toContain('box-shadow: 0 0 0 var(--stroke-focus, 2px) var(--color-border-subtle)')
   })
 })
+
+// The Figma `TextLink` set (design-plans/text-link-contract.md). Held here: one ink for
+// text, underline and icons; the underline at 40% until Hover / Pressed; a Focused link
+// that grows by the 2px inside stroke; the lg label bound to the scale step, not a role.
+describe('TextLink (Figma)', () => {
+  const at = (over: Record<string, string>) =>
+    resolveRecipe(COMPONENT_RECIPES.TextLink, { Size: 'default', State: 'Default', Variant: 'default', ...over })
+
+  it.each([
+    ['default', 'Default', 'color.content.link.default'], ['default', 'Hover', 'color.content.link.hover'], ['default', 'Visited', 'color.content.link.default'],
+    ['secondary', 'Default', 'color.content.secondary'], ['secondary', 'Pressed', 'color.content.primary'],
+    ['inverse', 'Hover', 'color.content.inverse'], ['critical', 'Default', 'color.status.critical.content'],
+    ['success', 'Focused', 'color.status.success.content'], ['info', 'Disabled', 'color.content.disabled'],
+  ])('%s · %s reads %s', (variant, state, ink) => {
+    expect(at({ Variant: variant, State: state }).root.text).toBe(ink)
+  })
+  it('draws the underline at 40% at rest and at full strength on Hover and Pressed', () => {
+    expect(at({ State: 'Default' }).underline.opacity).toBe('0.4')
+    expect(at({ State: 'Focused' }).underline.opacity).toBe('0.4')
+    expect(at({ State: 'Hover' }).underline).toMatchObject({ opacity: '1', fill: 'color.content.link.hover' })
+    expect(at({ State: 'Pressed' }).underline.opacity).toBe('1')
+  })
+  it('hides the underline from a data attribute, leaving Hover and Pressed their own rule', () => {
+    expect(at({})['underline[data-visible="false"]']).toEqual({ fill: 'none' })
+    const css = recipeCss(COMPONENT_RECIPES.TextLink)
+    expect(css).toContain('[data-part="TextLink.underline"][data-visible="false"]')
+    expect(css).toContain('opacity: 0.4')
+  })
+  it.each([['default', 'color.border.focus', 'color.border.ring.default'], ['secondary', 'color.border.strong', 'color.border.subtle'],
+    ['inverse', 'color.border.inverse', 'color.surface.inverse-muted'], ['critical', 'color.status.critical.border-strong', 'color.status.critical.border']])(
+    '%s focuses with edge %s and halo %s, and grows by the stroke', (variant, edge, ring) => {
+      const root = at({ Variant: variant, State: 'Focused' }).root
+      expect(root).toMatchObject({ focus: edge, ring, paddingX: 'spacing.gap-tight+stroke.focus', paddingY: 'stroke.focus' })
+    },
+  )
+  it('sizes the label, icon and gap by Size, and lg reads the scale step', () => {
+    expect(at({ Size: 'xs' }).label.font).toBe('type.body-sm')
+    expect(at({ Size: 'default' }).label.font).toBe('type.body-lg')
+    expect(at({ Size: 'lg' }).label.font).toBe('type.text-xl')
+    expect(at({ Size: 'sm' }).icon.width).toBe('icon.small')
+    expect(at({ Size: 'lg' }).icon.width).toBe('icon.medium')
+    expect(at({ Size: 'sm' }).root.gap).toBe('spacing.gap-tight')
+    expect(at({ Size: 'lg' }).root.gap).toBe('spacing.gap-control')
+    expect(cssVarOf('type.text-xl', 'font-size')).toBe('--font-size-text-xl')
+    expect(cssVarOf('type.body-sm', 'font-size')).toBe('--text-body-sm-font-size')
+  })
+  it('keeps opacity out of the token references', () => {
+    const refs = recipeTokenRefs(COMPONENT_RECIPES.TextLink)
+    expect(refs).not.toContain('0.4')
+    expect(refs).not.toContain('1')
+  })
+})

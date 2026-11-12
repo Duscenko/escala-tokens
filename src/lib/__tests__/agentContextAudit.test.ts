@@ -421,6 +421,7 @@ describe('design skills cite only names the system ships', () => {
           if (col === 'Color Semantics') expect(roles.has(name), `${f.path}: ${name}`).toBe(true)
           else if (col === 'Dimension Primitives') expect(json.dimensions?.[name], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Typography') expect(json.typography.sizes?.[name.replace(/^size\//, '')], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
           else {
             const [family, role] = roleOf(name)

@@ -31,3 +31,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Plugin parity test demands a builder for every web recipe | `RECIPE_BUILDERS` keys ≠ recipe keys after adding a recipe | The plugin is frozen: add the key to `WEB_ONLY` in `componentRecipesPluginParity.test.ts` (a decision, with the date) |
 | Things that move when a catalogue key + recipe are added | 7 failing tests | `npm run gen:registry-sources`; `public/sitemap.xml` line (no generator: the file mirrors `sitemapXml()`); `exportAudit -u` (read the diff: only added lines); store version + migration so existing selections get the key; `node scripts/build-plugin-studio.mjs` |
 | A running Storybook from another chat holds port 6006 | `preview_start` refuses | Point the Browser pane at it with `preview_start {url}`: same folder, so HMR serves your files |
+
+# Lessons from the TextLink (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A trimmed copy of `figma-read-set.js` dropped node `opacity` | Underline read as `Content/link/default`; the pixels said ink at 40 % (`(194,180,230)` vs `#6945c1`) | Never trim the script's `describe`; split the READ across calls instead. Pixels caught it — always sample a state with an effect-like detail (underline, edge) |
+| A node opacity set by hand in the file (0.4 underline, 1 on Hover / Pressed) | The recipe language has no opacity: refs are tokens | Recipe prop `opacity` (plain number string), listed in `NON_TOKEN_PROPS` so ref tables skip it. Use only where the file does |
+| A stroke INSIDE that counts in the layout (`strokesIncludedInLayout`) | Focused root 181×29 vs 177×25: the link grows 4px on focus | Copied: the focused padding adds `stroke.focus` (`spacing.gap-tight+stroke.focus` X, `stroke.focus` Y). Say it in the report: it is a layout jump |
+| A text style bound to the scale, not to a role (`Type/body-xl` → `size/text-xl`) | `type.body-xl` does not exist in code; no role in the file either | A type ref may be a scale step (`type.text-xl`): `typeStyleCss` falls back to it, `cssVarOf` reads the scale primitives, `figmaRefsFor` cites `Typography` `size/text-xl`, the registry supplies those vars. No new role |
+| Adding a component grows the agent context | `exportAudit` I10-budget 75 631 > 75 000 | Budget 80 000 with a dated note (the Button change set the precedent). Not a runaway loop |
+| A skill-doc test with a closed set of Figma collections | `Typography` collection not handled in `agentContextAudit` | Add the branch; the audit still checks every cited name exists in the payload |

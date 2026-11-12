@@ -5,6 +5,7 @@ import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
+import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
@@ -80,6 +81,26 @@ export function SkeletonCloseButtonSpecimen({ t, v }: SpecimenProps) {
         variant={(v.Variant ?? 'default') as CloseButtonVariant}
         forceState={(v.State ?? 'Default') as CloseButtonState}
       />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTextLinkSpecimen({ t, v, icons, children }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as TextLinkSize
+  const iconPx = iconForControlStep(size === 'xs' || size === 'sm' ? 'sm' : 'md', t)
+  return (
+    <RecipeScope t={t}>
+      <SkTextLink
+        href="#"
+        onClick={(e) => e.preventDefault()}
+        variant={(v.Variant ?? 'default') as TextLinkVariant}
+        size={size}
+        forceState={(v.State ?? 'Default') as TextLinkState}
+        leading={icons?.leading !== false ? <PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? 'plus'} size={iconPx} /> : undefined}
+        trailing={icons?.trailing !== false ? <PreviewIcon prefix={icons?.prefix} concept={icons?.trailingConcept ?? 'arrow-right'} size={iconPx} /> : undefined}
+      >
+        {children ?? 'Inline Text Link'}
+      </SkTextLink>
     </RecipeScope>
   )
 }

@@ -21,7 +21,13 @@ export const RECIPE_PROPS = [
   // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
   // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
   'halo',
+  // A node opacity the Figma file sets by hand (TextLink's underline is drawn at
+  // 40% until Hover). The ONE prop that is not a token reference: its value is a
+  // plain number string (`'0.4'`), so every table that walks refs skips it
+  // (`NON_TOKEN_PROPS`). Prefer a role; use this only where the file does.
+  'opacity',
 ] as const
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>
