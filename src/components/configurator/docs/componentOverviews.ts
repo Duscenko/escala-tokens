@@ -157,6 +157,21 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['outline', 'filled', 'underline'], { State: 'Filled' }),
     each('Size', ['sm', 'default', 'lg'], { State: 'Filled' }),
   ],
+  InputTag: [
+    each('State', ['Default', 'Hover', 'Focused'], { Value: 'filled' }, 360),
+    each('State', ['Invalid', 'Disabled', 'Loading'], { Value: 'filled' }, 360),
+    each('Layout', ['inline', 'outside'], { Value: 'filled' }, 360),
+    each('Size', ['sm', 'default', 'lg'], { Value: 'filled' }, 360),
+  ],
+  InputTagChip: [
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled']),
+    each('Variant', ['default', 'critical']),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+  ],
+  InputTagOption: [
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled'], {}, 240),
+    each('Type', ['option', 'create'], {}, 240),
+  ],
   Select: [
     each('State', ['Default', 'Focused'], {}, 220),
     each('State', ['Error', 'Disabled'], {}, 220),

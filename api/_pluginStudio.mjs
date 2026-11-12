@@ -4385,16 +4385,66 @@ var init_componentCatalogue = __esm({
         key: "InputTag",
         label: "Input Tag",
         category: "Form Controls",
-        description: "Free-text input that commits entries as removable tags inside the field.",
-        usage: "Use for open-ended multi-values (emails, labels). For a known list, prefer Combobox.",
-        axes: [],
-        figmaSets: ["Input Tag"],
-        props: [
-          { name: "value / defaultValue", type: "string[]", description: "Committed tags." },
-          { name: "onValueChange", type: "(value: string[]) => void", description: "Fires when a tag is added or removed." },
-          { name: "placeholder", type: "string", description: "Shown while there are no tags." }
+        description: "A multi-value text field that turns entries into removable tag chips, inline or stacked outside the field.",
+        usage: "Use for open-ended multi-values (emails, labels). For a known list, prefer Combobox. Keep a visible label (Field) and expose the error text through aria-describedby.",
+        // The Figma file's axes, value for value (design-plans/input-tag-contract.md).
+        axes: [
+          { name: "Layout", values: ["inline", "outside"] },
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Invalid", "Disabled", "Loading"] },
+          { name: "Value", values: ["placeholder", "filled"] }
         ],
-        accessibility: 'Tags removable via keyboard (Backspace). Each dismiss button labelled "Remove {tag}".'
+        figmaSets: ["InputTag"],
+        props: [
+          { name: "layout", type: '"inline" | "outside"', description: "inline wraps the chips inside the box; outside puts the box over the chips." },
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Box 32 \xB7 40 \xB7 48; the chips are InputTagChip xs \xB7 sm \xB7 default." },
+          { name: "value / defaultValue", type: "string[]", description: "Committed tags (Figma Value filled). The placeholder stays behind them, as in the file." },
+          { name: "onValueChange", type: "(value: string[]) => void", description: "Fires when a tag is added (Enter, comma, blur) or removed (\u2715, Backspace)." },
+          { name: "placeholder", type: "string", description: 'Figma Placeholder (default "Add tag\u2026").' },
+          { name: "max", type: "number", description: "Tags past this many are drawn critical." },
+          { name: "aria-invalid / disabled / loading", type: "boolean", description: "State Invalid / Disabled / Loading (the chips go Disabled, the Spinner replaces the placeholder). Hover and Focused come from the pointer and keyboard." }
+        ],
+        accessibility: 'A real text input; Enter or comma commits a tag, Backspace on an empty draft removes the last one. Each \u2715 is named "Remove {tag}". Announce added and removed tags to screen readers and expose the error through aria-describedby.'
+      },
+      {
+        key: "InputTagChip",
+        label: "Input Tag Chip",
+        category: "Form Controls",
+        description: "One removable tag of an InputTag; the critical variant marks tags past the maximum.",
+        usage: "Used by InputTag. Use it alone only where a removable tag is needed outside the field.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default", "lg", "xl"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] },
+          { name: "Variant", values: ["default", "critical"] }
+        ],
+        figmaSets: ["InputTagChip"],
+        props: [
+          { name: "size", type: '"xs" | "sm" | "default" | "lg" | "xl"', description: "Height 18 \xB7 20 \xB7 24 \xB7 28 \xB7 32." },
+          { name: "variant", type: '"default" | "critical"', description: "critical marks a tag past the maximum." },
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "removable / onRemove", type: "boolean / () => void", description: "Figma RemoveVisible (default on) and its handler." },
+          { name: "disabled / forceState", type: "boolean / string", description: "State Disabled; forceState pins a state (docs)." }
+        ],
+        accessibility: 'The \u2715 is a button named "Remove {label}" (set removeLabel for a non-text label); Focused is drawn on keyboard focus.'
+      },
+      {
+        key: "InputTagOption",
+        label: "Input Tag Option",
+        category: "Form Controls",
+        description: "A suggestion row of the InputTag dropdown: an existing option or a create-new action.",
+        usage: "Compose the InputTag dropdown from it. Render the list as a listbox with arrow-key navigation.",
+        axes: [
+          { name: "Type", values: ["option", "create"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["InputTagOption"],
+        props: [
+          { name: "type", type: '"option" | "create"', description: "create shows the plus and drops the dot and the count." },
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "meta / badge", type: "ReactNode / boolean", description: "Figma Meta (MetaVisible) and BadgeVisible." },
+          { name: "selected / disabled", type: "boolean", description: "aria-selected; State Disabled." }
+        ],
+        accessibility: 'role="option" with aria-selected; the list that holds it is a listbox with arrow-key navigation.'
       },
       {
         key: "Select",
@@ -8807,6 +8857,67 @@ function numberInputPaint(state2) {
   if (state2 === "Hover") return { root: { fill: c("surface.input"), stroke: c("border.control-hover") } };
   return { root: { fill: c("surface.input"), stroke: c("border.control") } };
 }
+function inputTagPaint(layout, state2) {
+  const box = layout === "outside" ? "field" : "root";
+  const disabled = state2 === "Disabled";
+  const out = {
+    text: { text: c("content.primary") },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") }
+  };
+  if (disabled) out[box] = { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE };
+  else if (state2 === "Invalid") out[box] = { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") };
+  else if (state2 === "Focused") out[box] = { fill: c("surface.input"), stroke: c("border.focus"), halo: c("border.ring.default") };
+  else if (state2 === "Hover") out[box] = { fill: c("surface.input"), stroke: c("border.control-hover") };
+  else out[box] = { fill: c("surface.input"), stroke: c("border.control") };
+  return out;
+}
+function chipPaint(size, variant, state2) {
+  const g = CHIP_GEOMETRY[size];
+  const critical = variant === "critical";
+  const disabled = state2 === "Disabled";
+  const ink = disabled ? c("content.disabled") : c(critical ? "status.critical.content" : "content.primary");
+  const edge = !disabled && (critical || state2 === "Focused");
+  const root = {
+    height: g.h,
+    radius: "radius.control",
+    gap: g.gap,
+    font: g.font,
+    text: ink,
+    // The stroke is laid out in the file: the content starts at padding + stroke.
+    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
+    strokeWidth: edge ? "stroke.control" : "stroke.none"
+  };
+  if (disabled) root.fill = c("action.disabled.default");
+  else if (critical) {
+    root.fill = c(state2 === "Hover" ? "status.critical.surface-pressed" : "status.critical.surface");
+    root.stroke = c(state2 === "Focused" ? "status.critical.border-strong" : "status.critical.border");
+    root.halo = state2 === "Focused" ? c("status.critical.border") : NONE;
+  } else {
+    root.fill = c(state2 === "Hover" ? "surface.muted-hover" : "surface.muted");
+    if (state2 === "Focused") {
+      root.stroke = c("border.focus");
+      root.halo = c("border.ring.default");
+    }
+  }
+  return { root, label: { text: ink }, remove: { text: ink, width: g.icon, height: g.icon } };
+}
+function optionPaint(state2) {
+  if (state2 === "Disabled") {
+    const ink2 = { text: c("content.disabled") };
+    return {
+      root: { fill: c("action.disabled.default"), stroke: c("border.control"), strokeWidth: "stroke.control", halo: NONE, text: c("content.disabled") },
+      label: ink2,
+      meta: ink2,
+      icon: ink2,
+      badge: { fill: c("content.disabled") }
+    };
+  }
+  const ink = c("content.primary");
+  const rest = { label: { text: ink }, meta: { text: c("content.subtle") }, icon: { text: ink }, badge: { fill: c("status.success.content") } };
+  if (state2 === "Hover") return { ...rest, root: { fill: c("surface.muted-hover"), strokeWidth: "stroke.none", halo: NONE, text: ink } };
+  if (state2 === "Focused") return { ...rest, root: { fill: c("surface.muted-hover"), stroke: c("border.focus"), strokeWidth: "stroke.control", halo: c("border.ring.default"), text: ink } };
+  return { ...rest, root: { fill: c("surface.input"), stroke: c("border.control"), strokeWidth: "stroke.control", halo: NONE, text: ink } };
+}
 function otpSlotRoot(variant, state2) {
   const underline = variant === "underline";
   const rest = variant === "filled" ? { fill: c("surface.muted"), stroke: c("border.subtle") } : { fill: c(underline ? "surface.page" : "surface.input"), stroke: c("border.control") };
@@ -8843,7 +8954,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9003,35 +9114,81 @@ var init_forms = __esm({
         part({ State: NUMBER_INPUT_STATES }, (state2) => numberInputPaint(state2))
       ]
     };
+    INPUT_TAG_LAYOUTS = ["inline", "outside"];
+    INPUT_TAG_SIZES = ["sm", "default", "lg"];
+    INPUT_TAG_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled", "Loading"];
+    TAG_BOX = { sm: "size.compact", default: "size.control", lg: "size.touch" };
     INPUT_TAG = {
       key: "InputTag",
-      slots: ["root", "tag", "tagRemove", "input"],
-      defaults: {},
+      slots: ["root", "field", "tags", "text", "placeholder", "spinner"],
+      pseudoSlots: { placeholder: { of: "text", pseudo: "::placeholder" } },
+      defaults: { Layout: "inline", Size: "default", State: "Default", Value: "placeholder" },
+      parts: [
+        part({}, () => ({
+          text: { font: "type.placeholder" },
+          spinner: { width: "icon.small", height: "icon.small" }
+        })),
+        part({ Layout: INPUT_TAG_LAYOUTS, Size: INPUT_TAG_SIZES }, (layout, size) => layout === "inline" ? {
+          root: {
+            radius: "radius.action",
+            strokeWidth: "stroke.control",
+            minHeight: TAG_BOX[size],
+            paddingX: "spacing.gap-control+stroke.control",
+            paddingY: "spacing.gap-tight+stroke.control",
+            gap: "spacing.gap-tight",
+            rowGap: "spacing.gap-tight"
+          }
+        } : {
+          root: { gap: "spacing.gap-control" },
+          field: {
+            radius: "radius.action",
+            strokeWidth: "stroke.control",
+            height: TAG_BOX[size],
+            paddingX: "spacing.inset-control+stroke.control",
+            gap: "spacing.gap-control"
+          },
+          tags: { gap: "spacing.gap-tight", rowGap: "spacing.gap-tight" }
+        }),
+        part({ Layout: INPUT_TAG_LAYOUTS, State: INPUT_TAG_STATES }, (layout, state2) => inputTagPaint(layout, state2))
+      ]
+    };
+    INPUT_TAG_CHIP_SIZES = ["xs", "sm", "default", "lg", "xl"];
+    INPUT_TAG_CHIP_STATES = ["Default", "Hover", "Focused", "Disabled"];
+    INPUT_TAG_CHIP_VARIANTS = ["default", "critical"];
+    CHIP_GEOMETRY = {
+      xs: { h: "spacing.4+spacing.0_5", padX: "spacing.1_5", gap: "spacing.gap-tight", icon: "spacing.2_5", font: "type.caption" },
+      sm: { h: "spacing.5", padX: "spacing.gap-control", gap: "spacing.gap-tight", icon: "spacing.3", font: "type.label" },
+      default: { h: "size.hit", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.label" },
+      lg: { h: "spacing.6+spacing.1", padX: "spacing.2_5", gap: "spacing.1_5", icon: "icon.small", font: "type.body-md" },
+      xl: { h: "size.compact", padX: "spacing.inset-control", gap: "spacing.gap-control", icon: "spacing.4+spacing.0_5", font: "type.body-lg" }
+    };
+    INPUT_TAG_CHIP = {
+      key: "InputTagChip",
+      slots: ["root", "label", "remove"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({ Size: INPUT_TAG_CHIP_SIZES, Variant: INPUT_TAG_CHIP_VARIANTS, State: INPUT_TAG_CHIP_STATES }, (size, variant, state2) => chipPaint(size, variant, state2))
+      ]
+    };
+    INPUT_TAG_OPTION_STATES = ["Default", "Hover", "Focused", "Disabled"];
+    INPUT_TAG_OPTION = {
+      key: "InputTagOption",
+      slots: ["root", "badge", "icon", "label", "meta"],
+      defaults: { Type: "option", State: "Default" },
       parts: [
         part({}, () => ({
           root: {
-            fill: c("surface.input"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            minHeight: "size.control",
-            paddingX: "spacing.2_5",
-            paddingY: "spacing.1_5",
-            gap: "spacing.1_5"
+            height: "size.compact",
+            radius: "radius.control",
+            paddingX: "spacing.gap-control",
+            gap: "spacing.gap-control",
+            font: "type.body-md"
           },
-          "root:focus-within": FIELD_FOCUS,
-          tag: {
-            fill: c("surface.selected"),
-            text: c("content.accent"),
-            radius: "radius.pill",
-            font: "type.label",
-            paddingX: "spacing.2",
-            gap: "spacing.1"
-          },
-          tagRemove: { text: c("content.accent") },
-          "tagRemove:hover": { text: c("content.link.hover") },
-          input: { text: c("content.primary"), font: "type.placeholder" }
-        }))
+          badge: { width: "spacing.2", height: "spacing.2", radius: "radius.pill" },
+          icon: { width: "spacing.3+spacing.0_5", height: "spacing.3+spacing.0_5" },
+          meta: { font: "type.caption" }
+        })),
+        part({ State: INPUT_TAG_OPTION_STATES }, (state2) => optionPaint(state2))
       ]
     };
     SELECT_GEOMETRY = { default: "size.control", sm: "size.compact" };
@@ -10348,7 +10505,7 @@ function badgePaint(variant) {
       return { root: { fill: NONE, stroke: NONE, text: c("content.link.default") } };
   }
 }
-var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
+var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -10400,7 +10557,7 @@ var init_indicators = __esm({
         part({ Status: ["online", "away", "busy", "offline"] }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } }))
       ]
     };
-    CHIP_GEOMETRY = {
+    CHIP_GEOMETRY2 = {
       default: { paddingX: "spacing.3", paddingY: "spacing.1", gap: "spacing.1_5" },
       sm: { paddingX: "spacing.2_5", paddingY: "spacing.0_5", gap: "spacing.1" }
     };
@@ -10416,7 +10573,7 @@ var init_indicators = __esm({
           remove: { hit: "size.hit" },
           "remove:focus-visible": FOCUS
         })),
-        part({ Size: ["default", "sm"] }, (size) => ({ root: CHIP_GEOMETRY[size] })),
+        part({ Size: ["default", "sm"] }, (size) => ({ root: CHIP_GEOMETRY2[size] })),
         part({ Selected: ["False", "True"] }, (selected) => selected === "True" ? {
           root: { fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") },
           "root:hover": { fill: c("surface.selected-pressed") }
@@ -10573,7 +10730,9 @@ var init_motion2 = __esm({
       Dropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
       InputGroup: { transitions: { root: FIELD2 } },
-      InputTag: { transitions: { root: FIELD2 } },
+      InputTag: { transitions: { root: FIELD2, field: FIELD2 } },
+      InputTagChip: { transitions: { root: FIELD2 } },
+      InputTagOption: { transitions: { root: FIELD2 } },
       InputOTPSlot: { transitions: { root: FIELD2 } },
       Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
       NativeSelect: { transitions: { select: FIELD2 } },
@@ -10631,6 +10790,8 @@ var init_componentRecipes = __esm({
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
       InputTag: INPUT_TAG,
+      InputTagChip: INPUT_TAG_CHIP,
+      InputTagOption: INPUT_TAG_OPTION,
       Select: SELECT,
       Combobox: COMBOBOX,
       InputOTP: INPUT_OTP,
@@ -13510,7 +13671,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 115,
+          version: 116,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14917,6 +15078,19 @@ var init_useDesignStore = __esm({
                 for (const key2 of ["PasswordStrengthRule", "PasswordStrengthMeter"]) {
                   if (!sel.includes(key2)) sel.splice(sel.indexOf("PasswordStrength") + 1, 0, key2);
                 }
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 116) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                let at = sel.indexOf("InputTag");
+                if (at < 0) return;
+                for (const key2 of ["InputTagChip", "InputTagOption"]) if (!sel.includes(key2)) sel.splice(++at, 0, key2);
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

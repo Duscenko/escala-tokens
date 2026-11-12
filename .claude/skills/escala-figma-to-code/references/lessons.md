@@ -132,3 +132,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 |---|---|---|
 | Splicing a recipe file from "the previous `// ──` heading" | The cut took Field and Label with it (PasswordStrength had no heading of its own) | Cut from the recipe's OWN const/comment, then `git diff | grep '^-'` before going on — every removed line must belong to the component you rebuild |
 | An axis whose values changed type (weak · fair · strong → 0–5) | Other surfaces (`ColourShowcase`, `PreviewPanel`) passed the old strings | grep every `v={{ <Axis>: … }}` caller and move it; the specimen maps the legacy values for old links |
+
+# Lessons from the InputTag (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| `get_metadata` on a set returns every variant's size and, per variant, its children's boxes | — | Use it (read-only, tiny) to check totals the script does not give: outside filled 68 / 58 / 80 = box + 8 + chip; inline Loading puts the Spinner right after the last chip; a 360×52 inline Invalid is just a sample with four tags that wraps |
+| A recipe size ref that is not a spacing step (`spacing.7`) | `shadcnRegistry` test: `--spacing-7` has no value in the published system | Steps are 0 · 0_5 · 1 · 1_5 · 2 · 2_5 · 3 · 4 · 5 · 6 · 8 …; 28 = `spacing.6+spacing.1` |
+| A stroke that exists only in some states and is laid out | Chip default has no stroke, Focused / critical have 1px inside the layout (width +2) | One part over Size × Variant × State that sets `strokeWidth` (`stroke.none` or `stroke.control`) AND adds `+stroke.control` to the padding only when the stroke exists |
+| One box painted by State, but the box differs per Layout | inline: the root; outside: the `field` child | The paint function takes the layout and writes to `root` or `field`; root state selectors (`:hover`, `:has(:focus-visible)`, `[data-force-state]`) still reach the child |
+| `exportAudit` I10 budget | Agent context 86 440 > 85 000 | Raise `contextAllTokens` with a dated note (a catalogue grows by three components) |

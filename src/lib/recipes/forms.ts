@@ -239,28 +239,155 @@ export const NUMBER_INPUT: ComponentRecipe = {
   ],
 }
 
-// ── InputTag ───────────────────────────────────────────────────────────────
+// ── InputTag · InputTagChip · InputTagOption ───────────────────────────────
+// The Figma `InputTag` page (design-plans/input-tag-contract.md): InputTag (390:744,
+// Layout × Size × State × Value, 72 variants), InputTagChip (388:235, Size × State ×
+// Variant, 40) and InputTagOption (390:793, Type × State, 8).
+// InputTag, inline: the ROOT is the box (Surface/input, Border/control, Radius/action,
+// a min-height 32 · 40 · 48, padding gap-control × gap-tight, gap gap-tight) and the
+// stroke is laid out (content starts at padding + stroke); the chips, the <input> (`text`)
+// and the Spinner wrap inside it. Outside: the root stacks `field` (the box, fixed 32 ·
+// 40 · 48 tall, padding inset-control, stroke laid out) over `tags` (the chips, only
+// with a value). The state paints the box: root inline, `field` outside. Invalid and
+// Focused draw a 2px halo fully OUTSIDE the 1px edge (`halo`); Loading swaps the
+// placeholder for a 16px Spinner and the chips go Disabled.
+export const INPUT_TAG_LAYOUTS = ['inline', 'outside'] as const
+export const INPUT_TAG_SIZES = ['sm', 'default', 'lg'] as const
+export const INPUT_TAG_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading'] as const
+export const INPUT_TAG_VALUES = ['placeholder', 'filled'] as const
+/** Box height per Size (32 · 40 · 48, unbound in the file; Size/control-sm · md · lg). */
+const TAG_BOX: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
+
+function inputTagPaint(layout: string, state: string): SlotMap {
+  const box = layout === 'outside' ? 'field' : 'root'
+  const disabled = state === 'Disabled'
+  const out: SlotMap = {
+    text: { text: c('content.primary') },
+    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+  }
+  if (disabled) out[box] = { fill: c('action.disabled.default'), stroke: c('border.control'), halo: NONE }
+  else if (state === 'Invalid') out[box] = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: c('status.critical.border') }
+  else if (state === 'Focused') out[box] = { fill: c('surface.input'), stroke: c('border.focus'), halo: c('border.ring.default') }
+  else if (state === 'Hover') out[box] = { fill: c('surface.input'), stroke: c('border.control-hover') }
+  else out[box] = { fill: c('surface.input'), stroke: c('border.control') }
+  return out
+}
 
 export const INPUT_TAG: ComponentRecipe = {
   key: 'InputTag',
-  slots: ['root', 'tag', 'tagRemove', 'input'],
-  defaults: {},
+  slots: ['root', 'field', 'tags', 'text', 'placeholder', 'spinner'],
+  pseudoSlots: { placeholder: { of: 'text', pseudo: '::placeholder' } },
+  defaults: { Layout: 'inline', Size: 'default', State: 'Default', Value: 'placeholder' },
+  parts: [
+    part({}, () => ({
+      text: { font: 'type.placeholder' },
+      spinner: { width: 'icon.small', height: 'icon.small' },
+    })),
+    part({ Layout: INPUT_TAG_LAYOUTS, Size: INPUT_TAG_SIZES }, (layout, size): SlotMap => (layout === 'inline'
+      ? {
+        root: {
+          radius: 'radius.action', strokeWidth: 'stroke.control', minHeight: TAG_BOX[size],
+          paddingX: 'spacing.gap-control+stroke.control', paddingY: 'spacing.gap-tight+stroke.control',
+          gap: 'spacing.gap-tight', rowGap: 'spacing.gap-tight',
+        },
+      }
+      : {
+        root: { gap: 'spacing.gap-control' },
+        field: {
+          radius: 'radius.action', strokeWidth: 'stroke.control', height: TAG_BOX[size],
+          paddingX: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control',
+        },
+        tags: { gap: 'spacing.gap-tight', rowGap: 'spacing.gap-tight' },
+      })),
+    part({ Layout: INPUT_TAG_LAYOUTS, State: INPUT_TAG_STATES }, (layout, state) => inputTagPaint(layout, state)),
+  ],
+}
+
+// InputTagChip: a removable tag. Fixed height per Size (18 · 20 · 24 · 28 · 32), Radius/control,
+// the label and the ✕ (an `icon/close` instance) gap apart. Default carries no stroke;
+// Focused and critical draw a 1px edge that the file lays out (a Focused chip grows 2px).
+export const INPUT_TAG_CHIP_SIZES = ['xs', 'sm', 'default', 'lg', 'xl'] as const
+export const INPUT_TAG_CHIP_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
+export const INPUT_TAG_CHIP_VARIANTS = ['default', 'critical'] as const
+/** Per Size: height · padding X · gap · ✕ · label type (unbound numbers as sums of steps). */
+const CHIP_GEOMETRY: Record<string, { h: string; padX: string; gap: string; icon: string; font: string }> = {
+  xs: { h: 'spacing.4+spacing.0_5', padX: 'spacing.1_5', gap: 'spacing.gap-tight', icon: 'spacing.2_5', font: 'type.caption' },
+  sm: { h: 'spacing.5', padX: 'spacing.gap-control', gap: 'spacing.gap-tight', icon: 'spacing.3', font: 'type.label' },
+  default: { h: 'size.hit', padX: 'spacing.gap-control', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', font: 'type.label' },
+  lg: { h: 'spacing.6+spacing.1', padX: 'spacing.2_5', gap: 'spacing.1_5', icon: 'icon.small', font: 'type.body-md' },
+  xl: { h: 'size.compact', padX: 'spacing.inset-control', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', font: 'type.body-lg' },
+}
+
+function chipPaint(size: string, variant: string, state: string): SlotMap {
+  const g = CHIP_GEOMETRY[size]
+  const critical = variant === 'critical'
+  const disabled = state === 'Disabled'
+  const ink = disabled ? c('content.disabled') : c(critical ? 'status.critical.content' : 'content.primary')
+  const edge = !disabled && (critical || state === 'Focused')
+  const root: SlotProps = {
+    height: g.h, radius: 'radius.control', gap: g.gap, font: g.font, text: ink,
+    // The stroke is laid out in the file: the content starts at padding + stroke.
+    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
+    strokeWidth: edge ? 'stroke.control' : 'stroke.none',
+  }
+  if (disabled) root.fill = c('action.disabled.default')
+  else if (critical) {
+    root.fill = c(state === 'Hover' ? 'status.critical.surface-pressed' : 'status.critical.surface')
+    root.stroke = c(state === 'Focused' ? 'status.critical.border-strong' : 'status.critical.border')
+    root.halo = state === 'Focused' ? c('status.critical.border') : NONE
+  } else {
+    root.fill = c(state === 'Hover' ? 'surface.muted-hover' : 'surface.muted')
+    if (state === 'Focused') { root.stroke = c('border.focus'); root.halo = c('border.ring.default') }
+  }
+  return { root, label: { text: ink }, remove: { text: ink, width: g.icon, height: g.icon } }
+}
+
+export const INPUT_TAG_CHIP: ComponentRecipe = {
+  key: 'InputTagChip',
+  slots: ['root', 'label', 'remove'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({ Size: INPUT_TAG_CHIP_SIZES, Variant: INPUT_TAG_CHIP_VARIANTS, State: INPUT_TAG_CHIP_STATES }, (size, variant, state) => chipPaint(size, variant, state)),
+  ],
+}
+
+// InputTagOption: a suggestion row of the dropdown (Type option · create). One size: 32 tall
+// (Size/control-sm), padding and gap gap-control, Radius/control, Type/body-md. At rest it
+// wears the FIELD's fill and edge (Surface/input + Border/control); Hover drops the edge,
+// Focused takes Border/focus with the 2px halo. The option's `badge` is an 8px dot
+// (Status/success/content), `meta` a Type/caption count, `icon` the 14px plus of create.
+export const INPUT_TAG_OPTION_TYPES = ['option', 'create'] as const
+export const INPUT_TAG_OPTION_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
+
+function optionPaint(state: string): SlotMap {
+  if (state === 'Disabled') {
+    const ink = { text: c('content.disabled') }
+    return {
+      root: { fill: c('action.disabled.default'), stroke: c('border.control'), strokeWidth: 'stroke.control', halo: NONE, text: c('content.disabled') },
+      label: ink, meta: ink, icon: ink, badge: { fill: c('content.disabled') },
+    }
+  }
+  const ink = c('content.primary')
+  const rest = { label: { text: ink }, meta: { text: c('content.subtle') }, icon: { text: ink }, badge: { fill: c('status.success.content') } }
+  if (state === 'Hover') return { ...rest, root: { fill: c('surface.muted-hover'), strokeWidth: 'stroke.none', halo: NONE, text: ink } }
+  if (state === 'Focused') return { ...rest, root: { fill: c('surface.muted-hover'), stroke: c('border.focus'), strokeWidth: 'stroke.control', halo: c('border.ring.default'), text: ink } }
+  return { ...rest, root: { fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control', halo: NONE, text: ink } }
+}
+
+export const INPUT_TAG_OPTION: ComponentRecipe = {
+  key: 'InputTagOption',
+  slots: ['root', 'badge', 'icon', 'label', 'meta'],
+  defaults: { Type: 'option', State: 'Default' },
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', minHeight: 'size.control', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5',
-        gap: 'spacing.1_5',
+        height: 'size.compact', radius: 'radius.control', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-md',
       },
-      'root:focus-within': FIELD_FOCUS,
-      tag: {
-        fill: c('surface.selected'), text: c('content.accent'), radius: 'radius.pill', font: 'type.label',
-        paddingX: 'spacing.2', gap: 'spacing.1',
-      },
-      tagRemove: { text: c('content.accent') },
-      'tagRemove:hover': { text: c('content.link.hover') },
-      input: { text: c('content.primary'), font: 'type.placeholder' },
+      badge: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
+      icon: { width: 'spacing.3+spacing.0_5', height: 'spacing.3+spacing.0_5' },
+      meta: { font: 'type.caption' },
     })),
+    part({ State: INPUT_TAG_OPTION_STATES }, (state) => optionPaint(state)),
   ],
 }
 

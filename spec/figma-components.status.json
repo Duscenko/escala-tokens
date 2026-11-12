@@ -4,17 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "InputTag": {
-      "status": "rebuild"
-    },
-    "InputTagChip": {
-      "status": "part",
-      "of": "InputTag"
-    },
-    "InputTagOption": {
-      "status": "part",
-      "of": "InputTag"
-    },
     "Combobox": {
       "status": "rebuild"
     },

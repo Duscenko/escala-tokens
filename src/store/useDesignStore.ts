@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 115,
+      version: 116,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3956,6 +3956,21 @@ export const useDesignStore = create<DesignStore>()(
             for (const key of ['PasswordStrengthRule', 'PasswordStrengthMeter']) {
               if (!sel.includes(key)) sel.splice(sel.indexOf('PasswordStrength') + 1, 0, key)
             }
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 116) {
+          // v115→v116: InputTagChip and InputTagOption are components of their own (the Figma file's
+          // sets). A selection with InputTag gets them.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            let at = sel.indexOf('InputTag')
+            if (at < 0) return
+            for (const key of ['InputTagChip', 'InputTagOption']) if (!sel.includes(key)) sel.splice(++at, 0, key)
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

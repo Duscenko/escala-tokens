@@ -177,7 +177,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // builder here. Each entry is a decision, not a gap to close.
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput (WEB_ONLY above).
@@ -191,7 +191,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-12: InputOTP rebuilt from the file (416:994): the separator between halves.
       InputOTP: ['separator'],
       // 2026-11-12: PasswordStrength rebuilt from the file (417:679): a card with the rules and the level label.
-      PasswordStrength: ['rules', 'level'] }
+      PasswordStrength: ['rules', 'level'],
+      // 2026-11-12: InputTag rebuilt from the file (390:744): the outside layout's field and chips row, the spinner; its chips are InputTagChip.
+      InputTag: ['field', 'tags', 'text', 'spinner'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))
@@ -201,7 +203,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // Every documented difference names real slots of that recipe.
     // A frozen plugin may still document slots of a recipe rebuilt from the file
     // after the freeze (ButtonGroup lost shadcn's `text` / `separator`, 2026-11-12).
-    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'] }
+    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'], InputTag: ['input', 'tag', 'tagRemove'] }
     for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
       if (!COMPONENT_RECIPES[key]) continue // a plugin key renamed on the web (RENAMED_ON_WEB)
       for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {

@@ -142,8 +142,16 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"\n\n<InputOTP length={4}${v.Variant && v.Variant !== 'outline' ? ` variant="${v.Variant}"` : ''} value={code} onChange={setCode}>\n  <InputOTPGroup>\n    <InputOTPSlot index={0} />\n    <InputOTPSlot index={1} />\n    <InputOTPSlot index={2} />\n    <InputOTPSlot index={3} />\n  </InputOTPGroup>\n</InputOTP>`,
   NumberInput: (v) =>
     `import { NumberInput } from "@/components/ui/number-input"\n\n<NumberInput aria-label="Quantity"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue={12} min={0} max={99}${v.State === 'Disabled' ? ' disabled' : v.State === 'Invalid' ? ' aria-invalid' : ''} />`,
-  InputTag: () =>
-    `import { InputTag } from "@/components/ui/input-tag"\n\n<InputTag defaultValue={["tokens", "figma"]} onValueChange={setTags} />`,
+  InputTag: (v) => {
+    const attrs = [v.Layout === 'outside' ? ' layout="outside"' : '', v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : '', v.State === 'Loading' ? ' loading' : ''].join('')
+    return `import { InputTag } from "@/components/ui/input-tag"\n\n<InputTag aria-label="Tags"${attrs} placeholder="Add tag…" value={tags} onValueChange={setTags} />`
+  },
+  InputTagChip: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'critical' ? ' variant="critical"' : '', v.State === 'Disabled' ? ' disabled' : ''].join('')
+    return `import { InputTagChip } from "@/components/ui/input-tag"\n\n<InputTagChip${attrs} onRemove={() => remove("Design")}>Design</InputTagChip>`
+  },
+  InputTagOption: (v) =>
+    `import { InputTagOption } from "@/components/ui/input-tag"\n\n<InputTagOption${v.Type === 'create' ? ' type="create"' : ' meta="12"'}${v.State === 'Disabled' ? ' disabled' : ''}>${v.Type === 'create' ? 'Create “Design”' : 'Design'}</InputTagOption>`,
   Select: (v) =>
     `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${v.Size === 'sm' ? ' size="sm"' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
   Combobox: () =>

@@ -9,7 +9,7 @@ import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type In
 import { Textarea as SkTextarea, type TextareaSize, type TextareaState } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
-import { InputTag as SkInputTag } from '../../../escala-ui/input-tag'
+import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
@@ -192,17 +192,50 @@ export function SkeletonNumberInputSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonInputTagSpecimen({ t, w }: SpecimenProps) {
-  // The board adds a third tag, holds it, takes it away.
+/** The Figma InputTag: Layout × Size × State × Value. On the board (no axis pinned) it is
+ *  live: the field adds a third tag, holds it, takes it away. */
+export function SkeletonInputTagSpecimen({ t, v, w }: SpecimenProps) {
   const step = useAutoplayStep(TAGS_PLAY.values.length, TAGS_PLAY.ms)
+  const pinned = Object.keys(v).length > 0
+  const state = (v.State ?? 'Default') as InputTagState
   return (
     <RecipeScope t={t}>
       <SkInputTag
-        defaultValue={['tokens', 'figma']}
-        value={step == null ? undefined : [...TAGS_PLAY.values[step]]}
-        width={w ?? 300}
-        removeIcon={<PreviewIcon concept="close" size={iconOf(9)} />}
+        key={`${v.Layout}-${v.Value}`}
+        layout={(v.Layout ?? 'inline') as InputTagLayout}
+        size={(v.Size ?? 'default') as InputTagSize}
+        forceState={state === 'Default' ? undefined : state}
+        defaultValue={pinned ? (v.Value === 'filled' ? ['Design', 'Research'] : []) : ['tokens', 'figma']}
+        value={pinned || step == null ? undefined : [...TAGS_PLAY.values[step]]}
+        width={w ?? (pinned ? 360 : 300)}
       />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonInputTagChipSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkInputTagChip
+        size={(v.Size ?? 'default') as InputTagChipSize}
+        variant={(v.Variant ?? 'default') as InputTagChipVariant}
+        forceState={(v.State === 'Default' ? undefined : v.State) as InputTagChipState | undefined}
+      >
+        Design
+      </SkInputTagChip>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonInputTagOptionSpecimen({ t, v }: SpecimenProps) {
+  const type = (v.Type ?? 'option') as InputTagOptionType
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 240 }}>
+        <SkInputTagOption type={type} meta="12" forceState={(v.State === 'Default' ? undefined : v.State) as InputTagOptionState | undefined}>
+          {type === 'create' ? 'Create “Design”' : 'Design'}
+        </SkInputTagOption>
+      </div>
     </RecipeScope>
   )
 }
