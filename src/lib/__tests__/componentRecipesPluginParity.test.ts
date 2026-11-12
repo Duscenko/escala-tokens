@@ -193,7 +193,8 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // SegmentedControl content (2026-11-12): the file's slot inside the track.
     // Avatar rebuilt from the file (378:2094, 2026-11-12): the icon glyph, the hairline edge over the content and the ring.
     // Badge rebuilt from the file (383:176, 2026-11-12): its icon, label and count layers (the frozen plugin draws one text).
-    const WEB_ONLY_SLOTS: Record<string, string[]> = { Badge: ['iconLeading', 'label', 'iconTrailing', 'icon', 'count'], Avatar: ['icon', 'stroke', 'ring'], SegmentedControl: ['content'], Slider: ['control', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
+    // Chip rebuilt from the file (390:10982, 2026-11-12): its leading frame, label and close frame.
+    const WEB_ONLY_SLOTS: Record<string, string[]> = { Chip: ['leading', 'label', 'close'], Badge: ['iconLeading', 'label', 'iconTrailing', 'icon', 'count'], Avatar: ['icon', 'stroke', 'ring'], SegmentedControl: ['content'], Slider: ['control', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
       // 2026-11-12: Textarea rebuilt from the file (394:152): its corner glyphs and resize grip.
       Textarea: ['adornment', 'status', 'spinner', 'corner', 'grip'],
       // 2026-11-12: InputOTP rebuilt from the file (416:994): the separator between halves.

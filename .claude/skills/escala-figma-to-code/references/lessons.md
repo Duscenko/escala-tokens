@@ -359,3 +359,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Old shadcn values on a changed axis (`default · secondary · destructive · outline · ghost · link` → severities × Appearance) | Callers painted the wrong tone silently | Move every caller: old `default` → `Variant default, Appearance solid`; `destructive` → `critical`; `outline` → `Variant secondary, Appearance outline` (Border/control + Content/primary is exactly the old outline); `secondary` stays (soft secondary = the old neutral fill) |
 | An `inverse` variant on the default page | axe 1.01:1 in Dark (light ink on the dark page) | Draw it on a `Surface/inverse` slot in the story, as Checkbox / CloseButton do |
 | `exportAudit` I10 budget again | 105 000 → 4 findings | 120 000 with a dated note (Avatar, FeaturedIcon, Badge) |
+
+# Lessons from the Chip (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A stroke the file draws only in some states AND lays out (soft Default 51 wide, soft Focused / Selected / Dragging 53) | One part cannot hold both the padding and the paint | Three parts: geometry (Size × Shape), padding (Size × Appearance × State: `inset+stroke.control` when the state has a stroke), paint (Variant × Appearance × State) |
+| A focus edge of 1px with the ring OUTSIDE (`focus-ring` frame stroked OUTSIDE, 2px) on a pill / rounded chip | The field `ring` path draws the halo straddling the edge | `stroke` = the 1px edge colour + `halo` = the outside ring colour, both in the Focused paint |
+| Non-pointer states in a State axis (Selected, Dragging, Disabled) | The recipe only knows hover / focus from the pointer | The component writes `data-force-state` (Selected from `selected`, Dragging, Disabled + `aria-disabled`); the generated `:hover` rule excludes a forced state, so a selected chip has no hover as in the file |
+| `Shadow/sm` whose rings and negative spreads do not paint | Copying `0 0 0 1 · 0 1 3 · 0 1 2 −1` would add a ring Figma does not draw | `lift: 'drag'` (`0 1 3` key + `0 1 2` ambient, spreads dropped) |
+| A close control smaller than 24px (16 / 20) | `componentRecipes.test` demanded `size.hit` on the old `remove` slot | `hit: 'size.hit'` on the new `close` slot (test moved to `['Chip', 'close']`) |
+| A board tile used `Live toggle="Selected"` on an axis the file no longer has | `Live` only toggles a True / False catalogue axis | The specimen takes an opt-in `v.Interactive: 'True'` (not a catalogue axis) and toggles its own `selected` |

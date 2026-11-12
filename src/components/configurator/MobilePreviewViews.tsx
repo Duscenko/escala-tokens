@@ -371,8 +371,8 @@ function FiltersTile({ t }: { t: T }) {
     <Tile wide label={t('Filters')}>
       {/* The chips carry the active filters; the actions sit after them. */}
       <Row>
-        <Chip dismissible removeIcon={<XGlyph />}><FilterLabel field={t('Status')} value={t('In review')} /></Chip>
-        <Chip dismissible removeIcon={<XGlyph />}><FilterLabel field={t('Owner')} value="Emma Collins" /></Chip>
+        <Chip size="sm" closeVisible><FilterLabel field={t('Status')} value={t('In review')} /></Chip>
+        <Chip size="sm" closeVisible><FilterLabel field={t('Owner')} value="Emma Collins" /></Chip>
         <Button size="sm" variant="outline"><PlusGlyph /> {t('Add filter')}</Button>
         <Button size="sm" variant="ghost">{t('Clear all')}</Button>
       </Row>

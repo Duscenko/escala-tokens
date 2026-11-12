@@ -66,6 +66,8 @@ const LIFT: Record<string, (key: string, ambient: string) => string[]> = {
   rest: (k, a) => [`0 12px 16px ${k}`, `0 4px 6px ${a}`],
   hover: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
   pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
+  drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
 }
 /** The surface effects a slot carries: its lift, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {

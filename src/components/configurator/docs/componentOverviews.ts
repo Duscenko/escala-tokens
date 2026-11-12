@@ -294,13 +294,11 @@ export const OVERVIEWS: Record<string, Overview> = {
   ],
   StatusBadge: [each('Status', ['online', 'away', 'busy', 'offline'])],
   Chip: [
-    [
-      { v: { Selected: 'False', Dismissible: 'False' } },
-      { v: { Selected: 'True', Dismissible: 'False' } },
-      { v: { Selected: 'False', Dismissible: 'True' } },
-      { v: { Selected: 'True', Dismissible: 'True' } },
-    ],
-    each('Size', ['sm', 'default'], { Selected: 'True', Dismissible: 'True' }),
+    each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled', 'Dragging']),
+    each('Variant', ['info', 'success', 'default', 'critical'], { Appearance: 'soft' }),
+    each('Appearance', ['outline', 'soft'], { Variant: 'info' }),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+    each('Shape', ['rounded', 'pill']),
   ],
   Icon: [each('Size', ['sm', 'default', 'lg'])],
   Kbd: [each('Size', ['xs', 'sm', 'default'])],

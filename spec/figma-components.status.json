@@ -34,9 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Chip": {
-      "status": "rebuild"
-    },
     "Accordion": {
       "status": "rebuild"
     },

@@ -4,7 +4,7 @@ import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient } 
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
 import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
-import { Chip as SkChip } from '../../../escala-ui/chip'
+import { Chip as SkChip, type ChipAppearance, type ChipShape, type ChipSize, type ChipState, type ChipVariant } from '../../../escala-ui/chip'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Progress as SkProgress } from '../../../escala-ui/progress'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
@@ -45,26 +45,31 @@ export function SkeletonStatusBadgeSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'online') as Presence} /></RecipeScope>
 }
 
-// Keyed by the axis values, so flipping `Selected` in the playground re-seeds
-// the chip's own toggle state (a key on the inner Chip left it stale).
+/** The Figma Chip. `CloseVisible` / `IconLeadingVisible` are Figma booleans (`'True'`). `v.Interactive: 'True'`
+ *  (opt-in, not a catalogue axis) lets a click toggle it, as the board plays it; otherwise State pins it. */
 export function SkeletonChipSpecimen(props: SpecimenProps) {
   const { v } = props
-  return <ChipPlayground key={`${v.Selected}-${v.Dismissible}-${v.Size}`} {...props} />
+  return <ChipPlayground key={`${v.State}-${v.Selected}-${v.Interactive}`} {...props} />
 }
 
-function ChipPlayground({ t, v }: SpecimenProps) {
-  const small = v.Size === 'sm'
-  const [selected, setSelected] = useState((v.Selected ?? 'False') === 'True')
+function ChipPlayground({ t, v, children }: SpecimenProps) {
+  const interactive = v.Interactive === 'True'
+  const [selected, setSelected] = useState(v.State === 'Selected' || v.Selected === 'True')
+  const state = (v.State ?? 'Default') as ChipState
   return (
     <RecipeScope t={t}>
       <SkChip
-        selected={selected}
-        onPressedChange={setSelected}
-        size={small ? 'sm' : 'default'}
-        dismissible={(v.Dismissible ?? 'False') === 'True'}
-        removeIcon={<PreviewIcon concept="close" size={small ? 9 : 10} />}
+        variant={(v.Variant ?? 'default') as ChipVariant}
+        appearance={(v.Appearance ?? 'outline') as ChipAppearance}
+        size={(v.Size ?? 'default') as ChipSize}
+        shape={(v.Shape ?? 'rounded') as ChipShape}
+        selected={interactive ? selected : undefined}
+        onPressedChange={interactive ? setSelected : undefined}
+        forceState={interactive ? undefined : state}
+        closeVisible={v.CloseVisible === 'True' || v.Dismissible === 'True'}
+        iconLeading={v.IconLeadingVisible === 'True' ? true : undefined}
       >
-        Design tokens
+        {children ?? 'Chip'}
       </SkChip>
     </RecipeScope>
   )

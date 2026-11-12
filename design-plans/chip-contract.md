@@ -26,3 +26,6 @@ Pill = `Radius/full`. Capas: `leading` (frame del icono, oculto) · `label` · `
 
 ## Estado
 Contrato leído; falta construir (receta, componente, catálogo, store v136, specimens, parity, story, medida).
+
+## Actualización (construido)
+Estado: receta `CHIP` (4 slots: root · leading · label · close; tres partes: geometría Size × Shape, padding +trazo Size × Appearance × State, pintura Variant × Appearance × State), componente `chip.tsx` (dos botones hermanos), catálogo con los ejes del archivo, specimen con `Interactive` opt-in para el tablero. `Dragging` = `lift: 'drag'` (`0 1 3 + 0 1 2`, sin spreads). Los callers del Chip viejo (Selected · Dismissible · sm/default) se movieron: `Dismissible` → `CloseVisible`, `Selected` → `State Selected`.

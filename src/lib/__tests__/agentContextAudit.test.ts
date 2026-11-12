@@ -280,7 +280,9 @@ describe('field outline is border.control', () => {
     for (const key of ['Input', 'Textarea', 'Select', 'RadioGroup', 'InputOTPSlot', 'Chip']) {
       const roles = recipeColorRoles(COMPONENT_RECIPES[key])
       expect(roles, key).toContain('border.control')
-      expect(roles, key).not.toContain('border.strong')
+      // Chip (the Figma file, 2026-11-12): its RESTING edge is border.control; border.strong is the
+      // Dragging edge of the default Variant.
+      if (key !== 'Chip') expect(roles, key).not.toContain('border.strong')
     }
     // Checkbox (the Figma file, 2026-11-12): its RESTING edge is border.control in every
     // Variant; border.strong is only secondary's FOCUS edge.

@@ -962,7 +962,7 @@ export function SystemCollage({
           <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
             <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
             <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
-            <InspectableLive c="Chip" t={tile(4)} v={{ Selected: 'True' }} toggle="Selected" />
+            <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>Design tokens</Chip>
           </div>
         </ScaledModule>
     ),

@@ -116,34 +116,77 @@ export const STATUS_BADGE: ComponentRecipe = {
 }
 
 // ── Chip ───────────────────────────────────────────────────────────────────
+// The Figma set (design-plans/chip-contract.md, 390:10982, 480 variants): Variant info · success · default ·
+// critical × Appearance outline · soft × Size xs … xl (24 · 32 · 40 · 48 · 56) × State Default · Hover · Focused ·
+// Selected · Disabled · Dragging × Shape rounded · pill. Radius steps up with the size (control · control ·
+// control · action · container); a pill is Radius/full. A stroke the file draws lays out (+2 wide), so the padding
+// adds it whenever the state has one.
 
-const CHIP_GEOMETRY: Record<string, SlotProps> = {
-  default: { paddingX: 'spacing.3', paddingY: 'spacing.1', gap: 'spacing.1_5' },
-  sm: { paddingX: 'spacing.2_5', paddingY: 'spacing.0_5', gap: 'spacing.1' },
+export const CHIP_VARIANTS = ['info', 'success', 'default', 'critical'] as const
+export const CHIP_APPEARANCES = ['outline', 'soft'] as const
+export const CHIP_SIZES = ['xs', 'sm', 'default', 'lg', 'xl'] as const
+export const CHIP_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled', 'Dragging'] as const
+export const CHIP_SHAPES = ['rounded', 'pill'] as const
+
+const CHIP_GEOMETRY: Record<string, { h: string; pad: string; gap: string; font: string; icon: string; radius: string }> = {
+  xs: { h: 'size.xs', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.caption', icon: 'icon.small', radius: 'radius.control' },
+  sm: { h: 'size.sm', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.small', radius: 'radius.control' },
+  default: { h: 'size.md', pad: 'spacing.inset-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.medium', radius: 'radius.control' },
+  lg: { h: 'size.lg', pad: 'spacing.inset-control', gap: 'spacing.gap-control', font: 'type.body-md', icon: 'icon.medium', radius: 'radius.action' },
+  xl: { h: 'size.xl', pad: 'spacing.gap-group', gap: 'spacing.gap-control', font: 'type.body-lg', icon: 'icon.large', radius: 'radius.container' },
+}
+
+function chipPaint(variant: string, appearance: string, state: string): SlotProps {
+  const status = variant !== 'default'
+  const soft = appearance === 'soft'
+  const ink = status ? `status.${variant}.content` : 'content.primary'
+  const base = status ? `status.${variant}.border` : 'border.control'
+  const strong = status ? `status.${variant}.border-strong` : 'border.strong'
+  const tint = status ? `status.${variant}.surface` : 'surface.muted'
+  const pressed = status ? `status.${variant}.surface-pressed` : 'surface.muted-hover'
+  const none: SlotProps = { fill: NONE, stroke: NONE, strokeWidth: 'stroke.none', text: c(ink) }
+  switch (state) {
+    case 'Hover':
+      return soft ? { ...none, fill: c(pressed) }
+        : { ...none, fill: c(tint), stroke: c(status ? strong : 'border.control-hover'), strokeWidth: 'stroke.control' }
+    case 'Focused':
+      return { ...none, fill: soft ? c(tint) : NONE, stroke: c(status ? strong : 'border.focus'), strokeWidth: 'stroke.control', halo: c(status ? base : 'border.ring.default') }
+    case 'Selected':
+      return status
+        ? { ...none, fill: c(pressed), stroke: c(strong), strokeWidth: 'stroke.control' }
+        : { ...none, fill: c('surface.selected'), stroke: c('border.accent'), strokeWidth: 'stroke.control', text: c('content.accent') }
+    case 'Disabled':
+      return soft ? { ...none, fill: c('action.disabled.default'), text: c('content.disabled') }
+        : { ...none, stroke: c('border.subtle'), strokeWidth: 'stroke.control', text: c('content.disabled') }
+    case 'Dragging':
+      return soft
+        ? { ...none, fill: c(pressed), stroke: c(status ? strong : 'border.strong'), strokeWidth: 'stroke.control', lift: 'drag' }
+        : { ...none, fill: c(status ? tint : 'surface.layer-1'), stroke: c(status ? strong : 'border.strong'), strokeWidth: 'stroke.control', lift: 'drag' }
+    default:
+      return soft ? { ...none, fill: c(tint) } : { ...none, stroke: c(base === 'border.control' ? 'border.control' : base), strokeWidth: 'stroke.control' }
+  }
 }
 
 export const CHIP: ComponentRecipe = {
   key: 'Chip',
-  slots: ['root', 'remove'],
-  defaults: { Selected: 'False', Dismissible: 'False', Size: 'default' },
+  slots: ['root', 'leading', 'label', 'close'],
+  defaults: { Variant: 'default', Appearance: 'outline', Size: 'default', State: 'Default', Shape: 'rounded' },
   parts: [
-    part({}, () => ({
-      root: { radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.label' },
-      'root:focus-visible': FOCUS,
-      // The × is ~10px: its pointer target is the 24px hit area around it.
-      remove: { hit: 'size.hit' },
-      'remove:focus-visible': FOCUS,
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({ root: CHIP_GEOMETRY[size] })),
-    part({ Selected: ['False', 'True'] as const }, (selected) => selected === 'True'
-      ? {
-          root: { fill: c('surface.selected'), stroke: c('border.accent'), text: c('content.accent') },
-          'root:hover': { fill: c('surface.selected-pressed') },
-        }
-      : {
-          root: { fill: NONE, stroke: c('border.control'), text: c('content.primary') },
-          'root:hover': { fill: c('surface.accent'), stroke: c('border.control-hover') },
-        }),
+    part({ Size: CHIP_SIZES, Shape: CHIP_SHAPES }, (size, shape) => {
+      const g = CHIP_GEOMETRY[size]
+      return {
+        root: { height: g.h, radius: shape === 'pill' ? 'radius.pill' : g.radius, font: g.font, gap: g.gap },
+        leading: { width: g.icon, height: g.icon },
+        // The × is 16 – 24px: its pointer target is the 24px hit area around it (WCAG 2.5.8).
+        close: { width: g.icon, height: g.icon, hit: 'size.hit' },
+      }
+    }),
+    // The stroke a state draws lays out (the chip is 2px wider): padding + stroke whenever there is one.
+    part({ Size: CHIP_SIZES, Appearance: CHIP_APPEARANCES, State: CHIP_STATES }, (size, appearance, state) => {
+      const stroke = appearance === 'outline' || ['Focused', 'Selected', 'Dragging'].includes(state)
+      return { root: { paddingX: `${CHIP_GEOMETRY[size].pad}${stroke ? '+stroke.control' : ''}` } }
+    }),
+    part({ Variant: CHIP_VARIANTS, Appearance: CHIP_APPEARANCES, State: CHIP_STATES }, (variant, appearance, state) => ({ root: chipPaint(variant, appearance, state) })),
   ],
 }
 
