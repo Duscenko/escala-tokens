@@ -15763,71 +15763,242 @@
         }
       ]
     },
-    "Rating": {
-      "key": "Rating",
+    "RatingGroup": {
+      "key": "RatingGroup",
       "slots": [
         "root",
-        "stars",
-        "star",
-        "starOn",
-        "label"
+        "content"
       ],
       "defaults": {
-        "Interactive": "False"
+        "Size": "default",
+        "Type": "star"
       },
       "parts": [
         {
           "axes": [
-            "Interactive"
+            "Type"
           ],
           "values": {
-            "False": {
-              "root": {
-                "gap": "spacing.gap-control"
-              },
-              "stars": {
-                "gap": "spacing.0_5"
-              },
-              "star": {
-                "text": "color.content.subtle",
-                "width": "icon.medium",
-                "height": "icon.medium"
-              },
-              "starOn": {
-                "text": "color.status.warning.surface-solid",
-                "width": "icon.medium",
-                "height": "icon.medium"
-              },
-              "label": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
+            "star": {
+              "content": {
+                "gap": "spacing.gap-tight"
               }
             },
-            "True": {
-              "root": {
+            "emoji": {
+              "content": {
                 "gap": "spacing.gap-control"
-              },
-              "stars": {
-                "gap": "spacing.0_5"
-              },
-              "star": {
-                "text": "color.content.subtle",
-                "width": "icon.medium",
-                "height": "icon.medium"
-              },
-              "starOn": {
-                "text": "color.status.warning.surface-solid",
-                "width": "icon.medium",
-                "height": "icon.medium"
-              },
-              "label": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
               }
             }
           }
         }
       ]
+    },
+    "RatingGroupItem": {
+      "key": "RatingGroupItem",
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Type": "star",
+        "Checked": "false",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "radius": "radius.action"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.compact",
+                "height": "size.compact"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.hit",
+                "height": "size.hit"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "size.control",
+                "height": "size.control"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Type",
+            "Checked",
+            "State"
+          ],
+          "values": {
+            "star|false|Default": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary"
+              }
+            },
+            "star|false|Hover": {
+              "root": {
+                "fill": "color.action.ghost.hover",
+                "text": "color.content.primary"
+              }
+            },
+            "star|false|Pressed": {
+              "root": {
+                "fill": "color.action.ghost.pressed",
+                "text": "color.content.primary"
+              }
+            },
+            "star|false|Focused": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "star|false|Disabled": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.disabled"
+              }
+            },
+            "star|true|Default": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.accent"
+              }
+            },
+            "star|true|Hover": {
+              "root": {
+                "fill": "color.action.ghost.hover",
+                "text": "color.content.accent"
+              }
+            },
+            "star|true|Pressed": {
+              "root": {
+                "fill": "color.action.ghost.pressed",
+                "text": "color.content.accent"
+              }
+            },
+            "star|true|Focused": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.accent",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "star|true|Disabled": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.disabled"
+              }
+            },
+            "emoji|false|Default": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary"
+              }
+            },
+            "emoji|false|Hover": {
+              "root": {
+                "fill": "color.action.ghost.hover",
+                "text": "color.content.primary"
+              }
+            },
+            "emoji|false|Pressed": {
+              "root": {
+                "fill": "color.action.ghost.pressed",
+                "text": "color.content.primary"
+              }
+            },
+            "emoji|false|Focused": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.secondary",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "emoji|false|Disabled": {
+              "root": {
+                "fill": "none",
+                "text": "color.content.disabled"
+              }
+            },
+            "emoji|true|Default": {
+              "root": {
+                "fill": "color.surface.selected",
+                "text": "color.content.accent"
+              }
+            },
+            "emoji|true|Hover": {
+              "root": {
+                "fill": "color.surface.selected",
+                "text": "color.content.accent"
+              }
+            },
+            "emoji|true|Pressed": {
+              "root": {
+                "fill": "color.surface.selected-pressed",
+                "text": "color.content.accent"
+              }
+            },
+            "emoji|true|Focused": {
+              "root": {
+                "fill": "color.surface.selected",
+                "text": "color.content.accent",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "emoji|true|Disabled": {
+              "root": {
+                "fill": "color.surface.selected",
+                "text": "color.content.disabled"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "FileFormat": {
       "key": "FileFormat",

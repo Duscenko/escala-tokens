@@ -44,7 +44,7 @@ import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU,
 } from './recipes/navigation.js'
 import { ALERT, SONNER, SKELETON, EMPTY } from './recipes/feedback.js'
-import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR, KBD } from './recipes/indicators.js'
+import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING_GROUP, RATING_GROUP_ITEM, FILE_FORMAT, AVATAR, KBD } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
   type TokenRef, type RecipeProp, type SlotProps, type RecipeMotion, type RecipeChoreo, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
@@ -105,7 +105,8 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Progress: PROGRESS,
   Spinner: SPINNER,
   Icon: ICON,
-  Rating: RATING,
+  RatingGroup: RATING_GROUP,
+  RatingGroupItem: RATING_GROUP_ITEM,
   FileFormat: FILE_FORMAT,
   Avatar: AVATAR,
   Separator: SEPARATOR,

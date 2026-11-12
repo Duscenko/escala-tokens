@@ -141,20 +141,55 @@ export const ICON: ComponentRecipe = {
   ],
 }
 
-// ── Rating ─────────────────────────────────────────────────────────────────
+// ── RatingGroup + RatingGroupItem ──────────────────────────────────────────
+// The Figma `RatingGroup` (design-plans/rating-group-contract.md, 1122:316, 6 variants: Size default ·
+// sm · lg × Type star · emoji) and its `RatingGroupItem` (1122:195, 60 variants: Size × Type × Checked
+// × State Default · Hover · Pressed · Focused · Disabled). A row of 5 items in a `Content` slot, 4 apart
+// (stars) or 8 (emoji). An item is a Radius/action square (32 · 24 · 40) with a 20 · 16 · 24 glyph:
+// Content/secondary at rest, a ghost wash and Content/primary on hover / press; a checked star is
+// Content/accent, a checked emoji sits on Surface/selected in Content/accent; Disabled Content/disabled.
+export const RATING_GROUP_SIZES = ['default', 'sm', 'lg'] as const
+export const RATING_GROUP_TYPES = ['star', 'emoji'] as const
+export const RATING_GROUP_ITEM_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+const RATING_ITEM: Record<string, { box: string; icon: string }> = {
+  default: { box: 'size.compact', icon: 'icon.medium' },
+  sm: { box: 'size.hit', icon: 'icon.small' },
+  lg: { box: 'size.control', icon: 'icon.large' },
+}
 
-export const RATING: ComponentRecipe = {
-  key: 'Rating',
-  slots: ['root', 'stars', 'star', 'starOn', 'label'],
-  defaults: { Interactive: 'False' },
+function ratingItemPaint(type: string, checked: string, state: string): SlotMap {
+  const on = checked === 'true'
+  const emoji = type === 'emoji'
+  if (state === 'Disabled') return { root: { fill: on && emoji ? c('surface.selected') : NONE, text: c('content.disabled') } }
+  const hoverFill = state === 'Hover' ? c('action.ghost.hover') : state === 'Pressed' ? c('action.ghost.pressed') : NONE
+  const focus = state === 'Focused' ? { focus: c('border.focus'), ring: c('border.ring.default') } : {}
+  if (on && emoji) {
+    return { root: { fill: c(state === 'Pressed' ? 'surface.selected-pressed' : 'surface.selected'), text: c('content.accent'), ...focus } }
+  }
+  const ink = on ? 'content.accent' : state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'
+  return { root: { fill: hoverFill, text: c(ink), ...focus } }
+}
+
+export const RATING_GROUP: ComponentRecipe = {
+  key: 'RatingGroup',
+  slots: ['root', 'content'],
+  defaults: { Size: 'default', Type: 'star' },
   parts: [
-    part({ Interactive: ['False', 'True'] as const }, () => ({
-      root: { gap: 'spacing.gap-control' },
-      stars: { gap: 'spacing.0_5' },
-      star: { text: c('content.subtle'), width: 'icon.medium', height: 'icon.medium' },
-      starOn: { text: c('status.warning.surface-solid'), width: 'icon.medium', height: 'icon.medium' },
-      label: { text: c('content.secondary'), font: 'type.body-sm' },
+    part({ Type: RATING_GROUP_TYPES }, (type) => ({ content: { gap: type === 'star' ? 'spacing.gap-tight' : 'spacing.gap-control' } })),
+  ],
+}
+
+export const RATING_GROUP_ITEM: ComponentRecipe = {
+  key: 'RatingGroupItem',
+  slots: ['root', 'icon'],
+  defaults: { Size: 'default', Type: 'star', Checked: 'false', State: 'Default' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.action' } })),
+    part({ Size: RATING_GROUP_SIZES }, (size) => ({
+      root: { width: RATING_ITEM[size].box, height: RATING_ITEM[size].box },
+      icon: { width: RATING_ITEM[size].icon, height: RATING_ITEM[size].icon },
     })),
+    part({ Type: RATING_GROUP_TYPES, Checked: ['false', 'true'] as const, State: RATING_GROUP_ITEM_STATES }, ratingItemPaint),
   ],
 }
 

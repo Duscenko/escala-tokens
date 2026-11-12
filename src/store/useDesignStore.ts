@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 131,
+      version: 132,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4172,6 +4172,21 @@ export const useDesignStore = create<DesignStore>()(
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 132) {
+          // v131→v132: Rating is RatingGroup in the Figma file (with its RatingGroupItem part).
+          const move = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Rating')
+            if (at >= 0) sel.splice(at, 1, 'RatingGroup')
+            const group = sel.indexOf('RatingGroup')
+            if (group >= 0 && !sel.includes('RatingGroupItem')) sel.splice(group + 1, 0, 'RatingGroupItem')
+          }
+          move(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) move(sys?.snapshot)
           }
         }
         return persisted

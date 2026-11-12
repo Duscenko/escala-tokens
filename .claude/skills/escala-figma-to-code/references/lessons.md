@@ -304,3 +304,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A flex child squeezed to 0 (tick 2×6 inside a 20px mark that holds 26px) | tick height 0 | `shrink-0` on the tick; the mark overflows like the file's |
 | A recipe slot test written for the old slot (`['Slider','thumb']`) | `hitSlots` expected `Slider.thumb` | Point it at `SliderThumb.root` |
 | A shadow style with no ring and a 4px halo with spread | Dragging draws nothing | Copy: no effect (spread on a non-clipping frame) |
+
+# Lessons from the RatingGroup and RatingGroupItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename in the ledger with the file also renamed (`rating.tsx` → `rating-group.tsx`) | Registry, `FILE_OF`, docs imports and every `Rating` string | `git mv` the file; catalogue, recipe key, specimens map, snippets, overviews, `ColourShowcase`, sitemap, motion, store migration (rename inside `selectedComponents` and add the part), parity `RENAMED_ON_WEB` + `WEB_ONLY` |
+| A Figma prop called `Type` on a `<button>` | `type` is the button's own attribute | `kind` on the item (documented); the group keeps `type` (a div has none) |
+| «In a star group set Checked on every item up to the value; code sets aria-checked on the chosen item only» | One boolean cannot be both | The group computes the visual `checked` (≤ value for stars, == for emoji) and the roving `aria-checked` separately |
+| Glyphs the shared component icon set lacks (the five smileys, the filled star) | No `PreviewIcon` concept | Inline Phosphor paths in the component (regular + `star-fill`) |

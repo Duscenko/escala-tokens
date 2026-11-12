@@ -9,7 +9,7 @@ import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Progress as SkProgress } from '../../../escala-ui/progress'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { Icon as SkIcon } from '../../../escala-ui/icon'
-import { Rating as SkRating } from '../../../escala-ui/rating'
+import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
 import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
 import { Avatar as SkAvatar, AvatarFallback as SkAvatarFallback, type AvatarSize } from '../../../escala-ui/avatar'
 import { RecipeScope } from './scope'
@@ -78,25 +78,29 @@ export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonRatingSpecimen(props: SpecimenProps) {
-  return <RatingPlayground key={props.v.Interactive} {...props} />
-}
-
-// Interactive: a click sets the score and the label follows it. Filled stars
-// are the fill weight of the same glyph, so a score reads at a glance.
-function RatingPlayground({ t, v }: SpecimenProps) {
-  const interactive = (v.Interactive ?? 'False') === 'True'
-  const [score, setScore] = useState(4)
-  const size = iconOf(18)
+/** The Figma RatingGroup: five stars (four checked) or five smileys (the fourth chosen). */
+export function SkeletonRatingGroupSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkRating
-        value={score}
-        onValueChange={interactive ? setScore : undefined}
-        interactive={interactive}
-        star={<PreviewIcon concept="star" size={size} />}
-        starOn={<PhosphorWeightProvider weight="fill"><PreviewIcon concept="star" size={size} /></PhosphorWeightProvider>}
-        label={`${score.toFixed(1)} · 128 reviews`}
+      <SkRatingGroup
+        aria-label="How was it?"
+        size={(v.Size ?? 'default') as RatingGroupSize}
+        type={(v.Type ?? 'star') as RatingGroupType}
+      />
+    </RecipeScope>
+  )
+}
+
+/** One Figma rating item on its own (the overview and the docs playground). */
+export function SkeletonRatingGroupItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkRatingGroupItem
+        aria-label="Rating"
+        size={(v.Size ?? 'default') as RatingGroupSize}
+        kind={(v.Type ?? 'star') as RatingGroupType}
+        checked={v.Checked === 'true'}
+        forceState={(v.State ?? 'Default') as RatingGroupItemState}
       />
     </RecipeScope>
   )

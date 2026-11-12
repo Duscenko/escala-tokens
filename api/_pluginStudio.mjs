@@ -5124,20 +5124,44 @@ var init_componentCatalogue = __esm({
         accessibility: "Rendered as <kbd>, which assistive tech announces as keyboard input. Spell modifier names in an aria-label when the glyph alone is ambiguous."
       },
       {
-        key: "Rating",
-        label: "Rating",
+        key: "RatingGroup",
+        label: "Rating Group",
         category: "Indicators",
-        description: "Star row for displaying or collecting a 1\u20135 score.",
-        usage: "Read-only by default; make interactive only where the user actually rates.",
-        axes: [{ name: "Interactive", values: ["False", "True"] }],
-        figmaSets: ["Rating"],
-        props: [
-          { name: "value", type: "number", description: "Score 0\u20135." },
-          { name: "onValueChange", type: "(value: number) => void", description: "Makes the row interactive." },
-          { name: "star", type: "ReactNode", description: "The star glyph, rendered five times." },
-          { name: "label", type: "ReactNode", description: 'Count label ("4.0 \xB7 128 reviews").' }
+        description: "Single-choice scale of 5 items. Type star for scores, emoji for sentiment; Size cascades to every item.",
+        usage: "Use to collect a 1\u20135 score or a sentiment. Use SegmentedControl for labelled options and Slider for a continuous value.",
+        // The Figma file's axes, value for value (design-plans/rating-group-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Type", values: ["star", "emoji"] }
         ],
-        accessibility: 'Read-only uses an aria-label ("4 of 5 stars"); interactive follows the radio pattern.'
+        figmaSets: ["RatingGroup"],
+        props: [
+          { name: "value / defaultValue / onValueChange", type: "number", description: "The chosen score 1\u20135 (a star group fills every star up to it)." },
+          { name: "size / type", type: 'Size / "star" | "emoji"', description: "Items 32 \xB7 24 \xB7 40; stars or smileys. Cascade to every item." },
+          { name: "children", type: "RatingGroupItem[]", description: "Figma Content slot. Omitted: the five stars or smileys." }
+        ],
+        accessibility: 'role="radiogroup"; each item role="radio" with aria-checked and a label ("4 of 5 stars", "Good"). One tab stop; the arrow keys move and select.'
+      },
+      {
+        key: "RatingGroupItem",
+        label: "Rating Group Item",
+        category: "Indicators",
+        description: "One option of a RatingGroup. A checked star fills in Content/accent; an emoji keeps its glyph and marks the choice with Surface/selected.",
+        usage: "Always inside a RatingGroup; give every item an aria-label.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Type", values: ["star", "emoji"] },
+          { name: "Checked", values: ["false", "true"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["RatingGroupItem"],
+        props: [
+          { name: "icon", type: "ReactNode", description: "Figma Icon (the swap)." },
+          { name: "value", type: "number", description: "The score it picks inside the group." },
+          { name: "kind / size / checked", type: "Type / Size / boolean", description: "Taken from the group when inside one (kind is the Figma Type)." },
+          { name: "disabled / forceState", type: "boolean / State", description: "Disabled mutes it; forceState pins a state for docs." }
+        ],
+        accessibility: 'role="radio" with aria-checked; the roving tabindex belongs to the group.'
       },
       {
         key: "FileFormat",
@@ -11276,7 +11300,19 @@ function badgePaint(variant) {
       return { root: { fill: NONE, stroke: NONE, text: c("content.link.default") } };
   }
 }
-var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
+function ratingItemPaint(type, checked, state2) {
+  const on = checked === "true";
+  const emoji = type === "emoji";
+  if (state2 === "Disabled") return { root: { fill: on && emoji ? c("surface.selected") : NONE, text: c("content.disabled") } };
+  const hoverFill = state2 === "Hover" ? c("action.ghost.hover") : state2 === "Pressed" ? c("action.ghost.pressed") : NONE;
+  const focus = state2 === "Focused" ? { focus: c("border.focus"), ring: c("border.ring.default") } : {};
+  if (on && emoji) {
+    return { root: { fill: c(state2 === "Pressed" ? "surface.selected-pressed" : "surface.selected"), text: c("content.accent"), ...focus } };
+  }
+  const ink = on ? "content.accent" : state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary";
+  return { root: { fill: hoverFill, text: c(ink), ...focus } };
+}
+var BADGE_VARIANTS, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_GEOMETRY, AVATAR, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -11387,18 +11423,33 @@ var init_indicators = __esm({
         }))
       ]
     };
-    RATING = {
-      key: "Rating",
-      slots: ["root", "stars", "star", "starOn", "label"],
-      defaults: { Interactive: "False" },
+    RATING_GROUP_SIZES = ["default", "sm", "lg"];
+    RATING_GROUP_TYPES = ["star", "emoji"];
+    RATING_GROUP_ITEM_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    RATING_ITEM = {
+      default: { box: "size.compact", icon: "icon.medium" },
+      sm: { box: "size.hit", icon: "icon.small" },
+      lg: { box: "size.control", icon: "icon.large" }
+    };
+    RATING_GROUP = {
+      key: "RatingGroup",
+      slots: ["root", "content"],
+      defaults: { Size: "default", Type: "star" },
       parts: [
-        part({ Interactive: ["False", "True"] }, () => ({
-          root: { gap: "spacing.gap-control" },
-          stars: { gap: "spacing.0_5" },
-          star: { text: c("content.subtle"), width: "icon.medium", height: "icon.medium" },
-          starOn: { text: c("status.warning.surface-solid"), width: "icon.medium", height: "icon.medium" },
-          label: { text: c("content.secondary"), font: "type.body-sm" }
-        }))
+        part({ Type: RATING_GROUP_TYPES }, (type) => ({ content: { gap: type === "star" ? "spacing.gap-tight" : "spacing.gap-control" } }))
+      ]
+    };
+    RATING_GROUP_ITEM = {
+      key: "RatingGroupItem",
+      slots: ["root", "icon"],
+      defaults: { Size: "default", Type: "star", Checked: "false", State: "Default" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.action" } })),
+        part({ Size: RATING_GROUP_SIZES }, (size) => ({
+          root: { width: RATING_ITEM[size].box, height: RATING_ITEM[size].box },
+          icon: { width: RATING_ITEM[size].icon, height: RATING_ITEM[size].icon }
+        })),
+        part({ Type: RATING_GROUP_TYPES, Checked: ["false", "true"], State: RATING_GROUP_ITEM_STATES }, ratingItemPaint)
       ]
     };
     FORMAT_TONE = {
@@ -11512,6 +11563,7 @@ var init_motion2 = __esm({
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
       Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
+      RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
       Progress: { transitions: { indicator: { width: "base-functional-standard" } } },
       Accordion: disclosure("--radix-accordion-content-height"),
@@ -11598,7 +11650,8 @@ var init_componentRecipes = __esm({
       Progress: PROGRESS,
       Spinner: SPINNER,
       Icon: ICON,
-      Rating: RATING,
+      RatingGroup: RATING_GROUP,
+      RatingGroupItem: RATING_GROUP_ITEM,
       FileFormat: FILE_FORMAT,
       Avatar: AVATAR,
       Separator: SEPARATOR,
@@ -14457,7 +14510,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 131,
+          version: 132,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -16064,6 +16117,20 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 132) {
+              const move = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Rating");
+                if (at >= 0) sel.splice(at, 1, "RatingGroup");
+                const group = sel.indexOf("RatingGroup");
+                if (group >= 0 && !sel.includes("RatingGroupItem")) sel.splice(group + 1, 0, "RatingGroupItem");
+              };
+              move(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) move(sys?.snapshot);
               }
             }
             return persisted;

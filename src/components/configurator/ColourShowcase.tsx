@@ -26,7 +26,7 @@ export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
   warning: [
     { key: 'Sonner', v: { Type: 'warning' }, w: 300 },
     { key: 'StatusBadge', v: { Status: 'away' } },
-    { key: 'Rating', v: {} },
+    { key: 'RatingGroup', v: {} },
     { key: 'FileFormat', v: { Format: 'zip' } },
     { key: 'PasswordStrength', v: { Strength: '3' } },
   ],

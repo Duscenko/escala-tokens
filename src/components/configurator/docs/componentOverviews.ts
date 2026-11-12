@@ -306,7 +306,16 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default'], { Selected: 'True', Dismissible: 'True' }),
   ],
   Icon: [each('Size', ['sm', 'default', 'lg'])],
-  Rating: stack('Interactive', ['False', 'True']),
+  RatingGroup: [
+    each('Type', ['star', 'emoji']),
+    each('Size', ['default', 'sm', 'lg']),
+  ],
+  RatingGroupItem: [
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
+    each('Checked', ['false', 'true']),
+    each('Type', ['star', 'emoji'], { Checked: 'true' }),
+    each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
+  ],
   FileFormat: [each('Format', ['pdf', 'png', 'svg', 'zip'])],
   Avatar: [each('Size', ['sm', 'default', 'lg'])],
 

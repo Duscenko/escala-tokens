@@ -34,14 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "RatingGroup": {
-      "status": "rename",
-      "code": "Rating"
-    },
-    "RatingGroupItem": {
-      "status": "part",
-      "of": "RatingGroup"
-    },
     "Avatar": {
       "status": "rebuild"
     },

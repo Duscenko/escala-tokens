@@ -61,6 +61,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
   Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },
+  RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
   Progress: { transitions: { indicator: { width: 'base-functional-standard' } } },
   Accordion: disclosure('--radix-accordion-content-height'),

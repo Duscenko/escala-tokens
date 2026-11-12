@@ -122,8 +122,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
   Icon: (v) =>
     `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
-  Rating: (v) =>
-    `import { Rating } from "@/components/ui/rating"\n\n<Rating value={4}${v.Interactive === 'True' ? ' onValueChange={setScore}' : ''} star={<Star />} starOn={<Star weight="fill" />} label="4.0 · 128 reviews" />`,
+  RatingGroup: (v) =>
+    `import { RatingGroup } from "@/components/ui/rating-group"\n\n<RatingGroup${v.Type === 'emoji' ? ' type="emoji"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue={4} onValueChange={setScore} aria-label="How was it?" />`,
+  RatingGroupItem: (v) =>
+    `import { RatingGroupItem } from "@/components/ui/rating-group"\n\n<RatingGroupItem${v.Type === 'emoji' ? ' kind="emoji"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Checked === 'true' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="4 of 5 stars" />`,
   FileFormat: (v) =>
     `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'pdf'}" />`,
   Avatar: (v) =>
