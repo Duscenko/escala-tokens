@@ -4,17 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "ButtonGroup": {
-      "status": "rebuild"
-    },
-    "ButtonGroupDivider": {
-      "status": "part",
-      "of": "ButtonGroup"
-    },
-    "ButtonGroupItem": {
-      "status": "part",
-      "of": "ButtonGroup"
-    },
     "Field": {
       "status": "rebuild"
     },

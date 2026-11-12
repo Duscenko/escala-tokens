@@ -433,24 +433,123 @@ export const FAB_GROUP: ComponentRecipe = {
   ],
 }
 
-// ── ButtonGroup ────────────────────────────────────────────────────────────
-// shadcn's group: Buttons attached edge to edge. The buttons paint themselves
-// (Button recipe); the group owns the separator and the text segment.
+// ── ButtonGroup · ButtonGroupItem · ButtonGroupDivider ─────────────────────
+// The Figma `ButtonGroup` page (design-plans/button-group-contract.md): three sets.
+// The group is a clipping, borderless box carrying `Shadow/xs` and the radius of
+// its Shape; the ITEMS paint themselves (their own set, not Button: no radius, no
+// stroke, their own fills per Variant); the dividers are 1px lines between items.
+// Shape `pill` overrides every labelled item's inset to `Spacing/inset-surface`;
+// Variant `outline` lays a `Border/control` edge OVER the items (Figma's absolute
+// `border` rectangle — here the root's `::after`).
+
+export const BUTTON_GROUP_SIZES = ['xs', 'sm', 'lg', 'xl', 'default'] as const
+export const BUTTON_GROUP_VARIANTS = ['outline', 'default', 'inverse', 'secondary'] as const
+export const BUTTON_GROUP_SHAPES = ['rounded', 'pill', 'square'] as const
+export const BUTTON_GROUP_ORIENTATIONS = ['horizontal', 'vertical'] as const
+export const BUTTON_GROUP_ITEM_SIZES = ['xs', 'sm', 'default', 'lg', 'xl'] as const
+export const BUTTON_GROUP_ITEM_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+
+const GROUP_RADIUS: Record<string, string> = { rounded: 'radius.action', pill: 'radius.pill', square: 'radius.none' }
 
 export const BUTTON_GROUP: ComponentRecipe = {
   key: 'ButtonGroup',
-  slots: ['root', 'text', 'separator'],
-  defaults: { Orientation: 'horizontal' },
+  slots: ['root', 'item', 'border'],
+  defaults: { Size: 'default', Variant: 'default', Shape: 'rounded', Orientation: 'horizontal' },
+  pseudoSlots: { border: { of: 'root', pseudo: '::after' } },
   parts: [
-    part({}, () => ({
-      text: {
-        fill: c('surface.layer-2'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        text: c('content.primary'), radius: 'radius.action', paddingX: 'spacing.2_5', gap: 'spacing.2', font: 'type.label',
-      },
-      separator: { fill: c('border.control') },
+    part({}, () => ({ root: { gap: 'spacing.none', shadow: 'shadow.xs' } })),
+    part({ Shape: BUTTON_GROUP_SHAPES }, (shape) => ({
+      root: { radius: GROUP_RADIUS[shape] },
+      border: { radius: GROUP_RADIUS[shape] },
+      // A pill gives its labelled items more room at both ends.
+      ...(shape === 'pill' ? { 'item[data-icononly="false"]': { paddingX: 'spacing.inset-surface' } } : {}),
     })),
-    part({ Orientation: ['horizontal', 'vertical'] as const }, (o) => ({
-      separator: o === 'horizontal' ? { width: 'stroke.control' } : { height: 'stroke.control' },
+    part({ Variant: BUTTON_GROUP_VARIANTS }, (variant) => ({
+      border: variant === 'outline'
+        ? { stroke: c('border.control'), strokeWidth: 'stroke.control' }
+        : { strokeWidth: 'stroke.none' },
+    })),
+  ],
+}
+
+/** An item's fill ladder per Variant: rest · hover · pressed (= active), its ink. */
+const ITEM_SOLID: Record<string, { fill: [string, string, string]; ink: string; focus: string; divider: string }> = {
+  default: { fill: [c('action.primary.default'), c('action.primary.hover'), c('action.primary.pressed')], ink: c('content.on-action'), focus: c('border.ring.default'), divider: c('action.primary.pressed') },
+  secondary: { fill: [c('action.secondary.default'), c('action.secondary.hover'), c('action.secondary.pressed')], ink: c('content.on-secondary'), focus: c('border.subtle'), divider: c('border.subtle') },
+}
+const MUTED_INV = c('surface.inverse-muted')
+
+function buttonGroupItemPaint(variant: string, active: string, state: string): SlotMap {
+  const on = active === 'true'
+  if (state === 'Disabled') {
+    return {
+      root: {
+        fill: variant === 'outline' ? NONE : c('surface.page'),
+        ...(variant === 'outline' ? {} : { overlay: c('action.disabled.default') }),
+        text: c('content.disabled'),
+        focus: NONE,
+      },
+    }
+  }
+  // Focused keeps the rest (or active) fill; the ring is a 2px edge INSIDE, no halo.
+  const step = on ? 2 : state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
+  if (variant === 'outline') {
+    const fill = on
+      ? (step === 2 && state !== 'Default' && state !== 'Focused' ? c('surface.selected-pressed') : c('surface.selected'))
+      : step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
+    return { root: { fill, text: c(on ? 'content.accent' : 'content.primary'), focus: state === 'Focused' ? c('border.ring.default') : NONE } }
+  }
+  if (variant === 'inverse') {
+    const root: SlotProps = { fill: c('surface.inverse'), text: c('content.inverse'), focus: state === 'Focused' ? MUTED_INV : NONE }
+    const layers = on || state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
+    if (layers >= 1) root.overlay = MUTED_INV
+    if (layers >= 2) root.overlay2 = MUTED_INV
+    return { root }
+  }
+  const k = ITEM_SOLID[variant]
+  return { root: { fill: k.fill[step], text: k.ink, focus: state === 'Focused' ? k.focus : NONE } }
+}
+
+const ITEM_GEOMETRY: Record<string, { box: string; gap: string; icon: string; spinner: string }> = {
+  xs: { box: 'size.hit', gap: 'spacing.gap-tight', icon: 'icon.small', spinner: 'icon.small' },
+  sm: { box: 'size.compact', gap: 'spacing.gap-tight', icon: 'icon.small', spinner: 'icon.small' },
+  default: { box: 'size.control', gap: 'spacing.gap-control', icon: 'icon.medium', spinner: 'icon.small' },
+  lg: { box: 'size.touch', gap: 'spacing.gap-control', icon: 'icon.large', spinner: 'icon.medium' },
+  xl: { box: 'size.fab', gap: 'spacing.gap-control', icon: 'icon.large', spinner: 'icon.medium' },
+}
+
+export const BUTTON_GROUP_ITEM: ComponentRecipe = {
+  key: 'ButtonGroupItem',
+  slots: ['root', 'label', 'icon', 'spinner'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default', IconOnly: 'false', Active: 'false' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.none', font: 'type.button', strokeWidth: 'stroke.none' } })),
+    part({ Size: BUTTON_GROUP_ITEM_SIZES, IconOnly: ['false', 'true'] as const }, (size, iconOnly) => {
+      const g = ITEM_GEOMETRY[size]
+      return {
+        root: iconOnly === 'true'
+          ? { height: g.box, width: g.box, paddingX: 'spacing.none', gap: g.gap }
+          : { height: g.box, paddingX: 'spacing.inset-control', gap: g.gap },
+        icon: { width: g.icon, height: g.icon },
+        spinner: { width: g.spinner, height: g.spinner },
+      }
+    }),
+    part({ Variant: BUTTON_GROUP_VARIANTS, Active: ['false', 'true'] as const, State: BUTTON_GROUP_ITEM_STATES }, (v, a, s) => buttonGroupItemPaint(v, a, s)),
+  ],
+}
+
+const DIVIDER_FILL: Record<string, string> = {
+  outline: c('border.control'), default: ITEM_SOLID.default.divider, inverse: c('border.inverse'), secondary: ITEM_SOLID.secondary.divider,
+}
+
+export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
+  key: 'ButtonGroupDivider',
+  slots: ['root'],
+  defaults: { Variant: 'default', Orientation: 'horizontal' },
+  parts: [
+    part({ Variant: BUTTON_GROUP_VARIANTS }, (v) => ({ root: { fill: DIVIDER_FILL[v] } })),
+    part({ Orientation: BUTTON_GROUP_ORIENTATIONS }, (o) => ({
+      root: o === 'horizontal' ? { width: 'stroke.divider' } : { height: 'stroke.divider' },
     })),
   ],
 }

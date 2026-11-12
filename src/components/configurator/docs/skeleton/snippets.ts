@@ -160,8 +160,19 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   PasswordStrength: (v) =>
     `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <Input type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
 
-  ButtonGroup: (v) =>
-    `import { Button } from "@/components/ui/button"\nimport { ButtonGroup } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} aria-label="Range">\n  <Button variant="secondary" appearance="outline">Day</Button>\n  <Button variant="secondary" appearance="outline">Week</Button>\n  <Button variant="secondary" appearance="outline">Month</Button>\n</ButtonGroup>`,
+  ButtonGroup: (v) => {
+    const attrs = [
+      v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '',
+      v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : '',
+      v.Shape && v.Shape !== 'rounded' ? ` shape="${v.Shape}"` : '',
+      v.Orientation === 'vertical' ? ' orientation="vertical"' : '',
+    ].join('')
+    return `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${attrs} aria-label="Range">\n  <ButtonGroupItem>Previous</ButtonGroupItem>\n  <ButtonGroupItem active>Today</ButtonGroupItem>\n  <ButtonGroupItem>Next</ButtonGroupItem>\n</ButtonGroup>`
+  },
+  ButtonGroupItem: (v) =>
+    `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="View">\n  <ButtonGroupItem${v.Active === 'true' ? ' active' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Label</ButtonGroupItem>\n</ButtonGroup>`,
+  ButtonGroupDivider: () =>
+    `// ButtonGroup draws a ButtonGroupDivider between its items by itself.\nimport { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup aria-label="Range">\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem>Week</ButtonGroupItem>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>
     `import { SocialLoginButton } from "@/components/ui/social-login-button"\n\n<SocialLoginButton provider="${v.Provider ?? 'google'}"${v.Size === 'lg' ? ' size="lg"' : ''} />`,
   AppStoreBadge: (v) =>

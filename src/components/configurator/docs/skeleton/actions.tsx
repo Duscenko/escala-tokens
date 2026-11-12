@@ -9,7 +9,10 @@ import { FABButton as SkFABButton, type FABButtonAppearance, type FABButtonShape
 import { FABGroup as SkFABGroup, type FABGroupLayout } from '../../../escala-ui/fab-group'
 import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
-import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
+import {
+  ButtonGroup as SkButtonGroup, ButtonGroupItem as SkButtonGroupItem, ButtonGroupDivider as SkButtonGroupDivider,
+  type ButtonGroupOrientation, type ButtonGroupShape, type ButtonGroupSize, type ButtonGroupVariant, type ButtonGroupItemState,
+} from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
@@ -147,15 +150,58 @@ export function SkeletonFABGroupSpecimen({ t, v, icons }: SpecimenProps) {
   )
 }
 
+/** Icon px per ButtonGroupItem Size (Figma: icon-sm at xs · sm, md at default, lg at lg · xl). */
+const GROUP_ICON_STEP: Record<string, string> = { xs: 'xs', sm: 'sm', default: 'md', lg: 'lg', xl: 'lg' }
+
 export function SkeletonButtonGroupSpecimen({ t, v }: SpecimenProps) {
   const orientation = (v.Orientation ?? 'horizontal') as ButtonGroupOrientation
   return (
     <RecipeScope t={t}>
-      <SkButtonGroup orientation={orientation} aria-label="Range">
-        <SkButton variant="secondary" appearance="outline">Day</SkButton>
-        <SkButton variant="secondary" appearance="outline">Week</SkButton>
-        <SkButton variant="secondary" appearance="outline">Month</SkButton>
+      <SkButtonGroup
+        orientation={orientation}
+        size={(v.Size ?? 'default') as ButtonGroupSize}
+        variant={(v.Variant ?? 'default') as ButtonGroupVariant}
+        shape={(v.Shape ?? 'rounded') as ButtonGroupShape}
+        aria-label="Range"
+      >
+        <SkButtonGroupItem>Previous</SkButtonGroupItem>
+        <SkButtonGroupItem active>Today</SkButtonGroupItem>
+        <SkButtonGroupItem>Next</SkButtonGroupItem>
       </SkButtonGroup>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonButtonGroupItemSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as ButtonGroupSize
+  const iconOnly = v.IconOnly === 'true'
+  const px = iconForControlStep(GROUP_ICON_STEP[size] ?? 'md', t)
+  const state = (v.State ?? 'Default') as ButtonGroupItemState
+  return (
+    <RecipeScope t={t}>
+      <SkButtonGroupItem
+        size={size}
+        variant={(v.Variant ?? 'default') as ButtonGroupVariant}
+        active={v.Active === 'true'}
+        iconOnly={iconOnly}
+        forceState={state}
+        disabled={state === 'Disabled'}
+        aria-label={iconOnly ? 'Add' : undefined}
+        leading={iconOnly ? <PreviewIcon concept="plus" size={px} /> : undefined}
+      >
+        Label
+      </SkButtonGroupItem>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonButtonGroupDividerSpecimen({ t, v }: SpecimenProps) {
+  const vertical = v.Orientation === 'vertical'
+  return (
+    <RecipeScope t={t}>
+      <div style={{ display: 'flex', width: vertical ? 68 : 1, height: vertical ? 1 : 40 }}>
+        <SkButtonGroupDivider variant={(v.Variant ?? 'default') as ButtonGroupVariant} orientation={vertical ? 'vertical' : 'horizontal'} style={vertical ? { flex: 1 } : undefined} />
+      </div>
     </RecipeScope>
   )
 }

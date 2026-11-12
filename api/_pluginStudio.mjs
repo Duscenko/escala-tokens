@@ -4110,16 +4110,68 @@ var init_componentCatalogue = __esm({
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
-        description: "shadcn/ui Button Group: Buttons attached edge to edge, with an optional text segment and separator.",
-        usage: "Use for 2\u20134 related actions that read as one control. For a single selected view, use Segmented Control or Tabs.",
-        axes: [{ name: "Orientation", values: ["horizontal", "vertical"] }],
-        figmaSets: ["Button Group"],
-        props: [
-          { name: "orientation", type: '"horizontal" | "vertical"', description: "Direction the buttons attach in." },
-          { name: "ButtonGroupText", type: "component", description: "A non-interactive segment (a label, a unit)." },
-          { name: "ButtonGroupSeparator", type: "component", description: "A divider between two buttons of the same variant." }
+        description: "A joined row or column of up to five ButtonGroupItem segments sharing one surface, outer radius and Shadow/xs. The group sets every segment's Variant and Size and puts a ButtonGroupDivider between them.",
+        usage: "Use for 2\u20135 related actions or views that read as one control (Previous \xB7 Today \xB7 Next, Day \xB7 Week \xB7 Month). Mark the selected segment with active. Shape pill is horizontal only.",
+        // The Figma file's axes, value for value, in the file's option order
+        // (spec/figma-components.json, design-plans/button-group-contract.md).
+        axes: [
+          { name: "Size", values: ["xs", "sm", "lg", "xl", "default"] },
+          { name: "Variant", values: ["outline", "default", "inverse", "secondary"] },
+          { name: "Shape", values: ["rounded", "pill", "square"] },
+          { name: "Orientation", values: ["horizontal", "vertical"] }
         ],
-        accessibility: 'role="group" on the container \u2014 add an aria-label. Each item is a real Button.'
+        figmaSets: ["ButtonGroup"],
+        props: [
+          { name: "size", type: '"xs" | "sm" | "lg" | "xl" | "default"', description: "Every segment's height: Size/control-xs 24 \xB7 sm 32 \xB7 md 40 \xB7 lg 48 \xB7 xl 56." },
+          { name: "variant", type: '"outline" | "default" | "inverse" | "secondary"', description: "Every segment's fill and the dividers between them." },
+          { name: "shape", type: '"rounded" | "pill" | "square"', description: "Outer corners: Radius/action \xB7 Radius/full \xB7 none. pill also widens labelled segments to Spacing/inset-surface." },
+          { name: "orientation", type: '"horizontal" | "vertical"', description: "A row, or a column whose segments fill its width." },
+          { name: "children", type: "ButtonGroupItem[]", description: "The segments (Figma Item1\u20265Visible). The group draws the dividers." }
+        ],
+        accessibility: 'role="group" \u2014 give it an aria-label. Each segment is a native <button>; a selected one carries aria-pressed. Icon-only segments need an aria-label.'
+      },
+      {
+        key: "ButtonGroupItem",
+        label: "Button Group Item",
+        category: "Button & Actions",
+        description: "One segment of a ButtonGroup: a selectable action with no radius or border of its own (the group clips the corners and draws the shared edge).",
+        usage: "Only inside a ButtonGroup. active marks the selected segment (aria-pressed); iconOnly makes it square.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default", "lg", "xl"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] },
+          { name: "Variant", values: ["outline", "default", "inverse", "secondary"] },
+          { name: "IconOnly", values: ["false", "true"] },
+          { name: "Active", values: ["false", "true"] }
+        ],
+        figmaSets: ["ButtonGroupItem"],
+        props: [
+          { name: "children", type: "ReactNode", description: "The label (Figma Label)." },
+          { name: "active", type: "boolean", description: "The selected segment (Figma Active) \u2014 aria-pressed." },
+          { name: "iconOnly", type: "boolean", description: "A square segment showing only leading (Figma IconOnly). Needs aria-label." },
+          { name: "leading", type: "ReactNode", description: "Icon before the label (Figma IconLeadingVisible + IconLeadingIcon)." },
+          { name: "trailing", type: "ReactNode", description: "Icon after the label (Figma IconTrailingVisible + IconTrailingIcon)." },
+          { name: "loading", type: "boolean", description: "A spinner after the label (Figma LoadingVisible); sets aria-busy." },
+          { name: "disabled", type: "boolean", description: "Disables the segment." },
+          { name: "variant / size", type: "see ButtonGroup", description: "Taken from the group; set them only for a segment outside one." }
+        ],
+        accessibility: "A native <button> with aria-pressed. Focus draws a 2px ring inside the segment. Icon-only: always an aria-label."
+      },
+      {
+        key: "ButtonGroupDivider",
+        label: "Button Group Divider",
+        category: "Button & Actions",
+        description: "The 1px line between two ButtonGroupItems (Stroke/divider), painted per Variant. ButtonGroup inserts it.",
+        usage: "Private to ButtonGroup \u2014 the group draws it between segments. Orientation horizontal is the vertical line of a row.",
+        axes: [
+          { name: "Variant", values: ["outline", "default", "inverse", "secondary"] },
+          { name: "Orientation", values: ["horizontal", "vertical"] }
+        ],
+        figmaSets: ["ButtonGroupDivider"],
+        props: [
+          { name: "variant", type: '"outline" | "default" | "inverse" | "secondary"', description: "Taken from the group." },
+          { name: "orientation", type: '"horizontal" | "vertical"', description: "The group's orientation (horizontal = a vertical line)." }
+        ],
+        accessibility: "Decorative: aria-hidden."
       },
       {
         key: "ToggleGroup",
@@ -8209,7 +8261,34 @@ function fabPaint(variant, appearance, state2) {
   if (state2 === "Focused") root.halo = k.halo;
   return { root };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+function buttonGroupItemPaint(variant, active, state2) {
+  const on = active === "true";
+  if (state2 === "Disabled") {
+    return {
+      root: {
+        fill: variant === "outline" ? NONE : c("surface.page"),
+        ...variant === "outline" ? {} : { overlay: c("action.disabled.default") },
+        text: c("content.disabled"),
+        focus: NONE
+      }
+    };
+  }
+  const step = on ? 2 : state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
+  if (variant === "outline") {
+    const fill = on ? step === 2 && state2 !== "Default" && state2 !== "Focused" ? c("surface.selected-pressed") : c("surface.selected") : step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
+    return { root: { fill, text: c(on ? "content.accent" : "content.primary"), focus: state2 === "Focused" ? c("border.ring.default") : NONE } };
+  }
+  if (variant === "inverse") {
+    const root = { fill: c("surface.inverse"), text: c("content.inverse"), focus: state2 === "Focused" ? MUTED_INV : NONE };
+    const layers = on || state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
+    if (layers >= 1) root.overlay = MUTED_INV;
+    if (layers >= 2) root.overlay2 = MUTED_INV;
+    return { root };
+  }
+  const k = ITEM_SOLID[variant];
+  return { root: { fill: k.fill[step], text: k.ink, focus: state2 === "Focused" ? k.focus : NONE } };
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8447,26 +8526,73 @@ var init_actions = __esm({
         }))
       ]
     };
+    BUTTON_GROUP_VARIANTS = ["outline", "default", "inverse", "secondary"];
+    BUTTON_GROUP_SHAPES = ["rounded", "pill", "square"];
+    BUTTON_GROUP_ORIENTATIONS = ["horizontal", "vertical"];
+    BUTTON_GROUP_ITEM_SIZES = ["xs", "sm", "default", "lg", "xl"];
+    BUTTON_GROUP_ITEM_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    GROUP_RADIUS = { rounded: "radius.action", pill: "radius.pill", square: "radius.none" };
     BUTTON_GROUP = {
       key: "ButtonGroup",
-      slots: ["root", "text", "separator"],
-      defaults: { Orientation: "horizontal" },
+      slots: ["root", "item", "border"],
+      defaults: { Size: "default", Variant: "default", Shape: "rounded", Orientation: "horizontal" },
+      pseudoSlots: { border: { of: "root", pseudo: "::after" } },
       parts: [
-        part({}, () => ({
-          text: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            text: c("content.primary"),
-            radius: "radius.action",
-            paddingX: "spacing.2_5",
-            gap: "spacing.2",
-            font: "type.label"
-          },
-          separator: { fill: c("border.control") }
+        part({}, () => ({ root: { gap: "spacing.none", shadow: "shadow.xs" } })),
+        part({ Shape: BUTTON_GROUP_SHAPES }, (shape) => ({
+          root: { radius: GROUP_RADIUS[shape] },
+          border: { radius: GROUP_RADIUS[shape] },
+          // A pill gives its labelled items more room at both ends.
+          ...shape === "pill" ? { 'item[data-icononly="false"]': { paddingX: "spacing.inset-surface" } } : {}
         })),
-        part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
-          separator: o === "horizontal" ? { width: "stroke.control" } : { height: "stroke.control" }
+        part({ Variant: BUTTON_GROUP_VARIANTS }, (variant) => ({
+          border: variant === "outline" ? { stroke: c("border.control"), strokeWidth: "stroke.control" } : { strokeWidth: "stroke.none" }
+        }))
+      ]
+    };
+    ITEM_SOLID = {
+      default: { fill: [c("action.primary.default"), c("action.primary.hover"), c("action.primary.pressed")], ink: c("content.on-action"), focus: c("border.ring.default"), divider: c("action.primary.pressed") },
+      secondary: { fill: [c("action.secondary.default"), c("action.secondary.hover"), c("action.secondary.pressed")], ink: c("content.on-secondary"), focus: c("border.subtle"), divider: c("border.subtle") }
+    };
+    MUTED_INV = c("surface.inverse-muted");
+    ITEM_GEOMETRY = {
+      xs: { box: "size.hit", gap: "spacing.gap-tight", icon: "icon.small", spinner: "icon.small" },
+      sm: { box: "size.compact", gap: "spacing.gap-tight", icon: "icon.small", spinner: "icon.small" },
+      default: { box: "size.control", gap: "spacing.gap-control", icon: "icon.medium", spinner: "icon.small" },
+      lg: { box: "size.touch", gap: "spacing.gap-control", icon: "icon.large", spinner: "icon.medium" },
+      xl: { box: "size.fab", gap: "spacing.gap-control", icon: "icon.large", spinner: "icon.medium" }
+    };
+    BUTTON_GROUP_ITEM = {
+      key: "ButtonGroupItem",
+      slots: ["root", "label", "icon", "spinner"],
+      defaults: { Size: "default", State: "Default", Variant: "default", IconOnly: "false", Active: "false" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.none", font: "type.button", strokeWidth: "stroke.none" } })),
+        part({ Size: BUTTON_GROUP_ITEM_SIZES, IconOnly: ["false", "true"] }, (size, iconOnly) => {
+          const g = ITEM_GEOMETRY[size];
+          return {
+            root: iconOnly === "true" ? { height: g.box, width: g.box, paddingX: "spacing.none", gap: g.gap } : { height: g.box, paddingX: "spacing.inset-control", gap: g.gap },
+            icon: { width: g.icon, height: g.icon },
+            spinner: { width: g.spinner, height: g.spinner }
+          };
+        }),
+        part({ Variant: BUTTON_GROUP_VARIANTS, Active: ["false", "true"], State: BUTTON_GROUP_ITEM_STATES }, (v, a2, s) => buttonGroupItemPaint(v, a2, s))
+      ]
+    };
+    DIVIDER_FILL = {
+      outline: c("border.control"),
+      default: ITEM_SOLID.default.divider,
+      inverse: c("border.inverse"),
+      secondary: ITEM_SOLID.secondary.divider
+    };
+    BUTTON_GROUP_DIVIDER = {
+      key: "ButtonGroupDivider",
+      slots: ["root"],
+      defaults: { Variant: "default", Orientation: "horizontal" },
+      parts: [
+        part({ Variant: BUTTON_GROUP_VARIANTS }, (v) => ({ root: { fill: DIVIDER_FILL[v] } })),
+        part({ Orientation: BUTTON_GROUP_ORIENTATIONS }, (o) => ({
+          root: o === "horizontal" ? { width: "stroke.divider" } : { height: "stroke.divider" }
         }))
       ]
     };
@@ -9097,7 +9223,7 @@ var init_forms = __esm({
 });
 
 // src/lib/recipes/surfaces.ts
-var CARD, OVERLAY_TITLE, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -9405,7 +9531,7 @@ var init_surfaces = __esm({
     };
     ITEM_VARIANTS = ["default", "outline", "muted"];
     ITEM_SIZES = ["default", "sm", "xs"];
-    ITEM_GEOMETRY = {
+    ITEM_GEOMETRY2 = {
       default: { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" },
       sm: { paddingX: "spacing.4", paddingY: "spacing.3", gap: "spacing.2_5" },
       xs: { paddingX: "spacing.3", paddingY: "spacing.2", gap: "spacing.2" }
@@ -9429,7 +9555,7 @@ var init_surfaces = __esm({
           root: variant === "outline" ? { fill: NONE, stroke: c("border.default") } : variant === "muted" ? { fill: c("surface.layer-2"), stroke: NONE } : { fill: NONE, stroke: NONE }
         })),
         part({ Size: ITEM_SIZES }, (size) => ({
-          root: ITEM_GEOMETRY[size],
+          root: ITEM_GEOMETRY2[size],
           content: { gap: ITEM_CONTENT_GAP[size] },
           description: { font: ITEM_DESCRIPTION[size] },
           'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: "radius.control" }
@@ -10299,6 +10425,8 @@ var init_componentRecipes = __esm({
       FABButton: FAB_BUTTON,
       FABGroup: FAB_GROUP,
       ButtonGroup: BUTTON_GROUP,
+      ButtonGroupItem: BUTTON_GROUP_ITEM,
+      ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
       Input: INPUT,
@@ -13182,7 +13310,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 111,
+          version: 112,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14536,6 +14664,20 @@ var init_useDesignStore = __esm({
                 if (sel.includes("FABGroup")) return;
                 const after = sel.includes("FABButton") ? "FABButton" : sel.includes("TextLink") ? "TextLink" : sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
                 if (after) sel.splice(sel.indexOf(after) + 1, 0, "FABGroup");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 112) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (!sel.includes("ButtonGroup")) return;
+                for (const key2 of ["ButtonGroupDivider", "ButtonGroupItem"]) {
+                  if (!sel.includes(key2)) sel.splice(sel.indexOf("ButtonGroup") + 1, 0, key2);
+                }
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

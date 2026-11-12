@@ -77,3 +77,15 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Screenshot crops from the Browser pane are saved as PNGs | `zoom` returns a path under `tool-results/` | `resize_window` to the screenshot frame (800×600) so one image pixel is one CSS pixel (the default 1024-wide viewport downscales), then sample the file with sharp |
 | The Figma export of a node includes its neighbours | The Hover render showed a second button's top rows at the bottom | Only read pixels inside the node's own rows; ignore bands that belong to a sibling variant |
 | An inner shadow can be checked exactly | `INNER_SHADOW 0 2 0` highlight at white α.149 over `#874fff` | Composite by hand: (153,105,255) is what Figma shows and what the CSS gives |
+
+# Lessons from the ButtonGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A page with SEVERAL sets (group + its item + its divider), the parts listed in the ledger as `part` | A part leaves `pending` only when the catalogue has an entry with its axes | Each set is a catalogue entry, a recipe and a component, all in ONE file: `FILE_OF` in `componentFiles.ts` maps the parts to the group's file; the registry finds every literal `data-escala` in it. Store migration adds the parts after the group |
+| The items of a group are NOT the file's Button | Tempting to reuse `Button` because the old shadcn group did | Read the nested instances' main component: `ButtonGroupItem` is its own set (no radius, no stroke, its own fills). Reuse Button only where the file nests Button |
+| A group OVERRIDES its instances (pill → every item's padding 20) | The item set alone shows 12 | Read the group's instances' own padding / visibility refs, not just the item set. Expressed as a group slot on the item (`item[data-icononly="false"]`, more specific than the item's own rule) |
+| An absolute `border` rectangle laid OVER the children (outline variant) | A CSS border on the root would push the items | A `::after` pseudoSlot of the root (`pseudoSlots: { border: { of: 'root', pseudo: '::after' } }`), structure classes on the component (absolute, inset-0, pointer-events-none) |
+| The frozen plugin documents slots (`RECIPE_FIGMA_ANATOMY.omit`) the rebuilt recipe no longer has | `ButtonGroup.text: expected [...] to include 'text'` | `STALE_ANATOMY` in `componentRecipesPluginParity.test.ts` (dated), never a plugin edit |
+| A pair the FILE binds fails AA | axe: outline · Active · Hover/Pressed = `Content/accent` on `Surface/selected-pressed`, 4.1:1 in Light | Copied (rule 1), reported to the owner in one line. Not a code bug |
+| axe on a story in a given theme | Swapping the manager iframe's `src` in a loop measured stale documents | Navigate the pane to `iframe.html?id=<story>&viewMode=story&globals=theme:dark`, wait, then `axe.run(#storybook-root)` (axe is on the preview window) |

@@ -64,7 +64,9 @@ export const BUDGETS = {
   // and IconButton a component of its own — real content, not bloat.
   // 75k → 80k (2026-11-12): CloseButton and TextLink, two more Figma components
   // with their own design-skill files.
-  contextAllTokens: 80_000,
+  // 80k → 85k (2026-11-12): ButtonGroup became three Figma components (group,
+  // item, divider), each with its own design-skill file.
+  contextAllTokens: 85_000,
   contextFoundationTokens: 12_000,
 }
 

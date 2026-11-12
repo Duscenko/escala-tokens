@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 111,
+      version: 112,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3896,6 +3896,22 @@ export const useDesignStore = create<DesignStore>()(
             if (sel.includes('FABGroup')) return
             const after = sel.includes('FABButton') ? 'FABButton' : sel.includes('TextLink') ? 'TextLink' : sel.includes('CloseButton') ? 'CloseButton' : sel.includes('IconButton') ? 'IconButton' : null
             if (after) sel.splice(sel.indexOf(after) + 1, 0, 'FABGroup')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 112) {
+          // v111→v112: ButtonGroupItem and ButtonGroupDivider are components of their
+          // own (the Figma file's sets). A selection with ButtonGroup gets both.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (!sel.includes('ButtonGroup')) return
+            for (const key of ['ButtonGroupDivider', 'ButtonGroupItem']) {
+              if (!sel.includes(key)) sel.splice(sel.indexOf('ButtonGroup') + 1, 0, key)
+            }
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

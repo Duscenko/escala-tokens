@@ -100,7 +100,22 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Shape', ['pill', 'rounded', 'square']),
     each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
   ],
-  ButtonGroup: [each('Orientation', ['horizontal', 'vertical'])],
+  ButtonGroup: [
+    each('Variant', ['default', 'secondary', 'outline', 'inverse']),
+    each('Shape', ['rounded', 'pill', 'square']),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+    each('Orientation', ['horizontal', 'vertical']),
+  ],
+  ButtonGroupItem: [
+    each('Variant', ['default', 'secondary', 'outline', 'inverse']),
+    each('Variant', ['default', 'secondary', 'outline', 'inverse'], { Active: 'true' }),
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled']),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl'], { IconOnly: 'true' }),
+  ],
+  ButtonGroupDivider: [
+    each('Variant', ['default', 'secondary', 'outline', 'inverse']),
+    each('Orientation', ['horizontal', 'vertical']),
+  ],
   ToggleGroup: [
     each('Variant', ['default', 'outline']),
     each('Size', ['sm', 'default', 'lg'], { Variant: 'outline' }),
