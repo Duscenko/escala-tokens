@@ -1,7 +1,7 @@
 import type * as React from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { SpecimenProps } from '../specimens'
-import { PreviewIcon } from '../specimens'
+import { PreviewIcon, avatarFillOf } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
 import { shadowOf } from '../../../../lib/previewTokens'
 import { choreographyVar } from '../../../../lib/motion'
@@ -11,7 +11,7 @@ import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as
 import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../../escala-ui/dialog'
 import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionContent as SkAccordionContent, AccordionItem as SkAccordionItem, AccordionTrigger as SkAccordionTrigger } from '../../../escala-ui/accordion'
-import { AspectRatio as SkAspectRatio, type RatioName } from '../../../escala-ui/aspect-ratio'
+import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescription as SkPopoverDescription, PopoverTitle as SkPopoverTitle } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
@@ -104,11 +104,19 @@ export function SkeletonAccordionSpecimen({ t }: SpecimenProps) {
   )
 }
 
-const RATIO_WIDTH: Record<string, number> = { '16:9': 240, '4:3': 200, '1:1': 140 }
-
-export function SkeletonAspectRatioSpecimen({ t, v }: SpecimenProps) {
-  const ratio = (v.Ratio ?? '16:9') as RatioName
-  return <RecipeScope t={t}><SkAspectRatio ratio={ratio} style={{ width: RATIO_WIDTH[ratio] }}>{ratio}</SkAspectRatio></RecipeScope>
+/** The Figma Image at the file's 240px sample width (`auto` in a 240 × 160 slot). The file's photo is a stock
+ *  image: shown as the system's gradient (no image ships). */
+export function SkeletonImageSpecimen({ t, v }: SpecimenProps) {
+  const ratio = (v.Ratio ?? 'auto') as ImageRatio
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 240, height: ratio === 'auto' ? 160 : undefined }}>
+        <SkImage ratio={ratio} shape={(v.Shape ?? 'square') as ImageShape}>
+          <div style={{ width: '100%', height: '100%', background: avatarFillOf(t) }} />
+        </SkImage>
+      </div>
+    </RecipeScope>
+  )
 }
 
 export function SkeletonPopoverSpecimen({ t }: SpecimenProps) {

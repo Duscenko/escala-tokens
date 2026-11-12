@@ -44,7 +44,7 @@ import {
 } from './skeleton/forms'
 import {
   SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen,
-  SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
+  SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
   SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
@@ -446,7 +446,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Drawer: SkeletonDrawerSpecimen,
   HoverCard: SkeletonHoverCardSpecimen,
   Accordion: SkeletonAccordionSpecimen,
-  AspectRatio: SkeletonAspectRatioSpecimen,
+  Image: SkeletonImageSpecimen,
   Dialog: SkeletonDialogSpecimen,
   Popover: SkeletonPopoverSpecimen,
   Tooltip: SkeletonTooltipSpecimen,

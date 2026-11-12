@@ -101,8 +101,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} />`,
   Accordion: () =>
     `import {\n  Accordion, AccordionItem, AccordionTrigger, AccordionContent,\n} from "@/components/ui/accordion"\n\n<Accordion type="single" collapsible defaultValue="a">\n  <AccordionItem value="a">\n    <AccordionTrigger>What are design tokens?</AccordionTrigger>\n    <AccordionContent>Named values for color, type and spacing.</AccordionContent>\n  </AccordionItem>\n</Accordion>`,
-  AspectRatio: (v) =>
-    `import { AspectRatio } from "@/components/ui/aspect-ratio"\n\n<AspectRatio ratio="${v.Ratio ?? '16:9'}">\n  <img src={cover} alt="" />\n</AspectRatio>`,
+  Image: (v) =>
+    `import { Image } from "@/components/ui/image"\n\n<Image${v.Ratio && v.Ratio !== 'auto' ? ` ratio="${v.Ratio}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} src={cover} alt="Team at the offsite" />`,
   Popover: () =>
     `import {\n  Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription,\n} from "@/components/ui/popover"\n\n<Popover>\n  <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>\n  <PopoverContent>\n    <PopoverTitle>Share this system</PopoverTitle>\n    <PopoverDescription>Anyone with the link can view tokens and docs.</PopoverDescription>\n  </PopoverContent>\n</Popover>`,
   Tooltip: () =>

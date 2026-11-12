@@ -34,10 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Image": {
-      "status": "rename",
-      "code": "AspectRatio"
-    },
     "Badge": {
       "status": "rebuild"
     },

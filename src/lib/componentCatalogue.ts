@@ -1423,18 +1423,24 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Radix Collapsible: the trigger is a button with aria-expanded and aria-controls; Space / Enter toggles.',
   },
   {
-    key: 'AspectRatio',
-    label: 'Aspect Ratio',
+    key: 'Image',
+    label: 'Image',
     category: 'Content & Surfaces',
-    description: 'Layout primitive that locks its content to a fixed ratio (16:9, 4:3, 1:1…).',
-    usage: 'Wrap media (images, embeds, maps) so layouts never shift while content loads.',
-    axes: [{ name: 'Ratio', values: ['16:9', '4:3', '1:1'] }],
-    figmaSets: ['Aspect Ratio'],
-    props: [
-      { name: 'ratio', type: '"16:9" | "4:3" | "1:1" | number', description: 'Width / height.' },
-      { name: 'children', type: 'ReactNode', description: 'Media or placeholder, centred in the box.' },
+    description: 'A photo or illustration cropped to a fixed ratio (object-fit: cover), on Surface/muted while it loads. Ratio auto fills its parent.',
+    usage: 'Wrap media so layouts never shift while content loads. Use Shape square inside a slot that already clips its corners. Always give alt text (alt="" when decorative).',
+    // The Figma file's axes, value for value (design-plans/image-contract.md).
+    axes: [
+      { name: 'Ratio', values: ['auto', '16:9', '4:3', '3:2', '1:1', '3:4'] },
+      { name: 'Shape', values: ['square', 'rounded'] },
     ],
-    accessibility: 'Purely presentational — semantics come from the wrapped content.',
+    figmaSets: ['Image'],
+    props: [
+      { name: 'ratio', type: '"auto" | "16:9" | "4:3" | "3:2" | "1:1" | "3:4"', description: 'Width / height; auto fills the parent.' },
+      { name: 'shape', type: '"square" | "rounded"', description: 'Radius/none or Radius/container.' },
+      { name: 'src / alt', type: 'string', description: 'Figma Media (the swap): the picture and its text.' },
+      { name: 'children', type: 'ReactNode', description: 'Any media node instead of src.' },
+    ],
+    accessibility: 'The image needs alt text; alt="" when decorative. Purely presentational otherwise.',
   },
   {
     key: 'Dialog',

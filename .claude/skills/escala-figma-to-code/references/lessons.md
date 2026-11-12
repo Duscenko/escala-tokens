@@ -332,3 +332,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Variants filled with a pasted RASTER (default·solid and secondary·solid: `fills[0].type === 'IMAGE'`, 600×600 and 704×1408, icon with no painted layer) | The grouped colour read gave `fill IMAGE · ink ?` for 16 of 96 variants | Never copy a photo. Read the image size (`figma.getImageByHash(...).getSizeAsync()`) and a `get_screenshot` to confirm it is an artefact, then reuse the sibling set's solid tones (Avatar: `Action/primary/default` + `Content/on-action`, `Surface/inverse` + `Content/inverse`) and say so in the contract and the report |
 | A set that shares another's tone table | Same Variant × Appearance colours as Avatar | The recipe reuses `AVATAR_TONE` / `AVATAR_SHAPES` / `AVATAR_APPEARANCES` from the same file |
 | A new catalogue key adds `selectedComponents` migration even for a brand-new component | — | Splice it after its sibling (`Icon`) in the store migration (v134) |
+
+# Lessons from the Image (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename in the ledger whose old key is also a FILE (`aspect-ratio.tsx` → `image.tsx`) and a plugin builder (`AspectRatio`) | Same checklist as Rating / Dropzone | `git mv` the file; catalogue, recipe key, specimens map, snippets, overview, sitemap, store migration (v135 renames inside `selectedComponents`), parity `RENAMED_ON_WEB` (`AspectRatio`) + `WEB_ONLY` (`Image`) |
+| A "Media" swap with a stock photo | No image ships | `src` / `alt` (or `children`); the specimen paints the system's gradient (`avatarFillOf`) in the media slot |
+| `Ratio auto` fills its parent | A fixed height in the specimen would lie | The Image is `size-full` for auto; the specimen / story gives it the file's 240 × 160 slot |

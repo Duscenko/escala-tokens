@@ -100,19 +100,20 @@ export const ACCORDION: ComponentRecipe = {
   ],
 }
 
-// ── AspectRatio ────────────────────────────────────────────────────────────
+// ── Image ──────────────────────────────────────────────────────────────────
+// The Figma set (design-plans/image-contract.md, 1126:15, 12 variants: Ratio auto · 16:9 · 4:3 · 3:2 · 1:1 · 3:4
+// × Shape square · rounded): a clipped box on Surface/muted (the ratio is the component's aspect-ratio), square =
+// Radius/none, rounded = Radius/container.
+export const IMAGE_RATIOS = ['auto', '16:9', '4:3', '3:2', '1:1', '3:4'] as const
+export const IMAGE_SHAPES = ['square', 'rounded'] as const
 
-export const ASPECT_RATIO: ComponentRecipe = {
-  key: 'AspectRatio',
-  slots: ['root'],
-  defaults: { Ratio: '16:9' },
+export const IMAGE: ComponentRecipe = {
+  key: 'Image',
+  slots: ['root', 'media'],
+  defaults: { Ratio: 'auto', Shape: 'square' },
   parts: [
-    part({ Ratio: ['16:9', '4:3', '1:1'] as const }, () => ({
-      root: {
-        fill: c('surface.selected'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        text: c('content.accent'), radius: PANEL_RADIUS, font: 'type.button',
-      },
-    })),
+    part({ Ratio: IMAGE_RATIOS }, () => ({ root: { fill: c('surface.muted') } })),
+    part({ Shape: IMAGE_SHAPES }, (shape) => ({ root: { radius: shape === 'square' ? 'radius.none' : 'radius.container' } })),
   ],
 }
 

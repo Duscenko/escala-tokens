@@ -343,7 +343,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   Card: [each('Size', ['default', 'sm'])],
   Separator: [each('Orientation', ['horizontal', 'vertical'])],
   Collapsible: [each('Open', ['False', 'True'])],
-  AspectRatio: [each('Ratio', ['16:9', '4:3', '1:1'])],
+  Image: [each('Ratio', ['auto', '16:9', '4:3', '3:2', '1:1', '3:4']), each('Shape', ['square', 'rounded'])],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.
   Sheet: [each('Side', ['right', 'bottom'])],

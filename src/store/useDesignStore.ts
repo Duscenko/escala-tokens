@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 134,
+      version: 135,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4215,6 +4215,19 @@ export const useDesignStore = create<DesignStore>()(
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 135) {
+          // v134→v135: AspectRatio is Image in the Figma file.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('AspectRatio')
+            if (at >= 0) sel.splice(at, 1, 'Image')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
           }
         }
         return persisted
