@@ -178,7 +178,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader / CalendarMonth / CalendarPresets / CalendarFooter (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput, Dropzone its

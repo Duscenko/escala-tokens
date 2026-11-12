@@ -89,10 +89,20 @@ export interface CheckboxItemProps extends Omit<CheckboxProps, 'forceState' | 'c
   rowStyle?: React.CSSProperties
 }
 
+/** A CheckboxGroup's Size · Placement · State · Variant, which its rows take unless they set their own. */
+const CheckboxGroupContext = React.createContext<{
+  size?: CheckboxSize; placement?: CheckboxItemPlacement; state?: CheckboxGroupState; variant?: CheckboxVariant
+} | null>(null)
+
 function CheckboxItem({
-  label = 'Label', description, placement = 'left', size = 'default', invalid, disabled, forceState,
-  rowClassName, rowStyle, id, ...props
+  label = 'Label', description, placement: placementProp, size: sizeProp, variant: variantProp, invalid, disabled,
+  forceState: forceProp, rowClassName, rowStyle, id, ...props
 }: CheckboxItemProps) {
+  const group = React.useContext(CheckboxGroupContext)
+  const size = sizeProp ?? group?.size ?? 'default'
+  const placement = placementProp ?? group?.placement ?? 'left'
+  const variant = variantProp ?? group?.variant ?? 'default'
+  const forceState = forceProp ?? (group?.state && group.state !== 'Default' ? group.state : undefined)
   const auto = React.useId()
   const boxId = id ?? auto
   const descId = `${boxId}-description`
@@ -103,6 +113,7 @@ function CheckboxItem({
       <Checkbox
         id={boxId}
         size={size}
+        variant={variant}
         disabled={disabled || state === 'Disabled'}
         aria-invalid={state === 'Invalid' || undefined}
         aria-describedby={description != null ? descId : undefined}
@@ -132,4 +143,66 @@ function CheckboxItem({
   )
 }
 
-export { Checkbox, CheckboxItem }
+// CheckboxGroup — the Figma `CheckboxGroup` set (design-plans/checkbox-group-contract.md): a group
+// label, the CheckboxItem rows (each independent) and an optional footer (helper, or the error when
+// Invalid). role="group" named by the label, described by the footer. Size · Placement · State ·
+// Variant cascade to the rows.
+export const CHECKBOX_GROUP_STATES = ['Default', 'Invalid', 'Disabled'] as const
+export type CheckboxGroupState = (typeof CHECKBOX_GROUP_STATES)[number]
+
+export interface CheckboxGroupProps extends React.ComponentProps<'div'> {
+  /** Figma GroupLabel. */
+  label?: React.ReactNode
+  /** Figma FooterText (FooterVisible when given): helper text, or the error when invalid. */
+  footer?: React.ReactNode
+  size?: CheckboxSize
+  placement?: CheckboxItemPlacement
+  variant?: CheckboxVariant
+  /** Figma State: Invalid reddens the footer and every box edge; Disabled mutes everything. */
+  invalid?: boolean
+  disabled?: boolean
+  /** Pin a State (docs). */
+  forceState?: CheckboxGroupState
+  /** The CheckboxItem rows. Omitted → the file's three sample rows. */
+  children?: React.ReactNode
+}
+
+function CheckboxGroup({
+  label = 'Notifications', footer, size = 'default', placement = 'left', variant = 'default', invalid, disabled,
+  forceState, children, className, id, ...props
+}: CheckboxGroupProps) {
+  const auto = React.useId()
+  const base = id ?? auto
+  const state: CheckboxGroupState = forceState ?? (disabled ? 'Disabled' : invalid ? 'Invalid' : 'Default')
+  const rows = children ?? (
+    <>
+      <CheckboxItem label="Email" defaultChecked />
+      <CheckboxItem label="SMS" />
+      <CheckboxItem label="Push notifications" defaultChecked />
+    </>
+  )
+  return (
+    <CheckboxGroupContext.Provider value={{ size, placement, state, variant }}>
+      <div
+        id={id}
+        role="group"
+        aria-labelledby={`${base}-label`}
+        aria-describedby={footer != null ? `${base}-footer` : undefined}
+        aria-disabled={state === 'Disabled' || undefined}
+        data-slot="checkbox-group"
+        data-escala="CheckboxGroup"
+        data-size={size}
+        data-placement={placement}
+        data-force-state={state === 'Default' ? undefined : state}
+        className={cn('flex max-w-full flex-col [&>[data-escala=CheckboxItem]]:w-full!', className)}
+        {...props}
+      >
+        <span data-part="CheckboxGroup.label" id={`${base}-label`}>{label}</span>
+        {rows}
+        {footer != null && <span data-part="CheckboxGroup.footer" id={`${base}-footer`}>{footer}</span>}
+      </div>
+    </CheckboxGroupContext.Provider>
+  )
+}
+
+export { Checkbox, CheckboxItem, CheckboxGroup }

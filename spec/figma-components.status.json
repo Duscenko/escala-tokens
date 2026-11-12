@@ -19,10 +19,6 @@
       "status": "part",
       "of": "Combobox"
     },
-    "CheckboxGroup": {
-      "status": "part",
-      "of": "Checkbox"
-    },
     "Radio": {
       "status": "part",
       "of": "RadioGroup"

@@ -230,6 +230,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Placement', ['left', 'right'], { Checked: 'true' }),
     each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
   ],
+  CheckboxGroup: [
+    each('State', ['Default', 'Invalid', 'Disabled']),
+    each('Placement', ['left', 'right']),
+    each('Size', ['xs', 'sm', 'default']),
+  ],
   Switch: [
     [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
     [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],

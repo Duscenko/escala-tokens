@@ -909,6 +909,32 @@ export const CHECKBOX_ITEM: ComponentRecipe = {
   ],
 }
 
+// ── CheckboxGroup ──────────────────────────────────────────────────────────
+// The Figma `CheckboxGroup` set (design-plans/checkbox-group-contract.md, 1015:10216, 108 variants:
+// Size × Placement × State Default · Invalid · Disabled × Variant): a 280 column (sample width) at
+// gap-control: the group label (Type/label, Content/primary), the CheckboxItem rows (they take the
+// group's axes) and the footer (Type/body-sm · caption · caption; Content/secondary, Status/critical/
+// content when Invalid, Content/disabled when Disabled — which also mutes the label).
+export const CHECKBOX_GROUP_STATES = ['Default', 'Invalid', 'Disabled'] as const
+export const CHECKBOX_GROUP: ComponentRecipe = {
+  key: 'CheckboxGroup',
+  slots: ['root', 'label', 'footer'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.6', gap: 'spacing.gap-control' },
+      label: { font: 'type.label' },
+    })),
+    part({ Size: CHECKBOX_ITEM_SIZES }, (size) => ({
+      footer: { font: size === 'default' ? 'type.body-sm' : 'type.caption' },
+    })),
+    part({ State: CHECKBOX_GROUP_STATES }, (state) => ({
+      label: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.primary') },
+      footer: { text: c(state === 'Disabled' ? 'content.disabled' : state === 'Invalid' ? 'status.critical.content' : 'content.secondary') },
+    })),
+  ],
+}
+
 // ── RadioGroup ─────────────────────────────────────────────────────────────
 // shadcn's RadioGroup: a grid of items; a checked item is bg-primary with a
 // primary-foreground dot (Radix's `data-state="checked"`).

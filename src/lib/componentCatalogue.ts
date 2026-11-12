@@ -830,6 +830,29 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'The row is a <label> for the box, so a click anywhere toggles it and the label is its name; the description is aria-describedby.',
   },
   {
+    key: 'CheckboxGroup',
+    label: 'Checkbox Group',
+    category: 'Form Controls',
+    description: 'Labelled multi-select: group label, CheckboxItem rows and an optional footer (helper or error). Each checkbox stays independent.',
+    usage: 'Use for several independent options under one question. Invalid shows the footer as the error; Disabled mutes the whole group. Size, Placement, State and Variant cascade to every row.',
+    // The Figma file's axes, value for value (design-plans/checkbox-group-contract.md).
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default'] },
+      { name: 'Placement', values: ['left', 'right'] },
+      { name: 'State', values: ['Default', 'Invalid', 'Disabled'] },
+      { name: 'Variant', values: ['default', 'secondary', 'critical', 'success', 'info', 'inverse'] },
+    ],
+    figmaSets: ['CheckboxGroup'],
+    props: [
+      { name: 'label', type: 'ReactNode', description: 'Figma GroupLabel: names the group (aria-labelledby).' },
+      { name: 'footer', type: 'ReactNode', description: 'Figma FooterText (FooterVisible when given): helper, or the error when invalid (aria-describedby).' },
+      { name: 'size / placement / variant', type: 'CheckboxItem axes', description: 'Cascade to every row unless a row sets its own.' },
+      { name: 'invalid / disabled', type: 'boolean', description: 'Figma State: cascade to the rows.' },
+      { name: 'children', type: 'ReactNode', description: 'The CheckboxItem rows (the file\'s three sample rows when omitted).' },
+    ],
+    accessibility: 'role="group" with aria-labelledby on the group label and aria-describedby on the footer; each checkbox stays independent.',
+  },
+  {
     key: 'RadioGroup',
     label: 'Radio Group',
     category: 'Form Controls',

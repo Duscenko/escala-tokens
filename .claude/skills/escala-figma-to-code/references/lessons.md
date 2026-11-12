@@ -266,3 +266,10 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A control frame as tall as the label's FIRST line, centring the box (y 3 in a 25 line) | A fixed offset per size | `h-[1lh]` on the control span with the label's type on it (recipe `control.font`): follows the line height of every Size |
 | «The whole row toggles» | A click handler on a div | The row is a `<label htmlFor>` around Radix's button (a labelable element): click anywhere toggles, the label is the name, no aria-label |
 | A composite whose nested axes always equal its own (324 variants checked) | — | Pass Size · Checked · State · Variant straight through; check it once with a script over every variant |
+
+# Lessons from the CheckboxGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A group whose axes cascade to its rows (Size · Placement · State · Variant) | Repeating the props on every row | A context in the group; the row's own props win; group State Default leaves rows free |
+| A group label that does not scale with Size (Type/label everywhere) | Tempting to scale it with the rows | Copy: one type for all sizes |

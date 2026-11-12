@@ -13643,6 +13643,87 @@
         }
       ]
     },
+    "CheckboxGroup": {
+      "key": "CheckboxGroup",
+      "slots": [
+        "root",
+        "label",
+        "footer"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.6",
+                "gap": "spacing.gap-control"
+              },
+              "label": {
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "footer": {
+                "font": "type.caption"
+              }
+            },
+            "sm": {
+              "footer": {
+                "font": "type.caption"
+              }
+            },
+            "default": {
+              "footer": {
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "label": {
+                "text": "color.content.primary"
+              },
+              "footer": {
+                "text": "color.content.secondary"
+              }
+            },
+            "Invalid": {
+              "label": {
+                "text": "color.content.primary"
+              },
+              "footer": {
+                "text": "color.status.critical.content"
+              }
+            },
+            "Disabled": {
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "footer": {
+                "text": "color.content.disabled"
+              }
+            }
+          }
+        }
+      ]
+    },
     "RadioGroup": {
       "key": "RadioGroup",
       "slots": [
