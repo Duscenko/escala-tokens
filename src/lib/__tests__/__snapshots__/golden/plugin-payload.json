@@ -15763,6 +15763,165 @@
         }
       ]
     },
+    "FeaturedIcon": {
+      "key": "FeaturedIcon",
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Variant": "default",
+        "Appearance": "soft",
+        "Shape": "circle"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.md",
+                "height": "size.md"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.sm",
+                "height": "size.sm"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "size.lg",
+                "height": "size.lg"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            },
+            "xl": {
+              "root": {
+                "width": "size.xl",
+                "height": "size.xl"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Shape"
+          ],
+          "values": {
+            "circle": {
+              "root": {
+                "radius": "radius.pill"
+              }
+            },
+            "rounded": {
+              "root": {
+                "radius": "radius.action"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "Appearance"
+          ],
+          "values": {
+            "default|soft": {
+              "root": {
+                "fill": "color.surface.accent",
+                "text": "color.content.accent"
+              }
+            },
+            "default|solid": {
+              "root": {
+                "fill": "color.action.primary.default",
+                "text": "color.content.on-action"
+              }
+            },
+            "secondary|soft": {
+              "root": {
+                "fill": "color.surface.muted",
+                "text": "color.content.secondary"
+              }
+            },
+            "secondary|solid": {
+              "root": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse"
+              }
+            },
+            "critical|soft": {
+              "root": {
+                "fill": "color.status.critical.surface",
+                "text": "color.status.critical.content"
+              }
+            },
+            "critical|solid": {
+              "root": {
+                "fill": "color.status.critical.surface-solid",
+                "text": "color.status.critical.on-solid"
+              }
+            },
+            "success|soft": {
+              "root": {
+                "fill": "color.status.success.surface",
+                "text": "color.status.success.content"
+              }
+            },
+            "success|solid": {
+              "root": {
+                "fill": "color.status.success.surface-solid",
+                "text": "color.status.success.on-solid"
+              }
+            },
+            "warning|soft": {
+              "root": {
+                "fill": "color.status.warning.surface",
+                "text": "color.status.warning.content"
+              }
+            },
+            "warning|solid": {
+              "root": {
+                "fill": "color.status.warning.surface-solid",
+                "text": "color.status.warning.on-solid"
+              }
+            },
+            "info|soft": {
+              "root": {
+                "fill": "color.status.info.surface",
+                "text": "color.status.info.content"
+              }
+            },
+            "info|solid": {
+              "root": {
+                "fill": "color.status.info.surface-solid",
+                "text": "color.status.info.on-solid"
+              }
+            }
+          }
+        }
+      ]
+    },
     "RatingGroup": {
       "key": "RatingGroup",
       "slots": [

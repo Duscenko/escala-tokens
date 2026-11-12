@@ -324,3 +324,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A negative gap (avatar stack, −4 … −16) | CSS `gap` cannot be negative: it silently computed `normal` | Prop `overlap` → `--escala-overlap`; the component lays out `[&>*+*]:ml-[var(--escala-overlap)]`. A size with no role (−6, −12, −16) sets the variable inline from a spacing step |
 | A set with 350 variants where colours are invariant of Size × Shape | One line per variant would pass 48 KB | Group by Type · Variant · Appearance and count distinct `fill · stroke · ink` lines: 25 groups of 14, one colour line each |
 | A catalogue axis whose values change meaning (old shadcn `sm · default · lg` = 24 · 32 · 40, Figma's = 32 · 40 · 48) | Board and artefacts kept the old strings | grep every `v={{ Size: … }}` caller and move it (`SystemCollage`, `ProfileArtefact`, `PreviewPanel`, `screenPatterns`, `AboutInspectDemo`) |
+
+# Lessons from the FeaturedIcon (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Variants filled with a pasted RASTER (default·solid and secondary·solid: `fills[0].type === 'IMAGE'`, 600×600 and 704×1408, icon with no painted layer) | The grouped colour read gave `fill IMAGE · ink ?` for 16 of 96 variants | Never copy a photo. Read the image size (`figma.getImageByHash(...).getSizeAsync()`) and a `get_screenshot` to confirm it is an artefact, then reuse the sibling set's solid tones (Avatar: `Action/primary/default` + `Content/on-action`, `Surface/inverse` + `Content/inverse`) and say so in the contract and the report |
+| A set that shares another's tone table | Same Variant × Appearance colours as Avatar | The recipe reuses `AVATAR_TONE` / `AVATAR_SHAPES` / `AVATAR_APPEARANCES` from the same file |
+| A new catalogue key adds `selectedComponents` migration even for a brand-new component | — | Splice it after its sibling (`Icon`) in the store migration (v134) |

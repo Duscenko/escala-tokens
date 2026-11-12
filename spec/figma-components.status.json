@@ -34,9 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "FeaturedIcon": {
-      "status": "new"
-    },
     "Image": {
       "status": "rename",
       "code": "AspectRatio"

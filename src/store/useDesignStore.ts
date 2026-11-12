@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 133,
+      version: 134,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4197,6 +4197,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('Avatar')
             if (at < 0) return
             for (const part of ['AvatarStatus', 'AvatarGroup']) if (!sel.includes(part)) sel.splice(sel.indexOf('Avatar') + 1, 0, part)
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 134) {
+          // v133→v134: FeaturedIcon is new (built from the Figma file); it follows Icon.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (sel.includes('FeaturedIcon')) return
+            const at = sel.indexOf('Icon')
+            if (at >= 0) sel.splice(at + 1, 0, 'FeaturedIcon')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

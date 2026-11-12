@@ -15,6 +15,7 @@ import {
   Avatar as SkAvatar, AvatarStatus as SkAvatarStatus, AvatarGroup as SkAvatarGroup,
   type AvatarSize, type AvatarType, type AvatarShape, type AvatarVariant, type AvatarAppearance, type AvatarStatusValue, type AvatarStatusSize,
 } from '../../../escala-ui/avatar'
+import { FeaturedIcon as SkFeaturedIcon, type FeaturedIconSize, type FeaturedIconShape, type FeaturedIconVariant, type FeaturedIconAppearance } from '../../../escala-ui/featured-icon'
 import { RecipeScope } from './scope'
 import { Kbd as SkKbd, KbdGroup as SkKbdGroup } from '../../../escala-ui/kbd'
 
@@ -162,6 +163,20 @@ export function SkeletonAvatarGroupSpecimen({ t, v }: SpecimenProps) {
           <SkAvatar key={initials} type="initials" variant={variants[i]} aria-label={initials}>{size === '2xs' ? initials[0] : initials}</SkAvatar>
         ))}
       </SkAvatarGroup>
+    </RecipeScope>
+  )
+}
+
+/** The Figma FeaturedIcon (a lightning bolt unless it is swapped). */
+export function SkeletonFeaturedIconSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkFeaturedIcon
+        size={(v.Size ?? 'default') as FeaturedIconSize}
+        variant={(v.Variant ?? 'default') as FeaturedIconVariant}
+        appearance={(v.Appearance ?? 'soft') as FeaturedIconAppearance}
+        shape={(v.Shape ?? 'circle') as FeaturedIconShape}
+      />
     </RecipeScope>
   )
 }

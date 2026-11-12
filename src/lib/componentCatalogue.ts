@@ -1215,6 +1215,26 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.',
   },
   {
+    key: 'FeaturedIcon',
+    label: 'Featured Icon',
+    category: 'Indicators',
+    description: 'A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.',
+    usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).',
+    // The Figma file's axes, value for value (design-plans/featured-icon-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg', 'xl'] },
+      { name: 'Variant', values: ['default', 'secondary', 'critical', 'success', 'warning', 'info'] },
+      { name: 'Appearance', values: ['soft', 'solid'] },
+      { name: 'Shape', values: ['circle', 'rounded'] },
+    ],
+    figmaSets: ['FeaturedIcon'],
+    props: [
+      { name: 'size / variant / appearance / shape', type: 'Figma axes', description: '32 · 40 · 48 · 56 container; glyph 20 on sm, 24 above.' },
+      { name: 'icon', type: 'ReactNode', description: 'Figma Icon (the swap); default a lightning bolt.' },
+    ],
+    accessibility: 'aria-hidden: decorative. The title or text beside it carries the meaning.',
+  },
+  {
     key: 'Kbd',
     label: 'Kbd',
     category: 'Indicators',

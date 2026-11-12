@@ -357,6 +357,36 @@ export const AVATAR_GROUP: ComponentRecipe = {
   ],
 }
 
+// ── FeaturedIcon ───────────────────────────────────────────────────────────
+// The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 96 variants): Size sm · default · lg ·
+// xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid × Shape circle (Radius/full) · rounded
+// (Radius/action), a glyph centred in it: 20 on sm, 24 from default up. Same tones as an Avatar.
+export const FEATURED_ICON_SIZES = ['default', 'sm', 'lg', 'xl'] as const
+export const FEATURED_ICON_VARIANTS = ['default', 'secondary', 'critical', 'success', 'warning', 'info'] as const
+const FEATURED_ICON_GEOMETRY: Record<string, { box: string; icon: string }> = {
+  sm: { box: 'size.sm', icon: 'icon.medium' },
+  default: { box: 'size.md', icon: 'icon.large' },
+  lg: { box: 'size.lg', icon: 'icon.large' },
+  xl: { box: 'size.xl', icon: 'icon.large' },
+}
+
+export const FEATURED_ICON: ComponentRecipe = {
+  key: 'FeaturedIcon',
+  slots: ['root', 'icon'],
+  defaults: { Size: 'default', Variant: 'default', Appearance: 'soft', Shape: 'circle' },
+  parts: [
+    part({ Size: FEATURED_ICON_SIZES }, (size) => ({
+      root: { width: FEATURED_ICON_GEOMETRY[size].box, height: FEATURED_ICON_GEOMETRY[size].box },
+      icon: { width: FEATURED_ICON_GEOMETRY[size].icon, height: FEATURED_ICON_GEOMETRY[size].icon },
+    })),
+    part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === 'circle' ? 'radius.pill' : 'radius.action' } })),
+    part({ Variant: FEATURED_ICON_VARIANTS, Appearance: AVATAR_APPEARANCES }, (variant, appearance) => {
+      const [fill, ink] = AVATAR_TONE[variant][appearance as 'soft' | 'solid']
+      return { root: { fill: c(fill), text: c(ink) } }
+    }),
+  ],
+}
+
 // ── Kbd ────────────────────────────────────────────────────────────────────
 // shadcn's Kbd: a key cap on the muted surface in the muted ink, caption type.
 // KbdGroup only spaces several keys, so it has no slot.

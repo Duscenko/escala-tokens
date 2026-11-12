@@ -122,6 +122,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
   Icon: (v) =>
     `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
+  FeaturedIcon: (v) =>
+    `import { FeaturedIcon } from "@/components/ui/featured-icon"\n\n<FeaturedIcon${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} />`,
   RatingGroup: (v) =>
     `import { RatingGroup } from "@/components/ui/rating-group"\n\n<RatingGroup${v.Type === 'emoji' ? ' type="emoji"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue={4} onValueChange={setScore} aria-label="How was it?" />`,
   RatingGroupItem: (v) =>

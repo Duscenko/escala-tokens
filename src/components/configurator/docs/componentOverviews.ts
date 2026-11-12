@@ -306,6 +306,12 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default'], { Selected: 'True', Dismissible: 'True' }),
   ],
   Icon: [each('Size', ['sm', 'default', 'lg'])],
+  FeaturedIcon: [
+    each('Size', ['default', 'sm', 'lg', 'xl']),
+    each('Variant', ['default', 'secondary', 'critical', 'success', 'warning', 'info']),
+    each('Appearance', ['soft', 'solid'], { Variant: 'info' }),
+    each('Shape', ['circle', 'rounded']),
+  ],
   RatingGroup: [
     each('Type', ['star', 'emoji']),
     each('Size', ['default', 'sm', 'lg']),

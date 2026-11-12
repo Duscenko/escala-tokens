@@ -23,7 +23,7 @@ import {
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
-  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen,
+  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
@@ -421,6 +421,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Progress: SkeletonProgressSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   Icon: SkeletonIconSpecimen,
+  FeaturedIcon: SkeletonFeaturedIconSpecimen,
   RatingGroup: SkeletonRatingGroupSpecimen,
   RatingGroupItem: SkeletonRatingGroupItemSpecimen,
   FileFormat: SkeletonFileFormatSpecimen,
