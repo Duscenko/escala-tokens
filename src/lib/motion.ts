@@ -709,7 +709,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-expand': {
       pattern: 'disclosure',
-      components: ['Accordion', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem', 'Collapsible'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases open; never a jump cut.' },
       direction: 'expand',
       motion: r('use-disclosure-in'),
@@ -717,7 +717,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-collapse': {
       pattern: 'disclosure',
-      components: ['Accordion', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem', 'Collapsible'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases closed, faster than it opened.' },
       direction: 'collapse',
       motion: r('use-disclosure-out'),

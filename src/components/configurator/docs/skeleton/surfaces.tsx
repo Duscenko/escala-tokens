@@ -10,7 +10,7 @@ import { Button as SkButton } from '../../../escala-ui/button'
 import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter } from '../../../escala-ui/card'
 import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../../escala-ui/dialog'
 import { Separator as SkSeparator } from '../../../escala-ui/separator'
-import { Accordion as SkAccordion, AccordionContent as SkAccordionContent, AccordionItem as SkAccordionItem, AccordionTrigger as SkAccordionTrigger } from '../../../escala-ui/accordion'
+import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type AccordionVariant, type AccordionItemState } from '../../../escala-ui/accordion'
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescription as SkPopoverDescription, PopoverTitle as SkPopoverTitle } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
@@ -83,23 +83,33 @@ export function SkeletonSeparatorSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonAccordionSpecimen({ t }: SpecimenProps) {
+/** The Figma Accordion at its 480px sample width: three items, the first open. */
+export function SkeletonAccordionSpecimen({ t, v }: SpecimenProps) {
   // Each question has its own answer — three identical panels read as a bug.
   const rows: [string, string][] = [
-    ['What are design tokens?', 'Named values for color, type and spacing that keep every surface consistent.'],
-    ['How does Figma sync work?', 'The plugin reads your published system and writes it as Figma variables and styles.'],
-    ['Can I export CSS?', 'Yes. Download variables.css, or copy it straight into your project.'],
+    ['What is Escala?', 'Escala is a design system with tokens, components and docs that stay in sync between Figma and code.'],
+    ['How do design tokens sync?', 'Variables map to CSS custom properties through a token pipeline.'],
+    ['Can I customize the theme?', 'Yes. Swap variable modes for color, shape and density.'],
   ]
   return (
     <RecipeScope t={t}>
-      <SkAccordion type="single" collapsible defaultValue="item-0" style={{ width: 320 }}>
-        {rows.map(([q, a], i) => (
-          <SkAccordionItem key={q} value={`item-${i}`}>
-            <SkAccordionTrigger icon={<PreviewIcon concept="chevron" size={iconOf(13)} />}>{q}</SkAccordionTrigger>
-            <SkAccordionContent>{a}</SkAccordionContent>
-          </SkAccordionItem>
-        ))}
+      <SkAccordion variant={(v.Variant ?? 'ghost-default') as AccordionVariant} defaultValue={['item-0']} style={{ width: 480 }}>
+        {rows.map(([q, a], i) => <SkAccordionItem key={q} value={`item-${i}`} label={q}>{a}</SkAccordionItem>)}
       </SkAccordion>
+    </RecipeScope>
+  )
+}
+
+/** The Figma AccordionItem on its own (State Open starts it open; Disabled mutes it). */
+export function SkeletonAccordionItemSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Closed') as AccordionItemState
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 480 }}>
+        <SkAccordion variant={(v.Variant ?? 'ghost-default') as AccordionVariant} defaultValue={state === 'Open' ? ['item'] : []}>
+          <SkAccordionItem value="item" disabled={state === 'Disabled'} />
+        </SkAccordion>
+      </div>
     </RecipeScope>
   )
 }

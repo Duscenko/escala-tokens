@@ -34,13 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Accordion": {
-      "status": "rebuild"
-    },
-    "AccordionItem": {
-      "status": "part",
-      "of": "Accordion"
-    },
     "Table": {
       "status": "rebuild"
     },

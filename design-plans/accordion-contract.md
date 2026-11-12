@@ -25,4 +25,4 @@ Solo `Variant` (6 valores). Pila de 3 `AccordionItem` con el mismo Variant; el p
 Hover/foco: ninguno en el archivo.
 
 ## Estado
-Leído; falta construir (receta ACCORDION + ACCORDION_ITEM, `accordion.tsx` — hoy Radix Accordion shadcn — catálogo, store v136, specimens, parity, story, medida).
+Construido: recetas ACCORDION (gap) + ACCORDION_ITEM (root · trigger · icon · label · chevron · content), `accordion.tsx` (Radix multiple; el Accordion lleva el valor y el Variant en un contexto, el item calcula Open / Disabled), catálogo, store v136, specimens, story. El `ui/accordion` de About (shadcn) no se toca.

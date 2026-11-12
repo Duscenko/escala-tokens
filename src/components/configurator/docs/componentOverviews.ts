@@ -339,6 +339,11 @@ export const OVERVIEWS: Record<string, Overview> = {
   Card: [each('Size', ['default', 'sm'])],
   Separator: [each('Orientation', ['horizontal', 'vertical'])],
   Collapsible: [each('Open', ['False', 'True'])],
+  Accordion: [each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'])],
+  AccordionItem: [
+    each('State', ['Closed', 'Open', 'Disabled'], { Variant: 'outline-rounded' }),
+    each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'], { State: 'Open' }),
+  ],
   Image: [each('Ratio', ['auto', '16:9', '4:3', '3:2', '1:1', '3:4']), each('Shape', ['square', 'rounded'])],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.

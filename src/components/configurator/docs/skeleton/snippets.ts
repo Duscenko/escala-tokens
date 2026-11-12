@@ -101,8 +101,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
 
   Separator: (v) =>
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} />`,
-  Accordion: () =>
-    `import {\n  Accordion, AccordionItem, AccordionTrigger, AccordionContent,\n} from "@/components/ui/accordion"\n\n<Accordion type="single" collapsible defaultValue="a">\n  <AccordionItem value="a">\n    <AccordionTrigger>What are design tokens?</AccordionTrigger>\n    <AccordionContent>Named values for color, type and spacing.</AccordionContent>\n  </AccordionItem>\n</Accordion>`,
+  Accordion: (v) =>
+    `import { Accordion, AccordionItem } from "@/components/ui/accordion"\n\n<Accordion${v.Variant && v.Variant !== 'ghost-default' ? ` variant="${v.Variant}"` : ''} defaultValue={["what"]}>\n  <AccordionItem value="what" label="What is Escala?">Escala is a design system…</AccordionItem>\n  <AccordionItem value="sync" label="How do design tokens sync?">Variables map to CSS custom properties…</AccordionItem>\n</Accordion>`,
+  AccordionItem: (v) =>
+    `import { AccordionItem } from "@/components/ui/accordion"\n\n<AccordionItem value="what"${v.Variant && v.Variant !== 'ghost-default' ? ` variant="${v.Variant}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''} label="What is Escala?">\n  Escala is a design system…\n</AccordionItem>`,
   Image: (v) =>
     `import { Image } from "@/components/ui/image"\n\n<Image${v.Ratio && v.Ratio !== 'auto' ? ` ratio="${v.Ratio}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} src={cover} alt="Team at the offsite" />`,
   Popover: () =>

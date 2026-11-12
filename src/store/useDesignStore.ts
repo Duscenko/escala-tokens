@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 135,
+      version: 136,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4228,6 +4228,19 @@ export const useDesignStore = create<DesignStore>()(
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 136) {
+          // v135→v136: Accordion is rebuilt from the Figma file with its AccordionItem part.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Accordion')
+            if (at >= 0 && !sel.includes('AccordionItem')) sel.splice(at + 1, 0, 'AccordionItem')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
           }
         }
         return persisted

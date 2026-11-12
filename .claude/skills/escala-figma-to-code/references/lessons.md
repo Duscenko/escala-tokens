@@ -370,3 +370,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | `Shadow/sm` whose rings and negative spreads do not paint | Copying `0 0 0 1 · 0 1 3 · 0 1 2 −1` would add a ring Figma does not draw | `lift: 'drag'` (`0 1 3` key + `0 1 2` ambient, spreads dropped) |
 | A close control smaller than 24px (16 / 20) | `componentRecipes.test` demanded `size.hit` on the old `remove` slot | `hit: 'size.hit'` on the new `close` slot (test moved to `['Chip', 'close']`) |
 | A board tile used `Live toggle="Selected"` on an axis the file no longer has | `Live` only toggles a True / False catalogue axis | The specimen takes an opt-in `v.Interactive: 'True'` (not a catalogue axis) and toggles its own `selected` |
+
+# Lessons from the Accordion and AccordionItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A State axis with no pointer state (Closed · Open · Disabled) | The recipe rules for Closed (the default value) had no selector: `stateSuffixes` returns only `[data-force-state="Closed"]` for an unknown state, so the Closed items lost their fill, edge and radius | The component sets `data-force-state` ALWAYS (Closed · Open · Disabled), not only for the non-default values |
+| The file's Accordion is a stack of AccordionItem instances; an item alone has no Radix root | An item story would crash (Radix Item outside a Root) | The Accordion owns the open values and the Variant in a context (Radix `type="multiple"` driven by it); an item rendered alone wraps itself in a root |
+| The old recipe lived on the container (one rounded panel) | The new look is per item (each item has its own fill / edge / radius) | `ACCORDION` keeps only the gap (0 or 8 by Variant); `ACCORDION_ITEM` paints; `RECIPE_MOTION` moves to the item (chevron transform + content choreography) and the choreography's `components` list gains `AccordionItem` in `lib/motion.ts` |
+| Same label on every item of an `AllCombinations` story | axe `landmark-unique`: the open `region`s share one accessible name | Suffix the label with the variant · state in the story |
+| `Content/secondary` on `Surface/muted` (ghost-rounded Open, filled-rounded) | axe 4.22:1 in Light | Copied (rule 1), reported |
+| `ui/accordion` (About) is a separate shadcn file | Rebuilding `escala-ui/accordion` looked like it would break About | About imports `../ui/accordion`, not escala-ui; untouched |

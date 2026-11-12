@@ -74,29 +74,72 @@ export const SEPARATOR: ComponentRecipe = {
   ],
 }
 
-// ── Accordion ──────────────────────────────────────────────────────────────
+// ── Accordion + AccordionItem ──────────────────────────────────────────────
+// The Figma sets (design-plans/accordion-contract.md; Accordion 451:375, 6 variants; AccordionItem 451:188, 18:
+// Variant × State Closed · Open · Disabled). An item is a trigger (20px glyph, the label, a chevron; 20px of
+// padding above and below, 16px between them) over a content block (20px below; text on Content/secondary).
+// Variant: ghost-default (bare), ghost-underline (a 1px rule below), ghost-rounded (Radius/container, Surface/muted
+// only when open), outline-rounded / outline-sharp (Surface/page, 1px edge: Border/default closed, /strong open,
+// /subtle disabled; Radius/container or none), filled-rounded (Surface/muted). Rounded and outline variants
+// pad the sides 20px. Items sit 0 apart (ghost-default, ghost-underline) or 8 apart (the rest).
+
+export const ACCORDION_VARIANTS = ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'] as const
+export const ACCORDION_ITEM_STATES = ['Closed', 'Open', 'Disabled'] as const
 
 export const ACCORDION: ComponentRecipe = {
   key: 'Accordion',
-  slots: ['root', 'item', 'trigger', 'icon', 'content'],
-  defaults: {},
+  slots: ['root'],
+  defaults: { Variant: 'ghost-default' },
+  parts: [
+    part({ Variant: ACCORDION_VARIANTS }, (variant) => ({
+      root: { gap: variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.gap-control' },
+    })),
+  ],
+}
+
+function accordionItemShell(variant: string, state: string): SlotProps {
+  const open = state === 'Open'
+  switch (variant) {
+    case 'ghost-underline':
+      return { fill: NONE, stroke: c('border.default'), strokeBottomWidth: 'stroke.divider' }
+    case 'ghost-rounded':
+      return { fill: open ? c('surface.muted') : NONE, radius: 'radius.container' }
+    case 'outline-rounded':
+    case 'outline-sharp':
+      return {
+        fill: c('surface.page'), strokeWidth: 'stroke.control', radius: variant === 'outline-sharp' ? 'radius.none' : 'radius.container',
+        stroke: c(state === 'Disabled' ? 'border.subtle' : open ? 'border.strong' : 'border.default'),
+      }
+    case 'filled-rounded':
+      return { fill: c('surface.muted'), radius: 'radius.container' }
+    default:
+      return { fill: NONE }
+  }
+}
+
+export const ACCORDION_ITEM: ComponentRecipe = {
+  key: 'AccordionItem',
+  slots: ['root', 'trigger', 'icon', 'label', 'chevron', 'content'],
+  defaults: { Variant: 'ghost-default', State: 'Closed' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container',
-      },
-      'item:not(:first-child)': { stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider' },
-      trigger: {
-        // A row label, not a section heading: shadcn's `text-sm font-medium`.
-        // `heading-xs` (20/600) made three questions outweigh the answer.
-        text: c('content.primary'), font: 'type.label', paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.2_5',
-      },
-      'trigger:hover': { fill: c('action.ghost.hover') },
-      icon: { text: c('content.secondary') },
-      // The answer hugs its question: no top inset (shadcn's `pt-0`), so the
-      // trigger's own bottom padding is the only gap between them.
-      content: { text: c('content.secondary'), font: 'type.body-sm', paddingX: 'spacing.4', paddingBottom: 'spacing.3' },
+      trigger: { paddingY: 'spacing.inset-surface', gap: 'spacing.gap-group' },
+      icon: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
+      label: { font: 'type.label', text: c('content.primary') },
+      chevron: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
+      content: { font: 'type.body-md', text: c('content.secondary'), paddingBottom: 'spacing.inset-surface' },
     })),
+    part({ Variant: ACCORDION_VARIANTS }, (variant) => {
+      const side = variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.inset-surface'
+      return { trigger: { paddingX: side }, content: { paddingX: side } }
+    }),
+    part({ Variant: ACCORDION_VARIANTS, State: ACCORDION_ITEM_STATES }, (variant, state) => {
+      const disabled = state === 'Disabled'
+      return {
+        root: accordionItemShell(variant, state),
+        ...(disabled ? { icon: { text: c('content.disabled') }, label: { text: c('content.disabled') }, chevron: { text: c('content.disabled') } } : {}),
+      }
+    }),
   ],
 }
 
