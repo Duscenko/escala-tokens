@@ -964,7 +964,9 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > reader goes through `pinnedOrSolvedAlpha` (tokens.json, CSS, sections, the projection via
 > `ThemePalette.pinnedAlpha`, the Primitives view), and editing a solid drops its pinned twin.
 > Storybook builds that system (`buildStudioTokens` + `applyFigmaFilePalette`); all 166 Color
-> Semantics roles × mode match the file (`figmaFilePalette.test.ts`). **Focus is the file's too:**
+> Semantics roles × mode match the file (`figmaFilePalette.test.ts`). **Scope (owner, same
+> day): Storybook only.** The web's Core / Minimalist style (same violet) keeps the generator's
+> palette for now — don't apply the file's palette to Core or any web default without asking. **Focus is the file's too:**
 > a control with `focus` (Button, Checkbox, Switch) draws a 2px `border.focus` edge inside and
 > a 2px `border.ring` halo outside; a field (`ring` alone, Input) keeps its 1px edge and the 2px
 > halo straddles it (`outline` + negative `outline-offset`). The padding gives back the border's
